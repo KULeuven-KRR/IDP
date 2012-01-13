@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 
@@ -29,8 +29,8 @@ using namespace std;
 unsigned int DefinitionGrounder::_currentdefnb = 1;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
-DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context) :
-		Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
+		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
 }
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
@@ -42,8 +42,8 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
-RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct) :
-		_headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
+		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
 }
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
@@ -79,8 +79,8 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 }
 
 HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<SortTable*>& vst) :
-		_grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
+		const vector<SortTable*>& vst)
+		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
 }
 
 Lit HeadGrounder::run() const {
@@ -123,8 +123,8 @@ Lit HeadGrounder::run() const {
 
 // FIXME require a transformation such that there is only one headgrounder for any defined symbol
 // FIXME also handle tseitin defined rules!
-LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct) :
-		RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())) {
+LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
+		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
 }
 
@@ -138,7 +138,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 			throw notyetimplemented("Lazygrounding with functions.\n");
 		}
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
-		domlist.push_back(dominst(var, headargs[i]));
+		domlist.push_back(dominst { var, headargs[i] });
 	}
 	return domlist;
 }

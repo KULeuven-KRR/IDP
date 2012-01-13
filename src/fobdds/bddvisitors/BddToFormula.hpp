@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
@@ -40,15 +40,15 @@ private:
 	Term* _currterm;
 	std::map<const FOBDDDeBruijnIndex*, Variable*> _dbrmapping;
 
-	void reset(){
+	void reset() {
 		_currformula = NULL;
 		_currterm = NULL;
 		_dbrmapping.clear();
 	}
 
 public:
-	BDDToFormula(FOBDDManager* m) :
-			FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
+	BDDToFormula(FOBDDManager* m)
+			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
 		_dbrmapping.clear();
 	}
 
@@ -118,7 +118,7 @@ private:
 	void visit(const FOBDDQuantKernel* quantkernel) {
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
-		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it){
+		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
 			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + 1)] = it->second;
 		}
 
@@ -126,7 +126,7 @@ private:
 
 		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
-		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, {quantvar}, _currformula, FormulaParseInfo());
+		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
 
 	void visit(const FOBDD* bdd) {
@@ -144,7 +144,7 @@ private:
 		// NOTE afterwards, _currformula is a formula representing the kernel
 
 		if (_manager->isFalsebdd(bdd->falsebranch())) {
-			if(_manager->isTruebdd(bdd->truebranch())){
+			if (_manager->isTruebdd(bdd->truebranch())) {
 				return; // kernel is the whole formula
 			}
 			auto kernelformula = _currformula;
@@ -155,7 +155,7 @@ private:
 		} else if (_manager->isFalsebdd(bdd->truebranch())) {
 			_currformula->negate();
 
-			if(_manager->isTruebdd(bdd->truebranch())){
+			if (_manager->isTruebdd(bdd->truebranch())) {
 				return; // \lnot kernel is the whole formula
 			}
 
@@ -179,7 +179,7 @@ private:
 				_currformula = new BoolForm(SIGN::POS, false, kernelformula, bf, FormulaParseInfo());
 			} else {
 				FOBDDVisitor::visit(bdd->truebranch());
-				auto  trueform = _currformula;
+				auto trueform = _currformula;
 				FOBDDVisitor::visit(bdd->falsebranch());
 				auto falseform = _currformula;
 				auto bf1 = new BoolForm(SIGN::POS, true, kernelformula, trueform, FormulaParseInfo());

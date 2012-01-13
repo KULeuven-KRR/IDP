@@ -79,11 +79,11 @@ const char* toCString(ArgType type) {
 	if (not init) {
 		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
 				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
-				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR,
-				"predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(
-				AT_FORMULA, "formula")(AT_THEORY, "theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(
-				AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED,
-				"overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
+				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
+				AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
+				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
+				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
+				AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -558,21 +558,21 @@ void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vecto
 	stringstream ss;
 	ss << "There is no procedure " << name << " with the provided arguments <";
 	bool begini = true;
-	for(auto i=passedtypes.cbegin(); i<passedtypes.cend(); ++i){
-		if(not begini){
-			ss <<",";
+	for (auto i = passedtypes.cbegin(); i < passedtypes.cend(); ++i) {
+		if (not begini) {
+			ss << ",";
 		}
-		begini=false;
+		begini = false;
 		bool beginj = true;
-		for(auto j=i->cbegin(); j<i->cend(); ++j){
-			if(not beginj){
-				ss <<"/";
+		for (auto j = i->cbegin(); j < i->cend(); ++j) {
+			if (not beginj) {
+				ss << "/";
 			}
-			beginj=false;
-			ss <<toCString(*j);
+			beginj = false;
+			ss << toCString(*j);
 		}
 	}
-	ss <<">\n";
+	ss << ">\n";
 	ss << "Did you intend to use:\n";
 	for (auto i = procs->begin(); i != procs->end(); ++i) {
 		ss << "\t" << name << "(";
@@ -703,11 +703,10 @@ int garbageCollect(T obj) {
 	return 0;
 }
 
-
 // FIXME commented garbage collection?
 // TODO cleanup garbage collection
 int gcInternProc(lua_State* L) {
-	auto t = *(map<vector<ArgType>,InternalProcedure*>**) lua_touserdata(L,1);
+	auto t = *(map<vector<ArgType>, InternalProcedure*>**) lua_touserdata(L, 1);
 	deleteList(*t);
 	delete (t);
 	return 0;
@@ -1692,8 +1691,8 @@ void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements)
 
 void internProcMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcInternProc, "__gc"));
-	elements.push_back(tablecolheader(&internalCall, "__call"));
+	elements.push_back(tablecolheader { &gcInternProc, "__gc" });
+	elements.push_back(tablecolheader { &internalCall, "__call" });
 
 	bool newtable = luaL_newmetatable(L, "internalprocedure") != 0;
 	Assert(newtable);
@@ -1708,154 +1707,154 @@ void internProcMetaTable(lua_State* L) {
 
 void sortMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcSort, "__gc"));
+	elements.push_back(tablecolheader { &gcSort, "__gc" });
 	createNewTable(L, AT_SORT, elements);
 }
 
 void predicateMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcPredicate, "__gc"));
-	elements.push_back(tablecolheader(&predicateIndex, "__index"));
-	elements.push_back(tablecolheader(&predicateArity, "__div"));
+	elements.push_back(tablecolheader { &gcPredicate, "__gc" });
+	elements.push_back(tablecolheader { &predicateIndex, "__index" });
+	elements.push_back(tablecolheader { &predicateArity, "__div" });
 	createNewTable(L, AT_PREDICATE, elements);
 }
 
 void functionMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcFunction, "__gc"));
-	elements.push_back(tablecolheader(&functionIndex, "__index"));
-	elements.push_back(tablecolheader(&functionArity, "__div"));
+	elements.push_back(tablecolheader { &gcFunction, "__gc" });
+	elements.push_back(tablecolheader { &functionIndex, "__index" });
+	elements.push_back(tablecolheader { &functionArity, "__div" });
 	createNewTable(L, AT_FUNCTION, elements);
 }
 
 void symbolMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcSymbol, "__gc"));
-	elements.push_back(tablecolheader(&symbolIndex, "__index"));
-	elements.push_back(tablecolheader(&symbolArity, "__div"));
+	elements.push_back(tablecolheader { &gcSymbol, "__gc" });
+	elements.push_back(tablecolheader { &symbolIndex, "__index" });
+	elements.push_back(tablecolheader { &symbolArity, "__div" });
 	createNewTable(L, AT_SYMBOL, elements);
 }
 
 void vocabularyMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcVocabulary, "__gc"));
-	elements.push_back(tablecolheader(&vocabularyIndex, "__index"));
+	elements.push_back(tablecolheader { &gcVocabulary, "__gc" });
+	elements.push_back(tablecolheader { &vocabularyIndex, "__index" });
 	createNewTable(L, AT_VOCABULARY, elements);
 }
 
 void compoundMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcCompound, "__gc"));
+	elements.push_back(tablecolheader { &gcCompound, "__gc" });
 	createNewTable(L, AT_COMPOUND, elements);
 }
 
 void domainatomMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcDomainAtom, "__gc"));
-	elements.push_back(tablecolheader(&domainatomIndex, "__index"));
+	elements.push_back(tablecolheader { &gcDomainAtom, "__gc" });
+	elements.push_back(tablecolheader { &domainatomIndex, "__index" });
 	createNewTable(L, AT_DOMAINATOM, elements);
 }
 
 void tupleMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcTuple, "__gc"));
-	elements.push_back(tablecolheader(&tupleIndex, "__index"));
-	elements.push_back(tablecolheader(&tupleLen, "__len"));
+	elements.push_back(tablecolheader { &gcTuple, "__gc" });
+	elements.push_back(tablecolheader { &tupleIndex, "__index" });
+	elements.push_back(tablecolheader { &tupleLen, "__len" });
 	createNewTable(L, AT_TUPLE, elements);
 }
 
 void domainMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcDomain, "__gc"));
+	elements.push_back(tablecolheader { &gcDomain, "__gc" });
 	createNewTable(L, AT_DOMAIN, elements);
 }
 
 void predtableMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcPredTable, "__gc"));
-	elements.push_back(tablecolheader(&predtableCall, "__call"));
+	elements.push_back(tablecolheader { &gcPredTable, "__gc" });
+	elements.push_back(tablecolheader { &predtableCall, "__call" });
 	createNewTable(L, AT_PREDTABLE, elements);
 }
 
 void predinterMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcPredInter, "__gc"));
-	elements.push_back(tablecolheader(&predinterIndex, "__index"));
-	elements.push_back(tablecolheader(&predinterNewIndex, "__newindex"));
+	elements.push_back(tablecolheader { &gcPredInter, "__gc" });
+	elements.push_back(tablecolheader { &predinterIndex, "__index" });
+	elements.push_back(tablecolheader { &predinterNewIndex, "__newindex" });
 	createNewTable(L, AT_PREDINTER, elements);
 }
 
 void funcinterMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcFuncInter, "__gc"));
-	elements.push_back(tablecolheader(&funcinterIndex, "__index"));
-	elements.push_back(tablecolheader(&funcinterNewIndex, "__newindex"));
-	elements.push_back(tablecolheader(&funcinterCall, "__call"));
+	elements.push_back(tablecolheader { &gcFuncInter, "__gc" });
+	elements.push_back(tablecolheader { &funcinterIndex, "__index" });
+	elements.push_back(tablecolheader { &funcinterNewIndex, "__newindex" });
+	elements.push_back(tablecolheader { &funcinterCall, "__call" });
 	createNewTable(L, AT_FUNCINTER, elements);
 }
 
 void structureMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcStructure, "__gc"));
-	elements.push_back(tablecolheader(&structureIndex, "__index"));
-	elements.push_back(tablecolheader(&structureNewIndex, "__newindex"));
+	elements.push_back(tablecolheader { &gcStructure, "__gc" });
+	elements.push_back(tablecolheader { &structureIndex, "__index" });
+	elements.push_back(tablecolheader { &structureNewIndex, "__newindex" });
 	createNewTable(L, AT_STRUCTURE, elements);
 }
 
 void tableiteratorMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcTableIterator, "__gc"));
+	elements.push_back(tablecolheader { &gcTableIterator, "__gc" });
 	createNewTable(L, AT_TABLEITERATOR, elements);
 }
 
 void domainiteratorMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcDomainIterator, "__gc"));
+	elements.push_back(tablecolheader { &gcDomainIterator, "__gc" });
 	createNewTable(L, AT_DOMAINITERATOR, elements);
 }
 
 void theoryMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcTheory, "__gc"));
+	elements.push_back(tablecolheader { &gcTheory, "__gc" });
 	createNewTable(L, AT_THEORY, elements);
 }
 
 void formulaMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcFormula, "__gc"));
+	elements.push_back(tablecolheader { &gcFormula, "__gc" });
 	createNewTable(L, AT_FORMULA, elements);
 }
 
 void queryMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcQuery, "__gc"));
+	elements.push_back(tablecolheader { &gcQuery, "__gc" });
 	createNewTable(L, AT_QUERY, elements);
 }
 
 void termMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcTerm, "__term"));
+	elements.push_back(tablecolheader { &gcTerm, "__term" });
 	createNewTable(L, AT_TERM, elements);
 }
 
 void optionsMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcOptions, "__gc"));
-	elements.push_back(tablecolheader(&optionsIndex, "__index"));
-	elements.push_back(tablecolheader(&optionsNewIndex, "__newindex"));
+	elements.push_back(tablecolheader { &gcOptions, "__gc" });
+	elements.push_back(tablecolheader { &optionsIndex, "__index" });
+	elements.push_back(tablecolheader { &optionsNewIndex, "__newindex" });
 	createNewTable(L, AT_OPTIONS, elements);
 }
 
 void namespaceMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcNamespace, "__gc"));
-	elements.push_back(tablecolheader(&namespaceIndex, "__index"));
+	elements.push_back(tablecolheader { &gcNamespace, "__gc" });
+	elements.push_back(tablecolheader { &namespaceIndex, "__index" });
 	createNewTable(L, AT_NAMESPACE, elements);
 }
 
 void overloadedMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcOverloaded, "__gc"));
+	elements.push_back(tablecolheader { &gcOverloaded, "__gc" });
 	createNewTable(L, AT_OVERLOADED, elements);
 }
 
@@ -1917,8 +1916,7 @@ void addInternalProcedures(lua_State*) {
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
-		}
-		lua_getglobal(_state, nsspace.c_str());
+		}lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
 			auto possiblearguments = new internalprocargmap(j->second);
 			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
@@ -1967,7 +1965,7 @@ void makeLuaConnection() {
 	// Parse configuration file
 	err = luaL_dofile(_state,getPathOfConfigFile().c_str());
 	if (err) {
-		clog << "Error in configuration file, searched in " << getPathOfConfigFile() <<"\n";
+		clog << "Error in configuration file, searched in " << getPathOfConfigFile() << "\n";
 		exit(1);
 	}
 }
@@ -2104,8 +2102,8 @@ string* getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) 
 		return 0;
 }
 
-LuaTraceMonitor* getLuaTraceMonitor(){
-	if(getState()==NULL){
+LuaTraceMonitor* getLuaTraceMonitor() {
+	if (getState() == NULL) {
 		return NULL;
 	}
 	return new LuaTraceMonitor(getState());

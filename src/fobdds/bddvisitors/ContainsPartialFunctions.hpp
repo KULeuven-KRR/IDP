@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef BDDPARTIALCHECKER_HPP_
 #define BDDPARTIALCHECKER_HPP_
@@ -37,8 +37,8 @@ private:
 	}
 
 public:
-	ContainsPartialFunctions(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	ContainsPartialFunctions(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 	bool check(const FOBDDArgument* arg) {
 		_result = false;

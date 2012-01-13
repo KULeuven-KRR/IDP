@@ -34,11 +34,12 @@ public:
 		return new SetAtomValueInference("makefalse", "Sets the interpretaion of the given tuple to false.\nModifies the table-interpretation.", SET_FALSE);
 	}
 	static Inference* getMakeAtomUnknownInference() {
-		return new SetAtomValueInference("makeunknown", "Sets the interpretaion of the given tuple to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
+		return new SetAtomValueInference("makeunknown", "Sets the interpretaion of the given tuple to unknown.\nModifies the table-interpretation.",
+				SET_UNKNOWN);
 	}
 
-	SetAtomValueInference(const char* command, const char* description, SETVALUE value) :
-		SetAtomValueInferenceBase(command, description, true), value_(value) {
+	SetAtomValueInference(const char* command, const char* description, SETVALUE value)
+			: SetAtomValueInferenceBase(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

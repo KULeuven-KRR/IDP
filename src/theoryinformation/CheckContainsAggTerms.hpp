@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef CONTAINSAGGTERMS_HPP_
 #define CONTAINSAGGTERMS_HPP_
@@ -21,14 +21,14 @@ private:
 	bool _result;
 
 public:
-	bool execute(const Formula* f){
+	bool execute(const Formula* f) {
 		_result = false;
 		f->accept(this);
 		return _result;
 	}
 
 protected:
-	void visit(const AggTerm*){
+	void visit(const AggTerm*) {
 		_result = true;
 	}
 };

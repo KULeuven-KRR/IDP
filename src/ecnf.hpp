@@ -250,8 +250,7 @@ public:
 	}
 	AggGroundRule(int head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
-			: GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype),
-				_lower(grb._lower), _bound(grb._bound) {
+			: GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
 	}
 
 	~AggGroundRule() {
@@ -632,7 +631,7 @@ private:
 	varidlist _varids;
 public:
 	CPSumTerm(const VarId& left, const VarId& right)
-			: _varids({left,right}) {
+			: _varids( { left, right }) {
 	}
 	CPSumTerm(const varidlist& varids)
 			: _varids(varids) {

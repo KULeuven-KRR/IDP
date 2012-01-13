@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef BASICGENERATOR_HPP_
 #define BASICGENERATOR_HPP_
@@ -16,34 +16,41 @@
 /**
  * Generates an empty set of instances
  */
-class EmptyGenerator : public InstGenerator {
+class EmptyGenerator: public InstGenerator {
 public:
-	virtual void next() {}
-	virtual void reset() { notifyAtEnd(); }
+	virtual void next() {
+	}
+	virtual void reset() {
+		notifyAtEnd();
+	}
 
-	EmptyGenerator* clone() const{
+	EmptyGenerator* clone() const {
 		return new EmptyGenerator(*this);
 	}
 };
 
-class FullGenerator : public InstGenerator {
+class FullGenerator: public InstGenerator {
 private:
 	bool first;
 public:
-	FullGenerator():first(true){}
+	FullGenerator()
+			: first(true) {
+	}
 
-	FullGenerator* clone() const{
+	FullGenerator* clone() const {
 		return new FullGenerator(*this);
 	}
 
 	virtual void next() {
-		if(first){
+		if (first) {
 			first = false;
-		}else{
+		} else {
 			notifyAtEnd();
 		}
 	}
-	virtual void reset() { first = true;}
+	virtual void reset() {
+		first = true;
+	}
 };
 
 #endif /* BASICGENERATOR_HPP_ */

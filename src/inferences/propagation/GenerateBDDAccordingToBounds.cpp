@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "vocabulary.hpp"
@@ -132,8 +132,7 @@ void GenerateBDDAccordingToBounds::visit(const AggForm*) {
 	}
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure,
-		double mcpa) {
+const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, double mcpa) {
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, _manager);
@@ -164,7 +163,7 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
 		output << "   ";
 		(it->first)->put(output);
-		output << endl<< tabs();
+		output << endl << tabs();
 		output << "      vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';

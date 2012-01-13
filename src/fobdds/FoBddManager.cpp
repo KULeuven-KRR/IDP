@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "utils/NumericLimits.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -907,7 +907,7 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVar
 
 const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOBDDDomainTerm* term, const FOBDDVariable* variable) {
 	map<const FOBDDDomainTerm*, const FOBDDVariable*> map;
-	map.insert(pair<const FOBDDDomainTerm*, const FOBDDVariable*>(term, variable));
+	map.insert(pair<const FOBDDDomainTerm*, const FOBDDVariable*> { term, variable });
 	SubstituteTerms<FOBDDDomainTerm, FOBDDVariable> s(this, map);
 	return kernel->acceptchange(&s);
 }
@@ -1037,8 +1037,7 @@ const FOBDDArgument* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDA
 								timesargs[0] = currterm;
 								double d =
 										constant->value()->type() == DET_INT ?
-												(double(1) / double(constant->value()->value()._int)) :
-												(double(1) / constant->value()->value()._double);
+												(double(1) / double(constant->value()->value()._int)) : (double(1) / constant->value()->value()._double);
 								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(), createDomElem(d));
 								d = -d;
 								return getFuncTerm(times, timesargs);
@@ -1278,13 +1277,13 @@ vector<vector<pair<bool, const FOBDDKernel*> > > FOBDDManager::pathsToFalse(cons
 		auto falsepaths = pathsToFalse(bdd->falsebranch());
 		auto truepaths = pathsToFalse(bdd->truebranch());
 		for (auto it = falsepaths.cbegin(); it != falsepaths.cend(); ++it) {
-			result.push_back( { pair<bool, const FOBDDKernel*>(false, bdd->kernel()) });
+			result.push_back( { pair<bool, const FOBDDKernel*> { false, bdd->kernel() } });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
 		}
 		for (auto it = truepaths.cbegin(); it != truepaths.cend(); ++it) {
-			result.push_back( { pair<bool, const FOBDDKernel*>(true, bdd->kernel()) });
+			result.push_back( { pair<bool, const FOBDDKernel*> { true, bdd->kernel() } });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
@@ -1480,8 +1479,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 						if (paths[pathnr][nodenr].first)
 							currchance = currchance * dynsubkernels[paths[pathnr][nodenr].second] / double(nodeunivsize - element);
 						else
-							currchance = currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second])
-									/ double(nodeunivsize - element);
+							currchance = currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second]) / double(nodeunivsize - element);
 					}
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
@@ -1497,8 +1495,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 
 					// randomly choose a path
 					double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
-					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss)
-							- cumulative_pathsposs.cbegin();
+					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss) - cumulative_pathsposs.cbegin();
 					for (unsigned int nodenr = 0; nodenr < paths[chosenpathnr].size(); ++nodenr) {
 						if (paths[chosenpathnr][nodenr].first)
 							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0);
@@ -1539,8 +1536,8 @@ double FOBDDManager::estimatedChance(const FOBDD* bdd, AbstractStructure* struct
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | kernel } in the given structure
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars,
-		const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
+double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+		AbstractStructure* structure) {
 	// TODO: improve this if functional dependency is known
 	double maxdouble = getMaxElem<double>();
 	double kernelchance = estimatedChance(kernel, structure);
@@ -1772,8 +1769,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
 			tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
 			double invkernans =
-					(kernelunivsize._type == TST_INFINITE || kernelunivsize._type == TST_UNKNOWN) ?
-							maxdouble : double(kernelunivsize._size) - kernelans;
+					(kernelunivsize._type == TST_INFINITE || kernelunivsize._type == TST_UNKNOWN) ? maxdouble : double(kernelunivsize._size) - kernelans;
 			double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices, structure);
 			if (kernelcost + (invkernans * falsecost) < maxdouble) {
 				return kernelcost + (invkernans * falsecost);
@@ -1792,8 +1788,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			else {
 				if ((double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost)
 						< maxdouble) {
-					return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost)
-							+ ((kernelunivsize._size - kernelans) * falsecost);
+					return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost);
 				} else
 					return maxdouble;
 			}
@@ -1897,8 +1892,7 @@ const FOBDD* FOBDDManager::make_more_false(const FOBDD* bdd, const set<const FOB
 		}
 
 		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
-		double truebranchweight =
-				(kernelans * weight_per_ans < getMaxElem<double>()) ? kernelans * weight_per_ans : getMaxElem<double>();
+		double truebranchweight = (kernelans * weight_per_ans < getMaxElem<double>()) ? kernelans * weight_per_ans : getMaxElem<double>();
 		const FOBDD* newtrue = make_more_false(bdd->truebranch(), branchvars, branchindices, structure, truebranchweight);
 
 		tablesize allkernelans = univNrAnswers(kernelvars, kernelindices, structure);
@@ -1912,8 +1906,7 @@ const FOBDD* FOBDDManager::make_more_false(const FOBDD* bdd, const set<const FOB
 			else
 				kernelans = 1;
 		}
-		double falsebranchweight =
-				(invkernelans * weight_per_ans < getMaxElem<double>()) ? invkernelans * weight_per_ans : getMaxElem<double>();
+		double falsebranchweight = (invkernelans * weight_per_ans < getMaxElem<double>()) ? invkernelans * weight_per_ans : getMaxElem<double>();
 		const FOBDD* newfalse = make_more_false(bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
 			return make_more_false(getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weight_per_ans);
@@ -2069,8 +2062,7 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 		}
 
 		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
-		double truebranchweight =
-				(kernelans * weight_per_ans < getMaxElem<double>()) ? kernelans * weight_per_ans : getMaxElem<double>();
+		double truebranchweight = (kernelans * weight_per_ans < getMaxElem<double>()) ? kernelans * weight_per_ans : getMaxElem<double>();
 		const FOBDD* newtrue = make_more_true(bdd->truebranch(), branchvars, branchindices, structure, truebranchweight);
 
 		tablesize allkernelans = univNrAnswers(kernelvars, kernelindices, structure);
@@ -2086,8 +2078,7 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 				return bdd; // FIXME was no here orginally!
 			}
 		}
-		double falsebranchweight =
-				(invkernelans * weight_per_ans < getMaxElem<double>()) ? invkernelans * weight_per_ans : getMaxElem<double>();
+		double falsebranchweight = (invkernelans * weight_per_ans < getMaxElem<double>()) ? invkernelans * weight_per_ans : getMaxElem<double>();
 		const FOBDD* newfalse = make_more_true(bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
 			return make_more_true(getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weight_per_ans);

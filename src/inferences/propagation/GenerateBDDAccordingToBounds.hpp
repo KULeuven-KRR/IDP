@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef SYMBOLICSTRUCTURE_HPP_
 #define SYMBOLICSTRUCTURE_HPP_
@@ -47,8 +47,8 @@ protected:
 
 public:
 	GenerateBDDAccordingToBounds(FOBDDManager* m, const Bound& ctbounds, const Bound& cfbounds,
-			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v) :
-			_manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v) {
+			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v)
+			: _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v) {
 	}
 	FOBDDManager* manager() const {
 		return _manager;

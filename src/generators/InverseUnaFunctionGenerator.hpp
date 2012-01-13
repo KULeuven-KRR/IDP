@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef INVUNAGENERATOR_HPP_
 #define INVUNAGENERATOR_HPP_
@@ -29,7 +29,7 @@ private:
 
 public:
 	InverseUNAFuncGenerator(const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
-			: _reset(true){
+			: _reset(true) {
 		_universe = univ;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
 			if (pattern[n] == Pattern::OUTPUT) {
@@ -46,16 +46,16 @@ public:
 		_resvar = vars.back();
 	}
 
-	InverseUNAFuncGenerator* clone() const{
+	InverseUNAFuncGenerator* clone() const {
 		return new InverseUNAFuncGenerator(*this);
 	}
 
-	void reset(){
+	void reset() {
 		_reset = true;
 	}
 
-	void next(){
-		if(_reset){
+	void next() {
+		if (_reset) {
 			_reset = false;
 			Assert(_resvar->get()->type() == DET_COMPOUND);
 			const Compound* c = _resvar->get()->value()._compound;
@@ -72,7 +72,7 @@ public:
 					break;
 				}
 			}
-		}else{
+		} else {
 			notifyAtEnd();
 		}
 	}

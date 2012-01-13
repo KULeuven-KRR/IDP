@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef SIMPLIFY_HPP_
 #define SIMPLIFY_HPP_
@@ -20,9 +20,10 @@
  *	Class to test simplification of bdds.
  *  Gets a query as input and returns a string representation of the simplified bdd associated to the query.
  */
-class SimplifyInference : public QueryBase {
+class SimplifyInference: public QueryBase {
 public:
-	SimplifyInference() : QueryBase("simplify", "Simplifies the given query if applicable, using bdds.") {
+	SimplifyInference()
+			: QueryBase("simplify", "Simplifies the given query if applicable, using bdds.") {
 		setNameSpace(getInternalNamespaceName());
 
 	}
@@ -34,13 +35,13 @@ public:
 		FOBDDManager manager;
 		FOBDDFactory factory(&manager);
 		auto bdd = factory.turnIntoBdd(q->query());
-		
+
 		// Simplify the bdd
 		auto simplifiedbdd = manager.simplify(bdd);
 
 		// Return the result
 		std::stringstream sstr;
-		manager.put(sstr,simplifiedbdd);
+		manager.put(sstr, simplifiedbdd);
 		return InternalArgument(StringPointer(sstr.str()));
 	}
 };

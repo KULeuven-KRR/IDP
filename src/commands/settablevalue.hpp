@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef MAKETABTRUE_HPP_
 #define MAKETABTRUE_HPP_
@@ -37,8 +37,8 @@ public:
 		return new SetTableValueInference("makeunknown", "Sets all tuples of the given table to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
 	}
 
-	SetTableValueInference(const char* command, const char* description, SETVALUE value) :
-		SetTableValueInferenceBase(command, description, true), value_(value) {
+	SetTableValueInference(const char* command, const char* description, SETVALUE value)
+			: SetTableValueInferenceBase(command, description, true), value_(value) {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

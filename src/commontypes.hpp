@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef COMMONTYPES_HPP
 #define COMMONTYPES_HPP
@@ -30,7 +30,9 @@
  *	- AGGMIN:	min
  *	- AGGMAX:	max
  */
-enum AggFunction { CARD, SUM, PROD, MIN, MAX };
+enum AggFunction {
+	CARD, SUM, PROD, MIN, MAX
+};
 
 /**
  * Enumeration for the possible ways to define a tseitin atom in terms of the subformula it replaces.
@@ -39,7 +41,9 @@ enum AggFunction { CARD, SUM, PROD, MIN, MAX };
  *		- TsType::IMPL:		tseitin => subformula
  *		- TsType::RIMPL:	tseitin <= subformula
  */
-enum TsType { EQ, RULE, IMPL, RIMPL };
+enum TsType {
+	EQ, RULE, IMPL, RIMPL
+};
 
 // TODO when better gcc compiler, add enum class here again (currently lacking default operators)
 
@@ -52,20 +56,32 @@ enum TsType { EQ, RULE, IMPL, RIMPL };
  *	- CompType::LEQ:	=<
  *	- CompType::GEQ:	>=
  */
-enum class CompType { EQ, NEQ, LT, GT, LEQ, GEQ };
+enum class CompType {
+	EQ, NEQ, LT, GT, LEQ, GEQ
+};
 
 /** The context of a subformula */
-enum class Context { POSITIVE, NEGATIVE, BOTH };
+enum class Context {
+	POSITIVE, NEGATIVE, BOTH
+};
 
 /** The sign of a formula (NEG is a negation in front) */
-enum class SIGN { NEG, POS };
+enum class SIGN {
+	NEG, POS
+};
 
-enum class QUANT { UNIV, EXIST };
+enum class QUANT {
+	UNIV, EXIST
+};
 
-enum class TruthType { POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE };
+enum class TruthType {
+	POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE
+};
 
 // NOTE: int and double domain elements are DISJOINT! It is never allowed to create a double domainelement if it in fact refers to an int, so have to check for this
-enum class NumType { CERTAINLYINT, POSSIBLYINT };
+enum class NumType {
+	CERTAINLYINT, POSSIBLYINT
+};
 
 typedef int Lit;
 typedef double Weight;

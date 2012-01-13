@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TERM_HPP
 #define TERM_HPP
@@ -50,8 +50,8 @@ private:
 
 public:
 	// Constructors
-	Term(const TermParseInfo& pi) 
-		: _pi(pi) {
+	Term(const TermParseInfo& pi)
+			: _pi(pi) {
 	}
 
 	virtual Term* clone() const = 0;
@@ -62,7 +62,8 @@ public:
 	//!< create a copy of the term and substitute the free variables according to the given map
 
 	// Destructors
-	virtual ~Term() { } //!< Shallow destructor. Does not delete subterms and subsets of the term.
+	virtual ~Term() {
+	} //!< Shallow destructor. Does not delete subterms and subsets of the term.
 	void recursiveDelete(); //!< Delete the term, its subterms, and subsets.
 
 	// Mutators
@@ -128,7 +129,8 @@ public:
 	VarTerm* cloneKeepVars() const;
 	VarTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~VarTerm() {}
+	~VarTerm() {
+	}
 
 	void sort(Sort* s);
 
@@ -161,7 +163,8 @@ public:
 	FuncTerm* cloneKeepVars() const;
 	FuncTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~FuncTerm() {}
+	~FuncTerm() {
+	}
 
 	void function(Function* f) {
 		_function = f;
@@ -198,7 +201,8 @@ public:
 	DomainTerm* cloneKeepVars() const;
 	DomainTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~DomainTerm() {}
+	~DomainTerm() {
+	}
 
 	void sort(Sort* s);
 
@@ -232,7 +236,8 @@ public:
 	AggTerm* cloneKeepVars() const;
 	AggTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~AggTerm() {}
+	~AggTerm() {
+	}
 
 	Sort* sort() const;
 	TermType type() const {
@@ -273,8 +278,8 @@ private:
 	ParseInfo _pi; //!< The place where the query was parsed.
 public:
 	// Constructors
-	Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi) :
-			_variables(vars), _query(q), _pi(pi) {
+	Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi)
+			: _variables(vars), _query(q), _pi(pi) {
 	}
 
 	// Inspectors
@@ -312,8 +317,8 @@ protected:
 
 public:
 	// Constructors
-	SetExpr(const SetParseInfo& pi) :
-			_pi(pi) {
+	SetExpr(const SetParseInfo& pi)
+			: _pi(pi) {
 	}
 
 	virtual SetExpr* clone() const = 0;
@@ -330,7 +335,8 @@ public:
 	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0:0})
 
 	// Destructors
-	virtual ~SetExpr() {} //!< Delete the set, but not its subformulas and subterms
+	virtual ~SetExpr() {
+	} //!< Delete the set, but not its subformulas and subterms
 	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
 
 	// Mutators
@@ -389,8 +395,8 @@ class EnumSetExpr: public SetExpr {
 ACCEPTBOTH(SetExpr)
 public:
 	// Constructors
-	EnumSetExpr(const SetParseInfo& pi) :
-			SetExpr(pi) {
+	EnumSetExpr(const SetParseInfo& pi)
+			: SetExpr(pi) {
 	}
 	EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
 

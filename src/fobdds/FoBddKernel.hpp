@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef FOBDDKERNEL_HPP_
 #define FOBDDKERNEL_HPP_
@@ -19,8 +19,8 @@ class FOBDDKernel {
 private:
 	KernelOrder _order;
 public:
-	FOBDDKernel(const KernelOrder& order) :
-			_order(order) {
+	FOBDDKernel(const KernelOrder& order)
+			: _order(order) {
 	}
 	virtual ~FOBDDKernel() {
 	}

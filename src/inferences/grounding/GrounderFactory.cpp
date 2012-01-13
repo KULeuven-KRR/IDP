@@ -64,8 +64,8 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
-		_structure(structure), _symstructure(symstructure) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
+		: _structure(structure), _symstructure(symstructure) {
 
 	Assert(_symstructure!=NULL);
 
@@ -86,10 +86,10 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		if (function->overloaded()) {
 			set<Function*> nonbuiltins = function->nonbuiltins();
 			for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-				passtocp = FuncUtils::isIntFunc(function,vocabulary); 
+				passtocp = FuncUtils::isIntFunc(function, vocabulary);
 			}
 		} else if (not function->builtin()) {
-			passtocp = FuncUtils::isIntFunc(function,vocabulary); 
+			passtocp = FuncUtils::isIntFunc(function, vocabulary);
 		}
 		if (passtocp) {
 			_cpsymbols.insert(function);
@@ -331,12 +331,11 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
  */
 void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
-	tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
+	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
 	if (not getOption(BoolType::CPSUPPORT)) {
-		tmptheory = FormulaUtils::splitComparisonChains(tmptheory,_structure->vocabulary());
-		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory,_structure);
-	}
-	Assert(sametypeid<Theory>(*tmptheory));
+		tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
+		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
+	}Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
@@ -394,7 +393,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
-		transpf = FormulaUtils::graphFuncsAndAggs(transpf,_structure,_context._funccontext);
+		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
 	} //TODO issue #23
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
@@ -517,7 +516,7 @@ void GrounderFactory::visit(const PredForm* pf) {
  * TODO should use this throughout
  */
 template<class T>
-void deleteDeep(T& object){
+void deleteDeep(T& object) {
 	object->recursiveDelete();
 	object = NULL;
 }
@@ -570,7 +569,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_topgrounder = new BoolGrounder(_grounding, sub, newbf->sign(), true, _context);
 		deleteDeep(newbf);
 
-		if (getOption(IntType::GROUNDVERBOSITY) > 3){
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
 		return;
@@ -632,7 +631,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	Formula* newsubformula = qf->subformula()->clone();
 	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
 	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula,_structure,_context._funccontext);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
 	//	for universal: checker valid => formula false, for existential: checker valid => formula true
@@ -883,8 +882,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	SortTable* domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
-					ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
@@ -929,7 +927,8 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 // TODO verify
 template<typename OrigConstruct>
-GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
+GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype,
+		TruthType checkertype) {
 	vector<const DomElemContainer*> vars;
 	vector<SortTable*> tables;
 	vector<Variable*> fovars, quantfovars;
@@ -989,7 +988,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	Formula* clonedformula = newqs->subformulas()[0]->clone();
 	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
 	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula,_structure,_context._funccontext); //TODO issue #23
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext); //TODO issue #23
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);

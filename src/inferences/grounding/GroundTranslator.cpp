@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "GroundTranslator.hpp"
 #include "ecnf.hpp"
@@ -17,18 +17,16 @@
 
 using namespace std;
 
-GroundTranslator::GroundTranslator() :
-		atomtype(1, AtomType::LONETSEITIN), _sets(1) {
+GroundTranslator::GroundTranslator()
+		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(std::pair<Lit, TsBody*>(0, (TsBody*) NULL));
+	atom2TsBody.push_back(std::pair<Lit, TsBody*> { 0, (TsBody*) NULL });
 }
 
-
-
 GroundTranslator::~GroundTranslator() {
-	for(auto i=atom2Tuple.cbegin(); i!=atom2Tuple.cend(); ++i){
-		if(*i!=NULL){
-			delete(*i);
+	for (auto i = atom2Tuple.cbegin(); i != atom2Tuple.cend(); ++i) {
+		if (*i != NULL) {
+			delete (*i);
 		}
 	}
 	atom2Tuple.clear();
@@ -44,7 +42,7 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
-		symbols[n].tuple2atom.insert(jt, Tuple2Atom(args, lit));
+		symbols[n].tuple2atom.insert(jt, Tuple2Atom { args, lit });
 		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
 		// FIXME expensive operation to do so often!
@@ -169,7 +167,7 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 Lit GroundTranslator::nextNumber(AtomType type) {
 	if (_freenumbers.empty()) {
 		Lit atom = atomtype.size();
-		atom2TsBody.push_back(tspair(atom, (TsBody*) NULL));
+		atom2TsBody.push_back(tspair { atom, (TsBody*) NULL });
 		atom2Tuple.push_back(NULL);
 		atomtype.push_back(type);
 		return atom;
@@ -199,7 +197,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 	if (nr == _false) {
 		return "false";
 	}
-	if(nr < 0){
+	if (nr < 0) {
 		s << "~";
 		nr = -nr;
 	}

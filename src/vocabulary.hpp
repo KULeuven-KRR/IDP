@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
@@ -53,7 +53,9 @@ protected:
 	Sort();
 	virtual ~Sort();
 
-	void setPred(Predicate* p){ _pred = p; }
+	void setPred(Predicate* p) {
+		_pred = p;
+	}
 
 public:
 	Sort(const std::string& name, SortTable* inter = NULL); //!< Create an internal sort
@@ -79,7 +81,9 @@ public:
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 
-	virtual std::vector<Sort*> getSortsForTable() { return std::vector<Sort*>{this}; }
+	virtual std::vector<Sort*> getSortsForTable() {
+		return std::vector<Sort*> { this };
+	}
 
 	std::ostream& put(std::ostream&) const;
 };
@@ -87,14 +91,17 @@ public:
 class UnionSort: public Sort {
 private:
 	std::vector<Sort*> sorts;
-	~UnionSort(){}
+	~UnionSort() {
+	}
 
 public:
 	UnionSort(const std::vector<Sort*>& sorts);
 
 	bool builtin() const;
 
-	virtual std::vector<Sort*> getSortsForTable() { return sorts; }
+	virtual std::vector<Sort*> getSortsForTable() {
+		return sorts;
+	}
 };
 
 std::ostream& operator<<(std::ostream&, const Sort&);
@@ -189,7 +196,7 @@ public:
 	const std::string& name() const; //!< Returns the name of the symbol (ends on /arity)
 	const ParseInfo& pi() const; //!< Returns the parse info of the symbol
 	std::size_t nrSorts() const; //!< Returns the number of sorts of the symbol
-							//!< (arity for predicates, arity+1 for functions)
+	//!< (arity for predicates, arity+1 for functions)
 	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
 	const std::vector<Sort*>& sorts() const; //!< Returns the sorts of the symbol
 	bool infix() const; //!< True iff the symbol is infix
@@ -425,7 +432,7 @@ public:
 	std::set<Function*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
 									   //!< and that are overloaded by 'this'.
 
-	// Output
+									   // Output
 	std::ostream& put(std::ostream&) const;
 
 	friend class Vocabulary;
@@ -447,8 +454,8 @@ public:
 	virtual ~FuncGenerator() {
 	}
 
-	FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding) :
-			_name(name), _arity(arity), _binding(binding) {
+	FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding)
+			: _name(name), _arity(arity), _binding(binding) {
 	}
 
 	const std::string& name() const; //!< Returns the name of the generated functions

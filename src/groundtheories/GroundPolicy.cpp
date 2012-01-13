@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "GroundPolicy.hpp"
 #include "ecnf.hpp"
@@ -33,7 +33,7 @@ void GroundPolicy::polRecursiveDelete() {
 	for (auto setit = _sets.begin(); setit != _sets.end(); ++setit) {
 		delete (*setit);
 	}
-	for(auto fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
+	for (auto fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
 		(*fdefit)->recursiveDelete();
 	}
 	for (auto cprit = _cpreifications.begin(); cprit != _cpreifications.end(); ++cprit) {
@@ -60,14 +60,14 @@ void GroundPolicy::polAdd(const TsSet& tsset, int setnr, bool) {
 
 void GroundPolicy::polAdd(int defnr, PCGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*>{defnr, new GroundDefinition(defnr, _translator)});
+		_definitions.insert(std::pair<int, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
 	}
 	_definitions.at(defnr)->addPCRule(rule->head(), rule->body(), rule->type() == RT_CONJ, rule->recursive());
 }
 
 void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*>{defnr, new GroundDefinition(defnr, _translator)});
+		_definitions.insert(std::pair<int, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
 	}
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
@@ -154,7 +154,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << termtranslator->printTerm(cpt->varid());
 		}
-		s << ' ' <<toString(cpr->_body->comp()) << ' ';
+		s << ' ' << toString(cpr->_body->comp()) << ' ';
 		CPBound right = cpr->_body->right();
 		if (right._isvarid) {
 			s << termtranslator->printTerm(right._varid);

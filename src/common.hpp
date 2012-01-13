@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef COMMON_HPP
 #define COMMON_HPP
@@ -44,8 +44,8 @@ std::string getPathOfConfigFile();
 
 template<bool isPointer, bool isFundamental, typename Type, typename Stream>
 struct PutInStream {
-	void operator() (const Type& object, Stream& ss) {
-		if(object==NULL) {
+	void operator()(const Type& object, Stream& ss) {
+		if (object == NULL) {
 			ss << "NULL";
 		} else {
 			object->put(ss);
@@ -55,14 +55,14 @@ struct PutInStream {
 
 template<typename Type, typename Stream>
 struct PutInStream<false, false, Type, Stream> {
-	void operator() (const Type& object, Stream& ss) {
+	void operator()(const Type& object, Stream& ss) {
 		object.put(ss);
 	}
 };
 
 template<typename Type, typename Stream>
 struct PutInStream<false, true, Type, Stream> {
-	void operator() (const Type& object, Stream& ss) {
+	void operator()(const Type& object, Stream& ss) {
 		ss << object;
 	}
 };
@@ -78,11 +78,11 @@ template<typename Type>
 std::string toString(const std::vector<Type>& v) {
 	std::stringstream ss;
 	ss << "(";
-	for(auto obj = v.cbegin(); obj != v.cend();){
+	for (auto obj = v.cbegin(); obj != v.cend();) {
 		ss << toString(*obj);
 		++obj;
 		if (obj != v.cend()) {
-			ss <<", ";
+			ss << ", ";
 		}
 	}
 	ss << ")";
@@ -93,11 +93,11 @@ template<typename Type>
 std::string toString(const std::set<Type>& v) {
 	std::stringstream ss;
 	ss << "{";
-	for(auto obj = v.cbegin(); obj != v.cend();){
+	for (auto obj = v.cbegin(); obj != v.cend();) {
 		ss << toString(*obj);
 		++obj;
-		if(obj != v.cend()){
-			ss <<", ";
+		if (obj != v.cend()) {
+			ss << ", ";
 		}
 	}
 	ss << "}";
@@ -108,13 +108,13 @@ template<typename Type1, typename Type2>
 std::string toString(const std::map<Type1, Type2>& v) {
 	std::stringstream ss;
 	ss << "(";
-	for(auto obj = v.cbegin(); obj != v.cend();){
+	for (auto obj = v.cbegin(); obj != v.cend();) {
 		ss << toString((*obj).first);
 		ss << "->";
 		ss << toString((*obj).second);
 		++obj;
-		if(obj != v.cend()){
-			ss <<"; ";
+		if (obj != v.cend()) {
+			ss << "; ";
 		}
 	}
 	ss << ")";
@@ -127,12 +127,12 @@ std::string toString(const CompType& type);
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 
-template<typename Stream>
-Stream& operator<<(Stream& out, CompType ct) {
-	out << toString(ct);
-	return out;
-}
-#endif*/
+ template<typename Stream>
+ Stream& operator<<(Stream& out, CompType ct) {
+ out << toString(ct);
+ return out;
+ }
+ #endif*/
 
 /**
  * HOW TO PRINT INFORMATION CONSISTENCTLY!
@@ -179,7 +179,7 @@ bool operator<(CompType left, CompType right);
 
 template<typename NumberType, typename NumberType2>
 bool compare(NumberType a, CompType comp, NumberType2 b) {
-	switch(comp){
+	switch (comp) {
 	case CompType::EQ:
 		return a == b;
 	case CompType::NEQ:
@@ -189,14 +189,12 @@ bool compare(NumberType a, CompType comp, NumberType2 b) {
 	case CompType::GEQ:
 		return a >= b;
 	case CompType::LT:
-		return a<b;
+		return a < b;
 	case CompType::GT:
-		return a>b;
-	}
-	Assert(false);
+		return a > b;
+	}Assert(false);
 	return true;
 }
-
 
 TsType reverseImplication(TsType type);
 

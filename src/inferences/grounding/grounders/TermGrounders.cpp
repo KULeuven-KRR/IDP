@@ -115,8 +115,8 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createSumTerm(SumType type, const VarId& left, const VarId& right) {
 	if (type == ST_MINUS) {
-		vector<VarId> varids({ left, right });
-		vector<int> weights({ 1, -1 });
+		vector<VarId> varids( { left, right });
+		vector<int> weights( { 1, -1 });
 		return new CPWSumTerm(varids, weights);
 	} else {
 		return new CPSumTerm(left, right);
@@ -248,7 +248,7 @@ GroundTerm AggTermGrounder::run() const {
 	if (_verbosity > 2) {
 		clog << "Result = " << *result;
 		poptab();
-		clog << "\n"<<tabs();
+		clog << "\n" << tabs();
 	}
 	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
 	return GroundTerm(result);

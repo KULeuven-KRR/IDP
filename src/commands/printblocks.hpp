@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef PRINTSTRUCTURE_HPP_
 #define PRINTSTRUCTURE_HPP_
@@ -20,7 +20,7 @@
 #include "vocabulary.hpp"
 
 template<class Object>
-std::string print(Object o){
+std::string print(Object o) {
 	std::stringstream stream;
 	auto printer = Printer::create<std::stringstream>(stream);
 	printer->startTheory();
@@ -30,9 +30,10 @@ std::string print(Object o){
 }
 
 typedef TypedInference<LIST(AbstractStructure*)> PrintStructureInferenceBase;
-class PrintStructureInference: public PrintStructureInferenceBase{
+class PrintStructureInference: public PrintStructureInferenceBase {
 public:
-	PrintStructureInference(): PrintStructureInferenceBase("tostring", "Prints the given structure.") {
+	PrintStructureInference()
+			: PrintStructureInferenceBase("tostring", "Prints the given structure.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -45,9 +46,10 @@ public:
 };
 
 typedef TypedInference<LIST(Namespace*)> PrintNamespaceInferenceBase;
-class PrintNamespaceInference: public  PrintNamespaceInferenceBase{
+class PrintNamespaceInference: public PrintNamespaceInferenceBase {
 public:
-	PrintNamespaceInference(): PrintNamespaceInferenceBase("tostring", "Prints the given namespace.") {
+	PrintNamespaceInference()
+			: PrintNamespaceInferenceBase("tostring", "Prints the given namespace.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -60,7 +62,8 @@ public:
 typedef TypedInference<LIST(AbstractTheory*)> PrintTheoryInferenceBase;
 class PrintTheoryInference: public PrintTheoryInferenceBase {
 public:
-	PrintTheoryInference(): PrintTheoryInferenceBase("tostring", "Prints the given theory.") {
+	PrintTheoryInference()
+			: PrintTheoryInferenceBase("tostring", "Prints the given theory.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -73,7 +76,8 @@ public:
 typedef TypedInference<LIST(Formula*)> PrintFormulaInferenceBase;
 class PrintFormulaInference: public PrintFormulaInferenceBase {
 public:
-	PrintFormulaInference(): PrintFormulaInferenceBase("tostring", "Prints the given formula.") {
+	PrintFormulaInference()
+			: PrintFormulaInferenceBase("tostring", "Prints the given formula.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -86,7 +90,8 @@ public:
 typedef TypedInference<LIST(Vocabulary*)> PrintVocabularyInferenceBase;
 class PrintVocabularyInference: public PrintVocabularyInferenceBase {
 public:
-	PrintVocabularyInference(): PrintVocabularyInferenceBase("tostring", "Prints the given vocabulary.") {
+	PrintVocabularyInference()
+			: PrintVocabularyInferenceBase("tostring", "Prints the given vocabulary.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 

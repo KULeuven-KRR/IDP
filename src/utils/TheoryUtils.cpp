@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "utils/TheoryUtils.hpp"
 
@@ -70,8 +70,7 @@ bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, 
-		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, cpsymbols);
 }
 }
@@ -91,8 +90,7 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, 
-		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
 }
 }
@@ -115,7 +113,7 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-void deriveSorts(Vocabulary* v, Formula* f){
+void deriveSorts(Vocabulary* v, Formula* f) {
 	transform<DeriveSorts>(f, v, false);
 	transform<DeriveSorts>(f, v, true);
 }
@@ -125,7 +123,7 @@ Formula* flatten(Formula* f) {
 }
 
 Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
-	return transform<GraphFuncsAndAggs, Formula*>(f,str,con);
+	return transform<GraphFuncsAndAggs, Formula*>(f, str, con);
 }
 
 Formula* pushNegations(Formula* f) {
@@ -160,8 +158,7 @@ Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, 
-		bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
 }
 
@@ -176,7 +173,7 @@ void flatten(AbstractTheory* t) {
 }
 
 AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(t,str,con);
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
 void pushNegations(AbstractTheory* t) {

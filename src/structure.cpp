@@ -42,24 +42,24 @@ ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 	return out << DomElTypeStrings[domeltype];
 }
 
-DomainElement::DomainElement() :
-		_type(DET_INT) {
+DomainElement::DomainElement()
+		: _type(DET_INT) {
 	_value._int = 0;
 }
 
 /**
  *	Constructor for domain elements that are integers
  */
-DomainElement::DomainElement(int value) :
-		_type(DET_INT) {
+DomainElement::DomainElement(int value)
+		: _type(DET_INT) {
 	_value._int = value;
 }
 
 /**
  *	Constructor for domain elements that are floating point numbers but not integers
  */
-DomainElement::DomainElement(double value) :
-		_type(DET_DOUBLE) {
+DomainElement::DomainElement(double value)
+		: _type(DET_DOUBLE) {
 	Assert(not isInt(value));
 	// TODO check rest of code
 	_value._double = value;
@@ -68,8 +68,8 @@ DomainElement::DomainElement(double value) :
 /**
  *	Constructor for domain elements that are strings but not floating point numbers
  */
-DomainElement::DomainElement(const string* value) :
-		_type(DET_STRING) {
+DomainElement::DomainElement(const string* value)
+		: _type(DET_STRING) {
 	Assert(not isDouble(*value));
 	_value._string = value;
 }
@@ -77,8 +77,8 @@ DomainElement::DomainElement(const string* value) :
 /**
  *	Constructor for domain elements that are compounds
  */
-DomainElement::DomainElement(const Compound* value) :
-		_type(DET_COMPOUND) {
+DomainElement::DomainElement(const Compound* value)
+		: _type(DET_COMPOUND) {
 	_value._compound = value;
 }
 
@@ -328,8 +328,8 @@ const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2
 	}
 }
 
-Compound::Compound(Function* function, const ElementTuple& arguments) :
-		_function(function), _arguments(arguments) {
+Compound::Compound(Function* function, const ElementTuple& arguments)
+		: _function(function), _arguments(arguments) {
 	Assert(function != NULL);
 }
 
@@ -445,8 +445,8 @@ string DomainAtom::toString() const {
  *		- firstfastint:	the lowest 'efficient' integer
  *		- lastfastint:	one past the highest 'efficient' integer
  */
-DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint) :
-		_firstfastint(firstfastint), _lastfastint(lastfastint) {
+DomainElementFactory::DomainElementFactory(int firstfastint, int lastfastint)
+		: _firstfastint(firstfastint), _lastfastint(lastfastint) {
 	Assert(firstfastint < lastfastint);
 	_fastintelements = vector<DomainElement*>(lastfastint - firstfastint, (DomainElement*) 0);
 }
@@ -703,8 +703,8 @@ SortIterator& SortIterator::operator++() {
 }
 
 //TODO remove bool h (hasnext)
-CartesianInternalTableIterator::CartesianInternalTableIterator(const vector<SortIterator>& vsi, const vector<SortIterator>& low, bool h) :
-		_iterators(vsi), _lowest(low), _hasNext(h) {
+CartesianInternalTableIterator::CartesianInternalTableIterator(const vector<SortIterator>& vsi, const vector<SortIterator>& low, bool h)
+		: _iterators(vsi), _lowest(low), _hasNext(h) {
 	if (h) {
 		for (auto it = _iterators.cbegin(); it != _iterators.cend(); ++it) {
 			if (it->isAtEnd()) {
@@ -746,9 +746,8 @@ void CartesianInternalTableIterator::operator++() {
 }
 
 // TODO bool flags
-GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomElemContainer*>& vars, bool reset,
-		bool h) :
-		_generator(generator), _vars(vars) {
+GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomElemContainer*>& vars, bool reset, bool h)
+		: _generator(generator), _vars(vars) {
 	if (reset) {
 		_generator->begin();
 		_hasNext = not _generator->isAtEnd();
@@ -784,8 +783,8 @@ void InternalFuncIterator::operator++() {
 		++_curr;
 }
 
-InternalFuncIterator::InternalFuncIterator(const InternalFuncTable* f, const Universe& univ) :
-		_function(f) {
+InternalFuncIterator::InternalFuncIterator(const InternalFuncTable* f, const Universe& univ)
+		: _function(f) {
 	vector<SortIterator> vsi1;
 	vector<SortIterator> vsi2;
 	for (unsigned int n = 0; n < univ.arity() - 1; ++n) {
@@ -807,8 +806,8 @@ void ProcInternalTableIterator::operator++() {
 		++_curr;
 }
 
-ProcInternalTableIterator::ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ) :
-		_univ(univ), _predicate(p) {
+ProcInternalTableIterator::ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ)
+		: _univ(univ), _predicate(p) {
 	vector<SortIterator> vsi1;
 	vector<SortIterator> vsi2;
 	for (unsigned int n = 0; n < univ.arity(); ++n) {
@@ -898,8 +897,8 @@ void UnionInternalIterator::setcurriterator() {
 	}
 }
 
-UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<InternalPredTable*>& outs, const Universe& univ) :
-		_iterators(its), _universe(univ), _outtables(outs) {
+UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<InternalPredTable*>& outs, const Universe& univ)
+		: _iterators(its), _universe(univ), _outtables(outs) {
 	setcurriterator();
 }
 
@@ -921,8 +920,8 @@ void UnionInternalIterator::operator++() {
 	setcurriterator();
 }
 
-InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its, InternalPredTable* out, const Universe& univ) :
-		_curr(its), _lowest(its), _universe(univ), _outtable(out), _end(false), _currtuple(its.size()) {
+InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its, InternalPredTable* out, const Universe& univ)
+		: _curr(its), _lowest(its), _universe(univ), _outtable(out), _end(false), _currtuple(its.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (_curr[n].isAtEnd()) {
 			_end = true;
@@ -938,8 +937,8 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 }
 
 InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, InternalPredTable* out,
-		const Universe& univ, bool end) :
-		_curr(curr), _lowest(low), _universe(univ), _outtable(out), _end(end), _currtuple(curr.size()) {
+		const Universe& univ, bool end)
+		: _curr(curr), _lowest(low), _universe(univ), _outtable(out), _end(end), _currtuple(curr.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
@@ -981,8 +980,8 @@ void InverseInternalIterator::operator++() {
 	} while ((not _end) && _outtable->contains(_currtuple, _universe));
 }
 
-UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f) :
-		_curr(its), _lowest(its), _function(f), _end(false), _currtuple(its.size()) {
+UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f)
+		: _curr(its), _lowest(its), _function(f), _end(false), _currtuple(its.size()) {
 	for (unsigned int n = 0; n < _curr.size(); ++n) {
 		if (_curr[n].isAtEnd()) {
 			_end = true;
@@ -992,8 +991,8 @@ UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Functi
 	}
 }
 
-UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end) :
-		_curr(curr), _lowest(low), _function(f), _end(end), _currtuple(curr.size()) {
+UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end)
+		: _curr(curr), _lowest(low), _function(f), _end(end), _currtuple(curr.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
@@ -1034,8 +1033,8 @@ void UNAInternalIterator::operator++() {
 	}
 }
 
-EqualInternalIterator::EqualInternalIterator(const SortIterator& iter) :
-		_iterator(iter) {
+EqualInternalIterator::EqualInternalIterator(const SortIterator& iter)
+		: _iterator(iter) {
 }
 
 bool EqualInternalIterator::hasNext() const {
@@ -1055,8 +1054,8 @@ EqualInternalIterator* EqualInternalIterator::clone() const {
 	return new EqualInternalIterator(_iterator);
 }
 
-UnionInternalSortIterator::UnionInternalSortIterator(const vector<SortIterator>& vsi, const vector<SortTable*>& tabs) :
-		_iterators(vsi), _outtables(tabs) {
+UnionInternalSortIterator::UnionInternalSortIterator(const vector<SortIterator>& vsi, const vector<SortTable*>& tabs)
+		: _iterators(vsi), _outtables(tabs) {
 	setcurriterator();
 }
 
@@ -1249,8 +1248,8 @@ bool StrictWeakNTupleOrdering::operator()(const ElementTuple& t1, const ElementT
 	return false;
 }
 
-FuncInternalPredTable::FuncInternalPredTable(FuncTable* table, bool linked) :
-		InternalPredTable(), _table(table), _linked(linked) {
+FuncInternalPredTable::FuncInternalPredTable(FuncTable* table, bool linked)
+		: InternalPredTable(), _table(table), _linked(linked) {
 }
 
 FuncInternalPredTable::~FuncInternalPredTable() {
@@ -1375,16 +1374,16 @@ InternalTableIterator* FullInternalPredTable::begin(const Universe& univ) const 
 	return new CartesianInternalTableIterator(vsi, vsi);
 }
 
-UnionInternalPredTable::UnionInternalPredTable() :
-		InternalPredTable() {
+UnionInternalPredTable::UnionInternalPredTable()
+		: InternalPredTable() {
 	_intables.push_back(new EnumeratedInternalPredTable());
 	_intables[0]->incrementRef();
 	_outtables.push_back(new EnumeratedInternalPredTable());
 	_outtables[0]->incrementRef();
 }
 
-UnionInternalPredTable::UnionInternalPredTable(const vector<InternalPredTable*>& intabs, const vector<InternalPredTable*>& outtabs) :
-		InternalPredTable(), _intables(intabs), _outtables(outtabs) {
+UnionInternalPredTable::UnionInternalPredTable(const vector<InternalPredTable*>& intabs, const vector<InternalPredTable*>& outtabs)
+		: InternalPredTable(), _intables(intabs), _outtables(outtabs) {
 	for (auto it = intabs.cbegin(); it != intabs.cend(); ++it) {
 		(*it)->incrementRef();
 	}
@@ -1575,8 +1574,8 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 	return new UnionInternalIterator(vti, _outtables, univ);
 }
 
-BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str) :
-		_manager(manager), _bdd(bdd), _vars(vars), _structure(str->clone()) {
+BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str)
+		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str->clone()) {
 }
 
 bool BDDInternalPredTable::finite(const Universe& univ) const {
@@ -1656,7 +1655,9 @@ InternalPredTable* BDDInternalPredTable::add(const ElementTuple& tuple) {
 	UnionInternalPredTable* upt = new UnionInternalPredTable();
 	upt->addInTable(this);
 	InternalPredTable* temp = upt->add(tuple);
-	if (temp != upt) { delete (upt); }
+	if (temp != upt) {
+		delete (upt);
+	}
 	return temp;
 }
 
@@ -1664,7 +1665,9 @@ InternalPredTable* BDDInternalPredTable::remove(const ElementTuple& tuple) {
 	UnionInternalPredTable* upt = new UnionInternalPredTable();
 	upt->addInTable(this);
 	InternalPredTable* temp = upt->remove(tuple);
-	if (temp != upt) { delete (upt); }
+	if (temp != upt) {
+		delete (upt);
+	}
 	return temp;
 }
 
@@ -1905,8 +1908,7 @@ tablesize StrLessInternalPredTable::size(const Universe& univ) const {
 InternalTableIterator* StrLessInternalPredTable::begin(const Universe& univ) const {
 	vector<const DomElemContainer*> vars { new DomElemContainer(), new DomElemContainer() };
 	return new GeneratorInternalTableIterator(
-			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::LT),
-			vars);
+			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::LT), vars);
 }
 
 /**
@@ -1983,8 +1985,7 @@ tablesize StrGreaterInternalPredTable::size(const Universe& univ) const {
 InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
 	vector<const DomElemContainer*> vars { new DomElemContainer(), new DomElemContainer() };
 	return new GeneratorInternalTableIterator(
-			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT),
-			vars);
+			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
 }
 
 /*************************
@@ -3050,8 +3051,8 @@ void SortTable::put(std::ostream& stream) const {
  PredTable
  ****************/
 
-PredTable::PredTable(InternalPredTable* table, const Universe& univ) :
-		_table(table), _universe(univ) {
+PredTable::PredTable(InternalPredTable* table, const Universe& univ)
+		: _table(table), _universe(univ) {
 	table->incrementRef();
 }
 
@@ -3316,8 +3317,8 @@ InternalTableIterator* InverseInternalPredTable::begin(const Universe& univ) con
  SortTable
  ****************/
 
-SortTable::SortTable(InternalSortTable* table) :
-		_table(table) {
+SortTable::SortTable(InternalSortTable* table)
+		: _table(table) {
 	_table->incrementRef();
 }
 
@@ -3404,8 +3405,8 @@ void SortTable::remove(const DomainElement* el) {
  FuncTable
  ****************/
 
-FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ) :
-		_table(table), _universe(univ) {
+FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ)
+		: _table(table), _universe(univ) {
 	_table->incrementRef();
 }
 
@@ -3623,8 +3624,7 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 	for (; table < universe().tables().cend(); ++table, ++elem) {
 		if (not (*table)->contains(*elem)) {
 			stringstream ss;
-			ss << "Element " << toString(*elem) << " is not part of table " << toString(*table)
-					<< ", but you are trying to assign it to such a table";
+			ss << "Element " << toString(*elem) << " is not part of table " << toString(*table) << ", but you are trying to assign it to such a table";
 			throw IdpException(ss.str());
 		}
 	}
@@ -3777,8 +3777,8 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
  Function interpretations
  *******************************/
 
-FuncInter::FuncInter(FuncTable* ft) :
-		_functable(ft) {
+FuncInter::FuncInter(FuncTable* ft)
+		: _functable(ft) {
 	PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
 	_graphinter = new PredInter(ct, true);
 }
@@ -4348,9 +4348,9 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 	}
 
 	if (needFixedNumberOfModels()) {
-		if(needMoreModels(extensions.size())){
+		if (needMoreModels(extensions.size())) {
 			stringstream ss;
-			ss <<"Only " <<extensions.size() <<" models exist, although " <<getOption(IntType::NBMODELS) <<" were requested.";
+			ss << "Only " << extensions.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.";
 			Warning::warning(ss.str());
 		}
 		// In this case, not all structures might be two-valued, so just choose a value for each of their elements
@@ -4453,7 +4453,7 @@ void addUNAPattern(Function*) {
 	throw notyetimplemented("una pattern type");
 }
 
-void AbstractStructure::put(std::ostream& s){
+void AbstractStructure::put(std::ostream& s) {
 	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(s);
 	p.startTheory();
 	p.visit(this);
@@ -4618,8 +4618,7 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}
-	Assert(s != NULL);
+	}Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	} else {

@@ -121,8 +121,8 @@ State Entails::checkEntailment(EntailmentData* data) const {
 #define COMMANDS_INDEX 2
 #else
 #define COMMANDS_INDEX 3 // TODO purely for compilation, should remove this
-		Error::error("\"entails\" is not supported on this platform.\n");
-		return State::UNKNOWN;
+	Error::error("\"entails\" is not supported on this platform.\n");
+	return State::UNKNOWN;
 #endif
 	InternalArgument& fofCommand = data->fofCommands[COMMANDS_INDEX];
 	InternalArgument& tffCommand = data->tffCommands[COMMANDS_INDEX];
@@ -295,5 +295,5 @@ State Entails::checkEntailment(EntailmentData* data) const {
 		return State::UNKNOWN;
 	}
 
-	return result?State::PROVEN:State::DISPROVEN;
+	return result ? State::PROVEN : State::DISPROVEN;
 }

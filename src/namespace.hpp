@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef NAMESPACE_HPP
 #define NAMESPACE_HPP
@@ -50,9 +50,9 @@ private:
 	std::set<std::string> doubleNames() const;
 
 public:
-	Namespace(std::string name, Namespace* super, const ParseInfo& pi) :
-			_name(name), _superspace(super), _pi(pi) {
-		if (super){
+	Namespace(std::string name, Namespace* super, const ParseInfo& pi)
+			: _name(name), _superspace(super), _pi(pi) {
+		if (super) {
 			super->add(this);
 		}
 	}

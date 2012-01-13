@@ -99,8 +99,8 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
-void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values,
-		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
+		std::vector<std::string>& option2name, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);

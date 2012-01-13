@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -22,8 +22,10 @@
 using namespace std;
 
 bool FOBDDFuncTerm::containsDeBruijnIndex(unsigned int index) const {
-	for(size_t n = 0; n < _args.size(); ++n) {
-		if(_args[n]->containsDeBruijnIndex(index)) { return true; }
+	for (size_t n = 0; n < _args.size(); ++n) {
+		if (_args[n]->containsDeBruijnIndex(index)) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -60,6 +62,6 @@ const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, con
 	addfunc = addfunc->disambiguate(std::vector<Sort*>(3, addsort), NULL);
 	Assert(addfunc!=NULL);
 	auto inter = addfunc->interpretation(NULL);
-	auto result = inter->funcTable()->operator[]({d1->value(), d2->value()});
+	auto result = inter->funcTable()->operator[]( { d1->value(), d2->value() });
 	return manager->getDomainTerm(addsort, result);
 }

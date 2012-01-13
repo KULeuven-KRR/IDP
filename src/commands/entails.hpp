@@ -19,8 +19,8 @@ typedef std::vector<InternalArgument> ialist;
 typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*, ialist*, ialist*, ialist*, ialist*, ialist*, ialist*)> EntailsInferenceBase;
 class EntailsInference: public EntailsInferenceBase {
 public:
-	EntailsInference() :
-			EntailsInferenceBase("entails", "Checks whether the first theory entails the second. ") {
+	EntailsInference()
+			: EntailsInferenceBase("entails", "Checks whether the first theory entails the second. ") {
 		setNameSpace(getInternalNamespaceName());
 		/*		add(AT_THEORY);
 		 add(AT_THEORY);

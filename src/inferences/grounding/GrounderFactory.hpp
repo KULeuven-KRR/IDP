@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GROUND_HPP
 #define GROUND_HPP
@@ -75,7 +75,7 @@ private:
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
 							// That is, the corresponding const DomElemContainer* acts as a variable+value.
 
-	// Return values
+							// Return values
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
@@ -133,10 +133,10 @@ public:
 	void InitContext(); // Initialize the context - public for debugging purposes
 
 	// Getters
-	GroundingContext getContext(){
+	GroundingContext getContext() {
 		return _context;
 	}
-	FormulaGrounder* getFormGrounder(){
+	FormulaGrounder* getFormGrounder() {
 		return _formgrounder;
 	}
 

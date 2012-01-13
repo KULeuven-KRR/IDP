@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef PRINT_HPP_
 #define PRINT_HPP_
@@ -40,23 +40,39 @@ typedef std::vector<int> GroundClause;
 int getIDForUndefined();
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
-class Printer : public TheoryVisitor {
+class Printer: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
-	int	opendef_; 	//the id of the currently open definition
+	int opendef_; //the id of the currently open definition
 	bool theoryopen_;
 	std::set<int> _pastopendefs;
 protected:
-	Printer(): opendef_(-1), theoryopen_(false){}
+	Printer()
+			: opendef_(-1), theoryopen_(false) {
+	}
 
-	bool isDefClosed() const { return opendef_ == -1; }
-	bool isDefOpen(int defid) const { return opendef_==defid; }
-	void closeDef() { opendef_ = -1; }
-	void openDef(int defid) { opendef_ = defid; }
+	bool isDefClosed() const {
+		return opendef_ == -1;
+	}
+	bool isDefOpen(int defid) const {
+		return opendef_ == defid;
+	}
+	void closeDef() {
+		opendef_ = -1;
+	}
+	void openDef(int defid) {
+		opendef_ = defid;
+	}
 
-	bool isTheoryOpen() const { return theoryopen_; }
-	virtual void closeTheory() { theoryopen_ = false; }
-	void openTheory() { theoryopen_ = true; }
+	bool isTheoryOpen() const {
+		return theoryopen_;
+	}
+	virtual void closeTheory() {
+		theoryopen_ = false;
+	}
+	void openTheory() {
+		theoryopen_ = true;
+	}
 
 protected:
 	void visit(const Formula*);
@@ -79,7 +95,7 @@ public:
 	template<class Stream> static Printer* create(Stream& stream, bool arithmetic);
 
 	virtual void checkOrOpen(int defid) {
-		if(!isDefOpen(defid)){
+		if (!isDefOpen(defid)) {
 			_pastopendefs.insert(opendef_);
 			Assert(_pastopendefs.find(defid)==_pastopendefs.cend());
 			openDef(defid);
@@ -89,15 +105,18 @@ public:
 	virtual void startTheory() = 0;
 	virtual void endTheory() = 0;
 
-	virtual void setTranslator(GroundTranslator*){}
-	virtual void setTermTranslator(GroundTermTranslator*){}
-	virtual void setStructure(AbstractStructure*){}
+	virtual void setTranslator(GroundTranslator*) {
+	}
+	virtual void setTermTranslator(GroundTermTranslator*) {
+	}
+	virtual void setStructure(AbstractStructure*) {
+	}
 
 	template<typename T>
-	void print(const T* t){
+	void print(const T* t) {
 		t->accept(this);
 	}
-	void print(const GroundClause& clause){
+	void print(const GroundClause& clause) {
 		visit(clause);
 	}
 };
@@ -108,24 +127,33 @@ template<> void Printer::print(const Namespace* b);
 template<> void Printer::print(const Vocabulary* b);
 
 template<typename Stream>
-class StreamPrinter : public Printer {
+class StreamPrinter: public Printer {
 	VISITORFRIENDS()
 private:
 	Stream& _out;
 	unsigned int indentation_;
 
 protected:
-	StreamPrinter(Stream& stream):
-		_out(stream), indentation_(0){} //default indentation = 0
+	StreamPrinter(Stream& stream)
+			: _out(stream), indentation_(0) {
+	} //default indentation = 0
 
-	Stream& output(){ return _out; }
+	Stream& output() {
+		return _out;
+	}
 
 	// Indentation
-	void indent() 				{ indentation_++; }
-	void unindent()				{ indentation_--; }
-	unsigned int getIndentation() const 	{ return indentation_; }
+	void indent() {
+		indentation_++;
+	}
+	void unindent() {
+		indentation_--;
+	}
+	unsigned int getIndentation() const {
+		return indentation_;
+	}
 	void printTab() {
-		for(unsigned int n = 0; n < getIndentation(); ++n){
+		for (unsigned int n = 0; n < getIndentation(); ++n) {
 			output() << "  ";
 		}
 	}

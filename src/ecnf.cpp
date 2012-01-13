@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "ecnf.hpp"
 
@@ -39,11 +39,11 @@ IMPLACCEPTNONMUTATING(GroundSet)
 IMPLACCEPTNONMUTATING(GroundAggregate)
 IMPLACCEPTNONMUTATING(CPReification)
 
-PCGroundRule::PCGroundRule(int head, PCTsBody* body, bool rec) :
-		GroundRule(head, body->conj() ? RT_CONJ : RT_DISJ, rec), _body(body->body()) {
+PCGroundRule::PCGroundRule(int head, PCTsBody* body, bool rec)
+		: GroundRule(head, body->conj() ? RT_CONJ : RT_DISJ, rec), _body(body->body()) {
 }
-AggGroundRule::AggGroundRule(int head, AggTsBody* body, bool rec) :
-		GroundRule(head, RT_AGG, rec), _setnr(body->setnr()), _aggtype(body->aggtype()), _lower(body->lower()), _bound(body->bound()) {
+AggGroundRule::AggGroundRule(int head, AggTsBody* body, bool rec)
+		: GroundRule(head, RT_AGG, rec), _setnr(body->setnr()), _aggtype(body->aggtype()), _lower(body->lower()), _bound(body->bound()) {
 }
 
 GroundDefinition* GroundDefinition::clone() const {
@@ -102,12 +102,11 @@ void GroundDefinition::addPCRule(int head, const vector<int>& body, bool conj, b
 		}
 		case RT_CONJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-			if (grb->body().size() == 1 && ((!conj) || body.size() == 1)){
+			if (grb->body().size() == 1 && ((!conj) || body.size() == 1)) {
 				grb->type(RT_DISJ);
 				for (unsigned int n = 0; n < body.size(); ++n)
 					grb->body().push_back(body[n]);
-			}
-			else if ((!conj) || body.size() == 1) {
+			} else if ((!conj) || body.size() == 1) {
 				int ts = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
 				grb->type(RT_DISJ);
 				grb->body(body);
@@ -235,7 +234,6 @@ ostream& GroundDefinition::put(ostream& s) const {
 	return s;
 }
 
-
 CPReification::~CPReification() {
 	delete (_body);
 }
@@ -264,121 +262,121 @@ bool TsBody::operator==(const TsBody& body) const {
 
 bool TsBody::operator<(const TsBody& body) const {
 	if (typeid(*this).before(typeid(body))) {
-		return true;
-	} else if (typeid(body).before(typeid(*this))) {
-		return false;
-	} else if (type() < body.type()) {
-		return true;
-	} else {
-		return false;
-	}
-}
+				return true;
+			} else if (typeid(body).before(typeid(*this))) {
+						return false;
+					} else if (type() < body.type()) {
+						return true;
+					} else {
+						return false;
+					}
+				}
 
-bool AggTsBody::operator==(const TsBody& body) const {
-	if (not (*this == body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const AggTsBody&>(body);
-	return bound() == rhs.bound() && setnr() == rhs.setnr() && lower() == rhs.lower() && aggtype() == rhs.aggtype();
-}
+				bool AggTsBody::operator==(const TsBody& body) const {
+					if (not (*this == body)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const AggTsBody&>(body);
+					return bound() == rhs.bound() && setnr() == rhs.setnr() && lower() == rhs.lower() && aggtype() == rhs.aggtype();
+				}
 
-bool AggTsBody::operator<(const TsBody& body) const {
-	if (TsBody::operator<(body)) {
-		return true;
-	} else if (TsBody::operator>(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const AggTsBody&>(body);
-	if (bound() < rhs.bound()) {
-		return true;
-	} else if (bound() > rhs.bound()) {
-		return false;
-	}
-	if (lower() < rhs.lower()) {
-		return true;
-	} else if (lower() > rhs.lower()) {
-		return false;
-	}
-	if (lower() < rhs.lower()) {
-		return true;
-	} else if (lower() > rhs.lower()) {
-		return false;
-	}
-	if (aggtype() < rhs.aggtype()) {
-		return true;
-	}
-	return false;
-}
+				bool AggTsBody::operator<(const TsBody& body) const {
+					if (TsBody::operator<(body)) {
+						return true;
+					} else if (TsBody::operator>(body)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const AggTsBody&>(body);
+					if (bound() < rhs.bound()) {
+						return true;
+					} else if (bound() > rhs.bound()) {
+						return false;
+					}
+					if (lower() < rhs.lower()) {
+						return true;
+					} else if (lower() > rhs.lower()) {
+						return false;
+					}
+					if (lower() < rhs.lower()) {
+						return true;
+					} else if (lower() > rhs.lower()) {
+						return false;
+					}
+					if (aggtype() < rhs.aggtype()) {
+						return true;
+					}
+					return false;
+				}
 
-bool PCTsBody::operator==(const TsBody& other) const {
-	if (not TsBody::operator==(other)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const PCTsBody&>(other);
-	return body() == rhs.body() && conj() == rhs.conj();
-}
+				bool PCTsBody::operator==(const TsBody& other) const {
+					if (not TsBody::operator==(other)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const PCTsBody&>(other);
+					return body() == rhs.body() && conj() == rhs.conj();
+				}
 
-bool PCTsBody::operator<(const TsBody& other) const {
-	if (TsBody::operator<(other)) {
-		return true;
-	} else if (TsBody::operator>(other)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const PCTsBody&>(other);
-	if (conj() < rhs.conj()) {
-		return true;
-	} else if (conj() > rhs.conj()) {
-		return false;
-	}
-	if (body() < rhs.body()) {
-		return true;
-	}
-	return false;
-}
+				bool PCTsBody::operator<(const TsBody& other) const {
+					if (TsBody::operator<(other)) {
+						return true;
+					} else if (TsBody::operator>(other)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const PCTsBody&>(other);
+					if (conj() < rhs.conj()) {
+						return true;
+					} else if (conj() > rhs.conj()) {
+						return false;
+					}
+					if (body() < rhs.body()) {
+						return true;
+					}
+					return false;
+				}
 
-CPTsBody::~CPTsBody() {
-	delete (_left);
-}
+				CPTsBody::~CPTsBody() {
+					delete (_left);
+				}
 
-bool CPTsBody::operator==(const TsBody& body) const {
-	if (not TsBody::operator==(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPTsBody&>(body);
-	return comp() == rhs.comp() && left() == rhs.left() && right() == rhs.right();
-}
+				bool CPTsBody::operator==(const TsBody& body) const {
+					if (not TsBody::operator==(body)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const CPTsBody&>(body);
+					return comp() == rhs.comp() && left() == rhs.left() && right() == rhs.right();
+				}
 
-bool CPTsBody::operator<(const TsBody& body) const {
-	if (TsBody::operator<(body)) {
-		return true;
-	} else if (TsBody::operator>(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPTsBody&>(body);
-	if (comp() < rhs.comp()) {
-		return true;
-	} else if (comp() > rhs.comp()) {
-		return false;
-	}
-	if (left() < rhs.left()) {
-		return true;
-	} else if (left() > rhs.left()) {
-		return false;
-	}
-	if (right() < rhs.right()) {
-		return true;
-	}
-	return false;
-}
+				bool CPTsBody::operator<(const TsBody& body) const {
+					if (TsBody::operator<(body)) {
+						return true;
+					} else if (TsBody::operator>(body)) {
+						return false;
+					}
+					auto rhs = dynamic_cast<const CPTsBody&>(body);
+					if (comp() < rhs.comp()) {
+						return true;
+					} else if (comp() > rhs.comp()) {
+						return false;
+					}
+					if (left() < rhs.left()) {
+						return true;
+					} else if (left() > rhs.left()) {
+						return false;
+					}
+					if (right() < rhs.right()) {
+						return true;
+					}
+					return false;
+				}
 
-/*bool LazyTsBody::operator==(const TsBody& body) const {
+				/*bool LazyTsBody::operator==(const TsBody& body) const {
 				 if (not TsBody::operator==(body)) {
 				 return false;
 				 }
 				 auto rhs = dynamic_cast<const LazyTsBody&>(body);
 				 return id_ == rhs.id_ && grounder_ == rhs.grounder_ && (*inst) == (*rhs.inst);
 				 }*/
-				 /*bool LazyTsBody::operator<(const TsBody& body) const {
+				/*bool LazyTsBody::operator<(const TsBody& body) const {
 				 if (TsBody::operator<(body)) {
 				 return true;
 				 } else if (TsBody::operator>(body)) {
@@ -401,106 +399,106 @@ bool CPTsBody::operator<(const TsBody& body) const {
 				 return false;
 				 }*/
 
-bool CPTerm::operator==(const CPTerm& body) const {
-	return typeid(*this) == typeid(body);
-}
+				bool CPTerm::operator==(const CPTerm& body) const {
+					return typeid(*this) == typeid(body);
+				}
 
-bool CPTerm::operator<(const CPTerm& body) const {
-	return typeid(*this).before(typeid(body));
-}
+				bool CPTerm::operator<(const CPTerm& body) const {
+					return typeid(*this).before(typeid(body));
+						}
 
-bool CPVarTerm::operator==(const CPTerm& body) const {
-	if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPVarTerm&>(body);
-	return _varid == rhs._varid;
-}
+						bool CPVarTerm::operator==(const CPTerm& body) const {
+							if (not CPTerm::operator==(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPVarTerm&>(body);
+							return _varid == rhs._varid;
+						}
 
-bool CPVarTerm::operator<(const CPTerm& body) const {
-	if (CPTerm::operator<(body)) {
-		return true;
-	} else if (CPTerm::operator>(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPVarTerm&>(body);
-	if (_varid < rhs._varid) {
-		return true;
-	}
-	return false;
-}
+						bool CPVarTerm::operator<(const CPTerm& body) const {
+							if (CPTerm::operator<(body)) {
+								return true;
+							} else if (CPTerm::operator>(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPVarTerm&>(body);
+							if (_varid < rhs._varid) {
+								return true;
+							}
+							return false;
+						}
 
-bool CPSumTerm::operator==(const CPTerm& body) const {
-	if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPSumTerm&>(body);
-	return _varids == rhs._varids;
-}
+						bool CPSumTerm::operator==(const CPTerm& body) const {
+							if (not CPTerm::operator==(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPSumTerm&>(body);
+							return _varids == rhs._varids;
+						}
 
-bool CPSumTerm::operator<(const CPTerm& body) const {
-	if (CPTerm::operator<(body)) {
-		return true;
-	} else if (CPTerm::operator>(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPSumTerm&>(body);
-	if (_varids < rhs._varids) {
-		return true;
-	}
-	return false;
-}
+						bool CPSumTerm::operator<(const CPTerm& body) const {
+							if (CPTerm::operator<(body)) {
+								return true;
+							} else if (CPTerm::operator>(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPSumTerm&>(body);
+							if (_varids < rhs._varids) {
+								return true;
+							}
+							return false;
+						}
 
-bool CPWSumTerm::operator==(const CPTerm& body) const {
-	if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPWSumTerm&>(body);
-	return _varids == rhs._varids;
-}
+						bool CPWSumTerm::operator==(const CPTerm& body) const {
+							if (not CPTerm::operator==(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPWSumTerm&>(body);
+							return _varids == rhs._varids;
+						}
 
-bool CPWSumTerm::operator<(const CPTerm& body) const {
-	if (CPTerm::operator<(body)) {
-		return true;
-	} else if (CPTerm::operator>(body)) {
-		return false;
-	}
-	auto rhs = dynamic_cast<const CPWSumTerm&>(body);
-	if (_varids < rhs._varids) {
-		return true;
-	} else if (_varids > rhs._varids) {
-		return false;
-	}
-	if (_weights < rhs._weights) {
-		return true;
-	}
-	return false;
-}
+						bool CPWSumTerm::operator<(const CPTerm& body) const {
+							if (CPTerm::operator<(body)) {
+								return true;
+							} else if (CPTerm::operator>(body)) {
+								return false;
+							}
+							auto rhs = dynamic_cast<const CPWSumTerm&>(body);
+							if (_varids < rhs._varids) {
+								return true;
+							} else if (_varids > rhs._varids) {
+								return false;
+							}
+							if (_weights < rhs._weights) {
+								return true;
+							}
+							return false;
+						}
 
-bool CPBound::operator==(const CPBound& rhs) const {
-	if (_isvarid != rhs._isvarid) {
-		return false;
-	}
-	if (_isvarid) {
-		return _varid == rhs._varid;
-	} else {
-		return _bound == rhs._bound;
-	}
-}
+						bool CPBound::operator==(const CPBound& rhs) const {
+							if (_isvarid != rhs._isvarid) {
+								return false;
+							}
+							if (_isvarid) {
+								return _varid == rhs._varid;
+							} else {
+								return _bound == rhs._bound;
+							}
+						}
 
-bool CPBound::operator<(const CPBound& rhs) const {
-	if (_isvarid < rhs._isvarid) {
-		return true;
-	} else if (_isvarid > rhs._isvarid) {
-		return false;
-	}
-	if (_isvarid) {
-		return _varid < rhs._varid;
-	} else {
-		return _bound < rhs._bound;
-	}
-}
+						bool CPBound::operator<(const CPBound& rhs) const {
+							if (_isvarid < rhs._isvarid) {
+								return true;
+							} else if (_isvarid > rhs._isvarid) {
+								return false;
+							}
+							if (_isvarid) {
+								return _varid < rhs._varid;
+							} else {
+								return _bound < rhs._bound;
+							}
+						}
 
-void LazyTsBody::notifyTheoryOccurence() {
-	grounder_->notifyTheoryOccurence(inst);
-}
+						void LazyTsBody::notifyTheoryOccurence() {
+							grounder_->notifyTheoryOccurence(inst);
+						}

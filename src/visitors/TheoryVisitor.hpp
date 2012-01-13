@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef THEORYVISITOR_HPP
 #define THEORYVISITOR_HPP
@@ -25,7 +25,8 @@
 class TheoryVisitor {
 	VISITORFRIENDS()
 public:
-	virtual ~TheoryVisitor() {}
+	virtual ~TheoryVisitor() {
+	}
 
 protected:
 	virtual void traverse(const Formula*);
@@ -49,7 +50,7 @@ protected:
 	virtual void visit(const GroundSet*);
 	virtual void visit(const GroundAggregate*);
 
-	virtual void visit(const CPReification*){
+	virtual void visit(const CPReification*) {
 		// TODO
 	}
 
@@ -62,13 +63,13 @@ protected:
 	virtual void visit(const DomainTerm*);
 	virtual void visit(const AggTerm*);
 
-	virtual void visit(const CPVarTerm*){
+	virtual void visit(const CPVarTerm*) {
 		// TODO
 	}
-	virtual void visit(const CPWSumTerm*){
+	virtual void visit(const CPWSumTerm*) {
 		// TODO
 	}
-	virtual void visit(const CPSumTerm*){
+	virtual void visit(const CPSumTerm*) {
 		// TODO
 	}
 

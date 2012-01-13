@@ -69,8 +69,8 @@ protected:
 	Lit run() const;
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*,
-			PredInter* inter, const std::vector<SortTable*>&, const GroundingContext&);
+			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&,
+			const GroundingContext&);
 	~AtomGrounder();
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
@@ -87,7 +87,8 @@ private:
 
 	Lit run() const;
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
+	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg,
+			const GroundingContext& gc)
 			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 	}
 	~ComparisonGrounder();
@@ -121,8 +122,7 @@ public:
 		bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
 		bool signPosIfStrict = isPos(_sign) == not noAggComp;
 		_doublenegtseitin = (gc._tseitin == TsType::RULE)
-				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict)
-						|| (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
+				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
 	}
 	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
@@ -198,7 +198,8 @@ protected:
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
 public:
-	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
+	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
+			const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	}
 	~QuantGrounder();

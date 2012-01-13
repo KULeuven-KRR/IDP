@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef IDPPRINTER_HPP_
 #define IDPPRINTER_HPP_
@@ -44,8 +44,8 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(Stream& stream) :
-			StreamPrinter<Stream>(stream), _translator(NULL), _termtranslator(NULL) {
+	IDPPrinter(Stream& stream)
+			: StreamPrinter<Stream>(stream), _translator(NULL), _termtranslator(NULL) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
@@ -262,7 +262,7 @@ public:
 		output() << "(";
 		f->subterms()[0]->accept(this);
 		for (size_t n = 0; n < f->comps().size(); ++n) {
-			output() << ' ' <<toString(f->comps()[n]) << ' ';
+			output() << ' ' << toString(f->comps()[n]) << ' ';
 			f->subterms()[n + 1]->accept(this);
 			if (not f->conj() && (n + 1 < f->comps().size())) {
 				output() << " | ";
@@ -335,7 +335,7 @@ public:
 		}
 		output() << '(';
 		f->left()->accept(this);
-		output() << ' ' <<toString(f->comp()) << ' ';
+		output() << ' ' << toString(f->comp()) << ' ';
 		f->right()->accept(this);
 		output() << ')';
 	}

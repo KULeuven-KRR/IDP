@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "theorytransformations/UnnestTerms.hpp"
@@ -21,12 +21,10 @@
 #include <numeric> // for accumulate
 #include <functional> // for multiplies
 #include <algorithm> // for min_element and max_element
-
 using namespace std;
 
-UnnestTerms::UnnestTerms() 
-	: _structure(NULL), _vocabulary(NULL), _context(Context::POSITIVE), 
-		_allowedToUnnest(false), _chosenVarSort(NULL) {
+UnnestTerms::UnnestTerms()
+		: _structure(NULL), _vocabulary(NULL), _context(Context::POSITIVE), _allowedToUnnest(false), _chosenVarSort(NULL) {
 }
 
 void UnnestTerms::contextProblem(Term* t) {
@@ -50,14 +48,15 @@ bool UnnestTerms::shouldMove(Term* t) {
  */
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
-	if (_structure != NULL && SortUtils::isSubsort(term->sort(),VocabularyUtils::intsort(),_vocabulary)) {
-		auto bounds = TermUtils::deriveTermBounds(term,_structure);
+	if (_structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), _vocabulary)) {
+		auto bounds = TermUtils::deriveTermBounds(term, _structure);
 		Assert(bounds.size()==2);
 		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
 			auto intmin = bounds[0]->value()._int;
 			auto intmax = bounds[1]->value()._int;
-			stringstream ss; ss << "_sort[" << intmin << '-' << intmax <<"]";
-			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin,intmax)));
+			stringstream ss;
+			ss << "_sort[" << intmin << '-' << intmax << "]";
+			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
 			sort->addParent(VocabularyUtils::intsort());
 		}
 	}
@@ -120,7 +119,7 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 }
 
 template<typename T>
-Formula* UnnestTerms::doRewrite(T origformula){
+Formula* UnnestTerms::doRewrite(T origformula) {
 	auto rewrittenformula = rewrite(origformula);
 	if (rewrittenformula == origformula) {
 		return origformula;
@@ -302,7 +301,7 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	} else {
 		newf = traverse(predform);
 	}
-	
+
 	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
 	return doRewrite(newf);
@@ -349,9 +348,9 @@ Term* UnnestTerms::visit(FuncTerm* t) {
 		auto finter = _structure->inter(function);
 		if (finter->approxTwoValued()) {
 			setAllowedToUnnest(false);
-		} 
+		}
 	} else {
-			setAllowedToUnnest(true);
+		setAllowedToUnnest(true);
 	}
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
@@ -377,7 +376,7 @@ SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 			//_equalities.push_back(s->subformulas()[n]);
 			//s->subformula(n, new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
 			savevars.insert(_variables.cbegin(), _variables.cend());
-			saveequalities.insert(saveequalities.end(),_equalities.cbegin(), _equalities.cend());
+			saveequalities.insert(saveequalities.end(), _equalities.cbegin(), _equalities.cend());
 			_equalities.clear();
 			_variables.clear();
 		}

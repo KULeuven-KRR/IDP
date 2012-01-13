@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GROUNDING_GROUNDTHEORY_HPP_
 #define GROUNDING_GROUNDTHEORY_HPP_
@@ -108,7 +108,7 @@ private:
 		PFSymbol* symbol = translator()->getSymbol(inputatom);
 		auto it = _defined.find(symbol);
 		if (it == _defined.end()) {
-			it = _defined.insert(std::pair<PFSymbol*,std::set<int>>{symbol, std::set<int>()}).first;
+			it = _defined.insert(std::pair<PFSymbol*, std::set<int>> { symbol, std::set<int>() }).first;
 		}
 		(*it).second.insert(inputatom);
 	}
@@ -176,7 +176,7 @@ public:
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
-				if (sametypeid<PCTsBody>(*tsbody)){
+				if (sametypeid<PCTsBody>(*tsbody)) {
 					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
@@ -286,7 +286,7 @@ public:
 	 */
 	void addFuncConstraints() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
-			if(GlobalData::instance()->terminateRequested()){
+			if (GlobalData::instance()->terminateRequested()) {
 				throw IdpException("Terminate requested");
 			}
 			auto pfs = translator()->getManagedSymbol(n);
@@ -318,32 +318,32 @@ public:
 				CHECKTERMINATION
 				ElementTuple current((*ptIterator));
 
-				if(begin){
+				if (begin) {
 					domainElement = current;
 					begin = false;
 				}
 
-				if(not equalDomain(current, domainElement)){
+				if (not equalDomain(current, domainElement)) {
 					newdomain = true;
-					if(not testcertainly){
+					if (not testcertainly) {
 						addRangeConstraint(f, tupleset, outSortTable);
 					}
 					tupleset.clear();
 				}
 
-				if(newdomain){
+				if (newdomain) {
 					domainElement = current;
 					newdomain = false;
 
 					// CERTAINLY TRUE OPTIMIZATION / PROPAGATION: if some in the domain is certainly true, assert all other ones false
-					while(not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current)){
+					while (not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current)) {
 						CHECKTERMINATION
 						++ctIterator;
 					}
-					if(not ctIterator.isAtEnd() && equalDomain(*ctIterator, current)){
+					if (not ctIterator.isAtEnd() && equalDomain(*ctIterator, current)) {
 						certainly = *ctIterator;
 						testcertainly = true;
-					}else{
+					} else {
 						testcertainly = false;
 					}
 				}
@@ -354,12 +354,12 @@ public:
 						addUnitClause(-translation);
 					}
 					continue;
-				}else{
+				} else {
 					Lit translation = translator()->translate(f, current);
 					tupleset.push_back(translation);
 				}
 			}
-			if(not testcertainly){
+			if (not testcertainly) {
 				addRangeConstraint(f, tupleset, outSortTable);
 			}
 
@@ -419,7 +419,7 @@ public:
 
 	void addFalseDefineds() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
-			if(GlobalData::instance()->terminateRequested()){
+			if (GlobalData::instance()->terminateRequested()) {
 				throw IdpException("Terminate requested");
 			}
 			PFSymbol* s = translator()->getManagedSymbol(n);
@@ -429,7 +429,7 @@ public:
 			}
 			const PredTable* pt = structure()->inter(s)->pt();
 			for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-				if(GlobalData::instance()->terminateRequested()){
+				if (GlobalData::instance()->terminateRequested()) {
 					throw IdpException("Terminate requested");
 				}
 				Lit translation = translator()->translate(s, (*ptIterator));
@@ -443,7 +443,7 @@ public:
 	}
 
 private:
-	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable){
+	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable) {
 		CHECKTERMINATION
 		std::vector<double> lw(set.size(), 1);
 		int setnr = translator()->translateSet(set, lw, { });

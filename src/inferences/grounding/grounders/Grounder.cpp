@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "Grounder.hpp"
@@ -28,27 +28,27 @@ Conn negateConn(Conn c) {
 	return result;
 }
 
-void ConjOrDisj::put(std::ostream& stream) const{
+void ConjOrDisj::put(std::ostream& stream) const {
 	bool begin = true;
-	for(auto i=literals.cbegin(); i<literals.cend(); ++i){
-		if(not begin){
-			switch(getType()){
+	for (auto i = literals.cbegin(); i < literals.cend(); ++i) {
+		if (not begin) {
+			switch (getType()) {
 			case Conn::DISJ:
-				stream <<" | ";
+				stream << " | ";
 				break;
 			case Conn::CONJ:
-				stream <<" & ";
+				stream << " & ";
 				break;
 			}
 		}
 		begin = false;
-		stream <<toString(*i);
+		stream << toString(*i);
 	}
 }
 void ConjOrDisj::negate() {
 	_type = negateConn(_type);
-	for(auto i = 0; i<literals.size();++i){
-		literals[i]= - literals.at(i);
+	for (auto i = 0; i < literals.size(); ++i) {
+		literals[i] = -literals.at(i);
 	}
 }
 
@@ -56,50 +56,50 @@ GroundTranslator* Grounder::getTranslator() const {
 	return _grounding->translator();
 }
 
-void Grounder::toplevelRun() const{
+void Grounder::toplevelRun() const {
 	//Assert(context()._conjunctivePathFromRoot);
 	ConjOrDisj formula;
 	run(formula);
-	if(formula.literals.size()==0){
-		if(formula.getType()==Conn::DISJ){ // UNSAT
+	if (formula.literals.size() == 0) {
+		if (formula.getType() == Conn::DISJ) { // UNSAT
 			getGrounding()->addUnitClause(1);
 			getGrounding()->addUnitClause(-1);
 		}
-	}else if(formula.literals.size()==1){
+	} else if (formula.literals.size() == 1) {
 		Lit l = formula.literals.back();
 
-		if(l==_true || l==_false){
-			if(formula.getType()==Conn::CONJ && l==_false){ // UNSAT
+		if (l == _true || l == _false) {
+			if (formula.getType() == Conn::CONJ && l == _false) { // UNSAT
 				getGrounding()->addUnitClause(1);
 				getGrounding()->addUnitClause(-1);
 			} // else SAT or irrelevant (TODO correct?)
-		}else{
+		} else {
 			getGrounding()->addUnitClause(l);
 		}
-	}else{
-		if(formula.getType()==Conn::CONJ){
-			for(auto i=formula.literals.cbegin(); i<formula.literals.cend(); ++i){
+	} else {
+		if (formula.getType() == Conn::CONJ) {
+			for (auto i = formula.literals.cbegin(); i < formula.literals.cend(); ++i) {
 				getGrounding()->addUnitClause(*i);
 			}
-		}else{
+		} else {
 			getGrounding()->add(formula.literals);
 		}
 	}
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
 }
 
-Lit Grounder::groundAndReturnLit() const{
+Lit Grounder::groundAndReturnLit() const {
 	ConjOrDisj formula;
 	run(formula);
-	if(formula.literals.size()==0){
-		if(formula.getType()==Conn::DISJ){
+	if (formula.literals.size() == 0) {
+		if (formula.getType() == Conn::DISJ) {
 			return _false;
-		}else{
+		} else {
 			return _true;
 		}
-	}else if(formula.literals.size()==1){
+	} else if (formula.literals.size() == 1) {
 		return formula.literals.back();
-	}else{
-		return getGrounding()->translator()->translate(formula.literals, formula.getType()==Conn::CONJ, context()._tseitin);
+	} else {
+		return getGrounding()->translator()->translate(formula.literals, formula.getType() == Conn::CONJ, context()._tseitin);
 	}
 }

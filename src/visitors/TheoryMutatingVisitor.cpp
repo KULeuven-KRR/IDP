@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "TheoryMutatingVisitor.hpp"
 
@@ -18,15 +18,14 @@
 
 using namespace std;
 
-
 Theory* TheoryMutatingVisitor::visit(Theory* t) {
-	for(auto it = t->sentences().begin(); it != t->sentences().end(); ++it) {
+	for (auto it = t->sentences().begin(); it != t->sentences().end(); ++it) {
 		*it = (*it)->accept(this);
 	}
-	for(auto it = t->definitions().begin(); it != t->definitions().end(); ++it) {
+	for (auto it = t->definitions().begin(); it != t->definitions().end(); ++it) {
 		*it = (*it)->accept(this);
 	}
-	for(auto it = t->fixpdefs().begin(); it != t->fixpdefs().end(); ++it) {
+	for (auto it = t->fixpdefs().begin(); it != t->fixpdefs().end(); ++it) {
 		*it = (*it)->accept(this);
 	}
 	return t;
@@ -38,11 +37,11 @@ AbstractGroundTheory* TheoryMutatingVisitor::visit(AbstractGroundTheory* t) {
 }
 
 Formula* TheoryMutatingVisitor::traverse(Formula* f) {
-	for(size_t n = 0; n < f->subterms().size(); ++n) {
-		f->subterm(n,f->subterms()[n]->accept(this));
+	for (size_t n = 0; n < f->subterms().size(); ++n) {
+		f->subterm(n, f->subterms()[n]->accept(this));
 	}
-	for(size_t n = 0; n < f->subformulas().size(); ++n) {
-		f->subformula(n,f->subformulas()[n]->accept(this));
+	for (size_t n = 0; n < f->subformulas().size(); ++n) {
+		f->subformula(n, f->subformulas()[n]->accept(this));
 	}
 	return f;
 }
@@ -77,28 +76,28 @@ Rule* TheoryMutatingVisitor::visit(Rule* r) {
 }
 
 Definition* TheoryMutatingVisitor::visit(Definition* d) {
-	for(size_t n = 0; n < d->rules().size(); ++n) {
-		d->rule(n,d->rules()[n]->accept(this));
+	for (size_t n = 0; n < d->rules().size(); ++n) {
+		d->rule(n, d->rules()[n]->accept(this));
 	}
 	return d;
 }
 
 FixpDef* TheoryMutatingVisitor::visit(FixpDef* fd) {
-	for(size_t n = 0; n < fd->rules().size(); ++n) {
-		fd->rule(n,fd->rules()[n]->accept(this));
+	for (size_t n = 0; n < fd->rules().size(); ++n) {
+		fd->rule(n, fd->rules()[n]->accept(this));
 	}
-	for(size_t n = 0; n < fd->defs().size(); ++n) {
-		fd->def(n,fd->defs()[n]->accept(this));
+	for (size_t n = 0; n < fd->defs().size(); ++n) {
+		fd->def(n, fd->defs()[n]->accept(this));
 	}
 	return fd;
 }
 
 Term* TheoryMutatingVisitor::traverse(Term* t) {
-	for(size_t n = 0; n < t->subterms().size(); ++n) {
-		t->subterm(n,t->subterms()[n]->accept(this));
+	for (size_t n = 0; n < t->subterms().size(); ++n) {
+		t->subterm(n, t->subterms()[n]->accept(this));
 	}
-	for(size_t n = 0; n < t->subsets().size(); ++n) {
-		t->subset(n,t->subsets()[n]->accept(this));
+	for (size_t n = 0; n < t->subsets().size(); ++n) {
+		t->subset(n, t->subsets()[n]->accept(this));
 	}
 	return t;
 }
@@ -120,11 +119,11 @@ Term* TheoryMutatingVisitor::visit(AggTerm* at) {
 }
 
 SetExpr* TheoryMutatingVisitor::traverse(SetExpr* s) {
-	for(size_t n = 0; n < s->subterms().size(); ++n) {
-		s->subterm(n,s->subterms()[n]->accept(this));
+	for (size_t n = 0; n < s->subterms().size(); ++n) {
+		s->subterm(n, s->subterms()[n]->accept(this));
 	}
-	for(size_t n = 0; n < s->subformulas().size(); ++n) {
-		s->subformula(n,s->subformulas()[n]->accept(this));
+	for (size_t n = 0; n < s->subformulas().size(); ++n) {
+		s->subformula(n, s->subformulas()[n]->accept(this));
 	}
 	return s;
 }

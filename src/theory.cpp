@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include <sstream>
@@ -31,8 +31,8 @@
 using namespace std;
 
 /**************
-	Formula
-**************/
+ Formula
+ **************/
 
 IMPLACCEPTBOTH(AggForm, Formula)
 IMPLACCEPTBOTH(BoolForm, Formula)
@@ -73,16 +73,24 @@ void Formula::recursiveDelete() {
 
 bool Formula::contains(const Variable* v) const {
 	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
-		if (*it == v) { return true; }
+		if (*it == v) {
+			return true;
+		}
 	}
 	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-		if (*it == v) { return true; }
+		if (*it == v) {
+			return true;
+		}
 	}
 	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		if ((*it)->contains(v)) { return true; }
+		if ((*it)->contains(v)) {
+			return true;
+		}
 	}
 	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		if ((*it)->contains(v)) { return true; }
+		if ((*it)->contains(v)) {
+			return true;
+		}
 	}
 	return false;
 }
@@ -100,15 +108,15 @@ ostream& operator<<(ostream& output, const Formula& f) {
 }
 
 /***************
-	PredForm
-***************/
+ PredForm
+ ***************/
 
 PredForm* PredForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
 }
 
-PredForm*	PredForm::cloneKeepVars() const{
+PredForm* PredForm::cloneKeepVars() const {
 	vector<Term*> na;
 	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
 		na.push_back((*it)->cloneKeepVars());
@@ -145,15 +153,15 @@ ostream& PredForm::put(ostream& output) const {
 }
 
 /******************
-	EqChainForm
-******************/
+ EqChainForm
+ ******************/
 
 EqChainForm* EqChainForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
 }
 
-EqChainForm* EqChainForm::cloneKeepVars() const{
+EqChainForm* EqChainForm::cloneKeepVars() const {
 	vector<Term*> nt;
 	for (auto it = subterms().cbegin(); it != subterms().cend(); ++it) {
 		nt.push_back((*it)->cloneKeepVars());
@@ -172,7 +180,9 @@ EqChainForm* EqChainForm::clone(const map<Variable*, Variable*>& mvv) const {
 }
 
 ostream& EqChainForm::put(ostream& output) const {
-	if (isNeg(sign())) { output << '~'; }
+	if (isNeg(sign())) {
+		output << '~';
+	}
 	output << '(';
 	subterms()[0]->put(output);
 	for (size_t n = 0; n < _comps.size(); ++n) {
@@ -188,15 +198,15 @@ ostream& EqChainForm::put(ostream& output) const {
 }
 
 /****************
-	EquivForm
-****************/
+ EquivForm
+ ****************/
 
 EquivForm* EquivForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
 }
 
-EquivForm*	EquivForm::cloneKeepVars() const{
+EquivForm* EquivForm::cloneKeepVars() const {
 	Formula* nl = left()->cloneKeepVars();
 	Formula* nr = right()->cloneKeepVars();
 	EquivForm* ef = new EquivForm(sign(), nl, nr, pi().clone());
@@ -220,15 +230,15 @@ ostream& EquivForm::put(ostream& output) const {
 }
 
 /***************
-	BoolForm
-***************/
+ BoolForm
+ ***************/
 
 BoolForm* BoolForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
 }
 
-BoolForm*	BoolForm::cloneKeepVars() const{
+BoolForm* BoolForm::cloneKeepVars() const {
 	vector<Formula*> ns;
 	for (auto it = subformulas().cbegin(); it != subformulas().cend(); ++it) {
 		ns.push_back((*it)->cloneKeepVars());
@@ -254,7 +264,9 @@ ostream& BoolForm::put(ostream& output) const {
 			output << "false";
 		}
 	} else {
-		if (isNeg(sign())) { output << '~'; }
+		if (isNeg(sign())) {
+			output << '~';
+		}
 		output << '(';
 		for (size_t n = 0; n < subformulas().size(); ++n) {
 			subformulas()[n]->put(output);
@@ -268,15 +280,15 @@ ostream& BoolForm::put(ostream& output) const {
 }
 
 /****************
-	QuantForm
-****************/
+ QuantForm
+ ****************/
 
 QuantForm* QuantForm::clone() const {
 	map<Variable*, Variable*> mvv;
 	return clone(mvv);
 }
 
-QuantForm*	QuantForm::cloneKeepVars() const{
+QuantForm* QuantForm::cloneKeepVars() const {
 	auto nf = subformula()->cloneKeepVars();
 	return new QuantForm(sign(), quant(), quantVars(), nf, pi().clone());
 }
@@ -295,7 +307,9 @@ QuantForm* QuantForm::clone(const map<Variable*, Variable*>& mvv) const {
 }
 
 ostream& QuantForm::put(ostream& output) const {
-	if (isNeg(sign())) { output << '~'; }
+	if (isNeg(sign())) {
+		output << '~';
+	}
 	output << '(';
 	output << (isUniv() ? '!' : '?');
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
@@ -309,11 +323,11 @@ ostream& QuantForm::put(ostream& output) const {
 }
 
 /**************
-	AggForm
-**************/
+ AggForm
+ **************/
 
-AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi) :
-		Formula(sign, pi), _comp(c), _aggterm(r) {
+AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi)
+		: Formula(sign, pi), _comp(c), _aggterm(r) {
 	addSubterm(l);
 	addSubterm(r);
 }
@@ -323,7 +337,7 @@ AggForm* AggForm::clone() const {
 	return clone(mvv);
 }
 
-AggForm*	AggForm::cloneKeepVars() const{
+AggForm* AggForm::cloneKeepVars() const {
 	auto nl = left()->cloneKeepVars();
 	auto nr = right()->cloneKeepVars();
 	return new AggForm(sign(), nl, _comp, nr, pi().clone());
@@ -336,7 +350,9 @@ AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {
 }
 
 ostream& AggForm::put(ostream& output) const {
-	if (isNeg(sign())) { output << '~'; }
+	if (isNeg(sign())) {
+		output << '~';
+	}
 	output << '(';
 	left()->put(output);
 	output << ' ' << toString(_comp) << ' ';
@@ -346,8 +362,8 @@ ostream& AggForm::put(ostream& output) const {
 }
 
 /***********
-	Rule
-***********/
+ Rule
+ ***********/
 
 Rule* Rule::clone() const {
 	map<Variable*, Variable*> mvv;
@@ -390,8 +406,8 @@ ostream& operator<<(ostream& output, const Rule& r) {
 }
 
 /******************
-	Definitions
-******************/
+ Definitions
+ ******************/
 
 Definition* Definition::clone() const {
 	Definition* newdef = new Definition();
@@ -438,8 +454,8 @@ ostream& Definition::put(ostream& output) const {
 }
 
 /***************************
-	Fixpoint definitions
-***************************/
+ Fixpoint definitions
+ ***************************/
 
 FixpDef* FixpDef::clone() const {
 	FixpDef* newfd = new FixpDef(_lfp);
@@ -481,7 +497,7 @@ ostream& FixpDef::put(ostream& output) const {
 		_rules[0]->put(output);
 		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output << '\n'<<tabs();
+			output << '\n' << tabs();
 			_rules[n]->put(output);
 		}
 		poptab();
@@ -497,8 +513,8 @@ ostream& FixpDef::put(ostream& output) const {
 }
 
 /***************
-	Theories
-***************/
+ Theories
+ ***************/
 
 Theory* Theory::clone() const {
 	Theory* newtheory = new Theory(_name, _vocabulary, ParseInfo());
@@ -548,7 +564,9 @@ set<TheoryComponent*> Theory::components() const {
 void Theory::remove(Definition* d) {
 	auto it = _definitions.begin();
 	for (; it != _definitions.end(); ++it) {
-		if (*it == d) { break; }
+		if (*it == d) {
+			break;
+		}
 	}
 	if (it != _definitions.end()) {
 		_definitions.erase(it);

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <typeinfo>
 #include <iostream>
@@ -162,8 +162,8 @@ bool FOPropBDDDomainFactory::approxequals(FOPropBDDDomain* domain1, FOPropBDDDom
 	return domain1->bdd() == domain2->bdd();
 }
 
-bool FOPropTableDomainFactory::approxequals(FOPropTableDomain* left, FOPropTableDomain* right) const{
-	return left->table()==right->table();
+bool FOPropTableDomainFactory::approxequals(FOPropTableDomain* left, FOPropTableDomain* right) const {
+	return left->table() == right->table();
 }
 
 PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain<FOPropBDDDomain>& dom, AbstractStructure* str) const {
@@ -244,14 +244,14 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -472,7 +472,8 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 template<class Factory, class Domain>
 bool TypedFOPropagator<Factory, Domain>::admissible(Domain* newd, Domain* oldd) const {
 	for (auto it = _admissiblecheckers.cbegin(); it != _admissiblecheckers.cend(); ++it) {
-		if (!((*it)->check(newd, oldd))) return false;
+		if (!((*it)->check(newd, oldd)))
+			return false;
 	}
 	return true;
 }

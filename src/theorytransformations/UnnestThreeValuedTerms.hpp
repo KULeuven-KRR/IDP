@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef REMOVETHREEVALUEDTERMS_HPP_
 #define REMOVETHREEVALUEDTERMS_HPP_
@@ -23,7 +23,7 @@ class Variable;
 class AbstractStructure;
 class PFSymbol;
 class Formula;
-class PredForm; 
+class PredForm;
 class Term;
 
 /**
@@ -48,13 +48,12 @@ class Term;
 class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
-	bool 						_cpsupport;
-	std::set<const PFSymbol*> 	_cpsymbols;
+	bool _cpsupport;
+	std::set<const PFSymbol*> _cpsymbols;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, 
-			const std::set<const PFSymbol*>& cpsymbols) {
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);

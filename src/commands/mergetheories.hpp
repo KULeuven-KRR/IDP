@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef MERGETHEORIES_HPP_
 #define MERGETHEORIES_HPP_
@@ -18,7 +18,8 @@
 typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*)> MergeTheoriesInferenceBase;
 class MergeTheoriesInference: public MergeTheoriesInferenceBase {
 public:
-	MergeTheoriesInference(): MergeTheoriesInferenceBase("merge", "Create a new theory which is the result of combining both input theories.") {
+	MergeTheoriesInference()
+			: MergeTheoriesInferenceBase("merge", "Create a new theory which is the result of combining both input theories.") {
 		//TODO: intern?
 	}
 

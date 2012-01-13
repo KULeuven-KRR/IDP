@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "GroundTermTranslator.hpp"
 #include "ecnf.hpp"
@@ -21,7 +21,7 @@ VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& a
 		return it->second;
 	} else {
 		VarId varid = nextNumber();
-		_functerm2varid_table[offset].insert(it, pair<vector<GroundTerm>,VarId>{args, varid});
+		_functerm2varid_table[offset].insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
 		_varid2function[varid] = _offset2function[offset];
 		_varid2args[varid] = args;
 		_varid2domain[varid] = _structure->inter(_offset2function[offset]->outsort());
@@ -38,7 +38,7 @@ VarId GroundTermTranslator::translate(CPTerm* cpterm, SortTable* domain) {
 	VarId varid = nextNumber();
 	CPBound bound(varid);
 	CPTsBody* cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
-	_varid2cprelation.insert(pair<VarId, CPTsBody*>{varid, cprelation});
+	_varid2cprelation.insert(pair<VarId, CPTsBody*> { varid, cprelation });
 	_varid2domain[varid] = domain;
 	return varid;
 }
@@ -52,7 +52,7 @@ VarId GroundTermTranslator::translate(const DomainElement* element) {
 	CPBound bound(element->value()._int);
 	// Add a new CP constraint
 	CPTsBody* cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
-	_varid2cprelation.insert(pair<VarId, CPTsBody*>{varid, cprelation});
+	_varid2cprelation.insert(pair<VarId, CPTsBody*> { varid, cprelation });
 	// Add a new domain containing only the given domain element
 	SortTable* domain = new SortTable(new EnumeratedInternalSortTable());
 	domain->add(element);

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef MODELEXPAND_HPP_
 #define MODELEXPAND_HPP_
@@ -21,15 +21,16 @@
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> ModelExpandInferenceBase;
 class ModelExpandInference: public ModelExpandInferenceBase {
 public:
-	ModelExpandInference() :
-		ModelExpandInferenceBase("modelexpand", "Return a list containing all 2-valued models of the theory which are more precise than the given structure.", false) {
+	ModelExpandInference()
+			: ModelExpandInferenceBase("modelexpand",
+					"Return a list containing all 2-valued models of the theory which are more precise than the given structure.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	// TODO trace is returned as the SECOND return value of the lua call
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		LuaTraceMonitor* tracer = NULL;
-		if(getOption(BoolType::TRACE)){
+		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
 		}
 		auto models = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), tracer);
@@ -42,7 +43,7 @@ public:
 			result._value._table->push_back(InternalArgument(*it));
 		}
 
-		if(tracer!=NULL){
+		if (tracer != NULL) {
 			InternalArgument randt;
 			randt._type = AT_MULT;
 			randt._value._table = new std::vector<InternalArgument>(1, result);
@@ -51,7 +52,7 @@ public:
 			trace._value._string = tracer->index();
 			randt._value._table->push_back(trace);
 			result = randt;
-			delete(tracer);
+			delete (tracer);
 		}
 
 		return result;

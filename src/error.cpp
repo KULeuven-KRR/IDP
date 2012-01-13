@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <iostream>
 #include "parseinfo.hpp"
@@ -174,8 +174,7 @@ void multfuncinter(const string& s, const ParseInfo& pi) {
 
 void emptyassign(const string& s, const ParseInfo& pi) {
 	error(pi);
-	clog << "I cannot assign the empty interpretation to symbol " << s << " because all symbols with that name do already have an interpretation."
-			<< "\n";
+	clog << "I cannot assign the empty interpretation to symbol " << s << " because all symbols with that name do already have an interpretation." << "\n";
 }
 
 void emptyambig(const string& s, const ParseInfo& pi) {
@@ -226,20 +225,20 @@ void threethreefunc(const string& s, const string& str) {
 
 void onethreepred(const string& s, const string& str) {
 	error();
-	clog << "In structure " << str << ", an interpretation for predicate " << s << "[u] is given, but there is no interpretation for " << s
-			<< "[ct] or " << s << "[cf].\n";
+	clog << "In structure " << str << ", an interpretation for predicate " << s << "[u] is given, but there is no interpretation for " << s << "[ct] or " << s
+			<< "[cf].\n";
 }
 
 void onethreefunc(const string& s, const string& str) {
 	error();
-	clog << "In structure " << str << ", an interpretation for function " << s << "[u] is given, but there is no interpretation for " << s
-			<< "[ct] or " << s << "[cf].\n";
+	clog << "In structure " << str << ", an interpretation for function " << s << "[u] is given, but there is no interpretation for " << s << "[ct] or " << s
+			<< "[cf].\n";
 }
 
 void sortelnotinsort(const string& el, const string& p, const string& s, const string& str) {
 	error();
-	clog << "In structure " << str << ", element " << el << " occurs in the domain of sort " << p
-			<< " but does not belong to the interpretation of sort " << s << ".\n";
+	clog << "In structure " << str << ", element " << el << " occurs in the domain of sort " << p << " but does not belong to the interpretation of sort " << s
+			<< ".\n";
 }
 
 void predelnotinsort(const string& el, const string& p, const string& s, const string& str) {
@@ -280,8 +279,7 @@ void threevalsort(const string&, const ParseInfo& pi) {
 
 void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Namespace " << nsname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Namespace " << nsname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -300,8 +298,7 @@ void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseI
 
 void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Theory " << thname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Theory " << thname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -310,8 +307,7 @@ void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseI
 
 void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Query " << fname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Query " << fname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -320,16 +316,15 @@ void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseI
 
 void multdeclterm(const string& tname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Term " << tname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
-	if (prevdeclplace.file()) clog << " of file " << *(prevdeclplace.file());
+	clog << "Term " << tname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
+	if (prevdeclplace.file())
+		clog << " of file " << *(prevdeclplace.file());
 	clog << "." << "\n";
 }
 
 void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Structure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Structure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -338,8 +333,7 @@ void multdeclstruct(const string& sname, const ParseInfo& thisplace, const Parse
 
 void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Options " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Options " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -348,8 +342,7 @@ void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInf
 
 void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Procedure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column "
-			<< prevdeclplace.col();
+	clog << "Procedure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.line() << ", column " << prevdeclplace.col();
 	if (prevdeclplace.file()) {
 		clog << " of file " << *(prevdeclplace.file());
 	}
@@ -553,9 +546,11 @@ void overloadedquery(const string& name, const ParseInfo& p1, const ParseInfo& p
 void overloadedterm(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 	error(thisplace);
 	clog << "The term " << name << " used here could be the term declared at " << "line " << p1.line() << ", column " << p1.col();
-	if (p1.file()) clog << " of file " << p1.file();
+	if (p1.file())
+		clog << " of file " << p1.file();
 	clog << " or the term declared at " << "line " << p2.line() << ", column " << p2.col();
-	if (p2.file()) clog << " of file " << p2.file();
+	if (p2.file())
+		clog << " of file " << p2.file();
 	clog << ".\n";
 }
 
@@ -727,7 +722,7 @@ void warning() {
 
 void warning(const std::string& message) {
 	warningcounter++;
-	clog << "WARNING: " <<message;
+	clog << "WARNING: " << message;
 }
 
 void warning(const ParseInfo& p) {
@@ -750,7 +745,7 @@ void possiblyInfiniteGrounding(const std::string& formula, const std::string& in
 }
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
-	clog << "Warning: tried to add " << boundedpredname << " to " <<vocname <<", instead " <<predname <<" was added to that vocabulary.\n";
+	clog << "Warning: tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
 }
 
 /** Ambiguous partial term **/

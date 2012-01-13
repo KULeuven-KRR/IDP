@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
@@ -24,13 +24,9 @@ using namespace std;
 unsigned int LazyQuantGrounder::maxid = 1;
 
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
-		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
-		QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct),
-		id_(maxid++),
-		groundtheory_(groundtheory),
-		_negatedformula(false),
-		currentlyGrounding(false),
-		freevars(freevars) {
+		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
+		: QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct), id_(maxid++), groundtheory_(groundtheory), _negatedformula(false),
+			currentlyGrounding(false), freevars(freevars) {
 	Assert(not conjunctive());
 	// TODO: currently, can only lazy ground existential quants
 	Assert(ct._tseitin != TsType::RULE);
@@ -100,7 +96,6 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 		printorig();
 	}
 
-
 	_generator->begin();
 	if (_generator->isAtEnd()) {
 		return;
@@ -110,7 +105,7 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	ResidualAndFreeInst* inst = new ResidualAndFreeInst();
 	for (auto var = freevars.cbegin(); var != freevars.cend(); ++var) {
 		auto tuple = varmap().at(*var);
-		inst->freevarinst.push_back(dominst(tuple, tuple->get()));
+		inst->freevarinst.push_back(dominst { tuple, tuple->get() });
 	}
 	inst->generator = _generator->clone();
 

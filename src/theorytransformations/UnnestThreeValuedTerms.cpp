@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "theorytransformations/UnnestThreeValuedTerms.hpp"
 
@@ -22,7 +22,7 @@ bool UnnestThreeValuedTerms::isCPSymbol(const PFSymbol* symbol) const {
 }
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
-	if(getAllowedToUnnest()) {
+	if (getAllowedToUnnest()) {
 		switch (t->type()) {
 		case TT_FUNC: {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
@@ -45,10 +45,10 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	Context savecontext = getContext();
 	bool savemovecontext = getAllowedToUnnest();
-	if(isNeg(f->sign())) {
+	if (isNeg(f->sign())) {
 		setContext(not getContext());
 	}
-	for(size_t n = 0; n < f->subterms().size(); ++n) {
+	for (size_t n = 0; n < f->subterms().size(); ++n) {
 		if (_cpsupport) {
 			setAllowedToUnnest(not isCPSymbol(f->symbol()));
 		}

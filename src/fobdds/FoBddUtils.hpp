@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef KERNELORDER_HPP_
 #define KERNELORDER_HPP_
@@ -31,11 +31,11 @@ enum AtomKernelType {
 struct KernelOrder {
 	unsigned int _category; //!< The unsigned int
 	unsigned int _number; //!< The second number
-	KernelOrder(unsigned int c, unsigned int n) :
-			_category(c), _number(n) {
+	KernelOrder(unsigned int c, unsigned int n)
+			: _category(c), _number(n) {
 	}
-	KernelOrder(const KernelOrder& order) :
-			_category(order._category), _number(order._number) {
+	KernelOrder(const KernelOrder& order)
+			: _category(order._category), _number(order._number) {
 	}
 };
 

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef BUMP_HPP_
 #define BUMP_HPP_
@@ -25,8 +25,8 @@ private:
 	const FOBDDVariable* _variable;
 
 public:
-	BumpIndices(FOBDDManager* manager, const FOBDDVariable* variable, unsigned int depth) :
-			FOBDDVisitor(manager), _depth(depth), _variable(variable) {
+	BumpIndices(FOBDDManager* manager, const FOBDDVariable* variable, unsigned int depth)
+			: FOBDDVisitor(manager), _depth(depth), _variable(variable) {
 	}
 
 	const FOBDDKernel* change(const FOBDDQuantKernel* kernel) {

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <sstream>
 #include "common.hpp"
@@ -70,7 +70,6 @@ bool Term::contains(const Variable* v) const {
 	return false;
 }
 
-
 ostream& operator<<(ostream& output, const Term& t) {
 	return t.put(output);
 }
@@ -88,8 +87,8 @@ void VarTerm::sort(Sort* s) {
 	_var->sort(s);
 }
 
-VarTerm::VarTerm(Variable* v, const TermParseInfo& pi) :
-		Term(pi), _var(v) {
+VarTerm::VarTerm(Variable* v, const TermParseInfo& pi)
+		: Term(pi), _var(v) {
 	setFreeVars();
 }
 
@@ -123,7 +122,7 @@ ostream& VarTerm::put(std::ostream& output) const {
  *  FuncTerm
  *************/
 
-FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi) 
+FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi)
 		: Term(pi), _function(func) {
 	subterms(args);
 }
@@ -171,7 +170,7 @@ ostream& FuncTerm::put(ostream& output) const {
  *  DomainTerm
  ***************/
 
-DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi) 
+DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi)
 		: Term(pi), _sort(sort), _value(value) {
 	Assert(_sort!=NULL);
 }
@@ -202,7 +201,7 @@ ostream& DomainTerm::put(ostream& output) const {
  *  AggTerm
  ************/
 
-AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi) 
+AggTerm::AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi)
 		: Term(pi), _function(function) {
 	addSet(set);
 }
@@ -298,7 +297,7 @@ ostream& operator<<(ostream& output, const SetExpr& set) {
  *  EnumSetExpr
  ****************/
 
-EnumSetExpr::EnumSetExpr(const vector<Formula*>& subforms, const vector<Term*>& weights, const SetParseInfo& pi) 
+EnumSetExpr::EnumSetExpr(const vector<Formula*>& subforms, const vector<Term*>& weights, const SetParseInfo& pi)
 		: SetExpr(pi) {
 	_subformulas = subforms;
 	_subterms = weights;
@@ -339,7 +338,7 @@ EnumSetExpr* EnumSetExpr::positiveSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, (*term)->pi());
 		auto termpos = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::GT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termpos }, (*form)->pi()));
 		newsubterms.push_back((*term)->clone());
@@ -353,7 +352,7 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, (*term)->pi());
 		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/1");
 		newsubterms.push_back(new FuncTerm(minSymbol, { (*term)->clone() }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::LT }, (*form)->pi());
@@ -368,7 +367,7 @@ EnumSetExpr* EnumSetExpr::zeroSubset() const {
 	auto nul = DomainElementFactory::createGlobal()->create(0);
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
-		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, (*term)->pi());
+		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, (*term)->pi());
 		newsubterms.push_back(nulterm);
 		auto termisnul = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::EQ }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termisnul }, (*form)->pi()));
@@ -393,7 +392,7 @@ Sort* EnumSetExpr::sort() const {
 		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::floatsort())) {
 			return VocabularyUtils::floatsort();
 		} else {
-			Error::notsubsort(currsort->name(),VocabularyUtils::floatsort()->name(),pi());
+			Error::notsubsort(currsort->name(), VocabularyUtils::floatsort()->name(), pi());
 			return NULL;
 		}
 	} else {
@@ -403,7 +402,7 @@ Sort* EnumSetExpr::sort() const {
 }
 
 tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
-	return tablesize(TST_EXACT,subformulas().size());
+	return tablesize(TST_EXACT, subformulas().size());
 }
 
 ostream& EnumSetExpr::put(ostream& output) const {
@@ -428,7 +427,7 @@ ostream& EnumSetExpr::put(ostream& output) const {
  *  QuantSetExpr
  *****************/
 
-QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Formula* formula, Term* term, const SetParseInfo& pi) 
+QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Formula* formula, Term* term, const SetParseInfo& pi)
 		: SetExpr(pi) {
 	_quantvars = qvars;
 	_subterms.push_back(term);
@@ -465,10 +464,10 @@ QuantSetExpr* QuantSetExpr::positiveSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, TermParseInfo());
 	auto termpos = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::GT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termpos }, form->pi());
-	newset->subformula(0,newform);
+	newset->subformula(0, newform);
 	return newset;
 }
 
@@ -477,13 +476,13 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, TermParseInfo());
 	auto termneg = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
-	newset->subformula(0,newform);
+	newset->subformula(0, newform);
 	auto minSymbol = (*(term->sort()->firstVocabulary()))->func("-/1");
 	auto newterm = new FuncTerm(minSymbol, { term }, term->pi());
-	newset->subterm(0,newterm);
+	newset->subterm(0, newterm);
 	return newset;
 }
 
@@ -492,11 +491,11 @@ QuantSetExpr* QuantSetExpr::zeroSubset() const {
 	auto form = newset->subformulas()[0];
 	auto term = newset->subterms()[0];
 	auto nul = DomainElementFactory::createGlobal()->create(0);
-	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0,0), nul, TermParseInfo());
+	auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, TermParseInfo());
 	auto termisnul = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::EQ }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termisnul }, form->pi());
-	newset->subformula(0,newform);
-	newset->subterm(0,nulterm);
+	newset->subformula(0, newform);
+	newset->subterm(0, nulterm);
 	delete term;
 	return newset;
 }
@@ -511,7 +510,7 @@ Sort* QuantSetExpr::sort() const {
 		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::floatsort())) {
 			return VocabularyUtils::floatsort();
 		} else {
-			Error::notsubsort(termsort->name(),VocabularyUtils::floatsort()->name(),pi());
+			Error::notsubsort(termsort->name(), VocabularyUtils::floatsort()->name(), pi());
 			return NULL;
 		}
 	} else {
@@ -522,7 +521,7 @@ Sort* QuantSetExpr::sort() const {
 
 tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 	if (structure == NULL) {
-		return tablesize(TST_UNKNOWN,0);
+		return tablesize(TST_UNKNOWN, 0);
 	}
 	size_t currentsize = 1;
 	TableSizeType tst = TST_EXACT;
@@ -532,9 +531,9 @@ tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 		tablesize qvardomsize = qvardom->size();
 		switch (qvardomsize._type) {
 		case TST_UNKNOWN:
-			return tablesize(TST_UNKNOWN,0);
+			return tablesize(TST_UNKNOWN, 0);
 		case TST_INFINITE:
-			return tablesize(TST_INFINITE,0);
+			return tablesize(TST_INFINITE, 0);
 		case TST_APPROXIMATED:
 			currentsize *= qvardomsize._size;
 			tst = TST_APPROXIMATED;
@@ -544,7 +543,7 @@ tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 			break;
 		}
 	}
-	return tablesize(tst,currentsize);
+	return tablesize(tst, currentsize);
 }
 
 ostream& QuantSetExpr::put(ostream& output) const {

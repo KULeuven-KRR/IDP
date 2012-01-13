@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GROUNDTHEORY_HPP_
 #define GROUNDTHEORY_HPP_
@@ -44,12 +44,24 @@ private:
 	}
 
 public:
-	const std::vector<GroundClause>& getClauses() const { return _clauses; }
-	const std::vector<GroundSet*>& getSets() const { return _sets; }
-	const std::vector<GroundAggregate*>& getAggregates() const { return _aggregates; }
-	const std::vector<GroundFixpDef*>& getFixpDefinitions() const { return _fixpdefs; }
-	const std::vector<CPReification*>& getCPReifications() const { return _cpreifications; }
-	const std::map<int, GroundDefinition*>& getDefinitions() const { return _definitions; }
+	const std::vector<GroundClause>& getClauses() const {
+		return _clauses;
+	}
+	const std::vector<GroundSet*>& getSets() const {
+		return _sets;
+	}
+	const std::vector<GroundAggregate*>& getAggregates() const {
+		return _aggregates;
+	}
+	const std::vector<GroundFixpDef*>& getFixpDefinitions() const {
+		return _fixpdefs;
+	}
+	const std::vector<CPReification*>& getCPReifications() const {
+		return _cpreifications;
+	}
+	const std::map<int, GroundDefinition*>& getDefinitions() const {
+		return _definitions;
+	}
 
 	void polStartTheory(GroundTranslator* translator);
 	void polEndTheory();

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TERMEXTRACTOR_HPP_
 #define TERMEXTRACTOR_HPP_
@@ -30,8 +30,8 @@ private:
 	std::vector<const FOBDDArgument*> _terms;
 	std::string _funcname;
 public:
-	TermCollector(FOBDDManager* m) :
-			FOBDDVisitor(m), _funcname("") {
+	TermCollector(FOBDDManager* m)
+			: FOBDDVisitor(m), _funcname("") {
 	}
 
 	const std::vector<const FOBDDArgument*>& getTerms(const FOBDDArgument* arg, const std::string& funcname) {
@@ -55,7 +55,7 @@ public:
 
 	void visit(const FOBDDFuncTerm* functerm) {
 		if (functerm->func()->name() == _funcname) {
-			for(auto i=functerm->args().cbegin(); i<functerm->args().cend(); ++i){
+			for (auto i = functerm->args().cbegin(); i < functerm->args().cend(); ++i) {
 				(*i)->accept(this);
 			}
 		} else {

@@ -109,7 +109,6 @@ Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
-
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
 
@@ -117,16 +116,14 @@ Formula* substituteTerm(Formula*, Term*, Variable*);
 Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all partial terms outside atoms */
-Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, 
-		AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Recursively remove all nested terms */
-Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, 
-		Vocabulary* voc = NULL);
+Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, 
-		bool cpsupport = false, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false,
+		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -135,7 +132,7 @@ void addCompletion(AbstractTheory*);
 void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
-  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
+ * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Merge two theories */
@@ -156,14 +153,11 @@ AbstractTheory* removeEquivalences(AbstractTheory*);
 /** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
 AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
-
 /** Recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL,
-		Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Rewrite the theory so that there are no nested terms */
-void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, 
-		AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 }
 
 namespace TermUtils {
@@ -186,7 +180,7 @@ namespace SetUtils {
 bool approxTwoValued(SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false, 
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
@@ -201,7 +195,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false, 
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 

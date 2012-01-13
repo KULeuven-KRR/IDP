@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GTGenerator_HPP_
 #define GTGenerator_HPP_
@@ -43,9 +43,9 @@ private:
 
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
-			CompType type) :
-			_leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input), _left(
-					leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), increaseouter(false) {
+			CompType type)
+			: _leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input),
+				_left(leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), increaseouter(false) {
 		if (_input == Input::RIGHT) {
 			_leftsort = rightsort;
 			_rightsort = leftsort;
@@ -56,13 +56,13 @@ public:
 		}
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<_leftvar <<"[" <<toString(_leftsort) <<"]" <<(_input!=Input::NONE?"(in)":"(out)");
-		stream <<toString(comparison);
-		stream <<_rightvar <<"[" <<toString(_rightsort) <<"]" <<(_input==Input::BOTH?"(in)":"(out)");
+	virtual void put(std::ostream& stream) {
+		stream << _leftvar << "[" << toString(_leftsort) << "]" << (_input != Input::NONE ? "(in)" : "(out)");
+		stream << toString(comparison);
+		stream << _rightvar << "[" << toString(_rightsort) << "]" << (_input == Input::BOTH ? "(in)" : "(out)");
 	}
 
-	ComparisonGenerator* clone() const{
+	ComparisonGenerator* clone() const {
 		return new ComparisonGenerator(*this);
 	}
 
@@ -75,10 +75,11 @@ public:
 	 * The first argument is the finite one of such is available.
 	 * NOTE: optimized for EQ comparison
 	 */
-	void findNext(SortIterator* finiteside, SortIterator* undefinedside, SortTable* undefinedSort, const DomElemContainer* finiteContainer, const DomElemContainer* undefinedContainer){
+	void findNext(SortIterator* finiteside, SortIterator* undefinedside, SortTable* undefinedSort, const DomElemContainer* finiteContainer,
+			const DomElemContainer* undefinedContainer) {
 		bool stop = false;
-		for(; not finiteside->isAtEnd() && not stop; ++(*finiteside)){
-			if(comparison!=CompType::EQ){
+		for (; not finiteside->isAtEnd() && not stop; ++(*finiteside)) {
+			if (comparison != CompType::EQ) {
 				for (; not (*undefinedside).isAtEnd() && not stop; ++(*undefinedside)) {
 					if (checkAndSet() == CompResult::VALID) {
 						stop = true;
@@ -89,8 +90,8 @@ public:
 					break;
 				}
 				*undefinedside = undefinedSort->sortBegin();
-			}else{
-				if(undefinedSort->contains(**finiteside)){
+			} else {
+				if (undefinedSort->contains(**finiteside)) {
 					finiteContainer->operator =(**finiteside);
 					undefinedContainer->operator =(**finiteside);
 					increaseouter = true;
@@ -106,61 +107,62 @@ public:
 	void next() {
 		switch (_input) {
 		case Input::BOTH:
-			if(_reset && correct()){
+			if (_reset && correct()) {
 				_reset = false;
-			}else{
+			} else {
 				notifyAtEnd();
 			}
 			break;
-		case Input::NONE:{
-			if(_reset){
+		case Input::NONE: {
+			if (_reset) {
 				_reset = false;
 				_left = _leftsort->sortBegin();
 				_right = _rightsort->sortBegin();
-			}else{
-				if(_leftsort->finite()){
-					if(increaseouter){
+			} else {
+				if (_leftsort->finite()) {
+					if (increaseouter) {
 						++_left;
 						increaseouter = false;
-					}else{
+					} else {
 						++_right;
 					}
-				}else{
-					if(increaseouter){
+				} else {
+					if (increaseouter) {
 						++_right;
 						increaseouter = false;
-					}else{
+					} else {
 						++_left;
 					}
 				}
 			}
-			if(_leftsort->finite()){ // NOTE: optimized for looping over non-finite sort first (if available)
+			if (_leftsort->finite()) { // NOTE: optimized for looping over non-finite sort first (if available)
 				findNext(&_left, &_right, _rightsort, _leftvar, _rightvar);
-			}else{
+			} else {
 				findNext(&_right, &_left, _leftsort, _rightvar, _leftvar);
 			}
-			break;}
+			break;
+		}
 		case Input::LEFT: // NOTE: optimized EQ comparison
-			if(_reset){
+			if (_reset) {
 				_reset = false;
-				if(comparison==CompType::EQ){
-					if(_rightsort->contains(_leftvar->get())){
+				if (comparison == CompType::EQ) {
+					if (_rightsort->contains(_leftvar->get())) {
 						_rightvar->operator =(_leftvar->get());
-					}else{
+					} else {
 						notifyAtEnd();
 					}
 					return;
-				}else{
+				} else {
 					_right = _rightsort->sortBegin();
 				}
-			}else{
-				if(comparison==CompType::EQ){
+			} else {
+				if (comparison == CompType::EQ) {
 					notifyAtEnd();
 					break;
 				}
 				++_right;
 			}
-			for(; not _right.isAtEnd(); ++_right){
+			for (; not _right.isAtEnd(); ++_right) {
 				if (checkAndSet() == CompResult::VALID) {
 					break;
 				}
@@ -170,25 +172,26 @@ public:
 			}
 			break;
 		case Input::RIGHT:
-			Assert(false); // Guaranteed not to happen
+			Assert(false);
+			// Guaranteed not to happen
 			break;
 		}
 	}
 
 private:
-	bool leftIsInput() const{
-		return _input==Input::BOTH || _input==Input::LEFT;
+	bool leftIsInput() const {
+		return _input == Input::BOTH || _input == Input::LEFT;
 	}
-	bool rightIsInput() const{
-		return _input==Input::BOTH;
+	bool rightIsInput() const {
+		return _input == Input::BOTH;
 	}
 
 	CompResult checkAndSet() {
 		if (correct()) {
-			if(not leftIsInput()){
+			if (not leftIsInput()) {
 				_leftvar->operator =(*_left);
 			}
-			if(not rightIsInput()){
+			if (not rightIsInput()) {
 				_rightvar->operator =(*_right);
 			}
 			return CompResult::VALID;
@@ -196,16 +199,16 @@ private:
 		return CompResult::INVALID;
 	}
 
-	bool correct(){
+	bool correct() {
 		const DomainElement *leftelem, *rightelem;
-		if(leftIsInput()){
+		if (leftIsInput()) {
 			leftelem = _leftvar->get();
-		}else{
+		} else {
 			leftelem = *_left;
 		}
-		if(rightIsInput()){
+		if (rightIsInput()) {
 			rightelem = _rightvar->get();
-		}else{
+		} else {
 			rightelem = *_right;
 		}
 		bool compsuccess = false;

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef SIMPLELOOKUPGENERATOR_HPP_
 #define SIMPLELOOKUPGENERATOR_HPP_
@@ -16,11 +16,11 @@
 /**
  * A generator which checks whether a fully instantiated list of variables is a valid tuple for a certain predicate
  */
-class LookupGenerator : public InstGenerator {
+class LookupGenerator: public InstGenerator {
 private:
-	const PredTable*						_table;
-	std::vector<const DomElemContainer*>	_vars;
-	Universe								_universe; // FIXME waarvoor is dit universe nu juist nodig? => om het juiste supertype mee te geven, je moet niet perse genereren over het type van de tabel
+	const PredTable* _table;
+	std::vector<const DomElemContainer*> _vars;
+	Universe _universe; // FIXME waarvoor is dit universe nu juist nodig? => om het juiste supertype mee te geven, je moet niet perse genereren over het type van de tabel
 
 	bool _reset;
 

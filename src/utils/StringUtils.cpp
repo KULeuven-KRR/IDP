@@ -60,8 +60,8 @@ string replaceAllAndTrimEachLine(const string& text, const string& find, const s
 	string::size_type prevpos = 0;
 	string::size_type position = text.find("\n");
 	while (position != string::npos) {
-		if(prevpos<position-1){ // Remove empty lines
-			ss << trim(text.substr(prevpos, position - 1)) <<"\n";
+		if (prevpos < position - 1) { // Remove empty lines
+			ss << trim(text.substr(prevpos, position - 1)) << "\n";
 		}
 		prevpos = position;
 		position = text.find(find, position + 1);
