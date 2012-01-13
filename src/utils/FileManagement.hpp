@@ -8,12 +8,23 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef FILEMANAGEMENT_HPP_
-#define FILEMANAGEMENT_HPP_
+#ifndef IDP_FILEMANAGEMENT_HPP_
+#define IDP_FILEMANAGEMENT_HPP_
 
 #include <vector>
 #include <string>
+#include <fstream>
 
 std::vector<std::string> getAllFilesInDirs(const std::string& prefix, const std::vector<std::string>& dirs);
 
-#endif /* FILEMANAGEMENT_HPP_ */
+template<typename T>
+bool fileIsReadable(T* filename) { //quick and dirty
+	std::ifstream f(filename, std::ios::in);
+	bool exists = f.is_open();
+	if (exists) {
+		f.close();
+	}
+	return exists;
+}
+
+#endif /* IDP_FILEMANAGEMENT_HPP_ */

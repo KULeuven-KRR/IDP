@@ -27,6 +27,8 @@
 #include "monitors/luainteractiveprintmonitor.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "IdpException.hpp"
+#include "utils/ListUtils.hpp"
+
 using namespace std;
 using namespace LuaConnection;
 
@@ -119,6 +121,31 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 
 namespace LuaConnection {
 
+lua_State* _state;
+lua_State* getState() {
+	return _state;
+}
+
+map<AbstractStructure*, unsigned int> _luastructures;
+map<AbstractTheory*, unsigned int> _luatheories;
+map<Options*, unsigned int> _luaoptions;
+
+template<typename T>
+map<T, unsigned int>& get();
+
+template<>
+map<AbstractTheory*, unsigned int>& get<AbstractTheory*>() {
+	return _luatheories;
+}
+template<>
+map<AbstractStructure*, unsigned int>& get<AbstractStructure*>() {
+	return _luastructures;
+}
+template<>
+map<Options*, unsigned int>& get<Options*>() {
+	return _luaoptions;
+}
+
 int InternalProcedure::operator()(lua_State* L) const {
 	std::vector<InternalArgument> args;
 	for (int arg = 1; arg <= lua_gettop(L); ++arg) {
@@ -162,17 +189,6 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		lua_setfield(state, LUA_REGISTRYINDEX, procedure->registryindex().c_str());
 	}
 }
-
-lua_State* _state;
-
-lua_State* getState() {
-	return _state;
-}
-
-// garbage collection
-map<AbstractStructure*, unsigned int> _luastructures;
-map<AbstractTheory*, unsigned int> _luatheories;
-map<Options*, unsigned int> _luaoptions;
 
 /**
  * Push a domain element to the lua stack
@@ -647,18 +663,53 @@ int internalCall(lua_State* L) {
 	return (*proc)(L);
 }
 
-/*************************
- Garbage collection
- *************************/
+/**********************
+ * Garbage collection
+ **********************/
 
-template<class T> int garbageCollect(T obj) {
+template<typename T>
+int garbageCollect(lua_State* L) {
+	auto t = *(T*) lua_touserdata(L, 1);
+	auto& list = get<T>();
+	auto it = list.find(t);
+	if (it != list.cend()) {
+		--(it->second);
+		if ((it->second) == 0) {
+			list.erase(t);
+			delete (t);
+		}
+	}
+	return 0;
+}
+
+template<>
+int garbageCollect<AbstractTheory*>(lua_State* L) {
+	auto t = *(AbstractTheory**) lua_touserdata(L, 1);
+	auto& list = get<AbstractTheory*>();
+	auto it = list.find(t);
+	if (it != list.cend()) {
+		--(it->second);
+		if ((it->second) == 0) {
+			list.erase(t);
+			t->recursiveDelete();
+		}
+	}
+	return 0;
+}
+
+template<typename T>
+int garbageCollect(T obj) {
 	delete (obj);
 	return 0;
 }
 
+
 // FIXME commented garbage collection?
 // TODO cleanup garbage collection
-int gcInternProc(lua_State*) { /*return garbageCollect(*(map<vector<ArgType>,InternalProcedure*>**)lua_touserdata(L,1));*/
+int gcInternProc(lua_State* L) {
+	auto t = *(map<vector<ArgType>,InternalProcedure*>**) lua_touserdata(L,1);
+	deleteList(*t);
+	delete (t);
 	return 0;
 }
 int gcSort(lua_State* L) {
@@ -712,35 +763,15 @@ int gcDomain(lua_State* L) {
 	return 0;
 }
 
-int gcStructure(lua_State*) {
-	/* TODO: uncomment
-	 AbstractStructure* s = *(AbstractStructure**)lua_touserdata(L,1);
-	 map<AbstractStructure*,unsigned int>::iterator it = _luastructures.find(s);
-	 if(it != _luastructures.cend()) {
-	 --(it->second);
-	 if((it->second) == 0) {
-	 _luastructures.erase(s);
-	 delete(s);
-	 }
-	 }
-	 */
-	return 0;
+int gcStructure(lua_State* L) {
+	return garbageCollect<AbstractStructure*>(L);
 }
 
 /**
  * Garbage collection for theories
  */
 int gcTheory(lua_State* L) {
-	AbstractTheory* t = *(AbstractTheory**) lua_touserdata(L, 1);
-	map<AbstractTheory*, unsigned int>::iterator it = _luatheories.find(t);
-	if (it != _luatheories.cend()) {
-		--(it->second);
-		if ((it->second) == 0) {
-			_luatheories.erase(t);
-			t->recursiveDelete();
-		}
-	}
-	return 0;
+	return garbageCollect<AbstractTheory*>(L);
 }
 
 int gcFormula(lua_State*) {
@@ -762,16 +793,7 @@ int gcTerm(lua_State*) {
  * Garbage collection for options
  */
 int gcOptions(lua_State* L) {
-	Options* opts = *(Options**) lua_touserdata(L, 1);
-	map<Options*, unsigned int>::iterator it = _luaoptions.find(opts);
-	if (it != _luaoptions.cend()) {
-		--(it->second);
-		if (it->second == 0) {
-			_luaoptions.erase(opts);
-			delete (opts);
-		}
-	}
-	return 0;
+	return garbageCollect<Options*>(L);
 }
 
 /**
@@ -1708,7 +1730,7 @@ void functionMetaTable(lua_State* L) {
 
 void symbolMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader(&gcInternProc, "__gc"));
+	elements.push_back(tablecolheader(&gcSymbol, "__gc"));
 	elements.push_back(tablecolheader(&symbolIndex, "__index"));
 	elements.push_back(tablecolheader(&symbolArity, "__div"));
 	createNewTable(L, AT_SYMBOL, elements);
@@ -1883,7 +1905,7 @@ void addInternalProcedure(Inference* inf) {
 	ns2name2procedures[inf->getNamespace()][inf->getName()][inf->getArgumentTypes()] = proc;
 }
 
-void addInternalProcedures(lua_State* L) {
+void addInternalProcedures(lua_State*) {
 	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
 		addInternalProcedure((*i).get());
 	}
@@ -1895,7 +1917,8 @@ void addInternalProcedures(lua_State* L) {
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
-		}lua_getglobal(_state, nsspace.c_str());
+		}
+		lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
 			auto possiblearguments = new internalprocargmap(j->second);
 			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
@@ -1944,10 +1967,9 @@ void makeLuaConnection() {
 	// Parse configuration file
 	err = luaL_dofile(_state,getPathOfConfigFile().c_str());
 	if (err) {
-		clog << "Error in configuration file, searched in " <<getPathOfConfigFile() <<"\n";
+		clog << "Error in configuration file, searched in " << getPathOfConfigFile() <<"\n";
 		exit(1);
 	}
-
 }
 
 /**
@@ -1955,13 +1977,17 @@ void makeLuaConnection() {
  */
 void closeLuaConnection() {
 	lua_close(_state);
-	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
-		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
-			for (auto k = j->second.cbegin(); k != j->second.cend(); ++k) {
-				delete (k->second);
-			}
-		}
-	}
+	//FIXME it seems that all of the Internal Procedures have been deleted by gc.
+	//FIXME no, they are not, just some are deleted...
+//	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
+//		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
+//			for (auto k = j->second.cbegin(); k != j->second.cend(); ++k) {
+//				if (k->second != NULL) {
+//					delete (k->second);
+//				}
+//			}
+//		}
+//	}
 }
 
 const DomainElement* execute(const std::string& chunk) {

@@ -80,41 +80,38 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe, const Formula* original) {
+InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const Universe& universe, const Formula* original) {
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
-	for(unsigned int i=0; i<universe.tables().size(); ++i){
-		if (pattern[i]==Pattern::OUTPUT) {
+	for (size_t i = 0; i < universe.tables().size(); ++i) {
+		if (pattern[i] == Pattern::OUTPUT) {
 			checkInfinity(universe.tables()[i], original);
 		}
 	}
-
 	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe){
+InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const Universe& universe){
 	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;
 	if (sametypeid<Predicate>(*(atom->symbol()))) {
 		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
 		auto inter = structure->inter(predicate);
 		switch (predicate->type()) {
-			case ST_NONE:
+		case ST_NONE:
 			table = inverse ? inter->cf() : inter->ct();
 			break;
-			case ST_CT:
+		case ST_CT:
 			table = inverse ? inter->pf() : inter->ct();
 			break;
-			case ST_CF:
+		case ST_CF:
 			table = inverse ? inter->pt() : inter->cf();
 			break;
-			case ST_PT:
+		case ST_PT:
 			table = inverse ? inter->cf() : inter->pt();
 			break;
-			case ST_PF:
+		case ST_PF:
 			table = inverse ? inter->ct() : inter->pf();
 			break;
 		}
@@ -126,9 +123,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 	return GeneratorFactory::create(table, pattern, vars, universe, atom);
 }
 
-InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe) {
-
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
 	Assert(pattern.size()==vars.size());
 	Assert(pattern.size()==universe.tables().size());
@@ -137,9 +132,10 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 	_pattern = pattern;
 	_vars = vars;
 	_universe = universe;
-	for (unsigned int n = 0; n < _vars.size(); ++n) {
+
+	for (size_t n = 0; n < _vars.size(); ++n) {
 		_firstocc.push_back(n);
-		for (unsigned int m = 0; m < n; ++m) {
+		for (size_t m = 0; m < n; ++m) {
 			if (_vars[n] == _vars[m]) {
 				_firstocc[n] = m;
 				break;
@@ -147,14 +143,14 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 		}
 	}
 
-	unsigned int firstout = 0;
+	size_t firstout = 0;
 	for (; firstout < pattern.size(); ++firstout) {
 		if (pattern[firstout] == Pattern::OUTPUT) {
 			break;
 		}
 	}
 	if (firstout == pattern.size()) { // no output variables
-		if (typeid(*(pt->internTable())) != typeid(BDDInternalPredTable)) {
+		if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
 			return new LookupGenerator(pt, vars, _universe);
 		} else {
 			StructureVisitor::visit(pt);

@@ -12,9 +12,9 @@
 #include "structure.hpp"
 #include "internalargument.hpp"
 
+// Note: following containers are used for garbage collection.
 std::set<SortTable*> domains;
 std::set<std::vector<InternalArgument>*> arguments;
-std::set<AbstractStructure*> structures;
 
 void addToGarbageCollection(SortTable* table) {
 	domains.insert(table);
@@ -22,10 +22,6 @@ void addToGarbageCollection(SortTable* table) {
 
 void addToGarbageCollection(std::vector<InternalArgument>* list) {
 	arguments.insert(list);
-}
-
-void addToGarbageCollection(AbstractStructure* structure) {
-	structures.insert(structure);
 }
 
 void garbageCollect(SortTable* table) {
@@ -41,14 +37,6 @@ void garbageCollect(std::vector<InternalArgument>* list) {
 	if (it != arguments.cend()) {
 		delete (*it);
 		arguments.erase(list);
-	}
-}
-
-void garbageCollect(AbstractStructure* list) {
-	auto it = structures.find(list);
-	if (it != structures.cend()) {
-		delete (*it);
-		structures.erase(list);
 	}
 }
 

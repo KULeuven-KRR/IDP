@@ -101,7 +101,7 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 	}
 	CPTerm* left = body->left();
 	CPBound right = body->right();
-	if(typeid(*left) == typeid(CPVarTerm)) {
+	if(sametypeid<CPVarTerm>(*left)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 		polAddCPVariable(term->varid(), _termtranslator);
 		if(right._isvarid) {
@@ -120,7 +120,7 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 			sentence.rel = comp;
 			getSolver().add(sentence);
 		}
-	} else if(typeid(*left) == typeid(CPSumTerm)) {
+	} else if(sametypeid<CPSumTerm>(*left)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 		polAddCPVariables(term->varids(), _termtranslator);
 		if(right._isvarid) {
@@ -139,7 +139,7 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp, getSolver());
 		}
 	} else {
-		Assert(typeid(*left) == typeid(CPWSumTerm));
+		Assert(sametypeid<CPWSumTerm>(*left));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		polAddCPVariables(term->varids(), _termtranslator);
 		if(right._isvarid) {

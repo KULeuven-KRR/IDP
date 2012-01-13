@@ -30,14 +30,14 @@ class TermGrounder {
 	protected:
 		AbstractGroundTheory*						_grounding;
 		mutable SortTable*							_domain;
-		const Term*									_origterm;
+		Term*										_origterm;
 		std::map<Variable*,const DomElemContainer*>	_varmap;
 		int											_verbosity;
 		void printOrig() const;
 	public:
 		TermGrounder() { }
 		TermGrounder(AbstractGroundTheory* g, SortTable* dom) : _grounding(g), _domain(dom) { }
-		virtual ~TermGrounder() { }
+		virtual ~TermGrounder();
 		virtual GroundTerm run() const = 0;
 		void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
 		SortTable* 	getDomain() const 			{ return _domain; }

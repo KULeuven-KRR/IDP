@@ -538,11 +538,11 @@ private:
 public:
 	Universe() {
 	}
-	Universe(const std::vector<SortTable*>& tables) :
-			_tables(tables) {
+	Universe(const std::vector<SortTable*>& tables)
+			: _tables(tables) {
 	}
-	Universe(const Universe& univ) :
-			_tables(univ.tables()) {
+	Universe(const Universe& univ)
+			: _tables(univ.tables()) {
 	}
 	~Universe() {
 	}

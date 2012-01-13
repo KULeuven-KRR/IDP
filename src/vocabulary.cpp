@@ -187,7 +187,6 @@ bool Sort::builtin() const {
 }
 
 SortTable* Sort::interpretation() const {
-
 	return _interpretation;
 }
 

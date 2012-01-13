@@ -22,8 +22,6 @@
 #include <csignal>
 #include "utils/StringUtils.hpp"
 
-#include "GeneralUtils.hpp"
-
 #include "external/TerminationManagement.hpp"
 
 using namespace std;
@@ -68,9 +66,7 @@ struct CLOptions {
 	string _exec;
 	bool _interactive;
 	bool _readfromstdin;
-	CLOptions() :
-			_exec(""), _interactive(false), _readfromstdin(false) {
-	}
+	CLOptions() : _exec(""), _interactive(false), _readfromstdin(false) { }
 };
 
 /** 
@@ -278,8 +274,7 @@ const DomainElement* executeProcedure(const string& proc) {
 
 	if (proc != "") {
 		// NOTE: as we allow in lua to replace . with ::, we have to convert the other way here!
-		string temp = proc;
-		replaceAll<std::string>(temp, "::", ".");
+		string temp = replaceAllIn(proc, "::", ".");
 
 		setStop(false);
 		hasStopped = false;

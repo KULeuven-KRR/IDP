@@ -24,27 +24,27 @@ private:
 	bool _reset;
 public:
 	SortInstGenerator(const InternalSortTable* table, const DomElemContainer* var)
-			:_table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
+			: _table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
 	}
 
-	SortInstGenerator* clone() const{
+	SortInstGenerator* clone() const {
 		return new SortInstGenerator(*this);
 	}
 
-	void reset(){
+	void reset() {
 		_reset = true;
 	}
 
-	void next(){
-		if(_reset){
+	void next() {
+		if (_reset) {
 			_reset = false;
 			_curr = _table->sortBegin();
-		}else{
+		} else {
 			++_curr;
 		}
-		if(_curr.isAtEnd()){
+		if (_curr.isAtEnd()) {
 			notifyAtEnd();
-		}else{
+		} else {
 			*_var = *_curr;
 		}
 	}

@@ -26,7 +26,6 @@
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
 #include "common.hpp"
-#include "GeneralUtils.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
@@ -360,6 +359,9 @@ void GrounderFactory::visit(const Theory* theory) {
 	}
 
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
+
+	// Clean up: delete the theory clone.
+	newtheory->recursiveDelete();
 }
 
 /**
@@ -438,16 +440,18 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
-		if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
+		}
 		return;
 	}
 
 	if (_context._component == CompContext::HEAD) {
 		PredInter* inter = _structure->inter(newpf->symbol());
 		_headgrounder = new HeadGrounder(_grounding, inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables);
-		if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
+		}
 		return;
 	}
 
@@ -503,8 +507,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 		_topgrounder = _formgrounder;
 	}
 	newpf->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
+	}
 }
 
 /**
@@ -924,8 +929,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 // TODO verify
 template<typename OrigConstruct>
-GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype,
-		TruthType checkertype) {
+GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
 	vector<const DomElemContainer*> vars;
 	vector<SortTable*> tables;
 	vector<Variable*> fovars, quantfovars;
@@ -1052,7 +1056,7 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 	return gf.create(hvars, hvst, original);
 }
 
-DomElemContainer* GrounderFactory::createVarMapping(Variable * const var) {
+DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 	Assert(varmapping().find(var)==varmapping().cend());
 	auto d = new DomElemContainer();
 	_varmapping[var] = d;
@@ -1069,8 +1073,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjPathUntilNode = false;
 
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
-			_cpsymbols);
+	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {

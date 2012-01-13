@@ -10,7 +10,6 @@
 
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
 
-#include <iostream>
 #include "vocabulary.hpp"
 #include "ecnf.hpp"
 #include "inferences/grounding/grounders/TermGrounders.hpp"
@@ -20,7 +19,9 @@
 #include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
+#include "utils/ListUtils.hpp"
 #include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -28,10 +29,22 @@ int verbosity() {
 	return getOption(IntType::GROUNDVERBOSITY);
 }
 
-//TODO: a lot of the "int" returns here should be "Lit": Issue 57199
-
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
 		: Grounder(grounding, ct), _origform(NULL) {
+}
+
+FormulaGrounder::~FormulaGrounder() {
+	if (_origform != NULL) {
+		_origform->recursiveDelete();
+		_origform = NULL;
+	}
+	if (not _origvarmap.empty()) {
+		for (auto i = _origvarmap.begin(); i != _origvarmap.end(); ++i) {
+			delete (i->first);
+			//delete (i->second);
+		}
+		_origvarmap.clear();
+	}
 }
 
 GroundTranslator* FormulaGrounder::translator() const {
@@ -73,6 +86,13 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
 			_symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter) {
 	gentype = ct.gentype;
+}
+
+AtomGrounder::~AtomGrounder() {
+	deleteList(_subtermgrounders);
+	delete (_pchecker);
+	delete (_cchecker);
+	deleteList(_checkargs);
 }
 
 Lit AtomGrounder::run() const {
@@ -196,6 +216,11 @@ void AtomGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run());
 }
 
+ComparisonGrounder::~ComparisonGrounder() {
+	delete (_lefttermgrounder);
+	delete (_righttermgrounder);
+}
+
 Lit ComparisonGrounder::run() const {
 	const GroundTerm& left = _lefttermgrounder->run();
 	const GroundTerm& right = _righttermgrounder->run();
@@ -259,13 +284,18 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
+AggGrounder::~AggGrounder() {
+	delete (_setgrounder);
+	delete (_boundgrounder);
+}
+
 /**
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 //TODO:why?
 Lit AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
 	TsType tp = context()._tseitin;
-	int tseitin = translator()->translate(boundvalue, negateComp(_comp), _type, setnr, tp);
+	Lit tseitin = translator()->translate(boundvalue, negateComp(_comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -334,24 +364,26 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 	if (simplify) {
 		if (_doublenegtseitin) {
 			if (negateset) {
-				int tseitin = translator()->translate(tsset.literals(), !conj, tp);
+				Lit tseitin = translator()->translate(tsset.literals(), !conj, tp);
 				return isPos(_sign) ? -tseitin : tseitin;
 			} else {
-				vector<int> newsetlits(tsset.size());
-				for (unsigned int n = 0; n < tsset.size(); ++n)
+				vector<Lit> newsetlits(tsset.size());
+				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
-				int tseitin = translator()->translate(newsetlits, !conj, tp);
+				}
+				Lit tseitin = translator()->translate(newsetlits, !conj, tp);
 				return isPos(_sign) ? -tseitin : tseitin;
 			}
 		} else {
 			if (negateset) {
-				vector<int> newsetlits(tsset.size());
-				for (unsigned int n = 0; n < tsset.size(); ++n)
+				vector<Lit> newsetlits(tsset.size());
+				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
-				int tseitin = translator()->translate(newsetlits, conj, tp);
+				}
+				Lit tseitin = translator()->translate(newsetlits, conj, tp);
 				return isPos(_sign) ? tseitin : -tseitin;
 			} else {
-				int tseitin = translator()->translate(tsset.literals(), conj, tp);
+				Lit tseitin = translator()->translate(tsset.literals(), conj, tp);
 				return isPos(_sign) ? tseitin : -tseitin;
 			}
 		}
@@ -359,7 +391,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 		if (_doublenegtseitin)
 			return handleDoubleNegation(double(leftvalue), setnr);
 		else {
-			int tseitin = translator()->translate(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
+			Lit tseitin = translator()->translate(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
@@ -374,17 +406,17 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
 	Assert(_type==AggFunction::PROD);
 	auto tsset = translator()->groundset(setnr);
-	std::vector<Lit> zerolits;
-	std::vector<double> zeroweights;
+	litlist zerolits;
+	weightlist zeroweights;
 
 	//All literals (made positive) (including the negative)
 	//IMPORTANT: This is NOT only the positives!!!!!!!!!!!
-	std::vector<Lit> poslits;
-	std::vector<double> posweights;
+	litlist poslits;
+	weightlist posweights;
 
 	//Only the negatives! with weights 1 (for cardinalities)
-	std::vector<Lit> neglits;
-	std::vector<double> negweights;
+	litlist neglits;
+	weightlist negweights;
 
 	for (size_t i = 0; i < tsset.literals().size(); ++i) {
 		if (tsset.weight(i) < 0) {
@@ -418,7 +450,7 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 	} else {
 		Lit nozeros = -translator()->translate(zerolits, false, tp);
 		Lit prodright = translator()->translate(abs(newboundvalue), _comp, AggFunction::PROD, possetnumber, tp);
-		std::vector<Lit> possiblecards;
+		litlist possiblecards;
 		if (newboundvalue > 0) {
 			Lit nonegatives = -translator()->translate(neglits, false, tp); //solver cannot handle empty sets.
 			possiblecards.push_back(nonegatives);
@@ -477,13 +509,10 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	if (_doublenegtseitin)
 		return handleDoubleNegation(newboundvalue, setnr);
 	else {
-		int tseitin;
+		Lit tseitin;
 		TsType tp = context()._tseitin;
 		if (isNeg(_sign)) {
-			if (tp == TsType::IMPL)
-				tp = TsType::RIMPL;
-			else if (tp == TsType::RIMPL)
-				tp = TsType::IMPL;
+			tp = reverseImplication(tp);
 		}
 		tseitin = translator()->translate(newboundvalue, _comp, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
@@ -514,7 +543,7 @@ Lit AggGrounder::run() const {
 	}
 
 	// Handle specific aggregates.
-	int tseitin;
+	Lit tseitin;
 	double minpossvalue = truevalue;
 	double maxpossvalue = truevalue;
 	switch (_type) {
@@ -523,11 +552,12 @@ Lit AggGrounder::run() const {
 		break;
 	case AggFunction::SUM:
 		// Compute the minimum and maximum possible value of the sum.
-		for (unsigned int n = 0; n < tsset.size(); ++n) {
-			if (tsset.weight(n) > 0)
+		for (size_t n = 0; n < tsset.size(); ++n) {
+			if (tsset.weight(n) > 0) {
 				maxpossvalue += tsset.weight(n);
-			else if (tsset.weight(n) < 0)
+			} else if (tsset.weight(n) < 0) {
 				minpossvalue += tsset.weight(n);
+			}
 		}
 		// Finish
 		tseitin = finish(boundvalue, (boundvalue - truevalue), minpossvalue, maxpossvalue, setnr);
@@ -536,7 +566,7 @@ Lit AggGrounder::run() const {
 		// Compute the minimum and maximum possible value of the product.
 		bool containsneg = false;
 		bool containszero = false;
-		for (unsigned int n = 0; n < tsset.size(); ++n) {
+		for (size_t n = 0; n < tsset.size(); ++n) {
 			if (abs(tsset.weight(n)) > 1) {
 				maxpossvalue *= abs(tsset.weight(n));
 			} else if (tsset.weight(n) != 0) {
@@ -552,8 +582,9 @@ Lit AggGrounder::run() const {
 		if (truevalue == 0) {
 			return boundvalue == 0 ? _true : _false;
 		}
-		if (containsneg)
+		if (containsneg) {
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
+		}
 		if (containsneg || containszero) {
 			Assert(truevalue != 0);//division is safe (see higher check for truevalue ==0)
 			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
@@ -565,7 +596,7 @@ Lit AggGrounder::run() const {
 	}
 	case AggFunction::MIN:
 		// Compute the minimum possible value of the set.
-		for (unsigned int n = 0; n < tsset.size();) {
+		for (size_t n = 0; n < tsset.size();) {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
 			// TODO: what if some set is used in multiple expressions? Then we are changing the set???
 			if (tsset.weight(n) >= truevalue) {
@@ -600,7 +631,7 @@ Lit AggGrounder::run() const {
 		break;
 	case AggFunction::MAX:
 		// Compute the maximum possible value of the set.
-		for (unsigned int n = 0; n < tsset.size();) {
+		for (size_t n = 0; n < tsset.size();) {
 			maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
 			if (tsset.weight(n) <= truevalue) {
 				tsset.removeLit(n);
@@ -628,7 +659,7 @@ Lit AggGrounder::run() const {
 				return isPos(_sign) ? _false : _true;
 			}
 		} else { //boundvalue > truevalue
-				 // Finish
+			// Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
@@ -758,6 +789,10 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	return FormStat::UNKNOWN;
 }
 
+BoolGrounder::~BoolGrounder() {
+	deleteList(_subgrounders);
+}
+
 // NOTE: Optimized to avoid looping over the formula after construction
 void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	if (verbosity() > 2) {
@@ -779,6 +814,12 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
 	}
+}
+
+QuantGrounder::~QuantGrounder() {
+	delete (_subgrounder);
+	delete (_generator);
+	delete (_checker);
 }
 
 void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
@@ -811,6 +852,11 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
 	}
+}
+
+EquivGrounder::~EquivGrounder() {
+	delete (_leftgrounder);
+	delete (_rightgrounder);
 }
 
 Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {

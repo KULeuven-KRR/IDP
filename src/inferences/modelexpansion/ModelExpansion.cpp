@@ -125,9 +125,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		Assert(newsolution->isConsistent());
 	}
 
-	grounding->recursiveDelete();
+	// Clean up: remove all objects that are only used here.
 	delete (solver);
+	grounding->recursiveDelete();
+	delete (grounder);
 	delete (abstractsolutions);
+	clonetheory->recursiveDelete();
+	delete (newstructure);
+	delete (symstructure);
 
 	return solutions;
 }

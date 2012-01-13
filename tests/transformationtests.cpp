@@ -40,7 +40,7 @@ TEST(FlattenTest,BoolForm) {
 	EXPECT_TRUE(sametypeid<BoolForm>(*result));
 	EXPECT_EQ(3,result->subformulas().size());
 
-	delete result; //TODO Does this delete all of the other elements as well?
+	result->recursiveDelete();
 }
 
 TEST(FlattenTest,QuantForm) {
@@ -57,7 +57,7 @@ TEST(FlattenTest,QuantForm) {
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));
 	EXPECT_EQ(2,result->quantVars().size());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(FlattenTest,Theory) {
@@ -91,7 +91,7 @@ TEST(FlattenTest,Theory) {
 	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
 	EXPECT_EQ(3,ressubformula->subformulas().size());
 
-	delete theory;
+	theory->recursiveDelete();
 }
 
 // GraphFuncsAndAggs - formula,theory
@@ -110,7 +110,7 @@ TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
 	EXPECT_TRUE(sametypeid<Function>(*(respredform->symbol())));
 	EXPECT_EQ(f.f()->name(),respredform->symbol()->name());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
@@ -139,7 +139,7 @@ TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
 	auto subf2 = dynamic_cast<PredForm*>(ressubformula->subformulas()[1]);
 	ASSERT_TRUE(sametypeid<Function>(*subf2->symbol()));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(GraphFuncsAndAggsTest,OneAggTerm) {
@@ -162,7 +162,7 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 	EXPECT_EQ(CompType::EQ,resaggform->comp());
 	EXPECT_EQ(sumterm,resaggform->right());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(GraphFuncsAndAggsTest,TwoAggTerm) {
@@ -192,7 +192,7 @@ TEST(GraphFuncsAndAggsTest,TwoAggTerm) {
 	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[0]));
 	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[1]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(GraphFuncsAndAggsTest,FuncTermAndAggTerm) {
@@ -222,7 +222,7 @@ TEST(GraphFuncsAndAggsTest,FuncTermAndAggTerm) {
 	ASSERT_TRUE(sametypeid<Function>(*subf->symbol()));
 	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[1]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 // PushNegations - theory
@@ -243,7 +243,7 @@ TEST(PushNegationsTest,BoolForm) {
 	EXPECT_TRUE(isNeg(result->subformulas()[0]->sign()));
 	EXPECT_TRUE(isNeg(result->subformulas()[1]->sign()));
 	
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(PushNegationsTest,NestedBoolForm) {
@@ -264,7 +264,7 @@ TEST(PushNegationsTest,NestedBoolForm) {
 	EXPECT_TRUE(isNeg(result->subformulas()[0]->sign()));
 	EXPECT_TRUE(isPos(result->subformulas()[1]->sign()));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(PushNegationsTest,QuantForm) {
@@ -283,7 +283,7 @@ TEST(PushNegationsTest,QuantForm) {
 	ASSERT_EQ(1,result->subformulas().size());
 	EXPECT_TRUE(isNeg(result->subformulas()[0]->sign()));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 //TEST(PushNegationsTest,EqChainForm) {
@@ -316,7 +316,7 @@ TEST(PushNegationsTest,Theory) {
 	EXPECT_TRUE(isNeg(resformula->subformulas()[0]->sign()));
 	EXPECT_TRUE(isNeg(resformula->subformulas()[1]->sign()));
 
-	delete theory;
+	theory->recursiveDelete();
 }
 
 // PushQuantifiers - theory
@@ -348,7 +348,7 @@ TEST(PushQuantifiersTest,Theory) {
 	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[0]));
 	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[1]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 // RemoveEquivalences - formula,theory
@@ -364,7 +364,7 @@ TEST(RemoveEquivalencesTest,EquivForm) {
 	ASSERT_TRUE(sametypeid<BoolForm>(*result));
 	ASSERT_EQ(2,result->subformulas().size());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 // SplitComparisonChains - formula,theory
@@ -382,7 +382,7 @@ TEST(SplitComparisonChainsTest,NormalEqChainForm) {
 	ASSERT_TRUE(sametypeid<BoolForm>(*result));
 	ASSERT_EQ(2,result->subformulas().size());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(SplitComparisonChainsTest,WeirdEqChainForm) {
@@ -399,7 +399,7 @@ TEST(SplitComparisonChainsTest,WeirdEqChainForm) {
 	ASSERT_TRUE(sametypeid<BoolForm>(*result));
 	ASSERT_EQ(2,result->subformulas().size());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 // SplitIntoMonotoneAgg
@@ -424,7 +424,7 @@ TEST(SubstituteTermTest,Formula) {
 	ASSERT_TRUE(sametypeid<VarTerm>(*subterm));
 	ASSERT_EQ(y,dynamic_cast<VarTerm*>(subterm)->var());
 
-	delete result;
+	result->recursiveDelete();
 }
 
 // UnnestPartialTerms
@@ -452,7 +452,7 @@ TEST(UnnestTermsTest,TwoFuncTermsEQ) {
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(UnnestTermsTest,TwoFuncTermsLT) {
@@ -475,7 +475,7 @@ TEST(UnnestTermsTest,TwoFuncTermsLT) {
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(UnnestTermsTest,TwoVarTermsEQ) {
@@ -490,7 +490,7 @@ TEST(UnnestTermsTest,TwoVarTermsEQ) {
 
 	ASSERT_EQ(&eqxy,result);
 
-	delete result;
+	result->recursiveDelete();
 }
 
 TEST(UnnestTermsTest,NestedFuncTerms) {
@@ -515,7 +515,7 @@ TEST(UnnestTermsTest,NestedFuncTerms) {
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
 	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
 
-	delete result;
+	result->recursiveDelete();
 }
 
 //TEST(UnnestTermsTest,NestedAggTerms) {

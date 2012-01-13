@@ -15,7 +15,7 @@
 #include "ecnf.hpp"
 #include "external/ExternalInterface.hpp"
 
-namespace MinisatID{
+namespace MinisatID {
  	 class WrappedPCSolver;
 }
 typedef MinisatID::WrappedPCSolver SATSolver;

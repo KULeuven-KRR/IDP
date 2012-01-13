@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef LUACONNECTION_HPP_
 #define LUACONNECTION_HPP_
@@ -24,11 +24,11 @@ class Inference;
 
 namespace LuaConnection {
 
+lua_State* getState();
+
 void makeLuaConnection();
 void closeLuaConnection();
 int convertToLua(lua_State*, InternalArgument);
-
-lua_State* getState();
 
 template<typename Object>
 void addGlobal(const std::string& name, Object v) {
@@ -47,7 +47,7 @@ Vocabulary* vocabulary(InternalArgument*);
 AbstractTheory* theory(InternalArgument*);
 AbstractStructure* structure(InternalArgument*);
 
-InternalArgument* call(const std::vector<std::string>&, const std::vector<std::vector<std::string> >&, const ParseInfo&);
+InternalArgument* call(const std::vector<std::string>&, const std::vector<std::vector<std::string>>&, const ParseInfo&);
 const DomainElement* funccall(std::string*, const std::vector<const DomainElement*>& tuple);
 bool predcall(std::string*, const std::vector<const DomainElement*>& tuple);
 
@@ -63,8 +63,8 @@ private:
 	Inference* inference_; // NOTE: does not have pointer authority
 
 public:
-	InternalProcedure(Inference* inference) :
-			inference_(inference) {
+	InternalProcedure(Inference* inference)
+			: inference_(inference) {
 	}
 	~InternalProcedure() {
 	}

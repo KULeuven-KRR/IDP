@@ -14,8 +14,6 @@
 #include "generators/InstGenerator.hpp"
 #include "common.hpp"
 
-using namespace std;
-
 class InvertNumericGenerator: public InstGenerator {
 private:
 	const DomElemContainer* _in;

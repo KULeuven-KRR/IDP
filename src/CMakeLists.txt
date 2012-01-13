@@ -52,7 +52,6 @@ add_library(idp
 	parser/yyltype.hpp
 	parser/lex.ll
 	parser/clconst.hpp
-	GeneralUtils.hpp
 	insert.hpp insert.cpp
 	error.hpp error.cpp
 	common.hpp common.cpp
@@ -215,6 +214,7 @@ add_library(idp
 	utils/NumericLimits.hpp utils/NumericLimits.cpp
 	utils/TheoryUtils.hpp utils/TheoryUtils.cpp
 	utils/StringUtils.hpp utils/StringUtils.cpp
+	utils/ListUtils.hpp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 

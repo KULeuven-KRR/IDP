@@ -8,14 +8,14 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef THEORYUTILS_HPP_
-#define THEORYUTILS_HPP_
+#ifndef IDP_THEORYUTILS_HPP_
+#define IDP_THEORYUTILS_HPP_
 
 #include "common.hpp"
-#include <iostream>
 #include "GlobalData.hpp"
 #include "options.hpp"
 #include <typeinfo>
+#include <iostream>
 
 class Definition;
 class SetExpr;
@@ -205,4 +205,4 @@ Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cp
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
-#endif /* THEORYUTILS_HPP_ */
+#endif /* IDP_THEORYUTILS_HPP_ */

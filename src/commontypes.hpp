@@ -68,7 +68,9 @@ enum class TruthType { POSS_TRUE, POSS_FALSE, CERTAIN_TRUE, CERTAIN_FALSE };
 enum class NumType { CERTAINLYINT, POSSIBLYINT };
 
 typedef int Lit;
+typedef double Weight;
 typedef std::vector<Lit> litlist;
+typedef std::vector<double> weightlist;
 
 // TODO dynamically initialized global: no init order, so cannot safely use in other globals, might be unsafe?
 const Lit _true(getMaxElem<int>());

@@ -56,10 +56,13 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	grounding->recursiveDelete();
 	delete (solver);
 	delete (abstractsolutions);
+	delete (grounder);
+	delete (symstructure);
+
 	return structure->isConsistent();
 }
 
-AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* originalStructure) const {
+AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
 	auto structure = originalStructure->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";

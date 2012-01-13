@@ -18,6 +18,7 @@
 #include "inferences/grounding/Utils.hpp"
 #include "external/ExternalInterface.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
+#include "utils/ListUtils.hpp"
 
 class PFSymbol;
 class Variable;
@@ -74,7 +75,7 @@ private:
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
 							// That is, the corresponding const DomElemContainer* acts as a variable+value.
 
-							// Return values
+	// Return values
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
@@ -91,6 +92,7 @@ private:
 	}
 
 	DomElemContainer* createVarMapping(Variable * const var);
+
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
@@ -98,10 +100,11 @@ private:
 		InstGenerator* _generator;
 		InstChecker* _checker;
 
-		GenAndChecker(InstGenerator* generator, InstChecker* checker) :
-				_generator(generator), _checker(checker) {
+		GenAndChecker(InstGenerator* generator, InstChecker* checker)
+				: _generator(generator), _checker(checker) {
 		}
 	};
+
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
@@ -111,6 +114,7 @@ private:
 public:
 	GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symbstructure);
 	virtual ~GrounderFactory() {
+		//deleteList(_varmapping);
 	}
 
 	// Factory method

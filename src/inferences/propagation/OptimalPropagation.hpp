@@ -105,6 +105,11 @@ public:
 			}
 		}
 		result->clean();
+
+		delete (grounder);
+		grounding->recursiveDelete();
+		delete (symstructure);
+
 		return result;
 	}
 };

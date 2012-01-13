@@ -24,6 +24,20 @@
 
 using namespace std;
 
+TermGrounder::~TermGrounder() {
+	if (_origterm != NULL) {
+		_origterm->recursiveDelete();
+		_origterm = NULL;
+	}
+	if (not _varmap.empty()) {
+		for (auto i = _varmap.begin(); i != _varmap.end(); ++i) {
+			delete (i->first);
+			//delete (i->second);
+		}
+		_varmap.clear();
+	}
+}
+
 void TermGrounder::setOrig(const Term* t, const map<Variable*, const DomElemContainer*>& mvd, int verb) {
 	_verbosity = verb;
 	map<Variable*, Variable*> mvv;
@@ -66,7 +80,7 @@ GroundTerm FuncTermGrounder::run() const {
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for (unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
+	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		if (GlobalData::instance()->terminateRequested()) {
 			throw IdpException("Terminate requested");
 		}
@@ -101,12 +115,8 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createSumTerm(SumType type, const VarId& left, const VarId& right) {
 	if (type == ST_MINUS) {
-		vector<VarId> varids(2); //XXX vector<VarId> varids[] = { left, right }; ?
-		varids[0] = left;
-		varids[1] = right;
-		vector<int> weights(2);
-		weights[0] = 1;
-		weights[1] = -1;
+		vector<VarId> varids({ left, right });
+		vector<int> weights({ 1, -1 });
 		return new CPWSumTerm(varids, weights);
 	} else {
 		return new CPSumTerm(left, right);

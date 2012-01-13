@@ -17,7 +17,7 @@
 #include "vocabulary.hpp"
 #include "structure.hpp"
 #include "error.hpp"
-#include "GeneralUtils.hpp"
+#include "utils/ListUtils.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "luaconnection.hpp" //TODO break connection with lua!
@@ -3956,7 +3956,7 @@ Structure::~Structure() {
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		delete (it->second);
 	}
-	deleteList<PredInter>(_intersToDelete);
+	deleteList(_intersToDelete);
 }
 
 Structure* Structure::clone() const {
@@ -4619,6 +4619,7 @@ SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
 	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	} else {

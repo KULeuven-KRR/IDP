@@ -8,8 +8,8 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef GROUDING_GROUNDTHEORY_HPP_
-#define GROUDING_GROUNDTHEORY_HPP_
+#ifndef GROUNDING_GROUNDTHEORY_HPP_
+#define GROUNDING_GROUNDTHEORY_HPP_
 
 #include "commontypes.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
@@ -25,6 +25,7 @@
 #include "visitors/VisitorFriends.hpp"
 
 #include <iostream>
+#include "utils/ListUtils.hpp"
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
@@ -40,12 +41,12 @@ public:
 	const int ID_FOR_UNDEFINED;
 
 	// Constructors
-	GroundTheory(AbstractStructure* str) :
-			AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1) {
+	GroundTheory(AbstractStructure* str)
+			: AbstractGroundTheory(str), ID_FOR_UNDEFINED(-1) {
 		Policy::polStartTheory(translator());
 	}
-	GroundTheory(Vocabulary* voc, AbstractStructure* str) :
-			AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1) {
+	GroundTheory(Vocabulary* voc, AbstractStructure* str)
+			: AbstractGroundTheory(voc, str), ID_FOR_UNDEFINED(-1) {
 		Policy::polStartTheory(translator());
 	}
 
@@ -64,7 +65,9 @@ public:
 	}
 
 	virtual void recursiveDelete() {
+		deleteList(_foldedterms);
 		Policy::polRecursiveDelete();
+		delete (this);
 	}
 
 	void closeTheory() {
@@ -105,7 +108,7 @@ private:
 		PFSymbol* symbol = translator()->getSymbol(inputatom);
 		auto it = _defined.find(symbol);
 		if (it == _defined.end()) {
-			it = _defined.insert(std::pair<PFSymbol*, std::set<int> >(symbol, std::set<int>())).first;
+			it = _defined.insert(std::pair<PFSymbol*,std::set<int>>{symbol, std::set<int>()}).first;
 		}
 		(*it).second.insert(inputatom);
 	}
@@ -173,11 +176,11 @@ public:
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
-				if (typeid(*tsbody) == typeid(PCTsBody)){
+				if (sametypeid<PCTsBody>(*tsbody)){
 					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
-							for (unsigned int m = 0; m < body->size(); ++m) {
+							for (size_t m = 0; m < body->size(); ++m) {
 								std::vector<int> cl { -atom, body->literal(m) };
 								add(cl, true);
 							}
@@ -209,7 +212,7 @@ public:
 						Assert(defnr != ID_FOR_UNDEFINED);
 						Policy::polAdd(defnr, new PCGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
 					}
-				} else if (typeid(*tsbody) == typeid(AggTsBody)) {
+				} else if (sametypeid<AggTsBody>(*tsbody)) {
 					AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 					if (body->type() == TsType::RULE) {
 						Assert(defnr != ID_FOR_UNDEFINED);
@@ -218,16 +221,16 @@ public:
 					} else {
 						add(atom, body);
 					}
-				} else if (typeid(*tsbody) == typeid(CPTsBody)) {
+				} else if (sametypeid<CPTsBody>(*tsbody)) {
 					CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 					if (body->type() == TsType::RULE) {
-						Assert(false);
+						notyetimplemented("Definition rules in CP constraints.");
 						//TODO Does this ever happen?
 					} else {
 						add(atom, body);
 					}
 				} else {
-					Assert(typeid(*tsbody) == typeid(LazyTsBody));
+					Assert(sametypeid<LazyTsBody>(*tsbody));
 					LazyTsBody* body = dynamic_cast<LazyTsBody*>(tsbody);
 					body->notifyTheoryOccurence();
 				}
@@ -238,7 +241,7 @@ public:
 	CPTerm* foldCPTerm(CPTerm* cpterm) {
 		if (_foldedterms.find(cpterm) == _foldedterms.end()) {
 			_foldedterms.insert(cpterm);
-			if (typeid(*cpterm) == typeid(CPVarTerm)) {
+			if (sametypeid<CPVarTerm>(*cpterm)) {
 				CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
 				if (not termtranslator()->function(varterm->varid())) {
 					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
@@ -248,28 +251,30 @@ public:
 						return left;
 					}
 				}
-			} else if (typeid(*cpterm) == typeid(CPSumTerm)) {
+			} else if (sametypeid<CPSumTerm>(*cpterm)) {
 				CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
 				std::vector<VarId> newvarids;
 				for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
 					if (not termtranslator()->function(*it)) {
 						CPTsBody* cprelation = termtranslator()->cprelation(*it);
 						CPTerm* left = foldCPTerm(cprelation->left());
-						if (typeid(*left) == typeid(CPSumTerm) && cprelation->comp() == CompType::EQ) {
+						if (sametypeid<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
 							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 							Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 							newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
 						}
 						//TODO Need to do something special in other cases?
-						else
+						else {
 							newvarids.push_back(*it);
-					} else
+						}
+					} else {
 						newvarids.push_back(*it);
+					}
 				}
 				sumterm->varids(newvarids);
-			} else if (typeid(*cpterm) == typeid(CPWSumTerm)) {
+			} else if (sametypeid<CPWSumTerm>(*cpterm)) {
 				//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
-				//TODO
+				//TODO Folding for weighted sumterms
 			}
 		}
 		return cpterm;
@@ -280,7 +285,7 @@ public:
 	 *	This method should be called before running the SAT solver and after grounding.
 	 */
 	void addFuncConstraints() {
-		for (unsigned int n = 0; n < translator()->nbManagedSymbols(); ++n) {
+		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
 			if(GlobalData::instance()->terminateRequested()){
 				throw IdpException("Terminate requested");
 			}
@@ -452,4 +457,4 @@ private:
 	}
 };
 
-#endif /* GROUDING_GROUNDTHEORY_HPP_ */
+#endif /* GROUNDING_GROUNDTHEORY_HPP_ */

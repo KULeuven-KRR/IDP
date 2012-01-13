@@ -25,47 +25,46 @@ private:
 	bool _reset;
 
 public:
-	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*> vars, const Universe& univ)
-			:_table(t), _vars(vars), _universe(univ), _reset(true) {
-		Assert(t->arity()==vars.size());
+	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
+			: _table(t), _vars(vars), _universe(univ), _reset(true) {
+		Assert(t->arity() == vars.size());
 	}
 
-	LookupGenerator* clone() const{
+	LookupGenerator* clone() const {
 		return new LookupGenerator(*this);
 	}
 
-
-	void reset(){
+	void reset() {
 		_reset = true;
 	}
 
-	void next(){
-		if(_reset){
+	void next() {
+		if (_reset) {
 			_reset = false;
 			std::vector<const DomainElement*> _currargs;
-			for(auto i=_vars.begin(); i<_vars.end(); ++i){
+			for (auto i = _vars.begin(); i < _vars.end(); ++i) {
 				_currargs.push_back((*i)->get());
 			}
 			bool allowedvalue = (_table->contains(_currargs) && _universe.contains(_currargs));
-			if(not allowedvalue){
+			if (not allowedvalue) {
 				notifyAtEnd();
 			}
-		}else{
+		} else {
 			notifyAtEnd();
 		}
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<toString(_table) <<"(";
+	virtual void put(std::ostream& stream) {
+		stream << toString(_table) << "(";
 		bool begin = true;
-		for(unsigned int n = 0; n<_vars.size(); ++n){
-			if(not begin){
-				stream <<", ";
+		for (unsigned int n = 0; n < _vars.size(); ++n) {
+			if (not begin) {
+				stream << ", ";
 			}
 			begin = false;
-			stream <<_vars[n] <<"(in)";
+			stream << _vars[n] << "(in)";
 		}
-		stream <<")";
+		stream << ")";
 	}
 };
 

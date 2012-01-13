@@ -8,8 +8,8 @@
 * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef NUMERICLIMITS_HPP_
-#define NUMERICLIMITS_HPP_
+#ifndef IDP_NUMERICLIMITS_HPP_
+#define IDP_NUMERICLIMITS_HPP_
 
 /**
  * Prevent bug with numeric_limits<double>::min() which is the smallest POSITIVE double value.
@@ -31,4 +31,4 @@ T getMaxElem(){
 	return std::numeric_limits<T>::max();
 }
 
-#endif /* NUMERICLIMITS_HPP_ */
+#endif /* IDP_NUMERICLIMITS_HPP_ */

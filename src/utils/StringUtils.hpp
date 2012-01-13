@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef STRINGTRIM_HPP_
-#define STRINGTRIM_HPP_
+#ifndef IDP_STRINGTRIM_HPP_
+#define IDP_STRINGTRIM_HPP_
 
 #include <string>
 
@@ -30,4 +30,4 @@ std::string replaceAllIn(const std::string& text, const std::string& find, const
 
 std::string replaceAllAndTrimEachLine(const std::string& text, const std::string& find, const std::string& replacement);
 
-#endif /* STRINGTRIM_HPP_ */
+#endif /* IDP_STRINGTRIM_HPP_ */

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef ECNF_HPP
 #define ECNF_HPP
@@ -31,26 +31,30 @@ class DomainElement;
 class InstGenerator;
 
 typedef unsigned int VarId;
+typedef std::vector<VarId> varidlist;
+typedef std::vector<Lit> litlist;
+typedef std::vector<double> weightlist;
+typedef std::vector<int> intweightlist;
 
-/*********************
- Ground clauses
- *********************/
+/******************
+ * Ground clauses
+ ******************/
 
 typedef litlist GroundClause;
 
 class GroundSet {
-	ACCEPTNONMUTATING()
+ACCEPTNONMUTATING()
 private:
 	unsigned int _setnr;
 	litlist _setlits; // All literals in the ground set
-	std::vector<double> _litweights; // For each literal a corresponding weight
+	weightlist _litweights; // For each literal a corresponding weight
 
 public:
 	// Constructors
 	GroundSet() {
 	}
-	GroundSet(int setnr, const litlist& s, const std::vector<double>& lw) :
-			_setnr(setnr), _setlits(s), _litweights(lw) {
+	GroundSet(int setnr, const litlist& s, const weightlist& lw)
+			: _setnr(setnr), _setlits(s), _litweights(lw) {
 	}
 
 	// Inspectors
@@ -88,7 +92,7 @@ public:
  *			set is a ground set
  */
 class GroundAggregate {
-	ACCEPTNONMUTATING()
+ACCEPTNONMUTATING()
 private:
 	// Attributes
 	int _head; // the head literal
@@ -101,12 +105,12 @@ private:
 
 public:
 	// Constructors
-	GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b) :
-			_head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
+	GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b)
+			: _head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
 		Assert(e != TsType::RULE);
 	}
-	GroundAggregate(const GroundAggregate& a) :
-			_head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
+	GroundAggregate(const GroundAggregate& a)
+			: _head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
 		Assert(a._arrow != TsType::RULE);
 	}
 	GroundAggregate() {
@@ -147,15 +151,15 @@ enum RuleType {
  *		This class represents a ground rule body, where literals are represented by integers.
  */
 class GroundRule {
-	ACCEPTDECLAREBOTH(GroundRule)
+ACCEPTDECLAREBOTH(GroundRule)
 private:
 	int _head;
 	RuleType _type; // The rule type (disjunction, conjunction, or aggregate
 	bool _recursive; // True iff the rule body contains defined literals
 
 protected:
-	GroundRule(int head, RuleType type, bool rec) :
-			_head(head), _type(type), _recursive(rec) {
+	GroundRule(int head, RuleType type, bool rec)
+			: _head(head), _type(type), _recursive(rec) {
 	}
 
 public:
@@ -186,21 +190,19 @@ public:
 	}
 };
 
-typedef std::vector<Lit> litlist;
-
 class PCGroundRule: public GroundRule {
-	ACCEPTBOTH(GroundRule)
+ACCEPTBOTH(GroundRule)
 private:
 	litlist _body; // The literals in the body
 
 public:
 	// Constructors
-	PCGroundRule(int head, RuleType type, const litlist& body, bool rec) :
-			GroundRule(head, type, rec), _body(body) {
+	PCGroundRule(int head, RuleType type, const litlist& body, bool rec)
+			: GroundRule(head, type, rec), _body(body) {
 	}
 	PCGroundRule(int head, PCTsBody* body, bool rec);
-	PCGroundRule(const PCGroundRule& grb) :
-			GroundRule(grb.head(), grb.type(), grb.recursive()), _body(grb._body) {
+	PCGroundRule(const PCGroundRule& grb)
+			: GroundRule(grb.head(), grb.type(), grb.recursive()), _body(grb._body) {
 	}
 
 	~PCGroundRule() {
@@ -234,7 +236,7 @@ public:
 };
 
 class AggGroundRule: public GroundRule {
-	ACCEPTBOTH(GroundRule)
+ACCEPTBOTH(GroundRule)
 private:
 	int _setnr; // The id of the set of the aggregate
 	AggFunction _aggtype; // The aggregate type (cardinality, sum, product, min, or max)
@@ -243,12 +245,13 @@ private:
 
 public:
 	// Constructors
-	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec) :
-			GroundRule(head, RT_AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec)
+			: GroundRule(head, RT_AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
 	AggGroundRule(int head, AggTsBody* body, bool rec);
-	AggGroundRule(const AggGroundRule& grb) :
-			GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
+	AggGroundRule(const AggGroundRule& grb)
+			: GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype),
+				_lower(grb._lower), _bound(grb._bound) {
 	}
 
 	~AggGroundRule() {
@@ -276,7 +279,7 @@ public:
 };
 
 class GroundDefinition: public AbstractDefinition {
-	ACCEPTBOTH(AbstractDefinition)
+ACCEPTBOTH(AbstractDefinition)
 private:
 	unsigned int _id;
 	GroundTranslator* _translator;
@@ -284,8 +287,8 @@ private:
 
 public:
 	// Constructors
-	GroundDefinition(unsigned int id, GroundTranslator* tr) :
-			_id(id), _translator(tr) {
+	GroundDefinition(unsigned int id, GroundTranslator* tr)
+			: _id(id), _translator(tr) {
 	}
 	GroundDefinition* clone() const;
 	void recursiveDelete();
@@ -340,22 +343,23 @@ public:
 	//TODO
 };
 
-/**********************
- CP reifications
- **********************/
+/*******************
+ * CP reifications
+ *******************/
 
 /**
  * class CPReification
  * 		This class represents CP constraints.
  */
-class CPReification { //TODO ?
-	ACCEPTNONMUTATING()
+class CPReification {
+ACCEPTNONMUTATING()
 public:
 	int _head;
 	CPTsBody* _body;
-	CPReification(int head, CPTsBody* body) :
-			_head(head), _body(body) {
+	CPReification(int head, CPTsBody* body)
+			: _head(head), _body(body) {
 	}
+	~CPReification();
 	std::string toString(unsigned int spaces = 0) const;
 };
 
@@ -367,11 +371,11 @@ struct GroundTerm {
 	};
 	GroundTerm() {
 	}
-	GroundTerm(const DomainElement* domel) :
-			isVariable(false), _domelement(domel) {
+	GroundTerm(const DomainElement* domel)
+			: isVariable(false), _domelement(domel) {
 	}
-	GroundTerm(const VarId& varid) :
-			isVariable(true), _varid(varid) {
+	GroundTerm(const VarId& varid)
+			: isVariable(true), _varid(varid) {
 	}
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);
@@ -382,28 +386,28 @@ struct GroundTerm {
  */
 class TsSet {
 private:
-	std::vector<int> _setlits; // All literals in the ground set
-	std::vector<double> _litweights; // For each literal a corresponding weight
-	std::vector<double> _trueweights; // The weights of the true literals in the set
+	litlist _setlits; // All literals in the ground set
+	weightlist _litweights; // For each literal a corresponding weight
+	weightlist _trueweights; // The weights of the true literals in the set
 public:
 	// Modifiers
 	void setWeight(unsigned int n, double w) {
 		_litweights[n] = w;
 	}
-	void removeLit(unsigned int n){
+	void removeLit(unsigned int n) {
 		_setlits[n] = _setlits.back();
 		_litweights[n] = _litweights.back();
 		_setlits.pop_back();
 		_litweights.pop_back();
 	}
 	// Inspectors
-	std::vector<int> literals() const {
+	litlist literals() const {
 		return _setlits;
 	}
-	std::vector<double> weights() const {
+	weightlist weights() const {
 		return _litweights;
 	}
-	std::vector<double> trueweights() const {
+	weightlist trueweights() const {
 		return _trueweights;
 	}
 	unsigned int size() const {
@@ -427,8 +431,8 @@ public:
 class TsBody {
 protected:
 	const TsType _type; // the type of "tseitin definition"
-	TsBody(TsType type) :
-			_type(type) {
+	TsBody(TsType type)
+			: _type(type) {
 	}
 public:
 	virtual ~TsBody() {
@@ -446,14 +450,14 @@ public:
 
 class PCTsBody: public TsBody {
 private:
-	std::vector<int> _body; // the literals in the subformula replaced by the tseitin
+	litlist _body; // the literals in the subformula replaced by the tseitin
 	bool _conj; // if true, the replaced subformula is the conjunction of the literals in _body,
 				// if false, the replaced subformula is the disjunction of the literals in _body
 public:
-	PCTsBody(TsType type, const std::vector<int>& body, bool conj) :
-			TsBody(type), _body(body), _conj(conj) {
+	PCTsBody(TsType type, const litlist& body, bool conj)
+			: TsBody(type), _body(body), _conj(conj) {
 	}
-	std::vector<int> body() const {
+	litlist body() const {
 		return _body;
 	}
 	unsigned int size() const {
@@ -478,8 +482,8 @@ private:
 	//If _lower is true this means CARD{_setnr}=<_bound
 	//If _lower is false this means CARD{_setnr}>=_bound
 public:
-	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr) :
-			TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr)
+			: TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
 	int setnr() const {
 		return _setnr;
@@ -512,11 +516,11 @@ public:
 		int _bound;
 		VarId _varid;
 	};
-	CPBound(const int& bound) :
-			_isvarid(false), _bound(bound) {
+	CPBound(const int& bound)
+			: _isvarid(false), _bound(bound) {
 	}
-	CPBound(const VarId& varid) :
-			_isvarid(true), _varid(varid) {
+	CPBound(const VarId& varid)
+			: _isvarid(true), _varid(varid) {
 	}
 	bool operator==(const CPBound& rhs) const;
 	bool operator<(const CPBound& rhs) const;
@@ -531,9 +535,10 @@ private:
 	CompType _comp;
 	CPBound _right;
 public:
-	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right) :
-			TsBody(type), _left(left), _comp(comp), _right(right) {
+	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right)
+			: TsBody(type), _left(left), _comp(comp), _right(right) {
 	}
+	~CPTsBody();
 	CPTerm* left() const {
 		return _left;
 	}
@@ -567,8 +572,8 @@ private:
 	ResidualAndFreeInst* inst;
 
 public:
-	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type) :
-			TsBody(type), id_(id), grounder_(grounder), inst(inst) {
+	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type)
+			: TsBody(type), id_(id), grounder_(grounder), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
@@ -602,12 +607,12 @@ public:
  * CP term consisting of one CP variable.
  */
 class CPVarTerm: public CPTerm {
-	ACCEPTNONMUTATING()
+ACCEPTNONMUTATING()
 private:
 	VarId _varid;
 public:
-	CPVarTerm(const VarId& varid) :
-			_varid(varid) {
+	CPVarTerm(const VarId& varid)
+			: _varid(varid) {
 	}
 
 	const VarId& varid() const {
@@ -622,23 +627,21 @@ public:
  * CP term consisting of a sum of CP variables.
  */
 class CPSumTerm: public CPTerm {
-	ACCEPTNONMUTATING()
+ACCEPTNONMUTATING()
 private:
-	std::vector<VarId> _varids;
+	varidlist _varids;
 public:
-	CPSumTerm(const VarId& left, const VarId& right) :
-			_varids(2) {
-		_varids[0] = left;
-		_varids[1] = right;
+	CPSumTerm(const VarId& left, const VarId& right)
+			: _varids({left,right}) {
 	}
-	CPSumTerm(const std::vector<VarId>& varids) :
-			_varids(varids) {
+	CPSumTerm(const varidlist& varids)
+			: _varids(varids) {
 	}
 
-	const std::vector<VarId>& varids() const {
+	const varidlist& varids() const {
 		return _varids;
 	}
-	void varids(const std::vector<VarId>& newids) {
+	void varids(const varidlist& newids) {
 		_varids = newids;
 	}
 
@@ -650,19 +653,19 @@ public:
  * CP term consisting of a weighted sum of CP variables.
  */
 class CPWSumTerm: public CPTerm {
-	ACCEPTNONMUTATING()
+ACCEPTNONMUTATING()
 private:
-	std::vector<VarId> _varids;
-	std::vector<int> _weights;
+	varidlist _varids;
+	intweightlist _weights;
 public:
-	CPWSumTerm(const std::vector<VarId>& varids, const std::vector<int>& weights) :
-			_varids(varids), _weights(weights) {
+	CPWSumTerm(const varidlist& varids, const intweightlist& weights)
+			: _varids(varids), _weights(weights) {
 	}
 
-	const std::vector<VarId>& varids() const {
+	const varidlist& varids() const {
 		return _varids;
 	}
-	const std::vector<int>& weights() const {
+	const intweightlist& weights() const {
 		return _weights;
 	}
 

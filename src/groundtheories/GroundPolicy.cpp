@@ -33,10 +33,9 @@ void GroundPolicy::polRecursiveDelete() {
 	for (auto setit = _sets.begin(); setit != _sets.end(); ++setit) {
 		delete (*setit);
 	}
-	//for(std::vector<GroundFixpDef*>::iterator fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
-	//	(*defit)->recursiveDelete();
-	//	delete(*defit);
-	//}
+	for(auto fdefit = _fixpdefs.begin(); fdefit != _fixpdefs.end(); ++fdefit) {
+		(*fdefit)->recursiveDelete();
+	}
 	for (auto cprit = _cpreifications.begin(); cprit != _cpreifications.end(); ++cprit) {
 		delete (*cprit);
 	}
@@ -61,14 +60,14 @@ void GroundPolicy::polAdd(const TsSet& tsset, int setnr, bool) {
 
 void GroundPolicy::polAdd(int defnr, PCGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*>(defnr, new GroundDefinition(defnr, _translator)));
+		_definitions.insert(std::pair<int, GroundDefinition*>{defnr, new GroundDefinition(defnr, _translator)});
 	}
 	_definitions.at(defnr)->addPCRule(rule->head(), rule->body(), rule->type() == RT_CONJ, rule->recursive());
 }
 
 void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*>(defnr, new GroundDefinition(defnr, _translator)));
+		_definitions.insert(std::pair<int, GroundDefinition*>{defnr, new GroundDefinition(defnr, _translator)});
 	}
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }

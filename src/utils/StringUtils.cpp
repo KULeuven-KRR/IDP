@@ -47,9 +47,9 @@ string trim(const string& s) {
 
 string replaceAllIn(const string& text, const string& find, const string& replacement) {
 	auto newtext = text;
-	string::size_type position = newtext.find(find); // find first space
+	string::size_type position = newtext.find(find); // find first position
 	while (position != string::npos) {
-		newtext.replace(position, 1, replacement);
+		newtext.replace(position, find.length(), replacement);
 		position = newtext.find(find, position + 1);
 	}
 	return newtext;

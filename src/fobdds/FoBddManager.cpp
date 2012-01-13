@@ -334,7 +334,6 @@ const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	if (it != _variabletable.cend()) {
 		return it->second;
 	}
-
 	// Lookup failed, create a new variable
 	return addVariable(var);
 }

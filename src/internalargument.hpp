@@ -104,8 +104,6 @@ void addToGarbageCollection(SortTable* table);
 void garbageCollect(SortTable* table);
 void addToGarbageCollection(std::vector<InternalArgument>* table);
 void garbageCollect(std::vector<InternalArgument>* table);
-void addToGarbageCollection(AbstractStructure* structure);
-void garbageCollect(AbstractStructure* structure);
 
 /**
  * Objects to overload sorts, predicate, and function symbols

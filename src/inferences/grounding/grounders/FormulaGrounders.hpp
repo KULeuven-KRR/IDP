@@ -28,28 +28,22 @@ class PFSymbol;
 
 /*** Formula grounders ***/
 
-typedef std::map<Variable*, const DomElemContainer*> var2domelemmap;
-
 int verbosity();
 
 class FormulaGrounder: public Grounder {
 private:
 	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;
-
 	var2dommap _origvarmap; // Maps the (cloned) variables in the original formula to their instantiation
-
 protected:
 	const var2dommap& varmap() const {
 		return _varmap;
 	}
-	const Formula* _origform;
+	Formula* _origform;
 	GroundTranslator* translator() const;
-
 public:
 	// FIXME verbosity should be passed in (or perhaps full option block?)
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);
-	virtual ~FormulaGrounder() {
-	}
+	virtual ~FormulaGrounder();
 
 	virtual bool conjunctive() const = 0;
 
@@ -75,8 +69,9 @@ protected:
 	Lit run() const;
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&,
-			const GroundingContext&);
+			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*,
+			PredInter* inter, const std::vector<SortTable*>&, const GroundingContext&);
+	~AtomGrounder();
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
 		return true;
@@ -92,10 +87,10 @@ private:
 
 	Lit run() const;
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg,
-			const GroundingContext& gc) :
-			FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
+	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
+			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 	}
+	~ComparisonGrounder();
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
 		return true;
@@ -121,13 +116,15 @@ private:
 
 	Lit run() const;
 public:
-	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign) :
-			FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
+	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
+			: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
 		bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
 		bool signPosIfStrict = isPos(_sign) == not noAggComp;
 		_doublenegtseitin = (gc._tseitin == TsType::RULE)
-				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
+				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict)
+						|| (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
 	}
+	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
 	bool conjunctive() const {
 		return true;
@@ -149,12 +146,12 @@ protected:
 	}
 	Lit createTseitin(const ConjOrDisj& formula) const;
 public:
-	ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct) :
-			FormulaGrounder(grounding, ct), sign_(sign), conn_(conj ? Conn::CONJ : Conn::DISJ) {
+	ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct)
+			: FormulaGrounder(grounding, ct), sign_(sign), conn_(conj ? Conn::CONJ : Conn::DISJ) {
 	}
-
+	virtual ~ClauseGrounder() {
+	}
 	void run(ConjOrDisj& formula) const;
-
 protected:
 	Lit getReification(const ConjOrDisj& formula) const;
 	bool makesFormulaTrue(Lit l, bool negated) const;
@@ -180,15 +177,13 @@ protected:
 class BoolGrounder: public ClauseGrounder {
 private:
 	std::vector<Grounder*> _subgrounders;
-
 protected:
 	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
-
 public:
-	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct) :
-			ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
+	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct)
+			: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
 	}
-
+	~BoolGrounder();
 	std::vector<Grounder*> getSubGrounders() {
 		return _subgrounders;
 	}
@@ -200,17 +195,13 @@ protected:
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
-
 protected:
 	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
-
 public:
-	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-			const GroundingContext& ct) :
-			ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
+	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
+			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	}
-
-	//Getter
+	~QuantGrounder();
 	FormulaGrounder* getSubGrounder() {
 		return _subgrounder;
 	}
@@ -220,15 +211,14 @@ class EquivGrounder: public ClauseGrounder {
 private:
 	FormulaGrounder* _leftgrounder;
 	FormulaGrounder* _rightgrounder;
-
 protected:
 	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
 	Lit getLitEquivWith(const ConjOrDisj& form) const;
-
 public:
-	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct) :
-			ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
+	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
+			: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
 	}
+	~EquivGrounder();
 };
 
 #endif /* FORMULAGROUNDERS_HPP_ */

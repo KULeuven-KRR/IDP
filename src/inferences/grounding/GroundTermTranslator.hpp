@@ -36,8 +36,11 @@ private:
 	std::vector<SortTable*> _varid2domain;
 
 public:
-	GroundTermTranslator(AbstractStructure* str) :
-			_structure(str), _varid2function(1), _varid2args(1), _varid2domain(1) {
+	GroundTermTranslator(AbstractStructure* str)
+			: _structure(str), _varid2function(1), _varid2args(1), _varid2domain(1) {
+	}
+	~GroundTermTranslator() {
+		//Note: Does not delete anything!
 	}
 
 	// Methods for translating terms to variable identifiers

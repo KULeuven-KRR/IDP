@@ -37,7 +37,8 @@ private:
 		auto grounder = factory.create(theory);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
-		delete(grounder);
+		delete (grounder);
+		delete (symstructure);
 		return grounding;
 	}
 };
@@ -62,7 +63,8 @@ private:
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 		delete(grounder);
-		delete(grounding);
+		grounding->recursiveDelete();
+		delete (symstructure);
 		monitor->flush();
 	}
 };

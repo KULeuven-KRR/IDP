@@ -26,7 +26,7 @@ private:
 
 	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
 
-	AbstractStructure* calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
+	AbstractStructure* calculateKnownDefinitions(Theory* theory, const AbstractStructure* structure) const;
 
 };
 

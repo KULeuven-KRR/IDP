@@ -29,13 +29,13 @@ public:
 		return InternalArgument(result);
 	}
 
-	void addAllMorePreciseToResult(AbstractStructure *s, std::vector<InternalArgument> *& result) const {
+	void addAllMorePreciseToResult(AbstractStructure* s, std::vector<InternalArgument>*& result) const {
 		if (not s->approxTwoValued()) {
 			auto extensions = generateAllTwoValuedExtensions(s);
 			result->insert(result->end(), extensions.begin(), extensions.end());
-			for(auto i=extensions.cbegin(); i<extensions.cend(); ++i){
-				addToGarbageCollection(*i);
-			}
+//			for(auto i=extensions.cbegin(); i<extensions.cend(); ++i){
+//				addToGarbageCollection(*i);
+//			}
 		} else {
 			result->push_back(s);
 		}
@@ -49,7 +49,7 @@ public:
 		TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of all of the given structures.") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument> & args) const {
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto result = new std::vector<InternalArgument>();
 		auto table = get<0>(args);
 		for (auto it = table->cbegin(); it != table->cend(); ++it) {
@@ -59,13 +59,13 @@ public:
 		return InternalArgument(result);
 	}
 
-	void addAllMorePreciseToResult(AbstractStructure *s, std::vector<InternalArgument> *& result) const {
+	void addAllMorePreciseToResult(AbstractStructure* s, std::vector<InternalArgument>*& result) const {
 		if (not s->approxTwoValued()) {
 			auto extensions = generateAllTwoValuedExtensions(s);
 			result->insert(result->end(), extensions.begin(), extensions.end());
-			for(auto i=extensions.cbegin(); i<extensions.cend(); ++i){
-				addToGarbageCollection(*i);
-			}
+//			for(auto i=extensions.cbegin(); i<extensions.cend(); ++i){
+//				addToGarbageCollection(*i);
+//			}
 		} else {
 			result->push_back(s);
 		}

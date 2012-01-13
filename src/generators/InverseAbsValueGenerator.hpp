@@ -14,8 +14,6 @@
 #include "generators/InstGenerator.hpp"
 #include "common.hpp"
 
-using namespace std;
-
 /**
  * Given the output of the abs function, generate all values that could have been input.
  */
