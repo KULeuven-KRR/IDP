@@ -483,7 +483,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
 		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
-		certtable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable()), Universe(tables));
+		certtable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
 
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
