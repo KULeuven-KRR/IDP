@@ -67,7 +67,6 @@ struct ParserData{
 	// Handle includes
 	vector<YY_BUFFER_STATE>	include_buffer_stack;		// currently opened buffers
 	vector<string*>			include_buffer_filenames;	// currently opened files
-	vector<FILE*>			include_buffer_files;		// currently opened files
 	vector<unsigned int>	include_line_stack;			// line number of the corresponding buffer
 	vector<unsigned int>	include_col_stack;			// column number of the corresponding buffer
 	bool					stdin_included;
@@ -83,7 +82,6 @@ struct ParserData{
 		// store the current buffer
 		include_buffer_stack.push_back(YY_CURRENT_BUFFER);
 		include_buffer_filenames.push_back(getInserter().currfile());
-		include_buffer_files.push_back(yyin);
 		include_line_stack.push_back(yylloc.first_line);
 		include_col_stack.push_back(yylloc.first_column + prevlength);
 		// open the new buffer
@@ -94,7 +92,6 @@ struct ParserData{
 			Error::unexistingfile(s,pi);
 			include_buffer_stack.pop_back();
 			include_buffer_filenames.pop_back();
-			include_buffer_files.pop_back();
 			include_line_stack.pop_back();
 			include_col_stack.pop_back();
 			yyin = oldfile;
@@ -117,7 +114,6 @@ struct ParserData{
 			// store the current buffer
 			include_buffer_stack.push_back(YY_CURRENT_BUFFER);
 			include_buffer_filenames.push_back(getInserter().currfile());
-			include_buffer_files.push_back(yyin);
 			include_line_stack.push_back(yylloc.first_line);
 			include_col_stack.push_back(yylloc.first_column + prevlength);
 			// open then new buffer
@@ -129,6 +125,10 @@ struct ParserData{
 		}
 	}
 	void end_include() {
+		if(yyin != stdin){
+			fclose(yyin);
+			yyin = NULL;
+		}
 		yy_delete_buffer(YY_CURRENT_BUFFER);
 		yy_switch_to_buffer(include_buffer_stack.back());
 		yylloc.first_line = include_line_stack.back();
@@ -137,8 +137,6 @@ struct ParserData{
 		getInserter().currfile(include_buffer_filenames.back());
 		include_buffer_stack.pop_back();
 		include_buffer_filenames.pop_back();
-		//fclose(include_buffer_files.back());
-		include_buffer_files.pop_back();
 		include_line_stack.pop_back();
 		include_col_stack.pop_back();
 	}
