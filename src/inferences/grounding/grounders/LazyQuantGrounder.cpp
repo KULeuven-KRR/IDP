@@ -67,7 +67,7 @@ void LazyQuantGrounder::groundMore() const {
 		overwriteVars(originstantiation, instance->freevarinst);
 
 		ConjOrDisj formula;
-		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, _negatedformula);
+		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula);
 
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
@@ -94,13 +94,12 @@ void LazyQuantGrounder::groundMore() const {
 	currentlyGrounding = false;
 }
 
-void LazyQuantGrounder::run(ConjOrDisj& formula, bool negatedformula) const {
+void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	Assert(not conjunctive());
 	if (verbosity() > 2) {
 		printorig();
 	}
 
-	_negatedformula = negatedformula;
 
 	_generator->begin();
 	if (_generator->isAtEnd()) {

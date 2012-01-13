@@ -52,7 +52,7 @@ private:
 	void notifyTheoryOccurence(ResidualAndFreeInst* instance) const;
 
 protected:
-	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
+	virtual void internalRun(ConjOrDisj& literals) const;
 };
 
 #endif /* LAZYQUANTGROUNDER_HPP_ */

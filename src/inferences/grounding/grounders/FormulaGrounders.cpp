@@ -29,8 +29,9 @@ int verbosity() {
 	return getOption(IntType::GROUNDVERBOSITY);
 }
 
-FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct), _origform(NULL) {
+
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
+		Grounder(grounding, ct), _origform(NULL) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
@@ -81,10 +82,10 @@ void FormulaGrounder::printorig() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter,
-		const vector<SortTable*>& vst, const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic),
-			_symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter) {
+		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
+		const GroundingContext& ct) :
+		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(
+				sign), _checkargs(checkargs), _inter(inter) {
 	gentype = ct.gentype;
 }
 
@@ -586,7 +587,8 @@ Lit AggGrounder::run() const {
 			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
 		}
 		if (containsneg || containszero) {
-			Assert(truevalue != 0);//division is safe (see higher check for truevalue ==0)
+			Assert(truevalue != 0);
+			//division is safe (see higher check for truevalue ==0)
 			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
 		} else {
 			// Finish
@@ -672,12 +674,8 @@ void AggGrounder::run(ConjOrDisj& formula) const {
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
-bool ClauseGrounder::isRedundantInFormula(Lit l, bool negated) const {
-	if (negated) {
-		return conn_ == Conn::CONJ ? l == _false : l == _true;
-	} else {
+bool ClauseGrounder::isRedundantInFormula(Lit l) const {
 		return conn_ == Conn::CONJ ? l == _true : l == _false;
-	}
 }
 
 /**
@@ -686,8 +684,8 @@ bool ClauseGrounder::isRedundantInFormula(Lit l, bool negated) const {
  * negated conjunction: true if literal is false
  * negated disjunction: never true by a literal
  */
-bool ClauseGrounder::makesFormulaTrue(Lit l, bool negated) const {
-	return (negated && conn_ == Conn::CONJ && l == _false) || (~negated && conn_ == Conn::DISJ && l == _true);
+bool ClauseGrounder::makesFormulaTrue(Lit l) const {
+	return ( conn_ == Conn::DISJ && l == _true);
 }
 
 /**
@@ -696,12 +694,12 @@ bool ClauseGrounder::makesFormulaTrue(Lit l, bool negated) const {
  * negated conjunction: never false by a literal
  * negated disjunction: false if a literal is true
  */
-bool ClauseGrounder::makesFormulaFalse(Lit l, bool negated) const {
-	return (negated && conn_ == Conn::DISJ && l == _true) || (not negated && conn_ == Conn::CONJ && l == _false);
+bool ClauseGrounder::makesFormulaFalse(Lit l) const {
+	return  ( conn_ == Conn::CONJ && l == _false);
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
-	return conjunctive() ? _true : _false;
+	return conn_==Conn::CONJ ? _true : _false;
 }
 
 TsType ClauseGrounder::getTseitinType() const {
@@ -711,9 +709,9 @@ TsType ClauseGrounder::getTseitinType() const {
 // Takes context into account!
 Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula) const {
 	TsType type = getTseitinType();
-	if (isNegative()) {
+	/*if (isNegative()) {
 		type = reverseImplication(type);
-	}
+	}*/
 
 	Lit tseitin;
 	bool asConjunction = formula.getType() == Conn::CONJ;
@@ -721,7 +719,8 @@ Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula) const {
 		asConjunction = not asConjunction;
 	}
 	tseitin = translator()->translate(formula.literals, asConjunction, type);
-	return isNegative() ? -tseitin : tseitin;
+	//return isNegative() ? -tseitin : tseitin;
+	return tseitin;
 }
 
 Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
@@ -737,40 +736,46 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
 }
 
 void ClauseGrounder::run(ConjOrDisj& formula) const {
-	run(formula, isNegative());
+	internalRun(formula);
+	if(isNegative()){
+		//todo: Do this or use negate(formula)?
+		Lit tseitin = getReification(formula);
+		//formula.setType(Conn::CONJ);
+		formula.literals = {-tseitin};
+	}
 }
 
-FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const {
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const {
 	Assert(formula.getType()==conn_);
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
-
 	if (subformula.literals.size() == 0) {
 		Lit value = subformula.getType() == Conn::CONJ ? _true : _false;
-		if (makesFormulaTrue(value, negated)) {
-			formula.literals = litlist { negated ? -_true : _true };
+		if (makesFormulaTrue(value)) {
+			formula.literals = litlist {  _true };
 			return FormStat::DECIDED;
-		} else if (makesFormulaFalse(value, negated)) {
-			formula.literals = litlist { negated ? -_false : _false };
+		} else if (makesFormulaFalse(value)) {
+			formula.literals = litlist {  _false };
 			return FormStat::DECIDED;
 		} else if (subformula.getType() != formula.getType()) {
-			formula.literals.push_back(negated ? -value : value);
+			formula.literals.push_back( value);
 			return (FormStat::UNKNOWN);
 		}
 		return (FormStat::UNKNOWN);
 	} else if (subformula.literals.size() == 1) {
 		Lit l = subformula.literals[0];
-		if (makesFormulaFalse(l, negated)) {
-			formula.literals = litlist { negated ? -_false : _false };
+		if (makesFormulaFalse(l)) {
+			formula.literals = litlist { _false };
 			return FormStat::DECIDED;
-		} else if (makesFormulaTrue(l, negated)) {
-			formula.literals = litlist { negated ? -_true : _true };
+		} else if (makesFormulaTrue(l)) {
+			formula.literals = litlist {  _true };
 			return FormStat::DECIDED;
-		} else if (not isRedundantInFormula(l, negated)) {
-			formula.literals.push_back(negated ? -l : l);
+		} else if (not isRedundantInFormula(l)) {
+			formula.literals.push_back( l);
 		}
 		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
+	//TODO: remove all the "negated"
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
@@ -794,7 +799,7 @@ BoolGrounder::~BoolGrounder() {
 }
 
 // NOTE: Optimized to avoid looping over the formula after construction
-void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
+void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
 		if (_origform != NULL) {
@@ -804,7 +809,7 @@ void BoolGrounder::run(ConjOrDisj& formula, bool negate) const {
 	formula.setType(conn_);
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
-		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula, negate) == FormStat::DECIDED) {
+		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 			}
@@ -822,7 +827,7 @@ QuantGrounder::~QuantGrounder() {
 	delete (_checker);
 }
 
-void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
+void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
 		if (_origform != NULL) {
@@ -842,7 +847,7 @@ void QuantGrounder::run(ConjOrDisj& formula, bool negated) const {
 			return;
 		}
 
-		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula, negated) == FormStat::DECIDED) {
+		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 			}
@@ -873,15 +878,15 @@ Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
 	}
 }
 
-void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
-	Assert(not negated);
+void EquivGrounder::internalRun(ConjOrDisj& formula) const {
+	//Assert(not negated); I think this is not needed.
 	if (verbosity() > 2) {
 		printorig();
 		if (_origform != NULL) {
 			pushtab();
 		}
 
-		clog << "Current formula: " << (negated ? "~" : "");
+		clog << "Current formula: " << (isNegative() ? "~" : "");
 		_leftgrounder->printorig();
 		clog << " <=> ";
 		_rightgrounder->printorig();
@@ -891,35 +896,35 @@ void EquivGrounder::run(ConjOrDisj& formula, bool negated) const {
 	ConjOrDisj leftformula, rightformula;
 	leftformula.setType(conn_);
 	rightformula.setType(conn_);
-	runSubGrounder(_leftgrounder, false, leftformula, false);
-	runSubGrounder(_rightgrounder, false, rightformula, false);
+	runSubGrounder(_leftgrounder, false, leftformula);
+	runSubGrounder(_rightgrounder, false, rightformula);
 	auto left = getLitEquivWith(leftformula);
 	auto right = getLitEquivWith(rightformula);
 
 	formula.setType(Conn::CONJ); // Does not matter for all those 1-literal lists
 	if (left == right) {
-		formula.literals = litlist { isPositive() ? _true : _false };
+		formula.literals = litlist {  _true  };
 	} else if (left == _true) {
 		if (right == _false) {
-			formula.literals = litlist { isPositive() ? _false : _true };
+			formula.literals = litlist {  _false };
 		} else {
-			formula.literals = litlist { isPositive() ? right : -right };
+			formula.literals = litlist {  right };
 		}
 	} else if (left == _false) {
 		if (right == _true) {
-			formula.literals = litlist { isPositive() ? _false : _true };
+			formula.literals = litlist {  _false  };
 		} else {
-			formula.literals = litlist { isPositive() ? -right : right };
+			formula.literals = litlist {  -right  };
 		}
 	} else if (right == _true) { // left is not true or false
-		formula.literals = litlist { isPositive() ? left : -left };
+		formula.literals = litlist {  left  };
 	} else if (right == _false) {
-		formula.literals = litlist { isPositive() ? -left : left };
+		formula.literals = litlist {  -left  };
 	} else {
 		// Two ways of encoding A <=> B  => 1: (A and B) or (~A and ~B)
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
-		litlist aornotb = { left, isPositive() ? -right : right };
-		litlist notaorb = { -left, isPositive() ? right : -right };
+		litlist aornotb = { left,  -right  };
+		litlist notaorb = { -left,  right  };
 		TsType tp = context()._tseitin;
 		Lit ts1 = translator()->translate(aornotb, false, tp);
 		Lit ts2 = translator()->translate(notaorb, false, tp);

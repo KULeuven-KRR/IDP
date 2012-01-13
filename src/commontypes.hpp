@@ -74,6 +74,6 @@ typedef std::vector<double> weightlist;
 
 // TODO dynamically initialized global: no init order, so cannot safely use in other globals, might be unsafe?
 const Lit _true(getMaxElem<int>());
-const Lit _false(getMinElem<int>());
+const Lit _false(-getMaxElem<int>()); //NOT getMinElem<int> because -_true should be _false
 
 #endif

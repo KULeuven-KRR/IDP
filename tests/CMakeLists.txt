@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 		
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 		
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D USEINTERACTIVE")
 endif()
@@ -20,15 +21,27 @@ include_directories ("
 ") 
 
 if(${BUILDTESTS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
-add_executable(idptests
-		testsuite.cpp
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
+	add_executable(idptests
 		mxtests.cpp
+		generatortests.cpp
+		bddtests.cpp
+		grounderfactorytests.cpp
+		definitiontests.cpp
+		propagationtests.cpp
+		parsertests.cpp
+		transformationtests.cpp
+                commandtests.cpp
+		cppinterface.hpp cppinterface.cpp
 		testingtools.hpp testingtools.cpp
 		TestUtils.hpp TestUtils.cpp
-)
-target_link_libraries(idptests idp gtest)
-set_target_properties(idptests PROPERTIES LINK_FLAGS "-pthread ")
-add_test(idptests idptests "--gtest_color=yes")
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS idptests)
+		testsuite.cpp
+		simpletests.cpp
+	)
+	target_link_libraries(idptests idp gtest)
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+		set_target_properties(idptests PROPERTIES LINK_FLAGS "-pthread ")
+	endif()
+	add_test(idptests idptests "--gtest_color=yes")
+	add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS idptests)
 endif()

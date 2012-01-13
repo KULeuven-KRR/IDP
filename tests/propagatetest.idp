@@ -1,6 +1,5 @@
 procedure main(){
 	stdoptions.timeout = 5
-	stdoptions.nbmodelequivalent = true
 	stdoptions.groundwithbounds = false
 	S1=groundpropagate(T,S)
 	S2=optimalpropagate(T,S)

@@ -154,9 +154,9 @@ public:
 	void run(ConjOrDisj& formula) const;
 protected:
 	Lit getReification(const ConjOrDisj& formula) const;
-	bool makesFormulaTrue(Lit l, bool negated) const;
-	bool makesFormulaFalse(Lit l, bool negated) const;
-	bool isRedundantInFormula(Lit l, bool negated) const;
+	bool makesFormulaTrue(Lit l) const;
+	bool makesFormulaFalse(Lit l) const;
+	bool isRedundantInFormula(Lit l) const;
 	Lit getEmtyFormulaValue() const;
 	bool conjunctive() const {
 		return (conn_ == Conn::CONJ && isPositive()) || (conn_ == Conn::DISJ && isNegative());
@@ -169,16 +169,16 @@ protected:
 		return isNeg(sign_);
 	}
 
-	virtual void run(ConjOrDisj& formula, bool negatedformula) const = 0;
+	virtual void internalRun(ConjOrDisj& formula) const = 0;
 
-	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula, bool negated) const;
+	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const;
 };
 
 class BoolGrounder: public ClauseGrounder {
 private:
 	std::vector<Grounder*> _subgrounders;
 protected:
-	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
+	virtual void internalRun(ConjOrDisj& literals) const;
 public:
 	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
@@ -196,7 +196,7 @@ protected:
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
 protected:
-	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
+	virtual void internalRun(ConjOrDisj& literals) const;
 public:
 	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
@@ -212,7 +212,7 @@ private:
 	FormulaGrounder* _leftgrounder;
 	FormulaGrounder* _rightgrounder;
 protected:
-	virtual void run(ConjOrDisj& literals, bool negatedformula) const;
+	virtual void internalRun(ConjOrDisj& literals) const;
 	Lit getLitEquivWith(const ConjOrDisj& form) const;
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)

@@ -98,11 +98,12 @@ TEST(FlattenTest,Theory) {
 TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
 	auto s = sort("X",-2,2);
 	auto one = domainterm(s,1);
+	auto two = domainterm(s,2);
 	auto f = func("F",{s},s);
 
-	Formula& eqf00 = (f({one}) == *one);
+	Formula& eqf00 = (f({one}) == *two);
 
-	// Rewriting (F(0) = 0) to (F(0,0))
+	// Rewriting (F(1) = 2) to (F(1,2))
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqf00);
 
 	ASSERT_TRUE(sametypeid<PredForm>(*result));

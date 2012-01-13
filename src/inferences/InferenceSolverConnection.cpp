@@ -23,7 +23,7 @@ namespace InferenceSolverConnection {
 SATSolver* createsolver() {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
-	modes.nbmodels = options->getValue(IntType::NRMODELS);
+	modes.nbmodels = options->getValue(IntType::NBMODELS);
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
 	modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ? MinisatID::POL_RAND : MinisatID::POL_STORED;
 
@@ -38,10 +38,10 @@ SATSolver* createsolver() {
 MinisatID::Solution* initsolution() {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::ModelExpandOptions opts;
-	opts.nbmodelstofind = options->getValue(IntType::NRMODELS);
+	opts.nbmodelstofind = options->getValue(IntType::NBMODELS);
 	opts.printmodels = MinisatID::PRINT_NONE;
 	opts.savemodels = MinisatID::SAVE_ALL;
-	opts.search = MinisatID::MODELEXPAND;
+	opts.inference = MinisatID::MODELEXPAND;
 	return new MinisatID::Solution(opts);
 }
 

@@ -4088,12 +4088,12 @@ bool Structure::isConsistent() const {
 }
 
 bool needMoreModels(unsigned int found) {
-	auto expected = getOption(IntType::NRMODELS);
+	auto expected = getOption(IntType::NBMODELS);
 	return expected == 0 || found < expected;
 }
 
 bool needFixedNumberOfModels() {
-	auto expected = getOption(IntType::NRMODELS);
+	auto expected = getOption(IntType::NBMODELS);
 	return expected != 0 && expected < getMaxElem<int>();
 }
 
@@ -4350,7 +4350,7 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 	if (needFixedNumberOfModels()) {
 		if(needMoreModels(extensions.size())){
 			stringstream ss;
-			ss <<"Only " <<extensions.size() <<" models exist, although " <<getOption(IntType::NRMODELS) <<" were requested.";
+			ss <<"Only " <<extensions.size() <<" models exist, although " <<getOption(IntType::NBMODELS) <<" were requested.";
 			Warning::warning(ss.str());
 		}
 		// In this case, not all structures might be two-valued, so just choose a value for each of their elements

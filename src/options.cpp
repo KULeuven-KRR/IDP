@@ -64,12 +64,12 @@ Options::Options() {
 	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //belongs to bdds : something about random seeds
 	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //zorgt dat de grounding het aantal modellen behoudt false => SAT
+	//BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //Verwijderd: is nu automatisch wanneer nbmodels == 1
 
 	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::DONOTPRINT);
-	IntPol::createOption(IntType::NRMODELS, "nrmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
+	IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 4, _option2name, PrintBehaviour::DONOTPRINT);
 	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, PrintBehaviour::DONOTPRINT);
 	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::DONOTPRINT); //TODO: testing!

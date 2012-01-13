@@ -62,8 +62,7 @@ public:
 	//!< create a copy of the term and substitute the free variables according to the given map
 
 	// Destructors
-	virtual ~Term() {
-	} //!< Shallow destructor. Does not delete subterms and subsets of the term.
+	virtual ~Term() { } //!< Shallow destructor. Does not delete subterms and subsets of the term.
 	void recursiveDelete(); //!< Delete the term, its subterms, and subsets.
 
 	// Mutators

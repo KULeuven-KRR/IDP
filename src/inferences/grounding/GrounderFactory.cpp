@@ -129,7 +129,7 @@ void GrounderFactory::InitContext() {
 	_context._funccontext = Context::POSITIVE;
 	_context._monotone = Context::POSITIVE;
 	_context._component = CompContext::SENTENCE;
-	_context._tseitin = getOption(MODELCOUNTEQUIVALENCE) ? TsType::EQ : TsType::IMPL;
+	_context._tseitin = (getOption(NBMODELS) != 1) ? TsType::EQ : TsType::IMPL;
 	_context._defined.clear();
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
 	_context._conjPathUntilNode = true;
