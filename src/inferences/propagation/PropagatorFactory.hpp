@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef PROPAGATORFACTORY_HPP_
 #define PROPAGATORFACTORY_HPP_
@@ -90,7 +90,7 @@ public:
 };
 
 // NOTE: structure can be NULL
-FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*,InitBoundType> mpi);
+FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 

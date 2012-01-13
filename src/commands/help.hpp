@@ -20,8 +20,8 @@
 typedef TypedInference<LIST(Namespace*)> HelpInferenceBase;
 class HelpInference: public HelpInferenceBase {
 public:
-	HelpInference() :
-		HelpInferenceBase("help", "Print information about the given namespace, when left blank, print information about the global namespace.", true) {
+	HelpInference()
+			: HelpInferenceBase("help", "Print information about the given namespace, when left blank, print information about the global namespace.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -42,8 +42,7 @@ private:
 		return prefix;
 	}
 
-	std::string printProcedure(std::string prefix, const std::string& name, const std::vector<std::string>& args,
-			const std::string& description) const {
+	std::string printProcedure(std::string prefix, const std::string& name, const std::vector<std::string>& args, const std::string& description) const {
 		std::stringstream sstr;
 		sstr << "\t* " << prefix << name << '(';
 		bool begin = true;
@@ -57,8 +56,8 @@ private:
 
 		sstr << ")\n";
 		auto tempdesc = replaceAllAndTrimEachLine(description, "\n", "\n\t\t");
-		if(tempdesc.at(tempdesc.length()-1)!='\n'){
-			tempdesc+='\n';
+		if (tempdesc.at(tempdesc.length() - 1) != '\n') {
+			tempdesc += '\n';
 		}
 		sstr << "\t\t" << tempdesc;
 		return sstr.str();
@@ -109,8 +108,8 @@ private:
 				procedures.insert(text);
 			}
 		}
-		for(auto i=procedures.cbegin(); i!=procedures.cend(); ++i){
-			sstr <<*i;
+		for (auto i = procedures.cbegin(); i != procedures.cend(); ++i) {
+			sstr << *i;
 		}
 		return sstr.str();
 	}

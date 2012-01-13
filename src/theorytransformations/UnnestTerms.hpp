@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef UNNESTTERMS_HPP_
 #define UNNESTTERMS_HPP_
@@ -33,15 +33,15 @@ class Term;
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 protected:
-	AbstractStructure*		_structure; //!< Used to find bounds on introduced variables for aggregates
-	Vocabulary* 			_vocabulary; //!< Used to do type derivation during rewrites
+	AbstractStructure* _structure; //!< Used to find bounds on introduced variables for aggregates
+	Vocabulary* _vocabulary; //!< Used to do type derivation during rewrites
 
 private:
-	Context 				_context; //!< Keeps track of the current context where terms are moved
-	bool 					_allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
-	std::vector<Formula*> 	_equalities; //!< used to temporarily store the equalities generated when moving terms
-	std::set<Variable*> 	_variables; //!< used to temporarily store the freshly introduced variables
-	Sort* 					_chosenVarSort;
+	Context _context; //!< Keeps track of the current context where terms are moved
+	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
+	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
+	std::set<Variable*> _variables; //!< used to temporarily store the freshly introduced variables
+	Sort* _chosenVarSort;
 
 	void contextProblem(Term* t);
 
@@ -54,11 +54,11 @@ protected:
 	void setAllowedToUnnest(bool allowed) {
 		_allowedToUnnest = allowed;
 	}
-	const Context& getContext() const { 
-		return _context; 
+	const Context& getContext() const {
+		return _context;
 	}
-	void setContext(const Context& context) { 
-		_context = context; 
+	void setContext(const Context& context) {
+		_context = context;
 	}
 
 public:
@@ -88,7 +88,7 @@ protected:
 	virtual Formula* visit(PredForm*);
 	virtual Term* traverse(Term*);
 	VarTerm* visit(VarTerm*);
-	virtual Term* visit(DomainTerm*) ;
+	virtual Term* visit(DomainTerm*);
 	virtual Term* visit(AggTerm*);
 	virtual Term* visit(FuncTerm*);
 	virtual SetExpr* visit(EnumSetExpr*);

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef SUBSTITUTE_HPP_
 #define SUBSTITUTE_HPP_
@@ -26,8 +26,8 @@ protected:
 		return _from2to;
 	}
 public:
-	SubstituteTerms(FOBDDManager* manager, const std::map<const From*, const To*> map) :
-			FOBDDVisitor(manager), _from2to(map) {
+	SubstituteTerms(FOBDDManager* manager, const std::map<const From*, const To*> map)
+			: FOBDDVisitor(manager), _from2to(map) {
 	}
 
 	const FOBDDArgument* change(const From* v) {
@@ -45,8 +45,8 @@ private:
 	const FOBDDDeBruijnIndex* _index;
 	const FOBDDVariable* _variable;
 public:
-	SubstituteIndex(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) :
-			FOBDDVisitor(manager), _index(index), _variable(variable) {
+	SubstituteIndex(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable)
+			: FOBDDVisitor(manager), _index(index), _variable(variable) {
 	}
 	const FOBDDArgument* change(const FOBDDDeBruijnIndex* i) {
 		if (i == _index) {

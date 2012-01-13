@@ -19,7 +19,9 @@ class InternalArgument;
 // TODO remove internalargument dependency
 // TODO cleanup code
 
-enum class State {PROVEN, DISPROVEN, UNKNOWN};
+enum class State {
+	PROVEN, DISPROVEN, UNKNOWN
+};
 
 struct EntailmentData {
 	std::vector<InternalArgument> fofCommands;

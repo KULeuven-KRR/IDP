@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef CLCONST_HPP
 #define CLCONST_HPP
@@ -31,8 +31,8 @@ class IntClConst: public CLConst {
 private:
 	int _value;
 public:
-	IntClConst(int v) :
-			_value(v) {
+	IntClConst(int v)
+			: _value(v) {
 	}
 	int execute() const {
 		yylval.nmr = _value;
@@ -45,8 +45,8 @@ class DoubleClConst: public CLConst {
 private:
 	double _value;
 public:
-	DoubleClConst(double d) :
-			_value(d) {
+	DoubleClConst(double d)
+			: _value(d) {
 	}
 	int execute() const {
 		yylval.dou = _value;
@@ -60,8 +60,8 @@ private:
 	char _value;
 	bool _cons;
 public:
-	CharCLConst(char c, bool b) :
-			_value(c), _cons(b) {
+	CharCLConst(char c, bool b)
+			: _value(c), _cons(b) {
 	}
 	int execute() const {
 		yylval.chr = _value;
@@ -75,8 +75,8 @@ private:
 	std::string _value;
 	bool _cons;
 public:
-	StrClConst(std::string s, bool b) :
-			_value(s), _cons(b) {
+	StrClConst(std::string s, bool b)
+			: _value(s), _cons(b) {
 	}
 	int execute() const {
 		yylval.str = new std::string(_value);

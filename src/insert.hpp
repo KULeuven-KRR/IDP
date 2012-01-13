@@ -63,11 +63,11 @@ struct NSPair {
 	bool _func; //!< true if the name is a pointer to a function
 	ParseInfo _pi; //!< place where the pair was parsed
 
-	NSPair(const longname& n, const std::vector<Sort*>& s, bool ari, const ParseInfo& pi) :
-			_name(n), _sorts(s), _arityincluded(ari), _sortsincluded(true), _func(false), _pi(pi) {
+	NSPair(const longname& n, const std::vector<Sort*>& s, bool ari, const ParseInfo& pi)
+			: _name(n), _sorts(s), _arityincluded(ari), _sortsincluded(true), _func(false), _pi(pi) {
 	}
-	NSPair(const longname& n, bool ari, const ParseInfo& pi) :
-			_name(n), _sorts(0), _arityincluded(ari), _sortsincluded(false), _func(false), _pi(pi) {
+	NSPair(const longname& n, bool ari, const ParseInfo& pi)
+			: _name(n), _sorts(0), _arityincluded(ari), _sortsincluded(false), _func(false), _pi(pi) {
 	}
 
 	void includePredArity();
@@ -91,20 +91,20 @@ struct ElRange {
 		std::pair<int, int>* _intrange;
 		std::pair<char, char>* _charrange;
 	} _value;
-	ElRange() :
-			_type(ERE_EL) {
+	ElRange()
+			: _type(ERE_EL) {
 		_value._element = 0;
 	}
-	ElRange(const DomainElement* e) :
-			_type(ERE_EL) {
+	ElRange(const DomainElement* e)
+			: _type(ERE_EL) {
 		_value._element = e;
 	}
-	ElRange(std::pair<int, int>* r) :
-			_type(ERE_INT) {
+	ElRange(std::pair<int, int>* r)
+			: _type(ERE_INT) {
 		_value._intrange = r;
 	}
-	ElRange(std::pair<char, char>* r) :
-			_type(ERE_CHAR) {
+	ElRange(std::pair<char, char>* r)
+			: _type(ERE_CHAR) {
 		_value._charrange = r;
 	}
 };
@@ -112,8 +112,8 @@ struct ElRange {
 struct VarName {
 	std::string _name;
 	Variable* _var;
-	VarName(const std::string& n, Variable* v) :
-			_name(n), _var(v) {
+	VarName(const std::string& n, Variable* v)
+			: _name(n), _var(v) {
 	}
 };
 

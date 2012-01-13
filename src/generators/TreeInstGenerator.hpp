@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TREEINSTGENERATOR_HPP_
 #define TREEINSTGENERATOR_HPP_
@@ -25,7 +25,7 @@ public:
 	}
 
 	// FIXME reimplement (deep clone)
-	TreeInstGenerator* clone() const{
+	TreeInstGenerator* clone() const {
 		return new TreeInstGenerator(*this);
 	}
 
@@ -34,10 +34,10 @@ public:
 	}
 
 	void next() {
-		if(_reset){
+		if (_reset) {
 			_reset = false;
 			_root->begin();
-		}else{
+		} else {
 			_root->next();
 		}
 		if (_root->isAtEnd()) {
@@ -45,10 +45,10 @@ public:
 		}
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<"TreeInstGenerator\n";
+	virtual void put(std::ostream& stream) {
+		stream << "TreeInstGenerator\n";
 		pushtab();
-		stream <<tabs() <<toString(_root);
+		stream << tabs() << toString(_root);
 		poptab();
 	}
 };

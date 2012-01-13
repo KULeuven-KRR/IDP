@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef THEORYMUTATINGVISITOR_HPP
 #define THEORYMUTATINGVISITOR_HPP
@@ -25,7 +25,8 @@
 class TheoryMutatingVisitor {
 	VISITORFRIENDS()
 public:
-	virtual ~TheoryMutatingVisitor(){}
+	virtual ~TheoryMutatingVisitor() {
+	}
 
 protected:
 	virtual Formula* traverse(Formula*);
@@ -43,11 +44,11 @@ protected:
 	virtual Formula* visit(AggForm*);
 
 	virtual GroundDefinition* visit(GroundDefinition*);
-	virtual GroundRule*	visit(AggGroundRule*);
-	virtual GroundRule*	visit(PCGroundRule*);
+	virtual GroundRule* visit(AggGroundRule*);
+	virtual GroundRule* visit(PCGroundRule*);
 
 	virtual Rule* visit(Rule*);
-	virtual Definition*	visit(Definition*);
+	virtual Definition* visit(Definition*);
 	virtual FixpDef* visit(FixpDef*);
 
 	virtual Term* visit(VarTerm*);

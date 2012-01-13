@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef STRUCTURE_HPP
 #define STRUCTURE_HPP
@@ -96,8 +96,8 @@ private:
 	mutable const DomainElement* domelem_;
 	mutable bool del;
 public:
-	DomElemContainer() :
-			domelem_(new DomainElement()), del(true) {
+	DomElemContainer()
+			: domelem_(new DomainElement()), del(true) {
 	}
 	~DomElemContainer() {
 		if (del) {
@@ -191,16 +191,16 @@ typedef std::map<ElementTuple, const DomainElement*, Compare<ElementTuple> > Tup
 
 struct FirstNElementsEqual {
 	unsigned int _arity;
-	FirstNElementsEqual(unsigned int arity) :
-			_arity(arity) {
+	FirstNElementsEqual(unsigned int arity)
+			: _arity(arity) {
 	}
 	bool operator()(const ElementTuple&, const ElementTuple&) const;
 };
 
 struct StrictWeakNTupleOrdering {
 	unsigned int _arity;
-	StrictWeakNTupleOrdering(unsigned int arity) :
-			_arity(arity) {
+	StrictWeakNTupleOrdering(unsigned int arity)
+			: _arity(arity) {
 	}
 	bool operator()(const ElementTuple&, const ElementTuple&) const;
 };
@@ -323,8 +323,8 @@ private:
 	PFSymbol* _symbol;
 	ElementTuple _args;
 
-	DomainAtom(PFSymbol* symbol, const ElementTuple& args) :
-			_symbol(symbol), _args(args) {
+	DomainAtom(PFSymbol* symbol, const ElementTuple& args)
+			: _symbol(symbol), _args(args) {
 	}
 
 public:
@@ -371,12 +371,12 @@ class TableIterator {
 private:
 	InternalTableIterator* _iterator;
 public:
-	TableIterator() :
-			_iterator(0) {
+	TableIterator()
+			: _iterator(0) {
 	}
 	TableIterator(const TableIterator&);
-	TableIterator(InternalTableIterator* iter) :
-			_iterator(iter) {
+	TableIterator(InternalTableIterator* iter)
+			: _iterator(iter) {
 	}
 	TableIterator& operator=(const TableIterator&);
 	//bool					hasNext()	const;
@@ -393,8 +393,8 @@ class SortIterator {
 private:
 	InternalSortIterator* _iterator;
 public:
-	SortIterator(InternalSortIterator* iter) :
-			_iterator(iter) {
+	SortIterator(InternalSortIterator* iter)
+			: _iterator(iter) {
 		Assert(iter!=NULL);
 	}
 	SortIterator(const SortIterator&);
@@ -463,8 +463,8 @@ private:
 	const ElementTuple& operator*() const;
 	void operator++();
 public:
-	SortInternalTableIterator(InternalSortIterator* isi) :
-			_iter(isi) {
+	SortInternalTableIterator(InternalSortIterator* isi)
+			: _iter(isi) {
 	}
 	~SortInternalTableIterator();
 	SortInternalTableIterator* clone() const;
@@ -484,8 +484,8 @@ private:
 		++_iter;
 	}
 public:
-	EnumInternalIterator(SortedElementTable::const_iterator it, SortedElementTable::const_iterator end) :
-			_iter(it), _end(end) {
+	EnumInternalIterator(SortedElementTable::const_iterator it, SortedElementTable::const_iterator end)
+			: _iter(it), _end(end) {
 	}
 	~EnumInternalIterator() {
 	}
@@ -505,8 +505,8 @@ private:
 		++_iter;
 	}
 public:
-	EnumInternalFuncIterator(Tuple2Elem::const_iterator it, Tuple2Elem::const_iterator end) :
-			_iter(it), _end(end) {
+	EnumInternalFuncIterator(Tuple2Elem::const_iterator it, Tuple2Elem::const_iterator end)
+			: _iter(it), _end(end) {
 	}
 	~EnumInternalFuncIterator() {
 	}
@@ -524,11 +524,11 @@ enum TableSizeType {
 struct tablesize {
 	TableSizeType _type;
 	size_t _size;
-	tablesize(TableSizeType tp, size_t sz) 
-		: _type(tp), _size(sz) {
+	tablesize(TableSizeType tp, size_t sz)
+			: _type(tp), _size(sz) {
 	}
-	tablesize() 
-		: _type(TST_UNKNOWN), _size(0) {
+	tablesize()
+			: _type(TST_UNKNOWN), _size(0) {
 	}
 };
 
@@ -579,8 +579,8 @@ private:
 	void operator++();
 public:
 	InternalFuncIterator(const InternalFuncTable* f, const Universe& univ);
-	InternalFuncIterator(const InternalFuncTable* f, const TableIterator& c) :
-			_curr(c), _function(f) {
+	InternalFuncIterator(const InternalFuncTable* f, const TableIterator& c)
+			: _curr(c), _function(f) {
 	}
 	~InternalFuncIterator() {
 	}
@@ -604,8 +604,8 @@ private:
 	void operator++();
 public:
 	ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ);
-	ProcInternalTableIterator(const InternalPredTable* p, const TableIterator& c, const Universe& univ) :
-			_curr(c), _univ(univ), _predicate(p) {
+	ProcInternalTableIterator(const InternalPredTable* p, const TableIterator& c, const Universe& univ)
+			: _curr(c), _univ(univ), _predicate(p) {
 	}
 	~ProcInternalTableIterator() {
 	}
@@ -733,8 +733,8 @@ private:
 		++_iter;
 	}
 public:
-	NatInternalSortIterator(int iter = 0) :
-			_iter(iter) {
+	NatInternalSortIterator(int iter = 0)
+			: _iter(iter) {
 	}
 	~NatInternalSortIterator() {
 	}
@@ -756,8 +756,8 @@ private:
 		++_iter;
 	}
 public:
-	IntInternalSortIterator(int iter = getMinElem<int>()) :
-			_iter(iter) {
+	IntInternalSortIterator(int iter = getMinElem<int>())
+			: _iter(iter) {
 	}
 	~IntInternalSortIterator() {
 	}
@@ -779,8 +779,8 @@ private:
 		++_iter;
 	}
 public:
-	FloatInternalSortIterator(double iter = getMinElem<double>()) :
-			_iter(iter) {
+	FloatInternalSortIterator(double iter = getMinElem<double>())
+			: _iter(iter) {
 	}
 	~FloatInternalSortIterator() {
 	}
@@ -798,8 +798,8 @@ private:
 	const DomainElement* operator*() const;
 	void operator++();
 public:
-	StringInternalSortIterator(const std::string& iter = "") :
-			_iter(iter) {
+	StringInternalSortIterator(const std::string& iter = "")
+			: _iter(iter) {
 	}
 	~StringInternalSortIterator() {
 	}
@@ -818,8 +818,8 @@ private:
 	const DomainElement* operator*() const;
 	void operator++();
 public:
-	CharInternalSortIterator(char iter = getMinElem<char>(), bool end = false) :
-			_iter(iter), _end(end) {
+	CharInternalSortIterator(char iter = getMinElem<char>(), bool end = false)
+			: _iter(iter), _end(end) {
 	}
 	~CharInternalSortIterator() {
 	}
@@ -843,8 +843,8 @@ private:
 		++_iter;
 	}
 public:
-	EnumInternalSortIterator(SortedElementTuple::iterator it, SortedElementTuple::iterator end) :
-			_iter(it), _end(end) {
+	EnumInternalSortIterator(SortedElementTuple::iterator it, SortedElementTuple::iterator end)
+			: _iter(it), _end(end) {
 	}
 	~EnumInternalSortIterator() {
 	}
@@ -867,8 +867,8 @@ private:
 		++_current;
 	}
 public:
-	RangeInternalSortIterator(int current, int last) :
-			_current(current), _last(last) {
+	RangeInternalSortIterator(int current, int last)
+			: _current(current), _last(last) {
 	}
 	~RangeInternalSortIterator() {
 	}
@@ -915,8 +915,8 @@ public:
 	// Iterators
 	virtual InternalTableIterator* begin(const Universe&) const = 0;
 
-	InternalPredTable() :
-			_nrRefs(0) {
+	InternalPredTable()
+			: _nrRefs(0) {
 	}
 	virtual ~InternalPredTable() {
 	}
@@ -934,8 +934,8 @@ class ProcInternalPredTable: public InternalPredTable {
 private:
 	std::string* _procedure;
 public:
-	ProcInternalPredTable(std::string* proc) :
-			InternalPredTable(), _procedure(proc) {
+	ProcInternalPredTable(std::string* proc)
+			: InternalPredTable(), _procedure(proc) {
 	}
 
 	~ProcInternalPredTable();
@@ -1005,8 +1005,8 @@ public:
 class FullInternalPredTable: public InternalPredTable {
 private:
 public:
-	FullInternalPredTable() :
-			InternalPredTable() {
+	FullInternalPredTable()
+			: InternalPredTable() {
 	}
 
 	bool finite(const Universe&) const;
@@ -1133,11 +1133,11 @@ private:
 	InternalTableIterator* begin(const Universe&) const;
 
 public:
-	EnumeratedInternalPredTable(const SortedElementTable& tab) :
-			InternalPredTable(), _table(tab) {
+	EnumeratedInternalPredTable(const SortedElementTable& tab)
+			: InternalPredTable(), _table(tab) {
 	}
-	EnumeratedInternalPredTable() :
-			InternalPredTable() {
+	EnumeratedInternalPredTable()
+			: InternalPredTable() {
 	}
 	~EnumeratedInternalPredTable() {
 	}
@@ -1167,8 +1167,8 @@ public:
  */
 class EqualInternalPredTable: public ComparisonInternalPredTable {
 public:
-	EqualInternalPredTable() :
-			ComparisonInternalPredTable() {
+	EqualInternalPredTable()
+			: ComparisonInternalPredTable() {
 	}
 	~EqualInternalPredTable() {
 	}
@@ -1191,8 +1191,8 @@ public:
  */
 class StrLessInternalPredTable: public ComparisonInternalPredTable {
 public:
-	StrLessInternalPredTable() :
-			ComparisonInternalPredTable() {
+	StrLessInternalPredTable()
+			: ComparisonInternalPredTable() {
 	}
 	~StrLessInternalPredTable() {
 	}
@@ -1215,8 +1215,8 @@ public:
  */
 class StrGreaterInternalPredTable: public ComparisonInternalPredTable {
 public:
-	StrGreaterInternalPredTable() :
-			ComparisonInternalPredTable() {
+	StrGreaterInternalPredTable()
+			: ComparisonInternalPredTable() {
 	}
 	~StrGreaterInternalPredTable() {
 	}
@@ -1243,8 +1243,8 @@ private:
 	InternalPredTable* _invtable; //!< the inverse of the actual table
 
 public:
-	InverseInternalPredTable(InternalPredTable* inv) :
-			InternalPredTable(), _invtable(inv) {
+	InverseInternalPredTable(InternalPredTable* inv)
+			: InternalPredTable(), _invtable(inv) {
 		inv->incrementRef();
 	}
 	~InverseInternalPredTable();
@@ -1367,8 +1367,8 @@ public:
 
 public:
 	UnionInternalSortTable();
-	UnionInternalSortTable(const std::vector<SortTable*>& in, const std::vector<SortTable*>& out) :
-			_intables(in), _outtables(out) {
+	UnionInternalSortTable(const std::vector<SortTable*>& in, const std::vector<SortTable*>& out)
+			: _intables(in), _outtables(out) {
 	}
 	~UnionInternalSortTable();
 	void addInTable(SortTable* t) {
@@ -1577,8 +1577,8 @@ public:
 	}
 	~EnumeratedInternalSortTable() {
 	}
-	EnumeratedInternalSortTable(const SortedElementTuple& d) :
-			_table(d) {
+	EnumeratedInternalSortTable(const SortedElementTuple& d)
+			: _table(d) {
 	}
 	InternalSortTable* add(const DomainElement*);
 	InternalSortTable* remove(const DomainElement*);
@@ -1599,8 +1599,8 @@ private:
 	int _first; //!< first element in the range
 	int _last; //!< last element in the range
 public:
-	IntRangeInternalSortTable(int f, int l) :
-			_first(f), _last(l) {
+	IntRangeInternalSortTable(int f, int l)
+			: _first(f), _last(l) {
 	}
 	bool finite() const {
 		return approxFinite();
@@ -1646,8 +1646,8 @@ class InternalFuncTable {
 protected:
 	unsigned int _nrRefs;
 public:
-	InternalFuncTable() :
-			_nrRefs(0) {
+	InternalFuncTable()
+			: _nrRefs(0) {
 	}
 	virtual ~InternalFuncTable() {
 	}
@@ -1683,8 +1683,8 @@ class ProcInternalFuncTable: public InternalFuncTable {
 private:
 	std::string* _procedure;
 public:
-	ProcInternalFuncTable(std::string* proc) :
-			InternalFuncTable(), _procedure(proc) {
+	ProcInternalFuncTable(std::string* proc)
+			: InternalFuncTable(), _procedure(proc) {
 	}
 
 	~ProcInternalFuncTable();
@@ -1709,8 +1709,8 @@ class UNAInternalFuncTable: public InternalFuncTable {
 private:
 	Function* _function;
 public:
-	UNAInternalFuncTable(Function* f) :
-			InternalFuncTable(), _function(f) {
+	UNAInternalFuncTable(Function* f)
+			: InternalFuncTable(), _function(f) {
 	}
 
 	~UNAInternalFuncTable() {
@@ -1739,11 +1739,11 @@ class EnumeratedInternalFuncTable: public InternalFuncTable {
 private:
 	Tuple2Elem _table;
 public:
-	EnumeratedInternalFuncTable() :
-			InternalFuncTable() {
+	EnumeratedInternalFuncTable()
+			: InternalFuncTable() {
 	}
-	EnumeratedInternalFuncTable(const Tuple2Elem& tab) :
-			InternalFuncTable(), _table(tab) {
+	EnumeratedInternalFuncTable(const Tuple2Elem& tab)
+			: InternalFuncTable(), _table(tab) {
 	}
 	virtual ~EnumeratedInternalFuncTable() {
 	}
@@ -1779,8 +1779,8 @@ protected:
 	NumType _type;
 public:
 
-	IntFloatInternalFuncTable(bool i) :
-			_type(i ? NumType::CERTAINLYINT : NumType::POSSIBLYINT) {
+	IntFloatInternalFuncTable(bool i)
+			: _type(i ? NumType::CERTAINLYINT : NumType::POSSIBLYINT) {
 	}
 
 	bool finite(const Universe&) const {
@@ -1811,8 +1811,8 @@ public:
 
 class PlusInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	PlusInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	PlusInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1823,8 +1823,8 @@ public:
 
 class MinusInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	MinusInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	MinusInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1835,8 +1835,8 @@ public:
 
 class TimesInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	TimesInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	TimesInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1847,8 +1847,8 @@ public:
 
 class DivInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	DivInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	DivInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1859,8 +1859,8 @@ public:
 
 class AbsInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	AbsInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	AbsInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1871,8 +1871,8 @@ public:
 
 class UminInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	UminInternalFuncTable(bool i) :
-			IntFloatInternalFuncTable(i) {
+	UminInternalFuncTable(bool i)
+			: IntFloatInternalFuncTable(i) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -2221,8 +2221,8 @@ class SinglePredInterGenerator: public PredInterGenerator {
 private:
 	PredInter* _inter;
 public:
-	SinglePredInterGenerator(PredInter* inter) :
-			_inter(inter) {
+	SinglePredInterGenerator(PredInter* inter)
+			: _inter(inter) {
 	}
 	~SinglePredInterGenerator() {
 		delete (_inter);
@@ -2238,8 +2238,8 @@ class InconsistentPredInterGenerator: public PredInterGenerator {
 private:
 	Predicate* _predicate;
 public:
-	InconsistentPredInterGenerator(Predicate* predicate) :
-			_predicate(predicate) {
+	InconsistentPredInterGenerator(Predicate* predicate)
+			: _predicate(predicate) {
 	}
 	PredInter* get(const AbstractStructure* structure);
 };
@@ -2248,8 +2248,8 @@ class EqualInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
 public:
-	EqualInterGenerator(Sort* sort) :
-			_sort(sort) {
+	EqualInterGenerator(Sort* sort)
+			: _sort(sort) {
 	}
 	PredInter* get(const AbstractStructure* structure);
 };
@@ -2258,8 +2258,8 @@ class StrLessThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
 public:
-	StrLessThanInterGenerator(Sort* sort) :
-			_sort(sort) {
+	StrLessThanInterGenerator(Sort* sort)
+			: _sort(sort) {
 	}
 	PredInter* get(const AbstractStructure* structure);
 };
@@ -2268,8 +2268,8 @@ class StrGreaterThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
 public:
-	StrGreaterThanInterGenerator(Sort* sort) :
-			_sort(sort) {
+	StrGreaterThanInterGenerator(Sort* sort)
+			: _sort(sort) {
 	}
 	PredInter* get(const AbstractStructure* structure);
 };
@@ -2306,8 +2306,8 @@ private:
 
 public:
 	FuncInter(FuncTable* ft);
-	FuncInter(PredInter* pt) :
-			_functable(0), _graphinter(pt) {
+	FuncInter(PredInter* pt)
+			: _functable(0), _graphinter(pt) {
 	}
 	~FuncInter();
 
@@ -2344,8 +2344,8 @@ class SingleFuncInterGenerator: public FuncInterGenerator {
 private:
 	FuncInter* _inter;
 public:
-	SingleFuncInterGenerator(FuncInter* inter) :
-			_inter(inter) {
+	SingleFuncInterGenerator(FuncInter* inter)
+			: _inter(inter) {
 	}
 	~SingleFuncInterGenerator() {
 		delete (_inter);
@@ -2359,8 +2359,8 @@ class InconsistentFuncInterGenerator: public FuncInterGenerator {
 private:
 	Function* _function;
 public:
-	InconsistentFuncInterGenerator(Function* function) :
-			_function(function) {
+	InconsistentFuncInterGenerator(Function* function)
+			: _function(function) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
@@ -2369,39 +2369,39 @@ class OneSortInterGenerator: public FuncInterGenerator {
 protected:
 	Sort* _sort;
 public:
-	OneSortInterGenerator(Sort* sort) :
-			_sort(sort) {
+	OneSortInterGenerator(Sort* sort)
+			: _sort(sort) {
 	}
 };
 
 class MinInterGenerator: public OneSortInterGenerator {
 public:
-	MinInterGenerator(Sort* sort) :
-			OneSortInterGenerator(sort) {
+	MinInterGenerator(Sort* sort)
+			: OneSortInterGenerator(sort) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
 
 class MaxInterGenerator: public OneSortInterGenerator {
 public:
-	MaxInterGenerator(Sort* sort) :
-			OneSortInterGenerator(sort) {
+	MaxInterGenerator(Sort* sort)
+			: OneSortInterGenerator(sort) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
 
 class SuccInterGenerator: public OneSortInterGenerator {
 public:
-	SuccInterGenerator(Sort* sort) :
-			OneSortInterGenerator(sort) {
+	SuccInterGenerator(Sort* sort)
+			: OneSortInterGenerator(sort) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
 
 class InvSuccInterGenerator: public OneSortInterGenerator {
 public:
-	InvSuccInterGenerator(Sort* sort) :
-			OneSortInterGenerator(sort) {
+	InvSuccInterGenerator(Sort* sort)
+			: OneSortInterGenerator(sort) {
 	}
 	FuncInter* get(const AbstractStructure* structure);
 };
@@ -2449,8 +2449,8 @@ protected:
 	Vocabulary* _vocabulary; // The vocabulary of the structure.
 
 public:
-	AbstractStructure(std::string name, const ParseInfo& pi) :
-			_name(name), _pi(pi), _vocabulary(0) {
+	AbstractStructure(std::string name, const ParseInfo& pi)
+			: _name(name), _pi(pi), _vocabulary(0) {
 	}
 	virtual ~AbstractStructure() {
 	}
@@ -2495,7 +2495,7 @@ public:
 
 	virtual void makeTwoValued() = 0;
 
-	void put(std::ostream& s) ;
+	void put(std::ostream& s);
 };
 
 /** Structures as constructed by the parser **/
@@ -2510,8 +2510,8 @@ private:
 	void canIncrement(TableIterator & domainIterator) const;
 
 public:
-	Structure(const std::string& name, const ParseInfo& pi) :
-			AbstractStructure(name, pi) {
+	Structure(const std::string& name, const ParseInfo& pi)
+			: AbstractStructure(name, pi) {
 	}
 	~Structure();
 
@@ -2537,10 +2537,10 @@ public:
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
-	virtual const std::map<Predicate*, PredInter*>& getPredInters() const{
+	virtual const std::map<Predicate*, PredInter*>& getPredInters() const {
 		return _predinter;
 	}
-	virtual const std::map<Function*, FuncInter*>& getFuncInters() const{
+	virtual const std::map<Function*, FuncInter*>& getFuncInters() const {
 		return _funcinter;
 	}
 
@@ -2552,13 +2552,14 @@ public:
 /**Class to represent inconsistent structures **/
 class InconsistentStructure: public AbstractStructure {
 public:
-	InconsistentStructure() :
-			AbstractStructure("Inconsistent Structure", ParseInfo()) {
+	InconsistentStructure()
+			: AbstractStructure("Inconsistent Structure", ParseInfo()) {
 	}
-	InconsistentStructure(const std::string& name, const ParseInfo& pi) :
-			AbstractStructure(name, pi) {
+	InconsistentStructure(const std::string& name, const ParseInfo& pi)
+			: AbstractStructure(name, pi) {
 	}
-	~InconsistentStructure(){}
+	~InconsistentStructure() {
+	}
 	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
 	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
 	void clean() {

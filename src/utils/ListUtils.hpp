@@ -36,7 +36,7 @@ void deleteList(std::vector<std::vector<T*>>& l) {
 
 template<typename T>
 void deleteList(std::set<T*>& l) {
-	for (auto i = l.cbegin(); i != l.cend(); ++i){
+	for (auto i = l.cbegin(); i != l.cend(); ++i) {
 		if (*i != NULL) {
 			delete (*i);
 		}

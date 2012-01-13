@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "theorytransformations/GraphFuncsAndAggs.hpp"
 
@@ -33,10 +33,10 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 	Assert(functerm->type() == TT_FUNC);
 	Assert(valueterm->type() != TT_FUNC && valueterm->type() != TT_AGG);
 	FuncTerm* ft = dynamic_cast<FuncTerm*>(functerm);
-	auto vt = ft->subterms(); 
+	auto vt = ft->subterms();
 	vt.push_back(valueterm);
-	PredForm* funcgraph = new PredForm(sign,ft->function(),vt,pi);
-	delete(ft);
+	PredForm* funcgraph = new PredForm(sign, ft->function(), vt, pi);
+	delete (ft);
 	return funcgraph;
 }
 
@@ -44,7 +44,7 @@ AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, Term* ag
 	Assert(aggterm->type() == TT_AGG);
 	Assert(valueterm->type() != TT_FUNC && valueterm->type() != TT_AGG);
 	AggTerm* at = dynamic_cast<AggTerm*>(aggterm);
-	AggForm* aggform = new AggForm(SIGN::POS,valueterm,comp,at,pi);
+	AggForm* aggform = new AggForm(SIGN::POS, valueterm, comp, at, pi);
 	return aggform;
 }
 
@@ -53,10 +53,9 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 
 		Term* subterm1 = pf->subterms()[0];
 		Term* subterm2 = pf->subterms()[1];
-		
-		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG) 
-				&& (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)) {
-			auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf,_structure,_context);
+
+		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG) && (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)) {
+			auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf, _structure, _context);
 			return splitformula->accept(this);
 		}
 
@@ -64,11 +63,11 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 
 		if (pf->symbol()->name() == "=/2") {
 			if (subterm1->type() == TT_FUNC) {
-				newformula = makeFuncGraph(pf->sign(),subterm1,subterm2,pf->pi().clone());
-				delete(pf);
+				newformula = makeFuncGraph(pf->sign(), subterm1, subterm2, pf->pi().clone());
+				delete (pf);
 			} else if (subterm2->type() == TT_FUNC) {
-				newformula = makeFuncGraph(pf->sign(),subterm2,subterm1,pf->pi().clone());
-				delete(pf);
+				newformula = makeFuncGraph(pf->sign(), subterm2, subterm1, pf->pi().clone());
+				delete (pf);
 			}
 			if (newformula != NULL) {
 				return newformula;
@@ -76,11 +75,11 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		}
 
 		if (subterm1->type() == TT_AGG) {
-			newformula = makeAggForm(subterm2,invertComp(getCompType(pf)),subterm1,pf->pi().clone());
-			delete(pf);
+			newformula = makeAggForm(subterm2, invertComp(getCompType(pf)), subterm1, pf->pi().clone());
+			delete (pf);
 		} else if (subterm2->type() == TT_AGG) {
-			newformula = makeAggForm(subterm1,getCompType(pf),subterm2,pf->pi().clone());
-			delete(pf);
+			newformula = makeAggForm(subterm1, getCompType(pf), subterm2, pf->pi().clone());
+			delete (pf);
 		}
 		if (newformula != NULL) {
 			return newformula;

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "term.hpp"
@@ -68,8 +68,8 @@ vector<unsigned int> detectDoubleOccurences(const vector<const DomElemContainer*
 	return firstocc;
 }
 
-BDDToGenerator::BDDToGenerator(FOBDDManager* manager) :
-		_manager(manager) {
+BDDToGenerator::BDDToGenerator(FOBDDManager* manager)
+		: _manager(manager) {
 }
 
 void extractFirstOccurringOutputs(const BddGeneratorData& data, const vector<unsigned int>& firstocc, vector<const DomElemContainer*>& outvars,
@@ -184,9 +184,9 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 	return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
 
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern){
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
-		if(pattern[n] == matchingPattern){
+		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n]);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
@@ -199,9 +199,9 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 	return atom;
 }
 
-PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager){
+PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager) {
 	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT);
-	if (atom==newatom) {
+	if (atom == newatom) {
 		vector<Term*> vt = lhs->subterms();
 		vt.push_back(rhs);
 		newatom = new PredForm(atom->sign(), lhs->function(), vt, atom->pi().clone());
@@ -214,7 +214,7 @@ PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<
 /**
  * NOTE: deletes the functerm and the atom
  */
-PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm){
+PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
 	vector<Term*> vt = ft->subterms();
 	vt.push_back(rangeTerm);
 	auto newatom = new PredForm(atom->sign(), ft->function(), vt, atom->pi().clone());
@@ -234,20 +234,20 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog <<"BDDGeneratorFactory visiting: " <<toString(atom) <<"\n";
+		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
 	}
 
 	if (FormulaUtils::containsFuncTerms(atom)) {
 		/*bool allinput = true; // TODO usage of this section?
-		for (auto it = pattern.cbegin(); allinput && it != pattern.cend(); ++it) {
-			if (*it == Pattern::OUTPUT) {
-				allinput = false;
-			}
-		}
-		if (allinput) {
-			// If everything is input, put it in a normal form if it is an arithmetic expression
-			atom = solveAndReplace(atom, pattern, atomvars, _manager, Pattern::INPUT);
-		} else*/ if (atom->symbol()->name() == "=/2") { // FIXME no hardcoded string comparisons!
+		 for (auto it = pattern.cbegin(); allinput && it != pattern.cend(); ++it) {
+		 if (*it == Pattern::OUTPUT) {
+		 allinput = false;
+		 }
+		 }
+		 if (allinput) {
+		 // If everything is input, put it in a normal form if it is an arithmetic expression
+		 atom = solveAndReplace(atom, pattern, atomvars, _manager, Pattern::INPUT);
+		 } else*/if (atom->symbol()->name() == "=/2") { // FIXME no hardcoded string comparisons!
 			// Remove all possible direct function applications: equalities; and put them into the form P(t1,...,tn)
 			// Only possibilities: at least one of both is a functerm! (otherwise there would be no functions present)
 			//	(A)		F(t1,...,tn) = t,
@@ -256,12 +256,12 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			//  (D)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
 
 			// TODO review what this does exactly
-			if(sametypeid<DomainTerm>(*(atom->subterms()[0]))){ // Case (B) or (D)
+			if (sametypeid<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
 				Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
 					atom = removeSumChain(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
-				}else{ // Case B
+				} else { // Case B
 					atom = graphFunction(atom, ft, atom->subterms()[0]);
 				}
 			} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
@@ -294,13 +294,13 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		newform = FormulaUtils::splitComparisonChains(newform);
 		newform = FormulaUtils::graphFuncsAndAggs(newform);
 		FormulaUtils::flatten(newform);
-		if(not sametypeid<QuantForm>(*newform)){
+		if (not sametypeid<QuantForm>(*newform)) {
 			throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 		}
 		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
 		Assert(sametypeid<BoolForm>(*(quantform->subformula())));
-		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());vector
-		<PredForm*> conjunction;
+		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
+		vector<PredForm*> conjunction;
 		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
 			Assert(typeid(*(*it)) == typeid(PredForm));
 			conjunction.push_back(dynamic_cast<PredForm*>(*it));
@@ -381,9 +381,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				}
 			}
 			branchpattern = newbranchpattern;
-			if (*it == origatom){
+			if (*it == origatom) {
 				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, inverse, Universe(kerntables)));
-			}else{
+			} else {
 				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, false, Universe(kerntables)));
 			}
 		}
@@ -419,8 +419,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				if (atomvars[pos] == var) {
 					break;
 				}
-			}
-			Assert(pos < pattern.size());
+			}Assert(pos < pattern.size());
 			atompattern.push_back(pattern[pos]);
 			datomvars.push_back(vars[pos]);
 			atomtables.push_back(universe.tables()[pos]);
@@ -460,9 +459,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	return GeneratorFactory::create(atom, structure, inverse, atompattern, datomvars, Universe(atomtables));
 }
 
-InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern,
-		const vector<const DomElemContainer*>& origvars, const vector<const FOBDDVariable*>& origkernelvars, AbstractStructure* structure,
-		bool generateFalsebranch, const Universe& origuniverse) {
+InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
+		const vector<const FOBDDVariable*>& origkernelvars, AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
@@ -476,8 +474,8 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 				atomvars.push_back((*it)->variable());
 			}
 			auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, generateFalsebranch, origuniverse);
-			if(getOption(IntType::GROUNDVERBOSITY)>3){
-				clog <<"Created kernel generator: " <<toString(gen) <<"\n";
+			if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+				clog << "Created kernel generator: " << toString(gen) << "\n";
 			}
 			return gen;
 		}

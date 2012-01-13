@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef MATERIALIZER_HPP 
 #define MATERIALIZER_HPP 
@@ -19,13 +19,13 @@
  */
 class EnumerateSymbolicTable: public StructureVisitor {
 private:
-	Universe 			_universe;
-	PredTable* 			_predtable;
-	FuncTable* 			_functable;
-	SortTable* 			_sorttable;
-	InternalPredTable* 	_internpredtable;
-	InternalFuncTable* 	_internfunctable;
-	InternalSortTable* 	_internsorttable;
+	Universe _universe;
+	PredTable* _predtable;
+	FuncTable* _functable;
+	SortTable* _sorttable;
+	InternalPredTable* _internpredtable;
+	InternalFuncTable* _internfunctable;
+	InternalSortTable* _internsorttable;
 
 	void makeEnumeratedPredTable(const InternalPredTable* ipt) {
 		if (ipt->approxFinite(_universe)) {

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef IDP_IDPEXCEPTION_HPP_
 #define IDP_IDPEXCEPTION_HPP_
@@ -14,44 +14,47 @@
 #include <sstream>
 #include <string>
 
-class Exception{
+class Exception {
 public:
-	~Exception(){}
+	~Exception() {
+	}
 	virtual std::string getMessage() const = 0;
 };
 
-class NoSuchProcedureException: public Exception{
-	std::string getMessage() const{
+class NoSuchProcedureException: public Exception {
+	std::string getMessage() const {
 		std::stringstream ss;
-		ss <<"No such lua procedure";
+		ss << "No such lua procedure";
 		return ss.str();
 	}
 };
 
-class AssertionException: public Exception{
+class AssertionException: public Exception {
 private:
 	std::string message;
 public:
-	AssertionException(std::string message): message(message){
+	AssertionException(std::string message)
+			: message(message) {
 
 	}
-	std::string getMessage() const{
+	std::string getMessage() const {
 		std::stringstream ss;
-		ss <<"AssertionException: " <<message;
+		ss << "AssertionException: " << message;
 		return ss.str();
 	}
 };
 
-class IdpException: public Exception{
+class IdpException: public Exception {
 private:
 	std::string message;
 public:
-	IdpException(std::string message): message(message){
+	IdpException(std::string message)
+			: message(message) {
 
 	}
-	std::string getMessage() const{
+	std::string getMessage() const {
 		std::stringstream ss;
-		ss <<"IdpException: " <<message;
+		ss << "IdpException: " << message;
 		return ss.str();
 	}
 };

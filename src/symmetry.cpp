@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "symmetry.hpp"
 #include "structure.hpp"
@@ -66,8 +66,7 @@ set<unsigned int> argumentNrs(const PFSymbol* relation, const set<Sort*>& sorts)
 /**
  *	returns a tuple of domain elements symmetrical under a binary permutation of domain elements to a given tuple, for the given arguments
  */
-ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement* first, const DomainElement* second,
-		const set<unsigned int>& argumentPlaces) {
+ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement* first, const DomainElement* second, const set<unsigned int>& argumentPlaces) {
 	ElementTuple symmetrical = original;
 	for (auto argumentPlaces_it = argumentPlaces.cbegin(); argumentPlaces_it != argumentPlaces.cend(); ++argumentPlaces_it) {
 		if (symmetrical[*argumentPlaces_it] == first) {
@@ -82,8 +81,7 @@ ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement*
 /**
  *	returns true iff a binary permutation of domain elements is an invariant permutation in an interpretation of a PFSymbol, given the arguments of the PFSymbol to check
  */
-bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>& argumentPlaces, const DomainElement* first,
-		const DomainElement* second) {
+bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>& argumentPlaces, const DomainElement* first, const DomainElement* second) {
 	bool isSymmetry = true;
 	for (TableIterator table_it = table->begin(); not table_it.isAtEnd() && isSymmetry; ++table_it) {
 		ElementTuple symmetrical = symmetricalTuple(*table_it, first, second, argumentPlaces);
@@ -97,8 +95,7 @@ bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>
 /**
  *	returns true iff a binary permutation of domain elements of a set of sorts is an invariant permutation for a certain PFSymbol
  */
-bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation,
-		const set<Sort*>& sorts) {
+bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation, const set<Sort*>& sorts) {
 	if (!hasInterpretation(s, relation)) {
 		return true;
 	}
@@ -223,8 +220,8 @@ private:
 
 public:
 	// Constructors
-	OccurrencesCounter(const AbstractStructure* s) :
-			structure_(s) {
+	OccurrencesCounter(const AbstractStructure* s)
+			: structure_(s) {
 	}
 
 	// Inspectors
@@ -285,7 +282,7 @@ map<const DomainElement*, pair<int, int> > OccurrencesCounter::count(PFSymbol* r
  */
 pair<int, int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort) {
 	Assert(!relation->argumentNrs(sort).empty());
-	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*>{relation, sort});
+	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*> { relation, sort });
 	if (occurrences_it != occurrences_.cend()) {
 		auto result_it = occurrences_it->second.find(element);
 		if (result_it != occurrences_it->second.cend()) {
@@ -307,7 +304,8 @@ pair<int, int> OccurrencesCounter::getOccurrences(const DomainElement* element, 
 /**
  *	Requests the occurrences of some domain elements of certain sorts for certain PFSymbols for both ct and cf tables.
  */
-map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations, const set<Sort*>& sorts) {
+map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const set<const DomainElement*>& elements, const set<PFSymbol*>& relations,
+		const set<Sort*>& sorts) {
 	map<const DomainElement*, vector<int> > result;
 	for (auto elements_it = elements.cbegin(); elements_it != elements.cend(); ++elements_it) {
 		vector<int> values;
@@ -327,7 +325,7 @@ map<const DomainElement*, vector<int> > OccurrencesCounter::getOccurrences(const
 	return result;
 }
 
-ostream& OccurrencesCounter::put(ostream& output) const{
+ostream& OccurrencesCounter::put(ostream& output) const {
 	output << "COUNTER:\n";
 	output << "structure: " << getStructure()->name() << "\n";
 	for (auto occurrences_it = occurrences_.cbegin(); occurrences_it != occurrences_.cend(); ++occurrences_it) {
@@ -369,23 +367,23 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 	Assert(elements_.size()>1);
 }
 
-ostream& IVSet::put(ostream& output) const{
+ostream& IVSet::put(ostream& output) const {
 	output << "structure: " << getStructure()->name() << "\n";
-		for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
-			output << toString(*sorts_it) << " | ";
-		}
-		output << "\n";
-		for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
-			output << toString(*relations_it) << " | ";
-		}
-		output << "\n";
-		output << getElements().size() << ": ";
-		for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
-			output << toString(*elements_it) << " | ";
-		}
-		output << "\n";
-		output << "Enkelvoudig? " << isEnkelvoudig() << "\n";
-		return output;
+	for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
+		output << toString(*sorts_it) << " | ";
+	}
+	output << "\n";
+	for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
+		output << toString(*relations_it) << " | ";
+	}
+	output << "\n";
+	output << getElements().size() << ": ";
+	for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
+		output << toString(*elements_it) << " | ";
+	}
+	output << "\n";
+	output << "Enkelvoudig? " << isEnkelvoudig() << "\n";
+	return output;
 }
 
 /**
@@ -711,8 +709,8 @@ private:
 	}
 
 public:
-	TheorySymmetryAnalyzer(const AbstractStructure* s) :
-			structure_(s) {
+	TheorySymmetryAnalyzer(const AbstractStructure* s)
+			: structure_(s) {
 		markAsUnfitForSymmetry(VocabularyUtils::intsort());
 		markAsUnfitForSymmetry(VocabularyUtils::floatsort());
 		markAsUnfitForSymmetry(VocabularyUtils::natsort());
@@ -833,8 +831,7 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef) {
  * 		every allowed domain element for a sort is not a forbidden element
  * 		every allowed domain element for a sort is not a domain element of a child sort
  */
-map<Sort*, set<const DomainElement*> > findElementsForSorts(const AbstractStructure* s, set<Sort*>& sorts,
-		const set<const DomainElement*>& forbiddenElements) {
+map<Sort*, set<const DomainElement*> > findElementsForSorts(const AbstractStructure* s, set<Sort*>& sorts, const set<const DomainElement*>& forbiddenElements) {
 	map<Sort*, set<const DomainElement*> > result;
 	for (auto sort_it = sorts.cbegin(); sort_it != sorts.cend(); ++sort_it) {
 		const SortTable* parent = s->inter(*sort_it);

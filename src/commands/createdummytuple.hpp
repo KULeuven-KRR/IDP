@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef CREATETUPLE_HPP_
 #define CREATETUPLE_HPP_
@@ -15,7 +15,8 @@
 
 class CreateTupleInference: public EmptyBase {
 public:
-	CreateTupleInference(): EmptyBase("createdummytuple", "Create a dummy empty tuple") {
+	CreateTupleInference()
+			: EmptyBase("createdummytuple", "Create a dummy empty tuple") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

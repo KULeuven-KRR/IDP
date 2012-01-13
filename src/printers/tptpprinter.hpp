@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TPTPPRINTER_HPP_
 #define TPTPPRINTER_HPP_
@@ -27,34 +27,29 @@ template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
-	bool						_conjecture;
-	bool						_arithmetic;
-	bool						_nats;
-	bool						_ints;
-	bool						_floats;
-	unsigned int				_count;
-	std::set<DomainTerm*>		_typedDomainTerms;
-	std::set<DomainElement*>	_typedDomainElements;
-	std::set<Sort*>				_types;
-	std::stringstream*			_os;
-	std::stringstream			_typeStream; // The types. (for TFF)
-	std::stringstream			_typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
-												  // and which functions/predicates take which types)
-	std::stringstream			_axiomStream; // The first theory as axioms
-	std::stringstream			_conjectureStream; // The second theory as conjectures
+	bool _conjecture;
+	bool _arithmetic;
+	bool _nats;
+	bool _ints;
+	bool _floats;
+	unsigned int _count;
+	std::set<DomainTerm*> _typedDomainTerms;
+	std::set<DomainElement*> _typedDomainElements;
+	std::set<Sort*> _types;
+	std::stringstream* _os;
+	std::stringstream _typeStream; // The types. (for TFF)
+	std::stringstream _typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
+										// and which functions/predicates take which types)
+	std::stringstream _axiomStream; // The first theory as axioms
+	std::stringstream _conjectureStream; // The second theory as conjectures
 
 	using StreamPrinter<Stream>::output;
 
 public:
-	TPTPPrinter(bool arithmetic, Stream& stream):
-			StreamPrinter<Stream>(stream),
-			_conjecture(false),
-			_arithmetic(arithmetic),
-			_nats(false),
-			_ints(false),
-			_floats(false),
-			_count(0){ }
-	
+	TPTPPrinter(bool arithmetic, Stream& stream)
+			: StreamPrinter<Stream>(stream), _conjecture(false), _arithmetic(arithmetic), _nats(false), _ints(false), _floats(false), _count(0) {
+	}
+
 	bool conjecture() {
 		return _conjecture;
 	}
@@ -63,8 +58,10 @@ public:
 		_conjecture = conjecture;
 	}
 
-	void startTheory() { }
-	void endTheory() { }
+	void startTheory() {
+	}
+	void endTheory() {
+	}
 
 protected:
 	void visit(const AbstractStructure*) {
@@ -72,37 +69,41 @@ protected:
 	}
 
 	void visit(const Vocabulary* v) {
-		for(auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			if(not it->second->builtin() || v == Vocabulary::std()) {
+		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {
 				visit(it->second);
 			}
 		}
-		for(auto it = v->firstPred(); it != v->lastPred(); ++it) {
-			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
+		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
+			}
 		}
-		for(auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
-			if(not it->second->builtin() || v == Vocabulary::std()) { visit(it->second); }
+		for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {
+				visit(it->second);
+			}
 		}
 	}
 
 	void visit(const Theory* t) {
-		if(!_conjecture) {
-			for(auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
+		if (!_conjecture) {
+			for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 				startAxiom("a");
 				(*it)->accept(this);
 				endAxiom();
-				_count ++;
+				_count++;
 			}
 		} else if (t->sentences().cbegin() != t->sentences().cend()) {
 			// Output a conjecture as a conjunction.
 			startAxiom("cnj");
 			auto it = t->sentences().cbegin();
-			while(it != t->sentences().cend()) {
+			while (it != t->sentences().cend()) {
 				_conjectureStream << "(";
 				(*it)->accept(this);
 				_conjectureStream << ")";
-				++ it;
-				if(it != t->sentences().cend()) {
+				++it;
+				if (it != t->sentences().cend()) {
 					_conjectureStream << " & ";
 				}
 			}
@@ -118,28 +119,28 @@ protected:
 	/** Formulas **/
 
 	void visit(const PredForm* f) {
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			(*_os) << "~";
 		}
-		if(toString(f->symbol()) == "=") {
+		if (toString(f->symbol()) == "=") {
 			(*_os) << "(";
 			f->subterms()[0]->accept(this);
 			(*_os) << " = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == ">") {
+		} else if (toString(f->symbol()) == ">") {
 			(*_os) << "$greater(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "<") {
+		} else if (toString(f->symbol()) == "<") {
 			(*_os) << "$less(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "+") {
+		} else if (toString(f->symbol()) == "+") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -147,7 +148,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "-" && f->subterms().size() == 3) {
+		} else if (toString(f->symbol()) == "-" && f->subterms().size() == 3) {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -155,13 +156,13 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "-" && f->subterms().size() == 2) {
+		} else if (toString(f->symbol()) == "-" && f->subterms().size() == 2) {
 			(*_os) << "($uminus(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ") = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "*") {
+		} else if (toString(f->symbol()) == "*") {
 			(*_os) << "($product(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",";
@@ -169,19 +170,19 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "PRED") {
+		} else if (toString(f->symbol()) == "PRED") {
 			(*_os) << "($difference(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "SUCC") {
+		} else if (toString(f->symbol()) == "SUCC") {
 			(*_os) << "($sum(";
 			f->subterms()[0]->accept(this);
 			(*_os) << ",1) = ";
 			f->subterms()[1]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "MAX") {
+		} else if (toString(f->symbol()) == "MAX") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -194,7 +195,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "MIN") {
+		} else if (toString(f->symbol()) == "MIN") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($less(";
 			f->subterms()[0]->accept(this);
@@ -207,7 +208,7 @@ protected:
 			(*_os) << ") = ";
 			f->subterms()[2]->accept(this);
 			(*_os) << ")";
-		} else if(toString(f->symbol()) == "abs") {
+		} else if (toString(f->symbol()) == "abs") {
 			// NOTE: $itett is often unsupported
 			(*_os) << "($itett($greater(";
 			f->subterms()[0]->accept(this);
@@ -222,10 +223,10 @@ protected:
 			(*_os) << ")";
 		} else {
 			(*_os) << "p_" << rewriteLongname(toString(f->symbol()));
-			if(!f->subterms().empty()) {
+			if (!f->subterms().empty()) {
 				(*_os) << "(";
 				f->subterms()[0]->accept(this);
-				for(unsigned int n = 1; n < f->subterms().size(); ++n) {
+				for (unsigned int n = 1; n < f->subterms().size(); ++n) {
 					(*_os) << ",";
 					f->subterms()[n]->accept(this);
 				}
@@ -235,30 +236,30 @@ protected:
 	}
 
 	void visit(const EqChainForm* f) {
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			(*_os) << "~";
 		}
 		(*_os) << "(";
 		f->subterms()[0]->accept(this);
-		for(unsigned int n = 0; n < f->comps().size(); ++n) {
-			if(f->comps()[n] == CompType::EQ)
+		for (unsigned int n = 0; n < f->comps().size(); ++n) {
+			if (f->comps()[n] == CompType::EQ)
 				(*_os) << " = ";
-			else if(f->comps()[n] == CompType::NEQ)
+			else if (f->comps()[n] == CompType::NEQ)
 				(*_os) << " != ";
-			f->subterms()[n+1]->accept(this);
-			if(n+1 < f->comps().size()) {
-				if(f->conj())
+			f->subterms()[n + 1]->accept(this);
+			if (n + 1 < f->comps().size()) {
+				if (f->conj())
 					(*_os) << " & ";
 				else
 					(*_os) << " | ";
-				f->subterms()[n+1]->accept(this);
+				f->subterms()[n + 1]->accept(this);
 			}
 		}
 		(*_os) << ")";
 	}
 
 	void visit(const EquivForm* f) {
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			(*_os) << "~";
 		}
 		(*_os) << "(";
@@ -269,21 +270,20 @@ protected:
 	}
 
 	void visit(const BoolForm* f) {
-		if(f->subformulas().empty()) {
-			if(f->isConjWithSign()){
+		if (f->subformulas().empty()) {
+			if (f->isConjWithSign()) {
 				(*_os) << "$true";
-			}else{
+			} else {
 				(*_os) << "$false";
 			}
-		}
-		else {
-			if(isNeg(f->sign())){
+		} else {
+			if (isNeg(f->sign())) {
 				(*_os) << "~";
 			}
 			(*_os) << "(";
 			f->subformulas()[0]->accept(this);
-			for(unsigned int n = 1; n < f->subformulas().size(); ++n) {
-				if(f->conj())
+			for (unsigned int n = 1; n < f->subformulas().size(); ++n) {
+				if (f->conj())
 					(*_os) << " & ";
 				else
 					(*_os) << " | ";
@@ -294,68 +294,66 @@ protected:
 	}
 
 	void visit(const QuantForm* f) {
-		if(isNeg(f->sign())){
+		if (isNeg(f->sign())) {
 			(*_os) << "~";
 		}
 		(*_os) << "(";
-		if(f->isUniv())
+		if (f->isUniv())
 			(*_os) << "! [";
 		else
 			(*_os) << "? [";
 		auto it = f->quantVars().cbegin();
 		(*_os) << "V_" << (*it)->name();
-		if(_arithmetic && (*it)->sort()) {
+		if (_arithmetic && (*it)->sort()) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString((*it)->sort());
 		}
-		++ it;
-		for(; it != f->quantVars().cend(); ++it) {
+		++it;
+		for (; it != f->quantVars().cend(); ++it) {
 			(*_os) << ",";
 			(*_os) << "V_" << (*it)->name();
-			if(_arithmetic && (*it)->sort()) {
+			if (_arithmetic && (*it)->sort()) {
 				(*_os) << ": ";
 				(*_os) << TFFTypeString((*it)->sort());
 			}
 		}
 		(*_os) << "] : (";
-		
+
 		// When quantifying over types, add these.
 		it = f->quantVars().cbegin();
-		while(it != f->quantVars().cend() && !(*it)->sort())
-			++ it;
+		while (it != f->quantVars().cend() && !(*it)->sort())
+			++it;
 		if (it != f->quantVars().cend()) {
-		 	if(f->isUniv()){
+			if (f->isUniv()) {
 				(*_os) << "~";
-		 	}
+			}
 			(*_os) << "(";
-			if(_types.find((*it)->sort()) == _types.cend()) {
+			if (_types.find((*it)->sort()) == _types.cend()) {
 				_types.insert((*it)->sort());
 			}
-			if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::natsort())) {
+			if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::natsort())) {
 				_nats = true;
-			}
-			else if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::intsort())) {
+			} else if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::intsort())) {
 				_ints = true;
-			}
-			else if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::floatsort())) {
 				_floats = true;
 			}
 			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
-			++ it;
-			for(; it != f->quantVars().cend(); ++it) {
-				if((*it)->sort()) {
+			++it;
+			for (; it != f->quantVars().cend(); ++it) {
+				if ((*it)->sort()) {
 					(*_os) << " & ";
 					(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
 				}
 			}
 			(*_os) << ")";
-			if(f->isUniv()){
+			if (f->isUniv()) {
 				(*_os) << " | ";
-			}else{
+			} else {
 				(*_os) << " & ";
 			}
 		}
-		
+
 		(*_os) << "(";
 		f->subformulas()[0]->accept(this);
 		(*_os) << ")))";
@@ -373,20 +371,18 @@ protected:
 	}
 
 	void visit(const DomainTerm* t) {
-		if(t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.cend()) {
+		if (t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.cend()) {
 			_typedDomainElements.insert(const_cast<DomainElement*>(t->value()));
 			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::natsort())) {
+			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::natsort())) {
 				_nats = true;
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::intsort())) {
 				_ints = true;
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::floatsort())) {
 				_floats = true;
 			}
 		}
-		if(t->sort() && _types.find(t->sort()) == _types.cend()) {
+		if (t->sort() && _types.find(t->sort()) == _types.cend()) {
 			_types.insert(t->sort());
 		}
 		(*_os) << domainTermNameString(t);
@@ -404,39 +400,47 @@ protected:
 			auto it = s->parents().cbegin();
 			(*_os) << "(" << "t_" << (*it)->name() << "(X)";
 			++it;
-			for(; it != s->parents().cend(); ++it) {
+			for (; it != s->parents().cend(); ++it) {
 				(*_os) << " & " << "t_" << (*it)->name() << "(X)";
 			}
 			(*_os) << "))";
 			endAxiom();
-			_count ++;
+			_count++;
 		}
 	}
 
 	void visit(const Predicate* p) {
 		outputPFSymbolType(p);
 		if (!p->overloaded() && p->arity() > 0) {
-			_count ++;
+			_count++;
 		}
 	}
-	
+
 	void visit(const Function* f) {
 		outputPFSymbolType(f);
 		if (!f->overloaded()) {
 			outputFuncAxiom(f);
-			_count ++;
+			_count++;
 		}
 	}
 
 	// Unimplemented virtual methods
-	void visit(const GroundSet*) { }
-	void visit(const Namespace*) { }
-	void visit(const GroundFixpDef*) { }
-	void visit(const GroundClause&) { }
-	void visit(const AggGroundRule*) { }
-	void visit(const GroundAggregate*) { }
-	void visit(const CPReification*) { }
-	void visit(const PCGroundRule*) { }
+	void visit(const GroundSet*) {
+	}
+	void visit(const Namespace*) {
+	}
+	void visit(const GroundFixpDef*) {
+	}
+	void visit(const GroundClause&) {
+	}
+	void visit(const AggGroundRule*) {
+	}
+	void visit(const GroundAggregate*) {
+	}
+	void visit(const CPReification*) {
+	}
+	void visit(const PCGroundRule*) {
+	}
 
 private:
 	void startAxiom(std::string prefix) {
@@ -445,34 +449,34 @@ private:
 		else
 			startAxiom(prefix, "axiom", &_axiomStream);
 	}
-	
+
 	void startAxiom(std::string prefix, std::stringstream* output) {
 		startAxiom(prefix, "axiom", output);
 	}
-	
+
 	void startAxiom(std::string prefix, std::string type, std::stringstream* output) {
 		_os = output;
-		if(_arithmetic)
+		if (_arithmetic)
 			(*_os) << "tff";
 		else
 			(*_os) << "fof";
 		(*_os) << "(" << prefix << _count << "," << type << ",(";
 	}
-	
+
 	void endAxiom() {
 		(*_os) << ")).\n";
 	}
-	
+
 	void outputPFSymbolType(const PFSymbol* pfs) {
 		if (!pfs->overloaded() && pfs->nrSorts() > 0) {
 			startAxiom("ta", &_typeAxiomStream);
 			(*_os) << "! [";
 			(*_os) << "V0";
-			if(_arithmetic) {
+			if (_arithmetic) {
 				(*_os) << ": ";
 				(*_os) << TFFTypeString(pfs->sort(0));
 			}
-			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
 				(*_os) << ",V" << n;
 				if (_arithmetic) {
 					(*_os) << ": ";
@@ -480,19 +484,19 @@ private:
 				}
 			}
 			(*_os) << "] : (";
-			if(pfs->nrSorts() != 1 || toString(pfs) != pfs->sort(0)->name())
+			if (pfs->nrSorts() != 1 || toString(pfs) != pfs->sort(0)->name())
 				(*_os) << "~";
 			(*_os) << "p_" << rewriteLongname(toString(pfs)) << "("; //TODO: because of the rewrite, the longname options cant be given here!
 			(*_os) << "V0";
-			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
 				(*_os) << ",V" << n;
 			}
-			if(pfs->nrSorts() == 1 && toString(pfs) == pfs->sort(0)->name())
+			if (pfs->nrSorts() == 1 && toString(pfs) == pfs->sort(0)->name())
 				(*_os) << ") <=> (";
 			else
 				(*_os) << ") | (";
 			(*_os) << "t_" << pfs->sort(0)->name() << "(V0)";
-			for(unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
 				(*_os) << " & " << "t_" << pfs->sort(n)->name() << "(V" << n << ")";
 			}
 			(*_os) << "))";
@@ -502,7 +506,7 @@ private:
 			endAxiom();
 		}
 	}
-	
+
 	void outputTFFPFSymbolType(const PFSymbol* pfs) {
 		//_typeStream << "tff(t" << _count;
 		//_typeStream << ",type,(";
@@ -512,11 +516,10 @@ private:
 		if (pfs->nrSorts() > 1) {
 			(*_os) << "(";
 		}
-		for(unsigned int n = 0; n < pfs->nrSorts(); ++ n) {
-			if(pfs->sort(n)) {
+		for (unsigned int n = 0; n < pfs->nrSorts(); ++n) {
+			if (pfs->sort(n)) {
 				(*_os) << TFFTypeString(pfs->sort(n));
-			}
-			else {
+			} else {
 				(*_os) << "$i";
 			}
 			if (n + 1 < pfs->nrSorts()) {
@@ -529,20 +532,20 @@ private:
 		//_typeStream << ")).\n";
 		endAxiom();
 	}
-	
+
 	void outputDomainTermTypeAxioms() {
 		std::vector<DomainTerm*> strings;
-		for(auto it = _typedDomainTerms.cbegin(); it != _typedDomainTerms.cend(); ++ it) {
+		for (auto it = _typedDomainTerms.cbegin(); it != _typedDomainTerms.cend(); ++it) {
 			startAxiom("dtta", &_typeAxiomStream);
 			std::string sortName = (*it)->sort()->name();
 			(*_os) << "t_" << sortName << "(";
 			(*_os) << domainTermNameString(*it);
 			(*_os) << ")";
 			endAxiom();
-			if(SortUtils::isSubsort((*it)->sort(),VocabularyUtils::stringsort())) {
+			if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::stringsort())) {
 				strings.push_back((*it));
 			}
-			_count ++;
+			_count++;
 			// if(_arithmetic && sortName != "int" && sortName != "nat" && sortName != "float" && sortName != "string") {
 			// 	_typeStream << "tff(dtt" << _count << ",type,(";
 			// 	_typeStream << domainTermNameString(*it) << ": ";
@@ -551,24 +554,24 @@ private:
 			// }
 			// _count ++;
 		}
-		if(_arithmetic) {
-			for(auto it = _types.cbegin(); it != _types.cend(); ++ it) {
- 				_typeStream << "tff(";
- 				_typeStream << "dtt";
- 				_typeStream << _count << ",type,(";
- 				_typeStream << "t_" << (*it)->name() << ": ";
- 				_typeStream << TFFTypeString(*it);
- 				_typeStream << " > $o";
- 				_typeStream << ")).\n";
-				_count ++;
-	 		}
+		if (_arithmetic) {
+			for (auto it = _types.cbegin(); it != _types.cend(); ++it) {
+				_typeStream << "tff(";
+				_typeStream << "dtt";
+				_typeStream << _count << ",type,(";
+				_typeStream << "t_" << (*it)->name() << ": ";
+				_typeStream << TFFTypeString(*it);
+				_typeStream << " > $o";
+				_typeStream << ")).\n";
+				_count++;
+			}
 		}
 		if (strings.size() >= 2) {
 			startAxiom("stringineqa", &_typeAxiomStream);
-			for(unsigned int i = 0; i < strings.size() - 1; i++) {
-				for(unsigned int j = i + 1; j < strings.size(); j++) {
+			for (unsigned int i = 0; i < strings.size() - 1; i++) {
+				for (unsigned int j = i + 1; j < strings.size(); j++) {
 					(*_os) << domainTermNameString(strings[i]) << " != " << domainTermNameString(strings[j]);
-					if(!(i == strings.size() - 2 && j == strings.size() - 1)) {
+					if (!(i == strings.size() - 2 && j == strings.size() - 1)) {
 						(*_os) << " & ";
 					}
 				}
@@ -579,29 +582,29 @@ private:
 		_typedDomainTerms.clear();
 		_types.clear();
 	}
-	
+
 	//FIXME: everywhere this method was called, the longname option was given.  However, this option disappeared!
 	std::string rewriteLongname(const std::string& longname) {
 		// Fancy stuff here.
 		std::string result = longname;
-		
+
 		// Remove types
 		auto pos = result.find("[");
 		if (pos != std::string::npos)
 			result.erase(pos);
-		
+
 		// Append 1 more '_' to sequences of 3 or more '_'s
 		pos = result.find("___");
-		while(pos != std::string::npos) {
-			while(result[pos + 3] == '_')
-				++ pos;
+		while (pos != std::string::npos) {
+			while (result[pos + 3] == '_')
+				++pos;
 			result.replace(pos, 3, "____");
 			pos = result.find("___", pos + 3);
 		}
-		
+
 		// Replace :: with ___
 		pos = result.find("::");
-		while(pos != std::string::npos) {
+		while (pos != std::string::npos) {
 			result.replace(pos, 2, "___");
 			pos = result.find("::", pos + 3);
 		}
@@ -609,48 +612,43 @@ private:
 	}
 
 	std::string TFFTypeString(const Sort* s) {
-		if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::natsort())) {
+		if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::natsort())) {
 			return "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::intsort())) {
+		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::intsort())) {
 			return "$int";
-		}
-		else if(SortUtils::isSubsort(const_cast<Sort*>(s),VocabularyUtils::floatsort())) {
+		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::floatsort())) {
 			return "$float";
-		}
-		else {
+		} else {
 			return "$i";
 		}
 	}
 
 	std::string domainTermNameString(const DomainTerm* t) {
 		std::string str = toString(t->value());
-		if(t->sort()) {
-			if(SortUtils::isSubsort(t->sort(),VocabularyUtils::stringsort())) {
+		if (t->sort()) {
+			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::stringsort())) {
 				std::stringstream result;
 				result << "str_" << t->value()->value()._string;
 				return result.str();
-			}
-			else if(SortUtils::isSubsort(t->sort(),VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::floatsort())) {
 				return str;
-			}
-			else {
+			} else {
 				return "tt_" + str;
 			}
-		}
-		else return "utt_" + str;
+		} else
+			return "utt_" + str;
 	}
 
 	void outputFuncAxiom(const Function* f) {
 		startAxiom("fa", &_typeAxiomStream);
-		if(f->arity() > 0) {
+		if (f->arity() > 0) {
 			(*_os) << "! [";
 			(*_os) << "V0";
-			if(_arithmetic) {
+			if (_arithmetic) {
 				(*_os) << ": ";
 				(*_os) << TFFTypeString(f->sort(0));
 			}
-			for(unsigned int n = 1; n < f->arity(); ++n) {
+			for (unsigned int n = 1; n < f->arity(); ++n) {
 				(*_os) << ",V" << n;
 				if (_arithmetic) {
 					(*_os) << ": ";
@@ -660,42 +658,42 @@ private:
 			(*_os) << "] : (";
 			(*_os) << "~(";
 			(*_os) << "t_" << f->sort(0)->name() << "(V0)";
-			for(unsigned int n = 1; n < f->arity(); ++n) {
+			for (unsigned int n = 1; n < f->arity(); ++n) {
 				(*_os) << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
 			}
 			(*_os) << ") | ";
 		}
 		(*_os) << "(? [X1";
-		if(_arithmetic) {
+		if (_arithmetic) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString(f->outsort());
 		}
 		(*_os) << "] : (";
 		(*_os) << "t_" << f->outsort()->name() << "(X1) & ";
 		(*_os) << "(! [X2";
-		if(_arithmetic) {
+		if (_arithmetic) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString(f->outsort());
 		}
 		(*_os) << "] : (";
-		if(f->partial())
+		if (f->partial())
 			(*_os) << "~";
 		(*_os) << "p_" << rewriteLongname(toString(f)) << "(";
-		if(f->arity() > 0) {
+		if (f->arity() > 0) {
 			(*_os) << "V0";
-			for(unsigned int n = 1; n < f->arity(); ++n) {
+			for (unsigned int n = 1; n < f->arity(); ++n) {
 				(*_os) << ",V" << n;
 			}
 			(*_os) << ",";
 		}
 		(*_os) << "X2)";
-		if(f->partial())
+		if (f->partial())
 			(*_os) << " | ";
 		else
 			(*_os) << " <=> ";
 		(*_os) << "X1 = X2";
 		(*_os) << "))))";
-		if(f->arity() > 0)
+		if (f->arity() > 0)
 			(*_os) << ")";
 		endAxiom();
 	}

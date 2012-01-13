@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GRAPHFUNCSANDAGGS_HPP_
 #define GRAPHFUNCSANDAGGS_HPP_
@@ -24,11 +24,11 @@ class FormulaParseInfo;
 // then we should probably remove graphFunctions and graphAggregates, 
 // because they should not be used anymore..
 
-class GraphFuncsAndAggs : public TheoryMutatingVisitor {
+class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	AbstractStructure* 	_structure;
-	Context 			_context;
+	AbstractStructure* _structure;
+	Context _context;
 public:
 	template<typename T>
 	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {

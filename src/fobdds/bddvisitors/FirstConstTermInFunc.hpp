@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef CONSTTERMEXTRACTOR_HPP_
 #define CONSTTERMEXTRACTOR_HPP_
@@ -31,8 +31,8 @@ class FirstConstMultTerm: public FOBDDVisitor {
 private:
 	const FOBDDDomainTerm* _result;
 public:
-	FirstConstMultTerm(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	FirstConstMultTerm(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 	const FOBDDDomainTerm* run(const FOBDDArgument* arg) {
 		_result = _manager->getDomainTerm(arg->sort(), createDomElem(1));

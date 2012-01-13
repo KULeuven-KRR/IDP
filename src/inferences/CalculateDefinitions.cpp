@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "inferences/CalculateDefinitions.hpp"
 #include "inferences/InferenceSolverConnection.hpp"
@@ -62,7 +62,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	return structure->isConsistent();
 }
 
-AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
+AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
 	auto structure = originalStructure->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";
@@ -91,7 +91,7 @@ AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theo
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
-					return new InconsistentStructure(structure->name(),structure->pi());
+					return new InconsistentStructure(structure->name(), structure->pi());
 				}
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
@@ -99,7 +99,7 @@ AbstractStructure*  CalculateDefinitions::calculateKnownDefinitions(Theory* theo
 			}
 		}
 	}
-	if (not structure->isConsistent() ) {
+	if (not structure->isConsistent()) {
 		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 			std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
 		}

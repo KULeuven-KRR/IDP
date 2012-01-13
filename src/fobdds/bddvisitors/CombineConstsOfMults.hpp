@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TERMADDER_HPP_
 #define TERMADDER_HPP_
@@ -28,8 +28,8 @@
  */
 class CombineConstsOfMults: public FOBDDVisitor {
 public:
-	CombineConstsOfMults(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	CombineConstsOfMults(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 
 	const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
@@ -44,7 +44,7 @@ public:
 			auto rightterm = getBddFuncTerm(functerm->args(1));
 			if (isAddition(rightterm)) {
 				auto rightncte = ncte.run(rightterm->args(0));
-				if(leftncte != rightncte){
+				if (leftncte != rightncte) {
 					return FOBDDVisitor::change(functerm);
 				}
 				FirstConstMultTerm cte(_manager);
@@ -55,12 +55,12 @@ public:
 				auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 				mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
 				Assert(mult!=NULL);
-				auto newterm = _manager->getFuncTerm(mult, {addterm, leftncte});
+				auto newterm = _manager->getFuncTerm(mult, { addterm, leftncte });
 				auto plus = Vocabulary::std()->func("+/2");
 				auto plussort = SortUtils::resolve(newterm->sort(), rightterm->args(1)->sort());
 				plus = plus->disambiguate(std::vector<Sort*>(3, plussort), NULL);
 				Assert(plus!=NULL);
-				auto addbddterm = _manager->getFuncTerm(plus, {newterm,rightterm->args(1)});
+				auto addbddterm = _manager->getFuncTerm(plus, { newterm, rightterm->args(1) });
 				return addbddterm->acceptchange(this);
 			}
 		}
@@ -75,7 +75,7 @@ public:
 			auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 			mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
 			Assert(mult!=NULL);
-			return _manager->getFuncTerm(mult, {addterm, leftncte});
+			return _manager->getFuncTerm(mult, { addterm, leftncte });
 		}
 
 		return FOBDDVisitor::change(functerm);

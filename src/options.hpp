@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
@@ -16,8 +16,12 @@
 
 // TODO enum class does not yet support comparison operators in 4.4.3
 
-enum Language {/* TXT,*/ IDP, ECNF, /*LATEX, ASP, CNF, */TPTP };
-enum Format { THREEVALUED, ALL, TWOVALUED };
+enum Language {/* TXT,*/
+	IDP, ECNF, /*LATEX, ASP, CNF, */TPTP
+};
+enum Format {
+	THREEVALUED, ALL, TWOVALUED
+};
 
 enum StringType {
 	LANGUAGE
@@ -30,23 +34,25 @@ enum IntType {
 enum BoolType {
 	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
 	//PRINTTYPES,
-	TRACE, 
-	AUTOCOMPLETE, 
-	LONGNAMES, 
-	RELATIVEPROPAGATIONSTEPS, 
-	CREATETRANSLATION, 
-	MXRANDOMPOLARITYCHOICE, 
+	TRACE,
+	AUTOCOMPLETE,
+	LONGNAMES,
+	RELATIVEPROPAGATIONSTEPS,
+	CREATETRANSLATION,
+	MXRANDOMPOLARITYCHOICE,
 	GROUNDLAZILY,
 	GROUNDWITHBOUNDS,
 	//MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
 	CPSUPPORT
 };
 
-enum DoubleType{
+enum DoubleType {
 
 };
 
-enum class PrintBehaviour {PRINT, DONOTPRINT};
+enum class PrintBehaviour {
+	PRINT, DONOTPRINT
+};
 
 template<class EnumType, class ConcreteType>
 class TypedOption {
@@ -60,17 +66,26 @@ public:
 	TypedOption(EnumType type, const std::string& name, PrintBehaviour visible)
 			: type(type), name(name), _visible(visible) {
 	}
-	virtual ~TypedOption() {}
+	virtual ~TypedOption() {
+	}
 
-	const std::string& getName() const { return name; }
-	bool shouldPrint() const { return _visible == PrintBehaviour::PRINT; }
+	const std::string& getName() const {
+		return name;
+	}
+	bool shouldPrint() const {
+		return _visible == PrintBehaviour::PRINT;
+	}
 
-	EnumType getType() const { return type; }
+	EnumType getType() const {
+		return type;
+	}
 
-	virtual bool 		isAllowedValue(const ConcreteType& value) = 0;
+	virtual bool isAllowedValue(const ConcreteType& value) = 0;
 	virtual std::string printOption() const = 0;
 
-	const ConcreteType&	getValue() const { return chosenvalue_; }
+	const ConcreteType& getValue() const {
+		return chosenvalue_;
+	}
 	void setValue(const ConcreteType& chosenvalue) {
 		Assert(isAllowedValue(chosenvalue));
 		chosenvalue_ = chosenvalue;
@@ -82,14 +97,19 @@ class RangeOption: public TypedOption<EnumType, ConcreteType> {
 private:
 	ConcreteType lowerbound_, upperbound_;
 
-	const ConcreteType&	lower() const { return lowerbound_;  }
-	const ConcreteType&	upper() const { return upperbound_;  }
+	const ConcreteType& lower() const {
+		return lowerbound_;
+	}
+	const ConcreteType& upper() const {
+		return upperbound_;
+	}
 
 public:
 	RangeOption(EnumType type, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, PrintBehaviour visible)
-		: TypedOption<EnumType, ConcreteType>(type, name, visible), lowerbound_(lowerbound), upperbound_(upperbound) { }
+			: TypedOption<EnumType, ConcreteType>(type, name, visible), lowerbound_(lowerbound), upperbound_(upperbound) {
+	}
 
-	bool isAllowedValue(const ConcreteType& value){
+	bool isAllowedValue(const ConcreteType& value) {
 		return value >= lower() && value <= upper();
 	}
 
@@ -99,15 +119,18 @@ public:
 template<class EnumType, class ConcreteType>
 class EnumeratedOption: public TypedOption<EnumType, ConcreteType> {
 private:
-	std::set<ConcreteType>	allowedvalues_;
-	const std::set<ConcreteType>& getAllowedValues() const { return allowedvalues_; }
+	std::set<ConcreteType> allowedvalues_;
+	const std::set<ConcreteType>& getAllowedValues() const {
+		return allowedvalues_;
+	}
 
 public:
 	EnumeratedOption(EnumType type, const std::string& name, const std::set<ConcreteType>& allowedvalues, PrintBehaviour visible)
-		: TypedOption<EnumType, ConcreteType>(type, name, visible), allowedvalues_(allowedvalues) { }
+			: TypedOption<EnumType, ConcreteType>(type, name, visible), allowedvalues_(allowedvalues) {
+	}
 
-	bool isAllowedValue(const ConcreteType& value){
-		return getAllowedValues().find(value)!=getAllowedValues().cend();
+	bool isAllowedValue(const ConcreteType& value) {
+		return getAllowedValues().find(value) != getAllowedValues().cend();
 	}
 
 	virtual std::string printOption() const;
@@ -116,44 +139,46 @@ public:
 class Options;
 
 template<class EnumType, class ValueType>
-class OptionPolicy{
+class OptionPolicy {
 private:
-	std::vector<TypedOption<EnumType, ValueType>* > _options;
+	std::vector<TypedOption<EnumType, ValueType>*> _options;
 	std::map<std::string, EnumType> _name2type;
 protected:
-	void createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible);
-	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible);
+	void createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue,
+			std::vector<std::string>& option2name, PrintBehaviour visible);
+	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
+			std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
-	~OptionPolicy(){
-		for(auto i=_options.cbegin(); i!=_options.cend(); ++i) {
-			delete(*i);
+	~OptionPolicy() {
+		for (auto i = _options.cbegin(); i != _options.cend(); ++i) {
+			delete (*i);
 		}
 	}
-	bool isOption(const std::string& name) const{
-		return _name2type.find(name)!=_name2type.cend();
+	bool isOption(const std::string& name) const {
+		return _name2type.find(name) != _name2type.cend();
 	}
-	ValueType getValue(const std::string& name) const{
+	ValueType getValue(const std::string& name) const {
 		Assert(isOption(name));
 		return _options.at(_name2type.at(name))->getValue();
 	}
-	ValueType getValue(EnumType option) const{
+	ValueType getValue(EnumType option) const {
 		return _options.at(option)->getValue();
 	}
-	void setStrValue(const std::string& name, const ValueType& value){
+	void setStrValue(const std::string& name, const ValueType& value) {
 		Assert(isOption(name));
 		_options.at(_name2type.at(name))->setValue(value);
 	}
-	void setValue(EnumType type, const ValueType& value){
+	void setValue(EnumType type, const ValueType& value) {
 		_options.at(type)->setValue(value);
 	}
-	bool isAllowedValue(const std::string& name, const ValueType& value) const{
+	bool isAllowedValue(const std::string& name, const ValueType& value) const {
 		return isOption(name) && _options.at(_name2type.at(name))->isAllowedValue(value);
 	}
-	std::string printOption(const std::string& name) const{
+	std::string printOption(const std::string& name) const {
 		return _options.at(_name2type.at(name))->printOption();
 	}
 	void addOptionStrings(std::vector<std::string>& optionlines) const {
-		for(auto i=_options.cbegin(); i<_options.cend(); ++i){
+		for (auto i = _options.cbegin(); i < _options.cend(); ++i) {
 			optionlines.push_back((*i)->printOption());
 		}
 	}
@@ -170,22 +195,22 @@ template<class T>
 struct OptionValueTraits;
 
 template<>
-struct OptionValueTraits<int>{
+struct OptionValueTraits<int> {
 	typedef IntType EnumType;
 };
 
 template<>
-struct OptionValueTraits<double>{
+struct OptionValueTraits<double> {
 	typedef DoubleType EnumType;
 };
 
 template<>
-struct OptionValueTraits<bool>{
+struct OptionValueTraits<bool> {
 	typedef BoolType EnumType;
 };
 
 template<>
-struct OptionValueTraits<std::string>{
+struct OptionValueTraits<std::string> {
 	typedef StringType EnumType;
 };
 
@@ -193,72 +218,73 @@ template<class T>
 struct OptionTypeTraits;
 
 template<>
-struct OptionTypeTraits<IntType>{
+struct OptionTypeTraits<IntType> {
 	typedef int ValueType;
 };
 
 template<>
-struct OptionTypeTraits<DoubleType>{
+struct OptionTypeTraits<DoubleType> {
 	typedef double ValueType;
 };
 
 template<>
-struct OptionTypeTraits<BoolType>{
+struct OptionTypeTraits<BoolType> {
 	typedef bool ValueType;
 };
 
 template<>
-struct OptionTypeTraits<StringType>{
+struct OptionTypeTraits<StringType> {
 	typedef std::string ValueType;
 };
 
 /**
  * Class to represent a block of options
  */
-class Options: public IntPol, public BoolPol, public DoublePol, public StringPol{
+class Options: public IntPol, public BoolPol, public DoublePol, public StringPol {
 private:
 	std::vector<std::string> _option2name;
 
 public:
 	Options();
-	~Options(){}
+	~Options() {
+	}
 
 	bool isOption(const std::string&) const;
 
 	template<class ValueType>
-	bool isOptionOfType(const std::string& optname) const{
+	bool isOptionOfType(const std::string& optname) const {
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isOption(optname);
 	}
 	template<class ValueType>
-	ValueType getValueOfType(const std::string& optname) const{
+	ValueType getValueOfType(const std::string& optname) const {
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::getValue(optname);
 	}
 
 	template<class EnumType>
-	typename OptionTypeTraits<EnumType>::ValueType getValue(EnumType type){
+	typename OptionTypeTraits<EnumType>::ValueType getValue(EnumType type) {
 		return OptionPolicy<EnumType, typename OptionTypeTraits<EnumType>::ValueType>::getValue(type);
 	}
 
 	template<class EnumType, class ValueType>
-	void setValue(EnumType type, const ValueType& value){
-		OptionPolicy<EnumType, ValueType>::setValue(type, value);
+	void setValue(EnumType type, const ValueType& value) {
+		OptionPolicy < EnumType, ValueType > ::setValue(type, value);
 	}
 
-	void			copyValues(Options*);
+	void copyValues(Options*);
 
-	std::string 	printAllowedValues	(const std::string& option) const;
-	std::ostream&	put					(std::ostream&)	const;
+	std::string printAllowedValues(const std::string& option) const;
+	std::ostream& put(std::ostream&) const;
 
-	Language		language() const;
+	Language language() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>
-	void setValue(const std::string& name, const ValueType& value){
+	void setValue(const std::string& name, const ValueType& value) {
 		OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::setStrValue(name, value);
 	}
 
 	template<class ValueType>
-	bool isAllowedValue(const std::string& name, const ValueType& value){
+	bool isAllowedValue(const std::string& name, const ValueType& value) {
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isAllowedValue(name, value);
 	}
 };

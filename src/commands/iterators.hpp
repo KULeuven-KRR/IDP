@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef DOMAINITERATOR_HPP_
 #define DOMAINITERATOR_HPP_
@@ -54,8 +54,7 @@ typedef TypedInference<LIST(TableIterator*, ElementTuple*)> TableDerefAndIncreme
 class TableDerefAndIncrementInference: public TableDerefAndIncrementInferenceBase {
 public:
 	TableDerefAndIncrementInference()
-			: TableDerefAndIncrementInferenceBase("deref_and_increment",
-					"Returns the current value and increments the tableiterator.") {
+			: TableDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the tableiterator.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -77,8 +76,7 @@ template<typename T>
 class DomainDerefAndIncrementInference: public Inference {
 public:
 	DomainDerefAndIncrementInference()
-			: Inference("deref_and_increment",
-					"Returns the current value and increments the sortiterator.") {
+			: Inference("deref_and_increment", "Returns the current value and increments the sortiterator.") {
 		addType(Type2Value<SortIterator*>::get());
 		addType(Type2Value<T>::get());
 	}

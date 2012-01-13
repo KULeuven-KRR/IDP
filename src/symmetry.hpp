@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef SYMMETRY_HPP_
 #define SYMMETRY_HPP_
@@ -45,45 +45,48 @@ class OccurrencesCounter;
  * (unfortunately, the last invariant is not enforced by an assertion, even though it is assumed it holds)
  */
 class IVSet {
-	
-	private:
-		// Attributes
-		const AbstractStructure*			structure_;				//!< The structure over which this symmetry ranges
-		const std::set<const DomainElement*>elements_;		//!< Elements which are permuted by the symmetry's
-		const std::set<Sort*>				sorts_;			//!< Sorts considered for the elements 
-		const std::set<PFSymbol*>			relations_;		//!< Relations which are permuted by the symmetry's
-		
-		// Inspectors
-		std::pair<std::list<int>,std::list<int> > getSymmetricLiterals(AbstractGroundTheory*, const DomainElement*, const DomainElement*) const;
 
-	public:
-		IVSet(const AbstractStructure*, const std::set<const DomainElement*>, const std::set<Sort*>, const std::set<PFSymbol*>);  
-		~IVSet(){}
-		
-		// Mutators
-		// none should come here, class is immutable :)
+private:
+	// Attributes
+	const AbstractStructure* structure_; //!< The structure over which this symmetry ranges
+	const std::set<const DomainElement*> elements_; //!< Elements which are permuted by the symmetry's
+	const std::set<Sort*> sorts_; //!< Sorts considered for the elements 
+	const std::set<PFSymbol*> relations_; //!< Relations which are permuted by the symmetry's
 
-		// Inspectors
-		const AbstractStructure* 	getStructure() const;
-		const std::set<const DomainElement*>& getElements() const;
-		const std::set<Sort*>& getSorts() const;
-		const std::set<PFSymbol*>& getRelations() const;
-		
-		int							getSize() const {return getElements().size();}
-		bool 						containsMultipleElements() const;
-		bool						hasRelevantRelationsAndSorts() const;
-		bool						isRelevantSymmetry() const;
-		bool 						isDontCare() const;
-		bool						isEnkelvoudig() const;
-		std::vector<const IVSet*>	splitBasedOnOccurrences(OccurrencesCounter*) const;
-		std::vector<const IVSet*>	splitBasedOnBinarySymmetries() const;
-		
-		void 						addSymBreakingPreds(AbstractGroundTheory*) const;
-		std::vector<std::map<int,int> >	getBreakingSymmetries(AbstractGroundTheory*) const;
-		std::vector<std::list<int> >getInterchangeableLiterals(AbstractGroundTheory*) const;
-		
-		// Output
-		std::ostream& put(std::ostream& output) const;
+	// Inspectors
+	std::pair<std::list<int>, std::list<int> > getSymmetricLiterals(AbstractGroundTheory*, const DomainElement*, const DomainElement*) const;
+
+public:
+	IVSet(const AbstractStructure*, const std::set<const DomainElement*>, const std::set<Sort*>, const std::set<PFSymbol*>);
+	~IVSet() {
+	}
+
+	// Mutators
+	// none should come here, class is immutable :)
+
+	// Inspectors
+	const AbstractStructure* getStructure() const;
+	const std::set<const DomainElement*>& getElements() const;
+	const std::set<Sort*>& getSorts() const;
+	const std::set<PFSymbol*>& getRelations() const;
+
+	int getSize() const {
+		return getElements().size();
+	}
+	bool containsMultipleElements() const;
+	bool hasRelevantRelationsAndSorts() const;
+	bool isRelevantSymmetry() const;
+	bool isDontCare() const;
+	bool isEnkelvoudig() const;
+	std::vector<const IVSet*> splitBasedOnOccurrences(OccurrencesCounter*) const;
+	std::vector<const IVSet*> splitBasedOnBinarySymmetries() const;
+
+	void addSymBreakingPreds(AbstractGroundTheory*) const;
+	std::vector<std::map<int, int> > getBreakingSymmetries(AbstractGroundTheory*) const;
+	std::vector<std::list<int> > getInterchangeableLiterals(AbstractGroundTheory*) const;
+
+	// Output
+	std::ostream& put(std::ostream& output) const;
 };
 
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);

@@ -66,7 +66,9 @@ struct CLOptions {
 	string _exec;
 	bool _interactive;
 	bool _readfromstdin;
-	CLOptions() : _exec(""), _interactive(false), _readfromstdin(false) { }
+	CLOptions()
+			: _exec(""), _interactive(false), _readfromstdin(false) {
+	}
 };
 
 /** 
@@ -76,7 +78,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	vector<string> inputfiles;
 	argc--;
 	argv++;
-	while (argc!=0) {
+	while (argc != 0) {
 		string str(argv[0]);
 		argc--;
 		argv++;
@@ -90,8 +92,8 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			cloptions._interactive = true;
 		}
 #endif
-		else if (str == "-d"){
-			if(argc==0){
+		else if (str == "-d") {
+			if (argc == 0) {
 				Error::error("-d option should be followed by a directorypath\n");
 				continue;
 			}
@@ -99,8 +101,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			setInstallDirectoryPath(str);
 			argc--;
 			argv++;
-		}
-		else if (str == "-c") {
+		} else if (str == "-c") {
 			str = argv[0];
 			if (argc && (str.find('=') != string::npos)) {
 				int p = str.find('=');
@@ -157,13 +158,13 @@ void setStop(bool value) {
 
 bool throwfromexecution = false;
 
-struct RunData{
+struct RunData {
 	string proc;
 	const DomainElement** result;
 };
 
 void handleAndRun(void* d) {
-	RunData* data = (RunData*)d;
+	RunData* data = (RunData*) d;
 	try {
 		*data->result = Insert::exec(data->proc);
 	} catch (const Exception& ex) {
@@ -205,7 +206,7 @@ void timeout(void*) {
 #else
 		usleep(sleep * 1000);
 #endif
-		
+
 		if (sleep < 1000) {
 			if (sleep < 100) {
 				sleep += 10;
@@ -257,7 +258,7 @@ void monitorShutdown(void*) {
 		monitoringtime += 10000;
 	}
 	if (not hasStopped) {
-	// TODO does not work in windows
+		// TODO does not work in windows
 //#if defined(DEBUGTHREADS) // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
 //		pthread_kill(executionhandle, SIGUSR1);
 //#endif
@@ -360,8 +361,8 @@ public:
  */
 Status test(const std::vector<std::string>& inputfileurls) {
 	DataManager m;
-	
-	setOption(BoolType::SHOWWARNINGS,true); //XXX Temporary solution to disable warnigns...
+
+	setOption(BoolType::SHOWWARNINGS, true); //XXX Temporary solution to disable warnigns...
 
 	try {
 		parse(inputfileurls);

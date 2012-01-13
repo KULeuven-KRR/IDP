@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef INTERNALARGUMENT_HPP_
 #define INTERNALARGUMENT_HPP_
@@ -170,8 +170,7 @@ private:
 public:
 	// Constructor
 	OverloadedObject()
-			: _namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL),
-				_formula(NULL), _query(NULL), _term(NULL) {
+			: _namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL), _formula(NULL), _query(NULL), _term(NULL) {
 	}
 
 	void insert(Namespace* n) {

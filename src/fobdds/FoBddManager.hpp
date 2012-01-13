@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef FOBDD_HPP
 #define FOBDD_HPP
@@ -146,11 +146,9 @@ public:
 	Formula* toFormula(const FOBDDKernel*);
 	Term* toTerm(const FOBDDArgument*);
 
-	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			AbstractStructure*);
+	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			AbstractStructure*);
+	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
 	void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
@@ -24,8 +24,8 @@
  */
 class TermsToLeft: public FOBDDVisitor {
 public:
-	TermsToLeft(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	TermsToLeft(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
@@ -63,8 +63,8 @@ public:
 		auto minus = Vocabulary::std()->func("-/2");
 		minus = minus->disambiguate(std::vector<Sort*>(2, sort), NULL);
 		Assert(minus!=NULL);
-		auto newlhs = _manager->getFuncTerm(minus, {lhs, rhs});
-		return _manager->getAtomKernel(atom->symbol(), atom->type(), {newlhs, zeroterm});
+		auto newlhs = _manager->getFuncTerm(minus, { lhs, rhs });
+		return _manager->getAtomKernel(atom->symbol(), atom->type(), { newlhs, zeroterm });
 	}
 };
 

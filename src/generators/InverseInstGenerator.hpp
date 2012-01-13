@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef INVERSEINSTGENERATOR_HPP_
 #define INVERSEINSTGENERATOR_HPP_
@@ -30,11 +30,11 @@ private:
 
 public:
 	InverseInstGenerator(PredTable* table, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars)
-			: _reset(true){
+			: _reset(true) {
 		std::vector<const DomElemContainer*> outvars;
 		std::vector<SortTable*> temptables;
-		for(unsigned int i=0; i<pattern.size(); ++i){
-			if(pattern[i]==Pattern::OUTPUT){
+		for (unsigned int i = 0; i < pattern.size(); ++i) {
+			if (pattern[i] == Pattern::OUTPUT) {
 				outvars.push_back(vars[i]);
 				temptables.push_back(table->universe().tables()[i]);
 			}
@@ -46,28 +46,28 @@ public:
 	}
 
 	// FIXME reimplemnt clone
-	InverseInstGenerator* clone() const{
+	InverseInstGenerator* clone() const {
 		return new InverseInstGenerator(*this);
 	}
 
-	void reset(){
+	void reset() {
 		_reset = true;
 	}
 
-	void next(){
-		if(_reset){
+	void next() {
+		if (_reset) {
 			_reset = false;
 			_universegen->begin();
-		}else{
+		} else {
 			_universegen->operator ++();
 		}
 
-		for(; not _universegen->isAtEnd(); _universegen->operator ++()){
-			if(not _predchecker->check()){ // It is NOT a tuple in the table
+		for (; not _universegen->isAtEnd(); _universegen->operator ++()) {
+			if (not _predchecker->check()) { // It is NOT a tuple in the table
 				return;
 			}
 		}
-		if(_universegen->isAtEnd()){
+		if (_universegen->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}

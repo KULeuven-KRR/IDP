@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
@@ -30,8 +30,8 @@ struct SymbolAndAtomMap {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
 
-	SymbolAndAtomMap(PFSymbol* symbol) :
-			symbol(symbol) {
+	SymbolAndAtomMap(PFSymbol* symbol)
+			: symbol(symbol) {
 	}
 };
 
@@ -45,8 +45,8 @@ struct SymbolAndTuple {
 
 	SymbolAndTuple() {
 	}
-	SymbolAndTuple(PFSymbol* symbol, const ElementTuple& tuple) :
-			symbol(symbol), tuple(tuple) {
+	SymbolAndTuple(PFSymbol* symbol, const ElementTuple& tuple)
+			: symbol(symbol), tuple(tuple) {
 	}
 };
 
@@ -94,7 +94,7 @@ public:
 	unsigned int addSymbol(PFSymbol* pfs);
 
 	bool isStored(Lit atom) const {
-		return atom > 0 && atomtype.size() > (unsigned int)atom;
+		return atom > 0 && atomtype.size() > (unsigned int) atom;
 	}
 	AtomType getType(Lit atom) const {
 		return atomtype[atom];
@@ -125,7 +125,7 @@ public:
 	}
 
 	bool isSet(int setID) const {
-		return _sets.size() > (unsigned int)setID;
+		return _sets.size() > (unsigned int) setID;
 	}
 
 	//TODO: when _sets contains pointers instead of objects, this should return a TsSet*

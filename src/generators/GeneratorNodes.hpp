@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GENERATORNODES_HPP_
 #define GENERATORNODES_HPP_
@@ -22,8 +22,8 @@ protected:
 	virtual void reset()= 0;
 
 public:
-	GeneratorNode() :
-			atEnd(false) {
+	GeneratorNode()
+			: atEnd(false) {
 	}
 	virtual ~GeneratorNode() {
 	}
@@ -35,7 +35,7 @@ public:
 	void begin() {
 		atEnd = false;
 		reset();
-		if(not isAtEnd()){
+		if (not isAtEnd()) {
 			next();
 		}
 	}
@@ -48,15 +48,15 @@ private:
 	InstGenerator* _generator;
 	bool _reset;
 public:
-	LeafGeneratorNode(InstGenerator* gt) :
-			GeneratorNode(), _generator(gt), _reset(true) {
+	LeafGeneratorNode(InstGenerator* gt)
+			: GeneratorNode(), _generator(gt), _reset(true) {
 	}
 
 	virtual void next() {
-		if(_reset){
+		if (_reset) {
 			_reset = false;
 			_generator->begin();
-		}else{
+		} else {
 			_generator->operator ++();
 		}
 		if (_generator->isAtEnd()) {
@@ -67,8 +67,8 @@ public:
 		_reset = true;
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<"generate " <<toString(_generator);
+	virtual void put(std::ostream& stream) {
+		stream << "generate " << toString(_generator);
 	}
 };
 
@@ -80,8 +80,8 @@ private:
 	bool _reset;
 
 public:
-	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c) :
-			_generator(gt), _child(c), _reset(true) {
+	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
+			: _generator(gt), _child(c), _reset(true) {
 	}
 
 	virtual void next() {
@@ -113,11 +113,11 @@ public:
 		_reset = true;
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<"generate: " <<toString(_generator) <<"\n";
-		stream <<tabs() <<"then ";
+	virtual void put(std::ostream& stream) {
+		stream << "generate: " << toString(_generator) << "\n";
+		stream << tabs() << "then ";
 		pushtab();
-		stream <<toString(_child);
+		stream << toString(_child);
 		poptab();
 	}
 };
@@ -130,8 +130,8 @@ private:
 	bool _reset;
 
 public:
-	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch) :
-			_checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
+	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch)
+			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
 	}
 
 	virtual void next() {
@@ -184,12 +184,12 @@ public:
 		_reset = true;
 	}
 
-	virtual void put(std::ostream& stream){
-		stream <<"generate: " <<toString(_generator) <<"\n";
-		stream <<tabs() <<"then\n";
+	virtual void put(std::ostream& stream) {
+		stream << "generate: " << toString(_generator) << "\n";
+		stream << tabs() << "then\n";
 		pushtab();
-		stream <<tabs() <<"truebranch "<<toString(_truecheckbranch) <<"\n";
-		stream <<tabs() <<"falsebranch "<<toString(_falsecheckbranch);
+		stream << tabs() << "truebranch " << toString(_truecheckbranch) << "\n";
+		stream << tabs() << "falsebranch " << toString(_falsecheckbranch);
 		poptab();
 	}
 };

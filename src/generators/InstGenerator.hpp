@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef INSTGENERATOR_HPP_
 #define INSTGENERATOR_HPP_
@@ -14,9 +14,11 @@
 #include <typeinfo>
 #include <sstream>
 
-enum class Pattern { INPUT, OUTPUT};
+enum class Pattern {
+	INPUT, OUTPUT
+};
 
-class InstChecker{
+class InstChecker {
 public:
 	virtual ~InstChecker() {}
 
@@ -33,7 +35,7 @@ class InstGenerator: public InstChecker {
 private:
 	bool end;
 protected:
-	void notifyAtEnd(){
+	void notifyAtEnd() {
 		end = true;
 	}
 
@@ -45,7 +47,8 @@ protected:
 	virtual void reset() = 0;
 
 public:
-	virtual ~InstGenerator(){}
+	virtual ~InstGenerator() {
+	}
 
 	virtual bool check() { // TODO probably do not need to be virtual any longer
 		begin();
@@ -59,7 +62,9 @@ public:
 	/**
 	 * Returns true if the last element has already been set as an instance
 	 */
-	bool isAtEnd() const { return end; }
+	bool isAtEnd() const {
+		return end;
+	}
 
 	void operator++();
 

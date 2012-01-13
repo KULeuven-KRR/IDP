@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include "common.hpp"
 #include "parseinfo.hpp"
@@ -41,22 +41,21 @@ using namespace std;
 
 // NOTE original can be NULL
 template<typename Table>
-void checkInfinity(Table t, const Formula* original){
+void checkInfinity(Table t, const Formula* original) {
 	if (not t->finite()) {
-		if(original!=NULL){
+		if (original != NULL) {
 			Warning::possiblyInfiniteGrounding(original->pi().original() != NULL ? toString(original->pi().original()) : "", toString(original));
 		}
-		if(not getOption(BoolType::GROUNDWITHBOUNDS)){ // TODO and not lazy?
+		if (not getOption(BoolType::GROUNDWITHBOUNDS)) { // TODO and not lazy?
 			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
 			throw IdpException("Infinite grounding");
 		}
 	}
 }
 
-
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs, const Formula* original) {
 	Assert(vars.size()==tabs.size());
-	if(vars.size()==0){
+	if (vars.size() == 0) {
 		return new FullGenerator(); // TODO check if this is always correct?
 	}
 	InstGenerator* gen = NULL;
@@ -80,7 +79,8 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const Universe& universe, const Formula* original) {
+InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const Universe& universe, const Formula* original) {
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
@@ -92,7 +92,8 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const Universe& universe){
+InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;
 	if (sametypeid<Predicate>(*(atom->symbol()))) {
@@ -123,7 +124,8 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 	return GeneratorFactory::create(table, pattern, vars, universe, atom);
 }
 
-InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
+		const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
 	Assert(pattern.size()==vars.size());
 	Assert(pattern.size()==universe.tables().size());
@@ -292,7 +294,7 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 				break;
 			}
 		}
-		if(not validunderocc){
+		if (not validunderocc) {
 			continue;
 		}
 		ElementTuple intuple, outtuple;
@@ -356,8 +358,7 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 	} else if (typeid(*interntable) == typeid(BDDInternalPredTable)) {
 		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
 		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
-		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(),
-				bddintern->structure());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(), bddintern->structure());
 		visit(invertedbddtable);
 	} else if (typeid(*interntable) == typeid(FullInternalPredTable)) {
 		_generator = new EmptyGenerator();
@@ -473,7 +474,7 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 	} else if (_pattern[1] == Pattern::INPUT) {
-		if(pift->getType()==NumType::CERTAINLYINT){
+		if (pift->getType() == NumType::CERTAINLYINT) {
 			// TODO E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
 			throw notyetimplemented("Generation for x/y=z, given x, in the case of integers.");
 		}

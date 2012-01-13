@@ -178,7 +178,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 }
 
 Formula* DeriveSorts::visit(EqChainForm* formula) {
-	if(_useBuiltIns){
+	if (_useBuiltIns) {
 		Sort* temp = NULL;
 		if (not _firstvisit) {
 			for (auto i = formula->subterms().cbegin(); i != formula->subterms().cend(); ++i) {
@@ -287,12 +287,13 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 void DeriveSorts::check() {
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
-			if(_useBuiltIns) Error::novarsort((*i)->name(), (*i)->pi());
+			if (_useBuiltIns)
+				Error::novarsort((*i)->name(), (*i)->pi());
 		} else if (getOption(BoolType::SHOWWARNINGS)) {
 			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 		}
 	}
-	if(_useBuiltIns){
+	if (_useBuiltIns) {
 		for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
 			Error::novarsort((*i)->name(), (*i)->pi());
 		}

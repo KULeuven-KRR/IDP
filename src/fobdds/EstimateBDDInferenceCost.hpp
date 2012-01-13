@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef TABLECOSTESTIMATOR_HPP_
 #define TABLECOSTESTIMATOR_HPP_
@@ -25,7 +25,7 @@ private:
 	std::vector<bool> _pattern; //!< _pattern[n] == true iff the n'th column is an input column
 	double _result;
 
-	double maxCost(){
+	double maxCost() {
 		return getMaxElem<double>();
 	}
 public:
@@ -279,7 +279,8 @@ public:
 		if (_pattern.back()) {
 			unsigned int patterncount = 0;
 			for (unsigned int n = 0; n < _pattern.size() - 1; ++n) {
-				if (_pattern[n]) ++patterncount;
+				if (_pattern[n])
+					++patterncount;
 			}
 			_result = patterncount;
 		} else {
@@ -340,7 +341,8 @@ public:
 	void visit(const PlusInternalFuncTable*) {
 		unsigned int patterncount = 0;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			if (_pattern[n]) ++patterncount;
+			if (_pattern[n])
+				++patterncount;
 		}
 		if (patterncount >= 2)
 			_result = 1;
@@ -351,7 +353,8 @@ public:
 	void visit(const MinusInternalFuncTable*) {
 		unsigned int patterncount = 0;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			if (_pattern[n]) ++patterncount;
+			if (_pattern[n])
+				++patterncount;
 		}
 		if (patterncount >= 2)
 			_result = 1;
@@ -362,7 +365,8 @@ public:
 	void visit(const TimesInternalFuncTable*) {
 		unsigned int patterncount = 0;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			if (_pattern[n]) ++patterncount;
+			if (_pattern[n])
+				++patterncount;
 		}
 		if (patterncount >= 2)
 			_result = 1;
@@ -373,7 +377,8 @@ public:
 	void visit(const DivInternalFuncTable*) {
 		unsigned int patterncount = 0;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			if (_pattern[n]) ++patterncount;
+			if (_pattern[n])
+				++patterncount;
 		}
 		if (patterncount >= 2)
 			_result = 1;

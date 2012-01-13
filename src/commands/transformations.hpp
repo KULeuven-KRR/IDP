@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef CMD_REMOVENESTING_HPP_
 #define CMD_REMOVENESTING_HPP_
@@ -15,9 +15,10 @@
 #include "theory.hpp"
 #include "utils/TheoryUtils.hpp"
 
-class RemoveNestingInference : public TheoryBase {
+class RemoveNestingInference: public TheoryBase {
 public:
-	RemoveNestingInference (): TheoryBase("removenesting", "Move nested terms (except equality) out.\nModifies the given theory.") {
+	RemoveNestingInference()
+			: TheoryBase("removenesting", "Move nested terms (except equality) out.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -26,9 +27,10 @@ public:
 	}
 };
 
-class PushNegationsInference: public TheoryBase{
+class PushNegationsInference: public TheoryBase {
 public:
-	PushNegationsInference(): TheoryBase("pushnegations", "Push negations inwards until they are before literals.\nModifies the given theory.") {
+	PushNegationsInference()
+			: TheoryBase("pushnegations", "Push negations inwards until they are before literals.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -39,7 +41,8 @@ public:
 
 class FlattenInference: public TheoryBase {
 public:
-	FlattenInference(): TheoryBase("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting.\nModifies the given theory.") {
+	FlattenInference()
+			: TheoryBase("flatten", "Rewrites formulas with the same operations in their child formulas by reducing the nesting.\nModifies the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -50,7 +53,8 @@ public:
 
 class CompletionInference: public TheoryBase {
 public:
-	CompletionInference(): TheoryBase("completion", "Add definitional completion to the given theory.") {
+	CompletionInference()
+			: TheoryBase("completion", "Add definitional completion to the given theory.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

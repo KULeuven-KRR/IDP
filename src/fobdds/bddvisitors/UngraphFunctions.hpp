@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef FUNCATOMREMOVER_HPP_
 #define FUNCATOMREMOVER_HPP_
@@ -23,8 +23,8 @@
  */
 class UngraphFunctions: public FOBDDVisitor {
 public:
-	UngraphFunctions(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	UngraphFunctions(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
@@ -39,7 +39,7 @@ public:
 		auto funcargs = atom->args();
 		funcargs.pop_back();
 		auto functerm = _manager->getFuncTerm(function, funcargs);
-		return _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED, {functerm, atom->args().back()});
+		return _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED, { functerm, atom->args().back() });
 	}
 };
 

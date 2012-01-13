@@ -19,9 +19,8 @@
 using namespace std;
 
 GlobalData::GlobalData()
-		: _globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace),
-			_domainelemFactory(DomainElementFactory::createGlobal()), _idcounter(1), _terminateRequested(false),
-			_options(new Options()), _tabsizestack(), _errorcount(0) {
+		: _globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _idcounter(1),
+			_terminateRequested(false), _options(new Options()), _tabsizestack(), _errorcount(0) {
 	_tabsizestack.push(0);
 }
 

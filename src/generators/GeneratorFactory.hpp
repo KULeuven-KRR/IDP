@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GENERATORFACTORY_HPP
 #define GENERATORFACTORY_HPP
@@ -26,15 +26,15 @@ class Universe;
 class PredForm;
 class AbstractStructure;
 
-class GeneratorFactory : public StructureVisitor {
+class GeneratorFactory: public StructureVisitor {
 private:
-	const PredTable*						_table;
-	std::vector<Pattern>					_pattern;	//!< _pattern[n] == true iff the n'th column is an input column
-	std::vector<const DomElemContainer*>	_vars;		//!< the variables corresponding to each column
-	Universe								_universe;	//!< the domains of the variables
-	std::vector<unsigned int>				_firstocc;	//!< for each of the variables, the position in _vars where this
-														//!< variable occurs first
-	InstGenerator*							_generator;
+	const PredTable* _table;
+	std::vector<Pattern> _pattern; //!< _pattern[n] == true iff the n'th column is an input column
+	std::vector<const DomElemContainer*> _vars; //!< the variables corresponding to each column
+	Universe _universe; //!< the domains of the variables
+	std::vector<unsigned int> _firstocc; //!< for each of the variables, the position in _vars where this
+										 //!< variable occurs first
+	InstGenerator* _generator;
 
 	// NOTE: for any function, if the range is an output variable, we can use the simple func generator
 	// if the range is input, we need more specialized generators depending on the function type
@@ -74,8 +74,10 @@ private:
 
 public:
 	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&, const Formula* original = NULL);
-	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&, const Formula* original = NULL);
-	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& universe);
+	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&,
+			const Formula* original = NULL);
+	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern,
+			const std::vector<const DomElemContainer*>& vars, const Universe& universe);
 };
 
 #endif /* GENERATORFACTORY_HPP */

@@ -1,12 +1,12 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #ifndef GROUND_HPP_
 #define GROUND_HPP_
@@ -21,7 +21,8 @@
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
 class GroundInference: public GroundBase {
 public:
-	GroundInference(): GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument.") {
+	GroundInference()
+			: GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -33,7 +34,7 @@ private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure) const {
 		// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
-		GrounderFactory factory(structure,symstructure);
+		GrounderFactory factory(structure, symstructure);
 		auto grounder = factory.create(theory);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
@@ -47,7 +48,8 @@ private:
 
 class PrintGroundingInference: public GroundBase {
 public:
-	PrintGroundingInference(): GroundBase("printgrounding", "Prints the grounding to cout.", true) {
+	PrintGroundingInference()
+			: GroundBase("printgrounding", "Prints the grounding to cout.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -59,10 +61,10 @@ private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory factory(structure, symstructure);
-		auto grounder = factory.create(theory,monitor);
+		auto grounder = factory.create(theory, monitor);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
-		delete(grounder);
+		delete (grounder);
 		grounding->recursiveDelete();
 		delete (symstructure);
 		monitor->flush();

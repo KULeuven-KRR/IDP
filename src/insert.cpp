@@ -1916,7 +1916,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) {
 			st->internTable(t->internTable());
 			sortsOccurringInUserDefinedStructure.insert(s);
 			delete (t);
-		} else{
+		} else {
 			Error::sortnotinstructvoc(toString(name), _currstructure->name(), pi);
 		}
 	} else if (p) {
@@ -1925,17 +1925,17 @@ void Insert::sortinter(NSPair* nst, SortTable* t) {
 			PredInter* i = _currstructure->inter(p);
 			i->ctpt(pt);
 			delete (t);
-		} else{
+		} else {
 			Error::prednotinstructvoc(toString(nst), _currstructure->name(), pi);
 		}
-	} else{
+	} else {
 		Error::undeclpred(toString(nst), pi);
 	}
 	delete (nst);
 }
 
-bool Insert::interpretationSpecifiedByUser(Sort *s) const{
-	return sortsOccurringInUserDefinedStructure.find(s)!=sortsOccurringInUserDefinedStructure.cend();
+bool Insert::interpretationSpecifiedByUser(Sort *s) const {
+	return sortsOccurringInUserDefinedStructure.find(s) != sortsOccurringInUserDefinedStructure.cend();
 }
 
 void Insert::addElement(SortTable* s, int i) const {
