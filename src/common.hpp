@@ -124,7 +124,7 @@ std::string toString(const std::map<Type1, Type2>& v) {
 template<>
 std::string toString(const CompType& type);
 
-#if __GNUC__ < 4 || \
+/*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 
 template<typename Stream>
@@ -132,7 +132,7 @@ Stream& operator<<(Stream& out, CompType ct) {
 	out << toString(ct);
 	return out;
 }
-#endif
+#endif*/
 
 /**
  * HOW TO PRINT INFORMATION CONSISTENCTLY!
