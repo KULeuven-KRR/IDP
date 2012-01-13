@@ -18,6 +18,8 @@ enum class Pattern { INPUT, OUTPUT};
 
 class InstChecker{
 public:
+	virtual ~InstChecker() {}
+
 	// FIXME Checker should only be created if there are no output variables
 	virtual bool check() = 0;
 

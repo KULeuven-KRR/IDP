@@ -1982,9 +1982,7 @@ tablesize StrGreaterInternalPredTable::size(const Universe& univ) const {
 
 InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
 	vector<const DomElemContainer*> vars { new DomElemContainer(), new DomElemContainer() };
-	return new GeneratorInternalTableIterator(
-			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT),
-			vars);
+	return new GeneratorInternalTableIterator(new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
 }
 
 /*************************
