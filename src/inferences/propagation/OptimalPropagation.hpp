@@ -57,7 +57,7 @@ public:
 		opts.nbmodelstofind = 0;
 		opts.printmodels = MinisatID::PRINT_NONE;
 		opts.savemodels = MinisatID::SAVE_ALL;
-		opts.search = MinisatID::MODELEXPAND;
+		opts.inference = MinisatID::MODELEXPAND;
 		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
 		solver.solve(abstractsolutions);
 

@@ -41,7 +41,7 @@ MinisatID::Solution* initsolution() {
 	opts.nbmodelstofind = options->getValue(IntType::NBMODELS);
 	opts.printmodels = MinisatID::PRINT_NONE;
 	opts.savemodels = MinisatID::SAVE_ALL;
-	opts.search = MinisatID::MODELEXPAND;
+	opts.inference = MinisatID::MODELEXPAND;
 	return new MinisatID::Solution(opts);
 }
 
