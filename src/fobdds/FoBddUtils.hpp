@@ -13,7 +13,7 @@
 
 class FOBDDDomainTerm;
 class FOBDDFuncTerm;
-class FOBDDArgument;
+class FOBDDTerm;
 class DomainElement;
 class FOBDDManager;
 
@@ -62,12 +62,14 @@ bool isBddFuncTerm(Type value) {
 }
 
 template<typename Type>
-const FOBDDDomainTerm* getBddDomainTerm(Type term) {
+const FOBDDDomainTerm* castBddDomainTerm(Type term) {
+	Assert(sametypeid<const FOBDDDomainTerm>(*term));
 	return dynamic_cast<const FOBDDDomainTerm*>(term);
 }
 
 template<typename Type>
-const FOBDDFuncTerm* getBddFuncTerm(Type term) {
+const FOBDDFuncTerm* castBddFuncTerm(Type term) {
+	Assert(sametypeid<const FOBDDFuncTerm>(*term));
 	return dynamic_cast<const FOBDDFuncTerm*>(term);
 }
 
@@ -90,7 +92,7 @@ struct Addition {
 
 	// Ordering method: true if ordered before
 	// TODO comment and check what they do!
-	bool operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2);
+	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
 };
 
 struct Multiplication {
@@ -101,16 +103,16 @@ struct Multiplication {
 	static const DomainElement* getNeutralElement();
 
 	// Ordering method: true if ordered before
-	// TODO comment and check what they do!
-	bool operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2);
-	static bool before(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
+	// TODO comment and check what they do! -> not understood yet!
+	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
 		Multiplication m;
 		return m(arg1, arg2);
 	}
 };
 
 struct TermOrder {
-	static bool before(const FOBDDArgument* arg1, const FOBDDArgument* arg2, FOBDDManager* manager);
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager);
 };
 
 #endif /* KERNELORDER_HPP_ */

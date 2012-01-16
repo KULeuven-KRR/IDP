@@ -32,7 +32,7 @@ const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	return _bdd;
 }
 
-const FOBDDArgument* FOBDDFactory::turnIntoBdd(const Term* t) {
+const FOBDDTerm* FOBDDFactory::turnIntoBdd(const Term* t) {
 	// FIXME: move partial functions in aggregates that occur in t
 	t->accept(this);
 	return _argument;
@@ -47,7 +47,7 @@ void FOBDDFactory::visit(const DomainTerm* dt) {
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	for (auto i = ft->subterms().cbegin(); i < ft->subterms().cend(); ++i) {
 		(*i)->accept(this);
 		args.push_back(_argument);
@@ -91,7 +91,7 @@ void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& inver
 }
 
 void FOBDDFactory::visit(const PredForm* pf) {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
 		(*i)->accept(this);
 		args.push_back(_argument);

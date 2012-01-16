@@ -16,12 +16,12 @@
 
 class Function;
 
-class FOBDDFuncTerm: public FOBDDArgument {
+class FOBDDFuncTerm: public FOBDDTerm {
 private:
 	Function* _function;
-	std::vector<const FOBDDArgument*> _args;
+	std::vector<const FOBDDTerm*> _args;
 
-	FOBDDFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args)
+	FOBDDFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args)
 			: _function(func), _args(args) {
 	}
 
@@ -31,16 +31,16 @@ public:
 	Function* func() const {
 		return _function;
 	}
-	const FOBDDArgument* args(unsigned int n) const {
+	const FOBDDTerm* args(unsigned int n) const {
 		return _args[n];
 	}
-	const std::vector<const FOBDDArgument*>& args() const {
+	const std::vector<const FOBDDTerm*>& args() const {
 		return _args;
 	}
 	Sort* sort() const;
 
 	void accept(FOBDDVisitor*) const;
-	const FOBDDArgument* acceptchange(FOBDDVisitor*) const;
+	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
 
 	friend class FOBDDManager;
 };

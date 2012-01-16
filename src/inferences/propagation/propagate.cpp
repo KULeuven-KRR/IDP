@@ -75,7 +75,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
 		args.push_back(bddfactory.turnIntoBdd(*it));
@@ -87,7 +87,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
 		args.push_back(bddfactory.turnIntoBdd(*it));

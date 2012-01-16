@@ -24,7 +24,7 @@ private:
 	FOBDDManager* _originalmanager;
 	FOBDDManager* _copymanager;
 	const FOBDDKernel* _kernel;
-	const FOBDDArgument* _argument;
+	const FOBDDTerm* _argument;
 public:
 	Copy(FOBDDManager* orig, FOBDDManager* copy)
 			: FOBDDVisitor(orig), _originalmanager(orig), _copymanager(copy) {
@@ -43,7 +43,7 @@ public:
 	}
 
 	void visit(const FOBDDFuncTerm* term) {
-		std::vector<const FOBDDArgument*> newargs;
+		std::vector<const FOBDDTerm*> newargs;
 		for (auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 			newargs.push_back(copy(*it));
 		}
@@ -56,14 +56,14 @@ public:
 	}
 
 	void visit(const FOBDDAtomKernel* kernel) {
-		std::vector<const FOBDDArgument*> newargs;
+		std::vector<const FOBDDTerm*> newargs;
 		for (auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 			newargs.push_back(copy(*it));
 		}
 		_kernel = _copymanager->getAtomKernel(kernel->symbol(), kernel->type(), newargs);
 	}
 
-	const FOBDDArgument* copy(const FOBDDArgument* arg) {
+	const FOBDDTerm* copy(const FOBDDTerm* arg) {
 		arg->accept(this);
 		return _argument;
 	}

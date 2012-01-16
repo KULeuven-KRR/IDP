@@ -44,7 +44,7 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	}
 	auto pvars = VarUtils::makeNewVariables(symbol->sorts());
 	vector<const FOBDDVariable*> bddvarlist;
-	vector<const FOBDDArgument*> bddarglist;
+	vector<const FOBDDTerm*> bddarglist;
 	for (size_t n = 0; n < pvars.size(); ++n) {
 		const FOBDDVariable* bddvar = manager.getVariable(pvars[n]);
 		bddvarlist.push_back(bddvar);

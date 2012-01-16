@@ -73,7 +73,7 @@ const FOBDD* FOBDDVisitor::change(const FOBDD* bdd) {
 }
 
 const FOBDDKernel* FOBDDVisitor::change(const FOBDDAtomKernel* kernel) {
-	vector<const FOBDDArgument*> nargs;
+	vector<const FOBDDTerm*> nargs;
 	for (auto it = kernel->args().cbegin(); it != kernel->args().cend(); ++it) {
 		nargs.push_back((*it)->acceptchange(this));
 	}
@@ -85,20 +85,20 @@ const FOBDDKernel* FOBDDVisitor::change(const FOBDDQuantKernel* kernel) {
 	return _manager->getQuantKernel(kernel->sort(), nbdd);
 }
 
-const FOBDDArgument* FOBDDVisitor::change(const FOBDDVariable* variable) {
+const FOBDDTerm* FOBDDVisitor::change(const FOBDDVariable* variable) {
 	return variable;
 }
 
-const FOBDDArgument* FOBDDVisitor::change(const FOBDDDeBruijnIndex* index) {
+const FOBDDTerm* FOBDDVisitor::change(const FOBDDDeBruijnIndex* index) {
 	return index;
 }
 
-const FOBDDArgument* FOBDDVisitor::change(const FOBDDDomainTerm* term) {
+const FOBDDTerm* FOBDDVisitor::change(const FOBDDDomainTerm* term) {
 	return term;
 }
 
-const FOBDDArgument* FOBDDVisitor::change(const FOBDDFuncTerm* term) {
-	vector<const FOBDDArgument*> args;
+const FOBDDTerm* FOBDDVisitor::change(const FOBDDFuncTerm* term) {
+	vector<const FOBDDTerm*> args;
 	for (auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 		args.push_back((*it)->acceptchange(this));
 	}

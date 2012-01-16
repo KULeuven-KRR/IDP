@@ -34,7 +34,7 @@ public:
 	FirstConstMultTerm(FOBDDManager* m)
 			: FOBDDVisitor(m) {
 	}
-	const FOBDDDomainTerm* run(const FOBDDArgument* arg) {
+	const FOBDDDomainTerm* run(const FOBDDTerm* arg) {
 		_result = _manager->getDomainTerm(arg->sort(), createDomElem(1));
 		arg->accept(this);
 		return _result;
@@ -42,7 +42,7 @@ public:
 	void visit(const FOBDDFuncTerm* ft) {
 		if (isBddDomainTerm(ft->args(0))) {
 			Assert(not isBddDomainTerm(ft->args(1)));
-			_result = getBddDomainTerm(ft->args(0));
+			_result = castBddDomainTerm(ft->args(0));
 		}
 	}
 };

@@ -43,16 +43,16 @@ void FOBDDFuncTerm::accept(FOBDDVisitor* v) const {
 	v->visit(this);
 }
 
-const FOBDDArgument* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 

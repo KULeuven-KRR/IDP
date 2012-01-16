@@ -64,7 +64,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			getct = not getct;
 		}
 		auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
-		map<const FOBDDVariable*, const FOBDDArgument*> mva;
+		map<const FOBDDVariable*, const FOBDDTerm*> mva;
 		const auto& vars = _vars[atom->symbol()];
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);

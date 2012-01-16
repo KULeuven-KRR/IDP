@@ -19,7 +19,7 @@ class FOBDDVariable;
 class FOBDDDeBruijnIndex;
 class FOBDDDomainTerm;
 class FOBDDFuncTerm;
-class FOBDDArgument;
+class FOBDDTerm;
 class FOBDDKernel;
 
 class FOBDDVisitor {
@@ -43,10 +43,10 @@ public:
 	virtual const FOBDD* change(const FOBDD*);
 	virtual const FOBDDKernel* change(const FOBDDAtomKernel*);
 	virtual const FOBDDKernel* change(const FOBDDQuantKernel*);
-	virtual const FOBDDArgument* change(const FOBDDVariable*);
-	virtual const FOBDDArgument* change(const FOBDDDeBruijnIndex*);
-	virtual const FOBDDArgument* change(const FOBDDDomainTerm*);
-	virtual const FOBDDArgument* change(const FOBDDFuncTerm*);
+	virtual const FOBDDTerm* change(const FOBDDVariable*);
+	virtual const FOBDDTerm* change(const FOBDDDeBruijnIndex*);
+	virtual const FOBDDTerm* change(const FOBDDDomainTerm*);
+	virtual const FOBDDTerm* change(const FOBDDFuncTerm*);
 };
 
 #endif /* FOBDDVISITOR_HPP_ */

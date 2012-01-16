@@ -18,7 +18,7 @@
 
 #include "fobdds/FoBddUtils.hpp"
 
-class FOBDDArgument;
+class FOBDDTerm;
 class FOBDDVariable;
 class FOBDDFuncTerm;
 class FOBDDDeBruijnIndex;
@@ -42,7 +42,7 @@ typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;
 typedef std::map<const FOBDD*, MBDDBDD> MBDDMBDDBDD;
 typedef std::map<const FOBDDKernel*, MBDDMBDDBDD> BDDTable;
 
-typedef std::map<std::vector<const FOBDDArgument*>, FOBDDAtomKernel*> MVAGAK;
+typedef std::map<std::vector<const FOBDDTerm*>, FOBDDAtomKernel*> MVAGAK;
 typedef std::map<AtomKernelType, MVAGAK> MAKTMVAGAK;
 typedef std::map<PFSymbol*, MAKTMVAGAK> AtomKernelTable;
 typedef std::map<const FOBDD*, FOBDDQuantKernel*> MBDDQK;
@@ -56,7 +56,7 @@ typedef std::map<unsigned int, FOBDDDeBruijnIndex*> MUIDB;
 typedef std::map<Sort*, MUIDB> DeBruijnIndexTable;
 typedef std::map<const DomainElement*, FOBDDDomainTerm*> MTEDT;
 typedef std::map<Sort*, MTEDT> DomainTermTable;
-typedef std::map<std::vector<const FOBDDArgument*>, FOBDDFuncTerm*> MVAFT;
+typedef std::map<std::vector<const FOBDDTerm*>, FOBDDFuncTerm*> MVAFT;
 typedef std::map<Function*, MVAFT> FuncTermTable;
 
 /**
@@ -108,11 +108,11 @@ public:
 	}
 
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
-	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDArgument*>&);
+	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDTerm*>&);
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
-	const FOBDDArgument* getFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
+	const FOBDDTerm* getFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
 	std::set<const FOBDDVariable*> getVariables(const std::set<Variable*>& vars);
@@ -128,23 +128,23 @@ public:
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
-	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDArgument*>&);
+	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDTerm*>&);
 
 	std::ostream& put(std::ostream&, const FOBDD*) const;
 	std::ostream& put(std::ostream&, const FOBDDKernel*) const;
-	std::ostream& put(std::ostream&, const FOBDDArgument*) const;
+	std::ostream& put(std::ostream&, const FOBDDTerm*) const;
 
 	bool contains(const FOBDDKernel*, Variable*);
 	bool contains(const FOBDDKernel*, const FOBDDVariable*);
 	bool contains(const FOBDD*, const FOBDDVariable*);
-	bool contains(const FOBDDArgument*, const FOBDDVariable*);
-	bool contains(const FOBDDArgument*, const FOBDDArgument*);
+	bool contains(const FOBDDTerm*, const FOBDDVariable*);
+	bool contains(const FOBDDTerm*, const FOBDDTerm*);
 	bool containsFuncTerms(const FOBDDKernel*);
 	bool containsFuncTerms(const FOBDD*);
 
 	Formula* toFormula(const FOBDD*);
 	Formula* toFormula(const FOBDDKernel*);
-	Term* toTerm(const FOBDDArgument*);
+	Term* toTerm(const FOBDDTerm*);
 
 	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
@@ -169,24 +169,24 @@ public:
 	 * Returns a null-pointer in case this is impossible.
 	 * Only guaranteed to work correctly on variables and indices.
 	 */
-	const FOBDDArgument* solve(const FOBDDKernel*, const FOBDDArgument*);
+	const FOBDDTerm* solve(const FOBDDKernel*, const FOBDDTerm*);
 
-	bool partial(const FOBDDArgument*); //!< Returns true iff the given term is partial
+	bool partial(const FOBDDTerm*); //!< Returns true iff the given term is partial
 
 	int longestbranch(const FOBDDKernel*);
 	int longestbranch(const FOBDD*);
 
 private:
 	KernelOrder newOrder(unsigned int category);
-	KernelOrder newOrder(const std::vector<const FOBDDArgument*>& args);
+	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
 	KernelOrder newOrder(const FOBDD* bdd);
 
 	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
-	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDArgument*>& args);
+	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDTerm*>& args);
 	FOBDDQuantKernel* addQuantKernel(Sort* sort, const FOBDD* bdd);
 	FOBDDVariable* addVariable(Variable* var);
 	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
-	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDArgument*>& args);
+	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
 	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
 
 	void clearDynamicTables();
@@ -206,7 +206,7 @@ private:
 	double estimatedChance(const FOBDDKernel*, AbstractStructure*);
 	double estimatedChance(const FOBDD*, AbstractStructure*);
 
-	const FOBDDArgument* invert(const FOBDDArgument*);
+	const FOBDDTerm* invert(const FOBDDTerm*);
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder

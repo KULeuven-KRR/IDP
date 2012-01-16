@@ -15,7 +15,7 @@
 #include "fobdds/FoBddKernel.hpp"
 
 class PFSymbol;
-class FOBDDArgument;
+class FOBDDTerm;
 class FOBDDManager;
 
 class FOBDDAtomKernel: public FOBDDKernel {
@@ -24,9 +24,9 @@ private:
 
 	PFSymbol* _symbol;
 	AtomKernelType _type;
-	std::vector<const FOBDDArgument*> _args;
+	std::vector<const FOBDDTerm*> _args;
 
-	FOBDDAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDArgument*>& args, const KernelOrder& order)
+	FOBDDAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDTerm*>& args, const KernelOrder& order)
 			: FOBDDKernel(order), _symbol(symbol), _type(akt), _args(args) {
 	}
 
@@ -39,11 +39,11 @@ public:
 	AtomKernelType type() const {
 		return _type;
 	}
-	const FOBDDArgument* args(unsigned int n) const {
+	const FOBDDTerm* args(unsigned int n) const {
 		return _args[n];
 	}
 
-	const std::vector<const FOBDDArgument*>& args() const {
+	const std::vector<const FOBDDTerm*>& args() const {
 		return _args;
 	}
 
