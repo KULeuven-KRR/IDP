@@ -15,9 +15,9 @@
 bool FOBDD::containsDeBruijnIndex(unsigned int index) const {
 	if (_kernel->containsDeBruijnIndex(index)) {
 		return true;
-	} else if (_falsebranch && _falsebranch->containsDeBruijnIndex(index)) {
+	} else if (_falsebranch != NULL && _falsebranch->containsDeBruijnIndex(index)) {
 		return true;
-	} else if (_truebranch && _truebranch->containsDeBruijnIndex(index)) {
+	} else if (_truebranch != NULL && _truebranch->containsDeBruijnIndex(index)) {
 		return true;
 	} else {
 		return false;

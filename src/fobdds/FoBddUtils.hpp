@@ -18,6 +18,9 @@ class DomainElement;
 class FOBDDManager;
 
 #include "common.hpp"
+#include <utility> // for relational operators (namespace rel_ops)
+using namespace std;
+using namespace rel_ops;
 
 enum AtomKernelType {
 	AKT_CT, AKT_CF, AKT_TWOVALUED
@@ -36,6 +39,15 @@ struct KernelOrder {
 	}
 	KernelOrder(const KernelOrder& order)
 			: _category(order._category), _number(order._number) {
+	}
+	bool operator<(const KernelOrder& ko) const {
+		if (_category < ko._category) {
+			return true;
+		} else if (_category > ko._category) {
+			return false;
+		} else {
+			return _number < ko._number;
+		}
 	}
 };
 

@@ -12,6 +12,9 @@
 #define FOBDDKERNEL_HPP_
 
 #include "fobdds/FoBddUtils.hpp"
+#include <utility> // for relational operators (namespace rel_ops)
+using namespace std;
+using namespace rel_ops;
 
 class FOBDDVisitor;
 
@@ -43,23 +46,7 @@ public:
 	}
 
 	bool operator<(const FOBDDKernel& k) const {
-		if (_order._category < k._order._category) {
-			return true;
-		} else if (_order._category > k._order._category) {
-			return false;
-		} else {
-			return _order._number < k._order._number;
-		}
-	}
-
-	bool operator>(const FOBDDKernel& k) const {
-		if (_order._category > k._order._category) {
-			return true;
-		} else if (_order._category < k._order._category) {
-			return false;
-		} else {
-			return _order._number > k._order._number;
-		}
+		return(_order < k._order);
 	}
 
 	virtual void accept(FOBDDVisitor*) const {
