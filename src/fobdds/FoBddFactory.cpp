@@ -27,32 +27,32 @@ using namespace std;
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
-	f->accept(this);
-	//cf->recursiveDelete(); FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
+	cf->accept(this);
+	//cf->recursiveDelete(); //FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
 	return _bdd;
 }
 
 const FOBDDTerm* FOBDDFactory::turnIntoBdd(const Term* t) {
 	// FIXME: move partial functions in aggregates that occur in t
 	t->accept(this);
-	return _argument;
+	return _term;
 }
 
 void FOBDDFactory::visit(const VarTerm* vt) {
-	_argument = _manager->getVariable(vt->var());
+	_term = _manager->getVariable(vt->var());
 }
 
 void FOBDDFactory::visit(const DomainTerm* dt) {
-	_argument = _manager->getDomainTerm(dt->sort(), dt->value());
+	_term = _manager->getDomainTerm(dt->sort(), dt->value());
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
 	vector<const FOBDDTerm*> args;
 	for (auto i = ft->subterms().cbegin(); i < ft->subterms().cend(); ++i) {
 		(*i)->accept(this);
-		args.push_back(_argument);
+		args.push_back(_term);
 	}
-	_argument = _manager->getFuncTerm(ft->function(), args);
+	_term = _manager->getFuncTerm(ft->function(), args);
 }
 
 void FOBDDFactory::visit(const AggTerm*) {
@@ -94,7 +94,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 	vector<const FOBDDTerm*> args;
 	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
 		(*i)->accept(this);
-		args.push_back(_argument);
+		args.push_back(_term);
 	}
 	auto akt = AtomKernelType::AKT_TWOVALUED;
 	auto invert = isNeg(pf->sign());

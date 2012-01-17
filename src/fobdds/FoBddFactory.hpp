@@ -42,7 +42,7 @@ private:
 	// Return values
 	const FOBDD* _bdd;
 	const FOBDDKernel* _kernel;
-	const FOBDDTerm* _argument;
+	const FOBDDTerm* _term;
 
 	void visit(const VarTerm* vt);
 	void visit(const DomainTerm* dt);
