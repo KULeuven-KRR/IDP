@@ -31,7 +31,7 @@ if(${BUILDTESTS})
 		propagationtests.cpp
 		parsertests.cpp
 		transformationtests.cpp
-                commandtests.cpp
+		commandtests.cpp
 		cppinterface.hpp cppinterface.cpp
 		testingtools.hpp testingtools.cpp
 		TestUtils.hpp TestUtils.cpp
