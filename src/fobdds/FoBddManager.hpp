@@ -34,6 +34,7 @@ class Sort;
 class Formula;
 class Term;
 class AbstractStructure;
+class DomainTerm;
 class DomainElement;
 class tablesize;
 class Function;
@@ -113,6 +114,7 @@ public:
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 	const FOBDDTerm* getFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
+	const FOBDDDomainTerm* getDomainTerm(const DomainTerm* dt);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
 	std::set<const FOBDDVariable*> getVariables(const std::set<Variable*>& vars);

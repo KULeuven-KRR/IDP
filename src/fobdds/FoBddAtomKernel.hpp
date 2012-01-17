@@ -40,7 +40,7 @@ public:
 		return _type;
 	}
 	const FOBDDTerm* args(unsigned int n) const {
-		Assert(_args != NULL & n<_args.size());
+		Assert( n<_args.size());
 		return _args[n];
 	}
 

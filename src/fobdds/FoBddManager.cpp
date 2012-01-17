@@ -647,6 +647,10 @@ FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBD
 	return newarg;
 }
 
+const FOBDDDomainTerm* FOBDDManager::getDomainTerm(const DomainTerm* dt){
+	return getDomainTerm(dt->sort(),dt->value());
+}
+
 const FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainElement* value) {
 	// Lookup
 	DomainTermTable::const_iterator it = _domaintermtable.find(sort);

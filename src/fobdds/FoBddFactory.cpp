@@ -28,7 +28,9 @@ const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	cf->accept(this);
-	//cf->recursiveDelete(); //FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
+	//cf->recursiveDelete();
+	//FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
+	//Possible solution: cf->recursiveDeleteKeepVars();
 	return _bdd;
 }
 
@@ -43,7 +45,7 @@ void FOBDDFactory::visit(const VarTerm* vt) {
 }
 
 void FOBDDFactory::visit(const DomainTerm* dt) {
-	_term = _manager->getDomainTerm(dt->sort(), dt->value());
+	_term = _manager->getDomainTerm(dt);
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
@@ -57,6 +59,7 @@ void FOBDDFactory::visit(const FuncTerm* ft) {
 
 void FOBDDFactory::visit(const AggTerm*) {
 	throw notyetimplemented("Creating a bdd for aggregate terms has not yet been implemented.");
+	//TODO
 }
 
 /**
@@ -75,11 +78,11 @@ void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& inver
 			break;
 		case ST_PF:
 			akt = AtomKernelType::AKT_CT;
-			invert = true;
+			invert = not invert;
 			break;
 		case ST_PT:
 			akt = AtomKernelType::AKT_CF;
-			invert = true;
+			invert = not invert;
 			break;
 		case ST_NONE:
 			break;
@@ -133,6 +136,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 
 void FOBDDFactory::visit(const EquivForm*) {
 	throw notyetimplemented("Creating a bdd for equivalences has not yet been implemented.");
+	//TODO
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
@@ -151,7 +155,7 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 }
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
-	auto efclone = ef->clone();
+	auto efclone = ef->cloneKeepVars(); //We are not allowed to change the vars, since the manager keeps a vars->bddvars mapping.
 	auto f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
 	f->accept(this);
 	// f->recursiveDelete(); TODO deletes variables also!
@@ -159,4 +163,5 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 
 void FOBDDFactory::visit(const AggForm*) {
 	throw notyetimplemented("Creating a bdd for aggregate formulas has not yet been implemented.");
+	//TODO
 }
