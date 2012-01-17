@@ -34,7 +34,7 @@ public:
 	virtual bool containsDeBruijnIndex(unsigned int) const {
 		return false;
 	}
-	unsigned int category() const {
+	KernelOrderCategory category() const {
 		return _order._category;
 	}
 	unsigned int number() const {

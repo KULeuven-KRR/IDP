@@ -37,21 +37,17 @@ using namespace std;
 
 extern int global_seed; // TODO part of global data or options!
 
-static unsigned int STANDARDCATEGORY = 1;
-static unsigned int DEBRUIJNCATEGORY = 2;
-static unsigned int TRUEFALSECATEGORY = 3;
-
-KernelOrder FOBDDManager::newOrder(unsigned int category) {
+KernelOrder FOBDDManager::newOrder(KernelOrderCategory category) {
 	KernelOrder order(category, _nextorder[category]);
 	++_nextorder[category];
 	return order;
 }
 
 KernelOrder FOBDDManager::newOrder(const vector<const FOBDDTerm*>& args) {
-	unsigned int category = STANDARDCATEGORY;
+	auto category = KernelOrderCategory::STANDARDCATEGORY;
 	for (size_t n = 0; n < args.size(); ++n) {
 		if (args[n]->containsFreeDeBruijnIndex()) {
-			category = DEBRUIJNCATEGORY;
+			category = KernelOrderCategory::DEBRUIJNCATEGORY;
 			break;
 		}
 	}
@@ -59,7 +55,7 @@ KernelOrder FOBDDManager::newOrder(const vector<const FOBDDTerm*>& args) {
 }
 
 KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
-	unsigned int category = (bdd->containsDeBruijnIndex(1)) ? DEBRUIJNCATEGORY : STANDARDCATEGORY;
+	auto category = (bdd->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
@@ -73,8 +69,8 @@ void FOBDDManager::clearDynamicTables() {
 
 void FOBDDManager::moveUp(const FOBDDKernel* kernel) {
 	clearDynamicTables();
-	unsigned int cat = kernel->category();
-	if (cat != TRUEFALSECATEGORY) {
+	auto cat = kernel->category();
+	if (cat != KernelOrderCategory::TRUEFALSECATEGORY) {
 		unsigned int nr = kernel->number();
 		if (nr != 0) {
 			--nr;
@@ -86,8 +82,8 @@ void FOBDDManager::moveUp(const FOBDDKernel* kernel) {
 
 void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 	clearDynamicTables();
-	unsigned int cat = kernel->category();
-	if (cat != TRUEFALSECATEGORY) {
+	auto cat = kernel->category();
+	if (cat != KernelOrderCategory::TRUEFALSECATEGORY) {
 		unsigned int nr = kernel->number();
 		vector<const FOBDD*> falseerase;
 		vector<const FOBDD*> trueerase;
@@ -270,9 +266,9 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 	// Lookup
 	AtomKernelTable::const_iterator it = _atomkerneltable.find(symbol);
 	if (it != _atomkerneltable.cend()) {
-		MAKTMVAGAK::const_iterator jt = it->second.find(akt);
+		MAKTMVTAK::const_iterator jt = it->second.find(akt);
 		if (jt != it->second.cend()) {
-			MVAGAK::const_iterator kt = jt->second.find(args);
+			MVTAK::const_iterator kt = jt->second.find(args);
 			if (kt != jt->second.cend()) {
 				return kt->second;
 			}
@@ -790,6 +786,7 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	return result;
 }
 
+//Note: there is a difference with getBDD... getBDD is good when everything is already sorted.  This method servers for creating a new bdd and sorting it at the mean time.
 const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	auto it = _ifthenelsetable.find(kernel);
 	if (it != _ifthenelsetable.cend()) {
@@ -888,7 +885,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 			return jt->second;
 		}
 	}
-	if (bdd->kernel()->category() == STANDARDCATEGORY) {
+	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
 		const FOBDD* newfalse = quantify(sort, bdd->falsebranch());
 		const FOBDD* newtrue = quantify(sort, bdd->truebranch());
 		const FOBDD* result = ifthenelse(bdd->kernel(), newtrue, newfalse);
@@ -2157,12 +2154,12 @@ const FOBDD* FOBDDManager::make_more_true(const FOBDD* bdd, const set<const FOBD
 }
 
 FOBDDManager::FOBDDManager() {
-	_nextorder[TRUEFALSECATEGORY] = 0;
-	_nextorder[STANDARDCATEGORY] = 0;
-	_nextorder[DEBRUIJNCATEGORY] = 0;
+	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
+	_nextorder[KernelOrderCategory::STANDARDCATEGORY] = 0;
+	_nextorder[KernelOrderCategory::DEBRUIJNCATEGORY] = 0;
 
-	KernelOrder ktrue = newOrder(TRUEFALSECATEGORY);
-	KernelOrder kfalse = newOrder(TRUEFALSECATEGORY);
+	KernelOrder ktrue = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	_truekernel = new FOBDDKernel(ktrue);
 	_falsekernel = new FOBDDKernel(kfalse);
 	_truebdd = new FOBDD(_truekernel, 0, 0);

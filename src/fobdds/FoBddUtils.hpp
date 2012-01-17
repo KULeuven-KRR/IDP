@@ -18,13 +18,10 @@ class DomainElement;
 class FOBDDManager;
 
 #include "common.hpp"
+#include "CommonBddTypes.hpp"
 #include <utility> // for relational operators (namespace rel_ops)
 using namespace std;
 using namespace rel_ops;
-
-enum AtomKernelType {
-	AKT_CT, AKT_CF, AKT_TWOVALUED
-};
 
 /**
  *	A kernel order contains two numbers to order kernels (nodes) in a BDD.
@@ -32,9 +29,9 @@ enum AtomKernelType {
  *	Within a category, kernels are ordered according to the second number.
  */
 struct KernelOrder {
-	unsigned int _category; //!< The unsigned int
+	KernelOrderCategory _category; //!< The category of this kernel
 	unsigned int _number; //!< The second number
-	KernelOrder(unsigned int c, unsigned int n)
+	KernelOrder(KernelOrderCategory c, unsigned int n)
 			: _category(c), _number(n) {
 	}
 	KernelOrder(const KernelOrder& order)
@@ -43,7 +40,7 @@ struct KernelOrder {
 	bool operator<(const KernelOrder& ko) const {
 		if (_category < ko._category) {
 			return true;
-		} else if (_category > ko._category) {
+		} else if (ko._category < _category) {
 			return false;
 		} else {
 			return _number < ko._number;

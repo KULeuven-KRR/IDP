@@ -43,14 +43,14 @@ typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;
 typedef std::map<const FOBDD*, MBDDBDD> MBDDMBDDBDD;
 typedef std::map<const FOBDDKernel*, MBDDMBDDBDD> BDDTable;
 
-typedef std::map<std::vector<const FOBDDTerm*>, FOBDDAtomKernel*> MVAGAK;
-typedef std::map<AtomKernelType, MVAGAK> MAKTMVAGAK;
-typedef std::map<PFSymbol*, MAKTMVAGAK> AtomKernelTable;
+typedef std::map<std::vector<const FOBDDTerm*>, FOBDDAtomKernel*> MVTAK;
+typedef std::map<AtomKernelType, MVTAK> MAKTMVTAK;
+typedef std::map<PFSymbol*, MAKTMVTAK> AtomKernelTable;
 typedef std::map<const FOBDD*, FOBDDQuantKernel*> MBDDQK;
 typedef std::map<Sort*, MBDDQK> QuantKernelTable;
 
 typedef std::map<unsigned int, FOBDDKernel*> MIK;
-typedef std::map<unsigned int, MIK> KernelTable;
+typedef std::map<KernelOrderCategory, MIK> KernelTable;
 
 typedef std::map<Variable*, FOBDDVariable*> VariableTable;
 typedef std::map<unsigned int, FOBDDDeBruijnIndex*> MUIDB;
@@ -72,7 +72,7 @@ private:
 	FOBDDKernel* _falsekernel; //!< the kernel 'false'
 
 	// Order
-	std::map<unsigned int, unsigned int> _nextorder;
+	std::map<KernelOrderCategory, unsigned int> _nextorder;
 
 	// Global tables
 	BDDTable _bddtable;
@@ -88,6 +88,9 @@ private:
 	std::map<const FOBDD*, const FOBDD*> _negationtable;
 	std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > _conjunctiontable;
 	std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > _disjunctiontable;
+	//_ifthenelsetable is a map:
+	// kernel -> ( truebdd -> (falsebdd -> result))
+	//Or, said differently: (kernel, truebdd, falsebdd) -> result
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
 
@@ -127,6 +130,8 @@ public:
 	const FOBDD* univquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* existsquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
+
+	//TODO: document what is substituted by what!
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
@@ -179,7 +184,7 @@ public:
 	int longestbranch(const FOBDD*);
 
 private:
-	KernelOrder newOrder(unsigned int category);
+	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
 	KernelOrder newOrder(const FOBDD* bdd);
 
