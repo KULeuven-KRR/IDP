@@ -41,6 +41,9 @@ class Function;
 
 typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;
 typedef std::map<const FOBDD*, MBDDBDD> MBDDMBDDBDD;
+// The BDDTable takes a Kernel, and two BDDs and maps it to the corresponding BDD
+// FIXME: currently, this table takes FIRST the falsbranch, then the truebranch.
+// It would be more logical the other way round (to be consistent with the order of the arguments in all bdd methods)
 typedef std::map<const FOBDDKernel*, MBDDMBDDBDD> BDDTable;
 
 typedef std::map<std::vector<const FOBDDTerm*>, FOBDDAtomKernel*> MVTAK;
