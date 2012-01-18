@@ -22,8 +22,8 @@ class FOBDDKernel {
 private:
 	KernelOrder _order;
 public:
-	FOBDDKernel(const KernelOrder& order)
-			: _order(order) {
+	FOBDDKernel(const KernelOrder& order) :
+			_order(order) {
 	}
 	virtual ~FOBDDKernel() {
 	}
@@ -46,7 +46,7 @@ public:
 	}
 
 	bool operator<(const FOBDDKernel& k) const {
-		return(_order < k._order);
+		return (_order < k._order);
 	}
 
 	virtual void accept(FOBDDVisitor*) const {
@@ -54,6 +54,29 @@ public:
 	virtual const FOBDDKernel* acceptchange(FOBDDVisitor*) const {
 		return this;
 	}
+
+	virtual std::ostream& put(std::ostream& output) const = 0;
+
 };
 
+class TrueFOBDDKernel: public FOBDDKernel {
+public:
+	TrueFOBDDKernel(const KernelOrder& order) :
+			FOBDDKernel(order) {
+	}
+	virtual ~TrueFOBDDKernel() {
+	}
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
+class FalseFOBDDKernel: public FOBDDKernel {
+public:
+	FalseFOBDDKernel(const KernelOrder& order) :
+			FOBDDKernel(order) {
+	}
+	virtual ~FalseFOBDDKernel() {
+	}
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
 #endif /* FOBDDKERNEL_HPP_ */

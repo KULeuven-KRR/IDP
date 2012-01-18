@@ -46,14 +46,42 @@ void FOBDDFuncTerm::accept(FOBDDVisitor* v) const {
 const FOBDDTerm* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
+std::ostream& FOBDDVariable::put(std::ostream& output) const {
+	output << toString(_variable);
+	return output;
+}
+
 const FOBDDTerm* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
+std::ostream& FOBDDDeBruijnIndex::put(std::ostream& output) const {
+	output << "<" << toString(_index) << ">[" << toString(_sort) << "]";
+	return output;
+}
+
 const FOBDDTerm* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
+
+std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
+	output << toString(_value) << "[" << toString(_sort) << "]";
+	return output;
+}
+
 const FOBDDTerm* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
+}
+std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
+	output << toString(_function);
+	if (_function->arity() > 0) {
+		output << "(";
+		output << toString(args(0));
+		for (size_t n = 1; n < _function->arity(); ++n) {
+			output << "," << toString(args(n));
+		}
+		output << ")";
+	}
+	return output;
 }
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2) {

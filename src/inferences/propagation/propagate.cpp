@@ -51,7 +51,7 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {
 	pushtab();
-	_manager->put(output, domain->bdd());
+	output << toString(domain->bdd());
 	poptab();
 	return output;
 }

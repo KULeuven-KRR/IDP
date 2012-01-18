@@ -167,15 +167,15 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 		output << "      vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
-			_manager->put(output, *jt);
+			output << toString(*jt);
 		}
 		output << '\n';
 		output << tabs();
 		output << "      ct:" << endl << tabs();
 		pushtab();
-		_manager->put(output, _ctbounds.find(it->first)->second);
+		output << toString(_ctbounds.find(it->first)->second);
 		output << "      cf:" << endl << tabs();
-		_manager->put(output, _cfbounds.find(it->first)->second);
+		output << toString(_cfbounds.find(it->first)->second);
 		poptab();
 	}
 	return output;

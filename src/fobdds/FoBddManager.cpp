@@ -755,8 +755,8 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 		bdd1 = bdd2;
 		bdd2 = temp;
 	}
-	auto result = lookup<const FOBDD>(_disjunctiontable, bdd1,bdd2);
-	if(result != NULL){
+	auto result = lookup<const FOBDD>(_disjunctiontable, bdd1, bdd2);
+	if (result != NULL) {
 		return result;
 	}
 
@@ -780,9 +780,9 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 //Note: there is a difference with getBDD... getBDD is good when everything is already sorted.  This method serves for creating a new bdd and sorting it at the mean time.
 const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
-	auto result = lookup<const FOBDD>(_ifthenelsetable,kernel,truebranch,falsebranch);
-	if(result != NULL){
-			return result;
+	auto result = lookup<const FOBDD>(_ifthenelsetable, kernel, truebranch, falsebranch);
+	if (result != NULL) {
+		return result;
 	}
 
 	const FOBDDKernel* truekernel = truebranch->kernel();
@@ -827,7 +827,7 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 			result = getBDD(falsekernel, newtrue, newfalse);
 		}
 	}
-	_ifthenelsetable[kernel][truebranch][falsebranch]=result;
+	_ifthenelsetable[kernel][truebranch][falsebranch] = result;
 	return result;
 
 }
@@ -862,13 +862,17 @@ const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*>& qvars
 const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	// base case
 	if (bdd == _truebdd || bdd == _falsebdd) {
-		auto sortNotEmpty = getQuantKernel(sort,getBDD(getAtomKernel(sort->pred(),AtomKernelType::AKT_CT,{getDeBruijnIndex(sort,0)}),_truebdd,_falsebdd)); // ?x[Sort]:Sort(x)
-		return getBDD(sortNotEmpty,bdd, negation(bdd));
+		if (sort->builtin()) {
+			return sort->interpretation()->empty() ? bdd : negation(bdd);
+		}
+		auto sortNotEmpty = getQuantKernel(sort,
+				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_CT, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
+		return getBDD(sortNotEmpty, bdd, negation(bdd));
 	}
 
 	// Recursive case
-	auto result = lookup<const FOBDD>(_quanttable,sort,bdd);
-	if(result != NULL){
+	auto result = lookup<const FOBDD>(_quanttable, sort, bdd);
+	if (result != NULL) {
 		return result;
 	}
 	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
@@ -877,9 +881,9 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 		result = ifthenelse(bdd->kernel(), newtrue, newfalse);
 	} else {
 		const FOBDDKernel* kernel = getQuantKernel(sort, bdd);
-		result= getBDD(kernel, _truebdd, _falsebdd);
+		result = getBDD(kernel, _truebdd, _falsebdd);
 	}
-	_quanttable[sort][bdd]=result;
+	_quanttable[sort][bdd] = result;
 	return result;
 }
 
@@ -1025,7 +1029,8 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 								timesargs[0] = currterm;
 								double d =
 										constant->value()->type() == DET_INT ?
-												(double(1) / double(constant->value()->value()._int)) : (double(1) / constant->value()->value()._double);
+												(double(1) / double(constant->value()->value()._int)) :
+												(double(1) / constant->value()->value()._double);
 								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(), createDomElem(d));
 								d = -d;
 								return getFuncTerm(times, timesargs);
@@ -1037,114 +1042,6 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		}
 	}
 	return 0;
-}
-
-ostream& FOBDDManager::put(ostream& output, const FOBDD* bdd) const {
-	if (bdd == _truebdd) {
-		output << tabs();
-		output << "true\n";
-	} else if (bdd == _falsebdd) {
-		output << tabs();
-		output << "false\n";
-	} else {
-		put(output, bdd->kernel());
-
-		pushtab();
-		output << tabs();
-		output << "FALSE BRANCH:\n";
-		pushtab();
-		output << tabs();
-		put(output, bdd->falsebranch());
-		poptab();
-		output << tabs();
-		output << "TRUE BRANCH:\n";
-		pushtab();
-		output << tabs();
-		put(output, bdd->truebranch());
-		poptab();
-		poptab();
-	}
-	return output;
-}
-
-ostream& FOBDDManager::put(ostream& output, const FOBDDKernel* kernel) const {
-	if (typeid(*kernel) == typeid(FOBDDAtomKernel)) {
-		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-		PFSymbol* symbol = atomkernel->symbol();
-		output << tabs();
-		output << *symbol;
-		if (atomkernel->type() == AtomKernelType::AKT_CF) {
-			output << "<cf>";
-		} else if (atomkernel->type() == AtomKernelType::AKT_CT) {
-			output << "<ct>";
-		}
-		if (typeid(*symbol) == typeid(Predicate)) {
-			Assert(atomkernel->args().size()==symbol->nrSorts());
-			if (symbol->nrSorts() > 0) {
-				output << "(";
-				put(output, atomkernel->args(0));
-				for (size_t n = 1; n < symbol->nrSorts(); ++n) {
-					output << ",";
-					put(output, atomkernel->args(n));
-				}
-				output << ")";
-			}
-		} else {
-			if (symbol->nrSorts() > 1) {
-				output << "(";
-				put(output, atomkernel->args(0));
-				for (size_t n = 1; n < symbol->nrSorts() - 1; ++n) {
-					output << ",";
-					put(output, atomkernel->args(n));
-				}
-				output << ")";
-			}
-			output << " = ";
-			put(output, atomkernel->args(symbol->nrSorts() - 1));
-		}
-	} else if (typeid(*kernel) == typeid(FOBDDQuantKernel)) {
-		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
-		output << tabs();
-		output << "EXISTS(" << toString(quantkernel->sort()) << ") {\n";
-		pushtab();
-		put(output, quantkernel->bdd());
-		poptab();
-		output << tabs();
-		output << "}";
-	} else {
-		throw notyetimplemented("Cannot print kerneltype, missing case in switch.");
-	}
-	output << '\n';
-	return output;
-}
-
-ostream& FOBDDManager::put(ostream& output, const FOBDDTerm* arg) const {
-	if (typeid(*arg) == typeid(FOBDDVariable)) {
-		const FOBDDVariable* var = dynamic_cast<const FOBDDVariable*>(arg);
-		var->variable()->put(output);
-	} else if (typeid(*arg) == typeid(FOBDDDeBruijnIndex)) {
-		const FOBDDDeBruijnIndex* dbr = dynamic_cast<const FOBDDDeBruijnIndex*>(arg);
-		output << "<" << dbr->index() << ">[" << toString(dbr->sort()) << "]";
-	} else if (typeid(*arg) == typeid(FOBDDFuncTerm)) {
-		const FOBDDFuncTerm* ft = dynamic_cast<const FOBDDFuncTerm*>(arg);
-		Function* f = ft->func();
-		output << *f;
-		if (f->arity()) {
-			output << "(";
-			put(output, ft->args(0));
-			for (size_t n = 1; n < f->arity(); ++n) {
-				output << ",";
-				put(output, ft->args(n));
-			}
-			output << ")";
-		}
-	} else if (typeid(*arg) == typeid(FOBDDDomainTerm)) {
-		const FOBDDDomainTerm* dt = dynamic_cast<const FOBDDDomainTerm*>(arg);
-		output << *(dt->value()) << "[" << toString(dt->sort()) << "]";
-	} else {
-		throw notyetimplemented("Cannot print bddterm, missing case in switch.");
-	}
-	return output;
 }
 
 Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
@@ -1467,7 +1364,8 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 						if (paths[pathnr][nodenr].first)
 							currchance = currchance * dynsubkernels[paths[pathnr][nodenr].second] / double(nodeunivsize - element);
 						else
-							currchance = currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second]) / double(nodeunivsize - element);
+							currchance = currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second])
+									/ double(nodeunivsize - element);
 					}
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
@@ -1483,7 +1381,8 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, AbstractStructur
 
 					// randomly choose a path
 					double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
-					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss) - cumulative_pathsposs.cbegin();
+					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss)
+							- cumulative_pathsposs.cbegin();
 					for (unsigned int nodenr = 0; nodenr < paths[chosenpathnr].size(); ++nodenr) {
 						if (paths[chosenpathnr][nodenr].first)
 							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0);
@@ -1524,8 +1423,8 @@ double FOBDDManager::estimatedChance(const FOBDD* bdd, AbstractStructure* struct
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | kernel } in the given structure
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		AbstractStructure* structure) {
+double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars,
+		const set<const FOBDDDeBruijnIndex*>& indices, AbstractStructure* structure) {
 	// TODO: improve this if functional dependency is known
 	double maxdouble = getMaxElem<double>();
 	double kernelchance = estimatedChance(kernel, structure);
@@ -1757,7 +1656,8 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
 			tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
 			double invkernans =
-					(kernelunivsize._type == TST_INFINITE || kernelunivsize._type == TST_UNKNOWN) ? maxdouble : double(kernelunivsize._size) - kernelans;
+					(kernelunivsize._type == TST_INFINITE || kernelunivsize._type == TST_UNKNOWN) ?
+							maxdouble : double(kernelunivsize._size) - kernelans;
 			double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices, structure);
 			if (kernelcost + (invkernans * falsecost) < maxdouble) {
 				return kernelcost + (invkernans * falsecost);
@@ -1776,7 +1676,8 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			else {
 				if ((double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost)
 						< maxdouble) {
-					return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost);
+					return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost)
+							+ ((kernelunivsize._size - kernelans) * falsecost);
 				} else
 					return maxdouble;
 			}
@@ -2147,8 +2048,8 @@ FOBDDManager::FOBDDManager() {
 
 	KernelOrder ktrue = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	_truekernel = new FOBDDKernel(ktrue);
-	_falsekernel = new FOBDDKernel(kfalse);
-	_truebdd = new FOBDD(_truekernel, 0, 0);
-	_falsebdd = new FOBDD(_falsekernel, 0, 0);
+	_truekernel = new TrueFOBDDKernel(ktrue);
+	_falsekernel = new FalseFOBDDKernel(kfalse);
+	_truebdd = new TrueFOBDD(_truekernel);
+	_falsebdd = new FalseFOBDD(_falsekernel);
 }

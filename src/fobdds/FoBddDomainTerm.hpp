@@ -41,6 +41,8 @@ public:
 
 	void accept(FOBDDVisitor*) const;
 	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2);

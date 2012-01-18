@@ -11,6 +11,8 @@
 #ifndef FOBDD_HPP_
 #define FOBDD_HPP_
 
+#include <iostream>
+
 class FOBDDKernel;
 class FOBDDManager;
 class FOBDDVisitor;
@@ -40,6 +42,9 @@ private:
 	}
 
 public:
+	virtual ~FOBDD(){
+
+	}
 	bool containsFreeDeBruijnIndex() const {
 		return containsDeBruijnIndex(0);
 	}
@@ -56,6 +61,9 @@ public:
 	}
 
 	void accept(FOBDDVisitor* visitor) const;
+
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 class TrueFOBDD: public FOBDD {
@@ -64,6 +72,8 @@ private:
 	TrueFOBDD(const FOBDDKernel* kernel) :
 			FOBDD(kernel, 0, 0) {
 	}
+public:
+	virtual std::ostream& put(std::ostream& output) const;
 
 };
 
@@ -73,6 +83,10 @@ private:
 	FalseFOBDD(const FOBDDKernel* kernel) :
 			FOBDD(kernel, 0, 0) {
 	}
+public:
+	virtual std::ostream& put(std::ostream& output) const;
+
+
 };
 
 #endif /* FOBDD_HPP_ */

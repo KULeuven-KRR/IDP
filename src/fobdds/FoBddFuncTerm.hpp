@@ -18,6 +18,8 @@ class Function;
 
 class FOBDDFuncTerm: public FOBDDTerm {
 private:
+	friend class FOBDDManager;
+
 	Function* _function;
 	std::vector<const FOBDDTerm*> _args;
 
@@ -42,7 +44,8 @@ public:
 	void accept(FOBDDVisitor*) const;
 	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
 
-	friend class FOBDDManager;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 #endif /* FOBDDFUNCTERM_HPP_ */

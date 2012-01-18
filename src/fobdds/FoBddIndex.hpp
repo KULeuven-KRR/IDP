@@ -40,6 +40,8 @@ public:
 
 	void accept(FOBDDVisitor*) const;
 	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 #endif /* FOBDDINDEX_HPP_ */

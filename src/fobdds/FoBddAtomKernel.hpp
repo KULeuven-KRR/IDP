@@ -50,6 +50,9 @@ public:
 
 	void accept(FOBDDVisitor*) const;
 	const FOBDDKernel* acceptchange(FOBDDVisitor*) const;
+
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 #endif /* FOBDDATOMKERNEL_HPP_ */

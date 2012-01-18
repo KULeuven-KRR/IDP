@@ -27,3 +27,33 @@ bool FOBDD::containsDeBruijnIndex(unsigned int index) const {
 void FOBDD::accept(FOBDDVisitor* visitor) const {
 	visitor->visit(this);
 }
+
+std::ostream& FOBDD::put(std::ostream& output) const {
+	output << toString(_kernel);
+	pushtab();
+	output << "\n" << tabs();
+	output << "FALSE BRANCH:";
+	pushtab();
+	output << "\n" << tabs();
+	output << toString(_falsebranch);
+	poptab();
+	output << "\n" << tabs();
+	output << "TRUE BRANCH:";
+	pushtab();
+	output << "\n" << tabs();
+	output << toString(_truebranch);
+	poptab();
+	poptab();
+	return output;
+}
+
+std::ostream& TrueFOBDD::put(std::ostream& output) const {
+	output << "true";
+	return output;
+}
+
+std::ostream& FalseFOBDD::put(std::ostream& output) const {
+	output << "false";
+	return output;
+}
+

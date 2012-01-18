@@ -10,7 +10,7 @@
 
 #ifndef FOBDDTERM_HPP_
 #define FOBDDTERM_HPP_
-
+#include <iostream>
 class Sort;
 class FOBDDVisitor;
 
@@ -31,6 +31,8 @@ public:
 	virtual const FOBDDTerm* acceptchange(FOBDDVisitor*) const = 0;
 
 	virtual Sort* sort() const = 0;
+	virtual std::ostream& put(std::ostream& output) const=0;
+
 };
 
 #endif /* FOBDDTERM_HPP_ */
