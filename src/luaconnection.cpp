@@ -1156,9 +1156,10 @@ InternalArgument getValue(Options* opts, const string& name) {
 		return InternalArgument(new string(opts->getValueOfType<std::string>(name)));
 	} else if (opts->isOptionOfType<bool>(name)) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
-	} else {
-		Assert(opts->isOptionOfType<double>(name));
+	} else if(opts->isOptionOfType<double>(name)) {
 		return InternalArgument(opts->getValueOfType<double>(name));
+	}else{
+		throw IdpException("Requesting non-existing option " + name);
 	}
 }
 
