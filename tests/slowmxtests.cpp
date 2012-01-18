@@ -21,21 +21,11 @@ using namespace std;
 
 namespace Tests {
 
-vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/", "numberknown/"};
-	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
-}
-vector<string> generateListOfMXsatFiles() {
-	vector<string> testdirs {"satmx/"};
-	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
-}
 vector<string> generateListOfSlowMXsatFiles() {
 	vector<string> testdirs {"satmxlongrunning/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 
-class MXnbTest: public ::testing::TestWithParam<string> {
-};
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
 
@@ -51,31 +41,6 @@ void runTests(const char* inferencefilename, const string& instancefile){
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-TEST_P(MXnbTest, DoesMX) {
-	runTests("mxnbofmodelstest.idp", GetParam());
-}
-
-TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
-}
-
-// TODO when bdds are implemented
-/*TEST_P(MXnbTest, DoesMXWithBounds) {
-	runTests("mxnbofmodelstestwithbounds.idp");
-}*/
-
-TEST_P(MXsatTest, DoesMX) {
-	runTests("mxsattest.idp", GetParam());
-}
-
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
-}
-
-INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
-INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
-
-#ifdef NDEBUG
 class SlowMXnbTest: public ::testing::TestWithParam<string> {
 };
 TEST_P(SlowMXnbTest, DoesSlowMX) {
@@ -83,12 +48,5 @@ TEST_P(SlowMXnbTest, DoesSlowMX) {
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
-#endif
-
-TEST(MakeTrueTest, Correct) {
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
 
 }

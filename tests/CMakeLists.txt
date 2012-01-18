@@ -38,10 +38,30 @@ if(${BUILDTESTS})
 		testsuite.cpp
 		simpletests.cpp
 	)
+	add_executable(lazytests
+		lazymxtests.cpp
+		testingtools.hpp testingtools.cpp
+		TestUtils.hpp TestUtils.cpp
+		testsuite.cpp
+	)
+	add_executable(slowtests
+		slowmxtests.cpp
+		testingtools.hpp testingtools.cpp
+		TestUtils.hpp TestUtils.cpp
+		testsuite.cpp
+	)
 	target_link_libraries(idptests idp gtest)
+	target_link_libraries(lazytests idp gtest)
+	target_link_libraries(slowtests idp gtest)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set_target_properties(idptests PROPERTIES LINK_FLAGS "-pthread ")
+		set_target_properties(lazytests PROPERTIES LINK_FLAGS "-pthread ")
+		set_target_properties(slowtests PROPERTIES LINK_FLAGS "-pthread ")
 	endif()
 	add_test(idptests idptests "--gtest_color=yes")
-	add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS idptests)
+	add_test(lazytests lazytests "--gtest_color=yes")
+	add_test(slowtests slowtests "--gtest_color=yes")
+	add_custom_target(check COMMAND idptests -V DEPENDS idptests)
+	add_custom_target(lazycheck COMMAND lazytests -V DEPENDS lazytests)
+	add_custom_target(fullcheck COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS idptests lazytests slowtests)
 endif()
