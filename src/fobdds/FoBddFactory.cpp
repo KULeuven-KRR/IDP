@@ -107,9 +107,9 @@ void FOBDDFactory::visit(const PredForm* pf) {
 
 	_kernel = _manager->getAtomKernel(symbol, akt, args);
 	if (invert) {
-		_bdd = _manager->getBDD(_kernel, _manager->falsebdd(), _manager->truebdd());
+		_bdd = _manager->ifthenelse(_kernel, _manager->falsebdd(), _manager->truebdd());
 	} else {
-		_bdd = _manager->getBDD(_kernel, _manager->truebdd(), _manager->falsebdd());
+		_bdd = _manager->ifthenelse(_kernel, _manager->truebdd(), _manager->falsebdd());
 	}
 }
 

@@ -161,7 +161,7 @@ namespace Tests{
 
 		auto bddvar = manager.getVariable(variable);
 		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDTerm*>{bddvar});
-		auto testbdd = manager.getBDD(predkernel, manager.truebdd(), manager.falsebdd());
+		auto testbdd = manager.ifthenelse(predkernel, manager.truebdd(), manager.falsebdd());
 		testbdd = manager.existsquantify(bddvar, testbdd);
 
 		ASSERT_EQ(testbdd, bdd);

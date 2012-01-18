@@ -81,7 +81,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
 		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CT, args);
-	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
+	const FOBDD* bdd = _manager->ifthenelse(k, _manager->truebdd(), _manager->falsebdd());
 	vector<Variable*> vv(pf->freeVars().cbegin(), pf->freeVars().cend());
 	return new FOPropBDDDomain(bdd, vv);
 }
@@ -93,7 +93,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CF, args);
-	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
+	const FOBDD* bdd = _manager->ifthenelse(k, _manager->truebdd(), _manager->falsebdd());
 	vector<Variable*> vv(pf->freeVars().cbegin(), pf->freeVars().cend());
 	return new FOPropBDDDomain(bdd, vv);
 }

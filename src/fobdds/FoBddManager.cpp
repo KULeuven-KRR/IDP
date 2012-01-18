@@ -74,6 +74,8 @@ void FOBDDManager::moveUp(const FOBDDKernel* kernel) {
 		unsigned int nr = kernel->number();
 		if (nr != 0) {
 			--nr;
+			Assert(_kernels.find(cat) != _kernels.cend());
+			Assert(_kernels[cat].find(nr) != _kernels[cat].cend());
 			const FOBDDKernel* pkernel = _kernels[cat][nr];
 			moveDown(pkernel);
 		}
@@ -87,6 +89,7 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 		unsigned int nr = kernel->number();
 		vector<const FOBDD*> falseerase;
 		vector<const FOBDD*> trueerase;
+		Assert(_kernels.find(cat) != _kernels.cend());
 		if (_kernels[cat].find(nr + 1) == _kernels[cat].cend()) {
 			return;
 		}
@@ -159,15 +162,9 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel, const FOBDD* truebr
 	}
 
 	// Lookup
-	auto it = _bddtable.find(kernel);
-	if (it != _bddtable.cend()) {
-		auto jt = it->second.find(falsebranch);
-		if (jt != it->second.cend()) {
-			auto kt = jt->second.find(truebranch);
-			if (kt != jt->second.cend()) {
-				return kt->second;
-			}
-		}
+	auto result = lookup<FOBDD>(_bddtable, kernel, falsebranch, truebranch);
+	if (result != NULL) {
+		return result;
 	}
 
 	// Lookup failed, create a new bdd
@@ -181,6 +178,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, FOBDDManager* manager) {
 }
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
+	Assert(lookup<FOBDD>(_bddtable,kernel,falsebranch,truebranch)==NULL);
 	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
@@ -231,13 +229,13 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 		const FOBDDTerm* rightarg = args[1];
 		if (VocabularyUtils::isNumeric(rightarg->sort())) {
 			Assert(VocabularyUtils::isNumeric(leftarg->sort()));
-			if (typeid(*rightarg) != typeid(FOBDDDomainTerm) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
+			if (not sametypeid<FOBDDDomainTerm>(*rightarg) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
 				const DomainElement* zero = createDomElem(0);
 				const FOBDDDomainTerm* zero_term = getDomainTerm(VocabularyUtils::natsort(), zero);
 				const FOBDDTerm* minus_rightarg = invert(rightarg);
 				Function* plus = Vocabulary::std()->func("+/2");
 				plus = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(leftarg->sort(), rightarg->sort())), 0);
-				Assert(plus);
+				Assert(plus != NULL);
 				vector<const FOBDDTerm*> plusargs(2);
 				plusargs[0] = leftarg;
 				plusargs[1] = minus_rightarg;
@@ -252,7 +250,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 
 	// Comparison rewriting
 	if (VocabularyUtils::isComparisonPredicate(symbol)) {
-		if (Multiplication::before(args[0], args[1])) {
+		if (Multiplication::before(args[0], args[1])) { //TODO: what does this do?
 			vector<const FOBDDTerm*> newargs(2);
 			newargs[0] = args[1];
 			newargs[1] = args[0];
@@ -267,15 +265,9 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 	}
 
 	// Lookup
-	auto it = _atomkerneltable.find(symbol);
-	if (it != _atomkerneltable.cend()) {
-		auto jt = it->second.find(akt);
-		if (jt != it->second.cend()) {
-			auto kt = jt->second.find(args);
-			if (kt != jt->second.cend()) {
-				return kt->second;
-			}
-		}
+	auto result = lookup<FOBDDAtomKernel>(_atomkerneltable, symbol, akt, args);
+	if (result != NULL) {
+		return result;
 	}
 
 	// Lookup failed, create a new atom kernel
@@ -283,6 +275,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 }
 
 FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const vector<const FOBDDTerm*>& args) {
+	Assert(lookup<FOBDDAtomKernel>(_atomkerneltable,symbol,akt,args)==NULL);
 	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol, akt, args, newOrder(args));
 	_atomkerneltable[symbol][akt][args] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
@@ -298,7 +291,7 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 	} else if (longestbranch(bdd) == 2) {
 		const FOBDDDeBruijnIndex* qvar = getDeBruijnIndex(sort, 0);
 		const FOBDDTerm* arg = solve(bdd->kernel(), qvar);
-		if (arg && !partial(arg)) {
+		if (arg != NULL && not containsPartialFunctions(arg)) {
 			if ((bdd->truebranch() == _truebdd && SortUtils::isSubsort(arg->sort(), sort)) || sort->builtin()) {
 				return _truekernel;
 			}
@@ -308,19 +301,16 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 	}
 
 	// Lookup
-	QuantKernelTable::const_iterator it = _quantkerneltable.find(sort);
-	if (it != _quantkerneltable.cend()) {
-		MBDDQK::const_iterator jt = it->second.find(bdd);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto resultingQK = lookup<FOBDDQuantKernel>(_quantkerneltable, sort, bdd);
+	if (resultingQK != NULL) {
+		return resultingQK;
 	}
-
 	// Lookup failed, create a new quantified kernel
 	return addQuantKernel(sort, bdd);
 }
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
+	Assert(lookup<FOBDDQuantKernel>(_quantkerneltable,sort,bdd)==NULL);
 	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrder(bdd));
 	_quantkerneltable[sort][bdd] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
@@ -329,10 +319,11 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 
 const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	// Lookup
-	VariableTable::const_iterator it = _variabletable.find(var);
-	if (it != _variabletable.cend()) {
-		return it->second;
+	auto result = lookup<FOBDDVariable>(_variabletable, var);
+	if (result != NULL) {
+		return result;
 	}
+
 	// Lookup failed, create a new variable
 	return addVariable(var);
 }
@@ -346,6 +337,7 @@ set<const FOBDDVariable*> FOBDDManager::getVariables(const set<Variable*>& vars)
 }
 
 FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
+	Assert(lookup<FOBDDVariable>(_variabletable,var)==NULL);
 	FOBDDVariable* newvariable = new FOBDDVariable(var);
 	_variabletable[var] = newvariable;
 	return newvariable;
@@ -353,18 +345,17 @@ FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
 
 const FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned int index) {
 	// Lookup
-	DeBruijnIndexTable::const_iterator it = _debruijntable.find(sort);
-	if (it != _debruijntable.cend()) {
-		MUIDB::const_iterator jt = it->second.find(index);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto result = lookup<FOBDDDeBruijnIndex>(_debruijntable, sort, index);
+	if (result != NULL) {
+		return result;
 	}
+
 	// Lookup failed, create a new De Bruijn index
 	return addDeBruijnIndex(sort, index);
 }
 
 FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index) {
+	Assert(lookup<FOBDDDeBruijnIndex>(_debruijntable,sort,index)==NULL);
 	FOBDDDeBruijnIndex* newindex = new FOBDDDeBruijnIndex(sort, index);
 	_debruijntable[sort][index] = newindex;
 	return newindex;
@@ -395,8 +386,8 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 	}
 	if (func->name() == "*/2" && Vocabulary::std()->contains(func)) {
 		// 3. Execute computable multiplications
-		if (typeid(*(args[0])) == typeid(FOBDDDomainTerm)) {
-			const FOBDDDomainTerm* leftterm = dynamic_cast<const FOBDDDomainTerm*>(args[0]);
+		if (sametypeid<FOBDDDomainTerm>(*(args[0]))) { //First one is a domain term
+			auto leftterm = dynamic_cast<const FOBDDDomainTerm*>(args[0]);
 			if (leftterm->value()->type() == DET_INT) {
 				if (leftterm->value()->value()._int == 0) {
 					return leftterm;
@@ -404,18 +395,27 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 					return args[1];
 				}
 			}
-			if (typeid(*(args[1])) == typeid(FOBDDDomainTerm)) {
-				const FOBDDDomainTerm* rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
-				FuncInter* fi = func->interpretation(0);
-				vector<const DomainElement*> multargs(2);
-				multargs[0] = leftterm->value();
-				multargs[1] = rightterm->value();
-				const DomainElement* result = fi->funcTable()->operator[](multargs);
+			if (sametypeid<FOBDDDomainTerm>(*(args[1]))) { // Both are domain terms
+				auto rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
+				FuncInter* fi = func->interpretation(NULL);
+				vector<const DomainElement*> copyargs(2);
+				copyargs[0] = leftterm->value();
+				copyargs[1] = rightterm->value();
+				auto result = fi->funcTable()->operator[](copyargs);
 				return getDomainTerm(func->outsort(), result);
+			}
+		} else if (sametypeid<FOBDDDomainTerm>(*(args[1]))) { // Second one is a domain term
+			auto rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
+			if (rightterm->value()->type() == DET_INT) {
+				if (rightterm->value()->value()._int == 0) {
+					return rightterm;
+				} else if (rightterm->value()->value()._int == 1) {
+					return args[0];
+				}
 			}
 		}
 		// 4. Apply distributivity of */2 with respect to +/2
-		if (typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
+		if (sametypeid<FOBDDFuncTerm>(*(args[0]))) {
 			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
 			if (leftterm->func()->name() == "+/2" && Vocabulary::std()->contains(leftterm->func())) {
 				vector<const FOBDDTerm*> newleftargs(2);
@@ -424,16 +424,14 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 				vector<const FOBDDTerm*> newrightargs(2);
 				newrightargs[0] = leftterm->args(1);
 				newrightargs[1] = args[1];
-				const FOBDDTerm* newleft = getFuncTerm(func, newleftargs);
-				const FOBDDTerm* newright = getFuncTerm(func, newrightargs);
 				vector<const FOBDDTerm*> newargs(2);
-				newargs[0] = newleft;
-				newargs[1] = newright;
+				newargs[0] = getFuncTerm(func, newleftargs);
+				newargs[1] = getFuncTerm(func, newrightargs);
 				return getFuncTerm(leftterm->func(), newargs);
 			}
 		}
-		if (typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
-			const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
+		if (sametypeid<FOBDDFuncTerm>(*(args[1]))) {
+			auto rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
 			if (rightterm->func()->name() == "+/2" && Vocabulary::std()->contains(rightterm->func())) {
 				vector<const FOBDDTerm*> newleftargs(2);
 				newleftargs[0] = args[0];
@@ -441,20 +439,19 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 				vector<const FOBDDTerm*> newrightargs(2);
 				newrightargs[0] = args[0];
 				newrightargs[1] = rightterm->args(1);
-				const FOBDDTerm* newleft = getFuncTerm(func, newleftargs);
-				const FOBDDTerm* newright = getFuncTerm(func, newrightargs);
 				vector<const FOBDDTerm*> newargs(2);
-				newargs[0] = newleft;
-				newargs[1] = newright;
+				newargs[0] = getFuncTerm(func, newleftargs);
+				newargs[1] = getFuncTerm(func, newrightargs);
 				return getFuncTerm(rightterm->func(), newargs);
 			}
 		}
 		// 5. Apply commutativity and associativity to obtain
 		// a sorted multiplication of the form ((((t1 * t2) * t3) * t4) * ...)
-		if (typeid(*(args[0])) == typeid(FOBDDFuncTerm)) {
-			const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
+		//TODO: didn't review this code yet starting from here, first: I'll check Multiplication...
+		if (sametypeid<FOBDDFuncTerm>(*(args[0]))) {
+			auto leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
 			if (leftterm->func()->name() == "*/2" && Vocabulary::std()->contains(leftterm->func())) {
-				if (typeid(*(args[1])) == typeid(FOBDDFuncTerm)) {
+				if (sametypeid<FOBDDFuncTerm>(*(args[1]))) {
 					const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
 					if (rightterm->func()->name() == "*/2" && Vocabulary::std()->contains(rightterm->func())) {
 						Function* times = Vocabulary::std()->func("*/2");
@@ -629,18 +626,16 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 	}
 
 	// Lookup
-	FuncTermTable::const_iterator it = _functermtable.find(func);
-	if (it != _functermtable.cend()) {
-		MVAFT::const_iterator jt = it->second.find(args);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto result = lookup<FOBDDFuncTerm>(_functermtable, func, args);
+	if (result != NULL) {
+		return result;
 	}
 	// Lookup failed, create a new funcion term
 	return addFuncTerm(func, args);
 }
 
 FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBDDTerm*>& args) {
+	Assert(lookup<FOBDDFuncTerm>(_functermtable,func,args) == NULL);
 	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func, args);
 	_functermtable[func][args] = newarg;
 	return newarg;
@@ -652,18 +647,16 @@ const FOBDDDomainTerm* FOBDDManager::getDomainTerm(const DomainTerm* dt) {
 
 const FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainElement* value) {
 	// Lookup
-	DomainTermTable::const_iterator it = _domaintermtable.find(sort);
-	if (it != _domaintermtable.cend()) {
-		MTEDT::const_iterator jt = it->second.find(value);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto result = lookup<FOBDDDomainTerm>(_domaintermtable, sort, value);
+	if (result != NULL) {
+		return result;
 	}
 	// Lookup failed, create a new funcion term
 	return addDomainTerm(sort, value);
 }
 
 FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* value) {
+	Assert(lookup<FOBDDDomainTerm>(_domaintermtable, sort, value)==NULL);
 	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(sort, value);
 	_domaintermtable[sort][value] = newdt;
 	return newdt;
@@ -682,17 +675,16 @@ const FOBDD* FOBDDManager::negation(const FOBDD* bdd) {
 		return _truebdd;
 	}
 
-	// Recursive case
-	map<const FOBDD*, const FOBDD*>::iterator it = _negationtable.find(bdd);
-	if (it != _negationtable.cend()) {
-		return it->second;
-	} else {
+	// Recursive case - first try to lookup
+	auto result = lookup<const FOBDD>(_negationtable, bdd);
+	if (result == NULL) {
+		//Lookup failed => Push the negations down to the lowest level
 		const FOBDD* falsebranch = negation(bdd->falsebranch());
 		const FOBDD* truebranch = negation(bdd->truebranch());
-		const FOBDD* result = getBDD(bdd->kernel(), truebranch, falsebranch);
+		result = getBDD(bdd->kernel(), truebranch, falsebranch);
 		_negationtable[bdd] = result;
-		return result;
 	}
+	return result;
 }
 
 const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
@@ -711,19 +703,19 @@ const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	}
 
 	// Recursive case
-	if (bdd2 < bdd1) {
+	if (bdd2 < bdd1) { //This check is done in order to have a uniform representation in the _conjunctiontable.  The order doens't matter as long as there is one
 		const FOBDD* temp = bdd1;
 		bdd1 = bdd2;
 		bdd2 = temp;
 	}
-	map<const FOBDD*, map<const FOBDD*, const FOBDD*> >::iterator it = _conjunctiontable.find(bdd1);
-	if (it != _conjunctiontable.cend()) {
-		map<const FOBDD*, const FOBDD*>::iterator jt = it->second.find(bdd2);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+
+	//Try to find the conjunction from previous calculations
+	auto result = lookup<const FOBDD>(_conjunctiontable, bdd1, bdd2);
+	if (result != NULL) {
+		return result;
 	}
-	const FOBDD* result = 0;
+
+	//Lookup failed, calculate
 	if (*(bdd1->kernel()) < *(bdd2->kernel())) {
 		const FOBDD* falsebranch = conjunction(bdd1->falsebranch(), bdd2);
 		const FOBDD* truebranch = conjunction(bdd1->truebranch(), bdd2);
@@ -763,14 +755,11 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 		bdd1 = bdd2;
 		bdd2 = temp;
 	}
-	map<const FOBDD*, map<const FOBDD*, const FOBDD*> >::iterator it = _disjunctiontable.find(bdd1);
-	if (it != _disjunctiontable.cend()) {
-		map<const FOBDD*, const FOBDD*>::iterator jt = it->second.find(bdd2);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto result = lookup<const FOBDD>(_disjunctiontable, bdd1,bdd2);
+	if(result != NULL){
+		return result;
 	}
-	const FOBDD* result = 0;
+
 	if (*(bdd1->kernel()) < *(bdd2->kernel())) {
 		const FOBDD* falsebranch = disjunction(bdd1->falsebranch(), bdd2);
 		const FOBDD* truebranch = disjunction(bdd1->truebranch(), bdd2);
@@ -789,7 +778,7 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	return result;
 }
 
-//Note: there is a difference with getBDD... getBDD is good when everything is already sorted.  This method servers for creating a new bdd and sorting it at the mean time.
+//Note: there is a difference with getBDD... getBDD is good when everything is already sorted.  This method serves for creating a new bdd and sorting it at the mean time.
 const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	auto it = _ifthenelsetable.find(kernel);
 	if (it != _ifthenelsetable.cend()) {
@@ -1188,7 +1177,7 @@ bool FOBDDManager::containsFuncTerms(const FOBDD* bdd) {
 	return ft.check(bdd);
 }
 
-bool FOBDDManager::partial(const FOBDDTerm* arg) {
+bool FOBDDManager::containsPartialFunctions(const FOBDDTerm* arg) {
 	ContainsPartialFunctions bpc(this);
 	return bpc.check(arg);
 }

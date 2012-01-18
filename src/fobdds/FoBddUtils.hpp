@@ -112,4 +112,24 @@ struct TermOrder {
 	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager);
 };
 
+
+
+template<typename ReturnType, typename T1, typename T2, typename Something, typename ... MoreTypes>
+ReturnType* lookup(std::map<T1,map<T2, Something> > m, T1 x, T2 y, MoreTypes ... parameters){
+	auto res= m.find(x) ;
+	if(res == m.cend()){
+		return NULL;
+	}
+	return lookup<ReturnType>(res->second,y,parameters...);
+}
+
+template<typename ReturnType, typename T1>
+ReturnType* lookup(std::map<T1,ReturnType*> m, T1 x){
+	auto res= m.find(x) ;
+	if(res == m.cend()){
+		return NULL;
+	}
+	return res->second;
+}
+
 #endif /* KERNELORDER_HPP_ */

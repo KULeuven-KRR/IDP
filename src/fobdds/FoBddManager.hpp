@@ -97,6 +97,10 @@ private:
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
 
+	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
+	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
+
+
 public:
 	FOBDDManager();
 
@@ -114,7 +118,6 @@ public:
 		return _falsebdd == bdd;
 	}
 
-	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDTerm*>&);
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDVariable* getVariable(Variable* var);
@@ -181,7 +184,7 @@ public:
 	 */
 	const FOBDDTerm* solve(const FOBDDKernel*, const FOBDDTerm*);
 
-	bool partial(const FOBDDTerm*); //!< Returns true iff the given term is partial
+	bool containsPartialFunctions(const FOBDDTerm*); //!< Returns true iff the given term is partial
 
 	int longestbranch(const FOBDDKernel*);
 	int longestbranch(const FOBDD*);

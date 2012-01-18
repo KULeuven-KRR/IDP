@@ -53,8 +53,8 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	vars[symbol] = bddvarlist;
 	auto ctkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CT, bddarglist);
 	auto cfkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CF, bddarglist);
-	ctbounds[symbol] = manager.getBDD(ctkernel, manager.truebdd(), manager.falsebdd());
-	cfbounds[symbol] = manager.getBDD(cfkernel, manager.truebdd(), manager.falsebdd());
+	ctbounds[symbol] = manager.ifthenelse(ctkernel, manager.truebdd(), manager.falsebdd());
+	cfbounds[symbol] = manager.ifthenelse(cfkernel, manager.truebdd(), manager.falsebdd());
 }
 
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, AbstractStructure* structure) {
