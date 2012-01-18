@@ -18,6 +18,8 @@ class FOBDDVisitor;
 class FOBDD {
 private:
 	friend class FOBDDManager;
+	friend class TrueFOBDD;
+	friend class FalseFOBDD;
 
 	const FOBDDKernel* _kernel;
 	const FOBDD* _truebranch;
@@ -33,8 +35,8 @@ private:
 		_kernel = k;
 	}
 
-	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch)
-			: _kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) {
+	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) :
+			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) {
 	}
 
 public:
@@ -59,8 +61,8 @@ public:
 class TrueFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	TrueFOBDD(const FOBDDKernel* kernel) {
-		FOBDD(kernel, 0, 0);
+	TrueFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
 	}
 
 };
@@ -68,8 +70,8 @@ private:
 class FalseFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	FalseFOBDD(const FOBDDKernel* kernel) {
-		FOBDD(kernel, 0, 0);
+	FalseFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
 	}
 };
 
