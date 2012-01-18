@@ -780,15 +780,9 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 //Note: there is a difference with getBDD... getBDD is good when everything is already sorted.  This method serves for creating a new bdd and sorting it at the mean time.
 const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
-	auto it = _ifthenelsetable.find(kernel);
-	if (it != _ifthenelsetable.cend()) {
-		auto jt = it->second.find(truebranch);
-		if (jt != it->second.cend()) {
-			auto kt = jt->second.find(falsebranch);
-			if (kt != jt->second.cend()) {
-				return kt->second;
-			}
-		}
+	auto result = lookup<const FOBDD>(_ifthenelsetable,kernel,truebranch,falsebranch);
+	if(result != NULL){
+			return result;
 	}
 
 	const FOBDDKernel* truekernel = truebranch->kernel();
@@ -796,43 +790,46 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 
 	if (*kernel < *truekernel) {
 		if (*kernel < *falsekernel) {
-			return getBDD(kernel, truebranch, falsebranch);
+			result = getBDD(kernel, truebranch, falsebranch);
 		} else if (kernel == falsekernel) {
-			return getBDD(kernel, truebranch, falsebranch->falsebranch());
+			result = getBDD(kernel, truebranch, falsebranch->falsebranch());
 		} else {
 			Assert(*kernel > *falsekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
-			return getBDD(falsekernel, newtrue, newfalse);
+			result = getBDD(falsekernel, newtrue, newfalse);
 		}
 	} else if (kernel == truekernel) {
 		if (*kernel < *falsekernel) {
-			return getBDD(kernel, truebranch->truebranch(), falsebranch);
+			result = getBDD(kernel, truebranch->truebranch(), falsebranch);
 		} else if (kernel == falsekernel) {
-			return getBDD(kernel, truebranch->truebranch(), falsebranch->falsebranch());
+			result = getBDD(kernel, truebranch->truebranch(), falsebranch->falsebranch());
 		} else {
 			Assert(*kernel > *falsekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
-			return getBDD(falsekernel, newtrue, newfalse);
+			result = getBDD(falsekernel, newtrue, newfalse);
 		}
 	} else {
 		Assert(*kernel > *truekernel);
 		if (*kernel < *falsekernel || kernel == falsekernel || *truekernel < *falsekernel) {
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch->truebranch(), falsebranch);
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch->falsebranch(), falsebranch);
-			return getBDD(truekernel, newtrue, newfalse);
+			result = getBDD(truekernel, newtrue, newfalse);
 		} else if (truekernel == falsekernel) {
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch->truebranch(), falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch->falsebranch(), falsebranch->falsebranch());
-			return getBDD(truekernel, newtrue, newfalse);
+			result = getBDD(truekernel, newtrue, newfalse);
 		} else {
 			Assert(*falsekernel < *truekernel);
 			const FOBDD* newtrue = ifthenelse(kernel, truebranch, falsebranch->truebranch());
 			const FOBDD* newfalse = ifthenelse(kernel, truebranch, falsebranch->falsebranch());
-			return getBDD(falsekernel, newtrue, newfalse);
+			result = getBDD(falsekernel, newtrue, newfalse);
 		}
 	}
+	_ifthenelsetable[kernel][truebranch][falsebranch]=result;
+	return result;
+
 }
 
 const FOBDD* FOBDDManager::univquantify(const FOBDDVariable* var, const FOBDD* bdd) {
@@ -865,27 +862,25 @@ const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*>& qvars
 const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	// base case
 	if (bdd == _truebdd || bdd == _falsebdd) {
-		// FIXME take empty sorts into account!
-		return bdd;
+		auto sortNotEmpty = getQuantKernel(sort,getBDD(getAtomKernel(sort->pred(),AtomKernelType::AKT_CT,{getDeBruijnIndex(sort,0)}),_truebdd,_falsebdd)); // ?x[Sort]:Sort(x)
+		return getBDD(sortNotEmpty,bdd, negation(bdd));
 	}
 
 	// Recursive case
-	auto it = _quanttable.find(sort);
-	if (it != _quanttable.cend()) {
-		auto jt = it->second.find(bdd);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
+	auto result = lookup<const FOBDD>(_quanttable,sort,bdd);
+	if(result != NULL){
+		return result;
 	}
 	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
 		const FOBDD* newfalse = quantify(sort, bdd->falsebranch());
 		const FOBDD* newtrue = quantify(sort, bdd->truebranch());
-		const FOBDD* result = ifthenelse(bdd->kernel(), newtrue, newfalse);
-		return result;
+		result = ifthenelse(bdd->kernel(), newtrue, newfalse);
 	} else {
 		const FOBDDKernel* kernel = getQuantKernel(sort, bdd);
-		return getBDD(kernel, _truebdd, _falsebdd);
+		result= getBDD(kernel, _truebdd, _falsebdd);
 	}
+	_quanttable[sort][bdd]=result;
+	return result;
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDVariable*>& mvv) {
