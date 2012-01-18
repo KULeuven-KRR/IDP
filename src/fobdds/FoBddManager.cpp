@@ -1096,7 +1096,7 @@ bool FOBDDManager::contains(const FOBDD* bdd, const FOBDDVariable* v) {
  * Returns true iff the kernel contains the variable
  */
 bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
-	if (typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+	if (sametypeid<FOBDDAtomKernel>(*kernel) ) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		for (unsigned int n = 0; n < atomkernel->symbol()->sorts().size(); ++n) {
 			if (contains(atomkernel->args(n), v))
@@ -1104,7 +1104,7 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
 		}
 		return false;
 	} else {
-		Assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return contains(quantkernel->bdd(), v);
 	}
@@ -1114,17 +1114,16 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
  * Returns true iff the argument contains the variable
  */
 bool FOBDDManager::contains(const FOBDDTerm* arg, const FOBDDVariable* v) {
-	if (typeid(*arg) == typeid(FOBDDVariable))
+	if (sametypeid<FOBDDVariable>(*arg))
 		return arg == v;
-	else if (typeid(*arg) == typeid(FOBDDFuncTerm)) {
+	else if (sametypeid<FOBDDFuncTerm>(*arg)) {
 		const FOBDDFuncTerm* farg = dynamic_cast<const FOBDDFuncTerm*>(arg);
 		for (unsigned int n = 0; n < farg->func()->arity(); ++n) {
 			if (contains(farg->args(n), v))
 				return true;
 		}
-		return false;
-	} else
-		return false;
+	}
+	return false;
 }
 
 /**
@@ -1155,19 +1154,20 @@ tablesize univNrAnswers(const set<const FOBDDVariable*>& vars, const set<const F
  * the booleans indicate whether the path continues via the false or true branch.
  */
 vector<vector<pair<bool, const FOBDDKernel*> > > FOBDDManager::pathsToFalse(const FOBDD* bdd) {
+	//FIXME: ugly return type
 	vector<vector<pair<bool, const FOBDDKernel*> > > result;
 	if (bdd == _falsebdd) {
 		result.push_back(vector<pair<bool, const FOBDDKernel*> >(0));
 	} else if (bdd != _truebdd) {
-		auto falsepaths = pathsToFalse(bdd->falsebranch());
-		auto truepaths = pathsToFalse(bdd->truebranch());
-		for (auto it = falsepaths.cbegin(); it != falsepaths.cend(); ++it) {
+		auto falsePathsToFalse = pathsToFalse(bdd->falsebranch());
+		auto truePathsToFalse = pathsToFalse(bdd->truebranch());
+		for (auto it = falsePathsToFalse.cbegin(); it != falsePathsToFalse.cend(); ++it) {
 			result.push_back( { pair<bool, const FOBDDKernel*> { false, bdd->kernel() } });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
 			}
 		}
-		for (auto it = truepaths.cbegin(); it != truepaths.cend(); ++it) {
+		for (auto it = truePathsToFalse.cbegin(); it != truePathsToFalse.cend(); ++it) {
 			result.push_back( { pair<bool, const FOBDDKernel*> { true, bdd->kernel() } });
 			for (auto jt = it->begin(); jt != it->end(); ++jt) {
 				result.back().push_back(*jt);
@@ -1176,6 +1176,8 @@ vector<vector<pair<bool, const FOBDDKernel*> > > FOBDDManager::pathsToFalse(cons
 	}
 	return result;
 }
+
+//TODO:Review from here
 
 /**
  * Return all kernels of the given bdd
