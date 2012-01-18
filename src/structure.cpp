@@ -111,6 +111,16 @@ ostream& DomainElement::put(ostream& output) const {
 	return output;
 }
 
+std::vector<const DomElemContainer*> DomElemContainer::containers;
+void DomElemContainer::deleteAllContainers(){
+	for (auto i = containers.cbegin(); i != containers.cend(); ++i) {
+		if (*i != NULL) {
+			delete (*i);
+		}
+	}
+	containers.clear();
+}
+
 ostream& operator<<(ostream& output, const DomainElement& d) {
 	return d.put(output);
 }

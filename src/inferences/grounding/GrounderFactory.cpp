@@ -74,7 +74,9 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 		clog << "Using the following symbolic structure to ground: " << endl;
 		_symstructure->put(clog);
 	}
+}
 
+GrounderFactory::~GrounderFactory() {
 }
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
@@ -1076,7 +1078,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
 	auto temprule = rule->clone();
 	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
-	// TODO apparenlty cannot safely delete temprule here, even if different from newrule
+	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
@@ -1144,5 +1146,5 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)
 		poptab();
 
-	newrule->recursiveDelete();
+	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }

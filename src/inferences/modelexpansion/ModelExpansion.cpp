@@ -42,18 +42,20 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
 	// FIXME currently skipping if working lazily!
-	auto clonetheory = theory->clone(); //We only clone if needed for calculatedefinitions (which changes the theory)
-	auto newstructure = structure;
-
+	auto clonetheory = theory->clone();
+	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (not newstructure->isConsistent()) {
+			delete(newstructure);
 			return std::vector<AbstractStructure*> { };
 		}
+	}else{
+		newstructure = structure->clone();
 	}
 
 	// Create solver and grounder
-	SATSolver* solver = InferenceSolverConnection::createsolver();
+	auto solver = InferenceSolverConnection::createsolver();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
@@ -63,13 +65,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Grounding\n";
 	}
 	GrounderFactory grounderfactory(newstructure, symstructure);
-	Grounder* grounder = grounderfactory.create(clonetheory, solver);
+	auto grounder = grounderfactory.create(clonetheory, solver);
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(solver);
 	}
 	grounder->toplevelRun();
-	AbstractGroundTheory* grounding = grounder->getGrounding();
+	auto grounding = grounder->getGrounding();
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -100,7 +102,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Run solver
-	MinisatID::Solution* abstractsolutions = InferenceSolverConnection::initsolution();
+	auto abstractsolutions = InferenceSolverConnection::initsolution();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Solving\n";
 	}
@@ -117,7 +119,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Generate 2-valued models\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
-		AbstractStructure* newsolution = newstructure->clone();
+		auto newsolution = newstructure->clone();
 		InferenceSolverConnection::addLiterals(*model, grounding->translator(), newsolution);
 		InferenceSolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
 		newsolution->clean();

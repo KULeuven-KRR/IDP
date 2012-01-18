@@ -95,14 +95,19 @@ class DomElemContainer {
 private:
 	mutable const DomainElement* domelem_;
 	mutable bool del;
-public:
-	DomElemContainer()
-			: domelem_(new DomainElement()), del(true) {
-	}
+	static std::vector<const DomElemContainer*> containers;
+
 	~DomElemContainer() {
 		if (del) {
 			delete (domelem_);
 		}
+	}
+
+public:
+	static void deleteAllContainers();
+	DomElemContainer()
+			: domelem_(new DomainElement()), del(true) {
+		containers.push_back(this);
 	}
 
 	void operator=(const DomElemContainer* container) const {

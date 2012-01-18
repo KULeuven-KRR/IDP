@@ -35,6 +35,7 @@ GlobalData::~GlobalData() {
 		delete (*m);
 	}
 	garbageCollectInternalArgumentVectors();
+	DomElemContainer::deleteAllContainers();
 	// Note: Options are handled by Lua's garbage collection.
 }
 

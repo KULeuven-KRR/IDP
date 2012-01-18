@@ -92,7 +92,6 @@ AtomGrounder::~AtomGrounder() {
 	deleteList(_subtermgrounders);
 	delete (_pchecker);
 	delete (_cchecker);
-	deleteList(_checkargs);
 }
 
 Lit AtomGrounder::run() const {
