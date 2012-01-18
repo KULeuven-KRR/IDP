@@ -23,6 +23,7 @@ void garbageCollectInternalArgumentVectors() {
 	for(auto i=lists.cbegin(); i!=lists.cend(); ++i) {
 		delete(*i);
 	}
+	lists.clear();
 }
 
 template<>

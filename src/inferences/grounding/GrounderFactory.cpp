@@ -391,10 +391,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
 	Formula* temppf = pf->clone();
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
-	if(temppf!=transpf){
-		delete(temppf);
-		temppf = NULL;
-	}
+	// TODO can we delete temppf here if different from transpf? APPARANTLY NOT!
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
@@ -1079,9 +1076,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
 	auto temprule = rule->clone();
 	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
-	if(temprule!=newrule){
-		delete(temprule);
-	}
+	// TODO apparenlty cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
