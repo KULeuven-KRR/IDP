@@ -38,78 +38,52 @@ class MXnbTest: public ::testing::TestWithParam<string> {
 };
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
-class LazyMXnbTest: public ::testing::TestWithParam<string> {
-};
-class SlowMXnbTest: public ::testing::TestWithParam<string> {
-};
 
 void throwexc() {
 	throw exception();
 }
 
-TEST_P(MXnbTest, DoesMX) {
-	string testfile(getTestDirectory() + "mxnbofmodelstest.idp");
-	cerr << "Testing " << GetParam() << "\n";
+void runTests(const char* inferencefilename, const string& instancefile){
+	string testfile(getTestDirectory() + inferencefilename);
+	cerr << "Testing " << instancefile << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
+	ASSERT_NO_THROW( result = test( { instancefile, testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
+}
+
+TEST_P(MXnbTest, DoesMX) {
+	runTests("mxnbofmodelstest.idp", GetParam());
 }
 
 TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
-	string testfile(getTestDirectory() + "mxnbofmodelstestwithsymmetrybreaking.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
 
+// TODO when bdds are implemented
 /*TEST_P(MXnbTest, DoesMXWithBounds) {
-	string testfile(string(TESTDIR) + "mxnbofmodelstestwithbounds.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	runTests("mxnbofmodelstestwithbounds.idp");
 }*/
 
 TEST_P(MXsatTest, DoesMX) {
-	string testfile(getTestDirectory() + "mxsattest.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	runTests("mxsattest.idp", GetParam());
 }
 
-
-
-TEST_P(SlowMXnbTest, DoesSlowMX) {
-	string testfile(getTestDirectory() + "mxsattestslow.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
+	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
 }
 
-/*TEST_P(LazyMXnbTest, DoesMX) {
-	string testfile(getTestDirectory() + "mxlazynbofmodelstest.idp");
-	cerr << "Testing " << string(TESTDIR) + GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { string(TESTDIR) + GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
-}*/
+TEST_P(MXsatTest, DoesLazyMX) {
+	runTests("mxlazysattest.idp", GetParam());
+}
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
-
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
 
-INSTANTIATE_TEST_CASE_P(LazyModelExpansion, LazyMXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
-
 #ifdef NDEBUG
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	string testfile(getTestDirectory() + "mxsattestwithsymmetrybreaking.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+class SlowMXnbTest: public ::testing::TestWithParam<string> {
+};
+TEST_P(SlowMXnbTest, DoesSlowMX) {
+	runTests("mxsattestslow.idp", GetParam());
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
