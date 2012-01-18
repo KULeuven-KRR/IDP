@@ -137,7 +137,7 @@ public:
 	const FOBDD* existsquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
 
-	//TODO: document what is substituted by what!
+	//TODO: All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
@@ -180,9 +180,9 @@ public:
 	 * Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
 	 * and such that the given argument does not occur in the left-hand side.
 	 * Returns a null-pointer in case this is impossible.
-	 * Only guaranteed to work correctly on variables and indices.
+	 * Only guaranteed to work correctly on variables and indices with a FOBDDAtomKernel.
 	 */
-	const FOBDDTerm* solve(const FOBDDKernel*, const FOBDDTerm*);
+	const FOBDDTerm* solve(const FOBDDKernel*, const FOBDDTerm*); //TODO review, currently only works for  "="...
 
 	bool containsPartialFunctions(const FOBDDTerm*); //!< Returns true iff the given term is partial
 

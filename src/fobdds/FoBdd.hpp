@@ -56,4 +56,21 @@ public:
 	void accept(FOBDDVisitor* visitor) const;
 };
 
+class TrueFOBDD: public FOBDD {
+private:
+	friend class FOBDDManager;
+	TrueFOBDD(const FOBDDKernel* kernel) {
+		FOBDD(kernel, 0, 0);
+	}
+
+};
+
+class FalseFOBDD: public FOBDD {
+private:
+	friend class FOBDDManager;
+	FalseFOBDD(const FOBDDKernel* kernel) {
+		FOBDD(kernel, 0, 0);
+	}
+};
+
 #endif /* FOBDD_HPP_ */

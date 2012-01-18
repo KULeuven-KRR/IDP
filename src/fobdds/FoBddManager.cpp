@@ -369,7 +369,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 //}
 //clog << endl;
 
-	// Arithmetic rewriting
+	// Arithmetic rewriting TODO: we might want to use a non-recurive version of "RewriteMinus-visitors and so on..."
 	// 1. Remove unary minus
 	if (func->name() == "-/1" && Vocabulary::std()->contains(func)) {
 		return invert(args[0]);
@@ -906,10 +906,10 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex
 }
 
 int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
-	if (typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		return 1;
 	} else {
-		Assert(typeid(*kernel) == typeid(FOBDDQuantKernel));
+		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
 		const FOBDDQuantKernel* qk = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return longestbranch(qk->bdd()) + 1;
 	}
@@ -961,7 +961,7 @@ bool FOBDDManager::contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
 }
 
 const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm* argument) {
-	if (typeid(*kernel) == typeid(FOBDDAtomKernel)) {
+	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		if (atom->symbol()->name() == "=/2") {
 			if (atom->args(0) == argument) {
