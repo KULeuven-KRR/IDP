@@ -342,8 +342,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	auto tcomps = newtheory->components();
-	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
+	auto components = newtheory->components();
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
