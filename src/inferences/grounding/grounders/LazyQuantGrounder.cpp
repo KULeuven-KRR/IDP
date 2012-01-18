@@ -92,6 +92,7 @@ void LazyQuantGrounder::groundMore() const {
 
 void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	Assert(not conjunctive());
+	formula.setType(Conn::DISJ);
 	if (verbosity() > 2) {
 		printorig();
 	}
