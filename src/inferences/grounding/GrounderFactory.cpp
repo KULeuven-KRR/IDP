@@ -337,6 +337,7 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
 		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
+		//tmptheory = FormulaUtils::mergeRulesOnSameSymbol(tmptheory);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
 	}
 

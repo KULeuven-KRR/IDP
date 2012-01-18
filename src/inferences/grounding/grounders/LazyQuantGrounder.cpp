@@ -63,6 +63,7 @@ void LazyQuantGrounder::groundMore() const {
 		overwriteVars(originstantiation, instance->freevarinst);
 
 		ConjOrDisj formula;
+		formula.setType(conn_);
 		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula);
 
 		restoreOrigVars(originstantiation, instance->freevarinst);

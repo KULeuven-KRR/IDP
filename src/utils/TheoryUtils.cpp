@@ -197,6 +197,10 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Co
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
+/*AbstractTheory* mergeRulesOnSameSymbol(AbstractTheory* t) {
+	return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
+}*/
+
 void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
 	Assert(newt==t);
