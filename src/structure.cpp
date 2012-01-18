@@ -3737,28 +3737,41 @@ PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structur
 	return new PredInter(emptytable, emptytable, false, false);
 }
 
+// FIXME better way of managing (the memory of) these interpretations?
+EqualInterGenerator::~EqualInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	EqualInternalPredTable* eip = new EqualInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
+StrLessThanInterGenerator::~StrLessThanInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
+StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
 EqualInterGenerator* EqualInterGeneratorGenerator::get(const std::vector<Sort*>& sorts) {

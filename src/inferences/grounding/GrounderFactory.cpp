@@ -335,26 +335,25 @@ void GrounderFactory::visit(const Theory* theory) {
 	if (not getOption(BoolType::CPSUPPORT)) {
 		tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
-	}Assert(sametypeid<Theory>(*tmptheory));
+	}
+	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	set<TheoryComponent*> tcomps = newtheory->components();
+	auto tcomps = newtheory->components();
 	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
-	vector<Grounder*> children(components.size());
+	vector<Grounder*> children;
 	for (size_t n = 0; n < components.size(); ++n) {
 		InitContext();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-			clog << "Creating a grounder for ";
-			components[n]->put(clog);
-			clog << "\n";
+			clog << "Creating a grounder for " <<toString(components[n]) <<"\n";
 		}
 		components[n]->accept(this);
-		children[n] = _topgrounder;
+		children.push_back(_topgrounder);
 	}
 
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
@@ -390,7 +389,12 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
-	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* temppf = pf->clone();
+	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	if(temppf!=transpf){
+		delete(temppf);
+		temppf = NULL;
+	}
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
@@ -403,8 +407,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
-		if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		if (getOption(IntType::GROUNDVERBOSITY) > 3){
 			poptab();
+		}
 		return;
 	}
 
@@ -439,6 +444,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
+		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this!
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
@@ -451,6 +457,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
+		newpf->recursiveDelete();
 		return;
 	}
 
@@ -492,8 +499,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Certainly table: \n" << tabs() << toString(certtable) << "\n" << tabs();
-		clog << "Possible table: \n" << tabs() << toString(posstable) << "\n" << tabs();
 		clog << "Possible checker: \n" << tabs() << toString(possch) << "\n" << tabs();
 		clog << "Certain checker: \n" << tabs() << toString(certainch) << "\n" << tabs();
 	}
@@ -512,8 +517,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 }
 
 /**
- * Recursively deletes an object AND sets its reference to NULL (causing sigsev is calling it later, instead of not failing at all)
- * TODO should use this throughout
+ * Recursively deletes an object AND sets its reference to NULL (causing sigsev when calling it later, instead of not failing at all)
+ * TODO should use this throughout the system
  */
 template<class T>
 void deleteDeep(T& object) {
@@ -1072,7 +1077,11 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjPathUntilNode = false;
 
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	auto temprule = rule->clone();
+	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	if(temprule!=newrule){
+		delete(temprule);
+	}
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
@@ -1139,4 +1148,6 @@ void GrounderFactory::visit(const Rule* rule) {
 	RestoreContext();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)
 		poptab();
+
+	newrule->recursiveDelete();
 }

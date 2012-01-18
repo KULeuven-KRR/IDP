@@ -863,7 +863,8 @@ void parsefile(const std::string& str) {
 	reset();
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
-	yylloc.descr = 0;
+	delete(yylloc.descr);
+	yylloc.descr = NULL;
 	yyrestart(GlobalData::instance()->openFile(str.c_str(),"r"));
 	if(yyin) {
 		getInserter().currfile(str);
@@ -878,7 +879,8 @@ void parsefile(const std::string& str) {
 void parsestdin() {
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
-	yylloc.descr = 0;
+	delete(yylloc.descr);
+	yylloc.descr = NULL;
 	yyrestart(stdin);
 	getInserter().currfile(NULL);
 	yyparse();

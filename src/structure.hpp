@@ -2247,30 +2247,36 @@ public:
 class EqualInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	EqualInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~EqualInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 
 class StrLessThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	StrLessThanInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~StrLessThanInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 
 class StrGreaterThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	StrGreaterThanInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~StrGreaterThanInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 

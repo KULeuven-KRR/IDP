@@ -35,10 +35,9 @@ private:
 		// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory factory(structure, symstructure);
-		auto grounder = factory.create(theory);
+		auto grounder = std::shared_ptr<Grounder>(factory.create(theory));
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
-		delete (grounder);
 		delete (symstructure);
 		return grounding;
 	}
@@ -61,10 +60,9 @@ private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
 		GrounderFactory factory(structure, symstructure);
-		auto grounder = factory.create(theory, monitor);
+		auto grounder = std::shared_ptr<Grounder>(factory.create(theory, monitor));
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
-		delete (grounder);
 		grounding->recursiveDelete();
 		delete (symstructure);
 		monitor->flush();

@@ -13,30 +13,15 @@
 #include "internalargument.hpp"
 
 // Note: following containers are used for garbage collection.
-std::set<SortTable*> domains;
-std::set<std::vector<InternalArgument>*> arguments;
-
-void addToGarbageCollection(SortTable* table) {
-	domains.insert(table);
-}
+std::set<std::vector<InternalArgument>*> lists;
 
 void addToGarbageCollection(std::vector<InternalArgument>* list) {
-	arguments.insert(list);
+	lists.insert(list);
 }
 
-void garbageCollect(SortTable* table) {
-	auto it = domains.find(table);
-	if (it != domains.cend()) {
-		delete (*it);
-		domains.erase(table);
-	}
-}
-
-void garbageCollect(std::vector<InternalArgument>* list) {
-	auto it = arguments.find(list);
-	if (it != arguments.cend()) {
-		delete (*it);
-		arguments.erase(list);
+void garbageCollectInternalArgumentVectors() {
+	for(auto i=lists.cbegin(); i!=lists.cend(); ++i) {
+		delete(*i);
 	}
 }
 
@@ -54,8 +39,6 @@ template<>
 Vocabulary* InternalArgument::get<Vocabulary*>() {
 	return vocabulary();
 }
-
-// TODO mults?
 
 template<>
 int InternalArgument::get<int>() {

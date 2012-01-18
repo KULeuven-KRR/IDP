@@ -29,6 +29,7 @@ private:
 	bool _reset;
 
 public:
+	// NOTE: takes ownership of table
 	InverseInstGenerator(PredTable* table, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars)
 			: _reset(true) {
 		std::vector<const DomElemContainer*> outvars;
@@ -45,7 +46,7 @@ public:
 		_predchecker = new LookupGenerator(table, vars, table->universe());
 	}
 
-	// FIXME reimplemnt clone
+	// FIXME reimplement clone
 	InverseInstGenerator* clone() const {
 		return new InverseInstGenerator(*this);
 	}

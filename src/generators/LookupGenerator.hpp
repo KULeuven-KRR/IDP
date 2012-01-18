@@ -25,6 +25,7 @@ private:
 	bool _reset;
 
 public:
+	// NOTE: takes ownership of the table
 	LookupGenerator(const PredTable* t, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
 			: _table(t), _vars(vars), _universe(univ), _reset(true) {
 		Assert(t->arity() == vars.size());
@@ -32,6 +33,10 @@ public:
 
 	LookupGenerator* clone() const {
 		return new LookupGenerator(*this);
+	}
+
+	~LookupGenerator(){
+		delete(_table);
 	}
 
 	void reset() {

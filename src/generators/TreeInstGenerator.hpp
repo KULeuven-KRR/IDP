@@ -22,11 +22,16 @@ private:
 public:
 	TreeInstGenerator(GeneratorNode* r)
 			: _root(r), _reset(true) {
+		Assert(r!=NULL);
 	}
 
 	// FIXME reimplement (deep clone)
 	TreeInstGenerator* clone() const {
 		return new TreeInstGenerator(*this);
+	}
+
+	~TreeInstGenerator(){
+		delete(_root);
 	}
 
 	void reset() {

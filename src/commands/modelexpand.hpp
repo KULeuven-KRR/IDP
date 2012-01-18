@@ -39,6 +39,7 @@ public:
 		InternalArgument result;
 		result._type = AT_TABLE;
 		result._value._table = new std::vector<InternalArgument>();
+		addToGarbageCollection(result._value._table);
 		for (auto it = models.cbegin(); it != models.cend(); ++it) {
 			result._value._table->push_back(InternalArgument(*it));
 		}
@@ -47,6 +48,7 @@ public:
 			InternalArgument randt;
 			randt._type = AT_MULT;
 			randt._value._table = new std::vector<InternalArgument>(1, result);
+			addToGarbageCollection(randt._value._table);
 			InternalArgument trace;
 			trace._type = AT_REGISTRY;
 			trace._value._string = tracer->index();

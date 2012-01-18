@@ -31,7 +31,6 @@ public:
 			return nilarg();
 		}
 		ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1, n2));
-		addToGarbageCollection(ia._value._domain);
 		return ia;
 	}
 };
