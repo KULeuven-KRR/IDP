@@ -64,8 +64,8 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
-		: _structure(structure), _symstructure(symstructure) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
+		_structure(structure), _symstructure(symstructure) {
 
 	Assert(_symstructure!=NULL);
 
@@ -334,10 +334,16 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
 void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
-	if (not getOption(BoolType::CPSUPPORT)) {
-		tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
+
+	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
+		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
 	}
+
+	if (not getOption(BoolType::CPSUPPORT)) {
+		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
+	}
+
 	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
@@ -351,7 +357,7 @@ void GrounderFactory::visit(const Theory* theory) {
 		InitContext();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-			clog << "Creating a grounder for " <<toString(components[n]) <<"\n";
+			clog << "Creating a grounder for " << toString(components[n]) << "\n";
 		}
 		components[n]->accept(this);
 		children.push_back(_topgrounder);
@@ -405,7 +411,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
-		if (getOption(IntType::GROUNDVERBOSITY) > 3){
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
 		return;
@@ -602,8 +608,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_topgrounder = _formgrounder;
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 /**
@@ -706,8 +711,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	}
 	newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 
 }
 
@@ -794,7 +798,8 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
+			_cpsymbols);
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
@@ -885,7 +890,8 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	SortTable* domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
+					ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
@@ -1040,8 +1046,7 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 template<class VarList>
@@ -1142,8 +1147,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new RuleGrounder(headgr, bodygr, headgen, bodygen, _context);
 	}
 	RestoreContext();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 
 	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }
