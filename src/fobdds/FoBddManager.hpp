@@ -103,7 +103,6 @@ private:
 	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
-
 public:
 	FOBDDManager();
 
@@ -112,6 +111,10 @@ public:
 	}
 	const FOBDD* falsebdd() const {
 		return _falsebdd;
+	}
+
+	bool isGoalbdd(bool goal, const FOBDD* bdd) const {
+		return (goal && isTruebdd(bdd)) || ((not goal) && isFalsebdd(bdd));
 	}
 
 	bool isTruebdd(const FOBDD* bdd) const {
@@ -161,9 +164,11 @@ public:
 	//these calculations (nranswers, chances, ...) seem to be non-manager-specific and might be moved to the bdd and kernel itself.
 	//TODO: Do this after some tests have been written
 	//NOTE: estimation-algorithms have not been reviewed yet
-	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+			AbstractStructure*);
 	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+			AbstractStructure*);
 	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
 	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
@@ -222,6 +227,9 @@ private:
 	double estimatedChance(const FOBDD*, AbstractStructure*);
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
+
+	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+			AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder

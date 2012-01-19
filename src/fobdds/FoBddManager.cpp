@@ -1218,7 +1218,7 @@ map<const FOBDDKernel*, double> FOBDDManager::kernelAnswers(const FOBDD* bdd, Ab
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		set<const FOBDDVariable*> vars = variables(*it);
-		set<const FOBDDDeBruijnIndex*> indices = indices(*it);
+		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = estimatedNrAnswers(*it, vars, indices, structure);
 	}
 	return result;
@@ -1264,7 +1264,7 @@ map<const FOBDDKernel*, tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, A
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		set<const FOBDDVariable*> vars = variables(*it);
-		set<const FOBDDDeBruijnIndex*> indices = indices(*it);
+		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = univNrAnswers(vars, indices, structure);
 	}
 	return result;
@@ -1622,7 +1622,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 	} else {
 		// split variables
 		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
-		set<const FOBDDDeBruijnIndex*> kernelindices = indices(bdd->kernel());
+		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
 		set<const FOBDDVariable*> bddvars;
 		set<const FOBDDDeBruijnIndex*> bddindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
@@ -1729,91 +1729,160 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 			// move to best position
 			Assert(bestposition<0);
 			//if (bestposition < 0) {
-				for (int n = 0; n > bestposition; --n)
-					moveUp(*it);
+			for (int n = 0; n > bestposition; --n)
+				moveUp(*it);
 			/*} else if (bestposition > 0) {
-				for (int n = 0; n < bestposition; ++n)
-					moveDown(*it);
-			}*/
+			 for (int n = 0; n < bestposition; ++n)
+			 moveDown(*it);
+			 }*/
 		}
 	}
 }
 
-const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		AbstractStructure* structure, double weight_per_ans) {
-
+const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+		AbstractStructure* structure, double weightPerAns) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
 		// Split variables
-		set<const FOBDDVariable*> kvars = variables(bdd->kernel());
-		set<const FOBDDDeBruijnIndex*> kindices = indices(bdd->kernel());
-		set<const FOBDDVariable*> kernelvars;
+		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
+		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
 		set<const FOBDDVariable*> branchvars;
-		set<const FOBDDDeBruijnIndex*> kernelindices;
 		set<const FOBDDDeBruijnIndex*> branchindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
-			if (kvars.find(*it) == kvars.cend())
+			if (kernelvars.find(*it) == kernelvars.cend())
 				branchvars.insert(*it);
-			else
-				kernelvars.insert(*it);
 		}
 		for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
-			if (kindices.find(*it) == kindices.cend())
+			if (kernelindices.find(*it) == kernelindices.cend())
 				branchindices.insert(*it);
-			else
-				kernelindices.insert(*it);
 		}
 
 		// Recursive call
-		double bddcost = estimatedCostAll(bdd, vars, indices, structure);
-		double bddans = estimatedNrAnswers(bdd, vars, indices, structure);
-		double totalbddcost = getMaxElem<double>();
-		if (bddcost + (bddans * weight_per_ans) < totalbddcost) {
-			totalbddcost = bddcost + (bddans * weight_per_ans);
+		double bddCost = estimatedCostAll(bdd, vars, indices, structure);
+		double bddAnswers = estimatedNrAnswers(bdd, vars, indices, structure);
+		double totalBddCost = getMaxElem<double>();
+		if (bddCost + (bddAnswers * weightPerAns) < totalBddCost) {
+			totalBddCost = bddCost + (bddAnswers * weightPerAns);
+		}
+
+		if (isGoalbdd(goal,bdd->falsebranch())) {
+			double branchCost = estimatedCostAll(bdd->truebranch(), vars, indices, structure);
+			double branchAnswers = estimatedNrAnswers(bdd->truebranch(), vars, indices, structure);
+			double totalBranchCost = getMaxElem<double>();
+			if (branchCost + (branchAnswers * weightPerAns) < totalBranchCost) {
+				totalBranchCost = branchCost + (branchAnswers * weightPerAns);
+			}
+			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
+				return makeMore(goal, bdd->truebranch(), vars, indices, structure, weightPerAns);
+			}
+		} else if (isGoalbdd(goal,bdd->truebranch())) {
+			double branchcost = estimatedCostAll(bdd->falsebranch(), vars, indices, structure);
+			double branchans = estimatedNrAnswers(bdd->falsebranch(), vars, indices, structure);
+			double totalbranchcost = getMaxElem<double>();
+			if (branchcost + (branchans * weightPerAns) < totalbranchcost) {
+				totalbranchcost = branchcost + (branchans * weightPerAns);
+			}
+			if (totalbranchcost < totalBddCost) {
+				return makeMore(goal, bdd->falsebranch(), vars, indices, structure, weightPerAns);
+			}
+		}
+
+		double kernelAnswers = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
+		double trueBranchWeight = (kernelAnswers * weightPerAns < getMaxElem<double>()) ? kernelAnswers * weightPerAns : getMaxElem<double>();
+		const FOBDD* newtrue = makeMore(goal, bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
+
+		tablesize allKernelAnswers = univNrAnswers(kernelvars, kernelindices, structure);
+		double chance = estimatedChance(bdd->kernel(), structure);
+		double kernelFalseAnswers;
+		if (allKernelAnswers._type == TST_APPROXIMATED || allKernelAnswers._type == TST_EXACT) {
+			kernelFalseAnswers = allKernelAnswers._size * (1 - chance);
+		} else {
+			Assert(allKernelAnswers._type == TST_INFINITE || allKernelAnswers._type == TST_UNKNOWN);
+			if (chance <= 0) //TODO: i changed this from > 0 to <= 0, seemed more logical... Check for correctness
+				kernelFalseAnswers = getMaxElem<double>();
+			else
+				kernelFalseAnswers = 1; //Why 1?
+		}
+		double falsebranchweight = (kernelFalseAnswers * weightPerAns < getMaxElem<double>()) ? kernelFalseAnswers * weightPerAns : getMaxElem<double>();
+		const FOBDD* newfalse = makeMore(goal, bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
+		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
+			return makeMore(goal, getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weightPerAns);
+		} else
+			return bdd;
+	}
+}
+
+const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+		AbstractStructure* structure, double weightPerAns) {
+	return makeMore(false, bdd,vars,indices,structure,weightPerAns);
+	/*if (isTruebdd(bdd) || isFalsebdd(bdd)) {
+		return bdd;
+	} else {
+		// Split variables
+		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
+		set<const FOBDDDeBruijnIndex*> kernelindices = indices(bdd->kernel());
+		set<const FOBDDVariable*> branchvars;
+		set<const FOBDDDeBruijnIndex*> branchindices;
+		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
+			if (kernelvars.find(*it) == kernelvars.cend())
+				branchvars.insert(*it);
+		}
+		for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
+			if (kernelindices.find(*it) == kernelindices.cend())
+				branchindices.insert(*it);
+		}
+
+		// Recursive call
+		double bddCost = estimatedCostAll(bdd, vars, indices, structure);
+		double bddAnswers = estimatedNrAnswers(bdd, vars, indices, structure);
+		double totalBddCost = getMaxElem<double>();
+		if (bddCost + (bddAnswers * weightPerAns) < totalBddCost) {
+			totalBddCost = bddCost + (bddAnswers * weightPerAns);
 		}
 
 		if (isTruebdd(bdd->falsebranch())) {
-			double branchcost = estimatedCostAll(bdd->truebranch(), vars, indices, structure);
-			double branchans = estimatedNrAnswers(bdd->truebranch(), vars, indices, structure);
-			double totalbranchcost = getMaxElem<double>();
-			if (branchcost + (branchans * weight_per_ans) < totalbranchcost) {
-				totalbranchcost = branchcost + (branchans * weight_per_ans);
+			double branchCost = estimatedCostAll(bdd->truebranch(), vars, indices, structure);
+			double branchAnswers = estimatedNrAnswers(bdd->truebranch(), vars, indices, structure);
+			double totalBranchCost = getMaxElem<double>();
+			if (branchCost + (branchAnswers * weightPerAns) < totalBranchCost) {
+				totalBranchCost = branchCost + (branchAnswers * weightPerAns);
 			}
-			if (totalbranchcost < totalbddcost) {
-				return makeMoreFalse(bdd->truebranch(), vars, indices, structure, weight_per_ans);
+			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
+				return makeMoreFalse(bdd->truebranch(), vars, indices, structure, weightPerAns);
 			}
 		} else if (isTruebdd(bdd->truebranch())) {
 			double branchcost = estimatedCostAll(bdd->falsebranch(), vars, indices, structure);
 			double branchans = estimatedNrAnswers(bdd->falsebranch(), vars, indices, structure);
 			double totalbranchcost = getMaxElem<double>();
-			if (branchcost + (branchans * weight_per_ans) < totalbranchcost) {
-				totalbranchcost = branchcost + (branchans * weight_per_ans);
+			if (branchcost + (branchans * weightPerAns) < totalbranchcost) {
+				totalbranchcost = branchcost + (branchans * weightPerAns);
 			}
-			if (totalbranchcost < totalbddcost) {
-				return makeMoreFalse(bdd->falsebranch(), vars, indices, structure, weight_per_ans);
+			if (totalbranchcost < totalBddCost) {
+				return makeMoreFalse(bdd->falsebranch(), vars, indices, structure, weightPerAns);
 			}
 		}
 
-		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
-		double truebranchweight = (kernelans * weight_per_ans < getMaxElem<double>()) ? kernelans * weight_per_ans : getMaxElem<double>();
-		const FOBDD* newtrue = makeMoreFalse(bdd->truebranch(), branchvars, branchindices, structure, truebranchweight);
+		double kernelAnswers = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
+		double trueBranchWeight = (kernelAnswers * weightPerAns < getMaxElem<double>()) ? kernelAnswers * weightPerAns : getMaxElem<double>();
+		const FOBDD* newtrue = makeMoreFalse(bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
 
-		tablesize allkernelans = univNrAnswers(kernelvars, kernelindices, structure);
+		tablesize allKernelAnswers = univNrAnswers(kernelvars, kernelindices, structure);
 		double chance = estimatedChance(bdd->kernel(), structure);
-		double invkernelans;
-		if (allkernelans._type == TST_APPROXIMATED || allkernelans._type == TST_EXACT) {
-			invkernelans = allkernelans._size * (1 - chance);
+		double kernelNonAnswers;
+		if (allKernelAnswers._type == TST_APPROXIMATED || allKernelAnswers._type == TST_EXACT) {
+			kernelNonAnswers = allKernelAnswers._size * (1 - chance);
 		} else {
-			if (chance > 0)
-				invkernelans = getMaxElem<double>();
+			Assert(allKernelAnswers._type == TST_INFINITE || allKernelAnswers._type == TST_UNKNOWN);
+			if (chance == 0) //TODO: i changed this from > 0 to == 0, seemed more logical... Check for correctness
+				kernelNonAnswers = getMaxElem<double>();
 			else
-				kernelans = 1;
+				kernelAnswers = 1;
 		}
-		double falsebranchweight = (invkernelans * weight_per_ans < getMaxElem<double>()) ? invkernelans * weight_per_ans : getMaxElem<double>();
+		double falsebranchweight = (kernelNonAnswers * weightPerAns < getMaxElem<double>()) ? kernelNonAnswers * weightPerAns : getMaxElem<double>();
 		const FOBDD* newfalse = makeMoreFalse(bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
-			return makeMoreFalse(getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weight_per_ans);
+			return makeMoreFalse(getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weightPerAns);
 		} else
 			return bdd;
 	}
@@ -1911,8 +1980,9 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDD
 }
 
 const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		AbstractStructure* structure, double weight_per_ans) {
-	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
+		AbstractStructure* structure, double weightPerAns) {
+	return makeMore(true, bdd,vars,indices,structure,weightPerAns);
+	/*if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
 		// Split variables
@@ -1988,7 +2058,7 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 			return makeMoreTrue(getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weight_per_ans);
 		} else
 			return bdd;
-
+		}
 		// Simplify quantification kernels
 		/*		if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
 		 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
@@ -2053,7 +2123,6 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 		 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,branch_cost_ans);
 		 return getBDD(bdd->kernel(),newtrue,newfalse);
 		 */
-	}
 }
 
 FOBDDManager::FOBDDManager() {
