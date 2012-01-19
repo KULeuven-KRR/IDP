@@ -130,7 +130,12 @@ public:
 	void ground(const Lit& head, const ElementTuple& headargs);
 	void notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders);
 
+private:
+	bool isGrounding;
+	std::queue<std::pair<const Lit&, const ElementTuple&>> stilltoground;
 	dominstlist createInst(const ElementTuple& headargs);
+	void doGrounding();
+	void doGround(const Lit& head, const ElementTuple& headargs);
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

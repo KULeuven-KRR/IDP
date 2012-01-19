@@ -110,26 +110,29 @@ public:
 		containers.push_back(this);
 	}
 
-	void operator=(const DomElemContainer* container) const {
+	DomElemContainer* operator=(const DomElemContainer* container) const {
 		if (del) {
 			delete (domelem_);
 		}
 		del = false;
 		domelem_ = container->get();
+		return this;
 	}
-	void operator=(const DomElemContainer& container) const {
+	DomElemContainer* operator=(const DomElemContainer& container) const {
 		if (del) {
 			delete (domelem_);
 		}
 		del = false;
 		domelem_ = container.get();
+		return this;
 	}
-	void operator=(const DomainElement* domelem) const {
+	DomElemContainer* operator=(const DomainElement* domelem) const {
 		if (del) {
 			delete (domelem_);
 		}
 		del = false;
 		domelem_ = domelem;
+		return this;
 	}
 
 	const DomainElement* get() const {

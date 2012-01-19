@@ -30,10 +30,10 @@ unsigned int DefinitionGrounder::_currentdefnb = 1;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
-		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr){
+		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr) {
 }
 
-DefinitionGrounder::~DefinitionGrounder(){
+DefinitionGrounder::~DefinitionGrounder() {
 	deleteList(_subgrounders);
 }
 
@@ -43,7 +43,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 		(*grounder)->run(id(), grounddefinition);
 	}
 	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
-	delete(grounddefinition);
+	delete (grounddefinition);
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
@@ -51,11 +51,11 @@ RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerato
 		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
 }
 
-RuleGrounder::~RuleGrounder(){
-	delete(_headgenerator);
-	delete(_headgrounder);
-	delete(_bodygrounder);
-	delete(_bodygenerator);
+RuleGrounder::~RuleGrounder() {
+	delete (_headgenerator);
+	delete (_headgrounder);
+	delete (_bodygrounder);
+	delete (_bodygenerator);
 }
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
@@ -95,7 +95,7 @@ HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const 
 		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
 }
 
-HeadGrounder::~HeadGrounder(){
+HeadGrounder::~HeadGrounder() {
 	deleteList(_subtermgrounders);
 }
 
@@ -140,7 +140,7 @@ Lit HeadGrounder::run() const {
 // FIXME require a transformation such that there is only one headgrounder for any defined symbol
 // FIXME also handle tseitin defined rules!
 LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())) {
+		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
 }
 
@@ -149,10 +149,7 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 
 	// set the variable instantiations
 	for (unsigned int i = 0; i < headargs.size(); ++i) {
-		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
-		if (not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])) {
-			throw notyetimplemented("Lazygrounding with functions.\n");
-		}
+		// TODO currently always unnested everything, so only vars in head!
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst { var, headargs[i] });
 	}
@@ -160,11 +157,27 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 }
 
 void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders) {
-	// FIXME do this for all grounders with the same grounding (which should be all, is other TODO?)?
 	grounding()->polNotifyDefined(lit, headargs, grounders);
 }
 
 void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs) {
+	stilltoground.push( { head, headargs });
+	if (not isGrounding) {
+		doGrounding();
+	}
+}
+
+void LazyRuleGrounder::doGrounding() {
+	isGrounding = true;
+	while (not stilltoground.empty()) {
+		auto elem = stilltoground.front();
+		stilltoground.pop();
+		doGround(elem.first, elem.second);
+	}
+	isGrounding = false;
+}
+
+void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
 
 	dominstlist headvarinstlist = createInst(headargs);
@@ -173,25 +186,23 @@ void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs) {
 	overwriteVars(originstantiation, headvarinstlist);
 
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
+		CHECKTERMINATION
 
 		ConjOrDisj body;
 		bodygrounder()->run(body);
 		bool conj = body.getType() == Conn::CONJ;
 		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
+		// IMPORTANT! As multiple rules might exist, should NOT add unit clauses if one body is certainly true or false!
 		if (falsebody) {
-			grounding()->add(GroundClause { -head });
-			continue;
+			conj = false;
+			body.literals = {};
 		} else if (truebody) {
-			grounding()->add(GroundClause { head });
-			continue;
-		} else {
-			// FIXME correct defID!
-			grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body.literals, context()._tseitin == TsType::RULE));
+			conj = true;
+			body.literals = {};
 		}
+		// FIXME correct defID!
+		grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body.literals, context()._tseitin == TsType::RULE));
 	}
 
 	restoreOrigVars(originstantiation, headvarinstlist);

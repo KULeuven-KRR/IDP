@@ -27,9 +27,7 @@ void InstGenerator::begin() {
 }
 
 void InstGenerator::operator++() {
+	CHECKTERMINATION
 	Assert(not isAtEnd());
-	if (getGlobal()->terminateRequested()) {
-		throw IdpException("Terminate requested");
-	}
 	next();
 }
