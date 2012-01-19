@@ -757,7 +757,7 @@ public:
 	const std::vector<FixpDef*>& fixpdefs() const {
 		return _fixpdefs;
 	}
-	std::set<TheoryComponent*> components() const;
+	std::vector<TheoryComponent*> components() const;
 
 	virtual std::ostream& put(std::ostream&) const;
 };

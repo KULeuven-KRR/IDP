@@ -547,16 +547,16 @@ void Theory::recursiveDelete() {
 	delete (this);
 }
 
-set<TheoryComponent*> Theory::components() const {
-	set<TheoryComponent*> stc;
+vector<TheoryComponent*> Theory::components() const {
+	vector<TheoryComponent*> stc;
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		stc.insert(*it);
+		stc.push_back(*it);
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		stc.insert(*it);
+		stc.push_back(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		stc.insert(*it);
+		stc.push_back(*it);
 	}
 	return stc;
 }

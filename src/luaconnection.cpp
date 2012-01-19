@@ -212,7 +212,6 @@ int convertToLua(lua_State* L, const DomainElement* d) {
 /**
  * Push an internal argument to the lua stack
  */
-//FIXME dit moet beter kunnen
 int convertToLua(lua_State* L, InternalArgument arg) {
 	switch (arg._type) {
 	case AT_SORT: {
@@ -384,6 +383,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		}
 		ia._type = AT_TABLE;
 		ia._value._table = new std::vector<InternalArgument>();
+		addToGarbageCollection(ia._value._table);
 		lua_pushnil(L);
 		while (lua_next(L, arg) != 0) {
 			ia._value._table->push_back(createArgument(-1, L));

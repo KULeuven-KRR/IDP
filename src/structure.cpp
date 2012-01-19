@@ -111,6 +111,16 @@ ostream& DomainElement::put(ostream& output) const {
 	return output;
 }
 
+std::vector<const DomElemContainer*> DomElemContainer::containers;
+void DomElemContainer::deleteAllContainers(){
+	for (auto i = containers.cbegin(); i != containers.cend(); ++i) {
+		if (*i != NULL) {
+			delete (*i);
+		}
+	}
+	containers.clear();
+}
+
 ostream& operator<<(ostream& output, const DomainElement& d) {
 	return d.put(output);
 }
@@ -1984,8 +1994,8 @@ tablesize StrGreaterInternalPredTable::size(const Universe& univ) const {
 
 InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
 	vector<const DomElemContainer*> vars { new DomElemContainer(), new DomElemContainer() };
-	return new GeneratorInternalTableIterator(
-			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
+	return new GeneratorInternalTableIterator(new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
+
 }
 
 /*************************
@@ -3737,28 +3747,41 @@ PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structur
 	return new PredInter(emptytable, emptytable, false, false);
 }
 
+// FIXME better way of managing (the memory of) these interpretations?
+EqualInterGenerator::~EqualInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	EqualInternalPredTable* eip = new EqualInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
+StrLessThanInterGenerator::~StrLessThanInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
+StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator(){
+	deleteList(generatedInters);
+}
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	return new PredInter(ct, true);
+	generatedInters.push_back(new PredInter(ct, true));
+	return generatedInters.back();
 }
 
 EqualInterGenerator* EqualInterGeneratorGenerator::get(const std::vector<Sort*>& sorts) {

@@ -12,6 +12,8 @@
 #define GROUNDER_HPP_
 
 #include "GroundUtils.hpp"
+#include <iostream>
+#include <typeinfo>
 
 enum class Conn {
 	DISJ, CONJ

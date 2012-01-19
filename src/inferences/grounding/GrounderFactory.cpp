@@ -64,8 +64,8 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
-		: _structure(structure), _symstructure(symstructure) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
+		_structure(structure), _symstructure(symstructure) {
 
 	Assert(_symstructure!=NULL);
 
@@ -74,7 +74,9 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 		clog << "Using the following symbolic structure to ground: " << endl;
 		_symstructure->put(clog);
 	}
+}
 
+GrounderFactory::~GrounderFactory() {
 }
 
 set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
@@ -332,29 +334,33 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solve
 void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
-	if (not getOption(BoolType::CPSUPPORT)) {
-		tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
+
+	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
+		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
-	}Assert(sametypeid<Theory>(*tmptheory));
+	}
+
+	if (not getOption(BoolType::CPSUPPORT)) {
+		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
+	}
+
+	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	set<TheoryComponent*> tcomps = newtheory->components();
-	vector<TheoryComponent*> components(tcomps.cbegin(), tcomps.cend());
+	auto components = newtheory->components();
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
-	vector<Grounder*> children(components.size());
+	vector<Grounder*> children;
 	for (size_t n = 0; n < components.size(); ++n) {
 		InitContext();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-			clog << "Creating a grounder for ";
-			components[n]->put(clog);
-			clog << "\n";
+			clog << "Creating a grounder for " << toString(components[n]) << "\n";
 		}
 		components[n]->accept(this);
-		children[n] = _topgrounder;
+		children.push_back(_topgrounder);
 	}
 
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
@@ -390,7 +396,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
-	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(pf->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* temppf = pf->clone();
+	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	// TODO can we delete temppf here if different from transpf? APPARANTLY NOT!
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
@@ -403,8 +411,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
-		if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
+		}
 		return;
 	}
 
@@ -439,6 +448,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
+		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this!
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
@@ -451,6 +461,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
+		newpf->recursiveDelete();
 		return;
 	}
 
@@ -492,8 +503,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Certainly table: \n" << tabs() << toString(certtable) << "\n" << tabs();
-		clog << "Possible table: \n" << tabs() << toString(posstable) << "\n" << tabs();
 		clog << "Possible checker: \n" << tabs() << toString(possch) << "\n" << tabs();
 		clog << "Certain checker: \n" << tabs() << toString(certainch) << "\n" << tabs();
 	}
@@ -512,8 +521,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 }
 
 /**
- * Recursively deletes an object AND sets its reference to NULL (causing sigsev is calling it later, instead of not failing at all)
- * TODO should use this throughout
+ * Recursively deletes an object AND sets its reference to NULL (causing sigsev when calling it later, instead of not failing at all)
+ * TODO should use this throughout the system
  */
 template<class T>
 void deleteDeep(T& object) {
@@ -599,8 +608,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_topgrounder = _formgrounder;
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 /**
@@ -703,8 +711,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	}
 	newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 
 }
 
@@ -791,7 +798,8 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
+			_cpsymbols);
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
@@ -882,7 +890,8 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	SortTable* domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
+					ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
@@ -1037,8 +1046,7 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 template<class VarList>
@@ -1072,7 +1080,9 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjPathUntilNode = false;
 
 	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-	Rule* newrule = DefinitionUtils::unnestThreeValuedTerms(rule->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	auto temprule = rule->clone();
+	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
@@ -1137,6 +1147,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new RuleGrounder(headgr, bodygr, headgen, bodygen, _context);
 	}
 	RestoreContext();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
+
+	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }

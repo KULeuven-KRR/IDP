@@ -52,6 +52,10 @@ public:
 			: GeneratorNode(), _generator(gt), _reset(true) {
 	}
 
+	~LeafGeneratorNode(){
+		delete(_generator);
+	}
+
 	virtual void next() {
 		if (_reset) {
 			_reset = false;
@@ -82,6 +86,11 @@ private:
 public:
 	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
 			: _generator(gt), _child(c), _reset(true) {
+	}
+
+	~OneChildGeneratorNode(){
+		delete(_generator);
+		delete(_child);
 	}
 
 	virtual void next() {
@@ -132,6 +141,13 @@ private:
 public:
 	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch)
 			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
+	}
+
+	~TwoChildGeneratorNode(){
+		delete(_checker);
+		delete(_generator);
+		delete(_falsecheckbranch);
+		delete(_truecheckbranch);
 	}
 
 	virtual void next() {

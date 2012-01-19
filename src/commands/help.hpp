@@ -46,12 +46,12 @@ private:
 		std::stringstream sstr;
 		sstr << "\t* " << prefix << name << '(';
 		bool begin = true;
-		for (auto i = 0; i < args.size(); ++i) {
+		for (auto i = args.cbegin(); i < args.cend(); ++i) {
 			if (!begin) {
 				sstr << ',';
 			}
 			begin = false;
-			sstr << args[i];
+			sstr << *i;
 		}
 
 		sstr << ")\n";

@@ -95,14 +95,19 @@ class DomElemContainer {
 private:
 	mutable const DomainElement* domelem_;
 	mutable bool del;
-public:
-	DomElemContainer()
-			: domelem_(new DomainElement()), del(true) {
-	}
+	static std::vector<const DomElemContainer*> containers;
+
 	~DomElemContainer() {
 		if (del) {
 			delete (domelem_);
 		}
+	}
+
+public:
+	static void deleteAllContainers();
+	DomElemContainer()
+			: domelem_(new DomainElement()), del(true) {
+		containers.push_back(this);
 	}
 
 	void operator=(const DomElemContainer* container) const {
@@ -2247,30 +2252,36 @@ public:
 class EqualInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	EqualInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~EqualInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 
 class StrLessThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	StrLessThanInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~StrLessThanInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 
 class StrGreaterThanInterGenerator: public PredInterGenerator {
 private:
 	Sort* _sort;
+	std::vector<PredInter*> generatedInters;
 public:
 	StrGreaterThanInterGenerator(Sort* sort)
 			: _sort(sort) {
 	}
+	~StrGreaterThanInterGenerator();
 	PredInter* get(const AbstractStructure* structure);
 };
 

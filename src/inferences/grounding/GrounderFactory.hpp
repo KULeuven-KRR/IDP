@@ -75,7 +75,7 @@ private:
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
 							// That is, the corresponding const DomElemContainer* acts as a variable+value.
 
-							// Return values
+	// Return values
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
@@ -113,9 +113,7 @@ private:
 
 public:
 	GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symbstructure);
-	virtual ~GrounderFactory() {
-		//deleteList(_varmapping);
-	}
+	virtual ~GrounderFactory();
 
 	// Factory method
 	Grounder* create(const AbstractTheory*);

@@ -41,6 +41,7 @@ private:
 	Universe _universe;
 
 public:
+	// NOTE: takes ownership of table
 	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ,
 			const std::vector<unsigned int>& firstocc)
 			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
@@ -72,6 +73,11 @@ public:
 			_currenttuple.push_back(_vars[i]->get());
 		}
 		_currenttuple.push_back(_rangevar->get());
+	}
+
+	~SimpleFuncGenerator(){
+		delete(_function);
+		delete(_univgen);
 	}
 
 	// FIXME reimplement (clone generator)

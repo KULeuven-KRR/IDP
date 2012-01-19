@@ -20,7 +20,7 @@ public:
 			: EmptyBase("newoptions", "Create new options, equal to the standard options.") {
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
 		auto opts = new Options();
 		return InternalArgument(opts);
 	}

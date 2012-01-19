@@ -46,7 +46,7 @@ public:
 	void addEmptyClause();
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
-	virtual void add(GroundDefinition* d) = 0;
+	virtual void add(const GroundDefinition& d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
 	virtual void add(int tseitin, CPTsBody* body) = 0;

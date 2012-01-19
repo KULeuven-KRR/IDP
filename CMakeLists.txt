@@ -93,9 +93,11 @@ add_subdirectory(lib/lua)
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(docs/documentation)
 
 ### Allow packing
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
 set(CPACK_PACKAGE_VERSION_MAJOR	${idp_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${idp_VERSION_MINOR})
+set(CPACK_NSIS_MODIFY_PATH ON)
 include(CPack)

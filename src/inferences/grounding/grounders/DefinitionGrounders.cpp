@@ -30,20 +30,32 @@ unsigned int DefinitionGrounder::_currentdefnb = 1;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
-		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr), _grounddefinition(new GroundDefinition(_defnb, gt->translator())) {
+		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr){
+}
+
+DefinitionGrounder::~DefinitionGrounder(){
+	deleteList(_subgrounders);
 }
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
+	auto grounddefinition = new GroundDefinition(_defnb, getTranslator());
 	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
-		(*grounder)->run(id(), _grounddefinition);
+		(*grounder)->run(id(), grounddefinition);
 	}
-	getGrounding()->add(_grounddefinition); // FIXME check how it is handled in the lazy part
-
+	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
+	delete(grounddefinition);
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
 RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+}
+
+RuleGrounder::~RuleGrounder(){
+	delete(_headgenerator);
+	delete(_headgrounder);
+	delete(_bodygrounder);
+	delete(_bodygenerator);
 }
 
 void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
@@ -81,6 +93,10 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<SortTable*>& vst)
 		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
+}
+
+HeadGrounder::~HeadGrounder(){
+	deleteList(_subtermgrounders);
 }
 
 Lit HeadGrounder::run() const {

@@ -40,8 +40,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	Assert(t->type() != TT_VAR && t->type() != TT_DOM);
-	return getAllowedToUnnest();
+	return getAllowedToUnnest() && t->type() != TT_VAR && t->type() != TT_DOM;
 }
 /**
  * Tries to derive a sort for the term given a structure.
@@ -155,7 +154,7 @@ Rule* UnnestTerms::visit(Rule* rule) {
 	auto saveallowed = getAllowedToUnnest();
 	setAllowedToUnnest(true);
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
-		Term* term = rule->head()->subterms()[termposition];
+		auto term = rule->head()->subterms()[termposition];
 		if (shouldMove(term)) {
 			VarTerm* new_head_term = move(term);
 			rule->head()->subterm(termposition, new_head_term);
@@ -334,7 +333,7 @@ Term* UnnestTerms::visit(AggTerm* t) {
 	//TODO Check what should be done with AllowedToUnnest...
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
-	if (getAllowedToUnnest() && shouldMove(result)) {
+	if (shouldMove(result)) {
 		return move(result);
 	} else {
 		return result;
@@ -354,7 +353,7 @@ Term* UnnestTerms::visit(FuncTerm* t) {
 	}
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
-	if (getAllowedToUnnest() && shouldMove(result)) {
+	if (shouldMove(result)) {
 		return move(result);
 	} else {
 		return result;

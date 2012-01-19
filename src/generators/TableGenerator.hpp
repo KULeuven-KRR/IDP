@@ -41,6 +41,10 @@ public:
 		_outputtable = new PredTable(new FullInternalPredTable(), Universe(outuniv));
 	}
 
+	~TableGenerator(){
+		delete(_outputtable);
+	}
+
 	TableGenerator* clone() const {
 		return new TableGenerator(*this);
 	}

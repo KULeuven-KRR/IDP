@@ -15,6 +15,7 @@
 #include "IdpException.hpp"
 #include <iostream>
 #include "options.hpp"
+#include "internalargument.hpp"
 
 using namespace std;
 
@@ -33,6 +34,8 @@ GlobalData::~GlobalData() {
 	for (auto m = _monitors.begin(); m != _monitors.end(); ++m) {
 		delete (*m);
 	}
+	garbageCollectInternalArgumentVectors();
+	DomElemContainer::deleteAllContainers();
 	// Note: Options are handled by Lua's garbage collection.
 }
 

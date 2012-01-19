@@ -83,18 +83,18 @@ public:
 		Policy::polAdd(cl);
 	}
 
-	void add(GroundDefinition* def) {
-		for (auto i = def->begin(); i != def->end(); ++i) {
+	void add(const GroundDefinition& def) {
+		for (auto i = def.begin(); i != def.end(); ++i) {
 			if (sametypeid<PCGroundRule>(*(*i).second)) {
 				auto rule = dynamic_cast<PCGroundRule*>((*i).second);
-				transformForAdd(rule->body(), (rule->type() == RT_CONJ ? VIT_CONJ : VIT_DISJ), def->id());
-				Policy::polAdd(def->id(), rule);
+				transformForAdd(rule->body(), (rule->type() == RT_CONJ ? VIT_CONJ : VIT_DISJ), def.id());
+				Policy::polAdd(def.id(), rule);
 				notifyDefined(rule->head());
 			} else {
 				Assert(sametypeid<AggGroundRule>(*(*i).second));
 				auto rule = dynamic_cast<AggGroundRule*>((*i).second);
-				add(rule->setnr(), def->id(), (rule->aggtype() != AggFunction::CARD));
-				Policy::polAdd(def->id(), rule);
+				add(rule->setnr(), def.id(), (rule->aggtype() != AggFunction::CARD));
+				Policy::polAdd(def.id(), rule);
 				notifyDefined(rule->head());
 			}
 		}

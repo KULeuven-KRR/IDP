@@ -26,6 +26,7 @@ std::string print(Object o) {
 	printer->startTheory();
 	printer->print(o);
 	printer->endTheory();
+	delete(printer);
 	return stream.str();
 }
 

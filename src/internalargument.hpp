@@ -100,10 +100,8 @@ template<typename T> map_init_helper<T> map_init(T& container) {
 const char* toCString(ArgType type);
 
 // TODO are these used an
-void addToGarbageCollection(SortTable* table);
-void garbageCollect(SortTable* table);
 void addToGarbageCollection(std::vector<InternalArgument>* table);
-void garbageCollect(std::vector<InternalArgument>* table);
+void garbageCollectInternalArgumentVectors();
 
 /**
  * Objects to overload sorts, predicate, and function symbols

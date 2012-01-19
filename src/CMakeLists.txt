@@ -238,3 +238,5 @@ install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/mx.idp
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
 		DESTINATION share/std)
+
+#?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} idp runidp.bat runidp.sh")

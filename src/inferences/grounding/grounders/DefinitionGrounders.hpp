@@ -46,9 +46,9 @@ private:
 	static unsigned int _currentdefnb;
 	unsigned int _defnb;
 	std::vector<RuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
-	GroundDefinition* _grounddefinition;
 public:
 	DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr, const GroundingContext& context);
+	~DefinitionGrounder();
 	void run(ConjOrDisj& formula) const;
 	unsigned int id() const {
 		return _defnb;
@@ -85,8 +85,7 @@ protected:
 
 public:
 	RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
-	virtual ~RuleGrounder() {
-	}
+	virtual ~RuleGrounder();
 	virtual void run(unsigned int defid, GroundDefinition* grounddefinition) const;
 };
 
@@ -104,6 +103,7 @@ private:
 public:
 	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
 			const std::vector<SortTable*>&);
+	~HeadGrounder();
 	Lit run() const;
 
 	const std::vector<TermGrounder*>& subtermgrounders() const {
@@ -114,20 +114,6 @@ public:
 	}
 	AbstractGroundTheory* grounding() const {
 		return _grounding;
-	}
-};
-
-class LazyRuleGrounder;
-
-class LazyDefinitionGrounder: public Grounder {
-private:
-	unsigned int _defnb;
-	std::vector<LazyRuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
-public:
-	LazyDefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<LazyRuleGrounder*> subgr, int verb);
-	bool run() const;
-	unsigned int id() const {
-		return _defnb;
 	}
 };
 

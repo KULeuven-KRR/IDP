@@ -79,6 +79,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
+// NOTE: becomes predtable owner!
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe, const Formula* original) {
 	GeneratorFactory factory;
@@ -124,6 +125,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	return GeneratorFactory::create(table, pattern, vars, universe, atom);
 }
 
+// NOTE: becomes predtable owner!
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
