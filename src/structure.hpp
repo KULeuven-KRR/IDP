@@ -110,7 +110,7 @@ public:
 		containers.push_back(this);
 	}
 
-	DomElemContainer* operator=(const DomElemContainer* container) const {
+	const DomElemContainer* operator=(const DomElemContainer* container) const {
 		if (del) {
 			delete (domelem_);
 		}
@@ -118,7 +118,7 @@ public:
 		domelem_ = container->get();
 		return this;
 	}
-	DomElemContainer* operator=(const DomElemContainer& container) const {
+	const DomElemContainer* operator=(const DomElemContainer& container) const {
 		if (del) {
 			delete (domelem_);
 		}
@@ -126,7 +126,7 @@ public:
 		domelem_ = container.get();
 		return this;
 	}
-	DomElemContainer* operator=(const DomainElement* domelem) const {
+	const DomElemContainer* operator=(const DomainElement* domelem) const {
 		if (del) {
 			delete (domelem_);
 		}
