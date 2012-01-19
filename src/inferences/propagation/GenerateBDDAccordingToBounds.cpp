@@ -161,21 +161,24 @@ void GenerateBDDAccordingToBounds::filter(AbstractStructure* structure, double m
 
 ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
-		output << "   ";
 		(it->first)->put(output);
+		pushtab();
 		output << endl << tabs();
-		output << "      vars:";
+		output << "vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
 			output << toString(*jt);
 		}
-		output << '\n';
-		output << tabs();
-		output << "      ct:" << endl << tabs();
+		output << endl << tabs();
 		pushtab();
+		output << "ct:" << endl << tabs();
 		output << toString(_ctbounds.find(it->first)->second);
-		output << "      cf:" << endl << tabs();
+		poptab();
+		output << endl << tabs() << "cf:";
+		pushtab();
+		output << endl << tabs();
 		output << toString(_cfbounds.find(it->first)->second);
+		poptab();
 		poptab();
 	}
 	return output;

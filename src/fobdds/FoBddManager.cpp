@@ -1724,10 +1724,10 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 					bestposition += -1;
 			}
 			//AT THIS POINT: the kernel is located at the bottom
-			// And bestposition is a negative number: the number of moveUps needed.
+			// And bestposition is a negative (or 0) number: the number of moveUps needed.
 
 			// move to best position
-			Assert(bestposition<0);
+			Assert(bestposition<=0);
 			//if (bestposition < 0) {
 			for (int n = 0; n > bestposition; --n)
 				moveUp(*it);
