@@ -1026,7 +1026,7 @@ const ElementTuple& UNAInternalIterator::operator*() const {
 
 void UNAInternalIterator::operator++() {
 	int pos = _curr.size() - 1;
-	for (vector<SortIterator>::reverse_iterator it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
+	for (auto it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
 		Assert(not it->isAtEnd());
 		++(*it);
 		if (not it->isAtEnd()) {
@@ -2387,12 +2387,13 @@ InternalSortIterator* UnionInternalSortTable::sortIterator(const DomainElement*)
 }
 
 const DomainElement* UnionInternalSortTable::first() const {
-	InternalSortIterator* isi = sortBegin();
+	auto isi = sortBegin();
 	if (isi->hasNext()) {
-		const DomainElement* f = *(*isi);
+		auto f = *(*isi);
 		delete (isi);
 		return f;
 	} else {
+		delete (isi);
 		return NULL;
 	}
 }
