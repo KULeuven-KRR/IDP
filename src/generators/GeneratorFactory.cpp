@@ -92,7 +92,7 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return factory.internalCreate(pt, pattern, vars, universe);
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;

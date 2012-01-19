@@ -32,7 +32,7 @@ struct BddGeneratorData {
 	std::vector<Pattern> pattern;
 	std::vector<const DomElemContainer*> vars;
 	std::vector<const FOBDDVariable*> bddvars;
-	AbstractStructure* structure;
+	const AbstractStructure* structure;
 	Universe universe;
 
 	bool check() const {
@@ -48,9 +48,9 @@ private:
 	FOBDDManager* _manager;
 
 	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			AbstractStructure*, bool, const Universe&);
+			const AbstractStructure*, bool, const Universe&);
 	InstGenerator* createFromKernel(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, AbstractStructure* structure, bool, const Universe&);
+			const std::vector<const FOBDDVariable*>&,const  AbstractStructure* structure, bool, const Universe&);
 
 	GeneratorNode* createnode(const BddGeneratorData& data);
 

@@ -1574,8 +1574,8 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 	return new UnionInternalIterator(vti, _outtables, univ);
 }
 
-BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, AbstractStructure* str)
-		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str->clone()) {
+BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const AbstractStructure* str)
+		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str) {
 }
 
 bool BDDInternalPredTable::finite(const Universe& univ) const {
@@ -3960,17 +3960,32 @@ Structure::~Structure() {
 }
 
 Structure* Structure::clone() const {
+	/*std::cerr << "CLONING";
+	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::cerr);
+		p.startTheory();
+		p.visit(this);
+		p.endTheory();
+		pushtab();*/
 	Structure* s = new Structure("", ParseInfo());
+	//std::cerr << endl << tabs() << "1";
 	s->vocabulary(_vocabulary);
+	//std::cerr << endl << tabs() << "2";
+
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
+		//std::cerr << endl << tabs() << "3";
 		s->inter(it->first)->internTable(it->second->internTable());
 	}
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
+		//std::cerr << endl << tabs() << "4";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
+		//std::cerr << endl << tabs() << "5";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
+	/*std::cerr << endl << tabs() << "6";
+	poptab();
+	std::cerr << endl << "DONE CLONING" << endl;*/
 	return s;
 }
 

@@ -966,9 +966,9 @@ private:
 	FOBDDManager* _manager;
 	const FOBDD* _bdd;
 	std::vector<Variable*> _vars;
-	AbstractStructure* _structure;
+	const AbstractStructure* _structure;
 public:
-	BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, AbstractStructure*);
+	BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, const AbstractStructure*);
 	~BDDInternalPredTable() {
 	}
 
@@ -981,7 +981,7 @@ public:
 	const std::vector<Variable*>& vars() const {
 		return _vars;
 	}
-	AbstractStructure* structure() const {
+	const AbstractStructure* structure() const {
 		return _structure;
 	}
 

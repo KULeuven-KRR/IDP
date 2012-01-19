@@ -165,16 +165,16 @@ public:
 	//TODO: Do this after some tests have been written
 	//NOTE: estimation-algorithms have not been reviewed yet
 	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			AbstractStructure*);
-	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+			const AbstractStructure*);
+	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
 	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			AbstractStructure*);
-	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+			const AbstractStructure*);
+	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
 
-	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
+	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
+	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
 			double weight_per_ans);
-	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
+	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
 			double weight_per_ans);
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
@@ -217,19 +217,19 @@ private:
 	std::set<const FOBDDVariable*> variables(const FOBDD*);
 	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*);
 	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
-	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, AbstractStructure* structure);
+	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const AbstractStructure* structure);
 
 	std::vector<Path> pathsToFalse(const FOBDD* bdd);
 	std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd);
 	std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd);
-	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, AbstractStructure*);
-	double estimatedChance(const FOBDDKernel*, AbstractStructure*);
-	double estimatedChance(const FOBDD*, AbstractStructure*);
+	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, const AbstractStructure*);
+	double estimatedChance(const FOBDDKernel*, const AbstractStructure*);
+	double estimatedChance(const FOBDD*, const AbstractStructure*);
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
 
 	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
+			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
