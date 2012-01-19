@@ -63,6 +63,9 @@ typedef std::map<Sort*, MTEDT> DomainTermTable;
 typedef std::map<std::vector<const FOBDDTerm*>, FOBDDFuncTerm*> MVAFT;
 typedef std::map<Function*, MVAFT> FuncTermTable;
 
+typedef pair<bool, const FOBDDKernel*> Choice;
+typedef vector<Choice> Path;
+
 /**
  * Class to create and manage first-order BDDs
  */
@@ -137,7 +140,7 @@ public:
 	const FOBDD* existsquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
 
-	//TODO: All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
+	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
@@ -155,15 +158,18 @@ public:
 	Formula* toFormula(const FOBDDKernel*);
 	Term* toTerm(const FOBDDTerm*);
 
+	//these calculations (nranswers, chances, ...) seem to be non-manager-specific and might be moved to the bdd and kernel itself.
+	//TODO: Do this after some tests have been written
+	//NOTE: estimation-algorithms have not been reviewed yet
 	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
 
-	void optimizequery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
-	const FOBDD* make_more_false(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
+	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*);
+	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
 			double weight_per_ans);
-	const FOBDD* make_more_true(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
+	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, AbstractStructure*,
 			double weight_per_ans);
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
@@ -208,7 +214,7 @@ private:
 	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, AbstractStructure* structure);
 
-	std::vector<std::vector<std::pair<bool, const FOBDDKernel*> > > pathsToFalse(const FOBDD* bdd);
+	std::vector<Path> pathsToFalse(const FOBDD* bdd);
 	std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd);
 	std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd);
 	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, AbstractStructure*);

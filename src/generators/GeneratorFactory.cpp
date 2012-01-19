@@ -189,7 +189,7 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 		}
 	}
 	set<const FOBDDDeBruijnIndex*> indices;
-	optimizemanager.optimizequery(data.bdd, outvars, indices, table->structure());
+	optimizemanager.optimizeQuery(data.bdd, outvars, indices, table->structure());
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);

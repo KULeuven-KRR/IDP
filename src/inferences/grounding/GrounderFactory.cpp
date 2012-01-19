@@ -719,10 +719,10 @@ const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<V
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
 	}
-	optimizemanager.optimizequery(copybdd, copyvars, indices, _structure);
+	optimizemanager.optimizeQuery(copybdd, copyvars, indices, _structure);
 
 	// 2. Remove certain leaves
-	const FOBDD* pruned = optimizemanager.make_more_true(copybdd, copyvars, indices, _structure, mcpa);
+	const FOBDD* pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, indices, _structure, mcpa);
 
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);
@@ -736,10 +736,10 @@ const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
 	const FOBDD* copybdd = optimizemanager.getBDD(bdd, manager);
 	set<const FOBDDVariable*> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
-	optimizemanager.optimizequery(copybdd, copyvars, indices, _structure);
+	optimizemanager.optimizeQuery(copybdd, copyvars, indices, _structure);
 
 	// 2. Remove certain leaves
-	const FOBDD* pruned = optimizemanager.make_more_false(copybdd, copyvars, indices, _structure, mcpa);
+	const FOBDD* pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, _structure, mcpa);
 
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);

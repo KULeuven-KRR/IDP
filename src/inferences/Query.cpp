@@ -19,7 +19,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	const FOBDD* bdd = factory.turnIntoBdd(q->query());
 
 	// optimize the query
-	manager.optimizequery(bdd, bddvars, bddindices, structure);
+	manager.optimizeQuery(bdd, bddvars, bddindices, structure);
 
 	// create a generator
 	BddGeneratorData data;

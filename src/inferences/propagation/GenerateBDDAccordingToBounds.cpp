@@ -141,10 +141,10 @@ const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vect
 	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 	}
-	optimizemanager.optimizequery(copybdd, copyvars, indices, structure);
+	optimizemanager.optimizeQuery(copybdd, copyvars, indices, structure);
 
 	// 2. Remove certain leaves
-	auto pruned = optimizemanager.make_more_false(copybdd, copyvars, indices, structure, mcpa);
+	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, structure, mcpa);
 
 	// 3. Replace result
 	return _manager->getBDD(pruned, &optimizemanager);
