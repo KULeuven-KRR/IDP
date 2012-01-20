@@ -1762,7 +1762,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 			totalBddCost = bddCost + (bddAnswers * weightPerAns);
 		}
 
-		if (isGoalbdd(goal, bdd->falsebranch())) {
+		if (isGoalbdd(not goal, bdd->falsebranch())) {
 			double branchCost = estimatedCostAll(bdd->truebranch(), vars, indices, structure);
 			double branchAnswers = estimatedNrAnswers(bdd->truebranch(), vars, indices, structure);
 			double totalBranchCost = getMaxElem<double>();
@@ -1772,7 +1772,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
 				return makeMore(goal, bdd->truebranch(), vars, indices, structure, weightPerAns);
 			}
-		} else if (isGoalbdd(goal, bdd->truebranch())) {
+		} else if (isGoalbdd(not goal, bdd->truebranch())) {
 			double branchcost = estimatedCostAll(bdd->falsebranch(), vars, indices, structure);
 			double branchans = estimatedNrAnswers(bdd->falsebranch(), vars, indices, structure);
 			double totalbranchcost = getMaxElem<double>();

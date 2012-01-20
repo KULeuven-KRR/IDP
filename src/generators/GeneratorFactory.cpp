@@ -153,17 +153,17 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 			break;
 		}
 	}
-	if (firstout == pattern.size()) { // no output variables
+	/*if (firstout == pattern.size()) { // no output variables
 		if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
 			return new LookupGenerator(pt, vars, _universe);
 		} else {
 			StructureVisitor::visit(pt);
 			return _generator;
 		}
-	} else {
+	} else {*/
 		StructureVisitor::visit(pt);
 		return _generator;
-	}
+	//}
 }
 
 void GeneratorFactory::visit(const ProcInternalPredTable*) {

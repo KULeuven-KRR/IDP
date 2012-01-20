@@ -161,6 +161,7 @@ void GenerateBDDAccordingToBounds::filter(AbstractStructure* structure, double m
 
 ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
+
 		(it->first)->put(output);
 		pushtab();
 		output << endl << tabs();
@@ -180,6 +181,7 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 		output << toString(_cfbounds.find(it->first)->second);
 		poptab();
 		poptab();
+		output << endl << tabs();
 	}
 	return output;
 }
