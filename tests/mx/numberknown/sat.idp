@@ -33,6 +33,3 @@ NegIn = { X2,C1; X3,C2; X1,C3; X3,C3 }
 procedure getExpectedNbOfModels(){
 	return 3
 }
-procedure getExpectedAModel(){
-	return true
-}

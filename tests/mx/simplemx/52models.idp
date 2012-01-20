@@ -1,0 +1,22 @@
+vocabulary V{
+	type course
+	type count isa int
+	f(course):count
+	
+	type value isa int
+	cost:value
+}
+
+theory T: V{
+	!s[count]: s=sum{c:true:f(c)} <=> cost=s.
+}
+
+structure S: V{
+	course = {A; B}
+	value = {0..10}
+	count = {0..3}
+}
+
+procedure getExpectedNbOfModels() {
+  return 52
+}

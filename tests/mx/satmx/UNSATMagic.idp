@@ -8,32 +8,26 @@ procedure getExpectedAModel(){
 *************************************************************************************/
 
 vocabulary V{
-type Num isa int
-Max : Num
-
- 
-El(Num) : Num
-Occ(Num,Num)
-
- 
-HOcc(Num,Num,Num)
-
+	type Num isa int
+	Max : Num
+	
+	El(Num) : Num
+	Occ(Num,Num)
+	HOcc(Num,Num,Num)
 }
 
 theory T : V { 
-{ Occ(x,y) <- HOcc(x,y,Max). }
+	{ Occ(x,y) <- HOcc(x,y,Max). }
 
-{ HOcc(x,1,0) <- El(0) = x.
-  HOcc(x,0,0) <- ~(El(0) = x).
-  HOcc(x,y,n) <- HOcc(x,y-1,n-1) & El(n) = x.
-  HOcc(x,y,n) <- HOcc(x,y,n-1) & ~(El(n) = x). }
+	{ HOcc(x,1,0) <- El(0) = x.
+	  HOcc(x,0,0) <- ~(El(0) = x).
+	  HOcc(x,y,n) <- HOcc(x,y-1,n-1) & El(n) = x.
+	  HOcc(x,y,n) <- HOcc(x,y,n-1) & ~(El(n) = x). }
 
-! x y : El(x) = y => Occ(x,y).
-
-
+	! x y : El(x) = y => Occ(x,y).
 }
 
 structure S : V{ 
-Num = {0..5}
-Max = 5
+	Num = {0..5}
+	Max = 5
 }

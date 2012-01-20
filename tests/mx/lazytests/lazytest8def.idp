@@ -1,0 +1,41 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q(x)
+	r(x)
+	s(x)
+}
+
+theory T: V{
+	?x: p(x).
+	{
+		p(x) <- q(x) | r(x).
+		q(x) <- q(x+1) | s(x).
+		s(x) <- q(x).
+	}
+}
+
+structure S: V {
+	x = {1..5}
+}
+
+#include <mx>
+
+procedure getonesol(){
+	stdoptions.groundlazily=true
+	stdoptions.satverbosity=4
+	stdoptions.randomvaluechoice = true
+	return mx::one(T, S)
+}
+
+procedure main(){
+	Sol = getonesol()
+	mx::printtuples("p<ct>", Sol[V::p].ct)
+	mx::printtuples("p<cf>", Sol[V::p].cf)
+	mx::printtuples("q<ct>", Sol[V::q].ct)
+	mx::printtuples("q<cf>", Sol[V::q].cf)
+	mx::printtuples("r<ct>", Sol[V::r].ct)
+	mx::printtuples("r<cf>", Sol[V::r].cf)
+	mx::printtuples("s<ct>", Sol[V::s].ct)
+	mx::printtuples("s<cf>", Sol[V::s].cf)
+}

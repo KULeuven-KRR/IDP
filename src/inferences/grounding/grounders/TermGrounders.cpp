@@ -69,6 +69,9 @@ GroundTerm DomTermGrounder::run() const {
 }
 
 GroundTerm VarTermGrounder::run() const {
+	if (_verbosity > 2) {
+		clog <<"value="<<toString(_value->get());
+	}
 	return GroundTerm(_value->get());
 }
 

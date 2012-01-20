@@ -55,9 +55,7 @@ void LazyQuantGrounder::groundMore() const {
 		ResidualAndFreeInst* instance = queuedtseitinstoground.front();
 		queuedtseitinstoground.pop();
 
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
+		CHECKTERMINATION
 
 		vector<const DomainElement*> originstantiation;
 		overwriteVars(originstantiation, instance->freevarinst);
