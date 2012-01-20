@@ -66,10 +66,10 @@ Required software packages:
   \item (optional) Gecode for constraint programming support.
 \end{itemize}
 
-Assume idp is unpacked in $sourcedir$, you want to build in $builddir$ (cannot be the same as $sourcedir$) and install in $installdir$. Building and installing is then achieved by executing the following commands:
+Assume idp is unpacked in $idpdir$, you want to build in $builddir$ (cannot be the same as $idpdir$) and install in $installdir$. Building and installing is then achieved by executing the following commands:
 \begin{lstlisting}
 cd <builddir>
-cmake <sourcedir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
+cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
 make -j 4
 make check
 make install
