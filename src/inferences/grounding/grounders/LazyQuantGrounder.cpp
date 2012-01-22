@@ -60,20 +60,35 @@ void LazyQuantGrounder::groundMore() const {
 		vector<const DomainElement*> originstantiation;
 		overwriteVars(originstantiation, instance->freevarinst);
 
-		ConjOrDisj formula;
-		formula.setType(conn_);
-		runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula);
+		Lit groundedlit = _false;
+		while(groundedlit == _false && not instance->generator->isAtEnd()){
+			ConjOrDisj formula;
+			formula = ConjOrDisj();
+			formula.setType(conn_);
+
+			runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula);
+			groundedlit = getReification(formula);
+			instance->generator->operator ++();
+		}
 
 		restoreOrigVars(originstantiation, instance->freevarinst);
 
-		Lit groundedlit = getReification(formula);
+		Lit oldtseitin = instance->residual;
+
+		if(groundedlit==_true){
+			GroundClause c = {oldtseitin};
+			groundtheory_->add(c);
+			continue; // Formula is true, so do not need to continue grounding
+		}else if(groundedlit == _false && instance->generator->isAtEnd()){
+			GroundClause c = { -oldtseitin };
+			groundtheory_->add(c);
+			continue; // Formula is false, so do not need to continue grounding
+		}
 
 		GroundClause clause;
 		clause.push_back(groundedlit);
 
-		Lit oldtseitin = instance->residual;
 		// TODO notify lazy should check whether the tseitin already has a value and request more grounding immediately!
-		instance->generator->operator ++();
 		if (not instance->generator->isAtEnd()) {
 			Lit newresidual = translator()->createNewUninterpretedNumber();
 			clause.push_back(newresidual);
