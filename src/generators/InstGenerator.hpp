@@ -44,29 +44,39 @@ protected:
 	//	No assumption is made about calling reset on its own.
 	//	Next will never be called when already at end.
 	virtual void next() = 0;
-	virtual void reset() = 0;
+	virtual void reset() = 0; // FIXME can probably make this static and drop all lower resets to this one
 
 public:
 	virtual ~InstGenerator() {
 	}
 
-	virtual bool check() { // TODO probably do not need to be virtual any longer
+	virtual bool check() {
 		begin();
 		return not isAtEnd();
 	}
 
 	// Can also be used for resets
 	// SETS the instance to the FIRST value if it exists
-	void begin();
+	inline void begin(){
+		end = false;
+		reset();
+		if (not isAtEnd()) {
+			next();
+		}
+	}
 
 	/**
 	 * Returns true if the last element has already been set as an instance
 	 */
-	bool isAtEnd() const {
+	inline bool isAtEnd() const {
 		return end;
 	}
 
-	void operator++();
+	inline void operator++(){
+		//CHECKTERMINATION
+		Assert(not isAtEnd());
+		next();
+	}
 
 	virtual InstGenerator* clone() const = 0;
 };

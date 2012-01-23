@@ -12,6 +12,8 @@
 #define TERMGROUNDERS_HPP_
 
 #include "common.hpp"
+#include "ecnf.hpp"
+#include "structure.hpp"
 
 class AbstractGroundTheory;
 class SortTable;
@@ -68,7 +70,9 @@ public:
 	VarTermGrounder(const DomElemContainer* a)
 			: _value(a) {
 	}
-	GroundTerm run() const;
+	inline GroundTerm run() const{
+		return GroundTerm(_value->get());
+	}
 
 	const DomElemContainer* getElement() const {
 		return _value;

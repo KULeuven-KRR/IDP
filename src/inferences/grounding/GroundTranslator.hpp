@@ -11,17 +11,9 @@
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
 
-// TODO all code should be reformatted to only use int domainelements. Only in that case can we use a more efficient ground translator for finite sorts (as
-// we then can constant time derive an index from a domainelement.
-// In the background, there should be a transformation possible from int domainelements to the original ones, given their sort.
-// But this then leads to problems concerning calling lua code etc?
-
 #include "inferences/grounding/Utils.hpp"
 #include "ecnf.hpp"
 #include "structure.hpp"
-
-#include <unordered_map>
-#include <bits/functional_hash.h>
 
 class LazyRuleGrounder;
 class TsSet;
@@ -31,59 +23,30 @@ class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
 
+typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
+typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
+
+struct SymbolAndAtomMap {
+	PFSymbol* symbol;
+	Tuple2AtomMap tuple2atom;
+
+	SymbolAndAtomMap(PFSymbol* symbol)
+			: symbol(symbol) {
+	}
+};
+
 enum class AtomType {
-	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN, UNASSIGNED
+	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN
 };
 
 struct SymbolAndTuple {
 	PFSymbol* symbol;
 	ElementTuple tuple;
 
-	SymbolAndTuple()
-			: symbol(NULL) {
+	SymbolAndTuple() {
 	}
 	SymbolAndTuple(PFSymbol* symbol, const ElementTuple& tuple)
 			: symbol(symbol), tuple(tuple) {
-	}
-};
-
-struct HashTuple {
-	size_t operator()(const ElementTuple& tuple) const {
-		size_t seed = 1;
-		for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
-			switch ((*i)->type()) {
-			case DomainElementType::DET_INT:
-				seed += (*i)->value()._int;
-				break;
-			case DomainElementType::DET_DOUBLE:
-				seed += (*i)->value()._double;
-				break;
-			case DomainElementType::DET_STRING:
-				seed += reinterpret_cast<size_t>((*i)->value()._string);
-				break;
-			case DomainElementType::DET_COMPOUND:
-				seed += reinterpret_cast<size_t>((*i)->value()._compound);
-				break;
-			}
-		}
-		return seed;
-	}
-};
-
-typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
-
-struct SymbolAndAtomMap {
-	PFSymbol* symbol;
-	bool finite;
-	int startnumber;
-	std::vector<int> multsizes;
-	Tuple2AtomMap tuple2atom;
-
-	SymbolAndAtomMap(PFSymbol* symbol)
-			: symbol(symbol), finite(false) {
-	}
-	SymbolAndAtomMap(PFSymbol* symbol, int startnumber, std::vector<int> sizes)
-			: symbol(symbol), finite(true), startnumber(startnumber), multsizes(sizes) {
 	}
 };
 
@@ -96,106 +59,70 @@ struct SymbolAndAtomMap {
 
 class GroundTranslator {
 private:
-	const AbstractStructure* structure;
-public:
-	GroundTranslator(const AbstractStructure* structure);
-	~GroundTranslator();
+	std::vector<SymbolAndAtomMap> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
 
-	// Tuple management
-private:
-	int nextnumber;
+	std::vector<AtomType> atomtype;
+	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
+	std::vector<tspair> atom2TsBody; // Pointers manager by the translator!
 
-	// Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
-	std::vector<SymbolAndAtomMap> symbolswithmapping;
-
-	std::vector<AtomType> atomtype; // For each atomnumber, stores what type it is.
-
-	std::vector<SymbolAndTuple*> atom2Tuple; // Used for mapping back from atomnumbers, by INDEX! Pointers managed by the translator!
-
-	Lit nextNumber(AtomType type);
-
-	bool isManagingSymbol(unsigned int n) const {
-		return symbolswithmapping.size() > n;
-	}
-public:
-	Lit translate(unsigned int, const ElementTuple&);
-	Lit translate(PFSymbol*, const ElementTuple&);
-
-	bool isStored(Lit atomnumber) const {
-		return atomnumber > 0 && atomtype.size() > (unsigned int) atomnumber && atomtype[atomnumber]!=AtomType::UNASSIGNED;
-	}
-	AtomType getType(Lit atomnumber) const {
-		Assert(atomtype.size()>atomnumber);
-		return atomtype[atomnumber];
-	}
-	bool isInputAtom(Lit atomnumber) const {
-		return isStored(atomnumber) && getType(atomnumber) == AtomType::INPUT;
-	}
-
-	// Symbols
-	unsigned int getSymbol(PFSymbol* pfs) const {
-		for (unsigned int n = 0; n < symbolswithmapping.size(); ++n) {
-			if (symbolswithmapping[n].symbol == pfs) {
-				return n;
-			}
-		}
-	}
-	unsigned int addSymbol(PFSymbol* pfs);
-	unsigned int nbManagedSymbols() const {
-		return symbolswithmapping.size();
-	}
-	PFSymbol* getManagedSymbol(unsigned int symbolnumber) const {
-		Assert(isManagingSymbol(symbolnumber));
-		return symbolswithmapping[symbolnumber].symbol;
-	}
-	const Tuple2AtomMap& getTuples(unsigned int symbolnumber) const {
-		Assert(isManagingSymbol(symbolnumber));
-		return symbolswithmapping[symbolnumber].tuple2atom;
-	}
-
-	// Backtranslation
-	PFSymbol* getSymbol(Lit atomnumber) const {
-		Assert(isInputAtom(atomnumber) && atom2Tuple[atomnumber]->symbol!=NULL);
-		return atom2Tuple[atomnumber]->symbol;
-	}
-	const ElementTuple& getArgs(Lit atomnumber) const {
-		Assert(isInputAtom(atomnumber) && atom2Tuple[atomnumber]->symbol!=NULL);
-		return atom2Tuple[atomnumber]->tuple;
-	}
-
-	// Tseitin management
-private:
-	std::vector<TsBody*> atom2TsBody; // Pointers managed by the translator!
 	std::map<unsigned int, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
 
+	std::queue<int> _freenumbers; // keeps atom numbers that were freed and can be used again
+	std::queue<int> _freesetnumbers; // keeps set numbers that were freed and can be used again
+
+	// TODO pointer
+	std::vector<TsSet> _sets; // keeps mapping between Set numbers and sets
+
 	Lit addTseitinBody(TsBody* body);
+	Lit nextNumber(AtomType type);
+
 public:
+	GroundTranslator();
+	~GroundTranslator();
+
+	Lit translate(unsigned int, const ElementTuple&);
 	Lit translate(const std::vector<int>& cl, bool conj, TsType tp);
 	Lit translate(const Lit& head, const std::vector<Lit>& clause, bool conj, TsType tstype);
 	Lit translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype);
+	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
+	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 	void translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
 	void notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
+
+	unsigned int addSymbol(PFSymbol* pfs);
+
+	bool isStored(Lit atom) const {
+		return atom > 0 && atomtype.size() > (unsigned int) atom;
+	}
+	AtomType getType(Lit atom) const {
+		return atomtype[atom];
+	}
+
+	bool isInputAtom(int atom) const {
+		return isStored(atom) && getType(atom) == AtomType::INPUT;
+	}
+	PFSymbol* getSymbol(int atom) const {
+		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
+		return atom2Tuple[atom]->symbol;
+	}
+	const ElementTuple& getArgs(int atom) const {
+		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
+		return atom2Tuple[atom]->tuple;
+	}
 
 	bool isTseitinWithSubformula(int atom) const {
 		return isStored(atom) && getType(atom) == AtomType::TSEITINWITHSUBFORMULA;
 	}
 	TsBody* getTsBody(int atom) const {
 		Assert(isTseitinWithSubformula(atom));
-		return atom2TsBody[atom];
+		return atom2TsBody[atom].second;
 	}
 
 	int createNewUninterpretedNumber() {
 		return nextNumber(AtomType::LONETSEITIN);
 	}
-
-	// Set management
-private:
-	// TODO pointer
-	std::vector<TsSet> _sets; // keeps mapping between Set numbers and sets
-public:
-	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 
 	bool isSet(int setID) const {
 		return _sets.size() > (unsigned int) setID;
@@ -207,7 +134,20 @@ public:
 		return _sets[setID];
 	}
 
-	// Printing
+	bool isManagingSymbol(unsigned int n) const {
+		return symbols.size() > n;
+	}
+	unsigned int nbManagedSymbols() const {
+		return symbols.size();
+	}
+	PFSymbol* getManagedSymbol(unsigned int n) const {
+		Assert(isManagingSymbol(n));
+		return symbols[n].symbol;
+	}
+	const Tuple2AtomMap& getTuples(unsigned int n) const {
+		Assert(isManagingSymbol(n));
+		return symbols[n].tuple2atom;
+	}
 
 	std::string printLit(const Lit& atom) const;
 };

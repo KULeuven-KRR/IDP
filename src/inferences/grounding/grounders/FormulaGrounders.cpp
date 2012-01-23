@@ -84,7 +84,9 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
-			_checkargs(checkargs), _inter(inter) {
+			_checkargs(checkargs), _inter(inter),
+			groundsubterms(_subtermgrounders.size()),
+			args(_subtermgrounders.size()){
 	gentype = ct.gentype;
 }
 
@@ -104,8 +106,6 @@ Lit AtomGrounder::run() const {
 
 	// Run subterm grounders
 	bool alldomelts = true;
-	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
-	ElementTuple args(_subtermgrounders.size());
 
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();

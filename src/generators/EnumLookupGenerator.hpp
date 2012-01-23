@@ -26,9 +26,10 @@ private:
 	std::vector<std::vector<const DomainElement*> >::const_iterator _iter;
 	std::vector<const DomElemContainer*> _invars, _outvars;
 	bool _reset;
+	mutable std::vector<const DomainElement*> _currargs;
 public:
 	EnumLookupGenerator(const LookupTable& t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out)
-			: _table(t), _invars(in), _outvars(out), _reset(true) {
+			: _table(t), _invars(in), _outvars(out), _reset(true), _currargs(_invars.size()) {
 #ifdef DEBUG
 		for(auto i=_table.cbegin(); i!=_table.cend(); ++i) {
 			for(auto j=(*i).second.cbegin(); j<(*i).second.cend(); ++j) {
@@ -56,9 +57,8 @@ public:
 	void next() {
 		if (_reset) {
 			_reset = false;
-			std::vector<const DomainElement*> _currargs;
-			for (auto i = _invars.cbegin(); i < _invars.cend(); ++i) {
-				_currargs.push_back((*i)->get());
+			for (uint i=0; i < _invars.size(); ++i) {
+				_currargs[i]=_invars[i]->get();
 			}
 			_currpos = _table.find(_currargs);
 			if (_currpos == _table.cend() || _currpos->second.size() == 0) {
