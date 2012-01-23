@@ -80,10 +80,16 @@ private:
 	DomainElement(const Compound* value);
 
 public:
-	~DomainElement(); //!< Destructor (does not delete the value of the domain element)
+	~DomainElement(){
 
-	DomainElementType type() const; //!< Returns the type of the element
-	DomainElementValue value() const; //!< Returns the value of the element
+	}
+
+	inline const DomainElementType& type() const{
+		return _type;
+	}
+	inline const DomainElementValue& value() const{
+		return _value;
+	}
 
 	std::ostream& put(std::ostream&) const;
 
@@ -135,7 +141,7 @@ public:
 		return this;
 	}
 
-	const DomainElement* get() const {
+	inline const DomainElement* get() const {
 		Assert(domelem_!=NULL);
 		return domelem_;
 	}

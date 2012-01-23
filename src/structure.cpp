@@ -82,17 +82,6 @@ DomainElement::DomainElement(const Compound* value)
 	_value._compound = value;
 }
 
-DomainElement::~DomainElement() {
-}
-
-DomainElementType DomainElement::type() const {
-	return _type;
-}
-
-DomainElementValue DomainElement::value() const {
-	return _value;
-}
-
 ostream& DomainElement::put(ostream& output) const {
 	switch (_type) {
 	case DET_INT:
@@ -2184,7 +2173,8 @@ const DomainElement* IntRangeInternalSortTable::last() const {
 
 bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
 	if (d->type() == DET_INT) {
-		return (_first <= d->value()._int && d->value()._int <= _last);
+		const auto& val = d->value()._int;
+		return (_first <= val && val <= _last);
 	} else {
 		return false;
 	}

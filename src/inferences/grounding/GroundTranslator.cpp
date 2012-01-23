@@ -17,10 +17,8 @@
 
 using namespace std;
 
-GroundTranslator::GroundTranslator()
-		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
-	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(std::pair<Lit, TsBody*> { 0, (TsBody*) NULL });
+GroundTranslator::GroundTranslator(const AbstractStructure* structure)
+		: structure(structure), nextnumber(1), _sets(1) {
 }
 
 GroundTranslator::~GroundTranslator() {
@@ -31,19 +29,26 @@ GroundTranslator::~GroundTranslator() {
 	}
 	atom2Tuple.clear();
 	for (auto i = atom2TsBody.cbegin(); i < atom2TsBody.cend(); ++i) {
-		delete ((*i).second);
+		if (*i != NULL) {
+			delete (*i);
+		}
 	}
 }
 
 Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	Lit lit = 0;
-	auto jt = symbols[n].tuple2atom.lower_bound(args);
-	if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
+	// TODO can we save the largest tuple seen till now? NOTE: would only help for creation, not retrieval!
+	auto& symbolmap = symbolswithmapping[n];
+	if(symbolmap.finite){
+		Assert(false);
+	}
+	const auto jt = symbolmap.tuple2atom.lower_bound(args);
+	if (jt != symbolmap.tuple2atom.cend() && jt->first == args) { // second part is again a arity time check
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
-		symbols[n].tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
+		symbolmap.tuple2atom.insert(jt, { args, lit });
+		atom2Tuple[lit] = new SymbolAndTuple(symbolmap.symbol, args);
 
 		// FIXME expensive operation to do so often!
 		auto rulesit = symbol2rulegrounder.find(n);
@@ -67,7 +72,7 @@ Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tst
 
 Lit GroundTranslator::translate(const Lit& head, const vector<Lit>& clause, bool conj, TsType tstype) {
 	PCTsBody* tsbody = new PCTsBody(tstype, clause, conj);
-	atom2TsBody[head] = tspair(head, tsbody);
+	atom2TsBody[head] = tsbody;
 	return head;
 }
 
@@ -82,7 +87,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	 }*/
 
 	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	atom2TsBody[nr] = tspair(nr, tsbody);
+	atom2TsBody[nr] = tsbody;
 	return nr;
 }
 
@@ -101,7 +106,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, instance, tstype);
-	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
+	atom2TsBody[instance->residual] = tsbody;
 }
 
 Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype) {
@@ -118,7 +123,7 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 	} else {
 		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LEQ || comp == CompType::GT), aggtype, setnr);
-		atom2TsBody[head] = tspair(head, tsbody);
+		atom2TsBody[head] = tsbody;
 		return (comp == CompType::LT || comp == CompType::GT) ? -head : head;
 	}
 }
@@ -134,60 +139,61 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	 }
 	 else {*/
 	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	atom2TsBody[nr] = tspair(nr, tsbody);
+	atom2TsBody[nr] = tsbody;
 	return nr;
 	//}
 }
 
 int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
 	int setnr;
-	if (_freesetnumbers.empty()) {
-		TsSet newset;
-		setnr = _sets.size();
-		_sets.push_back(newset);
-		TsSet& tsset = _sets.back();
-
-		tsset._setlits = lits;
-		tsset._litweights = weights;
-		tsset._trueweights = trueweights;
-	} else {
-		setnr = _freesetnumbers.front();
-		_freesetnumbers.pop();
-		TsSet& tsset = _sets[setnr];
-
-		tsset._setlits = lits;
-		tsset._litweights = weights;
-		tsset._trueweights = trueweights;
-	}
+	TsSet newset;
+	setnr = _sets.size();
+	_sets.push_back(newset);
+	TsSet& tsset = _sets.back();
+	tsset._setlits = lits;
+	tsset._litweights = weights;
+	tsset._trueweights = trueweights;
 	return setnr;
 }
 
 Lit GroundTranslator::nextNumber(AtomType type) {
-	if (_freenumbers.empty()) {
-		Lit atom = atomtype.size();
-		atom2TsBody.push_back(tspair { atom, (TsBody*) NULL });
-		atom2Tuple.push_back(NULL);
-		atomtype.push_back(type);
-		return atom;
-	} else {
-		int nr = _freenumbers.front();
-		_freenumbers.pop();
-		return nr;
-	}
+	Lit atom = nextnumber++;
+	atom2TsBody.resize(atom, NULL);
+	atom2Tuple.resize(atom, NULL);
+	atomtype.resize(atom, AtomType::UNASSIGNED);
+	atomtype[atom] = type;
+	return atom;
 }
 
 unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for (unsigned int n = 0; n < symbols.size(); ++n) {
-		if (symbols[n].symbol == pfs) {
+	for (unsigned int n = 0; n < symbolswithmapping.size(); ++n) {
+		if (symbolswithmapping[n].symbol == pfs) {
 			return n;
 		}
 	}
-	symbols.push_back(SymbolAndAtomMap(pfs));
-	return symbols.size() - 1;
+	auto universe = structure->universe(pfs);
+	if(universe.finite() && false){ // Cannot work unless we can transform any domainelement to an index into its sort
+		vector<int> sizes;
+		for(auto i=universe.tables().cbegin(); i<universe.tables().cend(); ++i){
+			sizes.push_back((*i)->size()._size * (sizes.size()>0?sizes.back():1));
+		}
+		int size = universe.size()._size;
+		Assert(size==sizes.back());
+		atom2Tuple.resize(nextnumber+size, NULL);
+		atomtype.resize(nextnumber+size, AtomType::UNASSIGNED);
+		symbolswithmapping.push_back(SymbolAndAtomMap(pfs, nextnumber, sizes));
+		nextnumber += size;
+	}else{
+		symbolswithmapping.push_back(SymbolAndAtomMap(pfs));
+	}
+
+	return symbolswithmapping.size() - 1;
 }
 
 string GroundTranslator::printLit(const Lit& lit) const {
-	stringstream s;
+	if(not isStored(lit)){
+		return "non-existing literal";
+	}
 	int nr = lit;
 	if (nr == _true) {
 		return "true";
@@ -195,6 +201,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 	if (nr == _false) {
 		return "false";
 	}
+	stringstream s;
 	if (nr < 0) {
 		s << "~";
 		nr = -nr;
@@ -227,6 +234,8 @@ string GroundTranslator::printLit(const Lit& lit) const {
 		break;
 	case AtomType::LONETSEITIN:
 		s << "tseitin_" << nr;
+		break;
+	case AtomType::UNASSIGNED: // NOTE: will not occur
 		break;
 	}
 	return s.str();

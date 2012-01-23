@@ -19,20 +19,23 @@ protected:
 		atEnd = true;
 	}
 
-	virtual void reset()= 0;
+	bool _reset;
+	inline void reset() {
+		_reset = true;
+	}
 
 public:
 	GeneratorNode()
-			: atEnd(false) {
+			: atEnd(false), _reset(true) {
 	}
 	virtual ~GeneratorNode() {
 	}
 
-	bool isAtEnd() const {
+	inline bool isAtEnd() const {
 		return atEnd;
 	}
 	virtual void next() = 0;
-	void begin() {
+	inline void begin() {
 		atEnd = false;
 		reset();
 		if (not isAtEnd()) {
@@ -46,10 +49,9 @@ public:
 class LeafGeneratorNode: public GeneratorNode {
 private:
 	InstGenerator* _generator;
-	bool _reset;
 public:
 	LeafGeneratorNode(InstGenerator* gt)
-			: GeneratorNode(), _generator(gt), _reset(true) {
+			: GeneratorNode(), _generator(gt) {
 	}
 
 	~LeafGeneratorNode(){
@@ -67,9 +69,6 @@ public:
 			notifyAtEnd();
 		}
 	}
-	virtual void reset() {
-		_reset = true;
-	}
 
 	virtual void put(std::ostream& stream) {
 		stream << "generate " << toString(_generator);
@@ -81,11 +80,9 @@ private:
 	InstGenerator* _generator;
 	GeneratorNode* _child;
 
-	bool _reset;
-
 public:
 	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
-			: _generator(gt), _child(c), _reset(true) {
+			: _generator(gt), _child(c) {
 	}
 
 	~OneChildGeneratorNode(){
@@ -118,10 +115,6 @@ public:
 		}
 	}
 
-	virtual void reset() {
-		_reset = true;
-	}
-
 	virtual void put(std::ostream& stream) {
 		stream << "generate: " << toString(_generator) << "\n";
 		stream << tabs() << "then ";
@@ -136,11 +129,10 @@ private:
 	InstChecker* _checker;
 	InstGenerator* _generator;
 	GeneratorNode *_falsecheckbranch, *_truecheckbranch;
-	bool _reset;
 
 public:
 	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch)
-			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
+			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch) {
 	}
 
 	~TwoChildGeneratorNode(){
@@ -194,10 +186,6 @@ public:
 		if (_generator->isAtEnd()) {
 			notifyAtEnd();
 		}
-	}
-
-	virtual void reset() {
-		_reset = true;
 	}
 
 	virtual void put(std::ostream& stream) {
