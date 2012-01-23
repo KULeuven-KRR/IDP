@@ -14,6 +14,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 
 #include "common.hpp"
+#include "ecnf.hpp"
 
 class TermGrounder;
 class InstChecker;
@@ -65,6 +66,9 @@ protected:
 	GenType gentype;
 	std::vector<const DomElemContainer*> _checkargs; // The variables representing the subterms of the atom. These are used in the generators and checkers
 	PredInter* _inter;
+
+	mutable std::vector<GroundTerm> groundsubterms;
+	mutable ElementTuple args;
 
 	Lit run() const;
 
