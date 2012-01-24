@@ -50,7 +50,7 @@ class DomainElementFactory;
  *	- DET_COMPOUND: a function applied to domain elements
  */
 enum DomainElementType {
-	DET_INT, DET_DOUBLE, DET_STRING, DET_COMPOUND
+	DET_INT=0, DET_DOUBLE=1, DET_STRING=3, DET_COMPOUND=4
 };
 
 std::ostream& operator<<(std::ostream&, const DomainElementType&);
@@ -63,6 +63,11 @@ union DomainElementValue {
 	double _double; //!< Value if the domain element is a floating point number
 	const std::string* _string; //!< Value if the domain element is a string
 	const Compound* _compound; //!< Value if the domain element is a function applied to domain elements
+
+	DomainElementValue(int i): _int(i){}
+	DomainElementValue(double i): _double(i){}
+	DomainElementValue(const std::string* i): _string(i){}
+	DomainElementValue(const Compound* i): _compound(i){}
 };
 
 /**
@@ -70,8 +75,8 @@ union DomainElementValue {
  */
 class DomainElement {
 private:
-	DomainElementType _type; //!< The type of the domain element
-	DomainElementValue _value; //!< The value of the domain element
+	const DomainElementType _type; //!< The type of the domain element
+	const DomainElementValue _value; //!< The value of the domain element
 
 	DomainElement();
 	DomainElement(int value);
@@ -80,9 +85,7 @@ private:
 	DomainElement(const Compound* value);
 
 public:
-	~DomainElement(){
-
-	}
+	~DomainElement(){}
 
 	inline const DomainElementType& type() const{
 		return _type;
@@ -161,16 +164,26 @@ public:
 	}
 };
 
-/*bool operator==(const DomElemContainer& left, const DomElemContainer& right);
- bool operator<(const DomElemContainer& left, const DomElemContainer& right);
- bool operator>(const DomElemContainer& left, const DomElemContainer& right);*/
-
 bool operator<(const DomainElement&, const DomainElement&);
-bool operator>(const DomainElement&, const DomainElement&);
-bool operator==(const DomainElement&, const DomainElement&);
-bool operator!=(const DomainElement&, const DomainElement&);
-bool operator<=(const DomainElement&, const DomainElement&);
-bool operator>=(const DomainElement&, const DomainElement&);
+inline bool operator>(const DomainElement& d1, const DomainElement& d2) {
+	return d2 < d1;
+}
+
+inline bool operator==(const DomainElement& d1, const DomainElement& d2) {
+	return &d1 == &d2; // FIXME: underapproximation of what is equal: just comparing pointers to get it fast, but NOT exact!
+}
+
+inline bool operator!=(const DomainElement& d1, const DomainElement& d2) {
+	return not (d1==d2);
+}
+
+inline bool operator<=(const DomainElement& d1, const DomainElement& d2) {
+	return d1 == d2 || d1 < d2;
+}
+
+inline bool operator>=(const DomainElement& d1, const DomainElement& d2) {
+	return d1==d2 || d1 > d2;
+}
 
 std::ostream& operator<<(std::ostream&, const DomainElement&);
 

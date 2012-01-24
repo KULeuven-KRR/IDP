@@ -43,43 +43,37 @@ ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 }
 
 DomainElement::DomainElement()
-		: _type(DET_INT) {
-	_value._int = 0;
+		: _type(DET_INT), _value(1) {
 }
 
 /**
  *	Constructor for domain elements that are integers
  */
 DomainElement::DomainElement(int value)
-		: _type(DET_INT) {
-	_value._int = value;
+		: _type(DET_INT), _value(value) {
 }
 
 /**
  *	Constructor for domain elements that are floating point numbers but not integers
  */
 DomainElement::DomainElement(double value)
-		: _type(DET_DOUBLE) {
-	Assert(not isInt(value));
-	// TODO check rest of code
-	_value._double = value;
+		: _type(DET_DOUBLE), _value(value) {
+	Assert(not isInt(value)); // TODO check rest of code for such errors
 }
 
 /**
  *	Constructor for domain elements that are strings but not floating point numbers
  */
 DomainElement::DomainElement(const string* value)
-		: _type(DET_STRING) {
+		: _type(DET_STRING), _value(value) {
 	Assert(not isDouble(*value));
-	_value._string = value;
 }
 
 /**
  *	Constructor for domain elements that are compounds
  */
 DomainElement::DomainElement(const Compound* value)
-		: _type(DET_COMPOUND) {
-	_value._compound = value;
+		: _type(DET_COMPOUND), _value(value) {
 }
 
 ostream& DomainElement::put(ostream& output) const {
@@ -125,17 +119,10 @@ ostream& operator<<(ostream& output, const ElementTuple& tuple) {
 	return output;
 }
 
-/*bool operator==(const DomElemContainer& left, const DomElemContainer& right){
- return left.get()==right.get();
- }
- bool operator<(const DomElemContainer& left, const DomElemContainer& right){
- return left.get()<right.get();
- }
- bool operator>(const DomElemContainer& left, const DomElemContainer& right){
- return left.get()>right.get();
- }*/
-
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
+	if(d1.type()==DET_INT && d2.type()==DET_INT){
+		return d1.value()._int < d2.value()._int; // NOTE: Try speedup of most occurring comparison
+	}
 	switch (d1.type()) {
 	case DET_INT:
 		switch (d2.type()) {
@@ -182,34 +169,6 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 		break;
 	}
 	return false;
-}
-
-bool operator>(const DomainElement& d1, const DomainElement& d2) {
-	return d2 < d1;
-}
-
-bool operator==(const DomainElement& d1, const DomainElement& d2) {
-	return &d1 == &d2;
-}
-
-bool operator!=(const DomainElement& d1, const DomainElement& d2) {
-	return &d1 != &d2;
-}
-
-bool operator<=(const DomainElement& d1, const DomainElement& d2) {
-	if (d1 == d2) {
-		return true;
-	} else {
-		return d1 < d2;
-	}
-}
-
-bool operator>=(const DomainElement& d1, const DomainElement& d2) {
-	if (d1 == d2) {
-		return true;
-	} else {
-		return d1 > d2;
-	}
 }
 
 // FIXME DUPLICATION!
@@ -2171,13 +2130,9 @@ const DomainElement* IntRangeInternalSortTable::last() const {
 	return createDomElem(_last);
 }
 
-bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
-	if (d->type() == DET_INT) {
-		const auto& val = d->value()._int;
-		return (_first <= val && val <= _last);
-	} else {
-		return false;
-	}
+inline bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
+	const auto& val = d->value()._int;
+	return d->type() == DET_INT && _first <= val && val <= _last;
 }
 
 InternalSortIterator* IntRangeInternalSortTable::sortBegin() const {

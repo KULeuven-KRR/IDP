@@ -17,6 +17,27 @@
 
 using namespace std;
 
+inline size_t HashTuple::operator()(const ElementTuple& tuple) const {
+	size_t seed = 1;
+	for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
+		switch ((*i)->type()) {
+		case DomainElementType::DET_INT:
+			seed += (*i)->value()._int;
+			break;
+		case DomainElementType::DET_DOUBLE:
+			seed += (*i)->value()._double;
+			break;
+		case DomainElementType::DET_STRING:
+			seed += reinterpret_cast<size_t>((*i)->value()._string);
+			break;
+		case DomainElementType::DET_COMPOUND:
+			seed += reinterpret_cast<size_t>((*i)->value()._compound);
+			break;
+		}
+	}
+	return seed % 104729;
+}
+
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
@@ -37,8 +58,10 @@ GroundTranslator::~GroundTranslator() {
 
 Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	Lit lit = 0;
-	auto jt = symbols[n].tuple2atom.lower_bound(args);
-	if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
+	//auto jt = symbols[n].tuple2atom.lower_bound(args);
+	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
+	auto jt = symbols[n].tuple2atom.find(args);
+	if (jt != symbols[n].tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
