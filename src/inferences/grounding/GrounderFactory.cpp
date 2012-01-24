@@ -64,8 +64,8 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
-		_structure(structure), _symstructure(symstructure) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
+		: _structure(structure), _symstructure(symstructure) {
 
 	Assert(_symstructure!=NULL);
 
@@ -154,6 +154,7 @@ void GrounderFactory::AggContext() {
  */
 void GrounderFactory::SaveContext() {
 	_contextstack.push(_context);
+	_context._mappedvars.clear();
 }
 
 /**
@@ -419,8 +420,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
-		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this!
+		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this! Stef: I think this is resolved.
 		newpf->recursiveDelete();
+
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
@@ -487,6 +489,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		_topgrounder = _formgrounder;
 	}
 	newpf->recursiveDelete();
+
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
