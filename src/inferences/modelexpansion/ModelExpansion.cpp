@@ -59,8 +59,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
-	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
-	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
+	//auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
+	// TODO bugged!
+	auto symstructure = generateApproxBounds(theory, structure);
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Grounding\n";
 	}
