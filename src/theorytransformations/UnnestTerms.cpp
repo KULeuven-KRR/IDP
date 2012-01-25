@@ -54,7 +54,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 			auto intmin = bounds[0]->value()._int;
 			auto intmax = bounds[1]->value()._int;
 			stringstream ss;
-			ss << "_sort[" << intmin << '-' << intmax << "]";
+			ss << "_sort«" << intmin << '-' << intmax << "»";
 			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
 			sort->addParent(VocabularyUtils::intsort());
 		}

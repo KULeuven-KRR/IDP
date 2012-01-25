@@ -63,10 +63,7 @@ private:
 	void DeeperContext(SIGN sign);
 
 	// Descend in the parse tree while taking care of the context
-	void descend(Formula* f);
-	void descend(Term* t);
-	void descend(Rule* r);
-	void descend(SetExpr* s);
+	template <typename T> void descend(T* child);
 
 	// Symbols passed to CP solver
 	std::set<const PFSymbol*> _cpsymbols;

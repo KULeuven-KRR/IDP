@@ -136,6 +136,7 @@ void GrounderFactory::InitContext() {
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
 	_context._conjPathUntilNode = true;
 
+	_context._mappedvars.clear();
 	_varmapping.clear();
 }
 
@@ -153,14 +154,23 @@ void GrounderFactory::AggContext() {
  */
 void GrounderFactory::SaveContext() {
 	_contextstack.push(_context);
+	_context._mappedvars.clear();
 }
 
 /**
  * void GrounderFactory::RestoreContext()
  * DESCRIPTION
- *		Restores the context to the top of the stack and pops the stack
+ *		Restores the context to the top of the stack and pops the stack.
  */
 void GrounderFactory::RestoreContext() {
+	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
+		auto found = _varmapping.find(*it);
+		if (found != _varmapping.end()) {
+			_varmapping.erase(found);
+		}
+	}
+	_context._mappedvars.clear();
+
 	_context = _contextstack.top();
 	_contextstack.pop();
 }
@@ -195,52 +205,14 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 /**
  * void GrounderFactory::descend(Term* t)
  * DESCRIPTION
- *		Visits a term and ensures the context is restored to the value before the visit.
+ *		Visits a child and ensures the context is saved before the visit and restored afterwards.
  * PARAMETERS
- *		t	- the visited term
+ *		child	- the child to be visited.
  */
-void GrounderFactory::descend(Term* t) {
+template <typename T>
+void GrounderFactory::descend(T* child) {
 	SaveContext();
-	t->accept(this);
-	RestoreContext();
-}
-
-/**
- * void GrounderFactory::descend(SetExpr* s)
- * DESCRIPTION
- *		Visits a set and ensures the context is restored to the value before the visit.
- * PARAMETERS
- *		s	- the visited set
- */
-void GrounderFactory::descend(SetExpr* s) {
-	SaveContext();
-	s->accept(this);
-	RestoreContext();
-}
-
-/**
- * void GrounderFactory::descend(Formula* f)
- * DESCRIPTION
- *		Visits a formula and ensures the context is restored to the value before the visit.
- * PARAMETERS
- *		f	- the visited formula
- */
-void GrounderFactory::descend(Formula* f) {
-	SaveContext();
-	f->accept(this);
-	RestoreContext();
-}
-
-/**
- * void GrounderFactory::descend(Rule* r)
- * DESCRIPTION
- *		Visits a rule and ensures the context is restored to the value before the visit.
- * PARAMETERS
- *		r	- the visited rule
- */
-void GrounderFactory::descend(Rule* r) {
-	SaveContext();
-	r->accept(this);
+	child->accept(this);
 	RestoreContext();
 }
 
@@ -401,7 +373,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
-	} //TODO issue #23
+	}
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -447,7 +419,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
 			_topgrounder = _formgrounder;
 		}
-		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this!
+		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this! Stef: I think this is resolved.
+		newpf->recursiveDelete();
+
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			poptab();
 		}
@@ -606,8 +580,9 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_topgrounder = _formgrounder;
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
+	}
 }
 
 /**
@@ -668,8 +643,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		newqf->recursiveDelete();
 
 		//FIXME: lazy stuff in this case?
-		_topgrounder = new QuantGrounder(_grounding, dynamic_cast<FormulaGrounder*>(_topgrounder), SIGN::POS, QUANT::UNIV, gc._generator, gc._checker,
-				_context);
+		_topgrounder = new QuantGrounder(_grounding, dynamic_cast<FormulaGrounder*>(_topgrounder), SIGN::POS, QUANT::UNIV, gc._generator, gc._checker, _context);
 	} else {
 		// Create grounder for subformula
 		SaveContext();
@@ -956,8 +930,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 // TODO verify
 template<typename OrigConstruct>
-GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype,
-		TruthType checkertype) {
+GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
 	vector<const DomElemContainer*> vars;
 	vector<SortTable*> tables;
 	vector<Variable*> fovars, quantfovars;
@@ -1086,6 +1059,7 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 
 DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 	Assert(varmapping().find(var)==varmapping().cend());
+	_context._mappedvars.insert(var);
 	auto d = new DomElemContainer();
 	_varmapping[var] = d;
 	return d;

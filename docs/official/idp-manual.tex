@@ -1,46 +1,8 @@
 \documentclass[a4]{article}
 \usepackage[english]{babel}
 \usepackage{geometry}
-\usepackage{xspace}
-\usepackage{listings}
-\usepackage{url}
 
-\newcommand{\idp}{{\sc idp}\xspace}
-\newcommand{\msid}{{\sc MiniSAT(ID)}\xspace}
-\newcommand{\minisatid}{\msid}
-\newcommand{\gidl}{{\sc GidL}\xspace}
-\newcommand{\fodotidp}{{\tt FO($\cdot$)$^{\mathtt{\tiny IDP}}$}\xspace}
-\newcommand{\fodot}{FO($\cdot$)\xspace}
-
-%% Source code fragments
-\usepackage[usenames,dvipsnames]{color}
-\usepackage{amssymb, amsmath}
-\usepackage{listings}
-
-\lstdefinelanguage{idp}{
-	morekeywords=[1]{namespace,vocabulary,theory,structure,procedure},
-	morekeywords=[2]{include,using,type,isa,contains,partial,extern,LFD,GFD},
-	morekeywords=[3]{int,float,char,string,nat},
-	morecomment=[s]{/*}{*/},	
-	morecomment=[l]{//}
-}
-\lstset{
-	language=idp,
-	tabsize=3,
-	frame=none,
-	basicstyle=\ttfamily,
-	commentstyle=\color{Gray},
-	keywordstyle=[1]\color{BrickRed}\bfseries,
-	keywordstyle=[2]\color{OliveGreen}\bfseries,
-	keywordstyle=[3]\color{Blue}\bfseries,
-}
-\newcommand{\code}[1]{{\tt #1}}
-\newcommand{\todo}[1]{\textcolor{blue}{TODO: #1}}
-
-%% Logic
-\newcommand{\lir}{\Rightarrow}
-\newcommand{\ril}{\Leftarrow}
-\newcommand{\rul}{\leftarrow}
+\include{idp-latex}
 
 
 \title{The \idp system reference manual}
@@ -66,10 +28,10 @@ Required software packages:
   \item (optional) Gecode for constraint programming support.
 \end{itemize}
 
-Assume idp is unpacked in $sourcedir$, you want to build in $builddir$ (cannot be the same as $sourcedir$) and install in $installdir$. Building and installing is then achieved by executing the following commands:
+Assume idp is unpacked in $idpdir$, you want to build in $builddir$ (cannot be the same as $idpdir$) and install in $installdir$. Building and installing is then achieved by executing the following commands:
 \begin{lstlisting}
 cd <builddir>
-cmake <sourcedir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
+cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
 make -j 4
 make check
 make install
@@ -83,12 +45,14 @@ One-shot execution of a procedure $proc$ with a set of files $files$ is achieved
 idp -e "proc()" files
 \end{lstlisting}
 
-An interactive interface using the files $files$ is started with \footnote{Currently, including additional files during an interactive session is not supported.}
+An interactive interface using the files $files$ is started with 
 \begin{lstlisting}
 idp -i files
 \end{lstlisting}
 
 Afterwards, command help can be requested with the $help()$ command. Auto-completion is available via the tab key, ctrl-r will search the command history.
+
+Currently including additional files during an interactive session is not supported.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Comments}
@@ -344,9 +308,9 @@ A \emph{formula} is inductively defined by:
 	\item \textbf{true} and \textbf{false} are formulas;
 	\item if $P$ is a predicate symbol with arity $n$ and $t_1,\ldots,t_n$ are terms, then $P(t_1,\ldots,t_n)$ is a formula;
 	\item if $t_1$ and $t_2$ are terms, then $t_1 = t_2$ is a formula;
-	\item if $\varphi$ and $\psi$ are formulas and $x$ is a variable, then the following are formulas: $\neg \varphi$, $\varphi \wedge \psi$, $\varphi \vee \psi$, $\varphi \lir \psi$, $\varphi \ril \psi$, $\varphi \equiv \psi$, $\forall x\ \varphi$, and $\exists x\ \varphi$.
+	\item if $\varphi$ and $\psi$ are formulas and $x$ is a variable, then the following are formulas: $\lnot \varphi$, $\varphi \land \psi$, $\varphi \lor \psi$, $\varphi \limplies \psi$, $\varphi \limpliedby \psi$, $\varphi \equiv \psi$, $\forall x\ \varphi$, and $\exists x\ \varphi$.
 \end{itemize}
-The following order of binding is used: $\neg$ binds tightest, next $\wedge$ and $\vee$, then $\lir$ and $\equiv$, and finally $\forall$ and $\exists$. Desambiguation can be done using brackets `(' and `)'. E.g. the formula $\forall x\ P(x) \wedge \neg Q(x) \lir R(x)$ is equivalent to the formula $\forall x\ ((P(x) \wedge (\neg Q(x))) \lir R(x))$.
+The following order of binding is used: $\lnot$ binds tightest, next $\land$ and $\lor$, then $\limplies$ and $\equiv$, and finally $\forall$ and $\exists$. Desambiguation can be done using brackets `(' and `)'. E.g. the formula $\forall x\ P(x) \land \lnot Q(x) \limplies R(x)$ is equivalent to the formula $\forall x\ ((P(x) \land (\lnot Q(x))) \limplies R(x))$.
 
 As for terms, if term $t$ occurs in predicate $P$, then the type of $t$ and the type of the input position of $P$ where it occurs must have a common ancestor type. For formulas of the form $t_1 = t_2$, $t_1$ and $t_2$ must have a common ancestor type.
 
@@ -358,11 +322,11 @@ The \idp syntax of the different symbols in formulas are given in the table belo
 \begin{tabular}{c|c|l}
 Logic & \idp & Declarative reading \\
 \hline
-$\wedge$		& {\tt \&}	& and \\
-$\vee$		& {\tt |}	& or	\\
-$\neg$		& \verb1~1	& not \\
-$\lir$		& {\tt =>}	& implies \\
-$\ril$		& {\tt <=}	& is implied by \\
+$\land$		& {\tt \&}	& and \\
+$\lor$		& {\tt |}	& or	\\
+$\lnot$		& \verb1~1	& not \\
+$\limplies$		& {\tt =>}	& implies \\
+$\limpliedby$		& {\tt <=}	& is implied by \\
 $\equiv$		& {\tt <=>}	& is equivalent to \\
 $\forall$	& {\tt !}	& for each \\
 $\exists$	& {\tt ?}	& there exists \\
@@ -394,10 +358,10 @@ In \idp, every variable has a type. The informal meaning of a sentence of the fo
 
 \subsubsection{Definitions}
 A definition defines a concept, i.e. a predicate, in terms of other predicates. Formally, a definition is a set of rules of the form 
-\[ \forall x_1,\ldots,x_n\ P(t_1,\ldots,t_m) \rul \varphi \]
+\[ \forall x_1,\ldots,x_n\ P(t_1,\ldots,t_m) \lrule \varphi \]
 where $P$ is a predicate symbol, $t_1,\ldots,t_m$ are terms that may contain the variables $x_1,\ldots,x_n$ and $\varphi$ a formula that may contain these variables. $P(t_1,\ldots,t_m)$ is called the \emph{head} of the rule and $\psi$ the \emph{body}. 
 
-A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\rul$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. The semantics for a definitions are the wellfounded semantics \todo{reference}.
+A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\lrule$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. The semantics for a definitions are the wellfounded semantics \todo{reference}.
 
 
 
@@ -439,7 +403,7 @@ A normal function is total: it assigns an output value to each of its input valu
 
 The semantics of a partial function $F$ is given by transforming constraints and rules where $F$ occurs as follows:
 \begin{itemize}
-	\item in a \emph{positive} context, $P(\ldots,F(x),\ldots)$ is transformed to $\forall y\ (F(x) = y \lir P(\ldots,y,\ldots)$;
+	\item in a \emph{positive} context, $P(\ldots,F(x),\ldots)$ is transformed to $\forall y\ (F(x) = y \limplies P(\ldots,y,\ldots)$;
 	\item in a negative context, $P(\ldots,F(x),\ldots)$ is transformed to $\exists y\ (F(y) = y \land P(\ldots,y,\ldots)$.
 \end{itemize}
 Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 

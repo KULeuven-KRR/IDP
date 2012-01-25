@@ -4,6 +4,7 @@ project (idp)
 ### The version number
 set (idp_VERSION_MAJOR 3)
 set (idp_VERSION_MINOR 0)
+set (idp_VERSION_PATCH 2)
 
 include(cmake/outofsourcecheck.cmake)
 assureOutOfSourceBuilds()
@@ -71,6 +72,11 @@ else()
 	endif()
 endif()
 
+option(GPERF  "Enable profiling support with google-perftools" OFF)
+if(GPERF)
+	set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -lprofiler -ltcmalloc")
+endif()
+
 ### Printing information
 message(STATUS "Global CXX flags: ")
 message(STATUS "${CMAKE_CXX_FLAGS}")
@@ -93,11 +99,27 @@ add_subdirectory(lib/lua)
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(docs/documentation)
+add_subdirectory(docs/official)
 
 ### Allow packing
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
 set(CPACK_PACKAGE_VERSION_MAJOR	${idp_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${idp_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${idp_VERSION_PATCH})
 set(CPACK_NSIS_MODIFY_PATH ON)
+set(CPACK_SOURCE_GENERATOR TGZ)
+# The following components are regex's to match anywhere (unless anchored)
+# in absolute path + filename to find files or directories to be excluded
+# from source tarball.
+set(CPACK_SOURCE_IGNORE_FILES
+	"^${PROJECT_SOURCE_DIR}/.*"
+	"^${PROJECT_SOURCE_DIR}/.git/"
+	"^${PROJECT_SOURCE_DIR}/builds/"
+	"^${PROJECT_SOURCE_DIR}/build/"
+	"^${PROJECT_SOURCE_DIR}/docs/visuals"
+	"^${PROJECT_SOURCE_DIR}/docs/code"
+	"^${PROJECT_SOURCE_DIR}/docs/technical"
+)
+message(STATUS "source package name: ${CPACK_SOURCE_PACKAGE_FILE_NAME}")
+message(STATUS "source package ignores: ${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
