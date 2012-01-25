@@ -72,7 +72,7 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate " << toString(_generator);
+		stream <<  toString(_generator);
 	}
 };
 
