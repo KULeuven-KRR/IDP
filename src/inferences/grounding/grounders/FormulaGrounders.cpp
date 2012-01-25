@@ -131,7 +131,7 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "Term value out of predicate type\n" << tabs();
+					clog << "Term value out of predicate type\n" << tabs(); //TODO should be a warning
 					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 					if (_origform != NULL) {
 						poptab();
@@ -838,13 +838,14 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
+			std::cerr << toString(_checker);
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
+				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n" << tabs();
 			}
 			return;
 		}
-
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();

@@ -64,8 +64,8 @@ GenType operator not(GenType orig) {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) :
-		_structure(structure), _symstructure(symstructure) {
+GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
+		: _structure(structure), _symstructure(symstructure) {
 
 	Assert(_symstructure!=NULL);
 
@@ -364,9 +364,8 @@ void GrounderFactory::visit(const Theory* theory) {
 	}
 
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
-
 	// Clean up: delete the theory clone.
-	newtheory->recursiveDelete();
+	//newtheory->recursiveDelete();
 }
 
 /**
@@ -479,7 +478,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	}
 
 	PredTable *posstable = NULL, *certtable = NULL;
-	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
+	if (getOption(BoolType::GROUNDWITHBOUNDS) && checksorts.size() > 0) { //TODO: didn't worked for size 0, i.e. for propositional symbols.  Fix this!
 		auto fovars = VarUtils::makeNewVariables(checksorts);
 		auto foterms = TermUtils::makeNewVarTerms(fovars);
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
@@ -499,7 +498,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
 		certtable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
-
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
@@ -514,7 +512,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = _formgrounder;
 	}
-	newpf->recursiveDelete();
+	//newpf->recursiveDelete(); //TODO: this is suspicious since the bdds use variables from newpf...
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
@@ -608,7 +606,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
 		_topgrounder = _formgrounder;
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		poptab();
 }
 
 /**
@@ -647,10 +646,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
-
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
 			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
-
 	// Handle a top-level conjunction without creating tseitin atoms
 	if (_context._conjPathUntilNode) {
 		// If qf is a negated exist, push the negation one level deeper.
@@ -674,7 +671,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		_topgrounder = new QuantGrounder(_grounding, dynamic_cast<FormulaGrounder*>(_topgrounder), SIGN::POS, QUANT::UNIV, gc._generator, gc._checker,
 				_context);
 	} else {
-
 		// Create grounder for subformula
 		SaveContext();
 
@@ -704,18 +700,22 @@ void GrounderFactory::visit(const QuantForm* qf) {
 		RestoreContext();
 
 		_formgrounder->setOrig(qf, varmapping());
-
 		if (_context._component == CompContext::SENTENCE) {
 			_topgrounder = _formgrounder;
 		}
 
 	}
-	newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
-
+	//newsubformula->recursiveDelete();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		poptab();
 }
 
-const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
+const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
+	if (true || getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+		clog << "improving the following (generator) BDD:";
+		pushtab();
+		clog << "\n" << tabs() << toString(bdd);
+	}
 	FOBDDManager* manager = _symstructure->manager();
 
 	// 1. Optimize the query
@@ -731,11 +731,24 @@ const FOBDD* GrounderFactory::improve_generator(const FOBDD* bdd, const vector<V
 	// 2. Remove certain leaves
 	const FOBDD* pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, indices, _structure, mcpa);
 
+	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
+		poptab();
+		clog << "\n" << tabs() << "Resulted in:";
+		pushtab();
+		clog << "\n" << tabs() << toString(pruned);
+		poptab();
+		clog << "\n" << tabs();
+	}
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);
 }
 
-const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
+const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
+	if (true || getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+		clog << "improving the following (checker) BDD:";
+		pushtab();
+		clog << "\n" << tabs() << toString(bdd);
+	}
 	FOBDDManager* manager = _symstructure->manager();
 
 	// 1. Optimize the query
@@ -747,6 +760,15 @@ const FOBDD* GrounderFactory::improve_checker(const FOBDD* bdd, double mcpa) {
 
 	// 2. Remove certain leaves
 	const FOBDD* pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, _structure, mcpa);
+
+	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
+		poptab();
+		clog << "\n" << tabs() << "Resulted in:";
+		pushtab();
+		clog << "\n" << tabs() << toString(pruned);
+		poptab();
+		clog << "\n" << tabs();
+	}
 
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);
@@ -798,8 +820,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
-			_cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
@@ -890,8 +911,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	SortTable* domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
-					ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
@@ -965,8 +985,8 @@ GrounderFactory::GenAndChecker GrounderFactory::createVarsAndGenerators(Formula*
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
 		auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
-		generatorbdd = improve_generator(generatorbdd, quantfovars, MCPA);
-		checkerbdd = improve_checker(checkerbdd, MCPA);
+		generatorbdd = improveGenerator(generatorbdd, quantfovars, MCPA);
+		checkerbdd = improveChecker(checkerbdd, MCPA);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
@@ -1046,7 +1066,8 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		poptab();
 }
 
 template<class VarList>
@@ -1147,7 +1168,8 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new RuleGrounder(headgr, bodygr, headgen, bodygen, _context);
 	}
 	RestoreContext();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+		poptab();
 
 	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }
