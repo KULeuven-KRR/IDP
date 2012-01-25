@@ -120,6 +120,22 @@ std::string toString(const std::map<Type1, Type2>& v) {
 	ss << ")";
 	return ss.str();
 }
+template<typename Type1, typename Type2, typename Type3> //to allow for a "compare" in th emaps
+std::string toString(const std::map<Type1, Type2, Type3>& v) {
+	std::stringstream ss;
+	ss << "(";
+	for (auto obj = v.cbegin(); obj != v.cend();) {
+		ss << toString((*obj).first);
+		ss << "->";
+		ss << toString((*obj).second);
+		++obj;
+		if (obj != v.cend()) {
+			ss << "; ";
+		}
+	}
+	ss << ")";
+	return ss.str();
+}
 
 template<>
 std::string toString(const CompType& type);
