@@ -50,6 +50,7 @@ private:
 public:
 	LeafGeneratorNode(InstGenerator* gt)
 			: GeneratorNode(), _generator(gt), _reset(true) {
+		reset();
 	}
 
 	~LeafGeneratorNode(){
@@ -202,10 +203,14 @@ public:
 
 	virtual void put(std::ostream& stream) {
 		stream << "generate: " << toString(_generator) << "\n";
-		stream << tabs() << "then\n";
+		stream << tabs() << "if result is in " << toString(_checker)<<"\n";
+		stream << tabs()<< "THEN\n";
 		pushtab();
-		stream << tabs() << "truebranch " << toString(_truecheckbranch) << "\n";
-		stream << tabs() << "falsebranch " << toString(_falsecheckbranch);
+		stream << tabs() << toString(_truecheckbranch) << "\n";
+		poptab();
+		stream << tabs()<< "ELSE\n";
+		pushtab();
+		stream << tabs() <<  toString(_falsecheckbranch);
 		poptab();
 	}
 };
