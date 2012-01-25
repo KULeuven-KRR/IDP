@@ -10,10 +10,7 @@
 
 #include "testingtools.hpp"
 
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "structure.hpp"
-#include "term.hpp"
+#include "IncludeComponents.hpp"
 
 namespace Tests {
 

@@ -11,16 +11,14 @@
 #ifndef ORDERTERMS_HPP_
 #define ORDERTERMS_HPP_
 
-#include "common.hpp"
-#include <algorithm>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/bddvisitors/TermCollector.hpp"
-
-#include "vocabulary.hpp"
+#include <algorithm>
 
 /**
  * Recursively from leaves to top do:

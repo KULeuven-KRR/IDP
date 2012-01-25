@@ -11,14 +11,13 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "generators/ComparisonGenerator.hpp"
 #include "generators/SortInstGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
 #include "generators/EnumLookupGenerator.hpp"
-#include "structure.hpp"
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

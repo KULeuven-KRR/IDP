@@ -11,7 +11,7 @@
 #ifndef ARGCHECKER_HPP_
 #define ARGCHECKER_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"

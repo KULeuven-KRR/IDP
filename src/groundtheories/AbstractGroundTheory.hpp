@@ -13,8 +13,8 @@
 
 #include "commontypes.hpp"
 
-#include "theory.hpp"
-#include "ecnf.hpp"
+#include "theory/theory.hpp"
+#include "theory/ecnf.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 class GroundTermTranslator;

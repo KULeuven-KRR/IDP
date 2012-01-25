@@ -11,9 +11,7 @@
 #ifndef TERMGROUNDERS_HPP_
 #define TERMGROUNDERS_HPP_
 
-#include "common.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp" // TODO too general
 
 class AbstractGroundTheory;
 class SortTable;

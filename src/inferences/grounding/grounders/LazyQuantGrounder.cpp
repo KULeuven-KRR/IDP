@@ -8,16 +8,15 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "LazyQuantGrounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "generators/InstGenerator.hpp"
-#include "inferences/grounding/grounders/GroundUtils.hpp"
+#include "GroundUtils.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "structure.hpp"
 
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

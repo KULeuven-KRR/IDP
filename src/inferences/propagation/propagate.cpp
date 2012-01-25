@@ -8,15 +8,10 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include <typeinfo>
-#include <iostream>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "structure.hpp"
 #include "propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 

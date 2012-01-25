@@ -9,11 +9,33 @@
  ****************************************************************/
 
 #include <set>
-#include "structure.hpp"
+#include "structure/structure.hpp"
 #include "internalargument.hpp"
 
 // Note: following containers are used for garbage collection.
 std::set<std::vector<InternalArgument>*> lists;
+
+InternalArgument::InternalArgument(const DomainElement* el) {
+	_type = AT_NIL;
+	switch (el->type()) {
+	case DET_INT:
+		_type = AT_INT;
+		_value._int = el->value()._int;
+		break;
+	case DET_DOUBLE:
+		_type = AT_DOUBLE;
+		_value._double = el->value()._double;
+		break;
+	case DET_STRING:
+		_type = AT_STRING;
+		_value._string = StringPointer(*(el->value()._string));
+		break;
+	case DET_COMPOUND:
+		_type = AT_COMPOUND;
+		_value._compound = el->value()._compound;
+		break;
+	}
+}
 
 void addToGarbageCollection(std::vector<InternalArgument>* list) {
 	lists.insert(list);

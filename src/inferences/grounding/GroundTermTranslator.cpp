@@ -9,9 +9,7 @@
  ****************************************************************/
 
 #include "GroundTermTranslator.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

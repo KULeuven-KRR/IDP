@@ -11,7 +11,7 @@
 #ifndef GENERATEANDTESTGENERATOR_HPP_
 #define GENERATEANDTESTGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 class TableGenerator: public InstGenerator {
 private:

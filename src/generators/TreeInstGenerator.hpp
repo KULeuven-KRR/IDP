@@ -11,8 +11,8 @@
 #ifndef TREEINSTGENERATOR_HPP_
 #define TREEINSTGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
-#include "generators/GeneratorNodes.hpp"
+#include "InstGenerator.hpp"
+#include "GeneratorNodes.hpp"
 
 class TreeInstGenerator: public InstGenerator {
 private:

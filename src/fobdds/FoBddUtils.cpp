@@ -14,7 +14,7 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/bddvisitors/FirstNonConstMultTerm.hpp"
 
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

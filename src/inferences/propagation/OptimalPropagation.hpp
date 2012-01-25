@@ -11,15 +11,9 @@
 #ifndef INFERENCES_OPTIMALPROPAGATE_HPP_
 #define INFERENCES_OPTIMALPROPAGATE_HPP_
 
-#include <vector>
-#include <map>
-#include <set>
-#include "theory.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
+#include "IncludeComponents.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"

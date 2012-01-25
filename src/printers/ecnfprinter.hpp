@@ -12,9 +12,7 @@
 #define ECNFPRINTER_HPP_
 
 #include "printers/print.hpp"
-#include "theory.hpp"
-#include "ecnf.hpp"
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"

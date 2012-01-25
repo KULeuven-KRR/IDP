@@ -8,35 +8,31 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "parseinfo.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
+#include "errorhandling/error.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "error.hpp"
 
-#include "generators/GeneratorFactory.hpp"
+#include "GeneratorFactory.hpp"
 
-#include "generators/BDDBasedGeneratorFactory.hpp"
+#include "BDDBasedGeneratorFactory.hpp"
 
-#include "generators/SimpleFuncGenerator.hpp"
-#include "generators/TreeInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/EnumLookupGenerator.hpp"
-#include "generators/SortLookupGenerator.hpp"
-#include "generators/TableGenerator.hpp"
-#include "generators/ComparisonGenerator.hpp"
-#include "generators/SimpleFuncGenerator.hpp"
-#include "generators/BasicGenerators.hpp"
-#include "generators/ArithmeticOperatorsGenerator.hpp"
-#include "generators/InverseUnaFunctionGenerator.hpp"
-#include "generators/InvertNumericGenerator.hpp"
-#include "generators/InverseAbsValueGenerator.hpp"
+#include "SimpleFuncGenerator.hpp"
+#include "TreeInstGenerator.hpp"
+#include "InverseInstGenerator.hpp"
+#include "SortInstGenerator.hpp"
+#include "EnumLookupGenerator.hpp"
+#include "SortLookupGenerator.hpp"
+#include "TableGenerator.hpp"
+#include "ComparisonGenerator.hpp"
+#include "SimpleFuncGenerator.hpp"
+#include "BasicGenerators.hpp"
+#include "ArithmeticOperatorsGenerator.hpp"
+#include "InverseUnaFunctionGenerator.hpp"
+#include "InvertNumericGenerator.hpp"
+#include "InverseAbsValueGenerator.hpp"
 using namespace std;
 
 // NOTE original can be NULL
@@ -44,7 +40,7 @@ template<typename Table>
 void checkInfinity(Table t, const Formula* original) {
 	if (not t->finite()) {
 		if (original != NULL) {
-			Warning::possiblyInfiniteGrounding(original->pi().original() != NULL ? toString(original->pi().original()) : "", toString(original));
+			Warning::possiblyInfiniteGrounding(original->pi().userDefined() ? toString(original->pi().originalobject()) : "", toString(original));
 		}
 		if (not getOption(BoolType::GROUNDWITHBOUNDS)) { // TODO and not lazy?
 			// If not grounding with bounds, we will certainly ground infinitely, so do not even start

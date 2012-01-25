@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "term.hpp"
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "options.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 

@@ -11,7 +11,7 @@
 #ifndef INVABSGENERATOR_HPP_
 #define INVABSGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 #include "common.hpp"
 
 /**

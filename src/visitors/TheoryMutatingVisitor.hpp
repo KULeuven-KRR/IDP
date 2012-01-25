@@ -11,7 +11,7 @@
 #ifndef THEORYMUTATINGVISITOR_HPP
 #define THEORYMUTATINGVISITOR_HPP
 
-#include "visitors/VisitorFriends.hpp"
+#include "VisitorFriends.hpp"
 
 /**
  * A class for visiting all elements in a logical theory. 

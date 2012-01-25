@@ -12,7 +12,7 @@
 #define SIMPLEFUNCGENERATOR_HPP_
 
 #include <vector>
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 class FuncTable;
 class DomElemContainer;

@@ -12,7 +12,7 @@
 #define TRUEQUANTKERNELGENERATOR_HPP_
 
 #include <set>
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * Generate all x such that ?x phi(x) is true.

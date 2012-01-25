@@ -12,8 +12,7 @@
 #define GENERATORFACTORY_HPP
 
 #include <vector>
-#include "structure.hpp"
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 #include "visitors/StructureVisitor.hpp"
 
 class PredTable;

@@ -11,7 +11,7 @@
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
 
-#include "inferences/grounding/grounders/Grounder.hpp"
+#include "Grounder.hpp"
 #include "GroundUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"

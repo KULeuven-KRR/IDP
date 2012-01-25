@@ -16,10 +16,8 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAtomKernel.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "IncludeComponents.hpp"
+#include "theory/TheoryUtils.hpp"
 
 using namespace std;
 

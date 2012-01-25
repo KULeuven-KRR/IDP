@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "TestUtils.hpp"
 #include "utils/FileManagement.hpp"
 

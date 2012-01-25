@@ -11,7 +11,7 @@
 #ifndef CONSTTERMEXTRACTOR_HPP_
 #define CONSTTERMEXTRACTOR_HPP_
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -19,8 +19,6 @@
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddVariable.hpp"
-
-#include "vocabulary.hpp"
 
 /**
  * Get the const term of the first func term with a const left hand side.

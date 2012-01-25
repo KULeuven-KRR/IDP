@@ -11,14 +11,12 @@
 #ifndef ARITHCHECKER_HPP_
 #define ARITHCHECKER_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddUtils.hpp"
-
-#include "vocabulary.hpp"
 
 /**
  * Checks whether the bdd contains no quantkernels, that each symbol is part of the std vocabulary and that all terms, variables and indices

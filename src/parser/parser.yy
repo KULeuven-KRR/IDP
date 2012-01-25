@@ -846,7 +846,7 @@ args				: args ',' identifier	{ getInserter().procarg(*$3);		}
 %%
 
 #include <iostream>
-#include "error.hpp"
+#include "errorhandling/error.hpp"
 
 void yyrestart(FILE*);
 
@@ -872,7 +872,7 @@ void parsefile(const std::string& str) {
 		GlobalData::instance()->closeFile(yyin);
 	}
 	else{
-		Error::unknfile(str);
+		Error::unexistingfile(str);
 	}
 }
 

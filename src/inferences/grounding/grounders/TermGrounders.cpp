@@ -16,11 +16,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

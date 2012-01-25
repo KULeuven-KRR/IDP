@@ -9,7 +9,7 @@
 #include "parser/clconst.hpp"
 #include "insert.hpp"
 #include "parser.hh"
-#include "error.hpp"
+#include "errorhandling/error.hpp"
 #include "common.hpp"
 #include "GlobalData.hpp"
 using namespace std;

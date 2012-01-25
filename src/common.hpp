@@ -19,18 +19,14 @@
 #include "commontypes.hpp"
 #include <utility>
 
-#include "IdpException.hpp"
+#include "errorhandling/IdpException.hpp"
 
 #include "loki/NullType.h"
 #include "loki/TypeTraits.h"
 #include "loki/static_check.h"
 #include <typeinfo>
 
-#ifndef NDEBUG
-#define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
-#else
-#define Assert(x) do {} while(0)
-#endif
+#include "Assert.h"
 
 std::string getGlobalNamespaceName();
 std::string getInternalNamespaceName();

@@ -12,7 +12,7 @@
 #define ENUMLOOKUPGENERATOR_HPP_
 
 #include <map>
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
 

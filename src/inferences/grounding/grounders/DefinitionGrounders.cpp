@@ -8,21 +8,16 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
+#include "DefinitionGrounders.hpp"
 
-#include "inferences/grounding/grounders/TermGrounders.hpp"
-#include "inferences/grounding/grounders/FormulaGrounders.hpp"
-#include "inferences/grounding/grounders/GroundUtils.hpp"
+#include "TermGrounders.hpp"
+#include "FormulaGrounders.hpp"
+#include "GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 
 #include "generators/InstGenerator.hpp"
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-
-#include <iostream>
-#include <exception>
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

@@ -8,15 +8,13 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "FormulaGrounders.hpp"
 
-#include "vocabulary.hpp"
-#include "ecnf.hpp"
-#include "inferences/grounding/grounders/TermGrounders.hpp"
-#include "inferences/grounding/grounders/SetGrounders.hpp"
+#include "IncludeComponents.hpp"
+#include "TermGrounders.hpp"
+#include "SetGrounders.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
-#include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"

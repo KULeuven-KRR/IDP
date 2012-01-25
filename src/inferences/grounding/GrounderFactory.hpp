@@ -11,11 +11,10 @@
 #ifndef GROUND_HPP
 #define GROUND_HPP
 
-#include "commontypes.hpp"
 #include <stack>
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
-#include "inferences/grounding/Utils.hpp"
+#include "Utils.hpp"
 #include "external/ExternalInterface.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"

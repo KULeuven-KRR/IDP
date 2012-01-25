@@ -11,7 +11,7 @@
 #ifndef GROUNDTERMTRANSLATOR_HPP_
 #define GROUNDTERMTRANSLATOR_HPP_
 
-#include "inferences/grounding/Utils.hpp"
+#include "Utils.hpp"
 
 class Function;
 class AbstractStructure;

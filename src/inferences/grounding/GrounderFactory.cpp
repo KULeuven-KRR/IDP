@@ -9,41 +9,31 @@
  ****************************************************************/
 
 #include "GrounderFactory.hpp"
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 
-#include <typeinfo>
-#include <iostream>
-#include <sstream>
 #include <limits>
 #include <cmath>
 #include <cstdlib>
 #include <utility> // for relational operators (namespace rel_ops)
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "term.hpp"
-#include "ecnf.hpp"
 #include "options.hpp"
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
-#include "common.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 #include "groundtheories/PrintGroundPolicy.hpp"
-#include "inferences/grounding/grounders/FormulaGrounders.hpp"
-#include "inferences/grounding/grounders/TermGrounders.hpp"
-#include "inferences/grounding/grounders/SetGrounders.hpp"
-#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "grounders/FormulaGrounders.hpp"
+#include "grounders/TermGrounders.hpp"
+#include "grounders/SetGrounders.hpp"
+#include "grounders/DefinitionGrounders.hpp"
+#include "grounders/LazyQuantGrounder.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
 
-#include "IdpException.hpp"
-
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"

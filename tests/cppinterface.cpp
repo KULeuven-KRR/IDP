@@ -1,10 +1,6 @@
 #include "cppinterface.hpp"
 
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
 
 namespace Tests {
 

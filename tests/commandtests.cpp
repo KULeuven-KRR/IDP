@@ -9,10 +9,9 @@
 ****************************************************************/
 
 #include "gtest/gtest.h"
-#include "commands/commandinterface.hpp"
-#include "commands/iterators.hpp"
-#include "common.hpp"
-#include "structure.hpp"
+#include "external/commands/commandinterface.hpp"
+#include "external/commands/iterators.hpp"
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

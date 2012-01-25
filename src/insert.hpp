@@ -43,6 +43,7 @@ class AbstractTheory;
 class Options;
 class UserProcedure;
 class Namespace;
+class Variable;
 
 struct YYLTYPE;
 class lua_State;

@@ -11,7 +11,7 @@
 #ifndef SIMPLELOOKUPGENERATOR_HPP_
 #define SIMPLELOOKUPGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * A generator which checks whether a fully instantiated list of variables is a valid tuple for a certain predicate

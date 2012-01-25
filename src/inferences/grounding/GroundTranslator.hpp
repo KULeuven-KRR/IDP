@@ -11,9 +11,8 @@
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
 
-#include "inferences/grounding/Utils.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
+#include "Utils.hpp"
+#include "IncludeComponents.hpp"
 
 #include <unordered_map>
 #include <bits/functional_hash.h>

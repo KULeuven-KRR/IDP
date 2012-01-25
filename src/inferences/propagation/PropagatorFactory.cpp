@@ -10,14 +10,10 @@
 
 #include "PropagatorFactory.hpp"
 
-#include <iostream>
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
+#include "IncludeComponents.hpp"
 #include "propagate.hpp"
 #include "GlobalData.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 #include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"

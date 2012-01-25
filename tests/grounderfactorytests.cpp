@@ -11,18 +11,12 @@
 #include <cmath>
 #include <map>
 
-
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
-#include "structure.hpp"
-#include <iostream>
+#include "external/rungidl.hpp"
+#include "IncludeComponents.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "options.hpp"
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
-#include "IdpException.hpp"
 #include "testingtools.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "fobdds/FoBddManager.hpp"

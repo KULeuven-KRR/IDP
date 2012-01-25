@@ -9,11 +9,9 @@
  ****************************************************************/
 
 #include "GroundTranslator.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
-#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
+#include "IncludeComponents.hpp"
+#include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/DefinitionGrounders.hpp"
 
 using namespace std;
 

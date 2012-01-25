@@ -11,7 +11,7 @@
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"

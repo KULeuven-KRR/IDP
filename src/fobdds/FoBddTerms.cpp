@@ -8,16 +8,13 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
-#include "fobdds/FoBddIndex.hpp"
-#include "fobdds/FoBddFuncTerm.hpp"
-#include "fobdds/FoBddDomainTerm.hpp"
-#include "fobdds/FoBddVariable.hpp"
-#include "fobdds/FoBddVisitor.hpp"
-#include "fobdds/FoBddManager.hpp"
-
-#include "vocabulary.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
+#include "FoBddIndex.hpp"
+#include "FoBddFuncTerm.hpp"
+#include "FoBddDomainTerm.hpp"
+#include "FoBddVariable.hpp"
+#include "FoBddVisitor.hpp"
+#include "FoBddManager.hpp"
 
 using namespace std;
 

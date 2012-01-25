@@ -11,7 +11,7 @@
 #ifndef BASICGENERATOR_HPP_
 #define BASICGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * Generates an empty set of instances

@@ -12,7 +12,7 @@
 #define BDDBASEDGENERATORFACTORY_HPP_
 
 #include "commontypes.hpp"
-#include "generators/GeneratorFactory.hpp"
+#include "GeneratorFactory.hpp"
 
 class FOBDDManager;
 class FOBDDVariable;

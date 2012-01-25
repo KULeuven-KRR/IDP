@@ -11,15 +11,10 @@
 #ifndef INFERENCES_SYMBOLICPROPAGATE_HPP_
 #define INFERENCES_SYMBOLICPROPAGATE_HPP_
 
-#include <vector>
-#include <map>
-#include <set>
-#include "theory.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
 #include "PropagatorFactory.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 
 /**

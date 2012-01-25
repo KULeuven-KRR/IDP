@@ -12,11 +12,7 @@
 #define IDPPRINTER_HPP_
 
 #include "printers/print.hpp"
-#include "theory.hpp"
-#include "vocabulary.hpp"
-#include "ecnf.hpp"
-#include "namespace.hpp"
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"

@@ -11,15 +11,12 @@
 #ifndef ADDMULTSIMPLIFIER_HPP_
 #define ADDMULTSIMPLIFIER_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddUtils.hpp"
-
-#include "vocabulary.hpp"
-#include "structure.hpp"
 
 /**
  * Recursively from leaves to top do:

@@ -10,13 +10,11 @@
 
 #include "SetGrounders.hpp"
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "TermGrounders.hpp"
 #include "FormulaGrounders.hpp"
 #include "generators/InstGenerator.hpp"
 #include "generators/BasicCheckers.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 
 using namespace std;

@@ -9,8 +9,7 @@
  ****************************************************************/
 
 #include "AbstractGroundTheory.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 

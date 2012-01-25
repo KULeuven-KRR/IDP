@@ -10,11 +10,8 @@
 
 #include "TheoryMutatingVisitor.hpp"
 
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
-#include "ecnf.hpp"
-#include "error.hpp"
+#include "IncludeComponents.hpp"
+#include "errorhandling/error.hpp"
 
 using namespace std;
 

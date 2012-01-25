@@ -15,7 +15,6 @@
 #include <sstream>
 
 #include "common.hpp"
-#include "IdpException.hpp"
 #include "GlobalData.hpp"
 
 using namespace std;

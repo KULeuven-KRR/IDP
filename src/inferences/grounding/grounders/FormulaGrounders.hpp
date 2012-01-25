@@ -11,10 +11,9 @@
 #ifndef FORMULAGROUNDERS_HPP_
 #define FORMULAGROUNDERS_HPP_
 
-#include "inferences/grounding/grounders/Grounder.hpp"
+#include "Grounder.hpp"
 
-#include "common.hpp"
-#include "ecnf.hpp"
+#include "IncludeComponents.hpp"
 
 class TermGrounder;
 class InstChecker;

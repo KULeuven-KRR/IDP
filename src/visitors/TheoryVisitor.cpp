@@ -10,10 +10,8 @@
 
 #include "TheoryVisitor.hpp"
 
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
-#include "error.hpp"
+#include "IncludeComponents.hpp"
+#include "errorhandling/error.hpp"
 
 #include "groundtheories/GroundPolicy.hpp"
 #include "groundtheories/GroundTheory.hpp"

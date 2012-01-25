@@ -11,9 +11,9 @@
 #ifndef INVERSEINSTGENERATOR_HPP_
 #define INVERSEINSTGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
-#include "generators/GeneratorFactory.hpp"
+#include "InstGenerator.hpp"
+#include "LookupGenerator.hpp"
+#include "GeneratorFactory.hpp"
 
 /**
  * Given a predicate table, generate tuples which, given the input, are not in the predicate table
