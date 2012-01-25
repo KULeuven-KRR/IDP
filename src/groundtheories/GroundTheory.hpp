@@ -286,9 +286,7 @@ public:
 	 */
 	void addFuncConstraints() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+			CHECKTERMINATION
 			auto pfs = translator()->getManagedSymbol(n);
 			if (not sametypeid<Function>(*pfs)) {
 				continue;
@@ -419,9 +417,7 @@ public:
 
 	void addFalseDefineds() {
 		for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+			CHECKTERMINATION
 			PFSymbol* s = translator()->getManagedSymbol(n);
 			auto it = _defined.find(s);
 			if (it == _defined.end()) {
@@ -429,16 +425,13 @@ public:
 			}
 			const PredTable* pt = structure()->inter(s)->pt();
 			for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-				if (GlobalData::instance()->terminateRequested()) {
-					throw IdpException("Terminate requested");
-				}
+				CHECKTERMINATION
 				Lit translation = translator()->translate(s, (*ptIterator));
 				if (it->second.find(translation) == it->second.end()) {
 					addUnitClause(-translation);
 					// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
 				}
 			}
-
 		}
 	}
 
