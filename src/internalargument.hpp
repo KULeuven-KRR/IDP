@@ -238,11 +238,11 @@ public:
 			result.push_back(AT_OPTIONS);
 		if (_procedure)
 			result.push_back(AT_PROCEDURE);
-		if (!_predicate.empty())
+		if (not _predicate.empty())
 			result.push_back(AT_PREDICATE);
-		if (!_function.empty())
+		if (not _function.empty())
 			result.push_back(AT_FUNCTION);
-		if (!_sort.empty())
+		if (not _sort.empty())
 			result.push_back(AT_SORT);
 		if (_formula)
 			result.push_back(AT_FORMULA);

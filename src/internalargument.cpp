@@ -20,7 +20,7 @@ void addToGarbageCollection(std::vector<InternalArgument>* list) {
 }
 
 void garbageCollectInternalArgumentVectors() {
-	for(auto i=lists.cbegin(); i!=lists.cend(); ++i) {
+	for (auto i=lists.cbegin(); i!=lists.cend(); ++i) {
 		delete(*i);
 	}
 	lists.clear();

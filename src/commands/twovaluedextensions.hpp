@@ -53,7 +53,6 @@ public:
 		for (auto it = table->cbegin(); it != table->cend(); ++it) {
 			addAllMorePreciseToResult((*it).structure(), result);
 		}
-		addToGarbageCollection(result);
 		return InternalArgument(result);
 	}
 

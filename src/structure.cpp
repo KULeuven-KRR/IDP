@@ -4635,22 +4635,23 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}Assert(s != NULL);
+	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
+	}
+
+	vector<SortTable*> tables;
+	auto list = s->getSortsForTable();
+	for (auto i = list.cbegin(); i < list.cend(); ++i) {
+		auto it = _sortinter.find(*i);
+		Assert(it != _sortinter.cend());
+		tables.push_back((*it).second);
+	}
+	if (tables.size() == 1) {
+		return tables.back();
 	} else {
-		vector<SortTable*> tables;
-		auto list = s->getSortsForTable();
-		for (auto i = list.cbegin(); i < list.cend(); ++i) {
-			auto it = _sortinter.find(*i);
-			Assert(it != _sortinter.cend());
-			tables.push_back((*it).second);
-		}
-		if (tables.size() == 1) {
-			return tables.back();
-		} else {
-			return new SortTable(new UnionInternalSortTable( { }, tables));
-		}
+		return new SortTable(new UnionInternalSortTable( { }, tables));
 	}
 }
 
@@ -4717,7 +4718,7 @@ Universe Structure::universe(const PFSymbol* s) const {
 	return Universe(vst);
 }
 
-// TODO new name and docuemnt
+// TODO new name and document
 void Structure::materialize() {
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
 		SortTable* st = it->second->materialize();
