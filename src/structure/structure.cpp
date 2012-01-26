@@ -106,8 +106,9 @@ ostream& operator<<(ostream& output, const ElementTuple& tuple) {
 	output << '(';
 	for (auto it = tuple.cbegin(); it != tuple.cend(); ++it) {
 		output << **it;
-		if (it != tuple.cend() - 1)
+		if (it != tuple.cend() - 1) {
 			output << ',';
+		}
 	}
 	output << ')';
 	return output;

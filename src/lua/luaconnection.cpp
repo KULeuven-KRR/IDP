@@ -1257,16 +1257,21 @@ int namespaceIndex(lua_State* L) {
 
 	Assert(counter==1);
 	// Only one element on the stack
-	if (subsp)
+	if (subsp) {
 		return convertToLua(L, InternalArgument(subsp));
-	if (vocab)
+	}
+	if (vocab) {
 		return convertToLua(L, InternalArgument(vocab));
-	if (theo)
+	}
+	if (theo) {
 		return convertToLua(L, InternalArgument(theo));
-	if (structure)
+	}
+	if (structure) {
 		return convertToLua(L, InternalArgument(structure));
-	if (opts)
+	}
+	if (opts) {
 		return convertToLua(L, InternalArgument(opts));
+	}
 	if (proc) {
 		compile(proc, L);
 		lua_getfield(L, LUA_REGISTRYINDEX, proc->registryindex().c_str());
