@@ -1,0 +1,30 @@
+vocabulary V{
+	type x isa int
+	type y isa int
+	p(x, y, x)
+}
+
+theory T: V{
+	?x: !y: ?z: p(x, y, z).
+	!x z: x<5 & z<5 => !y: ~p(x, y, z).
+}
+
+structure S: V {
+	x = {1..1000000}
+	y = {1..10}
+}
+
+#include <mx>
+
+procedure getonesol(){
+	stdoptions.groundlazily=true
+	stdoptions.groundverbosity=3
+	stdoptions.satverbosity=4
+	return mx::one(T, S)
+}
+
+procedure main(){
+	Sol = getonesol()
+	mx::printtuples("p<ct>", Sol[V::p].ct)
+	mx::printtuples("p<cf>", Sol[V::p].cf)
+}

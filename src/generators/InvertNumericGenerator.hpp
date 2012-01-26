@@ -11,7 +11,7 @@
 #ifndef UMINGENERATOR_HPP_
 #define UMINGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 #include "common.hpp"
 
 class InvertNumericGenerator: public InstGenerator {

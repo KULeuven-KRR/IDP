@@ -21,9 +21,3 @@ structure S : V {
 procedure getExpectedNbOfModels() {
 	return 2
 }
-
-procedure getExpectedAModel() {
-	return true
-}
-
-

@@ -18,18 +18,17 @@ void InstChecker::put(std::ostream& stream) {
 
 // Can also be used for resets
 // SETS the instance to the FIRST value if it exists
-void InstGenerator::begin() {
+/*void InstGenerator::begin() {
 	end = false;
 	reset();
 	if (not isAtEnd()) {
 		next();
 	}
-}
+}*/
 
-void InstGenerator::operator++() {
+/*void InstGenerator::operator++() {
+	CHECKTERMINATION
 	Assert(not isAtEnd());
-	if (getGlobal()->terminateRequested()) {
-		throw IdpException("Terminate requested");
-	}
 	next();
 }
+*/

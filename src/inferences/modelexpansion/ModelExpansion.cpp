@@ -9,23 +9,20 @@
  ****************************************************************/
 
 #include "ModelExpansion.hpp"
-#include "inferences/CalculateDefinitions.hpp"
-#include "inferences/InferenceSolverConnection.hpp"
+#include "inferences/definitionevaluation/CalculateDefinitions.hpp"
+#include "inferences/SolverConnection.hpp"
 
-#include "symmetry.hpp"
+#include "inferences/symmetrybreaking/symmetry.hpp"
 
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
-
-#include "external/TerminationManagement.hpp"
 
 #include "tracemonitor.hpp"
 
@@ -55,12 +52,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Create solver and grounder
-	auto solver = InferenceSolverConnection::createsolver();
+	auto solver = SolverConnection::createsolver();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
-	// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
+	// TODO bugged!
+	//auto symstructure = generateApproxBounds(clonetheory, newstructure);
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Grounding\n";
 	}
@@ -102,7 +100,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Run solver
-	auto abstractsolutions = InferenceSolverConnection::initsolution();
+	auto abstractsolutions = SolverConnection::initsolution();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Solving\n";
 	}
@@ -120,8 +118,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 		auto newsolution = newstructure->clone();
-		InferenceSolverConnection::addLiterals(*model, grounding->translator(), newsolution);
-		InferenceSolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
+		SolverConnection::addLiterals(*model, grounding->translator(), newsolution);
+		SolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
 		newsolution->clean();
 		solutions.push_back(newsolution);
 		Assert(newsolution->isConsistent());

@@ -1,0 +1,27 @@
+vocabulary V{
+	//	type x isa int BELANGRIJK: niet vermelden in structuur is lege verzameling!
+	p(int)
+}
+
+theory T: V{
+	?x: p(x).
+}
+
+structure S: V {
+	// x = int NIET MOGELIJK NU
+	// TODO minstens een WARNING als hij een veronderstelling maakt voor een type
+}
+
+#include <mx>
+
+procedure getonesol(){
+	stdoptions.groundlazily=true
+	stdoptions.satverbosity=1
+	return mx::one(T, S)
+}
+
+procedure main(){
+	Sol = getonesol()
+	mx::printtuples("p<ct>", Sol[V::p].ct)
+	mx::printtuples("p<cf>", Sol[V::p].cf)
+}

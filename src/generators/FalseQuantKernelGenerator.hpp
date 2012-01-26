@@ -11,7 +11,7 @@
 #ifndef FALSEQUANTKERNELGENERATOR_HPP_
 #define FALSEQUANTKERNELGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * Generate all x such that ?x phi(x) is false.

@@ -11,7 +11,7 @@
 #ifndef REMOVEMINUS_HPP_
 #define REMOVEMINUS_HPP_
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -28,7 +28,7 @@ public:
 	}
 
 	// Replace (t1 - t2) by (t1 + (-1) * t2)
-	const FOBDDArgument* rewriteBinaryMinus(const FOBDDFuncTerm *& functerm) {
+	const FOBDDTerm* rewriteBinaryMinus(const FOBDDFuncTerm *& functerm) {
 		auto plus = Vocabulary::std()->func("+/2");
 		plus = plus->disambiguate(functerm->func()->sorts(), NULL);
 		Assert(plus!=NULL);
@@ -42,7 +42,7 @@ public:
 	}
 
 	// Replace -t by (-1)*t
-	const FOBDDArgument* rewriteUnaryMinus(const FOBDDFuncTerm *& functerm) {
+	const FOBDDTerm* rewriteUnaryMinus(const FOBDDFuncTerm *& functerm) {
 		auto minusoneterm = _manager->getDomainTerm(functerm->args(0)->sort(), createDomElem(-1));
 		auto times = Vocabulary::std()->func("*/2");
 		times = times->disambiguate(std::vector<Sort*>(3, functerm->args(0)->sort()), NULL);
@@ -50,7 +50,7 @@ public:
 		return newterm->acceptchange(this);
 	}
 
-	const FOBDDArgument *change(const FOBDDFuncTerm *functerm) {
+	const FOBDDTerm *change(const FOBDDFuncTerm *functerm) {
 		if (functerm->func()->name() == "-/2") {
 			return rewriteBinaryMinus(functerm);
 		} else if (functerm->func()->name() == "-/1") {

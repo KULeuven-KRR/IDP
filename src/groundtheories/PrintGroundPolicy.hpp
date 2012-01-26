@@ -11,13 +11,7 @@
 #ifndef PRINTGROUNDTHEORY_HPP_
 #define PRINTGROUNDTHEORY_HPP_
 
-#include <string>
-#include <vector>
-#include <ostream>
-
-#include "theory.hpp"
-#include "ecnf.hpp"
-#include "commontypes.hpp"
+#include "IncludeComponents.hpp"
 
 #include "printers/print.hpp"
 
@@ -25,7 +19,7 @@
 
 #include "printers/ecnfprinter.hpp"
 #include "options.hpp"
-#include "error.hpp"
+#include "errorhandling/error.hpp"
 
 class TsSet;
 

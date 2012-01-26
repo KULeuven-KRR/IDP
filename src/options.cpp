@@ -10,7 +10,7 @@
 
 #include <sstream>
 #include "options.hpp"
-#include "error.hpp"
+#include "errorhandling/error.hpp"
 #include <algorithm>
 #include "utils/NumericLimits.hpp"
 using namespace std;

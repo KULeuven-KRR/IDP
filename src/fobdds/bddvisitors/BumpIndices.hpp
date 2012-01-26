@@ -36,7 +36,7 @@ public:
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
 
-	const FOBDDArgument* change(const FOBDDVariable* var) {
+	const FOBDDTerm* change(const FOBDDVariable* var) {
 		if (var == _variable) {
 			return _manager->getDeBruijnIndex(var->variable()->sort(), _depth);
 		} else {
@@ -44,7 +44,7 @@ public:
 		}
 	}
 
-	const FOBDDArgument* change(const FOBDDDeBruijnIndex* dbr) {
+	const FOBDDTerm* change(const FOBDDDeBruijnIndex* dbr) {
 		if (_depth <= dbr->index()) {
 			return _manager->getDeBruijnIndex(dbr->sort(), dbr->index() + 1);
 		} else {

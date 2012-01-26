@@ -11,7 +11,7 @@
 #ifndef INVUNAGENERATOR_HPP_
 #define INVUNAGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 #include "common.hpp"
 
 class InverseUNAFuncGenerator: public InstGenerator {

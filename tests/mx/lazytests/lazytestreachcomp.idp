@@ -1,0 +1,36 @@
+vocabulary V{
+	type vertex
+	edge(vertex, vertex)
+	reaches(vertex, vertex)
+	reachable(vertex, vertex)
+	connected
+}
+
+theory T: V{
+	connected <=> (!a b : reaches(a,b) => reachable(a,b)).
+	{
+		!x y: reachable(x, y) <- ?z: reaches(x, z) & edge(x, y).
+		!x z: reachable(x, z) <- ?y: reachable(x, y) & (edge(y, z) | edge(z, y)).
+	}
+}
+
+structure S: V {
+	vertex = {1..10}
+	edge = {1,2;2,1;3,4;4,5;5,6;6,7;7,8;8,9;9,10;10,3;}
+	reaches = {1, 2}
+}
+
+#include <mx>
+
+procedure getonesol(){
+	stdoptions.groundlazily=true
+	stdoptions.satverbosity=4
+	stdoptions.randomvaluechoice = true
+	return mx::one(T, S)
+}
+
+procedure main(){
+	Sol = getonesol()
+	mx::printtuples("reachable<ct>", Sol[V::reachable].ct)
+	mx::printtuples("reachable<cf>", Sol[V::reachable].cf)
+}

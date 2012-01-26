@@ -19,20 +19,23 @@ protected:
 		atEnd = true;
 	}
 
-	virtual void reset()= 0;
+	bool _reset;
+	inline void reset() {
+		_reset = true;
+	}
 
 public:
 	GeneratorNode()
-			: atEnd(false) {
+			: atEnd(false), _reset(true) {
 	}
 	virtual ~GeneratorNode() {
 	}
 
-	bool isAtEnd() const {
+	inline bool isAtEnd() const {
 		return atEnd;
 	}
 	virtual void next() = 0;
-	void begin() {
+	inline void begin() {
 		atEnd = false;
 		reset();
 		if (not isAtEnd()) {
@@ -46,14 +49,13 @@ public:
 class LeafGeneratorNode: public GeneratorNode {
 private:
 	InstGenerator* _generator;
-	bool _reset;
 public:
 	LeafGeneratorNode(InstGenerator* gt)
-			: GeneratorNode(), _generator(gt), _reset(true) {
+			: GeneratorNode(), _generator(gt) {
 	}
 
 	~LeafGeneratorNode(){
-		delete(_generator);
+		// TODO delete(_generator);
 	}
 
 	virtual void next() {
@@ -67,12 +69,9 @@ public:
 			notifyAtEnd();
 		}
 	}
-	virtual void reset() {
-		_reset = true;
-	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate " << toString(_generator);
+		stream <<  toString(_generator);
 	}
 };
 
@@ -81,16 +80,14 @@ private:
 	InstGenerator* _generator;
 	GeneratorNode* _child;
 
-	bool _reset;
-
 public:
 	OneChildGeneratorNode(InstGenerator* gt, GeneratorNode* c)
-			: _generator(gt), _child(c), _reset(true) {
+			: _generator(gt), _child(c) {
 	}
 
 	~OneChildGeneratorNode(){
-		delete(_generator);
-		delete(_child);
+		//delete(_generator);
+		//delete(_child);
 	}
 
 	virtual void next() {
@@ -118,10 +115,6 @@ public:
 		}
 	}
 
-	virtual void reset() {
-		_reset = true;
-	}
-
 	virtual void put(std::ostream& stream) {
 		stream << "generate: " << toString(_generator) << "\n";
 		stream << tabs() << "then ";
@@ -136,19 +129,18 @@ private:
 	InstChecker* _checker;
 	InstGenerator* _generator;
 	GeneratorNode *_falsecheckbranch, *_truecheckbranch;
-	bool _reset;
 
 public:
 	TwoChildGeneratorNode(InstChecker* c, InstGenerator* g, GeneratorNode* falsecheckbranch, GeneratorNode* truecheckbranch)
-			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch), _reset(true) {
+			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch) {
 	}
 
 	~TwoChildGeneratorNode(){
-		delete(_checker);
+		/*delete(_checker);
 		delete(_generator);
 		delete(_falsecheckbranch);
 		delete(_truecheckbranch);
-	}
+	*/}
 
 	virtual void next() {
 		if (_reset) {
@@ -196,16 +188,16 @@ public:
 		}
 	}
 
-	virtual void reset() {
-		_reset = true;
-	}
-
 	virtual void put(std::ostream& stream) {
 		stream << "generate: " << toString(_generator) << "\n";
-		stream << tabs() << "then\n";
+		stream << tabs() << "if result is in " << toString(_checker)<<"\n";
+		stream << tabs()<< "THEN\n";
 		pushtab();
-		stream << tabs() << "truebranch " << toString(_truecheckbranch) << "\n";
-		stream << tabs() << "falsebranch " << toString(_falsecheckbranch);
+		stream << tabs() << toString(_truecheckbranch) << "\n";
+		poptab();
+		stream << tabs()<< "ELSE\n";
+		pushtab();
+		stream << tabs() <<  toString(_falsecheckbranch);
 		poptab();
 	}
 };

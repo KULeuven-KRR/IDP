@@ -11,12 +11,8 @@
 #include "gtest/gtest.h"
 #include "cppinterface.hpp"
 
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "IncludeComponents.hpp"
+#include "theory/TheoryUtils.hpp"
 
 namespace Tests {
 

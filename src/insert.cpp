@@ -8,30 +8,25 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
-#include <typeinfo>
+#include "IncludeComponents.hpp"
 #include "insert.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "term.hpp"
-#include "theory.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-#include "theoryinformation/CheckSorts.hpp"
-#include "theorytransformations/DeriveSorts.hpp"
+#include "theory/information/CheckSorts.hpp"
+#include "theory/transformations/DeriveSorts.hpp"
 
-#include "namespace.hpp"
+
 #include "parser/yyltype.hpp"
 #include "parser.hh"
-#include "error.hpp"
+#include "errorhandling/error.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"
-#include "luaconnection.hpp"
+#include "lua/luaconnection.hpp"
 
 #include "GlobalData.hpp"
 
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 using namespace std;
 using namespace LuaConnection;
@@ -520,19 +515,19 @@ ParseInfo Insert::parseinfo(YYLTYPE l) const {
 }
 
 FormulaParseInfo Insert::formparseinfo(Formula* f, YYLTYPE l) const {
-	return FormulaParseInfo(l.first_line, l.first_column, _currfile, f);
+	return FormulaParseInfo(l.first_line, l.first_column, _currfile, *f);
 }
 
 TermParseInfo Insert::termparseinfo(Term* t, YYLTYPE l) const {
-	return TermParseInfo(l.first_line, l.first_column, _currfile, t);
+	return TermParseInfo(l.first_line, l.first_column, _currfile, *t);
 }
 
 TermParseInfo Insert::termparseinfo(Term* t, const ParseInfo& l) const {
-	return TermParseInfo(l.line(), l.col(), l.file(), t);
+	return TermParseInfo(l.linenumber(), l.columnnumber(), l.filename(), *t);
 }
 
 SetParseInfo Insert::setparseinfo(SetExpr* s, YYLTYPE l) const {
-	return SetParseInfo(l.first_line, l.first_column, _currfile, s);
+	return SetParseInfo(l.first_line, l.first_column, _currfile, *s);
 }
 
 set<Variable*> Insert::freevars(const ParseInfo& pi) {
@@ -1246,9 +1241,9 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 			if (n == vt.size()) {
 				vector<Term*> vtpi;
 				for (auto it = vt.cbegin(); it != vt.cend(); ++it) {
-					if ((*it)->pi().original())
-						vtpi.push_back((*it)->pi().original()->clone());
-					else
+					/*if ((*it)->pi().originalobject())
+						vtpi.push_back((*it)->pi().originalobject()->clone());
+					else*/
 						vtpi.push_back((*it)->clone());
 				}
 				PredForm* pipf = new PredForm(SIGN::POS, p, vtpi, FormulaParseInfo());
@@ -1291,11 +1286,11 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 	vt2.push_back(right);
 	vector<Term*> vtpi;
 	for (auto it = vt2.cbegin(); it != vt2.cend(); ++it) {
-		if ((*it)->pi().original()) {
-			vtpi.push_back((*it)->pi().original()->clone());
-		} else {
+		/*if ((*it)->pi().originalobject()) {
+			vtpi.push_back((*it)->pi().originalobject()->clone());
+		} else {*/
 			vtpi.push_back((*it)->clone());
-		}
+		//}
 	}
 	FormulaParseInfo pi = formparseinfo(new PredForm(SIGN::POS, functerm->function(), vtpi, FormulaParseInfo()), l);
 	return new PredForm(SIGN::POS, functerm->function(), vt2, pi);
@@ -1326,9 +1321,9 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 				vt2.push_back(t);
 				vector<Term*> vtpi;
 				for (auto it = vt2.cbegin(); it != vt2.cend(); ++it) {
-					if ((*it)->pi().original())
-						vtpi.push_back((*it)->pi().original()->clone());
-					else
+					/*if ((*it)->pi().originalobject())
+						vtpi.push_back((*it)->pi().originalobject()->clone());
+					else*/
 						vtpi.push_back((*it)->clone());
 				}
 				FormulaParseInfo pi = formparseinfo(new PredForm(SIGN::POS, f, vtpi, FormulaParseInfo()), l);
@@ -1360,8 +1355,8 @@ Formula* Insert::funcgraphform(NSPair* nst, Term* t, YYLTYPE l) const {
 
 Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	if (lf && rf) {
-		Formula* lfpi = lf->pi().original() ? lf->pi().original()->clone() : lf->clone();
-		Formula* rfpi = rf->pi().original() ? rf->pi().original()->clone() : rf->clone();
+		Formula* lfpi = lf->clone();
+		Formula* rfpi = rf->clone();
 		FormulaParseInfo pi = formparseinfo(new EquivForm(SIGN::POS, lfpi, rfpi, FormulaParseInfo()), l);
 		return new EquivForm(SIGN::POS, lf, rf, pi);
 	} else {
@@ -1379,8 +1374,8 @@ Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) const 
 		vector<Formula*> pivf(2);
 		vf[0] = lf;
 		vf[1] = rf;
-		pivf[0] = lf->pi().original() ? lf->pi().original()->clone() : lf->clone();
-		pivf[1] = rf->pi().original() ? rf->pi().original()->clone() : rf->clone();
+		pivf[0] = lf->clone();
+		pivf[1] = rf->clone();
 		FormulaParseInfo pi = formparseinfo(new BoolForm(SIGN::POS, conj, pivf, FormulaParseInfo()), l);
 		return new BoolForm(SIGN::POS, conj, vf, pi);
 	} else {
@@ -1422,7 +1417,7 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 			pivv.insert(v);
 			mvv[*it] = v;
 		}
-		Formula* pif = f->pi().original() ? f->pi().original()->clone(mvv) : f->clone(mvv);
+		Formula* pif = f->clone(mvv);
 		QUANT quant = univ ? QUANT::UNIV : QUANT::EXIST;
 		FormulaParseInfo pi = formparseinfo(new QuantForm(SIGN::POS, quant, pivv, pif, FormulaParseInfo()), l);
 		return new QuantForm(SIGN::POS, quant, vv, f, pi);
@@ -1446,8 +1441,8 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 		SetExpr* se = set(vv, f, l);
 		AggTerm* a = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, se, l));
 		Term* b = domterm(bound, l);
-		AggTerm* pia = a->pi().original() ? dynamic_cast<AggTerm*>(a->pi().original()->clone()) : a->clone();
-		Term* pib = b->pi().original() ? b->pi().original()->clone() : b->clone();
+		AggTerm* pia = a->clone();
+		Term* pib = b->clone();
 		FormulaParseInfo pi = formparseinfo(new AggForm(SIGN::POS, pib, invertComp(c), pia, FormulaParseInfo()), l);
 		return new AggForm(SIGN::POS, b, invertComp(c), a, pi);
 	} else
@@ -1463,20 +1458,20 @@ Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 		Assert(sametypeid<EqChainForm>(*f));
 		EqChainForm* ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
-		Formula* orig = ecf->pi().original();
-		Term* pit = t->pi().original() ? t->pi().original()->clone() : t->clone();
-		if (orig) {
+		//Formula* orig = ecf->pi().originalobject();
+		Term* pit = t->clone();
+		/*if (orig) {
 			EqChainForm* ecfpi = dynamic_cast<EqChainForm*>(orig);
 			ecfpi->add(c, pit);
-		}
+		}*/
 	}
 	return f;
 }
 
 Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 	if (left && right) {
-		Term* leftpi = left->pi().original() ? left->pi().original()->clone() : left->clone();
-		Term* rightpi = right->pi().original() ? right->pi().original()->clone() : right->clone();
+		Term* leftpi = left->clone();
+		Term* rightpi = right->clone();
 		EqChainForm* ecfpi = new EqChainForm(SIGN::POS, true, leftpi, FormulaParseInfo());
 		ecfpi->add(c, rightpi);
 		FormulaParseInfo fpi = formparseinfo(ecfpi, l);
@@ -1546,11 +1541,11 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 			if (n == vt.size()) {
 				vector<Term*> vtpi;
 				for (auto it = vt.cbegin(); it != vt.cend(); ++it) {
-					if ((*it)->pi().original()) {
-						vtpi.push_back((*it)->pi().original()->clone());
-					} else {
+					/*if ((*it)->pi().originalobject()) {
+						vtpi.push_back((*it)->pi().originalobject()->clone());
+					} else {*/
 						vtpi.push_back((*it)->clone());
-					}
+					//}
 				}
 				TermParseInfo pi = termparseinfo(new FuncTerm(f, vtpi, TermParseInfo()), nst->_pi);
 				t = new FuncTerm(f, vt, pi);
@@ -1607,8 +1602,8 @@ Term* Insert::functerm(NSPair* nst) {
 			t = functerm(nst, vt);
 		} else {
 			YYLTYPE l;
-			l.first_line = (nst->_pi).line();
-			l.first_column = (nst->_pi).col();
+			l.first_line = (nst->_pi).linenumber();
+			l.first_column = (nst->_pi).columnnumber();
 			v = quantifiedvar(name, l);
 			t = new VarTerm(v, termparseinfo(new VarTerm(v, TermParseInfo()), nst->_pi));
 			delete (nst);
@@ -1623,8 +1618,8 @@ Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 		Assert(f);
 		vector<Term*> vt = { lt, rt };
 		vector<Term*> pivt(2);
-		pivt[0] = lt->pi().original() ? lt->pi().original()->clone() : lt->clone();
-		pivt[1] = rt->pi().original() ? rt->pi().original()->clone() : rt->clone();
+		pivt[0] = lt->clone();
+		pivt[1] = rt->clone();
 		return new FuncTerm(f, vt, termparseinfo(new FuncTerm(f, pivt, TermParseInfo()), l));
 	} else {
 		if (lt) {
@@ -1642,7 +1637,7 @@ Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 		Function* f = _currvocabulary->func(s + "/1");
 		Assert(f);
 		vector<Term*> vt(1, t);
-		vector<Term*> pivt(1, t->pi().original() ? t->pi().original()->clone() : t->clone());
+		vector<Term*> pivt(1, t->clone());
 		return new FuncTerm(f, vt, termparseinfo(new FuncTerm(f, pivt, TermParseInfo()), l));
 	} else {
 		delete (t);
@@ -1686,7 +1681,7 @@ Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 
 Term* Insert::aggregate(AggFunction f, SetExpr* s, YYLTYPE l) const {
 	if (s) {
-		SetExpr* pis = s->pi().original() ? s->pi().original()->clone() : s->clone();
+		SetExpr* pis = s->clone();
 		TermParseInfo pi = termparseinfo(new AggTerm(pis, f, TermParseInfo()), l);
 		return new AggTerm(s, f, pi);
 	} else
@@ -1715,8 +1710,8 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 			pivv.insert(v);
 			mvv[*it] = v;
 		}
-		Term* picounter = counter->pi().original() ? counter->pi().original()->clone() : counter->clone();
-		Formula* pif = f->pi().original() ? f->pi().original()->clone(mvv) : f->clone(mvv);
+		Term* picounter = counter->clone();
+		Formula* pif = f->clone(mvv);
 		SetParseInfo pi = setparseinfo(new QuantSetExpr(pivv, pif, picounter, SetParseInfo()), l);
 		return new QuantSetExpr(vv, f, counter, pi);
 	} else {
@@ -1751,14 +1746,14 @@ EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 
 void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 	if (f && s && t) {
-		SetExpr* orig = s->pi().original();
-		if (orig && typeid(*orig) == typeid(EnumSetExpr)) {
+		//SetExpr* orig = s->pi().originalobject();
+		/*if (orig && typeid(*orig) == typeid(EnumSetExpr)) {
 			EnumSetExpr* origset = dynamic_cast<EnumSetExpr*>(orig);
-			Formula* pif = f->pi().original() ? f->pi().original()->clone() : f->clone();
-			Term* tif = t->pi().original() ? t->pi().original()->clone() : t->clone();
+			Formula* pif = f->clone();
+			Term* tif = t->clone();
 			origset->addTerm(tif);
 			origset->addFormula(pif);
-		}
+		}*/
 		s->addTerm(t);
 		s->addFormula(f);
 	} else {

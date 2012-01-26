@@ -9,7 +9,7 @@
  ****************************************************************/
 
 #include "GroundPolicy.hpp"
-#include "ecnf.hpp"
+#include "theory/ecnf.hpp"
 #include "common.hpp"
 
 #include <sstream>

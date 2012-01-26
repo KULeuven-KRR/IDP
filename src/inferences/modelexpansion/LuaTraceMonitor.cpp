@@ -8,16 +8,12 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "LuaTraceMonitor.hpp"
 #include "external/SearchMonitor.hpp"
 #include "external/ExternalInterface.hpp"
-#include "vocabulary.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "luaconnection.hpp"
-#include <iostream>
+#include "lua/luaconnection.hpp"
 
 LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 		: _translator(NULL), _state(L) {

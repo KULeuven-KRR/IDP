@@ -12,13 +12,7 @@
 #define TPTPPRINTER_HPP_
 
 #include "printers/print.hpp"
-#include "theory.hpp"
-#include "vocabulary.hpp"
-#include "namespace.hpp"
-#include "term.hpp"
-#include "structure.hpp"
-
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 #include "groundtheories/GroundPolicy.hpp"
 #include "visitors/VisitorFriends.hpp"

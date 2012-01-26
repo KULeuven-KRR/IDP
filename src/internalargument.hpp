@@ -16,14 +16,32 @@
 #include <cstdlib>
 #include "lua.hpp"
 #include "common.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "options.hpp"
-#include "namespace.hpp"
+#include "parseinfo.hpp"
+
+#include "structure/fwstructure.hpp"
 
 class LuaTraceMonitor;
+
+class Namespace;
+class Vocabulary;
+class AbstractTheory;
+class AbstractStructure;
+class Options;
+class Formula;
+class Query;
+class Term;
+class Variable;
+class Sort;
+class Function;
+class Predicate;
+class InternalArgument;
+class UserProcedure;
+class SortTable;
+class PredTable;
+class PredInter;
+class FuncInter;
+class TableIterator;
+class SortIterator;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -391,27 +409,7 @@ struct InternalArgument {
 			: _type(AT_TERM) {
 		_value._term = t;
 	}
-	InternalArgument(const DomainElement* el) {
-		_type = AT_NIL;
-		switch (el->type()) {
-		case DET_INT:
-			_type = AT_INT;
-			_value._int = el->value()._int;
-			break;
-		case DET_DOUBLE:
-			_type = AT_DOUBLE;
-			_value._double = el->value()._double;
-			break;
-		case DET_STRING:
-			_type = AT_STRING;
-			_value._string = StringPointer(*(el->value()._string));
-			break;
-		case DET_COMPOUND:
-			_type = AT_COMPOUND;
-			_value._compound = el->value()._compound;
-			break;
-		}
-	}
+	InternalArgument(const DomainElement* el);
 	InternalArgument(LuaTraceMonitor* v)
 			: _type(AT_TRACEMONITOR) {
 		_value._tracemonitor = v;

@@ -11,9 +11,8 @@
 #ifndef GTGenerator_HPP_
 #define GTGenerator_HPP_
 
-#include "common.hpp"
-#include "generators/InstGenerator.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
+#include "InstGenerator.hpp"
 
 class SortTable;
 class DomElemContainer;

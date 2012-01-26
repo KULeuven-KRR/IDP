@@ -12,8 +12,7 @@
 #define GENERATORFACTORY_HPP
 
 #include <vector>
-#include "structure.hpp"
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 #include "visitors/StructureVisitor.hpp"
 
 class PredTable;
@@ -77,7 +76,7 @@ public:
 	// NOTE: becomes predtable owner!
 	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&,
 			const Formula* original = NULL);
-	static InstGenerator* create(const PredForm* atom, AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern,
+	static InstGenerator* create(const PredForm* atom,const  AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern,
 			const std::vector<const DomElemContainer*>& vars, const Universe& universe);
 };
 

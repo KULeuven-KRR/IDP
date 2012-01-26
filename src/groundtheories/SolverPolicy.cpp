@@ -10,15 +10,11 @@
 
 #include "groundtheories/SolverPolicy.hpp"
 
-#include <iostream>
-
-#include "ecnf.hpp"
-#include "commontypes.hpp"
+#include "IncludeComponents.hpp"
 #include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
-#include "structure.hpp"
 
 using namespace std;
 

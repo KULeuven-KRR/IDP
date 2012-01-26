@@ -11,7 +11,7 @@
 #ifndef CONSTTERMEXTRACTOR_HPP_
 #define CONSTTERMEXTRACTOR_HPP_
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -19,8 +19,6 @@
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddVariable.hpp"
-
-#include "vocabulary.hpp"
 
 /**
  * Get the const term of the first func term with a const left hand side.
@@ -34,7 +32,7 @@ public:
 	FirstConstMultTerm(FOBDDManager* m)
 			: FOBDDVisitor(m) {
 	}
-	const FOBDDDomainTerm* run(const FOBDDArgument* arg) {
+	const FOBDDDomainTerm* run(const FOBDDTerm* arg) {
 		_result = _manager->getDomainTerm(arg->sort(), createDomElem(1));
 		arg->accept(this);
 		return _result;
@@ -42,7 +40,7 @@ public:
 	void visit(const FOBDDFuncTerm* ft) {
 		if (isBddDomainTerm(ft->args(0))) {
 			Assert(not isBddDomainTerm(ft->args(1)));
-			_result = getBddDomainTerm(ft->args(0));
+			_result = castBddDomainTerm(ft->args(0));
 		}
 	}
 };

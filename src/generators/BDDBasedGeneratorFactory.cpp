@@ -8,11 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
-#include "term.hpp"
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -22,20 +18,20 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAtomKernel.hpp"
-#include "generators/BDDBasedGeneratorFactory.hpp"
-#include "generators/InstGenerator.hpp"
-#include "generators/SimpleFuncGenerator.hpp"
-#include "generators/TreeInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
-#include "generators/EnumLookupGenerator.hpp"
-#include "generators/BasicGenerators.hpp"
-#include "generators/GeneratorFactory.hpp"
-#include "generators/FalseQuantKernelGenerator.hpp"
-#include "generators/TrueQuantKernelGenerator.hpp"
+#include "BDDBasedGeneratorFactory.hpp"
+#include "InstGenerator.hpp"
+#include "SimpleFuncGenerator.hpp"
+#include "TreeInstGenerator.hpp"
+#include "InverseInstGenerator.hpp"
+#include "SortInstGenerator.hpp"
+#include "LookupGenerator.hpp"
+#include "EnumLookupGenerator.hpp"
+#include "BasicGenerators.hpp"
+#include "GeneratorFactory.hpp"
+#include "FalseQuantKernelGenerator.hpp"
+#include "TrueQuantKernelGenerator.hpp"
 
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 using namespace std;
 
@@ -190,7 +186,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 			auto solvedterm = solve(*manager, atom, atomvars[n]);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
-				PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), { varterm, solvedterm }, atom->pi().clone());
+				PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), { varterm, solvedterm }, atom->pi());
 				delete (atom);
 				return newatom;
 			}
@@ -204,7 +200,7 @@ PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<
 	if (atom == newatom) {
 		vector<Term*> vt = lhs->subterms();
 		vt.push_back(rhs);
-		newatom = new PredForm(atom->sign(), lhs->function(), vt, atom->pi().clone());
+		newatom = new PredForm(atom->sign(), lhs->function(), vt, atom->pi());
 		delete (atom);
 		delete (lhs);
 	}
@@ -217,7 +213,7 @@ PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<
 PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
 	vector<Term*> vt = ft->subterms();
 	vt.push_back(rangeTerm);
-	auto newatom = new PredForm(atom->sign(), ft->function(), vt, atom->pi().clone());
+	auto newatom = new PredForm(atom->sign(), ft->function(), vt, atom->pi());
 	delete (atom);
 	delete (ft);
 	return newatom;
@@ -231,7 +227,7 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
  * TODO can only call on specific predforms
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+		const vector<Variable*>& atomvars,const  AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
@@ -460,7 +456,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 }
 
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
-		const vector<const FOBDDVariable*>& origkernelvars, AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
+		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);

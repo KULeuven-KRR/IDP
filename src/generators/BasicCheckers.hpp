@@ -11,7 +11,7 @@
 #ifndef BASICCHECKERS_HPP_
 #define BASICCHECKERS_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 class FalseInstChecker: public InstChecker {
 public:

@@ -11,7 +11,7 @@
 #ifndef LAZYQUANTGROUNDER_HPP_
 #define LAZYQUANTGROUNDER_HPP_
 
-#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "FormulaGrounders.hpp"
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 

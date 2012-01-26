@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "utils/FileManagement.hpp"
 #include "TestUtils.hpp"
 
@@ -27,10 +27,6 @@ vector<string> generateListOfMXnbFiles() {
 }
 vector<string> generateListOfMXsatFiles() {
 	vector<string> testdirs {"satmx/"};
-	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
-}
-vector<string> generateListOfSlowMXsatFiles() {
-	vector<string> testdirs {"satmxlongrunning/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 
@@ -74,16 +70,6 @@ TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
-
-#ifdef NDEBUG
-class SlowMXnbTest: public ::testing::TestWithParam<string> {
-};
-TEST_P(SlowMXnbTest, DoesSlowMX) {
-	runTests("mxsattestslow.idp", GetParam());
-}
-
-INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
-#endif
 
 TEST(MakeTrueTest, Correct) {
 	Status result = Status::FAIL;

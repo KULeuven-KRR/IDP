@@ -11,7 +11,7 @@
 #ifndef ARGCHECKER_HPP_
 #define ARGCHECKER_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -23,7 +23,7 @@
 class TermOccursNested: public FOBDDVisitor {
 private:
 	bool _result;
-	const FOBDDArgument* _arg;
+	const FOBDDTerm* _arg;
 
 	void visit(const FOBDDVariable* var) {
 		if (var == _arg) {
@@ -56,7 +56,7 @@ public:
 	TermOccursNested(FOBDDManager* m)
 			: FOBDDVisitor(m) {
 	}
-	bool termHasSubterm(const FOBDDArgument* super, const FOBDDArgument* arg) {
+	bool termHasSubterm(const FOBDDTerm* super, const FOBDDTerm* arg) {
 		_result = false;
 		_arg = arg;
 		super->accept(this);

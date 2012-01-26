@@ -10,14 +10,10 @@
 
 #include "PropagatorFactory.hpp"
 
-#include <iostream>
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
+#include "IncludeComponents.hpp"
 #include "propagate.hpp"
 #include "GlobalData.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 #include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -32,7 +28,7 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	propagator->doPropagation();
+	//propagator->doPropagation();
 	return propagator->symbolicstructure();
 }
 
@@ -44,7 +40,7 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	}
 	auto pvars = VarUtils::makeNewVariables(symbol->sorts());
 	vector<const FOBDDVariable*> bddvarlist;
-	vector<const FOBDDArgument*> bddarglist;
+	vector<const FOBDDTerm*> bddarglist;
 	for (size_t n = 0; n < pvars.size(); ++n) {
 		const FOBDDVariable* bddvar = manager.getVariable(pvars[n]);
 		bddvarlist.push_back(bddvar);
@@ -53,8 +49,8 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	vars[symbol] = bddvarlist;
 	auto ctkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CT, bddarglist);
 	auto cfkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CF, bddarglist);
-	ctbounds[symbol] = manager.getBDD(ctkernel, manager.truebdd(), manager.falsebdd());
-	cfbounds[symbol] = manager.getBDD(cfkernel, manager.truebdd(), manager.falsebdd());
+	ctbounds[symbol] = manager.ifthenelse(ctkernel, manager.truebdd(), manager.falsebdd());
+	cfbounds[symbol] = manager.ifthenelse(cfkernel, manager.truebdd(), manager.falsebdd());
 }
 
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, AbstractStructure* structure) {

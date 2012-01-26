@@ -11,21 +11,16 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "generators/ComparisonGenerator.hpp"
 #include "generators/SortInstGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
-#include "term.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
-#include <iostream>
-#include "IdpException.hpp"
 
 using namespace std;
 
@@ -160,8 +155,8 @@ namespace Tests{
 		auto bdd = bddfactory.turnIntoBdd(formula);
 
 		auto bddvar = manager.getVariable(variable);
-		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDArgument*>{bddvar});
-		auto testbdd = manager.getBDD(predkernel, manager.truebdd(), manager.falsebdd());
+		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDTerm*>{bddvar});
+		auto testbdd = manager.ifthenelse(predkernel, manager.truebdd(), manager.falsebdd());
 		testbdd = manager.existsquantify(bddvar, testbdd);
 
 		ASSERT_EQ(testbdd, bdd);

@@ -11,7 +11,7 @@
 #ifndef TERMEXTRACTOR_HPP_
 #define TERMEXTRACTOR_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -20,21 +20,19 @@
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddVariable.hpp"
 
-#include "vocabulary.hpp"
-
 /**
  * Collects all subterms of a given term which are reachable from root only by functerms of the provided type.
  */
 class TermCollector: public FOBDDVisitor {
 private:
-	std::vector<const FOBDDArgument*> _terms;
+	std::vector<const FOBDDTerm*> _terms;
 	std::string _funcname;
 public:
 	TermCollector(FOBDDManager* m)
 			: FOBDDVisitor(m), _funcname("") {
 	}
 
-	const std::vector<const FOBDDArgument*>& getTerms(const FOBDDArgument* arg, const std::string& funcname) {
+	const std::vector<const FOBDDTerm*>& getTerms(const FOBDDTerm* arg, const std::string& funcname) {
 		_funcname = funcname;
 		_terms.clear();
 		arg->accept(this);

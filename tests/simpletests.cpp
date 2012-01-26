@@ -11,8 +11,9 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "commontypes.hpp"
+#include "inferences/grounding/Utils.hpp"
 
 #include <dirent.h>
 #include <exception>

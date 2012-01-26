@@ -8,15 +8,13 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "FormulaGrounders.hpp"
 
-#include "vocabulary.hpp"
-#include "ecnf.hpp"
-#include "inferences/grounding/grounders/TermGrounders.hpp"
-#include "inferences/grounding/grounders/SetGrounders.hpp"
+#include "IncludeComponents.hpp"
+#include "TermGrounders.hpp"
+#include "SetGrounders.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
-#include "common.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"
@@ -84,7 +82,9 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
-			_checkargs(checkargs), _inter(inter) {
+			_checkargs(checkargs), _inter(inter),
+			groundsubterms(_subtermgrounders.size()),
+			args(_subtermgrounders.size()){
 	gentype = ct.gentype;
 }
 
@@ -104,8 +104,6 @@ Lit AtomGrounder::run() const {
 
 	// Run subterm grounders
 	bool alldomelts = true;
-	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
-	ElementTuple args(_subtermgrounders.size());
 
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
@@ -131,7 +129,7 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "Term value out of predicate type\n" << tabs();
+					clog << "Term value out of predicate type\n" << tabs(); //TODO should be a warning
 					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 					if (_origform != NULL) {
 						poptab();
@@ -840,13 +838,14 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
+			std::cerr << toString(_checker);
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
+				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n" << tabs();
 			}
 			return;
 		}
-
 		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();

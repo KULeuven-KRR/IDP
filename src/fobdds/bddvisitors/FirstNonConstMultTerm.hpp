@@ -11,7 +11,7 @@
 #ifndef NONCONSTTERMEXTRACTOR_HPP_
 #define NONCONSTTERMEXTRACTOR_HPP_
 
-#include <vector>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
@@ -20,20 +20,18 @@
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddVariable.hpp"
 
-#include "vocabulary.hpp"
-
 /**
  * Return first term which is not a multiplication with a const left hand side.
  */
 class FirstNonConstMultTerm: public FOBDDVisitor {
 private:
-	const FOBDDArgument* _result;
+	const FOBDDTerm* _result;
 public:
 	FirstNonConstMultTerm()
 			: FOBDDVisitor(NULL) {
 	}
 
-	const FOBDDArgument* run(const FOBDDArgument* arg) {
+	const FOBDDTerm* run(const FOBDDTerm* arg) {
 		_result = 0;
 		arg->accept(this);
 		return _result;

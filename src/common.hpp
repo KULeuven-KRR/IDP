@@ -19,18 +19,14 @@
 #include "commontypes.hpp"
 #include <utility>
 
-#include "IdpException.hpp"
+#include "errorhandling/IdpException.hpp"
 
 #include "loki/NullType.h"
 #include "loki/TypeTraits.h"
 #include "loki/static_check.h"
 #include <typeinfo>
 
-#ifndef NDEBUG
-#define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
-#else
-#define Assert(x) do {} while(0)
-#endif
+#include "Assert.h"
 
 std::string getGlobalNamespaceName();
 std::string getInternalNamespaceName();
@@ -106,6 +102,22 @@ std::string toString(const std::set<Type>& v) {
 
 template<typename Type1, typename Type2>
 std::string toString(const std::map<Type1, Type2>& v) {
+	std::stringstream ss;
+	ss << "(";
+	for (auto obj = v.cbegin(); obj != v.cend();) {
+		ss << toString((*obj).first);
+		ss << "->";
+		ss << toString((*obj).second);
+		++obj;
+		if (obj != v.cend()) {
+			ss << "; ";
+		}
+	}
+	ss << ")";
+	return ss.str();
+}
+template<typename Type1, typename Type2, typename Type3> //to allow for a "compare" in th emaps
+std::string toString(const std::map<Type1, Type2, Type3>& v) {
 	std::stringstream ss;
 	ss << "(";
 	for (auto obj = v.cbegin(); obj != v.cend();) {

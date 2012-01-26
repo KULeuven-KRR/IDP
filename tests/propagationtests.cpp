@@ -14,21 +14,16 @@
 #include <exception>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "generators/ComparisonGenerator.hpp"
 #include "generators/SortInstGenerator.hpp"
 #include "generators/InverseInstGenerator.hpp"
 #include "generators/LookupGenerator.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
-#include "term.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
-#include <iostream>
-#include "IdpException.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "TestUtils.hpp"

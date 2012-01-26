@@ -9,13 +9,32 @@
  ****************************************************************/
 
 #include "GroundTranslator.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
-#include "vocabulary.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
-#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
+#include "IncludeComponents.hpp"
+#include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/DefinitionGrounders.hpp"
 
 using namespace std;
+
+inline size_t HashTuple::operator()(const ElementTuple& tuple) const {
+	size_t seed = 1;
+	for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
+		switch ((*i)->type()) {
+		case DomainElementType::DET_INT:
+			seed += (*i)->value()._int;
+			break;
+		case DomainElementType::DET_DOUBLE:
+			seed += (*i)->value()._double;
+			break;
+		case DomainElementType::DET_STRING:
+			seed += reinterpret_cast<size_t>((*i)->value()._string);
+			break;
+		case DomainElementType::DET_COMPOUND:
+			seed += reinterpret_cast<size_t>((*i)->value()._compound);
+			break;
+		}
+	}
+	return seed % 104729;
+}
 
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
@@ -37,8 +56,10 @@ GroundTranslator::~GroundTranslator() {
 
 Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	Lit lit = 0;
-	auto jt = symbols[n].tuple2atom.lower_bound(args);
-	if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
+	//auto jt = symbols[n].tuple2atom.lower_bound(args);
+	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
+	auto jt = symbols[n].tuple2atom.find(args);
+	if (jt != symbols[n].tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
@@ -93,9 +114,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 		it = symbol2rulegrounder.insert(pair<unsigned int, std::vector<LazyRuleGrounder*> >(symbolnumber, { })).first;
 	}
 	for (auto grounderit = it->second.cbegin(); grounderit < it->second.cend(); ++grounderit) {
-		if (grounder == *grounderit) {
-			return;
-		}
+		Assert(grounder != *grounderit);
 	}
 	it->second.push_back(grounder);
 }

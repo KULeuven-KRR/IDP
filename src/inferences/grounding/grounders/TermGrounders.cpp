@@ -16,11 +16,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
-#include "common.hpp"
-#include "vocabulary.hpp"
-#include "term.hpp"
-
-#include <iostream>
+#include "IncludeComponents.hpp"
 
 using namespace std;
 
@@ -68,9 +64,12 @@ GroundTerm DomTermGrounder::run() const {
 	return GroundTerm(_value);
 }
 
-GroundTerm VarTermGrounder::run() const {
+/*GroundTerm VarTermGrounder::run() const {
+	if (_verbosity > 2) {
+		clog <<"value="<<toString(_value->get());
+	}
 	return GroundTerm(_value->get());
-}
+}*/
 
 GroundTerm FuncTermGrounder::run() const {
 	if (_verbosity > 2) {

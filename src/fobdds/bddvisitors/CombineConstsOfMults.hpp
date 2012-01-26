@@ -32,7 +32,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
 		if (not isAddition(functerm)) {
 			return FOBDDVisitor::change(functerm);
 		}
@@ -41,7 +41,7 @@ public:
 		auto leftncte = ncte.run(functerm->args(0));
 
 		if (isBddFuncTerm(functerm->args(1))) {
-			auto rightterm = getBddFuncTerm(functerm->args(1));
+			auto rightterm = castBddFuncTerm(functerm->args(1));
 			if (isAddition(rightterm)) {
 				auto rightncte = ncte.run(rightterm->args(0));
 				if (leftncte != rightncte) {

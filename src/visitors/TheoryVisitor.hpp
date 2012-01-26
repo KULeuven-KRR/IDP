@@ -11,7 +11,7 @@
 #ifndef THEORYVISITOR_HPP
 #define THEORYVISITOR_HPP
 
-#include "visitors/VisitorFriends.hpp"
+#include "VisitorFriends.hpp"
 
 #include "groundtheories/GroundPolicy.hpp"
 

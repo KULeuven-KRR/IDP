@@ -11,19 +11,16 @@
 #ifndef INFERENCES_GROUNDINGPROPAGATE_HPP_
 #define INFERENCES_GROUNDINGPROPAGATE_HPP_
 
-#include <vector>
-#include <map>
-#include <set>
-#include "theory.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
 #include "inferences/modelexpansion/propagatemonitor.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "PropagatorFactory.hpp"
+
+#include "inferences/SolverConnection.hpp"
 
 /**
  * Given a theory and a structure, return a new structure which is at least as precise as the structure
@@ -38,11 +35,7 @@ public:
 		auto monitor = new PropagateMonitor();
 
 		//Set MinisatID solver options
-		MinisatID::SolverOption modes;
-		modes.nbmodels = 0;
-		modes.verbosity = getOption(IntType::SATVERBOSITY);
-		//modes.remap = false;
-		MinisatID::WrappedPCSolver* solver = new SATSolver(modes);
+		auto solver = SolverConnection::createsolver(0);
 
 		//Create and execute grounder
 		auto symstructure = generateNaiveApproxBounds(theory, structure);

@@ -26,7 +26,7 @@
 template<typename Operation>
 class CollectSameOperationTerms: public FOBDDVisitor {
 private:
-	std::vector<const FOBDDArgument*> _result;
+	std::vector<const FOBDDTerm*> _result;
 
 	void avoidempty() {
 		if (_result.empty()) {
@@ -59,7 +59,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	std::vector<const FOBDDArgument*> getTerms(const FOBDDArgument* arg) {
+	std::vector<const FOBDDTerm*> getTerms(const FOBDDTerm* arg) {
 		_result.clear();
 		arg->accept(this);
 		return _result;

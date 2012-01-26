@@ -16,10 +16,8 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAtomKernel.hpp"
-#include "vocabulary.hpp"
-#include "theory.hpp"
-#include "term.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "IncludeComponents.hpp"
+#include "theory/TheoryUtils.hpp"
 
 using namespace std;
 
@@ -27,36 +25,39 @@ using namespace std;
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
-	f->accept(this);
-	//cf->recursiveDelete(); FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
+	cf->accept(this);
+	//cf->recursiveDelete();
+	//FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
+	//Possible solution: cf->recursiveDeleteKeepVars();
 	return _bdd;
 }
 
-const FOBDDArgument* FOBDDFactory::turnIntoBdd(const Term* t) {
+const FOBDDTerm* FOBDDFactory::turnIntoBdd(const Term* t) {
 	// FIXME: move partial functions in aggregates that occur in t
 	t->accept(this);
-	return _argument;
+	return _term;
 }
 
 void FOBDDFactory::visit(const VarTerm* vt) {
-	_argument = _manager->getVariable(vt->var());
+	_term = _manager->getVariable(vt->var());
 }
 
 void FOBDDFactory::visit(const DomainTerm* dt) {
-	_argument = _manager->getDomainTerm(dt->sort(), dt->value());
+	_term = _manager->getDomainTerm(dt);
 }
 
 void FOBDDFactory::visit(const FuncTerm* ft) {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	for (auto i = ft->subterms().cbegin(); i < ft->subterms().cend(); ++i) {
 		(*i)->accept(this);
-		args.push_back(_argument);
+		args.push_back(_term);
 	}
-	_argument = _manager->getFuncTerm(ft->function(), args);
+	_term = _manager->getFuncTerm(ft->function(), args);
 }
 
 void FOBDDFactory::visit(const AggTerm*) {
 	throw notyetimplemented("Creating a bdd for aggregate terms has not yet been implemented.");
+	//TODO
 }
 
 /**
@@ -75,11 +76,11 @@ void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& inver
 			break;
 		case ST_PF:
 			akt = AtomKernelType::AKT_CT;
-			invert = true;
+			invert = not invert;
 			break;
 		case ST_PT:
 			akt = AtomKernelType::AKT_CF;
-			invert = true;
+			invert = not invert;
 			break;
 		case ST_NONE:
 			break;
@@ -91,10 +92,10 @@ void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& inver
 }
 
 void FOBDDFactory::visit(const PredForm* pf) {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	for (auto i = pf->subterms().cbegin(); i < pf->subterms().cend(); ++i) {
 		(*i)->accept(this);
-		args.push_back(_argument);
+		args.push_back(_term);
 	}
 	auto akt = AtomKernelType::AKT_TWOVALUED;
 	auto invert = isNeg(pf->sign());
@@ -104,9 +105,9 @@ void FOBDDFactory::visit(const PredForm* pf) {
 
 	_kernel = _manager->getAtomKernel(symbol, akt, args);
 	if (invert) {
-		_bdd = _manager->getBDD(_kernel, _manager->falsebdd(), _manager->truebdd());
+		_bdd = _manager->ifthenelse(_kernel, _manager->falsebdd(), _manager->truebdd());
 	} else {
-		_bdd = _manager->getBDD(_kernel, _manager->truebdd(), _manager->falsebdd());
+		_bdd = _manager->ifthenelse(_kernel, _manager->truebdd(), _manager->falsebdd());
 	}
 }
 
@@ -133,6 +134,7 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 
 void FOBDDFactory::visit(const EquivForm*) {
 	throw notyetimplemented("Creating a bdd for equivalences has not yet been implemented.");
+	//TODO
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
@@ -151,7 +153,7 @@ void FOBDDFactory::visit(const QuantForm* qf) {
 }
 
 void FOBDDFactory::visit(const EqChainForm* ef) {
-	auto efclone = ef->clone();
+	auto efclone = ef->cloneKeepVars(); //We are not allowed to change the vars, since the manager keeps a vars->bddvars mapping.
 	auto f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
 	f->accept(this);
 	// f->recursiveDelete(); TODO deletes variables also!
@@ -159,4 +161,5 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 
 void FOBDDFactory::visit(const AggForm*) {
 	throw notyetimplemented("Creating a bdd for aggregate formulas has not yet been implemented.");
+	//TODO
 }

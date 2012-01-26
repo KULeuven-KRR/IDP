@@ -31,7 +31,9 @@ Veronderstel structuur \code{S}, voc \code{V}, theorie \code{T}, type \code{t}, 
 \centering
 \begin{tabular}{c|c}
 constructie & gebruik \\
+
 \hline
+
 type selecteren in theorie, bvb \code{MAX}, \code{MIN} & \code{MAX[:t]} \\
 predicaat uit voc & \code{V[p]} \\
 type uit voc & \code{V[t.type]} \\
@@ -42,7 +44,8 @@ predtabel van sort uit voc & \code{S[V::t.pred]} \\
 ct van predtabel & \code{pt.ct} \\
 type van pred positie 1 & ? \\
 formula uit theorie & ? \\
-\ldots & \ldots
+\ldots & \ldots \\
+
 \hline
 \end{tabular}
 \end{table}
@@ -55,7 +58,9 @@ hier zou best een correcte, formele definitie komen van \fodot, bruikbaar in al 
 \section{Typing}
 
 \subsection{Standard types}
-Zit er een hierarchie in de standaard types zelf? Geldt er \code{int isa float} en \code{nat isa int}? Is een char een string?
+Er is een hierarchie in de standaard types. $nat \rightarrow int \rightarrow float$ en $char \rightarrow string$.
+
+Is er een praktisch nut voor $char$ of is het gewoon bloat?
 
 \subsubsection{Range definitions in structure}
 Verwant probleem, wat kan je in een structuur schrijven van welk type? 
@@ -69,7 +74,7 @@ intranges bij ints, charranges bij chars, doubleranges bij doubles en enkel enum
 Verliezen we dan iets? Nee, want je kan lua schrijven om bvb strings te genereren. 
 
 \subsection{Overloading}
-Hoe lossen we het overloading <=> type derivatie probleem op? Momenteel is het zo geimplementeerd dat in geval van overloading, de gebruiker elk type moet specifieren.
+Hoe lossen we het overloading vs. type derivatie probleem op? Momenteel is het zo geimplementeerd dat in geval van overloading, de gebruiker elk type moet specifieren.
 
 \subsection{Subtyping en semantics}
 Hoe zit het juist met predicaat introductie bij subtyping? Er zijn een aantal dingen die niet consistent of niet doorzichtig worden ge\"implementeerd, waardoor het voor de gebruiker bijna onmogelijk is om te weten wat er zal gebeuren.
@@ -79,10 +84,10 @@ heeft een andere betekenis dan
 \[\{\forall x: P(x+1) \lrule \true \}\]
 Reden: er wordt een andere manier van predicaat-introductie gedaan.
 
-Verder, \[\{P(C) \lrule \true \}\] heeft een modellen als $C$ niet afbeeldt op een element uit het type van $P$. Dit is erg contra-intuitief, want als gebruiker heb je geasserteerd dat $P(C)$ waar moet zijn.
+Verder, \[\{P(C) \lrule \true \}\] heeft een model als $C$ niet afbeeldt op een element uit het type van $P$, met $P(C)$ false. Dit is erg contra-intuitief, want als gebruiker heb je geasserteerd dat $P(C)$ waar moet zijn.
 
 \subsubsection{Definition semantics}
-Hierop verder gaand, zou het soms nuttig zijn om als gebruiker te speficieren dat je een concept gedefinieerd op een oneindig type wilt beperken door het uit te rekenen alsof het op het oneindige type was, maar dan de projectie te nemen op het eindige interval.
+Hierop verder gaand, zou het soms nuttig zijn om als gebruiker te specifi\"eren dat je een concept gedefinieerd op een oneindig type wilt beperken door het uit te rekenen alsof het op het oneindige type was, maar dan de projectie te nemen op het eindige interval.
 
 \begin{lstlisting}
 vocabulary V {

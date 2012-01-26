@@ -11,12 +11,8 @@
 #ifndef GROUNDING_GROUNDTHEORY_HPP_
 #define GROUNDING_GROUNDTHEORY_HPP_
 
-#include "commontypes.hpp"
+#include "IncludeComponents.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
-
-#include "vocabulary.hpp"
-#include "structure.hpp"
-#include "ecnf.hpp"
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -24,7 +20,6 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
 
-#include <iostream>
 #include "utils/ListUtils.hpp"
 
 template<class Policy>

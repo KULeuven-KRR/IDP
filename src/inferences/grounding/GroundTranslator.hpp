@@ -11,9 +11,11 @@
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
 
-#include "inferences/grounding/Utils.hpp"
-#include "ecnf.hpp"
-#include "structure.hpp"
+#include "Utils.hpp"
+#include "IncludeComponents.hpp"
+
+#include <unordered_map>
+#include <bits/functional_hash.h>
 
 class LazyRuleGrounder;
 class TsSet;
@@ -23,7 +25,12 @@ class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
 
-typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
+struct HashTuple {
+	size_t operator()(const ElementTuple& tuple) const;
+};
+
+//typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
+typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
 typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
 struct SymbolAndAtomMap {

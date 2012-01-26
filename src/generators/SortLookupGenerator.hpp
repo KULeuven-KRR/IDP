@@ -11,7 +11,7 @@
 #ifndef SORTLOOKUPGENERATOR_HPP_
 #define SORTLOOKUPGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * Generate a domelem if the input is in the sorttable (TODO is in fact a checker).

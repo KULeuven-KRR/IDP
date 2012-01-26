@@ -11,8 +11,7 @@
 #ifndef SOLVERTHEORY_HPP_
 #define SOLVERTHEORY_HPP_
 
-#include "common.hpp"
-#include "ecnf.hpp"
+#include "IncludeComponents.hpp"
 #include "external/ExternalInterface.hpp"
 
 namespace MinisatID {

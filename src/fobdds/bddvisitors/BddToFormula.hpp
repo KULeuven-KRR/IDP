@@ -11,9 +11,7 @@
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
 
-#include <vector>
-#include <map>
-#include <set>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -24,11 +22,7 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddUtils.hpp"
 #include "fobdds/FoBdd.hpp"
-
-#include "vocabulary.hpp"
-#include "term.hpp"
-#include "theory.hpp"
-#include "utils/TheoryUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 /**
  * Given a bdd or a kernel, creates the associated formula.

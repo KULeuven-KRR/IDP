@@ -12,7 +12,7 @@
 #define PLUSGENERATOR_HPP_
 
 #include "common.hpp"
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 enum class ARITHRESULT {
 	VALID, INVALID

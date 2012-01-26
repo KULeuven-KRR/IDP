@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "rungidl.hpp"
+#include "external/rungidl.hpp"
 #include "utils/FileManagement.hpp"
 #include "TestUtils.hpp"
 
@@ -25,12 +25,14 @@ vector<string> generateListOfMXsatFiles() {
 	vector<string> testdirs {"satmx/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
-vector<string> generateListOfSlowMXsatFiles() {
-	vector<string> testdirs {"satmxlongrunning/"};
+vector<string> generateListOfMXnbFiles() {
+	vector<string> testdirs {"simplemx/", "numberknown/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 
 class MXLazySATTest: public ::testing::TestWithParam<string> {
+};
+class MXLazyMXTest: public ::testing::TestWithParam<string> {
 };
 
 void throwexc() {
@@ -45,10 +47,15 @@ void runTests(const char* inferencefilename, const string& instancefile){
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
+TEST_P(MXLazyMXTest, DoesLazyMX) {
+	runTests("mxlazymxtest.idp", GetParam());
+}
+
 TEST_P(MXLazySATTest, DoesLazyMX) {
 	runTests("mxlazysattest.idp", GetParam());
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXLazySATTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
+INSTANTIATE_TEST_CASE_P(ModelExpansion, MXLazyMXTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 
 }

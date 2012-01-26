@@ -11,7 +11,7 @@
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
 
-#include "inferences/grounding/grounders/Grounder.hpp"
+#include "Grounder.hpp"
 #include "GroundUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
@@ -130,7 +130,12 @@ public:
 	void ground(const Lit& head, const ElementTuple& headargs);
 	void notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders);
 
+private:
+	bool isGrounding;
+	std::queue<std::pair<const Lit&, const ElementTuple&>> stilltoground;
 	dominstlist createInst(const ElementTuple& headargs);
+	void doGrounding();
+	void doGround(const Lit& head, const ElementTuple& headargs);
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

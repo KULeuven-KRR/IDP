@@ -12,7 +12,7 @@
 #define SIMPLEFUNCGENERATOR_HPP_
 
 #include <vector>
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 class FuncTable;
 class DomElemContainer;
@@ -72,12 +72,11 @@ public:
 		for (unsigned int i = 0; i < domainpattern.size(); ++i) {
 			_currenttuple.push_back(_vars[i]->get());
 		}
-		_currenttuple.push_back(_rangevar->get());
 	}
 
-	~SimpleFuncGenerator(){
-		delete(_function);
-		delete(_univgen);
+	~SimpleFuncGenerator() {
+		delete (_function);
+		delete (_univgen);
 	}
 
 	// FIXME reimplement (clone generator)
@@ -94,7 +93,7 @@ public:
 			_reset = false;
 			_univgen->begin();
 
-			for (unsigned int i = 0; i < _vars.size(); ++i) {
+			for (unsigned int i = 0; i < _vars.size() - 1; ++i) {
 				_currenttuple[i] = _vars[i]->get();
 			}
 			for (unsigned int i = 0; i < _inpos.size(); ++i) {

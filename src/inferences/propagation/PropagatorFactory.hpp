@@ -12,25 +12,13 @@
 #define PROPAGATORFACTORY_HPP_
 
 #include <map>
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-class PFSymbol;
-class PredForm;
-class EqChainForm;
-class EquivForm;
-class BoolForm;
-class AggForm;
-class QuantForm;
-class FuncInter;
-class PredInter;
 class Options;
 class GenerateBDDAccordingToBounds;
 class FOPropScheduler;
-class Predicate;
-class Function;
-class PredTable;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 
 enum InitBoundType {

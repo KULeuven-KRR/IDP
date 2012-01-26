@@ -9,11 +9,8 @@
  ****************************************************************/
 
 #include "GlobalData.hpp"
-#include "structure.hpp"
-#include "namespace.hpp"
+#include "IncludeComponents.hpp"
 #include "parser/clconst.hpp"
-#include "IdpException.hpp"
-#include <iostream>
 #include "options.hpp"
 #include "internalargument.hpp"
 

@@ -11,7 +11,7 @@
 #ifndef SORTINSTGENERATOR_HPP_
 #define SORTINSTGENERATOR_HPP_
 
-#include "generators/InstGenerator.hpp"
+#include "InstGenerator.hpp"
 
 /**
  * Instantiate a given variable with all possible values for the given sort

@@ -29,7 +29,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	const FOBDDArgument* change(const FOBDDFuncTerm *functerm) {
+	const FOBDDTerm* change(const FOBDDFuncTerm *functerm) {
 		if (!isMultiplication(functerm)) {
 			return FOBDDVisitor::change(functerm);
 		}
@@ -37,14 +37,14 @@ public:
 		auto rightterm = functerm->args(1);
 
 		if (isBddFuncTerm(leftterm)) {
-			auto leftfuncterm = getBddFuncTerm(leftterm);
+			auto leftfuncterm = castBddFuncTerm(leftterm);
 			if (isAddition(leftfuncterm)) {
 				auto newterm = distribute(functerm, leftfuncterm, rightterm);
 				return newterm->acceptchange(this);
 			}
 		}
 		if (isBddFuncTerm(rightterm)) {
-			auto rightfuncterm = getBddFuncTerm(rightterm);
+			auto rightfuncterm = castBddFuncTerm(rightterm);
 			if (isAddition(rightfuncterm)) {
 				auto newterm = distribute(functerm, rightfuncterm, leftterm);
 				return newterm->acceptchange(this);
@@ -55,7 +55,7 @@ public:
 	}
 
 private:
-	const FOBDDArgument* distribute(const FOBDDFuncTerm* functerm, const FOBDDFuncTerm* leftfuncterm, const FOBDDArgument* & rightterm) {
+	const FOBDDTerm* distribute(const FOBDDFuncTerm* functerm, const FOBDDFuncTerm* leftfuncterm, const FOBDDTerm* & rightterm) {
 		auto newleft = _manager->getFuncTerm(functerm->func(), { leftfuncterm->args(0), rightterm });
 		auto newright = _manager->getFuncTerm(functerm->func(), { leftfuncterm->args(1), rightterm });
 		auto newterm = _manager->getFuncTerm(leftfuncterm->func(), { newleft, newright });

@@ -8,16 +8,13 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "common.hpp"
-#include "fobdds/FoBddIndex.hpp"
-#include "fobdds/FoBddFuncTerm.hpp"
-#include "fobdds/FoBddDomainTerm.hpp"
-#include "fobdds/FoBddVariable.hpp"
-#include "fobdds/FoBddVisitor.hpp"
-#include "fobdds/FoBddManager.hpp"
-
-#include "vocabulary.hpp"
-#include "structure.hpp"
+#include "IncludeComponents.hpp"
+#include "FoBddIndex.hpp"
+#include "FoBddFuncTerm.hpp"
+#include "FoBddDomainTerm.hpp"
+#include "FoBddVariable.hpp"
+#include "FoBddVisitor.hpp"
+#include "FoBddManager.hpp"
 
 using namespace std;
 
@@ -43,17 +40,45 @@ void FOBDDFuncTerm::accept(FOBDDVisitor* v) const {
 	v->visit(this);
 }
 
-const FOBDDArgument* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
+std::ostream& FOBDDVariable::put(std::ostream& output) const {
+	output << toString(_variable);
+	return output;
+}
+
+const FOBDDTerm* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
+std::ostream& FOBDDDeBruijnIndex::put(std::ostream& output) const {
+	output << "<" << toString(_index) << ">[" << toString(_sort) << "]";
+	return output;
+}
+
+const FOBDDTerm* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-const FOBDDArgument* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
+
+std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
+	output << toString(_value) << "[" << toString(_sort) << "]";
+	return output;
+}
+
+const FOBDDTerm* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
+}
+std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
+	output << toString(_function);
+	if (_function->arity() > 0) {
+		output << "(";
+		output << toString(args(0));
+		for (size_t n = 1; n < _function->arity(); ++n) {
+			output << "," << toString(args(n));
+		}
+		output << ")";
+	}
+	return output;
 }
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2) {

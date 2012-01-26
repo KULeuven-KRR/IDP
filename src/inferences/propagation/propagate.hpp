@@ -11,8 +11,7 @@
 #ifndef PROPAGATE_HPP
 #define PROPAGATE_HPP
 
-#include "common.hpp"
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "options.hpp"
 #include "PropagatorFactory.hpp"
 

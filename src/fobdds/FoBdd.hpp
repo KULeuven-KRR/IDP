@@ -11,6 +11,8 @@
 #ifndef FOBDD_HPP_
 #define FOBDD_HPP_
 
+#include <iostream>
+
 class FOBDDKernel;
 class FOBDDManager;
 class FOBDDVisitor;
@@ -18,6 +20,8 @@ class FOBDDVisitor;
 class FOBDD {
 private:
 	friend class FOBDDManager;
+	friend class TrueFOBDD;
+	friend class FalseFOBDD;
 
 	const FOBDDKernel* _kernel;
 	const FOBDD* _truebranch;
@@ -33,11 +37,14 @@ private:
 		_kernel = k;
 	}
 
-	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch)
-			: _kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) {
+	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) :
+			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) {
 	}
 
 public:
+	virtual ~FOBDD(){
+
+	}
 	bool containsFreeDeBruijnIndex() const {
 		return containsDeBruijnIndex(0);
 	}
@@ -54,6 +61,32 @@ public:
 	}
 
 	void accept(FOBDDVisitor* visitor) const;
+
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
+
+class TrueFOBDD: public FOBDD {
+private:
+	friend class FOBDDManager;
+	TrueFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
+	}
+public:
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
+
+class FalseFOBDD: public FOBDD {
+private:
+	friend class FOBDDManager;
+	FalseFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
+	}
+public:
+	virtual std::ostream& put(std::ostream& output) const;
+
+
 };
 
 #endif /* FOBDD_HPP_ */

@@ -11,16 +11,14 @@
 #ifndef ORDERTERMS_HPP_
 #define ORDERTERMS_HPP_
 
-#include "common.hpp"
-#include <algorithm>
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/bddvisitors/TermCollector.hpp"
-
-#include "vocabulary.hpp"
+#include <algorithm>
 
 /**
  * Recursively from leaves to top do:
@@ -33,7 +31,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
 		if (functerm->func()->name() != Ordering::getFuncName()) {
 			return FOBDDVisitor::change(functerm);
 		}
@@ -47,7 +45,7 @@ public:
 		Ordering mtswo;
 		std::sort(terms.begin(), terms.end(), mtswo);
 
-		const FOBDDArgument* currarg = terms.back();
+		const FOBDDTerm* currarg = terms.back();
 		for (auto i = terms.crbegin(); i < terms.crend(); ++i) { // NOTE: reverse!
 			auto nextarg = *i;
 			auto sort = SortUtils::resolve(currarg->sort(), nextarg->sort());

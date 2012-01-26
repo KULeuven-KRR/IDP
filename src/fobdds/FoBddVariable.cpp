@@ -10,7 +10,7 @@
 
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
-#include "vocabulary.hpp"
+#include "IncludeComponents.hpp"
 
 using namespace std;
 

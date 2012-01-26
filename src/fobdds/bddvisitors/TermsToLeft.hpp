@@ -11,7 +11,7 @@
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
 
-#include "common.hpp"
+#include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
@@ -29,8 +29,8 @@ public:
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
-		const FOBDDArgument* lhs = NULL;
-		const FOBDDArgument* rhs = NULL;
+		const FOBDDTerm* lhs = NULL;
+		const FOBDDTerm* rhs = NULL;
 		if (sametypeid<Function>(*(atom->symbol()))) { // f(\xx)=y
 			auto lhsterms = atom->args();
 			lhsterms.pop_back();

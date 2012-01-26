@@ -11,11 +11,10 @@
 #ifndef GROUND_HPP
 #define GROUND_HPP
 
-#include "commontypes.hpp"
 #include <stack>
-#include "theory.hpp"
+#include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
-#include "inferences/grounding/Utils.hpp"
+#include "Utils.hpp"
 #include "external/ExternalInterface.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
@@ -105,8 +104,8 @@ private:
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
-	const FOBDD* improve_generator(const FOBDD*, const std::vector<Variable*>&, double);
-	const FOBDD* improve_checker(const FOBDD*, double);
+	const FOBDD* improveGenerator(const FOBDD*, const std::vector<Variable*>&, double);
+	const FOBDD* improveChecker(const FOBDD*, double);
 
 public:
 	GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symbstructure);
