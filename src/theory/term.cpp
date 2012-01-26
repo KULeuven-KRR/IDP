@@ -183,7 +183,7 @@ DomainTerm* DomainTerm::cloneKeepVars() const {
 	return clone();
 }
 
-DomainTerm* DomainTerm::clone(const map<Variable*, Variable*>& mvv) const {
+DomainTerm* DomainTerm::clone(const map<Variable*, Variable*>&) const {
 	return new DomainTerm(_sort, _value, _pi);
 }
 

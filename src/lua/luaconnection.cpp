@@ -803,8 +803,9 @@ int predicateIndex(lua_State* L) {
 		for (auto it = sort->begin(); it != sort->end(); ++it) {
 			for (auto jt = pred->begin(); jt != pred->end(); ++jt) {
 				if ((*jt)->arity() == 1) {
-					if ((*jt)->resolve(vector<Sort*>(1, (*it))))
+					if ((*jt)->resolve(vector<Sort*>(1, (*it)))) {
 						newpred->insert(*jt);
+					}
 				}
 			}
 		}
@@ -820,28 +821,32 @@ int predicateIndex(lua_State* L) {
 		}
 		set<Predicate*>* newpred = new set<Predicate*>();
 		vector<set<Sort*>::iterator> carry(table->size());
-		for (unsigned int n = 0; n < table->size(); ++n)
+		for (size_t n = 0; n < table->size(); ++n) {
 			carry[n] = (*table)[n].sort()->begin();
+		}
 		while (true) {
 			vector<Sort*> currsorts(table->size());
-			for (unsigned int n = 0; n < table->size(); ++n)
+			for (size_t n = 0; n < table->size(); ++n) {
 				currsorts[n] = *(carry[n]);
+			}
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
 					if ((*it)->resolve(currsorts))
 						newpred->insert(*it);
 				}
 			}
-			unsigned int c = 0;
+			size_t c = 0;
 			for (; c < table->size(); ++c) {
 				++(carry[c]);
-				if (carry[c] != (*table)[c].sort()->end())
+				if (carry[c] != (*table)[c].sort()->end()) {
 					break;
-				else
+				} else {
 					carry[c] = (*table)[c].sort()->begin();
+				}
 			}
-			if (c == table->size())
+			if (c == table->size()) {
 				break;
+			}
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -864,7 +869,7 @@ int functionIndex(lua_State* L) {
 			lua_pushstring(L, "Invalid function symbol index");
 			return lua_error(L);
 		}
-		for (unsigned int n = 0; n < table->size(); ++n) {
+		for (size_t n = 0; n < table->size(); ++n) {
 			if ((*table)[n]._type == AT_SORT) {
 				newtable.push_back((*table)[n]);
 			} else {
@@ -874,28 +879,33 @@ int functionIndex(lua_State* L) {
 		}
 		set<Function*>* newfunc = new set<Function*>();
 		vector<set<Sort*>::iterator> carry(newtable.size());
-		for (unsigned int n = 0; n < newtable.size(); ++n)
+		for (size_t n = 0; n < newtable.size(); ++n) {
 			carry[n] = newtable[n].sort()->begin();
+		}
 		while (true) {
 			vector<Sort*> currsorts(newtable.size());
-			for (unsigned int n = 0; n < newtable.size(); ++n)
+			for (size_t n = 0; n < newtable.size(); ++n) {
 				currsorts[n] = *(carry[n]);
+			}
 			for (auto it = func->begin(); it != func->end(); ++it) {
 				if ((*it)->arity() == newtable.size()) {
-					if ((*it)->resolve(currsorts))
+					if ((*it)->resolve(currsorts)) {
 						newfunc->insert(*it);
+					}
 				}
 			}
-			unsigned int c = 0;
+			size_t c = 0;
 			for (; c < newtable.size(); ++c) {
 				++(carry[c]);
-				if (carry[c] != newtable[c].sort()->end())
+				if (carry[c] != newtable[c].sort()->end()) {
 					break;
-				else
+				} else {
 					carry[c] = newtable[c].sort()->begin();
+				}
 			}
-			if (c == newtable.size())
+			if (c == newtable.size()) {
 				break;
+			}
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -955,24 +965,26 @@ int vocabularyIndex(lua_State* L) {
 			++emptycounter;
 		}
 		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
-		if (preds.empty())
+		if (preds.empty()) {
 			++emptycounter;
+		}
 		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
-		if (funcs.empty())
+		if (funcs.empty()) {
 			++emptycounter;
-		if (emptycounter == 3)
+		}
+		if (emptycounter == 3) {
 			return 0;
-		else if (emptycounter == 2) {
+		} else if (emptycounter == 2) {
 			if (sort != NULL) {
 				set<Sort*>* newsorts = new set<Sort*> { sort };
 				InternalArgument ns(newsorts);
 				return convertToLua(L, ns);
-			} else if (!preds.empty()) {
+			} else if (not preds.empty()) {
 				set<Predicate*>* newpreds = new set<Predicate*>(preds);
 				InternalArgument np(newpreds);
 				return convertToLua(L, np);
 			} else {
-				Assert(!funcs.empty());
+				Assert(not funcs.empty());
 				set<Function*>* newfuncs = new set<Function*>(funcs);
 				InternalArgument nf(newfuncs);
 				return convertToLua(L, nf);
@@ -982,10 +994,12 @@ int vocabularyIndex(lua_State* L) {
 			if (sort != NULL) {
 				os->insert(sort);
 			}
-			for (auto it = preds.cbegin(); it != preds.cend(); ++it)
+			for (auto it = preds.cbegin(); it != preds.cend(); ++it) {
 				os->insert(*it);
-			for (auto it = funcs.cbegin(); it != funcs.cend(); ++it)
+			}
+			for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
 				os->insert(*it);
+			}
 			InternalArgument s(os);
 			return convertToLua(L, s);
 		}
@@ -1005,11 +1019,12 @@ int domainatomIndex(lua_State* L) {
 		string str = *index._value._string;
 		if (str == "symbol") {
 			PFSymbol* s = atom->symbol();
-			if (typeid(*s) == typeid(Predicate)) {
+			if (sametypeid<Predicate>(*s)) {
 				set<Predicate*>* sp = new set<Predicate*>();
 				sp->insert(dynamic_cast<Predicate*>(s));
 				return convertToLua(L, InternalArgument(sp));
 			} else {
+				Assert(sametypeid<Function>(*s));
 				set<Function*>* sf = new set<Function*>();
 				sf->insert(dynamic_cast<Function*>(s));
 				return convertToLua(L, InternalArgument(sf));
@@ -1154,7 +1169,7 @@ InternalArgument getValue(Options* opts, const string& name) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
 	} else if(opts->isOptionOfType<double>(name)) {
 		return InternalArgument(opts->getValueOfType<double>(name));
-	}else{
+	} else {
 		throw IdpException("Requesting non-existing option " + name);
 	}
 }
@@ -1319,9 +1334,9 @@ PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Univ
 				}
 			}
 			ipt->add(tuple);
-		} else if (it->_type == AT_TUPLE)
+		} else if (it->_type == AT_TUPLE) {
 			ipt->add(*(it->_value._tuple));
-		else {
+		} else {
 			lua_pushstring(L, "Expected a two-dimensional table");
 			lua_error(L);
 			return 0;
@@ -1348,7 +1363,8 @@ int predinterNewIndex(lua_State* L) {
 		} else {
 			lua_pushstring(L, "Wrong argument to __newindex procedure of a predicate interpretation");
 			return lua_error(L);
-		}Assert(pt);
+		}
+		Assert(pt);
 		string str = *(index._value._string);
 		if (str == "ct") {
 			predinter->ct(new PredTable(pt->internTable(), univ));
@@ -1500,7 +1516,7 @@ int optionsNewIndex(lua_State* L) {
 	switch (value._type) {
 	case AT_INT:
 		return attempToSetValue(L, opts, option, value._value._int);
-		/*case AT_DOUBLE: // TODO currently there are not float options
+	/*case AT_DOUBLE: // TODO currently there are no float options
 		 return attempToSetValue(L, opts, option, value._value._double);*/
 	case AT_STRING:
 		return attempToSetValue(L, opts, option, *value._value._string);
