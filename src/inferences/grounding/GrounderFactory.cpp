@@ -676,7 +676,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		clog << "improving the following (generator) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
@@ -696,7 +696,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 	// 2. Remove certain leaves
 	auto pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, indices, _structure, mcpa);
 
-	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		poptab();
 		clog << "\n" << tabs() << "Resulted in:";
 		pushtab();
@@ -709,7 +709,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 }
 
 const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		clog << "improving the following (checker) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
@@ -726,7 +726,7 @@ const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 	// 2. Remove certain leaves
 	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, _structure, mcpa);
 
-	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		poptab();
 		clog << "\n" << tabs() << "Resulted in:";
 		pushtab();
