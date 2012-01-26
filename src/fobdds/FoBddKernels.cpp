@@ -14,7 +14,7 @@
 #include "fobdds/FoBddKernel.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddTerm.hpp"
-#include "vocabulary.hpp"
+#include "vocabulary/vocabulary.hpp"
 
 using namespace std;
 

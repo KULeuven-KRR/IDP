@@ -676,16 +676,16 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
-	if (true || getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
 		clog << "improving the following (generator) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
 	}
-	FOBDDManager* manager = _symstructure->manager();
+	auto manager = _symstructure->manager();
 
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
-	const FOBDD* copybdd = optimizemanager.getBDD(bdd, manager);
+	auto copybdd = optimizemanager.getBDD(bdd, manager);
 	set<const FOBDDVariable*> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
@@ -694,7 +694,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 	optimizemanager.optimizeQuery(copybdd, copyvars, indices, _structure);
 
 	// 2. Remove certain leaves
-	const FOBDD* pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, indices, _structure, mcpa);
+	auto pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, indices, _structure, mcpa);
 
 	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
 		poptab();
@@ -709,22 +709,22 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 }
 
 const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
-	if (true || getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
+	if (getOption(IntType::GROUNDVERBOSITY) > 5) { //todo:remove true
 		clog << "improving the following (checker) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
 	}
-	FOBDDManager* manager = _symstructure->manager();
+	auto manager = _symstructure->manager();
 
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
-	const FOBDD* copybdd = optimizemanager.getBDD(bdd, manager);
+	auto copybdd = optimizemanager.getBDD(bdd, manager);
 	set<const FOBDDVariable*> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
 	optimizemanager.optimizeQuery(copybdd, copyvars, indices, _structure);
 
 	// 2. Remove certain leaves
-	const FOBDD* pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, _structure, mcpa);
+	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, _structure, mcpa);
 
 	if (true || getOption(IntType::GROUNDVERBOSITY) > 3) { //todo:remove true
 		poptab();
