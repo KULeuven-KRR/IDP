@@ -77,13 +77,15 @@ bool init = false;
 
 const char* toCString(ArgType type) {
 	if (not init) {
-		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
-				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
-				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
-				AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
-				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
-				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
-				AT_TRACEMONITOR, "tracemonitor");
+		map_init(argType2Name)
+				(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")
+				(AT_VOCABULARY,	"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")
+				(AT_PREDTABLE, "predicate_table")(AT_PREDINTER, "predicate_interpretation")(AT_FUNCINTER, "function_interpretation")
+				(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")
+				(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY, "theory")
+				(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")
+				(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")
+				(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -611,7 +613,7 @@ void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vecto
 int internalCall(lua_State* L) {
 	// get the list of possible procedures (with the associated name?)
 	map<vector<ArgType>, InternalProcedure*>* procs = *(map<vector<ArgType>, InternalProcedure*>**) lua_touserdata(L, 1);
-	Assert(!procs->empty());
+	Assert(not procs->empty());
 	//otherwise lua should have thrown an exception
 
 	lua_remove(L, 1); // The function itself is the first argument
@@ -1495,12 +1497,10 @@ int optionsNewIndex(lua_State* L) {
 	}
 
 	string option = *(index._value._string);
-	if (!opts->isOption(option)) {
+	if (not opts->isOption(option)) {
 		stringstream ss;
 		ss << "There is no option named " << option << ".\n";
 		lua_pushstring(L, ss.str().c_str());
-		// FIXME lua errors are not printed anymore?
-		clog << ss.str();
 		return lua_error(L);
 	}
 	switch (value._type) {
@@ -1572,10 +1572,12 @@ int funcinterCall(lua_State* L) {
 			InternalArgument argone = createArgument(1, L);
 			if (argone._type == AT_TUPLE) {
 				ElementTuple tuple = *(argone._value._tuple);
-				while (tuple.size() > ft->arity())
+				while (tuple.size() > ft->arity()) {
 					tuple.pop_back();
-				while (tuple.size() < ft->arity())
+				}
+				while (tuple.size() < ft->arity()) {
 					tuple.push_back(0);
+				}
 				const DomainElement* d = (*ft)[tuple];
 				return convertToLua(L, d);
 			}
@@ -1602,10 +1604,12 @@ int funcinterCall(lua_State* L) {
 				return 0;
 			}
 		}
-		while (tuple.size() > ft->arity())
+		while (tuple.size() > ft->arity()) {
 			tuple.pop_back();
-		while (tuple.size() < ft->arity())
+		}
+		while (tuple.size() < ft->arity()) {
 			tuple.push_back(0);
+		}
 		const DomainElement* d = (*ft)[tuple];
 		return convertToLua(L, d);
 	} else {
@@ -1623,8 +1627,9 @@ int predicateArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Predicate*>* newpred = new set<Predicate*>();
 		for (auto it = pred->begin(); it != pred->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int)
+			if ((int) (*it)->arity() == arity._value._int) {
 				newpred->insert(*it);
+			}
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -1643,8 +1648,9 @@ int functionArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Function*>* newfunc = new set<Function*>();
 		for (auto it = func->begin(); it != func->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int)
+			if ((int) (*it)->arity() == arity._value._int) {
 				newfunc->insert(*it);
+			}
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -1917,7 +1923,8 @@ void addInternalProcedures(lua_State*) {
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
-		}lua_getglobal(_state, nsspace.c_str());
+		}
+		lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
 			auto possiblearguments = new internalprocargmap(j->second);
 			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
@@ -2007,7 +2014,7 @@ const DomainElement* execute(const std::string& chunk) {
 
 void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 	lua_getglobal(_state, name[0].c_str());
-	for (unsigned int n = 1; n < name.size(); ++n) {
+	for (size_t n = 1; n < name.size(); ++n) {
 		if (lua_istable(_state,-1)) {
 			lua_getfield(_state, -1, name[n].c_str());
 			lua_remove(_state, -2);
@@ -2018,10 +2025,11 @@ void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 	}
 }
 
-InternalArgument* call(const vector<string>& proc, const vector<vector<string> >& args, const ParseInfo& pi) {
+InternalArgument* call(const vector<string>& proc, const vector<vector<string>>& args, const ParseInfo& pi) {
 	pushglobal(proc, pi);
-	for (unsigned int n = 0; n < args.size(); ++n)
+	for (size_t n = 0; n < args.size(); ++n) {
 		pushglobal(args[n], pi);
+	}
 	int err = lua_pcall(_state, args.size(), 1, 0);
 	if (err) {
 		Error::error(pi);
@@ -2075,7 +2083,8 @@ void compile(UserProcedure* proc) {
 	compile(proc, _state);
 }
 
-template<> void addGlobal(UserProcedure* p) {
+template<>
+void addGlobal(UserProcedure* p) {
 	InternalArgument ia;
 	ia._type = AT_PROCEDURE;
 	ia._value._string = StringPointer(p->registryindex());
@@ -2099,8 +2108,9 @@ string* getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) 
 	lua_pop(_state, 1);
 	if (ia._type == AT_PROCEDURE) {
 		return ia._value._string;
-	} else
+	} else {
 		return 0;
+	}
 }
 
 LuaTraceMonitor* getLuaTraceMonitor() {
@@ -2110,4 +2120,4 @@ LuaTraceMonitor* getLuaTraceMonitor() {
 	return new LuaTraceMonitor(getState());
 }
 
-}
+} /* namespace LuaConnection */
