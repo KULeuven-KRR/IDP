@@ -21,7 +21,7 @@
 
 using namespace std;
 
-unsigned int DefinitionGrounder::_currentdefnb = 1;
+DefId DefinitionGrounder::_currentdefnb = 1;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
@@ -53,25 +53,21 @@ RuleGrounder::~RuleGrounder() {
 	delete (_bodygenerator);
 }
 
-void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) const {
-	Assert(defid==grounddefinition->id());
-	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
+void RuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
+	Assert(defid == grounddefinition->id());
+	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
+		CHECKTERMINATION
 		ConjOrDisj body;
 		_bodygrounder->run(body);
 		bool conj = body.getType() == Conn::CONJ;
-		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
+		bool falsebody = (body.literals.empty() && not conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
 		if (falsebody) {
 			continue;
 		}
 
-		for (_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator ++()) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+		for (_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator++()) {
+			CHECKTERMINATION
 			Lit head = _headgrounder->run();
 			Assert(head != _true);
 			if (head != _false) {
@@ -85,8 +81,7 @@ void RuleGrounder::run(unsigned int defid, GroundDefinition* grounddefinition) c
 	}
 }
 
-HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<SortTable*>& vst)
+HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst)
 		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
 }
 
@@ -99,10 +94,8 @@ Lit HeadGrounder::run() const {
 	bool alldomelts = true;
 	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
 	ElementTuple args(_subtermgrounders.size());
-	for (unsigned int n = 0; n < _subtermgrounders.size(); ++n) {
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
+	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
+		CHECKTERMINATION
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if (groundsubterms[n].isVariable) {
 			alldomelts = false;
@@ -114,12 +107,14 @@ Lit HeadGrounder::run() const {
 	Assert(alldomelts);
 
 	// Checking partial functions
-	for (unsigned int n = 0; n < args.size(); ++n) {
+	for (size_t n = 0; n < args.size(); ++n) {
 		//TODO: only check positions that can be out of bounds or ...! Also produce a warning!
-		if (not args[n])
+		if (not args[n]) {
 			return _false;
-		if (not _tables[n]->contains(args[n]))
+		}
+		if (not _tables[n]->contains(args[n])) {
 			return _false;
+		}
 	}
 
 	// Run instance checkers and return grounding
@@ -143,8 +138,11 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 	dominstlist domlist;
 
 	// set the variable instantiations
-	for (unsigned int i = 0; i < headargs.size(); ++i) {
-		// TODO currently always unnested everything, so only vars in head!
+	for (size_t i = 0; i < headargs.size(); ++i) {
+		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
+		if (not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])) {
+			throw notyetimplemented("Lazygrounding with functions.\n");
+		}
 		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
 		domlist.push_back(dominst { var, headargs[i] });
 	}
@@ -203,6 +201,6 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	restoreOrigVars(originstantiation, headvarinstlist);
 }
 
-void LazyRuleGrounder::run(unsigned int, GroundDefinition*) const {
+void LazyRuleGrounder::run(DefId, GroundDefinition*) const {
 	// No-op
 }

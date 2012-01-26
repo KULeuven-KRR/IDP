@@ -159,7 +159,7 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		ss << "local function " << procedure->name() << "(";
 		bool begin = true;
 		for (auto it = procedure->args().cbegin(); it != procedure->args().cend(); ++it) {
-			if (!begin) {
+			if (not begin) {
 				ss << ",";
 			}
 			begin = false;
@@ -246,13 +246,14 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 	case AT_STRUCTURE: {
 		AbstractStructure** ptr = (AbstractStructure**) lua_newuserdata(L, sizeof(AbstractStructure*));
 		(*ptr) = arg._value._structure;
-		luaL_getmetatable(L, "structure");
+		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
 		if (arg._value._structure->pi().linenumber() == 0) {
-			if (_luastructures.find(arg._value._structure) != _luastructures.cend())
+			if (_luastructures.find(arg._value._structure) != _luastructures.cend()){
 				++_luastructures[arg._value._structure];
-			else
+			} else {
 				_luastructures[arg._value._structure] = 1;
+			}
 		}
 		return 1;
 	}
@@ -268,10 +269,11 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
 		if (arg._value._theory->pi().linenumber() == 0) {
-			if (_luatheories.find(arg._value._theory) != _luatheories.cend())
+			if (_luatheories.find(arg._value._theory) != _luatheories.cend()){
 				++_luatheories[arg._value._theory];
-			else
+			} else {
 				_luatheories[arg._value._theory] = 1;
+			}
 		}
 		return 1;
 	}
@@ -635,7 +637,7 @@ int internalCall(lua_State* L) {
 
 		//Code generates all possible combinations over argument types
 		bool newcombination = false;
-		for (unsigned int i = 0; !newcombination && i < argtypes.size(); ++i) {
+		for (size_t i = 0; not newcombination && i < argtypes.size(); ++i) {
 			++carry[i];
 			if (carry[i] != argtypes[i].cend()) {
 				newcombination = true;
@@ -643,7 +645,7 @@ int internalCall(lua_State* L) {
 				carry[i] = argtypes[i].begin();
 			}
 		}
-		if (!newcombination) {
+		if (not newcombination) {
 			break;
 		}
 	}
@@ -751,10 +753,9 @@ int gcOverloaded(lua_State* L) {
 }
 
 int gcDomain(lua_State* L) {
-	garbageCollect(*(SortTable**) lua_touserdata(L, 1));
+	//return garbageCollect(*(SortTable**) lua_touserdata(L, 1));
 	return 0;
 }
-
 int gcStructure(lua_State* L) {
 	return garbageCollect<AbstractStructure*>(L);
 }

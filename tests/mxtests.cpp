@@ -44,7 +44,7 @@ void runTests(const char* inferencefilename, const string& instancefile){
 	cerr << "Testing " << instancefile << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { instancefile, testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	ASSERT_EQ(Status::SUCCESS, result);
 }
 
 TEST_P(MXnbTest, DoesMX) {
@@ -74,7 +74,7 @@ INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateL
 TEST(MakeTrueTest, Correct) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
-	ASSERT_EQ(result, Status::SUCCESS);
+	ASSERT_EQ(Status::SUCCESS, result);
 }
 
 }

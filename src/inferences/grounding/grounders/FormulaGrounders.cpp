@@ -153,13 +153,15 @@ Lit AtomGrounder::run() const {
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
 			clog << "Possible checker failed\n" << tabs();
-			clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
+			//clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
+			clog << "Result is false";
 			if (_origform != NULL) {
 				poptab();
 			}
 			clog << "\n" << tabs();
 		}
-		return gentype == GenType::CANMAKETRUE ? _false : _true;
+		//return gentype == GenType::CANMAKETRUE ? _false : _false;
+		return _false;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
@@ -771,7 +773,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		}
 		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-	  //TODO: remove all the "negated"
+	//TODO: remove all the "negated"
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {

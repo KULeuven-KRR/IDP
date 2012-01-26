@@ -34,6 +34,7 @@ class PFSymbol;
 
 class RuleGrounder;
 typedef GroundTheory<SolverPolicy> SolverTheory;
+typedef unsigned int DefId;
 
 /** Grounder for a definition **/
 // NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
@@ -43,14 +44,14 @@ typedef GroundTheory<SolverPolicy> SolverTheory;
 //	first constructing and storing the full ground definition to remove duplicate heads
 class DefinitionGrounder: public Grounder {
 private:
-	static unsigned int _currentdefnb;
-	unsigned int _defnb;
+	static DefId _currentdefnb;
+	DefId _defnb;
 	std::vector<RuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
 public:
 	DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr, const GroundingContext& context);
 	~DefinitionGrounder();
 	void run(ConjOrDisj& formula) const;
-	unsigned int id() const {
+	DefId id() const {
 		return _defnb;
 	}
 };
@@ -86,7 +87,7 @@ protected:
 public:
 	RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~RuleGrounder();
-	virtual void run(unsigned int defid, GroundDefinition* grounddefinition) const;
+	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
 };
 
 /** Grounder for a head of a rule **/
@@ -101,8 +102,7 @@ private:
 	PFSymbol* _pfsymbol;
 
 public:
-	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
-			const std::vector<SortTable*>&);
+	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);
 	~HeadGrounder();
 	Lit run() const;
 
@@ -125,7 +125,7 @@ private:
 	}
 public:
 	LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
-	void run(unsigned int defid, GroundDefinition* grounddefinition) const;
+	void run(DefId defid, GroundDefinition* grounddefinition) const;
 
 	void ground(const Lit& head, const ElementTuple& headargs);
 	void notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders);

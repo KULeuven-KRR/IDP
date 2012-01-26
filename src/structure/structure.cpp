@@ -4060,8 +4060,7 @@ bool needFixedNumberOfModels() {
 	return expected != 0 && expected < getMaxElem<int>();
 }
 
-void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		vector<AbstractStructure*>& extensions) {
+void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function, vector<AbstractStructure*>& extensions) {
 	int currentnb = extensions.size();
 
 	// go over all saved structures and generate a new structure for each possible value for it
@@ -4069,18 +4068,14 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	vector<AbstractStructure*> partialfalsestructs;
 	if (function->partial()) {
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+			CHECKTERMINATION
 			partialfalsestructs.push_back((*j)->clone());
 		}
 	}
 
 	vector<AbstractStructure*> newstructs;
 	for (; not imageIterator.isAtEnd(); ++imageIterator) {
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
+		CHECKTERMINATION
 		ElementTuple tuple(domainElementWithoutValue);
 		tuple.push_back(*imageIterator);
 		if (cf->contains(tuple)) {
@@ -4088,9 +4083,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		}
 
 		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+			CHECKTERMINATION
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
 			news->clean();
@@ -4098,9 +4091,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			currentnb++;
 		}
 		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
-			if (GlobalData::instance()->terminateRequested()) {
-				throw IdpException("Terminate requested");
-			}
+			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
 	}Assert(newstructs.size()>0);
@@ -4113,6 +4104,7 @@ void Structure::makeTwoValued() {
 		return;
 	}
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
+		CHECKTERMINATION
 		auto inter = (*i).second;
 		if (inter->approxTwoValued()) {
 			continue;
@@ -4146,6 +4138,7 @@ void Structure::makeTwoValued() {
 			StrictWeakNTupleOrdering so((*i).first->arity());
 
 			for (; not allempty && not domainIterator.isAtEnd(); ++domainIterator) {
+				CHECKTERMINATION
 				// get unassigned domain element
 				domainElementWithoutValue = *domainIterator;
 				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
@@ -4157,6 +4150,7 @@ void Structure::makeTwoValued() {
 
 				auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
 				for (; not imageIterator.isAtEnd(); ++imageIterator) {
+					CHECKTERMINATION
 					ElementTuple tuple(domainElementWithoutValue);
 					tuple.push_back(*imageIterator);
 					if (cf->contains(tuple)) {
@@ -4177,12 +4171,10 @@ void Structure::makeTwoValued() {
 				inter->graphInter()->makeTrue(tuple);
 			}
 		}
-		if (GlobalData::instance()->terminateRequested()) {
-			throw IdpException("Terminate requested");
-		}
 	}
 	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
+		CHECKTERMINATION
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
 		if (inter->approxTwoValued()) {
@@ -4191,6 +4183,7 @@ void Structure::makeTwoValued() {
 
 		auto pf = inter->pf();
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+			CHECKTERMINATION
 			if (not pf->contains(*ptIterator)) {
 				continue;
 			}
@@ -4428,13 +4421,13 @@ void Structure::autocomplete() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
 			const PredTable* pt1 = it->second->ct();
-			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable)) {
+			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
-			if (!it->second->approxTwoValued()) {
+			if (not it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->cf();
-				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable)) {
+				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->pt();
 				}
 				completeSortTable(pt2, it->first, _name);
@@ -4443,17 +4436,17 @@ void Structure::autocomplete() {
 	}
 	// Adding elements from function interpretations to sorts
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		if (it->second->funcTable() && typeid(*(it->second->funcTable()->internTable())) == typeid(UNAInternalFuncTable)) {
+		if (it->second->funcTable() && sametypeid<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
 			addUNAPattern(it->first);
 		} else {
 			const PredTable* pt1 = it->second->graphInter()->ct();
-			if (typeid(*(pt1->internTable())) == typeid(InverseInternalPredTable)) {
+			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->graphInter()->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
-			if (!it->second->approxTwoValued()) {
+			if (not it->second->approxTwoValued()) {
 				const PredTable* pt2 = it->second->graphInter()->cf();
-				if (typeid(*(pt2->internTable())) == typeid(InverseInternalPredTable)) {
+				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->graphInter()->pt();
 				}
 				completeSortTable(pt2, it->first, _name);
@@ -4479,7 +4472,7 @@ void Structure::autocomplete() {
 			notextend.insert(s);
 			vector<Sort*> toextend;
 			vector<Sort*> tocheck;
-			while (!(notextend.empty())) {
+			while (not notextend.empty()) {
 				Sort* e = *(notextend.cbegin());
 				for (auto kt = e->parents().cbegin(); kt != e->parents().cend(); ++kt) {
 					Sort* sp = *kt;
@@ -4504,12 +4497,12 @@ void Structure::autocomplete() {
 					// TODO
 				}
 			}
-			if (!s->builtin()) {
+			if (not s->builtin()) {
 				for (auto kt = tocheck.cbegin(); kt != tocheck.cend(); ++kt) {
 					SortTable* kst = inter(*kt);
 					if (st->approxFinite()) {
 						for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
-							if (!kst->contains(*lt))
+							if (not kst->contains(*lt))
 								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
 						}
 					} else {
@@ -4543,8 +4536,9 @@ void Structure::functionCheck() {
 					if (eq(*it, *jt)) {
 						const ElementTuple& tuple = *it;
 						vector<string> vstr;
-						for (unsigned int c = 0; c < f->arity(); ++c)
+						for (size_t c = 0; c < f->arity(); ++c) {
 							vstr.push_back(toString(tuple[c]));
+						}
 						Error::notfunction(f->name(), name(), vstr);
 						do {
 							++it;
@@ -4558,7 +4552,7 @@ void Structure::functionCheck() {
 			if (isfunc && !(f->partial()) && ft->approxTwoValued() && ct->approxFinite()) {
 				vector<SortTable*> vst;
 				vector<bool> linked;
-				for (unsigned int c = 0; c < f->arity(); ++c) {
+				for (size_t c = 0; c < f->arity(); ++c) {
 					vst.push_back(inter(f->insort(c)));
 					linked.push_back(true);
 				}
@@ -4566,7 +4560,7 @@ void Structure::functionCheck() {
 				it = spt.begin();
 				TableIterator jt = ct->begin();
 				for (; not it.isAtEnd() && not jt.isAtEnd(); ++it, ++jt) {
-					if (!eq(*it, *jt)) {
+					if (not eq(*it, *jt)) {
 						break;
 					}
 				}
@@ -4581,22 +4575,23 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}Assert(s != NULL);
+	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
+	}
+
+	vector<SortTable*> tables;
+	auto list = s->getSortsForTable();
+	for (auto i = list.cbegin(); i < list.cend(); ++i) {
+		auto it = _sortinter.find(*i);
+		Assert(it != _sortinter.cend());
+		tables.push_back((*it).second);
+	}
+	if (tables.size() == 1) {
+		return tables.back();
 	} else {
-		vector<SortTable*> tables;
-		auto list = s->getSortsForTable();
-		for (auto i = list.cbegin(); i < list.cend(); ++i) {
-			auto it = _sortinter.find(*i);
-			Assert(it != _sortinter.cend());
-			tables.push_back((*it).second);
-		}
-		if (tables.size() == 1) {
-			return tables.back();
-		} else {
-			return new SortTable(new UnionInternalSortTable( { }, tables));
-		}
+		return new SortTable(new UnionInternalSortTable( { }, tables));
 	}
 }
 
@@ -4663,7 +4658,7 @@ Universe Structure::universe(const PFSymbol* s) const {
 	return Universe(vst);
 }
 
-// TODO new name and docuemnt
+// TODO new name and document
 void Structure::materialize() {
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
 		SortTable* st = it->second->materialize();

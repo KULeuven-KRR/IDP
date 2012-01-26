@@ -108,8 +108,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure*
 }
 
 // NOTE: becomes predtable owner!
-InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe, const Formula* original) {
+InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const Universe& universe, const Formula* original) {
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
@@ -122,8 +121,7 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 }
 
 // NOTE: becomes predtable owner!
-InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe) {
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
 	Assert(pattern.size()==vars.size());
 	Assert(pattern.size()==universe.tables().size());
