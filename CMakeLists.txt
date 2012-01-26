@@ -31,7 +31,7 @@ endif()
 ### Cp handling 
 option(CP  "Enable cp support" OFF)
 if(CP)
-	addToCXX("-D CPSUPPORT")
+	set(WITHCP ON CACHE BOOL "")
 endif()
 
 
