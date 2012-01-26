@@ -1,9 +1,8 @@
-vocabulary V{
+vocabulary V {
 	type Vertex isa int
 	Root: Vertex
 	P(Vertex)
 	Reached(Vertex)
-
 }
 
 theory T : V { 
@@ -15,14 +14,15 @@ theory T : V {
 	! v : Reached(v).
 }
 
-structure S : V{ 
-Vertex = {0..1}
+structure S : V { 
+	Vertex = {0..1}
 }
 
-procedure getExpectedNbOfModels(){
+procedure getExpectedNbOfModels() {
 	return 2
 }
-procedure getExpectedAModel(){
+
+procedure getExpectedAModel() {
 	return true
 }
 

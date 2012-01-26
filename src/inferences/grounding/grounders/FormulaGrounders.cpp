@@ -775,7 +775,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		}
 		return FormStat::UNKNOWN;
 	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-	  //TODO: remove all the "negated"
+	//TODO: remove all the "negated"
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
