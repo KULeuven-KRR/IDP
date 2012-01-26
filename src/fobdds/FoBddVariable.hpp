@@ -16,7 +16,7 @@
 class FOBDDManager;
 class Variable;
 
-class FOBDDVariable: public FOBDDArgument {
+class FOBDDVariable: public FOBDDTerm {
 private:
 	friend class FOBDDManager;
 
@@ -37,7 +37,9 @@ public:
 	Sort* sort() const;
 
 	void accept(FOBDDVisitor*) const;
-	const FOBDDArgument* acceptchange(FOBDDVisitor*) const;
+	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 #endif /* FOBDDVARIABLE_HPP_ */

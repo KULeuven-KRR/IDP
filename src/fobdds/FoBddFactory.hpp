@@ -16,7 +16,7 @@
 class Formula;
 class Term;
 class FOBDD;
-class FOBDDArgument;
+class FOBDDTerm;
 class FOBDDKernel;
 class VarTerm;
 class DomainTerm;
@@ -42,7 +42,7 @@ private:
 	// Return values
 	const FOBDD* _bdd;
 	const FOBDDKernel* _kernel;
-	const FOBDDArgument* _argument;
+	const FOBDDTerm* _term;
 
 	void visit(const VarTerm* vt);
 	void visit(const DomainTerm* dt);
@@ -62,7 +62,7 @@ public:
 	}
 
 	const FOBDD* turnIntoBdd(const Formula* f);
-	const FOBDDArgument* turnIntoBdd(const Term* t);
+	const FOBDDTerm* turnIntoBdd(const Term* t);
 };
 
 #endif /* FOBDDFACTORY_HPP_ */

@@ -31,7 +31,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
 		if (functerm->func()->name() != Ordering::getFuncName()) {
 			return FOBDDVisitor::change(functerm);
 		}
@@ -45,7 +45,7 @@ public:
 		Ordering mtswo;
 		std::sort(terms.begin(), terms.end(), mtswo);
 
-		const FOBDDArgument* currarg = terms.back();
+		const FOBDDTerm* currarg = terms.back();
 		for (auto i = terms.crbegin(); i < terms.crend(); ++i) { // NOTE: reverse!
 			auto nextarg = *i;
 			auto sort = SortUtils::resolve(currarg->sort(), nextarg->sort());

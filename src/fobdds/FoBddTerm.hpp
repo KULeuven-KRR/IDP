@@ -10,13 +10,17 @@
 
 #ifndef FOBDDTERM_HPP_
 #define FOBDDTERM_HPP_
-
+#include <iostream>
 class Sort;
 class FOBDDVisitor;
 
-class FOBDDArgument {
+/**
+ * Class to represents terms in BDDs.  A term can be a domainterm, function term, a variable
+ * or a DeBruyn index (which is in essence a variable)
+ */
+class FOBDDTerm {
 public:
-	virtual ~FOBDDArgument() {
+	virtual ~FOBDDTerm() {
 	}
 	virtual bool containsDeBruijnIndex(unsigned int index) const = 0;
 	bool containsFreeDeBruijnIndex() const {
@@ -24,9 +28,11 @@ public:
 	}
 
 	virtual void accept(FOBDDVisitor*) const = 0;
-	virtual const FOBDDArgument* acceptchange(FOBDDVisitor*) const = 0;
+	virtual const FOBDDTerm* acceptchange(FOBDDVisitor*) const = 0;
 
 	virtual Sort* sort() const = 0;
+	virtual std::ostream& put(std::ostream& output) const=0;
+
 };
 
 #endif /* FOBDDTERM_HPP_ */

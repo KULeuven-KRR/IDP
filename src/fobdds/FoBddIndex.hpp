@@ -15,7 +15,7 @@
 
 class FOBDDManager;
 
-class FOBDDDeBruijnIndex: public FOBDDArgument {
+class FOBDDDeBruijnIndex: public FOBDDTerm {
 private:
 	friend class FOBDDManager;
 
@@ -39,7 +39,9 @@ public:
 	}
 
 	void accept(FOBDDVisitor*) const;
-	const FOBDDArgument* acceptchange(FOBDDVisitor*) const;
+	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 #endif /* FOBDDINDEX_HPP_ */

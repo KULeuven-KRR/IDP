@@ -25,13 +25,13 @@
  */
 class FirstNonConstMultTerm: public FOBDDVisitor {
 private:
-	const FOBDDArgument* _result;
+	const FOBDDTerm* _result;
 public:
 	FirstNonConstMultTerm()
 			: FOBDDVisitor(NULL) {
 	}
 
-	const FOBDDArgument* run(const FOBDDArgument* arg) {
+	const FOBDDTerm* run(const FOBDDTerm* arg) {
 		_result = 0;
 		arg->accept(this);
 		return _result;

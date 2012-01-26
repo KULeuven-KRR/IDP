@@ -12,6 +12,9 @@
 #define FOBDDKERNEL_HPP_
 
 #include "fobdds/FoBddUtils.hpp"
+#include <utility> // for relational operators (namespace rel_ops)
+using namespace std;
+using namespace rel_ops;
 
 class FOBDDVisitor;
 
@@ -19,8 +22,8 @@ class FOBDDKernel {
 private:
 	KernelOrder _order;
 public:
-	FOBDDKernel(const KernelOrder& order)
-			: _order(order) {
+	FOBDDKernel(const KernelOrder& order) :
+			_order(order) {
 	}
 	virtual ~FOBDDKernel() {
 	}
@@ -31,7 +34,7 @@ public:
 	virtual bool containsDeBruijnIndex(unsigned int) const {
 		return false;
 	}
-	unsigned int category() const {
+	KernelOrderCategory category() const {
 		return _order._category;
 	}
 	unsigned int number() const {
@@ -43,23 +46,7 @@ public:
 	}
 
 	bool operator<(const FOBDDKernel& k) const {
-		if (_order._category < k._order._category) {
-			return true;
-		} else if (_order._category > k._order._category) {
-			return false;
-		} else {
-			return _order._number < k._order._number;
-		}
-	}
-
-	bool operator>(const FOBDDKernel& k) const {
-		if (_order._category > k._order._category) {
-			return true;
-		} else if (_order._category < k._order._category) {
-			return false;
-		} else {
-			return _order._number > k._order._number;
-		}
+		return (_order < k._order);
 	}
 
 	virtual void accept(FOBDDVisitor*) const {
@@ -67,6 +54,29 @@ public:
 	virtual const FOBDDKernel* acceptchange(FOBDDVisitor*) const {
 		return this;
 	}
+
+	virtual std::ostream& put(std::ostream& output) const = 0;
+
 };
 
+class TrueFOBDDKernel: public FOBDDKernel {
+public:
+	TrueFOBDDKernel(const KernelOrder& order) :
+			FOBDDKernel(order) {
+	}
+	virtual ~TrueFOBDDKernel() {
+	}
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
+class FalseFOBDDKernel: public FOBDDKernel {
+public:
+	FalseFOBDDKernel(const KernelOrder& order) :
+			FOBDDKernel(order) {
+	}
+	virtual ~FalseFOBDDKernel() {
+	}
+	virtual std::ostream& put(std::ostream& output) const;
+
+};
 #endif /* FOBDDKERNEL_HPP_ */

@@ -90,7 +90,7 @@ void deriveSorts(Vocabulary* v, Formula* f);
  *			- query does not contain any FuncTerm or AggTerm subterms
  *			- the query has a twovalue result in the given structure
  */
-double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse, AbstractStructure* structure);
+double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
 
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);

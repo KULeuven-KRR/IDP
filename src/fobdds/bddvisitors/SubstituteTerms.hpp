@@ -30,7 +30,7 @@ public:
 			: FOBDDVisitor(manager), _from2to(map) {
 	}
 
-	const FOBDDArgument* change(const From* v) {
+	const FOBDDTerm* change(const From* v) {
 		auto it = _from2to.find(v);
 		if (it != _from2to.cend()) {
 			return it->second;
@@ -48,7 +48,7 @@ public:
 	SubstituteIndex(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable)
 			: FOBDDVisitor(manager), _index(index), _variable(variable) {
 	}
-	const FOBDDArgument* change(const FOBDDDeBruijnIndex* i) {
+	const FOBDDTerm* change(const FOBDDDeBruijnIndex* i) {
 		if (i == _index) {
 			return _variable;
 		} else {

@@ -40,7 +40,7 @@ public:
 	ContainsPartialFunctions(FOBDDManager* m)
 			: FOBDDVisitor(m) {
 	}
-	bool check(const FOBDDArgument* arg) {
+	bool check(const FOBDDTerm* arg) {
 		_result = false;
 		arg->accept(this);
 		return _result;

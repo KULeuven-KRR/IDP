@@ -46,7 +46,7 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {
 	pushtab();
-	_manager->put(output, domain->bdd());
+	output << toString(domain->bdd());
 	poptab();
 	return output;
 }
@@ -70,25 +70,25 @@ FOPropBDDDomain* FOPropBDDDomainFactory::formuladomain(const Formula* f) const {
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::ctDomain(const PredForm* pf) const {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
 		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CT, args);
-	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
+	const FOBDD* bdd = _manager->ifthenelse(k, _manager->truebdd(), _manager->falsebdd());
 	vector<Variable*> vv(pf->freeVars().cbegin(), pf->freeVars().cend());
 	return new FOPropBDDDomain(bdd, vv);
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
-	vector<const FOBDDArgument*> args;
+	vector<const FOBDDTerm*> args;
 	FOBDDFactory bddfactory(_manager);
 	for (auto it = pf->subterms().cbegin(); it != pf->subterms().cend(); ++it) {
 		args.push_back(bddfactory.turnIntoBdd(*it));
 	}
 	const FOBDDKernel* k = _manager->getAtomKernel(pf->symbol(), AtomKernelType::AKT_CF, args);
-	const FOBDD* bdd = _manager->getBDD(k, _manager->truebdd(), _manager->falsebdd());
+	const FOBDD* bdd = _manager->ifthenelse(k, _manager->truebdd(), _manager->falsebdd());
 	vector<Variable*> vv(pf->freeVars().cbegin(), pf->freeVars().cend());
 	return new FOPropBDDDomain(bdd, vv);
 }

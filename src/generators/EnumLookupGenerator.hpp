@@ -78,6 +78,10 @@ public:
 		}
 		++_iter;
 	}
+	virtual void put(std::ostream& stream){
+		stream << toString(_table);
+	}
+
 };
 
 #endif /* ENUMLOOKUPGENERATOR_HPP_ */

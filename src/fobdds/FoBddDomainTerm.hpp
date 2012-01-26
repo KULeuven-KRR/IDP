@@ -16,7 +16,7 @@
 class DomainElement;
 class FOBDDManager;
 
-class FOBDDDomainTerm: public FOBDDArgument {
+class FOBDDDomainTerm: public FOBDDTerm {
 private:
 	friend class FOBDDManager;
 
@@ -40,7 +40,9 @@ public:
 	}
 
 	void accept(FOBDDVisitor*) const;
-	const FOBDDArgument* acceptchange(FOBDDVisitor*) const;
+	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
+
 };
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2);

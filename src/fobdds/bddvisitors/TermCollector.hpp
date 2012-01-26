@@ -25,14 +25,14 @@
  */
 class TermCollector: public FOBDDVisitor {
 private:
-	std::vector<const FOBDDArgument*> _terms;
+	std::vector<const FOBDDTerm*> _terms;
 	std::string _funcname;
 public:
 	TermCollector(FOBDDManager* m)
 			: FOBDDVisitor(m), _funcname("") {
 	}
 
-	const std::vector<const FOBDDArgument*>& getTerms(const FOBDDArgument* arg, const std::string& funcname) {
+	const std::vector<const FOBDDTerm*>& getTerms(const FOBDDTerm* arg, const std::string& funcname) {
 		_funcname = funcname;
 		_terms.clear();
 		arg->accept(this);

@@ -75,7 +75,21 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+// NOTE: becomes predtable owner!
+InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const Universe& universe, const Formula* original) {
+	GeneratorFactory factory;
+
+	// Check for infinite grounding
+	for (size_t i = 0; i < universe.tables().size(); ++i) {
+		if (pattern[i] == Pattern::OUTPUT) {
+			checkInfinity(universe.tables()[i], original);
+		}
+	}
+	return factory.internalCreate(pt, pattern, vars, universe);
+}
+
+InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;
@@ -121,7 +135,8 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 }
 
 // NOTE: becomes predtable owner!
-InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars, const Universe& universe) {
+InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
+		const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
 	Assert(pattern.size()==vars.size());
 	Assert(pattern.size()==universe.tables().size());
@@ -147,17 +162,17 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 			break;
 		}
 	}
-	if (firstout == pattern.size()) { // no output variables
+	/*if (firstout == pattern.size()) { // no output variables
 		if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
 			return new LookupGenerator(pt, vars, _universe);
 		} else {
 			StructureVisitor::visit(pt);
 			return _generator;
 		}
-	} else {
+	} else {*/
 		StructureVisitor::visit(pt);
 		return _generator;
-	}
+	//}
 }
 
 void GeneratorFactory::visit(const ProcInternalPredTable*) {
@@ -185,7 +200,7 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 		}
 	}
 	set<const FOBDDDeBruijnIndex*> indices;
-	optimizemanager.optimizequery(data.bdd, outvars, indices, table->structure());
+	optimizemanager.optimizeQuery(data.bdd, outvars, indices, table->structure());
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);

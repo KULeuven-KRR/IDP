@@ -55,7 +55,7 @@ public:
 	}
 
 	~LeafGeneratorNode(){
-		delete(_generator);
+		// TODO delete(_generator);
 	}
 
 	virtual void next() {
@@ -71,7 +71,7 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate " << toString(_generator);
+		stream <<  toString(_generator);
 	}
 };
 
@@ -86,8 +86,8 @@ public:
 	}
 
 	~OneChildGeneratorNode(){
-		delete(_generator);
-		delete(_child);
+		//delete(_generator);
+		//delete(_child);
 	}
 
 	virtual void next() {
@@ -136,11 +136,11 @@ public:
 	}
 
 	~TwoChildGeneratorNode(){
-		delete(_checker);
+		/*delete(_checker);
 		delete(_generator);
 		delete(_falsecheckbranch);
 		delete(_truecheckbranch);
-	}
+	*/}
 
 	virtual void next() {
 		if (_reset) {
@@ -190,10 +190,14 @@ public:
 
 	virtual void put(std::ostream& stream) {
 		stream << "generate: " << toString(_generator) << "\n";
-		stream << tabs() << "then\n";
+		stream << tabs() << "if result is in " << toString(_checker)<<"\n";
+		stream << tabs()<< "THEN\n";
 		pushtab();
-		stream << tabs() << "truebranch " << toString(_truecheckbranch) << "\n";
-		stream << tabs() << "falsebranch " << toString(_falsecheckbranch);
+		stream << tabs() << toString(_truecheckbranch) << "\n";
+		poptab();
+		stream << tabs()<< "ELSE\n";
+		pushtab();
+		stream << tabs() <<  toString(_falsecheckbranch);
 		poptab();
 	}
 };

@@ -74,9 +74,9 @@ public:
 		}
 	}
 
-	~SimpleFuncGenerator(){
-		delete(_function);
-		delete(_univgen);
+	~SimpleFuncGenerator() {
+		delete (_function);
+		delete (_univgen);
 	}
 
 	// FIXME reimplement (clone generator)

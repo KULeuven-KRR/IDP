@@ -24,14 +24,14 @@
 class ContainsTerm: public FOBDDVisitor {
 private:
 	bool _result;
-	const FOBDDArgument* _arg;
+	const FOBDDTerm* _arg;
 
 public:
 	ContainsTerm(FOBDDManager* m)
 			: FOBDDVisitor(m) {
 	}
 
-	bool contains(const FOBDDArgument* super, const FOBDDArgument* arg) {
+	bool contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
 		_result = false;
 		_arg = arg;
 		super->accept(this);

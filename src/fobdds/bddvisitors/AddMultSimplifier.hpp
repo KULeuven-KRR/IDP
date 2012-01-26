@@ -31,7 +31,7 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	const FOBDDArgument* change(const FOBDDFuncTerm* functerm) {
+	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
 		// Depth first: recurse
 		auto recurterm = FOBDDVisitor::change(functerm);
 
@@ -39,7 +39,7 @@ public:
 			return recurterm;
 		}
 
-		functerm = getBddFuncTerm(recurterm);
+		functerm = castBddFuncTerm(recurterm);
 
 		if (not isAddition(functerm) && not isMultiplication(functerm)) {
 			return recurterm;
@@ -49,7 +49,7 @@ public:
 			return recurterm;
 		}
 
-		auto leftconstant = getBddDomainTerm(functerm->args(0));
+		auto leftconstant = castBddDomainTerm(functerm->args(0));
 
 		auto zero = createDomElem(0);
 		auto one = createDomElem(1);
@@ -62,16 +62,16 @@ public:
 		}
 
 		if (isBddDomainTerm(functerm->args(1))) {
-			auto rightconstant = getBddDomainTerm(functerm->args(1));
+			auto rightconstant = castBddDomainTerm(functerm->args(1));
 			auto fi = functerm->func()->interpretation(NULL);
 			auto result = fi->funcTable()->operator[]( { leftconstant->value(), rightconstant->value() });
 			return _manager->getDomainTerm(functerm->func()->outsort(), result);
 		}
 
 		if (isBddFuncTerm(functerm->args(1))) {
-			auto rightterm = getBddFuncTerm(functerm->args(1));
+			auto rightterm = castBddFuncTerm(functerm->args(1));
 			if (rightterm->func()->name() == functerm->func()->name() && isBddDomainTerm(rightterm->args(0))) {
-				auto rightconstant = getBddDomainTerm(rightterm->args(0));
+				auto rightconstant = castBddDomainTerm(rightterm->args(0));
 				auto inter = functerm->func()->interpretation(0);
 				auto result = inter->funcTable()->operator[]( { leftconstant->value(), rightconstant->value() });
 				auto resultterm = _manager->getDomainTerm(functerm->func()->outsort(), result);

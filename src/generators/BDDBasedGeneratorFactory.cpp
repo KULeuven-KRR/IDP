@@ -227,7 +227,7 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
  * TODO can only call on specific predforms
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars, AbstractStructure* structure, bool inverse, const Universe& universe) {
+		const vector<Variable*>& atomvars,const  AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
@@ -456,7 +456,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 }
 
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
-		const vector<const FOBDDVariable*>& origkernelvars, AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
+		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);

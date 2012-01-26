@@ -13,15 +13,15 @@
 
 class FOBDDDomainTerm;
 class FOBDDFuncTerm;
-class FOBDDArgument;
+class FOBDDTerm;
 class DomainElement;
 class FOBDDManager;
 
 #include "common.hpp"
-
-enum AtomKernelType {
-	AKT_CT, AKT_CF, AKT_TWOVALUED
-};
+#include "CommonBddTypes.hpp"
+#include <utility> // for relational operators (namespace rel_ops)
+using namespace std;
+using namespace rel_ops;
 
 /**
  *	A kernel order contains two numbers to order kernels (nodes) in a BDD.
@@ -29,13 +29,22 @@ enum AtomKernelType {
  *	Within a category, kernels are ordered according to the second number.
  */
 struct KernelOrder {
-	unsigned int _category; //!< The unsigned int
+	KernelOrderCategory _category; //!< The category of this kernel
 	unsigned int _number; //!< The second number
-	KernelOrder(unsigned int c, unsigned int n)
+	KernelOrder(KernelOrderCategory c, unsigned int n)
 			: _category(c), _number(n) {
 	}
 	KernelOrder(const KernelOrder& order)
 			: _category(order._category), _number(order._number) {
+	}
+	bool operator<(const KernelOrder& ko) const {
+		if (_category < ko._category) {
+			return true;
+		} else if (ko._category < _category) {
+			return false;
+		} else {
+			return _number < ko._number;
+		}
 	}
 };
 
@@ -50,12 +59,14 @@ bool isBddFuncTerm(Type value) {
 }
 
 template<typename Type>
-const FOBDDDomainTerm* getBddDomainTerm(Type term) {
+const FOBDDDomainTerm* castBddDomainTerm(Type term) {
+	Assert(sametypeid<const FOBDDDomainTerm>(*term));
 	return dynamic_cast<const FOBDDDomainTerm*>(term);
 }
 
 template<typename Type>
-const FOBDDFuncTerm* getBddFuncTerm(Type term) {
+const FOBDDFuncTerm* castBddFuncTerm(Type term) {
+	Assert(sametypeid<const FOBDDFuncTerm>(*term));
 	return dynamic_cast<const FOBDDFuncTerm*>(term);
 }
 
@@ -78,7 +89,7 @@ struct Addition {
 
 	// Ordering method: true if ordered before
 	// TODO comment and check what they do!
-	bool operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2);
+	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
 };
 
 struct Multiplication {
@@ -89,16 +100,36 @@ struct Multiplication {
 	static const DomainElement* getNeutralElement();
 
 	// Ordering method: true if ordered before
-	// TODO comment and check what they do!
-	bool operator()(const FOBDDArgument* arg1, const FOBDDArgument* arg2);
-	static bool before(const FOBDDArgument* arg1, const FOBDDArgument* arg2) {
+	// TODO comment and check what they do! -> not understood yet!
+	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
 		Multiplication m;
 		return m(arg1, arg2);
 	}
 };
 
 struct TermOrder {
-	static bool before(const FOBDDArgument* arg1, const FOBDDArgument* arg2, FOBDDManager* manager);
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager);
 };
+
+
+
+template<typename ReturnType, typename T1, typename T2, typename Something, typename ... MoreTypes>
+ReturnType* lookup(std::map<T1,map<T2, Something> > m, T1 x, T2 y, MoreTypes ... parameters){
+	auto res= m.find(x) ;
+	if(res == m.cend()){
+		return NULL;
+	}
+	return lookup<ReturnType>(res->second,y,parameters...);
+}
+
+template<typename ReturnType, typename T1>
+ReturnType* lookup(std::map<T1,ReturnType*> m, T1 x){
+	auto res= m.find(x) ;
+	if(res == m.cend()){
+		return NULL;
+	}
+	return res->second;
+}
 
 #endif /* KERNELORDER_HPP_ */

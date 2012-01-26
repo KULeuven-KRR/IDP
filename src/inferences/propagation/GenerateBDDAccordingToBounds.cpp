@@ -62,7 +62,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			getct = not getct;
 		}
 		auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
-		map<const FOBDDVariable*, const FOBDDArgument*> mva;
+		map<const FOBDDVariable*, const FOBDDTerm*> mva;
 		const auto& vars = _vars[atom->symbol()];
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
@@ -139,10 +139,10 @@ const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vect
 	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable((*it)->variable()));
 	}
-	optimizemanager.optimizequery(copybdd, copyvars, indices, structure);
+	optimizemanager.optimizeQuery(copybdd, copyvars, indices, structure);
 
 	// 2. Remove certain leaves
-	auto pruned = optimizemanager.make_more_false(copybdd, copyvars, indices, structure, mcpa);
+	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, structure, mcpa);
 
 	// 3. Replace result
 	return _manager->getBDD(pruned, &optimizemanager);
@@ -159,22 +159,27 @@ void GenerateBDDAccordingToBounds::filter(AbstractStructure* structure, double m
 
 ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
-		output << "   ";
+
 		(it->first)->put(output);
+		pushtab();
 		output << endl << tabs();
-		output << "      vars:";
+		output << "vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
-			_manager->put(output, *jt);
+			output << toString(*jt);
 		}
-		output << '\n';
-		output << tabs();
-		output << "      ct:" << endl << tabs();
+		output << endl << tabs();
 		pushtab();
-		_manager->put(output, _ctbounds.find(it->first)->second);
-		output << "      cf:" << endl << tabs();
-		_manager->put(output, _cfbounds.find(it->first)->second);
+		output << "ct:" << endl << tabs();
+		output << toString(_ctbounds.find(it->first)->second);
 		poptab();
+		output << endl << tabs() << "cf:";
+		pushtab();
+		output << endl << tabs();
+		output << toString(_cfbounds.find(it->first)->second);
+		poptab();
+		poptab();
+		output << endl << tabs();
 	}
 	return output;
 }

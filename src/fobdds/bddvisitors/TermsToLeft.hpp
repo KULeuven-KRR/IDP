@@ -29,8 +29,8 @@ public:
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
-		const FOBDDArgument* lhs = NULL;
-		const FOBDDArgument* rhs = NULL;
+		const FOBDDTerm* lhs = NULL;
+		const FOBDDTerm* rhs = NULL;
 		if (sametypeid<Function>(*(atom->symbol()))) { // f(\xx)=y
 			auto lhsterms = atom->args();
 			lhsterms.pop_back();
