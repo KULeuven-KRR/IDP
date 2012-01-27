@@ -13,23 +13,18 @@
 
 using namespace std;
 
+/**
+ * Splits equivalences. It is probably better to first introduce tseitins because formulas are shared, so this transformation is only used in special cases, the grounding directly handles equivalences.
+ */
 Formula* RemoveEquivalences::visit(EquivForm* ef) {
-	Formula* nl = ef->left()->accept(this);
-	Formula* nr = ef->right()->accept(this);
-	vector<Formula*> vf1(2);
-	vector<Formula*> vf2(2);
-	vf1[0] = nl;
-	vf1[1] = nr;
-	vf2[0] = nl->clone();
-	vf2[1] = nr->clone();
-	vf1[0]->negate();
-	vf2[1]->negate();
-	BoolForm* bf1 = new BoolForm(SIGN::POS, false, vf1, ef->pi());
-	BoolForm* bf2 = new BoolForm(SIGN::POS, false, vf2, ef->pi());
-	vector<Formula*> vf(2);
-	vf[0] = bf1;
-	vf[1] = bf2;
-	BoolForm* bf = new BoolForm(ef->sign(), true, vf, ef->pi());
+	auto nl = ef->left()->accept(this);
+	auto nr = ef->right()->accept(this);
+	vector<Formula*> vf1({nl->negate(), nr});
+	vector<Formula*> vf2({nl->clone(), nr->clone()->negate()});
+	auto bf1 = new BoolForm(SIGN::POS, false, vf1, ef->pi());
+	auto bf2 = new BoolForm(SIGN::POS, false, vf2, ef->pi());
+	vector<Formula*> vf({bf1, bf2});
+	auto bf = new BoolForm(ef->sign(), true, vf, ef->pi());
 	delete (ef);
 	return bf;
 }
