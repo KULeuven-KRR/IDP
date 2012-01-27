@@ -5,6 +5,7 @@ project (idp)
 set (idp_VERSION_MAJOR 3)
 set (idp_VERSION_MINOR 0)
 set (idp_VERSION_PATCH 2)
+set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
 include(cmake/outofsourcecheck.cmake)
 assureOutOfSourceBuilds()
@@ -19,6 +20,9 @@ endmacro()
 
 ### Rpath handling
 include(cmake/rpathhandling.cmake)
+
+### Target properties helper
+include(cmake/settargetproperties.cmake)
 
 ### Gmp handling
 option(GMP  "Enable gmp support" OFF)

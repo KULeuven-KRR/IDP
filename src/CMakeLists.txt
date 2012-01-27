@@ -129,6 +129,11 @@ endif()
 target_link_libraries(idp-bin idp)
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
+set_target_properties(
+	idp-bin PROPERTIES
+	VERSION ${idp_VERSION}
+)
+
 # add the install targets
 install (TARGETS idp-bin DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 install (TARGETS idp DESTINATION lib)

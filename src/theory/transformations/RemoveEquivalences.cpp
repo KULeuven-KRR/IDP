@@ -19,11 +19,14 @@ using namespace std;
 Formula* RemoveEquivalences::visit(EquivForm* ef) {
 	auto nl = ef->left()->accept(this);
 	auto nr = ef->right()->accept(this);
-	vector<Formula*> vf1({nl->negate(), nr});
-	vector<Formula*> vf2({nl->clone(), nr->clone()->negate()});
+	nl->negate();
+	vector<Formula*> vf1 = {nl, nr};
+	auto newr = nr->clone();
+	newr->negate();
+	vector<Formula*> vf2 = {nl->clone(), newr};
 	auto bf1 = new BoolForm(SIGN::POS, false, vf1, ef->pi());
 	auto bf2 = new BoolForm(SIGN::POS, false, vf2, ef->pi());
-	vector<Formula*> vf({bf1, bf2});
+	vector<Formula*> vf = {bf1, bf2};
 	auto bf = new BoolForm(ef->sign(), true, vf, ef->pi());
 	delete (ef);
 	return bf;
