@@ -195,15 +195,15 @@ public:
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "\n" << tabs();
 		}
 		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "\n" << tabs();
 		}
 		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "\n" << tabs();
 		}
 	}
 
@@ -548,7 +548,6 @@ public:
 		printAtom(b->head());
 		output() << " <- ";
 		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
-		output() << ".\n";
 	}
 
 	void visit(const GroundAggregate* a) {

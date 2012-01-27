@@ -168,11 +168,12 @@ public:
 		}
 		for (; n < vi.size(); ++n) {
 			int atom = abs(vi[n]);
+			// NOTE: checks whether the tseitin has already been added to the grounding
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
 				if (sametypeid<PCTsBody>(*tsbody)) {
-					PCTsBody * body = dynamic_cast<PCTsBody*>(tsbody);
+					auto body = dynamic_cast<PCTsBody*>(tsbody);
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
 							for (size_t m = 0; m < body->size(); ++m) {

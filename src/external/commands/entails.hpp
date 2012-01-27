@@ -62,7 +62,7 @@ public:
 			return InternalArgument(true);
 		case State::DISPROVEN:
 			return InternalArgument(false);
-		case State::UNKNOWN:
+		default:
 			return nilarg();
 		}
 	}

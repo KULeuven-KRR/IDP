@@ -47,22 +47,12 @@ class FOBDD;
 class GrounderFactory: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
-	// Data
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
 	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
 
-	// Context
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;
-
-	void AggContext();
-	void SaveContext(); // Push the current context onto the stack
-	void RestoreContext(); // Set _context to the top of the stack and pop the stack
-	void DeeperContext(SIGN sign);
-
-	// Descend in the parse tree while taking care of the context
-	template <typename T> void descend(T* child);
 
 	// Symbols passed to CP solver
 	std::set<const PFSymbol*> _cpsymbols;
@@ -78,6 +68,14 @@ private:
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
 	Grounder* _topgrounder;
+
+	void AggContext();
+	void SaveContext(); // Push the current context onto the stack
+	void RestoreContext(); // Set _context to the top of the stack and pop the stack
+	void DeeperContext(SIGN sign);
+
+	// Descend in the parse tree while taking care of the context
+	template <typename T> void descend(T* child);
 
 	AbstractStructure* structure() const {
 		return _structure;
@@ -120,16 +118,14 @@ public:
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);
 	bool isCPSymbol(const PFSymbol*) const;
 
-	// Recursive check
 	bool recursive(const Formula*);
 
-	// Context
 	void InitContext(); // Initialize the context - public for debugging purposes
 
-	// Getters
 	GroundingContext getContext() {
 		return _context;
 	}
+
 	FormulaGrounder* getFormGrounder() {
 		return _formgrounder;
 	}
@@ -154,6 +150,12 @@ protected:
 
 	void visit(const Definition*);
 	void visit(const Rule*);
+
+private:
+	void createBoolGrounderConjPath(const BoolForm* bf);
+	void createBoolGrounderDisjPath(const BoolForm* bf);
+	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
+	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 };
 
 #endif

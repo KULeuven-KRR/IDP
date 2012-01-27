@@ -15,37 +15,42 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 
-#include <map>
-
 typedef GroundTheory<SolverPolicy> SolverTheory;
 
-class LazyQuantGrounder: public QuantGrounder {
+class LazyGroundingManager{
 private:
-	static unsigned int maxid;
-	unsigned int id_;
-
-	SolverTheory* groundtheory_;
-
-	mutable bool _negatedformula;
-
 	mutable bool currentlyGrounding; // If true, groundMore is currently already on the stack, so do not call it again!
 	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground; // Stack of what we still have to ground
 
+public:
+	LazyGroundingManager():currentlyGrounding(false){}
+	void groundMore() const;
+
+	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
+	void notifyBoundSatisfied(ResidualAndFreeInst* instance);
+	void notifyBoundSatisfiedInternal(ResidualAndFreeInst* instance) const;
+};
+
+class LazyGrounder{
+public:
+	virtual ~LazyGrounder(){}
+	virtual void groundMore(ResidualAndFreeInst* instance) const = 0;
+};
+
+class LazyQuantGrounder: public QuantGrounder, public LazyGrounder {
+private:
+	mutable bool _negatedformula;
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
+
+	SolverTheory* solvertheory;
+
+	LazyGroundingManager lazyManager;
 
 public:
 	LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
 			InstChecker* checker, const GroundingContext& ct);
 
-	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
-	void requestGroundMore(ResidualAndFreeInst* instance);
-	void groundMore() const;
-
-	unsigned int id() const {
-		return id_;
-	}
-
-	void notifyTheoryOccurence(ResidualAndFreeInst* instance) const;
+	void groundMore(ResidualAndFreeInst* instance) const;
 
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;

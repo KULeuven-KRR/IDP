@@ -119,9 +119,9 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 	it->second.push_back(grounder);
 }
 
-void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
+void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, instance, tstype);
+	LazyTsBody* tsbody = new LazyTsBody(lazygrounder, instance, tstype);
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 

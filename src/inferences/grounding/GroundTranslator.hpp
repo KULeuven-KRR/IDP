@@ -20,7 +20,7 @@
 class LazyRuleGrounder;
 class TsSet;
 class CPTerm;
-class LazyQuantGrounder;
+class LazyGroundingManager;
 class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
@@ -94,7 +94,7 @@ public:
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
-	void translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
+	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
 	void notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
 

@@ -20,6 +20,7 @@ class WrappedPCSolver;
 typedef MinisatID::WrappedPCSolver SATSolver;
 
 class TsSet;
+class LazyGroundingManager;
 class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
@@ -78,7 +79,7 @@ public:
 	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& clause);
 
-	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyQuantGrounder const* const grounder);
+	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
 
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
 

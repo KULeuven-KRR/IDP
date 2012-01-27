@@ -554,7 +554,11 @@ public:
 typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
+class LazyGrounder;
+class LazyGroundingManager;
+
 struct ResidualAndFreeInst {
+	const LazyGrounder* grounder;
 	InstGenerator* generator;
 	Lit residual;
 	dominstlist freevarinst;
@@ -566,20 +570,15 @@ struct ResidualAndFreeInst {
 
 class LazyTsBody: public TsBody {
 private:
-	unsigned int id_;
-	LazyQuantGrounder const* const grounder_;
+	LazyGroundingManager const* const grounder_;
 	ResidualAndFreeInst* inst;
 
 public:
-	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type)
-			: TsBody(type), id_(id), grounder_(grounder), inst(inst) {
+	LazyTsBody(LazyGroundingManager const* const grounder, ResidualAndFreeInst* inst, TsType type)
+			: TsBody(type), grounder_(grounder), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
-
-	unsigned int id() const {
-		return id_;
-	}
 
 	void notifyTheoryOccurence();
 };

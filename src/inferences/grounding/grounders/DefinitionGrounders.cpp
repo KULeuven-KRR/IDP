@@ -175,8 +175,7 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 
 	dominstlist headvarinstlist = createInst(headargs);
 
-	vector<const DomainElement*> originstantiation;
-	overwriteVars(originstantiation, headvarinstlist);
+	overwriteVars(headvarinstlist);
 
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
 		CHECKTERMINATION
@@ -197,8 +196,6 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 		// FIXME correct defID!
 		grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body.literals, context()._tseitin == TsType::RULE));
 	}
-
-	restoreOrigVars(originstantiation, headvarinstlist);
 }
 
 void LazyRuleGrounder::run(DefId, GroundDefinition*) const {
