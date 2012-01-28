@@ -557,7 +557,9 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 		RestoreContext();
 		sub.push_back(_topgrounder);
 	}
-	_topgrounder = new BoolGrounder(_grounding, sub, newbf->sign(), true, _context);
+	auto boolgrounder = new BoolGrounder(_grounding, sub, newbf->sign(), true, _context);
+	boolgrounder->setOrig(bf, varmapping());
+	_topgrounder = boolgrounder;
 	deleteDeep(newbf);
 }
 
@@ -655,20 +657,23 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	descend(subformula);
 	RestoreContext();
 
-	if(tempqf!=NULL){
-		deleteDeep(tempqf);
-	}
-
 	Assert(newqf->sign()==SIGN::POS && newqf->isUniv());
 
-	Assert(_formgrounder!=NULL || (_topgrounder != NULL && sametypeid<FormulaGrounder>(*_topgrounder)));
-	auto subgrounder = _formgrounder!=NULL?_formgrounder:dynamic_cast<FormulaGrounder*>(_topgrounder);
+	auto subgrounder = dynamic_cast<FormulaGrounder*>(_topgrounder);
+	Assert(subgrounder!=NULL);
 
+	QuantGrounder* quantgrounder = NULL;
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*_grounding)){
 		auto solvertheory = dynamic_cast<SolverTheory*>(_grounding);
-		_topgrounder = new LazyQuantGrounder(newqf->freeVars(), solvertheory, subgrounder, SIGN::POS, QUANT::UNIV, gc._generator, gc._checker, _context);
+		quantgrounder = new LazyQuantGrounder(newqf->freeVars(), solvertheory, subgrounder, SIGN::POS, QUANT::UNIV, gc._generator, gc._checker, _context);
 	}else{
-		_topgrounder = new QuantGrounder(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, gc._generator, gc._checker, _context);
+		quantgrounder = new QuantGrounder(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, gc._generator, gc._checker, _context);
+	}
+	quantgrounder->setOrig(qf, varmapping());
+	_topgrounder = quantgrounder;
+
+	if(tempqf!=NULL){
+		deleteDeep(tempqf);
 	}
 }
 
