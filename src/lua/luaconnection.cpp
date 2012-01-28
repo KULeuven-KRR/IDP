@@ -70,13 +70,15 @@ bool init = false;
 
 const char* toCString(ArgType type) {
 	if (not init) {
-		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
-				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
-				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
-				AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
-				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
-				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
-				AT_TRACEMONITOR, "tracemonitor");
+		map_init(argType2Name)
+				(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")
+				(AT_VOCABULARY,	"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")
+				(AT_PREDTABLE, "predicate_table")(AT_PREDINTER, "predicate_interpretation")(AT_FUNCINTER, "function_interpretation")
+				(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")
+				(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY, "theory")
+				(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")
+				(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")
+				(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -604,7 +606,7 @@ void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vecto
 int internalCall(lua_State* L) {
 	// get the list of possible procedures (with the associated name?)
 	map<vector<ArgType>, InternalProcedure*>* procs = *(map<vector<ArgType>, InternalProcedure*>**) lua_touserdata(L, 1);
-	Assert(!procs->empty());
+	Assert(not procs->empty());
 	//otherwise lua should have thrown an exception
 
 	lua_remove(L, 1); // The function itself is the first argument
@@ -801,8 +803,9 @@ int predicateIndex(lua_State* L) {
 		for (auto it = sort->begin(); it != sort->end(); ++it) {
 			for (auto jt = pred->begin(); jt != pred->end(); ++jt) {
 				if ((*jt)->arity() == 1) {
-					if ((*jt)->resolve(vector<Sort*>(1, (*it))))
+					if ((*jt)->resolve(vector<Sort*>(1, (*it)))) {
 						newpred->insert(*jt);
+					}
 				}
 			}
 		}
@@ -818,28 +821,32 @@ int predicateIndex(lua_State* L) {
 		}
 		set<Predicate*>* newpred = new set<Predicate*>();
 		vector<set<Sort*>::iterator> carry(table->size());
-		for (unsigned int n = 0; n < table->size(); ++n)
+		for (size_t n = 0; n < table->size(); ++n) {
 			carry[n] = (*table)[n].sort()->begin();
+		}
 		while (true) {
 			vector<Sort*> currsorts(table->size());
-			for (unsigned int n = 0; n < table->size(); ++n)
+			for (size_t n = 0; n < table->size(); ++n) {
 				currsorts[n] = *(carry[n]);
+			}
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
 					if ((*it)->resolve(currsorts))
 						newpred->insert(*it);
 				}
 			}
-			unsigned int c = 0;
+			size_t c = 0;
 			for (; c < table->size(); ++c) {
 				++(carry[c]);
-				if (carry[c] != (*table)[c].sort()->end())
+				if (carry[c] != (*table)[c].sort()->end()) {
 					break;
-				else
+				} else {
 					carry[c] = (*table)[c].sort()->begin();
+				}
 			}
-			if (c == table->size())
+			if (c == table->size()) {
 				break;
+			}
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -862,7 +869,7 @@ int functionIndex(lua_State* L) {
 			lua_pushstring(L, "Invalid function symbol index");
 			return lua_error(L);
 		}
-		for (unsigned int n = 0; n < table->size(); ++n) {
+		for (size_t n = 0; n < table->size(); ++n) {
 			if ((*table)[n]._type == AT_SORT) {
 				newtable.push_back((*table)[n]);
 			} else {
@@ -872,28 +879,33 @@ int functionIndex(lua_State* L) {
 		}
 		set<Function*>* newfunc = new set<Function*>();
 		vector<set<Sort*>::iterator> carry(newtable.size());
-		for (unsigned int n = 0; n < newtable.size(); ++n)
+		for (size_t n = 0; n < newtable.size(); ++n) {
 			carry[n] = newtable[n].sort()->begin();
+		}
 		while (true) {
 			vector<Sort*> currsorts(newtable.size());
-			for (unsigned int n = 0; n < newtable.size(); ++n)
+			for (size_t n = 0; n < newtable.size(); ++n) {
 				currsorts[n] = *(carry[n]);
+			}
 			for (auto it = func->begin(); it != func->end(); ++it) {
 				if ((*it)->arity() == newtable.size()) {
-					if ((*it)->resolve(currsorts))
+					if ((*it)->resolve(currsorts)) {
 						newfunc->insert(*it);
+					}
 				}
 			}
-			unsigned int c = 0;
+			size_t c = 0;
 			for (; c < newtable.size(); ++c) {
 				++(carry[c]);
-				if (carry[c] != newtable[c].sort()->end())
+				if (carry[c] != newtable[c].sort()->end()) {
 					break;
-				else
+				} else {
 					carry[c] = newtable[c].sort()->begin();
+				}
 			}
-			if (c == newtable.size())
+			if (c == newtable.size()) {
 				break;
+			}
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -953,24 +965,26 @@ int vocabularyIndex(lua_State* L) {
 			++emptycounter;
 		}
 		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
-		if (preds.empty())
+		if (preds.empty()) {
 			++emptycounter;
+		}
 		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
-		if (funcs.empty())
+		if (funcs.empty()) {
 			++emptycounter;
-		if (emptycounter == 3)
+		}
+		if (emptycounter == 3) {
 			return 0;
-		else if (emptycounter == 2) {
+		} else if (emptycounter == 2) {
 			if (sort != NULL) {
 				set<Sort*>* newsorts = new set<Sort*> { sort };
 				InternalArgument ns(newsorts);
 				return convertToLua(L, ns);
-			} else if (!preds.empty()) {
+			} else if (not preds.empty()) {
 				set<Predicate*>* newpreds = new set<Predicate*>(preds);
 				InternalArgument np(newpreds);
 				return convertToLua(L, np);
 			} else {
-				Assert(!funcs.empty());
+				Assert(not funcs.empty());
 				set<Function*>* newfuncs = new set<Function*>(funcs);
 				InternalArgument nf(newfuncs);
 				return convertToLua(L, nf);
@@ -980,10 +994,12 @@ int vocabularyIndex(lua_State* L) {
 			if (sort != NULL) {
 				os->insert(sort);
 			}
-			for (auto it = preds.cbegin(); it != preds.cend(); ++it)
+			for (auto it = preds.cbegin(); it != preds.cend(); ++it) {
 				os->insert(*it);
-			for (auto it = funcs.cbegin(); it != funcs.cend(); ++it)
+			}
+			for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
 				os->insert(*it);
+			}
 			InternalArgument s(os);
 			return convertToLua(L, s);
 		}
@@ -1003,11 +1019,12 @@ int domainatomIndex(lua_State* L) {
 		string str = *index._value._string;
 		if (str == "symbol") {
 			PFSymbol* s = atom->symbol();
-			if (typeid(*s) == typeid(Predicate)) {
+			if (sametypeid<Predicate>(*s)) {
 				set<Predicate*>* sp = new set<Predicate*>();
 				sp->insert(dynamic_cast<Predicate*>(s));
 				return convertToLua(L, InternalArgument(sp));
 			} else {
+				Assert(sametypeid<Function>(*s));
 				set<Function*>* sf = new set<Function*>();
 				sf->insert(dynamic_cast<Function*>(s));
 				return convertToLua(L, InternalArgument(sf));
@@ -1152,7 +1169,7 @@ InternalArgument getValue(Options* opts, const string& name) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
 	} else if(opts->isOptionOfType<double>(name)) {
 		return InternalArgument(opts->getValueOfType<double>(name));
-	}else{
+	} else {
 		throw IdpException("Requesting non-existing option " + name);
 	}
 }
@@ -1240,16 +1257,21 @@ int namespaceIndex(lua_State* L) {
 
 	Assert(counter==1);
 	// Only one element on the stack
-	if (subsp)
+	if (subsp) {
 		return convertToLua(L, InternalArgument(subsp));
-	if (vocab)
+	}
+	if (vocab) {
 		return convertToLua(L, InternalArgument(vocab));
-	if (theo)
+	}
+	if (theo) {
 		return convertToLua(L, InternalArgument(theo));
-	if (structure)
+	}
+	if (structure) {
 		return convertToLua(L, InternalArgument(structure));
-	if (opts)
+	}
+	if (opts) {
 		return convertToLua(L, InternalArgument(opts));
+	}
 	if (proc) {
 		compile(proc, L);
 		lua_getfield(L, LUA_REGISTRYINDEX, proc->registryindex().c_str());
@@ -1317,9 +1339,9 @@ PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Univ
 				}
 			}
 			ipt->add(tuple);
-		} else if (it->_type == AT_TUPLE)
+		} else if (it->_type == AT_TUPLE) {
 			ipt->add(*(it->_value._tuple));
-		else {
+		} else {
 			lua_pushstring(L, "Expected a two-dimensional table");
 			lua_error(L);
 			return 0;
@@ -1346,7 +1368,8 @@ int predinterNewIndex(lua_State* L) {
 		} else {
 			lua_pushstring(L, "Wrong argument to __newindex procedure of a predicate interpretation");
 			return lua_error(L);
-		}Assert(pt);
+		}
+		Assert(pt);
 		string str = *(index._value._string);
 		if (str == "ct") {
 			predinter->ct(new PredTable(pt->internTable(), univ));
@@ -1489,18 +1512,16 @@ int optionsNewIndex(lua_State* L) {
 	}
 
 	string option = *(index._value._string);
-	if (!opts->isOption(option)) {
+	if (not opts->isOption(option)) {
 		stringstream ss;
 		ss << "There is no option named " << option << ".\n";
 		lua_pushstring(L, ss.str().c_str());
-		// FIXME lua errors are not printed anymore?
-		clog << ss.str();
 		return lua_error(L);
 	}
 	switch (value._type) {
 	case AT_INT:
 		return attempToSetValue(L, opts, option, value._value._int);
-		/*case AT_DOUBLE: // TODO currently there are not float options
+	/*case AT_DOUBLE: // TODO currently there are no float options
 		 return attempToSetValue(L, opts, option, value._value._double);*/
 	case AT_STRING:
 		return attempToSetValue(L, opts, option, *value._value._string);
@@ -1566,10 +1587,12 @@ int funcinterCall(lua_State* L) {
 			InternalArgument argone = createArgument(1, L);
 			if (argone._type == AT_TUPLE) {
 				ElementTuple tuple = *(argone._value._tuple);
-				while (tuple.size() > ft->arity())
+				while (tuple.size() > ft->arity()) {
 					tuple.pop_back();
-				while (tuple.size() < ft->arity())
+				}
+				while (tuple.size() < ft->arity()) {
 					tuple.push_back(0);
+				}
 				const DomainElement* d = (*ft)[tuple];
 				return convertToLua(L, d);
 			}
@@ -1596,10 +1619,12 @@ int funcinterCall(lua_State* L) {
 				return 0;
 			}
 		}
-		while (tuple.size() > ft->arity())
+		while (tuple.size() > ft->arity()) {
 			tuple.pop_back();
-		while (tuple.size() < ft->arity())
+		}
+		while (tuple.size() < ft->arity()) {
 			tuple.push_back(0);
+		}
 		const DomainElement* d = (*ft)[tuple];
 		return convertToLua(L, d);
 	} else {
@@ -1617,8 +1642,9 @@ int predicateArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Predicate*>* newpred = new set<Predicate*>();
 		for (auto it = pred->begin(); it != pred->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int)
+			if ((int) (*it)->arity() == arity._value._int) {
 				newpred->insert(*it);
+			}
 		}
 		InternalArgument np(newpred);
 		return convertToLua(L, np);
@@ -1637,8 +1663,9 @@ int functionArity(lua_State* L) {
 	if (arity._type == AT_INT) {
 		set<Function*>* newfunc = new set<Function*>();
 		for (auto it = func->begin(); it != func->end(); ++it) {
-			if ((int) (*it)->arity() == arity._value._int)
+			if ((int) (*it)->arity() == arity._value._int) {
 				newfunc->insert(*it);
+			}
 		}
 		InternalArgument nf(newfunc);
 		return convertToLua(L, nf);
@@ -1911,7 +1938,8 @@ void addInternalProcedures(lua_State*) {
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
-		}lua_getglobal(_state, nsspace.c_str());
+		}
+		lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
 			auto possiblearguments = new internalprocargmap(j->second);
 			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
@@ -2001,7 +2029,7 @@ const DomainElement* execute(const std::string& chunk) {
 
 void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 	lua_getglobal(_state, name[0].c_str());
-	for (unsigned int n = 1; n < name.size(); ++n) {
+	for (size_t n = 1; n < name.size(); ++n) {
 		if (lua_istable(_state,-1)) {
 			lua_getfield(_state, -1, name[n].c_str());
 			lua_remove(_state, -2);
@@ -2012,10 +2040,11 @@ void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 	}
 }
 
-InternalArgument* call(const vector<string>& proc, const vector<vector<string> >& args, const ParseInfo& pi) {
+InternalArgument* call(const vector<string>& proc, const vector<vector<string>>& args, const ParseInfo& pi) {
 	pushglobal(proc, pi);
-	for (unsigned int n = 0; n < args.size(); ++n)
+	for (size_t n = 0; n < args.size(); ++n) {
 		pushglobal(args[n], pi);
+	}
 	int err = lua_pcall(_state, args.size(), 1, 0);
 	if (err) {
 		Error::error(pi);
@@ -2069,7 +2098,8 @@ void compile(UserProcedure* proc) {
 	compile(proc, _state);
 }
 
-template<> void addGlobal(UserProcedure* p) {
+template<>
+void addGlobal(UserProcedure* p) {
 	InternalArgument ia;
 	ia._type = AT_PROCEDURE;
 	ia._value._string = StringPointer(p->registryindex());
@@ -2093,8 +2123,9 @@ string* getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) 
 	lua_pop(_state, 1);
 	if (ia._type == AT_PROCEDURE) {
 		return ia._value._string;
-	} else
+	} else {
 		return 0;
+	}
 }
 
 LuaTraceMonitor* getLuaTraceMonitor() {
@@ -2104,4 +2135,4 @@ LuaTraceMonitor* getLuaTraceMonitor() {
 	return new LuaTraceMonitor(getState());
 }
 
-}
+} /* namespace LuaConnection */
