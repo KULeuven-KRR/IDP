@@ -24,6 +24,9 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
+typedef int SetId;
+typedef int DefId;
+
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
@@ -66,13 +69,13 @@ public:
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 
 	void polAdd(const GroundClause& cl);
-	void polAdd(const TsSet& tsset, int setnr, bool weighted);
-	void polAdd(int defnr, PCGroundRule* rule);
-	void polAdd(int defnr, AggGroundRule* rule);
-	void polAdd(int defnr, int head, AggGroundRule* body, bool);
-	void polAdd(int head, AggTsBody* body);
+	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
+	void polAdd(DefId defnr, PCGroundRule* rule);
+	void polAdd(DefId defnr, AggGroundRule* rule);
+	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
+	void polAdd(Lit head, AggTsBody* body);
 	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver);
-	void polAdd(int tseitin, CPTsBody* body);
+	void polAdd(Lit tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& clause);
@@ -91,13 +94,13 @@ public:
 	}
 
 private:
-	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
+	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
 
 	void polAddCPVariables(const std::vector<VarId>& varids, GroundTermTranslator* termtranslator);
 
 	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
 
-	void polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool);
+	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive, bool);
 };
 
 #endif /* SOLVERTHEORY_HPP_ */

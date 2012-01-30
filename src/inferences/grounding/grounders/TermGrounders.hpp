@@ -12,6 +12,7 @@
 #define TERMGROUNDERS_HPP_
 
 #include "IncludeComponents.hpp" // TODO too general
+#include "GroundUtils.hpp"
 
 class AbstractGroundTheory;
 class SortTable;
@@ -31,7 +32,7 @@ protected:
 	AbstractGroundTheory* _grounding;
 	mutable SortTable* _domain;
 	Term* _origterm;
-	std::map<Variable*, const DomElemContainer*> _varmap;
+	var2dommap _varmap;
 	int _verbosity;
 	void printOrig() const;
 public:
@@ -42,7 +43,9 @@ public:
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
-	void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
+
+	void setOrig(const Term* t, const var2dommap& mvd, int verbosity);
+
 	SortTable* getDomain() const {
 		return _domain;
 	}
@@ -68,7 +71,7 @@ public:
 	VarTermGrounder(const DomElemContainer* a)
 			: _value(a) {
 	}
-	inline GroundTerm run() const{
+	inline GroundTerm run() const {
 		return GroundTerm(_value->get());
 	}
 
@@ -108,8 +111,7 @@ protected:
 	TermGrounder* _righttermgrounder;
 	SumType _type;
 public:
-	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type =
-			ST_PLUS)
+	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
 			: TermGrounder(g, dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
 	}
 	GroundTerm run() const;

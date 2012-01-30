@@ -45,29 +45,29 @@ void GroundPolicy::polAdd(const GroundClause& cl) {
 	_clauses.push_back(cl);
 }
 
-void GroundPolicy::polAdd(int head, AggTsBody* body) {
-	_aggregates.push_back(new GroundAggregate(body->aggtype(), body->lower(), body->type(), head, body->setnr(), body->bound()));
+void GroundPolicy::polAdd(Lit tseitin, AggTsBody* body) {
+	_aggregates.push_back(new GroundAggregate(body->aggtype(), body->lower(), body->type(), tseitin, body->setnr(), body->bound()));
 }
 
-void GroundPolicy::polAdd(int tseitin, CPTsBody* body) {
+void GroundPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 	//TODO also add variables (in a separate container?)
 	_cpreifications.push_back(new CPReification(tseitin, body));
 }
 
-void GroundPolicy::polAdd(const TsSet& tsset, int setnr, bool) {
+void GroundPolicy::polAdd(const TsSet& tsset, SetId setnr, bool) {
 	_sets.push_back(new GroundSet(setnr, tsset.literals(), tsset.weights()));
 }
 
-void GroundPolicy::polAdd(int defnr, PCGroundRule* rule) {
+void GroundPolicy::polAdd(DefId defnr, PCGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
+		_definitions.insert(std::pair<DefId, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
 	}
 	_definitions.at(defnr)->addPCRule(rule->head(), rule->body(), rule->type() == RT_CONJ, rule->recursive());
 }
 
-void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
+void GroundPolicy::polAdd(DefId defnr, AggGroundRule* rule) {
 	if (_definitions.find(defnr) == _definitions.end()) {
-		_definitions.insert(std::pair<int, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
+		_definitions.insert(std::pair<DefId, GroundDefinition*> { defnr, new GroundDefinition(defnr, _translator) });
 	}
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
@@ -123,7 +123,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 		CPReification* cpr = *it;
 		s << translator->printLit(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
-		if (typeid(*left) == typeid(CPSumTerm)) {
+		if (sametypeid<CPSumTerm>(*left)) {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 			s << "sum[ ";
 			bool begin = true;
@@ -135,7 +135,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 				s << termtranslator->printTerm(*vit);
 			}
 			s << " ]";
-		} else if (typeid(*left) == typeid(CPWSumTerm)) {
+		} else if (sametypeid<CPWSumTerm>(*left)) {
 			CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
 			s << "wsum[ ";
 			bool begin = true;
@@ -150,7 +150,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 			}
 			s << " ]";
 		} else {
-			Assert(typeid(*left) == typeid(CPVarTerm));
+			Assert(sametypeid<CPVarTerm>(*left));
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << termtranslator->printTerm(cpt->varid());
 		}

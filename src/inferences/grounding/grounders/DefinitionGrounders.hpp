@@ -34,7 +34,7 @@ class PFSymbol;
 
 class RuleGrounder;
 typedef GroundTheory<SolverPolicy> SolverTheory;
-typedef unsigned int DefId;
+typedef int DefId;
 
 /** Grounder for a definition **/
 // NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)

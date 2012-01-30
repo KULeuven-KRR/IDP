@@ -20,8 +20,7 @@
 using namespace std;
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, vector<int>& literals, vector<double>& weights,
-		vector<double>& trueweights, InstChecker& checker) {
+void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights, InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
 		l = _true;
@@ -34,7 +33,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	const auto& groundweight = subtermgrounder.run();
 	Assert(not groundweight.isVariable);
 	const auto& d = groundweight._domelement;
-	double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
+	Weight w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
 	if (l == _true) {
 		trueweights.push_back(w);
 		//TODO push literal anyway?
@@ -44,25 +43,25 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	}
 }
 
-int EnumSetGrounder::run() const {
-	vector<Lit> literals;
-	vector<double> weights;
-	vector<double> trueweights;
+SetId EnumSetGrounder::run() const {
+	litlist literals;
+	weightlist weights;
+	weightlist trueweights;
 	InstChecker* checker = new FalseInstChecker();
 	for (size_t n = 0; n < _subgrounders.size(); ++n) {
 		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights, *checker);
 	}
-	Lit s = _translator->translateSet(literals, weights, trueweights);
+	SetId s = _translator->translateSet(literals, weights, trueweights);
 	return s;
 }
 
-int QuantSetGrounder::run() const {
-	vector<Lit> literals;
-	vector<double> weights;
-	vector<double> trueweights;
-	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+SetId QuantSetGrounder::run() const {
+	litlist literals;
+	weightlist weights;
+	weightlist trueweights;
+	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator++()) {
 		groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, *_checker);
 	}
-	Lit s = _translator->translateSet(literals, weights, trueweights);
+	SetId s = _translator->translateSet(literals, weights, trueweights);
 	return s;
 }

@@ -33,6 +33,8 @@ struct HashTuple {
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
 typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
+typedef size_t SymbolOffset;
+
 struct SymbolAndAtomMap {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
@@ -87,18 +89,18 @@ public:
 	GroundTranslator();
 	~GroundTranslator();
 
-	Lit translate(unsigned int, const ElementTuple&);
-	Lit translate(const std::vector<int>& cl, bool conj, TsType tp);
-	Lit translate(const Lit& head, const std::vector<Lit>& clause, bool conj, TsType tstype);
-	Lit translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype);
+	Lit translate(SymbolOffset, const ElementTuple&);
+	Lit translate(const litlist& cl, bool conj, TsType tp);
+	Lit translate(const Lit& head, const litlist& clause, bool conj, TsType tstype);
+	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
+	Lit translateSet(const litlist&, const weightlist&, const weightlist&);
 	void translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
 	void notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
 
-	unsigned int addSymbol(PFSymbol* pfs);
+	SymbolOffset addSymbol(PFSymbol* pfs);
 
 	bool isStored(Lit atom) const {
 		return atom > 0 && atomtype.size() > (unsigned int) atom;
@@ -131,32 +133,32 @@ public:
 		return nextNumber(AtomType::LONETSEITIN);
 	}
 
-	bool isSet(int setID) const {
-		return _sets.size() > (unsigned int) setID;
+	bool isSet(SetId setID) const {
+		return _sets.size() > (size_t) setID;
 	}
 
 	//TODO: when _sets contains pointers instead of objects, this should return a TsSet*
-	const TsSet groundset(int setID) const {
+	const TsSet groundset(SetId setID) const {
 		Assert(isSet(setID));
 		return _sets[setID];
 	}
 
-	bool isManagingSymbol(unsigned int n) const {
+	bool isManagingSymbol(SymbolOffset n) const {
 		return symbols.size() > n;
 	}
-	unsigned int nbManagedSymbols() const {
+	size_t nbManagedSymbols() const {
 		return symbols.size();
 	}
-	PFSymbol* getManagedSymbol(unsigned int n) const {
+	PFSymbol* getManagedSymbol(SymbolOffset n) const {
 		Assert(isManagingSymbol(n));
 		return symbols[n].symbol;
 	}
-	const Tuple2AtomMap& getTuples(unsigned int n) const {
+	const Tuple2AtomMap& getTuples(SymbolOffset n) const {
 		Assert(isManagingSymbol(n));
 		return symbols[n].tuple2atom;
 	}
 
-	std::string printLit(const Lit& atom) const;
+	std::string printLit(const Lit& lit) const;
 };
 
 #endif /* GROUNDTRANSLATOR_HPP_ */

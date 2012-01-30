@@ -39,7 +39,7 @@ inline size_t HashTuple::operator()(const ElementTuple& tuple) const {
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(std::pair<Lit, TsBody*> { 0, (TsBody*) NULL });
+	atom2TsBody.push_back(tspair{ 0, (TsBody*) NULL });
 }
 
 GroundTranslator::~GroundTranslator() {
@@ -54,7 +54,7 @@ GroundTranslator::~GroundTranslator() {
 	}
 }
 
-Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
+Lit GroundTranslator::translate(SymbolOffset n, const ElementTuple& args) {
 	Lit lit = 0;
 	//auto jt = symbols[n].tuple2atom.lower_bound(args);
 	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
@@ -77,16 +77,16 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 }
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
-	unsigned int offset = addSymbol(s);
+	SymbolOffset offset = addSymbol(s);
 	return translate(offset, args);
 }
 
-Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tstype) {
+Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype) {
 	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	return translate(nr, clause, conj, tstype);
 }
 
-Lit GroundTranslator::translate(const Lit& head, const vector<Lit>& clause, bool conj, TsType tstype) {
+Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool conj, TsType tstype) {
 	PCTsBody* tsbody = new PCTsBody(tstype, clause, conj);
 	atom2TsBody[head] = tspair(head, tsbody);
 	return head;
@@ -108,7 +108,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder) {
-	int symbolnumber = addSymbol(pfs);
+	SymbolOffset symbolnumber = addSymbol(pfs);
 	auto it = symbol2rulegrounder.find(symbolnumber);
 	if (symbol2rulegrounder.find(symbolnumber) == symbol2rulegrounder.cend()) {
 		it = symbol2rulegrounder.insert(pair<unsigned int, std::vector<LazyRuleGrounder*> >(symbolnumber, { })).first;
@@ -125,14 +125,14 @@ void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, Re
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 
-Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype) {
+Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype) {
 	if (comp == CompType::EQ) {
-		vector<int> cl(2);
+		litlist cl(2);
 		cl[0] = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
 		cl[1] = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
 		return translate(cl, true, tstype);
 	} else if (comp == CompType::NEQ) {
-		vector<int> cl(2);
+		litlist cl(2);
 		cl[0] = translate(bound, CompType::GT, aggtype, setnr, tstype);
 		cl[1] = translate(bound, CompType::LT, aggtype, setnr, tstype);
 		return translate(cl, false, tstype);
@@ -160,7 +160,7 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	//}
 }
 
-int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
+SetId GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
 	int setnr;
 	if (_freesetnumbers.empty()) {
 		TsSet newset;
@@ -185,20 +185,20 @@ int GroundTranslator::translateSet(const vector<int>& lits, const vector<double>
 
 Lit GroundTranslator::nextNumber(AtomType type) {
 	if (_freenumbers.empty()) {
-		Lit atom = atomtype.size();
-		atom2TsBody.push_back(tspair { atom, (TsBody*) NULL });
+		Lit nr = atomtype.size();
+		atom2TsBody.push_back(tspair { nr, (TsBody*) NULL });
 		atom2Tuple.push_back(NULL);
 		atomtype.push_back(type);
-		return atom;
+		return nr;
 	} else {
-		int nr = _freenumbers.front();
+		Lit nr = _freenumbers.front();
 		_freenumbers.pop();
 		return nr;
 	}
 }
 
-unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for (unsigned int n = 0; n < symbols.size(); ++n) {
+SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
+	for (size_t n = 0; n < symbols.size(); ++n) {
 		if (symbols[n].symbol == pfs) {
 			return n;
 		}
@@ -209,7 +209,7 @@ unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
 
 string GroundTranslator::printLit(const Lit& lit) const {
 	stringstream s;
-	int nr = lit;
+	Lit nr = lit;
 	if (nr == _true) {
 		return "true";
 	}

@@ -64,7 +64,7 @@ void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
 	}
-	clog << "\n" << tabs() << "Grounding formula " << toString(_origform);
+	clog << "\n\n" << tabs() << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		pushtab();
 		clog << "\n" << tabs() << "with instance ";
@@ -75,7 +75,6 @@ void FormulaGrounder::printorig() const {
 		}
 		poptab();
 	}
-	clog << "\n" << tabs();
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
@@ -104,7 +103,6 @@ Lit AtomGrounder::run() const {
 
 	// Run subterm grounders
 	bool alldomelts = true;
-
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		groundsubterms[n] = _subtermgrounders[n]->run();
 		if (groundsubterms[n].isVariable) {
@@ -129,12 +127,9 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "Term value out of predicate type\n" << tabs(); //TODO should be a warning
-					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
-					if (_origform != NULL) {
-						poptab();
-					}
-					clog << tabs();
+					clog << "\n" << tabs() << "Term value out of predicate type"; //TODO should be a warning
+					if (_origform != NULL) { poptab(); }
+					clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "false" : "true");
 				}
 
 				return isPos(_sign) ? _false : _true;
@@ -142,8 +137,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	Assert(alldomelts);
-	// If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
+	Assert(alldomelts); // If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
@@ -152,45 +146,32 @@ Lit AtomGrounder::run() const {
 	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << "Possible checker failed\n" << tabs();
+			clog << "\n" << tabs() << "Possible checker failed";
+			if (_origform != NULL) { poptab(); }
 			//clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
-			clog << "Result is false";
-			if (_origform != NULL) {
-				poptab();
-			}
-			clog << "\n" << tabs();
+			clog << "\n" << tabs() << "Result is false";
 		}
-		//return gentype == GenType::CANMAKETRUE ? _false : _false;
 		return _false;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << "Certain checker succeeded\n" << tabs();
-			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
-			if (_origform != NULL) {
-				poptab();
-			}
-			clog << "\n" << tabs();
+			clog << "\n" << tabs() << "Certain checker succeeded";
+			if (_origform != NULL) { poptab(); }
+			clog << "\n" << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
-			clog << "Result is " << (isPos(_sign) ? "true" : "false");
-			if (_origform != NULL) {
-				poptab();
-			}
-			clog << "\n" << tabs();
+			if (_origform != NULL) { poptab(); }
+			clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "true" : "false");
 		}
 		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
 		if (verbosity() > 2) {
-			clog << "Result is " << (isPos(_sign) ? "false" : "true");
-			if (_origform != NULL) {
-				poptab();
-			}
-			clog << "\n" << tabs();
+			if (_origform != NULL) { poptab(); }
+			clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "false" : "true");
 		}
 		return isPos(_sign) ? _false : _true;
 	}
@@ -201,11 +182,8 @@ Lit AtomGrounder::run() const {
 		lit = -lit;
 	}
 	if (verbosity() > 2) {
-		clog << "Result is " << translator()->printLit(lit);
-		if (_origform != NULL) {
-			poptab();
-		}
-		clog << "\n" << tabs();
+		if (_origform != NULL) { poptab(); }
+		clog << "\n" << tabs() << "Result is " << translator()->printLit(lit);
 	}
 	return lit;
 }
@@ -292,13 +270,13 @@ AggGrounder::~AggGrounder() {
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 //TODO:why?
-Lit AggGrounder::handleDoubleNegation(double boundvalue, int setnr) const {
+Lit AggGrounder::handleDoubleNegation(double boundvalue, SetId setnr) const {
 	TsType tp = context()._tseitin;
 	Lit tseitin = translator()->translate(boundvalue, negateComp(_comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
-Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) const {
+Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) const {
 	int leftvalue = int(boundvalue - truevalue);
 	auto tsset = translator()->groundset(setnr);
 	int maxposscard = tsset.size();
@@ -366,7 +344,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 				Lit tseitin = translator()->translate(tsset.literals(), !conj, tp);
 				return isPos(_sign) ? -tseitin : tseitin;
 			} else {
-				vector<Lit> newsetlits(tsset.size());
+				litlist newsetlits(tsset.size());
 				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
@@ -375,7 +353,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
 			}
 		} else {
 			if (negateset) {
-				vector<Lit> newsetlits(tsset.size());
+				litlist newsetlits(tsset.size());
 				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
@@ -465,7 +443,6 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 		}
 		Lit cardright = translator()->translate(possiblecards, false, tp);
 		tseitin = translator()->translate( { nozeros, prodright, cardright }, true, tp);
-
 	}
 	return isPos(_sign) ? tseitin : -tseitin;
 
@@ -520,7 +497,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 
 Lit AggGrounder::run() const {
 	// Run subgrounders
-	int setnr = _setgrounder->run();
+	SetId setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
 	Assert(not groundbound.isVariable);
 
@@ -530,10 +507,10 @@ Lit AggGrounder::run() const {
 	auto tsset = translator()->groundset(setnr);
 
 	// Retrieve the value of the bound
-	double boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
+	Weight boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
 
 	// Compute the value of the aggregate based on weights of literals that are certainly true.
-	double truevalue = applyAgg(_type, tsset.trueweights());
+	Weight truevalue = applyAgg(_type, tsset.trueweights());
 
 	// When the set is empty (no more unknown values), return an answer based on the current value of the aggregate.
 	if (tsset.empty()) {
@@ -625,7 +602,7 @@ Lit AggGrounder::run() const {
 				return isPos(_sign) ? _false : _true;
 			}
 		} else { //boundvalue < truevalue
-				 // Finish
+			// Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
@@ -838,11 +815,11 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			std::cerr << toString(_checker);
+			cerr << toString(_checker);
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
-				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n" << tabs();
+				clog << "\n" << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front());
 			}
 			return;
 		}
@@ -885,9 +862,9 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 
-		clog << "Current formula: " << (isNegative() ? "~" : "");
+		clog << "\n" << tabs() << "Current formula: " << (isNegative() ? "~" : "");
 		_leftgrounder->printorig();
-		clog << " <=> ";
+		clog << "\n" << tabs() << " <=> ";
 		_rightgrounder->printorig();
 	}
 

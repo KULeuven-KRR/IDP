@@ -17,11 +17,7 @@
 
 class AbstractStructure;
 
-//TODO issue #23
 //TODO Check recursion issue... Think about nested aggregates!
-//TODO if this transformer works completely like it should, 
-// then we should probably remove graphFunctions and graphAggregates, 
-// because they should not be used anymore..
 
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()

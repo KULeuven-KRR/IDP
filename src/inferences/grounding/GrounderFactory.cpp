@@ -361,7 +361,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	Formula* temppf = pf->clone();
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	// TODO can we delete temppf here if different from transpf? APPARANTLY NOT!
-	//transpf = FormulaUtils::splitComparisonChains(transpf);
 	if (not getOption(BoolType::CPSUPPORT)) { // TODO Check not present in quantgrounder
 		transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
 	}
@@ -603,7 +602,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
 	newsubformula = FormulaUtils::unnestThreeValuedTerms(newsubformula, _structure, _context._funccontext);
-	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
 	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext);
 
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
@@ -612,7 +610,8 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
-	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
+	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf,
+			qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
 			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 	// Handle a top-level conjunction without creating tseitin atoms
 	if (_context._conjPathUntilNode) {
@@ -978,10 +977,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	}
 
 	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
-	Formula* clonedformula = newqs->subformulas()[0]->clone();
-	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
-	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext); //TODO issue #23
+	Formula* clonedsubformula = newqs->subformulas()[0]->clone();
+	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedsubformula, _structure, Context::POSITIVE);
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);

@@ -37,7 +37,7 @@ void SolverPolicy::polAdd(const GroundClause& cl) {
 	getSolver().add(clause);
 }
 
-void SolverPolicy::polAdd(const TsSet& tsset, int setnr, bool weighted) {
+void SolverPolicy::polAdd(const TsSet& tsset, SetId setnr, bool weighted) {
 	if (not weighted) {
 		MinisatID::Set set;
 		set.setID = setnr;
@@ -56,22 +56,22 @@ void SolverPolicy::polAdd(const TsSet& tsset, int setnr, bool weighted) {
 	}
 }
 
-void SolverPolicy::polAdd(int defnr, PCGroundRule* rule) {
+void SolverPolicy::polAdd(DefId defnr, PCGroundRule* rule) {
 	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RT_CONJ), rule->recursive());
 }
 
-void SolverPolicy::polAdd(int defnr, AggGroundRule* rule) {
+void SolverPolicy::polAdd(DefId defnr, AggGroundRule* rule) {
 	polAddAggregate(defnr, rule->head(), rule->lower(), rule->setnr(), rule->aggtype(), TsType::RULE, rule->bound());
 }
 
-void SolverPolicy::polAdd(int defnr, int head, AggGroundRule* body, bool) {
+void SolverPolicy::polAdd(DefId defnr, Lit head, AggGroundRule* body, bool) {
 	polAddAggregate(defnr, head, body->lower(), body->setnr(), body->aggtype(), TsType::RULE, body->bound());
 }
 
-void SolverPolicy::polAdd(int head, AggTsBody* body) {
+void SolverPolicy::polAdd(Lit tseitin, AggTsBody* body) {
 	Assert(body->type() != TsType::RULE);
 	//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
-	polAddAggregate(-1, head, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
+	polAddAggregate(-1, tseitin, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
 }
 
 void SolverPolicy::polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
@@ -85,7 +85,7 @@ void SolverPolicy::polAddWeightedSum(const MinisatID::Atom& head, const std::vec
 	solver.add(sentence);
 }
 
-void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
+void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch (body->comp()) {
 	case CompType::EQ:
@@ -253,44 +253,26 @@ void SolverPolicy::polNotifyDefined(const Lit& lit, const ElementTuple& args, st
 	getSolver().add(lc);
 }
 
-void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
+void SolverPolicy::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	switch (aggtype) {
 	case AggFunction::CARD:
 		agg.type = MinisatID::CARD;
-		if (_verbosity > 1) {
-			std::clog << "card ";
-		}
 		break;
 	case AggFunction::SUM:
 		agg.type = MinisatID::SUM;
-		if (_verbosity > 1) {
-			std::clog << "sum ";
-		}
 		break;
 	case AggFunction::PROD:
 		agg.type = MinisatID::PROD;
-		if (_verbosity > 1) {
-			std::clog << "prod ";
-		}
 		break;
 	case AggFunction::MIN:
 		agg.type = MinisatID::MIN;
-		if (_verbosity > 1) {
-			std::clog << "min ";
-		}
 		break;
 	case AggFunction::MAX:
-		if (_verbosity > 1) {
-			std::clog << "max ";
-		}
 		agg.type = MinisatID::MAX;
 		break;
-	}
-	if (_verbosity > 1) {
-		std::clog << setnr << ' ';
 	}
 	switch (sem) {
 	case TsType::EQ:
@@ -301,9 +283,6 @@ void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, 
 	case TsType::RULE:
 		agg.sem = MinisatID::DEF;
 		break;
-	}
-	if (_verbosity > 1) {
-		std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
 	}
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
@@ -329,31 +308,16 @@ void SolverPolicy::polAddCPVariable(const VarId& varid, GroundTermTranslator* te
 			cpvar.varID = varid;
 			cpvar.minvalue = domain->first()->value()._int;
 			cpvar.maxvalue = domain->last()->value()._int;
-			if (_verbosity > 0) {
-				std::clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
-			}
 			getSolver().add(cpvar);
 		} else {
 			// the domain is not a complete range.
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
-			if (_verbosity > 0) {
-				std::clog << "{ ";
-			}
 			for (SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 				int value = (*it)->value()._int;
 				cpvar.values.push_back(value);
-				if (_verbosity > 0) {
-					std::clog << value << "; ";
-				}
-			}
-			if (_verbosity > 0) {
-				std::clog << "}";
 			}
 			getSolver().add(cpvar);
-		}
-		if (_verbosity > 0) {
-			std::clog << "\n";
 		}
 	}
 }

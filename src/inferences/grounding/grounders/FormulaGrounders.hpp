@@ -91,8 +91,7 @@ private:
 
 	Lit run() const;
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg,
-			const GroundingContext& gc)
+	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
 			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 	}
 	~ComparisonGrounder();
@@ -110,23 +109,22 @@ private:
 	CompType _comp;
 	SIGN _sign;
 	bool _doublenegtseitin;
-	Lit handleDoubleNegation(double boundvalue, int setnr) const;
-	Lit finishCard(double truevalue, double boundvalue, int setnr) const;
-	Lit finishSum(double truevalue, double boundvalue, int setnr) const;
-	Lit finishProduct(double truevalue, double boundvalue, int setnr) const;
-	Lit finishMaximum(double truevalue, double boundvalue, int setnr) const;
-	Lit finishMinimum(double truevalue, double boundvalue, int setnr) const;
-	Lit splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const;
-	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
+	Lit handleDoubleNegation(double boundvalue, SetId setnr) const;
+	Lit finishCard(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishSum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishProduct(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishMaximum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishMinimum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, SetId setnr) const;
+	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, SetId setnr) const;
 
 	Lit run() const;
 public:
 	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
 			: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
-		bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
-		bool signPosIfStrict = isPos(_sign) == not noAggComp;
-		_doublenegtseitin = (gc._tseitin == TsType::RULE)
-				&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
+		bool noAggComp = (comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ);
+		bool signPosIfStrict = (isPos(_sign) == not noAggComp);
+		_doublenegtseitin = (gc._tseitin == TsType::RULE) && ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
 	}
 	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
@@ -202,8 +200,7 @@ protected:
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
 public:
-	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-			const GroundingContext& ct)
+	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	}
 	~QuantGrounder();
