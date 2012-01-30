@@ -37,6 +37,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	double w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
 	if (l == _true) {
 		trueweights.push_back(w);
+		//TODO push literal anyway?
 	} else {
 		weights.push_back(w);
 		literals.push_back(l);

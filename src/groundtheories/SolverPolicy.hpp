@@ -33,7 +33,7 @@ private:
 	SATSolver* _solver; // The SAT solver
 	std::map<PFSymbol*, std::set<int> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
-	std::set<unsigned int> _addedvarids; // Variable ids that have already been added, together with their domain.
+	std::set<VarId> _addedvarids; // Variable ids that have already been added, together with their domain.
 
 	int _verbosity;
 
@@ -71,8 +71,7 @@ public:
 	void polAdd(int defnr, AggGroundRule* rule);
 	void polAdd(int defnr, int head, AggGroundRule* body, bool);
 	void polAdd(int head, AggTsBody* body);
-	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
-			MinisatID::EqType rel, SATSolver& solver);
+	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver);
 	void polAdd(int tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?

@@ -225,9 +225,9 @@ Lit ComparisonGrounder::run() const {
 	const GroundTerm& right = _righttermgrounder->run();
 
 	//TODO Is following check necessary??
-	if ((not left._domelement && not left._varid) || (not right._domelement && not right._varid)) {
-		return context()._funccontext != Context::NEGATIVE ? _true : _false;
-	}
+//	if ((left._domelement == NULL && not left.isVariable) || (right._domelement == NULL && not right.isVariable)) {
+//		return context()._funccontext != Context::NEGATIVE ? _true : _false;
+//	}
 
 	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
 

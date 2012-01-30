@@ -227,7 +227,7 @@ ostream& GroundDefinition::put(ostream& s) const {
 }
 
 CPReification::~CPReification() {
-	delete (_body);
+	//delete (_body);
 }
 
 bool operator==(const GroundTerm& a, const GroundTerm& b) {

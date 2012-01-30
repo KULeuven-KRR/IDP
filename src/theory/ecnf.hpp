@@ -390,10 +390,10 @@ private:
 	weightlist _trueweights; // The weights of the true literals in the set
 public:
 	// Modifiers
-	void setWeight(unsigned int n, double w) {
+	void setWeight(size_t n, double w) {
 		_litweights[n] = w;
 	}
-	void removeLit(unsigned int n) {
+	void removeLit(size_t n) {
 		_setlits[n] = _setlits.back();
 		_litweights[n] = _litweights.back();
 		_setlits.pop_back();
@@ -409,16 +409,16 @@ public:
 	weightlist trueweights() const {
 		return _trueweights;
 	}
-	unsigned int size() const {
+	size_t size() const {
 		return _setlits.size();
 	}
 	bool empty() const {
 		return _setlits.empty();
 	}
-	int literal(unsigned int n) const {
+	int literal(size_t n) const {
 		return _setlits[n];
 	}
-	double weight(unsigned int n) const {
+	double weight(size_t n) const {
 		return _litweights[n];
 	}
 	friend class GroundTranslator;

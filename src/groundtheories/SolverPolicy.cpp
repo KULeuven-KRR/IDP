@@ -260,32 +260,38 @@ void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, 
 	switch (aggtype) {
 	case AggFunction::CARD:
 		agg.type = MinisatID::CARD;
-		if (_verbosity > 1)
+		if (_verbosity > 1) {
 			std::clog << "card ";
+		}
 		break;
 	case AggFunction::SUM:
 		agg.type = MinisatID::SUM;
-		if (_verbosity > 1)
+		if (_verbosity > 1) {
 			std::clog << "sum ";
+		}
 		break;
 	case AggFunction::PROD:
 		agg.type = MinisatID::PROD;
-		if (_verbosity > 1)
+		if (_verbosity > 1) {
 			std::clog << "prod ";
+		}
 		break;
 	case AggFunction::MIN:
 		agg.type = MinisatID::MIN;
-		if (_verbosity > 1)
+		if (_verbosity > 1) {
 			std::clog << "min ";
+		}
 		break;
 	case AggFunction::MAX:
-		if (_verbosity > 1)
+		if (_verbosity > 1) {
 			std::clog << "max ";
+		}
 		agg.type = MinisatID::MAX;
 		break;
 	}
-	if (_verbosity > 1)
+	if (_verbosity > 1) {
 		std::clog << setnr << ' ';
+	}
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
@@ -296,8 +302,9 @@ void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, 
 		agg.sem = MinisatID::DEF;
 		break;
 	}
-	if (_verbosity > 1)
+	if (_verbosity > 1) {
 		std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
+	}
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -322,34 +329,39 @@ void SolverPolicy::polAddCPVariable(const VarId& varid, GroundTermTranslator* te
 			cpvar.varID = varid;
 			cpvar.minvalue = domain->first()->value()._int;
 			cpvar.maxvalue = domain->last()->value()._int;
-			if (_verbosity > 0)
+			if (_verbosity > 0) {
 				std::clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
+			}
 			getSolver().add(cpvar);
 		} else {
 			// the domain is not a complete range.
 			MinisatID::CPIntVarEnum cpvar;
 			cpvar.varID = varid;
-			if (_verbosity > 0)
+			if (_verbosity > 0) {
 				std::clog << "{ ";
+			}
 			for (SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 				int value = (*it)->value()._int;
 				cpvar.values.push_back(value);
-				if (_verbosity > 0)
+				if (_verbosity > 0) {
 					std::clog << value << "; ";
+				}
 			}
-			if (_verbosity > 0)
+			if (_verbosity > 0) {
 				std::clog << "}";
+			}
 			getSolver().add(cpvar);
 		}
-		if (_verbosity > 0)
+		if (_verbosity > 0) {
 			std::clog << "\n";
+		}
 	}
 }
 
 void SolverPolicy::polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool) {
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
-	for (unsigned int n = 0; n < body.size(); ++n) {
+	for (size_t n = 0; n < body.size(); ++n) {
 		rule.body.push_back(createLiteral(body[n]));
 	}
 	rule.conjunctive = conjunctive;

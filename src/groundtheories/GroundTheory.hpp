@@ -60,7 +60,7 @@ public:
 	}
 
 	virtual void recursiveDelete() {
-		deleteList(_foldedterms);
+		//deleteList(_foldedterms);
 		Policy::polRecursiveDelete();
 		delete (this);
 	}
@@ -241,7 +241,7 @@ public:
 				if (not termtranslator()->function(varterm->varid())) {
 					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 					CPTerm* left = foldCPTerm(cprelation->left());
-					if ((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
+					if ((sametypeid<CPSumTerm>(*left) || sametypeid<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
 						Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
 						return left;
 					}
