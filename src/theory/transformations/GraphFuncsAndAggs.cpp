@@ -68,7 +68,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 				delete (pf);
 			}
 			if (newformula != NULL) {
-				return newformula;
+				return traverse(newformula);
 			}
 		}
 
@@ -80,11 +80,11 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 			delete (pf);
 		}
 		if (newformula != NULL) {
-			return newformula;
+			return traverse(newformula);
 		}
 	}
 
-	return pf;
+	return traverse(pf);
 }
 
 Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
@@ -100,7 +100,7 @@ Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 		auto newformula = FormulaUtils::splitComparisonChains(ef);
 		return newformula->accept(this);
 	} else {
-		return ef;
+		return traverse(ef);
 	}
 }
 
