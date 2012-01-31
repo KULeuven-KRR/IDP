@@ -16,5 +16,9 @@ structure structure : voc{
 procedure main(){
 	stdoptions.nbmodels=5
 	local solutions = modelexpand(theory, structure)
-	return #solutions==2
+	if #solutions==2 then
+		return 1
+	else
+		return 0
+	end
 }
