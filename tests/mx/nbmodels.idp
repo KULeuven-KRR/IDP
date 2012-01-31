@@ -1,0 +1,20 @@
+#include <mx>
+
+vocabulary voc {
+	type Block isa nat
+	p(Block)
+}
+
+theory theory : voc {
+	p(1).
+}
+
+structure structure : voc{
+	Block = {1..2}
+}
+
+procedure main(){
+	stdoptions.nbmodels=5
+	local solutions = modelexpand(theory, structure)
+	return #solutions==2
+}

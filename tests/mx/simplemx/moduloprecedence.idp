@@ -1,0 +1,15 @@
+#include <mx>
+
+vocabulary V {
+}
+
+theory T : V {
+	6=3+(10-2)%5.
+}
+
+structure S : V{
+}
+
+procedure getExpectedNbOfModels() {
+	return 1
+}
