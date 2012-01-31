@@ -125,7 +125,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder) {
-	//cerr <<"Notified that symbol " <<toString(pfs) <<" is defined\n";
+	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined\n";
 	int symbolnumber = addSymbol(pfs);
 	auto it = symbol2rulegrounder.find(symbolnumber);
 	if (symbol2rulegrounder.find(symbolnumber) == symbol2rulegrounder.cend()) {
@@ -142,7 +142,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 
 void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	//cerr <<"Adding lazy tseitin" <<instance->residual <<nt();
+	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
 	LazyTsBody* tsbody = new LazyTsBody(lazygrounder, instance, tstype);
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }

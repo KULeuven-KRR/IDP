@@ -364,7 +364,7 @@ void SolverPolicy::polAddPCRule(int defnr, int head, std::vector<int> body, bool
 void SolverPolicy::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) {
 	LazyClauseMon* mon = new LazyClauseMon(inst);
 #warning fix sign here (monotone, anti-, both)
-	//cerr <<"Wathing " <<inst->residual <<"(idp)\n";
+	//clog <<"Wathing " <<inst->residual <<"(idp)\n";
 	MinisatID::LazyGroundLit lc(true, createLiteral(inst->residual), mon);
 	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
 	mon->setRequestMoreGrounding(cbmore);

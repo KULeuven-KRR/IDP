@@ -85,7 +85,9 @@ void Grounder::toplevelRun() const {
 			getGrounding()->add(formula.literals);
 		}
 	}
-	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+	if(not getOption(BoolType::GROUNDLAZILY)){
+		getGrounding()->closeTheory(); // TODO very important and easily forgotten
+	}
 }
 
 Lit Grounder::groundAndReturnLit() const {
