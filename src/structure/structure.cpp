@@ -4211,11 +4211,34 @@ void Structure::makeTwoValued() {
 	Assert(approxTwoValued());
 }
 
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
+
+// Contents ownership to receiver
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& partialstructures) {
+	auto result = std::vector<AbstractStructure*>();
+	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
+		if (not (*i)->approxTwoValued()) {
+			auto extensions = generateEnoughTwoValuedExtensions(*i);
+			result.insert(result.end(), extensions.begin(), extensions.end());
+		} else {
+			result.push_back(*i);
+		}
+	}
+
+	if(needMoreModels(result.size())){
+		stringstream ss;
+		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
+		Warning::warning(ss.str());
+	}
+
+	return result;
+}
+
 /*
  * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
  * TODO refactor into clean methods!
  */
-std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* original) {
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original) {
 	vector<AbstractStructure*> extensions;
 
 	extensions.push_back(original->clone());
@@ -4320,11 +4343,6 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 	}
 
 	if (needFixedNumberOfModels()) {
-		if (needMoreModels(extensions.size())) {
-			stringstream ss;
-			ss << "Only " << extensions.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
-			Warning::warning(ss.str());
-		}
 		// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 			(*j)->makeTwoValued();

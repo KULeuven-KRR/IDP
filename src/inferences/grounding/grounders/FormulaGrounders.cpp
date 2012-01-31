@@ -757,7 +757,6 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			return FormStat::DECIDED;
 		} else if (subformula.getType() != formula.getType()) {
 			formula.literals.push_back(value);
-			return (FormStat::UNKNOWN);
 		}
 		return (FormStat::UNKNOWN);
 	} else if (subformula.literals.size() == 1) {

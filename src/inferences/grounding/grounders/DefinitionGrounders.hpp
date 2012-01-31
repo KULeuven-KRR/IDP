@@ -131,7 +131,7 @@ public:
 
 private:
 	bool isGrounding;
-	std::queue<std::pair<const Lit&, const ElementTuple&>> stilltoground;
+	std::queue<std::pair<Lit, ElementTuple>> stilltoground;
 	dominstlist createInst(const ElementTuple& headargs);
 	void doGrounding();
 	void doGround(const Lit& head, const ElementTuple& headargs);

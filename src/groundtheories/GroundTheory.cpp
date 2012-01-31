@@ -276,8 +276,6 @@ void GroundTheory<Policy>::addFuncConstraints() {
 		}
 		auto f = dynamic_cast<Function*>(pfs);
 
-		Assert(!translator()->getTuples(n).empty());
-
 		FirstNElementsEqual equalDomain(f->arity());
 		StrictWeakNTupleOrdering tuplesFirstNSmaller(f->arity());
 

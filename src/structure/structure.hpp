@@ -2144,6 +2144,11 @@ public:
 
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		Assert(tuple.size()==arity());
+#ifndef NDEBUG
+		for(auto i=tuple.cbegin(); i<tuple.cend(); ++i){
+			Assert(*i!=NULL);
+		}
+#endif
 		return _table->operator[](tuple);
 	}
 	bool contains(const ElementTuple& tuple) const;
@@ -2610,7 +2615,8 @@ public:
 	void makeTwoValued();
 };
 
-std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* s);
+// Contents ownership to receiver
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& s);
 
 /************************
  Auxiliary methods
