@@ -4293,7 +4293,6 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 		}
 
 		const PredTable* pf = inter->pf();
-		int count = 0;
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION
 			if (not pf->contains(*ptIterator)) {
@@ -4301,6 +4300,7 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 			}
 
 			vector<AbstractStructure*> newstructs;
+			int count = 0;
 			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
 				CHECKTERMINATION
 				auto news = (*j)->clone();
@@ -4322,10 +4322,10 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 	if (needFixedNumberOfModels()) {
 		if (needMoreModels(extensions.size())) {
 			stringstream ss;
-			ss << "Only " << extensions.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.";
+			ss << "Only " << extensions.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 			Warning::warning(ss.str());
 		}
-		// In this case, not all structures might be two-valued, so just choose a value for each of their elements
+		// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 			(*j)->makeTwoValued();
 		}

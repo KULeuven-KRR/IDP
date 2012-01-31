@@ -57,7 +57,7 @@ public:
 	}
 
 	~LeafGeneratorNode(){
-		// TODO delete(_generator);
+		delete(_generator);
 	}
 
 	virtual void next() {
@@ -94,8 +94,8 @@ public:
 	}
 
 	~OneChildGeneratorNode(){
-		//delete(_generator);
-		//delete(_child);
+		delete(_generator);
+		delete(_child);
 	}
 
 	virtual OneChildGeneratorNode* clone() const{
@@ -151,11 +151,11 @@ public:
 	}
 
 	~TwoChildGeneratorNode(){
-		/*delete(_checker);
+		delete(_checker);
 		delete(_generator);
 		delete(_falsecheckbranch);
 		delete(_truecheckbranch);
-	*/}
+	}
 
 	virtual TwoChildGeneratorNode* clone() const{
 		auto t = new TwoChildGeneratorNode(*this);

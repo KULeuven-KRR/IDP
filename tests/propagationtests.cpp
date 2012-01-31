@@ -120,7 +120,8 @@ INSTANTIATE_TEST_CASE_P(Propagation, LuaPropagationTest,  ::testing::ValuesIn(ge
  // TODO
  }*/
 
-TEST(PropagationTest, INF) {
+// TODO
+/*TEST(PropagationTest, INF) {
 	auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
 	auto sort = new Sort("x", sorttable);
 	auto variable = new Variable(sort);
@@ -163,5 +164,5 @@ TEST(PropagationTest, INF) {
 		counter++;
 	}
 	ASSERT_EQ(5, counter);
-}
+}*/
 }

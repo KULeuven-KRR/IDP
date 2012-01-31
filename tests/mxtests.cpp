@@ -64,6 +64,14 @@ TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
 }
 
+TEST(MXnbmodelsTest, DoesMX) {
+	string testfile(getTestDirectory() + "mx/nbmodels.idp");
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { testfile }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
 }

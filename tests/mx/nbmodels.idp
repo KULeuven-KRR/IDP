@@ -1,0 +1,24 @@
+#include <mx>
+
+vocabulary voc {
+	type Block isa nat
+	p(Block)
+}
+
+theory theory : voc {
+	p(1).
+}
+
+structure structure : voc{
+	Block = {1..2}
+}
+
+procedure main(){
+	stdoptions.nbmodels=5
+	local solutions = modelexpand(theory, structure)
+	if #solutions==2 then
+		return 1
+	else
+		return 0
+	end
+}

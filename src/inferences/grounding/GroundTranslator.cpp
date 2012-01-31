@@ -135,6 +135,9 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 		Assert(grounder != *grounderit);
 	}
 	it->second.push_back(grounder);
+
+	// TODO in this way, we will add func constraints for all functions, might not be necessary!
+	newsymbols.push(symbolnumber); // NOTE: For defined functions, should add the func constraint anyway, because it is not guaranteed to have a model!
 }
 
 void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
