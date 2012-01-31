@@ -29,7 +29,7 @@ public:
 
 	// FIXME reimplemnt clone
 	FalseQuantKernelGenerator* clone() const {
-		return new FalseQuantKernelGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	bool check() const {

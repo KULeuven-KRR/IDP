@@ -46,16 +46,16 @@ void TermGrounder::setOrig(const Term* t, const map<Variable*, const DomElemCont
 }
 
 void TermGrounder::printOrig() const {
-	clog << "\n" << tabs() << "Grounding term " << toString(_origterm);
+	clog << "" <<nt() << "Grounding term " << toString(_origterm);
 	if (not _origterm->freeVars().empty()) {
-		clog << "\n" << tabs() << " with instance ";
+		clog << "" <<nt() << " with instance ";
 		for (auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
 	}
-	clog << "\n" << tabs();
+	clog << "" <<nt();
 }
 
 GroundTerm DomTermGrounder::run() const {
@@ -97,7 +97,7 @@ GroundTerm FuncTermGrounder::run() const {
 			if (_verbosity > 2) {
 				clog << "Result = " << *result;
 				poptab();
-				clog << "\n" << tabs();
+				clog << "" <<nt();
 			}
 			return GroundTerm(result);
 		}
@@ -107,7 +107,7 @@ GroundTerm FuncTermGrounder::run() const {
 	if (_verbosity > 2) {
 		clog << "Result = " << _termtranslator->printTerm(varid);
 		poptab();
-		clog << "\n" << tabs();
+		clog << "" <<nt();
 	}
 	return GroundTerm(varid);
 }
@@ -212,7 +212,7 @@ GroundTerm SumTermGrounder::run() const {
 			if (_verbosity > 2) {
 				clog << "Result = " << *result;
 				poptab();
-				clog << "\n" << tabs();
+				clog << "" <<nt();
 			}
 			return GroundTerm(result);
 		}
@@ -228,7 +228,7 @@ GroundTerm SumTermGrounder::run() const {
 	if (_verbosity > 2) {
 		clog << "Result = " << _termtranslator->printTerm(varid);
 		poptab();
-		clog << "\n" << tabs();
+		clog << "" <<nt();
 	}
 	return GroundTerm(varid);
 }
@@ -247,7 +247,7 @@ GroundTerm AggTermGrounder::run() const {
 	if (_verbosity > 2) {
 		clog << "Result = " << *result;
 		poptab();
-		clog << "\n" << tabs();
+		clog << "" <<nt();
 	}
 	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
 	return GroundTerm(result);

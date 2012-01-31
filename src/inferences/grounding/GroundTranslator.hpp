@@ -66,6 +66,7 @@ struct SymbolAndTuple {
 
 class GroundTranslator {
 private:
+	std::queue<int> newsymbols;
 	std::vector<SymbolAndAtomMap> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
 
 	std::vector<AtomType> atomtype;
@@ -86,6 +87,16 @@ private:
 public:
 	GroundTranslator();
 	~GroundTranslator();
+
+	// NOTE: used to add func constraints as soon as possible
+	int getNextNewSymbol(){
+		auto i = newsymbols.front();
+		newsymbols.pop();
+		return i;
+	}
+	bool hasNewSymbols() const {
+		return newsymbols.size();
+	}
 
 	Lit translate(unsigned int, const ElementTuple&);
 	Lit translate(const std::vector<int>& cl, bool conj, TsType tp);
@@ -110,7 +121,7 @@ public:
 	bool isInputAtom(int atom) const {
 		return isStored(atom) && getType(atom) == AtomType::INPUT;
 	}
-	PFSymbol* getSymbol(int atom) const {
+	PFSymbol* getSymbol(Lit atom) const {
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
 		return atom2Tuple[atom]->symbol;
 	}

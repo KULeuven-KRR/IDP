@@ -44,6 +44,15 @@ class GenerateBDDAccordingToBounds;
 class Grounder;
 class FOBDD;
 
+struct GenAndChecker {
+	InstGenerator* _generator;
+	InstChecker* _checker;
+
+	GenAndChecker(InstGenerator* generator, InstChecker* checker)
+			: _generator(generator), _checker(checker) {
+	}
+};
+
 class GrounderFactory: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
@@ -89,15 +98,6 @@ private:
 
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
-
-	struct GenAndChecker {
-		InstGenerator* _generator;
-		InstChecker* _checker;
-
-		GenAndChecker(InstGenerator* generator, InstChecker* checker)
-				: _generator(generator), _checker(checker) {
-		}
-	};
 
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);

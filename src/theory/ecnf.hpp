@@ -142,8 +142,8 @@ public:
  *************************/
 
 // Enumeration type for rules
-enum RuleType {
-	RT_CONJ, RT_DISJ, RT_AGG
+enum class RuleType {
+	CONJ, DISJ, AGG
 };
 
 /**
@@ -228,10 +228,10 @@ public:
 		return _body[n];
 	}
 	bool isFalse() const {
-		return (_body.empty() && type() == RT_DISJ);
+		return (_body.empty() && type() == RuleType::DISJ);
 	}
 	bool isTrue() const {
-		return (_body.empty() && type() == RT_CONJ);
+		return (_body.empty() && type() == RuleType::CONJ);
 	}
 };
 
@@ -246,11 +246,11 @@ private:
 public:
 	// Constructors
 	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec)
-			: GroundRule(head, RT_AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+			: GroundRule(head, RuleType::AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
 	AggGroundRule(int head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
-			: GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
+			: GroundRule(grb.head(), RuleType::AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
 	}
 
 	~AggGroundRule() {
@@ -285,7 +285,6 @@ private:
 	std::map<int, GroundRule*> _rules;
 
 public:
-	// Constructors
 	GroundDefinition(unsigned int id, GroundTranslator* tr)
 			: _id(id), _translator(tr) {
 	}
@@ -560,6 +559,7 @@ class LazyGroundingManager;
 struct ResidualAndFreeInst {
 	const LazyGrounder* grounder;
 	InstGenerator* generator;
+	int index;
 	Lit residual;
 	dominstlist freevarinst;
 
@@ -569,7 +569,7 @@ struct ResidualAndFreeInst {
 };
 
 class LazyTsBody: public TsBody {
-private:
+public:
 	LazyGroundingManager const* const grounder_;
 	ResidualAndFreeInst* inst;
 

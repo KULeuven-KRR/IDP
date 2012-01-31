@@ -45,14 +45,13 @@ typedef unsigned int DefId;
 class DefinitionGrounder: public Grounder {
 private:
 	static DefId _currentdefnb;
-	DefId _defnb;
 	std::vector<RuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
 public:
 	DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr, const GroundingContext& context);
 	~DefinitionGrounder();
 	void run(ConjOrDisj& formula) const;
 	DefId id() const {
-		return _defnb;
+		return context().getCurrentDefID();
 	}
 };
 

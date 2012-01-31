@@ -554,9 +554,13 @@ ACCEPTBOTH(Definition)
 private:
 	std::vector<Rule*> _rules; //!< The rules in the definition
 	std::set<PFSymbol*> _defsyms; //!< Symbols defined by the definition
+	int id;
 
 public:
-	Definition() {
+	Definition();
+
+	int getID() const {
+		return id;
 	}
 
 	Definition* clone() const;

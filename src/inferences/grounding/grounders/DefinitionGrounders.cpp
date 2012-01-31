@@ -15,17 +15,19 @@
 #include "GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 #include "generators/InstGenerator.hpp"
 #include "IncludeComponents.hpp"
 
-using namespace std;
+#include "utils/ListUtils.hpp"
 
-DefId DefinitionGrounder::_currentdefnb = 1;
+using namespace std;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
-		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr) {
+		: Grounder(gt, context), _subgrounders(subgr) {
+	Assert(context.getCurrentDefID()!=getIDForUndefined());
 }
 
 DefinitionGrounder::~DefinitionGrounder() {
@@ -33,7 +35,7 @@ DefinitionGrounder::~DefinitionGrounder() {
 }
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
-	auto grounddefinition = new GroundDefinition(_defnb, getTranslator());
+	auto grounddefinition = new GroundDefinition(id(), getTranslator());
 	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
 		(*grounder)->run(id(), grounddefinition);
 	}
@@ -127,8 +129,6 @@ Lit HeadGrounder::run() const {
 	return atom;
 }
 
-// FIXME require a transformation such that there is only one headgrounder for any defined symbol
-// FIXME also handle tseitin defined rules!
 LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
 		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
@@ -175,7 +175,8 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 
 	dominstlist headvarinstlist = createInst(headargs);
 
-	overwriteVars(headvarinstlist);
+	vector<const DomainElement*> originst;
+	overwriteVars(originst, headvarinstlist);
 
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
 		CHECKTERMINATION
@@ -193,9 +194,10 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 			conj = true;
 			body.literals = {};
 		}
-		// FIXME correct defID!
-		grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body.literals, context()._tseitin == TsType::RULE));
+		grounding()->add(context().getCurrentDefID(), new PCGroundRule(head, (conj ? RuleType::CONJ : RuleType::DISJ), body.literals, context()._tseitin == TsType::RULE));
 	}
+
+	restoreOrigVars(originst, headvarinstlist);
 }
 
 void LazyRuleGrounder::run(DefId, GroundDefinition*) const {

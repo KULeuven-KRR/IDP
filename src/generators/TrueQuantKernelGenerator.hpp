@@ -26,9 +26,8 @@ public:
 			: _quantgenerator(gen) {
 	}
 
-	// FIXME reimplement (deep clone)
 	TrueQuantKernelGenerator* clone() const {
-		return new TrueQuantKernelGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	bool check() const {
@@ -52,7 +51,9 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << tabs() << "generate: TrueQuantKernelGenerator = " << toString(_quantgenerator) << "\n";
+		pushtab();
+		stream << "generate: TrueQuantKernelGenerator = " << toString(_quantgenerator);
+		poptab();
 	}
 };
 

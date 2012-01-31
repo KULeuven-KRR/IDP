@@ -46,7 +46,9 @@ public:
 	}
 
 	TableGenerator* clone() const {
-		return new TableGenerator(*this);
+		auto t = new TableGenerator(*this);
+		t->_outputtable = new PredTable(*_outputtable);
+		return t;
 	}
 
 	void reset() {

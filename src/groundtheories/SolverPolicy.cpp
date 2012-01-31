@@ -18,6 +18,22 @@
 
 using namespace std;
 
+inline MinisatID::Atom createAtom(int lit) {
+	return MinisatID::Atom(abs(lit));
+}
+
+inline MinisatID::Literal createLiteral(int lit) {
+	return MinisatID::Literal(abs(lit), lit < 0);
+}
+
+MinisatID::literallist createList(const litlist& origlist){
+	MinisatID::literallist list;
+	for(auto i=origlist.cbegin(); i<origlist.cend(); i++){
+		list.push_back(createLiteral(*i));
+	}
+	return list;
+}
+
 void SolverPolicy::initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator) {
 	_solver = solver;
 	_verbosity = verbosity;
@@ -56,8 +72,10 @@ void SolverPolicy::polAdd(const TsSet& tsset, int setnr, bool weighted) {
 	}
 }
 
+// TODO make all polAdd methods protected (had a bug because of that)
+
 void SolverPolicy::polAdd(int defnr, PCGroundRule* rule) {
-	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RT_CONJ), rule->recursive());
+	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RuleType::CONJ), rule->recursive());
 }
 
 void SolverPolicy::polAdd(int defnr, AggGroundRule* rule) {
@@ -167,37 +185,23 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 }
 
 // FIXME probably already exists in transform for add?
-void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& clause) {
-	switch (type) {
-	case TsType::RIMPL: {
+void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
+	MinisatID::ImplicationType impltype;
+	switch(type){
+	case TsType::RULE:
 		Assert(false);
-		// FIXME add equivalence or rule or impl
+		break;
+	case TsType::IMPL:
+		impltype = MinisatID::ImplicationType::IMPLIES;
+		break;
+	case TsType::RIMPL:
+		impltype = MinisatID::ImplicationType::IMPLIEDBY;
+		break;
+	case TsType::EQ:
+		impltype = MinisatID::ImplicationType::EQUIVALENT;
 		break;
 	}
-	case TsType::IMPL: {
-		MinisatID::Disjunction d;
-		d.literals.push_back(createLiteral(-tseitin));
-		for (auto i = clause.begin(); i < clause.end(); ++i) {
-			d.literals.push_back(createLiteral(*i));
-		}
-		getSolver().add(d);
-		break;
-	}
-	case TsType::RULE: {
-		Assert(false);
-		// FIXME add equivalence or rule or impl
-		break;
-	}
-	case TsType::EQ: {
-		MinisatID::Equivalence eq;
-		eq.head = createLiteral(-tseitin);
-		for (auto i = clause.begin(); i < clause.end(); ++i) {
-			eq.body.push_back(createLiteral(*i));
-		}
-		getSolver().add(eq);
-		break;
-	}
-	}
+	getSolver().add(MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
 typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
@@ -360,6 +364,7 @@ void SolverPolicy::polAddPCRule(int defnr, int head, std::vector<int> body, bool
 void SolverPolicy::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) {
 	LazyClauseMon* mon = new LazyClauseMon(inst);
 #warning fix sign here (monotone, anti-, both)
+	//cerr <<"Wathing " <<inst->residual <<"(idp)\n";
 	MinisatID::LazyGroundLit lc(true, createLiteral(inst->residual), mon);
 	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
 	mon->setRequestMoreGrounding(cbmore);

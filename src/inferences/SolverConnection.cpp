@@ -12,6 +12,7 @@
 
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 
 using namespace std;
 

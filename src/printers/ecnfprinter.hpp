@@ -17,6 +17,9 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
+
 template<typename Stream>
 class EcnfPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
@@ -161,7 +164,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		output() << (b->type() == RT_CONJ ? "C " : "D ");
+		output() << (b->type() == RuleType::CONJ ? "C " : "D ");
 		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
 		for (unsigned int n = 0; n < b->size(); ++n) {
 			output() << b->literal(n) << ' ';

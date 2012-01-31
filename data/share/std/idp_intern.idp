@@ -68,6 +68,22 @@ procedure modelexpand(theory, structure) {
 	end
 }
 
+procedure sat(theory, structure) {
+	if type(theory) ~= "theory" then
+		print("Error: theory expected")
+		return
+	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	local solutions = idpintern.modelexpand(clonetheo,structure)
+	return #solutions>0
+}
+
 /**
  * Create the reduced grounding of the given theory and structure */
 procedure ground(theory, structure) {

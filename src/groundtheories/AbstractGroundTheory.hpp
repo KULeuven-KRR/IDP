@@ -51,6 +51,7 @@ public:
 	virtual void add(int head, AggTsBody* body) = 0;
 	virtual void add(int tseitin, CPTsBody* body) = 0;
 	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
+	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

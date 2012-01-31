@@ -158,10 +158,20 @@ public:
 	void run(ConjOrDisj& formula) const;
 protected:
 	Lit getReification(const ConjOrDisj& formula) const;
+
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaTrue(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaFalse(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
+	bool decidesFormula(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool isRedundantInFormula(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
+	Lit redundantLiteral() const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	Lit getEmtyFormulaValue() const;
+
 	bool conjunctive() const {
 		return (conn_ == Conn::CONJ && isPositive()) || (conn_ == Conn::DISJ && isNegative());
 	}
@@ -188,7 +198,7 @@ public:
 			: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
 	}
 	~BoolGrounder();
-	std::vector<Grounder*> getSubGrounders() {
+	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
 

@@ -64,6 +64,9 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 	} else {
 		lit = nextNumber(AtomType::INPUT);
 		symbols[n].tuple2atom.insert(jt, Tuple2Atom { args, lit });
+		if(symbols[n].tuple2atom.size()==1){
+			newsymbols.push(n);
+		}
 		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
 		// FIXME expensive operation to do so often!
@@ -73,7 +76,21 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 		}
 	}
 
+	//clog <<toString(symbols[n].symbol) <<toString(args) <<" maps to " <<lit <<nt();
+
 	return lit;
+}
+
+unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
+	// TODO expensive!
+	for (unsigned int n = 0; n < symbols.size(); ++n) {
+		if (symbols[n].symbol == pfs) {
+			return n;
+		}
+	}
+
+	symbols.push_back(SymbolAndAtomMap(pfs));
+	return symbols.size() - 1;
 }
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
@@ -87,7 +104,7 @@ Lit GroundTranslator::translate(const vector<Lit>& clause, bool conj, TsType tst
 }
 
 Lit GroundTranslator::translate(const Lit& head, const vector<Lit>& clause, bool conj, TsType tstype) {
-	PCTsBody* tsbody = new PCTsBody(tstype, clause, conj);
+	auto tsbody = new PCTsBody(tstype, clause, conj);
 	atom2TsBody[head] = tspair(head, tsbody);
 	return head;
 }
@@ -108,6 +125,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 }
 
 void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder) {
+	//cerr <<"Notified that symbol " <<toString(pfs) <<" is defined\n";
 	int symbolnumber = addSymbol(pfs);
 	auto it = symbol2rulegrounder.find(symbolnumber);
 	if (symbol2rulegrounder.find(symbolnumber) == symbol2rulegrounder.cend()) {
@@ -121,6 +139,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 
 void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+	//cerr <<"Adding lazy tseitin" <<instance->residual <<nt();
 	LazyTsBody* tsbody = new LazyTsBody(lazygrounder, instance, tstype);
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
@@ -195,16 +214,6 @@ Lit GroundTranslator::nextNumber(AtomType type) {
 		_freenumbers.pop();
 		return nr;
 	}
-}
-
-unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for (unsigned int n = 0; n < symbols.size(); ++n) {
-		if (symbols[n].symbol == pfs) {
-			return n;
-		}
-	}
-	symbols.push_back(SymbolAndAtomMap(pfs));
-	return symbols.size() - 1;
 }
 
 string GroundTranslator::printLit(const Lit& lit) const {

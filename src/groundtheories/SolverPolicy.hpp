@@ -45,7 +45,7 @@ private:
 		return *_solver;
 	}
 
-public:
+protected:
 	void polRecursiveDelete() {
 	}
 
@@ -54,17 +54,7 @@ public:
 	void polEndTheory() {
 	}
 
-	inline MinisatID::Atom createAtom(int lit) {
-		return MinisatID::Atom(abs(lit));
-	}
-
-	inline MinisatID::Literal createLiteral(int lit) {
-		return MinisatID::Literal(abs(lit), lit < 0);
-	}
-
 	MinisatID::Weight createWeight(double weight);
-
-	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 
 	void polAdd(const GroundClause& cl);
 	void polAdd(const TsSet& tsset, int setnr, bool weighted);
@@ -77,11 +67,7 @@ public:
 	void polAdd(int tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?
-	void polAdd(Lit tseitin, TsType type, const GroundClause& clause);
-
-	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
-
-	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
+	void polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
 		Assert(false);
@@ -91,6 +77,11 @@ public:
 		Assert(false);
 		return "";
 	}
+
+public:
+	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
+	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
+	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);

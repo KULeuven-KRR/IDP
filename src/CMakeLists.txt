@@ -59,6 +59,7 @@ add_library(idp
 	inferences/symmetrybreaking/symmetry.cpp
 	inferences/modelexpansion/LuaTraceMonitor.cpp
 	monitors/luainteractiveprintmonitor.hpp
+	groundtheories/GroundTheory.cpp
 	groundtheories/GroundPolicy.cpp
 	groundtheories/SolverPolicy.cpp
 	groundtheories/AbstractGroundTheory.cpp

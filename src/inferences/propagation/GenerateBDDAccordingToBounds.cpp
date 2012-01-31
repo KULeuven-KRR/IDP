@@ -162,24 +162,24 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 
 		(it->first)->put(output);
 		pushtab();
-		output << endl << tabs();
+		output <<nt();
 		output << "vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
 			output << toString(*jt);
 		}
-		output << endl << tabs();
+		output <<nt();
 		pushtab();
-		output << "ct:" << endl << tabs();
+		output << "ct:" <<nt();
 		output << toString(_ctbounds.find(it->first)->second);
 		poptab();
-		output << endl << tabs() << "cf:";
+		output <<nt() << "cf:";
 		pushtab();
-		output << endl << tabs();
+		output <<nt();
 		output << toString(_cfbounds.find(it->first)->second);
 		poptab();
 		poptab();
-		output << endl << tabs();
+		output <<nt();
 	}
 	return output;
 }

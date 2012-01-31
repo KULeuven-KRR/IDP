@@ -13,6 +13,7 @@
 
 #include <typeinfo>
 #include <sstream>
+#include <iostream>
 
 enum class Pattern {
 	INPUT, OUTPUT
@@ -34,6 +35,7 @@ public:
 class InstGenerator: public InstChecker {
 private:
 	bool end;
+	bool initdone;
 protected:
 	void notifyAtEnd() {
 		end = true;
@@ -47,6 +49,8 @@ protected:
 	virtual void reset() = 0; // FIXME can probably make this static and drop all lower resets to this one
 
 public:
+	InstGenerator():end(false),initdone(false){
+	}
 	virtual ~InstGenerator() {
 	}
 
@@ -60,20 +64,23 @@ public:
 	inline void begin(){
 		end = false;
 		reset();
-		if (not isAtEnd()) {
+		if (not end) {
 			next();
 		}
+		initdone = true;
 	}
 
 	/**
 	 * Returns true if the last element has already been set as an instance
 	 */
 	inline bool isAtEnd() const {
+		Assert(initdone);
 		return end;
 	}
 
 	inline void operator++(){
 		//CHECKTERMINATION
+		Assert(initdone);
 		Assert(not isAtEnd());
 		next();
 	}

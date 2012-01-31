@@ -27,7 +27,7 @@ public:
 	}
 
 	InvertNumericGenerator* clone() const {
-		return new InvertNumericGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {
