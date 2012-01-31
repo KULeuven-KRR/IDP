@@ -111,8 +111,16 @@ void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		// TODO deletion
 	}
 
-	// TODO probably somewhere IMLP where in fact EQ should be derived?
-	getGrounding()->add(oldtseitin, context()._tseitin==TsType::RULE?TsType::RULE:TsType::EQ, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
+	auto tseitin = context()._tseitin;
+
+	// FIXME always adding EQ instead of the original tseitin
+	if(context()._tseitin!=TsType::RULE){
+		tseitin = TsType::EQ;
+	}
+
+	// FIXME always watching both signs
+
+	getGrounding()->add(oldtseitin, tseitin, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
 	poptab();
 }
 
@@ -201,8 +209,16 @@ void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		// TODO deletion
 	}
 
-	// TODO probably somewhere IMLP where in fact EQ should be derived?
-	getGrounding()->add(oldtseitin, context()._tseitin==TsType::RULE?TsType::RULE:TsType::EQ, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
+	auto tseitin = context()._tseitin;
+
+	// FIXME always adding EQ instead of the original tseitin
+	if(context()._tseitin!=TsType::RULE){
+		tseitin = TsType::EQ;
+	}
+
+	// FIXME always watching both signs
+
+	getGrounding()->add(oldtseitin, tseitin, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
 	poptab();
 }
 

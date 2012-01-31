@@ -1,13 +1,10 @@
-procedure getExpectedAModel(){
-	return false
+procedure getExpectedNbOfModels(){
+	return 0
 }
 
 vocabulary V{
 	type N isa int
-
- 
 	Q(N)
-	
 }
 
 theory T : V { 
@@ -15,9 +12,8 @@ theory T : V {
 		Q(y) <- sum{x: Q(x):x}=<3.
 		Q(1) <-.
 	}
-
 }
 
 structure S : V{ 
-N =  {1..5}
+	N =  {1..5}
 }

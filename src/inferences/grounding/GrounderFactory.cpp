@@ -1170,7 +1170,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// Create rule grounder
 	SaveContext();
 	if (recursive(newrule->body())) {
-		_context._tseitin = TsType::RULE; //TODO: is this right??? Shouldn't it be higher (before createing the bodygrounder)?
+		_context._tseitin = TsType::RULE;
 	}
 	if (getOption(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(headgrounder, bodygrounder, bodygen, _context);
