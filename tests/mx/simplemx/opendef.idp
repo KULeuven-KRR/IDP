@@ -1,0 +1,30 @@
+procedure getExpectedNbOfModels(){
+	return 16
+}
+
+vocabulary V{
+	type Num isa int
+	type Cost isa int
+ 
+	A(Num)
+	B(Num, Cost)
+	C(Cost)
+	D(Num, Cost)
+	F(Num, Cost)
+	Q(Num, Cost)
+}
+
+theory T : V { 
+	{
+		!x[Num] y[Cost]: A(x) <- (B(x, y) & ~C(y) & Q(x, y)) & D(x, y).
+		!x[Num] y[Cost]: B(x, y) <- C(y) & D(x, y).
+		!x[Num] y[Cost]: C(y) <- ~A(x) & B(x, y) & D(x, y).				
+		!x[Num] y[Cost]: D(x, y) <- F(x, y).
+		!x[Num] y[Cost]: F(x, y).
+	}	
+}
+
+structure S : V{ 
+	Num = {1..2}
+	Cost = {1..2}
+}

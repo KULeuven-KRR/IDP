@@ -204,59 +204,6 @@ void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, boo
 	getSolver().add(MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
-typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
-class LazyClauseMon: public MinisatID::LazyGroundingCommand {
-private:
-	ResidualAndFreeInst* inst;
-	callbackgrounding requestGroundingCB;
-
-public:
-	LazyClauseMon(ResidualAndFreeInst* inst)
-			: inst(inst) {
-	}
-
-	void setRequestMoreGrounding(callbackgrounding cb) {
-		requestGroundingCB = cb;
-	}
-
-	virtual void requestGrounding() {
-		if (not alreadyGround()) {
-			MinisatID::LazyGroundingCommand::requestGrounding();
-			requestGroundingCB(inst);
-		}
-	}
-};
-
-typedef cb::Callback2<void, const Lit&, const std::vector<const DomainElement*>&> callbackrulegrounding;
-class LazyRuleMon: public MinisatID::LazyGroundingCommand {
-private:
-	Lit lit;
-	ElementTuple args;
-	std::vector<LazyRuleGrounder*> grounders;
-
-public:
-	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<LazyRuleGrounder*>& grounders)
-			: lit(lit), args(args), grounders(grounders) {
-	}
-
-	virtual void requestGrounding() {
-		if (not alreadyGround()) {
-			MinisatID::LazyGroundingCommand::requestGrounding();
-			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
-				(*i)->ground(lit, args);
-			}
-		}
-	}
-};
-
-void SolverPolicy::polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders) {
-	LazyRuleMon* mon = new LazyRuleMon(lit, args, grounders);
-	MinisatID::LazyGroundLit lc(true, createLiteral(lit), mon);
-	//callbackrulegrounding cbmore(grounder, &LazyRuleGrounder::ground); // FIXME for some reason, cannot seem to pass in const function pointers?
-	//mon->setRequestRuleGrounding(cbmore);
-	getSolver().add(lc);
-}
-
 void SolverPolicy::polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
@@ -361,10 +308,60 @@ void SolverPolicy::polAddPCRule(int defnr, int head, std::vector<int> body, bool
 	getSolver().add(rule);
 }
 
-void SolverPolicy::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) {
-	LazyClauseMon* mon = new LazyClauseMon(inst);
+class LazyRuleMon: public MinisatID::LazyGroundingCommand {
+private:
+	Lit lit;
+	ElementTuple args;
+	std::vector<LazyRuleGrounder*> grounders;
+
+public:
+	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<LazyRuleGrounder*>& grounders)
+			: lit(lit), args(args), grounders(grounders) {
+	}
+
+	virtual void requestGrounding() {
+		if (not isAlreadyGround()) {
+			notifyGrounded();
+			//cerr <<"Grounding rule with inst " <<toString(args) <<"\n";
+			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
+				(*i)->ground(lit, args);
+			}
+		}
+	}
+};
+
+void SolverPolicy::polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders) {
+	auto mon = new LazyRuleMon(lit, args, grounders);
+	MinisatID::LazyGroundLit lc(true, createLiteral(lit), mon);
+	getSolver().add(lc);
+}
+
+typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
+class LazyClauseMon: public MinisatID::LazyGroundingCommand {
+private:
+	ResidualAndFreeInst* inst;
+	callbackgrounding requestGroundingCB;
+
+public:
+	LazyClauseMon(ResidualAndFreeInst* inst)
+			: inst(inst) {
+	}
+
+	void setRequestMoreGrounding(callbackgrounding cb) {
+		requestGroundingCB = cb;
+	}
+
+	virtual void requestGrounding() {
+		if (not isAlreadyGround()) {
+			notifyGrounded();
+			requestGroundingCB(inst);
+		}
+	}
+};
+
+void SolverPolicy::polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) {
+	auto mon = new LazyClauseMon(inst);
 #warning fix sign here (monotone, anti-, both)
-	//clog <<"Wathing " <<inst->residual <<"(idp)\n";
 	MinisatID::LazyGroundLit lc(true, createLiteral(inst->residual), mon);
 	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
 	mon->setRequestMoreGrounding(cbmore);

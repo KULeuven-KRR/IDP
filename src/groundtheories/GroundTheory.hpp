@@ -14,6 +14,9 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<int> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
@@ -51,6 +54,8 @@ public:
 	void add(int setnr, unsigned int defnr, bool weighted);
 	void add(int head, AggTsBody* body);
 	void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
+
+	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
 
 	std::ostream& put(std::ostream& s) const;
 

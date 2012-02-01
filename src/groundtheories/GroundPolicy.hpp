@@ -29,6 +29,9 @@ class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+
 class GroundPolicy {
 private:
 	std::vector<GroundClause> _clauses;
@@ -42,6 +45,9 @@ private:
 	GroundTranslator* polTranslator() const {
 		return _translator;
 	}
+
+protected:
+	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){}
 
 public:
 	const std::vector<GroundClause>& getClauses() const {

@@ -69,10 +69,10 @@ Lit GroundTranslator::translate(unsigned int n, const ElementTuple& args) {
 		}
 		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
 
-		// FIXME expensive operation to do so often!
-		auto rulesit = symbol2rulegrounder.find(n);
+		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
+		auto rulesit = symbol2rulegrounder.find(n); // FIXME expensive operation to do so often!
 		if (rulesit != symbol2rulegrounder.cend() && rulesit->second.size() > 0) {
-			(*rulesit->second.cbegin())->notify(lit, args, rulesit->second);
+			(*rulesit->second.cbegin())->notify(lit, args, rulesit->second); // First part gets the grounding
 		}
 	}
 

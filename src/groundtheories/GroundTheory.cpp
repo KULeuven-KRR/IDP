@@ -30,6 +30,11 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){
+	Policy::polNotifyLazyResidual(inst, grounder);
+}
+
+template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
 	deleteList(_foldedterms);
 	Policy::polRecursiveDelete();

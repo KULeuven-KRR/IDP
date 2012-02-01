@@ -40,11 +40,10 @@ public:
 class LazyQuantGrounder: public QuantGrounder, public LazyGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
-	SolverTheory* solvertheory;
 	LazyGroundingManager lazyManager;
 
 public:
-	LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
+	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
 			InstChecker* checker, const GroundingContext& ct);
 
 	void groundMore(ResidualAndFreeInst* instance) const;
@@ -56,11 +55,10 @@ protected:
 class LazyBoolGrounder: public BoolGrounder, public LazyGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
-	SolverTheory* solvertheory;
 	LazyGroundingManager lazyManager;
 
 public:
-	LazyBoolGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct);
+	LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct);
 
 	void groundMore(ResidualAndFreeInst* instance) const;
 

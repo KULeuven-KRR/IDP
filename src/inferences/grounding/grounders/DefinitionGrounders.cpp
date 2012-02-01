@@ -46,6 +46,10 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 
 RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+	Assert(hgr!=NULL);
+	Assert(bgr!=NULL);
+	Assert(hig!=NULL);
+	Assert(big!=NULL);
 }
 
 RuleGrounder::~RuleGrounder() {
@@ -129,9 +133,22 @@ Lit HeadGrounder::run() const {
 	return atom;
 }
 
-LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
+LazyRuleGrounder::LazyRuleGrounder(const vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
 		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
+
+	std::map<Variable*, int> vartofirstocc;
+	int index = 0;
+	for(auto i=vars.cbegin(); i<vars.cend(); ++i, ++index){
+		auto varterm = dynamic_cast<VarTerm*>(*i);
+		Assert(varterm!=NULL);
+		auto first = vartofirstocc.find(varterm->var());
+		if(first==vartofirstocc.cend()){
+			vartofirstocc[varterm->var()] = index;
+		}else{
+			sameargs.push_back({first->second, index});
+		}
+	}
 }
 
 dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
@@ -173,10 +190,18 @@ void LazyRuleGrounder::doGrounding() {
 void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
 
+	// NOTE: If multiple vars are the same, it is not checked that their instantiation is also the same!
+	for(auto i=sameargs.cbegin(); i<sameargs.cend(); ++i){
+		if(headargs[i->first]!=headargs[i->second]){
+			return;
+		}
+	}
+
 	dominstlist headvarinstlist = createInst(headargs);
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, headvarinstlist);
+
 
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
 		CHECKTERMINATION

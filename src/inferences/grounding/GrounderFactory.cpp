@@ -313,7 +313,6 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
 		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
-		//tmptheory = FormulaUtils::mergeRulesOnSameSymbol(tmptheory);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
 	}
 
@@ -542,12 +541,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 BoolGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
-	//if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
-	//	auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-	//	return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
-	//}else{
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
+		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
+	}else{
 		return new BoolGrounder(grounding, sub, sign, conj, context);
-	//}
+	}
 }
 
 // Handle a top-level conjunction without creating tseitin atoms
@@ -1116,7 +1115,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
-	if (getOption(BoolType::GROUNDLAZILY)) {
+/*	if (getOption(BoolType::GROUNDLAZILY)) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// TODO resolve this in a clean way
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
@@ -1130,7 +1129,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		}
 
 		bodygen = createVarMapAndGenerator(rule->head(), bodyvars);
-	} else {
+	} else {*/
 		// Split the quantified variables in two categories:
 		//		1. the variables that only occur in the head
 		//		2. the variables that occur in the body (and possibly in the head)
@@ -1147,7 +1146,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		headgen = createVarMapAndGenerator(rule->head(), headvars);
 		bodygen = createVarMapAndGenerator(rule->body(), bodyvars);
-	}
+	//}
 
 	// Create head grounder
 	SaveContext();
@@ -1172,11 +1171,11 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (recursive(newrule->body())) {
 		_context._tseitin = TsType::RULE;
 	}
-	if (getOption(BoolType::GROUNDLAZILY)) {
-		_rulegrounder = new LazyRuleGrounder(headgrounder, bodygrounder, bodygen, _context);
-	} else {
+	//if (getOption(BoolType::GROUNDLAZILY)) {
+	//	_rulegrounder = new LazyRuleGrounder(rule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
+	//} else {
 		_rulegrounder = new RuleGrounder(headgrounder, bodygrounder, headgen, bodygen, _context);
-	}
+	//}
 	RestoreContext();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)
 		poptab();

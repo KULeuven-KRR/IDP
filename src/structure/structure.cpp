@@ -4225,7 +4225,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if(needMoreModels(result.size())){
+	if(getOption(IntType::NBMODELS)!=0 && needMoreModels(result.size())){
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

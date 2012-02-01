@@ -7,60 +7,56 @@ procedure getExpectedAModel(){
 ***************************/
 
 vocabulary V{
-type Num isa int
-Given(Num,Num,Num)
-
+	type Num isa int
+	Given(Num,Num,Num)
  
-Sudoku(Num,Num) : Num
-
+	Sudoku(Num,Num) : Num
  
-Same(Num,Num)
-SameBlock(Num,Num,Num,Num)
-
+	Same(Num,Num)
+	SameBlock(Num,Num,Num,Num)
 }
 
 theory T : V { 
-! r c n : Given(r,c,n) => Sudoku(r,c) = n.
+	! r c n : Given(r,c,n) => Sudoku(r,c) = n.
 
-! r c1 c2: Sudoku(r,c1) = Sudoku(r,c2) => c1 = c2.
-! c r1 r2: Sudoku(r1,c) = Sudoku(r2,c) => r1 = r2.
+	! r c1 c2: Sudoku(r,c1) = Sudoku(r,c2) => c1 = c2.
+	! c r1 r2: Sudoku(r1,c) = Sudoku(r2,c) => r1 = r2.
 
-! r1 r2 c1 c2: SameBlock(r1,r2,c1,c2) & Sudoku(r1,c1) = Sudoku(r2,c2) => (r1 = r2 & c1 = c2).
+	! r1 r2 c1 c2: SameBlock(r1,r2,c1,c2) & Sudoku(r1,c1) = Sudoku(r2,c2) => (r1 = r2 & c1 = c2).
 
-{ Same(n,n).
-  Same(n1,n2) <- Same(n2,n1).
-  Same(1,2). Same(1,3). Same(2,3). Same(4,5). Same(4,6). Same(5,6). Same(7,8). Same(7,9). Same(8,9). }
+	{ Same(n,n).
+	  Same(n1,n2) <- Same(n2,n1).
+	  Same(1,2). Same(1,3). Same(2,3). Same(4,5). Same(4,6). Same(5,6). Same(7,8). Same(7,9). Same(8,9). }
 
-{ SameBlock(r1,r2,c1,c2) <- Same(r1,r2) & Same(c1,c2). }
-
+	{ SameBlock(r1,r2,c1,c2) <- Same(r1,r2) & Same(c1,c2). }
 }
 
 structure S : V{ 
-Num = {1..9}
-Given = { 1,1,6;
-          1,8,4;
-          2,3,5;
-          2,6,2;
-          2,9,7;
-          3,1,7;
-          3,2,2;
-          3,3,9;
-          3,9,3;
-          4,2,9;
-          4,5,4;
-          4,9,1;
-          5,5,6;
-          6,1,4;
-          6,5,8;
-          6,8,7;
-          7,1,3;
-          7,7,1;
-          7,8,6;
-          7,9,5;
-          8,1,2;
-          8,4,4;
-          8,7,8;
-          9,2,5;
-          9,9,4
+	Num = {1..9}
+	Given = { 1,1,6;
+		      1,8,4;
+		      2,3,5;
+		      2,6,2;
+		      2,9,7;
+		      3,1,7;
+		      3,2,2;
+		      3,3,9;
+		      3,9,3;
+		      4,2,9;
+		      4,5,4;
+		      4,9,1;
+		      5,5,6;
+		      6,1,4;
+		      6,5,8;
+		      6,8,7;
+		      7,1,3;
+		      7,7,1;
+		      7,8,6;
+		      7,9,5;
+		      8,1,2;
+		      8,4,4;
+		      8,7,8;
+		      9,2,5;
+		      9,9,4
 }
 }

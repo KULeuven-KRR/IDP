@@ -54,10 +54,9 @@ void LazyGroundingManager::groundMore() const {
 	currentlyGrounding = false;
 }
 
-LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
+LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
 		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
 		: QuantGrounder(groundtheory, sub, sign, q, gen, checker, ct),
-		  solvertheory(groundtheory),
 		  freevars(freevars) {
 }
 
@@ -87,12 +86,18 @@ void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 
 	Lit oldtseitin = instance->residual;
 
+	// FIXME always adding EQ instead of the original tseitin
+	auto tseitintype = context()._tseitin;
+	if(context()._tseitin!=TsType::RULE){
+		tseitintype = TsType::EQ;
+	}
+
 	if(decidesFormula(groundedlit)){
-		solvertheory->add({redundantLiteral()==_false?oldtseitin:-oldtseitin}); // NOTE: if false, then can stop if non-ground part is true, so tseitin true
+		getGrounding()->add(oldtseitin, tseitintype, {}, redundantLiteral()==_false, context().getCurrentDefID()); // NOTE: if false, then can stop if non-ground part is true, so tseitin true
 		poptab();
 		return; // Formula is true, so do not need to continue grounding
 	}else if(groundedlit==redundantLiteral() && generator->isAtEnd()){
-		solvertheory->add({redundantLiteral()==_false?-oldtseitin:oldtseitin});  // NOTE: if false, then all are non-stoppable, so tseitin false
+		getGrounding()->add(oldtseitin, tseitintype, {},redundantLiteral()==_true, context().getCurrentDefID());  // NOTE: if false, then all are non-stoppable, so tseitin false
 		poptab();
 		return; // Formula is false, so do not need to continue grounding
 	}
@@ -106,21 +111,14 @@ void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
-		solvertheory->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
+		getGrounding()->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
 	} else {
 		// TODO deletion
 	}
 
-	auto tseitin = context()._tseitin;
-
-	// FIXME always adding EQ instead of the original tseitin
-	if(context()._tseitin!=TsType::RULE){
-		tseitin = TsType::EQ;
-	}
-
 	// FIXME always watching both signs
 
-	getGrounding()->add(oldtseitin, tseitin, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
+	getGrounding()->add(oldtseitin, tseitintype, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
 	poptab();
 }
 
@@ -157,9 +155,8 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	poptab();
 }
 
-LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, SolverTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct)
+LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct)
 		: BoolGrounder(groundtheory, sub, sign, conj, ct),
-		  solvertheory(groundtheory),
 		  freevars(freevars) {
 }
 
@@ -185,12 +182,18 @@ void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 
 	Lit oldtseitin = instance->residual;
 
+	// FIXME always adding EQ instead of the original tseitin
+	auto tseitintype = context()._tseitin;
+	if(context()._tseitin!=TsType::RULE){
+		tseitintype = TsType::EQ;
+	}
+
 	if(decidesFormula(groundedlit)){
-		solvertheory->add({redundantLiteral()==_false?oldtseitin:-oldtseitin}); // NOTE: if false, then can stop if non-ground part is true, so tseitin true
+		getGrounding()->add(oldtseitin, tseitintype, {}, redundantLiteral()==_false, context().getCurrentDefID()); // NOTE: if false, then can stop if non-ground part is true, so tseitin true
 		poptab();
 		return; // Formula is true, so do not need to continue grounding
 	}else if(groundedlit==redundantLiteral() && index>=getSubGrounders().size()){
-		solvertheory->add({redundantLiteral()==_false?-oldtseitin:oldtseitin});  // NOTE: if false, then all are non-stoppable, so tseitin false
+		getGrounding()->add(oldtseitin, tseitintype, {},redundantLiteral()==_true, context().getCurrentDefID());  // NOTE: if false, then all are non-stoppable, so tseitin false
 		poptab();
 		return; // Formula is false, so do not need to continue grounding
 	}
@@ -204,26 +207,19 @@ void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
-		solvertheory->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
+		getGrounding()->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
 	} else {
 		// TODO deletion
 	}
 
-	auto tseitin = context()._tseitin;
-
-	// FIXME always adding EQ instead of the original tseitin
-	if(context()._tseitin!=TsType::RULE){
-		tseitin = TsType::EQ;
-	}
-
 	// FIXME always watching both signs
 
-	getGrounding()->add(oldtseitin, tseitin, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
+	getGrounding()->add(oldtseitin, tseitintype, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
 	poptab();
 }
 
 void LazyBoolGrounder::internalRun(ConjOrDisj& formula) const {
-	formula.setType(Conn::DISJ);
+	formula.setType(conn_);
 	pushtab();
 	if (verbosity() > 2) {
 		clog <<"INITIAL: ";

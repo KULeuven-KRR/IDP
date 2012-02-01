@@ -9,9 +9,10 @@ procedure main() {
 	if(#solutions~=getExpectedNbOfModels()) then
 		return 0
 	end 
-	for i= 1,#solutions do
-		if not isconsistent(solutions[i]) then
-			io.stderr:write("ModelExpand found an inconsistent model\n")
+	
+	for i,v in ipairs(solutions) do
+		if(#modelexpand(T, v)==0) then
+			io.stderr:write("Found an invalid solution.\n")
 			return 0
 		end
 	end

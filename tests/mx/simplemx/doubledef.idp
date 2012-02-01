@@ -1,0 +1,20 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+// NOTE: checks whether definition is ground correctly (issue in lazy grounding because of the same variable)
+
+vocabulary V{
+	type Num isa int
+	Same(Num,Num)
+}
+
+theory T : V { 
+	!n n2: n~=n2 => ~Same(n, n2).
+
+	{ Same(n,n).}
+}
+
+structure S : V{ 
+	Num = {1..2}
+}

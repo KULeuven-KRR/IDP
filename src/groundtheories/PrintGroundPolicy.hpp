@@ -21,6 +21,9 @@
 #include "options.hpp"
 #include "errorhandling/error.hpp"
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+
 class TsSet;
 
 /**
@@ -33,6 +36,7 @@ private:
 	Printer* printer_;
 
 public:
+	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){}
 	void polRecursiveDelete() {
 	}
 

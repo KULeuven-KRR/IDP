@@ -28,7 +28,11 @@ SATSolver* createsolver(int nbmodels) {
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
-	modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ? MinisatID::POL_RAND : MinisatID::POL_STORED;
+
+	modes.polarity = MinisatID::POL_STORED;
+	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)/* || getOption(BoolType::GROUNDLAZILY)*/){ // TODO test
+		modes.polarity = MinisatID::POL_RAND;
+	}
 
 	if (options->getValue(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
