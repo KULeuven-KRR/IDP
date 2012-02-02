@@ -219,6 +219,10 @@ Lit GroundTranslator::nextNumber(AtomType type) {
 	}
 }
 
+string GroundTranslator::print(Lit lit) {
+	return printLit(lit);
+}
+
 string GroundTranslator::printLit(const Lit& lit) const {
 	stringstream s;
 	int nr = lit;

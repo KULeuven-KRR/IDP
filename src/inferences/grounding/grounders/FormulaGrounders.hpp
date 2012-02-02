@@ -52,6 +52,7 @@ public:
 	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd);
 
 	void printorig() const;
+	std::string printFormula() const;
 };
 
 class AtomGrounder: public FormulaGrounder {

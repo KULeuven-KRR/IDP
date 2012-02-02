@@ -25,7 +25,7 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
 	// TODO duplicate code with modelexpansion
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver();
+	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 
@@ -93,6 +93,9 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
+					if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+						clog << "The given structure is not a model of the definition.\n";
+					}
 					return new InconsistentStructure(structure->name(), structure->pi());
 				}
 				theory->remove(currentdefinition->first);
@@ -101,11 +104,7 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			}
 		}
 	}
-	if (not structure->isConsistent()) {
-		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
-			std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
-		}
-	}
+	Assert(structure->isConsistent()); // NOTE: oherwise early exit
 	return structure;
 }
 

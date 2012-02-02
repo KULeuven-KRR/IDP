@@ -167,6 +167,7 @@ public:
 		return symbols[n].tuple2atom;
 	}
 
+	std::string print(Lit atom);
 	std::string printLit(const Lit& atom) const;
 };
 

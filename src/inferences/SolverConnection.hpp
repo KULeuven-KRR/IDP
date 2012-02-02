@@ -24,8 +24,9 @@ class WrappedPCSolver;
 }
 
 namespace SolverConnection {
-SATSolver* createsolver();
-SATSolver* createsolver(int nbmodels);
+// Note: default find all models
+MinisatID::WrappedPCSolver* createsolver(int nbmodels = 0);
+void setTranslator(MinisatID::WrappedPCSolver*, GroundTranslator* translator);
 MinisatID::Solution* initsolution();
 
 // Parse model into structure
