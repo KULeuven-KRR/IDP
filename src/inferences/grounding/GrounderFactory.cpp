@@ -653,12 +653,12 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 QuantGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
-	//if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
-	//	auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-	//	return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
-	//}else{
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
+		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
+	}else{
 		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
-	//}
+	}
 }
 
 void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
@@ -1115,7 +1115,8 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
-/*	if (getOption(BoolType::GROUNDLAZILY)) {
+	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
+	if (getOption(BoolType::GROUNDLAZILY)) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// TODO resolve this in a clean way
 		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
@@ -1129,7 +1130,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		}
 
 		bodygen = createVarMapAndGenerator(rule->head(), bodyvars);
-	} else {*/
+	} else {
 		// Split the quantified variables in two categories:
 		//		1. the variables that only occur in the head
 		//		2. the variables that occur in the body (and possibly in the head)
@@ -1146,7 +1147,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		headgen = createVarMapAndGenerator(rule->head(), headvars);
 		bodygen = createVarMapAndGenerator(rule->body(), bodyvars);
-	//}
+	}
 
 	// Create head grounder
 	SaveContext();
@@ -1171,11 +1172,11 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (recursive(newrule->body())) {
 		_context._tseitin = TsType::RULE;
 	}
-	//if (getOption(BoolType::GROUNDLAZILY)) {
-	//	_rulegrounder = new LazyRuleGrounder(rule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
-	//} else {
+	if (getOption(BoolType::GROUNDLAZILY)) {
+		_rulegrounder = new LazyRuleGrounder(rule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
+	} else {
 		_rulegrounder = new RuleGrounder(headgrounder, bodygrounder, headgen, bodygen, _context);
-	//}
+	}
 	RestoreContext();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)
 		poptab();
