@@ -67,11 +67,13 @@ LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, Abstra
 void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	pushtab();
 	if (verbosity() > 2) {
-		clog <<"CONTINUED: ";
-		printorig();
+		//clog <<"CONTINUED: ";
+		//printorig();
 	}
 
 	auto generator = instance->generator;
+
+	generator->setVarsAgain();
 
 	Lit groundedlit = redundantLiteral();
 	while(groundedlit==redundantLiteral() && not generator->isAtEnd()){
@@ -110,6 +112,9 @@ void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		Lit newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
+		if (verbosity() > 0) {
+			clog <<"Added lazy tseitin: " <<toString(instance->residual) <<toString(tseitintype) <<printFormula() <<"[[" <<"domelem"<<" to end ]]" <<nt();
+		}
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
 		getGrounding()->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
 	} else {
@@ -126,8 +131,8 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	pushtab();
 	formula.setType(Conn::DISJ);
 	if (verbosity() > 2) {
-		clog <<"INITIAL: ";
-		printorig();
+		//clog <<"INITIAL: ";
+		//printorig();
 	}
 
 	_generator->begin();
@@ -144,14 +149,22 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 	inst->grounder = this;
 	inst->generator = _generator->clone();
 
+	auto tseitintype = context()._tseitin;
+	if(context()._tseitin!=TsType::RULE){
+		tseitintype = TsType::EQ;
+	}
+
 	// NOTE: initially, we do not ground anything, but just create a tseitin representing the whole formula.
 	// Only when it occurs in the ground theory, will we start lazy grounding anything!
-	translator()->translate(&lazyManager, inst, context()._tseitin);
+	translator()->translate(&lazyManager, inst, tseitintype);
 
 	if (isNegative()) {
 		inst->residual = -inst->residual;
 	}
 	formula.literals.push_back(inst->residual);
+	if (verbosity() > 0) {
+		clog <<"Added lazy tseitin: " <<toString(inst->residual) <<toString(tseitintype) <<printFormula() <<nt();
+	}
 	poptab();
 }
 
@@ -163,8 +176,8 @@ LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, Abstract
 void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	pushtab();
 	if (verbosity() > 2) {
-		clog <<"CONTINUED: ";
-		printorig();
+		//clog <<"CONTINUED: ";
+		//printorig();
 	}
 
 	auto& index = instance->index;
@@ -206,6 +219,9 @@ void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		Lit newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
+		if (verbosity() > 0) {
+			clog <<"Added lazy tseitin: " <<toString(instance->residual) <<toString(tseitintype) <<printFormula() <<"[[" <<instance->index <<" to end ]]" <<nt();
+		}
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
 		getGrounding()->notifyLazyResidual(instance, &lazyManager); // set on not-decide and add to watchlist
 	} else {
@@ -222,8 +238,8 @@ void LazyBoolGrounder::internalRun(ConjOrDisj& formula) const {
 	formula.setType(conn_);
 	pushtab();
 	if (verbosity() > 2) {
-		clog <<"INITIAL: ";
-		printorig();
+		//clog <<"INITIAL: ";
+		//printorig();
 	}
 
 	if(getSubGrounders().size()==0){
@@ -240,13 +256,23 @@ void LazyBoolGrounder::internalRun(ConjOrDisj& formula) const {
 	inst->generator = NULL;
 	inst->index = 0;
 
+	auto tseitintype = context()._tseitin;
+	if(context()._tseitin!=TsType::RULE){
+		tseitintype = TsType::EQ;
+	}
+
 	// NOTE: initially, we do not ground anything, but just create a tseitin representing the whole formula.
 	// Only when it occurs in the ground theory, will we start lazy grounding anything!
-	translator()->translate(&lazyManager, inst, context()._tseitin);
+	translator()->translate(&lazyManager, inst, tseitintype);
 
 	if (isNegative()) {
 		inst->residual = -inst->residual;
 	}
 	formula.literals.push_back(inst->residual);
+
+	if (verbosity() > 0) {
+		clog <<"Added lazy tseitin: " <<toString(inst->residual) <<toString(tseitintype) <<printFormula() <<nt();
+	}
+
 	poptab();
 }

@@ -85,6 +85,8 @@ public:
 		next();
 	}
 
+	virtual void setVarsAgain();
+
 	virtual InstGenerator* clone() const = 0;
 };
 

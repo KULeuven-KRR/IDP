@@ -112,6 +112,26 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 5);
 	}
 
+	TEST(SortGenerator, CloneFiniteSort){
+		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto var = new DomElemContainer();
+		auto gen = new SortInstGenerator(sort->internTable(), var);
+
+		gen->begin();
+		gen->operator ++();
+		gen->operator ++();
+
+		auto gen2 = gen->clone();
+		set<int> genvalues;
+		for(gen2->begin(); not gen2->isAtEnd(); gen2->operator ++()){
+			auto value = var->get()->value()._int;
+			genvalues.insert(value);
+			ASSERT_LT(value, 3);
+			ASSERT_GT(value, -1);
+		}
+		ASSERT_EQ(genvalues.size(), 3);
+	}
+
 	TEST(LookupGenerator, FiniteSort){
 		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto var = new DomElemContainer();
