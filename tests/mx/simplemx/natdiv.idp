@@ -12,6 +12,5 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	io.stderr:write("See issue 70\n")
 	return 2
 }

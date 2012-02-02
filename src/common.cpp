@@ -240,6 +240,26 @@ std::string toString(const CompType& type) {
 	return output.str();
 }
 
+template<>
+std::string toString(const TsType& type) {
+	std::stringstream output;
+	switch (type) {
+	case TsType::RIMPL:
+		output << " <= ";
+		break;
+	case TsType::IMPL:
+		output << " => ";
+		break;
+	case TsType::RULE:
+		output << " <- ";
+		break;
+	case TsType::EQ:
+		output << " <=> ";
+		break;
+	}
+	return output.str();
+}
+
 /*********************
  Shared strings
  *********************/
