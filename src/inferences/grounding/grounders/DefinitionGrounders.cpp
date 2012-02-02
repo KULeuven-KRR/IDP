@@ -46,10 +46,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 
 RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
-	Assert(hgr!=NULL);
-	Assert(bgr!=NULL);
-	Assert(hig!=NULL);
-	Assert(big!=NULL);
+	// TODO Assert(...!=NULL);
 }
 
 RuleGrounder::~RuleGrounder() {
@@ -61,6 +58,7 @@ RuleGrounder::~RuleGrounder() {
 
 void RuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
 	Assert(defid == grounddefinition->id());
+	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
 		CHECKTERMINATION
 		ConjOrDisj body;
@@ -72,6 +70,7 @@ void RuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
 			continue;
 		}
 
+		Assert(_headgenerator!=NULL);
 		for (_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator++()) {
 			CHECKTERMINATION
 			Lit head = _headgrounder->run();
@@ -201,7 +200,6 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, headvarinstlist);
-
 
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
 		CHECKTERMINATION
