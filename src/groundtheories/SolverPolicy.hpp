@@ -34,7 +34,7 @@ class SolverPolicy {
 private:
 	GroundTermTranslator* _termtranslator;
 	SATSolver* _solver; // The SAT solver
-	std::map<PFSymbol*, std::set<int> > _defined; // Symbols that are defined in the theory. This set is used to
+	std::map<PFSymbol*, std::set<Atom> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
 	std::set<VarId> _addedvarids; // Variable ids that have already been added, together with their domain.
 
@@ -56,15 +56,15 @@ public:
 	void polEndTheory() {
 	}
 
-	inline MinisatID::Atom createAtom(int lit) {
+	inline MinisatID::Atom createAtom(Lit lit) {
 		return MinisatID::Atom(abs(lit));
 	}
 
-	inline MinisatID::Literal createLiteral(int lit) {
+	inline MinisatID::Literal createLiteral(Lit lit) {
 		return MinisatID::Literal(abs(lit), lit < 0);
 	}
 
-	MinisatID::Weight createWeight(double weight);
+	MinisatID::Weight createWeight(Weight weight);
 
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 
@@ -74,7 +74,7 @@ public:
 	void polAdd(DefId defnr, AggGroundRule* rule);
 	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
 	void polAdd(Lit head, AggTsBody* body);
-	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, MinisatID::EqType rel, SATSolver& solver);
+	void polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel, SATSolver& solver);
 	void polAdd(Lit tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?
@@ -96,7 +96,7 @@ public:
 private:
 	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
 
-	void polAddCPVariables(const std::vector<VarId>& varids, GroundTermTranslator* termtranslator);
+	void polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator);
 
 	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
 

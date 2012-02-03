@@ -74,8 +74,7 @@ void SolverPolicy::polAdd(Lit tseitin, AggTsBody* body) {
 	polAddAggregate(-1, tseitin, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
 }
 
-void SolverPolicy::polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
-		MinisatID::EqType rel, SATSolver& solver) {
+void SolverPolicy::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel, SATSolver& solver) {
 	MinisatID::CPSumWeighted sentence;
 	sentence.head = head;
 	sentence.varIDs = varids;
@@ -133,8 +132,8 @@ void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _termtranslator);
-			std::vector<VarId> varids = term->varids();
-			std::vector<int> weights;
+			varidlist varids = term->varids();
+			intweightlist weights;
 			weights.resize(1, term->varids().size());
 
 			int bound = 0;
@@ -143,7 +142,7 @@ void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 
 			polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
 		} else {
-			std::vector<int> weights { (int) term->varids().size() };
+			intweightlist weights { (int) term->varids().size() };
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp, getSolver());
 		}
 	} else {
@@ -152,8 +151,8 @@ void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _termtranslator);
-			std::vector<VarId> varids = term->varids();
-			std::vector<int> weights = term->weights();
+			varidlist varids = term->varids();
+			intweightlist weights = term->weights();
 
 			int bound = 0;
 			varids.push_back(right._varid);

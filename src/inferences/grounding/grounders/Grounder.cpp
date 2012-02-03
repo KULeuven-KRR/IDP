@@ -86,6 +86,9 @@ void Grounder::toplevelRun() const {
 		}
 	}
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		clog << "\n" << tabs();
+	}
 }
 
 Lit Grounder::groundAndReturnLit() const {

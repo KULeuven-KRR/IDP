@@ -84,8 +84,12 @@ enum class NumType {
 };
 
 typedef int Lit;
+typedef unsigned int Atom;
 typedef double Weight;
 typedef std::vector<Lit> litlist;
-typedef std::vector<double> weightlist;
+typedef std::vector<Weight> weightlist;
+
+typedef int SetId;
+typedef int DefId;
 
 #endif

@@ -48,9 +48,9 @@ public:
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
 	virtual void add(const GroundDefinition& d) = 0;
 	virtual void add(GroundFixpDef*) = 0;
-	virtual void add(int head, AggTsBody* body) = 0;
-	virtual void add(int tseitin, CPTsBody* body) = 0;
-	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
+	virtual void add(Lit head, AggTsBody* body) = 0;
+	virtual void add(Lit tseitin, CPTsBody* body) = 0;
+	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

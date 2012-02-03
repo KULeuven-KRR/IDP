@@ -26,11 +26,10 @@ template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
 	//ACCEPTBOTH(AbstractTheory)
 
-	std::set<int> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
-	std::set<int> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
-	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
+	std::set<Lit> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
+	std::set<SetId> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<CPTerm*> _foldedterms;
-	std::map<PFSymbol*, std::set<int> > _defined; //!< List of defined symbols and the heads which have a rule.
+	std::map<PFSymbol*, std::set<Atom> > _defined; //!< List of defined symbols and the heads which have a rule.
 
 public:
 	const int ID_FOR_UNDEFINED;
@@ -96,14 +95,14 @@ public:
 	}
 
 private:
-	void notifyDefined(int inputatom) {
+	void notifyDefined(Atom inputatom) {
 		if (not translator()->isInputAtom(inputatom)) {
 			return;
 		}
 		PFSymbol* symbol = translator()->getSymbol(inputatom);
 		auto it = _defined.find(symbol);
 		if (it == _defined.end()) {
-			it = _defined.insert(std::pair<PFSymbol*, std::set<int>> { symbol, std::set<int>() }).first;
+			it = _defined.insert(std::pair<PFSymbol*, std::set<Atom>> { symbol, std::set<Atom>() }).first;
 		}
 		(*it).second.insert(inputatom);
 	}
@@ -114,7 +113,7 @@ public:
 		//TODO
 	}
 
-	void add(int tseitin, CPTsBody* body) {
+	void add(Lit tseitin, CPTsBody* body) {
 		//TODO also add variables (in a separate container?)
 
 		CPTsBody* foldedbody = new CPTsBody(body->type(), foldCPTerm(body->left()), body->comp(), body->right());
@@ -123,12 +122,12 @@ public:
 		Policy::polAdd(tseitin, foldedbody);
 	}
 
-	void add(int setnr, unsigned int defnr, bool weighted) {
+	void add(SetId setnr, DefId defnr, bool weighted) {
 		if (_printedsets.find(setnr) == _printedsets.end()) {
 			_printedsets.insert(setnr);
 			auto tsset = translator()->groundset(setnr);
 			transformForAdd(tsset.literals(), VIT_SET, defnr);
-			std::vector<double> weights;
+			weightlist weights;
 			if (weighted) {
 				weights = tsset.weights();
 			}
@@ -144,7 +143,7 @@ public:
 		Policy::polAdd(tseitin, type, clause);
 	}
 
-	void add(int head, AggTsBody* body) {
+	void add(Lit head, AggTsBody* body) {
 		add(body->setnr(), ID_FOR_UNDEFINED, (body->aggtype() != AggFunction::CARD));
 		Policy::polAdd(head, body);
 	}
@@ -161,13 +160,13 @@ public:
 		return v->visit(this);
 	}
 
-	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false) {
+	void transformForAdd(const litlist& vi, VIType /*vit*/, DefId defnr, bool skipfirst = false) {
 		size_t n = 0;
 		if (skipfirst) {
 			++n;
 		}
 		for (; n < vi.size(); ++n) {
-			int atom = abs(vi[n]);
+			Atom atom = abs(vi[n]);
 			if (translator()->isTseitinWithSubformula(atom) && _printedtseitins.find(atom) == _printedtseitins.end()) {
 				_printedtseitins.insert(atom);
 				TsBody* tsbody = translator()->getTsBody(atom);
@@ -176,11 +175,11 @@ public:
 					if (body->type() == TsType::IMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
 							for (size_t m = 0; m < body->size(); ++m) {
-								std::vector<int> cl { -atom, body->literal(m) };
+								litlist cl { -atom, body->literal(m) };
 								add(cl, true);
 							}
 						} else {
-							std::vector<int> cl(body->size() + 1, -atom);
+							litlist cl(body->size() + 1, -atom);
 							for (size_t m = 0; m < body->size(); ++m) {
 								cl[m + 1] = body->literal(m);
 							}
@@ -189,14 +188,14 @@ public:
 					}
 					if (body->type() == TsType::RIMPL || body->type() == TsType::EQ) {
 						if (body->conj()) {
-							std::vector<int> cl(body->size() + 1, atom);
+							litlist cl(body->size() + 1, atom);
 							for (size_t m = 0; m < body->size(); ++m) {
 								cl[m + 1] = -body->literal(m);
 							}
 							add(cl, true);
 						} else {
 							for (size_t m = 0; m < body->size(); ++m) {
-								std::vector<int> cl(2, atom);
+								litlist cl(2, atom);
 								cl[1] = -body->literal(m);
 								add(cl, true);
 							}
@@ -238,7 +237,7 @@ public:
 			_foldedterms.insert(cpterm);
 			if (sametypeid<CPVarTerm>(*cpterm)) {
 				CPVarTerm* varterm = static_cast<CPVarTerm*>(cpterm);
-				if (not termtranslator()->function(varterm->varid())) {
+				if (termtranslator()->function(varterm->varid()) == NULL) {
 					CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 					CPTerm* left = foldCPTerm(cprelation->left());
 					if ((sametypeid<CPSumTerm>(*left) || sametypeid<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
@@ -250,7 +249,7 @@ public:
 				CPSumTerm* sumterm = static_cast<CPSumTerm*>(cpterm);
 				std::vector<VarId> newvarids;
 				for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
-					if (not termtranslator()->function(*it)) {
+					if (termtranslator()->function(*it) == NULL) {
 						CPTsBody* cprelation = termtranslator()->cprelation(*it);
 						CPTerm* left = foldCPTerm(cprelation->left());
 						if (sametypeid<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
@@ -433,9 +432,9 @@ public:
 private:
 	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable) {
 		CHECKTERMINATION
-		std::vector<double> lw(set.size(), 1);
-		int setnr = translator()->translateSet(set, lw, { });
-		int tseitin;
+		weightlist lw(set.size(), 1);
+		SetId setnr = translator()->translateSet(set, lw, { });
+		Lit tseitin;
 		if (f->partial() || (not outSortTable->finite())) {
 			tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
 		} else {
