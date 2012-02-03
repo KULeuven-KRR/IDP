@@ -61,8 +61,8 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 
 	// Create a symbolic structure if no such structure is given
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
-		clog << "Using the following symbolic structure to ground: " << endl;
-		_symstructure->put(clog);
+		clog << "\n" << tabs() << "Using the following symbolic structure to ground:";
+		clog << "\n" << tabs() << toString(_symstructure);
 	}
 }
 
@@ -88,11 +88,10 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		}
 	}
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		clog << "User-defined symbols that can be handled by the constraint solver: ";
+		clog << "\n" << tabs() << "User-defined symbols that can be handled by the constraint solver: ";
 		for (auto it = _cpsymbols.cbegin(); it != _cpsymbols.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
-		clog << "\n";
 	}
 	return _cpsymbols;
 }
@@ -320,13 +319,14 @@ void GrounderFactory::visit(const Theory* theory) {
 		InitContext();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-			clog << "Creating a grounder for " << toString(components[n]) << "\n";
+			clog << "\n" << tabs() << "Creating a grounder for " << toString(components[n]);
 		}
 		components[n]->accept(this);
 		children.push_back(_topgrounder);
 	}
 
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
+
 	// Clean up: delete the theory clone.
 	//newtheory->recursiveDelete();
 }
@@ -347,9 +347,8 @@ void GrounderFactory::visit(const Theory* theory) {
  */
 void GrounderFactory::visit(const PredForm* pf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " << toString(pf);
+		clog << "\n" << tabs() << "Grounderfactory visiting: " << toString(pf);
 		pushtab();
-		clog << "\n" << tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -368,7 +367,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(pf) << " to " << toString(transpf) << "\n" << tabs();
+			clog << "\n" << tabs() << "Rewritten " << toString(pf) << " to " << toString(transpf);
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
@@ -465,8 +464,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Possible checker: \n" << tabs() << toString(possch) << "\n" << tabs();
-		clog << "Certain checker: \n" << tabs() << toString(certainch) << "\n" << tabs();
+		clog << "\n" << tabs() << "Possible checker: \n" << tabs() << toString(possch);
+		clog << "\n" << tabs() << "Certain checker: \n" << tabs() << toString(certainch);
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
@@ -508,9 +507,8 @@ void deleteDeep(T& object) {
  */
 void GrounderFactory::visit(const BoolForm* bf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " << toString(bf);
+		clog << "\n" << tabs() << "Grounderfactory visiting: " << toString(bf);
 		pushtab();
-		clog << "\n" << tabs();
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
@@ -591,9 +589,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
  */
 void GrounderFactory::visit(const QuantForm* qf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " << toString(qf);
+		clog << "\n" << tabs() << "Grounderfactory visiting: " << toString(qf);
 		pushtab();
-		clog << "\n" << tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -670,13 +667,14 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	}
 	//newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
+	}
 }
 
 const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
-		clog << "improving the following (generator) BDD:";
+		clog << "\n" << tabs() << "improving the following (generator) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
 	}
@@ -701,7 +699,6 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 		pushtab();
 		clog << "\n" << tabs() << toString(pruned);
 		poptab();
-		clog << "\n" << tabs();
 	}
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);
@@ -709,7 +706,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 
 const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
-		clog << "improving the following (checker) BDD:";
+		clog << "\n" << tabs() << "improving the following (checker) BDD:";
 		pushtab();
 		clog << "\n" << tabs() << toString(bdd);
 	}
@@ -731,7 +728,6 @@ const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 		pushtab();
 		clog << "\n" << tabs() << toString(pruned);
 		poptab();
-		clog << "\n" << tabs();
 	}
 
 	// 3. Replace result
@@ -792,7 +788,7 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	if (not sametypeid<AggForm>(*transaf)) { // The rewriting changed the atom
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(af) << " to " << toString(transaf) << "\n";
+			clog << "\n" << tabs() << "Rewritten " << toString(af) << " to " << toString(transaf);
 		}
 		transaf->accept(this);
 	} else { // The rewriting did not change the atom
@@ -970,7 +966,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(origqs) << " to " << toString(transqs) << "\n";
+			clog << "\n" << tabs() << "Rewritten " << toString(origqs) << " to " << toString(transqs);
 		}
 		transqs->accept(this);
 		return;
@@ -1006,9 +1002,8 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
  */
 void GrounderFactory::visit(const Definition* def) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " << toString(def);
+		clog << "\n" << tabs() << "Grounderfactory visiting: " << toString(def);
 		pushtab();
-		clog << "\n" << tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -1028,8 +1023,9 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
+	}
 }
 
 template<class VarList>
@@ -1056,9 +1052,8 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 
 void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Grounderfactory visiting: " << toString(rule);
+		clog << "\n" << tabs() << "Grounderfactory visiting: " << toString(rule);
 		pushtab();
-		clog << "\n" << tabs();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -1131,8 +1126,9 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new RuleGrounder(headgr, bodygr, headgen, bodygen, _context);
 	}
 	RestoreContext();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
+	}
 
 	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }
