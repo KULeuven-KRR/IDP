@@ -1,0 +1,12 @@
+vocabulary V{
+	a b c d e f g h
+}
+
+theory T : V {
+	~a | ~b.
+	~a | ~b | ~c | ~d | ~h | ~e | ~f | ~g.
+	{ d <- true. }
+}
+
+structure S : V{
+}

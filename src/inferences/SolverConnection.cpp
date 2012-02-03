@@ -35,7 +35,6 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 		modes.lazy = true;
 	}
 
-//		modes.remap = false; // FIXME no longer allowed, because solver needs the remapping for extra literals.
 	startInference(); // NOTE: have to tell the solver to reset its instance
 	CHECKTERMINATION
 	return new SATSolver(modes);

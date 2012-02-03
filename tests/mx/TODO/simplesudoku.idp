@@ -1,0 +1,25 @@
+vocabulary V{
+	type Num isa int
+ 
+	Sudoku(Num,Num) : Num
+ 
+	Same(Num,Num)
+	SameBlock(Num,Num,Num,Num)
+}
+
+theory T : V { 
+	! r c1 c2: Sudoku(r,c1) = Sudoku(r,c2) => c1 = c2.
+	! c r1 r2: Sudoku(r1,c) = Sudoku(r2,c) => r1 = r2.
+
+	! r1 r2 c1 c2: SameBlock(r1,r2,c1,c2) & Sudoku(r1,c1) = Sudoku(r2,c2) => (r1 = r2 & c1 = c2).
+
+	{ Same(n,n).
+	  Same(n1,n2) <- Same(n2,n1).
+	}
+
+	{ SameBlock(r1,r2,c1,c2) <- Same(r1,r2) & Same(c1,c2). }
+}
+
+structure S : V{ 
+	Num = {1..3}
+}
