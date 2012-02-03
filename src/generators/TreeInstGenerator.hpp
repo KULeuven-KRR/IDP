@@ -51,6 +51,10 @@ public:
 		}
 	}
 
+	void setVarsAgain(){
+		_root->setVarsAgain();
+	}
+
 	virtual void put(std::ostream& stream) {
 		pushtab();
 		stream << "TreeInstGenerator" <<nt() << toString(_root);

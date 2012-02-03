@@ -313,7 +313,6 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
 		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
-		//tmptheory = FormulaUtils::mergeRulesOnSameSymbol(tmptheory);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
 	}
 
@@ -542,12 +541,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 BoolGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
-	//if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
-	//	auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-	//	return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
-	//}else{
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
+		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
+	}else{
 		return new BoolGrounder(grounding, sub, sign, conj, context);
-	//}
+	}
 }
 
 // Handle a top-level conjunction without creating tseitin atoms
@@ -654,12 +653,12 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 QuantGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
-	//if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
-	//	auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-	//	return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
-	//}else{
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
+		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
+	}else{
 		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
-	//}
+	}
 }
 
 void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
@@ -1116,6 +1115,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
+	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
 	if (getOption(BoolType::GROUNDLAZILY)) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// TODO resolve this in a clean way
@@ -1173,7 +1173,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		_context._tseitin = TsType::RULE;
 	}
 	if (getOption(BoolType::GROUNDLAZILY)) {
-		_rulegrounder = new LazyRuleGrounder(headgrounder, bodygrounder, bodygen, _context);
+		_rulegrounder = new LazyRuleGrounder(rule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
 	} else {
 		_rulegrounder = new RuleGrounder(headgrounder, bodygrounder, headgen, bodygen, _context);
 	}

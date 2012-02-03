@@ -25,6 +25,9 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
@@ -81,7 +84,7 @@ protected:
 public:
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
-	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
+	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);

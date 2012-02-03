@@ -35,6 +35,10 @@ public:
 		_reset = true;
 	}
 
+	void setVarsAgain(){
+		*_var = *_curr;
+	}
+
 	void next() {
 		if (_reset) {
 			_reset = false;

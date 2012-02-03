@@ -8,23 +8,24 @@ procedure main() {
 	stdoptions.groundverbosity = 0
 	stdoptions.satverbosity = 0
 	
-	s = sat(T,S)
+	partialsolution = modelexpandpartial(T,S)
 	
-	if s then
-		io.stderr:write("Found SAT, expected ")
-	else
-		io.stderr:write("Found UNSAT, expected ")
+	if(partialsolution==nil) then
+		if(getExpectedAModel())then
+			io.stderr:write("Found UNSAT, expected SAT.\n")
+			return 0
+		else
+			io.stderr:write("Found UNSAT, expected UNSAT.\n")
+			return 1
+		end
 	end
-	
-	if getExpectedAModel() then
-		io.stderr:write("SAT\n")
-	else
-		io.stderr:write("UNSAT\n")
-	end
-	
-	if(getExpectedAModel() == s) then
-		return 1
-	else
+
+	stdoptions.nbmodels = 1
+	stdoptions.groundlazily = false	
+	if(#modelexpand(T, partialsolution)==0)then
+		io.stderr:write("Found an invalid partial model.\n")
 		return 0
 	end
+	io.stderr:write("Found SAT, expected SAT.\n")
+	return 1
 }

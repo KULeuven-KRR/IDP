@@ -43,6 +43,8 @@ public:
 		}
 	}
 
+	virtual void setVarsAgain() = 0;
+
 	virtual GeneratorNode* clone() const = 0;
 
 	virtual void put(std::ostream& stream) = 0;
@@ -70,6 +72,10 @@ public:
 		if (_generator->isAtEnd()) {
 			notifyAtEnd();
 		}
+	}
+
+	void setVarsAgain(){
+		_generator->setVarsAgain();
 	}
 
 	virtual LeafGeneratorNode* clone() const{
@@ -103,6 +109,11 @@ public:
 		t->_generator = _generator->clone();
 		t->_child = _child->clone();
 		return t;
+	}
+
+	void setVarsAgain(){
+		_generator->setVarsAgain();
+		_child->setVarsAgain();
 	}
 
 	virtual void next() {
@@ -164,6 +175,12 @@ public:
 		t->_falsecheckbranch = _falsecheckbranch->clone();
 		t->_truecheckbranch = _truecheckbranch->clone();
 		return t;
+	}
+
+	void setVarsAgain(){
+		_generator->setVarsAgain();
+		_truecheckbranch->setVarsAgain();
+		_falsecheckbranch->setVarsAgain();
 	}
 
 	virtual void next() {

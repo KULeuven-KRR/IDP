@@ -9,21 +9,20 @@ procedure main() {
 	
 	solution = mx::one(T,S)
 	
-	if solution == nil then
-		io.stderr:write("Found UNSAT, expected ")
-	else
-		io.stderr:write("Found SAT, expected ")
+	if(solution==nil) then
+		if(getExpectedAModel()) then
+			io.stderr:write("Found UNSAT, expected SAT.\n")
+			return 0
+		else
+			io.stderr:write("Found UNSAT, expected UNSAT.\n")
+			return 1
+		end
 	end
-	
-	if getExpectedAModel() then
-		io.stderr:write("SAT\n")
-	else
-		io.stderr:write("UNSAT\n")
-	end
-	
-	if(getExpectedAModel() == (solution ~= nil)) then
-		return 1
-	else
+
+	if(#modelexpand(T, solution)==0) then
+		io.stderr:write("Found an invalid partial model.\n")
 		return 0
 	end
+	io.stderr:write("Found SAT, expected SAT.\n")
+	return 1
 }

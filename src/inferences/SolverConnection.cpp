@@ -18,17 +18,18 @@ using namespace std;
 
 namespace SolverConnection {
 
-SATSolver* createsolver() {
-	auto options = GlobalData::instance()->getOptions();
-	return createsolver(options->getValue(IntType::NBMODELS));
-}
+typedef cb::Callback1<std::string, int> callbackprinting;
 
-SATSolver* createsolver(int nbmodels) {
+MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
-	modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ? MinisatID::POL_RAND : MinisatID::POL_STORED;
+
+	modes.polarity = MinisatID::POL_STORED;
+	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)/* || getOption(BoolType::GROUNDLAZILY)*/){ // TODO test
+		modes.polarity = MinisatID::POL_RAND;
+	}
 
 	if (options->getValue(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
@@ -38,6 +39,11 @@ SATSolver* createsolver(int nbmodels) {
 	startInference(); // NOTE: have to tell the solver to reset its instance
 	CHECKTERMINATION
 	return new SATSolver(modes);
+}
+
+void setTranslator(MinisatID::WrappedPCSolver* solver, GroundTranslator* translator){
+	callbackprinting cbprint(translator, &GroundTranslator::print);
+	solver->setTranslator(cbprint);
 }
 
 MinisatID::Solution* initsolution() {

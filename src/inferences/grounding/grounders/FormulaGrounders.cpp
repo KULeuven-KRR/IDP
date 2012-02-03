@@ -78,6 +78,24 @@ void FormulaGrounder::printorig() const {
 	clog << nt();
 }
 
+std::string FormulaGrounder::printFormula() const {
+	if (_origform == NULL) {
+		return "";
+	}
+	stringstream ss;
+	ss <<toString(_origform);
+	if (not _origform->freeVars().empty()) {
+		ss <<"[";
+		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
+			ss << toString(*it) << " = ";
+			const DomainElement* e = _origvarmap.find(*it)->second->get();
+			ss << toString(e) << ',';
+		}
+		ss <<"]";
+	}
+	return ss.str();
+}
+
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
@@ -837,7 +855,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			std::cerr << toString(_checker);
+			std::clog << toString(_checker);
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();

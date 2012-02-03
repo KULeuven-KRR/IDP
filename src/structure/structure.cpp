@@ -3924,32 +3924,32 @@ Structure::~Structure() {
 }
 
 Structure* Structure::clone() const {
-	/*std::cerr << "CLONING";
-	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::cerr);
+	/*std::clog << "CLONING";
+	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::clog);
 		p.startTheory();
 		p.visit(this);
 		p.endTheory();
 		pushtab();*/
 	Structure* s = new Structure("", ParseInfo());
-	//std::cerr << endl << tabs() << "1";
+	//std::clog << endl << tabs() << "1";
 	s->vocabulary(_vocabulary);
-	//std::cerr << endl << tabs() << "2";
+	//std::clog << endl << tabs() << "2";
 
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "3";
+		//std::clog << endl << tabs() << "3";
 		s->inter(it->first)->internTable(it->second->internTable());
 	}
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "4";
+		//std::clog << endl << tabs() << "4";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "5";
+		//std::clog << endl << tabs() << "5";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
-	/*std::cerr << endl << tabs() << "6";
+	/*std::clog << endl << tabs() << "6";
 	poptab();
-	std::cerr << endl << "DONE CLONING" << endl;*/
+	std::clog << endl << "DONE CLONING" << endl;*/
 	return s;
 }
 
@@ -4225,7 +4225,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if(needMoreModels(result.size())){
+	if(getOption(IntType::NBMODELS)!=0 && needMoreModels(result.size())){
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

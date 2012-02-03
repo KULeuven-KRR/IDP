@@ -118,12 +118,14 @@ public:
 
 class LazyRuleGrounder: public RuleGrounder {
 private:
+	std::vector<std::pair<int, int> > sameargs; // a list of indices into the head terms which are the same variables
 	SolverTheory* _grounding;
+
 	SolverTheory* grounding() const {
 		return _grounding;
 	}
 public:
-	LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
+	LazyRuleGrounder(const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	void run(DefId defid, GroundDefinition* grounddefinition) const;
 
 	void ground(const Lit& head, const ElementTuple& headargs);

@@ -440,7 +440,7 @@ COMMENTLINE		"//".*
 							  return USINGNAMESPACE;			
 							}
 <*>"using"					{
-								cerr <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
+								clog <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
 								yyterminate();
 							}
 <*>{CH}						{ data.advancecol();

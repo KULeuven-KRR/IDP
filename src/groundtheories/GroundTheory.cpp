@@ -30,6 +30,11 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){
+	Policy::polNotifyLazyResidual(inst, grounder);
+}
+
+template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
 	deleteList(_foldedterms);
 	Policy::polRecursiveDelete();
@@ -38,8 +43,12 @@ void GroundTheory<Policy>::recursiveDelete() {
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
+	if(getOption(IntType::GROUNDVERBOSITY)>0){
+		clog <<"Closing theory, adding functional constraints and symbols defined false.\n";
+	}
 	// TODO arbitrary values?
 	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
+	Assert(not getOption(BoolType::GROUNDLAZILY));
 	addFalseDefineds();
 	addFuncConstraints();
 	Policy::polEndTheory();
