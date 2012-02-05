@@ -112,7 +112,7 @@ void LazyQuantGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		Lit newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
-		if (verbosity() > 0) {
+		if (verbosity() > 1) {
 			clog <<"Added lazy tseitin: " <<toString(instance->residual) <<toString(tseitintype) <<printFormula() <<"[[" <<"domelem"<<" to end ]]" <<nt();
 		}
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
@@ -162,7 +162,7 @@ void LazyQuantGrounder::internalRun(ConjOrDisj& formula) const {
 		inst->residual = -inst->residual;
 	}
 	formula.literals.push_back(inst->residual);
-	if (verbosity() > 0) {
+	if (verbosity() > 1) {
 		clog <<"Added lazy tseitin: " <<toString(inst->residual) <<toString(tseitintype) <<printFormula() <<nt();
 	}
 	poptab();
@@ -219,7 +219,7 @@ void LazyBoolGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		Lit newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
-		if (verbosity() > 0) {
+		if (verbosity() > 1) {
 			clog <<"Added lazy tseitin: " <<toString(instance->residual) <<toString(tseitintype) <<printFormula() <<"[[" <<instance->index <<" to end ]]" <<nt();
 		}
 		// TODO optimize by only watching truth or falsity in pure monotone or anti-monotone contexts
@@ -270,7 +270,7 @@ void LazyBoolGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 	formula.literals.push_back(inst->residual);
 
-	if (verbosity() > 0) {
+	if (verbosity() > 1) {
 		clog <<"Added lazy tseitin: " <<toString(inst->residual) <<toString(tseitintype) <<printFormula() <<nt();
 	}
 

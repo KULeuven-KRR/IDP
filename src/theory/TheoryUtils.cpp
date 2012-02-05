@@ -204,6 +204,12 @@ void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabul
 	Assert(newt==t);
 }
 
+void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport, cpsymbols);
+	Assert(newt==t);
+}
+
 int nrSubformulas(AbstractTheory* t) {
 	return transform<CountNbOfSubFormulas, int>(t);
 }

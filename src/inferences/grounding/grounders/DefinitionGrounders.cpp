@@ -140,7 +140,11 @@ LazyRuleGrounder::LazyRuleGrounder(const vector<Term*>& vars, HeadGrounder* hgr,
 	int index = 0;
 	for(auto i=vars.cbegin(); i<vars.cend(); ++i, ++index){
 		auto varterm = dynamic_cast<VarTerm*>(*i);
-		Assert(varterm!=NULL);
+		if(varterm==NULL){
+			//Assert(dynamic_cast<DomainTerm*>(*i)!=NULL);
+			continue;
+		}
+
 		auto first = vartofirstocc.find(varterm->var());
 		if(first==vartofirstocc.cend()){
 			vartofirstocc[varterm->var()] = index;
@@ -155,12 +159,18 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 
 	// set the variable instantiations
 	for (size_t i = 0; i < headargs.size(); ++i) {
-		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
-		if (not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])) {
-			throw notyetimplemented("Lazygrounding with functions.\n");
+		auto grounder = headgrounder()->subtermgrounders()[i];
+		// NOTE: can only be a vartermgrounder or a two-valued termgrounder here
+		if (not sametypeid<VarTermGrounder>(*grounder)) {
+			auto result = grounder->run(); // TODO running the grounder each time again?
+			Assert(not result.isVariable);
+			if(headargs[i]!=result._domelement){
+				return {};
+			}
+		}else{
+			auto var = (dynamic_cast<VarTermGrounder*>(grounder))->getElement();
+			domlist.push_back(dominst { var, headargs[i] });
 		}
-		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
-		domlist.push_back(dominst { var, headargs[i] });
 	}
 	return domlist;
 }
@@ -197,6 +207,9 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	}
 
 	dominstlist headvarinstlist = createInst(headargs);
+	if(headvarinstlist.size()==0 && headargs.size()!=0){ // TODO in fact, want to have a boolean stating that the headargs cannot substitute the head of the rule
+		return;
+	}
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, headvarinstlist);

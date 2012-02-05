@@ -312,7 +312,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
 
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
-		tmptheory = FormulaUtils::unnestFuncsAndAggs(tmptheory, _structure);
+		FormulaUtils::unnestThreeValuedTerms(tmptheory, Context::POSITIVE, _structure);
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
 	}
 
@@ -541,7 +541,8 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 BoolGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+	//bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) /*&& mightdolazy*/){
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
 	}else{
@@ -653,7 +654,9 @@ void GrounderFactory::visit(const QuantForm* qf) {
 }
 
 QuantGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)){
+	//bool conj = quant==QUANT::UNIV;
+	//bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)/* && mightdolazy*/){
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	}else{

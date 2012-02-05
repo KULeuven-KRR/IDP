@@ -158,6 +158,8 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NUL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, bool cpsupport = false,
+		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 namespace TermUtils {
