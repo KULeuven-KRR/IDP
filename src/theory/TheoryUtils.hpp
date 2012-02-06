@@ -122,7 +122,7 @@ Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractS
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false,
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 
 /** Replace all definitions in the theory by their completion */
@@ -180,7 +180,7 @@ namespace SetUtils {
 bool approxTwoValued(SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false,
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
@@ -195,7 +195,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false,
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 

@@ -68,8 +68,8 @@ bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(str, exp);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, cpsymbols);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsymbols);
 }
 }
 
@@ -88,8 +88,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsymbols);
 }
 }
 
@@ -156,8 +156,8 @@ Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, const std::set<const PFSymbol*> cpsymbols) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsymbols);
 }
 
 void addCompletion(AbstractTheory* t) {

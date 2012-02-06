@@ -51,12 +51,12 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols) {
+	T execute(T t, AbstractStructure* str, Context context, const std::set<const PFSymbol*>& cpsymbols) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
-		_cpsupport = cpsupport;
+		_cpsupport = getOption(BoolType::CPSUPPORT);
 		_cpsymbols = cpsymbols;
 		return t->accept(this);
 		//return UnnestTerms::execute(t, context, str, str->vocabulary());
