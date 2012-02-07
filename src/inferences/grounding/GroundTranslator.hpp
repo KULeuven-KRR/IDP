@@ -106,7 +106,7 @@ public:
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	bool alreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id);
+	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id);
 	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
 
 	unsigned int addSymbol(PFSymbol* pfs);

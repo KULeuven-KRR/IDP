@@ -124,14 +124,14 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::alreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id){
+bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id){
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;
 	if(grounders.empty()){
 		return false;
 	}
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if((*i)->getID()==id){
+		if((*i)->getID()!=id){
 			return true;
 		}
 	}
@@ -139,11 +139,11 @@ bool GroundTranslator::alreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int i
 }
 
 void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
-	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined\n";
+	clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;
 #ifndef NDEBUG
-	Assert(not alreadyDelayedOnDifferentID(grounder->getID());
+	Assert(not isAlreadyDelayedOnDifferentID(pfs, grounder->getID()));
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
 		Assert(grounder != *i);
 	}

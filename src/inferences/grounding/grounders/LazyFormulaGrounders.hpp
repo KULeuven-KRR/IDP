@@ -122,7 +122,7 @@ private:
 public:
 	LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
-	virtual void run(ConjOrDisj& formula) const{} // NO-op
+	virtual void run(ConjOrDisj&) const{} // NO-op
 
 protected:
 	FormulaGrounder* getSubGrounder() const{

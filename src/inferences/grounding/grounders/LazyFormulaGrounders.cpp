@@ -124,7 +124,7 @@ void LazyQuantGrounder::initializeInst(ResidualAndFreeInst* inst) const {
 	inst->generator = _generator->clone();
 }
 
-Grounder* LazyQuantGrounder::getLazySubGrounder(ResidualAndFreeInst* instance) const {
+Grounder* LazyQuantGrounder::getLazySubGrounder(ResidualAndFreeInst*) const {
 	auto grounder = getSubGrounder();
 	return grounder;
 }
@@ -209,7 +209,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 }
 
 LazyUnknUnivGrounder::LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct)
-		: Grounder(groundtheory, ct), LazyUnknBoundGrounder(symbol, -1, groundtheory), _quantvars(quantvars) {
+		: Grounder(groundtheory, ct), LazyUnknBoundGrounder(symbol, -1, groundtheory), _quantvars(quantvars), _subgrounder(sub) {
 
 }
 

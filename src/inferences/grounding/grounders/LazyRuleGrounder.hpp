@@ -19,7 +19,7 @@ private:
 	std::vector<std::pair<int, int> > sameargs; // a list of indices into the head terms which are the same variables
 
 public:
-	LazyRuleGrounder(const Rule* rule, DefId defid, const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
+	LazyRuleGrounder(const Rule* rule, const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	void run(DefId defid, GroundDefinition* grounddefinition) const;
 
 private:

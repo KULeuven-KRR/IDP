@@ -1124,7 +1124,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
 	vector<Variable*> headvars;
-	if (getOption(BoolType::GROUNDLAZILY)) {
+	auto groundlazily = getOption(BoolType::GROUNDLAZILY) && not _grounding->translator()->isAlreadyDelayedOnDifferentID(newrule->head()->symbol(), _context.getCurrentDefID());
+	if (groundlazily) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
 		varlist bodyvars;
@@ -1180,7 +1181,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (recursive(newrule->body())) {
 		_context._tseitin = TsType::RULE;
 	}
-	if (getOption(BoolType::GROUNDLAZILY)) {
+	if (groundlazily) {
 		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
 	} else {
 		_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
