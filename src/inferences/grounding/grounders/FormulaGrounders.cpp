@@ -744,7 +744,7 @@ Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType 
 		return formula.literals[0];
 	}
 
-	return createTseitin(formula, getTseitinType());
+	return createTseitin(formula, type);
 }
 
 // Takes context into account!
@@ -903,6 +903,10 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	ConjOrDisj leftformula, rightformula;
 	leftformula.setType(conjunctive());
 	rightformula.setType(conjunctive());
+	Assert(_leftgrounder->context()._monotone==Context::BOTH);
+	Assert(_rightgrounder->context()._monotone==Context::BOTH);
+	Assert(_leftgrounder->context()._tseitin==TsType::EQ|| _leftgrounder->context()._tseitin==TsType::RULE);
+	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
 	runSubGrounder(_leftgrounder, false, leftformula);
 	runSubGrounder(_rightgrounder, false, rightformula);
 	auto left = getEquivalentReification(leftformula);
