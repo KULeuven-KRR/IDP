@@ -207,3 +207,57 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	poptab();
 	return isAtEnd(instance);
 }
+
+LazyUnknUnivGrounder::LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct)
+		: Grounder(groundtheory, ct), LazyUnknBoundGrounder(symbol, -1, groundtheory), _quantvars(quantvars) {
+
+}
+
+// set the variable instantiations
+dominstlist LazyUnknUnivGrounder::createInst(const ElementTuple& args) {
+	dominstlist domlist;
+	for (size_t i = 0; i < args.size(); ++i) {
+		domlist.push_back(dominst { _quantvars[i], args[i] });
+	}
+	return domlist;
+}
+
+LazyUnknBoundGrounder::LazyUnknBoundGrounder(PFSymbol* symbol, unsigned int id, AbstractGroundTheory* gt): _id(id), _isGrounding(false), _grounding(gt){
+	getGrounding()->translator()->notifyDelayUnkn(symbol, this);
+}
+
+void LazyUnknBoundGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders) {
+	getGrounding()->notifyUnknBound(lit, args, grounders);
+}
+
+void LazyUnknBoundGrounder::ground(const Lit& boundlit, const ElementTuple& args) {
+	_stilltoground.push( { boundlit, args });
+	if (not _isGrounding) {
+		doGrounding();
+	}
+}
+
+void LazyUnknBoundGrounder::doGrounding() {
+	_isGrounding = true;
+	while (not _stilltoground.empty()) {
+		auto elem = _stilltoground.front();
+		_stilltoground.pop();
+		doGround(elem.first, elem.second);
+	}
+	_isGrounding = false;
+}
+
+void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
+	Assert(head!=_true && head!=_false);
+
+	dominstlist boundvarinstlist = createInst(headargs);
+
+	vector<const DomainElement*> originst;
+	overwriteVars(originst, boundvarinstlist);
+
+	ConjOrDisj formula;
+	_subgrounder->run(formula);
+	addToGrounding(Grounder::getGrounding(), formula);
+
+	restoreOrigVars(originst, boundvarinstlist);
+}

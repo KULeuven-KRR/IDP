@@ -30,6 +30,11 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
+void GroundTheory<Policy>::notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+	Policy::polNotifyUnknBound(boundlit, args, grounders);
+}
+
+template<class Policy>
 void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder){
 	Policy::polNotifyLazyResidual(inst, type, grounder);
 }
@@ -448,7 +453,11 @@ AbstractTheory* GroundTheory<Policy>::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
+#include "external/FlatZincRewriter.hpp"
+#include "external/ExternalInterface.hpp"
+
 // Explicit instantiations
 template class GroundTheory<GroundPolicy> ;
-template class GroundTheory<SolverPolicy> ;
+template class GroundTheory<SolverPolicy<MinisatID::WrappedPCSolver> > ;
+template class GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> > ;
 template class GroundTheory<PrintGroundPolicy> ;

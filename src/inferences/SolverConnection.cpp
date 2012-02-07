@@ -37,7 +37,7 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 
 	startInference(); // NOTE: have to tell the solver to reset its instance
 	CHECKTERMINATION
-	return new SATSolver(modes);
+	return new MinisatID::WrappedPCSolver(modes);
 }
 
 void setTranslator(MinisatID::WrappedPCSolver* solver, GroundTranslator* translator){

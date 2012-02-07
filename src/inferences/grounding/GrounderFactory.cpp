@@ -19,15 +19,12 @@
 #include "generators/GeneratorFactory.hpp"
 #include "generators/InstGenerator.hpp"
 #include "monitors/interactiveprintmonitor.hpp"
-#include "groundtheories/AbstractGroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
-#include "groundtheories/GroundPolicy.hpp"
-#include "groundtheories/PrintGroundPolicy.hpp"
 #include "grounders/FormulaGrounders.hpp"
 #include "grounders/TermGrounders.hpp"
 #include "grounders/SetGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 #include "grounders/LazyFormulaGrounders.hpp"
+#include "grounders/LazyRuleGrounder.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "generators/BasicGenerators.hpp"
@@ -39,6 +36,10 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFactory.hpp"
+
+#include "groundtheories/GroundPolicy.hpp"
+#include "groundtheories/PrintGroundPolicy.hpp"
+#include "groundtheories/SolverTheory.hpp"
 
 using namespace std;
 using namespace rel_ops;
@@ -282,9 +283,9 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrint
  *		One or more models of the ground theory can be obtained by calling solve() on
  *		the solver.
  */
-Grounder* GrounderFactory::create(const AbstractTheory* theory, SATSolver* solver) {
+Grounder* GrounderFactory::create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver) {
 	// Allocate a solver theory
-	auto groundtheory = new GroundTheory<SolverPolicy>(theory->vocabulary(), _structure->clone());
+	auto groundtheory = new SolverTheory(theory->vocabulary(), _structure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	_grounding = groundtheory;
 
@@ -1182,7 +1183,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(BoolType::GROUNDLAZILY)) {
 		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
 	} else {
-		_rulegrounder = new RuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
+		_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
 	}
 	RestoreContext();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)

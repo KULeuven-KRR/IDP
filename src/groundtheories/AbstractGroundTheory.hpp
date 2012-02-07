@@ -29,6 +29,7 @@ enum VIType {
 
 class ResidualAndFreeInst;
 class LazyGroundingManager;
+class LazyUnknBoundGrounder;
 
 /**
  * Implements base class for ground theories
@@ -50,12 +51,14 @@ public:
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
 	virtual void add(const GroundDefinition& d) = 0;
+	virtual void add(int defid, PCGroundRule* rule) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(int head, AggTsBody* body) = 0;
 	virtual void add(int tseitin, CPTsBody* body) = 0;
 	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr) = 0;
 
+	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders) = 0;
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 
 	//NOTE: have to call these!

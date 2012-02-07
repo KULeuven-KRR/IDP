@@ -491,15 +491,13 @@ private:
 	ParseInfo _pi; //!< the place where the rule was parsed
 
 public:
-	// Constructors
 	Rule(const std::set<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi)
 			: _head(h), _body(b), _quantvars(vv), _pi(pi) {
 	}
 
 	Rule* clone() const; //!< Make a deep copy of the rule
 
-	// Destructor
-	~Rule() {
+	virtual ~Rule() {
 	} //!< Delete the rule, but not its components
 	void recursiveDelete(); //!< Delete the rule and its components
 

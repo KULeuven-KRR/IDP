@@ -13,7 +13,7 @@
 
 #include "theory/TheoryUtils.hpp"
 
-#include "groundtheories/GroundTheory.hpp"
+#include "groundtheories/SolverTheory.hpp"
 
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
@@ -34,7 +34,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto grounder = grounderfactory.create(&theory, solver);
 
 	grounder->toplevelRun();
-	AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->getGrounding());
+	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
 	// Run solver
 	MinisatID::Solution* abstractsolutions = SolverConnection::initsolution();

@@ -44,18 +44,19 @@ public:
 
 	virtual void recursiveDelete();
 
-	void closeTheory();
+	virtual void closeTheory();
 
-	void add(const GroundClause& cl, bool skipfirst = false);
-	void add(const GroundDefinition& def);
-	void add(int defid, PCGroundRule* rule);
-	void add(GroundFixpDef*);
-	void add(int tseitin, CPTsBody* body);
-	void add(int setnr, unsigned int defnr, bool weighted);
-	void add(int head, AggTsBody* body);
-	void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
+	virtual void add(const GroundClause& cl, bool skipfirst = false);
+	virtual void add(const GroundDefinition& def);
+	virtual void add(int defid, PCGroundRule* rule);
+	virtual void add(GroundFixpDef*);
+	virtual void add(int tseitin, CPTsBody* body);
+	virtual void add(int setnr, unsigned int defnr, bool weighted);
+	virtual void add(int head, AggTsBody* body);
+	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
 
-	void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
+	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
+	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 	std::ostream& put(std::ostream& s) const;
 

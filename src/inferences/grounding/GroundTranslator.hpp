@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <bits/functional_hash.h>
 
-class LazyRuleGrounder;
+class LazyUnknBoundGrounder;
 class TsSet;
 class CPTerm;
 class LazyGroundingManager;
@@ -33,11 +33,12 @@ struct HashTuple {
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
 typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
-struct SymbolAndAtomMap {
+struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
+	std::vector<LazyUnknBoundGrounder*> assocGrounders;
 
-	SymbolAndAtomMap(PFSymbol* symbol)
+	SymbolInfo(PFSymbol* symbol)
 			: symbol(symbol) {
 	}
 };
@@ -67,13 +68,11 @@ struct SymbolAndTuple {
 class GroundTranslator {
 private:
 	std::queue<int> newsymbols;
-	std::vector<SymbolAndAtomMap> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
+	std::vector<SymbolInfo> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
 
 	std::vector<AtomType> atomtype;
 	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
 	std::vector<tspair> atom2TsBody; // Pointers manager by the translator!
-
-	std::map<unsigned int, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
 
 	std::queue<int> _freenumbers; // keeps atom numbers that were freed and can be used again
 	std::queue<int> _freesetnumbers; // keeps set numbers that were freed and can be used again
@@ -98,7 +97,7 @@ public:
 		return newsymbols.size();
 	}
 
-	Lit translate(unsigned int, const ElementTuple&);
+	Lit translate(unsigned int symbolID, const ElementTuple& args);
 	Lit translate(const std::vector<int>& cl, bool conj, TsType tp);
 	Lit translate(const Lit& head, const std::vector<Lit>& clause, bool conj, TsType tstype);
 	Lit translate(double bound, CompType comp, AggFunction aggtype, int setnr, TsType tstype);
@@ -107,7 +106,8 @@ public:
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	void notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
+	bool alreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id);
+	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
 
 	unsigned int addSymbol(PFSymbol* pfs);
 

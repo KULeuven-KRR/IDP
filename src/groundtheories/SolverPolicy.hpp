@@ -8,16 +8,11 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef SOLVERTHEORY_HPP_
-#define SOLVERTHEORY_HPP_
+#ifndef SOLVERPOLICY_HPP_
+#define SOLVERPOLICY_HPP_
 
 #include "IncludeComponents.hpp"
 #include "external/ExternalInterface.hpp"
-
-namespace MinisatID {
-class WrappedPCSolver;
-}
-typedef MinisatID::WrappedPCSolver SATSolver;
 
 class TsSet;
 class LazyGroundingManager;
@@ -31,20 +26,21 @@ class LazyGroundingManager;
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
+template<class Solver>
 class SolverPolicy {
 private:
 	GroundTermTranslator* _termtranslator;
-	SATSolver* _solver; // The SAT solver
+	Solver* _solver; // The SAT solver
 	std::map<PFSymbol*, std::set<int> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
 	std::set<unsigned int> _addedvarids; // Variable ids that have already been added, together with their domain.
 
 	int _verbosity;
 
-	const SATSolver& getSolver() const {
+	const Solver& getSolver() const {
 		return *_solver;
 	}
-	SATSolver& getSolver() {
+	Solver& getSolver() {
 		return *_solver;
 	}
 
@@ -66,7 +62,7 @@ protected:
 	void polAdd(int defnr, int head, AggGroundRule* body, bool);
 	void polAdd(int head, AggTsBody* body);
 	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
-			MinisatID::EqType rel, SATSolver& solver);
+			MinisatID::EqType rel);
 	void polAdd(int tseitin, CPTsBody* body);
 
 	// FIXME probably already exists in transform for add?
@@ -82,8 +78,9 @@ protected:
 	}
 
 public:
-	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
-	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
+	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
+
+	void polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
 	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 private:
@@ -96,4 +93,4 @@ private:
 	void polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool);
 };
 
-#endif /* SOLVERTHEORY_HPP_ */
+#endif /* SOLVERPOLICY_HPP_ */

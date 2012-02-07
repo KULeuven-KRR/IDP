@@ -12,10 +12,6 @@
 #define LAZYQUANTGROUNDER_HPP_
 
 #include "FormulaGrounders.hpp"
-#include "groundtheories/GroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
-
-typedef GroundTheory<SolverPolicy> SolverTheory;
 
 class LazyGroundingManager{
 private:
@@ -86,6 +82,55 @@ protected:
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
+};
+
+class LazyUnknBoundGrounder{
+private:
+	unsigned int _id;
+
+	bool _isGrounding;
+	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
+
+	AbstractGroundTheory* _grounding;
+
+public:
+	// @precondition: two IDs HAVE to be different if referring to an instance of a symbol in a DIFFERENT definition (if it is a head)
+	//		it HAS to be -1 if it is not a head occurrence
+	// 		in all other cases, they should preferably be equal
+	LazyUnknBoundGrounder(PFSymbol* symbol, unsigned int id, AbstractGroundTheory* gt);
+	virtual ~LazyUnknBoundGrounder(){}
+	void ground(const Lit& boundlit, const ElementTuple& args);
+	void notify(const Lit& boundlit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders);
+
+	unsigned int getID() const { return _id; }
+
+protected:
+	AbstractGroundTheory* getGrounding() const { return _grounding; }
+
+	void doGrounding();
+	virtual void doGround(const Lit& boundlit, const ElementTuple& args) = 0;
+};
+
+class LazyUnknUnivGrounder: public Grounder, public LazyUnknBoundGrounder {
+private:
+	bool _isGrounding;
+	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
+
+	std::vector<const DomElemContainer*> _quantvars;
+
+	FormulaGrounder* _subgrounder;
+public:
+	LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+
+	virtual void run(ConjOrDisj& formula) const{} // NO-op
+
+protected:
+	FormulaGrounder* getSubGrounder() const{
+		return _subgrounder;
+	}
+
+	dominstlist createInst(const ElementTuple& args);
+	void doGround(const Lit& boundlit, const ElementTuple& args);
 };
 
 #endif /* LAZYQUANTGROUNDER_HPP_ */

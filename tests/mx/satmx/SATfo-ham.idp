@@ -14,7 +14,22 @@ vocabulary V{
 }
 
 theory T : V { 
+	/** LessThan is a linear order **/
+	! x y : LessThan(x,y) | LessThan(y,x).						// total order
+	! x y : LessThan(x,y) & LessThan(y,x) => x = y.				// anti-symmetric
+	! x y z : LessThan(x,y) & LessThan(y,z) => LessThan(x,z).	// transitive
+
+	/** Strict order **/
+	! x y : SLessThan(x,y) <=> (LessThan(x,y) & x ~= y).
+
+	/** Ham/2 is the successor relation **/
 	! x y : Ham(x,y) <=> (SLessThan(x,y) & ! z : SLessThan(x,z) => LessThan(y,z)).
+
+	/** Ham/2 is a subset of the edges **/
+	! x y : Ham(x,y) => Edge(x,y).
+
+	/** Start at the correct node **/
+	! x : ~SLessThan(x,Start).
 }
 
 structure S : V{ 
