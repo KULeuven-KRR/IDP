@@ -50,12 +50,10 @@ private:
 	weightlist _litweights; // For each literal a corresponding weight
 
 public:
-	// Constructors
-	GroundSet() {
-	}
 	GroundSet(int setnr, const litlist& s, const weightlist& lw)
 			: _setnr(setnr), _setlits(s), _litweights(lw) {
 	}
+	virtual ~GroundSet(){}
 
 	// Inspectors
 	unsigned int setnr() const {
@@ -113,8 +111,7 @@ public:
 			: _head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
 		Assert(a._arrow != TsType::RULE);
 	}
-	GroundAggregate() {
-	}
+	virtual ~GroundAggregate(){}
 
 	// Inspectors
 	int head() const {
@@ -357,7 +354,7 @@ public:
 	CPReification(int head, CPTsBody* body)
 			: _head(head), _body(body) {
 	}
-	~CPReification();
+	virtual ~CPReification();
 	std::string toString(unsigned int spaces = 0) const;
 };
 
@@ -559,7 +556,7 @@ class LazyGroundingManager;
 struct ResidualAndFreeInst {
 	const LazyGrounder* grounder;
 	InstGenerator* generator;
-	int index;
+	size_t index;
 	Lit residual;
 	dominstlist freevarinst;
 

@@ -10,7 +10,7 @@
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
-#include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 
 using namespace std;
@@ -143,7 +143,7 @@ void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grou
 void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder, instance, tstype);
+	auto tsbody = new LazyTsBody(lazygrounder, instance, tstype);
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 

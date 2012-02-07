@@ -36,7 +36,7 @@ private:
 	Printer* printer_;
 
 public:
-	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){}
+	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 	void polRecursiveDelete() {
 	}
 

@@ -30,8 +30,8 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){
-	Policy::polNotifyLazyResidual(inst, grounder);
+void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder){
+	Policy::polNotifyLazyResidual(inst, type, grounder);
 }
 
 template<class Policy>

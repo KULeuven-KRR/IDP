@@ -38,6 +38,7 @@
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
+#include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 
 using namespace std;
@@ -90,6 +91,9 @@ std::set<PFSymbol*> opens(Definition* d) {
 
 Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
+}
+Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
+	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
 }
 }
 

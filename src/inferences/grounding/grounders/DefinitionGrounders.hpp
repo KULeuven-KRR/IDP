@@ -60,6 +60,8 @@ class HeadGrounder;
 /** Grounder for a single rule **/
 class RuleGrounder {
 private:
+	Rule* origrule;
+
 	HeadGrounder* _headgrounder;
 	FormulaGrounder* _bodygrounder;
 	InstGenerator* _headgenerator;
@@ -84,9 +86,11 @@ protected:
 	}
 
 public:
-	RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
+	RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~RuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
+
+	void put(std::stringstream& stream);
 };
 
 /** Grounder for a head of a rule **/
@@ -125,7 +129,7 @@ private:
 		return _grounding;
 	}
 public:
-	LazyRuleGrounder(const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
+	LazyRuleGrounder(const Rule* rule, const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	void run(DefId defid, GroundDefinition* grounddefinition) const;
 
 	void ground(const Lit& head, const ElementTuple& headargs);
@@ -134,7 +138,10 @@ public:
 private:
 	bool isGrounding;
 	std::queue<std::pair<Lit, ElementTuple>> stilltoground;
-	dominstlist createInst(const ElementTuple& headargs);
+
+	enum class Substitutable { UNIFIABLE, NO_UNIFIER};
+
+	Substitutable createInst(const ElementTuple& headargs, dominstlist& domlist);
 	void doGrounding();
 	void doGround(const Lit& head, const ElementTuple& headargs);
 };

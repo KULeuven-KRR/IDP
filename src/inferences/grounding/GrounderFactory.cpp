@@ -27,7 +27,7 @@
 #include "grounders/TermGrounders.hpp"
 #include "grounders/SetGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
-#include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/LazyFormulaGrounders.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 #include "generators/BasicGenerators.hpp"
@@ -311,10 +311,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
 
-	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding with (nested) functions and nested aggregates
-		FormulaUtils::unnestThreeValuedTerms(tmptheory, Context::POSITIVE, _structure);
-		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
-	}
+	Assert(not getOption(BoolType::GROUNDLAZILY) || not getOption(BoolType::CPSUPPORT)); // TODO currently not both
 
 	if (not getOption(BoolType::CPSUPPORT)) {
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
@@ -370,7 +367,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
-	// FIXME aggregaten moeten correct worden herschreven als ze niet tweewaardig zijn -> issue #23?
 	Formula* temppf = pf->clone();
 	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	// TODO can we delete temppf here if different from transpf? APPARANTLY NOT!
@@ -420,10 +416,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 		_formgrounder = new ComparisonGrounder(_grounding, _grounding->termtranslator(), subtermgrounders[0], comp, subtermgrounders[1], _context);
 		_formgrounder->setOrig(newpf, varmapping());
-		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside?
+		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside (also other occurences)
 			_topgrounder = _formgrounder;
 		}
-		// FIXME recursive delete here is incorrect as setorig also deleted its formula, fix this! Stef: I think this is resolved.
 		newpf->recursiveDelete();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
@@ -540,9 +535,12 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-BoolGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
-	//bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) /*&& mightdolazy*/){
+ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
+	bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
+	if(context._monotone==Context::BOTH){
+		mightdolazy = true;
+	}
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy){
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
 	}else{
@@ -634,8 +632,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	// NOTE: if the checker return valid, then the value of the formula can be decided from the value of the checked instantiation
 	//	for universal: checker valid => formula false, for existential: checker valid => formula true
 
-	// FIXME SUBFORMULA got cloned, not the formula itself! REVIEW CODE!
-
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
@@ -653,12 +649,15 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	}
 }
 
-QuantGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
-	//bool conj = quant==QUANT::UNIV;
-	//bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding)/* && mightdolazy*/){
+ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
+	bool conj = quant==QUANT::UNIV;
+	bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
+	if(context._monotone==Context::BOTH){
+		mightdolazy = true;
+	}
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy){
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
+		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, /*gc._checker, */context); // TODO checker to be used during lazy grounding?
 	}else{
 		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	}
@@ -687,7 +686,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	auto subgrounder = dynamic_cast<FormulaGrounder*>(_topgrounder);
 	Assert(subgrounder!=NULL);
 
-	QuantGrounder* quantgrounder = createQ(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, newqf->freeVars(), gc, getContext());
+	auto quantgrounder = createQ(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, newqf->freeVars(), gc, getContext());
 	quantgrounder->setOrig(qf, varmapping());
 	_topgrounder = quantgrounder;
 
@@ -817,7 +816,9 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	SaveContext();
 	if (recursive(ef)) {
 		_context._tseitin = TsType::RULE;
-	}
+	}/*else{
+		_context._tseitin = TsType::EQ;
+	}*/
 	_formgrounder = new EquivGrounder(_grounding, leftgrounder, rightgrounder, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
@@ -964,7 +965,6 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 	_setgrounder = new EnumSetGrounder(_grounding->translator(), subfgr, subtgr);
 }
 
-// TODO verify
 template<typename OrigConstruct>
 GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
 	vector<const DomElemContainer*> vars;
@@ -1026,7 +1026,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	Formula* clonedformula = newqs->subformulas()[0]->clone();
 	Formula* newsubformula = FormulaUtils::unnestThreeValuedTerms(clonedformula, _structure, Context::POSITIVE);
 	//newsubformula = FormulaUtils::splitComparisonChains(newsubformula);
-	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext); //TODO issue #23
+	newsubformula = FormulaUtils::graphFuncsAndAggs(newsubformula, _structure, _context._funccontext);
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
 	GenAndChecker gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
@@ -1112,27 +1112,31 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	// TODO for lazygroundrules, we need a generator for all variables NOT occurring in the head!
+
 	auto temprule = rule->clone();
 	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding rules with variables within functerms
+		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
+	}
 	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
 	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
+	vector<Variable*> headvars;
 	if (getOption(BoolType::GROUNDLAZILY)) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
-		// TODO resolve this in a clean way
-		// for lazy ground rules, need a generator which generates bodies given a head, so only vars not occurring in the head!
+		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
 		varlist bodyvars;
 		for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
 			if (not newrule->head()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
+				headvars.push_back(*it);
 				createVarMapping(*it);
 			}
 		}
 
-		bodygen = createVarMapAndGenerator(rule->head(), bodyvars);
+		bodygen = createVarMapAndGenerator(newrule->head(), bodyvars);
 	} else {
 		// Split the quantified variables in two categories:
 		//		1. the variables that only occur in the head
@@ -1148,8 +1152,8 @@ void GrounderFactory::visit(const Rule* rule) {
 			}
 		}
 
-		headgen = createVarMapAndGenerator(rule->head(), headvars);
-		bodygen = createVarMapAndGenerator(rule->body(), bodyvars);
+		headgen = createVarMapAndGenerator(newrule->head(), headvars);
+		bodygen = createVarMapAndGenerator(newrule->body(), bodyvars);
 	}
 
 	// Create head grounder
@@ -1176,9 +1180,9 @@ void GrounderFactory::visit(const Rule* rule) {
 		_context._tseitin = TsType::RULE;
 	}
 	if (getOption(BoolType::GROUNDLAZILY)) {
-		_rulegrounder = new LazyRuleGrounder(rule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
+		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
 	} else {
-		_rulegrounder = new RuleGrounder(headgrounder, bodygrounder, headgen, bodygen, _context);
+		_rulegrounder = new RuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
 	}
 	RestoreContext();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3)

@@ -47,7 +47,7 @@ private:
 	}
 
 protected:
-	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder){}
+	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 public:
 	const std::vector<GroundClause>& getClauses() const {

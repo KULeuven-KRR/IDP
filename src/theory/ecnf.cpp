@@ -11,7 +11,7 @@
 #include "IncludeComponents.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
 
 using namespace std;
 
@@ -360,36 +360,6 @@ bool CPTsBody::operator<(const TsBody& body) const {
 	}
 	return false;
 }
-
-/*bool LazyTsBody::operator==(const TsBody& body) const {
-				 if (not TsBody::operator==(body)) {
-				 return false;
-				 }
-				 auto rhs = dynamic_cast<const LazyTsBody&>(body);
-				 return id_ == rhs.id_ && grounder_ == rhs.grounder_ && (*inst) == (*rhs.inst);
-				 }*/
-				 /*bool LazyTsBody::operator<(const TsBody& body) const {
-				 if (TsBody::operator<(body)) {
-				 return true;
-				 } else if (TsBody::operator>(body)) {
-				 return false;
-				 }
-				 auto rhs = dynamic_cast<const LazyTsBody&>(body);
-				 if (id_ < rhs.id_) {
-				 return true;
-				 } else if (id_ > rhs.id_) {
-				 return false;
-				 }
-				 if (grounder_ < rhs.grounder_) {
-				 return true;
-				 } else if (grounder_ > rhs.grounder_) {
-				 return false;
-				 }
-				 if ((*inst) == (*rhs.inst)) {
-				 return true;
-				 }
-				 return false;
-				 }*/
 
 bool CPTerm::operator==(const CPTerm& body) const {
 	return typeid(*this) == typeid(body);

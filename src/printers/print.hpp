@@ -48,6 +48,7 @@ protected:
 	Printer()
 			: opendef_(-1), theoryopen_(false) {
 	}
+	virtual ~Printer(){}
 
 	bool isDefClosed() const {
 		return opendef_ == -1;

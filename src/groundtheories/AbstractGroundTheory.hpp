@@ -56,7 +56,7 @@ public:
 	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr) = 0;
 
-	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) = 0;
+	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

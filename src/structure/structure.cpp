@@ -4116,9 +4116,11 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 }
 
 void Structure::makeTwoValued() {
+	Assert(isConsistent());
 	if (approxTwoValued()) {
 		return;
 	}
+	//clog <<"Before: \n" <<toString(this) <<"\n";
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
 		CHECKTERMINATION
 		auto inter = (*i).second;
@@ -4188,7 +4190,6 @@ void Structure::makeTwoValued() {
 			}
 		}
 	}
-	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
 		CHECKTERMINATION
 		auto inter = (*i).second;
@@ -4204,10 +4205,11 @@ void Structure::makeTwoValued() {
 				continue;
 			}
 
-			inter->makeTrue(*ptIterator);
+			inter->makeFalse(*ptIterator);
 		}
 	}
 	clean();
+	//clog <<"After: \n" <<toString(this) <<"\n";
 	Assert(approxTwoValued());
 }
 

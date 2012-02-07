@@ -2,7 +2,7 @@
 
 procedure main() {
 	stdoptions.nbmodels = 1
-	stdoptions.timeout = 50
+	stdoptions.timeout = 20
 	stdoptions.groundwithbounds = false
 	stdoptions.groundlazily = true
 	stdoptions.groundverbosity = 0

@@ -55,7 +55,7 @@ public:
 	void add(int head, AggTsBody* body);
 	void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
 
-	void notifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
+	void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 	std::ostream& put(std::ostream& s) const;
 

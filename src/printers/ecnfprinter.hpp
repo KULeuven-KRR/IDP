@@ -13,6 +13,7 @@
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
+#include "errorhandling/error.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
@@ -153,7 +154,6 @@ public:
 		closeDef();
 	}
 
-	//FIXME a visitor for definitions does not work!
 	void visit(const GroundDefinition* d) {
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
@@ -271,7 +271,8 @@ private:
 			output() << "Max ";
 			break;
 		}
-#warning "Replacing implication by equivalence in ecnfprinter, should change in future.";
+		// FIXME:
+		Warning::warning("The ecnf output format does not support implications for aggregates yet, so currently replacing them with equivalences!\n");
 		switch (arrow) {
 		case TsType::EQ:
 		case TsType::IMPL:

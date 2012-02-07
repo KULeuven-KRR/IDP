@@ -79,6 +79,7 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\
+		friend class UnnestHeadTermsContainingVars;\
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;

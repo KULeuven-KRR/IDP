@@ -16,10 +16,8 @@ vocabulary V{
 	RowOfWhite(Whitesquare) : Row
 	ColOfWhite(Whitesquare) : Col
 
- 
 	ContainLight(Whitesquare)
 
- 
 	SameCol(Whitesquare,Whitesquare)
 	SameRow(Whitesquare,Whitesquare)
 	CanIllumC(Whitesquare,Whitesquare)
@@ -29,7 +27,6 @@ vocabulary V{
 }
 
 theory T : V { 
-
 	{ SameCol(ws1,ws2) <- ColOfWhite(ws1) = ColOfWhite(ws2).
 	  SameRow(ws1,ws2) <- RowOfWhite(ws1) = RowOfWhite(ws2). }
 
@@ -41,48 +38,45 @@ theory T : V {
 	{ IllumBy(ws,l) <- ContainLight(l) & CanIllumC(l,ws).
 	  IllumBy(ws,l) <- ContainLight(l) & CanIllumR(l,ws). }
 
-	! s n[Num] : ContainNumber(s,n) => n = #{ w : NextTo(w,s) & ContainLight(w)}.
-	! ws : ~ContainLight(ws) <=> (? l : IllumBy(ws,l)).
-	
-
+	!s n[Num]: ContainNumber(s,n) => n = #{w: NextTo(w,s) & ContainLight(w)}.
+	!ws: ~ContainLight(ws) <=> (?l: IllumBy(ws,l)).
 }
 
 structure S : V{ 
-Row = {1..7}
-Col = {1..7}
-Whitesquare = {Ws11; Ws12; Ws13; Ws14; Ws15; Ws16; Ws17; 
-					Ws21; Ws22;             Ws25; Ws26; Ws27; 
-					Ws31; Ws32; Ws33; Ws34; Ws35;       Ws37; 
-					Ws41;       Ws43;       Ws45;       Ws47; 
-					Ws51;       Ws53; Ws54; Ws55; Ws56; Ws57; 
-					Ws61; Ws62; Ws63;             Ws66; Ws67; 
-					Ws71; Ws72; Ws73; Ws74; Ws75; Ws76; Ws77  }
-
-Blacksquare = {Bs23;Bs24;Bs36;Bs42;Bs44;Bs46;Bs52;Bs64;Bs65}
-
-Num = {0..4}
-
-ContainNumber = {Bs23,2;Bs36,0;Bs42,1;Bs44,1;Bs46,0;Bs52,0;Bs64,2;Bs65,1 }
-
-NextTo = {Ws13,Bs23; Ws22,Bs23; Ws33,Bs23; Ws14,Bs24; Ws25,Bs24; Ws34,Bs24; Ws26,Bs36; Ws35,Bs36; Ws37,Bs36; Ws32,Bs42; Ws41,Bs42; Ws43,Bs42; Ws34,Bs44; Ws43,Bs44; Ws45,Bs44; Ws54,Bs44; Ws45,Bs46; Ws47,Bs46; Ws56,Bs46; Ws51,Bs52; Ws53,Bs52; Ws62,Bs52; Ws54,Bs64; Ws63,Bs64; Ws74,Bs64; Ws55,Bs65; Ws66,Bs65; Ws75,Bs65}
-
-ColOfWhite = {Ws11->1; Ws12->2; Ws13->3; Ws14->4; Ws15->5; Ws16->6; Ws17->7; 
-					 Ws21->1; Ws22->2;                   Ws25->5; Ws26->6; Ws27->7; 
-					 Ws31->1; Ws32->2; Ws33->3; Ws34->4; Ws35->5;          Ws37->7; 
-					 Ws41->1;			 Ws43->3;          Ws45->5;          Ws47->7; 
-					 Ws51->1;			 Ws53->3; Ws54->4; Ws55->5; Ws56->6; Ws57->7; 
-					 Ws61->1; Ws62->2; Ws63->3;                   Ws66->6; Ws67->7; 
-					 Ws71->1; Ws72->2; Ws73->3; Ws74->4; Ws75->5; Ws76->6; Ws77->7  }
-
-RowOfWhite = {Ws11->1; Ws12->1; Ws13->1; Ws14->1; Ws15->1; Ws16->1; Ws17->1; 
-					 Ws21->2; Ws22->2;                   Ws25->2; Ws26->2; Ws27->2; 
-					 Ws31->3; Ws32->3; Ws33->3; Ws34->3; Ws35->3;          Ws37->3; 
-					 Ws41->4;			 Ws43->4;          Ws45->4;          Ws47->4; 
-					 Ws51->5;			 Ws53->5; Ws54->5; Ws55->5; Ws56->5; Ws57->5; 
-					 Ws61->6; Ws62->6; Ws63->6;                   Ws66->6; Ws67->6; 
-					 Ws71->7; Ws72->7; Ws73->7; Ws74->7; Ws75->7; Ws76->7; Ws77->7  }
-
-ColOfBlack = {Bs23->3;Bs24->4;Bs36->6;Bs42->2;Bs44->4;Bs46->6;Bs52->2;Bs64->4;Bs65->5}
-
-RowOfBlack = {Bs23->2;Bs24->2;Bs36->3;Bs42->4;Bs44->4;Bs46->4;Bs52->5;Bs64->6;Bs65->6}
+	Row = {1..7}
+	Col = {1..7}
+	Whitesquare = {Ws11; Ws12; Ws13; Ws14; Ws15; Ws16; Ws17; 
+						Ws21; Ws22;             Ws25; Ws26; Ws27; 
+						Ws31; Ws32; Ws33; Ws34; Ws35;       Ws37; 
+						Ws41;       Ws43;       Ws45;       Ws47; 
+						Ws51;       Ws53; Ws54; Ws55; Ws56; Ws57; 
+						Ws61; Ws62; Ws63;             Ws66; Ws67; 
+						Ws71; Ws72; Ws73; Ws74; Ws75; Ws76; Ws77  }
+	
+	Blacksquare = {Bs23;Bs24;Bs36;Bs42;Bs44;Bs46;Bs52;Bs64;Bs65}
+	
+	Num = {0..4}
+	
+	ContainNumber = {Bs23,2;Bs36,0;Bs42,1;Bs44,1;Bs46,0;Bs52,0;Bs64,2;Bs65,1 }
+	
+	NextTo = {Ws13,Bs23; Ws22,Bs23; Ws33,Bs23; Ws14,Bs24; Ws25,Bs24; Ws34,Bs24; Ws26,Bs36; Ws35,Bs36; Ws37,Bs36; Ws32,Bs42; Ws41,Bs42; Ws43,Bs42; Ws34,Bs44; Ws43,Bs44; Ws45,Bs44; Ws54,Bs44; Ws45,Bs46; Ws47,Bs46; Ws56,Bs46; Ws51,Bs52; Ws53,Bs52; Ws62,Bs52; Ws54,Bs64; Ws63,Bs64; Ws74,Bs64; Ws55,Bs65; Ws66,Bs65; Ws75,Bs65}
+	
+	ColOfWhite = {Ws11->1; Ws12->2; Ws13->3; Ws14->4; Ws15->5; Ws16->6; Ws17->7; 
+						 Ws21->1; Ws22->2;                   Ws25->5; Ws26->6; Ws27->7; 
+						 Ws31->1; Ws32->2; Ws33->3; Ws34->4; Ws35->5;          Ws37->7; 
+						 Ws41->1;			 Ws43->3;          Ws45->5;          Ws47->7; 
+						 Ws51->1;			 Ws53->3; Ws54->4; Ws55->5; Ws56->6; Ws57->7; 
+						 Ws61->1; Ws62->2; Ws63->3;                   Ws66->6; Ws67->7; 
+						 Ws71->1; Ws72->2; Ws73->3; Ws74->4; Ws75->5; Ws76->6; Ws77->7  }
+	
+	RowOfWhite = {Ws11->1; Ws12->1; Ws13->1; Ws14->1; Ws15->1; Ws16->1; Ws17->1; 
+						 Ws21->2; Ws22->2;                   Ws25->2; Ws26->2; Ws27->2; 
+						 Ws31->3; Ws32->3; Ws33->3; Ws34->3; Ws35->3;          Ws37->3; 
+						 Ws41->4;			 Ws43->4;          Ws45->4;          Ws47->4; 
+						 Ws51->5;			 Ws53->5; Ws54->5; Ws55->5; Ws56->5; Ws57->5; 
+						 Ws61->6; Ws62->6; Ws63->6;                   Ws66->6; Ws67->6; 
+						 Ws71->7; Ws72->7; Ws73->7; Ws74->7; Ws75->7; Ws76->7; Ws77->7  }
+	
+	ColOfBlack = {Bs23->3;Bs24->4;Bs36->6;Bs42->2;Bs44->4;Bs46->6;Bs52->2;Bs64->4;Bs65->5}
+	RowOfBlack = {Bs23->2;Bs24->2;Bs36->3;Bs42->4;Bs44->4;Bs46->4;Bs52->5;Bs64->6;Bs65->6}
 }

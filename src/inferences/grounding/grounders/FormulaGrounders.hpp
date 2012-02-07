@@ -202,7 +202,6 @@ public:
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
-
 };
 
 class QuantGrounder: public ClauseGrounder {
@@ -218,7 +217,7 @@ public:
 			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	}
 	~QuantGrounder();
-	FormulaGrounder* getSubGrounder() {
+	FormulaGrounder* getSubGrounder() const{
 		return _subgrounder;
 	}
 };
@@ -233,6 +232,7 @@ protected:
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
+		//Assert(ct._tseitin==TsType::EQ || ct._tseitin==TsType::RULE);
 	}
 	~EquivGrounder();
 };

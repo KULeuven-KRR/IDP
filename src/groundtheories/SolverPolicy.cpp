@@ -11,10 +11,12 @@
 #include "groundtheories/SolverPolicy.hpp"
 
 #include "IncludeComponents.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
+
+#include <cmath>
 
 using namespace std;
 
@@ -40,9 +42,13 @@ void SolverPolicy::initialize(SATSolver* solver, int verbosity, GroundTermTransl
 	_termtranslator = termtranslator;
 }
 
+double test;
+
 inline MinisatID::Weight SolverPolicy::createWeight(double weight) {
-#warning "Dangerous cast from double to int in adding rules to the solver"
-	return MinisatID::Weight(int(weight)); // TODO: remove cast when supported by the solver
+	if(modf(weight, &test)!=0){
+		throw notyetimplemented("MinisatID does not support doubles yet.");
+	}
+	return int(weight);
 }
 
 void SolverPolicy::polAdd(const GroundClause& cl) {
@@ -72,8 +78,6 @@ void SolverPolicy::polAdd(const TsSet& tsset, int setnr, bool weighted) {
 	}
 }
 
-// TODO make all polAdd methods protected (had a bug because of that)
-
 void SolverPolicy::polAdd(int defnr, PCGroundRule* rule) {
 	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RuleType::CONJ), rule->recursive());
 }
@@ -88,8 +92,8 @@ void SolverPolicy::polAdd(int defnr, int head, AggGroundRule* body, bool) {
 
 void SolverPolicy::polAdd(int head, AggTsBody* body) {
 	Assert(body->type() != TsType::RULE);
-	//FIXME correct undefined id numbering instead of -1 (should be the number the solver takes as undefined, so should but it in the solver interface)
-	polAddAggregate(-1, head, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
+	//FIXME getIDForUndefined() should be replaced by the number the SOLVER takes as undefined
+	polAddAggregate(getIDForUndefined(), head, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
 }
 
 void SolverPolicy::polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
@@ -184,7 +188,6 @@ void SolverPolicy::polAdd(int tseitin, CPTsBody* body) {
 	}
 }
 
-// FIXME probably already exists in transform for add?
 void SolverPolicy::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
 	MinisatID::ImplicationType impltype;
 	switch(type){
@@ -359,10 +362,14 @@ public:
 	}
 };
 
-void SolverPolicy::polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder) {
+void SolverPolicy::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
 	auto mon = new LazyClauseMon(inst);
-#warning fix sign here (monotone, anti-, both)
-	MinisatID::LazyGroundLit lc(true, createLiteral(inst->residual), mon);
+	auto watchboth = type==TsType::RULE || type==TsType::EQ;
+	auto lit = createLiteral(inst->residual);
+	if(type==TsType::RIMPL){
+		lit = not lit;
+	}
+	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
 	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
 	mon->setRequestMoreGrounding(cbmore);
 	getSolver().add(lc);

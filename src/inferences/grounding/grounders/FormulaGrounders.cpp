@@ -789,8 +789,8 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			formula.literals.push_back(l);
 		}
 		return FormStat::UNKNOWN;
-	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-	  //TODO: remove all the "negated"
+	}
+	// otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
@@ -941,7 +941,7 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		TsType tp = context()._tseitin;
+		TsType tp = context()._tseitin==TsType::RULE?TsType::RULE:TsType::EQ;
 		Lit ts1 = translator()->translate(aornotb, false, tp);
 		Lit ts2 = translator()->translate(notaorb, false, tp);
 		formula.literals = litlist { ts1, ts2 };

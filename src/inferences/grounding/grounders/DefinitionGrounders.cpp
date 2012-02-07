@@ -44,9 +44,13 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
-RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
+		: origrule(rule->clone()), _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
 	// TODO Assert(...!=NULL);
+}
+
+void RuleGrounder::put(std::stringstream& stream){
+	stream <<toString(origrule);
 }
 
 RuleGrounder::~RuleGrounder() {
@@ -132,16 +136,16 @@ Lit HeadGrounder::run() const {
 	return atom;
 }
 
-LazyRuleGrounder::LazyRuleGrounder(const vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
+LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
+		: RuleGrounder(rule, hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
 	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
 
 	std::map<Variable*, int> vartofirstocc;
 	int index = 0;
-	for(auto i=vars.cbegin(); i<vars.cend(); ++i, ++index){
+	for(auto i=headterms.cbegin(); i<headterms.cend(); ++i, ++index){
 		auto varterm = dynamic_cast<VarTerm*>(*i);
 		if(varterm==NULL){
-			//Assert(dynamic_cast<DomainTerm*>(*i)!=NULL);
+			Assert((*i)->freeVars().size()==0);
 			continue;
 		}
 
@@ -154,9 +158,7 @@ LazyRuleGrounder::LazyRuleGrounder(const vector<Term*>& vars, HeadGrounder* hgr,
 	}
 }
 
-dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
-	dominstlist domlist;
-
+LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple& headargs, dominstlist& domlist) {
 	// set the variable instantiations
 	for (size_t i = 0; i < headargs.size(); ++i) {
 		auto grounder = headgrounder()->subtermgrounders()[i];
@@ -165,14 +167,16 @@ dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
 			auto result = grounder->run(); // TODO running the grounder each time again?
 			Assert(not result.isVariable);
 			if(headargs[i]!=result._domelement){
-				return {};
+				//clog <<"Head of rule " <<toString(this) <<" not unifiable with " <<toString(headargs) <<"\n";
+				return Substitutable::NO_UNIFIER;
 			}
 		}else{
 			auto var = (dynamic_cast<VarTermGrounder*>(grounder))->getElement();
 			domlist.push_back(dominst { var, headargs[i] });
 		}
 	}
-	return domlist;
+	//clog <<"Head of rule " <<toString(this) <<" unifies with " <<toString(headargs) <<"\n";
+	return Substitutable::UNIFIABLE;
 }
 
 void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders) {
@@ -206,8 +210,9 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 		}
 	}
 
-	dominstlist headvarinstlist = createInst(headargs);
-	if(headvarinstlist.size()==0 && headargs.size()!=0){ // TODO in fact, want to have a boolean stating that the headargs cannot substitute the head of the rule
+	dominstlist headvarinstlist;
+	auto subst = createInst(headargs, headvarinstlist);
+	if(subst==Substitutable::NO_UNIFIER){
 		return;
 	}
 

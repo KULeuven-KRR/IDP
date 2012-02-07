@@ -84,7 +84,7 @@ protected:
 public:
 	void initialize(SATSolver* solver, int verbosity, GroundTermTranslator* termtranslator);
 	void polNotifyDefined(const Lit& lit, const ElementTuple& args, std::vector<LazyRuleGrounder*> grounders);
-	void polNotifyLazyResidual(ResidualAndFreeInst* inst, LazyGroundingManager const* const grounder);
+	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);

@@ -63,7 +63,7 @@ add_library(idp
 	groundtheories/GroundPolicy.cpp
 	groundtheories/SolverPolicy.cpp
 	groundtheories/AbstractGroundTheory.cpp
-	inferences/grounding/grounders/LazyQuantGrounder.cpp
+	inferences/grounding/grounders/LazyFormulaGrounders.cpp
 	inferences/grounding/grounders/DefinitionGrounders.cpp
 	inferences/grounding/grounders/FormulaGrounders.cpp
 	inferences/grounding/grounders/SetGrounders.cpp
