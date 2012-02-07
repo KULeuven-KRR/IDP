@@ -48,7 +48,6 @@ protected:
 	Printer()
 			: opendef_(-1), theoryopen_(false) {
 	}
-	virtual ~Printer(){}
 
 	bool isDefClosed() const {
 		return opendef_ == -1;
@@ -73,7 +72,6 @@ protected:
 		theoryopen_ = true;
 	}
 
-protected:
 	void visit(const Formula*);
 	void visit(const AbstractTheory*);
 
@@ -89,6 +87,8 @@ protected:
 	virtual void visit(const CPReification* cpr) = 0;
 
 public:
+	virtual ~Printer(){}
+
 	// Factory method
 	template<class Stream> static Printer* create(Stream& stream);
 	template<class Stream> static Printer* create(Stream& stream, bool arithmetic);

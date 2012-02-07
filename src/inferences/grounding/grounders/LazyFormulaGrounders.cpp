@@ -72,7 +72,7 @@ LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, Abstract
 }
 
 void LazyGrounder::internalRun(ConjOrDisj& formula) const {
-	formula.setType(conn_);
+	formula.setType(conjunctive());
 	pushtab();
 
 	if (grounderIsEmpty()) {
@@ -168,7 +168,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	while (groundedlit == redundantLiteral() && not isAtEnd(instance)) {
 		ConjOrDisj formula;
 		formula = ConjOrDisj();
-		formula.setType(conn_);
+		formula.setType(conjunctive());
 
 		runSubGrounder(getLazySubGrounder(instance), context()._conjunctivePathFromRoot, formula);
 		groundedlit = getReification(formula);
@@ -203,7 +203,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		getGrounding()->notifyLazyResidual(instance, tseitintype, &lazyManager); // set on not-decide and add to watchlist
 	}
 
-	getGrounding()->add(oldtseitin, tseitintype, clause, conn_ == Conn::CONJ, context().getCurrentDefID());
+	getGrounding()->add(oldtseitin, tseitintype, clause, conjunctive() == Conn::CONJ, context().getCurrentDefID());
 	poptab();
 	return isAtEnd(instance);
 }
