@@ -139,7 +139,7 @@ bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int
 }
 
 void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
-	clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
+	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;
 #ifndef NDEBUG
