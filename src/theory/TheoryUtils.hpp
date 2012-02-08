@@ -84,7 +84,7 @@ bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
-const PredForm* findUnknownBoundLiteral(const Formula* f, const GroundTranslator* translator);
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);

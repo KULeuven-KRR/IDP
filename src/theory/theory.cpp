@@ -544,10 +544,11 @@ void Theory::recursiveDelete() {
 
 vector<TheoryComponent*> Theory::components() const {
 	vector<TheoryComponent*> stc;
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
+	// NOTE: re-ordered for lazy grounding
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		stc.push_back(*it);
 	}
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		stc.push_back(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {

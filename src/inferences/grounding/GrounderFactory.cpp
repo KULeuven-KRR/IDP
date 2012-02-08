@@ -322,7 +322,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	auto components = newtheory->components();
+	const auto& components = newtheory->components(); // NOTE: primitive reorder present: definitions first
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
@@ -704,9 +704,10 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	bool delayedunknbound = false;
 	if (getOption(BoolType::GROUNDLAZILY)){
-		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _grounding->translator());
+		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator());
 		if(delayablepf!=NULL){
-			grounder = new LazyUnknUnivGrounder(delayablepf->symbol(), gc._vars, _grounding, subgrounder, getContext());
+			//clog <<"Adding lazy unknown bound\n";
+			grounder = new LazyUnknUnivGrounder(delayablepf, varmapping(), _grounding, subgrounder, getContext());
 			delayedunknbound = true;
 		}
 	}

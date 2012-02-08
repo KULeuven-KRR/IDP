@@ -23,19 +23,21 @@
 class FindUnknownBoundLiteral: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
-	bool start;
-	bool allquantvars;
-	const GroundTranslator* translator;
-	const PredForm* resultingliteral;
-	std::set<Variable*> quantvars;
+	bool _start;
+	bool _allquantvars;
+	const GroundTranslator* _translator;
+	const AbstractStructure* _structure;
+	const PredForm* _resultingliteral;
+	std::set<Variable*> _quantvars, _containingquantvars;
 public:
 	template<typename T>
-	const PredForm* execute(T t, const GroundTranslator* trans) {
-		start = true;
-		resultingliteral = NULL;
-		translator = trans;
+	const PredForm* execute(T t, const AbstractStructure* structure, const GroundTranslator* trans) {
+		_start = true;
+		_resultingliteral = NULL;
+		_translator = trans;
+		_structure = structure;
 		t->accept(this);
-		return resultingliteral;
+		return _resultingliteral;
 	}
 
 protected:
@@ -43,20 +45,25 @@ protected:
 		for (size_t n = 0; n < f->subterms().size(); ++n) {
 			f->subterms()[n]->accept(this);
 		}
-		for (size_t n = 0; n < f->subformulas().size() && resultingliteral==NULL; ++n) {
+		for (size_t n = 0; n < f->subformulas().size() && _resultingliteral==NULL; ++n) {
 			f->subformulas()[n]->accept(this);
 		}
 	}
 	virtual void visit(const PredForm* pf){
-		if(translator->isAlreadyDelayedOnDifferentID(pf->symbol(), -1)){
+		if(_translator->isAlreadyDelayedOnDifferentID(pf->symbol(), -1)){
 			return;
 		}
-		allquantvars = true;
+		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
+			// TODO checks here whether NO tupels are known about the predicate. This can obvious be done better, by checking if it is only a small number AND adding those to the grounding explitly!!!
+			return;
+		}
+		_allquantvars = true;
+		_containingquantvars.clear();
 		for(auto i=pf->args().cbegin(); i<pf->args().cend(); ++i) {
 			 (*i)->accept(this);
 		}
-		if(allquantvars){
-			resultingliteral = pf;
+		if(_allquantvars && _containingquantvars.size()==_quantvars.size()){
+			_resultingliteral = pf;
 		}
 		return;
 	}
@@ -67,119 +74,121 @@ protected:
 		return;
 	}
 	virtual void visit(const QuantForm* formula){
-		if(start){
-			quantvars = formula->quantVars();
+		if(_start){
+			_quantvars = formula->quantVars();
 		}else{
 			return;
 		}
-		start = false;
+		_start = false;
 		traverse(formula);
 		return;
 	}
 
 	virtual void visit(const VarTerm* term){
-		start = false;
-		if(quantvars.find(term->var())==quantvars.cend()){
-			allquantvars = false;
+		_start = false;
+		if(_quantvars.find(term->var())==_quantvars.cend()){
+			_allquantvars = false;
+		}else{
+			_containingquantvars.insert(term->var());
 		}
 		return;
 	}
 	virtual void visit(const FuncTerm*){
-		allquantvars = false;
-		start = false;
+		_allquantvars = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const DomainTerm*){
-		allquantvars = false;
-		start = false;
+		_allquantvars = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const AggTerm*){
-		allquantvars = false;
-		start = false;
+		_allquantvars = false;
+		_start = false;
 		return;
 	}
 
 	// NOTE: DEFAULTS: just return
 	virtual void visit(const EqChainForm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const EquivForm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const Theory*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const AbstractGroundTheory*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const GroundTheory<GroundPolicy>*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const AggForm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const GroundDefinition*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const PCGroundRule*){
-		start = false;
-		start = false;
+		_start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const AggGroundRule*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const GroundSet*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const GroundAggregate*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const CPReification*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const Rule*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const Definition*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const FixpDef*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const CPVarTerm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const CPWSumTerm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const CPSumTerm*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const EnumSetExpr*){
-		start = false;
+		_start = false;
 		return;
 	}
 	virtual void visit(const QuantSetExpr*){
-		start = false;
+		_start = false;
 		return;
 	}
 };

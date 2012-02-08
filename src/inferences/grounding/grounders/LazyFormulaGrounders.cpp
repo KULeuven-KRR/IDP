@@ -208,10 +208,13 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	return isAtEnd(instance);
 }
 
-LazyUnknUnivGrounder::LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars,
+LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, const var2dommap& varmapping,
 		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
-		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(symbol, -1, groundtheory), _quantvars(quantvars), _subgrounder(sub) {
-
+		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), -1, groundtheory), _subgrounder(sub) {
+	for(auto i=pf->args().cbegin(); i<pf->args().cend(); ++i) {
+		auto var = dynamic_cast<VarTerm*>(*i)->var();
+		_varcontainers.push_back(varmapping.at(var));
+	}
 }
 
 void LazyUnknUnivGrounder::run(ConjOrDisj& formula) const {
@@ -222,7 +225,7 @@ void LazyUnknUnivGrounder::run(ConjOrDisj& formula) const {
 dominstlist LazyUnknUnivGrounder::createInst(const ElementTuple& args) {
 	dominstlist domlist;
 	for (size_t i = 0; i < args.size(); ++i) {
-		domlist.push_back(dominst { _quantvars[i], args[i] });
+		domlist.push_back(dominst { _varcontainers[i], args[i] });
 	}
 	return domlist;
 }

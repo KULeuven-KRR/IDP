@@ -116,8 +116,8 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-const PredForm* findUnknownBoundLiteral(const Formula* f, const GroundTranslator* translator){
-	return transform<FindUnknownBoundLiteral, const PredForm*>(f, translator);
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator){
+	return transform<FindUnknownBoundLiteral, const PredForm*>(f, structure, translator);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {

@@ -114,13 +114,12 @@ protected:
 class LazyUnknUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
 private:
 	bool _isGrounding;
+	std::vector<const DomElemContainer*> _varcontainers;
 	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
-
-	std::vector<const DomElemContainer*> _quantvars;
 
 	FormulaGrounder* _subgrounder;
 public:
-	LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+	LazyUnknUnivGrounder(const PredForm* pf, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
 	virtual void run(ConjOrDisj& formula) const;
 
