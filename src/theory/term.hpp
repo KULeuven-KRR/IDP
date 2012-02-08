@@ -19,7 +19,7 @@ class Sort;
 class Variable;
 class Function;
 class DomainElement;
-class TheoryVisitor;
+class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 
 /***********

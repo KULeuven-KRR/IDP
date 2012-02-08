@@ -40,6 +40,7 @@
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
+#include "information/FindUnknBoundLiteral.hpp"
 
 using namespace std;
 
@@ -113,6 +114,10 @@ bool containsAggTerms(Formula* f) {
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
+}
+
+const PredForm* findUnknownBoundLiteral(const Formula* f, const GroundTranslator* translator){
+	return transform<FindUnknownBoundLiteral, const PredForm*>(f, translator);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {

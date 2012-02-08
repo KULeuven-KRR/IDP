@@ -72,8 +72,10 @@ Formula& operator|(Formula& left, Formula& right);
 Formula& operator not(Formula&);
 
 Formula& all(Variable*, Formula&);
+Formula& all(const std::set<Variable*>&, Formula&);
 Formula& atom(Predicate*, const std::vector<Variable*>&);
 
+void add(Vocabulary*, const std::vector<Sort*>);
 void add(Vocabulary*, const std::vector<PFSymbol*>);
 
 class PredWrapper {

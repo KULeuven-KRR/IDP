@@ -81,16 +81,24 @@ Lit GroundTranslator::translate(unsigned int symbolID, const ElementTuple& args)
 	return lit;
 }
 
-unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
-	// TODO expensive!
+// TODO expensive!
+int GroundTranslator::getSymbol(PFSymbol* pfs) const {
 	for (unsigned int n = 0; n < symbols.size(); ++n) {
 		if (symbols[n].symbol == pfs) {
 			return n;
 		}
 	}
+	return -1;
+}
 
-	symbols.push_back(SymbolInfo(pfs));
-	return symbols.size() - 1;
+unsigned int GroundTranslator::addSymbol(PFSymbol* pfs) {
+	auto n = getSymbol(pfs);
+	if(n==-1){
+		symbols.push_back(SymbolInfo(pfs));
+		return symbols.size() - 1;
+	}else{
+		return n;
+	}
 }
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
@@ -124,14 +132,17 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id){
-	auto symbolID = addSymbol(pfs);
+bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const {
+	auto symbolID = getSymbol(pfs);
+	if(symbolID==-1){
+		return false;
+	}
 	auto& grounders = symbols[symbolID].assocGrounders;
 	if(grounders.empty()){
 		return false;
 	}
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if((*i)->getID()!=id){
+		if((*i)->getID()!=id || (id==-1 && (*i)->getID()==-1)){
 			return true;
 		}
 	}
@@ -139,6 +150,7 @@ bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int
 }
 
 void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
+	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;

@@ -33,7 +33,7 @@ class FOBDDManager;
 /**
  * Class to transform first-order formulas to BDDs
  */
-class FOBDDFactory: public TheoryVisitor {
+class FOBDDFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	FOBDDManager* _manager;

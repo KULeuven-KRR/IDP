@@ -650,6 +650,15 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	}
 }
 
+void checkGeneratorInfinite(InstChecker* gen){
+	if (gen->isInfiniteGenerator()) {
+		/*if (original != NULL) { // TODO
+			Warning::possiblyInfiniteGrounding(original->pi().userDefined() ? toString(original->pi().originalobject()) : "", toString(original));
+		}*/
+		throw IdpException("Infinite grounding");
+	}
+}
+
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
 	bool conj = quant==QUANT::UNIV;
 	bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
@@ -660,6 +669,11 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, /*gc._checker, */context); // TODO checker to be used during lazy grounding?
 	}else{
+		if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
+			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
+			checkGeneratorInfinite(gc._generator);
+			checkGeneratorInfinite(gc._checker);
+		}
 		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	}
 }
@@ -686,10 +700,24 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	auto subgrounder = dynamic_cast<FormulaGrounder*>(_topgrounder);
 	Assert(subgrounder!=NULL);
+	FormulaGrounder* grounder = NULL;
 
-	auto quantgrounder = createQ(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, newqf->freeVars(), gc, getContext());
-	quantgrounder->setOrig(qf, varmapping());
-	_topgrounder = quantgrounder;
+	bool delayedunknbound = false;
+	if (getOption(BoolType::GROUNDLAZILY)){
+		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _grounding->translator());
+		if(delayablepf!=NULL){
+			grounder = new LazyUnknUnivGrounder(delayablepf->symbol(), gc._vars, _grounding, subgrounder, getContext());
+			delayedunknbound = true;
+		}
+	}
+	if(not delayedunknbound){
+		grounder = createQ(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, newqf->freeVars(), gc, getContext());
+	}
+	Assert(grounder!=NULL);
+
+	grounder->setOrig(qf, varmapping());
+
+	_topgrounder = grounder;
 
 	if(tempqf!=NULL){
 		deleteDeep(tempqf);
@@ -1006,7 +1034,7 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-	return GenAndChecker(gen, check);
+	return GenAndChecker(vars, gen, check);
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
@@ -1044,6 +1072,10 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder
+	if(not getOption(BoolType::GROUNDWITHBOUNDS)){
+		checkGeneratorInfinite(gc._generator);
+		checkGeneratorInfinite(gc._checker);
+	}
 	_setgrounder = new QuantSetGrounder(_grounding->translator(), subgr, gc._generator, gc._checker, wgr);
 }
 
@@ -1156,7 +1188,9 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		headgen = createVarMapAndGenerator(newrule->head(), headvars);
 		bodygen = createVarMapAndGenerator(newrule->body(), bodyvars);
+		checkGeneratorInfinite(headgen);
 	}
+	checkGeneratorInfinite(bodygen);
 
 	// Create head grounder
 	SaveContext();

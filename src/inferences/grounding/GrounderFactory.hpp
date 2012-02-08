@@ -21,18 +21,11 @@
 
 class PFSymbol;
 class Variable;
-class FuncTable;
 class AbstractStructure;
 class AbstractGroundTheory;
 class InstGenerator;
 class InstChecker;
-class InstanceChecker;
-class SortTable;
-class DomainElement;
-class Options;
-
-class LazyQuantGrounder;
-class LazyRuleGrounder;
+class DomElemContainer;
 
 class InteractivePrintMonitor;
 class TermGrounder;
@@ -45,15 +38,16 @@ class Grounder;
 class FOBDD;
 
 struct GenAndChecker {
-	InstGenerator* _generator;
-	InstChecker* _checker;
+	const std::vector<const DomElemContainer*> _vars;
+	InstGenerator* const _generator;
+	InstChecker* const _checker;
 
-	GenAndChecker(InstGenerator* generator, InstChecker* checker)
-			: _generator(generator), _checker(checker) {
+	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker)
+			: _vars(vars), _generator(generator), _checker(checker) {
 	}
 };
 
-class GrounderFactory: public TheoryVisitor {
+class GrounderFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
@@ -99,6 +93,7 @@ private:
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
+	// NOTE: creates generators, which do a check on infinite grounding
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 

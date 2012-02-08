@@ -31,7 +31,7 @@ class DomainTerm;
 class AggTerm;
 class EnumSetExpr;
 class QuantSetExpr;
-class TheoryVisitor;
+class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 class Variable;
 

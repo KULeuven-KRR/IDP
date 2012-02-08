@@ -111,7 +111,7 @@ protected:
 	virtual void doGround(const Lit& boundlit, const ElementTuple& args) = 0;
 };
 
-class LazyUnknUnivGrounder: public Grounder, public LazyUnknBoundGrounder {
+class LazyUnknUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
 private:
 	bool _isGrounding;
 	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
@@ -122,7 +122,7 @@ private:
 public:
 	LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
-	virtual void run(ConjOrDisj&) const{} // NO-op
+	virtual void run(ConjOrDisj& formula) const;
 
 protected:
 	FormulaGrounder* getSubGrounder() const{

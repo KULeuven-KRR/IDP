@@ -12,6 +12,7 @@
 #define VISITORFRIENDS_HPP_
 
 class TheoryVisitor;
+class DefaultTraversingTheoryVisitor;
 class ApproxCheckTwoValued;
 class CheckContainment;
 class CheckContainsAggTerms;
@@ -38,6 +39,7 @@ template<typename Stream> class IDPPrinter;
 class SplitIntoMonotoneAgg;
 
 #define VISITORS() \
+		friend class DefaultTraversingTheoryVisitor; \
 		friend class TheoryVisitor; \
 		friend class ApproxCheckTwoValued; \
 		friend class CheckContainment; \
@@ -80,6 +82,7 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\
 		friend class UnnestHeadTermsContainingVars;\
+		friend class FindUnknownBoundLiteral;\
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;

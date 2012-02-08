@@ -15,7 +15,7 @@
 
 class Vocabulary;
 
-class CheckSorts: public TheoryVisitor {
+class CheckSorts: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	Vocabulary* _vocab;
