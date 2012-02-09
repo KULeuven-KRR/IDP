@@ -30,8 +30,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	theory.add(definition);
 
 	auto symstructure = generateNaiveApproxBounds(&theory, structure);
-	GrounderFactory grounderfactory(structure, symstructure);
-	auto grounder = grounderfactory.create(&theory, solver);
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());

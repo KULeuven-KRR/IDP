@@ -15,7 +15,6 @@
 #include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "Utils.hpp"
-#include "external/ExternalInterface.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 
@@ -37,6 +36,11 @@ class GenerateBDDAccordingToBounds;
 class Grounder;
 class FOBDD;
 
+namespace MinisatID{
+class WrappedPCSolver;
+class FlatZincRewriter;
+}
+
 struct GenAndChecker {
 	const std::vector<const DomElemContainer*> _vars;
 	InstGenerator* const _generator;
@@ -45,6 +49,12 @@ struct GenAndChecker {
 	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker)
 			: _vars(vars), _generator(generator), _checker(checker) {
 	}
+};
+
+struct GroundInfo{
+	const AbstractTheory* theory;
+	AbstractStructure* partialstructure;
+	GenerateBDDAccordingToBounds* symbolicstructure;
 };
 
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
@@ -100,14 +110,19 @@ private:
 	const FOBDD* improveGenerator(const FOBDD*, const std::vector<Variable*>&, double);
 	const FOBDD* improveChecker(const FOBDD*, double);
 
+	template<typename Grounding>
+	GrounderFactory(const GroundInfo& data, Grounding* grounding);
+
+	Grounder* getTopGrounder() const { return _topgrounder; }
+
 public:
-	GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symbstructure);
 	virtual ~GrounderFactory();
 
-	// Factory method
-	Grounder* create(const AbstractTheory*);
-	Grounder* create(const AbstractTheory*, MinisatID::WrappedPCSolver*);
-	Grounder* create(const AbstractTheory*, InteractivePrintMonitor*);
+	// Factory methods which return a toplevelgrounder able to generate the full grounding
+	static Grounder* create(const GroundInfo& data);
+	static Grounder* create(const GroundInfo& data, MinisatID::WrappedPCSolver* satsolver);
+	static Grounder* create(const GroundInfo& data, MinisatID::FlatZincRewriter* flatzincprinter);
+	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);

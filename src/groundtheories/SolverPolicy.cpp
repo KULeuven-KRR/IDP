@@ -46,6 +46,15 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermT
 	_termtranslator = termtranslator;
 }
 
+template<typename Solver>
+void SolverPolicy<Solver>::polEndTheory(){
+}
+
+template<>
+void SolverPolicy<MinisatID::FlatZincRewriter>::polEndTheory(){
+	getSolver().finishParsing();
+}
+
 double test;
 
 template<typename Solver>

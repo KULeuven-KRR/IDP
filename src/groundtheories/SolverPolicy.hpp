@@ -44,14 +44,18 @@ private:
 		return *_solver;
 	}
 
+public:
+	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
+	void polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
+	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
+
 protected:
 	void polRecursiveDelete() {
 	}
 
 	void polStartTheory(GroundTranslator*) {
 	}
-	void polEndTheory() {
-	}
+	void polEndTheory();
 
 	MinisatID::Weight createWeight(double weight);
 
@@ -77,19 +81,10 @@ protected:
 		return "";
 	}
 
-public:
-	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
-
-	void polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
-	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
-
 private:
 	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
-
 	void polAddCPVariables(const std::vector<VarId>& varids, GroundTermTranslator* termtranslator);
-
 	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
-
 	void polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool);
 };
 

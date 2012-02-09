@@ -39,8 +39,7 @@ public:
 
 		//Create and execute grounder
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
-		GrounderFactory grounderfactory(structure, symstructure);
-		auto grounder = grounderfactory.create(theory, solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, solver);
 		monitor->setTranslator(grounder->getTranslator());
 		monitor->setSolver(solver);
 		grounder->toplevelRun();

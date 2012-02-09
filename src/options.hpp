@@ -17,7 +17,7 @@
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language {/* TXT,*/
-	IDP, ECNF, /*LATEX, ASP, CNF, */TPTP
+	IDP, ECNF, /*LATEX, ASP, CNF, */TPTP, FLATZINC
 };
 enum Format {
 	THREEVALUED, ALL, TWOVALUED

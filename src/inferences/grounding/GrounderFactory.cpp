@@ -59,8 +59,9 @@ int getIDForUndefined() {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
-		: _structure(structure), _symstructure(symstructure) {
+template<typename Grounding>
+GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding)
+		: _structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding) {
 
 	Assert(_symstructure!=NULL);
 
@@ -68,6 +69,11 @@ GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccord
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		clog << "Using the following symbolic structure to ground: " <<nt();
 		_symstructure->put(clog);
+	}
+
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		findCPSymbols(data.theory);
 	}
 }
 
@@ -230,40 +236,23 @@ void GrounderFactory::descend(T* child) {
  * PARAMETERS
  *		theory	- the theory for which a grounder will be created
  * PRECONDITIONS
- *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory.
+ *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory. TODO is this checked or guaranteed?
  * RETURNS
  *		A grounder such that calling run() on it produces a grounding.
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
-Grounder* GrounderFactory::create(const AbstractTheory* theory) {
-	// Allocate an ecnf theory to be returned by the grounder
-	auto groundtheory = new GroundTheory<GroundPolicy>(theory->vocabulary(), _structure->clone());
-	_grounding = groundtheory;
-
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
-	}
-
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+Grounder* GrounderFactory::create(const GroundInfo& data) {
+	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
+	GrounderFactory g(data, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
 }
-
-// TODO comment
-Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor) {
-	auto groundtheory = new GroundTheory<PrintGroundPolicy>(_structure->clone());
+Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
+	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	_grounding = groundtheory;
-
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
-	}
-
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+	GrounderFactory g(data, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
 }
 
 /**
@@ -283,20 +272,19 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrint
  *		One or more models of the ground theory can be obtained by calling solve() on
  *		the solver.
  */
-Grounder* GrounderFactory::create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver) {
-	// Allocate a solver theory
-	auto groundtheory = new SolverTheory(theory->vocabulary(), _structure->clone());
+Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSolver* solver) {
+	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	_grounding = groundtheory;
-
-	// Find function that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
-	}
-
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+	GrounderFactory g(data, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
+}
+Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRewriter* printer) {
+	auto groundtheory = new GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	GrounderFactory g(data, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
 }
 
 /**
