@@ -19,7 +19,7 @@ using namespace std;
 
 namespace Tests {
 
-vector<string> generateListOfCPFiles() {
+vector<string> generateListOfSimpleCPFiles() {
 	vector<string> testdirs {"cp/"};
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
@@ -28,13 +28,13 @@ class CPTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(CPTest, SimpleCP) {
-	string testfile(getTestDirectory() + "cptest.idp");
+	string testfile(getTestDirectory() + "mxsattestwithcp.idp");
 	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { GetParam(), testfile }););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(SimpleCP, CPTest, ::testing::ValuesIn(generateListOfCPFiles()));
+INSTANTIATE_TEST_CASE_P(SimpleCP, CPTest, ::testing::ValuesIn(generateListOfSimpleCPFiles()));
 
 } /* namespace Tests */

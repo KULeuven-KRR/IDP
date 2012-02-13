@@ -2,11 +2,10 @@
 
 procedure main() {
 	stdoptions.cpsupport = true
-	stdoptions.nbmodels = 0
+	stdoptions.nbmodels = 1
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
-	stdoptions.groundverbosity = 0
-	stdoptions.satverbosity = 0
+	stdoptions.symmetry = 0
 	
 	solution = mx::one(T,S)
 	
