@@ -831,8 +831,9 @@ int predicateIndex(lua_State* L) {
 			}
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
-					if ((*it)->resolve(currsorts))
+					if ((*it)->resolve(currsorts)) {
 						newpred->insert(*it);
+					}
 				}
 			}
 			size_t c = 0;

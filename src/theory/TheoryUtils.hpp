@@ -36,13 +36,13 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog << "\n" << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object) << "\n";
 		pushtab();
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog << "\n" << tabs() << "Resulted in: " << toString(result) << "\n" << tabs();
+		std::clog << tabs() << "Resulted in: " << toString(result) << "\n";
 	}
 	return result;
 }
@@ -51,13 +51,13 @@ template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog << "\n" << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object) << "\n";
 		pushtab();
 	}
 	t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog << "\n" << tabs() << "Resulted in: " << toString(object) << "\n" << tabs();
+		std::clog << tabs() << "Resulted in: " << toString(object) << "\n";
 	}
 }
 

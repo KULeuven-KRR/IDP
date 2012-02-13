@@ -218,6 +218,15 @@ CPReification::~CPReification() {
 	//delete (_body);
 }
 
+std::ostream& GroundTerm::put(std::ostream& s) const {
+	if (isVariable) {
+		s << "var_" << _varid;
+	} else {
+		s << toString(_domelement);
+	}
+	return s;
+}
+
 bool operator==(const GroundTerm& a, const GroundTerm& b) {
 	if (a.isVariable == b.isVariable) {
 		return a.isVariable ? (a._varid == b._varid) : (a._domelement == b._domelement);

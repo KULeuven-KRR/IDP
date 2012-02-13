@@ -14,6 +14,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include <list>
 
+#include "visitors/TheoryVisitor.hpp"
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
@@ -28,7 +29,7 @@ using namespace std;
  * 	returns true if a sort has a domain fit to detect meaningful invariant permutations.
  */
 bool isSortForSymmetry(Sort* sort, const AbstractStructure* s) {
-	return s->inter(sort)->approxFinite() && !s->inter(sort)->approxEmpty();
+	return s->inter(sort)->approxFinite() && not s->inter(sort)->approxEmpty();
 }
 
 /**
@@ -42,7 +43,7 @@ bool hasTrivialInterpretation(const AbstractStructure* s, PFSymbol* relation) {
  *	returns true if a PFSymbol has an interpretation
  */
 bool hasInterpretation(const AbstractStructure* s, PFSymbol* relation) {
-	return !(s->inter(relation)->ct()->approxEmpty() && s->inter(relation)->cf()->approxEmpty());
+	return not (s->inter(relation)->ct()->approxEmpty() && s->inter(relation)->cf()->approxEmpty());
 }
 
 /**
@@ -90,7 +91,7 @@ bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>
  *	returns true iff a binary permutation of domain elements of a set of sorts is an invariant permutation for a certain PFSymbol
  */
 bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation, const set<Sort*>& sorts) {
-	if (!hasInterpretation(s, relation)) {
+	if (not hasInterpretation(s, relation)) {
 		return true;
 	}
 	set<unsigned int> argumentPlaces = argumentNrs(relation, sorts);
@@ -100,7 +101,7 @@ bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, co
 	const PredInter* inter = s->inter(relation);
 	const PredTable* table = inter->ct();
 	bool result = isBinarySymmetryInPredTable(table, argumentPlaces, first, second);
-	if (!inter->approxTwoValued() && result == true) {
+	if (not inter->approxTwoValued() && result == true) {
 		table = inter->cf();
 		result = isBinarySymmetryInPredTable(table, argumentPlaces, first, second);
 	}

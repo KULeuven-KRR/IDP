@@ -160,8 +160,8 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	//}
 }
 
-SetId GroundTranslator::translateSet(const vector<int>& lits, const vector<double>& weights, const vector<double>& trueweights) {
-	int setnr;
+SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights) {
+	SetId setnr;
 	if (_freesetnumbers.empty()) {
 		TsSet newset;
 		setnr = _sets.size();

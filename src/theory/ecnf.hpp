@@ -15,9 +15,9 @@
 #include <ostream>
 
 #include "theory.hpp"
-#include "visitors/TheoryVisitor.hpp" // TODO calls should go into cpp
-#include "visitors/TheoryMutatingVisitor.hpp" // TODO calls should go into cpp
 #include "visitors/VisitorFriends.hpp"
+
+class TheoryVisitor;
 
 class GroundTranslator;
 class GroundTermTranslator;
@@ -32,14 +32,8 @@ class DomainElement;
 class InstGenerator;
 
 typedef unsigned int VarId;
-typedef double Weight;
 typedef std::vector<VarId> varidlist;
-typedef std::vector<Lit> litlist;
-typedef std::vector<Weight> weightlist;
 typedef std::vector<int> intweightlist;
-
-typedef int SetId;
-typedef int DefId;
 
 /******************
  * Ground clauses
@@ -364,7 +358,6 @@ public:
 			: _head(head), _body(body) {
 	}
 	~CPReification();
-	std::string toString(unsigned int spaces = 0) const;
 };
 
 struct GroundTerm {
@@ -383,6 +376,7 @@ struct GroundTerm {
 	}
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);
+	std::ostream& put(std::ostream&) const;
 };
 
 /**

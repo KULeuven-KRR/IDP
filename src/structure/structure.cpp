@@ -2834,10 +2834,11 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
-	if (a2 == 0)
-		return 0;
-	else
+	if (a2 == 0) {
+		return NULL;
+	} else {
 		return createDomElem(a1 % a2);
+	}
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
@@ -2930,17 +2931,19 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	if (getType() == NumType::CERTAINLYINT) {
 		int a1 = tuple[0]->value()._int;
 		int a2 = tuple[1]->value()._int;
-		if (a2 == 0)
-			return 0;
-		else
+		if (a2 == 0) {
+			return NULL;
+		} else {
 			return createDomElem(a1 / a2);
+		}
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		if (a2 == 0)
-			return 0;
-		else
+		if (a2 == 0) {
+			return NULL;
+		} else {
 			return createDomElem(a1 / a2, NumType::POSSIBLYINT);
+		}
 	}
 }
 

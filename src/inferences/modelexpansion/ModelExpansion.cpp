@@ -47,7 +47,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			delete(newstructure);
 			return std::vector<AbstractStructure*> { };
 		}
-	}else{
+	} else {
 		newstructure = structure->clone();
 	}
 
