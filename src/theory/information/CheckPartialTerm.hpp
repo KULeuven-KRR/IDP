@@ -16,7 +16,7 @@
 /**
  * Class to implement TermUtils::isPartial
  */
-class CheckPartialTerm: public TheoryVisitor {
+class CheckPartialTerm: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _result;

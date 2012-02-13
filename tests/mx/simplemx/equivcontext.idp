@@ -1,0 +1,18 @@
+vocabulary V {
+	type x
+	a(x)
+	b(x)
+	c(x)
+}
+
+theory T:V{
+	!x: a(x) <=> (b(x) & (!y: b(y) => c(y))).
+}
+
+structure S:V{
+	x = {1..2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 16
+}

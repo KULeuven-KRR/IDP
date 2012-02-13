@@ -62,7 +62,7 @@ public:
 	}
 
 	ComparisonGenerator* clone() const {
-		return new ComparisonGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {

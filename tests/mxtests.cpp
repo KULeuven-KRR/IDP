@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/", "numberknown/"};
+	vector<string> testdirs {"simplemx/", "numberknown/", "nontotal/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 vector<string> generateListOfMXsatFiles() {
@@ -55,9 +55,9 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
 
-TEST_P(MXnbTest, DoesMXWithCP) {
+/*TEST_P(MXnbTest, DoesMXWithCP) {
 	runTests("mxnbofmodelstestwithcp.idp", GetParam());
-}
+}*/
 
 // TODO when bdds are implemented
 /*TEST_P(MXnbTest, DoesMXWithBounds) {
@@ -68,13 +68,21 @@ TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
 }
 
+TEST(MXnbmodelsTest, DoesMX) {
+	string testfile(getTestDirectory() + "mx/nbmodels.idp");
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { testfile }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
 }
 
-TEST_P(MXsatTest, DoesMXWithCP) {
+/*TEST_P(MXsatTest, DoesMXWithCP) {
 	runTests("mxsattestwithcp.idp", GetParam());
-}
+}*/
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));

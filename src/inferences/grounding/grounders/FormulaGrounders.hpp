@@ -45,13 +45,12 @@ public:
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);
 	virtual ~FormulaGrounder();
 
-	virtual bool conjunctive() const = 0;
-
 	// TODO resolve this note?
 	// NOTE: required for correctness because it creates the associated varmap!
 	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd);
 
 	void printorig() const;
+	std::string printFormula() const;
 };
 
 class AtomGrounder: public FormulaGrounder {
@@ -77,9 +76,6 @@ public:
 			const GroundingContext&);
 	~AtomGrounder();
 	void run(ConjOrDisj& formula) const;
-	bool conjunctive() const {
-		return true;
-	}
 };
 
 class ComparisonGrounder: public FormulaGrounder {
@@ -96,9 +92,6 @@ public:
 	}
 	~ComparisonGrounder();
 	void run(ConjOrDisj& formula) const;
-	bool conjunctive() const {
-		return true;
-	}
 };
 
 class AggGrounder: public FormulaGrounder {
@@ -128,9 +121,6 @@ public:
 	}
 	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
-	bool conjunctive() const {
-		return true;
-	}
 };
 
 enum class FormStat {
@@ -138,37 +128,55 @@ enum class FormStat {
 };
 
 class ClauseGrounder: public FormulaGrounder {
-protected:
-	SIGN sign_;
-	Conn conn_;
+private:
+	SIGN _sign;
+	Conn _conn;
 
-	TsType getTseitinType() const;
 	bool negativeDefinedContext() const {
 		return getTseitinType() == TsType::RULE && context()._monotone == Context::NEGATIVE;
 	}
-	Lit createTseitin(const ConjOrDisj& formula) const;
+	Lit createTseitin(const ConjOrDisj& formula, TsType type) const;
+	Lit getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const;
+
 public:
 	ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct)
-			: FormulaGrounder(grounding, ct), sign_(sign), conn_(conj ? Conn::CONJ : Conn::DISJ) {
+			: FormulaGrounder(grounding, ct), _sign(sign), _conn(conj ? Conn::CONJ : Conn::DISJ) {
 	}
 	virtual ~ClauseGrounder() {
 	}
 	void run(ConjOrDisj& formula) const;
+
 protected:
+	TsType getTseitinType() const;
+
 	Lit getReification(const ConjOrDisj& formula) const;
+	Lit getEquivalentReification(const ConjOrDisj& formula) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
+
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaTrue(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaFalse(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
+	bool decidesFormula(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool isRedundantInFormula(Lit l) const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
+	Lit redundantLiteral() const;
+	// NOTE: used by internalrun, which does not take SIGN into account!
 	Lit getEmtyFormulaValue() const;
-	bool conjunctive() const {
-		return (conn_ == Conn::CONJ && isPositive()) || (conn_ == Conn::DISJ && isNegative());
+
+	Conn conjunctive() const {
+		return _conn;
+	}
+	bool conjunctiveWithSign() const {
+		return (_conn == Conn::CONJ && isPositive()) || (_conn == Conn::DISJ && isNegative());
 	}
 
 	bool isPositive() const {
-		return isPos(sign_);
+		return isPos(_sign);
 	}
 	bool isNegative() const {
-		return isNeg(sign_);
+		return isNeg(_sign);
 	}
 
 	virtual void internalRun(ConjOrDisj& formula) const = 0;
@@ -186,10 +194,9 @@ public:
 			: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
 	}
 	~BoolGrounder();
-	std::vector<Grounder*> getSubGrounders() {
+	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
-
 };
 
 class QuantGrounder: public ClauseGrounder {
@@ -204,7 +211,7 @@ public:
 			: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	}
 	~QuantGrounder();
-	FormulaGrounder* getSubGrounder() {
+	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
 	}
 };
@@ -215,10 +222,10 @@ private:
 	FormulaGrounder* _rightgrounder;
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
-	Lit getLitEquivWith(const ConjOrDisj& form) const;
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
 			: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
+		//Assert(ct._tseitin==TsType::EQ || ct._tseitin==TsType::RULE);
 	}
 	~EquivGrounder();
 };

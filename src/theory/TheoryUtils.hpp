@@ -29,6 +29,7 @@ class Formula;
 class Vocabulary;
 class Term;
 class AggForm;
+class GroundTranslator;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -82,6 +83,9 @@ bool containsFuncTerms(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
+/** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator);
+
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);
 
@@ -122,8 +126,7 @@ Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractS
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -158,6 +161,7 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NUL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 namespace TermUtils {
@@ -180,8 +184,7 @@ namespace SetUtils {
 bool approxTwoValued(SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 namespace DefinitionUtils {
@@ -195,8 +198,9 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+
+Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
 }
 
 #endif /* IDP_THEORYUTILS_HPP_ */

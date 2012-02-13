@@ -14,8 +14,7 @@
 #include "Grounder.hpp"
 #include "GroundUtils.hpp"
 
-#include "groundtheories/GroundTheory.hpp"
-#include "groundtheories/SolverPolicy.hpp"
+#include "groundtheories/SolverTheory.hpp"
 
 class TermGrounder;
 class InstChecker;
@@ -33,7 +32,6 @@ class GroundTermTranslator;
 class PFSymbol;
 
 class RuleGrounder;
-typedef GroundTheory<SolverPolicy> SolverTheory;
 typedef int DefId;
 
 /** Grounder for a definition **/
@@ -45,25 +43,24 @@ typedef int DefId;
 class DefinitionGrounder: public Grounder {
 private:
 	static DefId _currentdefnb;
-	DefId _defnb;
 	std::vector<RuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
 public:
 	DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr, const GroundingContext& context);
 	~DefinitionGrounder();
 	void run(ConjOrDisj& formula) const;
 	DefId id() const {
-		return _defnb;
+		return context().getCurrentDefID();
 	}
 };
 
 class HeadGrounder;
 
-/** Grounder for a single rule **/
 class RuleGrounder {
 private:
+	Rule* origrule;
+
 	HeadGrounder* _headgrounder;
 	FormulaGrounder* _bodygrounder;
-	InstGenerator* _headgenerator;
 	InstGenerator* _bodygenerator;
 	GroundingContext _context;
 
@@ -74,9 +71,6 @@ protected:
 	FormulaGrounder* bodygrounder() const {
 		return _bodygrounder;
 	}
-	InstGenerator* headgenerator() const {
-		return _headgenerator;
-	}
 	InstGenerator* bodygenerator() const {
 		return _bodygenerator;
 	}
@@ -85,8 +79,25 @@ protected:
 	}
 
 public:
-	RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
+	RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	virtual ~RuleGrounder();
+	virtual void run(DefId defid, GroundDefinition* grounddefinition) const = 0;
+
+	void put(std::stringstream& stream);
+};
+
+class FullRuleGrounder: public RuleGrounder {
+private:
+	InstGenerator* _headgenerator;
+
+protected:
+	InstGenerator* headgenerator() const {
+		return _headgenerator;
+	}
+
+public:
+	FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
+	virtual ~FullRuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
 };
 
@@ -115,27 +126,6 @@ public:
 	AbstractGroundTheory* grounding() const {
 		return _grounding;
 	}
-};
-
-class LazyRuleGrounder: public RuleGrounder {
-private:
-	SolverTheory* _grounding;
-	SolverTheory* grounding() const {
-		return _grounding;
-	}
-public:
-	LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
-	void run(DefId defid, GroundDefinition* grounddefinition) const;
-
-	void ground(const Lit& head, const ElementTuple& headargs);
-	void notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders);
-
-private:
-	bool isGrounding;
-	std::queue<std::pair<const Lit&, const ElementTuple&>> stilltoground;
-	dominstlist createInst(const ElementTuple& headargs);
-	void doGrounding();
-	void doGround(const Lit& head, const ElementTuple& headargs);
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

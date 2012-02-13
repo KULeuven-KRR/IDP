@@ -51,10 +51,6 @@ if(${BUILDTESTS})
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp
 	)
-	set_target_properties(
-		idptests lazytests slowtests PROPERTIES
-		VERSION ${idp_VERSION}
-	)
 	target_link_libraries(idptests idp gtest)
 	target_link_libraries(lazytests idp gtest)
 	target_link_libraries(slowtests idp gtest)

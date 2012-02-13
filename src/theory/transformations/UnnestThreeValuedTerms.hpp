@@ -59,14 +59,12 @@ public:
 		_cpsupport = getOption(BoolType::CPSUPPORT);
 		_cpsymbols = cpsymbols;
 		return t->accept(this);
-		//return UnnestTerms::execute(t, context, str, str->vocabulary());
 	}
 
 protected:
 	bool shouldMove(Term* t);
 
 	Formula* traverse(PredForm* f);
-	Rule* traverse(Rule* r); //TODO should this have non-standard behavior?
 
 private:
 	bool isCPSymbol(const PFSymbol* symbol) const;

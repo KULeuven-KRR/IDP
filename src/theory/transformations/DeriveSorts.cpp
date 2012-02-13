@@ -213,7 +213,7 @@ void DeriveSorts::derivefuncs() {
 			}
 			vs.push_back(NULL);
 
-			//cerr <<"Disambiguating for " <<f->name() <<" with " <<toString(vs) <<"\n";
+			//clog <<"Disambiguating for " <<f->name() <<" with " <<toString(vs) <<"\n";
 
 			auto rf = f->disambiguate(vs, _vocab);
 			if (rf != NULL) {

@@ -37,16 +37,8 @@ using namespace std;
 
 // NOTE original can be NULL
 template<typename Table>
-void checkInfinity(Table t, const Formula* original) {
-	if (not t->finite()) {
-		if (original != NULL) {
-			Warning::possiblyInfiniteGrounding(original->pi().userDefined() ? toString(original->pi().originalobject()) : "", toString(original));
-		}
-		if (not getOption(BoolType::GROUNDWITHBOUNDS)) { // TODO and not lazy?
-			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
-			throw IdpException("Infinite grounding");
-		}
-	}
+bool isCertainlyFinite(Table t) {
+	return t->finite();
 }
 
 InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs, const Formula* original) {
@@ -57,8 +49,11 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	InstGenerator* gen = NULL;
 	GeneratorNode* node = NULL;
 	auto jt = tabs.crbegin();
+	bool certainlyfinite = true;
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it, ++jt) {
-		checkInfinity((*jt)->internTable(), original);
+		if(not isCertainlyFinite((*jt)->internTable())){
+			certainlyfinite = false;
+		}
 		auto tig = new SortInstGenerator((*jt)->internTable(), *it);
 		if (vars.size() == 1) {
 			gen = tig;
@@ -72,6 +67,9 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	if (gen == NULL) {
 		gen = new TreeInstGenerator(node);
 	}
+	if(not certainlyfinite){
+		gen->notifyIsInfiniteGenerator();
+	}
 	return gen;
 }
 
@@ -81,12 +79,19 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
-	for (size_t i = 0; i < universe.tables().size(); ++i) {
+	bool certainlyfinite = true;
+	for (size_t i = 0; i < universe.tables().size() && certainlyfinite; ++i) {
 		if (pattern[i] == Pattern::OUTPUT) {
-			checkInfinity(universe.tables()[i], original);
+			if(not isCertainlyFinite(universe.tables()[i])){
+				certainlyfinite = false;
+			}
 		}
 	}
-	return factory.internalCreate(pt, pattern, vars, universe);
+	auto gen = factory.internalCreate(pt, pattern, vars, universe);
+	if(not certainlyfinite){
+		gen->notifyIsInfiniteGenerator();
+	}
+	return gen;
 }
 
 InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,

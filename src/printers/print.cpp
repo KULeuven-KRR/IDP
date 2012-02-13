@@ -19,11 +19,6 @@
 using namespace std;
 using namespace rel_ops;
 
-const int ID_FOR_UNDEFINED = -1;
-int getIDForUndefined() {
-	return ID_FOR_UNDEFINED;
-}
-
 template<class Stream>
 Printer* Printer::create(Stream& stream) {
 	switch (getGlobal()->getOptions()->language()) {

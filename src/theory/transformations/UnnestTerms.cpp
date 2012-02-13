@@ -141,18 +141,12 @@ Theory* UnnestTerms::visit(Theory* theory) {
 	return theory;
 }
 
-/**
- *	Visit a rule, assuming negative context for body.
- *	May move terms from rule head.
- */
-Rule* UnnestTerms::visit(Rule* rule) {
-// Visit head
-	auto saveallowed = getAllowedToUnnest();
-	setAllowedToUnnest(true);
+void UnnestTerms::visitRuleHead(Rule* rule){
+	Assert(_equalities.empty());
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
 		auto term = rule->head()->subterms()[termposition];
 		if (shouldMove(term)) {
-			VarTerm* new_head_term = move(term);
+			auto new_head_term = move(term);
 			rule->head()->subterm(termposition, new_head_term);
 		}
 	}
@@ -168,6 +162,17 @@ Rule* UnnestTerms::visit(Rule* rule) {
 		_equalities.clear();
 		_variables.clear();
 	}
+}
+
+/**
+ *	Visit a rule, assuming negative context for body.
+ *	May move terms from rule head.
+ */
+Rule* UnnestTerms::visit(Rule* rule) {
+// Visit head
+	auto saveallowed = getAllowedToUnnest();
+	setAllowedToUnnest(true);
+	visitRuleHead(rule);
 
 // Visit body
 	_context = Context::NEGATIVE;

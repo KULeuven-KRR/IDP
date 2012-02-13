@@ -90,6 +90,8 @@ protected:
 	virtual SetExpr* visit(EnumSetExpr*);
 	virtual SetExpr* visit(QuantSetExpr*);
 
+	void visitRuleHead(Rule* rule); // Split to allow reuse
+
 private:
 	template<typename T>
 	Formula* doRewrite(T origformula);

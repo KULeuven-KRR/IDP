@@ -27,7 +27,7 @@
 class OptimalPropagation {
 public:
 	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
-		// TODO: make a clean version of the implementation
+		// TODO: make a clean version of the implementation (should call ModelExpansion)
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
 
@@ -36,14 +36,13 @@ public:
 		modes.nbmodels = 0;
 		modes.verbosity = 0;
 		//modes.remap = false;
-		SATSolver solver(modes);
+		MinisatID::WrappedPCSolver solver(modes);
 
 		//Grounding
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
-		GrounderFactory grounderfactory(structure, symstructure);
-		Grounder* grounder = grounderfactory.create(theory, &solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, &solver);
 		grounder->toplevelRun();
-		AbstractGroundTheory* grounding = grounder->getGrounding();
+		auto grounding = grounder->getGrounding();
 
 		//MinisatID modelexpandoptions
 		MinisatID::ModelExpandOptions opts;
@@ -59,7 +58,7 @@ public:
 			return new InconsistentStructure(structure->name(), structure->pi());
 		}
 		// Take the intersection of all models
-		MinisatID::Model* firstmodel = *(abstractsolutions->getModels().cbegin());
+		auto firstmodel = *(abstractsolutions->getModels().cbegin());
 		for (auto it = firstmodel->literalinterpretations.cbegin(); it != firstmodel->literalinterpretations.cend(); ++it) {
 			intersection.insert(it->getValue());
 		}
@@ -72,15 +71,15 @@ public:
 		}
 
 		//Translate the result
-		GroundTranslator* translator = grounding->translator();
-		AbstractStructure* result = structure->clone();
+		auto translator = grounding->translator();
+		auto result = structure->clone();
 		for (auto literal = intersection.cbegin(); literal != intersection.cend(); ++literal) {
 			int atomnr = (*literal > 0) ? *literal : (-1) * (*literal);
 			if (translator->isInputAtom(atomnr)) {
-				PFSymbol* symbol = translator->getSymbol(atomnr);
+				auto symbol = translator->getSymbol(atomnr);
 				const ElementTuple& args = translator->getArgs(atomnr);
 				if (sametypeid<Predicate>(*symbol)) {
-					Predicate* pred = dynamic_cast<Predicate*>(symbol);
+					auto pred = dynamic_cast<Predicate*>(symbol);
 					if (*literal < 0) {
 						result->inter(pred)->makeFalse(args);
 					} else {

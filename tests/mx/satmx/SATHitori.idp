@@ -3,21 +3,18 @@ procedure getExpectedAModel(){
 }
 
 vocabulary V{
-type Xpos isa int
-type Ypos isa int
-type Number isa int
+	type Xpos isa int
+	type Ypos isa int
+	type Number isa int
 
-State(Xpos,Ypos,Number)
-
+	State(Xpos,Ypos,Number)
  
 	Black(Xpos,Ypos)
 	NextTo(Xpos,Ypos,Xpos,Ypos)
 	Reachable(Xpos,Ypos)
-
 }
 
 theory T : V { 
-
 	{ NextTo(x1,y1,x2,y2) <- abs(x1 - x2) + abs(y1 - y2) = 1. }
 
 	! x1 y1 x2 y2 : NextTo(x1,y1,x2,y2) => ~(Black(x1,y1) & Black(x2,y2)).
@@ -30,16 +27,13 @@ theory T : V {
 	  Reachable(x,y) <- NextTo(x,y,rx,ry) & ~Black(x,y) & Reachable(rx,ry). }
 
 	! x y : ~Black(x,y) => Reachable(x,y).
-
 }
 
 structure S : V{ 
-
-Xpos = {1..3}
-Ypos = {1..3}
-Number = {1..5}
-State = { 1,1,1; 1,2,1; 1,3,2;
-          2,1,5; 2,2,4; 2,3,3;
-			 3,1,5; 3,2,3; 3,3,2; }
-
+	Xpos = {1..3}
+	Ypos = {1..3}
+	Number = {1..5}
+	State = { 1,1,1; 1,2,1; 1,3,2;
+		      2,1,5; 2,2,4; 2,3,3;
+				 3,1,5; 3,2,3; 3,3,2; }
 }

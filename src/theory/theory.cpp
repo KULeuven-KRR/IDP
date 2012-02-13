@@ -402,6 +402,9 @@ ostream& operator<<(ostream& output, const Rule& r) {
  Definitions
  ******************/
 
+Definition::Definition(): id(getGlobal()->getNewID()) {
+}
+
 Definition* Definition::clone() const {
 	Definition* newdef = new Definition();
 	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
@@ -436,8 +439,7 @@ ostream& Definition::put(ostream& output) const {
 		_rules[0]->put(output);
 		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output << '\n';
-			output << tabs();
+			output <<nt();
 			_rules[n]->put(output);
 		}
 		poptab();
@@ -490,14 +492,14 @@ ostream& FixpDef::put(ostream& output) const {
 		_rules[0]->put(output);
 		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output << '\n' << tabs();
+			output <<nt();
 			_rules[n]->put(output);
 		}
 		poptab();
 	}
 	pushtab();
 	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it) {
-		output << '\n' << tabs();
+		output <<nt();
 		(*it)->put(output);
 	}
 	poptab();
@@ -542,10 +544,11 @@ void Theory::recursiveDelete() {
 
 vector<TheoryComponent*> Theory::components() const {
 	vector<TheoryComponent*> stc;
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
+	// NOTE: re-ordered for lazy grounding
+	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
 		stc.push_back(*it);
 	}
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		stc.push_back(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
@@ -571,19 +574,19 @@ std::ostream& Theory::put(std::ostream& output) const {
 	if (_vocabulary) {
 		output << " : " << vocabulary()->name();
 	}
-	output << " {\n";
 	pushtab();
+	output << " {";
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		output << tabs() << toString(*it) << "\n";
+		output <<nt() << toString(*it);
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		output << tabs() << toString(*it) << "\n";
+		output <<nt() << toString(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		output << tabs() << toString(*it) << "\n";
+		output <<nt() << toString(*it);
 	}
 	poptab();
-	output << "}";
+	output <<nt() << "}";
 	return output;
 }
 

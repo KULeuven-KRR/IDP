@@ -17,6 +17,9 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
+
 //TODO is not guaranteed to generate correct idp files!
 //TODO usage of stored parameters might be incorrect in some cases.
 
@@ -195,15 +198,15 @@ public:
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 	}
 
@@ -522,7 +525,7 @@ public:
 		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
-		char c = (b->type() == RT_CONJ ? '&' : '|');
+		char c = (b->type() == RuleType::CONJ ? '&' : '|');
 		if (not b->empty()) {
 			for (unsigned int n = 0; n < b->size(); ++n) {
 				if (b->literal(n) < 0) {
@@ -535,7 +538,7 @@ public:
 			}
 		} else {
 			Assert(b->empty());
-			if (b->type() == RT_CONJ)
+			if (b->type() == RuleType::CONJ)
 				output() << "true";
 			else
 				output() << "false";
@@ -548,7 +551,6 @@ public:
 		printAtom(b->head());
 		output() << " <- ";
 		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
-		output() << ".\n";
 	}
 
 	void visit(const GroundAggregate* a) {

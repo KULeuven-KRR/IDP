@@ -68,6 +68,42 @@ procedure modelexpand(theory, structure) {
 	end
 }
 
+procedure modelexpandpartial(theory, structure) {
+	if type(theory) ~= "theory" then
+		print("Error: theory expected")
+		return
+	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	// TODO currentoptions.nbmodels moet 0 of 1 zijn
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	local solutions, trace = idpintern.modelexpand(clonetheo,structure)
+	if(#solutions==0)then
+		return nil
+	end
+	return solutions[1],trace 
+}
+
+procedure sat(theory, structure) {
+	if type(theory) ~= "theory" then
+		print("Error: theory expected")
+		return
+	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	local solutions = idpintern.modelexpand(clonetheo,structure)
+	return #solutions>0
+}
+
 /**
  * Create the reduced grounding of the given theory and structure */
 procedure ground(theory, structure) {

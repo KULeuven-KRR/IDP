@@ -48,7 +48,7 @@ public:
 
 	// FIXME reimplement clone
 	InverseInstGenerator* clone() const {
-		return new InverseInstGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {

@@ -12,6 +12,7 @@
 #define GROUNDTHEORY_HPP_
 
 #include "common.hpp"
+#include "structure/fwstructure.hpp"
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
@@ -32,6 +33,10 @@ class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+class LazyUnknBoundGrounder;
+
 class GroundPolicy {
 private:
 	std::vector<GroundClause> _clauses;
@@ -45,6 +50,10 @@ private:
 	GroundTranslator* polTranslator() const {
 		return _translator;
 	}
+
+protected:
+	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 public:
 	const std::vector<GroundClause>& getClauses() const {

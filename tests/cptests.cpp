@@ -18,7 +18,7 @@
 using namespace std;
 
 namespace Tests {
-
+/*
 vector<string> generateListOfSimpleCPFiles() {
 	vector<string> testdirs {"cp/"};
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
@@ -36,5 +36,5 @@ TEST_P(CPTest, SimpleCP) {
 }
 
 INSTANTIATE_TEST_CASE_P(SimpleCP, CPTest, ::testing::ValuesIn(generateListOfSimpleCPFiles()));
-
+*/
 } /* namespace Tests */

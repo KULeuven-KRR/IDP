@@ -52,10 +52,17 @@ string getPathOfConfigFile() {
 
 std::string tabs() {
 	stringstream ss;
+	ss << '\n';
 	auto nb = GlobalData::instance()->getTabSize();
 	for (size_t i = 0; i < nb; ++i) {
 		ss << "    ";
 	}
+	return ss.str();
+}
+
+std::string nt() {
+	stringstream ss;
+	ss << '\n' << tabs();
 	return ss.str();
 }
 
@@ -236,6 +243,26 @@ std::string toString(const CompType& type) {
 		break;
 	case CompType::GEQ:
 		output << " >= ";
+		break;
+	}
+	return output.str();
+}
+
+template<>
+std::string toString(const TsType& type) {
+	std::stringstream output;
+	switch (type) {
+	case TsType::RIMPL:
+		output << " <= ";
+		break;
+	case TsType::IMPL:
+		output << " => ";
+		break;
+	case TsType::RULE:
+		output << " <- ";
+		break;
+	case TsType::EQ:
+		output << " <=> ";
 		break;
 	}
 	return output.str();

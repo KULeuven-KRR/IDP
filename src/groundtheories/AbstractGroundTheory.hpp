@@ -27,6 +27,10 @@ enum VIType {
 	VIT_DISJ, VIT_CONJ, VIT_SET
 };
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+class LazyUnknBoundGrounder;
+
 /**
  * Implements base class for ground theories
  */
@@ -47,10 +51,15 @@ public:
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
 	virtual void add(const GroundDefinition& d) = 0;
+	virtual void add(DefId defid, PCGroundRule* rule) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(Lit head, AggTsBody* body) = 0;
 	virtual void add(Lit tseitin, CPTsBody* body) = 0;
 	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
+	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr) = 0;
+
+	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders) = 0;
+	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

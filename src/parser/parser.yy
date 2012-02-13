@@ -139,7 +139,7 @@ typedef std::list<isp>				lisp;
 %token <operator> RANGE			".."
 %token <operator> NSPACE		"::"
 
-/** Precedence declarations for connectives **/
+/** Precedence declarations for connectives (higher line number = higher precedence)  **/
 %right ':'
 %nonassoc "<=>"
 %nonassoc "=>"
@@ -148,10 +148,10 @@ typedef std::list<isp>				lisp;
 %right '&'
 %right '~' 
 
-/**  Precedence declarations for arithmetic **/
-%left '%'
+/**  Precedence declarations for arithmetic (higher line number = higher precedence) **/
 %left '-' '+'
-%left '/' '*' 
+%left '/' '*'
+%left '%' 
 %left '^'
 %left UMINUS
 

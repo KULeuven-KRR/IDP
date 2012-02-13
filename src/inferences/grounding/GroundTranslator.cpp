@@ -10,7 +10,7 @@
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
-#include "grounders/LazyQuantGrounder.hpp"
+#include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 
 using namespace std;
@@ -54,26 +54,51 @@ GroundTranslator::~GroundTranslator() {
 	}
 }
 
-Lit GroundTranslator::translate(SymbolOffset n, const ElementTuple& args) {
+Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args) {
 	Lit lit = 0;
 	//auto jt = symbols[n].tuple2atom.lower_bound(args);
 	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
-	auto jt = symbols[n].tuple2atom.find(args);
-	if (jt != symbols[n].tuple2atom.cend()) {
+	auto& symbolinfo = symbols[symbolID];
+	auto jt = symbolinfo.tuple2atom.find(args);
+	if (jt != symbolinfo.tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
 		lit = nextNumber(AtomType::INPUT);
-		symbols[n].tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		atom2Tuple[lit] = new SymbolAndTuple(symbols[n].symbol, args);
+		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
+		if(symbolinfo.tuple2atom.size()==1){
+			newsymbols.push(symbolID);
+		}
+		atom2Tuple[lit] = new SymbolAndTuple(symbolinfo.symbol, args);
 
-		// FIXME expensive operation to do so often!
-		auto rulesit = symbol2rulegrounder.find(n);
-		if (rulesit != symbol2rulegrounder.cend() && rulesit->second.size() > 0) {
-			(*rulesit->second.cbegin())->notify(lit, args, rulesit->second);
+		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
+		if(not symbolinfo.assocGrounders.empty()){
+			symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
 		}
 	}
 
+	//clog <<toString(symbols[n].symbol) <<toString(args) <<" maps to " <<lit <<nt();
+
 	return lit;
+}
+
+// TODO expensive!
+int GroundTranslator::getSymbol(PFSymbol* pfs) const {
+	for (size_t n = 0; n < symbols.size(); ++n) {
+		if (symbols[n].symbol == pfs) {
+			return n;
+		}
+	}
+	return -1;
+}
+
+SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
+	auto n = getSymbol(pfs);
+	if(n == -1){
+		symbols.push_back(SymbolInfo(pfs));
+		return symbols.size() - 1;
+	} else {
+		return n;
+	}
 }
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
@@ -87,7 +112,7 @@ Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype)
 }
 
 Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool conj, TsType tstype) {
-	PCTsBody* tsbody = new PCTsBody(tstype, clause, conj);
+	auto tsbody = new PCTsBody(tstype, clause, conj);
 	atom2TsBody[head] = tspair(head, tsbody);
 	return head;
 }
@@ -107,21 +132,44 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-void GroundTranslator::notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder) {
-	SymbolOffset symbolnumber = addSymbol(pfs);
-	auto it = symbol2rulegrounder.find(symbolnumber);
-	if (symbol2rulegrounder.find(symbolnumber) == symbol2rulegrounder.cend()) {
-		it = symbol2rulegrounder.insert(pair<unsigned int, std::vector<LazyRuleGrounder*> >(symbolnumber, { })).first;
+bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const {
+	auto symbolID = getSymbol(pfs);
+	if(symbolID==-1){
+		return false;
 	}
-	for (auto grounderit = it->second.cbegin(); grounderit < it->second.cend(); ++grounderit) {
-		Assert(grounder != *grounderit);
+	auto& grounders = symbols[symbolID].assocGrounders;
+	if(grounders.empty()){
+		return false;
 	}
-	it->second.push_back(grounder);
+	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
+		if((*i)->getID()!=id || (id==-1 && (*i)->getID()==-1)){
+			return true;
+		}
+	}
+	return false;
 }
 
-void GroundTranslator::translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
+void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
+	Assert(grounder!=NULL);
+	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
+	auto symbolID = addSymbol(pfs);
+	auto& grounders = symbols[symbolID].assocGrounders;
+#ifndef NDEBUG
+	Assert(not isAlreadyDelayedOnDifferentID(pfs, grounder->getID()));
+	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
+		Assert(grounder != *i);
+	}
+#endif
+	grounders.push_back(grounder);
+
+	// TODO in this way, we will add func constraints for all functions, might not be necessary!
+	newsymbols.push(symbolID); // NOTE: For defined functions, should add the func constraint anyway, because it is not guaranteed to have a model!
+}
+
+void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
 	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	LazyTsBody* tsbody = new LazyTsBody(lazygrounder->id(), lazygrounder, instance, tstype);
+	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
+	auto tsbody = new LazyTsBody(lazygrounder, instance, tstype);
 	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
 }
 
@@ -197,14 +245,8 @@ Lit GroundTranslator::nextNumber(AtomType type) {
 	}
 }
 
-SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
-	for (size_t n = 0; n < symbols.size(); ++n) {
-		if (symbols[n].symbol == pfs) {
-			return n;
-		}
-	}
-	symbols.push_back(SymbolAndAtomMap(pfs));
-	return symbols.size() - 1;
+string GroundTranslator::print(Lit lit) {
+	return printLit(lit);
 }
 
 string GroundTranslator::printLit(const Lit& lit) const {

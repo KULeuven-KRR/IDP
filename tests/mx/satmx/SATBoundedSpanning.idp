@@ -26,25 +26,25 @@ Reached(Vertex)
 }
 
 theory T : V { 
-! v : NrOfChildren(v) =< Bound.
-{ SpTree(p,y) <- ?n[Num]: y = Child(p,n) & n > 0 & n =< NrOfChildren(p). }
+	//! v : NrOfChildren(v) =< Bound.
+	{ SpTree(p,y) <- ?n[Num]: y = Child(p,n) & n > 0 & n =< NrOfChildren(p). }
 
-// Spanning tree rules:
-! v_1 v_2 : SpTree(v_1,v_2) => Edge(v_1,v_2).
-! v : ~SpTree(v,Root).
-! v_1 v_2 y : SpTree(v_1,y) & SpTree(v_2,y) => v_1 = v_2.
+	// Spanning tree rules:
+	! v_1 v_2 : SpTree(v_1,v_2) => Edge(v_1,v_2).
+	//! v : ~SpTree(v,Root).
+	//! v_1 v_2 y : SpTree(v_1,y) & SpTree(v_2,y) => v_1 = v_2.
 
-{ Reached(Root).
- Reached(c) <- SpTree(p,c) & Reached(p).
-}
+	{ 
+		Reached(Root).
+		Reached(c) <- SpTree(p,c) & Reached(p).
+	}
 
-! v : Reached(v).
-
+	!v: Reached(v).
 }
 
 structure S : V{ 
-Num = {0..4}
-Bound = 4
-Vertex = {A..D}
-Edge = { A,B; A,C; B,C; C,D; D,B }
+	Num = {0..4}
+	Bound = 4
+	Vertex = {A..D}
+	Edge = { A,B; A,C; B,C; C,D; D,B }
 }

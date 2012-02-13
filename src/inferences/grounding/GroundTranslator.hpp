@@ -17,10 +17,10 @@
 #include <unordered_map>
 #include <bits/functional_hash.h>
 
-class LazyRuleGrounder;
+class LazyUnknBoundGrounder;
 class TsSet;
 class CPTerm;
-class LazyQuantGrounder;
+class LazyGroundingManager;
 class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
@@ -35,11 +35,12 @@ typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
 typedef size_t SymbolOffset;
 
-struct SymbolAndAtomMap {
+struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
+	std::vector<LazyUnknBoundGrounder*> assocGrounders;
 
-	SymbolAndAtomMap(PFSymbol* symbol)
+	SymbolInfo(PFSymbol* symbol)
 			: symbol(symbol) {
 	}
 };
@@ -68,13 +69,12 @@ struct SymbolAndTuple {
 
 class GroundTranslator {
 private:
-	std::vector<SymbolAndAtomMap> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
+	std::queue<int> newsymbols;
+	std::vector<SymbolInfo> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
 
 	std::vector<AtomType> atomtype;
 	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
 	std::vector<tspair> atom2TsBody; // Pointers manager by the translator!
-
-	std::map<unsigned int, std::vector<LazyRuleGrounder*> > symbol2rulegrounder; // map a symbol to the rulegrounders in which the symbol occurs as a head
 
 	std::queue<int> _freenumbers; // keeps atom numbers that were freed and can be used again
 	std::queue<int> _freesetnumbers; // keeps set numbers that were freed and can be used again
@@ -85,9 +85,21 @@ private:
 	Lit addTseitinBody(TsBody* body);
 	Lit nextNumber(AtomType type);
 
+	int getSymbol(PFSymbol* pfs) const;
+
 public:
 	GroundTranslator();
 	~GroundTranslator();
+
+	// NOTE: used to add func constraints as soon as possible
+	int getNextNewSymbol(){
+		auto i = newsymbols.front();
+		newsymbols.pop();
+		return i;
+	}
+	bool hasNewSymbols() const {
+		return newsymbols.size();
+	}
 
 	Lit translate(SymbolOffset, const ElementTuple&);
 	Lit translate(const litlist& cl, bool conj, TsType tp);
@@ -96,9 +108,10 @@ public:
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const litlist&, const weightlist&, const weightlist&);
-	void translate(LazyQuantGrounder const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
+	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	void notifyDefined(PFSymbol* pfs, LazyRuleGrounder* const grounder);
+	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const;
+	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
 
 	SymbolOffset addSymbol(PFSymbol* pfs);
 
@@ -112,7 +125,7 @@ public:
 	bool isInputAtom(int atom) const {
 		return isStored(atom) && getType(atom) == AtomType::INPUT;
 	}
-	PFSymbol* getSymbol(int atom) const {
+	PFSymbol* getSymbol(Lit atom) const {
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->symbol!=NULL);
 		return atom2Tuple[atom]->symbol;
 	}
@@ -158,7 +171,8 @@ public:
 		return symbols[n].tuple2atom;
 	}
 
-	std::string printLit(const Lit& lit) const;
+	std::string print(Lit atom);
+	std::string printLit(const Lit& atom) const;
 };
 
 #endif /* GROUNDTRANSLATOR_HPP_ */

@@ -52,7 +52,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver();
+	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Approximation\n";
 	}
@@ -62,8 +62,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Grounding\n";
 	}
-	GrounderFactory grounderfactory(newstructure, symstructure);
-	auto grounder = grounderfactory.create(clonetheory, solver);
+	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, solver);
+	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(solver);
@@ -114,7 +114,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
-		clog << "Generate 2-valued models\n";
+		clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 		auto newsolution = newstructure->clone();

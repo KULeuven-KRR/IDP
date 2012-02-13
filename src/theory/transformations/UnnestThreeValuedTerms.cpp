@@ -56,8 +56,3 @@ Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
 	setAllowedToUnnest(savemovecontext);
 	return f;
 }
-
-Rule* UnnestThreeValuedTerms::traverse(Rule* r) {
-	notyetimplemented("Unnesting of three-valued terms in rules is not implemented yet.");
-	return r;
-}

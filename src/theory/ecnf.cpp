@@ -11,7 +11,10 @@
 #include "IncludeComponents.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/grounders/LazyQuantGrounder.hpp"
+#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
+
+#include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 
 using namespace std;
 
@@ -32,10 +35,10 @@ IMPLACCEPTNONMUTATING(GroundAggregate)
 IMPLACCEPTNONMUTATING(CPReification)
 
 PCGroundRule::PCGroundRule(Lit head, PCTsBody* body, bool rec)
-		: GroundRule(head, body->conj() ? RT_CONJ : RT_DISJ, rec), _body(body->body()) {
+		: GroundRule(head, body->conj() ? RuleType::CONJ : RuleType::DISJ, rec), _body(body->body()) {
 }
 AggGroundRule::AggGroundRule(Lit head, AggTsBody* body, bool rec)
-		: GroundRule(head, RT_AGG, rec), _setnr(body->setnr()), _aggtype(body->aggtype()), _lower(body->lower()), _bound(body->bound()) {
+		: GroundRule(head, RuleType::AGG, rec), _setnr(body->setnr()), _aggtype(body->aggtype()), _lower(body->lower()), _bound(body->bound()) {
 }
 
 GroundDefinition* GroundDefinition::clone() const {
@@ -65,21 +68,21 @@ void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool 
 	// Search for a rule with the same head
 	auto it = _rules.find(head);
 	if (it == _rules.cend()) { // There is not yet a rule with the same head
-		_rules[head] = new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body, recursive);
+		_rules[head] = new PCGroundRule(head, (conj ? RuleType::CONJ : RuleType::DISJ), body, recursive);
 	} else if ((it->second)->isFalse()) { // The existing rule is false
 		PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
-		grb->type(conj ? RT_CONJ : RT_DISJ);
+		grb->type(conj ? RuleType::CONJ : RuleType::DISJ);
 		grb->head(head);
 		grb->body(body);
 		grb->recursive(recursive);
 	} else if (body.empty()) { // We are adding a rule with a true or false body
 		if (conj) {
 			delete (it->second);
-			it->second = new PCGroundRule(head, RT_CONJ, body, false);
+			it->second = new PCGroundRule(head, RuleType::CONJ, body, false);
 		}
 	} else if (not (it->second)->isTrue()) { // There is a rule with the same head, and it is not true or false
 		switch (it->second->type()) {
-		case RT_DISJ: {
+		case RuleType::DISJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 			if ((not conj) || body.size() == 1) {
 				for (size_t n = 0; n < body.size(); ++n) {
@@ -92,40 +95,40 @@ void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool 
 			grb->recursive(grb->recursive() || recursive);
 			break;
 		}
-		case RT_CONJ: {
+		case RuleType::CONJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 			if (grb->body().size() == 1 && ((not conj) || body.size() == 1)) {
-				grb->type(RT_DISJ);
+				grb->type(RuleType::DISJ);
 				for (size_t n = 0; n < body.size(); ++n) {
 					grb->body().push_back(body[n]);
 				}
 			} else if ((not conj) || body.size() == 1) {
 				Lit ts = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
-				grb->type(RT_DISJ);
+				grb->type(RuleType::DISJ);
 				grb->body(body);
 				grb->body().push_back(ts);
 			} else {
 				Lit ts1 = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
 				Lit ts2 = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
-				grb->type(RT_DISJ);
+				grb->type(RuleType::DISJ);
 				grb->body() = { ts1, ts2 };
 			}
 			grb->recursive(grb->recursive() || recursive);
 			break;
 		}
-		case RT_AGG: {
+		case RuleType::AGG: {
 			AggGroundRule* grb = dynamic_cast<AggGroundRule*>(it->second);
 			CompType comp = (grb->lower() ? CompType::LEQ : CompType::GEQ);
 			if ((not conj) || body.size() == 1) {
 				Lit ts = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
-				PCGroundRule* newgrb = new PCGroundRule(head, RT_DISJ, body, (recursive || grb->recursive()));
+				PCGroundRule* newgrb = new PCGroundRule(head, RuleType::DISJ, body, (recursive || grb->recursive()));
 				newgrb->body().push_back(ts);
 				delete (grb);
 				it->second = newgrb;
 			} else {
 				Lit ts1 = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
 				Lit ts2 = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
-				it->second = new PCGroundRule(head, RT_DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
+				it->second = new PCGroundRule(head, RuleType::DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
 				delete (grb);
 			}
 			break;
@@ -145,32 +148,32 @@ void GroundDefinition::addAggRule(Lit head, SetId setnr, AggFunction aggtype, bo
 		it->second = new AggGroundRule(head, setnr, aggtype, lower, bound, recursive);
 	} else if (not (it->second->isTrue())) {
 		switch (it->second->type()) {
-		case RT_DISJ: {
+		case RuleType::DISJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 			Lit ts = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
 			grb->body().push_back(ts);
 			grb->recursive(grb->recursive() || recursive);
 			break;
 		}
-		case RT_CONJ: {
+		case RuleType::CONJ: {
 			PCGroundRule* grb = dynamic_cast<PCGroundRule*>(it->second);
 			Lit ts2 = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
 			if (grb->body().size() == 1) {
-				grb->type(RT_DISJ);
+				grb->type(RuleType::DISJ);
 				grb->body().push_back(ts2);
 			} else {
 				Lit ts1 = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
-				grb->type(RT_DISJ);
+				grb->type(RuleType::DISJ);
 				grb->body({ ts1, ts2 });
 			}
 			grb->recursive(grb->recursive() || recursive);
 			break;
 		}
-		case RT_AGG: {
+		case RuleType::AGG: {
 			AggGroundRule* grb = dynamic_cast<AggGroundRule*>(it->second);
 			Lit ts1 = _translator->translate(grb->bound(), (grb->lower() ? CompType::LEQ : CompType::GEQ), grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
 			Lit ts2 = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
-			it->second = new PCGroundRule(head, RT_DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
+			it->second = new PCGroundRule(head, RuleType::DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
 			delete (grb);
 			break;
 		}
@@ -183,13 +186,13 @@ ostream& GroundDefinition::put(ostream& s) const {
 	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
 		s << _translator->printLit((*it).second->head()) << " <- ";
 		auto body = (*it).second;
-		if (body->type() == RT_AGG) {
+		if (body->type() == RuleType::AGG) {
 			const AggGroundRule* grb = dynamic_cast<const AggGroundRule*>(body);
 			s << grb->bound() << (grb->lower() ? " =< " : " >= ");
 			s << grb->aggtype() << grb->setnr() << ".\n";
 		} else {
 			const PCGroundRule* grb = dynamic_cast<const PCGroundRule*>(body);
-			char c = grb->type() == RT_CONJ ? '&' : '|';
+			char c = grb->type() == RuleType::CONJ ? '&' : '|';
 			if (not grb->body().empty()) {
 				if (grb->body()[0] < 0) {
 					s << '~';
@@ -202,7 +205,7 @@ ostream& GroundDefinition::put(ostream& s) const {
 					}
 					s << _translator->printLit(grb->body()[n]);
 				}
-			} else if (grb->type() == RT_CONJ) {
+			} else if (grb->type() == RuleType::CONJ) {
 				s << "true";
 			} else {
 				s << "false";
@@ -358,36 +361,6 @@ bool CPTsBody::operator<(const TsBody& body) const {
 	return false;
 }
 
-/*bool LazyTsBody::operator==(const TsBody& body) const {
-				 if (not TsBody::operator==(body)) {
-				 return false;
-				 }
-				 auto rhs = dynamic_cast<const LazyTsBody&>(body);
-				 return id_ == rhs.id_ && grounder_ == rhs.grounder_ && (*inst) == (*rhs.inst);
-				 }*/
-				 /*bool LazyTsBody::operator<(const TsBody& body) const {
-				 if (TsBody::operator<(body)) {
-				 return true;
-				 } else if (TsBody::operator>(body)) {
-				 return false;
-				 }
-				 auto rhs = dynamic_cast<const LazyTsBody&>(body);
-				 if (id_ < rhs.id_) {
-				 return true;
-				 } else if (id_ > rhs.id_) {
-				 return false;
-				 }
-				 if (grounder_ < rhs.grounder_) {
-				 return true;
-				 } else if (grounder_ > rhs.grounder_) {
-				 return false;
-				 }
-				 if ((*inst) == (*rhs.inst)) {
-				 return true;
-				 }
-				 return false;
-				 }*/
-
 bool CPTerm::operator==(const CPTerm& body) const {
 	return typeid(*this) == typeid(body);
 }
@@ -489,5 +462,5 @@ bool CPBound::operator<(const CPBound& rhs) const {
 }
 
 void LazyTsBody::notifyTheoryOccurence() {
-	grounder_->notifyTheoryOccurence(inst);
+	grounder_->notifyBoundSatisfiedInternal(inst);
 }
