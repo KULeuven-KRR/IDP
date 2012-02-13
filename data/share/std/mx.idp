@@ -36,8 +36,8 @@ namespace mx {
 		print("Number of models: "..#sols)
 		for k,v in ipairs(sols) do
 			print("Model "..k)
-			kstr = tostring(k)
-			str = "======"
+			local kstr = tostring(k)
+			local str = "======"
 			for i=1,string.len(kstr) do str = str.."=" end
 			print(str)
 			print(v)
