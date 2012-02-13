@@ -17,7 +17,7 @@
 
 class AbstractStructure;
 
-//TODO Check recursion issue... Think about nested aggregates!
+//TODO This visitor should take cpsymbols into account!
 
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()

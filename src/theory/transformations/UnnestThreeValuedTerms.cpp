@@ -26,7 +26,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
 			Function* func = ft->function();
 			FuncInter* finter = _structure->inter(func);
-			return (not finter->approxTwoValued());
+			return (not (finter->approxTwoValued() || (_cpsupport && isCPSymbol(func))));
 		}
 		case TT_AGG: {
 			//TODO include test for CPSymbols...

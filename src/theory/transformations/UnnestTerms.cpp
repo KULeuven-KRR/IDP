@@ -279,11 +279,10 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 				_chosenVarSort = rightsort;
 			}
 		}
-
 	} else {
 		setAllowedToUnnest(true);
 	}
-// Traverse the atom
+	// Traverse the atom
 	Formula* newf = predform;
 	if (moveonlyleft) {
 		predform->subterm(1, predform->subterms()[1]->accept(this));
