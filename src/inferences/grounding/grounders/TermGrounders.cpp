@@ -17,6 +17,7 @@
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "IncludeComponents.hpp"
+#include "errorhandling/error.hpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ TermGrounder::~TermGrounder() {
 	if (not _varmap.empty()) {
 		for (auto i = _varmap.begin(); i != _varmap.end(); ++i) {
 			delete (i->first); // Delete the Variable
-			//delete (i->second); // Don't delete the Domain element
+			// Don't delete the Domain element!
 		}
 		_varmap.clear();
 	}
@@ -46,22 +47,21 @@ void TermGrounder::setOrig(const Term* t, const var2dommap& mvd, int verb) {
 }
 
 void TermGrounder::printOrig() const {
-	clog << "\n\n" << tabs() << "Grounding term " << toString(_origterm);
+	clog << tabs() << "Grounding term " << toString(_origterm) << "\n";
 	if (not _origterm->freeVars().empty()) {
 		pushtab();
-		clog << "\n" << tabs() << "with instance ";
+		clog << tabs() << "with instance ";
 		for (auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
+		clog << "\n";
 		poptab();
 	}
 }
 
 GroundTerm DomTermGrounder::run() const {
-	//SortTable* _domain = new SortTable(new EnumeratedInternalSortTable());
-	//_domain->add(_value);
 	return GroundTerm(_value);
 }
 
@@ -79,16 +79,16 @@ GroundTerm FuncTermGrounder::run() const {
 		if (groundsubterms[n].isVariable) {
 			calculable = false;
 		} else {
-			Assert(groundsubterms[n]._domelement!=NULL);
+			Assert(groundsubterms[n]._domelement != NULL);
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}
-	if (calculable && _functable) { // All ground subterms are domain elements!
+	if (calculable && _functable != NULL) { // All ground subterms are domain elements!
 		const DomainElement* domelem = (*_functable)[args];
 		if (domelem) {
 			if (_verbosity > 2) {
 				poptab();
-				clog << "\n" << tabs() << "Result = " << toString(domelem);
+				clog << tabs() << "Result = " << toString(domelem) << "\n";
 			}
 			return GroundTerm(domelem);
 		}
@@ -97,7 +97,7 @@ GroundTerm FuncTermGrounder::run() const {
 	VarId varid = _termtranslator->translate(_function, groundsubterms);
 	if (_verbosity > 2) {
 		poptab();
-		clog << "\n" << tabs() << "Result = " << _termtranslator->printTerm(varid);
+		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -152,10 +152,10 @@ GroundTerm SumTermGrounder::run() const {
 			_domain = new SortTable(new IntRangeInternalSortTable(min, max));
 		} else {
 			if (leftdomain && not leftdomain->approxFinite()) {
-				clog << "Left domain is infinite...\n";
+				Warning::warning("Left domain is infinite...");
 			}
 			if (rightdomain && not rightdomain->approxFinite()) {
-				clog << "Right domain is infinite...\n";
+				Warning::warning("Right domain is infinite...");
 			}
 			//TODO one of the domains is unknown or infinite...
 			//TODO one case when left or right is a domain element!
@@ -192,47 +192,50 @@ GroundTerm SumTermGrounder::run() const {
 			varid = _termtranslator->translate(sumterm, _domain);
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable);
-			Assert(_functable);
+			Assert(_functable != NULL);
 			ElementTuple args({ left._domelement, right._domelement });
 			const DomainElement* domelem = (*_functable)[args];
-			Assert(domelem);
+			Assert(domelem != NULL);
 			if (_verbosity > 2) {
 				poptab();
-				clog << "\n" << tabs() << "Result = " << toString(domelem);
+				clog << tabs() << "Result = " << toString(domelem) << "\n";
 			}
 			return GroundTerm(domelem);
 		}
 	}
 
 	// Ask for a new tseitin for this cp constraint and add it to the grounding.
-	//FIXME Following should be done more efficiently... overhead because of lookup in translator...
-	//CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	//int sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TS_EQ);
-	//_grounding->addUnitClause(sumtseitin);
+	CPTsBody* cprelation = _termtranslator->cprelation(varid);
+	Lit sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
+	_grounding->addUnitClause(sumtseitin);
 
 	// Return result
 	if (_verbosity > 2) {
 		poptab();
-		clog << "\n" << tabs() << "Result = " << _termtranslator->printTerm(varid);
+		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
 
 GroundTerm AggTermGrounder::run() const {
-//TODO Should this grounder return a VarId in some cases?
 	if (_verbosity > 2) {
 		printOrig();
 		pushtab();
 	}
 	SetId setnr = _setgrounder->run();
 	auto tsset = _translator->groundset(setnr);
-	Assert(tsset.empty());
-	Weight value = applyAgg(_type, tsset.trueweights());
-	const DomainElement* domelem = createDomElem(value);
-	if (_verbosity > 2) {
-		poptab();
-		clog << "\n" << tabs() << "Result = " << toString(domelem);
-	}
 	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
-	return GroundTerm(domelem);
+	if (tsset.empty()) {
+		Weight value = applyAgg(_type, tsset.trueweights());
+		const DomainElement* domelem = createDomElem(value);
+		if (_verbosity > 2) {
+			poptab();
+			clog << tabs() << "Result = " << toString(domelem) << "\n";
+		}
+		return GroundTerm(domelem);
+	} else {
+		//FIXME in this case, there should have been a dedicated cpgrounder for this aggterm...
+		Assert(false);
+		return GroundTerm();
+	}
 }

@@ -133,8 +133,7 @@ void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _termtranslator);
 			varidlist varids = term->varids();
-			intweightlist weights;
-			weights.resize(1, term->varids().size());
+			intweightlist weights(term->varids().size(),1);
 
 			int bound = 0;
 			varids.push_back(right._varid);
@@ -142,7 +141,7 @@ void SolverPolicy::polAdd(Lit tseitin, CPTsBody* body) {
 
 			polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp, getSolver());
 		} else {
-			intweightlist weights { (int) term->varids().size() };
+			intweightlist weights(term->varids().size(),1);
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp, getSolver());
 		}
 	} else {
@@ -299,7 +298,7 @@ void SolverPolicy::polAddCPVariable(const VarId& varid, GroundTermTranslator* te
 	if (_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		SortTable* domain = termtranslator->domain(varid);
-		Assert(domain);
+		Assert(domain != NULL);
 		Assert(domain->approxFinite());
 		if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.

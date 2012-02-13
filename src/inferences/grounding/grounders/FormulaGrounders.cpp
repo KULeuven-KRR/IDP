@@ -64,15 +64,16 @@ void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
 	}
-	clog << "\n\n" << tabs() << "Grounding formula " << toString(_origform);
+	clog << tabs() << "Grounding formula " << toString(_origform) << "\n";
 	if (not _origform->freeVars().empty()) {
 		pushtab();
-		clog << "\n" << tabs() << "with instance ";
+		clog << tabs() << "with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			clog << toString(e) << ' ';
 		}
+		clog << "\n";
 		poptab();
 	}
 }
@@ -127,9 +128,9 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "\n" << tabs() << "Term value out of predicate type"; //TODO should be a warning
+					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) { poptab(); }
-					clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "false" : "true");
+					clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 				}
 
 				return isPos(_sign) ? _false : _true;
@@ -146,32 +147,32 @@ Lit AtomGrounder::run() const {
 	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << "\n" << tabs() << "Possible checker failed";
+			clog << tabs() << "Possible checker failed" << "\n";
 			if (_origform != NULL) { poptab(); }
 			//clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
-			clog << "\n" << tabs() << "Result is false";
+			clog << tabs() << "Result is false" << "\n";
 		}
 		return _false;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << "\n" << tabs() << "Certain checker succeeded";
+			clog << tabs() << "Certain checker succeeded" << "\n";
 			if (_origform != NULL) { poptab(); }
-			clog << "\n" << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
+			clog << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
 			if (_origform != NULL) { poptab(); }
-			clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "true" : "false");
+			clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
 		}
 		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
 		if (verbosity() > 2) {
 			if (_origform != NULL) { poptab(); }
-			clog << "\n" << tabs() << "Result is " << (isPos(_sign) ? "false" : "true");
+			clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 		}
 		return isPos(_sign) ? _false : _true;
 	}
@@ -183,7 +184,7 @@ Lit AtomGrounder::run() const {
 	}
 	if (verbosity() > 2) {
 		if (_origform != NULL) { poptab(); }
-		clog << "\n" << tabs() << "Result is " << translator()->printLit(lit);
+		clog << tabs() << "Result is " << translator()->printLit(lit) << "\n";
 	}
 	return lit;
 }
@@ -207,19 +208,19 @@ Lit ComparisonGrounder::run() const {
 //		return context()._funccontext != Context::NEGATIVE ? _true : _false;
 //	}
 
-	//TODO??? out-of-bounds check. Can out-of-bounds ever occur on </2, >/2, =/2???
+	//TODO out-of-bounds check?
 
 	Lit result;
 	if (left.isVariable) {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			result = translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			result = translator()->translate(leftterm, _comparator, rightbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
 		}
 	} else {
 		Assert(not left.isVariable);
@@ -227,7 +228,7 @@ Lit ComparisonGrounder::run() const {
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
@@ -333,10 +334,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 		break;
 	}
 	if (isNeg(_sign)) {
-		if (tp == TsType::IMPL)
-			tp = TsType::RIMPL;
-		else if (tp == TsType::RIMPL)
-			tp = TsType::IMPL;
+		tp = reverseImplication(tp);
 	}
 	if (simplify) {
 		if (_doublenegtseitin) {
@@ -749,7 +747,8 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			formula.literals.push_back(l);
 		}
 		return FormStat::UNKNOWN;
-	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
+	}
+	// otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
 	//TODO: remove all the "negated"
 	if (conjFromRoot && conjunctive()) {
 		if (subformula.getType() == Conn::CONJ) {
@@ -819,7 +818,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
-				clog << "\n" << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front());
+				clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
 			}
 			return;
 		}
@@ -862,10 +861,12 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 
-		clog << "\n" << tabs() << "Current formula: " << (isNegative() ? "~" : "");
+		clog << tabs() << "Current formula: " << (isNegative() ? "~" : "");
 		_leftgrounder->printorig();
-		clog << "\n" << tabs() << " <=> ";
+		clog << "\n";
+		clog << tabs() << " <=> ";
 		_rightgrounder->printorig();
+		clog << "\n";
 	}
 
 	// Run subgrounders

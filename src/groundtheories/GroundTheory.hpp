@@ -18,6 +18,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 #include "utils/ListUtils.hpp"
@@ -127,10 +128,10 @@ public:
 			_printedsets.insert(setnr);
 			auto tsset = translator()->groundset(setnr);
 			transformForAdd(tsset.literals(), VIT_SET, defnr);
-			weightlist weights;
-			if (weighted) {
-				weights = tsset.weights();
-			}
+//			weightlist weights;
+//			if (weighted) {
+//				weights = tsset.weights();
+//			}
 			Policy::polAdd(tsset, setnr, weighted);
 		}
 	}
@@ -256,9 +257,7 @@ public:
 							CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 							Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 							newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
-						}
-						//TODO Need to do something special in other cases?
-						else {
+						} else { //TODO Need to do something special in other cases?
 							newvarids.push_back(*it);
 						}
 					} else {
@@ -286,6 +285,9 @@ public:
 				continue;
 			}
 			auto f = dynamic_cast<Function*>(pfs);
+			if (getOption(IntType::GROUNDVERBOSITY) >= 2) {
+				std::clog << "\n" << tabs() << "Adding constraints for function " << toString(f) << "\n";
+			}
 
 			if (translator()->getTuples(n).empty()) {
 				continue;
@@ -299,7 +301,7 @@ public:
 			auto outSortTable = structure()->inter(f->outsort());
 			if (not pt->finite()) {
 				throw notyetimplemented("Cannot ground functions with infinite sorts.");
-				//FIXME make this work for functions with infintie domains and/or infinite out-sorts.  Take a look at lower code...
+				//FIXME make this work for functions with infinite domains and/or infinite out-sorts.  Take a look at lower code...
 			}
 
 			ElementTuple domainElement, certainly;

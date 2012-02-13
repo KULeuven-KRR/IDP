@@ -77,6 +77,12 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 }
 
 void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+	// Convert vector of variableassignments to a map
+	map<VarId,int> variable2valuemap;
+	for (auto cpvar = model->variableassignments.cbegin(); cpvar != model->variableassignments.cend(); ++cpvar) {
+		variable2valuemap[cpvar->variable] = cpvar->value;
+	}
+	// Add terms to the output structure
 	for (auto cpvar = model->variableassignments.cbegin(); cpvar != model->variableassignments.cend(); ++cpvar) {
 		Function* function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
@@ -86,7 +92,7 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, Abs
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = model->variableassignments[it->_varid].value;
+				int value = variable2valuemap[it->_varid];
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

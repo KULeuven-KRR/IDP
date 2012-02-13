@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef INFERENCESOLVERCONN_HPP_
-#define INFERENCESOLVERCONN_HPP_
+#ifndef INFERENCE_SOLVERCONN_HPP_
+#define INFERENCE_SOLVERCONN_HPP_
 
 #include "groundtheories/SolverPolicy.hpp"
 
@@ -17,6 +17,7 @@ class AbstractStructure;
 class GroundTranslator;
 class GroundTermTranslator;
 class TraceMonitor;
+
 namespace MinisatID {
 class Solution;
 class Model;
@@ -36,4 +37,4 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, Abs
 
 }
 
-#endif //INFERENCESOLVERCONN_HPP_
+#endif //INFERENCE_SOLVERCONN_HPP_
