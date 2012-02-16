@@ -39,6 +39,7 @@
 #include "structureproperties.hpp"
 #include "setAsCurrentOptions.hpp"
 #include "createdummytuple.hpp"
+#include "minimize.hpp"
 
 #include <vector>
 
@@ -99,6 +100,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 		inferences.push_back(make_shared<IsConsistentInference>());
 		inferences.push_back(make_shared<SetOptionsInference>());
 		inferences.push_back(make_shared<CreateTupleInference>());
+		inferences.push_back(make_shared<MinimizeInference>());
 	}
 	return inferences;
 }

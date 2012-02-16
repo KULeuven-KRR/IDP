@@ -84,6 +84,8 @@ public:
 	void polAdd(int defnr, PCGroundRule* rule);
 	void polAdd(int defnr, AggGroundRule* rule);
 
+	void polAddOptimization(AggFunction function, int setid);
+
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 
 	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const;

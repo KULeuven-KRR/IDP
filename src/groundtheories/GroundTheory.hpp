@@ -55,6 +55,8 @@ public:
 	virtual void add(int head, AggTsBody* body);
 	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
 
+	virtual void addOptimization(AggFunction function, int setid);
+
 	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 

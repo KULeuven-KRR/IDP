@@ -58,6 +58,8 @@ public:
 	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr) = 0;
 
+	virtual void addOptimization(AggFunction function, int setid) = 0;
+
 	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders) = 0;
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 

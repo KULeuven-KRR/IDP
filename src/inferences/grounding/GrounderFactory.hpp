@@ -51,6 +51,11 @@ struct GenAndChecker {
 	}
 };
 
+struct GroundStructureInfo{
+	AbstractStructure* partialstructure;
+	GenerateBDDAccordingToBounds* symbolicstructure;
+};
+
 struct GroundInfo{
 	const AbstractTheory* theory;
 	AbstractStructure* partialstructure;
@@ -111,9 +116,15 @@ private:
 	const FOBDD* improveChecker(const FOBDD*, double);
 
 	template<typename Grounding>
-	GrounderFactory(const GroundInfo& data, Grounding* grounding);
+	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding);
 
 	Grounder* getTopGrounder() const { return _topgrounder; }
+	FormulaGrounder* getFormGrounder() {
+		return _formgrounder;
+	}
+	SetGrounder* getSetGrounder() {
+		return _setgrounder;
+	}
 
 public:
 	virtual ~GrounderFactory();
@@ -123,6 +134,7 @@ public:
 	static Grounder* create(const GroundInfo& data, MinisatID::WrappedPCSolver* satsolver);
 	static Grounder* create(const GroundInfo& data, MinisatID::FlatZincRewriter* flatzincprinter);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
+	static SetGrounder* create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
 
 	// Determine what should be passed to CP solver
 	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);
@@ -134,10 +146,6 @@ public:
 
 	GroundingContext getContext() {
 		return _context;
-	}
-
-	FormulaGrounder* getFormGrounder() {
-		return _formgrounder;
 	}
 
 protected:

@@ -96,6 +96,10 @@ public:
 		delete (reif);
 	}
 
+	void polAddOptimization(AggFunction function, int setid){
+		throw notyetimplemented("Printing an optimization constraint.\n");
+	}
+
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
 		Assert(false);
 		return s;

@@ -23,6 +23,7 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 
 #include "tracemonitor.hpp"
 
@@ -53,13 +54,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Create solver and grounder
 	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
 	// TODO bugged!
 	//auto symstructure = generateApproxBounds(clonetheory, newstructure);
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
 	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, solver);
@@ -71,9 +72,23 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	grounder->toplevelRun();
 	auto grounding = grounder->getGrounding();
 
+	// TODO refactor optimization!
+
+	if(minimizeterm!=NULL){
+		auto term = dynamic_cast<AggTerm*>(minimizeterm);
+		if(term!=NULL){
+			auto setgrounder = GrounderFactory::create(term->set(), {newstructure, symstructure}, grounding);
+			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
+			optimgrounder.setOrig(minimizeterm);
+			optimgrounder.run();
+		}else{
+			throw notyetimplemented("Optimization over non-aggregate terms.");
+		}
+	}
+
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		if (verbosity() >= 1) {
 			clog << "Symmetry breaking\n";
 		}
 		auto ivsets = findIVSets(clonetheory, newstructure);
@@ -101,7 +116,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	auto abstractsolutions = SolverConnection::initsolution();
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
@@ -113,7 +128,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
 	}
 	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {

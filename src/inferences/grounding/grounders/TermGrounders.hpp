@@ -12,7 +12,6 @@
 #define TERMGROUNDERS_HPP_
 
 #include "IncludeComponents.hpp" // TODO too general
-
 class AbstractGroundTheory;
 class SortTable;
 class Term;
@@ -27,26 +26,26 @@ class GroundTranslator;
 class GroundTermTranslator;
 
 class TermGrounder {
-protected:
-	AbstractGroundTheory* _grounding;
+private:
 	mutable SortTable* _domain;
 	Term* _origterm;
 	std::map<Variable*, const DomElemContainer*> _varmap;
-	int _verbosity;
-	void printOrig() const;
 public:
-	TermGrounder() {
-	}
-	TermGrounder(AbstractGroundTheory* g, SortTable* dom)
-			: _grounding(g), _domain(dom) {
+	// @parameter dom: the sort of the position the term occurs in
+	TermGrounder(SortTable* dom = NULL) :
+			_domain(dom) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
-	void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd, int);
+
+	void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd);
+	void printOrig() const;
+
 	SortTable* getDomain() const {
 		return _domain;
 	}
-	void setDomain(SortTable* dom) {
+protected:
+	void setDomain(SortTable* dom) const { // TODO ugly const setter!
 		_domain = dom;
 	}
 };
@@ -55,8 +54,8 @@ class DomTermGrounder: public TermGrounder {
 private:
 	const DomainElement* _value;
 public:
-	DomTermGrounder(const DomainElement* val)
-			: _value(val) {
+	DomTermGrounder(const DomainElement* val) :
+			_value(val) {
 	}
 	GroundTerm run() const;
 };
@@ -65,10 +64,10 @@ class VarTermGrounder: public TermGrounder {
 private:
 	const DomElemContainer* _value;
 public:
-	VarTermGrounder(const DomElemContainer* a)
-			: _value(a) {
+	VarTermGrounder(const DomElemContainer* a) :
+			_value(a) {
 	}
-	inline GroundTerm run() const{
+	inline GroundTerm run() const {
 		return GroundTerm(_value->get());
 	}
 
@@ -84,9 +83,8 @@ protected:
 	FuncTable* _functable;
 	std::vector<TermGrounder*> _subtermgrounders;
 public:
-	FuncTermGrounder(GroundTermTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<TermGrounder*>& sub)
-			: _termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub) {
-		_domain = dom;
+	FuncTermGrounder(GroundTermTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<TermGrounder*>& sub) :
+			TermGrounder(dom), _termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub) {
 	}
 	GroundTerm run() const;
 
@@ -107,10 +105,12 @@ protected:
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	SumType _type;
+
+	AbstractGroundTheory* _grounding;
 public:
-	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type =
-			ST_PLUS)
-			: TermGrounder(g, dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
+	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg,
+			SumType type = ST_PLUS) :
+			TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type), _grounding(g) {
 	}
 	GroundTerm run() const;
 };
@@ -123,8 +123,8 @@ private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr)
-			: _translator(gt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr) :
+			_translator(gt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };
