@@ -55,8 +55,8 @@ MinisatID::Solution* initsolution() {
 	return new MinisatID::Solution(opts);
 }
 
-void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) {
-	for (auto literal = model->literalinterpretations.cbegin(); literal != model->literalinterpretations.cend(); ++literal) {
+void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
+	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
 		int atomnr = literal->getAtom().getValue();
 
 		if (translator->isInputAtom(atomnr)) {
@@ -81,8 +81,8 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 	}
 }
 
-void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
-	for (auto cpvar = model->variableassignments.cbegin(); cpvar != model->variableassignments.cend(); ++cpvar) {
+void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		Function* function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
 			continue;
@@ -91,7 +91,7 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, Abs
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = model->variableassignments[it->_varid].value;
+				int value = model.variableassignments[it->_varid].value;
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

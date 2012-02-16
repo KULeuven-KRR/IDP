@@ -29,6 +29,8 @@
 
 using namespace std;
 
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
+
 class SolverTermination: public TerminateMonitor {
 public:
 	void notifyTerminateRequested() {
@@ -128,16 +130,17 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if (verbosity() >= 1) {
-		clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
-	}
-	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
-		auto newsolution = newstructure->clone();
-		SolverConnection::addLiterals(*model, grounding->translator(), newsolution);
-		SolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
-		newsolution->clean();
-		solutions.push_back(newsolution);
-		Assert(newsolution->isConsistent());
+	if(minimizeterm!=NULL){ // Optimizing
+		if(abstractsolutions->getModels().size()>0){
+			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
+		}
+	}else{
+		if (verbosity() >= 1) {
+			clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
+		}
+		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
+			solutions.push_back(handleSolution(newstructure, **model, grounding));
+		}
 	}
 
 	// Clean up: remove all objects that are only used here.
@@ -150,4 +153,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	delete (symstructure);
 
 	return solutions;
+}
+
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding){
+	auto newsolution = structure->clone();
+	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
+	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);
+	newsolution->clean();
+	Assert(newsolution->isConsistent());
+	return newsolution;
 }

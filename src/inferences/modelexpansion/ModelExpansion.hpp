@@ -39,6 +39,5 @@ private:
 			: theory(theory), structure(structure), tracemonitor(tracemonitor), minimizeterm(minimize) {
 	}
 	std::vector<AbstractStructure*> expand() const;
-
 };
 #endif //MODELEXPANSION_HPP_
