@@ -31,10 +31,10 @@ namespace SolverConnection {
 	MinisatID::Solution* initsolution();
 
 	// Parse model into structure
-	void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init);
+	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);
 
 	// Parse cp-model into structure
-	void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init);
+	void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init);
 }
 
 #endif //INFERENCE_SOLVERCONN_HPP_
