@@ -69,6 +69,7 @@ add_library(idp
 	inferences/grounding/grounders/FormulaGrounders.cpp
 	inferences/grounding/grounders/SetGrounders.cpp
 	inferences/grounding/grounders/TermGrounders.cpp
+	inferences/grounding/grounders/OptimizationTermGrounders.cpp
 	inferences/grounding/GroundTermTranslator.cpp
 	inferences/grounding/GroundTranslator.cpp
 	inferences/grounding/GrounderFactory.cpp

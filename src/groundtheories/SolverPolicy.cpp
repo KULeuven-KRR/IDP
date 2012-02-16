@@ -228,28 +228,44 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	getSolver().add(MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
+MinisatID::AggType convert(AggFunction agg){
+	switch (agg) {
+	case AggFunction::CARD:
+		if (verbosity() > 1){
+			std::clog << "card ";
+		}
+		return MinisatID::CARD;
+	case AggFunction::SUM:
+		if (verbosity() > 1){
+			std::clog << "sum ";
+		}
+		return MinisatID::SUM;
+	case AggFunction::PROD:
+		if (verbosity() > 1){
+			std::clog << "prod ";
+		}
+		return MinisatID::PROD;
+	case AggFunction::MIN:
+		if (verbosity() > 1){
+			std::clog << "min ";
+		}
+		return MinisatID::MIN;
+	case AggFunction::MAX:
+		if (verbosity() > 1){
+			std::clog << "max ";
+		}
+		return MinisatID::MAX;
+	}
+}
+
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
-	switch (aggtype) {
-	case AggFunction::CARD:
-		agg.type = MinisatID::CARD;
-		break;
-	case AggFunction::SUM:
-		agg.type = MinisatID::SUM;
-		break;
-	case AggFunction::PROD:
-		agg.type = MinisatID::PROD;
-		break;
-	case AggFunction::MIN:
-		agg.type = MinisatID::MIN;
-		break;
-	case AggFunction::MAX:
-		agg.type = MinisatID::MAX;
-		break;
-	}
+	agg.type = convert(aggtype);
+	if (_verbosity > 1)
+		std::clog << setnr << ' ';
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
@@ -260,6 +276,8 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 		agg.sem = MinisatID::DEF;
 		break;
 	}
+	if (_verbosity > 1)
+		std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
@@ -310,6 +328,14 @@ void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> bo
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
 	getSolver().add(rule);
+}
+
+template<typename Solver>
+void SolverPolicy<Solver>::polAddOptimization(AggFunction function, int setid){
+	MinisatID::MinimizeAgg minim;
+	minim.setid = setid;
+	minim.type = convert(function);
+	getSolver().add(minim);
 }
 
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {

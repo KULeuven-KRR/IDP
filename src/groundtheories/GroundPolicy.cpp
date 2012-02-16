@@ -72,6 +72,10 @@ void GroundPolicy::polAdd(DefId defnr, AggGroundRule* rule) {
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
 
+void GroundPolicy::polAddOptimization(AggFunction function, int setid){
+	throw notyetimplemented("Adding optimization to the grounding\n");
+}
+
 std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 	std::clog << "Printing ground theory\n";
 	std::clog << "Has " << _clauses.size() << " clauses." << "\n";

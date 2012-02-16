@@ -194,6 +194,12 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 }
 
 template<class Policy>
+void GroundTheory<Policy>::addOptimization(AggFunction function, int setid){
+	add(setid, getIDForUndefined(), function!=AggFunction::CARD);
+	Policy::polAddOptimization(function, setid);
+}
+
+template<class Policy>
 std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 	return Policy::polPut(s, translator(), termtranslator());
 }

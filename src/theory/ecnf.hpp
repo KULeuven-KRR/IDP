@@ -396,13 +396,13 @@ public:
 		_litweights.pop_back();
 	}
 	// Inspectors
-	litlist literals() const {
+	const litlist& literals() const {
 		return _setlits;
 	}
-	weightlist weights() const {
+	const weightlist& weights() const {
 		return _litweights;
 	}
-	weightlist trueweights() const {
+	const weightlist& trueweights() const {
 		return _trueweights;
 	}
 	size_t size() const {
