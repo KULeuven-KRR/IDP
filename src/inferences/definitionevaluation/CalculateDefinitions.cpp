@@ -48,8 +48,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	} else {
 		Assert(abstractsolutions->getModels().size() == 1);
 		auto model = *(abstractsolutions->getModels().cbegin());
-		SolverConnection::addLiterals(model, grounding->translator(), structure);
-		SolverConnection::addTerms(model, grounding->termtranslator(), structure);
+		SolverConnection::addLiterals(*model, grounding->translator(), structure);
+		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
 	}
 

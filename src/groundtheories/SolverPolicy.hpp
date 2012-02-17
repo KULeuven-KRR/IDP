@@ -69,6 +69,8 @@ protected:
 			MinisatID::EqType rel);
 	void polAdd(int tseitin, CPTsBody* body);
 
+	void polAddOptimization(AggFunction function, int setid);
+
 	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction);
 

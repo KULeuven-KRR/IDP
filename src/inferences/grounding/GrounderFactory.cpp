@@ -60,7 +60,7 @@ int getIDForUndefined() {
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
 template<typename Grounding>
-GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding)
+GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding)
 		: _structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding) {
 
 	Assert(_symstructure!=NULL);
@@ -69,11 +69,6 @@ GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding)
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		clog << "Using the following symbolic structure to ground: " <<nt();
 		_symstructure->put(clog);
-	}
-
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(data.theory);
 	}
 }
 
@@ -243,14 +238,22 @@ void GrounderFactory::descend(T* child) {
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
-	GrounderFactory g(data, groundtheory);
+	GrounderFactory g({data.partialstructure, data.symbolicstructure}, groundtheory);
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		g.findCPSymbols(data.theory);
+	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	GrounderFactory g(data, groundtheory);
+	GrounderFactory g({data.partialstructure, data.symbolicstructure}, groundtheory);
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		g.findCPSymbols(data.theory);
+	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
@@ -275,16 +278,30 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
 Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g(data, groundtheory);
+	GrounderFactory g({data.partialstructure, data.symbolicstructure}, groundtheory);
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		g.findCPSymbols(data.theory);
+	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRewriter* printer) {
 	auto groundtheory = new GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g(data, groundtheory);
+	GrounderFactory g({data.partialstructure, data.symbolicstructure}, groundtheory);
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		g.findCPSymbols(data.theory);
+	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
+}
+
+SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
+	GrounderFactory g(data, grounding);
+	set->accept(&g);
+	return g.getSetGrounder();
 }
 
 /**
@@ -910,7 +927,7 @@ void GrounderFactory::visit(const VarTerm* t) {
 
 	Assert(varmapping().find(t->var()) != varmapping().cend());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const DomainTerm* t) {
@@ -918,7 +935,7 @@ void GrounderFactory::visit(const DomainTerm* t) {
 	_context._conjPathUntilNode = false;
 
 	_termgrounder = new DomTermGrounder(t->value());
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const FuncTerm* t) {
@@ -947,7 +964,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(), function, ftable, domain, subtermgrounders);
 	}
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const AggTerm* t) {
@@ -959,7 +976,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding->translator(), t->function(), _setgrounder);
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const EnumSetExpr* s) {
