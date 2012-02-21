@@ -52,7 +52,6 @@ string getPathOfConfigFile() {
 
 std::string tabs() {
 	stringstream ss;
-	ss << '\n';
 	auto nb = GlobalData::instance()->getTabSize();
 	for (size_t i = 0; i < nb; ++i) {
 		ss << "    ";

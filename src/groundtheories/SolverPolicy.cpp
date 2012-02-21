@@ -231,29 +231,14 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 MinisatID::AggType convert(AggFunction agg){
 	switch (agg) {
 	case AggFunction::CARD:
-		if (verbosity() > 1){
-			std::clog << "card ";
-		}
 		return MinisatID::CARD;
 	case AggFunction::SUM:
-		if (verbosity() > 1){
-			std::clog << "sum ";
-		}
 		return MinisatID::SUM;
 	case AggFunction::PROD:
-		if (verbosity() > 1){
-			std::clog << "prod ";
-		}
 		return MinisatID::PROD;
 	case AggFunction::MIN:
-		if (verbosity() > 1){
-			std::clog << "min ";
-		}
 		return MinisatID::MIN;
 	case AggFunction::MAX:
-		if (verbosity() > 1){
-			std::clog << "max ";
-		}
 		return MinisatID::MAX;
 	}
 }
@@ -264,8 +249,6 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	agg.type = convert(aggtype);
-	if (_verbosity > 1)
-		std::clog << setnr << ' ';
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
@@ -276,8 +259,6 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 		agg.sem = MinisatID::DEF;
 		break;
 	}
-	if (_verbosity > 1)
-		std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
