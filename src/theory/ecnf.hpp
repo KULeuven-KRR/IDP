@@ -383,7 +383,8 @@ class TsSet {
 private:
 	litlist _setlits; // All literals in the ground set
 	weightlist _litweights; // For each literal a corresponding weight
-	weightlist _trueweights; // The weights of the true literals in the set
+	weightlist _trueweights; // The weights corresponding to true literals in the set
+	varidlist _varids; // CP variable ids corresponding to true literals in the set
 public:
 	// Modifiers
 	void setWeight(size_t n, Weight w) {
@@ -404,6 +405,9 @@ public:
 	}
 	const weightlist& trueweights() const {
 		return _trueweights;
+	}
+	const varidlist& varids() const {
+		return _varids;
 	}
 	size_t size() const {
 		return _setlits.size();
@@ -627,7 +631,7 @@ private:
 	varidlist _varids;
 public:
 	CPSumTerm(const VarId& left, const VarId& right)
-			: _varids( { left, right }) {
+			: _varids({ left, right }) {
 	}
 	CPSumTerm(const varidlist& varids)
 			: _varids(varids) {

@@ -14,7 +14,9 @@
 #include "IncludeComponents.hpp"
 #include "UnnestTerms.hpp"
 
-#include <set>
+#include "utils/CPUtils.hpp"
+
+//#include <set>
 
 class Vocabulary;
 class Variable;
@@ -23,6 +25,8 @@ class PFSymbol;
 class Formula;
 class PredForm;
 class Term;
+
+//FIXME description still says non-recursively!!
 
 /**
  *	Non-recursively moves terms that are three-valued according to a given structure
@@ -47,27 +51,31 @@ class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool _cpsupport;
-	std::set<const PFSymbol*> _cpsymbols;
+//	std::set<const PFSymbol*> _cpsymbols;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, const std::set<const PFSymbol*>& cpsymbols) {
+	T execute(T t, AbstractStructure* str, Context context, const std::set<const Function*>& cpfuncsymbols) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
 		_cpsupport = getOption(BoolType::CPSUPPORT);
-		_cpsymbols = cpsymbols;
+		if (_cpsupport) {
+			CPSupport::findCPSymbols(_vocabulary);
+		}
 		return t->accept(this);
 	}
 
 protected:
 	bool shouldMove(Term* t);
 
-	Formula* traverse(PredForm* f);
+//	Formula* traverse(PredForm* f);
+	Formula* visit(PredForm* predform);
 
-private:
-	bool isCPSymbol(const PFSymbol* symbol) const;
+//private:
+//	bool eligibleForCP(const PFSymbol*) const;
+//	bool eligibleForCP(const AggTerm*) const;
 };
 
 #endif /* REMOVETHREEVALUEDTERMS_HPP_ */

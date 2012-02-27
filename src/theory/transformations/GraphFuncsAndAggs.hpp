@@ -14,21 +14,26 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "parseinfo.hpp"
 #include "commontypes.hpp"
+#include "utils/CPUtils.hpp"
+#include "IncludeComponents.hpp"
 
 class AbstractStructure;
-
-//TODO This visitor should take cpsymbols into account!
 
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	AbstractStructure* _structure;
 	Context _context;
+	bool _cpsupport;
 public:
 	template<typename T>
 	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {
 		_structure = str;
 		_context = c;
+		_cpsupport = getOption(BoolType::CPSUPPORT);
+		if (_cpsupport && str != NULL) {
+			CPSupport::findCPSymbols(str->vocabulary());
+		}
 		return t->accept(this);
 	}
 protected:

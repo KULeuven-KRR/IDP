@@ -227,12 +227,12 @@ Lit ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin);
 		}
 	} else {
 		Assert(not left.isVariable);
@@ -240,7 +240,7 @@ Lit ComparisonGrounder::run() const {
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, context()._tseitin); //TsType::EQ); //TODO use _context._tseitin?
+			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, context()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
@@ -390,7 +390,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
  *
  * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often ayway.
  */
-Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, int setnr) const {
 	Assert(_type==AggFunction::PROD);
 	auto tsset = translator()->groundset(setnr);
 	litlist zerolits;
@@ -420,16 +420,12 @@ Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double m
 		}
 	}
 
-	int possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights());
-	int negsetnumber = translator()->translateSet(neglits, negweights, { });
+	int possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights(), { });
+	int negsetnumber = translator()->translateSet(neglits, negweights, { }, { });
 
 	auto tp = context()._tseitin;
 	if (isNeg(_sign)) {
-		if (tp == TsType::IMPL) {
-			tp = TsType::RIMPL;
-		} else if (tp == TsType::RIMPL) {
-			tp = TsType::IMPL;
-		}
+		tp = reverseImplication(tp);
 	}
 	Lit tseitin;
 	if (newboundvalue == 0) {
@@ -492,8 +488,9 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		break;
 
 	}
-	if (_doublenegtseitin)
+	if (_doublenegtseitin) {
 		return handleDoubleNegation(newboundvalue, setnr);
+	}
 	else {
 		Lit tseitin;
 		TsType tp = context()._tseitin;

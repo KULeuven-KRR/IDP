@@ -1,13 +1,13 @@
-vocabulary V{
+vocabulary V {
 	type x isa string
 	b:x
 }
 
-theory T:V{
-	!a[x]: a>=b => a = "Hello".
+theory T : V {
+	! a[x] :  a >= b  =>  a = "Hello".
 }
 
-structure S:V{
+structure S : V {
 	x = {"Hello";"ABC";ABB}
 }
 

@@ -92,7 +92,6 @@ GroundTerm FuncTermGrounder::run() const {
 			return GroundTerm(domelem);
 		}
 	}
-	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
@@ -101,7 +100,7 @@ GroundTerm FuncTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
-CPTerm* createSumTerm(SumType type, const VarId& left, const VarId& right) {
+CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
 	if (type == ST_MINUS) {
 		return new CPWSumTerm({ left, right }, { 1, -1 });
 	} else {
@@ -121,6 +120,7 @@ GroundTerm SumTermGrounder::run() const {
 	auto rightdomain = _righttermgrounder->getDomain();
 
 	// Compute domain for the sum term
+	//TODO can we do this using the deriveSort(Term*) from UnnestTerms?
 	if (getDomain()==NULL || not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
 			leftdomain = new SortTable(new EnumeratedInternalSortTable());
@@ -163,7 +163,7 @@ GroundTerm SumTermGrounder::run() const {
 	VarId varid;
 	if (left.isVariable) {
 		if (right.isVariable) {
-			auto sumterm = createSumTerm(_type, left._varid, right._varid);
+			auto sumterm = createCPSumTerm(_type, left._varid, right._varid);
 			varid = _termtranslator->translate(sumterm, getDomain());
 		} else {
 			Assert(not right.isVariable);
@@ -173,7 +173,7 @@ GroundTerm SumTermGrounder::run() const {
 			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			auto sumterm = createSumTerm(_type, left._varid, rightvarid);
+			auto sumterm = createCPSumTerm(_type, left._varid, rightvarid);
 			varid = _termtranslator->translate(sumterm, getDomain());
 		}
 	} else {
@@ -185,7 +185,7 @@ GroundTerm SumTermGrounder::run() const {
 			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
 			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
-			auto sumterm = createSumTerm(_type, leftvarid, right._varid);
+			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
 			varid = _termtranslator->translate(sumterm, getDomain());
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable && _functable!=NULL);
@@ -199,17 +199,23 @@ GroundTerm SumTermGrounder::run() const {
 		}
 	}
 
-	// Ask for a new tseitin for this cp constraint and add it to the grounding.
-	CPTsBody* cprelation = _termtranslator->cprelation(varid);
-	Lit sumtseitin = _grounding->translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
-	_grounding->addUnitClause(sumtseitin);
-
 	// Return result
 	if (verbosity() > 2) {
 		poptab();
 		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
+}
+
+CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
+	Assert(f == SUM);
+	switch (f) {
+	case SUM :
+		return new CPSumTerm(varids);
+	default:
+		notyetimplemented("No CP support for aggregate functions other that sum.");
+		return NULL;
+	}
 }
 
 GroundTerm AggTermGrounder::run() const {
@@ -219,18 +225,29 @@ GroundTerm AggTermGrounder::run() const {
 	}
 	auto setnr = _setgrounder->run();
 	auto tsset = _translator->groundset(setnr);
-	// FIXME if grounding aggregates, with an upper and lower bound, should not return a domelem from the subgrounder, but a vardomain or something?
-	if (tsset.empty()) {
-		auto value = applyAgg(_type, tsset.trueweights());
-		auto domelem = createDomElem(value);
+	Assert(tsset.literals().empty());
+
+	if (not tsset.varids().empty()) {
+		//Note: When the aggregate is not computable (its set is three-valued), it should've been rewritten into an AggForm!
+		// Only when grounding with cpsupport it is possible that we end up here.
+		Assert(getOption(BoolType::CPSUPPORT) && tsset.trueweights().empty());
+
+		auto sumterm = createCPAggTerm(_type, tsset.varids());
+		auto varid = _termtranslator->translate(sumterm, getDomain());
+
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << toString(domelem) << "\n";
+			clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 		}
-		return GroundTerm(domelem);
-	} else {
-		//FIXME in this case, there should have been a dedicated cpgrounder for this aggterm...
-		Assert(false);
-		return GroundTerm();
+		return GroundTerm(varid);
 	}
+
+	//Note: This only happens when the set is two-valued, and the aggregate is computable (otherwise this term would've been unnested and graphed to an AggForm).
+	auto value = applyAgg(_type, tsset.trueweights());
+	auto domelem = createDomElem(value);
+	if (verbosity() > 2) {
+		poptab();
+		clog << tabs() << "Result = " << toString(domelem) << "\n";
+	}
+	return GroundTerm(domelem);
 }

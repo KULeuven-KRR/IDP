@@ -107,7 +107,7 @@ public:
 	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translateSet(const litlist&, const weightlist&, const weightlist&);
+	Lit translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
 	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const;

@@ -208,26 +208,21 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	//}
 }
 
-SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights) {
+SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const varidlist& varids) {
 	SetId setnr;
 	if (_freesetnumbers.empty()) {
 		TsSet newset;
 		setnr = _sets.size();
 		_sets.push_back(newset);
-		TsSet& tsset = _sets.back();
-
-		tsset._setlits = lits;
-		tsset._litweights = weights;
-		tsset._trueweights = trueweights;
 	} else {
 		setnr = _freesetnumbers.front();
 		_freesetnumbers.pop();
-		TsSet& tsset = _sets[setnr];
-
-		tsset._setlits = lits;
-		tsset._litweights = weights;
-		tsset._trueweights = trueweights;
 	}
+	TsSet& tsset = _sets[setnr];
+	tsset._setlits = lits;
+	tsset._litweights = weights;
+	tsset._trueweights = trueweights;
+	tsset._varids = varids;
 	return setnr;
 }
 

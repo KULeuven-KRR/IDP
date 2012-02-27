@@ -127,8 +127,15 @@ template<class Policy>
 void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	//TODO also add variables (in a separate container?)
 
-	CPTsBody* foldedbody = new CPTsBody(body->type(), foldCPTerm(body->left()), body->comp(), body->right());
+	auto foldedbody = new CPTsBody(body->type(), foldCPTerm(body->left()), body->comp(), body->right());
 	//FIXME possible leaks!!
+
+	//TODO refactor the following...
+	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
+		auto cprelation = termtranslator()->cprelation(body->right()._varid);
+		auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
+		add(tseitin2, cprelation);
+	}
 
 	Policy::polAdd(tseitin, foldedbody);
 	addFuncConstraints();
@@ -254,9 +261,10 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		return cpterm;
 	}
 	_foldedterms.insert(cpterm);
+
 	if (sametypeid<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (not termtranslator()->function(varterm->varid())) {
+		if (termtranslator()->function(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
 			if ((sametypeid<CPSumTerm>(*left) || sametypeid<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
@@ -369,7 +377,7 @@ void GroundTheory<Policy>::addFuncConstraints() {
 			addRangeConstraint(f, tupleset, outSortTable);
 		}
 
-		//OLD CODE that might work for infintite domains... First we should find out what exactly is the meaning of the grounding in case of infinite domains...
+		//OLD CODE that might work for infinite domains... First we should find out what exactly is the meaning of the grounding in case of infinite domains...
 		//FIXME implement for infinite domains
 		/*std::vector<bool> weak;
 		 for (auto it = tuples.begin(); it != tuples.end();) {
@@ -448,7 +456,7 @@ template<class Policy>
 void GroundTheory<Policy>::addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable) {
 	CHECKTERMINATION
 	weightlist lw(set.size(), 1);
-	SetId setnr = translator()->translateSet(set, lw, { });
+	SetId setnr = translator()->translateSet(set, lw, { }, { });
 	Lit tseitin;
 	if (f->partial() || (not outSortTable->finite())) {
 		tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);

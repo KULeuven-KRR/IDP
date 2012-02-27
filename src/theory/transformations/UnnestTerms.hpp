@@ -37,11 +37,12 @@ private:
 	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
 	std::set<Variable*> _variables; //!< used to temporarily store the freshly introduced variables
-	Sort* _chosenVarSort;
 
 	void contextProblem(Term* t);
 
 protected:
+	Sort* _chosenVarSort;
+
 	virtual bool shouldMove(Term* t);
 
 	bool getAllowedToUnnest() const {
@@ -70,14 +71,13 @@ public:
 	}
 
 protected:
-	Formula* rewrite(Formula*);
-
-	VarTerm* move(Term*);
+	template<typename T>
+	Formula* doRewrite(T origformula);
 
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);
 	virtual Formula* traverse(Formula*);
-	virtual Formula* traverse(PredForm*);
+//	virtual Formula* traverse(PredForm*);
 	virtual Formula* visit(EquivForm*);
 	virtual Formula* visit(AggForm*);
 	virtual Formula* visit(EqChainForm*);
@@ -93,8 +93,8 @@ protected:
 	void visitRuleHead(Rule* rule); // Split to allow reuse
 
 private:
-	template<typename T>
-	Formula* doRewrite(T origformula);
+	Formula* rewrite(Formula*);
+	VarTerm* move(Term*);
 
 	Sort* deriveSort(Term*);
 };

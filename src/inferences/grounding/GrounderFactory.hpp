@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef GROUND_HPP
-#define GROUND_HPP
+#ifndef GROUNDERFACTORY_HPP
+#define GROUNDERFACTORY_HPP
 
 #include <stack>
 #include "IncludeComponents.hpp"
@@ -73,7 +73,7 @@ private:
 	std::stack<GroundingContext> _contextstack;
 
 	// Symbols passed to CP solver
-	std::set<const PFSymbol*> _cpsymbols;
+	std::set<const Function*> _cpfuncsymbols;
 
 	// Variable mapping
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
@@ -137,8 +137,7 @@ public:
 	static SetGrounder* create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
 
 	// Determine what should be passed to CP solver
-	std::set<const PFSymbol*> findCPSymbols(const AbstractTheory*);
-	bool isCPSymbol(const PFSymbol*) const;
+	std::set<const Function*> findCPSymbols(const AbstractTheory*);
 
 	bool recursive(const Formula*);
 
@@ -176,4 +175,4 @@ private:
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 };
 
-#endif
+#endif /* GROUNDERFACTORY_HPP */

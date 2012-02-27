@@ -41,6 +41,7 @@ bool UnnestTerms::shouldMove(Term* t) {
 /**
  * Tries to derive a sort for the term given a structure.
  */
+//TODO Move this to TermUtils or SortUtils!!
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), _vocabulary)) {
@@ -199,10 +200,10 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	return f;
 }
 
-Formula* UnnestTerms::traverse(PredForm* f) {
-//TODO Very ugly static cast!! XXX This needs to be done differently!! FIXME
-	return traverse(static_cast<Formula*>(f));
-}
+//Formula* UnnestTerms::traverse(PredForm* f) {
+////TODO Very ugly static cast!! XXX This needs to be done differently!! FIXME
+//	return traverse(static_cast<Formula*>(f));
+//}
 
 Formula* UnnestTerms::visit(EquivForm* ef) {
 	Context savecontext = getContext();

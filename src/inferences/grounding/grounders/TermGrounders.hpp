@@ -34,8 +34,8 @@ private:
 	var2dommap _varmap;
 public:
 	// @parameter dom: the sort of the position the term occurs in
-	TermGrounder(SortTable* dom = NULL) :
-			_domain(dom) {
+	TermGrounder(SortTable* dom = NULL)
+			: _domain(dom) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
@@ -121,11 +121,12 @@ class SetGrounder;
 class AggTermGrounder: public TermGrounder {
 private:
 	GroundTranslator* _translator;
+	GroundTermTranslator* _termtranslator;
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr) :
-			_translator(gt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SetGrounder* gr) :
+			_translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };

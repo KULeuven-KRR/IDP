@@ -119,6 +119,7 @@ add_library(idp
 	utils/NumericLimits.cpp
 	theory/TheoryUtils.cpp
 	utils/StringUtils.cpp
+	utils/CPUtils.cpp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
