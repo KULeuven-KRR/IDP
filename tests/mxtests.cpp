@@ -51,14 +51,13 @@ TEST_P(MXnbTest, DoesMX) {
 	runTests("mxnbofmodelstest.idp", GetParam());
 }
 
+TEST_P(MXnbTest, DoesMXWithBounds) {
+	runTests("mxnbofmodelstestwithbounds.idp", GetParam());
+}
+
 TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
-
-// TODO when bdds are implemented
-/*TEST_P(MXnbTest, DoesMXWithBounds) {
-	runTests("mxnbofmodelstestwithbounds.idp");
-}*/
 
 TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
