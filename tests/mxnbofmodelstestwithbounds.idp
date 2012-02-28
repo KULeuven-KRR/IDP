@@ -6,8 +6,14 @@ procedure main(){
 	stdoptions.groundwithbounds = true
 	solutions = mx::all(T, S)
 	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
-	if(#solutions==getExpectedNbOfModels())
-		then return 1
-	else return 0
+	if(#solutions~=getExpectedNbOfModels()) then
+		return 0
+	end 
+	for i= 1,#solutions do
+		if not isconsistent(solutions[i]) then
+			io.stderr:write("ModelExpand found an inconsistent model\n")
+			return 0
+		end
 	end
+	return 1
 }

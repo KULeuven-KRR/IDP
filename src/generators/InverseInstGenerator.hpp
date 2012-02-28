@@ -72,6 +72,10 @@ public:
 			notifyAtEnd();
 		}
 	}
+	virtual void put(std::ostream& stream) {
+		stream << "Inverse instance generater: inverse of\n"<< tabs()<< toString(_predchecker) ;
+	}
+
 };
 
 #endif /* INVERSEINSTGENERATOR_HPP_ */
