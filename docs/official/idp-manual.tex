@@ -129,11 +129,11 @@ A type with name \code{MyType} is declared by
 \begin{lstlisting}
 	type MyType
 \end{lstlisting}
-When declaring a type, it can be stated that this type is a subtype or supertype of a set of other types.  The followint declares \code{MyType} to be a supbtype of the previously declared types \code{A1} and \code{A2}, and a supertype of the previously declared types \code{B1} and {B2}:
+When declaring a type, it can be stated that this type is a subtype or supertype of a set of other types.  The following declares \code{MyType} to be a supbtype of the previously declared types \code{A1} and \code{A2}, and a supertype of the previously declared types \code{B1} and {B2}:
 \begin{lstlisting}
 	type MyType isa A1, A2 contains B1, B2
 \end{lstlisting}
-A predicate with name \code{MyPred} and types \code{T1},\code{T2},\code{T3} is declared by
+A predicate with name \code{MyPred}, arity 3 and types \code{T1},\code{T2},\code{T3} is declared by
 \begin{lstlisting}
 	MyPred(T1,T2,T3)
 \end{lstlisting}
@@ -392,7 +392,7 @@ The current system has support for five aggregate functions:
 \[ \sum_{i | I\vDash {\tt phi\_i}} {\tt t_i }. \]
 	\item[Product:] Products are defined similar to sum.  
 	\item[Maximum:] One can write `{\tt max} $S$' to denote the maximum value of the term in $S$, i.e.,
-	\[ \textrm{max}(\{ {\tt t} \mid {\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi} {\tt t },\}) \] for sets of the second sort.  Sets of the first sort are handled analogously. %{\tt(a\_1,a\_2,..., a\_n)} \in S} {\tt a\_1 }, \]
+	\[ \max_{{\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi}} {\tt t} \] for sets of the second sort.  Sets of the first sort are handled analogously. %{\tt(a\_1,a\_2,..., a\_n)} \in S} {\tt a\_1 }, \]
 	\item[Minimum:] To get the minimum value, write `{\tt min} $S$'.
 \end{description}
 When using cardinality, the terms do not matter.  You can choose to write $1$ for every term, but are also allowed to leave out the terms.
