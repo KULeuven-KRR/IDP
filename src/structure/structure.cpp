@@ -390,6 +390,10 @@ string DomainAtom::toString() const {
 	return sstr.str();
 }
 
+bool isFinite(const tablesize& tsize){
+	return tsize._type==TST_EXACT || tsize._type==TST_APPROXIMATED;
+}
+
 /**
  *	Constructor for a domain element factory. The constructor gets two arguments, 
  *	specifying the range of integer for which creation of domain elements is optimized.
@@ -3003,7 +3007,8 @@ void SortTable::put(std::ostream& stream) const {
  ****************/
 
 PredTable::PredTable(InternalPredTable* table, const Universe& univ)
-		: _table(table), _universe(univ) {
+		: _table(NULL), _universe(univ) {
+	setTable(table);
 	table->incrementRef();
 }
 
@@ -3011,13 +3016,25 @@ PredTable::~PredTable() {
 	_table->decrementRef();
 }
 
+void PredTable::setTable(InternalPredTable* table){
+	/**
+	 * TODO optimize table for size here:
+	 * 		non-inverted table => contains by search in table                    log(|table|)
+	 * 						   => iterate by walking over table                  |table| for |table| results
+	 * 		inverted table     => contains by search in table and in universe    log(|table|) + log(|univ|)
+	 * 		                   => iterate by walk over univ and check with table |univ| * log(|table|) for |univ|-|table| results
+	 * 		                   		==> if table is very large, e.g. another inverted table, then ...
+	 */
+	_table = table;
+}
+
 void PredTable::add(const ElementTuple& tuple) {
 	Assert(arity() == tuple.size());
 	if (_table->contains(tuple, _universe)) {
 		return;
 	}
-	InternalPredTable* temp = _table;
-	_table = _table->add(tuple);
+	auto temp = _table;
+	setTable(_table->add(tuple));
 	if (temp != _table) {
 		temp->decrementRef();
 		_table->incrementRef();
@@ -3029,8 +3046,8 @@ void PredTable::remove(const ElementTuple& tuple) {
 	if (not _table->contains(tuple, _universe)) {
 		return;
 	}
-	InternalPredTable* temp = _table;
-	_table = _table->remove(tuple);
+	auto temp = _table;
+	setTable(_table->remove(tuple));
 	if (temp != _table) {
 		temp->decrementRef();
 		_table->incrementRef();
@@ -3100,6 +3117,14 @@ InternalPredTable* ProcInternalPredTable::remove(const ElementTuple&) {
 
 InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const {
 	return new ProcInternalTableIterator(this, univ);
+}
+
+InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
+		: InternalPredTable(), _invtable(inv) {
+	/*if(dynamic_cast<InverseInternalPredTable*>(inv)!=NULL){
+		cerr <<"Inverting an inverted table\n";
+	}*/
+	inv->incrementRef();
 }
 
 InverseInternalPredTable::~InverseInternalPredTable() {
@@ -3257,6 +3282,9 @@ InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
 }
 
 InternalTableIterator* InverseInternalPredTable::begin(const Universe& univ) const {
+	if(isFinite(univ.size()) && _invtable->size(univ)._size==univ.size()._size){
+		return new SortInternalTableIterator(new RangeInternalSortIterator(0,0)); // TODO should be a clean way to create an empty iterator!
+	}
 	vector<SortIterator> vsi;
 	for (auto it = univ.tables().cbegin(); it != univ.tables().cend(); ++it) {
 		vsi.push_back((*it)->sortBegin());
@@ -3518,25 +3546,33 @@ bool PredInter::isInconsistent(const ElementTuple& tuple) const {
 }
 
 bool PredInter::isConsistent() const {
-	auto ctIterator = _ct->begin();
-	auto cfIterator = _cf->begin();
-
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
 
-	FirstNElementsEqual eq(_ct->arity());
-	StrictWeakNTupleOrdering so(_ct->arity());
-	for (; not ctIterator.isAtEnd(); ++ctIterator) {
+	auto smallest = _ct->size()._size<_ct->size()._size?_ct:_cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
+	auto largest = smallest==_ct?_cf:_ct;
+	auto smallIt = smallest->begin();
+	auto largeIt = largest->begin();
+
+	auto sPossTable = smallest==_ct?_pt:_pf;
+	auto lPossTable = smallest==_ct?_pf:_pt;
+
+	FirstNElementsEqual eq(smallest->arity());
+	StrictWeakNTupleOrdering so(smallest->arity());
+	for (; not smallIt.isAtEnd(); ++smallIt) {
+		CHECKTERMINATION
 		// get unassigned domain element
-		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
-			Assert(not _pt->contains(*cfIterator));
+		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+			CHECKTERMINATION
+			Assert(sPossTable->size()._size>1000 || not sPossTable->contains(*largeIt)); // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
-			++cfIterator;
+			++largeIt;
 		}
-		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
+		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			return false;
-		}Assert(not _pf->contains(*ctIterator));
+		}
+		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));  // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
 	return true;
