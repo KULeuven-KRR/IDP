@@ -5,9 +5,7 @@ vocabulary V {
 }
 
 theory T : V {
-  //a >= #{x : p(x)} & a =< #{x : p(x)}. //THIS WORKS
   a = #{x : p(x)}.
-  //#{x : p(x)} = a.
 }
 
 structure S : V {

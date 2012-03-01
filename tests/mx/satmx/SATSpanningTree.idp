@@ -18,16 +18,16 @@ SpReached(Vertex)
 }
 
 theory T : V { 
-! x y : SpTree(x,y) => Edge(x,y).
-! x : ~SpTree(x,SpRoot).
-! x1 x2 y : SpTree(x1,y) & SpTree(x2,y) => x1 = x2.
+	! x y : SpTree(x,y) => Edge(x,y).
+	! x : ~SpTree(x,SpRoot).
+	! x1 x2 y : SpTree(x1,y) & SpTree(x2,y) => x1 = x2.
 
-{ SpReached(SpRoot).
-  SpReached(y) <- SpTree(x,y) & SpReached(x).
-}
+	{ 
+		SpReached(SpRoot).
+	 	SpReached(y) <- SpTree(x,y) & SpReached(x).
+	}
 
-! x : SpReached(x).
-
+	! x : SpReached(x).
 }
 
 structure S : V{ 

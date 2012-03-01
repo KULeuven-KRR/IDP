@@ -59,14 +59,17 @@ add_library(idp
 	inferences/symmetrybreaking/symmetry.cpp
 	inferences/modelexpansion/LuaTraceMonitor.cpp
 	monitors/luainteractiveprintmonitor.hpp
+	groundtheories/GroundTheory.cpp
 	groundtheories/GroundPolicy.cpp
 	groundtheories/SolverPolicy.cpp
 	groundtheories/AbstractGroundTheory.cpp
-	inferences/grounding/grounders/LazyQuantGrounder.cpp
+	inferences/grounding/grounders/LazyFormulaGrounders.cpp
+	inferences/grounding/grounders/LazyRuleGrounder.cpp
 	inferences/grounding/grounders/DefinitionGrounders.cpp
 	inferences/grounding/grounders/FormulaGrounders.cpp
 	inferences/grounding/grounders/SetGrounders.cpp
 	inferences/grounding/grounders/TermGrounders.cpp
+	inferences/grounding/grounders/OptimizationTermGrounders.cpp
 	inferences/grounding/GroundTermTranslator.cpp
 	inferences/grounding/GroundTranslator.cpp
 	inferences/grounding/GrounderFactory.cpp

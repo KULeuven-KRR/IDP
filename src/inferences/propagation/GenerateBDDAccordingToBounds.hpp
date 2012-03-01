@@ -22,7 +22,7 @@ class FOBDDVariable;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-class GenerateBDDAccordingToBounds: public TheoryVisitor {
+class GenerateBDDAccordingToBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	FOBDDManager* _manager;

@@ -23,10 +23,6 @@
 
 using namespace std;
 
-int verbosity() {
-	return getOption(IntType::GROUNDVERBOSITY);
-}
-
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
 		: Grounder(grounding, ct), _origform(NULL) {
 }
@@ -64,10 +60,10 @@ void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
 	}
-	clog << "\n" << tabs() << "Grounding formula " << toString(_origform);
+	clog << nt() << "Grounding formula " << toString(_origform);
 	if (not _origform->freeVars().empty()) {
 		pushtab();
-		clog << "\n" << tabs() << "with instance ";
+		clog << nt() << "with instance ";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			clog << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
@@ -75,16 +71,32 @@ void FormulaGrounder::printorig() const {
 		}
 		poptab();
 	}
-	clog << "\n" << tabs();
+	clog << nt();
+}
+
+std::string FormulaGrounder::printFormula() const {
+	if (_origform == NULL) {
+		return "";
+	}
+	stringstream ss;
+	ss <<toString(_origform);
+	if (not _origform->freeVars().empty()) {
+		ss <<"[";
+		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
+			ss << toString(*it) << " = ";
+			const DomainElement* e = _origvarmap.find(*it)->second->get();
+			ss << toString(e) << ',';
+		}
+		ss <<"]";
+	}
+	return ss.str();
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
-			_checkargs(checkargs), _inter(inter),
-			groundsubterms(_subtermgrounders.size()),
-			args(_subtermgrounders.size()){
+			_checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 }
 
@@ -120,8 +132,8 @@ Lit AtomGrounder::run() const {
 				 // TODO: produce an error
 				 }
 				 if(verbosity() > 2) {
-				 clog << "Partial function went out of bounds\n";
-				 clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
+				 clog <<"Partial function went out of bounds\n";
+				 clog <<"Result is " <<(context()._funccontext != Context::NEGATIVE  ? "true" : "false") <<"\n";
 				 }
 				 return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
 			}
@@ -129,12 +141,12 @@ Lit AtomGrounder::run() const {
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
-					clog << "Term value out of predicate type\n" << tabs(); //TODO should be a warning
-					clog << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+					clog << "Term value out of predicate type" << nt(); //TODO should be a warning
+					clog << "Result is " << (isPos(_sign) ? "false" : "true");
 					if (_origform != NULL) {
 						poptab();
 					}
-					clog << tabs();
+					clog << nt();
 				}
 
 				return isPos(_sign) ? _false : _true;
@@ -152,25 +164,25 @@ Lit AtomGrounder::run() const {
 	}
 	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << "Possible checker failed\n" << tabs();
-			//clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
+			clog << "Possible checker failed" << nt();
+			//clog <<"Result is " <<(gentype == GenType::CANMAKETRUE ? "false" : "true");
 			clog << "Result is false";
 			if (_origform != NULL) {
 				poptab();
 			}
-			clog << "\n" << tabs();
+			clog << nt();
 		}
 		//return gentype == GenType::CANMAKETRUE ? _false : _false;
 		return _false;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << "Certain checker succeeded\n" << tabs();
+			clog << "Certain checker succeeded" << nt();
 			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
 			if (_origform != NULL) {
 				poptab();
 			}
-			clog << "\n" << tabs();
+			clog << nt();
 		}
 		return gentype == GenType::CANMAKETRUE ? _true : _false;
 	}
@@ -180,7 +192,7 @@ Lit AtomGrounder::run() const {
 			if (_origform != NULL) {
 				poptab();
 			}
-			clog << "\n" << tabs();
+			clog << nt();
 		}
 		return isPos(_sign) ? _true : _false;
 	}
@@ -190,7 +202,7 @@ Lit AtomGrounder::run() const {
 			if (_origform != NULL) {
 				poptab();
 			}
-			clog << "\n" << tabs();
+			clog << nt();
 		}
 		return isPos(_sign) ? _false : _true;
 	}
@@ -205,7 +217,7 @@ Lit AtomGrounder::run() const {
 		if (_origform != NULL) {
 			poptab();
 		}
-		clog << "\n" << tabs();
+		clog << nt();
 	}
 	return lit;
 }
@@ -673,7 +685,11 @@ void AggGrounder::run(ConjOrDisj& formula) const {
 }
 
 bool ClauseGrounder::isRedundantInFormula(Lit l) const {
-	return conn_ == Conn::CONJ ? l == _true : l == _false;
+	return conjunctive() == Conn::CONJ ? l == _true : l == _false;
+}
+
+Lit ClauseGrounder::redundantLiteral() const {
+	return conjunctive() == Conn::CONJ?_true:_false;
 }
 
 /**
@@ -683,7 +699,7 @@ bool ClauseGrounder::isRedundantInFormula(Lit l) const {
  * negated disjunction: never true by a literal
  */
 bool ClauseGrounder::makesFormulaTrue(Lit l) const {
-	return (conn_ == Conn::DISJ && l == _true);
+	return (conjunctive() == Conn::DISJ && l == _true);
 }
 
 /**
@@ -693,35 +709,29 @@ bool ClauseGrounder::makesFormulaTrue(Lit l) const {
  * negated disjunction: false if a literal is true
  */
 bool ClauseGrounder::makesFormulaFalse(Lit l) const {
-	return (conn_ == Conn::CONJ && l == _false);
+	return (conjunctive() == Conn::CONJ && l == _false);
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
-	return conn_ == Conn::CONJ ? _true : _false;
+	return conjunctive() == Conn::CONJ? _true : _false;
+}
+
+bool ClauseGrounder::decidesFormula(Lit lit) const {
+	return conjunctive()==Conn::CONJ? lit==_false : lit==_true;
 }
 
 TsType ClauseGrounder::getTseitinType() const {
 	return context()._tseitin;
 }
 
-// Takes context into account!
-Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula) const {
-	TsType type = getTseitinType();
-	/*if (isNegative()) {
-	 type = reverseImplication(type);
-	 }*/
-
-	Lit tseitin;
-	bool asConjunction = formula.getType() == Conn::CONJ;
-	if (negativeDefinedContext()) {
-		asConjunction = not asConjunction;
-	}
-	tseitin = translator()->translate(formula.literals, asConjunction, type);
-	//return isNegative() ? -tseitin : tseitin;
-	return tseitin;
+Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
+	return getOneLiteralRepresenting(formula, getTseitinType());
+}
+Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula) const {
+	return getOneLiteralRepresenting(formula, getTseitinType()==TsType::RULE?TsType::RULE:TsType::EQ);
 }
 
-Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
+Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const {
 	if (formula.literals.empty()) {
 		return getEmtyFormulaValue();
 	}
@@ -730,21 +740,30 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
 		return formula.literals[0];
 	}
 
-	return createTseitin(formula);
+	return createTseitin(formula, type);
+}
+
+// Takes context into account!
+Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula, TsType type) const {
+	Lit tseitin;
+	bool asConjunction = formula.getType() == Conn::CONJ;
+	if (negativeDefinedContext()) {
+		asConjunction = not asConjunction;
+	}
+	tseitin = translator()->translate(formula.literals, asConjunction, type);
+	return tseitin;
 }
 
 void ClauseGrounder::run(ConjOrDisj& formula) const {
 	internalRun(formula);
 	if (isNegative()) {
-		//todo: Do this or use negate(formula)?
 		Lit tseitin = getReification(formula);
-		//formula.setType(Conn::CONJ);
 		formula.literals = {-tseitin};
 	}
 }
 
 FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const {
-	Assert(formula.getType()==conn_);
+	Assert(formula.getType()==conjunctive());
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 	if (subformula.literals.size() == 0) {
@@ -757,7 +776,6 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			return FormStat::DECIDED;
 		} else if (subformula.getType() != formula.getType()) {
 			formula.literals.push_back(value);
-			return (FormStat::UNKNOWN);
 		}
 		return (FormStat::UNKNOWN);
 	} else if (subformula.literals.size() == 1) {
@@ -772,9 +790,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			formula.literals.push_back(l);
 		}
 		return FormStat::UNKNOWN;
-	} // otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-	//TODO: remove all the "negated"
-	if (conjFromRoot && conjunctive()) {
+	}
+	// otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
+	if (conjFromRoot && conjunctiveWithSign()) {
 		if (subformula.getType() == Conn::CONJ) {
 			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
 				getGrounding()->addUnitClause(*i);
@@ -804,7 +822,7 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 	}
-	formula.setType(conn_);
+	formula.setType(conjunctive());
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
@@ -833,16 +851,16 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 		}
 	}
 
-	formula.setType(conn_);
+	formula.setType(conjunctive());
 
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			std::cerr << toString(_checker);
+			std::clog << toString(_checker);
 			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
-				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n" << tabs();
+				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << nt();
 			}
 			return;
 		}
@@ -863,20 +881,6 @@ EquivGrounder::~EquivGrounder() {
 	delete (_rightgrounder);
 }
 
-Lit EquivGrounder::getLitEquivWith(const ConjOrDisj& form) const {
-	if (form.literals.size() == 0) {
-		if (form.getType() == Conn::CONJ) {
-			return _true;
-		} else {
-			return _false;
-		}
-	} else if (form.literals.size() == 1) {
-		return form.literals[0];
-	} else {
-		return getReification(form);
-	}
-}
-
 void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	//Assert(not negated); I think this is not needed.
 	if (verbosity() > 2) {
@@ -893,12 +897,16 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 
 	// Run subgrounders
 	ConjOrDisj leftformula, rightformula;
-	leftformula.setType(conn_);
-	rightformula.setType(conn_);
+	leftformula.setType(conjunctive());
+	rightformula.setType(conjunctive());
+	Assert(_leftgrounder->context()._monotone==Context::BOTH);
+	Assert(_rightgrounder->context()._monotone==Context::BOTH);
+	Assert(_leftgrounder->context()._tseitin==TsType::EQ|| _leftgrounder->context()._tseitin==TsType::RULE);
+	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
 	runSubGrounder(_leftgrounder, false, leftformula);
 	runSubGrounder(_rightgrounder, false, rightformula);
-	auto left = getLitEquivWith(leftformula);
-	auto right = getLitEquivWith(rightformula);
+	auto left = getEquivalentReification(leftformula);
+	auto right = getEquivalentReification(rightformula);
 
 	formula.setType(Conn::CONJ); // Does not matter for all those 1-literal lists
 	if (left == right) {
@@ -924,9 +932,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		TsType tp = context()._tseitin;
-		Lit ts1 = translator()->translate(aornotb, false, tp);
-		Lit ts2 = translator()->translate(notaorb, false, tp);
+		Lit ts1 = translator()->translate(aornotb, false, context()._tseitin);
+		Lit ts2 = translator()->translate(notaorb, false, context()._tseitin);
 		formula.literals = litlist { ts1, ts2 };
 		formula.setType(Conn::CONJ);
 	}

@@ -79,9 +79,9 @@ public:
 		delete (_univgen);
 	}
 
-	// FIXME reimplement (clone generator)
+	// FIXME reimplement
 	SimpleFuncGenerator* clone() const {
-		return new SimpleFuncGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {

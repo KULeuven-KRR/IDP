@@ -80,12 +80,22 @@ Formula& all(Variable* var, Formula& formula) {
 	return *new QuantForm(SIGN::POS, QUANT::UNIV, { var }, &formula, FormulaParseInfo());
 }
 
+Formula& all(const std::set<Variable*>& vars, Formula& formula) {
+	return *new QuantForm(SIGN::POS, QUANT::UNIV, vars, &formula, FormulaParseInfo());
+}
+
 Formula& atom(Predicate* p, const std::vector<Variable*>& vars) {
 	std::vector<Term*> terms;
 	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
 		terms.push_back(new VarTerm(*i, TermParseInfo()));
 	}
 	return *new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
+}
+
+void add(Vocabulary* v, const std::vector<Sort*> symbols) {
+	for (auto i = symbols.cbegin(); i < symbols.cend(); ++i) {
+		v->add(*i);
+	}
 }
 
 void add(Vocabulary* v, const std::vector<PFSymbol*> symbols) {

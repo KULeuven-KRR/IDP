@@ -34,7 +34,7 @@ public:
 	}
 
 	InverseAbsValueGenerator* clone() const {
-		return new InverseAbsValueGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {

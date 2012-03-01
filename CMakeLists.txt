@@ -123,9 +123,12 @@ set(CPACK_SOURCE_GENERATOR TGZ)
 # The following components are regex's to match anywhere (unless anchored)
 # in absolute path + filename to find files or directories to be excluded
 # from source tarball.
+# note: escape char is \\\\
 set(CPACK_SOURCE_IGNORE_FILES
-	"^${PROJECT_SOURCE_DIR}/.*"
+	"^${PROJECT_SOURCE_DIR}/\\\\..*"
 	"^${PROJECT_SOURCE_DIR}/.git/"
+	"^${PROJECT_SOURCE_DIR}/*/.git/"
+	"^${PROJECT_SOURCE_DIR}/*/*/.git/"
 	"^${PROJECT_SOURCE_DIR}/builds/"
 	"^${PROJECT_SOURCE_DIR}/build/"
 	"^${PROJECT_SOURCE_DIR}/docs/visuals"

@@ -13,9 +13,13 @@
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
+#include "errorhandling/error.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
+
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 
 template<typename Stream>
 class EcnfPrinter: public StreamPrinter<Stream> {
@@ -150,7 +154,6 @@ public:
 		closeDef();
 	}
 
-	//FIXME a visitor for definitions does not work!
 	void visit(const GroundDefinition* d) {
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
@@ -161,7 +164,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		output() << (b->type() == RT_CONJ ? "C " : "D ");
+		output() << (b->type() == RuleType::CONJ ? "C " : "D ");
 		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
 		for (unsigned int n = 0; n < b->size(); ++n) {
 			output() << b->literal(n) << ' ';
@@ -268,7 +271,8 @@ private:
 			output() << "Max ";
 			break;
 		}
-#warning "Replacing implication by equivalence in ecnfprinter, should change in future.";
+		// FIXME:
+		Warning::warning("The ecnf output format does not support implications for aggregates yet, so currently replacing them with equivalences!\n");
 		switch (arrow) {
 		case TsType::EQ:
 		case TsType::IMPL:

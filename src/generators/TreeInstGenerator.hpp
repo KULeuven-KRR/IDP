@@ -16,7 +16,7 @@
 
 class TreeInstGenerator: public InstGenerator {
 private:
-	GeneratorNode* const _root;
+	GeneratorNode* _root;
 	bool _reset;
 
 public:
@@ -25,9 +25,10 @@ public:
 		Assert(r!=NULL);
 	}
 
-	// FIXME reimplement (deep clone)
 	TreeInstGenerator* clone() const {
-		return new TreeInstGenerator(*this);
+		auto t = new TreeInstGenerator(*this);
+		t->_root = _root->clone();
+		return t;
 	}
 
 	~TreeInstGenerator(){
@@ -50,10 +51,13 @@ public:
 		}
 	}
 
+	void setVarsAgain(){
+		_root->setVarsAgain();
+	}
+
 	virtual void put(std::ostream& stream) {
-		stream << "TreeInstGenerator\n";
 		pushtab();
-		stream << tabs() << toString(_root);
+		stream << "TreeInstGenerator" <<nt() << toString(_root);
 		poptab();
 	}
 };

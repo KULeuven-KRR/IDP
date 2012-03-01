@@ -21,18 +21,24 @@
 #include "options.hpp"
 #include "errorhandling/error.hpp"
 
+class ResidualAndFreeInst;
+class LazyGroundingManager;
+class LazyUnknBoundGrounder;
+
 class TsSet;
 
 /**
  * A ground theory which does not store the grounding, but directly writes it to its monitors.
  */
-//TODO monitor policy
 class PrintGroundPolicy {
 private:
 	InteractivePrintMonitor* monitor_;
 	Printer* printer_;
 
 public:
+	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
+
 	void polRecursiveDelete() {
 	}
 
@@ -88,6 +94,10 @@ public:
 		auto reif = new CPReification(tseitin, body);
 		printer().print(reif);
 		delete (reif);
+	}
+
+	void polAddOptimization(AggFunction function, int setid){
+		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {

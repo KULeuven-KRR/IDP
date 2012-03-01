@@ -170,6 +170,7 @@ void reset(){
 
 ID				_*[A-Za-z][a-zA-Z0-9_]*	
 CH				[A-Za-z]
+	// TODO More logical name for CH and CHR? (letter en character)
 INT				[0-9]+
 FL				[0-9]*"."[0-9]+
 STR				\"[^\"]*\"
@@ -440,7 +441,7 @@ COMMENTLINE		"//".*
 							  return USINGNAMESPACE;			
 							}
 <*>"using"					{
-								cerr <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
+								clog <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
 								yyterminate();
 							}
 <*>{CH}						{ data.advancecol();

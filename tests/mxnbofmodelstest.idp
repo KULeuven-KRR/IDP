@@ -2,16 +2,17 @@
 
 procedure main() {
 	stdoptions.nbmodels = 0
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	stdoptions.groundwithbounds = false
 	solutions = mx::all(T,S)
 	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
 	if(#solutions~=getExpectedNbOfModels()) then
 		return 0
 	end 
-	for i= 1,#solutions do
-		if not isconsistent(solutions[i]) then
-			io.stderr:write("ModelExpand found an inconsistent model\n")
+	
+	for i,v in ipairs(solutions) do
+		if(#modelexpand(T, v)==0) then
+			io.stderr:write("Found an invalid solution.\n")
 			return 0
 		end
 	end

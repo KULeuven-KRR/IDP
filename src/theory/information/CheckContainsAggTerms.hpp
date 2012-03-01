@@ -15,7 +15,7 @@
 
 class PFSymbol;
 
-class CheckContainsAggTerms: public TheoryVisitor {
+class CheckContainsAggTerms: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _result;

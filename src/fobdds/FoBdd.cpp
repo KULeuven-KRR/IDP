@@ -31,16 +31,16 @@ void FOBDD::accept(FOBDDVisitor* visitor) const {
 std::ostream& FOBDD::put(std::ostream& output) const {
 	output << toString(_kernel);
 	pushtab();
-	output << "\n" << tabs();
+	output << "" <<nt();
 	output << "FALSE BRANCH:";
 	pushtab();
-	output << "\n" << tabs();
+	output << "" <<nt();
 	output << toString(_falsebranch);
 	poptab();
-	output << "\n" << tabs();
+	output << "" <<nt();
 	output << "TRUE BRANCH:";
 	pushtab();
-	output << "\n" << tabs();
+	output << "" <<nt();
 	output << toString(_truebranch);
 	poptab();
 	poptab();

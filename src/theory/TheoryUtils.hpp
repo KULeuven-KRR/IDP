@@ -29,6 +29,7 @@ class Formula;
 class Vocabulary;
 class Term;
 class AggForm;
+class GroundTranslator;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -36,13 +37,13 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog << "\n" << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog << "" <<nt() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
 		pushtab();
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog << "\n" << tabs() << "Resulted in: " << toString(result) << "\n" << tabs();
+		std::clog << "" <<nt() << "Resulted in: " << toString(result) <<nt();
 	}
 	return result;
 }
@@ -51,13 +52,13 @@ template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog << "\n" << tabs() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog <<nt() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
 		pushtab();
 	}
 	t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog << "\n" << tabs() << "Resulted in: " << toString(object) << "\n" << tabs();
+		std::clog <<nt() << "Resulted in: " << toString(object) <<nt();
 	}
 }
 
@@ -81,6 +82,9 @@ void checkSorts(Vocabulary* v, Formula* f);
 bool containsFuncTerms(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
+
+/** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);
@@ -158,6 +162,8 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NUL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, bool cpsupport = false,
+		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
 }
 
 namespace TermUtils {
@@ -197,6 +203,8 @@ std::set<PFSymbol*> opens(Definition*);
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false,
 		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+
+Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
 }
 
 #endif /* IDP_THEORYUTILS_HPP_ */

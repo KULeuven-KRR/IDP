@@ -43,6 +43,10 @@ public:
 		}
 	}
 
+	virtual void setVarsAgain() = 0;
+
+	virtual GeneratorNode* clone() const = 0;
+
 	virtual void put(std::ostream& stream) = 0;
 };
 
@@ -70,6 +74,16 @@ public:
 		}
 	}
 
+	void setVarsAgain(){
+		_generator->setVarsAgain();
+	}
+
+	virtual LeafGeneratorNode* clone() const{
+		auto t = new LeafGeneratorNode(*this);
+		t->_generator = _generator->clone();
+		return t;
+	}
+
 	virtual void put(std::ostream& stream) {
 		stream <<  toString(_generator);
 	}
@@ -88,6 +102,18 @@ public:
 	~OneChildGeneratorNode(){
 		delete(_generator);
 		delete(_child);
+	}
+
+	virtual OneChildGeneratorNode* clone() const{
+		auto t = new OneChildGeneratorNode(*this);
+		t->_generator = _generator->clone();
+		t->_child = _child->clone();
+		return t;
+	}
+
+	void setVarsAgain(){
+		_generator->setVarsAgain();
+		_child->setVarsAgain();
 	}
 
 	virtual void next() {
@@ -116,8 +142,8 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate: " << toString(_generator) << "\n";
-		stream << tabs() << "then ";
+		stream << "generate: " << toString(_generator) <<nt();
+		stream << "then ";
 		pushtab();
 		stream << toString(_child);
 		poptab();
@@ -140,6 +166,21 @@ public:
 		delete(_generator);
 		delete(_falsecheckbranch);
 		delete(_truecheckbranch);
+	}
+
+	virtual TwoChildGeneratorNode* clone() const{
+		auto t = new TwoChildGeneratorNode(*this);
+		t->_checker = _checker->clone();
+		t->_generator = _generator->clone();
+		t->_falsecheckbranch = _falsecheckbranch->clone();
+		t->_truecheckbranch = _truecheckbranch->clone();
+		return t;
+	}
+
+	void setVarsAgain(){
+		_generator->setVarsAgain();
+		_truecheckbranch->setVarsAgain();
+		_falsecheckbranch->setVarsAgain();
 	}
 
 	virtual void next() {
@@ -189,15 +230,15 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate: " << toString(_generator) << "\n";
-		stream << tabs() << "if result is in " << toString(_checker)<<"\n";
-		stream << tabs()<< "THEN\n";
+		stream << "generate: " << toString(_generator) <<nt();
+		stream << "if result is in " << toString(_checker)<<nt();
 		pushtab();
-		stream << tabs() << toString(_truecheckbranch) << "\n";
+		stream << "THEN" <<nt();
 		poptab();
-		stream << tabs()<< "ELSE\n";
+		stream << toString(_truecheckbranch) <<nt();
+		stream << "ELSE" <<nt();
 		pushtab();
-		stream << tabs() <<  toString(_falsecheckbranch);
+		stream <<  toString(_falsecheckbranch);
 		poptab();
 	}
 };

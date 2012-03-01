@@ -38,7 +38,9 @@
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
+#include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
+#include "information/FindUnknBoundLiteral.hpp"
 
 using namespace std;
 
@@ -91,6 +93,9 @@ std::set<PFSymbol*> opens(Definition* d) {
 Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
 }
+Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
+	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
+}
 }
 
 /* FormulaUtils */
@@ -109,6 +114,10 @@ bool containsAggTerms(Formula* f) {
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
+}
+
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator){
+	return transform<FindUnknownBoundLiteral, const PredForm*>(f, structure, translator);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {
@@ -201,6 +210,12 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Co
 
 void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
+	Assert(newt==t);
+}
+
+void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str, bool cpsupport,
+		const std::set<const PFSymbol*> cpsymbols) {
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport, cpsymbols);
 	Assert(newt==t);
 }
 

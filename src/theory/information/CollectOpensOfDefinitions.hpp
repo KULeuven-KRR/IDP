@@ -18,7 +18,7 @@
 class Definition;
 class PFSymbol;
 
-class CollectOpensOfDefinitions: public TheoryVisitor {
+class CollectOpensOfDefinitions: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	Definition* _definition;

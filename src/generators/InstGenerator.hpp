@@ -13,13 +13,18 @@
 
 #include <typeinfo>
 #include <sstream>
+#include <iostream>
 
 enum class Pattern {
 	INPUT, OUTPUT
 };
 
 class InstChecker {
+private:
+	bool generatesInfiniteDomain;
+
 public:
+	InstChecker(): generatesInfiniteDomain(false){}
 	virtual ~InstChecker() {}
 
 	// FIXME Checker should only be created if there are no output variables
@@ -29,11 +34,21 @@ public:
 	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
 
 	virtual void put(std::ostream& stream);
+
+	void notifyIsInfiniteGenerator(){
+		generatesInfiniteDomain = true;
+	}
+
+	bool isInfiniteGenerator() const {
+		return generatesInfiniteDomain;
+	}
 };
 
 class InstGenerator: public InstChecker {
 private:
 	bool end;
+	bool initdone;
+
 protected:
 	void notifyAtEnd() {
 		end = true;
@@ -47,6 +62,8 @@ protected:
 	virtual void reset() = 0; // FIXME can probably make this static and drop all lower resets to this one
 
 public:
+	InstGenerator():end(false),initdone(false){
+	}
 	virtual ~InstGenerator() {
 	}
 
@@ -60,23 +77,28 @@ public:
 	inline void begin(){
 		end = false;
 		reset();
-		if (not isAtEnd()) {
+		if (not end) {
 			next();
 		}
+		initdone = true;
 	}
 
 	/**
 	 * Returns true if the last element has already been set as an instance
 	 */
 	inline bool isAtEnd() const {
+		Assert(initdone);
 		return end;
 	}
 
 	inline void operator++(){
 		//CHECKTERMINATION
+		Assert(initdone);
 		Assert(not isAtEnd());
 		next();
 	}
+
+	virtual void setVarsAgain();
 
 	virtual InstGenerator* clone() const = 0;
 };

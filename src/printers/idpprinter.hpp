@@ -17,6 +17,9 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
+
 //TODO is not guaranteed to generate correct idp files!
 //TODO usage of stored parameters might be incorrect in some cases.
 
@@ -81,20 +84,17 @@ public:
 			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				Predicate* p = *jt;
 				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
-					PredInter* pi = structure->inter(p);
+					auto pi = structure->inter(p);
 					if (pi->approxTwoValued()) {
 						output() << toString(p) << " = ";
-						const PredTable* pt = pi->ct();
-						visit(pt);
+						visit(pi->ct());
 						output() << '\n';
 					} else {
-						const PredTable* ct = pi->ct();
 						output() << toString(p) << "<ct> = ";
-						visit(ct);
+						visit(pi->ct());
 						output() << '\n';
-						const PredTable* cf = pi->cf();
 						output() << toString(p) << "<cf> = ";
-						visit(cf);
+						visit(pi->cf());
 						output() << '\n';
 					}
 				}
@@ -195,15 +195,15 @@ public:
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
-			output() << ".\n" << tabs();
+			output() << "" <<nt();
 		}
 	}
 
@@ -522,7 +522,7 @@ public:
 		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
-		char c = (b->type() == RT_CONJ ? '&' : '|');
+		char c = (b->type() == RuleType::CONJ ? '&' : '|');
 		if (not b->empty()) {
 			for (unsigned int n = 0; n < b->size(); ++n) {
 				if (b->literal(n) < 0) {
@@ -535,7 +535,7 @@ public:
 			}
 		} else {
 			Assert(b->empty());
-			if (b->type() == RT_CONJ)
+			if (b->type() == RuleType::CONJ)
 				output() << "true";
 			else
 				output() << "false";
@@ -548,7 +548,6 @@ public:
 		printAtom(b->head());
 		output() << " <- ";
 		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
-		output() << ".\n";
 	}
 
 	void visit(const GroundAggregate* a) {
@@ -799,15 +798,19 @@ public:
 		}
 	}
 
-	void visit(SortTable* table) {
+	void visit(const SortTable* table) {
 		Assert(isTheoryOpen());
-		SortIterator it = table->sortBegin();
 		output() << "{ ";
-		if (not it.isAtEnd()) {
-			output() << toString((*it));
-			++it;
-			for (; not it.isAtEnd(); ++it) {
-				output() << "; " << toString((*it));
+		if(table->isRange()){
+			output() <<toString(table->first()) <<".." <<toString(table->last());
+		}else{
+			auto it = table->sortBegin();
+			if (not it.isAtEnd()) {
+				output() << toString((*it));
+				++it;
+				for (; not it.isAtEnd(); ++it) {
+					output() << "; " << toString((*it));
+				}
 			}
 		}
 		output() << " }";

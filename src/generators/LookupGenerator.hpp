@@ -32,7 +32,7 @@ public:
 	}
 
 	LookupGenerator* clone() const {
-		return new LookupGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	~LookupGenerator(){

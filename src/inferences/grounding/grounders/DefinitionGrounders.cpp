@@ -15,17 +15,19 @@
 #include "GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 #include "generators/InstGenerator.hpp"
 #include "IncludeComponents.hpp"
 
-using namespace std;
+#include "utils/ListUtils.hpp"
 
-DefId DefinitionGrounder::_currentdefnb = 1;
+using namespace std;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
-		: Grounder(gt, context), _defnb(_currentdefnb++), _subgrounders(subgr) {
+		: Grounder(gt, context), _subgrounders(subgr) {
+	Assert(context.getCurrentDefID()!=getIDForUndefined());
 }
 
 DefinitionGrounder::~DefinitionGrounder() {
@@ -33,7 +35,7 @@ DefinitionGrounder::~DefinitionGrounder() {
 }
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
-	auto grounddefinition = new GroundDefinition(_defnb, getTranslator());
+	auto grounddefinition = new GroundDefinition(id(), getTranslator());
 	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
 		(*grounder)->run(id(), grounddefinition);
 	}
@@ -42,33 +44,49 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
-RuleGrounder::RuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-		: _headgrounder(hgr), _bodygrounder(bgr), _headgenerator(hig), _bodygenerator(big), _context(ct) {
+RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
+		: origrule(rule->clone()), _headgrounder(hgr), _bodygrounder(bgr), _bodygenerator(big), _context(ct) {
+	Assert(_headgrounder!=NULL);
+	Assert(_bodygrounder!=NULL);
+	Assert(_bodygenerator!=NULL);
+}
+
+void RuleGrounder::put(std::stringstream& stream) {
+	stream << toString(origrule);
 }
 
 RuleGrounder::~RuleGrounder() {
-	delete (_headgenerator);
 	delete (_headgrounder);
 	delete (_bodygrounder);
 	delete (_bodygenerator);
 }
 
-void RuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
+FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
+		: RuleGrounder(rule, hgr, bgr, big, ct), _headgenerator(hig) {
+	Assert(hig!=NULL);
+}
+
+FullRuleGrounder::~FullRuleGrounder() {
+	delete (_headgenerator);
+}
+
+void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
 	Assert(defid == grounddefinition->id());
+	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
 		CHECKTERMINATION
 		ConjOrDisj body;
-		_bodygrounder->run(body);
-		bool conj = body.getType() == Conn::CONJ;
-		bool falsebody = (body.literals.empty() && not conj) || (body.literals.size() == 1 && body.literals[0] == _false);
-		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
+		bodygrounder()->run(body);
+		auto conj = body.getType() == Conn::CONJ;
+		auto falsebody = (body.literals.empty() && not conj) || (body.literals.size() == 1 && body.literals[0] == _false);
+		auto truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
 		if (falsebody) {
 			continue;
 		}
 
-		for (_headgenerator->begin(); not _headgenerator->isAtEnd(); _headgenerator->operator++()) {
+		for (headgenerator()->begin(); not headgenerator()->isAtEnd(); headgenerator()->operator++()) {
 			CHECKTERMINATION
-			Lit head = _headgrounder->run();
+			Lit head = headgrounder()->run();
 			Assert(head != _true);
 			if (head != _false) {
 				if (truebody) {
@@ -81,7 +99,8 @@ void RuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
 	}
 }
 
-HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst)
+HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
+		const vector<SortTable*>& vst)
 		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
 }
 
@@ -125,82 +144,4 @@ Lit HeadGrounder::run() const {
 		_grounding->addUnitClause(-atom);
 	}
 	return atom;
-}
-
-// FIXME require a transformation such that there is only one headgrounder for any defined symbol
-// FIXME also handle tseitin defined rules!
-LazyRuleGrounder::LazyRuleGrounder(HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(hgr, bgr, NULL, big, ct), _grounding(dynamic_cast<SolverTheory*>(headgrounder()->grounding())), isGrounding(false) {
-	grounding()->translator()->notifyDefined(headgrounder()->pfsymbol(), this);
-}
-
-dominstlist LazyRuleGrounder::createInst(const ElementTuple& headargs) {
-	dominstlist domlist;
-
-	// set the variable instantiations
-	for (size_t i = 0; i < headargs.size(); ++i) {
-		// FIXME what if it is not a VarTermGrounder! (e.g. if it is a constant => we should check whether it can unify with it)
-		if (not sametypeid<VarTermGrounder>(*headgrounder()->subtermgrounders()[i])) {
-			throw notyetimplemented("Lazygrounding with functions.\n");
-		}
-		auto var = (dynamic_cast<VarTermGrounder*>(headgrounder()->subtermgrounders()[i]))->getElement();
-		domlist.push_back(dominst { var, headargs[i] });
-	}
-	return domlist;
-}
-
-void LazyRuleGrounder::notify(const Lit& lit, const ElementTuple& headargs, const std::vector<LazyRuleGrounder*>& grounders) {
-	grounding()->polNotifyDefined(lit, headargs, grounders);
-}
-
-void LazyRuleGrounder::ground(const Lit& head, const ElementTuple& headargs) {
-	stilltoground.push( { head, headargs });
-	if (not isGrounding) {
-		doGrounding();
-	}
-}
-
-void LazyRuleGrounder::doGrounding() {
-	isGrounding = true;
-	while (not stilltoground.empty()) {
-		auto elem = stilltoground.front();
-		stilltoground.pop();
-		doGround(elem.first, elem.second);
-	}
-	isGrounding = false;
-}
-
-void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
-	Assert(head!=_true && head!=_false);
-
-	dominstlist headvarinstlist = createInst(headargs);
-
-	vector<const DomainElement*> originstantiation;
-	overwriteVars(originstantiation, headvarinstlist);
-
-	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator ++()) {
-		CHECKTERMINATION
-
-		ConjOrDisj body;
-		bodygrounder()->run(body);
-		bool conj = body.getType() == Conn::CONJ;
-		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
-		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
-		// IMPORTANT! As multiple rules might exist, should NOT add unit clauses if one body is certainly true or false!
-		if (falsebody) {
-			conj = false;
-			body.literals = {};
-		} else if (truebody) {
-			conj = true;
-			body.literals = {};
-		}
-		// FIXME correct defID!
-		grounding()->polAdd(1, new PCGroundRule(head, (conj ? RT_CONJ : RT_DISJ), body.literals, context()._tseitin == TsType::RULE));
-	}
-
-	restoreOrigVars(originstantiation, headvarinstlist);
-}
-
-void LazyRuleGrounder::run(DefId, GroundDefinition*) const {
-	// No-op
 }

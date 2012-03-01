@@ -12,31 +12,37 @@
 
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
 
 using namespace std;
 
 namespace SolverConnection {
 
-SATSolver* createsolver() {
-	auto options = GlobalData::instance()->getOptions();
-	return createsolver(options->getValue(IntType::NBMODELS));
-}
+typedef cb::Callback1<std::string, int> callbackprinting;
 
-SATSolver* createsolver(int nbmodels) {
+MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
-	modes.polarity = options->getValue(BoolType::MXRANDOMPOLARITYCHOICE) ? MinisatID::POL_RAND : MinisatID::POL_STORED;
+
+	modes.polarity = MinisatID::POL_STORED;
+	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE) || getOption(BoolType::GROUNDLAZILY)){ // TODO test
+		modes.polarity = MinisatID::POL_RAND;
+	}
 
 	if (options->getValue(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
 	}
 
-//		modes.remap = false; // FIXME no longer allowed, because solver needs the remapping for extra literals.
 	startInference(); // NOTE: have to tell the solver to reset its instance
 	CHECKTERMINATION
-	return new SATSolver(modes);
+	return new MinisatID::WrappedPCSolver(modes);
+}
+
+void setTranslator(MinisatID::WrappedPCSolver* solver, GroundTranslator* translator){
+	callbackprinting cbprint(translator, &GroundTranslator::print);
+	solver->setTranslator(cbprint);
 }
 
 MinisatID::Solution* initsolution() {
@@ -49,8 +55,8 @@ MinisatID::Solution* initsolution() {
 	return new MinisatID::Solution(opts);
 }
 
-void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init) {
-	for (auto literal = model->literalinterpretations.cbegin(); literal != model->literalinterpretations.cend(); ++literal) {
+void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
+	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
 		int atomnr = literal->getAtom().getValue();
 
 		if (translator->isInputAtom(atomnr)) {
@@ -75,8 +81,8 @@ void addLiterals(MinisatID::Model* model, GroundTranslator* translator, Abstract
 	}
 }
 
-void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
-	for (auto cpvar = model->variableassignments.cbegin(); cpvar != model->variableassignments.cend(); ++cpvar) {
+void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		Function* function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
 			continue;
@@ -85,7 +91,7 @@ void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, Abs
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = model->variableassignments[it->_varid].value;
+				int value = model.variableassignments[it->_varid].value;
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

@@ -79,8 +79,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
 		} else {
-			_minimum = NULL;
-			_maximum = NULL;
+			Assert(false);
 		}
 	} else {
 		Assert(t->sort() != NULL);

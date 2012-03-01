@@ -32,3 +32,8 @@ void InstChecker::put(std::ostream& stream) {
 	next();
 }
 */
+
+void InstGenerator::setVarsAgain(){
+	std::cerr <<typeid(*this).name() <<"\n";
+	Assert(false);
+}

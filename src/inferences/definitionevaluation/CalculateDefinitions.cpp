@@ -13,7 +13,7 @@
 
 #include "theory/TheoryUtils.hpp"
 
-#include "groundtheories/GroundTheory.hpp"
+#include "groundtheories/SolverTheory.hpp"
 
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
@@ -25,16 +25,15 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
 	// TODO duplicate code with modelexpansion
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver();
+	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 
 	auto symstructure = generateNaiveApproxBounds(&theory, structure);
-	GrounderFactory grounderfactory(structure, symstructure);
-	auto grounder = grounderfactory.create(&theory, solver);
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
-	AbstractGroundTheory* grounding = dynamic_cast<GroundTheory<SolverPolicy>*>(grounder->getGrounding());
+	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
 	// Run solver
 	MinisatID::Solution* abstractsolutions = SolverConnection::initsolution();
@@ -49,8 +48,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	} else {
 		Assert(abstractsolutions->getModels().size() == 1);
 		auto model = *(abstractsolutions->getModels().cbegin());
-		SolverConnection::addLiterals(model, grounding->translator(), structure);
-		SolverConnection::addTerms(model, grounding->termtranslator(), structure);
+		SolverConnection::addLiterals(*model, grounding->translator(), structure);
+		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
 	}
 
@@ -93,6 +92,9 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
+					if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+						clog << "The given structure is not a model of the definition.\n";
+					}
 					return new InconsistentStructure(structure->name(), structure->pi());
 				}
 				theory->remove(currentdefinition->first);
@@ -101,11 +103,7 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			}
 		}
 	}
-	if (not structure->isConsistent()) {
-		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
-			std::clog << "Calculating definitions resulted in inconsistent model. \n" << "Theory is unsatisfiable.\n";
-		}
-	}
+	Assert(structure->isConsistent()); // NOTE: oherwise early exit
 	return structure;
 }
 

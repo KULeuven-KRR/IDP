@@ -1728,33 +1728,29 @@ ostream& Vocabulary::putName(ostream& output) const {
 }
 
 ostream& Vocabulary::put(ostream& output) const {
-	output << "Vocabulary " << _name << ":\n";
 	pushtab();
-	output << tabs();
-	output << "Sorts:\n";
+	output << "Vocabulary " << _name << ":" <<nt();
+	output << "Sorts:";
 	pushtab();
 	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
-		output << tabs();
+		output <<nt();
 		(*it).second->put(output);
-		output << '\n';
 	}
 	poptab();
-	output << tabs();
-	output << "Predicates:\n";
+	output <<nt();
+	output << "Predicates:";
 	pushtab();
 	for (auto it = _name2pred.cbegin(); it != _name2pred.cend(); ++it) {
-		output << tabs();
+		output <<nt();
 		it->second->put(output);
-		output << '\n';
 	}
 	poptab();
-	output << tabs();
-	output << "Functions:\n";
+	output <<nt();
+	output << "Functions:";
 	pushtab();
 	for (auto it = _name2func.cbegin(); it != _name2func.cend(); ++it) {
-		output << tabs();
+		output <<nt();
 		it->second->put(output);
-		output << '\n';
 	}
 	poptab();
 	poptab();

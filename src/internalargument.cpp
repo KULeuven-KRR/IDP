@@ -147,3 +147,8 @@ template<>
 Query* InternalArgument::get<Query*>() {
 	return _value._query;
 }
+
+template<>
+Term* InternalArgument::get<Term*>() {
+	return _value._term;
+}

@@ -11,29 +11,30 @@
 #ifndef INFERENCESOLVERCONN_HPP_
 #define INFERENCESOLVERCONN_HPP_
 
-#include "groundtheories/SolverPolicy.hpp"
+#include "external/ExternalInterface.hpp"
 
 class AbstractStructure;
 class GroundTranslator;
 class GroundTermTranslator;
 class TraceMonitor;
+
 namespace MinisatID {
-class Solution;
-class Model;
-class WrappedPCSolver;
+	class Solution;
+	class Model;
+	class WrappedPCSolver;
 }
 
 namespace SolverConnection {
-SATSolver* createsolver();
-SATSolver* createsolver(int nbmodels);
-MinisatID::Solution* initsolution();
+	// Note: default find all models
+	MinisatID::WrappedPCSolver* createsolver(int nbmodels = 0);
+	void setTranslator(MinisatID::WrappedPCSolver*, GroundTranslator* translator);
+	MinisatID::Solution* initsolution();
 
-// Parse model into structure
-void addLiterals(MinisatID::Model* model, GroundTranslator* translator, AbstractStructure* init);
+	// Parse model into structure
+	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);
 
-// Parse cp-model into structure
-void addTerms(MinisatID::Model* model, GroundTermTranslator* termtranslator, AbstractStructure* init);
-
+	// Parse cp-model into structure
+	void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init);
 }
 
 #endif //INFERENCESOLVERCONN_HPP_

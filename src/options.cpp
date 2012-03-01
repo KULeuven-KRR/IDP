@@ -25,15 +25,29 @@ std::string str(Language choice) {
 		return "ecnf";
 	case Language::TPTP:
 		return "tptp";
+	case Language::FLATZINC:
+		return "flatzinc";
+	default:
+		return "unknown";
 		//case Language::CNF:
 		//	return "cnf";
 		//case Language::ASP:
 		//	return "asp";
 		//case Language::LATEX:
 		//	return "latex";
-	default:
-		return "unknown";
 	}
+}
+
+std::set<Language> possibleLanguageValues(){
+	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF};
+}
+std::set<std::string> possibleLanguageStringValues(){
+	std::set<std::string> s;
+	auto values = possibleLanguageValues();
+	for(auto i=values.cbegin(); i!=values.cend(); ++i){
+		s.insert(str(*i));
+	}
+	return s;
 }
 
 std::string str(Format choice) {
@@ -79,8 +93,8 @@ Options::Options() {
 	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
-	StringPol::createOption(StringType::LANGUAGE, "language", std::set<std::string> { /*str(Language::TXT),*/str(Language::IDP), /*str(Language::LATEX),*/
-	str(Language::ECNF), /*str(Language::ASP),*/str(Language::TPTP) }, str(Language::IDP), _option2name, PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name,
+			PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
@@ -99,8 +113,8 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
-void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
-		std::vector<std::string>& option2name, PrintBehaviour visible) {
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values,
+		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
@@ -172,26 +186,15 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 }
 
 Language Options::language() const {
+	auto values = possibleLanguageValues();
 	const std::string& value = StringPol::getValue(StringType::LANGUAGE);
-	/*if (value.compare(str(Language::TXT)) == 0) {
-	 return Language::TXT;
-	 } else*/
-	if (value.compare("tptp") == 0) {
-		return Language::TPTP;
-	} else if (value.compare("idp") == 0) {
-		return Language::IDP;
-	} else if (value.compare("ecnf") == 0) {
-		return Language::ECNF;
-	} /*else if (value.compare("asp") == 0) {
-	 return Language::ASP;
-	 } else {
-	 Assert(value.compare("latex")==0);
-	 return Language::LATEX;
-	 }*/
-	else {
-		Assert(false);
-		return Language::ECNF;
+	for(auto i=values.cbegin(); i!=values.cend(); ++i) {
+		if (value.compare(str(*i)) == 0) {
+			return *i;
+		}
 	}
+	Warning::warning("Encountered unsupported language option, assuming ECNF.\n");
+	return Language::ECNF;
 }
 
 std::string Options::printAllowedValues(const std::string& name) const {

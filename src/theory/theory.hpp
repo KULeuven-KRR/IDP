@@ -31,7 +31,7 @@ class DomainTerm;
 class AggTerm;
 class EnumSetExpr;
 class QuantSetExpr;
-class TheoryVisitor;
+class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 class Variable;
 
@@ -491,15 +491,13 @@ private:
 	ParseInfo _pi; //!< the place where the rule was parsed
 
 public:
-	// Constructors
 	Rule(const std::set<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi)
 			: _head(h), _body(b), _quantvars(vv), _pi(pi) {
 	}
 
 	Rule* clone() const; //!< Make a deep copy of the rule
 
-	// Destructor
-	~Rule() {
+	virtual ~Rule() {
 	} //!< Delete the rule, but not its components
 	void recursiveDelete(); //!< Delete the rule and its components
 
@@ -554,9 +552,13 @@ ACCEPTBOTH(Definition)
 private:
 	std::vector<Rule*> _rules; //!< The rules in the definition
 	std::set<PFSymbol*> _defsyms; //!< Symbols defined by the definition
+	int id;
 
 public:
-	Definition() {
+	Definition();
+
+	int getID() const {
+		return id;
 	}
 
 	Definition* clone() const;
