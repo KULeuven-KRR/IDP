@@ -709,10 +709,11 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	bool delayedunknbound = false;
 	if (getOption(BoolType::GROUNDLAZILY)){
-		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator());
+		Context context = Context::BOTH;
+		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), context);
 		if(delayablepf!=NULL){
 			//clog <<"Adding lazy unknown bound\n";
-			grounder = new LazyUnknUnivGrounder(delayablepf, varmapping(), _grounding, subgrounder, getContext());
+			grounder = new LazyUnknUnivGrounder(delayablepf, context, varmapping(), _grounding, subgrounder, getContext());
 			delayedunknbound = true;
 		}
 	}

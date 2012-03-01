@@ -544,7 +544,8 @@ TEST(FindUnknTest,NestedQuantFormula) {
 	auto& pf_p = p({x,y});
 	auto& formula = all(x, all(y, pf_p | (q({x,y}) | r({x,y}))));
 
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator);
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ((void*)NULL, predform);
 }
 
@@ -565,13 +566,14 @@ TEST(FindUnknTest,QuantFormula) {
 	auto& pf_p = p({x,y});
 	auto& formula = all({x, y}, pf_p | (q({x,y}) | r({x,y})));
 
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator);
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ(predform, &pf_p);
 }
 
 class TestGrounder: public LazyUnknBoundGrounder{
 public:
-	TestGrounder(PFSymbol* symbol):LazyUnknBoundGrounder(symbol, -1, new GroundTheory<GroundPolicy>(NULL)){
+	TestGrounder(PFSymbol* symbol):LazyUnknBoundGrounder(symbol, Context::BOTH, -1, new GroundTheory<GroundPolicy>(NULL)){
 
 	}
 	void doGround(const Lit& boundlit, const ElementTuple& args) {
@@ -600,7 +602,8 @@ TEST(FindUnknTest,QuantFormulaFirstWatched) {
 	auto& pf_q = not q({x,y});
 	auto& formula = all({x, y}, pf_p | pf_q | r({x,y}));
 
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator);
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ(predform, &pf_q);
 }
 
@@ -619,6 +622,7 @@ TEST(FindUnknTest,QuantFormulaPred) {
 	auto& pf_p = p({x,y});
 	auto& formula = all({x, y}, pf_p);
 
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator);
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ(predform, &pf_p);
 }

@@ -30,8 +30,8 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
-	Policy::polNotifyUnknBound(boundlit, args, grounders);
+void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+	Policy::polNotifyUnknBound(context, boundlit, args, grounders);
 }
 
 template<class Policy>

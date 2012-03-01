@@ -46,7 +46,7 @@ private:
 
 public:
 	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
-	void polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
+	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
 	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 protected:

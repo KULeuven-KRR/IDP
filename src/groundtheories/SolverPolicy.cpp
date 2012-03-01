@@ -364,7 +364,6 @@ public:
 	virtual void requestGrounding() {
 		if (not isAlreadyGround()) {
 			notifyGrounded();
-			//cerr <<"Grounding rule with inst " <<toString(args) <<"\n";
 			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
 				(*i)->ground(lit, args);
 			}
@@ -373,12 +372,16 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
 
 template<>
-void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
-	auto mon = new LazyRuleMon(boundlit, args, grounders);
-	MinisatID::LazyGroundLit lc(true, createLiteral(boundlit), mon);
+void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+	auto mon = new LazyRuleMon(delaylit, args, grounders);
+	auto literal = createLiteral(delaylit);
+	if(context==Context::NEGATIVE){
+		literal = not literal;
+	}
+	MinisatID::LazyGroundLit lc(context==Context::BOTH, literal, mon);
 	getSolver().add(lc);
 }
 
@@ -386,21 +389,17 @@ typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
 class LazyClauseMon: public MinisatID::LazyGroundingCommand {
 private:
 	ResidualAndFreeInst* inst;
-	callbackgrounding requestGroundingCB;
+	LazyGroundingManager const * const grounder;
 
 public:
-	LazyClauseMon(ResidualAndFreeInst* inst)
-			: inst(inst) {
-	}
-
-	void setRequestMoreGrounding(callbackgrounding cb) {
-		requestGroundingCB = cb;
+	LazyClauseMon(ResidualAndFreeInst* inst, LazyGroundingManager const * const grounder)
+			: inst(inst), grounder(grounder) {
 	}
 
 	virtual void requestGrounding() {
 		if (not isAlreadyGround()) {
 			notifyGrounded();
-			requestGroundingCB(inst);
+			grounder->notifyDelayTriggered(inst);
 		}
 	}
 };
@@ -412,15 +411,13 @@ void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyLazyResidual(ResidualAn
 
 template<>
 void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
-	auto mon = new LazyClauseMon(inst);
+	auto mon = new LazyClauseMon(inst, grounder);
 	auto watchboth = type==TsType::RULE || type==TsType::EQ;
 	auto lit = createLiteral(inst->residual);
 	if(type==TsType::RIMPL){
 		lit = not lit;
 	}
 	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
-	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
-	mon->setRequestMoreGrounding(cbmore);
 	getSolver().add(lc);
 }
 

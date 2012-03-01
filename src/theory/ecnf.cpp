@@ -462,5 +462,5 @@ bool CPBound::operator<(const CPBound& rhs) const {
 }
 
 void LazyTsBody::notifyTheoryOccurence() {
-	grounder_->notifyBoundSatisfiedInternal(inst);
+	grounder_->notifyDelayTriggered(inst);
 }

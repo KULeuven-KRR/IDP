@@ -20,12 +20,7 @@
 
 using namespace std;
 
-void LazyGroundingManager::notifyBoundSatisfied(ResidualAndFreeInst * instance) {
-	notifyBoundSatisfiedInternal(instance);
-}
-
-// NOTE: code structure to prevent recursion
-void LazyGroundingManager::notifyBoundSatisfiedInternal(ResidualAndFreeInst* instance) const {
+void LazyGroundingManager::notifyDelayTriggered(ResidualAndFreeInst * instance) const {
 	queuedtseitinstoground.push(instance);
 	if (not currentlyGrounding) {
 		groundMore();
@@ -208,9 +203,9 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	return isAtEnd(instance);
 }
 
-LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, const var2dommap& varmapping,
+LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping,
 		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
-		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), -1, groundtheory), _subgrounder(sub) {
+		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), context, -1, groundtheory), _subgrounder(sub) {
 	for(auto i=pf->args().cbegin(); i<pf->args().cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		_varcontainers.push_back(varmapping.at(var));
@@ -230,14 +225,14 @@ dominstlist LazyUnknUnivGrounder::createInst(const ElementTuple& args) {
 	return domlist;
 }
 
-LazyUnknBoundGrounder::LazyUnknBoundGrounder(PFSymbol* symbol, unsigned int id, AbstractGroundTheory* gt) :
-		_id(id), _isGrounding(false), _grounding(gt) {
+LazyUnknBoundGrounder::LazyUnknBoundGrounder(PFSymbol* symbol, Context context, unsigned int id, AbstractGroundTheory* gt) :
+		_id(id), _isGrounding(false), _context(context), _grounding(gt) {
 	Assert(gt!=NULL);
 	getGrounding()->translator()->notifyDelayUnkn(symbol, this);
 }
 
 void LazyUnknBoundGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders) {
-	getGrounding()->notifyUnknBound(lit, args, grounders);
+	getGrounding()->notifyUnknBound(_context, lit, args, grounders);
 }
 
 void LazyUnknBoundGrounder::ground(const Lit& boundlit, const ElementTuple& args) {

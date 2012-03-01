@@ -49,7 +49,7 @@ private:
 	}
 
 protected:
-	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
 	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 public:
