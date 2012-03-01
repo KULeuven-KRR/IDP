@@ -3548,6 +3548,8 @@ bool PredInter::isConsistent() const {
  * NOTE: Simple check if _ct == _pt
  */
 bool PredInter::approxTwoValued() const {
+	// TODO turn it into something that is smarter, without comparing the tables!
+	// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
 	return _ct->internTable() == _pt->internTable();
 }
 
