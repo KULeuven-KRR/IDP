@@ -73,7 +73,7 @@ public:
 		}
 	}
 	virtual void put(std::ostream& stream) {
-		stream << "Inverse instance generater: inverse of\n"<< tabs()<< toString(_predchecker) ;
+		stream << "Inverse instance generater: inverse of"<< nt()<< toString(_predchecker) ;
 	}
 
 };
