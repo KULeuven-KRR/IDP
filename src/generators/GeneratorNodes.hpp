@@ -136,9 +136,9 @@ public:
 				return;
 			}
 		}
-		if (_generator->isAtEnd()) {
-			notifyAtEnd();
-		}
+		Assert(_generator->isAtEnd())
+		notifyAtEnd();
+
 	}
 
 	virtual void put(std::ostream& stream) {
