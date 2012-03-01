@@ -6,5 +6,5 @@ term T : V{
 	C
 }
 procedure main(){
-	
+	return 1
 }

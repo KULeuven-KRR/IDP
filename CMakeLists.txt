@@ -4,7 +4,7 @@ project (idp)
 ### The version number
 set (idp_VERSION_MAJOR 3)
 set (idp_VERSION_MINOR 0)
-set (idp_VERSION_PATCH 4)
+set (idp_VERSION_PATCH 5)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
 include(cmake/outofsourcecheck.cmake)
@@ -126,9 +126,7 @@ set(CPACK_SOURCE_GENERATOR TGZ)
 # note: escape char is \\\\
 set(CPACK_SOURCE_IGNORE_FILES
 	"^${PROJECT_SOURCE_DIR}/\\\\..*"
-	"^${PROJECT_SOURCE_DIR}/.git/"
-	"^${PROJECT_SOURCE_DIR}/*/.git/"
-	"^${PROJECT_SOURCE_DIR}/*/*/.git/"
+	".*/.git/"
 	"^${PROJECT_SOURCE_DIR}/builds/"
 	"^${PROJECT_SOURCE_DIR}/build/"
 	"^${PROJECT_SOURCE_DIR}/docs/visuals"
