@@ -56,8 +56,8 @@ public:
 class AtomGrounder: public FormulaGrounder {
 protected:
 	std::vector<TermGrounder*> _subtermgrounders;
-	InstChecker* const _pchecker;
-	InstChecker* const _cchecker;
+	InstChecker* const _ptchecker;
+	InstChecker* const _ctchecker;
 	size_t _symbol; // symbol's offset in translator's table.
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
