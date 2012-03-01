@@ -135,6 +135,8 @@ std::string toString(const std::map<Type1, Type2, Type3>& v) {
 
 template<>
 std::string toString(const CompType& type);
+template<>
+std::string toString(const TsType& type);
 
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
@@ -160,7 +162,7 @@ std::string toString(const CompType& type);
  * 		after each newline you put yourself, put tabs().
  * 		when you have done printing, the cursor should be at the END of the last INFORMATION you printed. No newlines or tabs!
  */
-std::string tabs();
+std::string nt();
 void pushtab();
 void poptab();
 

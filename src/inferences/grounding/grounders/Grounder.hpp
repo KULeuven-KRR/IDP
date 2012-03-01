@@ -60,7 +60,7 @@ public:
 	}
 
 	void toplevelRun() const; // Guaranteed toplevel run.
-	Lit groundAndReturnLit() const; // Explicitly requesting one literal equisat with subgrounding. NOTE: interprete returnvalue as if in conjunction (false is unsat, true is sat)
+	Lit groundAndReturnLit() const; // Explicitly request one literal equisat with subgrounding. NOTE: interprets returnvalue as if in conjunction (false is unsat, true is sat)
 	virtual void run(ConjOrDisj& formula) const = 0;
 
 	AbstractGroundTheory* getGrounding() const {
@@ -73,5 +73,7 @@ public:
 		return _context;
 	}
 };
+
+void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula);
 
 #endif /* GROUNDER_HPP_ */

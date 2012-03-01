@@ -23,10 +23,13 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 
 #include "tracemonitor.hpp"
 
 using namespace std;
+
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
 
 class SolverTermination: public TerminateMonitor {
 public:
@@ -52,18 +55,18 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver();
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
+	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
 	// TODO bugged!
 	//auto symstructure = generateApproxBounds(clonetheory, newstructure);
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
-	GrounderFactory grounderfactory(newstructure, symstructure);
-	auto grounder = grounderfactory.create(clonetheory, solver);
+	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, solver);
+	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(solver);
@@ -71,9 +74,23 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	grounder->toplevelRun();
 	auto grounding = grounder->getGrounding();
 
+	// TODO refactor optimization!
+
+	if(minimizeterm!=NULL){
+		auto term = dynamic_cast<AggTerm*>(minimizeterm);
+		if(term!=NULL){
+			auto setgrounder = GrounderFactory::create(term->set(), {newstructure, symstructure}, grounding);
+			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
+			optimgrounder.setOrig(minimizeterm);
+			optimgrounder.run();
+		}else{
+			throw notyetimplemented("Optimization over non-aggregate terms.");
+		}
+	}
+
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+		if (verbosity() >= 1) {
 			clog << "Symmetry breaking\n";
 		}
 		auto ivsets = findIVSets(clonetheory, newstructure);
@@ -101,7 +118,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	auto abstractsolutions = SolverConnection::initsolution();
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (verbosity() >= 1) {
 		clog << "Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
@@ -113,16 +130,17 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
-		clog << "Generate 2-valued models\n";
-	}
-	for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
-		auto newsolution = newstructure->clone();
-		SolverConnection::addLiterals(*model, grounding->translator(), newsolution);
-		SolverConnection::addTerms(*model, grounding->termtranslator(), newsolution);
-		newsolution->clean();
-		solutions.push_back(newsolution);
-		Assert(newsolution->isConsistent());
+	if(minimizeterm!=NULL){ // Optimizing
+		if(abstractsolutions->getModels().size()>0){
+			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
+		}
+	}else{
+		if (verbosity() >= 1) {
+			clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
+		}
+		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
+			solutions.push_back(handleSolution(newstructure, **model, grounding));
+		}
 	}
 
 	// Clean up: remove all objects that are only used here.
@@ -135,4 +153,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	delete (symstructure);
 
 	return solutions;
+}
+
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding){
+	auto newsolution = structure->clone();
+	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
+	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);
+	newsolution->clean();
+	Assert(newsolution->isConsistent());
+	return newsolution;
 }

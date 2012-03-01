@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-	return true
+procedure getExpectedNbOfModels(){
+	return 1
 }
 
 vocabulary V{
@@ -20,7 +20,7 @@ theory T : V {
 }
 
 structure S : V{ 
-	Vtx = { a..d }
-	Length = { 0..3 }
-	Edge = {a,b,1; a,c,2; b,d,1; c,d,1 }
+	Vtx = { a..b }
+	Length = { 0..1 }
+	Edge = {a,b,1; }
 }

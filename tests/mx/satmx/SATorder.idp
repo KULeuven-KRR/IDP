@@ -4,20 +4,15 @@ procedure getExpectedAModel(){
 
 vocabulary V{
 	type F
-
  
 	LessThan(F,F)
-
 }
 
 theory T : V { 
-
 	// Axioms of partial order
-	! f : ~LessThan(f,f).
-	! f1 f2 f3 : LessThan(f1,f2) & LessThan(f2,f3) => LessThan(f1,f3).
-	! f1 f2 : LessThan(f1,f2) => ~LessThan(f2,f1).
-
-
+	!f: ~LessThan(f,f).
+	!f1 f2 f3: LessThan(f1,f2) & LessThan(f2,f3) => LessThan(f1,f3).
+	!f1 f2: LessThan(f1,f2) => ~LessThan(f2,f1).
 }
 
 structure S : V{ 

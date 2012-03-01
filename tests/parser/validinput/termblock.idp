@@ -1,0 +1,10 @@
+vocabulary V{
+	type x
+	C:x
+}
+term T : V{
+	C
+}
+procedure main(){
+	
+}

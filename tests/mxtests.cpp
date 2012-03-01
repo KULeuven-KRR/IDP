@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/", "numberknown/"};
+	vector<string> testdirs {"simplemx/", "numberknown/", "nontotal/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 vector<string> generateListOfMXsatFiles() {

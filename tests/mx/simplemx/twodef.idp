@@ -1,0 +1,16 @@
+procedure getExpectedNbOfModels(){
+	return 0
+}
+
+vocabulary V{
+	p
+	q
+}
+
+theory T : V {
+	{ p <-q.}
+	{ p <-~q.}
+}
+
+structure S : V{
+}

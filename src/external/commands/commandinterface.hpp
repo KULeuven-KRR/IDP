@@ -25,6 +25,7 @@
 template<typename T> struct Type2Value;
 
 #define LIST(...) Loki::TL::MakeTypelist<__VA_ARGS__>::Result
+
 #define MAPPING(object, enumvalue)\
 template<>\
 struct Type2Value<object>{\
@@ -33,6 +34,7 @@ struct Type2Value<object>{\
 	}\
 };
 
+// NOTE: also implement the appropriate get method in internalargument!
 MAPPING(AbstractTheory*, AT_THEORY)
 MAPPING(int, AT_INT)
 MAPPING(double, AT_DOUBLE)
@@ -54,6 +56,7 @@ MAPPING(PredInter*, AT_PREDINTER)
 MAPPING(ElementTuple*, AT_TUPLE)
 MAPPING(std::vector<InternalArgument>*, AT_TABLE)
 MAPPING(bool, AT_BOOLEAN)
+MAPPING(Term*, AT_TERM)
 
 class Inference {
 private:

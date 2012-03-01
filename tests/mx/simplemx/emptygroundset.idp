@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	prod{x: p(x): x}=1.
+}
+
+structure S:V{
+	x = {0..5}
+	p<ct> = {  }
+	p<cf> = { 1; 2; 3; 4; 5 }
+}
+
+//we test for product of empty sets: solutions are {} and {1}
+procedure getExpectedNbOfModels(){
+	return 1
+}

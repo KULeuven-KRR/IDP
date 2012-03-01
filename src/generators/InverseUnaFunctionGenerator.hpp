@@ -47,7 +47,7 @@ public:
 	}
 
 	InverseUNAFuncGenerator* clone() const {
-		return new InverseUNAFuncGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	void reset() {

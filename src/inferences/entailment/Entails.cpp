@@ -25,7 +25,7 @@
 
 using namespace std;
 
-class TheorySupportedChecker: public TheoryVisitor {
+class TheorySupportedChecker: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _arithmeticFound;

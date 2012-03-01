@@ -15,13 +15,6 @@
 
 #include "groundtheories/GroundPolicy.hpp"
 
-/**
- * A class for visiting all elements in a logical theory. 
- * The theory is NOT changed.
- *
- * By default, it is traversed depth-first, allowing subimplementations
- * to only implement some of the traversals specifically.
- */
 class TheoryVisitor {
 	VISITORFRIENDS()
 public:
@@ -33,6 +26,51 @@ protected:
 	virtual void traverse(const Term*);
 	virtual void traverse(const SetExpr*);
 
+	virtual void visit(const Theory*) = 0;
+	virtual void visit(const AbstractGroundTheory*) = 0;
+	virtual void visit(const GroundTheory<GroundPolicy>*) = 0;
+
+	virtual void visit(const PredForm*) = 0;
+	virtual void visit(const EqChainForm*) = 0;
+	virtual void visit(const EquivForm*) = 0;
+	virtual void visit(const BoolForm*) = 0;
+	virtual void visit(const QuantForm*) = 0;
+	virtual void visit(const AggForm*) = 0;
+
+	virtual void visit(const GroundDefinition*) = 0;
+	virtual void visit(const PCGroundRule*) = 0;
+	virtual void visit(const AggGroundRule*) = 0;
+	virtual void visit(const GroundSet*) = 0;
+	virtual void visit(const GroundAggregate*) = 0;
+
+	virtual void visit(const CPReification*) = 0;
+
+	virtual void visit(const Rule*) = 0;
+	virtual void visit(const Definition*) = 0;
+	virtual void visit(const FixpDef*) = 0;
+
+	virtual void visit(const VarTerm*) = 0;
+	virtual void visit(const FuncTerm*) = 0;
+	virtual void visit(const DomainTerm*) = 0;
+	virtual void visit(const AggTerm*) = 0;
+
+	virtual void visit(const CPVarTerm*) = 0;
+	virtual void visit(const CPWSumTerm*) = 0;
+	virtual void visit(const CPSumTerm*) = 0;
+	virtual void visit(const EnumSetExpr*) = 0;
+	virtual void visit(const QuantSetExpr*) = 0;
+};
+
+/**
+ * A class for visiting all elements in a logical theory. 
+ * The theory is NOT changed.
+ *
+ * By default, it is traversed depth-first, allowing subimplementations
+ * to only implement some of the traversals specifically.
+ */
+class DefaultTraversingTheoryVisitor: public TheoryVisitor {
+	VISITORFRIENDS()
+protected:
 	virtual void visit(const Theory*);
 	virtual void visit(const AbstractGroundTheory*);
 	virtual void visit(const GroundTheory<GroundPolicy>*);

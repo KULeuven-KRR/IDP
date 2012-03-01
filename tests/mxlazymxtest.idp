@@ -2,31 +2,32 @@
 
 procedure main() {
 	stdoptions.nbmodels = 1
-	stdoptions.timeout = 50
+	stdoptions.timeout = 10
 	stdoptions.groundwithbounds = false
 	stdoptions.groundlazily = true
 	stdoptions.groundverbosity = 0
 	stdoptions.satverbosity = 0
 	
-	solution = mx::one(T,S)
+	partialsolution = modelexpandpartial(T,S)
 	
-	if solution == nil then
-		io.stderr:write("Found UNSAT, expected ")
-	else
-		io.stderr:write("Found SAT, expected ")
+	if(partialsolution==nil) then
+		if(getExpectedAModel())then
+			io.stderr:write("Found UNSAT, expected SAT.\n")
+			return 0
+		else
+			io.stderr:write("Found UNSAT, expected UNSAT.\n")
+			return 1
+		end
 	end
-	
-	if getExpectedAModel() then
-		io.stderr:write("SAT\n")
-	else
-		io.stderr:write("UNSAT\n")
-	end
-	
-	if(getExpectedAModel() == (solution ~= nil)) then
-		return 1
-	else
+
+	stdoptions.nbmodels = 1
+	stdoptions.groundlazily = false	
+	if(#modelexpand(T, partialsolution)==0)then
+		io.stderr:write("Found an invalid partial model.\n")
 		return 0
 	end
+	io.stderr:write("Found SAT, expected SAT.\n")
+	return 1
 }
 
 procedure getExpectedAModel(){

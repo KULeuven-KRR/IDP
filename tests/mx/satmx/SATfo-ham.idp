@@ -8,16 +8,15 @@ vocabulary V{
 	Start : Vtx
  
 	Ham(Vtx,Vtx)
-// 
+
 	LessThan(Vtx,Vtx)
 	SLessThan(Vtx,Vtx)
 }
 
 theory T : V { 
-	
 	/** LessThan is a linear order **/
-	! x y : LessThan(x,y) | LessThan(y,x).								// total order
-	! x y : LessThan(x,y) & LessThan(y,x) => x = y.					// anti-symmetric
+	! x y : LessThan(x,y) | LessThan(y,x).						// total order
+	! x y : LessThan(x,y) & LessThan(y,x) => x = y.				// anti-symmetric
 	! x y z : LessThan(x,y) & LessThan(y,z) => LessThan(x,z).	// transitive
 
 	/** Strict order **/
@@ -31,7 +30,6 @@ theory T : V {
 
 	/** Start at the correct node **/
 	! x : ~SLessThan(x,Start).
-
 }
 
 structure S : V{ 

@@ -116,7 +116,7 @@ public:
 	}
 
 	DivGenerator* clone() const {
-		return new DivGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	virtual void put(std::ostream& stream) {
@@ -138,7 +138,7 @@ public:
 	}
 
 	TimesGenerator* clone() const {
-		return new TimesGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	virtual void put(std::ostream& stream) {
@@ -160,7 +160,7 @@ public:
 	}
 
 	MinusGenerator* clone() const {
-		return new MinusGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	virtual void put(std::ostream& stream) {
@@ -182,7 +182,7 @@ public:
 	}
 
 	PlusGenerator* clone() const {
-		return new PlusGenerator(*this);
+		throw notyetimplemented("Cloning generators.");
 	}
 
 	virtual void put(std::ostream& stream) {

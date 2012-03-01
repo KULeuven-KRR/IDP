@@ -3548,6 +3548,8 @@ bool PredInter::isConsistent() const {
  * NOTE: Simple check if _ct == _pt
  */
 bool PredInter::approxTwoValued() const {
+	// TODO turn it into something that is smarter, without comparing the tables!
+	// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
 	return _ct->internTable() == _pt->internTable();
 }
 
@@ -3924,32 +3926,32 @@ Structure::~Structure() {
 }
 
 Structure* Structure::clone() const {
-	/*std::cerr << "CLONING";
-	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::cerr);
+	/*std::clog << "CLONING";
+	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::clog);
 		p.startTheory();
 		p.visit(this);
 		p.endTheory();
 		pushtab();*/
 	Structure* s = new Structure("", ParseInfo());
-	//std::cerr << endl << tabs() << "1";
+	//std::clog << endl << tabs() << "1";
 	s->vocabulary(_vocabulary);
-	//std::cerr << endl << tabs() << "2";
+	//std::clog << endl << tabs() << "2";
 
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "3";
+		//std::clog << endl << tabs() << "3";
 		s->inter(it->first)->internTable(it->second->internTable());
 	}
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "4";
+		//std::clog << endl << tabs() << "4";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		//std::cerr << endl << tabs() << "5";
+		//std::clog << endl << tabs() << "5";
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
-	/*std::cerr << endl << tabs() << "6";
+	/*std::clog << endl << tabs() << "6";
 	poptab();
-	std::cerr << endl << "DONE CLONING" << endl;*/
+	std::clog << endl << "DONE CLONING" << endl;*/
 	return s;
 }
 
@@ -4116,9 +4118,11 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 }
 
 void Structure::makeTwoValued() {
+	Assert(isConsistent());
 	if (approxTwoValued()) {
 		return;
 	}
+	//clog <<"Before: \n" <<toString(this) <<"\n";
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
 		CHECKTERMINATION
 		auto inter = (*i).second;
@@ -4188,7 +4192,6 @@ void Structure::makeTwoValued() {
 			}
 		}
 	}
-	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
 		CHECKTERMINATION
 		auto inter = (*i).second;
@@ -4204,18 +4207,42 @@ void Structure::makeTwoValued() {
 				continue;
 			}
 
-			inter->makeTrue(*ptIterator);
+			inter->makeFalse(*ptIterator);
 		}
 	}
 	clean();
+	//clog <<"After: \n" <<toString(this) <<"\n";
 	Assert(approxTwoValued());
+}
+
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
+
+// Contents ownership to receiver
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& partialstructures) {
+	auto result = std::vector<AbstractStructure*>();
+	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
+		if (not (*i)->approxTwoValued()) {
+			auto extensions = generateEnoughTwoValuedExtensions(*i);
+			result.insert(result.end(), extensions.begin(), extensions.end());
+		} else {
+			result.push_back(*i);
+		}
+	}
+
+	if(getOption(IntType::NBMODELS)!=0 && needMoreModels(result.size())){
+		stringstream ss;
+		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
+		Warning::warning(ss.str());
+	}
+
+	return result;
 }
 
 /*
  * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
  * TODO refactor into clean methods!
  */
-std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure* original) {
+std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original) {
 	vector<AbstractStructure*> extensions;
 
 	extensions.push_back(original->clone());
@@ -4320,11 +4347,6 @@ std::vector<AbstractStructure*> generateAllTwoValuedExtensions(AbstractStructure
 	}
 
 	if (needFixedNumberOfModels()) {
-		if (needMoreModels(extensions.size())) {
-			stringstream ss;
-			ss << "Only " << extensions.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
-			Warning::warning(ss.str());
-		}
 		// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 			(*j)->makeTwoValued();

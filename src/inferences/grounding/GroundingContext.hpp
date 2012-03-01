@@ -25,12 +25,21 @@ GenType operator not(GenType orig);
 class PFSymbol;
 class Variable;
 
+int getIDForUndefined();
+
+#define iff(x, y) ((x && y) || (not x && not y))
+
 struct GroundingContext {
 	GenType gentype; // if a certainly checker succeeds, then this type applies. if a possible checker fails, then the formula is irrelevant
 	Context _funccontext;
 	Context _monotone;
 	CompContext _component; // Indicates the context of the visited formula
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
+	int currentDefID; // If tstype = rule, this indicates the definition to which the grounders belong
+	int getCurrentDefID() const{
+		Assert(_tseitin!=TsType::RULE || currentDefID!=getIDForUndefined());
+		return currentDefID;
+	}
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
 
 	std::set<Variable*> _mappedvars; // Keeps track of which variables where added to the varmapping.

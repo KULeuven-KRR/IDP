@@ -686,7 +686,7 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
  *		a set of relations which are used in the theory (to exclude unused but nonetheless defined relations)
  */
 
-class TheorySymmetryAnalyzer: public TheoryVisitor {
+class TheorySymmetryAnalyzer: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	const AbstractStructure* structure_;

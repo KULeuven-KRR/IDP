@@ -50,8 +50,9 @@ string getPathOfConfigFile() {
 	return ss.str();
 }
 
-std::string tabs() {
+std::string nt() {
 	stringstream ss;
+	ss <<'\n';
 	auto nb = GlobalData::instance()->getTabSize();
 	for (size_t i = 0; i < nb; ++i) {
 		ss << "    ";
@@ -72,8 +73,8 @@ void poptab() {
  }*/
 
 IdpException notyetimplemented(const string& message) {
-	clog << "WARNING or ERROR: The following feature is not yet implemented:\n" << tabs() << '\t' << message << '\n';
-	clog << tabs() << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n" << tabs();
+	clog << "WARNING or ERROR: The following feature is not yet implemented:" <<nt() << '\t' << message <<nt();
+	clog << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature." <<nt();
 	return IdpException("Aborting because of not yet implemented feature.");
 }
 
@@ -234,6 +235,26 @@ std::string toString(const CompType& type) {
 		break;
 	case CompType::GEQ:
 		output << " >= ";
+		break;
+	}
+	return output.str();
+}
+
+template<>
+std::string toString(const TsType& type) {
+	std::stringstream output;
+	switch (type) {
+	case TsType::RIMPL:
+		output << " <= ";
+		break;
+	case TsType::IMPL:
+		output << " => ";
+		break;
+	case TsType::RULE:
+		output << " <- ";
+		break;
+	case TsType::EQ:
+		output << " <=> ";
 		break;
 	}
 	return output.str();

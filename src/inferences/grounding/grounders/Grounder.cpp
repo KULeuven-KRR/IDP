@@ -56,36 +56,41 @@ GroundTranslator* Grounder::getTranslator() const {
 	return _grounding->translator();
 }
 
-void Grounder::toplevelRun() const {
-	//Assert(context()._conjunctivePathFromRoot);
-	ConjOrDisj formula;
-	run(formula);
+void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	if (formula.literals.size() == 0) {
 		if (formula.getType() == Conn::DISJ) { // UNSAT
-			getGrounding()->addUnitClause(1);
-			getGrounding()->addUnitClause(-1);
+			gt->addUnitClause(1);
+			gt->addUnitClause(-1);
 		}
 	} else if (formula.literals.size() == 1) {
 		Lit l = formula.literals.back();
-
 		if (l == _true || l == _false) {
 			if (formula.getType() == Conn::CONJ && l == _false) { // UNSAT
-				getGrounding()->addUnitClause(1);
-				getGrounding()->addUnitClause(-1);
+				gt->addUnitClause(1);
+				gt->addUnitClause(-1);
 			} // else SAT or irrelevant (TODO correct?)
 		} else {
-			getGrounding()->addUnitClause(l);
+			gt->addUnitClause(l);
 		}
 	} else {
 		if (formula.getType() == Conn::CONJ) {
 			for (auto i = formula.literals.cbegin(); i < formula.literals.cend(); ++i) {
-				getGrounding()->addUnitClause(*i);
+				gt->addUnitClause(*i);
 			}
 		} else {
-			getGrounding()->add(formula.literals);
+			gt->add(formula.literals);
 		}
 	}
-	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+}
+
+void Grounder::toplevelRun() const {
+	//Assert(context()._conjunctivePathFromRoot);
+	ConjOrDisj formula;
+	run(formula);
+	addToGrounding(getGrounding(), formula);
+	if(not getOption(BoolType::GROUNDLAZILY)){
+		getGrounding()->closeTheory(); // TODO very important and easily forgotten
+	}
 }
 
 Lit Grounder::groundAndReturnLit() const {

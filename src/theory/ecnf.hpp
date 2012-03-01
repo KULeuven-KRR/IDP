@@ -50,12 +50,10 @@ private:
 	weightlist _litweights; // For each literal a corresponding weight
 
 public:
-	// Constructors
-	GroundSet() {
-	}
 	GroundSet(int setnr, const litlist& s, const weightlist& lw)
 			: _setnr(setnr), _setlits(s), _litweights(lw) {
 	}
+	virtual ~GroundSet(){}
 
 	// Inspectors
 	unsigned int setnr() const {
@@ -113,8 +111,7 @@ public:
 			: _head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
 		Assert(a._arrow != TsType::RULE);
 	}
-	GroundAggregate() {
-	}
+	virtual ~GroundAggregate(){}
 
 	// Inspectors
 	int head() const {
@@ -142,8 +139,8 @@ public:
  *************************/
 
 // Enumeration type for rules
-enum RuleType {
-	RT_CONJ, RT_DISJ, RT_AGG
+enum class RuleType {
+	CONJ, DISJ, AGG
 };
 
 /**
@@ -228,10 +225,10 @@ public:
 		return _body[n];
 	}
 	bool isFalse() const {
-		return (_body.empty() && type() == RT_DISJ);
+		return (_body.empty() && type() == RuleType::DISJ);
 	}
 	bool isTrue() const {
-		return (_body.empty() && type() == RT_CONJ);
+		return (_body.empty() && type() == RuleType::CONJ);
 	}
 };
 
@@ -246,11 +243,11 @@ private:
 public:
 	// Constructors
 	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec)
-			: GroundRule(head, RT_AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+			: GroundRule(head, RuleType::AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
 	AggGroundRule(int head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
-			: GroundRule(grb.head(), RT_AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
+			: GroundRule(grb.head(), RuleType::AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
 	}
 
 	~AggGroundRule() {
@@ -285,7 +282,6 @@ private:
 	std::map<int, GroundRule*> _rules;
 
 public:
-	// Constructors
 	GroundDefinition(unsigned int id, GroundTranslator* tr)
 			: _id(id), _translator(tr) {
 	}
@@ -358,7 +354,7 @@ public:
 	CPReification(int head, CPTsBody* body)
 			: _head(head), _body(body) {
 	}
-	~CPReification();
+	virtual ~CPReification();
 	std::string toString(unsigned int spaces = 0) const;
 };
 
@@ -400,13 +396,13 @@ public:
 		_litweights.pop_back();
 	}
 	// Inspectors
-	litlist literals() const {
+	const litlist& literals() const {
 		return _setlits;
 	}
-	weightlist weights() const {
+	const weightlist& weights() const {
 		return _litweights;
 	}
-	weightlist trueweights() const {
+	const weightlist& trueweights() const {
 		return _trueweights;
 	}
 	unsigned int size() const {
@@ -554,8 +550,13 @@ public:
 typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
+class LazyGrounder;
+class LazyGroundingManager;
+
 struct ResidualAndFreeInst {
+	const LazyGrounder* grounder;
 	InstGenerator* generator;
+	size_t index;
 	Lit residual;
 	dominstlist freevarinst;
 
@@ -565,21 +566,16 @@ struct ResidualAndFreeInst {
 };
 
 class LazyTsBody: public TsBody {
-private:
-	unsigned int id_;
-	LazyQuantGrounder const* const grounder_;
+public:
+	LazyGroundingManager const* const grounder_;
 	ResidualAndFreeInst* inst;
 
 public:
-	LazyTsBody(int id, LazyQuantGrounder const* const grounder, ResidualAndFreeInst* inst, TsType type)
-			: TsBody(type), id_(id), grounder_(grounder), inst(inst) {
+	LazyTsBody(LazyGroundingManager const* const grounder, ResidualAndFreeInst* inst, TsType type)
+			: TsBody(type), grounder_(grounder), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
-
-	unsigned int id() const {
-		return id_;
-	}
 
 	void notifyTheoryOccurence();
 };

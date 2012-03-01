@@ -45,8 +45,16 @@ public:
 #endif
 	}
 
+	// TODO quite expensive
 	EnumLookupGenerator* clone() const {
-		return new EnumLookupGenerator(*this);
+		auto g = new EnumLookupGenerator(_table, _invars, _outvars);
+		g->_reset = _reset;
+		g->_currargs = _currargs;
+		g->_currpos = g->_table.find(g->_currargs);
+		if(g->_currpos!=g->_table.cend()){
+			g->_iter = g->_currpos->second.cbegin();
+		}
+		return g;
 	}
 
 	void reset() {

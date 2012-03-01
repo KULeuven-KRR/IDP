@@ -1,0 +1,29 @@
+vocabulary V{
+	type i isa int
+	type d isa float
+	type s isa string
+	p(i)
+	q(d)
+	r(s)
+}
+
+theory T:V{
+	?x: p(x).
+	?x: p(x).
+	?x: p(x).
+	?x: p(x).
+	?x: p(x).
+	?x: q(x).
+	?x: r(x).
+}
+
+structure S:V{
+	i = {1..10000}
+	d = {0.1;0..1} // ERROR: takes incorrect doubles!
+	s = {A..Z; 0..1} // error, cannot go from A to an int?, cannot do "A".."B", but can do A..B
+}
+
+procedure main(){
+	//stdoptions.language="ecnf"
+	print(ground(T, S))
+}
