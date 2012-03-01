@@ -89,6 +89,7 @@ public:
 	}
 
 	void next() {
+		pushtab();
 		if (_reset) {
 			_reset = false;
 			_univgen->begin();
@@ -100,6 +101,10 @@ public:
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
 		}
+		else{
+			_univgen->operator ++();
+		}
+
 		if (_univgen->isAtEnd()) {
 			notifyAtEnd();
 		}
@@ -108,11 +113,7 @@ public:
 			_currenttuple[_outpos[i]] = _outvars[i]->get();
 		}
 		_rangevar->operator =(_function->operator [](_currenttuple));
-
-		_univgen->operator ++();
-		if (_univgen->isAtEnd()) {
-			notifyAtEnd();
-		}
+		poptab();
 	}
 
 	virtual void put(std::ostream& stream) {
