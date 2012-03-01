@@ -16,6 +16,7 @@
 
 #include "groundtheories/GroundPolicy.hpp"
 #include "visitors/VisitorFriends.hpp"
+#include "theory/TheoryUtils.hpp"
 
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
@@ -80,24 +81,29 @@ protected:
 		}
 	}
 
-	void visit(const Theory* t) {
-		if (!_conjecture) {
-			for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
+	void visit(const Theory* theory) {
+		auto temp = theory->clone();
+		auto cloned = dynamic_cast<Theory*>(FormulaUtils::graphFuncsAndAggs(temp, NULL, Context::POSITIVE));
+		if(cloned==NULL){ // TODO ugly hack
+			Assert(false);
+		}
+		if (not _conjecture) {
+			for (auto it = cloned->sentences().cbegin(); it != cloned->sentences().cend(); ++it) {
 				startAxiom("a");
 				(*it)->accept(this);
 				endAxiom();
 				_count++;
 			}
-		} else if (t->sentences().cbegin() != t->sentences().cend()) {
+		} else if (not cloned->sentences().empty()) {
 			// Output a conjecture as a conjunction.
 			startAxiom("cnj");
-			auto it = t->sentences().cbegin();
-			while (it != t->sentences().cend()) {
+			auto it = cloned->sentences().cbegin();
+			while (it != cloned->sentences().cend()) {
 				_conjectureStream << "(";
 				(*it)->accept(this);
 				_conjectureStream << ")";
 				++it;
-				if (it != t->sentences().cend()) {
+				if (it != cloned->sentences().cend()) {
 					_conjectureStream << " & ";
 				}
 			}
@@ -459,6 +465,7 @@ private:
 
 	void endAxiom() {
 		(*_os) << ")).\n";
+		output() <<_os->str();
 	}
 
 	void outputPFSymbolType(const PFSymbol* pfs) {
