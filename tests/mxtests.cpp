@@ -76,9 +76,7 @@ TEST(MXnbmodelsTest, DoesMX) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
-}
+
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
