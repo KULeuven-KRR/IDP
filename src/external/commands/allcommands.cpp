@@ -16,7 +16,6 @@
 #include "printoptions.hpp"
 #include "newstructure.hpp"
 #include "modelexpand.hpp"
-#include "newoptions.hpp"
 #include "clone.hpp"
 #include "mergetheories.hpp"
 #include "idptype.hpp"
@@ -37,7 +36,7 @@
 #include "twovaluedextensions.hpp"
 #include "calculatedefinitions.hpp"
 #include "structureproperties.hpp"
-#include "setAsCurrentOptions.hpp"
+#include "options.hpp"
 #include "createdummytuple.hpp"
 #include "minimize.hpp"
 
@@ -101,6 +100,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 		inferences.push_back(make_shared<SetOptionsInference>());
 		inferences.push_back(make_shared<CreateTupleInference>());
 		inferences.push_back(make_shared<MinimizeInference>());
+		inferences.push_back(make_shared<GetOptionsInference>());
 	}
 	return inferences;
 }

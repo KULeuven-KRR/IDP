@@ -47,6 +47,18 @@ TEST_P(SlowMXnbTest, DoesSlowMX) {
 	runTests("mxsattestslow.idp", GetParam());
 }
 
+TEST_P(MXsatTest, DoesMXWithSymmetryBreaking){
+	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
+}
+
+TEST_P(MXsatTest, DoesMXWithoutPushingNegationsOrFlattening) {
+	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
+}
+
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
 
 }
+
+
+
+

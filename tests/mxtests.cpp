@@ -59,6 +59,15 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
 
+TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
+	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
+}
+
+// TODO when bdds are implemented
+/*TEST_P(MXnbTest, DoesMXWithBounds) {
+	runTests("mxnbofmodelstestwithbounds.idp");
+}*/
+
 TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
 }
@@ -71,9 +80,7 @@ TEST(MXnbmodelsTest, DoesMX) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
-}
+
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
