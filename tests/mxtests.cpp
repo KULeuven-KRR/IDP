@@ -55,6 +55,10 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
 
+TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
+	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
+}
+
 // TODO when bdds are implemented
 /*TEST_P(MXnbTest, DoesMXWithBounds) {
 	runTests("mxnbofmodelstestwithbounds.idp");
