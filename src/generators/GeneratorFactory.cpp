@@ -30,6 +30,7 @@
 #include "SimpleFuncGenerator.hpp"
 #include "BasicGenerators.hpp"
 #include "ArithmeticOperatorsGenerator.hpp"
+#include "ArithmeticOperatorsChecker.hpp"
 #include "InverseUnaFunctionGenerator.hpp"
 #include "InvertNumericGenerator.hpp"
 #include "InverseAbsValueGenerator.hpp"
@@ -191,11 +192,13 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 			outvars.insert(var);
 		}
 	}
+
 	set<const FOBDDDeBruijnIndex*> indices;
 	optimizemanager.optimizeQuery(data.bdd, outvars, indices, table->structure());
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);
+
 	_generator = btg.create(data);
 }
 
@@ -434,7 +437,12 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 
 void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
-		_generator = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+		if(_pattern[1] == Pattern::INPUT){
+				_generator = new PlusChecker(_vars[0],_vars[1],_vars[2]); //TODO: also do this mod for times, .... If Everything is input, we CANNOT make a minusgenerator and so...
+		}
+		else{
+			_generator = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+		}
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new MinusGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
