@@ -36,19 +36,23 @@ const DomainElement* domelem(T t){
 }
 
 namespace Tests{
-	TEST(BddGenerator, PredForm){
+TEST(BddGenerator, PredForm){
 		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto sort = new Sort("x", sorttable);
 		auto variable = new Variable(sort);
-		auto sortterm = new VarTerm(variable, TermParseInfo());
+		auto sortterm = new VarTerm(variable, TermParseInfo()); //var x
 		auto symbol = new Predicate("P", {sort}, false);
-		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
+		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo()); //P(x)
 		auto vocabulary = new Vocabulary("V");
 		vocabulary->add(sort);
 		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
 		structure->vocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
+
+		//P<ct> = {-2,1}
+		//P<cf> = {2}
+		//P<u>  = {-1,0}
 		predinter->makeTrue({createDomElem(1)});
 		predinter->makeFalse({createDomElem(2)});
 		predinter->makeTrue({createDomElem(-2)});
@@ -60,7 +64,7 @@ namespace Tests{
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
 		auto bddset = manager.getVariables({variable});
-		Assert(bddset.size()==1);
+		ASSERT_EQ(1,bddset.size());
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);
@@ -80,8 +84,52 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 2);
 		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
 		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
-
 	}
+
+	TEST(BddGenerator, PredFormSmallerThan){
+		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = new Sort("x", sorttable);
+		auto variable = new Variable(sort);
+		auto sortterm = new VarTerm(variable, TermParseInfo()); //var x
+		auto vocabulary = new Vocabulary("V");
+		vocabulary->add(sort);
+		auto less = VocabularyUtils::lessThan(sort);
+		auto zero = createDomElem(0);
+		auto zeroterm = new DomainTerm(sort, zero, TermParseInfo());
+		Formula* formula = new PredForm(SIGN::POS, less, {sortterm, zeroterm}, FormulaParseInfo()); //x<0
+		auto structure = new Structure("S", ParseInfo());
+		structure->vocabulary(vocabulary);
+
+		FOBDDManager manager;
+		FOBDDFactory bddfactory(&manager, NULL);
+
+		BddGeneratorData data;
+
+		data.bdd = bddfactory.turnIntoBdd(formula);
+		auto bddset = manager.getVariables({variable});
+		ASSERT_EQ(1,bddset.size());
+		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
+
+		BDDToGenerator genfactory(&manager);
+		auto var = new DomElemContainer();
+		Universe u({sorttable});
+		data.pattern = {Pattern::OUTPUT};
+		data.vars = {var};
+		data.structure = structure;
+		data.universe = u;
+		auto gen = genfactory.create(data);
+
+		set<int> genvalues;
+		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
+			auto value = var->get()->value()._int;
+			genvalues.insert(value);
+		}
+		std::cerr << toString(gen);
+		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
+		ASSERT_TRUE(genvalues.find(-1)!=genvalues.end());
+	}
+
 
 	// TODO move to nonbdd test
 	TEST(Vocabulary, CreatePTInter){
