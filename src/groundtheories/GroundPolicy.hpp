@@ -49,7 +49,7 @@ private:
 	}
 
 protected:
-	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
 	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 public:
@@ -83,6 +83,8 @@ public:
 	void polAdd(const TsSet& tsset, int setnr, bool);
 	void polAdd(int defnr, PCGroundRule* rule);
 	void polAdd(int defnr, AggGroundRule* rule);
+
+	void polAddOptimization(AggFunction function, int setid);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 

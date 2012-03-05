@@ -15,7 +15,7 @@
 
 class PFSymbol;
 
-class CheckContainment: public TheoryVisitor {
+class CheckContainment: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	const PFSymbol* _symbol;

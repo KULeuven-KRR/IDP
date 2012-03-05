@@ -29,6 +29,7 @@ class Formula;
 class Vocabulary;
 class Term;
 class AggForm;
+class GroundTranslator;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -81,6 +82,9 @@ void checkSorts(Vocabulary* v, Formula* f);
 bool containsFuncTerms(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
+
+/** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);

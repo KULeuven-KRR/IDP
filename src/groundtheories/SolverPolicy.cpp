@@ -46,6 +46,15 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermT
 	_termtranslator = termtranslator;
 }
 
+template<typename Solver>
+void SolverPolicy<Solver>::polEndTheory(){
+}
+
+template<>
+void SolverPolicy<MinisatID::FlatZincRewriter>::polEndTheory(){
+	getSolver().finishParsing();
+}
+
 double test;
 
 template<typename Solver>
@@ -221,38 +230,42 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	getSolver().add(MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
+MinisatID::AggType convert(AggFunction agg){
+	switch (agg) {
+	case AggFunction::CARD:
+		if (verbosity() > 1){
+			std::clog << "card ";
+		}
+		return MinisatID::CARD;
+	case AggFunction::SUM:
+		if (verbosity() > 1){
+			std::clog << "sum ";
+		}
+		return MinisatID::SUM;
+	case AggFunction::PROD:
+		if (verbosity() > 1){
+			std::clog << "prod ";
+		}
+		return MinisatID::PROD;
+	case AggFunction::MIN:
+		if (verbosity() > 1){
+			std::clog << "min ";
+		}
+		return MinisatID::MIN;
+	case AggFunction::MAX:
+		if (verbosity() > 1){
+			std::clog << "max ";
+		}
+		return MinisatID::MAX;
+	}
+}
+
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	MinisatID::Aggregate agg;
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
-	switch (aggtype) {
-	case AggFunction::CARD:
-		agg.type = MinisatID::CARD;
-		if (_verbosity > 1)
-			std::clog << "card ";
-		break;
-	case AggFunction::SUM:
-		agg.type = MinisatID::SUM;
-		if (_verbosity > 1)
-			std::clog << "sum ";
-		break;
-	case AggFunction::PROD:
-		agg.type = MinisatID::PROD;
-		if (_verbosity > 1)
-			std::clog << "prod ";
-		break;
-	case AggFunction::MIN:
-		agg.type = MinisatID::MIN;
-		if (_verbosity > 1)
-			std::clog << "min ";
-		break;
-	case AggFunction::MAX:
-		if (_verbosity > 1)
-			std::clog << "max ";
-		agg.type = MinisatID::MAX;
-		break;
-	}
+	agg.type = convert(aggtype);
 	if (_verbosity > 1)
 		std::clog << setnr << ' ';
 	switch (sem) {
@@ -329,6 +342,14 @@ void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> bo
 	getSolver().add(rule);
 }
 
+template<typename Solver>
+void SolverPolicy<Solver>::polAddOptimization(AggFunction function, int setid){
+	MinisatID::MinimizeAgg minim;
+	minim.setid = setid;
+	minim.type = convert(function);
+	getSolver().add(minim);
+}
+
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {
 private:
 	Lit lit;
@@ -343,7 +364,6 @@ public:
 	virtual void requestGrounding() {
 		if (not isAlreadyGround()) {
 			notifyGrounded();
-			//cerr <<"Grounding rule with inst " <<toString(args) <<"\n";
 			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
 				(*i)->ground(lit, args);
 			}
@@ -352,12 +372,16 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
 
 template<>
-void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
-	auto mon = new LazyRuleMon(boundlit, args, grounders);
-	MinisatID::LazyGroundLit lc(true, createLiteral(boundlit), mon);
+void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+	auto mon = new LazyRuleMon(delaylit, args, grounders);
+	auto literal = createLiteral(delaylit);
+	if(context==Context::NEGATIVE){
+		literal = not literal;
+	}
+	MinisatID::LazyGroundLit lc(context==Context::BOTH, literal, mon);
 	getSolver().add(lc);
 }
 
@@ -365,21 +389,17 @@ typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
 class LazyClauseMon: public MinisatID::LazyGroundingCommand {
 private:
 	ResidualAndFreeInst* inst;
-	callbackgrounding requestGroundingCB;
+	LazyGroundingManager const * const grounder;
 
 public:
-	LazyClauseMon(ResidualAndFreeInst* inst)
-			: inst(inst) {
-	}
-
-	void setRequestMoreGrounding(callbackgrounding cb) {
-		requestGroundingCB = cb;
+	LazyClauseMon(ResidualAndFreeInst* inst, LazyGroundingManager const * const grounder)
+			: inst(inst), grounder(grounder) {
 	}
 
 	virtual void requestGrounding() {
 		if (not isAlreadyGround()) {
 			notifyGrounded();
-			requestGroundingCB(inst);
+			grounder->notifyDelayTriggered(inst);
 		}
 	}
 };
@@ -391,15 +411,13 @@ void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyLazyResidual(ResidualAn
 
 template<>
 void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
-	auto mon = new LazyClauseMon(inst);
+	auto mon = new LazyClauseMon(inst, grounder);
 	auto watchboth = type==TsType::RULE || type==TsType::EQ;
 	auto lit = createLiteral(inst->residual);
 	if(type==TsType::RIMPL){
 		lit = not lit;
 	}
 	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
-	callbackgrounding cbmore(const_cast<LazyGroundingManager*>(grounder), &LazyGroundingManager::notifyBoundSatisfied);
-	mon->setRequestMoreGrounding(cbmore);
 	getSolver().add(lc);
 }
 

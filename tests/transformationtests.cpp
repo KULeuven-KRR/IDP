@@ -14,7 +14,12 @@
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
 
-namespace Tests {
+#include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
+#include "groundtheories/GroundTheory.hpp"
+#include "groundtheories/GroundPolicy.hpp"
+
+using namespace Tests;
 
 // AddCompletion - theory
 //TODO
@@ -316,38 +321,6 @@ TEST(PushNegationsTest,Theory) {
 	theory->recursiveDelete();
 }
 
-// PushQuantifiers - theory
-TEST(PushQuantifiersTest,Theory) {
-	auto s = sort("X",-2,2);
-	auto p = pred("P",{s});
-	auto q = pred("Q",{s});
-	auto x = var(s);
-
-	auto voc = new Vocabulary("V");
-	voc->add(s);
-	voc->add(p.p());
-	voc->add(q.p());
-
-	Formula& axpxqx = all(x,(p({x}) & q({x})));
-
-	auto theory = new Theory("T",voc,ParseInfo());
-	theory->add(&axpxqx);
-
-	// Rewriting (! x : P(x) & Q(x)) to ((! x : P(x)) & (! x : Q(x))).
-	auto result = FormulaUtils::pushQuantifiers(theory);
-
-	ASSERT_TRUE(sametypeid<Theory>(*result));
-	auto restheory = dynamic_cast<Theory*>(result);
-	ASSERT_EQ(1,restheory->sentences().size());
-	auto resformula = restheory->sentences()[0];
-	ASSERT_TRUE(sametypeid<BoolForm>(*resformula));
-	ASSERT_EQ(2,resformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[1]));
-
-	result->recursiveDelete();
-}
-
 // RemoveEquivalences - formula,theory
 TEST(RemoveEquivalencesTest,EquivForm) {
 	auto p = pred("P",{});
@@ -522,5 +495,102 @@ TEST(UnnestTermsTest,NestedFuncTerms) {
 // UnnestThreeValuedTerms - formula,rule
 //TODO
 
+TEST(FindUnknTest,NestedQuantFormula) {
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
+	auto q = pred("Q",{s,s});
+	auto r = pred("R",{s,s});
 
-} /* namespace Tests */
+	auto voc = new Vocabulary("V");
+	add(voc, {s});
+	add(voc, {p.p(), r.p(), q.p()});
+
+	GroundTranslator translator;
+
+	auto& pf_p = p({x,y});
+	auto& formula = all(x, all(y, pf_p | (q({x,y}) | r({x,y}))));
+
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
+	ASSERT_EQ((void*)NULL, predform);
+}
+
+TEST(FindUnknTest,QuantFormula) {
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
+	auto q = pred("Q",{s,s});
+	auto r = pred("R",{s,s});
+
+	auto voc = new Vocabulary("V");
+	add(voc, {s});
+	add(voc, {p.p(), r.p(), q.p()});
+
+	GroundTranslator translator;
+
+	auto& pf_p = p({x,y});
+	auto& formula = all({x, y}, pf_p | (q({x,y}) | r({x,y})));
+
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
+	ASSERT_EQ(predform, &pf_p);
+}
+
+class TestGrounder: public LazyUnknBoundGrounder{
+public:
+	TestGrounder(PFSymbol* symbol):LazyUnknBoundGrounder(symbol, Context::BOTH, -1, new GroundTheory<GroundPolicy>(NULL)){
+
+	}
+	void doGround(const Lit& boundlit, const ElementTuple& args) {
+
+	}
+};
+
+TEST(FindUnknTest,QuantFormulaFirstWatched) {
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
+	auto q = pred("Q",{s,s});
+	auto r = pred("R",{s,s});
+
+	auto voc = new Vocabulary("V");
+	add(voc, {s});
+	add(voc, {p.p(), r.p(), q.p()});
+
+	GroundTranslator translator;
+	TestGrounder grounder(p.p());
+	translator.notifyDelayUnkn(p.p(), &grounder);
+	ASSERT_TRUE(translator.isAlreadyDelayedOnDifferentID(p.p(), -1));
+
+	auto& pf_p = p({x,y});
+	auto& pf_q = not q({x,y});
+	auto& formula = all({x, y}, pf_p | pf_q | r({x,y}));
+
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
+	ASSERT_EQ(predform, &pf_q);
+}
+
+TEST(FindUnknTest,QuantFormulaPred) {
+	auto s = sort("S",-2,2);
+	auto x = var(s);
+	auto y = var(s);
+	auto p = pred("P",{s,s});
+
+	auto voc = new Vocabulary("V");
+	add(voc, {s});
+	add(voc, {p.p()});
+
+	GroundTranslator translator;
+
+	auto& pf_p = p({x,y});
+	auto& formula = all({x, y}, pf_p);
+
+	Context context = Context::BOTH;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
+	ASSERT_EQ(predform, &pf_p);
+}

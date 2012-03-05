@@ -116,3 +116,7 @@ size_t GlobalData::getTabSize() const {
 GlobalData* getGlobal() {
 	return GlobalData::instance();
 }
+
+int verbosity() {
+	return getOption(IntType::GROUNDVERBOSITY);
+}

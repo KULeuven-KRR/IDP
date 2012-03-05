@@ -12,15 +12,21 @@
 #define MODELEXPANSION_HPP_
 
 #include <vector>
+#include <cstdlib>
 
 class AbstractStructure;
 class AbstractTheory;
 class TraceMonitor;
+class Term;
 
 class ModelExpansion {
 public:
 	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) {
-		ModelExpansion m(theory, structure, tracemonitor);
+		ModelExpansion m(theory, structure, NULL, tracemonitor);
+		return m.expand();
+	}
+	static std::vector<AbstractStructure*> doOptimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor) {
+		ModelExpansion m(theory, structure, term, tracemonitor);
 		return m.expand();
 	}
 
@@ -28,10 +34,11 @@ private:
 	AbstractTheory* theory;
 	AbstractStructure* structure;
 	TraceMonitor* tracemonitor;
-	ModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor)
-			: theory(theory), structure(structure), tracemonitor(tracemonitor) {
+	Term* minimizeterm; // if NULL, no optimization is done
+
+	ModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
+			: theory(theory), structure(structure), tracemonitor(tracemonitor), minimizeterm(minimize) {
 	}
 	std::vector<AbstractStructure*> expand() const;
-
 };
 #endif //MODELEXPANSION_HPP_

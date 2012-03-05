@@ -36,7 +36,7 @@ private:
 	Printer* printer_;
 
 public:
-	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
 	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 	void polRecursiveDelete() {
@@ -94,6 +94,10 @@ public:
 		auto reif = new CPReification(tseitin, body);
 		printer().print(reif);
 		delete (reif);
+	}
+
+	void polAddOptimization(AggFunction function, int setid){
+		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {

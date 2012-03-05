@@ -13,7 +13,7 @@
 
 #include "visitors/TheoryVisitor.hpp"
 
-class FormulaFuncTermChecker: public TheoryVisitor {
+class FormulaFuncTermChecker: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _result;

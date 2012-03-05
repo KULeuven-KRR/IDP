@@ -16,7 +16,7 @@
 
 class AbstractStructure;
 
-class ApproxCheckTwoValued: public TheoryVisitor {
+class ApproxCheckTwoValued: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	AbstractStructure* _structure;

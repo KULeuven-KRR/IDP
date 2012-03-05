@@ -28,7 +28,7 @@ enum InitBoundType {
 /**
  * Constraint propagator for first-order theories
  */
-class FOPropagator: public TheoryVisitor {
+class FOPropagator: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 public:
 	virtual ~FOPropagator() {
@@ -49,7 +49,7 @@ public:
  * 	and domains for formulas in a theory.
  */
 template<class InterpretationFactory, class PropDomain>
-class FOPropagatorFactory: public TheoryVisitor {
+class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 	typedef TypedFOPropagator<InterpretationFactory, PropDomain> Propagator;
 private:

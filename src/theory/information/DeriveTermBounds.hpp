@@ -23,7 +23,7 @@ class DomainElement;
  * Derives lower and upper bounds for a term given a structure.
  * Returns NULL when it cannot derive a bound.
  */
-class DeriveTermBounds: public TheoryVisitor {
+class DeriveTermBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	const AbstractStructure* _structure;

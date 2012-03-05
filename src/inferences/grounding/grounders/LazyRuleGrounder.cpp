@@ -16,7 +16,7 @@
 using namespace std;
 
 LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(rule, hgr, bgr, big, ct), LazyUnknBoundGrounder(rule->head()->symbol(), ct.getCurrentDefID(), hgr->grounding()) {
+		: RuleGrounder(rule, hgr, bgr, big, ct), LazyUnknBoundGrounder(rule->head()->symbol(), Context::BOTH, ct.getCurrentDefID(), hgr->grounding()) {
 	std::map<Variable*, int> vartofirstocc;
 	int index = 0;
 	for(auto i=headterms.cbegin(); i<headterms.cend(); ++i, ++index){

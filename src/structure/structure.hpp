@@ -550,6 +550,8 @@ struct tablesize {
 	}
 };
 
+bool isFinite(const tablesize& tsize);
+
 class Universe {
 private:
 	std::vector<SortTable*> _tables;
@@ -1261,10 +1263,7 @@ private:
 	InternalPredTable* _invtable; //!< the inverse of the actual table
 
 public:
-	InverseInternalPredTable(InternalPredTable* inv)
-			: InternalPredTable(), _invtable(inv) {
-		inv->incrementRef();
-	}
+	InverseInternalPredTable(InternalPredTable* inv);
 	~InverseInternalPredTable();
 
 	bool finite(const Universe&) const;
@@ -2037,16 +2036,19 @@ public:
 
 	TableIterator begin() const;
 
-	InternalPredTable* internTable() const {
-		return _table;
-	}
-
 	const Universe& universe() const {
 		return _universe;
 	}
 	PredTable* materialize() const;
 
 	virtual void put(std::ostream& stream) const;
+
+	InternalPredTable* internTable() const {
+		return _table;
+	}
+
+private:
+	void setTable(InternalPredTable* table);
 };
 
 /**

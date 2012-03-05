@@ -1,0 +1,17 @@
+vocabulary V{
+	p(int)
+	q(int)
+	r(int)
+}
+
+theory T:V{
+	?x: ~p(x).
+	!x: r(x) => p(x) & q(x).
+	{
+		p(x) <- q(x).
+		q(x) <- p(x).
+	}
+}
+
+structure S:V{
+}

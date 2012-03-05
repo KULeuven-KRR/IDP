@@ -27,7 +27,7 @@
 class OptimalPropagation {
 public:
 	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
-		// TODO: make a clean version of the implementation
+		// TODO: make a clean version of the implementation (should call ModelExpansion)
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
 
@@ -40,8 +40,7 @@ public:
 
 		//Grounding
 		auto symstructure = generateNaiveApproxBounds(theory, structure);
-		GrounderFactory grounderfactory(structure, symstructure);
-		auto grounder = grounderfactory.create(theory, &solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, &solver);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 

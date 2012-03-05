@@ -22,9 +22,7 @@ public:
 	LazyGroundingManager():currentlyGrounding(false){}
 	void groundMore() const;
 
-	// TODO for some reason, the callback framework does not compile when using the const method groundmore directly.
-	void notifyBoundSatisfied(ResidualAndFreeInst* instance);
-	void notifyBoundSatisfiedInternal(ResidualAndFreeInst* instance) const;
+	void notifyDelayTriggered(ResidualAndFreeInst* instance) const;
 };
 
 class LazyGrounder: public ClauseGrounder{
@@ -91,13 +89,15 @@ private:
 	bool _isGrounding;
 	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
 
+	Context _context;
+
 	AbstractGroundTheory* _grounding;
 
 public:
 	// @precondition: two IDs HAVE to be different if referring to an instance of a symbol in a DIFFERENT definition (if it is a head)
 	//		it HAS to be -1 if it is not a head occurrence
 	// 		in all other cases, they should preferably be equal
-	LazyUnknBoundGrounder(PFSymbol* symbol, unsigned int id, AbstractGroundTheory* gt);
+	LazyUnknBoundGrounder(PFSymbol* symbol, Context context, unsigned int id, AbstractGroundTheory* gt);
 	virtual ~LazyUnknBoundGrounder(){}
 	void ground(const Lit& boundlit, const ElementTuple& args);
 	void notify(const Lit& boundlit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders);
@@ -111,18 +111,18 @@ protected:
 	virtual void doGround(const Lit& boundlit, const ElementTuple& args) = 0;
 };
 
-class LazyUnknUnivGrounder: public Grounder, public LazyUnknBoundGrounder {
+class LazyUnknUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
 private:
 	bool _isGrounding;
+	std::vector<const DomElemContainer*> _varcontainers;
 	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
 
-	std::vector<const DomElemContainer*> _quantvars;
-
 	FormulaGrounder* _subgrounder;
-public:
-	LazyUnknUnivGrounder(PFSymbol* symbol, const std::vector<const DomElemContainer*>& quantvars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
-	virtual void run(ConjOrDisj&) const{} // NO-op
+public:
+	LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+
+	virtual void run(ConjOrDisj& formula) const;
 
 protected:
 	FormulaGrounder* getSubGrounder() const{

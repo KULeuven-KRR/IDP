@@ -30,8 +30,8 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
-	Policy::polNotifyUnknBound(boundlit, args, grounders);
+void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+	Policy::polNotifyUnknBound(context, boundlit, args, grounders);
 }
 
 template<class Policy>
@@ -180,6 +180,12 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 		add(defnr, new PCGroundRule(head, conj ? RuleType::CONJ : RuleType::DISJ, body, true)); //TODO true (recursive) might not always be the case?
 	}
 	addFuncConstraints();
+}
+
+template<class Policy>
+void GroundTheory<Policy>::addOptimization(AggFunction function, int setid){
+	add(setid, getIDForUndefined(), function!=AggFunction::CARD);
+	Policy::polAddOptimization(function, setid);
 }
 
 template<class Policy>

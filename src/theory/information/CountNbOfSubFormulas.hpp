@@ -14,7 +14,7 @@
 /**
  * Count the number of subformulas
  */
-class CountNbOfSubFormulas: public TheoryVisitor {
+class CountNbOfSubFormulas: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	int _result;

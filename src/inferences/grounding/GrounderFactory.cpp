@@ -59,14 +59,15 @@ int getIDForUndefined() {
 
 double MCPA = 1; // TODO: constant currently used when pruning bdds. Should be made context dependent
 
-GrounderFactory::GrounderFactory(AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure)
-		: _structure(structure), _symstructure(symstructure) {
+template<typename Grounding>
+GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding) :
+		_structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding) {
 
 	Assert(_symstructure!=NULL);
 
 	// Create a symbolic structure if no such structure is given
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
-		clog << "Using the following symbolic structure to ground: " <<nt();
+		clog << "Using the following symbolic structure to ground: " << nt();
 		_symstructure->put(clog);
 	}
 }
@@ -97,7 +98,7 @@ set<const PFSymbol*> GrounderFactory::findCPSymbols(const AbstractTheory* theory
 		for (auto it = _cpsymbols.cbegin(); it != _cpsymbols.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
-		clog <<nt();
+		clog << nt();
 	}
 	return _cpsymbols;
 }
@@ -205,7 +206,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
  * PARAMETERS
  *		child	- the child to be visited.
  */
-template <typename T>
+template<typename T>
 void GrounderFactory::descend(T* child) {
 	SaveContext();
 	_formgrounder = NULL;
@@ -230,40 +231,31 @@ void GrounderFactory::descend(T* child) {
  * PARAMETERS
  *		theory	- the theory for which a grounder will be created
  * PRECONDITIONS
- *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory.
+ *		The vocabulary of theory is a subset of the vocabulary of the structure of the GrounderFactory. TODO is this checked or guaranteed?
  * RETURNS
  *		A grounder such that calling run() on it produces a grounding.
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
-Grounder* GrounderFactory::create(const AbstractTheory* theory) {
-	// Allocate an ecnf theory to be returned by the grounder
-	auto groundtheory = new GroundTheory<GroundPolicy>(theory->vocabulary(), _structure->clone());
-	_grounding = groundtheory;
-
+Grounder* GrounderFactory::create(const GroundInfo& data) {
+	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	// Find functions that can be passed to CP solver.
 	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
+		g.findCPSymbols(data.theory);
 	}
-
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+	data.theory->accept(&g);
+	return g.getTopGrounder();
 }
-
-// TODO comment
-Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrintMonitor* monitor) {
-	auto groundtheory = new GroundTheory<PrintGroundPolicy>(_structure->clone());
+Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
+	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	_grounding = groundtheory;
-
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	// Find functions that can be passed to CP solver.
 	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
+		g.findCPSymbols(data.theory);
 	}
-
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+	data.theory->accept(&g);
+	return g.getTopGrounder();
 }
 
 /**
@@ -283,20 +275,33 @@ Grounder* GrounderFactory::create(const AbstractTheory* theory, InteractivePrint
  *		One or more models of the ground theory can be obtained by calling solve() on
  *		the solver.
  */
-Grounder* GrounderFactory::create(const AbstractTheory* theory, MinisatID::WrappedPCSolver* solver) {
-	// Allocate a solver theory
-	auto groundtheory = new SolverTheory(theory->vocabulary(), _structure->clone());
+Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSolver* solver) {
+	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	_grounding = groundtheory;
-
-	// Find function that can be passed to CP solver.
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	// Find functions that can be passed to CP solver.
 	if (getOption(BoolType::CPSUPPORT)) {
-		findCPSymbols(theory);
+		g.findCPSymbols(data.theory);
 	}
+	data.theory->accept(&g);
+	return g.getTopGrounder();
+}
+Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRewriter* printer) {
+	auto groundtheory = new GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	// Find functions that can be passed to CP solver.
+	if (getOption(BoolType::CPSUPPORT)) {
+		g.findCPSymbols(data.theory);
+	}
+	data.theory->accept(&g);
+	return g.getTopGrounder();
+}
 
-	// Create the grounder
-	theory->accept(this);
-	return _topgrounder;
+SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
+	GrounderFactory g(data, grounding);
+	set->accept(&g);
+	return g.getSetGrounder();
 }
 
 /**
@@ -312,7 +317,14 @@ void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
 
-	Assert(not getOption(BoolType::GROUNDLAZILY) || not getOption(BoolType::CPSUPPORT)); // TODO currently not both
+	Assert(not getOption(BoolType::GROUNDLAZILY) || not getOption(BoolType::CPSUPPORT));
+	// TODO currently not both
+
+	if (getOption(BoolType::GROUNDLAZILY)) {
+		tmptheory = FormulaUtils::pushQuantifiers(tmptheory);
+		// FIXME this introduces sometimes a boolform with only one subformula. This is not wrong, but seems to be no longer treated as toplevel then when it IS a conjunction.
+		// so fix it on both places (do not make the boolform, but also treat it correctly if it happens)
+	}
 
 	if (not getOption(BoolType::CPSUPPORT)) {
 		tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
@@ -322,7 +334,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	auto components = newtheory->components();
+	const auto& components = newtheory->components(); // NOTE: primitive reorder present: definitions first
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
@@ -331,7 +343,7 @@ void GrounderFactory::visit(const Theory* theory) {
 		InitContext();
 
 		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-			clog <<"Creating a grounder for " << toString(components[n]) <<nt();
+			clog << "Creating a grounder for " << toString(components[n]) << nt();
 		}
 		components[n]->accept(this);
 		children.push_back(_topgrounder);
@@ -360,7 +372,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Grounderfactory visiting: " << toString(pf);
 		pushtab();
-		clog <<nt();
+		clog << nt();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -379,7 +391,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(pf) << " to " << toString(transpf) <<nt();
+			clog << "Rewritten " << toString(pf) << " to " << toString(transpf) << nt();
 		}
 		transpf->accept(this);
 		transpf->recursiveDelete();
@@ -475,8 +487,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Possible checker: " <<nt() << toString(possch)  <<nt();
-		clog << "Certain checker: " <<nt() << toString(certainch)  <<nt();
+		clog << "Possible checker: " << nt() << toString(possch) << nt();
+		clog << "Certain checker: " << nt() << toString(certainch) << nt();
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
@@ -520,15 +532,20 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Grounderfactory visiting: " << toString(bf);
 		pushtab();
-		clog <<nt();
+		clog << nt();
 	}
 
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
-	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && bf->isConjWithSign();
+	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && (bf->isConjWithSign() || bf->subformulas().size()==1);
+
+	// If a disjunction or conj with one subformula, it's subformula can be treated as if it was the root of this formula
+	if(isPos(bf->sign()) && bf->subformulas().size()==1){
+		bf->subformulas()[0]->accept(this);
+	}
 
 	if (_context._conjPathUntilNode) {
 		createBoolGrounderConjPath(bf);
-	}else{
+	} else {
 		createBoolGrounderDisjPath(bf);
 	}
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
@@ -536,22 +553,23 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj, const GroundingContext& context){
-	bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
-	if(context._monotone==Context::BOTH){
+ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
+		const GroundingContext& context) {
+	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
+	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy){
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
-	}else{
+	} else {
 		return new BoolGrounder(grounding, sub, sign, conj, context);
 	}
 }
 
 // Handle a top-level conjunction without creating tseitin atoms
 void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
-	// If bf is a negated disjunction, push the negation one level deeper.
+	// NOTE: to reduce the number of created tseitins, if bf is a negated disjunction, push the negation one level deeper.
 	// Take a clone to avoid changing bf;
 	auto newbf = bf->clone();
 	if (not newbf->conj()) {
@@ -620,7 +638,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Grounderfactory visiting: " << toString(qf);
 		pushtab();
-		clog <<nt();
+		clog << nt();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
@@ -639,42 +657,57 @@ void GrounderFactory::visit(const QuantForm* qf) {
 			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
 	// Handle a top-level conjunction without creating tseitin atoms
-	if (_context._conjPathUntilNode) {
+	if (_context._conjunctivePathFromRoot) {
 		createTopQuantGrounder(qf, newsubformula, gc);
 	} else {
 		createNonTopQuantGrounder(qf, newsubformula, gc);
 	}
 	// TODO newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3){
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
 }
 
-ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars, const GenAndChecker& gc, const GroundingContext& context){
-	bool conj = quant==QUANT::UNIV;
-	bool mightdolazy = (not conj && context._monotone==Context::POSITIVE) || (conj && context._monotone==Context::NEGATIVE);
-	if(context._monotone==Context::BOTH){
+void checkGeneratorInfinite(InstChecker* gen) {
+	if (gen->isInfiniteGenerator()) {
+		/*if (original != NULL) { // TODO
+		 Warning::possiblyInfiniteGrounding(original->pi().userDefined() ? toString(original->pi().originalobject()) : "", toString(original));
+		 }*/
+		throw IdpException("Infinite grounding");
+	}
+}
+
+ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars,
+		const GenAndChecker& gc, const GroundingContext& context) {
+	bool conj = quant == QUANT::UNIV;
+	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
+	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy){
+	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, /*gc._checker, */context); // TODO checker to be used during lazy grounding?
-	}else{
+	} else {
+		if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
+			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
+			checkGeneratorInfinite(gc._generator);
+			checkGeneratorInfinite(gc._checker);
+		}
 		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	}
 }
 
 void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
-	// If qf is a negated exist, push the negation one level deeper.
-	// Take a clone to avoid changing qf;
+	// NOTE: to reduce the number of tseitins created, negations are pushed deeper whenever relevant:
+	// If qf is a negated exist, push the negation one level deeper. Take a clone to avoid changing qf;
 	QuantForm* tempqf = NULL;
-	if(not qf->isUniv() && qf->sign()==SIGN::NEG){
+	if (not qf->isUniv() && qf->sign() == SIGN::NEG) {
 		tempqf = qf->clone();
 		tempqf->quant(QUANT::UNIV);
 		tempqf->negate();
 		subformula->negate();
 	}
-	auto newqf = tempqf==NULL?qf:tempqf;
+	auto newqf = tempqf == NULL ? qf : tempqf;
 
 	// Visit subformula
 	SaveContext();
@@ -682,15 +715,26 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	descend(subformula);
 	RestoreContext();
 
-	Assert(newqf->sign()==SIGN::POS && newqf->isUniv());
-
 	auto subgrounder = dynamic_cast<FormulaGrounder*>(_topgrounder);
 	Assert(subgrounder!=NULL);
+	FormulaGrounder* grounder = NULL;
 
-	auto quantgrounder = createQ(_grounding, subgrounder, SIGN::POS, QUANT::UNIV, newqf->freeVars(), gc, getContext());
-	quantgrounder->setOrig(qf, varmapping());
-	_topgrounder = quantgrounder;
+	bool delayedunknbound = false;
+	if (getOption(BoolType::GROUNDLAZILY)) {
+		Context context = Context::BOTH;
+		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), context);
+		if (delayablepf != NULL) {
+			grounder = new LazyUnknUnivGrounder(delayablepf, context, varmapping(), _grounding, subgrounder, getContext());
+			delayedunknbound = true;
+		}
+	}
+	if (not delayedunknbound) {
+		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext());
+	}Assert(grounder!=NULL);
 
+	grounder->setOrig(qf, varmapping());
+
+	_topgrounder = grounder;
 	if(tempqf!=NULL){
 		deleteDeep(tempqf);
 	}
@@ -723,7 +767,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		clog << "improving the following (generator) BDD:";
 		pushtab();
-		clog <<nt() << toString(bdd);
+		clog << nt() << toString(bdd);
 	}
 	auto manager = _symstructure->manager();
 
@@ -742,11 +786,11 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		poptab();
-		clog <<nt() << "Resulted in:";
+		clog << nt() << "Resulted in:";
 		pushtab();
-		clog <<nt() << toString(pruned);
+		clog << nt() << toString(pruned);
 		poptab();
-		clog <<nt();
+		clog << nt();
 	}
 	// 3. Replace result
 	return manager->getBDD(pruned, &optimizemanager);
@@ -756,7 +800,7 @@ const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		clog << "improving the following (checker) BDD:";
 		pushtab();
-		clog <<nt() << toString(bdd);
+		clog << nt() << toString(bdd);
 	}
 	auto manager = _symstructure->manager();
 
@@ -772,11 +816,11 @@ const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
 		poptab();
-		clog <<nt() << "Resulted in:";
+		clog << nt() << "Resulted in:";
 		pushtab();
-		clog <<nt() << toString(pruned);
+		clog << nt() << toString(pruned);
 		poptab();
-		clog <<nt();
+		clog << nt();
 	}
 
 	// 3. Replace result
@@ -818,8 +862,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if (recursive(ef)) {
 		_context._tseitin = TsType::RULE;
 	}/*else{
-		_context._tseitin = TsType::EQ;
-	}*/
+	 _context._tseitin = TsType::EQ;
+	 }*/
 	_formgrounder = new EquivGrounder(_grounding, leftgrounder, rightgrounder, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
@@ -831,7 +875,8 @@ void GrounderFactory::visit(const AggForm* af) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT),
+			_cpsymbols);
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
@@ -839,7 +884,7 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	if (not sametypeid<AggForm>(*transaf)) { // The rewriting changed the atom
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(af) << " to " << toString(transaf) <<nt();
+			clog << "Rewritten " << toString(af) << " to " << toString(transaf) << nt();
 		}
 		transaf->accept(this);
 	} else { // The rewriting did not change the atom
@@ -893,7 +938,7 @@ void GrounderFactory::visit(const VarTerm* t) {
 
 	Assert(varmapping().find(t->var()) != varmapping().cend());
 	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const DomainTerm* t) {
@@ -901,7 +946,7 @@ void GrounderFactory::visit(const DomainTerm* t) {
 	_context._conjPathUntilNode = false;
 
 	_termgrounder = new DomTermGrounder(t->value());
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const FuncTerm* t) {
@@ -923,14 +968,15 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	SortTable* domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
+					ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(), function, ftable, domain, subtermgrounders);
 	}
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const AggTerm* t) {
@@ -942,7 +988,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(_grounding->translator(), t->function(), _setgrounder);
-	_termgrounder->setOrig(t, varmapping(), getOption(IntType::GROUNDVERBOSITY));
+	_termgrounder->setOrig(t, varmapping());
 }
 
 void GrounderFactory::visit(const EnumSetExpr* s) {
@@ -1006,7 +1052,7 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-	return GenAndChecker(gen, check);
+	return GenAndChecker(vars, gen, check);
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
@@ -1017,7 +1063,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
 	if (not sametypeid<QuantSetExpr>(*transqs)) {
 		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-			clog << "Rewritten " << toString(origqs) << " to " << toString(transqs) <<nt();
+			clog << "Rewritten " << toString(origqs) << " to " << toString(transqs) << nt();
 		}
 		transqs->accept(this);
 		return;
@@ -1044,6 +1090,10 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	TermGrounder* wgr = _termgrounder;
 
 	// Create grounder
+	if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
+		checkGeneratorInfinite(gc._generator);
+		checkGeneratorInfinite(gc._checker);
+	}
 	_setgrounder = new QuantSetGrounder(_grounding->translator(), subgr, gc._generator, gc._checker, wgr);
 }
 
@@ -1056,7 +1106,7 @@ void GrounderFactory::visit(const Definition* def) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Grounderfactory visiting: " << toString(def);
 		pushtab();
-		clog <<nt();
+		clog << nt();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
@@ -1078,8 +1128,7 @@ void GrounderFactory::visit(const Definition* def) {
 	_topgrounder = new DefinitionGrounder(_grounding, subgrounders, _context);
 
 	_context._defined.clear();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 }
 
 template<class VarList>
@@ -1108,11 +1157,10 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "Grounderfactory visiting: " << toString(rule);
 		pushtab();
-		clog <<nt();
+		clog << nt();
 	}
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
-
 
 	auto temprule = rule->clone();
 	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT), _cpsymbols);
@@ -1124,7 +1172,8 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
 	vector<Variable*> headvars;
-	auto groundlazily = getOption(BoolType::GROUNDLAZILY) && not _grounding->translator()->isAlreadyDelayedOnDifferentID(newrule->head()->symbol(), _context.getCurrentDefID());
+	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
+			&& not _grounding->translator()->isAlreadyDelayedOnDifferentID(newrule->head()->symbol(), _context.getCurrentDefID());
 	if (groundlazily) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
@@ -1156,7 +1205,9 @@ void GrounderFactory::visit(const Rule* rule) {
 
 		headgen = createVarMapAndGenerator(newrule->head(), headvars);
 		bodygen = createVarMapAndGenerator(newrule->body(), bodyvars);
+		checkGeneratorInfinite(headgen);
 	}
+	checkGeneratorInfinite(bodygen);
 
 	// Create head grounder
 	SaveContext();
@@ -1187,8 +1238,7 @@ void GrounderFactory::visit(const Rule* rule) {
 		_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
 	}
 	RestoreContext();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3)
-		poptab();
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) poptab();
 
 	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
 }

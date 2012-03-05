@@ -20,7 +20,11 @@ enum class Pattern {
 };
 
 class InstChecker {
+private:
+	bool generatesInfiniteDomain;
+
 public:
+	InstChecker(): generatesInfiniteDomain(false){}
 	virtual ~InstChecker() {}
 
 	// FIXME Checker should only be created if there are no output variables
@@ -30,12 +34,21 @@ public:
 	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
 
 	virtual void put(std::ostream& stream);
+
+	void notifyIsInfiniteGenerator(){
+		generatesInfiniteDomain = true;
+	}
+
+	bool isInfiniteGenerator() const {
+		return generatesInfiniteDomain;
+	}
 };
 
 class InstGenerator: public InstChecker {
 private:
 	bool end;
 	bool initdone;
+
 protected:
 	void notifyAtEnd() {
 		end = true;

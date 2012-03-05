@@ -23,10 +23,6 @@
 
 using namespace std;
 
-int verbosity() {
-	return getOption(IntType::GROUNDVERBOSITY);
-}
-
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
 		: Grounder(grounding, ct), _origform(NULL) {
 }

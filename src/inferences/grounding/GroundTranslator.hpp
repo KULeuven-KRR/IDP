@@ -83,6 +83,8 @@ private:
 	Lit addTseitinBody(TsBody* body);
 	Lit nextNumber(AtomType type);
 
+	int getSymbol(PFSymbol* pfs) const;
+
 public:
 	GroundTranslator();
 	~GroundTranslator();
@@ -106,7 +108,7 @@ public:
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id);
+	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const;
 	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
 
 	unsigned int addSymbol(PFSymbol* pfs);
