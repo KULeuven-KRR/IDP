@@ -52,7 +52,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	auto jt = tabs.crbegin();
 	bool certainlyfinite = true;
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it, ++jt) {
-		if(not isCertainlyFinite((*jt)->internTable())){
+		if (not isCertainlyFinite((*jt)->internTable())) {
 			certainlyfinite = false;
 		}
 		auto tig = new SortInstGenerator((*jt)->internTable(), *it);
@@ -68,7 +68,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	if (gen == NULL) {
 		gen = new TreeInstGenerator(node);
 	}
-	if(not certainlyfinite){
+	if (not certainlyfinite) {
 		gen->notifyIsInfiniteGenerator();
 	}
 	return gen;
@@ -83,13 +83,13 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	bool certainlyfinite = true;
 	for (size_t i = 0; i < universe.tables().size() && certainlyfinite; ++i) {
 		if (pattern[i] == Pattern::OUTPUT) {
-			if(not isCertainlyFinite(universe.tables()[i])){
+			if (not isCertainlyFinite(universe.tables()[i])) {
 				certainlyfinite = false;
 			}
 		}
 	}
 	auto gen = factory.internalCreate(pt, pattern, vars, universe);
-	if(not certainlyfinite){
+	if (not certainlyfinite) {
 		gen->notifyIsInfiniteGenerator();
 	}
 	return gen;
@@ -156,15 +156,15 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 		}
 	}
 	/*if (firstout == pattern.size()) { // no output variables
-		if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
-			return new LookupGenerator(pt, vars, _universe);
-		} else {
-			StructureVisitor::visit(pt);
-			return _generator;
-		}
-	} else {*/
-		StructureVisitor::visit(pt);
-		return _generator;
+	 if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
+	 return new LookupGenerator(pt, vars, _universe);
+	 } else {
+	 StructureVisitor::visit(pt);
+	 return _generator;
+	 }
+	 } else {*/
+	StructureVisitor::visit(pt);
+	return _generator;
 	//}
 }
 
@@ -437,10 +437,9 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 
 void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
-		if(_pattern[1] == Pattern::INPUT){
-				_generator = new PlusChecker(_vars[0],_vars[1],_vars[2]); //TODO: also do this mod for times, .... If Everything is input, we CANNOT make a minusgenerator and so...
-		}
-		else{
+		if (_pattern[1] == Pattern::INPUT) {
+			_generator = new PlusChecker(_vars[0], _vars[1], _vars[2]); //TODO: also do this mod for times, .... If Everything is input, we CANNOT make a minusgenerator and so...
+		} else {
 			_generator = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
 	} else if (_pattern[1] == Pattern::INPUT) {
@@ -459,7 +458,11 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
-		_generator = new MinusGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+		if (_pattern[1] == Pattern::INPUT) {
+			_generator = new MinusChecker(_vars[0], _vars[1], _vars[2]);
+		} else {
+			_generator = new MinusGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+		}
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new PlusGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
@@ -471,7 +474,11 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
-		_generator = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+		if (_pattern[1] == Pattern::INPUT) {
+			_generator = new TimesChecker(_vars[0], _vars[1], _vars[2]);
+		} else {
+			_generator = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+		}
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
@@ -483,8 +490,14 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 
 void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
-		_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+		if (_pattern[1] == Pattern::INPUT) {
+			_generator = new DivChecker(_vars[0], _vars[1], _vars[2]);
+		} else {
+			_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+		}
 	} else if (_pattern[1] == Pattern::INPUT) {
+		std::cerr << "3" << nt();
+
 		if (pift->getType() == NumType::CERTAINLYINT) {
 			// TODO E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
 			throw notyetimplemented("Generation for x/y=z, given x, in the case of integers.");
