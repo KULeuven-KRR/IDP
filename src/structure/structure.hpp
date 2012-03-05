@@ -2096,6 +2096,8 @@ public:
 	SortIterator sortBegin() const;
 	SortIterator sortIterator(const DomainElement*) const;
 
+	// TODO: first and last should only be called AFTER checking that the table is not empty!
+	//   also should isRange==true imply that the table is not empty?
 	const DomainElement* first() const {
 		return _table->first();
 	}

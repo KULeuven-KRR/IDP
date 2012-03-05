@@ -151,8 +151,8 @@ public:
 protected:
 	TsType getTseitinType() const;
 
-	Lit getReification(const ConjOrDisj& formula) const;
-	Lit getEquivalentReification(const ConjOrDisj& formula) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
+	Lit getReification(const ConjOrDisj& formula, TsType tseitintype) const;
+	Lit getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
 
 	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaTrue(Lit l) const;
