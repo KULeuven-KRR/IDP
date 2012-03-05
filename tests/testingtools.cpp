@@ -30,8 +30,8 @@ TestingSet1 getTestingSet1() {
 	testingSet.vocabulary->add(testingSet.p);
 	testingSet.vocabulary->add(testingSet.q);
 	testingSet.vocabulary->add(testingSet.r);
-	testingSet.s = new Structure("S", ParseInfo());
-	testingSet.s->vocabulary(testingSet.vocabulary);
+	testingSet.structure = new Structure("S", ParseInfo());
+	testingSet.structure->vocabulary(testingSet.vocabulary);
 
 	testingSet.px = new PredForm(SIGN::POS, testingSet.p, { testingSet.sortterm }, FormulaParseInfo()); //P(x)
 	testingSet.qx = new PredForm(SIGN::POS, testingSet.q, { testingSet.sortterm }, FormulaParseInfo()); //Q(x)
@@ -65,7 +65,7 @@ void cleanTestingSet1() {
 	//delete ts.q;Should not be done, will be deleted when it has no more vocabularies
 	//delete ts.vocabulary;
 
-//	delete ts.s;
+//	delete ts.structure;
 //
 //	delete ts.px;
 //	delete ts.qx;

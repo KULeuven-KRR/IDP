@@ -321,38 +321,6 @@ TEST(PushNegationsTest,Theory) {
 	theory->recursiveDelete();
 }
 
-// PushQuantifiers - theory
-TEST(PushQuantifiersTest,Theory) {
-	auto s = sort("X",-2,2);
-	auto p = pred("P",{s});
-	auto q = pred("Q",{s});
-	auto x = var(s);
-
-	auto voc = new Vocabulary("V");
-	voc->add(s);
-	voc->add(p.p());
-	voc->add(q.p());
-
-	Formula& axpxqx = all(x,(p({x}) & q({x})));
-
-	auto theory = new Theory("T",voc,ParseInfo());
-	theory->add(&axpxqx);
-
-	// Rewriting (! x : P(x) & Q(x)) to ((! x : P(x)) & (! x : Q(x))).
-	auto result = FormulaUtils::pushQuantifiers(theory);
-
-	ASSERT_TRUE(sametypeid<Theory>(*result));
-	auto restheory = dynamic_cast<Theory*>(result);
-	ASSERT_EQ(1,restheory->sentences().size());
-	auto resformula = restheory->sentences()[0];
-	ASSERT_TRUE(sametypeid<BoolForm>(*resformula));
-	ASSERT_EQ(2,resformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<QuantForm>(*resformula->subformulas()[1]));
-
-	result->recursiveDelete();
-}
-
 // RemoveEquivalences - formula,theory
 TEST(RemoveEquivalencesTest,EquivForm) {
 	auto p = pred("P",{});

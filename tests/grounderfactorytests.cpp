@@ -26,17 +26,17 @@ using namespace std;
 
 namespace Tests {
 
-Grounder* getBoolGrounder(Theory& t, AbstractStructure* s){
+Grounder* getGrounder(Theory& t, AbstractStructure* s){
 	auto gddatb = generateNaiveApproxBounds(&t, s);
 	return dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, s, gddatb})))->getSubGrounders().at(0);
 }
 
 TEST(Grounderfactory, Context) {
-	TestingSet1 ts = getTestingSet1();
+	auto ts = getTestingSet1();
 
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.p0vq0);
-	auto context = getBoolGrounder(t, ts.s)->context();
+	auto context = getGrounder(t, ts.structure)->context();
 	ASSERT_TRUE(CompContext::SENTENCE == context._component);
 	//FIXME: ASSERTEQ didn't work since there is no tostring for enum classes
 	ASSERT_FALSE(context._conjPathUntilNode);
@@ -44,14 +44,14 @@ TEST(Grounderfactory, Context) {
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.np0iffq0);
-	context = getBoolGrounder(t, ts.s)->context();
+	context = getGrounder(t, ts.structure)->context();
 	ASSERT_TRUE(CompContext::SENTENCE == context._component);
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.Axpx);
-	QuantGrounder* qg = dynamic_cast<QuantGrounder*>(getBoolGrounder(t, ts.s));
+	auto qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
 	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
@@ -63,7 +63,7 @@ TEST(Grounderfactory, Context) {
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.nAxpx);
-	qg = dynamic_cast<QuantGrounder*>(getBoolGrounder(t, ts.s));
+	qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
 	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_FALSE(context._conjPathUntilNode);
@@ -75,7 +75,7 @@ TEST(Grounderfactory, Context) {
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.nExqx);
-	qg = dynamic_cast<QuantGrounder*>(getBoolGrounder(t, ts.s));
+	qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
 	context = qg->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
@@ -87,19 +87,35 @@ TEST(Grounderfactory, Context) {
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.xF);
-	context = getBoolGrounder(t, ts.s)->context();
+	context = getGrounder(t, ts.structure)->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 
 	t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.maxxpxgeq0);
-	context = getBoolGrounder(t, ts.s)->context();
+	context = getGrounder(t, ts.structure)->context();
 	ASSERT_TRUE(CompContext::SENTENCE==context._component);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 
 	//TODO: test definitions (and fixpdefinitions)
 	//clean(ts);
+}
+
+TEST(Grounderfactory, BoolFormContext) {
+	auto ts = getTestingSet1();
+
+	auto theory = Theory("T", ts.vocabulary, ParseInfo());
+	theory.add(new BoolForm(SIGN::POS, false, {ts.Axpx}, FormulaParseInfo()));
+	auto grounder = getGrounder(theory, ts.structure);
+	auto context = grounder->context();
+	ASSERT_TRUE(CompContext::SENTENCE == context._component);
+	ASSERT_TRUE(context._conjPathUntilNode);
+	ASSERT_TRUE(context._conjunctivePathFromRoot);
+	auto context2 = dynamic_cast<BoolGrounder*>(grounder)->getSubGrounders()[0]->context();
+	ASSERT_TRUE(context2._conjunctivePathFromRoot);
+	ASSERT_TRUE(ts.Axpx->isUnivWithSign());
+	ASSERT_TRUE(context2._conjPathUntilNode);
 }
 
 }
