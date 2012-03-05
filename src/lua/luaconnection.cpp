@@ -1483,7 +1483,7 @@ int structureNewIndex(lua_State* L) {
 
 int invalidOption(Options* options, lua_State* L, const string& option, const string& value) {
 	stringstream ss;
-	ss << "\"" << value << "\" is not a valid value for " << option << ".\n";
+	ss << "\"" << value << "\" is not a valid value for option " << option << ".\n";
 	ss << options->printAllowedValues(option) << ".\n";
 	lua_pushstring(L, ss.str().c_str());
 	return lua_error(L);
