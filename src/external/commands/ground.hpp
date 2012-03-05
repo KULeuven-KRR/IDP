@@ -33,8 +33,9 @@ public:
 	}
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure) const {
-		// TODO bugged! auto symstructure = generateApproxBounds(theory, structure);
-		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		// TODO bugged!
+		auto symstructure = generateApproxBounds(theory, structure);
+		//auto symstructure = generateNaiveApproxBounds(theory, structure);
 		auto grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }));
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
@@ -58,7 +59,9 @@ public:
 	}
 private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
-		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		auto symstructure = generateApproxBounds(theory, structure);
+
+		//auto symstructure = generateNaiveApproxBounds(theory, structure);
 
 		std::shared_ptr<Grounder> grounder;
 		if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)

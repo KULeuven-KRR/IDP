@@ -127,7 +127,7 @@ void GrounderFactory::InitContext() {
 	_context._funccontext = Context::POSITIVE;
 	_context._monotone = Context::POSITIVE;
 	_context._component = CompContext::SENTENCE;
-	_context._tseitin = (getOption(NBMODELS) != 1) ? TsType::EQ : TsType::IMPL;
+	_context._tseitin = (true) ? TsType::EQ : TsType::IMPL; //TODO fix this with a new infrerence.  See issue 112
 	_context.currentDefID = getIDForUndefined();
 	_context._defined.clear();
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
@@ -463,35 +463,28 @@ void GrounderFactory::visit(const PredForm* pf) {
 		tables.push_back(_structure->inter((*it)->sort()));
 	}
 
-	PredTable *posstable = NULL, *certtable = NULL;
+	PredTable *certTrueTable = NULL, *possTrueTable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS) && checksorts.size() > 0) { //TODO: didn't work for size 0, i.e. for propositional symbols.  Fix this!
 		auto fovars = VarUtils::makeNewVariables(checksorts);
 		auto foterms = TermUtils::makeNewVarTerms(fovars);
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-		const FOBDD* possbdd;
-		const FOBDD* certbdd;
-		if (_context.gentype == GenType::CANMAKETRUE) {
-			possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
-			certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
-		} else {
-			possbdd = _symstructure->evaluate(checkpf, TruthType::POSS_FALSE);
-			certbdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_FALSE);
-		}
-
-		posstable = new PredTable(new BDDInternalPredTable(possbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-		certtable = new PredTable(new BDDInternalPredTable(certbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+		const FOBDD* possTrueBdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
+		const FOBDD* certTrueBdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);;
+		possTrueTable = new PredTable(new BDDInternalPredTable(possTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
+		certTrueTable= new PredTable(new BDDInternalPredTable(certTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
-		posstable = new PredTable(new FullInternalPredTable(), Universe(tables));
-		certtable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
-	}
-	auto possch = GeneratorFactory::create(posstable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
-	auto certainch = GeneratorFactory::create(certtable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Possible checker: " << nt() << toString(possch) << nt();
-		clog << "Certain checker: " << nt() << toString(certainch) << nt();
+		possTrueTable =  new PredTable(new FullInternalPredTable(), Universe(tables));
+		certTrueTable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
 
-	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possch, certainch,
+	auto possTrueChecker = GeneratorFactory::create(possTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+	auto certTrueChecker = GeneratorFactory::create(certTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		clog << "Possible checker: " << nt() << toString(possTrueChecker) << nt();
+		clog << "Certain checker: " << nt() << toString(certTrueChecker) << nt();
+	}
+
+	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possTrueChecker, certTrueChecker,
 			_structure->inter(newpf->symbol()), argsorttables, _context);
 
 	_formgrounder->setOrig(newpf, varmapping());

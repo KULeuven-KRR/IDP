@@ -93,17 +93,17 @@ std::string FormulaGrounder::printFormula() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
+		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
+		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
 			_checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 }
 
 AtomGrounder::~AtomGrounder() {
 	deleteList(_subtermgrounders);
-	delete (_pchecker);
-	delete (_cchecker);
+	delete (_ptchecker);
+	delete (_ctchecker);
 }
 
 Lit AtomGrounder::run() const {
@@ -162,29 +162,29 @@ Lit AtomGrounder::run() const {
 	for (size_t n = 0; n < args.size(); ++n) {
 		*(_checkargs[n]) = args[n];
 	}
-	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
+	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << "Possible checker failed" << nt();
+			clog << "Certainly true checker succeeded" << nt();
 			//clog <<"Result is " <<(gentype == GenType::CANMAKETRUE ? "false" : "true");
-			clog << "Result is false";
+			clog << "Result is true";
 			if (_origform != NULL) {
 				poptab();
 			}
 			clog << nt();
 		}
 		//return gentype == GenType::CANMAKETRUE ? _false : _false;
-		return _false;
+		return _true;
 	}
-	if (_cchecker->check()) { // Literal decides formula if checker succeeds
+	if (not _ptchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << "Certain checker succeeded" << nt();
-			clog << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false);
+			clog << "Possibly true checker failed" << nt();
+			clog << "Result is false";
 			if (_origform != NULL) {
 				poptab();
 			}
 			clog << nt();
 		}
-		return gentype == GenType::CANMAKETRUE ? _true : _false;
+		return  _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {

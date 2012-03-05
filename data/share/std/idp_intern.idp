@@ -48,8 +48,8 @@ procedure elements(d) {
 	Basic inference
 **********************/
 /**
- * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
- * The result is a table of (possibly 3-valued) structures and, if Opts.trace == true, a trace of the solver 
+ * Apply model expansion to theory T, structure S.
+ * The result is a table of (possibly 3-valued) structures and, if getoptions().trace == true, a trace of the solver 
  */
 procedure expand(theory, structure){
 	if type(theory) ~= "theory" then
@@ -68,8 +68,8 @@ procedure expand(theory, structure){
 }
 
 /**
- * Apply model expansion to theory T, structure S, and options Opts. Opts defaults to stdoptions.
- * The result is a table of structures and, if Opts.trace == true, a trace of the solver */
+ * Apply model expansion to theory T, structure S.
+ * The result is a table of structures and, if getoptions().trace == true, a trace of the solver */
 procedure modelexpand(theory, structure) {
 	local solutions, trace = expand(theory,structure)
 	local solutions2 = alltwovaluedextensions(solutions)
