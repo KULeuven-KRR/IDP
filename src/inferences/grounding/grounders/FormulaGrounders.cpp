@@ -724,11 +724,11 @@ TsType ClauseGrounder::getTseitinType() const {
 	return context()._tseitin;
 }
 
-Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
-	return getOneLiteralRepresenting(formula, getTseitinType());
+Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype) const {
+	return getOneLiteralRepresenting(formula, tseitintype);
 }
-Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula) const {
-	return getOneLiteralRepresenting(formula, getTseitinType()==TsType::RULE?TsType::RULE:TsType::EQ);
+Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const {
+	return getOneLiteralRepresenting(formula, tseitintype==TsType::RULE?TsType::RULE:TsType::EQ);
 }
 
 Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const {
@@ -757,8 +757,7 @@ Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula, TsType type) const 
 void ClauseGrounder::run(ConjOrDisj& formula) const {
 	internalRun(formula);
 	if (isNegative()) {
-		Lit tseitin = getReification(formula);
-		formula.literals = {-tseitin};
+		formula.literals = {-getReification(formula, getTseitinType())};
 	}
 }
 
@@ -804,7 +803,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		if (subformula.getType() == formula.getType()) {
 			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
 		} else {
-			formula.literals.push_back(getReification(subformula));
+			formula.literals.push_back(getReification(subformula, subgrounder->context()._tseitin));
 		}
 	}
 	return FormStat::UNKNOWN;
@@ -905,8 +904,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
 	runSubGrounder(_leftgrounder, false, leftformula);
 	runSubGrounder(_rightgrounder, false, rightformula);
-	auto left = getEquivalentReification(leftformula);
-	auto right = getEquivalentReification(rightformula);
+	auto left = getEquivalentReification(leftformula, getTseitinType());
+	auto right = getEquivalentReification(rightformula, getTseitinType());
 
 	formula.setType(Conn::CONJ); // Does not matter for all those 1-literal lists
 	if (left == right) {
@@ -932,10 +931,21 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		Lit ts1 = translator()->translate(aornotb, false, context()._tseitin);
-		Lit ts2 = translator()->translate(notaorb, false, context()._tseitin);
-		formula.literals = litlist { ts1, ts2 };
-		formula.setType(Conn::CONJ);
+		if(context()._conjunctivePathFromRoot){
+			if(isPositive()){
+				getGrounding()->add(aornotb);
+				getGrounding()->add(notaorb);
+				formula.literals = litlist{_true};
+			}else{
+				getGrounding()->add({left, right});
+				getGrounding()->add({-left, -right});
+				formula.literals = litlist{_false};
+			}
+		}else{
+			auto ts1 = translator()->translate(aornotb, false, context()._tseitin);
+			auto ts2 = translator()->translate(notaorb, false, context()._tseitin);
+			formula.literals = litlist { ts1, ts2 };
+		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
