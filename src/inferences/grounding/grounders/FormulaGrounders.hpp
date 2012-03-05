@@ -56,8 +56,8 @@ public:
 class AtomGrounder: public FormulaGrounder {
 protected:
 	std::vector<TermGrounder*> _subtermgrounders;
-	InstChecker* const _pchecker;
-	InstChecker* const _cchecker;
+	InstChecker* const _ptchecker;
+	InstChecker* const _ctchecker;
 	size_t _symbol; // symbol's offset in translator's table.
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
@@ -151,8 +151,8 @@ public:
 protected:
 	TsType getTseitinType() const;
 
-	Lit getReification(const ConjOrDisj& formula) const;
-	Lit getEquivalentReification(const ConjOrDisj& formula) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
+	Lit getReification(const ConjOrDisj& formula, TsType tseitintype) const;
+	Lit getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
 
 	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaTrue(Lit l) const;
