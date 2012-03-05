@@ -53,12 +53,12 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		Assert(_in1->get()->type()==_in2->get()->type());
-		Assert(_in1->get()->type()==_in3->get()->type());
-		Assert(_in1->get()->type()==DET_INT || _in1->get()->type()==DET_DOUBLE);
 
-		double result;
-		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
+		Assert(_in1->get()->type()==DET_INT || _in1->get()->type()==DET_DOUBLE);
+		Assert(_in2->get()->type()==DET_INT || _in2->get()->type()==DET_DOUBLE);
+		Assert(_in3->get()->type()==DET_INT || _in3->get()->type()==DET_DOUBLE);
+
+
 		if (not check()){
 			notifyAtEnd();
 			return;
