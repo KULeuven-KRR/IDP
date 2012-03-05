@@ -93,17 +93,17 @@ std::string FormulaGrounder::printFormula() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* pic, InstChecker* cic, PredInter* inter, const vector<SortTable*>& vst,
+		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _pchecker(pic), _cchecker(cic), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
+		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
 			_checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 }
 
 AtomGrounder::~AtomGrounder() {
 	deleteList(_subtermgrounders);
-	delete (_pchecker);
-	delete (_cchecker);
+	delete (_ptchecker);
+	delete (_ctchecker);
 }
 
 Lit AtomGrounder::run() const {
@@ -157,22 +157,23 @@ Lit AtomGrounder::run() const {
 	for (size_t n = 0; n < args.size(); ++n) {
 		*(_checkargs[n]) = args[n];
 	}
-	if (not _pchecker->check()) { // Literal is irrelevant in its occurrences
+	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
-			clog << tabs() << "Possible checker failed" << "\n";
+			clog << tabs() << "Certainly true checker succeeded" << "\n";
 			if (_origform != NULL) { poptab(); }
-			//clog << "Result is " << (gentype == GenType::CANMAKETRUE ? "false" : "true");
-			clog << tabs() << "Result is false" << "\n";
+			//clog << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
+			clog << tabs() << "Result is true" << "\n";
 		}
-		return _false;
+		//return gentype == GenType::CANMAKETRUE ? _true : _false;
+		return _true;
 	}
 	if (_cchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
-			clog << tabs() << "Certain checker succeeded" << "\n";
+			clog << tabs() << "Possibly true checker failed" << "\n";
 			if (_origform != NULL) { poptab(); }
-			clog << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
+			clog << tabs() << "Result is false" << "\n";
 		}
-		return gentype == GenType::CANMAKETRUE ? _true : _false;
+		return _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
@@ -696,11 +697,11 @@ TsType ClauseGrounder::getTseitinType() const {
 	return context()._tseitin;
 }
 
-Lit ClauseGrounder::getReification(const ConjOrDisj& formula) const {
-	return getOneLiteralRepresenting(formula, getTseitinType());
+Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype) const {
+	return getOneLiteralRepresenting(formula, tseitintype);
 }
-Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula) const {
-	return getOneLiteralRepresenting(formula, getTseitinType()==TsType::RULE?TsType::RULE:TsType::EQ);
+Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const {
+	return getOneLiteralRepresenting(formula, tseitintype==TsType::RULE?TsType::RULE:TsType::EQ);
 }
 
 Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const {
@@ -729,8 +730,7 @@ Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula, TsType type) const 
 void ClauseGrounder::run(ConjOrDisj& formula) const {
 	internalRun(formula);
 	if (isNegative()) {
-		Lit tseitin = getReification(formula);
-		formula.literals = {-tseitin};
+		formula.literals = {-getReification(formula, getTseitinType())};
 	}
 }
 
@@ -776,7 +776,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		if (subformula.getType() == formula.getType()) {
 			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
 		} else {
-			formula.literals.push_back(getReification(subformula));
+			formula.literals.push_back(getReification(subformula, subgrounder->context()._tseitin));
 		}
 	}
 	return FormStat::UNKNOWN;
@@ -879,8 +879,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
 	runSubGrounder(_leftgrounder, false, leftformula);
 	runSubGrounder(_rightgrounder, false, rightformula);
-	auto left = getEquivalentReification(leftformula);
-	auto right = getEquivalentReification(rightformula);
+	auto left = getEquivalentReification(leftformula, getTseitinType());
+	auto right = getEquivalentReification(rightformula, getTseitinType());
 
 	formula.setType(Conn::CONJ); // Does not matter for all those 1-literal lists
 	if (left == right) {
@@ -906,10 +906,21 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		Lit ts1 = translator()->translate(aornotb, false, context()._tseitin);
-		Lit ts2 = translator()->translate(notaorb, false, context()._tseitin);
-		formula.literals = litlist { ts1, ts2 };
-		formula.setType(Conn::CONJ);
+		if(context()._conjunctivePathFromRoot){
+			if(isPositive()){
+				getGrounding()->add(aornotb);
+				getGrounding()->add(notaorb);
+				formula.literals = litlist{_true};
+			}else{
+				getGrounding()->add({left, right});
+				getGrounding()->add({-left, -right});
+				formula.literals = litlist{_false};
+			}
+		}else{
+			auto ts1 = translator()->translate(aornotb, false, context()._tseitin);
+			auto ts2 = translator()->translate(notaorb, false, context()._tseitin);
+			formula.literals = litlist { ts1, ts2 };
+		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
