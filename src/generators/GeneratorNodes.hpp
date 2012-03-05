@@ -136,7 +136,7 @@ public:
 				return;
 			}
 		}
-		Assert(_generator->isAtEnd())
+		Assert(_generator->isAtEnd());
 		notifyAtEnd();
 
 	}
