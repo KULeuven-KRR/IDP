@@ -855,8 +855,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			std::clog << toString(_checker);
-			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
+			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _true : _false };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << nt();
