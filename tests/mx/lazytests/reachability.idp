@@ -1,0 +1,22 @@
+vocabulary V{
+	type Vtx
+	Edge(Vtx,Vtx)
+	Reaches(Vtx,Vtx) //the query
+
+	Connected
+	Path(Vtx, Vtx)
+}
+theory T:V{
+	{ 
+		Path(a,x) <-  Edge(a,x).
+		Path(a,x) <-  Path(a,y) & Edge(y,x).
+	}
+	Connected <=> ?a b: Reaches(a,b) & Path(a,b).
+}
+
+procedure main(){
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}
+
+structure S:V{

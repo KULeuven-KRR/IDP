@@ -681,7 +681,7 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, /*gc._checker, */context); // TODO checker to be used during lazy grounding?
+		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	} else {
 		if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
 			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
@@ -703,6 +703,13 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		subformula->negate();
 	}
 	auto newqf = tempqf == NULL ? qf : tempqf;
+
+	const PredForm* delayablepf = NULL;
+	Context lazycontext = Context::BOTH;
+	if (getOption(BoolType::GROUNDLAZILY)) {
+		delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+	}
+
 	// Visit subformula
 	SaveContext();
 	_context.gentype = newqf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
@@ -711,18 +718,14 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	auto subgrounder = dynamic_cast<FormulaGrounder*>(_topgrounder);
 	Assert(subgrounder!=NULL);
-	FormulaGrounder* grounder = NULL;
 
-	bool delayedunknbound = false;
+	FormulaGrounder* grounder = NULL;
 	if (getOption(BoolType::GROUNDLAZILY)) {
-		Context context = Context::BOTH;
-		auto delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), context);
 		if (delayablepf != NULL) {
-			grounder = new LazyUnknUnivGrounder(delayablepf, context, varmapping(), _grounding, subgrounder, getContext());
-			delayedunknbound = true;
+			grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), _grounding, subgrounder, getContext());
 		}
 	}
-	if (not delayedunknbound) {
+	if (grounder==NULL) {
 		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext());
 	}
 	Assert(grounder!=NULL);

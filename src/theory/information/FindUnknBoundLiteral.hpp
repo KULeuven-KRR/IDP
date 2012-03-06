@@ -41,7 +41,9 @@ public:
 		_structure = structure;
 		_context = Context::POSITIVE;
 		t->accept(this);
-		context = not _resultingContext;
+		if(_resultingliteral!=NULL){
+			context = not _resultingContext;
+		}
 		return _resultingliteral;
 	}
 

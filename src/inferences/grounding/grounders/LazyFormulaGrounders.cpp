@@ -57,8 +57,8 @@ LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTh
 }
 
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign,
-		QUANT q, InstGenerator* gen, const GroundingContext& ct) :
-		LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen) {
+		QUANT q, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
+		LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 }
 
 LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign,
@@ -94,7 +94,7 @@ void LazyGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 	formula.literals.push_back(inst->residual);
 
-	if (verbosity() > 1) {
+	if (verbosity() > 3) {
 		clog << "Added lazy tseitin: " << toString(inst->residual) << toString(tseitintype) << printFormula() << nt();
 	}
 
@@ -117,6 +117,7 @@ void LazyBoolGrounder::initializeInst(ResidualAndFreeInst* inst) const {
 
 void LazyQuantGrounder::initializeInst(ResidualAndFreeInst* inst) const {
 	inst->generator = _generator->clone();
+	//inst->checker = _checker->clone(); // TODO add checker support
 }
 
 Grounder* LazyQuantGrounder::getLazySubGrounder(ResidualAndFreeInst*) const {
@@ -130,7 +131,9 @@ Grounder* LazyBoolGrounder::getLazySubGrounder(ResidualAndFreeInst* instance) co
 }
 
 void LazyQuantGrounder::increment(ResidualAndFreeInst* instance) const {
-	instance->generator->operator ++();
+	//do{
+		instance->generator->operator ++();
+	//}while(not instance->checker->check() && not instance->generator->isAtEnd());  // TODO add checker support
 }
 
 void LazyBoolGrounder::increment(ResidualAndFreeInst* instance) const {
@@ -191,7 +194,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		auto newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
-		if (verbosity() > 1) {
+		if (verbosity() > 3) {
 			clog << "Added lazy tseitin: " << toString(instance->residual) << toString(tseitintype) << printFormula() << "[[" << instance->index
 					<< " to end ]]" << nt();
 		}

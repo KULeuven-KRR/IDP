@@ -1,0 +1,31 @@
+vocabulary V{
+	type Id
+	type S isa int
+	type X isa int
+	type Y isa int
+	
+	Size(Id):S
+	XPos(Id, X)
+	YPos(Id, Y)
+	NoOverlap(Id, Id)
+}
+theory T:V{
+	// ISSUE HERE: only watching one literal as unknown bound is not enough to prevent propagation from a true literal to all others false
+	// instead what would be required is to trigger only when TWO true literals have been found and then add the associated formula.
+	// In the current fashion, it will always decide all XPos!
+	!id x x2: ~XPos(id, x) | ~XPos(id, x2) | x=x2.
+	!id: ?x: XPos(id, x).
+}
+structure S:V{
+	Id = {1..3}
+	S = {1..3}
+	X = {1..20}
+	Y = {1..100}
+	Size = {1->3; 2->3; 3->3}
+}
+procedure main(){
+	stdoptions.groundverbosity=0
+	stdoptions.satverbosity=0
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}

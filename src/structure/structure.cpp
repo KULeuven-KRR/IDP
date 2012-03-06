@@ -886,6 +886,9 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 		}
 		_currtuple[n] = *(_curr[n]);
 	}
+	if(_outtable->size(_universe)._size==_universe.size()._size){
+		_end = true;
+	}
 	if (not _end) {
 		if (_outtable->contains(_currtuple, _universe)) {
 			operator++();
@@ -900,6 +903,9 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& cur
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
 		}
+	}
+	if(_outtable->size(_universe)._size==_universe.size()._size){
+		_end = true;
 	}
 }
 
@@ -4516,13 +4522,13 @@ void Structure::autocomplete() {
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
-			const PredTable* pt1 = it->second->ct();
+			auto pt1 = it->second->ct();
 			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
-				const PredTable* pt2 = it->second->cf();
+				auto pt2 = it->second->cf();
 				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->pt();
 				}
@@ -4535,13 +4541,13 @@ void Structure::autocomplete() {
 		if (it->second->funcTable() && sametypeid<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
 			addUNAPattern(it->first);
 		} else {
-			const PredTable* pt1 = it->second->graphInter()->ct();
+			auto pt1 = it->second->graphInter()->ct();
 			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->graphInter()->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
-				const PredTable* pt2 = it->second->graphInter()->cf();
+				auto pt2 = it->second->graphInter()->cf();
 				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->graphInter()->pt();
 				}
@@ -4564,8 +4570,7 @@ void Structure::autocomplete() {
 	for (auto it = invscores.rbegin(); it != invscores.rend(); ++it) {
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			Sort* s = *jt;
-			set<Sort*> notextend;
-			notextend.insert(s);
+			set<Sort*> notextend = {s};
 			vector<Sort*> toextend;
 			vector<Sort*> tocheck;
 			while (not notextend.empty()) {
@@ -4578,26 +4583,35 @@ void Structure::autocomplete() {
 						} else {
 							toextend.push_back(sp);
 						}
-					} else
+					} else{
 						notextend.insert(sp);
+					}
 				}
 				notextend.erase(e);
 			}
-			SortTable* st = inter(s);
+			auto st = inter(s);
 			for (auto kt = toextend.cbegin(); kt != toextend.cend(); ++kt) {
-				SortTable* kst = inter(*kt);
+				auto kst = inter(*kt);
 				if (st->approxFinite()) {
-					for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt)
+					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt){
 						kst->add(*lt);
+					}
 				} else {
 					// TODO
 				}
 			}
 			if (not s->builtin()) {
 				for (auto kt = tocheck.cbegin(); kt != tocheck.cend(); ++kt) {
-					SortTable* kst = inter(*kt);
+					auto kst = inter(*kt);
+					// TODO speedup for common cases (expensive if both tables are large) => should be in some general visitor which checks this!
+					if(dynamic_cast<AllIntegers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
+						continue;
+					}
+					if(dynamic_cast<AllNaturalNumbers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
+						continue;
+					}
 					if (st->approxFinite()) {
-						for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
+						for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
 							if (not kst->contains(*lt))
 								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
 						}

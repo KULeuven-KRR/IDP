@@ -11,6 +11,8 @@
 #include "IncludeComponents.hpp"
 #include "PushQuantifications.hpp"
 
+#include "theory/TheoryUtils.hpp"
+
 using namespace std;
 
 template<class VarList>
@@ -79,14 +81,28 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 					auto subformulas = splitformulalevels[j];
 					if(prevform!=NULL){
 						subformulas.push_back(prevform);
+					}else{
+						Assert(subformulas.size()>0);
 					}
-					prevform = new QuantForm(SIGN::POS, quantforms[i]->quant(), {splitvariables[j]}, new BoolForm(SIGN::POS, conj, subformulas, bsubf->pi()), quantforms[i]->pi());
+					if(subformulas.size()==1){
+						prevform = new QuantForm(SIGN::POS, quantforms[i]->quant(), {splitvariables[j]}, subformulas.back(), quantforms[i]->pi());
+					}else{
+						prevform = new QuantForm(SIGN::POS, quantforms[i]->quant(), {splitvariables[j]}, new BoolForm(SIGN::POS, conj, subformulas, bsubf->pi()), quantforms[i]->pi());
+					}
 				}
 			}
 			auto subformulas = formulalevels[0];
 			Assert(prevform!=NULL);
 			subformulas.push_back(prevform);
-			return new BoolForm(SIGN::POS, conj, subformulas, bsubf->pi());
+
+			Formula* result = NULL;
+			if(subformulas.size()==1){
+				result = subformulas.back();
+			}else{
+				result = new BoolForm(SIGN::POS, conj, subformulas, bsubf->pi());
+			}
+
+			return FormulaUtils::flatten(result);
 		}
 	}
 }

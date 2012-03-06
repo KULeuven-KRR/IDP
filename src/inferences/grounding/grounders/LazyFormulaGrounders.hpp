@@ -48,8 +48,9 @@ class LazyQuantGrounder: public LazyGrounder {
 private:
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator;
+	InstChecker* _checker;
 public:
-	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen, const GroundingContext& ct);
+	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct);
 
 protected:
 	virtual bool grounderIsEmpty() const;
