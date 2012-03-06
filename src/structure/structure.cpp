@@ -1954,8 +1954,11 @@ bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
 }
 
 bool EnumeratedInternalSortTable::isRange() const {
-	const DomainElement* f = first();
-	const DomainElement* l = last();
+	if(_table.empty()){
+		return false;
+	}
+	auto f = first();
+	auto l = last();
 	if (f->type() == DET_INT && l->type() == DET_INT) {
 		return l->value()._int - f->value()._int == (int) _table.size() - 1;
 	} else {
@@ -1974,7 +1977,9 @@ InternalSortIterator* EnumeratedInternalSortTable::sortIterator(const DomainElem
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	if (empty()) {
 		return new IntRangeInternalSortTable(i1, i2);
-	} else if (first()->type() == DET_INT && last()->type() == DET_INT) {
+	}
+
+	if (first()->type() == DET_INT && last()->type() == DET_INT) {
 		if (i1 <= first()->value()._int && last()->value()._int <= i2) {
 			return new IntRangeInternalSortTable(i1, i2);
 		} else if (isRange()) {
@@ -2023,19 +2028,13 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	if (_table.empty()) {
-		return NULL;
-	} else {
-		return *(_table.cbegin());
-	}
+	Assert(not _table.empty());
+	return *(_table.cbegin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	if (_table.empty()) {
-		return NULL;
-	} else {
-		return *(_table.rbegin());
-	}
+	Assert(not _table.empty());
+	return *(_table.rbegin());
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {

@@ -127,7 +127,7 @@ void GrounderFactory::InitContext() {
 	_context._funccontext = Context::POSITIVE;
 	_context._monotone = Context::POSITIVE;
 	_context._component = CompContext::SENTENCE;
-	_context._tseitin = (true) ? TsType::EQ : TsType::IMPL; //TODO fix this with a new infrerence.  See issue 112
+	_context._tseitin = (getOption(NBMODELS)!=1) ? TsType::EQ : TsType::IMPL;
 	_context.currentDefID = getIDForUndefined();
 	_context._defined.clear();
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
