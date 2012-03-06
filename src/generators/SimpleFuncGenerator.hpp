@@ -29,6 +29,7 @@ private:
 private:
 	std::vector<const DomElemContainer*> _outvars;
 	std::vector<unsigned int> _outpos;
+
 	const DomElemContainer* _rangevar;
 	bool _reset;
 
@@ -89,7 +90,6 @@ public:
 	}
 
 	void next() {
-		pushtab();
 		if (_reset) {
 			_reset = false;
 			_univgen->begin();
@@ -100,20 +100,26 @@ public:
 			for (unsigned int i = 0; i < _inpos.size(); ++i) {
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
-		}
-		else{
+		} else {
 			_univgen->operator ++();
 		}
 
 		if (_univgen->isAtEnd()) {
 			notifyAtEnd();
+			return;
 		}
 
 		for (unsigned int i = 0; i < _outpos.size(); ++i) {
 			_currenttuple[_outpos[i]] = _outvars[i]->get();
 		}
-		_rangevar->operator =(_function->operator [](_currenttuple));
-		poptab();
+		auto result = _function->operator [](_currenttuple);
+		if(result != NULL){
+			Assert(_universe.tables().back()->contains(result));
+			_rangevar->operator =(result);
+			return;
+		} else{
+			next();
+		}
 	}
 
 	virtual void put(std::ostream& stream) {
