@@ -44,6 +44,7 @@ public:
 	}
 
 	void next() {
+		universeGenerator->operator ++();
 		while (not universeGenerator->isAtEnd() && quantKernelTrueChecker->check()) {
 			universeGenerator->operator ++();
 		}
@@ -51,6 +52,12 @@ public:
 			notifyAtEnd();
 		}
 	}
+	virtual void put(std::ostream& stream){
+		pushtab();
+		stream << "all false instances of: " << nt() << toString(quantKernelTrueChecker);
+		poptab();
+	}
+
 };
 
 #endif /* FALSEQUANTKERNELGENERATOR_HPP_ */
