@@ -17,6 +17,9 @@ using namespace std;
 
 LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
 		: RuleGrounder(rule, hgr, bgr, big, ct), LazyUnknBoundGrounder(rule->head()->symbol(), Context::BOTH, ct.getCurrentDefID(), hgr->grounding()) {
+	if(verbosity()>2){
+		clog <<"Lazily grounding " <<toString(rule) <<" by unknown-delay of the head.\n";
+	}
 	std::map<Variable*, int> vartofirstocc;
 	int index = 0;
 	for(auto i=headterms.cbegin(); i<headterms.cend(); ++i, ++index){

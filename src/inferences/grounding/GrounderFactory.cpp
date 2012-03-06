@@ -335,6 +335,7 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
 	const auto& components = newtheory->components(); // NOTE: primitive reorder present: definitions first
+	// NOTE: currently, definitions first is important for good lazy grounding
 	//TODO Order components the components to optimize the grounding process
 
 	// Create grounders for all components
@@ -534,13 +535,14 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	// If a disjunction or conj with one subformula, it's subformula can be treated as if it was the root of this formula
 	if(isPos(bf->sign()) && bf->subformulas().size()==1){
 		bf->subformulas()[0]->accept(this);
+	}else{
+		if (_context._conjPathUntilNode) {
+			createBoolGrounderConjPath(bf);
+		} else {
+			createBoolGrounderDisjPath(bf);
+		}
 	}
 
-	if (_context._conjPathUntilNode) {
-		createBoolGrounderConjPath(bf);
-	} else {
-		createBoolGrounderDisjPath(bf);
-	}
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
@@ -701,7 +703,6 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		subformula->negate();
 	}
 	auto newqf = tempqf == NULL ? qf : tempqf;
-
 	// Visit subformula
 	SaveContext();
 	_context.gentype = newqf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
@@ -723,7 +724,8 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	if (not delayedunknbound) {
 		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext());
-	}Assert(grounder!=NULL);
+	}
+	Assert(grounder!=NULL);
 
 	grounder->setOrig(qf, varmapping());
 
@@ -956,9 +958,9 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	}
 
 	// Create term grounder
-	Function* function = t->function();
-	FuncTable* ftable = _structure->inter(function)->funcTable();
-	SortTable* domain = _structure->inter(function->outsort());
+	auto function = t->function();
+	auto ftable = _structure->inter(function)->funcTable();
+	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
 			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],

@@ -90,7 +90,8 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 	if (calculable && _functable) { // All ground subterms are domain elements!
 		auto result = (*_functable)[args];
-		if (result) {
+		Assert(result!=NULL);
+		if (result!=NULL) {
 			if (verbosity() > 2) {
 				clog << "Result = " << *result;
 				poptab();

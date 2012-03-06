@@ -112,10 +112,7 @@ TEST(Grounderfactory, BoolFormContext) {
 	ASSERT_TRUE(CompContext::SENTENCE == context._component);
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	auto context2 = dynamic_cast<BoolGrounder*>(grounder)->getSubGrounders()[0]->context();
-	ASSERT_TRUE(context2._conjunctivePathFromRoot);
-	ASSERT_TRUE(ts.Axpx->isUnivWithSign());
-	ASSERT_TRUE(context2._conjPathUntilNode);
+	ASSERT_TRUE(dynamic_cast<QuantGrounder*>(grounder)!=NULL);
 }
 
 }

@@ -206,6 +206,9 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping,
 		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
 		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), context, -1, groundtheory), _subgrounder(sub) {
+	if(verbosity()>2){
+		clog <<"Delaying the grounding " <<sub->printFormula() <<" on " <<toString(pf) <<".\n";
+	}
 	for(auto i=pf->args().cbegin(); i<pf->args().cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		_varcontainers.push_back(varmapping.at(var));
