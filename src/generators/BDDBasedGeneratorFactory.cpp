@@ -570,7 +570,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 
 	// Create a generator for the quantified formula
 	if (generateFalsebranch) { // NOTE if generating the false branch, we implement a generator for the universe and check the false branch
-		quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::INPUT);
+		quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::OUTPUT);
 	} else {
 		quantdata.pattern = origpattern;
 	}
