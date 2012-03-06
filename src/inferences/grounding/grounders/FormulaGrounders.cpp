@@ -125,17 +125,17 @@ Lit AtomGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 			// Check partial functions
 			if (args[n] == NULL) {
-				throw notyetimplemented("Partial function issue in grounding an atom.");
+				//throw notyetimplemented("Partial function issue in grounding an atom.");
 				// FIXME what should happen here?
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
-				 }
+				 }*/
 				 if(verbosity() > 2) {
-				 clog <<"Partial function went out of bounds\n";
-				 clog <<"Result is " <<(context()._funccontext != Context::NEGATIVE  ? "true" : "false") <<"\n";
+					 clog <<"Partial function went out of bounds" << nt();
+					 clog <<"Result is " << "false" << nt();
 				 }
-				 return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
+				 return _false;
 			}
 
 			// Checking out-of-bounds

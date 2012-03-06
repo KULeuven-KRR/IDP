@@ -1950,6 +1950,9 @@ InternalTableIterator* InternalSortTable::begin() const {
 }
 
 bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
+	if(d==NULL){
+		return false;
+	}
 	return _table.find(d) != _table.cend();
 }
 
@@ -2125,6 +2128,9 @@ const DomainElement* IntRangeInternalSortTable::last() const {
 }
 
 inline bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
+	if(d==NULL){
+			return false;
+		}
 	const auto& val = d->value()._int;
 	return d->type() == DET_INT && _first <= val && val <= _last;
 }
@@ -2224,6 +2230,9 @@ bool UnionInternalSortTable::approxEmpty() const {
 }
 
 bool UnionInternalSortTable::contains(const DomainElement* d) const {
+	if(d==NULL){
+			return false;
+		}
 	bool in = false;
 	for (auto it = _intables.cbegin(); it != _intables.cend(); ++it) {
 		if ((*it)->contains(d)) {
@@ -2389,6 +2398,9 @@ InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
 }
 
 bool AllNaturalNumbers::contains(const DomainElement* d) const {
+	if(d==NULL){
+			return false;
+		}
 	if (d->type() == DET_INT) {
 		return d->value()._int >= 0;
 	} else {
@@ -2426,6 +2438,9 @@ InternalSortTable* AllNaturalNumbers::add(int i1, int i2) {
 }
 
 bool AllIntegers::contains(const DomainElement* d) const {
+	if(d==NULL){
+			return false;
+		}
 	return (d->type() == DET_INT);
 }
 
