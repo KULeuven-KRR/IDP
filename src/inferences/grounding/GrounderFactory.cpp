@@ -637,6 +637,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
 	// Handle a top-level conjunction without creating tseitin atoms
+	_context.gentype = qf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
 	if (_context._conjPathUntilNode) {
 		createTopQuantGrounder(qf, newsubformula, gc);
 	} else {
@@ -690,7 +691,6 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	// Visit subformula
 	SaveContext();
-	_context.gentype = newqf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
 	descend(subformula);
 	RestoreContext();
 
@@ -727,7 +727,6 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 	// Create grounder for subformula
 	SaveContext();
 	DeeperContext(qf->sign());
-	_context.gentype = qf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
 	descend(subformula);
 	RestoreContext();
 
