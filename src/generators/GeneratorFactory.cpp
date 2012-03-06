@@ -438,7 +438,7 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		if (_pattern[1] == Pattern::INPUT) {
-			_generator = new PlusChecker(_vars[0], _vars[1], _vars[2]); //TODO: also do this mod for times, .... If Everything is input, we CANNOT make a minusgenerator and so...
+			_generator = new PlusChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
 			_generator = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
@@ -459,7 +459,7 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		if (_pattern[1] == Pattern::INPUT) {
-			_generator = new MinusChecker(_vars[0], _vars[1], _vars[2]);
+			_generator = new MinusChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
 			_generator = new MinusGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
@@ -475,7 +475,7 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		if (_pattern[1] == Pattern::INPUT) {
-			_generator = new TimesChecker(_vars[0], _vars[1], _vars[2]);
+			_generator = new TimesChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
 			_generator = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
@@ -491,7 +491,7 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 	if (_pattern[0] == Pattern::INPUT) {
 		if (_pattern[1] == Pattern::INPUT) {
-			_generator = new DivChecker(_vars[0], _vars[1], _vars[2]);
+			_generator = new DivChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
 			_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
