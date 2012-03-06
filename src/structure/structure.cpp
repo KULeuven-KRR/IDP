@@ -2451,6 +2451,9 @@ const DomainElement* AllIntegers::last() const {
 }
 
 bool AllFloats::contains(const DomainElement* d) const {
+	if(d==NULL){
+		return false;
+	}
 	return (d->type() == DET_INT || d->type() == DET_DOUBLE);
 }
 
@@ -2476,6 +2479,9 @@ const DomainElement* AllFloats::last() const {
 }
 
 bool AllStrings::contains(const DomainElement* d) const {
+	if(d==NULL){
+		return false;
+	}
 	return d->type() != DET_COMPOUND;
 }
 
@@ -2509,6 +2515,9 @@ const DomainElement* AllStrings::last() const {
 }
 
 bool AllChars::contains(const DomainElement* d) const {
+	if(d==NULL){
+		return false;
+	}
 	if (d->type() == DET_INT) {
 		return (d->value()._int >= 0 && d->value()._int < 10);
 	} else if (d->type() == DET_STRING) {
