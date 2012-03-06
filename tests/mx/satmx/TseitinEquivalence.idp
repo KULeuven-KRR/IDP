@@ -1,0 +1,20 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type Color
+	type Node
+	Used(Color)
+	Color(Color, Node)
+}
+
+theory T : V { 
+	!x: Used(x)<=>?y: Color(x, y).
+	?x y: Color(x, y).
+}
+
+structure S : V {
+	Color = {A..D}
+	Node = {A..D}
+}

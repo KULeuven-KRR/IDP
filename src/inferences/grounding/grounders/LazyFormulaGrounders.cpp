@@ -171,7 +171,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		formula.setType(conjunctive());
 
 		runSubGrounder(getLazySubGrounder(instance), context()._conjunctivePathFromRoot, formula);
-		groundedlit = getReification(formula);
+		groundedlit = getReification(formula, getTseitinType());
 		increment(instance);
 	}
 
