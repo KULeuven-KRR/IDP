@@ -213,7 +213,6 @@ public:
 					}
 				}
 			}
-
 		}
 		// Here, the generator is at a new value
 		for (; not _generator->isAtEnd(); _generator->operator ++()) {

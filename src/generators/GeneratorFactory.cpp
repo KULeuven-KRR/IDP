@@ -34,6 +34,7 @@
 #include "InverseUnaFunctionGenerator.hpp"
 #include "InvertNumericGenerator.hpp"
 #include "InverseAbsValueGenerator.hpp"
+#include "AbsValueChecker.hpp"
 using namespace std;
 
 // NOTE original can be NULL
@@ -555,8 +556,12 @@ void GeneratorFactory::visit(const ModInternalFuncTable*) {
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
-	Assert(_pattern[0]==Pattern::OUTPUT);
-	_generator = new InverseAbsValueGenerator(_vars[1], _vars[0], _universe.tables()[0], aift->getType());
+	if(_pattern[0]==Pattern::OUTPUT){
+		_generator = new InverseAbsValueGenerator(_vars[1], _vars[0], _universe.tables()[0], aift->getType());
+	}
+	else{
+		_generator = new AbsValueChecker(_vars[0], _vars[1], _universe);
+	}
 }
 
 void GeneratorFactory::visit(const UminInternalFuncTable* uift) {
