@@ -379,6 +379,7 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 void GeneratorFactory::visit(const FuncTable* ft) {
 	if (_pattern.back() == Pattern::OUTPUT) {
 		// TODO: for the input positions, change universe to the universe of ft if this is smaller
+		//TODO: and vice versa: if the other is smaller, we can also make the universe of ft smaller!
 		_generator = new SimpleFuncGenerator(ft, _pattern, _vars, _universe, _firstocc);
 	} else {
 		ft->internTable()->accept(this);
