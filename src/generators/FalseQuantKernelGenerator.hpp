@@ -19,42 +19,44 @@
  */
 class FalseQuantKernelGenerator: public InstGenerator {
 private:
-	InstGenerator* universeGenerator;
-	InstChecker* quantKernelTrueChecker;
+	InstGenerator* _universeGenerator;
+	InstChecker* _quantKernelTrueChecker;
+	bool _reset;
 
 public:
-	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker)
-			: universeGenerator(universegenerator), quantKernelTrueChecker(bddtruechecker) {
+	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker) :
+			_universeGenerator(universegenerator), _quantKernelTrueChecker(bddtruechecker) {
 	}
 
 	// FIXME reimplemnt clone
 	FalseQuantKernelGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
-	}
-
-	bool check() const {
-		return not quantKernelTrueChecker->check();
+		throw notyetimplemented("Cloning FalseQuantKernelGenerators.");
 	}
 
 	void reset() {
-		universeGenerator->begin();
-		if (universeGenerator->isAtEnd()) {
+		_reset = true;
+		_universeGenerator->begin();
+		if (_universeGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
 
 	void next() {
-		universeGenerator->operator ++();
-		while (not universeGenerator->isAtEnd() && quantKernelTrueChecker->check()) {
-			universeGenerator->operator ++();
+		if (_reset) {
+			_reset = false;
+		} else {
+			_universeGenerator->operator ++();
 		}
-		if (universeGenerator->isAtEnd()) {
+
+		for (; not _universeGenerator->isAtEnd() && _quantKernelTrueChecker->check(); _universeGenerator->operator ++()) {
+		}
+		if (_universeGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
-	virtual void put(std::ostream& stream){
+	virtual void put(std::ostream& stream) {
 		pushtab();
-		stream << "all false instances of: " << nt() << toString(quantKernelTrueChecker);
+		stream << "all false instances of: " << nt() << toString(_quantKernelTrueChecker);
 		poptab();
 	}
 

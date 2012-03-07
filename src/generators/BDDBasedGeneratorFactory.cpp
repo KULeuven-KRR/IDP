@@ -64,8 +64,8 @@ vector<unsigned int> detectDoubleOccurences(const vector<const DomElemContainer*
 	return firstocc;
 }
 
-BDDToGenerator::BDDToGenerator(FOBDDManager* manager)
-		: _manager(manager) {
+BDDToGenerator::BDDToGenerator(FOBDDManager* manager) :
+		_manager(manager) {
 }
 
 void extractFirstOccurringOutputs(const BddGeneratorData& data, const vector<unsigned int>& firstocc, vector<const DomElemContainer*>& outvars,
@@ -172,15 +172,16 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
 
 	branchdata.bdd = data.bdd->falsebranch();
-	auto truegenerator = createnode(branchdata);
+	auto falsegenerator = createnode(branchdata);
 
 	branchdata.bdd = data.bdd->truebranch();
-	auto falsegenerator = createnode(branchdata);
+	auto truegenerator = createnode(branchdata);
 
 	return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
 
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager,
+		Pattern matchingPattern) {
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n]);
@@ -195,7 +196,8 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 	return atom;
 }
 
-PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager) {
+PredForm* removeSumChain(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars,
+		FOBDDManager* manager) {
 	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT);
 	if (atom == newatom) {
 		vector<Term*> vt = lhs->subterms();
@@ -227,7 +229,7 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
  * TODO can only call on specific predforms
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars,const  AbstractStructure* structure, bool inverse, const Universe& universe) {
+		const vector<Variable*>& atomvars, const AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
@@ -255,7 +257,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			if (sametypeid<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
 				Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
+				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort())
+						&& (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
 					atom = removeSumChain(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
 				} else { // Case B
 					atom = graphFunction(atom, ft, atom->subterms()[0]);
@@ -263,7 +266,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
 				Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (C)
+				if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort())
+						&& (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (C)
 					atom = removeSumChain(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
 				} else { // Case (B)
 					atom = graphFunction(atom, ft, atom->subterms()[1]);
@@ -459,8 +463,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	return GeneratorFactory::create(atom, structure, inverse, atompattern, datomvars, Universe(atomtables));
 }
 
-InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
-		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, bool generateFalsebranch, const Universe& origuniverse) {
+InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern,
+		const vector<const DomElemContainer*>& origvars, const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure,
+		bool generateFalsebranch, const Universe& origuniverse) {
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
@@ -569,11 +574,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	quantdata.bdd = _manager->substitute(quantkernel->bdd(), quantindex, bddquantvar);
 
 	// Create a generator for the quantified formula
-	if (generateFalsebranch) { // NOTE if generating the false branch, we implement a generator for the universe and check the false branch
-		quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::INPUT);
-	} else {
-		quantdata.pattern = origpattern;
-	}
+	quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::INPUT);
 	quantdata.pattern.push_back(Pattern::OUTPUT);
 
 	quantdata.vars = origvars;
@@ -588,20 +589,20 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	BDDToGenerator btg(_manager);
 
 	// Create a generator for the kernel
-	if (generateFalsebranch) {
-		vector<const DomElemContainer*> univgenvars;
-		vector<SortTable*> univgentables;
-		for (unsigned int n = 0; n < quantdata.pattern.size(); ++n) {
-			if (quantdata.pattern[n] == Pattern::INPUT) {
-				univgenvars.push_back(quantdata.vars[n]);
-				univgentables.push_back(quantdata.universe.tables()[n]);
-			}
+	vector<const DomElemContainer*> univgenvars;
+	vector<SortTable*> univgentables;
+	for (unsigned int n = 0; n < quantdata.pattern.size() - 1; ++n) {
+		if (n==quantdata.pattern.size()-1 || origpattern[n] == Pattern::OUTPUT) {
+			univgenvars.push_back(quantdata.vars[n]);
+			univgentables.push_back(quantdata.universe.tables()[n]);
 		}
-		auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
-		auto bddtruechecker = btg.create(quantdata);
+	}
+	auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
+
+	auto bddtruechecker = btg.create(quantdata);
+	if (generateFalsebranch) {
 		return new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
 	} else {
-		auto quantgenerator = btg.create(quantdata);
-		return new TrueQuantKernelGenerator(quantgenerator);
+		return new TrueQuantKernelGenerator(univgenerator, bddtruechecker);
 	}
 }
