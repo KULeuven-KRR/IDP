@@ -364,7 +364,8 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 	} else if (typeid(*interntable) == typeid(BDDInternalPredTable)) {
 		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
 		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
-		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(), bddintern->structure());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(),
+				bddintern->structure());
 		visit(invertedbddtable);
 	} else if (typeid(*interntable) == typeid(FullInternalPredTable)) {
 		_generator = new EmptyGenerator();
@@ -453,7 +454,17 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 		_generator = new DivGenerator(_vars[2], twopointer, _vars[0], NumType::POSSIBLYINT, _universe.tables()[0]);
 		//}
 	} else {
-		throw notyetimplemented("Infinite generator for addition pattern (out,out,in)");
+		if (_universe.tables()[0]->approxFinite()) {
+			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+			auto ygen = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+		} else if (_universe.tables()[1]->approxFinite()) {
+			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+			auto xgen = new MinusGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+		} else {
+			throw notyetimplemented("Infinite generator for addition pattern (out,out,in)");
+		}
 	}
 }
 
@@ -469,7 +480,17 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x-x=y, with x output");
 	} else {
-		throw notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
+		if (_universe.tables()[0]->approxFinite()) {
+			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+			auto ygen = new MinusGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+		} else if (_universe.tables()[1]->approxFinite()) {
+			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+			auto xgen = new PlusGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+		} else {
+			throw notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
+		}
 	}
 }
 
@@ -485,7 +506,17 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x*x=y, with x output");
 	} else {
-		throw notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
+		if (_universe.tables()[0]->approxFinite()) {
+			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+			auto ygen = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+		} else if (_universe.tables()[1]->approxFinite()) {
+			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+			auto xgen = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+		} else {
+			throw notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
+		}
 	}
 }
 
@@ -497,17 +528,21 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 			_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 		}
 	} else if (_pattern[1] == Pattern::INPUT) {
-		std::cerr << "3" << nt();
-
-		if (pift->getType() == NumType::CERTAINLYINT) {
-			// TODO E.g., a / 2 = 1 should result in a \in { 2,3 } instead of a \in { 2 }
-			throw notyetimplemented("Generation for x/y=z, given x, in the case of integers.");
-		}
 		_generator = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x/x=y, with x output");
 	} else {
-		throw notyetimplemented("Infinite generator for division pattern (out,out,in)");
+		if (_universe.tables()[0]->approxFinite()) {
+			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+			auto ygen = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+		} else if (_universe.tables()[1]->approxFinite()) {
+			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+			auto xgen = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+		} else {
+			throw notyetimplemented("Infinite generator for division pattern (out,out,in)");
+		}
 	}
 }
 
