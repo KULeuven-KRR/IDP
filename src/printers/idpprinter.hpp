@@ -84,20 +84,17 @@ public:
 			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				Predicate* p = *jt;
 				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
-					PredInter* pi = structure->inter(p);
+					auto pi = structure->inter(p);
 					if (pi->approxTwoValued()) {
 						output() << toString(p) << " = ";
-						const PredTable* pt = pi->ct();
-						visit(pt);
+						visit(pi->ct());
 						output() << '\n';
 					} else {
-						const PredTable* ct = pi->ct();
 						output() << toString(p) << "<ct> = ";
-						visit(ct);
+						visit(pi->ct());
 						output() << '\n';
-						const PredTable* cf = pi->cf();
 						output() << toString(p) << "<cf> = ";
-						visit(cf);
+						visit(pi->cf());
 						output() << '\n';
 					}
 				}
@@ -801,15 +798,19 @@ public:
 		}
 	}
 
-	void visit(SortTable* table) {
+	void visit(const SortTable* table) {
 		Assert(isTheoryOpen());
-		SortIterator it = table->sortBegin();
 		output() << "{ ";
-		if (not it.isAtEnd()) {
-			output() << toString((*it));
-			++it;
-			for (; not it.isAtEnd(); ++it) {
-				output() << "; " << toString((*it));
+		if(table->isRange()){
+			output() <<toString(table->first()) <<".." <<toString(table->last());
+		}else{
+			auto it = table->sortBegin();
+			if (not it.isAtEnd()) {
+				output() << toString((*it));
+				++it;
+				for (; not it.isAtEnd(); ++it) {
+					output() << "; " << toString((*it));
+				}
 			}
 		}
 		output() << " }";

@@ -34,6 +34,7 @@ void InstChecker::put(std::ostream& stream) {
 */
 
 void InstGenerator::setVarsAgain(){
-	std::cerr <<typeid(*this).name() <<"\n";
-	Assert(false);
+	std::stringstream ss;
+	ss << "Resetting variables for " << (typeid(*this).name()) << "\n";
+	notyetimplemented(ss.str());
 }

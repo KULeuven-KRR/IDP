@@ -78,8 +78,10 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		} else if (function->name() == "-/1") {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
-		} else {
-			Assert(false);
+		}else{
+			// TODO better solution for what's not handled!
+			_minimum = NULL;
+			_maximum = NULL;
 		}
 	} else {
 		Assert(t->sort() != NULL);

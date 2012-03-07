@@ -2094,6 +2094,8 @@ public:
 	SortIterator sortBegin() const;
 	SortIterator sortIterator(const DomainElement*) const;
 
+	// TODO: first and last should only be called AFTER checking that the table is not empty!
+	//   also should isRange==true imply that the table is not empty?
 	const DomainElement* first() const {
 		return _table->first();
 	}
@@ -2142,6 +2144,7 @@ public:
 		return _table->size(_universe);
 	}
 
+	// !!! RETURNS NULL iff the given tuple does not map to a domainelement within the range sort
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		Assert(tuple.size()==arity());
 #ifndef NDEBUG
@@ -2149,7 +2152,12 @@ public:
 			Assert(*i!=NULL);
 		}
 #endif
-		return _table->operator[](tuple);
+		auto result = _table->operator[](tuple);
+		if(universe().tables().back()->contains(result)){
+			return result;
+		}else{
+			return NULL;
+		}
 	}
 	bool contains(const ElementTuple& tuple) const;
 	void add(const ElementTuple& tuple);

@@ -24,7 +24,6 @@
 #include "generators/ComparisonGenerator.hpp"
 
 #include "printers/idpprinter.hpp" //TODO only for debugging
-
 using namespace std;
 
 /**********************
@@ -52,7 +51,8 @@ DomainElement::DomainElement(int value)
  */
 DomainElement::DomainElement(double value)
 		: _type(DET_DOUBLE), _value(value) {
-	Assert(not isInt(value)); // TODO check rest of code for such errors
+	Assert(not isInt(value));
+	// TODO check rest of code for such errors
 }
 
 /**
@@ -89,7 +89,7 @@ ostream& DomainElement::put(ostream& output) const {
 }
 
 std::vector<const DomElemContainer*> DomElemContainer::containers;
-void DomElemContainer::deleteAllContainers(){
+void DomElemContainer::deleteAllContainers() {
 	for (auto i = containers.cbegin(); i != containers.cend(); ++i) {
 		if (*i != NULL) {
 			delete (*i);
@@ -115,7 +115,7 @@ ostream& operator<<(ostream& output, const ElementTuple& tuple) {
 }
 
 bool operator<(const DomainElement& d1, const DomainElement& d2) {
-	if(d1.type()==DET_INT && d2.type()==DET_INT){
+	if (d1.type() == DET_INT && d2.type() == DET_INT) {
 		return d1.value()._int < d2.value()._int; // NOTE: Try speedup of most occurring comparison
 	}
 	switch (d1.type()) {
@@ -1937,7 +1937,8 @@ tablesize StrGreaterInternalPredTable::size(const Universe& univ) const {
 
 InternalTableIterator* StrGreaterInternalPredTable::begin(const Universe& univ) const {
 	vector<const DomElemContainer*> vars { new DomElemContainer(), new DomElemContainer() };
-	return new GeneratorInternalTableIterator(new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
+	return new GeneratorInternalTableIterator(
+			new ComparisonGenerator(univ.tables()[0], univ.tables()[0], new DomElemContainer(), new DomElemContainer(), Input::NONE, CompType::GT), vars);
 
 }
 
@@ -1950,12 +1951,18 @@ InternalTableIterator* InternalSortTable::begin() const {
 }
 
 bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	return _table.find(d) != _table.cend();
 }
 
 bool EnumeratedInternalSortTable::isRange() const {
-	const DomainElement* f = first();
-	const DomainElement* l = last();
+	if (_table.empty()) {
+		return false;
+	}
+	auto f = first();
+	auto l = last();
 	if (f->type() == DET_INT && l->type() == DET_INT) {
 		return l->value()._int - f->value()._int == (int) _table.size() - 1;
 	} else {
@@ -1974,7 +1981,9 @@ InternalSortIterator* EnumeratedInternalSortTable::sortIterator(const DomainElem
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	if (empty()) {
 		return new IntRangeInternalSortTable(i1, i2);
-	} else if (first()->type() == DET_INT && last()->type() == DET_INT) {
+	}
+
+	if (first()->type() == DET_INT && last()->type() == DET_INT) {
 		if (i1 <= first()->value()._int && last()->value()._int <= i2) {
 			return new IntRangeInternalSortTable(i1, i2);
 		} else if (isRange()) {
@@ -2023,19 +2032,13 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	if (_table.empty()) {
-		return NULL;
-	} else {
-		return *(_table.cbegin());
-	}
+	Assert(not _table.empty());
+	return *(_table.cbegin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	if (_table.empty()) {
-		return NULL;
-	} else {
-		return *(_table.rbegin());
-	}
+	Assert(not _table.empty());
+	return *(_table.rbegin());
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
@@ -2126,6 +2129,9 @@ const DomainElement* IntRangeInternalSortTable::last() const {
 }
 
 inline bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	const auto& val = d->value()._int;
 	return d->type() == DET_INT && _first <= val && val <= _last;
 }
@@ -2225,6 +2231,9 @@ bool UnionInternalSortTable::approxEmpty() const {
 }
 
 bool UnionInternalSortTable::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	bool in = false;
 	for (auto it = _intables.cbegin(); it != _intables.cend(); ++it) {
 		if ((*it)->contains(d)) {
@@ -2390,6 +2399,9 @@ InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
 }
 
 bool AllNaturalNumbers::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	if (d->type() == DET_INT) {
 		return d->value()._int >= 0;
 	} else {
@@ -2427,6 +2439,9 @@ InternalSortTable* AllNaturalNumbers::add(int i1, int i2) {
 }
 
 bool AllIntegers::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	return (d->type() == DET_INT);
 }
 
@@ -2451,6 +2466,9 @@ const DomainElement* AllIntegers::last() const {
 }
 
 bool AllFloats::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	return (d->type() == DET_INT || d->type() == DET_DOUBLE);
 }
 
@@ -2476,6 +2494,9 @@ const DomainElement* AllFloats::last() const {
 }
 
 bool AllStrings::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	return d->type() != DET_COMPOUND;
 }
 
@@ -2509,6 +2530,9 @@ const DomainElement* AllStrings::last() const {
 }
 
 bool AllChars::contains(const DomainElement* d) const {
+	if (d == NULL) {
+		return false;
+	}
 	if (d->type() == DET_INT) {
 		return (d->value()._int >= 0 && d->value()._int < 10);
 	} else if (d->type() == DET_STRING) {
@@ -3548,6 +3572,8 @@ bool PredInter::isConsistent() const {
  * NOTE: Simple check if _ct == _pt
  */
 bool PredInter::approxTwoValued() const {
+	// TODO turn it into something that is smarter, without comparing the tables!
+	// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
 	return _ct->internTable() == _pt->internTable();
 }
 
@@ -3689,7 +3715,7 @@ PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structur
 }
 
 // FIXME better way of managing (the memory of) these interpretations?
-EqualInterGenerator::~EqualInterGenerator(){
+EqualInterGenerator::~EqualInterGenerator() {
 	deleteList(generatedInters);
 }
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
@@ -3701,7 +3727,7 @@ PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 	return generatedInters.back();
 }
 
-StrLessThanInterGenerator::~StrLessThanInterGenerator(){
+StrLessThanInterGenerator::~StrLessThanInterGenerator() {
 	deleteList(generatedInters);
 }
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
@@ -3713,7 +3739,7 @@ PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 	return generatedInters.back();
 }
 
-StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator(){
+StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator() {
 	deleteList(generatedInters);
 }
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
@@ -3925,11 +3951,11 @@ Structure::~Structure() {
 
 Structure* Structure::clone() const {
 	/*std::clog << "CLONING";
-	IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::clog);
-		p.startTheory();
-		p.visit(this);
-		p.endTheory();
-		pushtab();*/
+	 IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::clog);
+	 p.startTheory();
+	 p.visit(this);
+	 p.endTheory();
+	 pushtab();*/
 	Structure* s = new Structure("", ParseInfo());
 	//std::clog << endl << tabs() << "1";
 	s->vocabulary(_vocabulary);
@@ -3948,8 +3974,8 @@ Structure* Structure::clone() const {
 		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
 	/*std::clog << endl << tabs() << "6";
-	poptab();
-	std::clog << endl << "DONE CLONING" << endl;*/
+	 poptab();
+	 std::clog << endl << "DONE CLONING" << endl;*/
 	return s;
 }
 
@@ -4076,7 +4102,8 @@ bool needFixedNumberOfModels() {
 	return expected != 0 && expected < getMaxElem<int>();
 }
 
-void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function, vector<AbstractStructure*>& extensions) {
+void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
+		vector<AbstractStructure*>& extensions) {
 	int currentnb = extensions.size();
 
 	// go over all saved structures and generate a new structure for each possible value for it
@@ -4227,7 +4254,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if(getOption(IntType::NBMODELS)!=0 && needMoreModels(result.size())){
+	if (getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());
@@ -4611,8 +4638,7 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}
-	Assert(s != NULL);
+	}Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	}
