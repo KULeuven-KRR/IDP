@@ -21,7 +21,7 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION_MAJOR}-${idp_VERSION_MINOR}\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION}\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_PREFIX}/\\\"\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
@@ -133,7 +133,7 @@ target_link_libraries(idp-bin idp)
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 set_target_properties(
-	idp-bin PROPERTIES
+	idp idp-bin PROPERTIES
 	VERSION ${idp_VERSION}
 )
 

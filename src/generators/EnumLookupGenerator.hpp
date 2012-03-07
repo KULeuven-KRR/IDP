@@ -65,7 +65,7 @@ public:
 	void next() {
 		if (_reset) {
 			_reset = false;
-			for (uint i=0; i < _invars.size(); ++i) {
+			for (unsigned int i=0; i < _invars.size(); ++i) {
 				_currargs[i]=_invars[i]->get();
 			}
 			_currpos = _table.find(_currargs);
