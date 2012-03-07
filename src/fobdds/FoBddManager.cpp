@@ -864,7 +864,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	// base case
 	if (bdd == _truebdd || bdd == _falsebdd) {
 		if (sort->builtin()) {
-			return sort->interpretation()->empty() ? bdd : negation(bdd);
+			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}
 		auto sortNotEmpty = getQuantKernel(sort,
 				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_CT, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)

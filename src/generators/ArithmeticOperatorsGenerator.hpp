@@ -32,6 +32,16 @@ private:
 	bool alreadyrun;
 protected:
 	virtual ARITHRESULT doCalculation(double left, double right, double& result) const = 0;
+	virtual DomainElementType getOutType() {
+		auto leftt = getIn1()->get()->type();
+		auto rightt = getIn2()->get()->type();
+		Assert(leftt == DomainElementType::DET_INT || leftt == DomainElementType::DET_DOUBLE);
+		Assert(rightt == DomainElementType::DET_INT || rightt == DomainElementType::DET_DOUBLE);
+		if (leftt == rightt) {
+			return leftt;
+		}
+		return DomainElementType::DET_DOUBLE;
+	}
 
 	const DomElemContainer* getIn1() const {
 		return _in1;
@@ -60,12 +70,6 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		const DomainElement* left = _in1->get();
-		const DomainElement* right = _in2->get();
-		Assert(left->type()==right->type());
-
-		DomainElementType type = left->type();
-		Assert(type==DET_INT || type==DET_DOUBLE);
 
 		double result;
 		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
@@ -73,7 +77,7 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		*_out = createDomElem(type == DET_INT ? int(result) : result, _requestedType);
+		*_out = createDomElem(getOutType() == DET_INT ? int(result) : result, _requestedType);
 		if (not _outdom->contains(_out->get())) {
 			notifyAtEnd();
 		}
@@ -122,6 +126,15 @@ public:
 	virtual void put(std::ostream& stream) {
 		stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
 				<< "(out)";
+	}
+	virtual DomainElementType getOutType() {
+#ifdef DEBUG
+		auto leftt = getIn1()->get()->type();
+		auto rightt = getIn2()->get()->type();
+		Assert(leftt == DomainElementType::DET_INT || leftt == DomainElementType::DET_DOUBLE);
+		Assert(rightt == DomainElementType::DET_INT || rightt == DomainElementType::DET_DOUBLE);
+#endif
+		return DomainElementType::DET_DOUBLE;
 	}
 };
 

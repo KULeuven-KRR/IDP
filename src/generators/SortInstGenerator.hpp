@@ -35,7 +35,7 @@ public:
 		_reset = true;
 	}
 
-	void setVarsAgain(){
+	void setVarsAgain() {
 		*_var = *_curr;
 	}
 
@@ -51,6 +51,12 @@ public:
 		} else {
 			*_var = *_curr;
 		}
+	}
+
+	virtual void put(std::ostream& stream) {
+		pushtab();
+		stream << "generator for sort: " << toString(_table);
+		poptab();
 	}
 };
 

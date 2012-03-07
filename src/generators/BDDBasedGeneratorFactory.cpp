@@ -275,6 +275,10 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 				atom = graphFunction(atom, ft, atom->subterms()[0]);
 			}
+			//If the symbol still is "=/2", we need to call recursively.  This means there were nested functions. (ex =(+(z,+(x,y)),0))
+			if (atom->symbol()->name() == "=/2") {
+				return createFromPredForm(atom, pattern, vars, atomvars, structure, inverse, universe);
+			}
 		}
 
 		// NOTE should now have a predicate formula which is allinput or does not contain equality
@@ -588,7 +592,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		vector<const DomElemContainer*> univgenvars;
 		vector<SortTable*> univgentables;
 		for (unsigned int n = 0; n < quantdata.pattern.size(); ++n) {
-			if (quantdata.pattern[n] == Pattern::OUTPUT) {
+			if (quantdata.pattern[n] == Pattern::INPUT) {
 				univgenvars.push_back(quantdata.vars[n]);
 				univgentables.push_back(quantdata.universe.tables()[n]);
 			}
