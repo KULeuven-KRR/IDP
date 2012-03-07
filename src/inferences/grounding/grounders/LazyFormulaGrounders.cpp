@@ -272,3 +272,56 @@ void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headarg
 
 	restoreOrigVars(originst, boundvarinstlist);
 }
+
+
+LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(const PredForm* pfone, const PredForm* pftwo, Context context, const var2dommap& varmapping,
+		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
+		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pfone->symbol(), context, -1, groundtheory), _subgrounder(sub) {
+	if(verbosity()>2){
+		clog <<"Delaying the grounding " <<sub->printFormula() <<" on " <<toString(pfone) <<" and " <<toString(pftwo) <<".\n";
+	}
+	// TODO INCORRECT IF THERE ARE SHARED VARIABLES!
+	for(auto i=pfone->args().cbegin(); i<pfone->args().cend(); ++i) {
+		auto var = dynamic_cast<VarTerm*>(*i)->var();
+		_varcontainers.push_back(varmapping.at(var));
+	}
+	for(auto i=pftwo->args().cbegin(); i<pftwo->args().cend(); ++i) {
+		auto var = dynamic_cast<VarTerm*>(*i)->var();
+		_varcontainers.push_back(varmapping.at(var));
+	}
+}
+
+void LazyTwinDelayUnivGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
+}
+
+// set the variable instantiations
+dominstlist LazyTwinDelayUnivGrounder::createInst(const ElementTuple& args) {
+	dominstlist domlist;
+	for (size_t i = 0; i < args.size(); ++i) {
+		domlist.push_back(dominst { _varcontainers[i], args[i] });
+	}
+	return domlist;
+}
+
+void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
+	Assert(head!=_true && head!=_false);
+
+	_seen.push_back(headargs);
+
+	for(auto other = _seen.cbegin(); other<_seen.cend(); ++other){
+		auto tuple = headargs;
+		tuple.insert(tuple.end(), headargs.cbegin(), headargs.cend());
+
+		dominstlist boundvarinstlist = createInst(tuple);
+
+		vector<const DomainElement*> originst;
+		overwriteVars(originst, boundvarinstlist);
+
+		ConjOrDisj formula;
+		_subgrounder->run(formula);
+		addToGrounding(Grounder::getGrounding(), formula);
+
+		restoreOrigVars(originst, boundvarinstlist);
+	}
+}

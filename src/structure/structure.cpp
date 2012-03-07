@@ -4607,7 +4607,9 @@ void Structure::autocomplete() {
 					if(dynamic_cast<AllIntegers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
 						continue;
 					}
-					if(dynamic_cast<AllNaturalNumbers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
+					if(dynamic_cast<AllNaturalNumbers*>(kst->internTable())!=NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int>-1){
 						continue;
 					}
 					if (st->approxFinite()) {

@@ -134,4 +134,28 @@ protected:
 	void doGround(const Lit& boundlit, const ElementTuple& args);
 };
 
+class LazyTwinDelayUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
+private:
+	std::vector<ElementTuple> _seen;
+
+	bool _isGrounding;
+	std::vector<const DomElemContainer*> _varcontainers;
+	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
+
+	FormulaGrounder* _subgrounder;
+
+public:
+	LazyTwinDelayUnivGrounder(const PredForm* pfone, const PredForm* pftwo, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+
+	virtual void run(ConjOrDisj& formula) const;
+
+protected:
+	FormulaGrounder* getSubGrounder() const{
+		return _subgrounder;
+	}
+
+	dominstlist createInst(const ElementTuple& args);
+	void doGround(const Lit& boundlit, const ElementTuple& args);
+};
+
 #endif /* LAZYQUANTGROUNDER_HPP_ */

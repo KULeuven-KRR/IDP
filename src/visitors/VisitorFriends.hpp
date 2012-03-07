@@ -83,6 +83,7 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestThreeValuedTerms;\
 		friend class UnnestHeadTermsContainingVars;\
 		friend class FindUnknownBoundLiteral;\
+		friend class FindDoubleDelayLiteral;\
 		friend class SplitIntoMonotoneAgg;
 
 class AbstractTheory;

@@ -321,7 +321,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	// TODO currently not both
 
 	if (getOption(BoolType::GROUNDLAZILY)) {
-		tmptheory = FormulaUtils::pushQuantifiers(tmptheory);
+	//	tmptheory = FormulaUtils::pushQuantifiers(tmptheory);
 		// FIXME this introduces sometimes a boolform with only one subformula. This is not wrong, but seems to be no longer treated as toplevel then when it IS a conjunction.
 		// so fix it on both places (do not make the boolform, but also treat it correctly if it happens)
 	}
@@ -705,9 +705,16 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	auto newqf = tempqf == NULL ? qf : tempqf;
 
 	const PredForm* delayablepf = NULL;
+	const PredForm* twindelayablepf = NULL;
 	Context lazycontext = Context::BOTH;
 	if (getOption(BoolType::GROUNDLAZILY)) {
-		delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+		if(tuple.size()!=2){
+			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+		}else{
+			delayablepf = tuple[0];
+			twindelayablepf = tuple[1];
+		}
 	}
 
 	// Visit subformula
@@ -722,7 +729,11 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	FormulaGrounder* grounder = NULL;
 	if (getOption(BoolType::GROUNDLAZILY)) {
 		if (delayablepf != NULL) {
-			grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), _grounding, subgrounder, getContext());
+			if(twindelayablepf!=NULL){
+				grounder = new LazyTwinDelayUnivGrounder(delayablepf, twindelayablepf, lazycontext, varmapping(), _grounding, subgrounder, getContext());
+			}else{
+				grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), _grounding, subgrounder, getContext());
+			}
 		}
 	}
 	if (grounder==NULL) {

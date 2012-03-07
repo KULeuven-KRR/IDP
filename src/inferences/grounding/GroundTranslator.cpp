@@ -133,6 +133,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 }
 
 bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const {
+	hier moet het sign erbij: er mag oneindig veel hetzelfde gewatcht worden als het altijd positief/negatief is!
 	auto symbolID = getSymbol(pfs);
 	if(symbolID==-1){
 		return false;
