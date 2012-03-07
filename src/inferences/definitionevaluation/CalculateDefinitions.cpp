@@ -29,7 +29,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 
-	auto symstructure = generateNaiveApproxBounds(&theory, structure);
+	//auto symstructure = generateNaiveApproxBounds(&theory, structure);
+	auto symstructure = generateApproxBounds(&theory, structure);
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
