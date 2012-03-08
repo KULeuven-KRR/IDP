@@ -549,7 +549,16 @@ vector<TheoryComponent*> Theory::components() const {
 		stc.push_back(*it);
 	}
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		stc.push_back(*it);
+		auto quantform = dynamic_cast<QuantForm*>(*it);
+		if(quantform!=NULL && quantform->isUniv()){
+			stc.push_back(*it);
+		}
+	}
+	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
+		auto quantform = dynamic_cast<QuantForm*>(*it);
+		if(quantform==NULL || not quantform->isUniv()){
+			stc.push_back(*it);
+		}
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
 		stc.push_back(*it);

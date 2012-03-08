@@ -7,6 +7,7 @@ vocabulary V{
 	Path(Vtx, Vtx)
 }
 theory T:V{
+	// ISSUE: no good bdds yet
 	{ 
 		Path(a,x) <-  Edge(a,x).
 		Path(a,x) <-  Path(a,y) & Edge(y,x).

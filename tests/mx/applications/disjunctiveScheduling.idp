@@ -1,0 +1,41 @@
+procedure main(){
+	stdoptions.groundlazily=true
+	stdoptions.groundverbosity=1
+	stdoptions.satverbosity=10
+	print(modelexpandpartial(T, S))
+}
+vocabulary V{
+	type Id
+	type Duration isa int
+	type Tm isa int
+	Task(Id,Duration)
+	Prec(Id,Id)
+	Est(Id,Tm)
+	Let(Id,Tm)
+	Disj(Id,Id)
+
+	Time(Id,Tm)
+
+	SymDisj(Id,Id)
+	Pst(Id,Tm)
+	Split(Id,Tm)
+}
+theory T:V{
+	 { Pst(id,t) <- Est(id,est) & Let(id,let) & Task(id,dur) & t >= est & t =< let - dur.	}
+	 
+	 !id tm: Time(id,tm) => Pst(id,tm).
+
+	!id: ? tm : Time(id,tm).
+	
+	//!id tm1 tm2: Time(id,tm1) & Time(id,tm2) =>tm1=tm2.
+
+	//! id1 id2 stm1 stm2 dur1 : Prec(id1,id2) & Time(id1,stm1) & Time(id2,stm2) & Task(id1,dur1) => stm1 + dur1 =< stm2.
+
+	//{ SymDisj(id1,id2) <- Disj(id1,id2) | Disj(id2,id1). }
+	
+	//!id1 stm2: Split(id1,stm2) | !id2: ~SymDisj(id1,id2) | ~Time(id2,stm2). 
+	//! id1 id2 stm2 : ~SymDisj(id1,id2) | ~Time(id2,stm2) | Split(id1,stm2). // TODO issue with order of grounding here!
+	
+	//! id1 stm1 stm2 dur1 : ~Split(id1,stm2) | ~Time(id1,stm1) | stm1 > stm2 | ~Task(id1,dur1) | stm1 + dur1 =< stm2.
+}
+structure S:V{

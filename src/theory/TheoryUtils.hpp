@@ -85,6 +85,7 @@ bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
 const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context);
+/** Returns an empty set if no such delay was possible **/
 std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context);
 
 /** Derive sorts in the given formula **/

@@ -13,25 +13,28 @@
 
 #include "FormulaGrounders.hpp"
 
-class LazyGroundingManager{
+class LazyGroundingManager {
 private:
 	mutable bool currentlyGrounding; // If true, groundMore is currently already on the stack, so do not call it again!
 	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground; // Stack of what we still have to ground
 
 public:
-	LazyGroundingManager():currentlyGrounding(false){}
+	LazyGroundingManager()
+			: currentlyGrounding(false) {
+	}
 	void groundMore() const;
 
 	void notifyDelayTriggered(ResidualAndFreeInst* instance) const;
 };
 
-class LazyGrounder: public ClauseGrounder{
+class LazyGrounder: public ClauseGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
 	LazyGroundingManager lazyManager;
 public:
 	LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
-	virtual ~LazyGrounder(){}
+	virtual ~LazyGrounder() {
+	}
 	bool groundMore(ResidualAndFreeInst* instance) const;
 
 protected:
@@ -41,7 +44,8 @@ protected:
 	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const = 0;
 	virtual void increment(ResidualAndFreeInst* instance) const = 0;
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const = 0;
-	virtual void initializeGroundMore(ResidualAndFreeInst*) const {}
+	virtual void initializeGroundMore(ResidualAndFreeInst*) const {
+	}
 };
 
 class LazyQuantGrounder: public LazyGrounder {
@@ -50,7 +54,8 @@ private:
 	InstGenerator* _generator;
 	InstChecker* _checker;
 public:
-	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct);
+	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
+			InstChecker* checker, const GroundingContext& ct);
 
 protected:
 	virtual bool grounderIsEmpty() const;
@@ -60,7 +65,7 @@ protected:
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
 	virtual void initializeGroundMore(ResidualAndFreeInst* instance) const;
 
-	FormulaGrounder* getSubGrounder() const{
+	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
 	}
 };
@@ -69,7 +74,8 @@ class LazyBoolGrounder: public LazyGrounder {
 private:
 	std::vector<Grounder*> _subgrounders;
 public:
-	LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj, const GroundingContext& ct);
+	LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
+			const GroundingContext& ct);
 
 protected:
 	virtual bool grounderIsEmpty() const;
@@ -83,36 +89,50 @@ protected:
 	}
 };
 
-class LazyUnknBoundGrounder{
+class DelayGrounder {
 private:
 	unsigned int _id;
+	Context _context;
 
 	bool _isGrounding;
 	std::queue<std::pair<Lit, ElementTuple>> _stilltoground;
 
-	Context _context;
-
 	AbstractGroundTheory* _grounding;
+
+	std::vector<std::pair<int, int> > sameargs; // a list of indices into the head terms which are the same variables
 
 public:
 	// @precondition: two IDs HAVE to be different if referring to an instance of a symbol in a DIFFERENT definition (if it is a head)
 	//		it HAS to be -1 if it is not a head occurrence
 	// 		in all other cases, they should preferably be equal
-	LazyUnknBoundGrounder(PFSymbol* symbol, Context context, unsigned int id, AbstractGroundTheory* gt);
-	virtual ~LazyUnknBoundGrounder(){}
-	void ground(const Lit& boundlit, const ElementTuple& args);
-	void notify(const Lit& boundlit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders);
+	DelayGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, unsigned int id, AbstractGroundTheory* gt);
+	virtual ~DelayGrounder() {
+	}
 
-	unsigned int getID() const { return _id; }
+	void ground(const Lit& boundlit, const ElementTuple& args);
+	void notify(const Lit& boundlit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders);
+
+	unsigned int getID() const {
+		return _id;
+	}
+	Context getContext() const {
+		return _context;
+	}
 
 protected:
-	AbstractGroundTheory* getGrounding() const { return _grounding; }
+	AbstractGroundTheory* getGrounding() const {
+		return _grounding;
+	}
+
+	const std::vector<std::pair<int, int> >& getSameargs() const{
+		return sameargs;
+	}
 
 	void doGrounding();
 	virtual void doGround(const Lit& boundlit, const ElementTuple& args) = 0;
 };
 
-class LazyUnknUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
+class LazyUnknUnivGrounder: public FormulaGrounder, public DelayGrounder {
 private:
 	bool _isGrounding;
 	std::vector<const DomElemContainer*> _varcontainers;
@@ -121,12 +141,13 @@ private:
 	FormulaGrounder* _subgrounder;
 
 public:
-	LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+	LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub,
+			const GroundingContext& ct);
 
 	virtual void run(ConjOrDisj& formula) const;
 
 protected:
-	FormulaGrounder* getSubGrounder() const{
+	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
 	}
 
@@ -134,7 +155,7 @@ protected:
 	void doGround(const Lit& boundlit, const ElementTuple& args);
 };
 
-class LazyTwinDelayUnivGrounder: public FormulaGrounder, public LazyUnknBoundGrounder {
+class LazyTwinDelayUnivGrounder: public FormulaGrounder, public DelayGrounder {
 private:
 	std::vector<ElementTuple> _seen;
 
@@ -145,12 +166,13 @@ private:
 	FormulaGrounder* _subgrounder;
 
 public:
-	LazyTwinDelayUnivGrounder(const PredForm* pfone, const PredForm* pftwo, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
+	LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory,
+			FormulaGrounder* sub, const GroundingContext& ct);
 
 	virtual void run(ConjOrDisj& formula) const;
 
 protected:
-	FormulaGrounder* getSubGrounder() const{
+	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
 	}
 

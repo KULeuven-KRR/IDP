@@ -64,7 +64,7 @@ private:
 	InstGenerator* _bodygenerator;
 	GroundingContext _context;
 
-protected:
+public:
 	HeadGrounder* headgrounder() const {
 		return _headgrounder;
 	}

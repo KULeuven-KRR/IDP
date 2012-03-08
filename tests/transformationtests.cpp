@@ -11,6 +11,8 @@
 #include "gtest/gtest.h"
 #include "cppinterface.hpp"
 
+#include <iostream>
+
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
 
@@ -539,9 +541,9 @@ TEST(FindUnknTest,QuantFormula) {
 	ASSERT_EQ(predform, &pf_p);
 }
 
-class TestGrounder: public LazyUnknBoundGrounder{
+class TestGrounder: public DelayGrounder{
 public:
-	TestGrounder(PFSymbol* symbol):LazyUnknBoundGrounder(symbol, Context::BOTH, -1, new GroundTheory<GroundPolicy>(NULL)){
+	TestGrounder(PredForm& pred, Context context):DelayGrounder(pred.symbol(), pred.args(), context, -1, new GroundTheory<GroundPolicy>(NULL)){
 
 	}
 	void doGround(const Lit& boundlit, const ElementTuple& args) {
@@ -561,14 +563,14 @@ TEST(FindUnknTest,QuantFormulaFirstWatched) {
 	add(voc, {s});
 	add(voc, {p.p(), r.p(), q.p()});
 
-	GroundTranslator translator;
-	TestGrounder grounder(p.p());
-	translator.notifyDelayUnkn(p.p(), &grounder);
-	ASSERT_TRUE(translator.isAlreadyDelayedOnDifferentID(p.p(), -1));
-
 	auto& pf_p = p({x,y});
 	auto& pf_q = not q({x,y});
 	auto& formula = all({x, y}, pf_p | pf_q | r({x,y}));
+
+	GroundTranslator translator;
+	TestGrounder grounder(pf_p, Context::BOTH);
+	translator.notifyDelay(p.p(), &grounder);
+	ASSERT_TRUE(not translator.canBeDelayedOn(p.p(), Context::BOTH, -1));
 
 	Context context = Context::BOTH;
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
@@ -593,4 +595,44 @@ TEST(FindUnknTest,QuantFormulaPred) {
 	Context context = Context::BOTH;
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ(predform, &pf_p);
+}
+
+TEST(FindUnknTest,WithMultipleMono) {
+	auto s = sort("S",-2,2);
+	auto p = pred("P",{s});
+
+	auto voc = new Vocabulary("V");
+	add(voc, {s});
+	add(voc, {p.p()});
+
+	GroundTranslator translator;
+
+	auto x1 = var(s);
+	auto x2 = var(s);
+	auto& p1 = p({x1});
+	auto& p2 = p({x2});
+	auto& formula1 = all({x1}, p1);
+	auto& formula2 = exists({x2}, p2);
+
+	Context context;
+	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula1, NULL, &translator, context);
+	ASSERT_EQ(predform, &p1);
+	ASSERT_EQ(context, Context::POSITIVE);
+
+	TestGrounder grounder(p1, context);
+	translator.notifyDelay(p.p(), &grounder);
+	ASSERT_TRUE(translator.canBeDelayedOn(p.p(), Context::POSITIVE, -1));
+	ASSERT_FALSE(translator.canBeDelayedOn(p.p(), Context::NEGATIVE, -1));
+	ASSERT_FALSE(translator.canBeDelayedOn(p.p(), Context::BOTH, -1));
+
+	auto predform2 = FormulaUtils::findUnknownBoundLiteral(&formula2, NULL, &translator, context);
+	ASSERT_EQ(context, Context::POSITIVE);
+	ASSERT_EQ(predform2, &p2);
+
+	TestGrounder grounder2(p2, context);
+	translator.notifyDelay(p.p(), &grounder2);
+
+	auto& formula3 = exists({x2}, not p2);
+	auto predform3 = FormulaUtils::findUnknownBoundLiteral(&formula3, NULL, &translator, context);
+	ASSERT_TRUE(predform3==NULL);
 }

@@ -100,6 +100,8 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
 				fixpoint = false;
+				//cerr <<"Current structure after evaluating a definition: \n";
+				//cerr <<toString(structure) <<"\n";
 			}
 		}
 	}

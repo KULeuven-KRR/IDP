@@ -208,7 +208,7 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 
 LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping,
 		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
-		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), context, -1, groundtheory), _subgrounder(sub) {
+		FormulaGrounder(groundtheory, ct), DelayGrounder(pf->symbol(), pf->args(), context, -1, groundtheory), _subgrounder(sub) {
 	if(verbosity()>2){
 		clog <<"Delaying the grounding " <<sub->printFormula() <<" on " <<toString(pf) <<".\n";
 	}
@@ -231,28 +231,55 @@ dominstlist LazyUnknUnivGrounder::createInst(const ElementTuple& args) {
 	return domlist;
 }
 
-LazyUnknBoundGrounder::LazyUnknBoundGrounder(PFSymbol* symbol, Context context, unsigned int id, AbstractGroundTheory* gt) :
-		_id(id), _isGrounding(false), _context(context), _grounding(gt) {
-	Assert(gt!=NULL);
-	getGrounding()->translator()->notifyDelayUnkn(symbol, this);
+
+
+// Returns a list of indices in List which contain the same variable
+std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms){
+	std::vector<pair<int, int> > sameargs;
+	std::map<Variable*, int> vartofirstocc;
+	int index = 0;
+	for(auto i=terms.cbegin(); i<terms.cend(); ++i, ++index){
+		auto varterm = dynamic_cast<VarTerm*>(*i);
+		if(varterm==NULL){ // If not a var, it cannot contain free variables!
+			Assert((*i)->freeVars().size()==0);
+			continue;
+		}
+
+		auto first = vartofirstocc.find(varterm->var());
+		if(first==vartofirstocc.cend()){
+			vartofirstocc[varterm->var()] = index;
+		}else{
+			sameargs.push_back({first->second, index});
+		}
+	}
+	return sameargs;
 }
 
-void LazyUnknBoundGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders) {
+
+DelayGrounder::DelayGrounder(PFSymbol* symbol, const vector<Term*>& terms, Context context, unsigned int id, AbstractGroundTheory* gt) :
+		_id(id), _isGrounding(false), _context(context), _grounding(gt) {
+	Assert(gt!=NULL);
+	getGrounding()->translator()->notifyDelay(symbol, this);
+	sameargs = findSameArgs(terms);
+}
+
+void DelayGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders) {
 	getGrounding()->notifyUnknBound(_context, lit, args, grounders);
 }
 
-void LazyUnknBoundGrounder::ground(const Lit& boundlit, const ElementTuple& args) {
+void DelayGrounder::ground(const Lit& boundlit, const ElementTuple& args) {
 	_stilltoground.push( { boundlit, args });
 	if (not _isGrounding) {
 		doGrounding();
 	}
 }
 
-void LazyUnknBoundGrounder::doGrounding() {
+void DelayGrounder::doGrounding() {
 	_isGrounding = true;
 	while (not _stilltoground.empty()) {
 		auto elem = _stilltoground.front();
 		_stilltoground.pop();
+
 		doGround(elem.first, elem.second);
 	}
 	_isGrounding = false;
@@ -260,6 +287,12 @@ void LazyUnknBoundGrounder::doGrounding() {
 
 void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
+
+	for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
+		if(headargs[i->first]!=headargs[i->second]){
+			continue;
+		}
+	}
 
 	dominstlist boundvarinstlist = createInst(headargs);
 
@@ -273,20 +306,19 @@ void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headarg
 	restoreOrigVars(originst, boundvarinstlist);
 }
 
-
-LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(const PredForm* pfone, const PredForm* pftwo, Context context, const var2dommap& varmapping,
+// @Precon: terms should be first those of the first predform, followed by those of the second
+LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping,
 		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
-		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pfone->symbol(), context, -1, groundtheory), _subgrounder(sub) {
-	if(verbosity()>2){
-		clog <<"Delaying the grounding " <<sub->printFormula() <<" on " <<toString(pfone) <<" and " <<toString(pftwo) <<".\n";
+		FormulaGrounder(groundtheory, ct), DelayGrounder(symbol, terms, context, -1, groundtheory), _subgrounder(sub) {
+	if(verbosity()>1){
+		clog <<"Delaying the grounding " <<sub->printFormula() <<" on " <<"TODO" <<" and " <<"TODO" <<".\n"; // TODO
 	}
-	// TODO INCORRECT IF THERE ARE SHARED VARIABLES!
-	for(auto i=pfone->args().cbegin(); i<pfone->args().cend(); ++i) {
+	for(auto i=terms.cbegin(); i<terms.cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
-		_varcontainers.push_back(varmapping.at(var));
-	}
-	for(auto i=pftwo->args().cbegin(); i<pftwo->args().cend(); ++i) {
-		auto var = dynamic_cast<VarTerm*>(*i)->var();
+		Assert(var!=NULL);
+		//cerr <<"Searching " <<toString(var) <<" in " <<toString(varmapping) <<"\n";
+		//cerr <<"Searching " <<var <<"\n";
+		Assert(varmapping.find(var)!=varmapping.cend());
 		_varcontainers.push_back(varmapping.at(var));
 	}
 }
@@ -312,6 +344,13 @@ void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& he
 	for(auto other = _seen.cbegin(); other<_seen.cend(); ++other){
 		auto tuple = headargs;
 		tuple.insert(tuple.end(), headargs.cbegin(), headargs.cend());
+
+		// If multiple vars are the same, checks that their instantiation are also the same!
+		for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
+			if(tuple[i->first]!=tuple[i->second]){
+				continue;
+			}
+		}
 
 		dominstlist boundvarinstlist = createInst(tuple);
 

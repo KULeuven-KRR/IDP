@@ -44,9 +44,10 @@ public:
 		_context = Context::POSITIVE;
 		t->accept(this);
 		if(_resultingliteral2!=NULL){
-			context = not _resultingContext;
+			context = _resultingContext;
+			return {_resultingliteral, _resultingliteral2};
 		}
-		return {_resultingliteral, _resultingliteral2};
+		return {};
 	}
 
 protected:
@@ -66,7 +67,11 @@ protected:
 		_context = tempcontext;
 	}
 	virtual void visit(const PredForm* pf){
-		if(_translator->isAlreadyDelayedOnDifferentID(pf->symbol(), -1)){
+		auto context = _context;
+		if(isNeg(pf->sign())){
+			context = not context;
+		}
+		if(not _translator->canBeDelayedOn(pf->symbol(), context, -1)){
 			return;
 		}
 		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
@@ -76,12 +81,9 @@ protected:
 
 		if(_resultingliteral==NULL){
 			_resultingliteral = pf;
-			_resultingContext = _context;
-			if(isNeg(pf->sign())){
-				_resultingContext = not _resultingContext;
-			}
+			_resultingContext = context;
 		}else{
-			if(_resultingliteral->symbol()!=pf->symbol() && _resultingliteral->sign()==pf->sign()){
+			if(_resultingliteral->symbol()!=pf->symbol() || _resultingliteral->sign()!=pf->sign()){
 				return;
 			}
 			_allquantvars = true;

@@ -10,10 +10,9 @@ vocabulary V{
 	NoOverlap(Id, Id)
 }
 theory T:V{
-	// ISSUE HERE: only watching one literal as unknown bound is not enough to prevent propagation from a true literal to all others false
-	// instead what would be required is to trigger only when TWO true literals have been found and then add the associated formula.
-	// In the current fashion, it will always decide all XPos!
+	// ISSUE: Cannot handle shared delay variables yet
 	!id x x2: ~XPos(id, x) | ~XPos(id, x2) | x=x2.
+	// ISSUE: Cannot handle multiple types of quantifiers yet
 	!id: ?x: XPos(id, x).
 }
 structure S:V{
@@ -24,7 +23,7 @@ structure S:V{
 	Size = {1->3; 2->3; 3->3}
 }
 procedure main(){
-	stdoptions.groundverbosity=0
+	stdoptions.groundverbosity=2
 	stdoptions.satverbosity=0
 	stdoptions.groundlazily=true
 	print(modelexpandpartial(T, S))

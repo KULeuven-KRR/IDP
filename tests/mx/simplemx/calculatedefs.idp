@@ -1,0 +1,18 @@
+procedure getExpectedNbOfModels(){
+	return 0
+}
+vocabulary V{
+	type Tm isa int
+	Time(Tm)
+	Pst(Tm)
+}
+theory T:V{
+	{ Pst(t) <- false. }
+
+	!tm: Time(tm) => Pst(tm).
+
+	?tm : Time(tm).
+}
+structure S:V{
+	Tm = {1..3}
+}

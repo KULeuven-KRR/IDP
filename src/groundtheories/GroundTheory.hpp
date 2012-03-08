@@ -57,7 +57,7 @@ public:
 
 	virtual void addOptimization(AggFunction function, int setid);
 
-	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
+	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 	std::ostream& put(std::ostream& s) const;

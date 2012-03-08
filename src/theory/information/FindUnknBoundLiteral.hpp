@@ -42,7 +42,7 @@ public:
 		_context = Context::POSITIVE;
 		t->accept(this);
 		if(_resultingliteral!=NULL){
-			context = not _resultingContext;
+			context = _resultingContext;
 		}
 		return _resultingliteral;
 	}
@@ -64,7 +64,11 @@ protected:
 		_context = tempcontext;
 	}
 	virtual void visit(const PredForm* pf){
-		if(_translator->isAlreadyDelayedOnDifferentID(pf->symbol(), -1)){
+		auto context = _context;
+		if(isNeg(pf->sign())){
+			context = not context;
+		}
+		if(not _translator->canBeDelayedOn(pf->symbol(), context, -1)){
 			return;
 		}
 		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
@@ -78,7 +82,7 @@ protected:
 		}
 		if(_allquantvars && _containingquantvars.size()==_quantvars.size()){
 			_resultingliteral = pf;
-			_resultingContext = _context;
+			_resultingContext = context;
 		}
 		return;
 	}

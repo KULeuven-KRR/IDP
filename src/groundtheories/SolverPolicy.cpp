@@ -354,10 +354,10 @@ class LazyRuleMon: public MinisatID::LazyGroundingCommand {
 private:
 	Lit lit;
 	ElementTuple args;
-	std::vector<LazyUnknBoundGrounder*> grounders;
+	std::vector<DelayGrounder*> grounders;
 
 public:
-	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders)
+	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders)
 			: lit(lit), args(args), grounders(grounders) {
 	}
 
@@ -372,13 +372,13 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context context, const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
 
 template<>
-void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
+void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
 	auto mon = new LazyRuleMon(delaylit, args, grounders);
 	auto literal = createLiteral(delaylit);
-	if(context==Context::NEGATIVE){
+	if(context==Context::POSITIVE){ // In a positive context, should watch when the literal becomes false, or it's negation becomes true
 		literal = not literal;
 	}
 	MinisatID::LazyGroundLit lc(context==Context::BOTH, literal, mon);
