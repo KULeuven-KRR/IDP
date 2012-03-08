@@ -13,28 +13,34 @@
 
 #include <set>
 #include "InstGenerator.hpp"
+#include "structure/structure.hpp"
 
 /**
  * Generate all y such that such that ?x phi(x,y) is true.
  * (y might be input or output)
  * Given are:
- * 	* A generator for all x (INCLUDED IN UNIVERSE!)
- * 	* A generator for all output y
- * 	* A checker which returns true if phi(x,y) is true.
+ * 	* A generator which returns all tuples (x,y) such that phi(x,y) is true.
+ * He keeps a set of all y he has already generated; to avoid doubles...
  */
-//TODO: for the moment, the quantVarGenerator is not included.  This has as consequence that the generate might generate some things more than once.
-//This might cause troubles when we are working with aggregates for example.
-//However, naively running over all x and checking every time might not be the most efficient solution!
+
 class TrueQuantKernelGenerator: public InstGenerator {
 private:
-	//InstGenerator* _quantVarGenerator;
-	InstGenerator* _universeGenerator;
-	InstChecker* _quantKernelTrueChecker;
+	InstGenerator* _subBddTrueGenerator;
+	set<ElementTuple, Compare<ElementTuple> > _alreadySeen;
+	vector<const DomElemContainer*> _outvars;
 	bool _reset;
 
+	ElementTuple getDomainElements() {
+		auto tuple = vector<const DomainElement*>(_outvars.size());
+		for (int i = 0; i < _outvars.size(); ++i) {
+			tuple[i] = _outvars[i]->get();
+		}
+		return tuple;
+	}
+
 public:
-	TrueQuantKernelGenerator(/*InstGenerator* quantVarGenerator,*/ InstGenerator* universegenerator, InstChecker* bddtruechecker) :
-			/*_quantVarGenerator(quantVarGenerator),*/ _universeGenerator(universegenerator), _quantKernelTrueChecker(bddtruechecker) {
+	TrueQuantKernelGenerator(InstGenerator* subBddTrueGenerator, vector<const DomElemContainer*> outvars)
+			: _subBddTrueGenerator(subBddTrueGenerator), _outvars(outvars), _alreadySeen() {
 	}
 
 	// FIXME reimplemnt clone
@@ -44,8 +50,9 @@ public:
 
 	void reset() {
 		_reset = true;
-		_universeGenerator->begin();
-		if (_universeGenerator->isAtEnd()) {
+		_alreadySeen.clear();
+		_subBddTrueGenerator->begin();
+		if (_subBddTrueGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
@@ -54,20 +61,22 @@ public:
 		if (_reset) {
 			_reset = false;
 		} else {
-			_universeGenerator->operator ++();
+			_subBddTrueGenerator->operator ++();
 		}
-
-		for (; not _universeGenerator->isAtEnd() && not _quantKernelTrueChecker->check() ; _universeGenerator->operator ++()) {
-			//for(_quantVarGenerator->begin();not _quantVarGenerator->isAtEnd();_quantVarGenerator->operator ++()){
-			//}
+		for (; not _subBddTrueGenerator->isAtEnd(); _subBddTrueGenerator->operator ++()) {
+			auto elements = getDomainElements();
+			if (_alreadySeen.find(elements) == _alreadySeen.cend()) {
+				_alreadySeen.insert(elements);
+				return;
+			}
 		}
-		if (_universeGenerator->isAtEnd()) {
+		if (_subBddTrueGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
 	virtual void put(std::ostream& stream) {
 		pushtab();
-		stream << "all true instances of: " << nt() << toString(_quantKernelTrueChecker);
+		stream << "all true instances of: " << nt() << toString(_subBddTrueGenerator);
 		poptab();
 	}
 

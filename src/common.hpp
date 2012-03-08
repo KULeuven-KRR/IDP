@@ -100,6 +100,21 @@ std::string toString(const std::set<Type>& v) {
 	return ss.str();
 }
 
+template<typename Type, typename CompareType>
+std::string toString(const std::set<Type, CompareType>& v) {
+	std::stringstream ss;
+	ss << "{";
+	for (auto obj = v.cbegin(); obj != v.cend();) {
+		ss << toString(*obj);
+		++obj;
+		if (obj != v.cend()) {
+			ss << ", ";
+		}
+	}
+	ss << "}";
+	return ss.str();
+}
+
 template<typename Type1, typename Type2>
 std::string toString(const std::map<Type1, Type2>& v) {
 	std::stringstream ss;
