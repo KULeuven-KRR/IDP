@@ -29,7 +29,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 
-	auto symstructure = generateNaiveApproxBounds(&theory, structure);
+	auto symstructure = generateBounds(&theory, structure);
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
@@ -100,6 +100,8 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
 				fixpoint = false;
+				//cerr <<"Current structure after evaluating a definition: \n";
+				//cerr <<toString(structure) <<"\n";
 			}
 		}
 	}

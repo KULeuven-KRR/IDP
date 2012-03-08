@@ -23,8 +23,8 @@
 
 using namespace std;
 
-FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct), _origform(NULL) {
+FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct) :
+		Grounder(grounding, ct), _origform(NULL) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
@@ -79,24 +79,24 @@ std::string FormulaGrounder::printFormula() const {
 		return "";
 	}
 	stringstream ss;
-	ss <<toString(_origform);
+	ss << toString(_origform);
 	if (not _origform->freeVars().empty()) {
-		ss <<"[";
+		ss << "[";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			ss << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
 			ss << toString(e) << ',';
 		}
-		ss <<"]";
+		ss << "]";
 	}
 	return ss.str();
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
-		const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
-			_checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
+		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter,
+		const vector<SortTable*>& vst, const GroundingContext& ct) :
+		FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)), _tables(
+				vst), _sign(sign), _checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 }
 
@@ -131,11 +131,11 @@ Lit AtomGrounder::run() const {
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
 				 }*/
-				 if(verbosity() > 2) {
-					 clog <<"Partial function went out of bounds" << nt();
-					 clog <<"Result is " << "false" << nt();
-				 }
-				 return _false;
+				if (verbosity() > 2) {
+					clog << "Partial function went out of bounds" << nt();
+					clog << "Result is " << "false" << nt();
+				}
+				return _false;
 			}
 
 			// Checking out-of-bounds
@@ -184,7 +184,7 @@ Lit AtomGrounder::run() const {
 			}
 			clog << nt();
 		}
-		return  _false;
+		return _false;
 	}
 	if (_inter->isTrue(args)) {
 		if (verbosity() > 2) {
@@ -689,7 +689,7 @@ bool ClauseGrounder::isRedundantInFormula(Lit l) const {
 }
 
 Lit ClauseGrounder::redundantLiteral() const {
-	return conjunctive() == Conn::CONJ?_true:_false;
+	return conjunctive() == Conn::CONJ ? _true : _false;
 }
 
 /**
@@ -713,11 +713,11 @@ bool ClauseGrounder::makesFormulaFalse(Lit l) const {
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
-	return conjunctive() == Conn::CONJ? _true : _false;
+	return conjunctive() == Conn::CONJ ? _true : _false;
 }
 
 bool ClauseGrounder::decidesFormula(Lit lit) const {
-	return conjunctive()==Conn::CONJ? lit==_false : lit==_true;
+	return conjunctive() == Conn::CONJ ? lit == _false : lit == _true;
 }
 
 TsType ClauseGrounder::getTseitinType() const {
@@ -728,7 +728,7 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype
 	return getOneLiteralRepresenting(formula, tseitintype);
 }
 Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const {
-	return getOneLiteralRepresenting(formula, tseitintype==TsType::RULE?TsType::RULE:TsType::EQ);
+	return getOneLiteralRepresenting(formula, tseitintype == TsType::RULE ? TsType::RULE : TsType::EQ);
 }
 
 Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const {
@@ -766,18 +766,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 	if (subformula.literals.size() == 0) {
-		Lit value = subformula.getType() == Conn::CONJ ? _true : _false;
-		if (makesFormulaTrue(value)) {
-			formula.literals = litlist { _true };
-			return FormStat::DECIDED;
-		} else if (makesFormulaFalse(value)) {
-			formula.literals = litlist { _false };
-			return FormStat::DECIDED;
-		} else if (subformula.getType() != formula.getType()) {
-			formula.literals.push_back(value);
-		}
-		return (FormStat::UNKNOWN);
-	} else if (subformula.literals.size() == 1) {
+		subformula.literals.push_back(subformula.getType() == Conn::CONJ ? _true : _false);
+	}
+	if (subformula.literals.size() == 1) {
 		Lit l = subformula.literals[0];
 		if (makesFormulaFalse(l)) {
 			formula.literals = litlist { _false };
@@ -845,6 +836,7 @@ QuantGrounder::~QuantGrounder() {
 void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
+		std::cerr << "conjunctive grounder? "<< toString(conjunctive()==Conn::CONJ);
 		if (_origform != NULL) {
 			pushtab();
 		}
@@ -855,8 +847,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			std::clog << toString(_checker);
-			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
+			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _true : _false };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 				clog << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << nt();
@@ -931,17 +922,17 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		if(context()._conjunctivePathFromRoot){
-			if(isPositive()){
+		if (context()._conjunctivePathFromRoot) {
+			if (isPositive()) {
 				getGrounding()->add(aornotb);
 				getGrounding()->add(notaorb);
-				formula.literals = litlist{_true};
-			}else{
-				getGrounding()->add({left, right});
-				getGrounding()->add({-left, -right});
-				formula.literals = litlist{_false};
+				formula.literals = litlist { _true };
+			} else {
+				getGrounding()->add( { left, right });
+				getGrounding()->add( { -left, -right });
+				formula.literals = litlist { _false };
 			}
-		}else{
+		} else {
 			auto ts1 = translator()->translate(aornotb, false, context()._tseitin);
 			auto ts2 = translator()->translate(notaorb, false, context()._tseitin);
 			formula.literals = litlist { ts1, ts2 };

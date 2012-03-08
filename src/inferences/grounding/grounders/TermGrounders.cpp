@@ -95,9 +95,7 @@ GroundTerm FuncTermGrounder::run() const {
 				clog << "Result = " << *result;
 				poptab();
 				clog << "" << nt();
-			}
-
-			else {
+			} else {
 				if (verbosity() > 2) {
 					clog << "Result = **invalid term**";
 					poptab();
@@ -106,8 +104,8 @@ GroundTerm FuncTermGrounder::run() const {
 			}
 		}
 		return GroundTerm(result);
-
 	}
+
 	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {

@@ -1,0 +1,25 @@
+#include <mx>
+vocabulary V {
+	type Person isa string
+	Smokes(Person)
+	Influence(Person, Person)
+	Friend(Person, Person)
+	Stress(Person)
+}
+theory smokestheory : V {
+	! x y : Influence(x,y) => x ~= y.
+	{
+		Smokes(x) <- Stress(x).
+		Smokes(x) <- Friend(x, y) & Smokes(y) & Influence(y, x).
+	}
+}
+structure S:V {
+	Person = { John; Mary}
+	Friend<ct> = { John, Mary; Mary, John}
+	Stress<ct> = {John}
+}
+procedure main() {
+	stdoptions.nbmodels = 3 // Zoekt naar (maximum) 3 oplossingen
+	models = modelexpand(smokestheory, S)
+	mx::printmodels(models) 
+}

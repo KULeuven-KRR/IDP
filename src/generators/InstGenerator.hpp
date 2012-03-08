@@ -100,7 +100,10 @@ public:
 
 	virtual void setVarsAgain();
 
+	// NOTE: important to always call new XGen(*this); to guarantee that all parent variables are set correctly!
 	virtual InstGenerator* clone() const = 0;
+
+	bool isInitialized() const { return initdone; }
 };
 
 #endif /* INSTGENERATOR_HPP_ */

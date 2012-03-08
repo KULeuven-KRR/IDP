@@ -32,7 +32,7 @@ class AggGroundRule;
 
 class ResidualAndFreeInst;
 class LazyGroundingManager;
-class LazyUnknBoundGrounder;
+class DelayGrounder;
 
 class GroundPolicy {
 private:
@@ -49,7 +49,7 @@ private:
 	}
 
 protected:
-	void polNotifyUnknBound(const Lit&, const ElementTuple&, std::vector<LazyUnknBoundGrounder*>){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
 	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
 
 public:

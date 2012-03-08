@@ -15,46 +15,62 @@
 #include "InstGenerator.hpp"
 
 /**
- * Generate all x such that ?x phi(x) is true.
- * Given is a generator which returns tuples for which phi(x) is false.
+ * Generate all y such that such that ?x phi(x,y) is true.
+ * (y might be input or output)
+ * Given are:
+ * 	* A generator for all x (INCLUDED IN UNIVERSE!)
+ * 	* A generator for all output y
+ * 	* A checker which returns true if phi(x,y) is true.
  */
+//TODO: for the moment, the quantVarGenerator is not included.  This has as consequence that the generate might generate some things more than once.
+//This might cause troubles when we are working with aggregates for example.
+//However, naively running over all x and checking every time might not be the most efficient solution!
 class TrueQuantKernelGenerator: public InstGenerator {
 private:
-	InstGenerator* _quantgenerator;
+	//InstGenerator* _quantVarGenerator;
+	InstGenerator* _universeGenerator;
+	InstChecker* _quantKernelTrueChecker;
+	bool _reset;
+
 public:
-	TrueQuantKernelGenerator(InstGenerator* gen)
-			: _quantgenerator(gen) {
+	TrueQuantKernelGenerator(/*InstGenerator* quantVarGenerator,*/ InstGenerator* universegenerator, InstChecker* bddtruechecker) :
+			/*_quantVarGenerator(quantVarGenerator),*/ _universeGenerator(universegenerator), _quantKernelTrueChecker(bddtruechecker) {
 	}
 
+	// FIXME reimplemnt clone
 	TrueQuantKernelGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
-	}
-
-	bool check() const {
-		return not _quantgenerator->check();
+		throw notyetimplemented("Cloning TrueQuantKernelGenerators.");
 	}
 
 	void reset() {
-		_quantgenerator->begin();
-		if (_quantgenerator->isAtEnd()) {
+		_reset = true;
+		_universeGenerator->begin();
+		if (_universeGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
 
 	void next() {
-		while (not _quantgenerator->isAtEnd()) {
-			_quantgenerator->operator ++();
+		if (_reset) {
+			_reset = false;
+		} else {
+			_universeGenerator->operator ++();
 		}
-		if (_quantgenerator->isAtEnd()) {
+
+		for (; not _universeGenerator->isAtEnd() && not _quantKernelTrueChecker->check() ; _universeGenerator->operator ++()) {
+			//for(_quantVarGenerator->begin();not _quantVarGenerator->isAtEnd();_quantVarGenerator->operator ++()){
+			//}
+		}
+		if (_universeGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
-
 	virtual void put(std::ostream& stream) {
 		pushtab();
-		stream << "generate: TrueQuantKernelGenerator = " << toString(_quantgenerator);
+		stream << "all true instances of: " << nt() << toString(_quantKernelTrueChecker);
 		poptab();
 	}
+
 };
 
 #endif /* TRUEQUANTKERNELGENERATOR_HPP_ */

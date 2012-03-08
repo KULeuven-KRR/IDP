@@ -27,7 +27,7 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
 
 	modes.polarity = MinisatID::POL_STORED;
-	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE) || getOption(BoolType::GROUNDLAZILY)){ // TODO test
+	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE) || getOption(BoolType::GROUNDLAZILY)){
 		modes.polarity = MinisatID::POL_RAND;
 	}
 

@@ -390,6 +390,10 @@ string DomainAtom::toString() const {
 	return sstr.str();
 }
 
+bool isFinite(const tablesize& tsize){
+	return tsize._type==TST_EXACT || tsize._type==TST_APPROXIMATED;
+}
+
 /**
  *	Constructor for a domain element factory. The constructor gets two arguments, 
  *	specifying the range of integer for which creation of domain elements is optimized.
@@ -882,6 +886,9 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 		}
 		_currtuple[n] = *(_curr[n]);
 	}
+	if(_outtable->size(_universe)._size==_universe.size()._size){
+		_end = true;
+	}
 	if (not _end) {
 		if (_outtable->contains(_currtuple, _universe)) {
 			operator++();
@@ -896,6 +903,9 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& cur
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
 		}
+	}
+	if(_outtable->size(_universe)._size==_universe.size()._size){
+		_end = true;
 	}
 }
 
@@ -3027,7 +3037,8 @@ void SortTable::put(std::ostream& stream) const {
  ****************/
 
 PredTable::PredTable(InternalPredTable* table, const Universe& univ)
-		: _table(table), _universe(univ) {
+		: _table(NULL), _universe(univ) {
+	setTable(table);
 	table->incrementRef();
 }
 
@@ -3035,13 +3046,25 @@ PredTable::~PredTable() {
 	_table->decrementRef();
 }
 
+void PredTable::setTable(InternalPredTable* table){
+	/**
+	 * TODO optimize table for size here:
+	 * 		non-inverted table => contains by search in table                    log(|table|)
+	 * 						   => iterate by walking over table                  |table| for |table| results
+	 * 		inverted table     => contains by search in table and in universe    log(|table|) + log(|univ|)
+	 * 		                   => iterate by walk over univ and check with table |univ| * log(|table|) for |univ|-|table| results
+	 * 		                   		==> if table is very large, e.g. another inverted table, then ...
+	 */
+	_table = table;
+}
+
 void PredTable::add(const ElementTuple& tuple) {
 	Assert(arity() == tuple.size());
 	if (_table->contains(tuple, _universe)) {
 		return;
 	}
-	InternalPredTable* temp = _table;
-	_table = _table->add(tuple);
+	auto temp = _table;
+	setTable(_table->add(tuple));
 	if (temp != _table) {
 		temp->decrementRef();
 		_table->incrementRef();
@@ -3053,8 +3076,8 @@ void PredTable::remove(const ElementTuple& tuple) {
 	if (not _table->contains(tuple, _universe)) {
 		return;
 	}
-	InternalPredTable* temp = _table;
-	_table = _table->remove(tuple);
+	auto temp = _table;
+	setTable(_table->remove(tuple));
 	if (temp != _table) {
 		temp->decrementRef();
 		_table->incrementRef();
@@ -3124,6 +3147,14 @@ InternalPredTable* ProcInternalPredTable::remove(const ElementTuple&) {
 
 InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const {
 	return new ProcInternalTableIterator(this, univ);
+}
+
+InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
+		: InternalPredTable(), _invtable(inv) {
+	/*if(dynamic_cast<InverseInternalPredTable*>(inv)!=NULL){
+		cerr <<"Inverting an inverted table\n";
+	}*/
+	inv->incrementRef();
 }
 
 InverseInternalPredTable::~InverseInternalPredTable() {
@@ -3542,25 +3573,33 @@ bool PredInter::isInconsistent(const ElementTuple& tuple) const {
 }
 
 bool PredInter::isConsistent() const {
-	auto ctIterator = _ct->begin();
-	auto cfIterator = _cf->begin();
-
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
 
-	FirstNElementsEqual eq(_ct->arity());
-	StrictWeakNTupleOrdering so(_ct->arity());
-	for (; not ctIterator.isAtEnd(); ++ctIterator) {
+	auto smallest = _ct->size()._size<_cf->size()._size?_ct:_cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
+	auto largest = smallest==_ct?_cf:_ct;
+	auto smallIt = smallest->begin();
+	auto largeIt = largest->begin();
+
+	auto sPossTable = smallest==_ct?_pt:_pf;
+	auto lPossTable = smallest==_ct?_pf:_pt;
+
+	FirstNElementsEqual eq(smallest->arity());
+	StrictWeakNTupleOrdering so(smallest->arity());
+	for (; not smallIt.isAtEnd(); ++smallIt) {
+		CHECKTERMINATION
 		// get unassigned domain element
-		while (not cfIterator.isAtEnd() && so(*cfIterator, *ctIterator)) {
-			Assert(not _pt->contains(*cfIterator));
+		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+			CHECKTERMINATION
+			Assert(sPossTable->size()._size>1000 || not sPossTable->contains(*largeIt)); // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
-			++cfIterator;
+			++largeIt;
 		}
-		if (not cfIterator.isAtEnd() && eq(*cfIterator, *ctIterator)) {
+		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			return false;
-		}Assert(not _pf->contains(*ctIterator));
+		}
+		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));  // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
 	return true;
@@ -4389,34 +4428,34 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 }
 
 void InconsistentStructure::inter(Predicate*, PredInter*) {
-	throw new IdpException("Trying to set the interpretation of a predicate for an inconsistent structure");
+	throw IdpException("Trying to set the interpretation of a predicate for an inconsistent structure");
 }
 void InconsistentStructure::inter(Function*, FuncInter*) {
-	throw new IdpException("Trying to set the interpretation of a functions for an inconsistent structure");
+	throw IdpException("Trying to set the interpretation of a functions for an inconsistent structure");
 }
 
 SortTable* InconsistentStructure::inter(Sort*) const {
-	throw new IdpException("Trying to get the interpretation of a sort in an inconsistent structure");
+	throw IdpException("Trying to get the interpretation of a sort in an inconsistent structure");
 }
 PredInter* InconsistentStructure::inter(Predicate*) const {
-	throw new IdpException("Trying to get the interpretation of a predicate in an inconsistent structure");
+	throw IdpException("Trying to get the interpretation of a predicate in an inconsistent structure");
 }
 FuncInter* InconsistentStructure::inter(Function*) const {
-	throw new IdpException("Trying to get the interpretation of a function in an inconsistent structure");
+	throw IdpException("Trying to get the interpretation of a function in an inconsistent structure");
 }
 PredInter* InconsistentStructure::inter(PFSymbol*) const {
-	throw new IdpException("Trying to get the interpretation of a symbol in an inconsistent structure");
+	throw IdpException("Trying to get the interpretation of a symbol in an inconsistent structure");
 }
 
 const std::map<Predicate*, PredInter*>& InconsistentStructure::getPredInters() const {
-	throw new IdpException("Trying to get the list of interpretations of an inconsistent structure");
+	throw IdpException("Trying to get the list of interpretations of an inconsistent structure");
 }
 const std::map<Function*, FuncInter*>& InconsistentStructure::getFuncInters() const {
-	throw new IdpException("Trying to get the list of interpretations of an inconsistent structure");
+	throw IdpException("Trying to get the list of interpretations of an inconsistent structure");
 }
 
 void InconsistentStructure::makeTwoValued() {
-	throw new IdpException("Cannot make an inconsistent structure two-valued");
+	throw IdpException("Cannot make an inconsistent structure two-valued");
 }
 
 AbstractStructure* InconsistentStructure::clone() const {
@@ -4424,7 +4463,7 @@ AbstractStructure* InconsistentStructure::clone() const {
 }
 
 Universe InconsistentStructure::universe(const PFSymbol*) const {
-	throw new IdpException("Trying to get the universe for a symbol in an inconsistent structure");
+	throw IdpException("Trying to get the universe for a symbol in an inconsistent structure");
 }
 
 bool InconsistentStructure::approxTwoValued() const {
@@ -4483,13 +4522,13 @@ void Structure::autocomplete() {
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
-			const PredTable* pt1 = it->second->ct();
+			auto pt1 = it->second->ct();
 			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
-				const PredTable* pt2 = it->second->cf();
+				auto pt2 = it->second->cf();
 				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->pt();
 				}
@@ -4502,13 +4541,13 @@ void Structure::autocomplete() {
 		if (it->second->funcTable() && sametypeid<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
 			addUNAPattern(it->first);
 		} else {
-			const PredTable* pt1 = it->second->graphInter()->ct();
+			auto pt1 = it->second->graphInter()->ct();
 			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->graphInter()->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
-				const PredTable* pt2 = it->second->graphInter()->cf();
+				auto pt2 = it->second->graphInter()->cf();
 				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->graphInter()->pt();
 				}
@@ -4531,8 +4570,7 @@ void Structure::autocomplete() {
 	for (auto it = invscores.rbegin(); it != invscores.rend(); ++it) {
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			Sort* s = *jt;
-			set<Sort*> notextend;
-			notextend.insert(s);
+			set<Sort*> notextend = {s};
 			vector<Sort*> toextend;
 			vector<Sort*> tocheck;
 			while (not notextend.empty()) {
@@ -4545,26 +4583,37 @@ void Structure::autocomplete() {
 						} else {
 							toextend.push_back(sp);
 						}
-					} else
+					} else{
 						notextend.insert(sp);
+					}
 				}
 				notextend.erase(e);
 			}
-			SortTable* st = inter(s);
+			auto st = inter(s);
 			for (auto kt = toextend.cbegin(); kt != toextend.cend(); ++kt) {
-				SortTable* kst = inter(*kt);
+				auto kst = inter(*kt);
 				if (st->approxFinite()) {
-					for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt)
+					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt){
 						kst->add(*lt);
+					}
 				} else {
 					// TODO
 				}
 			}
 			if (not s->builtin()) {
 				for (auto kt = tocheck.cbegin(); kt != tocheck.cend(); ++kt) {
-					SortTable* kst = inter(*kt);
+					auto kst = inter(*kt);
+					// TODO speedup for common cases (expensive if both tables are large) => should be in some general visitor which checks this!
+					if(dynamic_cast<AllIntegers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
+						continue;
+					}
+					if(dynamic_cast<AllNaturalNumbers*>(kst->internTable())!=NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int>-1){
+						continue;
+					}
 					if (st->approxFinite()) {
-						for (SortIterator lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
+						for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
 							if (not kst->contains(*lt))
 								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
 						}
@@ -4745,17 +4794,17 @@ void Structure::clean() {
 		if (not TableUtils::approxIsInverse(it->second->ct(), it->second->cf())) {
 			continue;
 		}
-		PredTable* npt = new PredTable(it->second->ct()->internTable(), it->second->ct()->universe());
+		auto npt = new PredTable(it->second->ct()->internTable(), it->second->ct()->universe());
 		it->second->pt(npt);
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		if (it->first->partial()) {
-			SortTable* lastsorttable = it->second->universe().tables().back();
+			auto lastsorttable = it->second->universe().tables().back();
 			for (auto ctit = it->second->graphInter()->ct()->begin(); not ctit.isAtEnd(); ++ctit) {
-				ElementTuple tuple = *ctit;
-				const DomainElement* ctvalue = tuple.back();
+				auto tuple = *ctit;
+				auto ctvalue = tuple.back();
 				for (auto sortit = lastsorttable->sortBegin(); not sortit.isAtEnd(); ++sortit) {
-					const DomainElement* cfvalue = *sortit;
+					auto cfvalue = *sortit;
 					if (*cfvalue != *ctvalue) {
 						tuple.pop_back();
 						tuple.push_back(*sortit);
@@ -4772,8 +4821,8 @@ void Structure::clean() {
 		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
-			EnumeratedInternalFuncTable* eift = new EnumeratedInternalFuncTable();
-			for (TableIterator jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
+			auto eift = new EnumeratedInternalFuncTable();
+			for (auto jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
 				eift->add(*jt);
 			}
 			it->second->funcTable(new FuncTable(eift, it->second->graphInter()->ct()->universe()));

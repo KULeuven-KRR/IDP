@@ -2394,21 +2394,23 @@ void Insert::option(const string& opt, bool val, YYLTYPE l) const {
 void Insert::assignunknowntables() {
 	// Assign the unknown predicate interpretations
 	for (auto it = _unknownpredtables.cbegin(); it != _unknownpredtables.cend(); ++it) {
-		PredInter* pri = _currstructure->inter(it->first);
-		const PredTable* ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		PredTable* pt = new PredTable(ctable->internTable(), ctable->universe());
-		for (TableIterator tit = it->second->begin(); not tit.isAtEnd(); ++tit)
+		auto pri = _currstructure->inter(it->first);
+		auto ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
+		auto pt = new PredTable(ctable->internTable(), ctable->universe());
+		for (auto tit = it->second->begin(); not tit.isAtEnd(); ++tit){
 			pt->add(*tit);
+		}
 		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete (it->second);
 	}
 	// Assign the unknown function interpretations
 	for (auto it = _unknownfunctables.cbegin(); it != _unknownfunctables.cend(); ++it) {
-		PredInter* pri = _currstructure->inter(it->first)->graphInter();
-		const PredTable* ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		PredTable* pt = new PredTable(ctable->internTable(), ctable->universe());
-		for (TableIterator tit = it->second->begin(); not tit.isAtEnd(); ++tit)
+		auto pri = _currstructure->inter(it->first)->graphInter();
+		auto ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
+		auto pt = new PredTable(ctable->internTable(), ctable->universe());
+		for (auto tit = it->second->begin(); not tit.isAtEnd(); ++tit){
 			pt->add(*tit);
+		}
 		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
 		delete (it->second);
 	}
