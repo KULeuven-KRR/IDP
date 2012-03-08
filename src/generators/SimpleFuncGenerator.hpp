@@ -76,8 +76,9 @@ public:
 	}
 
 	~SimpleFuncGenerator() {
-		delete (_function);
-		delete (_univgen);
+		//delete (_function);
+		//delete (_univgen);
+		//TODO: memory management
 	}
 
 	// FIXME reimplement
