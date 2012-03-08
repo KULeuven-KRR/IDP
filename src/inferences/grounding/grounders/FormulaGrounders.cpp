@@ -167,7 +167,7 @@ Lit AtomGrounder::run() const {
 		//return gentype == GenType::CANMAKETRUE ? _true : _false;
 		return _true;
 	}
-	if (_cchecker->check()) { // Literal decides formula if checker succeeds
+	if (not _ptchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			clog << tabs() << "Possibly true checker failed" << "\n";
 			if (_origform != NULL) { poptab(); }

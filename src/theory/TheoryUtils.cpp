@@ -70,8 +70,8 @@ bool approxTwoValued(const SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<const Function*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsymbols);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context);
 }
 }
 
@@ -90,8 +90,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, const std::set<const Function*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsymbols);
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context);
 }
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
 	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
@@ -169,8 +169,8 @@ Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, const std::set<const Function*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsymbols);
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context);
 }
 
 void addCompletion(AbstractTheory* t) {
@@ -217,8 +217,8 @@ void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabul
 	Assert(newt==t);
 }
 
-void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str, const std::set<const Function*> cpsymbols) {
-	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsymbols);
+void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str) {
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con);
 	Assert(newt==t);
 }
 

@@ -23,6 +23,7 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<SetId> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
+	std::set<VarId> _printedvarids;
 	std::map<PFSymbol*, std::set<Atom> > _defined; //!< List of defined symbols and the heads which have a rule.
 
 public:

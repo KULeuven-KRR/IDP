@@ -23,16 +23,18 @@ class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	AbstractStructure* _structure;
+	Vocabulary* _vocabulary;
 	Context _context;
 	bool _cpsupport;
 public:
 	template<typename T>
 	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {
 		_structure = str;
+		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
 		_cpsupport = getOption(BoolType::CPSUPPORT);
-		if (_cpsupport && str != NULL) {
-			CPSupport::findCPSymbols(str->vocabulary());
+		if (_cpsupport and _vocabulary != NULL) {
+			CPSupport::findCPSymbols(_vocabulary);
 		}
 		return t->accept(this);
 	}

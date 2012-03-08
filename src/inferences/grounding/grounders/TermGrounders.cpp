@@ -19,6 +19,8 @@
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
 
+#include "utils/CPUtils.hpp"
+
 using namespace std;
 
 TermGrounder::~TermGrounder() {
@@ -169,9 +171,9 @@ GroundTerm SumTermGrounder::run() const {
 			Assert(not right.isVariable);
 			auto rightvarid = _termtranslator->translate(right._domelement);
 			// Create tseitin
-			auto cpelement = _termtranslator->cprelation(rightvarid);
-			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
-			_grounding->addUnitClause(tseitin);
+//			auto cpelement = _termtranslator->cprelation(rightvarid);
+//			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
+//			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, left._varid, rightvarid);
 			varid = _termtranslator->translate(sumterm, getDomain());
@@ -181,9 +183,9 @@ GroundTerm SumTermGrounder::run() const {
 		if (right.isVariable) {
 			auto leftvarid = _termtranslator->translate(left._domelement);
 			// Create tseitin
-			auto cpelement = _termtranslator->cprelation(leftvarid);
-			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
-			_grounding->addUnitClause(tseitin);
+//			auto cpelement = _termtranslator->cprelation(leftvarid);
+//			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
+//			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
 			varid = _termtranslator->translate(sumterm, getDomain());
@@ -208,7 +210,7 @@ GroundTerm SumTermGrounder::run() const {
 }
 
 CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
-	Assert(f == SUM);
+	Assert(CPSupport::eligibleForCP(f));
 	switch (f) {
 	case SUM :
 		return new CPSumTerm(varids);

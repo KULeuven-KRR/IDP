@@ -51,17 +51,18 @@ class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool _cpsupport;
-//	std::set<const PFSymbol*> _cpsymbols;
+	bool _allowedToLeave;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, const std::set<const Function*>& cpfuncsymbols) {
+	T execute(T t, AbstractStructure* str, Context context) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
+		setAllowedToLeave(true);
 		_cpsupport = getOption(BoolType::CPSUPPORT);
-		if (_cpsupport) {
+		if (_cpsupport and _vocabulary != NULL) {
 			CPSupport::findCPSymbols(_vocabulary);
 		}
 		return t->accept(this);
@@ -69,13 +70,15 @@ public:
 
 protected:
 	bool shouldMove(Term* t);
-
-//	Formula* traverse(PredForm* f);
 	Formula* visit(PredForm* predform);
 
-//private:
-//	bool eligibleForCP(const PFSymbol*) const;
-//	bool eligibleForCP(const AggTerm*) const;
+private:
+	bool getAllowedToLeave() const {
+		return _allowedToLeave;
+	}
+	void setAllowedToLeave(bool allowed) {
+		_allowedToLeave = allowed;
+	}
 };
 
 #endif /* REMOVETHREEVALUEDTERMS_HPP_ */

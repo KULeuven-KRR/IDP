@@ -26,10 +26,6 @@ class AbstractStructure;
 namespace CPSupport {
 
 //TODO template function eligibleForCPSupport(Object, ...)
-//template<class Object>
-//bool eligibleForCP(Object*, ...) {
-//	return false;
-//}
 
 // Determine what should be passed to CP solver
 std::set<const Function*> findCPSymbols(const Vocabulary* vocabulary);

@@ -132,9 +132,12 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 
 	//TODO refactor the following...
 	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
-		auto cprelation = termtranslator()->cprelation(body->right()._varid);
-		auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
-		add(tseitin2, cprelation);
+		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
+			_printedvarids.insert(body->right()._varid);
+			auto cprelation = termtranslator()->cprelation(body->right()._varid);
+			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
+			addUnitClause(tseitin2);
+		}
 	}
 
 	Policy::polAdd(tseitin, foldedbody);

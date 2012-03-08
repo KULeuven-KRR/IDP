@@ -52,7 +52,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		Term* subterm1 = pf->subterms()[0];
 		Term* subterm2 = pf->subterms()[1];
 
-		bool eligibleForCP = _cpsupport && VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_structure->vocabulary())
+		bool eligibleForCP = _cpsupport && VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_vocabulary)
 				&& CPSupport::eligibleForCP(subterm1,_structure) && CPSupport::eligibleForCP(subterm2,_structure);
 
 		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG)

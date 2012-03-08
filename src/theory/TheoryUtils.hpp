@@ -130,7 +130,7 @@ Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractS
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, const std::set<const Function*> cpsymbols = std::set<const Function*>());
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -165,7 +165,7 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NUL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, const std::set<const Function*> cpsymbols = std::set<const Function*>());
+void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
 }
 
 namespace TermUtils {
@@ -188,7 +188,7 @@ namespace SetUtils {
 bool approxTwoValued(const SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, const std::set<const Function*> cpsymbols = std::set<const Function*>());
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context);
 }
 
 namespace DefinitionUtils {
@@ -202,7 +202,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, const std::set<const Function*> cpsymbols = std::set<const Function*>());
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context);
 
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
 }

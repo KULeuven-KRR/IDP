@@ -15,44 +15,6 @@
 
 using namespace std;
 
-//TODO Refactor eligibleForCP (use visitor?) and move to CPUtils.
-
-//bool UnnestThreeValuedTerms::eligibleForCP(const PFSymbol* symbol) const {
-//	if (_cpsupport) {
-//		if (sametypeid<Function>(symbol)) {
-//			return (_cpsymbols.find(symbol) != _cpsymbols.cend());
-//		} else if (sametypeid<Predicate>(symbol)) {
-//			return VocabularyUtils::isComparisonPredicate(symbol);
-//		}
-//	}
-//	return false;
-//}
-//
-//bool UnnestThreeValuedTerms::eligibleForCP(const AggTerm* at) const {
-//	if (_cpsupport and at->function() == SUM) {
-//		for (auto it = at->set()->subformulas().cbegin(); it < at->set()->subformulas().cend(); ++it) {
-//			if (not FormulaUtils::approxTwoValued(*it,_structure)) {
-//				return false;
-//			}
-//		}
-//		for (auto it = at->set()->subterms().cbegin(); it < at->set()->subterms().cend(); ++it) {
-//			if (sametypeid<FuncTerm>(*it)) {
-//				auto subt = dynamic_cast<FuncTerm*>(*it);
-//				if (not eligibleForCP(dynamic_cast<PFSymbol*>(subt->function()))) {
-//					return false;
-//				}
-//			} else if (sametypeid<AggTerm>(*it)) {
-//				auto subt = dynamic_cast<AggTerm*>(*it);
-//				if (not eligibleForCP(subt)) {
-//					return false;
-//				}
-//			}
-//		}
-//		return true;
-//	}
-//	return false;
-//}
-
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	if (getAllowedToUnnest()) {
 		switch (t->type()) {
@@ -60,11 +22,13 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
 			Function* func = ft->function();
 			FuncInter* finter = _structure->inter(func);
-			return (not finter->approxTwoValued() and not (_cpsupport and CPSupport::eligibleForCP(ft,_vocabulary)));
+			return not finter->approxTwoValued()
+				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft,_vocabulary));
 		}
 		case TT_AGG: {
 			AggTerm* at = dynamic_cast<AggTerm*>(t);
-			return (not SetUtils::approxTwoValued(at->set(), _structure) and not (_cpsupport and CPSupport::eligibleForCP(at,_structure)));
+			return not SetUtils::approxTwoValued(at->set(), _structure)
+				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at,_structure));
 		}
 		case TT_VAR:
 		case TT_DOM:
@@ -74,19 +38,12 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	return false;
 }
 
-//Formula* UnnestThreeValuedTerms::traverse(PredForm* p) {
-//	Context savecontext = getContext();
-//	bool savemovecontext = getAllowedToUnnest();
-//	if (isNeg(p->sign())) {
-//		setContext(not getContext());
-//	}
-//	for (size_t n = 0; n < p->subterms().size(); ++n) {
-//		setAllowedToUnnest(not (_cpsupport and CPSupport::eligibleForCP(p,_vocabulary)));
-//		p->subterm(n, p->subterms()[n]->accept(this));
-//	}
-//	setContext(savecontext);
-//	setAllowedToUnnest(savemovecontext);
-//	return p;
+//Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
+//	bool saveAllowedToLeave = getAllowedToLeave();
+//	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
+//	auto result = UnnestTerms::visit(predform);
+//	setAllowedToLeave(saveAllowedToLeave);
+//	return result;
 //}
 
 template<typename T>
@@ -101,6 +58,9 @@ Formula* UnnestTerms::doRewrite(T origformula) {
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	bool savemovecontext = getAllowedToUnnest();
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
+
 // Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
@@ -114,7 +74,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		} else if (predform->symbol()->name() == "=/2") {
 			moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
 		} else {
-			setAllowedToUnnest(not (_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary)));
+			setAllowedToUnnest(true);
 		}
 
 		if (predform->symbol()->name() == "=/2") {
@@ -127,23 +87,24 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			}
 		}
 	} else {
-		setAllowedToUnnest(not (_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary)));
+		setAllowedToUnnest(true);
 	}
 	// Traverse the atom
 	Formula* newf = predform;
 	if (moveonlyleft) {
 		predform->subterm(1, predform->subterms()[1]->accept(this));
-		setAllowedToUnnest(not (_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary)));
+		setAllowedToUnnest(true);
 		predform->subterm(0, predform->subterms()[0]->accept(this));
 	} else if (moveonlyright) {
 		predform->subterm(0, predform->subterms()[0]->accept(this));
-		setAllowedToUnnest(not (_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary)));
+		setAllowedToUnnest(true);
 		predform->subterm(1, predform->subterms()[1]->accept(this));
 	} else {
 		newf = traverse(predform);
 	}
 
 	_chosenVarSort = NULL;
+	setAllowedToLeave(saveAllowedToLeave);
 	setAllowedToUnnest(savemovecontext);
 	return doRewrite(newf);
 }

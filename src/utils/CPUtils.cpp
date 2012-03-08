@@ -16,11 +16,12 @@
 using namespace std;
 
 namespace CPSupport {
-//TODO Keep a list of CP symbols in GlobalData? Broes says no..
+//TODO Keep a list of CP symbols in GlobalData? Or in Translators?
 std::set<const PFSymbol*> _cppredsymbols;
 std::set<const Function*> _cpfuncsymbols;
 
 std::set<const Function*> findCPSymbols(const Vocabulary* vocabulary) {
+	Assert(vocabulary != NULL);
 	if (_cpfuncsymbols.empty()) {
 		for (auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
 			Function* function = funcit->second;
@@ -39,21 +40,17 @@ std::set<const Function*> findCPSymbols(const Vocabulary* vocabulary) {
 			}
 		}
 	}
-//	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-//		clog << tabs() << "User-defined symbols that can be handled by the constraint solver: ";
-//		for (auto it = _cpfuncsymbols.cbegin(); it != _cpfuncsymbols.cend(); ++it) {
-//			clog << toString(*it) << " ";
-//		}
-//		clog << "\n";
-//	}
 	return _cpfuncsymbols;
 }
 
 bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 	if (_cppredsymbols.find(pf->symbol()) != _cppredsymbols.cend()) {
 		return true;
+	} else if (VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc)) {
+		_cppredsymbols.insert(pf->symbol());
+		return true;
 	}
-	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc);
+	return false;
 }
 
 bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
@@ -71,7 +68,7 @@ bool eligibleForCP(const AggFunction& f) {
 }
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
-	if (eligibleForCP(at->function())) {
+	if (eligibleForCP(at->function()) && str != NULL) {
 		for (auto it = at->set()->subformulas().cbegin(); it != at->set()->subformulas().cend(); ++it) {
 			if (not FormulaUtils::approxTwoValued(*it,str)) {
 				return false;
@@ -88,10 +85,11 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 }
 
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
+	Vocabulary* voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
 	case TT_FUNC: {
 		auto ft = dynamic_cast<const FuncTerm*>(t);
-		return eligibleForCP(ft,str->vocabulary());
+		return eligibleForCP(ft,voc);
 	}
 	case TT_AGG: {
 		auto at = dynamic_cast<const AggTerm*>(t);
@@ -99,7 +97,7 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	}
 	case TT_VAR:
 	case TT_DOM:
-		SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort(),str->vocabulary());
+		SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort(),voc);
 		return true;
 	}
 }
