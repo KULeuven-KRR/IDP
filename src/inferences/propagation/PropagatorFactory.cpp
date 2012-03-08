@@ -152,6 +152,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	FormulaUtils::unnestTerms(newtheo); // FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo);
+	FormulaUtils::unnestDomainTerms(newtheo);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
@@ -268,6 +269,11 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 		lcd._connector = leafconnector;
 		lcd._equalities = _propagator->getFactory()->trueDomain(leafconnector);
 		for (unsigned int n = 0; n < symbol->sorts().size(); ++n) {
+			if (typeid(*(pf->subterms()[n])) != typeid(VarTerm)){
+				std::cerr << n << nt();
+				std::cerr << toString(pf);
+
+			}
 			Assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
 			Assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());

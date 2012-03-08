@@ -483,8 +483,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	auto possTrueChecker = GeneratorFactory::create(possTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certTrueChecker = GeneratorFactory::create(certTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << "Possible checker: " << nt() << toString(possTrueChecker) << nt();
-		clog << "Certain checker: " << nt() << toString(certTrueChecker) << nt();
+		clog << "Possibly true checker: " << nt() << toString(possTrueChecker) << nt();
+		clog << "Certainly true checker: " << nt() << toString(certTrueChecker) << nt();
 	}
 
 	_formgrounder = new AtomGrounder(_grounding, newpf->sign(), newpf->symbol(), subtermgrounders, checkargs, possTrueChecker, certTrueChecker,
@@ -772,6 +772,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	grounder->setOrig(qf, varmapping());
 
 	_topgrounder = grounder;
+
 	if (tempqf != NULL) {
 		deleteDeep(tempqf);
 	}
@@ -1079,28 +1080,13 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		checkerbdd = improveChecker(checkerbdd, MCPA);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
-		/*std::cerr << "___________GENERATORBDD FOR QUANTFORMULA WITH SUBFORM " << toString(subformula)<<nt();
-		std::cerr << toString(generatorbdd)<< nt();
-		std::cerr << "___________CHECKERBDD FOR QUANTFORMULA WITH SUBFORM " << toString(subformula)<<nt();
-		std::cerr << toString(checkerbdd)<< nt();*/
-
-
 	} else {
 		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
 		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
 	}
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
-	/*std::cerr << "___________GENERATOR FOR QUANTFORMULA WITH SUBFORM " << toString(subformula)<<nt();
-	std::cerr << toString(gen)<< nt();*/
-
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-	/*int i = 0;
-		for(gen->begin();not gen->isAtEnd() && i < 20000; gen->operator ++(),i++){
-			std :: cerr << "var: "<< toString(vars)<< nt();
-			std::cerr << "checker:" << check->check()<<nt();
-			std::cerr << "fovars:"<< toString(fovars)<<nt();
-		}*/
 	return GenAndChecker(vars, gen, check);
 }
 
