@@ -103,6 +103,7 @@ struct Multiplication {
 	// TODO comment and check what they do! -> not understood yet!
 	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
 	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
+		// TODO MAKE THIS INDEPENDENT OF POINTER ORDERING
 		Multiplication m;
 		return m(arg1, arg2);
 	}

@@ -65,6 +65,7 @@ bool Multiplication::operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
 #include "fobdds/bddvisitors/CollectSameOperationTerms.hpp"
 
 bool TermOrder::before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager) {
+	// TODO MAKE THIS INDEPENDENT OF POINTER ORDERING
 	CollectSameOperationTerms<Multiplication> fa(manager);
 	auto flat1 = fa.getTerms(arg1);
 	auto flat2 = fa.getTerms(arg2);

@@ -14,7 +14,6 @@
 #include "common.hpp"
 #include "InstGenerator.hpp"
 #include "ArithmeticOperatorsGenerator.hpp"// for the arithresult
-
 /**
  * Instance checker for the formula x op y = z
  * where x and y and z are input.
@@ -25,6 +24,7 @@ private:
 	const DomElemContainer* _in1;
 	const DomElemContainer* _in2;
 	const DomElemContainer* _in3;
+	const Universe _universe;
 	bool alreadyrun;
 protected:
 	virtual ARITHRESULT doCalculation(double left, double right, double& result) const = 0;
@@ -40,8 +40,8 @@ protected:
 	}
 
 public:
-	ArithOpChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3)
-			: _in1(in1), _in2(in2), _in3(in3), alreadyrun(false) {
+	ArithOpChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: _in1(in1), _in2(in2), _in3(in3), alreadyrun(false), _universe(univ) {
 	}
 
 	void reset() {
@@ -53,13 +53,12 @@ public:
 			notifyAtEnd();
 			return;
 		}
-		Assert(_in1->get()->type()==_in2->get()->type());
-		Assert(_in1->get()->type()==_in3->get()->type());
-		Assert(_in1->get()->type()==DET_INT || _in1->get()->type()==DET_DOUBLE);
 
-		double result;
-		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
-		if (not check()){
+		Assert(_in1->get()->type()==DET_INT || _in1->get()->type()==DET_DOUBLE);
+		Assert(_in2->get()->type()==DET_INT || _in2->get()->type()==DET_DOUBLE);
+		Assert(_in3->get()->type()==DET_INT || _in3->get()->type()==DET_DOUBLE);
+
+		if (not check()) {
 			notifyAtEnd();
 			return;
 		}
@@ -69,7 +68,7 @@ public:
 	bool check() const {
 		double result;
 		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
-		return status == ARITHRESULT::VALID && result == getValue(_in3);
+		return status == ARITHRESULT::VALID && result == getValue(_in3) && _universe.contains( { _in1->get(), _in2->get(), _in3->get() });
 	}
 
 private:
@@ -97,8 +96,8 @@ protected:
 	}
 	;
 public:
-	DivChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3)
-			: ArithOpChecker(in1, in2, in3) {
+	DivChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
 	DivGenerator* clone() const {
@@ -106,7 +105,7 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " <<  toString(getIn3()) << "(in)";
+		stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 	}
 };
 
@@ -118,8 +117,8 @@ protected:
 	}
 	;
 public:
-	TimesChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3)
-			: ArithOpChecker(in1, in2, in3) {
+	TimesChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
 	TimesGenerator* clone() const {
@@ -127,7 +126,7 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)" ;
+		stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 	}
 };
 
@@ -139,8 +138,8 @@ protected:
 	}
 	;
 public:
-	MinusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3)
-			: ArithOpChecker(in1, in2, in3){
+	MinusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
 	MinusGenerator* clone() const {
@@ -160,8 +159,8 @@ protected:
 	}
 	;
 public:
-	PlusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3)
-			: ArithOpChecker(in1, in2, in3) {
+	PlusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
 	PlusGenerator* clone() const {
