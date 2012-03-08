@@ -1,6 +1,7 @@
 procedure main(){
 	stdoptions.groundlazily=true
-	stdoptions.groundverbosity=1
+	stdoptions.groundwithbounds=true
+	stdoptions.groundverbosity=0
 	stdoptions.satverbosity=10
 	print(modelexpandpartial(T, S))
 }

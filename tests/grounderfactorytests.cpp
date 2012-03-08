@@ -27,7 +27,7 @@ using namespace std;
 namespace Tests {
 
 Grounder* getGrounder(Theory& t, AbstractStructure* s){
-	auto gddatb = generateNaiveApproxBounds(&t, s);
+	auto gddatb = generateBounds(&t, s);
 	return dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, s, gddatb})))->getSubGrounders().at(0);
 }
 

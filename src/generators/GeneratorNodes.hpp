@@ -106,8 +106,10 @@ public:
 
 	virtual OneChildGeneratorNode* clone() const {
 		auto t = new OneChildGeneratorNode(*this);
+		bool initgen = _generator->isInitialized();
 		t->_generator = _generator->clone();
 		t->_child = _child->clone();
+		Assert(not initgen || t->_generator->isInitialized());
 		return t;
 	}
 

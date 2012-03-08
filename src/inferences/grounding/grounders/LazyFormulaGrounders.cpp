@@ -257,7 +257,7 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms){
 
 
 DelayGrounder::DelayGrounder(PFSymbol* symbol, const vector<Term*>& terms, Context context, unsigned int id, AbstractGroundTheory* gt) :
-		_id(id), _isGrounding(false), _context(context), _grounding(gt) {
+		_id(id), _context(context), _isGrounding(false), _grounding(gt) {
 	Assert(gt!=NULL);
 	getGrounding()->translator()->notifyDelay(symbol, this);
 	sameargs = findSameArgs(terms);
