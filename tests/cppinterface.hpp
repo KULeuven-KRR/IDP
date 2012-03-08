@@ -47,6 +47,7 @@ class Formula;
 class Predicate;
 class Vocabulary;
 class PFSymbol;
+class PredForm;
 
 namespace Tests {
 
@@ -72,8 +73,10 @@ Formula& operator|(Formula& left, Formula& right);
 Formula& operator not(Formula&);
 
 Formula& all(Variable*, Formula&);
+Formula& exists(Variable*, Formula&);
 Formula& all(const std::set<Variable*>&, Formula&);
-Formula& atom(Predicate*, const std::vector<Variable*>&);
+Formula& exists(const std::set<Variable*>& vars, Formula& formula);
+PredForm& atom(Predicate*, const std::vector<Variable*>&);
 
 void add(Vocabulary*, const std::vector<Sort*>);
 void add(Vocabulary*, const std::vector<PFSymbol*>);
@@ -83,7 +86,7 @@ private:
 	Predicate* _p;
 public:
 	PredWrapper(Predicate* p) : _p(p) { }
-	Formula& operator()(const std::vector<Variable*>& vars) {
+	PredForm& operator()(const std::vector<Variable*>& vars) {
 		return atom(_p, vars);
 	}
 	Predicate* p() const {

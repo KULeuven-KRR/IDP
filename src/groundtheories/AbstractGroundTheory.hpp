@@ -29,7 +29,7 @@ enum VIType {
 
 class ResidualAndFreeInst;
 class LazyGroundingManager;
-class LazyUnknBoundGrounder;
+class DelayGrounder;
 
 /**
  * Implements base class for ground theories
@@ -60,7 +60,7 @@ public:
 
 	virtual void addOptimization(AggFunction function, int setid) = 0;
 
-	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders) = 0;
+	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) = 0;
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 
 	//NOTE: have to call these!

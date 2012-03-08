@@ -24,6 +24,17 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure* structure) {
+	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+		return generateApproxBounds(theory, structure);
+	}else{
+		return generateNaiveApproxBounds(theory, structure);
+	}
+}
+
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure) {
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);

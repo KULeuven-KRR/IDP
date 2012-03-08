@@ -132,30 +132,34 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const {
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, unsigned int id) const{
 	auto symbolID = getSymbol(pfs);
-	if(symbolID==-1){
-		return false;
+	if(symbolID==-1){ // there is no such symbol yet
+		return true;
 	}
 	auto& grounders = symbols[symbolID].assocGrounders;
 	if(grounders.empty()){
-		return false;
+		return true;
 	}
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if((*i)->getID()!=id || (id==-1 && (*i)->getID()==-1)){
-			return true;
+		if(context==Context::BOTH){ // If unknown-delay, can only delay if in same DEFINITION
+			if(id==-1 || (*i)->getID()!=id){
+				return false;
+			}
+		}else if((*i)->getContext()!=context){ // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
+			return false;
 		}
 	}
-	return false;
+	return true;
 }
 
-void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
+void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder) {
 	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;
 #ifndef NDEBUG
-	Assert(not isAlreadyDelayedOnDifferentID(pfs, grounder->getID()));
+	Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
 		Assert(grounder != *i);
 	}

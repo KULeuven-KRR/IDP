@@ -45,7 +45,7 @@ struct TestingSet1 {
 	Predicate* q; //predicate Q of [-2,2]
 	Predicate* r; //predicate R of [-2,2]
 	Vocabulary* vocabulary;
-	Structure* s;
+	Structure* structure;
 
 	PredForm* px; //P(x)
 	PredForm* qx; //Q(x)

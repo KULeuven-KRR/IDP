@@ -1,0 +1,26 @@
+vocabulary V{
+	type Node
+	type Nb isa int
+	type Count isa int
+	type C isa int
+	
+	Needs(Node):Nb
+	XPos(Node): C
+	YPos(Node): C
+	
+	Edges(Node, Node, Count)
+}
+theory T:V{
+	!x: sum{y c: x~=y & Edges(x, y, c):c}=Needs(x).
+	
+	!x y: #{c: Edges(x, y, c)}<2.
+	!x y c: Edges(x, y, c) => Edges(y, x, c) & (XPos(x)=XPos(y) | YPos(x)=YPos(y)).
+	
+	!x y: x~=y => XPos(x)~=XPos(y) | YPos(x)~=YPos(y).
+}
+structure S:V{
+	Node = {1..10}
+	Count = {1..2}
+	C = {1..50}
+	Nb = {1..8}
+}

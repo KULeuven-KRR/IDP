@@ -60,9 +60,9 @@ void LuaTraceMonitor::propagate(MinisatID::Literal lit, int dl) {
 
 	int atomnr = lit.getAtom().getValue();
 	if (_translator->isInputAtom(atomnr)) {
-		PFSymbol* s = _translator->getSymbol(atomnr);
-		const ElementTuple& args = _translator->getArgs(lit.getAtom().getValue());
-		const DomainAtom* atom = DomainAtomFactory::instance()->create(s, args);
+		auto s = _translator->getSymbol(atomnr);
+		auto args = _translator->getArgs(lit.getAtom().getValue());
+		auto atom = DomainAtomFactory::instance()->create(s, args);
 		InternalArgument ia(atom);
 		LuaConnection::convertToLua(_state, ia);
 	} else {

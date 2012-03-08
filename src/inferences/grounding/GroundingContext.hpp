@@ -47,6 +47,8 @@ struct GroundingContext {
 	bool _conjPathUntilNode, _conjunctivePathFromRoot;
 	// If true, there is a conjunctive path from the root of the sentence parsetree to this node.
 	// NOTE advantage: can optimize by creating less tseitins by using the knowledge that the formula can be added directly into cnf
+
+	bool _allowDelaySearch;
 };
 
 #endif /* GROUNDINGCONTEXT_HPP_ */

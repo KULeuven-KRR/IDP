@@ -30,8 +30,8 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders){
-	Policy::polNotifyUnknBound(boundlit, args, grounders);
+void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
+	Policy::polNotifyUnknBound(context, boundlit, args, grounders);
 }
 
 template<class Policy>
@@ -416,18 +416,22 @@ void GroundTheory<Policy>::addFuncConstraints() {
 
 template<class Policy>
 void GroundTheory<Policy>::addFalseDefineds() {
-	for (size_t n = 0; n < translator()->nbManagedSymbols(); ++n) {
+	/*
+	 * FIXME FIXME HACKED!
+	 * There is an issue that, if all instantiations of a symbol are false, none is ever added to the translator
+	 * In that case, it is not managing that symbol, so will not write falsedefineds for it.
+	 * This was solved by a workaround in DefinitionGrounder which adds all its head symbols to the translator. This is not maintainable or clear!
+	 * It also works lazily because when delaying, the symbol is also added to the translator
+	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
+	 */
+	for (auto sit=translator()->getDefinedSymbols().cbegin(); sit!=translator()->getDefinedSymbols().cend(); ++sit) {
 		CHECKTERMINATION
-		PFSymbol* s = translator()->getManagedSymbol(n);
-		auto it = _defined.find(s);
-		if (it == _defined.end()) {
-			continue;
-		}
-		const PredTable* pt = structure()->inter(s)->pt();
+		auto pt = structure()->inter(*sit)->pt();
+		auto it = _defined.find(*sit);
 		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION
-			Lit translation = translator()->translate(s, (*ptIterator));
-			if (it->second.find(translation) == it->second.end()) {
+			auto translation = translator()->translate(*sit, (*ptIterator));
+			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
 				addUnitClause(-translation);
 				// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
 			}

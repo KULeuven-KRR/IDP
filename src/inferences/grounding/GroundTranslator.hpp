@@ -17,7 +17,7 @@
 #include <unordered_map>
 #include <bits/functional_hash.h>
 
-class LazyUnknBoundGrounder;
+class DelayGrounder;
 class TsSet;
 class CPTerm;
 class LazyGroundingManager;
@@ -36,7 +36,7 @@ typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
-	std::vector<LazyUnknBoundGrounder*> assocGrounders;
+	std::vector<DelayGrounder*> assocGrounders;
 
 	SymbolInfo(PFSymbol* symbol)
 			: symbol(symbol) {
@@ -69,6 +69,8 @@ class GroundTranslator {
 private:
 	std::queue<int> newsymbols;
 	std::vector<SymbolInfo> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
+
+	std::set<PFSymbol*> definedsymbols;
 
 	std::vector<AtomType> atomtype;
 	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
@@ -108,8 +110,22 @@ public:
 	Lit translateSet(const std::vector<int>&, const std::vector<double>&, const std::vector<double>&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const;
-	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
+	/*
+	 * @precon: defid==-1 if a FORMULA will be delayed
+	 * @precon: context==POS if pfs occurs monotonously, ==NEG if anti-..., otherwise BOTH
+	 * Returns true iff delaying pfs in the given context cannot violate satisfiability because of existing watches
+	 */
+	bool canBeDelayedOn(PFSymbol* pfs, Context context, unsigned int defid) const;
+	/**
+	 * Same preconditions as canBeDelayedOn
+	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.
+	 */
+	void notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder);
+
+	void notifyDefined(PFSymbol* pfs){
+		definedsymbols.insert(pfs);
+	}
+	const std::set<PFSymbol*>& getDefinedSymbols() const { return definedsymbols; }
 
 	unsigned int addSymbol(PFSymbol* pfs);
 

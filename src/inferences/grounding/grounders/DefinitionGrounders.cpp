@@ -38,6 +38,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	auto grounddefinition = new GroundDefinition(id(), getTranslator());
 	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
 		(*grounder)->run(id(), grounddefinition);
+		getGrounding()->translator()->notifyDefined((*grounder)->headgrounder()->pfsymbol()); // FIXME very ugly hack to get addFalseDefineds correct, see more info there (groundtheory.cpp)
 	}
 	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
 	delete (grounddefinition);

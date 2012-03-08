@@ -1,0 +1,17 @@
+vocabulary V{
+	type x isa int
+	P(x)
+}
+theory T:V{
+	!x x2: ~P(x2) | x=x2 | ~P(x).
+	?x: P(x).
+}
+structure S:V{
+	x = {1..100000000}
+}
+procedure main(){
+	stdoptions.groundverbosity=10
+	stdoptions.satverbosity=10
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}

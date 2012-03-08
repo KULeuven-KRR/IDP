@@ -39,7 +39,7 @@ public:
 		MinisatID::WrappedPCSolver solver(modes);
 
 		//Grounding
-		auto symstructure = generateNaiveApproxBounds(theory, structure);
+		auto symstructure = generateBounds(theory, structure);
 		auto grounder = GrounderFactory::create({theory, structure, symstructure}, &solver);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();

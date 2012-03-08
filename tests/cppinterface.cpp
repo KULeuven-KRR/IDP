@@ -77,14 +77,25 @@ Formula& operator not(Formula& f) {
 }
 
 Formula& all(Variable* var, Formula& formula) {
-	return *new QuantForm(SIGN::POS, QUANT::UNIV, { var }, &formula, FormulaParseInfo());
+	return all(std::set<Variable*>{var}, formula);
+}
+Formula& exists(Variable* var, Formula& formula) {
+	return exists(std::set<Variable*>{var}, formula);
+}
+
+Formula& quant(QUANT q, const std::set<Variable*>& vars, Formula& formula){
+	return *new QuantForm(SIGN::POS, q, vars, &formula, FormulaParseInfo());
+}
+
+Formula& exists(const std::set<Variable*>& vars, Formula& formula) {
+	return quant(QUANT::EXIST, vars, formula);
 }
 
 Formula& all(const std::set<Variable*>& vars, Formula& formula) {
-	return *new QuantForm(SIGN::POS, QUANT::UNIV, vars, &formula, FormulaParseInfo());
+	return quant(QUANT::UNIV, vars, formula);
 }
 
-Formula& atom(Predicate* p, const std::vector<Variable*>& vars) {
+PredForm& atom(Predicate* p, const std::vector<Variable*>& vars) {
 	std::vector<Term*> terms;
 	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
 		terms.push_back(new VarTerm(*i, TermParseInfo()));

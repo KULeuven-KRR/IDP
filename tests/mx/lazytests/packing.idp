@@ -1,0 +1,30 @@
+vocabulary V{
+	type Id
+	type S isa int
+	type X isa int
+	type Y isa int
+	
+	Size(Id):S
+	XPos(Id, X)
+	YPos(Id, Y)
+	NoOverlap(Id, Id)
+}
+theory T:V{
+	// ISSUE: Cannot handle shared delay variables yet
+	!id x x2: ~XPos(id, x) | ~XPos(id, x2) | x=x2.
+	// ISSUE: Cannot handle multiple types of quantifiers yet
+	!id: ?x: XPos(id, x).
+}
+structure S:V{
+	Id = {1..3}
+	S = {1..3}
+	X = {1..20}
+	Y = {1..100}
+	Size = {1->3; 2->3; 3->3}
+}
+procedure main(){
+	stdoptions.groundverbosity=2
+	stdoptions.satverbosity=0
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}

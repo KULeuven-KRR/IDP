@@ -59,9 +59,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
-	auto symstructure = generateNaiveApproxBounds(clonetheory, newstructure);
-	// TODO bugged!
-	//auto symstructure = generateApproxBounds(clonetheory, newstructure);
+	auto symstructure = generateBounds(clonetheory, newstructure);
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
@@ -146,7 +144,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	delete (solver);
 	grounding->recursiveDelete();
-	delete (grounder);
+	// delete (grounder); TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
 	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	delete (newstructure);

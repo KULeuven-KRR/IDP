@@ -1,0 +1,25 @@
+vocabulary V{
+	p(nat)
+	q(nat)
+	r(nat)
+}
+
+theory T:V{
+	?x: ~p(x).
+	?x: p(x).
+	!x: ~p(x) => r(x).
+	!x: p(x) => q(x).
+	
+	{
+		r(x) <- p(x).
+	}
+}
+
+structure S:V{
+}
+procedure main(){
+	stdoptions.groundverbosity=2
+	stdoptions.satverbosity=0
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}
