@@ -37,6 +37,7 @@
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
+#include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
@@ -156,6 +157,10 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
+Formula* unnestDomainTerms(Formula* f, AbstractStructure* str,  Context con ) {
+	return transform<UnnestDomainTerms, Formula*>(f, str, con);
+}
+
 
 Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
@@ -164,6 +169,7 @@ Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Voc
 Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
+
 
 Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
@@ -202,6 +208,10 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
+}
+
+AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<UnnestDomainTerms, AbstractTheory*>(t, str, con);
 }
 
 /*AbstractTheory* mergeRulesOnSameSymbol(AbstractTheory* t) {

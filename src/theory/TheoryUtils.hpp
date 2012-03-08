@@ -119,6 +119,10 @@ Formula* substituteTerm(Formula*, Term*, Variable*);
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
+/** Recursively move all domain terms */
+Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+
 /** Recursively move all partial terms outside atoms */
 Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
@@ -159,6 +163,10 @@ AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+/** Recursively move all domain terms */
+AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);

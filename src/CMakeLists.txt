@@ -104,6 +104,7 @@ add_library(idp
 	theory/transformations/RemoveEquivalences.cpp
 	theory/transformations/SplitComparisonChains.cpp
 	theory/transformations/UnnestFuncsAndAggs.cpp
+	theory/transformations/UnnestDomainTerms.cpp
 	theory/transformations/UnnestTerms.cpp
 	theory/transformations/UnnestThreeValuedTerms.cpp
 	GlobalData.cpp
