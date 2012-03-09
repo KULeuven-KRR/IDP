@@ -25,6 +25,10 @@ vector<string> generateListOfSlowMXsatFiles() {
 	vector<string> testdirs {"satmxlongrunning/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
+vector<string> generateListOfMXsatFiles() {
+	vector<string> testdirs {"satmx/"};
+	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
+}
 
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
@@ -41,21 +45,25 @@ void runTests(const char* inferencefilename, const string& instancefile){
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
-class SlowMXnbTest: public ::testing::TestWithParam<string> {
+class SlowMXsatTest: public ::testing::TestWithParam<string> {
 };
-TEST_P(SlowMXnbTest, DoesSlowMX) {
+TEST_P(SlowMXsatTest, DoesSlowMX) {
 	runTests("mxsattestslow.idp", GetParam());
 }
+TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {
+	runTests("mxsattestwithbounds.idp", GetParam());
+}
 
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking){
+TEST_P(MXsatTest, DoesMXWithBounds) {
+	runTests("mxsattestwithbounds.idp", GetParam());
+}
+
+TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
 }
 
-TEST_P(MXsatTest, DoesMXWithoutPushingNegationsOrFlattening) {
-	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
-}
-
-INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXnbTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
+INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXsatTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));
+INSTANTIATE_TEST_CASE_P(ModelExpansionLong, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));
 
 }
 
