@@ -140,8 +140,11 @@ void FOBDDFactory::visit(const EquivForm* ef) {
 	right->accept(this);
 	auto rightbdd = _bdd;
 	auto both = _manager->conjunction(leftbdd, rightbdd);
-	auto none = _manager->conjunction(_manager->negation(leftbdd),_manager->negation(rightbdd));
-	_bdd = _manager->disjunction(both,none);
+	auto none = _manager->conjunction(_manager->negation(leftbdd), _manager->negation(rightbdd));
+	_bdd = _manager->disjunction(both, none);
+	if (isNeg(ef->sign())) {
+		_bdd = _manager->negation(_bdd);
+	}
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
