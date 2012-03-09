@@ -132,9 +132,16 @@ void FOBDDFactory::visit(const BoolForm* bf) {
 	}
 }
 
-void FOBDDFactory::visit(const EquivForm*) {
-	throw notyetimplemented("Creating a bdd for equivalences has not yet been implemented.");
-	//TODO
+void FOBDDFactory::visit(const EquivForm* ef) {
+	auto left = ef->left();
+	auto right = ef->right();
+	left->accept(this);
+	auto leftbdd = _bdd;
+	right->accept(this);
+	auto rightbdd = _bdd;
+	auto both = _manager->conjunction(leftbdd, rightbdd);
+	auto none = _manager->conjunction(_manager->negation(leftbdd),_manager->negation(rightbdd));
+	_bdd = _manager->disjunction(both,none);
 }
 
 void FOBDDFactory::visit(const QuantForm* qf) {
