@@ -33,18 +33,6 @@ vector<string> generateListOfMXsatFiles() {
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
 
-void throwexc() {
-	throw exception();
-}
-
-void runTests(const char* inferencefilename, const string& instancefile){
-	string testfile(getTestDirectory() + inferencefilename);
-	cerr << "Testing " << instancefile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { instancefile, testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
-
 class SlowMXsatTest: public ::testing::TestWithParam<string> {
 };
 TEST_P(SlowMXsatTest, DoesSlowMX) {
