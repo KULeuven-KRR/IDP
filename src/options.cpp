@@ -77,7 +77,7 @@ Options::Options() {
 	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //show? bugged: when grounding: write out the information about which string belongs to which cnf number
 	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //belongs to bdds : something about random seeds
 	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	//BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //Verwijderd: is nu automatisch wanneer nbmodels == 1
 
 	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
