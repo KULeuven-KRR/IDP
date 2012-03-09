@@ -365,8 +365,7 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 	} else if (typeid(*interntable) == typeid(BDDInternalPredTable)) {
 		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
 		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
-		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(),
-				bddintern->structure());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(), bddintern->structure());
 		visit(invertedbddtable);
 	} else if (typeid(*interntable) == typeid(FullInternalPredTable)) {
 		_generator = new EmptyGenerator();
@@ -501,19 +500,23 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 			_generator = new TimesChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
 			_generator = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+			//TODO: this does not allow for vars2 and vars0 to be both zero!
 		}
 	} else if (_pattern[1] == Pattern::INPUT) {
 		_generator = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
+		//TODO: this does not allow for vars2 and vars1 to be both zero!
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x*x=y, with x output");
 	} else {
 		if (_universe.tables()[0]->approxFinite()) {
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 			auto ygen = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
+			//TODO: this does not allow for vars2 and vars0 to be both zero!
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
 		} else if (_universe.tables()[1]->approxFinite()) {
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto xgen = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
+			//TODO: this does not allow for vars2 and vars1 to be both zero!
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
 		} else {
 			throw notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
@@ -526,21 +529,49 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		if (_pattern[1] == Pattern::INPUT) {
 			_generator = new DivChecker(_vars[0], _vars[1], _vars[2], _universe);
 		} else {
-			_generator = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+			auto temp = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
+			auto varzero = new DomElemContainer();
+			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+			auto notzerois1 = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+			auto zerois0 = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
+			auto zerois2 = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
+			auto standardsolution = new TreeInstGenerator(new OneChildGeneratorNode(temp, new LeafGeneratorNode(notzerois1)));
+			auto othersolution = new TreeInstGenerator(
+					new OneChildGeneratorNode(zerois0, new OneChildGeneratorNode(zerois2, new LeafGeneratorNode(notzerois1))));
+			_generator = standardsolution;
+			//TODO!!!! _generator should be the disjunction of othersolution and standardsolution...
 		}
 	} else if (_pattern[1] == Pattern::INPUT) {
-		_generator = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
+		auto temp = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
+		auto varzero = new DomElemContainer();
+		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+		auto notzero = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+		_generator = new TreeInstGenerator(new OneChildGeneratorNode(temp, new LeafGeneratorNode(notzero)));
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x/x=y, with x output");
 	} else {
 		if (_universe.tables()[0]->approxFinite()) {
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 			auto ygen = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
-			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+			auto temp = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
+			auto varzero = new DomElemContainer();
+			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+			auto notzerois1 = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+			auto zerois0 = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
+			auto zerois2 = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
+			auto standardsolution = new TreeInstGenerator(new OneChildGeneratorNode(temp, new LeafGeneratorNode(notzerois1)));
+			auto othersolution = new TreeInstGenerator(	new OneChildGeneratorNode(zerois0, new OneChildGeneratorNode(zerois2, new LeafGeneratorNode(notzerois1))));
+			_generator = standardsolution;
+			//TODO!!!! _generator should be the disjunction of othersolution and standardsolution...
 		} else if (_universe.tables()[1]->approxFinite()) {
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto xgen = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
-			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+			auto varzero = new DomElemContainer();
+			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+			auto notzero = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+			auto temp = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
+			_generator = new TreeInstGenerator(new OneChildGeneratorNode(temp, new LeafGeneratorNode(notzero)));
+
 		} else {
 			throw notyetimplemented("Infinite generator for division pattern (out,out,in)");
 		}
@@ -556,10 +587,9 @@ void GeneratorFactory::visit(const ModInternalFuncTable*) {
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
-	if(_pattern[0]==Pattern::OUTPUT){
+	if (_pattern[0] == Pattern::OUTPUT) {
 		_generator = new InverseAbsValueGenerator(_vars[1], _vars[0], _universe.tables()[0], aift->getType());
-	}
-	else{
+	} else {
 		_generator = new AbsValueChecker(_vars[0], _vars[1], _universe);
 	}
 }
