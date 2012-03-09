@@ -146,6 +146,7 @@ install (FILES ${PROJECT_SOURCE_DIR}/data/var/.idprc DESTINATION var)
 install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/mx.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
+				${PROJECT_SOURCE_DIR}/data/share/std/table_utils.idp 
 		DESTINATION share/std)
 
 #?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} idp runidp.bat runidp.sh")

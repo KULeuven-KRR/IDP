@@ -35,18 +35,6 @@ class MXLazySATTest: public ::testing::TestWithParam<string> {
 class MXLazyMXTest: public ::testing::TestWithParam<string> {
 };
 
-void throwexc() {
-	throw exception();
-}
-
-void runTests(const char* inferencefilename, const string& instancefile){
-	string testfile(getTestDirectory() + inferencefilename);
-	cerr << "Testing " << instancefile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { instancefile, testfile }););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
-
 TEST_P(MXLazyMXTest, DoesLazyMX) {
 	runTests("mxlazymxtest.idp", GetParam());
 }

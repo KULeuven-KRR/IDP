@@ -35,18 +35,6 @@ class MXnbTest: public ::testing::TestWithParam<string> {
 class MXsatTest: public ::testing::TestWithParam<string> {
 };
 
-void throwexc() {
-	throw exception();
-}
-
-void runTests(const char* inferencefilename, const string& instancefile){
-	string testfile(getTestDirectory() + inferencefilename);
-	cerr << "Testing " << instancefile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { instancefile, testfile }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 TEST_P(MXnbTest, DoesMX) {
 	runTests("mxnbofmodelstest.idp", GetParam());
 }
@@ -62,11 +50,6 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
 	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
 }
-
-// TODO when bdds are implemented
-/*TEST_P(MXnbTest, DoesMXWithBounds) {
-	runTests("mxnbofmodelstestwithbounds.idp");
-}*/
 
 TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
