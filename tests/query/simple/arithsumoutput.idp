@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa int
+}
+
+query Q:V{
+	{ x[t] y[t]: x+0=y} 
+}
+
+structure S:V{
+	t = {-2..2}
+}
+
+procedure getExpectedSet(){
+	return {{2,2},{1,1},{0,0},{-2,-2},{-1,-1}}
+}

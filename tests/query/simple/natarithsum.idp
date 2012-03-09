@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa nat
+}
+
+query Q:V{
+	{x[t] y[t] : x+y=0} 
+}
+
+structure S:V{
+	t = {0..7}
+}
+
+procedure getExpectedSet(){
+  return {{0,0}}
+}
