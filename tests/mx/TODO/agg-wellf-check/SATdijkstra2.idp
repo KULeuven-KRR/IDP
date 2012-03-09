@@ -19,8 +19,8 @@ theory T : V {
 	}
 }
 
-structure S : V{
-	Length = { 0..1 } 
-	Vtx = { a..b }	
-	Edge = {a,b,1; }
+structure S : V{  
+	Length = { 1..5}
+	Vtx = { a;b;c}
+	Edge = { a,b,2;a,b,1;b,c,1;b,b,1}
 }
