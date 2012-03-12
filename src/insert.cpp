@@ -1425,26 +1425,20 @@ void Insert::negate(Formula* f) const {
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 	if (f && t) {
 		Assert(sametypeid<EqChainForm>(*f));
-		EqChainForm* ecf = dynamic_cast<EqChainForm*>(f);
+		auto ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
-		//Formula* orig = ecf->pi().originalobject();
-		Term* pit = t->clone();
-		/*if (orig) {
-		 EqChainForm* ecfpi = dynamic_cast<EqChainForm*>(orig);
-		 ecfpi->add(c, pit);
-		 }*/
 	}
 	return f;
 }
 
 Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 	if (left && right) {
-		Term* leftpi = left->clone();
-		Term* rightpi = right->clone();
-		EqChainForm* ecfpi = new EqChainForm(SIGN::POS, true, leftpi, FormulaParseInfo());
+		auto leftpi = left->clone();
+		auto rightpi = right->clone();
+		auto ecfpi = new EqChainForm(SIGN::POS, true, leftpi, FormulaParseInfo());
 		ecfpi->add(c, rightpi);
-		FormulaParseInfo fpi = formparseinfo(ecfpi, l);
-		EqChainForm* ecf = new EqChainForm(SIGN::POS, true, left, fpi);
+		auto fpi = formparseinfo(ecfpi, l);
+		auto ecf = new EqChainForm(SIGN::POS, true, left, fpi);
 		ecf->add(c, right);
 		return ecf;
 	} else {
@@ -1453,20 +1447,20 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 }
 
 Variable* Insert::quantifiedvar(const string& name, YYLTYPE l) {
-	ParseInfo pi = parseinfo(l);
-	Variable* v = new Variable(name, 0, pi);
+	auto pi = parseinfo(l);
+	auto v = new Variable(name, 0, pi);
 	_curr_vars.push_front(VarName(name, v));
 	return v;
 }
 
 Variable* Insert::quantifiedvar(const string& name, Sort* sort, YYLTYPE l) {
-	Variable* v = quantifiedvar(name, l);
+	auto v = quantifiedvar(name, l);
 	if (sort) v->sort(sort);
 	return v;
 }
 
 Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
-	Sort* s = sortpointer(vs, l);
+	auto s = sortpointer(vs, l);
 	if (s) {
 		if (belongsToVoc(s)) {
 			return s;

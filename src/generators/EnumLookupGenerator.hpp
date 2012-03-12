@@ -12,9 +12,12 @@
 #define ENUMLOOKUPGENERATOR_HPP_
 
 #include <map>
+#include <unordered_map>
 #include "InstGenerator.hpp"
+#include "structure/fwstructure.hpp"
 
-typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
+typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> LookupTable;
+//typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
 
 /**
  * Given a map from tuples to a list of tuples, with given input variables and output variables, go over the list of tuples of the corresponding input tuple.
@@ -91,11 +94,13 @@ public:
 	}
 
 	void setVarsAgain(){
-		for (unsigned int i=0; i < _invars.size(); ++i) {
-			*(_invars[i]) = _currargs[i];
-		}
-		for (unsigned int n = 0; n < _outvars.size(); ++n) {
-			*(_outvars[n]) = (*_iter)[n];
+		if(_iter != _currpos->second.cend()){
+			for (unsigned int i=0; i < _invars.size(); ++i) {
+				*(_invars[i]) = _currargs[i];
+			}
+			for (unsigned int n = 0; n < _outvars.size(); ++n) {
+				*(_outvars[n]) = (*_iter)[n];
+			}
 		}
 	}
 

@@ -18,6 +18,7 @@
 #include <vector>
 #include "commontypes.hpp"
 #include <utility>
+#include <unordered_map>
 
 #include "errorhandling/IdpException.hpp"
 
@@ -115,32 +116,16 @@ std::string toString(const std::set<Type, CompareType>& v) {
 	return ss.str();
 }
 
-template<typename Type1, typename Type2>
-std::string toString(const std::map<Type1, Type2>& v) {
+template<typename Map>
+std::string printMap(const Map& map){
 	std::stringstream ss;
 	ss << "(";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
+	for (auto obj = map.cbegin(); obj != map.cend();) {
 		ss << toString((*obj).first);
 		ss << "->";
 		ss << toString((*obj).second);
 		++obj;
-		if (obj != v.cend()) {
-			ss << "; ";
-		}
-	}
-	ss << ")";
-	return ss.str();
-}
-template<typename Type1, typename Type2, typename Type3> //to allow for a "compare" in th emaps
-std::string toString(const std::map<Type1, Type2, Type3>& v) {
-	std::stringstream ss;
-	ss << "(";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
-		ss << toString((*obj).first);
-		ss << "->";
-		ss << toString((*obj).second);
-		++obj;
-		if (obj != v.cend()) {
+		if (obj != map.cend()) {
 			ss << "; ";
 		}
 	}
@@ -148,10 +133,29 @@ std::string toString(const std::map<Type1, Type2, Type3>& v) {
 	return ss.str();
 }
 
+template<typename Type1, typename Type2>
+std::string toString(const std::map<Type1, Type2>& map) {
+	return printMap(map);
+}
+template<typename Type1, typename Type2, typename Type3> //to allow for a "compare" in the maps
+std::string toString(const std::map<Type1, Type2, Type3>& map) {
+	return printMap(map);
+}
+template<typename Type1, typename Type2>
+std::string toString(const std::unordered_map<Type1, Type2>& map) {
+	return printMap(map);
+}
+template<typename Type1, typename Type2, typename Type3>
+std::string toString(const std::unordered_map<Type1, Type2, Type3>& map) {
+	return printMap(map);
+}
+
 template<>
 std::string toString(const CompType& type);
 template<>
 std::string toString(const TsType& type);
+template<>
+std::string toString(const AggFunction& type);
 
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)

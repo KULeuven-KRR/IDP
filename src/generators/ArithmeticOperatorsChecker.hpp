@@ -41,7 +41,7 @@ protected:
 
 public:
 	ArithOpChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
-			: _in1(in1), _in2(in2), _in3(in3), alreadyrun(false), _universe(univ) {
+			: _in1(in1), _in2(in2), _in3(in3), _universe(univ), alreadyrun(false) {
 	}
 
 	void reset() {

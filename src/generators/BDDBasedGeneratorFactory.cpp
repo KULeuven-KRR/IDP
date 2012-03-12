@@ -606,8 +606,8 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		auto bddtruechecker = btg.create(quantdata);
 		return new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
 	} else {
-		vector<const DomElemContainer*> outvars(0);
-		for(int n=0; n<origpattern.size();++n){
+		vector<const DomElemContainer*> outvars;
+		for(unsigned int n=0; n<origpattern.size();++n){
 			if(origpattern[n]==Pattern::OUTPUT){
 				outvars.push_back(origvars[n]);
 			}

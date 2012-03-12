@@ -242,10 +242,10 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	// Call the prover with timeout.
 	auto callresult = system((applicationStream.str() + " " + arguments).c_str());
 	// TODO call the prover with the prover timeout
-	//if(callresult!=0)
-	//	Info::print("The theorem prover did not finish within the specified timeout.");
-	//	return State::UNKNOWN;
-	//}
+	if(callresult!=0){
+		Info::print("The theorem prover did not finish within the specified timeout.");
+		return State::UNKNOWN;
+	}
 
 	std::vector<InternalArgument> theoremStrings;
 	std::vector<InternalArgument> counterSatisfiableStrings;

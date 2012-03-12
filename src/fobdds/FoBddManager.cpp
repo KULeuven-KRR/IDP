@@ -1893,7 +1893,6 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDD
 	 return bdd;
 	 }
 
-	 /*
 	 if(isFalsebdd(bdd)) {
 	 return bdd;
 	 }
@@ -2066,39 +2065,39 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 	 return bdd;
 	 }
 	 // Simplify quantification kernels
-	 /*		if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
-	 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-	 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-	 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
-	 if(isTruebdd(bdd)) return bdd;
-	 else {
-	 Assert(!isFalsebdd(bdd));
-	 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
-	 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
+	 if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
+		 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+		 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+		 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
+		 if(isTruebdd(bdd)) return bdd;
+		 else {
+			 Assert(!isFalsebdd(bdd));
+			 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
+			 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
 
-	 set<const FOBDDVariable*> emptyvars;
-	 set<const FOBDDDeBruijnIndex*> zeroindices;
-	 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
-	 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
-	 if(quantans < 1) quantans = 1;
-	 double quant_per_ans = max_cost_per_ans / quantans;
+			 set<const FOBDDVariable*> emptyvars;
+			 set<const FOBDDDeBruijnIndex*> zeroindices;
+			 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
+			 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
+			 if(quantans < 1) quantans = 1;
+			 double quant_per_ans = max_cost_per_ans / quantans;
 
-	 if(isTruebdd(bdd->falsebranch())) {
-	 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 if(isTruebdd(bdd->falsebranch())) {
+				 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 }
+			 else if(isTruebdd(bdd->truebranch())) {
+				 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 }
+	 	 }
+	 	 if(isTruebdd(bdd)) return bdd;
 	 }
-	 else if(isTruebdd(bdd->truebranch())) {
-	 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
-	 }
-	 }
-	 if(isTruebdd(bdd)) return bdd;
-	 }
-	 */
+
 	// Recursive call
-	/*		double branch_cost_ans;
+	double branch_cost_ans;
 	 if(isFalsebdd(bdd->falsebranch())) {
 	 double kernelcost = estimatedCostAll(true,bdd->kernel(),kernelvars,kernelindices,structure);
 	 double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);

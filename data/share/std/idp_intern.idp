@@ -13,7 +13,6 @@ procedure help(namespace) {
 	else
 		print("Error: namespace expected")
 	end
-	
 }
 
 /**************************

@@ -7,12 +7,16 @@ vocabulary V{
 
 	Connected
 	Path(Vtx, Vtx)
+	L(Vtx, Vtx, int)
+	R1(Vtx, Vtx)
+	R2(Vtx, Vtx)
+	ValidLevel(Vtx, Vtx)
 }
 theory T:V{
-	{ 
-		Path(a,x) <-  Edge(a,x).
-		Path(a,x) <-  Path(a,y) & Edge(y,x).
-	}
+	!a x: Path(a, x) <=> R1(a, x) | R2(a, x).
+	!a x: R1(a, x) <=> Edge(a, x) & L(a, x, 0).
+	!a x: R2(a, x) <=> Path(a, y) & Edge(y, x) & ValidLevel(a, x) /* & ?l: L(a, x, l)*/.
+	//!a x l1 l2: ValidLevel(a, x) & L(a, x, l1) & L(a, y, l2) => l1=l2+1. 
 	Connected <=> ?a b: Reaches(a,b) & Path(a,b).
 }
 

@@ -25,10 +25,6 @@ class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
 
-struct HashTuple {
-	size_t operator()(const ElementTuple& tuple) const;
-};
-
 //typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
 typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
@@ -115,7 +111,7 @@ public:
 	 * @precon: context==POS if pfs occurs monotonously, ==NEG if anti-..., otherwise BOTH
 	 * Returns true iff delaying pfs in the given context cannot violate satisfiability because of existing watches
 	 */
-	bool canBeDelayedOn(PFSymbol* pfs, Context context, unsigned int defid) const;
+	bool canBeDelayedOn(PFSymbol* pfs, Context context, int defid) const;
 	/**
 	 * Same preconditions as canBeDelayedOn
 	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.

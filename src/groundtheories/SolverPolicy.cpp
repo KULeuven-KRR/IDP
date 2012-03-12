@@ -231,33 +231,25 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 }
 
 MinisatID::AggType convert(AggFunction agg){
+	MinisatID::AggType type = MinisatID::AggType::CARD;
 	switch (agg) {
 	case AggFunction::CARD:
-		if (verbosity() > 1){
-			std::clog << "card ";
-		}
-		return MinisatID::CARD;
+		type= MinisatID::CARD;
+		break;
 	case AggFunction::SUM:
-		if (verbosity() > 1){
-			std::clog << "sum ";
-		}
-		return MinisatID::SUM;
+		type= MinisatID::SUM;
+		break;
 	case AggFunction::PROD:
-		if (verbosity() > 1){
-			std::clog << "prod ";
-		}
-		return MinisatID::PROD;
+		type= MinisatID::PROD;
+		break;
 	case AggFunction::MIN:
-		if (verbosity() > 1){
-			std::clog << "min ";
-		}
-		return MinisatID::MIN;
+		type= MinisatID::MIN;
+		break;
 	case AggFunction::MAX:
-		if (verbosity() > 1){
-			std::clog << "max ";
-		}
-		return MinisatID::MAX;
+		type= MinisatID::MAX;
+		break;
 	}
+	return type;
 }
 
 template<typename Solver>
@@ -266,8 +258,9 @@ void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowe
 	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
 	agg.setID = setnr;
 	agg.type = convert(aggtype);
-	if (_verbosity > 1)
-		std::clog << setnr << ' ';
+	if (_verbosity > 1){
+		std::clog <<toString(aggtype) << setnr << ' ';
+	}
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
@@ -372,7 +365,7 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
+void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
 
 template<>
 void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
