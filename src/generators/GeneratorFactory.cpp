@@ -43,7 +43,7 @@ bool isCertainlyFinite(Table t) {
 	return t->finite();
 }
 
-InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs, const Formula* original) {
+InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& vars, const vector<SortTable*>& tabs, const Formula*) {
 	Assert(vars.size()==tabs.size());
 	if (vars.size() == 0) {
 		return new FullGenerator(); // TODO check if this is always correct?
@@ -77,7 +77,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 
 // NOTE: becomes predtable owner!
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe, const Formula* original) {
+		const Universe& universe, const Formula*) {
 	GeneratorFactory factory;
 
 	// Check for infinite grounding
@@ -280,6 +280,7 @@ void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
 void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 	LookupTable lookuptab;
 	vector<const DomElemContainer*> invars, outvars;
+
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
 		if (_firstocc[n] != n) {
 			continue;
@@ -290,8 +291,15 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 			outvars.push_back(_vars[n]);
 		}
 	}
+
+	// TODO make this cheaper by adding domelem to index mappings
+	// TODO only create it ONCE! instead of multiple times
+
+	lookuptab.reserve(_table->size()._size);
 	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
-		const auto& tuple = *it;
+		CHECKTERMINATION
+
+		auto tuple = *it;
 		bool validunderocc = true;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
 			// Skip tuples which do no have the same values for multiple occurrences of some variable

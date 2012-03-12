@@ -45,12 +45,16 @@ using namespace std;
 using namespace rel_ops;
 
 GenType operator not(GenType orig) {
+	GenType result = GenType::CANMAKEFALSE;
 	switch (orig) {
 	case GenType::CANMAKEFALSE:
-		return GenType::CANMAKETRUE;
+		result = GenType::CANMAKETRUE;
+		break;
 	case GenType::CANMAKETRUE:
-		return GenType::CANMAKEFALSE;
+		result = GenType::CANMAKEFALSE;
+		break;
 	}
+	return result;
 }
 
 int getIDForUndefined() {

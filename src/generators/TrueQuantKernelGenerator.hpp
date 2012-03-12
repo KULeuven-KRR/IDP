@@ -31,19 +31,18 @@ private:
 	bool _reset;
 
 	ElementTuple getDomainElements() {
-		auto tuple = vector<const DomainElement*>(_outvars.size());
-		for (int i = 0; i < _outvars.size(); ++i) {
-			tuple[i] = _outvars[i]->get();
+		ElementTuple tuple;
+		for (auto i = _outvars.cbegin(); i < _outvars.cend(); ++i) {
+			tuple.push_back((*i)->get());
 		}
 		return tuple;
 	}
 
 public:
 	TrueQuantKernelGenerator(InstGenerator* subBddTrueGenerator, vector<const DomElemContainer*> outvars)
-			: _subBddTrueGenerator(subBddTrueGenerator), _outvars(outvars), _alreadySeen() {
+			: _subBddTrueGenerator(subBddTrueGenerator), _alreadySeen(), _outvars(outvars), _reset(true) {
 	}
 
-	// FIXME reimplemnt clone
 	TrueQuantKernelGenerator* clone() const {
 		throw notyetimplemented("Cloning TrueQuantKernelGenerators.");
 	}

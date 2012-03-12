@@ -40,7 +40,7 @@ endif()
 
 
 ### Set default compile flags
-addToCXX("-std=c++0x -Wall -std=c++0x ")
+addToCXX("-std=c++0x -Wall ")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
 endif()

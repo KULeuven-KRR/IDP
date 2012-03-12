@@ -412,9 +412,9 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, int setnr) cons
  * This method is only made because the solver cannot handle products with sets containing zeros or negative values.
  * If the solver improves, this should be deleted.
  *
- * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often ayway.
+ * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often anyway.
  */
-Lit AggGrounder::splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, int setnr) const {
 	Assert(_type==AggFunction::PROD);
 	auto tsset = translator()->groundset(setnr);
 	litlist zerolits;

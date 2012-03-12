@@ -72,7 +72,7 @@ void GroundPolicy::polAdd(int defnr, AggGroundRule* rule) {
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
 
-void GroundPolicy::polAddOptimization(AggFunction function, int setid){
+void GroundPolicy::polAddOptimization(AggFunction /*function*/, int /*setid*/){
 	throw notyetimplemented("Adding optimization to the grounding\n");
 }
 

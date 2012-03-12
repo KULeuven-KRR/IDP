@@ -47,7 +47,7 @@ void ConjOrDisj::put(std::ostream& stream) const {
 }
 void ConjOrDisj::negate() {
 	_type = negateConn(_type);
-	for (auto i = 0; i < literals.size(); ++i) {
+	for (size_t i = 0; i < literals.size(); ++i) {
 		literals[i] = -literals.at(i);
 	}
 }

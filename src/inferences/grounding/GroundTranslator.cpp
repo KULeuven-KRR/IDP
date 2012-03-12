@@ -15,27 +15,6 @@
 
 using namespace std;
 
-inline size_t HashTuple::operator()(const ElementTuple& tuple) const {
-	size_t seed = 1;
-	for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
-		switch ((*i)->type()) {
-		case DomainElementType::DET_INT:
-			seed += (*i)->value()._int;
-			break;
-		case DomainElementType::DET_DOUBLE:
-			seed += (*i)->value()._double;
-			break;
-		case DomainElementType::DET_STRING:
-			seed += reinterpret_cast<size_t>((*i)->value()._string);
-			break;
-		case DomainElementType::DET_COMPOUND:
-			seed += reinterpret_cast<size_t>((*i)->value()._compound);
-			break;
-		}
-	}
-	return seed % 104729;
-}
-
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
@@ -132,7 +111,7 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, unsigned int id) const{
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const{
 	auto symbolID = getSymbol(pfs);
 	if(symbolID==-1){ // there is no such symbol yet
 		return true;
