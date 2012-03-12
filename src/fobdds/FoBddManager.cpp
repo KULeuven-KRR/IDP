@@ -785,7 +785,15 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	if (result != NULL) {
 		return result;
 	}
-
+	if(kernel == _truekernel){
+		return truebranch;
+	}
+	if(kernel == _falsekernel){
+		return falsebranch;
+	}
+	if(truebranch == falsebranch){
+		return truebranch;
+	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
 	const FOBDDKernel* falsekernel = falsebranch->kernel();
 
