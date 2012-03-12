@@ -27,6 +27,9 @@ class FOBDDDomainTerm;
 class FOBDDKernel;
 class FOBDDAtomKernel;
 class FOBDDQuantKernel;
+class FOBDDAggKernel;
+class FOBDDAggTerm;
+class FOBDDSetExpr;
 class FOBDD;
 class PFSymbol;
 class Variable;
@@ -38,6 +41,7 @@ class DomainTerm;
 class DomainElement;
 class tablesize;
 class Function;
+enum class CompType;
 
 typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;
 typedef std::map<const FOBDD*, MBDDBDD> MBDDMBDDBDD;
@@ -51,6 +55,8 @@ typedef std::map<AtomKernelType, MVTAK> MAKTMVTAK;
 typedef std::map<PFSymbol*, MAKTMVTAK> AtomKernelTable;
 typedef std::map<const FOBDD*, FOBDDQuantKernel*> MBDDQK;
 typedef std::map<Sort*, MBDDQK> QuantKernelTable;
+typedef std::map<const FOBDDTerm*, std::map<CompType, std::map<const FOBDDAggTerm*, FOBDDAggKernel*> > > AggKernelTable;
+
 
 typedef std::map<unsigned int, FOBDDKernel*> MIK;
 typedef std::map<KernelOrderCategory, MIK> KernelTable;
@@ -62,6 +68,7 @@ typedef std::map<const DomainElement*, FOBDDDomainTerm*> MTEDT;
 typedef std::map<Sort*, MTEDT> DomainTermTable;
 typedef std::map<std::vector<const FOBDDTerm*>, FOBDDFuncTerm*> MVAFT;
 typedef std::map<Function*, MVAFT> FuncTermTable;
+typedef std::map<AggFunction,std::map<const FOBDDSetExpr*, FOBDDAggTerm*> > AggTermTable;
 
 typedef pair<bool, const FOBDDKernel*> Choice;
 typedef vector<Choice> Path;
@@ -84,9 +91,11 @@ private:
 	BDDTable _bddtable;
 	AtomKernelTable _atomkerneltable;
 	QuantKernelTable _quantkerneltable;
+	AggKernelTable _aggkerneltable;
 	VariableTable _variabletable;
 	DeBruijnIndexTable _debruijntable;
 	FuncTermTable _functermtable;
+	AggTermTable _aggtermtable;
 	DomainTermTable _domaintermtable;
 	KernelTable _kernels;
 
@@ -126,9 +135,12 @@ public:
 
 	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDTerm*>&);
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
+	const FOBDDKernel* getAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDTerm* right);
+
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 	const FOBDDTerm* getFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
+	const FOBDDTerm* getAggTerm(AggFunction func, const FOBDDSetExpr* set);
 	const FOBDDDomainTerm* getDomainTerm(const DomainTerm* dt);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
@@ -200,13 +212,16 @@ private:
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
 	KernelOrder newOrder(const FOBDD* bdd);
+	KernelOrder newOrder(const FOBDDAggTerm* aggterm);
 
 	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
 	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDTerm*>& args);
 	FOBDDQuantKernel* addQuantKernel(Sort* sort, const FOBDD* bdd);
+	FOBDDAggKernel* addAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDAggTerm* right);
 	FOBDDVariable* addVariable(Variable* var);
 	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
+	FOBDDAggTerm* addAggTerm(AggFunction func, const FOBDDSetExpr* set);
 	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
 
 	void clearDynamicTables();

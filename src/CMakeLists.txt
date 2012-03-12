@@ -116,6 +116,7 @@ add_library(idp
 	fobdds/FoBddManager.cpp
 	fobdds/FoBddUtils.cpp
 	fobdds/FoBddVisitor.cpp
+	fobdds/FoBddSetExpr.cpp
 	utils/FileManagement.cpp
 	utils/NumericLimits.cpp
 	theory/TheoryUtils.cpp

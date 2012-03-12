@@ -55,11 +55,32 @@ void FOBDDFactory::visit(const FuncTerm* ft) {
 	_term = _manager->getFuncTerm(ft->function(), args);
 }
 
-void FOBDDFactory::visit(const AggTerm*) {
-	throw notyetimplemented("Creating a bdd for aggregate terms has not yet been implemented.");
-	//TODO
+void FOBDDFactory::visit(const AggTerm* at) {
+	auto function = at->function();
+	at->set()->accept(this);
+	_term = _manager->getAggTerm(function, _set);
 }
-
+void FOBDDFactory::visit(const EnumSetExpr* se) {
+	int size = se->subformulas().size();
+	Assert(size == se->subterms().size());
+	std::vector<const FOBDD*> subforms(size);
+	std::vector<const FOBDDTerm*> subterms(size);
+	for (int i = 0; i < size; i++) {
+		se->subformulas()[i]->accept(this);
+		subforms[i] = _bdd;
+		se->subterms()[i]->accept(this);
+		subterms[i] = _term;
+	}
+	_set = _manager->getEnumSetExpr(subforms,subterms, se->sort());
+}
+void FOBDDFactory::visit(const QuantSetExpr* se) {
+	se->subformulas()[0]->accept(this);
+	auto formula = _bdd;
+	se->subterms()[0]->accept(this);
+	auto term = _term;
+	//TODO: make sorts
+	_set = _manager->getQuantSetExpr(sorts, formula, term, se->sort());
+}
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,
  * if so, set the relevant kerneltype and inversion.
@@ -169,7 +190,20 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 	// f->recursiveDelete(); TODO deletes variables also!
 }
 
-void FOBDDFactory::visit(const AggForm*) {
-	throw notyetimplemented("Creating a bdd for aggregate formulas has not yet been implemented.");
-	//TODO
+void FOBDDFactory::visit(const AggForm* af) {
+#ifndef NDEBUG
+	if (af->left()->type() != TermType::TT_DOM && af->left()->type() != TermType::TT_VAR) {
+		throw notyetimplemented("Creating a bdd for unnested aggregate formulas has not yet been implemented.");
+	}
+#endif
+	auto invert = isNeg(af->sign());
+	af->left()->accept(this);
+	auto left = _term;
+	af->right()->accept(this);
+	_kernel = _manager->getAggKernel(left, af->comp(), _term);
+	if (invert) {
+		_bdd = _manager->ifthenelse(_kernel, _manager->falsebdd(), _manager->truebdd());
+	} else {
+		_bdd = _manager->ifthenelse(_kernel, _manager->truebdd(), _manager->falsebdd());
+	}
 }

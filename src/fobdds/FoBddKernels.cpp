@@ -10,10 +10,12 @@
 
 #include "fobdds/FoBddAtomKernel.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
+#include "fobdds/FoBddAggKernels.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddKernel.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "vocabulary/vocabulary.hpp"
 
 using namespace std;
@@ -30,12 +32,18 @@ bool FOBDDAtomKernel::containsDeBruijnIndex(unsigned int index) const {
 	}
 	return false;
 }
+bool FOBDDAggKernel::containsDeBruijnIndex(unsigned int index) const {
+	return _left->containsDeBruijnIndex(index)||_right->containsDeBruijnIndex(index);
+}
 
 void FOBDDAtomKernel::accept(FOBDDVisitor* v) const {
 
 	v->visit(this);
 }
 void FOBDDQuantKernel::accept(FOBDDVisitor* v) const {
+	v->visit(this);
+}
+void FOBDDAggKernel::accept(FOBDDVisitor* v) const {
 	v->visit(this);
 }
 
@@ -73,7 +81,6 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 	}
 	return output;
 }
-
 std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	output << "EXISTS(" << toString(_sort) << ") {\n";
 	pushtab();
@@ -81,6 +88,11 @@ std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	poptab();
 	output <<  "" <<nt();
 	output << "}";
+	return output;
+}
+std::ostream& FOBDDAggKernel::put(std::ostream& output) const{
+	output << "SOME AGGKERNEL"<<nt();
+	//TODO: printing of aggkernels
 	return output;
 }
 
@@ -97,5 +109,8 @@ const FOBDDKernel* FOBDDAtomKernel::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 const FOBDDKernel* FOBDDQuantKernel::acceptchange(FOBDDVisitor* v) const {
+	return v->change(this);
+}
+const FOBDDKernel* FOBDDAggKernel::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }

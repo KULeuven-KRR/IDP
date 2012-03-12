@@ -9,6 +9,7 @@
  ****************************************************************/
 
 #include "utils/NumericLimits.hpp"
+#include "commontypes.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/bddvisitors/OrderTerms.hpp"
 #include "fobdds/bddvisitors/TermOccursNested.hpp"
@@ -31,6 +32,8 @@
 #include "fobdds/bddvisitors/ContainsTerm.hpp"
 #include "fobdds/bddvisitors/CombineConstsOfMults.hpp"
 
+#include "fobdds/FoBddAggKernels.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/EstimateBDDInferenceCost.hpp"
 
 using namespace std;
@@ -56,6 +59,11 @@ KernelOrder FOBDDManager::newOrder(const vector<const FOBDDTerm*>& args) {
 
 KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
 	auto category = (bdd->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
+	return newOrder(category);
+}
+
+KernelOrder FOBDDManager::newOrder(const FOBDDAggTerm* aggterm) {
+	auto category = (aggterm->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
@@ -179,7 +187,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, FOBDDManager* manager) {
 }
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
-	Assert(lookup<FOBDD>(_bddtable,kernel,falsebranch,truebranch)==NULL);
+	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
 	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
@@ -276,7 +284,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 }
 
 FOBDDAtomKernel* FOBDDManager::addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const vector<const FOBDDTerm*>& args) {
-	Assert(lookup<FOBDDAtomKernel>(_atomkerneltable,symbol,akt,args)==NULL);
+	Assert(lookup < FOBDDAtomKernel > (_atomkerneltable, symbol, akt, args) == NULL);
 	FOBDDAtomKernel* newkernel = new FOBDDAtomKernel(symbol, akt, args, newOrder(args));
 	_atomkerneltable[symbol][akt][args] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
@@ -311,9 +319,33 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 }
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
-	Assert(lookup<FOBDDQuantKernel>(_quantkerneltable,sort,bdd)==NULL);
+	Assert(lookup < FOBDDQuantKernel > (_quantkerneltable, sort, bdd) == NULL);
 	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrder(bdd));
 	_quantkerneltable[sort][bdd] = newkernel;
+	_kernels[newkernel->category()][newkernel->number()] = newkernel;
+	return newkernel;
+}
+
+const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right) {
+#ifndef NDEBUG
+	if (not sametypeid<FOBDDAggTerm>(*right)) {
+		throw notyetimplemented("Creating aggkernel where right is nog aggterm ");
+		//this can happen when bdds are simplified...
+	}
+#endif
+	const FOBDDAggTerm* newright = dynamic_cast<const FOBDDAggTerm*>(right);
+	auto resultingAK = lookup<FOBDDAggKernel>(_aggkerneltable, left, comp, newright);
+	if (resultingAK != NULL) {
+		return resultingAK;
+	}
+	return addAggKernel(left, comp, newright);
+}
+
+FOBDDAggKernel* FOBDDManager::addAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDAggTerm* right) {
+
+	Assert(lookup < FOBDDAggKernel > (_aggkerneltable, left, comp, right) == NULL);
+	auto newkernel = new FOBDDAggKernel(left, comp, right, newOrder(right));
+	_aggkerneltable[left][comp][right] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
 	return newkernel;
 }
@@ -338,7 +370,7 @@ set<const FOBDDVariable*> FOBDDManager::getVariables(const set<Variable*>& vars)
 }
 
 FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
-	Assert(lookup<FOBDDVariable>(_variabletable,var)==NULL);
+	Assert(lookup < FOBDDVariable > (_variabletable, var) == NULL);
 	FOBDDVariable* newvariable = new FOBDDVariable(var);
 	_variabletable[var] = newvariable;
 	return newvariable;
@@ -356,7 +388,7 @@ const FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned in
 }
 
 FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index) {
-	Assert(lookup<FOBDDDeBruijnIndex>(_debruijntable,sort,index)==NULL);
+	Assert(lookup < FOBDDDeBruijnIndex > (_debruijntable, sort, index) == NULL);
 	FOBDDDeBruijnIndex* newindex = new FOBDDDeBruijnIndex(sort, index);
 	_debruijntable[sort][index] = newindex;
 	return newindex;
@@ -636,10 +668,26 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 }
 
 FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBDDTerm*>& args) {
-	Assert(lookup<FOBDDFuncTerm>(_functermtable,func,args) == NULL);
+	Assert(lookup < FOBDDFuncTerm > (_functermtable, func, args) == NULL);
 	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func, args);
 	_functermtable[func][args] = newarg;
 	return newarg;
+}
+
+const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDSetExpr* set) {
+	auto result = lookup<FOBDDAggTerm>(_aggtermtable, func, set);
+	if (result != NULL) {
+		return result;
+	}
+	// Lookup failed, create a new funcion term
+	return addAggTerm(func, set);
+}
+
+FOBDDAggTerm* FOBDDManager::addAggTerm(AggFunction func, const FOBDDSetExpr* set) {
+	Assert(lookup<FOBDDAggTerm>(_aggtermtable, func, set) == NULL);
+	FOBDDAggTerm* result =new FOBDDAggTerm(func,set);
+	_aggtermtable[func][set] = result;
+	return result;
 }
 
 const FOBDDDomainTerm* FOBDDManager::getDomainTerm(const DomainTerm* dt) {
@@ -657,7 +705,7 @@ const FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainEleme
 }
 
 FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* value) {
-	Assert(lookup<FOBDDDomainTerm>(_domaintermtable, sort, value)==NULL);
+	Assert(lookup < FOBDDDomainTerm > (_domaintermtable, sort, value) == NULL);
 	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(sort, value);
 	_domaintermtable[sort][value] = newdt;
 	return newdt;
@@ -785,13 +833,13 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	if (result != NULL) {
 		return result;
 	}
-	if(kernel == _truekernel){
+	if (kernel == _truekernel) {
 		return truebranch;
 	}
-	if(kernel == _falsekernel){
+	if (kernel == _falsekernel) {
 		return falsebranch;
 	}
-	if(truebranch == falsebranch){
+	if (truebranch == falsebranch) {
 		return truebranch;
 	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
@@ -922,7 +970,7 @@ int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		return 1;
 	} else {
-		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
+		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
 		const FOBDDQuantKernel* qk = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return longestbranch(qk->bdd()) + 1;
 	}
@@ -1112,7 +1160,7 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
 		}
 		return false;
 	} else {
-		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
+		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return contains(quantkernel->bdd(), v);
 	}
@@ -1323,7 +1371,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		}
 		return chance;
 	} else { // case of a quantification kernel
-		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
+		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 		// get the table of the sort of the quantified variable
@@ -1733,7 +1781,7 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 			// And bestposition is a negative (or 0) number: the number of moveUps needed.
 
 			// move to best position
-			Assert(bestposition<=0);
+			Assert(bestposition <= 0);
 			//if (bestposition < 0) {
 			for (int n = 0; n > bestposition; --n)
 				moveUp(*it);
