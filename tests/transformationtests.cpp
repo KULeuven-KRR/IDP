@@ -546,7 +546,7 @@ public:
 	TestGrounder(PredForm& pred, Context context):DelayGrounder(pred.symbol(), pred.args(), context, -1, new GroundTheory<GroundPolicy>(NULL)){
 
 	}
-	void doGround(const Lit& boundlit, const ElementTuple& args) {
+	void doGround(const Lit&, const ElementTuple&) {
 
 	}
 };

@@ -91,7 +91,7 @@ protected:
 
 class DelayGrounder {
 private:
-	unsigned int _id;
+	int _id;
 	Context _context;
 
 	bool _isGrounding;
@@ -105,14 +105,14 @@ public:
 	// @precondition: two IDs HAVE to be different if referring to an instance of a symbol in a DIFFERENT definition (if it is a head)
 	//		it HAS to be -1 if it is not a head occurrence
 	// 		in all other cases, they should preferably be equal
-	DelayGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, unsigned int id, AbstractGroundTheory* gt);
+	DelayGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, int id, AbstractGroundTheory* gt);
 	virtual ~DelayGrounder() {
 	}
 
 	void ground(const Lit& boundlit, const ElementTuple& args);
 	void notify(const Lit& boundlit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders);
 
-	unsigned int getID() const {
+	int getID() const {
 		return _id;
 	}
 	Context getContext() const {

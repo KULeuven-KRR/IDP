@@ -166,119 +166,106 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	return false;
 }
 
-// FIXME DUPLICATION!
-const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2) {
+std::string getDomElemOpErrorMessage(const std::string& operation){
+	stringstream ss;
+	ss <<"Taking the " <<operation <<" of domain elements of nonnumerical types";
+	return ss.str();
+}
+
+template<typename IntOpType, typename DoubleOpType>
+const DomainElement* domElemOp(const DomainElement* d1, const DomainElement* d2, IntOpType (*opint)(IntOpType, IntOpType), DoubleOpType (*opdouble)(DoubleOpType, DoubleOpType), const std::string& operation) {
+	const DomainElement* dnew = NULL;
 	switch (d1->type()) {
 	case DET_INT:
 		switch (d2->type()) {
 		case DET_INT:
-			return createDomElem(d1->value()._int + d2->value()._int);
+			dnew = createDomElem(opint(d1->value()._int, d2->value()._int));
+			break;
 		case DET_DOUBLE:
-			return createDomElem(double(d1->value()._int) + d2->value()._double);
+			dnew = createDomElem(opdouble(double(d1->value()._int), d2->value()._double));
+			break;
 		case DET_STRING:
 		case DET_COMPOUND:
-			throw notyetimplemented("Sum of domain elements of nonnumerical types");
+			throw notyetimplemented(getDomElemOpErrorMessage(operation));
 		}
 		break;
 	case DET_DOUBLE:
 		switch (d2->type()) {
 		case DET_INT:
-			return createDomElem(d1->value()._double + double(d2->value()._int));
+			dnew = createDomElem(opdouble(d1->value()._double, double(d2->value()._int)));
+			break;
 		case DET_DOUBLE:
-			return createDomElem(d1->value()._double + d2->value()._double);
+			dnew = createDomElem(opdouble(d1->value()._double, d2->value()._double));
+			break;
 		case DET_STRING:
 		case DET_COMPOUND:
-			throw notyetimplemented("Sum of domain elements of nonnumerical types");
+			throw notyetimplemented(getDomElemOpErrorMessage(operation));
 		}
 		break;
 	case DET_STRING:
 	case DET_COMPOUND:
-		throw notyetimplemented("Sum of domain elements of nonnumerical types");
+		throw notyetimplemented(getDomElemOpErrorMessage(operation));
 	}
+	return dnew;
+}
+
+template<typename T>
+T sum(T l, T r){
+	return l+r;
+}
+
+template<typename T>
+T prod(T l, T r){
+	return l*r;
+}
+
+template<typename T>
+T pow(T l, T r){
+	return std::pow(l,r);
+}
+
+const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2) {
+	return domElemOp(d1, d2, &sum<int>, &sum<double>, "sum");
 }
 
 const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d2) {
-	switch (d1->type()) {
-	case DET_INT:
-		switch (d2->type()) {
-		case DET_INT:
-			return createDomElem(d1->value()._int * d2->value()._int);
-		case DET_DOUBLE:
-			return createDomElem(double(d1->value()._int) * d2->value()._double);
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented("Product of domain elements of nonnumerical types");
-		}
-		break;
-	case DET_DOUBLE:
-		switch (d2->type()) {
-		case DET_INT:
-			return createDomElem(d1->value()._double * double(d2->value()._int));
-		case DET_DOUBLE:
-			return createDomElem(d1->value()._double * d2->value()._double);
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented("Product of domain elements of nonnumerical types");
-		}
-		break;
-	case DET_STRING:
-	case DET_COMPOUND:
-		throw notyetimplemented("Product of domain elements of nonnumerical types");
-	}
+	return domElemOp(d1, d2, &prod<int>, &prod<double>, "product");
+}
+
+const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2) {
+	return domElemOp<double, double>(d1, d2, &pow<double>, &pow<double>, "power");
 }
 
 const DomainElement* domElemAbs(const DomainElement* d) {
+	const DomainElement* dnew = NULL;
 	switch (d->type()) {
 	case DET_INT:
-		return createDomElem(std::abs(d->value()._int));
+		dnew = createDomElem(std::abs(d->value()._int));
+		break;
 	case DET_DOUBLE:
-		return createDomElem(std::abs(d->value()._double));
+		dnew = createDomElem(std::abs(d->value()._double));
+		break;
 	case DET_STRING:
 	case DET_COMPOUND:
 		throw notyetimplemented("Absolute value of domain elements of nonnumerical types");
 	}
+	return dnew;
 }
 
 const DomainElement* domElemUmin(const DomainElement* d) {
+	const DomainElement* dnew = NULL;
 	switch (d->type()) {
 	case DET_INT:
-		return createDomElem(-d->value()._int);
+		dnew = createDomElem(-d->value()._int);
+		break;
 	case DET_DOUBLE:
-		return createDomElem(-d->value()._double);
+		dnew = createDomElem(-d->value()._double);
+		break;
 	case DET_STRING:
 	case DET_COMPOUND:
 		throw notyetimplemented("Negative value of domain elements of nonnumerical types");
 	}
-}
-
-const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2) {
-	switch (d1->type()) {
-	case DET_INT:
-		switch (d2->type()) {
-		case DET_INT:
-			return createDomElem(std::pow(double(d1->value()._int), double(d2->value()._int)));
-		case DET_DOUBLE:
-			return createDomElem(std::pow(double(d1->value()._int), d2->value()._double));
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented("Power of domain elements of nonnumerical types");
-		}
-		break;
-	case DET_DOUBLE:
-		switch (d2->type()) {
-		case DET_INT:
-			return createDomElem(std::pow(d1->value()._double, double(d2->value()._int)));
-		case DET_DOUBLE:
-			return createDomElem(std::pow(d1->value()._double, d2->value()._double));
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented("Power of domain elements of nonnumerical types");
-		}
-		break;
-	case DET_STRING:
-	case DET_COMPOUND:
-		throw notyetimplemented("Product of domain elements of nonnumerical types");
-	}
+	return dnew;
 }
 
 Compound::Compound(Function* function, const ElementTuple& arguments)
@@ -4131,14 +4118,14 @@ bool Structure::isConsistent() const {
 	return true;
 }
 
-bool needMoreModels(unsigned int found) {
-	auto expected = getOption(IntType::NBMODELS);
-	return expected == 0 || found < expected;
-}
-
 bool needFixedNumberOfModels() {
 	auto expected = getOption(IntType::NBMODELS);
 	return expected != 0 && expected < getMaxElem<int>();
+}
+
+bool needMoreModels(unsigned int found) {
+	auto expected = getOption(IntType::NBMODELS);
+	return expected == 0 || (needFixedNumberOfModels() && found < (unsigned int) expected);
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,

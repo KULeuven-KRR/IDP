@@ -20,16 +20,22 @@
 using namespace std;
 
 TruthType swapTF(TruthType type) {
+	TruthType result = TruthType::CERTAIN_TRUE;
 	switch (type) {
 	case TruthType::POSS_FALSE:
-		return TruthType::POSS_TRUE;
+		result = TruthType::POSS_TRUE;
+		break;
 	case TruthType::POSS_TRUE:
-		return TruthType::POSS_FALSE;
+		result = TruthType::POSS_FALSE;
+		break;
 	case TruthType::CERTAIN_FALSE:
-		return TruthType::CERTAIN_TRUE;
+		result = TruthType::CERTAIN_TRUE;
+		break;
 	case TruthType::CERTAIN_TRUE:
-		return TruthType::CERTAIN_FALSE;
+		result = TruthType::CERTAIN_FALSE;
+		break;
 	}
+	return result;
 }
 
 const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) {

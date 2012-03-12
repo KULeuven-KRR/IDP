@@ -19,6 +19,9 @@ enum class Pattern {
 	INPUT, OUTPUT
 };
 
+template<>
+std::string toString(const Pattern& type);
+
 class InstChecker {
 private:
 	bool generatesInfiniteDomain;

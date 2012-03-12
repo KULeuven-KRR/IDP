@@ -140,7 +140,7 @@ enum {
     SPECIAL_RIGHT = -23,
     SPECIAL_DELETE = -24,
     SPECIAL_HOME = -25,
-    SPECIAL_END = -26,
+    SPECIAL_END = -26
 };
 
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
@@ -1349,7 +1349,6 @@ int linenoiseHistorySave(const char *filename) {
 
 int linenoiseHistoryAppend(const char *filename, const char* line) {
     FILE *fp = fopen(filename,"a");
-    int j;
 
     if (fp == NULL){
     	return -1;

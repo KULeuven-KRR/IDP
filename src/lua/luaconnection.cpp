@@ -189,64 +189,83 @@ void compile(UserProcedure* procedure, lua_State* state) {
  * Push a domain element to the lua stack
  */
 int convertToLua(lua_State* L, const DomainElement* d) {
+	int result = -1;
 	switch (d->type()) {
 	case DET_INT:
 		lua_pushinteger(L, d->value()._int);
-		return 1;
+		result = 1;
+		break;
 	case DET_DOUBLE:
 		lua_pushnumber(L, d->value()._double);
-		return 1;
+		result = 1;
+		break;
 	case DET_STRING:
 		lua_pushstring(L, d->value()._string->c_str());
-		return 1;
+		result = 1;
+		break;
 	case DET_COMPOUND:
-		return addUserData(L, d->value()._compound, AT_COMPOUND);
+		result = addUserData(L, d->value()._compound, AT_COMPOUND);
+		break;
 	}
+	return result;
 }
 
 /**
  * Push an internal argument to the lua stack
  */
 int convertToLua(lua_State* L, InternalArgument arg) {
+	int result = -1;
 	switch (arg._type) {
 	case AT_SORT: {
-		return addUserData(L, arg._value._sort, arg._type);
+		result = addUserData(L, arg._value._sort, arg._type);
+		break;
 	}
 	case AT_PREDICATE: {
-		return addUserData(L, arg._value._predicate, arg._type);
+		result = addUserData(L, arg._value._predicate, arg._type);
+		break;
 	}
 	case AT_FUNCTION: {
-		return addUserData(L, arg._value._function, arg._type);
+		result = addUserData(L, arg._value._function, arg._type);
+		break;
 	}
 	case AT_SYMBOL: {
-		return addUserData(L, arg._value._symbol, arg._type);
+		result = addUserData(L, arg._value._symbol, arg._type);
+		break;
 	}
 	case AT_VOCABULARY: {
-		return addUserData(L, arg._value._vocabulary, arg._type);
+		result = addUserData(L, arg._value._vocabulary, arg._type);
+		break;
 	}
 	case AT_COMPOUND: {
-		return addUserData(L, arg._value._compound, arg._type);
+		result = addUserData(L, arg._value._compound, arg._type);
+		break;
 	}
 	case AT_DOMAINATOM: {
-		return addUserData(L, arg._value._domainatom, arg._type);
+		result = addUserData(L, arg._value._domainatom, arg._type);
+		break;
 	}
 	case AT_TUPLE: {
-		return addUserData(L, arg._value._tuple, arg._type);
+		result = addUserData(L, arg._value._tuple, arg._type);
+		break;
 	}
 	case AT_DOMAIN: {
-		return addUserData(L, arg._value._domain, arg._type);
+		result = addUserData(L, arg._value._domain, arg._type);
+		break;
 	}
 	case AT_PREDTABLE: {
-		return addUserData(L, arg._value._predtable, arg._type);
+		result = addUserData(L, arg._value._predtable, arg._type);
+		break;
 	}
 	case AT_PREDINTER: {
-		return addUserData(L, arg._value._predinter, arg._type);
+		result = addUserData(L, arg._value._predinter, arg._type);
+		break;
 	}
 	case AT_FUNCINTER: {
-		return addUserData(L, arg._value._funcinter, arg._type);
+		result = addUserData(L, arg._value._funcinter, arg._type);
+		break;
 	}
 	case AT_STRUCTURE: {
-		AbstractStructure** ptr = (AbstractStructure**) lua_newuserdata(L, sizeof(AbstractStructure*));
+		auto ptr = (AbstractStructure**) lua_newuserdata(L, sizeof(AbstractStructure*));
 		(*ptr) = arg._value._structure;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
@@ -257,16 +276,19 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 				_luastructures[arg._value._structure] = 1;
 			}
 		}
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_TABLEITERATOR: {
-		return addUserData(L, arg._value._tableiterator, arg._type);
+		result = addUserData(L, arg._value._tableiterator, arg._type);
+		break;
 	}
 	case AT_DOMAINITERATOR: {
-		return addUserData(L, arg._value._sortiterator, arg._type);
+		result = addUserData(L, arg._value._sortiterator, arg._type);
+		break;
 	}
 	case AT_THEORY: {
-		AbstractTheory** ptr = (AbstractTheory**) lua_newuserdata(L, sizeof(AbstractTheory*));
+		auto ptr = (AbstractTheory**) lua_newuserdata(L, sizeof(AbstractTheory*));
 		(*ptr) = arg._value._theory;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
@@ -277,19 +299,23 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 				_luatheories[arg._value._theory] = 1;
 			}
 		}
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_FORMULA: {
-		return addUserData(L, arg._value._formula, arg._type);
+		result = addUserData(L, arg._value._formula, arg._type);
+		break;
 	}
 	case AT_QUERY: {
-		return addUserData(L, arg._value._query, arg._type);
+		result = addUserData(L, arg._value._query, arg._type);
+		break;
 	}
 	case AT_TERM: {
-		return addUserData(L, arg._value._term, arg._type);
+		result = addUserData(L, arg._value._term, arg._type);
+		break;
 	}
 	case AT_OPTIONS: {
-		Options** ptr = (Options**) lua_newuserdata(L, sizeof(Options*));
+		auto ptr = (Options**) lua_newuserdata(L, sizeof(Options*));
 		(*ptr) = arg._value._options;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
@@ -298,31 +324,38 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		} else {
 			_luaoptions[arg._value._options] = 1;
 		}
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_NAMESPACE: {
-		return addUserData(L, arg._value._namespace, arg._type);
+		result = addUserData(L, arg._value._namespace, arg._type);
+		break;
 	}
 	case AT_NIL: {
 		lua_pushnil(L);
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_INT: {
 		lua_pushinteger(L, arg._value._int);
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_DOUBLE: {
 		lua_pushnumber(L, arg._value._double);
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_BOOLEAN: {
 		lua_pushboolean(L, arg._value._boolean);
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_STRING: {
 		Assert(arg._value._string!=NULL);
 		lua_pushstring(L, arg._value._string->c_str());
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_TABLE: {
 		Assert(arg._value._table!=NULL);
@@ -332,15 +365,18 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 			convertToLua(L, (*(arg._value._table))[n]);
 			lua_settable(L, -3);
 		}
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_PROCEDURE: {
 		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
-		return 1;
+		result = 1;
+		break;
 	}
 	case AT_OVERLOADED: {
-		return addUserData(L, arg._value._overloaded, arg._type);
+		result = addUserData(L, arg._value._overloaded, arg._type);
+		break;
 	}
 	case AT_MULT: {
 		Assert(arg._value._table!=NULL);
@@ -348,15 +384,18 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		for (size_t n = 0; n < arg._value._table->size(); ++n) {
 			nrres += convertToLua(L, (*(arg._value._table))[n]);
 		}
-		return nrres;
+		result = nrres;
+		break;
 	}
 	case AT_REGISTRY:
 		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
-		return 1;
+		result = 1;
+		break;
 	case AT_TRACEMONITOR:
 		throw IdpException("Tracemonitors cannot be passed to lua.");
 	}
+	return result;
 }
 
 InternalArgument createArgument(int arg, lua_State* L) {
@@ -754,8 +793,8 @@ int gcOverloaded(lua_State* L) {
 	return garbageCollect(*(OverloadedObject**) lua_touserdata(L, 1));
 }
 
-int gcDomain(lua_State* L) {
-	//return garbageCollect(*(SortTable**) lua_touserdata(L, 1));
+int gcDomain(lua_State*) {
+	// TODO return garbageCollect(*(SortTable**) lua_touserdata(L, 1));
 	return 0;
 }
 int gcStructure(lua_State* L) {

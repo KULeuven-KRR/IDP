@@ -47,6 +47,6 @@ void yyinit(){ }
 void yydestroy(){
 }
 
-void yyerror(const char* msg) {
+void yyerror(const char*) {
 	abort();
 }

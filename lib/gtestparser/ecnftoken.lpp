@@ -10,7 +10,7 @@ stringstream ss;
 %}
 
 /* lex definitions: */
-%option noyywrap never-interactive 
+%option noyywrap never-interactive nounput
 
 %s block
 
