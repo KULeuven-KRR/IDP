@@ -2464,9 +2464,9 @@ public:
 	InvSuccInterGenerator* get(const std::vector<Sort*>&);
 };
 
-/*****************
- Structures
- *****************/
+/**************
+ * Structures
+ **************/
 
 /** Abstract base class **/
 
@@ -2474,7 +2474,6 @@ class Predicate;
 
 class AbstractStructure {
 protected:
-
 	std::string _name; // The name of the structure
 	ParseInfo _pi; // The place where this structure was parsed.
 	Vocabulary* _vocabulary; // The vocabulary of the structure.
@@ -2537,7 +2536,7 @@ private:
 	std::map<Predicate*, PredInter*> _predinter; //!< The interpretations of the predicate symbols.
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
 
-	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
+	mutable std::vector<PredInter*> _intersToDelete; //!< Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
 	void canIncrement(TableIterator & domainIterator) const;
 
 public:
@@ -2560,7 +2559,6 @@ public:
 
 	// Inspectors
 	SortTable* inter(Sort* s) const; //!< Return the domain of s.
-
 	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
 	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
@@ -2594,20 +2592,19 @@ public:
 	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
 	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
 	void clean() {
-	} //!< make three-valued interpretations that are in fact
-	  //!< two-valued, two-valued.
+	} //!< make three-valued interpretations that are in fact two-valued, two-valued.
 	void materialize() {
 	} //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
-	SortTable* inter(Sort* s) const; // Return the domain of s.
-	PredInter* inter(Predicate* p) const; // Return the interpretation of p.
-	FuncInter* inter(Function* f) const; // Return the interpretation of f.
-	PredInter* inter(PFSymbol* s) const; // Return the interpretation of s.
+	SortTable* inter(Sort* s) const; //!< Return the domain of s.
+	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
+	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
+	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
 
 	const std::map<Predicate*, PredInter*>& getPredInters() const;
 	const std::map<Function*, FuncInter*>& getFuncInters() const;
 
-	AbstractStructure* clone() const; // take a clone of this structure
+	AbstractStructure* clone() const; //!< take a clone of this structure
 
 	Universe universe(const PFSymbol*) const;
 
@@ -2620,9 +2617,9 @@ public:
 // Contents ownership to receiver
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& s);
 
-/************************
- Auxiliary methods
- ************************/
+/*********************
+ * Auxiliary methods
+ *********************/
 
 namespace TableUtils {
 PredInter* leastPredInter(const Universe& univ);
