@@ -632,29 +632,29 @@ where \code{MyOption} is the name of the option and \code{MyValue} is the value 
 To activate an option set, use the procedure \code{setascurrentoptions(MyOptionSet)}.  From that moment, \code{MyOptionSet} will be used in all comands.
 
 \begin{description}
-	\item[autocomplete = [false, true]] Turn autocompletion of structures on or off
-	%\item[cpsupport = [false, true]] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
-	%\item[createtranslation = [false, true]] \todo{watdoetdit?}
-	%\item[groundlazily = [false, true]] Enable/disable lazy grounding
-	\item[groundverbosity = [0..max(int)]] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
-	%\item[groundwithbounds = [false, true]] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
-	\item[language = [ecnf, idp, %latex, asp, txt
-				tptp]] The language used when printing objects. 
-	%\item[longestbranch = [0..2147483647]] \todo{}
-	\item[longnames = [false, true]] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
-	%\item[nbmodelequivalent = [false, true]] If set true, the result of modelexpansion will be \textbf{all} models.  If set false, some models might be left out for efficiency.
-	\item[nbmodels = [0..max(int)]] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
-	%\item[nrpropsteps = [0..2147483647]] \todo{ietsmetbddsmaarwat?}
-	%\item[printtypes = [false, true]] \todo{doet niets voor de moment?}
-	%\item[propagateverbosity = [0..2147483647]]Like groundverbosity, but controls the verbosity of the propagation.
-	%\item[provertimeout = [0..2147483647]] \todo{?}
-	%\item[randomvaluechoice =  [false, true]] \todo{?}
-	%\item[relativepropsteps =  [false, true]] \todo{?}
-	\item[satverbosity = [0..max(int)]] Like groundverbosity, but controls the verbosity of \minisatid
-	%\item[showwarnings = [false, true]] Enable/disable the warnings.
-	%\item[symmetry = [0..2147483647]] \todo{?} 1 is static, 0 is none, higher = ?
-	\item[timeout = [0..max(int)]] Set the timeout for inferences (in seconds)
-	\item[trace = [false, true]] If true, the procedure modelexpand produces also an execution trace of \minisatid 
+	\item[{autocomplete = [false, true]}] Turn autocompletion of structures on or off
+	%\item[{cpsupport = [false, true]}] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
+	%\item[{createtranslation = [false, true]}] \todo{watdoetdit?}
+	%\item[{groundlazily = [false, true]}] Enable/disable lazy grounding
+	\item[{groundverbosity = [0..max(int)]}] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
+	%\item[{groundwithbounds = [false, true]}] Enable/disable the BDD's.  BDD's provide ct and cf bounds for formulas to reduce the size of the grounding.
+	\item[{language = [ecnf, idp, %latex, asp, txt
+				tptp]}] The language used when printing objects. 
+	%\item[{longestbranch = [0..2147483647]}] \todo{}
+	\item[{longnames = [false, true]}] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
+	%\item[{nbmodelequivalent = [false, true]}] If set true, the result of modelexpansion will be \textbf{all} models.  If set false, some models might be left out for efficiency.
+	\item[{nbmodels = [0..max(int)]}] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
+	%\item[{nrpropsteps = [0..2147483647]}] \todo{ietsmetbddsmaarwat?}
+	%\item[{printtypes = [false, true]}] \todo{doet niets voor de moment?}
+	%\item[{propagateverbosity = [0..2147483647]}]Like groundverbosity, but controls the verbosity of the propagation.
+	%\item[{provertimeout = [0..2147483647]}] \todo{?}
+	%\item[{randomvaluechoice =  [false, true]}] \todo{?}
+	%\item[{relativepropsteps =  [false, true]}] \todo{?}
+	\item[{satverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
+	%\item[{showwarnings = [false, true]}] Enable/disable the warnings.
+	%\item[{symmetry = [0..2147483647]}] \todo{?} 1 is static, 0 is none, higher = ?
+	\item[{timeout = [0..max(int)]}] Set the timeout for inferences (in seconds)
+	\item[{trace = [false, true]}] If true, the procedure modelexpand produces also an execution trace of \minisatid 
 
 \end{description}
 
