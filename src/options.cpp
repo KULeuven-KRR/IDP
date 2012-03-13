@@ -141,8 +141,9 @@ std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => between " << lower() << " and " << upper() << ".\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 template<>
@@ -161,8 +162,9 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 		}
 		ss << "]\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 template<class EnumType, class ConcreteType>
@@ -181,8 +183,9 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 		}
 		ss << "]\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 Language Options::language() const {
