@@ -42,6 +42,10 @@ public:
 		Assert(_subformulas.size()==_subterms.size());
 		return _subformulas.size();
 	}
+
+	const std::vector<Sort*>& quantvarsorts() const{
+		return _quantvarsorts;
+	}
 	const FOBDD* subformula(int i) const {
 		Assert(i<_subformulas.size());
 		return _subformulas[i];

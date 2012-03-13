@@ -15,6 +15,7 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddUtils.hpp"
 
@@ -44,6 +45,12 @@ private:
 		avoidempty();
 		_result.push_back(i);
 	}
+
+	void visit(const FOBDDAggTerm* at) {
+		avoidempty();
+		_result.push_back(at);
+	}
+
 	void visit(const FOBDDFuncTerm* ft) {
 		if (ft->func()->name() == Operation::getFuncName()) {
 			ft->args(0)->accept(this);

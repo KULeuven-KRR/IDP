@@ -20,7 +20,7 @@
 #include "FoBddIndex.hpp"
 #include "FoBddAtomKernel.hpp"
 #include "FoBddQuantKernel.hpp"
-#include "FoBddAggKernels.hpp"
+#include "FoBddAggKernel.hpp"
 #include "FoBddUtils.hpp"
 #include "FoBdd.hpp"
 

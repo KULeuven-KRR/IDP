@@ -84,7 +84,7 @@ void FOBDDFactory::visit(const QuantSetExpr* se) {
 	for (auto it = se->quantVars().cbegin(); it != se->quantVars().cend(); it.operator ++(), i++) {
 		variables[i] = _manager->getVariable((*it));
 	}
-	_set = _manager->getQuantSetExpr(variables, formula, term, se->sort());
+	_set = _manager->setquantify(variables, formula, term, se->sort());
 }
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,

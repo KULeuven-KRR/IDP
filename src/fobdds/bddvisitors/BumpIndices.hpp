@@ -36,6 +36,10 @@ public:
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
 
+	const FOBDDKernel* change(const FOBDDAggKernel* kernel){
+		throw notyetimplemented("Bumpindices for bdds with aggregates");
+	}
+
 	const FOBDDTerm* change(const FOBDDVariable* var) {
 		if (var == _variable) {
 			return _manager->getDeBruijnIndex(var->variable()->sort(), _depth);

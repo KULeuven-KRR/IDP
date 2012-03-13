@@ -138,7 +138,9 @@ public:
 	const FOBDDKernel* getAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDTerm* right);
 
 	const FOBDDSetExpr* getEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
-	const FOBDDSetExpr* getQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
+	//If this is not the case, use setquantify!
+	const FOBDDSetExpr* getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
 
 	const FOBDDVariable* getVariable(Variable* var);
@@ -158,6 +160,9 @@ public:
 	const FOBDD* univquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* existsquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
+
+	const FOBDDSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+
 
 	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
@@ -228,7 +233,7 @@ private:
 	FOBDDAggTerm* addAggTerm(AggFunction func, const FOBDDSetExpr* set);
 	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
 	FOBDDSetExpr* addEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
-	FOBDDSetExpr* addQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	FOBDDSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
 
 	void clearDynamicTables();

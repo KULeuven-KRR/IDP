@@ -32,7 +32,7 @@
 #include "fobdds/bddvisitors/ContainsTerm.hpp"
 #include "fobdds/bddvisitors/CombineConstsOfMults.hpp"
 
-#include "fobdds/FoBddAggKernels.hpp"
+#include "fobdds/FoBddAggKernel.hpp"
 #include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/EstimateBDDInferenceCost.hpp"
 
@@ -345,9 +345,9 @@ const FOBDDSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDD*>
 	//TODO: improve this with dynamic programming!
 	return addEnumSetExpr(formulas, terms, sort);
 }
-const FOBDDSetExpr* FOBDDManager::getQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+const FOBDDSetExpr* FOBDDManager::getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	//TODO: improve this with dynamic programming!
-	return addQuantSetExpr(vars, formula, term, sort);
+	return addQuantSetExpr(varsorts, formula, term, sort);
 }
 
 FOBDDAggKernel* FOBDDManager::addAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDAggTerm* right) {
@@ -724,23 +724,9 @@ FOBDDSetExpr* FOBDDManager::addEnumSetExpr(const std::vector<const FOBDD*>& form
 	//TODO: improve with dynamic programming
 	return new FOBDDEnumSetExpr(formulas, terms, sort);
 }
-FOBDDSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+FOBDDSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	//TODO: improve with dynamic programming
-	std::vector<Sort*> sorts(vars.size());
-	int i = 0;
-	const FOBDD* bumpedformula = formula;
-	const FOBDDTerm* bumpedterm = term;
-	for (auto it = vars.crbegin(); it != vars.crend(); it.operator ++(), i++) {
-		BumpIndices b(this, *it, 0);
-		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
-		bumpedterm = bumpedterm->acceptchange(&b);
-	}
-	i = 0;
-	for (auto it = vars.cbegin(); it != vars.cend(); it.operator ++(), i++) {
-		sorts[i] = (*it)->sort();
-	}
-
-	return new FOBDDQuantSetExpr(sorts, bumpedformula, bumpedterm, sort);
+	return new FOBDDQuantSetExpr(varsorts, formula, term, sort);
 }
 
 /*************************
@@ -919,6 +905,26 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	_ifthenelsetable[kernel][truebranch][falsebranch] = result;
 	return result;
 
+}
+const FOBDDSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+	if(vars.size()==0){
+		throw notyetimplemented("FOBDDQUANTSET without variables");
+		Assert(false);//TODO what does this mean?  Enumsetexpr with one?
+	}
+	std::vector<Sort*> sorts(vars.size());
+	int i = 0;
+	const FOBDD* bumpedformula = formula;
+	const FOBDDTerm* bumpedterm = term;
+	for (auto it = vars.crbegin(); it != vars.crend(); it.operator ++(), i++) {
+		BumpIndices b(this, *it, 0);
+		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
+		bumpedterm = bumpedterm->acceptchange(&b);
+	}
+	i = 0;
+	for (auto it = vars.cbegin(); it != vars.cend(); it.operator ++(), i++) {
+		sorts[i] = (*it)->sort();
+	}
+	return getQuantSetExpr(sorts, bumpedformula, bumpedterm, sort);
 }
 
 const FOBDD* FOBDDManager::univquantify(const FOBDDVariable* var, const FOBDD* bdd) {
@@ -1133,17 +1139,17 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 }
 
 Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
-	BDDToFormula btf(this);
+	BDDToFO btf(this);
 	return btf.createFormula(bdd);
 }
 
 Formula* FOBDDManager::toFormula(const FOBDDKernel* kernel) {
-	BDDToFormula btf(this);
+	BDDToFO btf(this);
 	return btf.createFormula(kernel);
 }
 
 Term* FOBDDManager::toTerm(const FOBDDTerm* arg) {
-	BDDToFormula btf(this);
+	BDDToFO btf(this);
 	return btf.createTerm(arg);
 }
 

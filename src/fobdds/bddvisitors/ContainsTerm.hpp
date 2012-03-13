@@ -71,6 +71,15 @@ private:
 		}
 	}
 
+	void visit(const FOBDDAggTerm* a) {
+		if (a == _arg) {
+			_result = true;
+			return;
+		} else {
+			a->setexpr()->accept(this);
+		}
+	}
+
 };
 
 #endif /* CONTAINSTERM_HPP_ */

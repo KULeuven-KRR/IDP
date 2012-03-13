@@ -10,7 +10,7 @@
 
 #include "fobdds/FoBddAtomKernel.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
-#include "fobdds/FoBddAggKernels.hpp"
+#include "fobdds/FoBddAggKernel.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddKernel.hpp"
 #include "fobdds/FoBdd.hpp"

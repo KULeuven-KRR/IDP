@@ -37,6 +37,10 @@ public:
 		--_minimaldepth;
 	}
 
+	void visit(const FOBDDAggKernel* ak){
+		throw notyetimplemented("Collecting indices from an agg kernel");
+	}
+
 	void visit(const FOBDDDeBruijnIndex* index) {
 		if (index->index() >= _minimaldepth) {
 			auto i = _manager->getDeBruijnIndex(index->sort(), index->index() - _minimaldepth);

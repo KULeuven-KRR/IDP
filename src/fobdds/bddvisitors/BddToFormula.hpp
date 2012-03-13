@@ -28,7 +28,7 @@
  * Given a bdd or a kernel, creates the associated formula.
  * Given a bddterm, creates the associated term.
  */
-class BDDToFormula: public FOBDDVisitor {
+class BDDToFO: public FOBDDVisitor {
 private:
 	Formula* _currformula;
 	Term* _currterm;
@@ -41,7 +41,7 @@ private:
 	}
 
 public:
-	BDDToFormula(FOBDDManager* m)
+	BDDToFO(FOBDDManager* m)
 			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
 		_dbrmapping.clear();
 	}
@@ -90,6 +90,18 @@ private:
 		_currterm = new FuncTerm(ft->func(), args, TermParseInfo());
 	}
 
+	void visit(const FOBDDAggTerm* aggterm){
+		throw notyetimplemented("BDDToFO for aggregates");
+	}
+
+	void visit(const FOBDDEnumSetExpr* set){
+		throw notyetimplemented("BDDToFO for aggregates");
+	}
+
+	void visit(const FOBDDQuantSetExpr* set){
+		throw notyetimplemented("BDDToFO for aggregates");
+	}
+
 	void visit(const FOBDDAtomKernel* atom) {
 		std::vector<Term*> args;
 		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
@@ -121,6 +133,10 @@ private:
 		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
+	}
+
+	void visit(const FOBDDAggKernel* aggkernel){
+		throw notyetimplemented("BDDToFO for aggregates");
 	}
 
 	void visit(const FOBDD* bdd) {

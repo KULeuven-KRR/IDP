@@ -8,21 +8,23 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef CONTAINSAGGTERMS_HPP_
-#define CONTAINSAGGTERMS_HPP_
+#ifndef CONTAINSFUNCTERMS_HPP_
+#define CONTAINSFUNCTERMS_HPP_
 
+#include <vector>
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
-#include "fobdds/FoBddAggTerm.hpp"
+#include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains Aggregates
+ * Checks whether the given term contains functions
  */
 class ContainsFuncTerms: public FOBDDVisitor {
 private:
 	bool _result;
-	void visit(const FOBDDAggTerm*) {
+	void visit(const FOBDDFuncTerm*) {
 		_result = true;
 		return;
 	}
@@ -39,4 +41,4 @@ public:
 	}
 };
 
-#endif /* CONTAINSAGGTERMS_HPP_ */
+#endif /* CONTAINSFUNCTERMS_HPP_ */
