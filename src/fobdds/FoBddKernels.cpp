@@ -33,7 +33,7 @@ bool FOBDDAtomKernel::containsDeBruijnIndex(unsigned int index) const {
 	return false;
 }
 bool FOBDDAggKernel::containsDeBruijnIndex(unsigned int index) const {
-	return _left->containsDeBruijnIndex(index)||_right->containsDeBruijnIndex(index);
+	return _left->containsDeBruijnIndex(index) || _right->containsDeBruijnIndex(index);
 }
 
 void FOBDDAtomKernel::accept(FOBDDVisitor* v) const {
@@ -84,15 +84,14 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	output << "EXISTS(" << toString(_sort) << ") {\n";
 	pushtab();
-	output << "" <<nt() << toString(_bdd);
+	output << "" << nt() << toString(_bdd);
 	poptab();
-	output <<  "" <<nt();
+	output << "" << nt();
 	output << "}";
 	return output;
 }
-std::ostream& FOBDDAggKernel::put(std::ostream& output) const{
-	output << "SOME AGGKERNEL"<<nt();
-	//TODO: printing of aggkernels
+std::ostream& FOBDDAggKernel::put(std::ostream& output) const {
+	output << toString(_left) << " " << toString(_comp) << " " << toString(_right);
 	return output;
 }
 

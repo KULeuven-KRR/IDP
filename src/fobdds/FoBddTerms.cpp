@@ -92,8 +92,8 @@ std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
 }
 
 std::ostream& FOBDDAggTerm::put(std::ostream& output) const {
-	output << "some fobddaggterm (TODO: printing"<<nt();
-	return output; //TODO: printing of fobddaggterm
+	output << toString(_aggfunction)<<"{ "<<toString(_setexpr)<<nt()<<"}";
+	return output;
 }
 
 Sort* FOBDDAggTerm::sort() const{

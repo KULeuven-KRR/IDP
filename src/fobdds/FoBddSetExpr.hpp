@@ -14,7 +14,7 @@
 #include <set>
 #include <vector>
 #include <iostream>
-#include "common.hpp"
+#include "vocabulary/vocabulary.hpp"
 
 class Sort;
 class FOBDD;
@@ -54,7 +54,7 @@ public:
 
 	virtual void accept(FOBDDVisitor*) const = 0;
 	virtual const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const = 0;
-	virtual std::ostream& put(std::ostream& output) const;
+	virtual std::ostream& put(std::ostream& output) const = 0;
 };
 
 class FOBDDQuantSetExpr: public FOBDDSetExpr {
@@ -72,6 +72,7 @@ private:
 public:
 	void accept(FOBDDVisitor*) const;
 	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
 };
 
 class FOBDDEnumSetExpr: public FOBDDSetExpr {
@@ -89,6 +90,7 @@ public:
 
 	void accept(FOBDDVisitor*) const;
 	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
+	virtual std::ostream& put(std::ostream& output) const;
 
 };
 
