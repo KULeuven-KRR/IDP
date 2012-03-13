@@ -200,11 +200,6 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	return f;
 }
 
-//Formula* UnnestTerms::traverse(PredForm* f) {
-////TODO Very ugly static cast!! XXX This needs to be done differently!! FIXME
-//	return traverse(static_cast<Formula*>(f));
-//}
-
 Formula* UnnestTerms::visit(EquivForm* ef) {
 	Context savecontext = getContext();
 	setContext(Context::BOTH);
@@ -258,9 +253,9 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 	}
 }
 
-Formula* UnnestTerms::visit(PredForm* predform) {
+Formula* UnnestTerms::specialTraverse(PredForm* predform) {
+	// Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool savemovecontext = getAllowedToUnnest();
-// Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
 	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
@@ -301,9 +296,15 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	} else {
 		newf = traverse(predform);
 	}
-
 	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
+	// Return result
+	return newf;
+}
+
+Formula* UnnestTerms::visit(PredForm* predform) {
+// Special treatment for (in)equalities: possibly only one side needs to be moved
+	auto newf = specialTraverse(predform);
 	return doRewrite(newf);
 }
 

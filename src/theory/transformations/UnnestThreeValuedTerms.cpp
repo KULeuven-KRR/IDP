@@ -38,14 +38,15 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	return false;
 }
 
-//Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
-//	bool saveAllowedToLeave = getAllowedToLeave();
-//	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
-//	auto result = UnnestTerms::visit(predform);
-//	setAllowedToLeave(saveAllowedToLeave);
-//	return result;
-//}
+Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
+	auto newf = specialTraverse(predform);
+	setAllowedToLeave(saveAllowedToLeave);
+	return doRewrite(newf);
+}
 
+//FIXME: This is just a copy of the code from UnnestTerms, to make the above work.
 template<typename T>
 Formula* UnnestTerms::doRewrite(T origformula) {
 	auto rewrittenformula = rewrite(origformula);
@@ -54,57 +55,4 @@ Formula* UnnestTerms::doRewrite(T origformula) {
 	} else {
 		return rewrittenformula->accept(this);
 	}
-}
-
-Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
-	bool savemovecontext = getAllowedToUnnest();
-	bool saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
-
-// Special treatment for (in)equalities: possibly only one side needs to be moved
-	bool moveonlyleft = false;
-	bool moveonlyright = false;
-	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
-		auto leftterm = predform->subterms()[0];
-		auto rightterm = predform->subterms()[1];
-		if (leftterm->type() == TT_AGG) {
-			moveonlyright = true;
-		} else if (rightterm->type() == TT_AGG) {
-			moveonlyleft = true;
-		} else if (predform->symbol()->name() == "=/2") {
-			moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
-		} else {
-			setAllowedToUnnest(true);
-		}
-
-		if (predform->symbol()->name() == "=/2") {
-			auto leftsort = leftterm->sort();
-			auto rightsort = rightterm->sort();
-			if (SortUtils::isSubsort(leftsort, rightsort)) {
-				_chosenVarSort = leftsort;
-			} else {
-				_chosenVarSort = rightsort;
-			}
-		}
-	} else {
-		setAllowedToUnnest(true);
-	}
-	// Traverse the atom
-	Formula* newf = predform;
-	if (moveonlyleft) {
-		predform->subterm(1, predform->subterms()[1]->accept(this));
-		setAllowedToUnnest(true);
-		predform->subterm(0, predform->subterms()[0]->accept(this));
-	} else if (moveonlyright) {
-		predform->subterm(0, predform->subterms()[0]->accept(this));
-		setAllowedToUnnest(true);
-		predform->subterm(1, predform->subterms()[1]->accept(this));
-	} else {
-		newf = traverse(predform);
-	}
-
-	_chosenVarSort = NULL;
-	setAllowedToLeave(saveAllowedToLeave);
-	setAllowedToUnnest(savemovecontext);
-	return doRewrite(newf);
 }

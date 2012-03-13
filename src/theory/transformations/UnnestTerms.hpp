@@ -75,7 +75,6 @@ protected:
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);
 	virtual Formula* traverse(Formula*);
-//	virtual Formula* traverse(PredForm*);
 	virtual Formula* visit(EquivForm*);
 	virtual Formula* visit(AggForm*);
 	virtual Formula* visit(EqChainForm*);
@@ -89,6 +88,7 @@ protected:
 	virtual SetExpr* visit(QuantSetExpr*);
 
 	void visitRuleHead(Rule* rule); // Split to allow reuse
+	Formula* specialTraverse(PredForm* predform);
 
 private:
 	Formula* rewrite(Formula*);
