@@ -24,6 +24,8 @@
 #include "fobdds/FoBdd.hpp"
 #include "theory/TheoryUtils.hpp"
 
+#include <vector>
+
 /**
  * Given a bdd or a kernel, creates the associated formula.
  * Given a bddterm, creates the associated term.
@@ -32,17 +34,19 @@ class BDDToFO: public FOBDDVisitor {
 private:
 	Formula* _currformula;
 	Term* _currterm;
+	SetExpr* _currset;
 	std::map<const FOBDDDeBruijnIndex*, Variable*> _dbrmapping;
 
 	void reset() {
 		_currformula = NULL;
 		_currterm = NULL;
+		_currset = NULL;
 		_dbrmapping.clear();
 	}
 
 public:
 	BDDToFO(FOBDDManager* m)
-			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
+			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL), _currset(NULL) {
 		_dbrmapping.clear();
 	}
 
@@ -58,6 +62,13 @@ public:
 		reset();
 		arg->accept(this);
 		return _currterm;
+	}
+
+	template<typename BddSet>
+	SetExpr* createSet(const BddSet* arg) {
+		reset();
+		arg->accept(this);
+		return _currset;
 	}
 
 private:
@@ -90,16 +101,39 @@ private:
 		_currterm = new FuncTerm(ft->func(), args, TermParseInfo());
 	}
 
-	void visit(const FOBDDAggTerm* aggterm){
-		throw notyetimplemented("BDDToFO for aggregates");
+	void visit(const FOBDDAggTerm* aggterm) {
+		auto set = createSet(aggterm->setexpr());
+		_currterm = new AggTerm(set,aggterm->aggfunction(),TermParseInfo());
 	}
 
-	void visit(const FOBDDEnumSetExpr* set){
-		throw notyetimplemented("BDDToFO for aggregates");
+	void visit(const FOBDDEnumSetExpr* set) {
+		std::vector<Formula*> formulas(set->size());
+		std::vector<Term*> terms(set->size());
+		for (int i = 0; i < set->size(); i++) {
+			formulas[i] = createFormula(set->subformula(i));
+			terms[i] = createTerm(set->subterm(i));
+		}
+		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
 	}
 
-	void visit(const FOBDDQuantSetExpr* set){
-		throw notyetimplemented("BDDToFO for aggregates");
+	void visit(const FOBDDQuantSetExpr* set) {
+		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
+		_dbrmapping.clear();
+		std::set<Variable*> vars(set->quantvarsorts().size());
+
+		for(int i =0;i<set->quantvarsorts().size();i++){
+			auto v = new Variable(set->quantvarsorts()[i]);
+			_dbrmapping[i] = v;
+			vars.insert(v);
+		}
+		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size())] = it->second;
+		}
+
+		auto subform = createFormula(set->subformula(0));
+		auto subterm = createTerm(set->subterm(0));
+		_dbrmapping = savedmapping;
+		_currset= new QuantSetExpr(vars,subform,subterm,SetParseInfo());
 	}
 
 	void visit(const FOBDDAtomKernel* atom) {
@@ -135,7 +169,8 @@ private:
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
 
-	void visit(const FOBDDAggKernel* aggkernel){
+	void visit(const FOBDDAggKernel* aggkernel) {
+
 		throw notyetimplemented("BDDToFO for aggregates");
 	}
 
