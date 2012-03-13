@@ -7,6 +7,7 @@
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
+#include <algorithm>
 
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -78,7 +79,11 @@ void FOBDDFactory::visit(const QuantSetExpr* se) {
 	auto formula = _bdd;
 	se->subterms()[0]->accept(this);
 	auto term = _term;
-	//TODO: make sorts
+	std::vector<Sort*> sorts(se->quantVars().size());
+	for(auto it = se->quantVars().cbegin(); it != se->quantVars().cend();it.operator ++()){
+		sorts.push_back((*it)->sort());
+	}
+	sort(sorts.begin(),sorts.end());
 	_set = _manager->getQuantSetExpr(sorts, formula, term, se->sort());
 }
 /**
