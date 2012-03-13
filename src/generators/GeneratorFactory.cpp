@@ -295,7 +295,8 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 	// TODO make this cheaper by adding domelem to index mappings
 	// TODO only create it ONCE! instead of multiple times
 
-	lookuptab.reserve(_table->size()._size);
+	//TODO: this doesn't work currently (wrong version of gcc? thus it is commented)
+	//lookuptab.reserve(_table->size()._size);
 	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
 		CHECKTERMINATION
 
@@ -466,12 +467,12 @@ void GeneratorFactory::visit(const PlusInternalFuncTable* pift) {
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 			auto ygen = new MinusGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
-		} else if (_universe.tables()[1]->approxFinite()) {
+		} else {
+			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make the sum right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto xgen = new MinusGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
-		} else {
-			throw notyetimplemented("Infinite generator for addition pattern (out,out,in)");
 		}
 	}
 }
@@ -492,12 +493,12 @@ void GeneratorFactory::visit(const MinusInternalFuncTable* pift) {
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 			auto ygen = new MinusGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(xgen, new LeafGeneratorNode(ygen)));
-		} else if (_universe.tables()[1]->approxFinite()) {
+		} else {
+			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto xgen = new PlusGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
-		} else {
-			throw notyetimplemented("Infinite generator for subtraction pattern (out,out,in)");
 		}
 	}
 }
@@ -545,8 +546,10 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 			auto xandzarezero = new TreeInstGenerator(new OneChildGeneratorNode(xiszero, new LeafGeneratorNode(ziszero)));
 			auto yisanything = new LeafGeneratorNode(new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]));
 			_generator = new TreeInstGenerator(new TwoChildGeneratorNode(xandzarezero, xgen, standardsolution, yisanything));
-		} else if (_universe.tables()[1]->approxFinite()) {
+		} else {
 			//same as before, but now generate y instead of fullgenerator
+			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto standardsolution = new LeafGeneratorNode(new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]));
 			auto varzero = new DomElemContainer();
@@ -556,8 +559,6 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 			auto yandzarezero = new TreeInstGenerator(new OneChildGeneratorNode(yiszero, new LeafGeneratorNode(ziszero)));
 			auto xisanything = new LeafGeneratorNode(new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]));
 			_generator = new TreeInstGenerator(new TwoChildGeneratorNode(yandzarezero, ygen, standardsolution, xisanything));
-		} else {
-			throw notyetimplemented("Infinite generator for multiplication pattern (out,out,in)");
 		}
 	}
 }
@@ -612,7 +613,9 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 			auto ynotzerogenerator = new LeafGeneratorNode(
 					new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT, CompType::NEQ));
 			_generator = new TreeInstGenerator(new TwoChildGeneratorNode(xandzarezero, xgen, standardsolution, ynotzerogenerator));
-		} else if (_universe.tables()[1]->approxFinite()) {
+		} else {
+			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
 			auto xgen = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
 			auto varzero = new DomElemContainer();
@@ -621,8 +624,6 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 			auto temp = new TreeInstGenerator(new OneChildGeneratorNode(ygen, new LeafGeneratorNode(xgen)));
 			_generator = new TreeInstGenerator(new OneChildGeneratorNode(temp, new LeafGeneratorNode(notzero)));
 
-		} else {
-			throw notyetimplemented("Infinite generator for division pattern (out,out,in)");
 		}
 	}
 }
