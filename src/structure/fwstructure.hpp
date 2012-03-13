@@ -102,7 +102,7 @@ struct HashTuple {
 			}
 			prod *=10000;
 		}
-		//clog <<seed % 15485863 <<"\n";
+		//std::clog <<seed % 15485863 <<" ";
 		return seed % 104729 /*15485863*/;
 	}
 };

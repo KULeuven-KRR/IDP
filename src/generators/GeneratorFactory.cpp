@@ -293,9 +293,12 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 	}
 
 	// TODO make this cheaper by adding domelem to index mappings
-	// TODO only create it ONCE! instead of multiple times
+	// TODO only create generator ONCE instead of multiple times if possible
 
-	lookuptab.reserve(_table->size()._size);
+	if(_pattern.size()>0 && invars.size()>0){
+		lookuptab.reserve(_table->size()._size* (invars.size()/_pattern.size())); // Prevents too many rehashes
+	}
+
 	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
 		CHECKTERMINATION
 

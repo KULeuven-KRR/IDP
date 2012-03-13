@@ -238,7 +238,9 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms){
 	std::vector<pair<int, int> > sameargs;
 	std::map<Variable*, int> vartofirstocc;
 	int index = 0;
+	//cerr <<"Args: ";
 	for(auto i=terms.cbegin(); i<terms.cend(); ++i, ++index){
+		//cerr <<toString(*i) <<", ";
 		auto varterm = dynamic_cast<VarTerm*>(*i);
 		if(varterm==NULL){ // If not a var, it cannot contain free variables!
 			Assert((*i)->freeVars().size()==0);
@@ -249,6 +251,7 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms){
 		if(first==vartofirstocc.cend()){
 			vartofirstocc[varterm->var()] = index;
 		}else{
+			//cerr <<"[=" <<first->second <<"]";
 			sameargs.push_back({first->second, index});
 		}
 	}
@@ -290,7 +293,7 @@ void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headarg
 
 	for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
 		if(headargs[i->first]!=headargs[i->second]){
-			continue;
+			return;
 		}
 	}
 
@@ -342,14 +345,18 @@ void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& he
 	_seen.push_back(headargs);
 
 	for(auto other = _seen.cbegin(); other<_seen.cend(); ++other){
-		auto tuple = headargs;
+		auto tuple = *other;
 		tuple.insert(tuple.end(), headargs.cbegin(), headargs.cend());
 
 		// If multiple vars are the same, checks that their instantiation are also the same!
-		for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
+		bool different = false;
+		for(auto i=getSameargs().cbegin(); not different && i<getSameargs().cend(); ++i){
 			if(tuple[i->first]!=tuple[i->second]){
-				continue;
+				different = true;
 			}
+		}
+		if(different){
+			continue;
 		}
 
 		dominstlist boundvarinstlist = createInst(tuple);

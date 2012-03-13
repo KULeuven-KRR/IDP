@@ -50,7 +50,7 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 
 	for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
 		if(headargs[i->first]!=headargs[i->second]){
-			continue;
+			return;
 		}
 	}
 

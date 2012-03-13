@@ -1,0 +1,29 @@
+#include <mx>
+#include <table_utils>
+
+vocabulary V{
+	type Vtx
+	L(Vtx, Vtx, nat)
+}
+theory T:V{
+	!a x l l2: L(a, x, l) & L(a, x, l2) => l=l2.
+	?a x: L(a, x, 1) & L(a, x, 10).
+}
+
+procedure main(){
+	stdoptions.groundlazily=true
+	stdoptions.groundwithbounds=false
+	stdoptions.groundverbosity=0
+	stdoptions.satverbosity=0
+	sol = modelexpandpartial(T, S)
+	if(sol==nil) then
+		print("Unsat as expected")
+	else
+		mx::printtuples("L<ct>", sol[V::L].ct)
+		print("Should have been unsat")
+	end
+}
+
+structure S:V{
+	Vtx = {1..10}
+}
