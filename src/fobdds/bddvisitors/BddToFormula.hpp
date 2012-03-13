@@ -15,6 +15,7 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -22,6 +23,7 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddUtils.hpp"
 #include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
 #include "theory/TheoryUtils.hpp"
 
 #include <vector>
@@ -102,7 +104,8 @@ private:
 	}
 
 	void visit(const FOBDDAggTerm* aggterm) {
-		auto set = createSet(aggterm->setexpr());
+		aggterm->setexpr()->accept(this);
+		auto set = _currset;
 		_currterm = new AggTerm(set,aggterm->aggfunction(),TermParseInfo());
 	}
 
@@ -110,8 +113,10 @@ private:
 		std::vector<Formula*> formulas(set->size());
 		std::vector<Term*> terms(set->size());
 		for (int i = 0; i < set->size(); i++) {
-			formulas[i] = createFormula(set->subformula(i));
-			terms[i] = createTerm(set->subterm(i));
+			set->subformula(i)->accept(this);
+			formulas[i] = _currformula;
+			set->subterm(i)->accept(this);
+			terms[i] = _currterm;
 		}
 		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
 	}
@@ -119,19 +124,19 @@ private:
 	void visit(const FOBDDQuantSetExpr* set) {
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
-		std::set<Variable*> vars(set->quantvarsorts().size());
-
+		std::set<Variable*> vars;
 		for(int i =0;i<set->quantvarsorts().size();i++){
 			auto v = new Variable(set->quantvarsorts()[i]);
-			_dbrmapping[i] = v;
+			_dbrmapping[_manager->getDeBruijnIndex(set->quantvarsorts()[i],i)] = v;
 			vars.insert(v);
 		}
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
-			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size())] = it->second;
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size()+1)] = it->second;
 		}
-
-		auto subform = createFormula(set->subformula(0));
-		auto subterm = createTerm(set->subterm(0));
+		set->subformula(0)->accept(this);
+		auto subform = _currformula;
+		set->subterm(0)->accept(this);
+		auto subterm = _currterm;
 		_dbrmapping = savedmapping;
 		_currset= new QuantSetExpr(vars,subform,subterm,SetParseInfo());
 	}
