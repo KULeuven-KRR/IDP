@@ -16,7 +16,6 @@
 #include <iostream>
 #include "common.hpp"
 
-
 class Sort;
 class FOBDD;
 class FOBDDTerm;
@@ -27,8 +26,8 @@ private:
 	friend class FOBDDManager;
 protected:
 	std::vector<Sort*> _quantvarsorts; //!< The sorts of the quantified variables of the set expression (in order of quantification (for the DeBruyn indices)
-	std::vector<FOBDD*> _subformulas; //!< The direct subformulas of the set expression
-	std::vector<FOBDDTerm*> _subterms; //!< The direct subterms of the set expression
+	std::vector<const FOBDD*> _subformulas; //!< The direct subformulas of the set expression
+	std::vector<const FOBDDTerm*> _subterms; //!< The direct subterms of the set expression
 	Sort* _sort; //The sort of the expression (needs to be given when creating)
 
 public:
@@ -39,18 +38,18 @@ public:
 		return _sort;
 	}
 
-	int size() const{
+	int size() const {
 		Assert(_subformulas.size()==_subterms.size());
 		return _subformulas.size();
 	}
-	const FOBDD* subformula(int i) const{
+	const FOBDD* subformula(int i) const {
 		Assert(i<_subformulas.size());
 		return _subformulas[i];
 	}
-	const FOBDDTerm* subterm(int i) const{
-			Assert(i<_subterms.size());
-			return _subterms[i];
-		}
+	const FOBDDTerm* subterm(int i) const {
+		Assert(i<_subterms.size());
+		return _subterms[i];
+	}
 	bool containsDeBruijnIndex(unsigned int i) const;
 
 	virtual void accept(FOBDDVisitor*) const = 0;
@@ -61,36 +60,34 @@ public:
 class FOBDDQuantSetExpr: public FOBDDSetExpr {
 private:
 	friend class FOBDDManager;
-
-public:
-	FOBDDQuantSetExpr( Sort* sort)
+	FOBDDQuantSetExpr(Sort* sort)
 			: FOBDDSetExpr(sort) {
 	}
-	FOBDDQuantSetExpr(const std::vector<Sort*>& sorts, FOBDD* formula, FOBDDTerm* term,  Sort* sort)
+	FOBDDQuantSetExpr(const std::vector<Sort*>& sorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort)
 			: FOBDDSetExpr(sort) {
 		_quantvarsorts = sorts;
 		_subformulas = {formula};
 		_subterms = {term};
 	}
-	void accept(FOBDDVisitor*) const ;
+public:
+	void accept(FOBDDVisitor*) const;
 	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
 };
 
 class FOBDDEnumSetExpr: public FOBDDSetExpr {
 private:
 	friend class FOBDDManager;
-
-public:
-	FOBDDEnumSetExpr( Sort* sort)
+	FOBDDEnumSetExpr(Sort* sort)
 			: FOBDDSetExpr(sort) {
 	}
-	FOBDDEnumSetExpr(const std::vector<FOBDD*>& s, const std::vector<FOBDDTerm*>& t,  Sort* sort)
+	FOBDDEnumSetExpr(const std::vector<const FOBDD*>& s, const std::vector<const FOBDDTerm*>& t, Sort* sort)
 			: FOBDDSetExpr(sort) {
 		_subformulas = s;
 		_subterms = t;
 	}
+public:
 
-	void accept(FOBDDVisitor*) const ;
+	void accept(FOBDDVisitor*) const;
 	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
 
 };

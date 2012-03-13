@@ -29,6 +29,7 @@ class EqChainForm;
 class AggForm;
 class Vocabulary;
 class FOBDDManager;
+class FOBDDSetExpr;
 
 /**
  * Class to transform first-order formulas to BDDs

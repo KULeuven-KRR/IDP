@@ -72,19 +72,19 @@ void FOBDDFactory::visit(const EnumSetExpr* se) {
 		se->subterms()[i]->accept(this);
 		subterms[i] = _term;
 	}
-	_set = _manager->getEnumSetExpr(subforms,subterms, se->sort());
+	_set = _manager->getEnumSetExpr(subforms, subterms, se->sort());
 }
 void FOBDDFactory::visit(const QuantSetExpr* se) {
 	se->subformulas()[0]->accept(this);
 	auto formula = _bdd;
 	se->subterms()[0]->accept(this);
 	auto term = _term;
-	std::vector<Sort*> sorts(se->quantVars().size());
-	for(auto it = se->quantVars().cbegin(); it != se->quantVars().cend();it.operator ++()){
-		sorts.push_back((*it)->sort());
+	std::vector<const FOBDDVariable*> variables(se->quantVars().size());
+	int i = 0;
+	for (auto it = se->quantVars().cbegin(); it != se->quantVars().cend(); it.operator ++(), i++) {
+		variables[i] = _manager->getVariable((*it));
 	}
-	sort(sorts.begin(),sorts.end());
-	_set = _manager->getQuantSetExpr(sorts, formula, term, se->sort());
+	_set = _manager->getQuantSetExpr(variables, formula, term, se->sort());
 }
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,

@@ -28,11 +28,10 @@ private:
 	CompType _comp;
 	const FOBDDAggTerm* _right;
 
+	FOBDDAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDAggTerm* right, const KernelOrder& order)
+			: FOBDDKernel(order), _left(left), _comp(comp), _right(right) {
+	}
 public:
-	FOBDDAggKernel(const FOBDDTerm* left, CompType comp,	const FOBDDAggTerm* right, const KernelOrder& order)
-				: FOBDDKernel(order), _left(left), _comp(comp), _right(right) {
-		}
-
 	bool containsDeBruijnIndex(unsigned int index) const;
 
 	const FOBDDTerm* left() const {
@@ -41,19 +40,15 @@ public:
 	CompType comp() const {
 		return _comp;
 	}
-	const FOBDDAggTerm* right() const{
+	const FOBDDAggTerm* right() const {
 		return _right;
 	}
-
 
 	void accept(FOBDDVisitor*) const;
 	const FOBDDKernel* acceptchange(FOBDDVisitor*) const;
 
 	virtual std::ostream& put(std::ostream& output) const;
 
-
 };
-
-
 
 #endif /* FOBDDAGGKERNEL_HPP_ */

@@ -137,6 +137,10 @@ public:
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDKernel* getAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDTerm* right);
 
+	const FOBDDSetExpr* getEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
+	const FOBDDSetExpr* getQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+
+
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 	const FOBDDTerm* getFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
@@ -223,6 +227,9 @@ private:
 	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
 	FOBDDAggTerm* addAggTerm(AggFunction func, const FOBDDSetExpr* set);
 	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
+	FOBDDSetExpr* addEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
+	FOBDDSetExpr* addQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+
 
 	void clearDynamicTables();
 

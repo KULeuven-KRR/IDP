@@ -341,6 +341,15 @@ const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType co
 	return addAggKernel(left, comp, newright);
 }
 
+const FOBDDSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDD*>& formulas, const std::vector<const FOBDDTerm*>& terms, Sort* sort) {
+	//TODO: improve this with dynamic programming!
+	return addEnumSetExpr(formulas, terms, sort);
+}
+const FOBDDSetExpr* FOBDDManager::getQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+	//TODO: improve this with dynamic programming!
+	return addQuantSetExpr(vars, formula, term, sort);
+}
+
 FOBDDAggKernel* FOBDDManager::addAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDAggTerm* right) {
 
 	Assert(lookup < FOBDDAggKernel > (_aggkerneltable, left, comp, right) == NULL);
@@ -685,7 +694,7 @@ const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDSetExpr* 
 
 FOBDDAggTerm* FOBDDManager::addAggTerm(AggFunction func, const FOBDDSetExpr* set) {
 	Assert(lookup<FOBDDAggTerm>(_aggtermtable, func, set) == NULL);
-	FOBDDAggTerm* result =new FOBDDAggTerm(func,set);
+	FOBDDAggTerm* result = new FOBDDAggTerm(func, set);
 	_aggtermtable[func][set] = result;
 	return result;
 }
@@ -709,6 +718,25 @@ FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* va
 	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(sort, value);
 	_domaintermtable[sort][value] = newdt;
 	return newdt;
+}
+
+FOBDDSetExpr* FOBDDManager::addEnumSetExpr(const std::vector<const FOBDD*>& formulas, const std::vector<const FOBDDTerm*>& terms, Sort* sort) {
+	//TODO: improve with dynamic programming
+	return new FOBDDEnumSetExpr(formulas, terms, sort);
+}
+FOBDDSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+	//TODO: improve with dynamic programming
+	std::vector<Sort*> sorts(vars.size());
+	int i=0;
+	const FOBDD* bumpedformula = formula;
+	const FOBDDTerm* bumpedterm = term;
+	for(auto it=vars.cbegin(); it != vars.cend();it.operator ++(),i++){
+		BumpIndices b(this, *it, 0);
+		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
+		bumpedterm = bumpedterm->acceptchange(&b);
+		sorts[i]=(*it)->sort();
+	}
+	return new FOBDDQuantSetExpr(sorts, bumpedformula, bumpedterm, sort);
 }
 
 /*************************
@@ -2114,38 +2142,38 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 	 }
 	 // Simplify quantification kernels
 	 if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
-		 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-		 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-		 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
-		 if(isTruebdd(bdd)) return bdd;
-		 else {
-			 Assert(!isFalsebdd(bdd));
-			 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
-			 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
+	 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+	 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+	 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
+	 if(isTruebdd(bdd)) return bdd;
+	 else {
+	 Assert(!isFalsebdd(bdd));
+	 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
+	 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
 
-			 set<const FOBDDVariable*> emptyvars;
-			 set<const FOBDDDeBruijnIndex*> zeroindices;
-			 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
-			 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
-			 if(quantans < 1) quantans = 1;
-			 double quant_per_ans = max_cost_per_ans / quantans;
+	 set<const FOBDDVariable*> emptyvars;
+	 set<const FOBDDDeBruijnIndex*> zeroindices;
+	 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
+	 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
+	 if(quantans < 1) quantans = 1;
+	 double quant_per_ans = max_cost_per_ans / quantans;
 
-			 if(isTruebdd(bdd->falsebranch())) {
-				 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
-			 }
-			 else if(isTruebdd(bdd->truebranch())) {
-				 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
-			 }
-	 	 }
-	 	 if(isTruebdd(bdd)) return bdd;
+	 if(isTruebdd(bdd->falsebranch())) {
+	 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+	 }
+	 else if(isTruebdd(bdd->truebranch())) {
+	 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+	 }
+	 }
+	 if(isTruebdd(bdd)) return bdd;
 	 }
 
-	// Recursive call
-	double branch_cost_ans;
+	 // Recursive call
+	 double branch_cost_ans;
 	 if(isFalsebdd(bdd->falsebranch())) {
 	 double kernelcost = estimatedCostAll(true,bdd->kernel(),kernelvars,kernelindices,structure);
 	 double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);
