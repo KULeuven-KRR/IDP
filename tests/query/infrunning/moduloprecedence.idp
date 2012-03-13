@@ -1,0 +1,16 @@
+vocabulary V{
+	type x
+}
+
+
+query Q:V {
+	{x :  x=3+(10-2)%5}
+}
+
+structure S:V {
+	x = {1..6}
+}
+
+procedure getExpectedSet(){
+  return {{6}}
+}

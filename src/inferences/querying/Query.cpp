@@ -15,7 +15,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
 	std::set<const FOBDDDeBruijnIndex*> bddindices;
 	const FOBDD* bdd = factory.turnIntoBdd(q->query());
-
+	Assert(bdd != NULL);
 	// optimize the query
 	manager.optimizeQuery(bdd, bddvars, bddindices, structure);
 

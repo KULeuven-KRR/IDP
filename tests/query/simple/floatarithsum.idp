@@ -1,0 +1,15 @@
+vocabulary V{
+	type t isa float
+}
+
+query Q:V{
+	{ x[t] y[t]: x+y=0} 
+}
+
+structure S:V{
+	t = {-2;0;2;-1.5;1.5;0.3}
+}
+
+procedure getExpectedSet(){
+	return {{-2,2},{-1.5,1.5},{0,0},{1.5,-1.5},{2,-2}}
+}

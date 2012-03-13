@@ -1,0 +1,17 @@
+vocabulary V {
+	type x
+	p(x)
+}
+
+query Q:V {
+	{x : p(x)}
+}
+
+structure S:V {
+	x = {}
+	p = {}
+}
+
+procedure getExpectedSet(){
+  return {}
+}

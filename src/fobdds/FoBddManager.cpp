@@ -785,7 +785,15 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	if (result != NULL) {
 		return result;
 	}
-
+	if(kernel == _truekernel){
+		return truebranch;
+	}
+	if(kernel == _falsekernel){
+		return falsebranch;
+	}
+	if(truebranch == falsebranch){
+		return truebranch;
+	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
 	const FOBDDKernel* falsekernel = falsebranch->kernel();
 
@@ -1180,6 +1188,7 @@ vector<Path> FOBDDManager::pathsToFalse(const FOBDD* bdd) {
  * Return all kernels of the given bdd
  */
 set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
+	Assert(bdd != NULL);
 	set<const FOBDDKernel*> result;
 	if (bdd != _truebdd && bdd != _falsebdd) {
 		auto falsekernels = allkernels(bdd->falsebranch());
@@ -1691,6 +1700,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 
 void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
+	Assert(query != NULL);
 	if (query != _truebdd && query != _falsebdd) {
 		set<const FOBDDKernel*> kernels = allkernels(query);
 		for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {

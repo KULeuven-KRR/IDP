@@ -17,9 +17,13 @@ enum class AtomKernelType {
 	AKT_CT, AKT_CF, AKT_TWOVALUED
 };
 enum class KernelOrderCategory {
-	STANDARDCATEGORY, DEBRUIJNCATEGORY, TRUEFALSECATEGORY
+	//In this ordering: (truefalsecat is the lowest since it can only occur in truebdd or falsebdd leaves).  Otherwise we should simplify.
+	STANDARDCATEGORY, //For Kernels containing no quantified variables (no debruynindex 0's)
+	DEBRUIJNCATEGORY, //For Kernels containing <0>
+	TRUEFALSECATEGORY //For true and false kernels
 };
 
+//TODO: shouldn't TRUEFALSECAT be the smallest???
 inline bool operator<(const KernelOrderCategory x,const  KernelOrderCategory y) {
 	if (x == KernelOrderCategory::TRUEFALSECATEGORY) {
 		return false;

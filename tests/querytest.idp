@@ -1,0 +1,61 @@
+#include <table_utils>
+
+procedure main() {
+	//require("table-utils") //TODO: change to???
+	stdoptions.timeout = 10
+	stdoptions.satverbosity=0
+	stdoptions.groundverbosity=0
+	//stdoptions.groundwithbounds = TODO?
+	local solutions = totable(query(Q,S))
+	if(	check(solutions) ) then
+		return 1
+	end 
+	return 0
+}
+
+procedure check(solutions){
+	local expected = getExpectedSet()
+	if #solutions ~= #expected then
+		io.write("Found a set with size "..#solutions..", expected size was "..#expected.."\n")
+		io.write("Result was "..tabletostring(solutions).." instead of "..tabletostring(expected).."\n") 
+		return false
+	end
+	if sameelementsets(solutions,expected) then
+		io.write("Result was "..tabletostring(solutions)..", as expected\n") 
+		return true
+	end
+	io.write("Result was "..tabletostring(solutions).." instead of "..tabletostring(expected).."\n") 
+	return false
+}
+
+procedure sameelementsets(x,y){
+	for i,a in ipairs(x) do
+		found = false
+		for j,b in ipairs(y) do
+			if sameelements(a,b) then 
+				found = true
+				break
+			end
+		end
+		if found == false then
+			return false
+		end
+	end
+	return true
+}
+
+procedure sameelements(x,y){
+	for i,a in ipairs(x) do
+		found = false
+		for j,b in ipairs(y) do
+			if a == b then 
+				found = true
+				break
+			end
+		end
+		if found == false then
+			return false
+		end
+	end
+	return true
+}
