@@ -16,6 +16,7 @@
 
 #include <unordered_map>
 #include <bits/functional_hash.h>
+#include "structure/HashElementTuple.hpp"
 
 class DelayGrounder;
 class TsSet;

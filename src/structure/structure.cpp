@@ -23,6 +23,8 @@
 #include "generators/InstGenerator.hpp"
 #include "generators/ComparisonGenerator.hpp"
 
+#include "NumericOperations.hpp"
+
 #include "printers/idpprinter.hpp" //TODO only for debugging
 using namespace std;
 
@@ -166,108 +168,6 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 	return false;
 }
 
-std::string getDomElemOpErrorMessage(const std::string& operation){
-	stringstream ss;
-	ss <<"Taking the " <<operation <<" of domain elements of nonnumerical types";
-	return ss.str();
-}
-
-template<typename IntOpType, typename DoubleOpType>
-const DomainElement* domElemOp(const DomainElement* d1, const DomainElement* d2, IntOpType (*opint)(IntOpType, IntOpType), DoubleOpType (*opdouble)(DoubleOpType, DoubleOpType), const std::string& operation) {
-	const DomainElement* dnew = NULL;
-	switch (d1->type()) {
-	case DET_INT:
-		switch (d2->type()) {
-		case DET_INT:
-			dnew = createDomElem(opint(d1->value()._int, d2->value()._int));
-			break;
-		case DET_DOUBLE:
-			dnew = createDomElem(opdouble(double(d1->value()._int), d2->value()._double));
-			break;
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented(getDomElemOpErrorMessage(operation));
-		}
-		break;
-	case DET_DOUBLE:
-		switch (d2->type()) {
-		case DET_INT:
-			dnew = createDomElem(opdouble(d1->value()._double, double(d2->value()._int)));
-			break;
-		case DET_DOUBLE:
-			dnew = createDomElem(opdouble(d1->value()._double, d2->value()._double));
-			break;
-		case DET_STRING:
-		case DET_COMPOUND:
-			throw notyetimplemented(getDomElemOpErrorMessage(operation));
-		}
-		break;
-	case DET_STRING:
-	case DET_COMPOUND:
-		throw notyetimplemented(getDomElemOpErrorMessage(operation));
-	}
-	return dnew;
-}
-
-template<typename T>
-T sum(T l, T r){
-	return l+r;
-}
-
-template<typename T>
-T prod(T l, T r){
-	return l*r;
-}
-
-template<typename T>
-T pow(T l, T r){
-	return std::pow(l,r);
-}
-
-const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2) {
-	return domElemOp(d1, d2, &sum<int>, &sum<double>, "sum");
-}
-
-const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d2) {
-	return domElemOp(d1, d2, &prod<int>, &prod<double>, "product");
-}
-
-const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2) {
-	return domElemOp<double, double>(d1, d2, &pow<double>, &pow<double>, "power");
-}
-
-const DomainElement* domElemAbs(const DomainElement* d) {
-	const DomainElement* dnew = NULL;
-	switch (d->type()) {
-	case DET_INT:
-		dnew = createDomElem(std::abs(d->value()._int));
-		break;
-	case DET_DOUBLE:
-		dnew = createDomElem(std::abs(d->value()._double));
-		break;
-	case DET_STRING:
-	case DET_COMPOUND:
-		throw notyetimplemented("Absolute value of domain elements of nonnumerical types");
-	}
-	return dnew;
-}
-
-const DomainElement* domElemUmin(const DomainElement* d) {
-	const DomainElement* dnew = NULL;
-	switch (d->type()) {
-	case DET_INT:
-		dnew = createDomElem(-d->value()._int);
-		break;
-	case DET_DOUBLE:
-		dnew = createDomElem(-d->value()._double);
-		break;
-	case DET_STRING:
-	case DET_COMPOUND:
-		throw notyetimplemented("Negative value of domain elements of nonnumerical types");
-	}
-	return dnew;
-}
-
 Compound::Compound(Function* function, const ElementTuple& arguments)
 		: _function(function), _arguments(arguments) {
 	Assert(function != NULL);
@@ -377,8 +277,8 @@ string DomainAtom::toString() const {
 	return sstr.str();
 }
 
-bool isFinite(const tablesize& tsize){
-	return tsize._type==TST_EXACT || tsize._type==TST_APPROXIMATED;
+bool isFinite(const tablesize& tsize) {
+	return tsize._type == TST_EXACT || tsize._type == TST_APPROXIMATED;
 }
 
 /**
@@ -873,7 +773,7 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 		}
 		_currtuple[n] = *(_curr[n]);
 	}
-	if(_outtable->size(_universe)._size==_universe.size()._size){
+	if (_outtable->size(_universe)._size == _universe.size()._size) {
 		_end = true;
 	}
 	if (not _end) {
@@ -891,7 +791,7 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& cur
 			_currtuple[n] = *(_curr[n]);
 		}
 	}
-	if(_outtable->size(_universe)._size==_universe.size()._size){
+	if (_outtable->size(_universe)._size == _universe.size()._size) {
 		_end = true;
 	}
 }
@@ -2057,7 +1957,7 @@ InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
 		InternalSortTable* ist = eist->add(d);
 		InternalSortTable* ist2 = ist->add(_first, _last);
 		if (ist2 != eist) {
-			delete (eist);
+			delete(new SortTable(eist));
 		}
 		return ist2;
 	} else {
@@ -2111,7 +2011,7 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 		}
 		InternalSortTable* ist = eist->add(i1, i2);
 		if (ist != eist) {
-			delete (eist);
+			delete(new SortTable(eist));
 		}
 		return ist;
 	}
@@ -2373,7 +2273,7 @@ InternalSortTable* InfiniteInternalSortTable::add(const DomainElement* d) {
 		upt->addInTable(new SortTable(this));
 		InternalSortTable* temp = upt->add(d);
 		if (temp != upt) {
-			delete (upt);
+			delete(new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -2387,7 +2287,7 @@ InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
 		upt->addOutTable(new SortTable(this));
 		InternalSortTable* temp = upt->remove(d);
 		if (temp != upt) {
-			delete (upt);
+			delete(new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -2901,9 +2801,7 @@ InternalFuncTable* IntFloatInternalFuncTable::remove(const ElementTuple&) {
 
 const DomainElement* PlusInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
-		int a1 = tuple[0]->value()._int;
-		int a2 = tuple[1]->value()._int;
-		return createDomElem(a1 + a2);
+		return sum<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
@@ -2917,9 +2815,7 @@ InternalTableIterator* PlusInternalFuncTable::begin(const Universe& univ) const 
 
 const DomainElement* MinusInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
-		int a1 = tuple[0]->value()._int;
-		int a2 = tuple[1]->value()._int;
-		return createDomElem(a1 - a2);
+		return difference<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
@@ -2933,9 +2829,7 @@ InternalTableIterator* MinusInternalFuncTable::begin(const Universe& univ) const
 
 const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
-		int a1 = tuple[0]->value()._int;
-		int a2 = tuple[1]->value()._int;
-		return createDomElem(a1 * a2);
+		return product<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
@@ -2949,12 +2843,7 @@ InternalTableIterator* TimesInternalFuncTable::begin(const Universe& univ) const
 
 const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
-		int a1 = tuple[0]->value()._int;
-		int a2 = tuple[1]->value()._int;
-		if (a2 == 0)
-			return 0;
-		else
-			return createDomElem(a1 / a2);
+		return division<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
@@ -3033,7 +2922,7 @@ PredTable::~PredTable() {
 	_table->decrementRef();
 }
 
-void PredTable::setTable(InternalPredTable* table){
+void PredTable::setTable(InternalPredTable* table) {
 	/**
 	 * TODO optimize table for size here:
 	 * 		non-inverted table => contains by search in table                    log(|table|)
@@ -3139,8 +3028,8 @@ InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const 
 InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
 		: InternalPredTable(), _invtable(inv) {
 	/*if(dynamic_cast<InverseInternalPredTable*>(inv)!=NULL){
-		cerr <<"Inverting an inverted table\n";
-	}*/
+	 cerr <<"Inverting an inverted table\n";
+	 }*/
 	inv->incrementRef();
 }
 
@@ -3564,13 +3453,13 @@ bool PredInter::isConsistent() const {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
 
-	auto smallest = _ct->size()._size<_cf->size()._size?_ct:_cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
-	auto largest = smallest==_ct?_cf:_ct;
+	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
+	auto largest = smallest == _ct ? _cf : _ct;
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
-	auto sPossTable = smallest==_ct?_pt:_pf;
-	auto lPossTable = smallest==_ct?_pf:_pt;
+	auto sPossTable = smallest == _ct ? _pt : _pf;
+	auto lPossTable = smallest == _ct ? _pf : _pt;
 
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
@@ -3579,14 +3468,16 @@ bool PredInter::isConsistent() const {
 		// get unassigned domain element
 		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION
-			Assert(sPossTable->size()._size>1000 || not sPossTable->contains(*largeIt)); // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
+			Assert(sPossTable->size()._size>1000 || not sPossTable->contains(*largeIt));
+			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
 		}
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			return false;
 		}
-		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));  // NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
+		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
 	return true;
@@ -4163,7 +4054,8 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
-	}Assert(newstructs.size()>0);
+	}
+	Assert(newstructs.size()>0);
 	extensions = newstructs;
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
 }
@@ -4557,7 +4449,7 @@ void Structure::autocomplete() {
 	for (auto it = invscores.rbegin(); it != invscores.rend(); ++it) {
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			Sort* s = *jt;
-			set<Sort*> notextend = {s};
+			set<Sort*> notextend = { s };
 			vector<Sort*> toextend;
 			vector<Sort*> tocheck;
 			while (not notextend.empty()) {
@@ -4570,7 +4462,7 @@ void Structure::autocomplete() {
 						} else {
 							toextend.push_back(sp);
 						}
-					} else{
+					} else {
 						notextend.insert(sp);
 					}
 				}
@@ -4580,7 +4472,7 @@ void Structure::autocomplete() {
 			for (auto kt = toextend.cbegin(); kt != toextend.cend(); ++kt) {
 				auto kst = inter(*kt);
 				if (st->approxFinite()) {
-					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt){
+					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
 						kst->add(*lt);
 					}
 				} else {
@@ -4591,12 +4483,11 @@ void Structure::autocomplete() {
 				for (auto kt = tocheck.cbegin(); kt != tocheck.cend(); ++kt) {
 					auto kst = inter(*kt);
 					// TODO speedup for common cases (expensive if both tables are large) => should be in some general visitor which checks this!
-					if(dynamic_cast<AllIntegers*>(kst->internTable())!=NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL){
+					if (dynamic_cast<AllIntegers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL) {
 						continue;
 					}
-					if(dynamic_cast<AllNaturalNumbers*>(kst->internTable())!=NULL
-							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())!=NULL
-							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int>-1){
+					if (dynamic_cast<AllNaturalNumbers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int > -1) {
 						continue;
 					}
 					if (st->approxFinite()) {
@@ -4674,7 +4565,8 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}Assert(s != NULL);
+	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	}

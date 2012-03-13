@@ -11,6 +11,7 @@
 #include "DeriveTermBounds.hpp"
 
 #include "IncludeComponents.hpp"
+#include "structure/NumericOperations.hpp"
 
 #include <numeric> // for accumulate
 #include <algorithm> // for min_element and max_element

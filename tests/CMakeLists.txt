@@ -32,9 +32,10 @@ if(${BUILDTESTS})
 		propagationtests.cpp
 		parsertests.cpp
 		transformationtests.cpp
+		overflowtests.cpp
 		commandtests.cpp
 		cppinterface.hpp cppinterface.cpp
-		testingtools.hpp testingtools.cpp
+		testingtools.hpp testingtools.cpp		
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp
 		simpletests.cpp
