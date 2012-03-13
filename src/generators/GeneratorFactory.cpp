@@ -295,7 +295,8 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 	// TODO make this cheaper by adding domelem to index mappings
 	// TODO only create it ONCE! instead of multiple times
 
-	lookuptab.reserve(_table->size()._size);
+	//TODO: this doesn't work currently (wrong version of gcc? thus it is commented)
+	//lookuptab.reserve(_table->size()._size);
 	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
 		CHECKTERMINATION
 
