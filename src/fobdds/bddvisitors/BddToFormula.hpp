@@ -125,9 +125,10 @@ private:
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
 		std::set<Variable*> vars;
-		for(int i =0;i<set->quantvarsorts().size();i++){
-			auto v = new Variable(set->quantvarsorts()[i]);
-			_dbrmapping[_manager->getDeBruijnIndex(set->quantvarsorts()[i],i)] = v;
+		int i=0;
+		for(auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rbegin(); it++,i++){
+			auto v = new Variable(*it);
+			_dbrmapping[_manager->getDeBruijnIndex(*it,i)] = v;
 			vars.insert(v);
 		}
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
@@ -135,6 +136,7 @@ private:
 		}
 		set->subformula(0)->accept(this);
 		auto subform = _currformula;
+		std::cerr << "HEY, IFOUND" << toString(subform)<< "for"<< toString(set->subformula(0))<<nt();
 		set->subterm(0)->accept(this);
 		auto subterm = _currterm;
 		_dbrmapping = savedmapping;
@@ -167,7 +169,7 @@ private:
 			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + 1)] = it->second;
 		}
 
-		FOBDDVisitor::visit(quantkernel->bdd());
+		quantkernel->bdd()->accept(this);
 
 		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
@@ -198,7 +200,7 @@ private:
 				return; // kernel is the whole formula
 			}
 			auto kernelformula = _currformula;
-			FOBDDVisitor::visit(bdd->truebranch());
+			bdd->truebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
@@ -210,7 +212,7 @@ private:
 			}
 
 			auto kernelformula = _currformula;
-			FOBDDVisitor::visit(bdd->falsebranch());
+			bdd->falsebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
@@ -220,17 +222,17 @@ private:
 			negkernelformula->negate();
 
 			if (_manager->isTruebdd(bdd->falsebranch())) {
-				FOBDDVisitor::visit(bdd->truebranch());
+				bdd->truebranch()->accept(this);
 				auto bf = new BoolForm(SIGN::POS, true, kernelformula, _currformula, FormulaParseInfo());
 				_currformula = new BoolForm(SIGN::POS, false, negkernelformula, bf, FormulaParseInfo());
 			} else if (_manager->isTruebdd(bdd->truebranch())) {
-				FOBDDVisitor::visit(bdd->falsebranch());
+				bdd->falsebranch()->accept(this);
 				auto bf = new BoolForm(SIGN::POS, true, negkernelformula, _currformula, FormulaParseInfo());
 				_currformula = new BoolForm(SIGN::POS, false, kernelformula, bf, FormulaParseInfo());
 			} else {
-				FOBDDVisitor::visit(bdd->truebranch());
+				bdd->truebranch()->accept(this);
 				auto trueform = _currformula;
-				FOBDDVisitor::visit(bdd->falsebranch());
+				bdd->falsebranch()->accept(this);
 				auto falseform = _currformula;
 				auto bf1 = new BoolForm(SIGN::POS, true, kernelformula, trueform, FormulaParseInfo());
 				auto bf2 = new BoolForm(SIGN::POS, true, negkernelformula, falseform, FormulaParseInfo());
