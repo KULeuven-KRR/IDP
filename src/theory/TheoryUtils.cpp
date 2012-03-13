@@ -111,7 +111,7 @@ bool containsFuncTerms(Formula* f) {
 }
 
 bool containsAggTerms(Formula* f) {
-	return transform<CheckContainsFuncTerms, bool>(f);
+	return transform<CheckContainsAggTerms, bool>(f);
 }
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
