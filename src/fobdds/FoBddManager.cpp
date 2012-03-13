@@ -727,15 +727,19 @@ FOBDDSetExpr* FOBDDManager::addEnumSetExpr(const std::vector<const FOBDD*>& form
 FOBDDSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	//TODO: improve with dynamic programming
 	std::vector<Sort*> sorts(vars.size());
-	int i=0;
+	int i = 0;
 	const FOBDD* bumpedformula = formula;
 	const FOBDDTerm* bumpedterm = term;
-	for(auto it=vars.cbegin(); it != vars.cend();it.operator ++(),i++){
+	for (auto it = vars.crbegin(); it != vars.crend(); it.operator ++(), i++) {
 		BumpIndices b(this, *it, 0);
 		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
 		bumpedterm = bumpedterm->acceptchange(&b);
-		sorts[i]=(*it)->sort();
 	}
+	i = 0;
+	for (auto it = vars.cbegin(); it != vars.cend(); it.operator ++(), i++) {
+		sorts[i] = (*it)->sort();
+	}
+
 	return new FOBDDQuantSetExpr(sorts, bumpedformula, bumpedterm, sort);
 }
 
