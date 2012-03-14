@@ -40,6 +40,10 @@ struct BddGeneratorData {
 	}
 };
 
+enum class BRANCH {
+	FALSEBRANCH, TRUEBRANCH
+};
+
 /**
  * Class to convert a bdd into a generator
  */
@@ -47,10 +51,20 @@ class BDDToGenerator {
 private:
 	FOBDDManager* _manager;
 
-	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			const AbstractStructure*, bool, const Universe&);
+	/*
+	 * Creates an instance generator from a predform (i.e.~an atom kernel).
+	 * branchToGenerate determines whether all instances for which the predform evaluates to true
+	 * or all instances for which the predform evaluates to false are generated
+	 */
+	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
+			const std::vector<Variable*>&, const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+
+	/*
+	 * Creates an instance generator from a kernel.  branchToGenerate determines whether all instances for which the kernel evaluates to true
+	 * or all instances for which the kernel evaluates to false are generated
+	 */
 	InstGenerator* createFromKernel(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&,const  AbstractStructure* structure, bool, const Universe&);
+			const std::vector<const FOBDDVariable*>&, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe&);
 
 	GeneratorNode* createnode(const BddGeneratorData& data);
 
