@@ -8,25 +8,29 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef CHECKFUNCTERMS_HPP_
-#define CHECKFUNCTERMS_HPP_
+#ifndef CONTAINSDOMTERMS_HPP_
+#define CONTAINSDOMTERMS_HPP_
 
 #include "visitors/TheoryVisitor.hpp"
 
-class FormulaFuncTermChecker: public DefaultTraversingTheoryVisitor {
+class PFSymbol;
+
+class CheckContainsDomainTerms: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _result;
-protected:
-	void visit(const FuncTerm*) {
-		_result = true;
-	}
+
 public:
-	bool execute(Formula* f) {
+	bool execute(const Formula* f) {
 		_result = false;
 		f->accept(this);
 		return _result;
 	}
+
+protected:
+	void visit(const DomainTerm*) {
+		_result = true;
+	}
 };
 
-#endif /* CHECKFUNCTERMS_HPP_ */
+#endif /* CONTAINSDOMTERMS_HPP_ */

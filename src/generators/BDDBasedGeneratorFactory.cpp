@@ -318,6 +318,65 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm *atom, const vector<Patter
 	return atom;
 }
 
+InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+
+	//Check the precondition
+	Assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
+	// Create the pattern for an atom with only Var and DomainTerms.
+
+	vector<Pattern> atompattern;
+	vector<const DomElemContainer*> datomvars;
+	vector<SortTable*> atomtables;
+	//Now we create atompattern, ...
+	//These vectors should be in the order that the elements occur in atom.
+	//If multiple occurrences, they should also occur multiple times in atompattern
+	for (auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
+		Assert(sametypeid<VarTerm>(**it) || sametypeid<DomainTerm>(**it));
+		if (sametypeid<VarTerm>(**it)) {
+			auto var = (dynamic_cast<VarTerm*>(*it))->var();
+			// For each var, find its position, pattern and table
+			unsigned int pos = 0;
+			for (; pos < pattern.size(); ++pos) {
+				if (atomvars[pos] == var) {
+					break;
+				}
+			}
+			atompattern.push_back(pattern[pos]);
+			datomvars.push_back(vars[pos]);
+			atomtables.push_back(universe.tables()[pos]);
+		} else { // Domain term
+			// For each domain term, create a new variable and substitute the domainterm with the new varterm
+			auto domterm = dynamic_cast<DomainTerm*>(*it);
+			auto domelement = new const DomElemContainer();
+			*domelement = domterm->value();
+			auto var = new Variable(domterm->sort());
+			auto newatom = dynamic_cast<PredForm*>(FormulaUtils::substituteTerm(atom, domterm, var));
+#ifndef NDEBUG // Check that the var has really been added in place of the domainterm
+			bool found = false;
+			for (auto it = newatom->subterms().cbegin(); it != newatom->subterms().cend(); ++it) {
+				if (sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var() == var) {
+					found = true;
+				}Assert((*it)!=domterm);
+			}Assert(found);
+#endif
+			vector<Pattern> termpattern(pattern);
+			termpattern.push_back(Pattern::INPUT);
+			vector<const DomElemContainer*> termvars(vars);
+			termvars.push_back(domelement);
+			vector<Variable*> fotermvars(atomvars);
+			fotermvars.push_back(var);
+			vector<SortTable*> termuniv(universe.tables());
+			termuniv.push_back(structure->inter(domterm->sort()));
+
+			// The domain term has been replaced, hence recursive case.
+			// We cannot continue looping since other subterms have also already been replaced.
+			return createFromSimplePredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
+		}
+	}
+	return GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+}
+
 // FIXME error in removenesting if this does not introduce a quantifier
 // FIXME very ugly code
 // TODO move to other class: not related to bdds. ---> Actually it is, since we heavily rely on the normal form the bdd has transformed our formula to!
@@ -452,62 +511,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			return new TreeInstGenerator(node);
 		}
 	}
-
-	Assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
-
-	// Create the pattern for an atom with only Var and DomainTerms.
-	vector<Pattern> atompattern;
-	vector<const DomElemContainer*> datomvars;
-	vector<SortTable*> atomtables;
-	for (auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
-		Assert(sametypeid<VarTerm>(**it) || sametypeid<DomainTerm>(**it));
-		if (typeid(*(*it)) == typeid(VarTerm)) {
-			auto var = (dynamic_cast<VarTerm*>(*it))->var();
-
-			// For each var, find its position, pattern and table
-			unsigned int pos = 0;
-			for (; pos < pattern.size(); ++pos) {
-				if (atomvars[pos] == var) {
-					break;
-				}
-			}Assert(pos < pattern.size());
-			atompattern.push_back(pattern[pos]);
-			datomvars.push_back(vars[pos]);
-			atomtables.push_back(universe.tables()[pos]);
-		} else { // Domain term
-			// For each domain term, create a new variable and substitute the domainterm with the new varterm
-			auto domterm = dynamic_cast<DomainTerm*>(*it);
-			auto domelement = new const DomElemContainer();
-			*domelement = domterm->value();
-			auto var = new Variable(domterm->sort());
-			auto newatom = dynamic_cast<PredForm*>(FormulaUtils::substituteTerm(atom, domterm, var));
-
-#ifdef DEBUG // Check that the var has really been added in place of the domainterm
-			bool found = false;
-			for (auto it = newatom->subterms().cbegin(); it != newatom->subterms().cend(); ++it) {
-				if(sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var()==var) {
-					found = true;
-				}
-				Assert((*it)!=domterm);
-			}
-			Assert(found);
-#endif
-
-			vector<Pattern> termpattern(pattern);
-			termpattern.push_back(Pattern::INPUT);
-			vector<const DomElemContainer*> termvars(vars);
-			termvars.push_back(domelement);
-			vector<Variable*> fotermvars(atomvars);
-			fotermvars.push_back(var);
-			vector<SortTable*> termuniv(universe.tables());
-			termuniv.push_back(structure->inter(domterm->sort()));
-
-			// Recursive case!
-			return createFromPredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
-		}
-	}
-
-	return GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+	return createFromSimplePredForm(atom, pattern, atomvars, vars, universe, structure, branchToGenerate);
 }
 
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern,

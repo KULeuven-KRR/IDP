@@ -26,7 +26,6 @@ class FOBDDFactory;
 class FOPropagator;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 template<class InterpretationFactory, class PropDomain> class FOPropagatorFactory;
-class FormulaFuncTermChecker;
 class GenerateBDDAccordingToBounds;
 class GrounderFactory;
 class Printer;
@@ -45,6 +44,7 @@ class SplitIntoMonotoneAgg;
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
 		friend class CheckContainsFuncTerms; \
+		friend class CheckContainsDomainTerms; \
 		friend class CheckContainsFuncTermsOutsideOfSets; \
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
@@ -56,7 +56,6 @@ class SplitIntoMonotoneAgg;
 		friend class FOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class TypedFOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class FOPropagatorFactory; \
-		friend class FormulaFuncTermChecker; \
 		friend class GenerateBDDAccordingToBounds; \
 		friend class GrounderFactory; \
 		friend class Printer; \

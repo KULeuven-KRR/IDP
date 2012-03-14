@@ -58,6 +58,13 @@ private:
 
 	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
+	 * Can only be used on atoms that contain only var and domain terms (no functions and aggregates)
+	 */
+	InstGenerator *createFromSimplePredForm(PredForm *atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*> & vars, const vector<Variable*> & atomvars,
+			  const AbstractStructure *structure, BRANCH branchToGenerate,const Universe & universe);
+
+	/*
+	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * branchToGenerate determines whether all instances for which the predform evaluates to true
 	 * or all instances for which the predform evaluates to false are generated
 	 */

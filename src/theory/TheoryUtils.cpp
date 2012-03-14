@@ -18,9 +18,9 @@
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
+#include "information/CheckContainsDomainTerms.hpp"
 #include "information/CheckContainsFuncTermsOutsideOfSets.hpp"
 #include "information/CheckContainsAggTerms.hpp"
-#include "information/CheckFuncTerms.hpp"
 #include "information/CheckPartialTerm.hpp"
 #include "information/CheckSorts.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
@@ -109,6 +109,10 @@ void checkSorts(Vocabulary* v, Formula* f) {
 
 bool containsFuncTerms(Formula* f) {
 	return transform<CheckContainsFuncTerms, bool>(f);
+}
+
+bool containsDomainTerms(Formula* f) {
+	return transform<CheckContainsDomainTerms, bool>(f);
 }
 
 bool containsFuncTermsOutsideOfSets(Formula* f) {
