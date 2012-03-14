@@ -34,7 +34,7 @@ TEST_P(QueryTest, DoesQuerying) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(ModelExpansion, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
+INSTANTIATE_TEST_CASE_P(Querying, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
 
 
 }

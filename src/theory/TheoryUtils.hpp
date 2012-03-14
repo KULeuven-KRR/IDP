@@ -80,6 +80,7 @@ void checkSorts(Vocabulary* v, Formula* f);
 
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula */
 bool containsFuncTerms(Formula* f);
+bool containsFuncTermsOutsideOfSets(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 

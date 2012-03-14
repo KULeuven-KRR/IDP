@@ -45,6 +45,7 @@ class SplitIntoMonotoneAgg;
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
 		friend class CheckContainsFuncTerms; \
+		friend class CheckContainsFuncTermsOutsideOfSets; \
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \

@@ -52,6 +52,11 @@ private:
 	FOBDDManager* _manager;
 
 	/*
+	 * Help-method for creating from predform
+	 */
+	PredForm* smartGraphFunction(PredForm* atom, const std::vector<Pattern>& pattern, const std::vector<Variable*>& atomvars);
+
+	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * branchToGenerate determines whether all instances for which the predform evaluates to true
 	 * or all instances for which the predform evaluates to false are generated
