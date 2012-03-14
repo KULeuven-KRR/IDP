@@ -60,7 +60,7 @@ private:
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * Can only be used on atoms that contain only var and domain terms (no functions and aggregates)
 	 */
-	InstGenerator *createFromSimplePredForm(PredForm *atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*> & vars, const vector<Variable*> & atomvars,
+	InstGenerator *createFromSimplePredForm(PredForm *atom, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*> & vars, const std::vector<Variable*> & atomvars,
 			  const AbstractStructure *structure, BRANCH branchToGenerate,const Universe & universe);
 
 	/*
