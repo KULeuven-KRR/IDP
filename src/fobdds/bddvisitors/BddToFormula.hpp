@@ -126,7 +126,7 @@ private:
 		_dbrmapping.clear();
 		std::set<Variable*> vars;
 		int i=0;
-		for(auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rbegin(); it++,i++){
+		for(auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rend(); it++,i++){
 			auto v = new Variable(*it);
 			_dbrmapping[_manager->getDeBruijnIndex(*it,i)] = v;
 			vars.insert(v);
