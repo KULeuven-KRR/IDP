@@ -18,6 +18,7 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAtomKernel.hpp"
+#include "fobdds/FoBddAggKernel.hpp"
 #include "BDDBasedGeneratorFactory.hpp"
 #include "InstGenerator.hpp"
 #include "SimpleFuncGenerator.hpp"
@@ -446,11 +447,9 @@ vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vecto
 		branchpattern = newbranchpattern;
 		if (*it == origatom) {
 			//This distinction serves for: the original atom might need to be inverted, the newly created not.
-			generators.push_back(
-					createFromPredForm(dynamic_cast<PredForm*>(*it), kernpattern, kernvars, kernfovars, structure, branchToGenerate, Universe(kerntables)));
+			generators.push_back(createFromFormula(*it, kernpattern, kernvars, kernfovars, structure, branchToGenerate, Universe(kerntables)));
 		} else {
-			generators.push_back(
-					createFromPredForm(dynamic_cast<PredForm*>(*it), kernpattern, kernvars, kernfovars, structure, BRANCH::TRUEBRANCH, Universe(kerntables)));
+			generators.push_back(createFromFormula(*it, kernpattern, kernvars, kernfovars, structure, BRANCH::TRUEBRANCH, Universe(kerntables)));
 		}
 	}
 
@@ -487,7 +486,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		if (FormulaUtils::containsAggTerms(atom)) {
 			auto newform = FormulaUtils::graphFuncsAndAggs(atom);
 			Assert(sametypeid<AggForm>(*newform));
-			return (NULL); //TODO: createfromAggForm()
+			auto transform = dynamic_cast<AggForm*>(newform);
+			return createFromAggForm(transform, pattern, vars, atomvars, structure, branchToGenerate, universe);
 		}Assert(not FormulaUtils::containsFuncTerms(atom));
 		return createFromSimplePredForm(atom, pattern, vars, atomvars, structure, branchToGenerate, universe);
 	}
@@ -502,7 +502,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform);
 	FormulaUtils::flatten(newform);
-	if (!sametypeid<QuantForm>(*newform)) {
+	if (not sametypeid<QuantForm>(*newform)) {
 		throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 	}
 	QuantForm *quantform = dynamic_cast<QuantForm*>(newform);
@@ -547,24 +547,19 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
 		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& origuniverse) {
 
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
+	if (sametypeid<FOBDDAtomKernel>(*kernel) || sametypeid<FOBDDAggKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-		auto atomform = _manager->toFormula(atom);
-		Assert(sametypeid<PredForm>(*atomform));
-		auto pf = dynamic_cast<PredForm*>(atomform);
+		auto formula = _manager->toFormula(kernel);
+		Assert(sametypeid<PredForm>(*formula) || sametypeid<AggForm>(*formula));
 		vector<Variable*> atomvars;
 		for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
 			atomvars.push_back((*it)->variable());
 		}
-		auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, branchToGenerate, origuniverse);
+		auto gen = createFromFormula(formula, origpattern, origvars, atomvars, structure, branchToGenerate, origuniverse);
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			clog << "Created kernel generator: " << toString(gen) << "\n";
 		}
 		return gen;
-	}
-	else if(sametypeid<FOBDDAggKernel>(*kernel)){
-		return NULL;
-		//TODO: aggkernels
 	}
 
 	// Quantification kernel
@@ -629,4 +624,19 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		auto bddtruegenerator = btg.create(quantdata);
 		return new TrueQuantKernelGenerator(bddtruegenerator, outvars);
 	}
+}
+
+InstGenerator* BDDToGenerator::createFromAggForm(AggForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
+		const std::vector<Variable*>&, const AbstractStructure*, BRANCH branchToGenerate, const Universe&) {
+	return NULL; //TODO
+}
+
+InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
+		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+	if (sametypeid<PredForm>(*f)) {
+		auto newf = dynamic_cast<PredForm*>(f);
+		return createFromPredForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
+	}Assert(sametypeid<AggForm>(*f));
+	auto newf = dynamic_cast<AggForm*>(f);
+	return createFromAggForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
 }

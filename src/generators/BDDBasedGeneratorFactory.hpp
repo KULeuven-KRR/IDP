@@ -60,17 +60,31 @@ private:
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * Can only be used on atoms that contain only var and domain terms (no functions and aggregates)
 	 */
-	InstGenerator *createFromSimplePredForm(PredForm *atom, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*> & vars, const std::vector<Variable*> & atomvars,
-			  const AbstractStructure *structure, BRANCH branchToGenerate,const Universe & universe);
+	InstGenerator *createFromSimplePredForm(PredForm *atom, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*> & vars,
+			const std::vector<Variable*> & atomvars, const AbstractStructure *structure, BRANCH branchToGenerate, const Universe & universe);
 
 	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * branchToGenerate determines whether all instances for which the predform evaluates to true
 	 * or all instances for which the predform evaluates to false are generated
 	 */
-	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<Variable*>&, const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
+			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
 
+	/*
+	 * Creates an instance generator from a aggform (i.e.~an aggkernel).
+	 * branchToGenerate determines whether all instances for which the predform evaluates to true
+	 * or all instances for which the aggform evaluates to false are generated
+	 */
+	InstGenerator* createFromAggForm(AggForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
+			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+
+	/*
+	 * Creates an instance generator from a formula
+	 * PRECONDITION: f is either a predform or an aggform (i.e.~is the direct translation of an atomkernel or an aggkernel)
+	 */
+	InstGenerator* createFromFormula(Formula* f, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
+			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
 	/*
 	 * Creates an instance generator from a kernel.  branchToGenerate determines whether all instances for which the kernel evaluates to true
 	 * or all instances for which the kernel evaluates to false are generated
