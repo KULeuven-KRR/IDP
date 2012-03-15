@@ -91,8 +91,8 @@ void extractFirstOccurringOutputs(const BddGeneratorData& data, const vector<uns
 	}
 }
 
-BDDToGenerator::BDDToGenerator(FOBDDManager* manager) :
-		_manager(manager) {
+BDDToGenerator::BDDToGenerator(FOBDDManager* manager)
+		: _manager(manager) {
 }
 
 InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
@@ -184,8 +184,7 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 
 	// Both branches possible: create a checker and a generator for all possibilities
 	vector<Pattern> checkerpattern(kernpattern.size(), Pattern::INPUT);
-	auto kernelchecker = createFromKernel(data.bdd->kernel(), checkerpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
-			Universe(kerntables));
+	auto kernelchecker = createFromKernel(data.bdd->kernel(), checkerpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH, Universe(kerntables));
 
 	//Generator for the universe of kerneloutput
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
@@ -204,8 +203,7 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
  * with x a variable with the right pattern
  * If it is not possible, the original atom is returned
  */
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager,
-		Pattern matchingPattern) {
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n]);
@@ -223,7 +221,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 /**
  * NOTE: deletes the functerm and the atom
  */
-PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
+PredForm* graphOneFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
 	vector<Term*> vt = ft->subterms();
 	vt.push_back(rangeTerm);
 	auto newatom = new PredForm(atom->sign(), ft->function(), vt, atom->pi());
@@ -235,20 +233,20 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
 /**
  * NOTE:Graphs an atom.  Precondition: atom is an equality symbol and one of its arguments is a functerm
  */
-PredForm* graphFunction(PredForm* atom) {
+PredForm* graphOneFunction(PredForm* atom) {
 	Assert(atom->symbol()->name() == "=/2");
 	FuncTerm* ft;
 	Term* rangeTerm;
 	if (sametypeid<FuncTerm>(*(atom->subterms()[1]))) {
 		ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 		rangeTerm = atom->subterms()[0];
-		return graphFunction(atom, ft, rangeTerm);
+		return graphOneFunction(atom, ft, rangeTerm);
 	} else {
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 		ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		rangeTerm = atom->subterms()[1];
 	}
-	return graphFunction(atom, ft, rangeTerm);
+	return graphOneFunction(atom, ft, rangeTerm);
 }
 
 /**
@@ -257,19 +255,17 @@ PredForm* graphFunction(PredForm* atom) {
  * In general, it tries to rewrite F(x,y) = z to ... = v with v some output variable.
  * If not such rewriting is possible, this method simply graphs the function.
  */
-PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars,
-		FOBDDManager* manager) {
+PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager) {
 	Assert((atom->subterms()[0] == lhs&& atom->subterms()[1] == rhs)||(atom->subterms()[1] == lhs&& atom->subterms()[0] == rhs));
 	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT);
 	if (atom == newatom) {
-		return graphFunction(newatom, lhs, rhs);
+		return graphOneFunction(newatom, lhs, rhs);
 	}
 	if (FormulaUtils::containsFuncTermsOutsideOfSets(newatom)) {
 		//We are in the case the sum has been rewritten to t = x, with x still containing functions
-		return graphFunction(newatom);
+		return graphOneFunction(newatom);
 	}
-	//We are in the case the sum has been rewritten to y = x, with y a domain term or varterm
-
+	//We are in the case the sum has been rewritten to y = x, with x output and y no functionterm
 	return newatom;
 }
 
@@ -297,7 +293,7 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm *atom, const vector<Patter
 		if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
 			atom = rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
 		} else { // Case B
-			atom = graphFunction(atom, ft, atom->subterms()[0]);
+			atom = graphOneFunction(atom, ft, atom->subterms()[0]);
 		}
 	} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
@@ -305,15 +301,15 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm *atom, const vector<Patter
 		if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (C)
 			atom = rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
 		} else { // Case (B)
-			atom = graphFunction(atom, ft, atom->subterms()[1]);
+			atom = graphOneFunction(atom, ft, atom->subterms()[1]);
 		}
 	} else if (sametypeid<FuncTerm>(*(atom->subterms()[0]))) { // Case (A)
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-		atom = graphFunction(atom, ft, atom->subterms()[1]);
+		atom = graphOneFunction(atom, ft, atom->subterms()[1]);
 	} else { // Case (B)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-		atom = graphFunction(atom, ft, atom->subterms()[0]);
+		atom = graphOneFunction(atom, ft, atom->subterms()[0]);
 	}
 	return atom;
 }
@@ -377,7 +373,92 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 	return GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
 }
 
+vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, set<Variable*> free_vars,
+		const AbstractStructure *& structure) {
+	vector<Formula*> orderedconjunction;
+	while (!atoms_to_order.empty()) {
+		Formula *bestatom = 0;
+		double bestcost = getMaxElem<double>();
+		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
+			bool currinverse = false;
+			if (*it == origatom) {
+				currinverse = (branchToGenerate == BRANCH::FALSEBRANCH);
+			}
+			set<Variable*> projectedfree;
+			//projectedfree are the free variables that occur free in THIS atom
+			for (auto jt = free_vars.cbegin(); jt != free_vars.cend(); ++jt) {
+				if ((*it)->freeVars().find(*jt) != (*it)->freeVars().cend()) {
+					projectedfree.insert(*jt);
+				}
+			}
+
+			double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
+			if (currcost < bestcost) {
+				bestcost = currcost;
+				bestatom = *it;
+			}
+		}
+
+		if (!bestatom) {
+			bestatom = *(atoms_to_order.cbegin());
+		}
+		orderedconjunction.push_back(bestatom);
+		atoms_to_order.erase(bestatom);
+		for (auto it = bestatom->freeVars().cbegin(); it != bestatom->freeVars().cend(); ++it) {
+			free_vars.erase(*it);
+		}
+	}Assert(free_vars.empty());
+	return orderedconjunction;
+}
+
+vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vector<Pattern> & pattern, const vector<const DomElemContainer*> & vars,
+		const vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure, vector<Formula*> conjunction,
+		Formula *origatom, BRANCH branchToGenerate) {
+	vector<InstGenerator*> generators;
+	vector<Pattern> branchpattern = pattern;
+	vector<const DomElemContainer*> branchvars = vars;
+	vector<Variable*> branchfovars = atomvars;
+	vector<SortTable*> branchuniverse = universe.tables();
+	for (auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
+		branchpattern.push_back(Pattern::OUTPUT);
+		branchvars.push_back(new const DomElemContainer());
+		branchfovars.push_back(*it);
+		branchuniverse.push_back(structure->inter((*it)->sort()));
+	}
+	for (auto it = conjunction.cbegin(); it != conjunction.cend(); ++it) {
+		vector<Pattern> kernpattern;
+		vector<const DomElemContainer*> kernvars;
+		vector<Variable*> kernfovars;
+		vector<SortTable*> kerntables;
+		vector<Pattern> newbranchpattern;
+		for (unsigned int n = 0; n < branchpattern.size(); ++n) {
+			if ((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().cend()) {
+				newbranchpattern.push_back(branchpattern[n]);
+			} else {
+				kernpattern.push_back(branchpattern[n]);
+				kernvars.push_back(branchvars[n]);
+				kernfovars.push_back(branchfovars[n]);
+				kerntables.push_back(branchuniverse[n]);
+				newbranchpattern.push_back(Pattern::INPUT);
+			}
+		}
+
+		branchpattern = newbranchpattern;
+		if (*it == origatom) {
+			//This distinction serves for: the original atom might need to be inverted, the newly created not.
+			generators.push_back(
+					createFromPredForm(dynamic_cast<PredForm*>(*it), kernpattern, kernvars, kernfovars, structure, branchToGenerate, Universe(kerntables)));
+		} else {
+			generators.push_back(
+					createFromPredForm(dynamic_cast<PredForm*>(*it), kernpattern, kernvars, kernfovars, structure, BRANCH::TRUEBRANCH, Universe(kerntables)));
+		}
+	}
+
+	return generators;
+}
+
 // FIXME error in removenesting if this does not introduce a quantifier
+// FIXME no hardcoded string comparisons! (see "=/2")
 // FIXME very ugly code
 // TODO move to other class: not related to bdds. ---> Actually it is, since we heavily rely on the normal form the bdd has transformed our formula to!
 /**
@@ -391,222 +472,99 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	}
 	if (atom->symbol()->name() == "=/2") {
 		if (FormulaUtils::containsFuncTermsOutsideOfSets(atom)) {
-			// FIXME no hardcoded string comparisons!
 			atom = smartGraphFunction(atom, pattern, atomvars);
 		}
 	}
 	// NOW atom is of one of the forms:
-	// * GraphedFunction(x,y,z,...)
-	// * a = b where a and b are no functerms (hence, aggterm, domainterm or varterm)
+	// 1* a = b where a and b are no functerms (hence, aggterm, domainterm or varterm)
+	// 2* P(x,y,z,...) with P no equality
+	// -> In this case: two possibilities:
+	// A** either, atom still contains functerms or aggterms, hence we need to unnest,...
+	// B** or, atom only contains varterms and domainterms (this is the simplest case)
 
-	if (FormulaUtils::containsFuncTerms(atom)) {
-		auto newform = FormulaUtils::unnestTerms(atom, Context::NEGATIVE);
-		newform = FormulaUtils::splitComparisonChains(newform);
-		newform = FormulaUtils::graphFuncsAndAggs(newform);
-		FormulaUtils::flatten(newform);
-		if (not sametypeid<QuantForm>(*newform)) {
-			throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
-		}
-		QuantForm* quantform = dynamic_cast<QuantForm*>(newform);
-		Assert(sametypeid<BoolForm>(*(quantform->subformula())));
-		BoolForm* boolform = dynamic_cast<BoolForm*>(quantform->subformula());
-		vector<PredForm*> conjunction;
-		for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
-			Assert(typeid(*(*it)) == typeid(PredForm));
-			conjunction.push_back(dynamic_cast<PredForm*>(*it));
-		}
-		PredForm* origatom = conjunction.back();
-		set<Variable*> still_free;
-		for (unsigned int n = 0; n < pattern.size(); ++n) {
-			if (pattern[n] == Pattern::OUTPUT) {
-				still_free.insert(atomvars[n]);
-			}
-		}
-		for (auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
-			still_free.insert(*it);
-		}
-		set<PredForm*> atoms_to_order(conjunction.cbegin(), conjunction.cend());
-		vector<PredForm*> orderedconjunction;
-		while (not atoms_to_order.empty()) {
-			PredForm* bestatom = 0;
-			double bestcost = getMaxElem<double>();
-			for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
-				bool currinverse = false;
-				if (*it == origatom) {
-					currinverse = (branchToGenerate == BRANCH::FALSEBRANCH);
-				}
-				set<Variable*> projectedfree;
-				for (auto jt = still_free.cbegin(); jt != still_free.cend(); ++jt) {
-					if ((*it)->freeVars().find(*jt) != (*it)->freeVars().cend()) {
-						projectedfree.insert(*jt);
-					}
-				}
-				double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
-				if (currcost < bestcost) {
-					bestcost = currcost;
-					bestatom = *it;
-				}
-			}
-			if (not bestatom) {
-				bestatom = *(atoms_to_order.cbegin());
-			}
-			orderedconjunction.push_back(bestatom);
-			atoms_to_order.erase(bestatom);
-			for (auto it = bestatom->freeVars().cbegin(); it != bestatom->freeVars().cend(); ++it) {
-				still_free.erase(*it);
-			}
-		}
+	//CASE 1
+	if (atom->symbol()->name() == "=/2") {
+		if (FormulaUtils::containsAggTerms(atom)) {
+			auto newform = FormulaUtils::graphFuncsAndAggs(atom);
+			Assert(sametypeid<AggForm>(*newform));
+			return (NULL); //TODO: createfromAggForm()
+		}Assert(not FormulaUtils::containsFuncTerms(atom));
+		return createFromSimplePredForm(atom, pattern, vars, atomvars, structure, branchToGenerate, universe);
+	}
 
-//		clog <<"Ordered conjunction: \n";
-//		for(auto i=orderedconjunction.cbegin(); i<orderedconjunction.cend(); ++i){
-//			clog <<toString(*i) <<"\n";
-//		}
-
-		vector<InstGenerator*> generators;
-		vector<Pattern> branchpattern = pattern;
-		vector<const DomElemContainer*> branchvars = vars;
-		vector<Variable*> branchfovars = atomvars;
-		vector<SortTable*> branchuniverse = universe.tables();
-		for (auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
-			branchpattern.push_back(Pattern::OUTPUT);
-			branchvars.push_back(new const DomElemContainer());
-			branchfovars.push_back(*it);
-			branchuniverse.push_back(structure->inter((*it)->sort()));
-		}
-		for (auto it = orderedconjunction.cbegin(); it != orderedconjunction.cend(); ++it) {
-			vector<Pattern> kernpattern;
-			vector<const DomElemContainer*> kernvars;
-			vector<Variable*> kernfovars;
-			vector<SortTable*> kerntables;
-			vector<Pattern> newbranchpattern;
-			for (unsigned int n = 0; n < branchpattern.size(); ++n) {
-				if ((*it)->freeVars().find(branchfovars[n]) == (*it)->freeVars().cend()) {
-					newbranchpattern.push_back(branchpattern[n]);
-				} else {
-					kernpattern.push_back(branchpattern[n]);
-					kernvars.push_back(branchvars[n]);
-					kernfovars.push_back(branchfovars[n]);
-					kerntables.push_back(branchuniverse[n]);
-					newbranchpattern.push_back(Pattern::INPUT);
-				}
-			}
-			branchpattern = newbranchpattern;
-			if (*it == origatom) { //TODO WHY IS THIS DISTINCTION?
-				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, branchToGenerate, Universe(kerntables)));
-			} else {
-				generators.push_back(createFromPredForm(*it, kernpattern, kernvars, kernfovars, structure, BRANCH::TRUEBRANCH, Universe(kerntables)));
-			}
-		}
-
-		if (generators.size() == 1)
-			return generators[0];
-		else {
-			GeneratorNode* node = 0;
-			for (auto it = generators.rbegin(); it != generators.rend(); ++it) {
-				if (node)
-					node = new OneChildGeneratorNode(*it, node);
-				else
-					node = new LeafGeneratorNode(*it);
-			}
-			return new TreeInstGenerator(node);
+	//CASE 2B
+	if (!FormulaUtils::containsFuncTerms(atom) && !FormulaUtils::containsAggTerms(atom)) {
+		return createFromSimplePredForm(atom, pattern, vars, atomvars, structure, branchToGenerate, universe);
+	}
+	//CASE 2A
+	//We unnest non-recursive since we don't want to pull functerms outside of aggregates.
+	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(atom, NULL, Context::NEGATIVE);
+	newform = FormulaUtils::splitComparisonChains(newform);
+	newform = FormulaUtils::graphFuncsAndAggs(newform);
+	FormulaUtils::flatten(newform);
+	if (!sametypeid<QuantForm>(*newform)) {
+		throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
+	}
+	QuantForm *quantform = dynamic_cast<QuantForm*>(newform);
+	Assert(sametypeid<BoolForm>(*(quantform->subformula())));
+	BoolForm *boolform = dynamic_cast<BoolForm*>(quantform->subformula());
+	Assert(boolform->isConjWithSign());
+	for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
+		Assert(sametypeid<PredForm>(**it)||sametypeid<AggForm>(**it));
+	}
+	Formula *origatom = boolform->subformulas().back();
+	//All variables that are still free: the original free variables + the quantvars
+	set<Variable*> all_free_vars;
+	for (unsigned int n = 0; n < pattern.size(); ++n) {
+		if (pattern[n] == Pattern::OUTPUT) {
+			all_free_vars.insert(atomvars[n]);
 		}
 	}
-	return createFromSimplePredForm(atom, pattern, atomvars, vars, universe, structure, branchToGenerate);
+	for (auto it = quantform->quantVars().cbegin(); it != quantform->quantVars().cend(); ++it) {
+		all_free_vars.insert(*it);
+	}
+	set<Formula*> atoms_to_order(boolform->subformulas().cbegin(), boolform->subformulas().cend());
+	vector<Formula*> orderedconjunction = orderSubformulas(atoms_to_order, origatom, branchToGenerate, all_free_vars, structure);
+
+	vector<InstGenerator*> generators = turnConjunctionIntoGenerators(pattern, vars, atomvars, universe, quantform, structure, orderedconjunction, origatom,
+			branchToGenerate);
+
+	if (generators.size() == 1)
+		return generators[0];
+	else {
+		GeneratorNode* node = 0;
+		for (auto it = generators.rbegin(); it != generators.rend(); ++it) {
+			if (node)
+				node = new OneChildGeneratorNode(*it, node);
+			else
+				node = new LeafGeneratorNode(*it);
+		}
+		return new TreeInstGenerator(node);
+	}
+
 }
 
-InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern,
-		const vector<const DomElemContainer*>& origvars, const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure,
-		BRANCH branchToGenerate, const Universe& origuniverse) {
+InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
+		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& origuniverse) {
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-
-		if (_manager->containsFuncTerms(atom)) {
-			auto atomform = _manager->toFormula(atom);
-			Assert(typeid(*atomform) == typeid(PredForm));
-			auto pf = dynamic_cast<PredForm*>(atomform);
-			vector<Variable*> atomvars;
-			for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
-				atomvars.push_back((*it)->variable());
-			}
-			auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, branchToGenerate, origuniverse);
-			if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-				clog << "Created kernel generator: " << toString(gen) << "\n";
-			}
-			return gen;
+		auto atomform = _manager->toFormula(atom);
+		Assert(sametypeid<PredForm>(*atomform));
+		auto pf = dynamic_cast<PredForm*>(atomform);
+		vector<Variable*> atomvars;
+		for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
+			atomvars.push_back((*it)->variable());
 		}
-
-		// Replace all fobbddomainterms with an instantiated variable (necessary for the generators)
-		auto newkernelvars = origkernelvars;
-		auto newuniverse = origuniverse;
-		auto newpattern = origpattern;
-		auto newvars = origvars;
-		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
-			if (not sametypeid<FOBDDDomainTerm>(**it)) {
-				continue;
-			}
-			auto domterm = dynamic_cast<const FOBDDDomainTerm*>(*it);
-			auto domelement = new const DomElemContainer();
-			*domelement = domterm->value();
-
-			auto termvar = new Variable(domterm->sort());
-			auto bddtermvar = _manager->getVariable(termvar);
-			auto termkernel = _manager->substitute(kernel, domterm, bddtermvar); // NOTE: should not introduce quantifications!
-			Assert(sametypeid<FOBDDAtomKernel>(*termkernel));
-
-			newpattern.push_back(Pattern::INPUT);
-			newvars.push_back(domelement);
-			newkernelvars.push_back(bddtermvar);
-			newuniverse.addTable(structure->inter(domterm->sort()));
-
-			atom = dynamic_cast<const FOBDDAtomKernel*>(termkernel);
-			it = atom->args().cbegin();
+		auto gen = createFromPredForm(pf, origpattern, origvars, atomvars, structure, branchToGenerate, origuniverse);
+		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+			clog << "Created kernel generator: " << toString(gen) << "\n";
 		}
-
-		// Create the pattern for the atom
-		vector<Pattern> atompattern;
-		vector<const DomElemContainer*> atomvars;
-		vector<SortTable*> atomtables;
-		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
-			// An atomkernel without functerms can only have variables and domainterms (and the last have been removed)
-			Assert(sametypeid<FOBDDVariable>(**it));
-			auto var = dynamic_cast<const FOBDDVariable*>(*it);
-			unsigned int pos = 0;
-			for (; pos < newkernelvars.size(); ++pos) {
-				if (newkernelvars[pos] == var) {
-					break;
-				}
-			}
-
-			Assert(pos < newkernelvars.size());
-			// Each variable in the atomkernel should occur in kernelvars
-			atompattern.push_back(newpattern[pos]);
-			atomvars.push_back(newvars[pos]);
-			atomtables.push_back(newuniverse.tables()[pos]);
-		}
-
-		// Construct the generator
-		auto symbol = atom->symbol();
-		const PredInter* inter = NULL;
-		if (sametypeid<Predicate>(*symbol)) {
-			inter = structure->inter(dynamic_cast<Predicate*>(symbol));
-		} else {
-			Assert(sametypeid<Function>(*symbol));
-			inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
-		}
-		const PredTable* table = 0;
-		switch (atom->type()) {
-		case AtomKernelType::AKT_TWOVALUED:
-			table = branchToGenerate == BRANCH::FALSEBRANCH ? inter->cf() : inter->ct();
-			break;
-		case AtomKernelType::AKT_CT:
-			table = branchToGenerate == BRANCH::FALSEBRANCH ? inter->pf() : inter->ct();
-			break;
-		case AtomKernelType::AKT_CF:
-			table = branchToGenerate == BRANCH::FALSEBRANCH ? inter->pt() : inter->cf();
-			break;
-		}
-		return GeneratorFactory::create(table, atompattern, atomvars, Universe(atomtables));
+		return gen;
+	}
+	else if(sametypeid<FOBDDAggKernel>(*kernel)){
+		return NULL;
+		//TODO: aggkernels
 	}
 
 	// Quantification kernel

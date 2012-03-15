@@ -102,7 +102,12 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	const PredTable* table = NULL;
 	if (sametypeid<Predicate>(*(atom->symbol()))) {
 		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
-		auto inter = structure->inter(predicate);
+		PredInter* inter;
+		if (predicate->type() == ST_NONE) {
+			inter = structure->inter(predicate);
+		} else {
+			inter = structure->inter(predicate->parent());
+		}
 		switch (predicate->type()) {
 		case ST_NONE:
 			table = inverse ? inter->cf() : inter->ct();

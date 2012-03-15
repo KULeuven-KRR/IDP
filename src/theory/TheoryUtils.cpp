@@ -36,6 +36,7 @@
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
+#include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
 #include "transformations/UnnestDomainTerms.hpp"
@@ -172,6 +173,11 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
+
+Formula* unnestFuncsAndAggsNonRecursive(Formula* f, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
+}
+
 Formula* unnestDomainTerms(Formula* f, AbstractStructure* str,  Context con ) {
 	return transform<UnnestDomainTerms, Formula*>(f, str, con);
 }
@@ -225,6 +231,10 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Co
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
+}
+
 AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Context con) {
 	return transform<UnnestDomainTerms, AbstractTheory*>(t, str, con);
 }
@@ -269,7 +279,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);

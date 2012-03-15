@@ -98,7 +98,7 @@ void deriveSorts(Vocabulary* v, Formula* f);
  *			- query does not contain any FuncTerm or AggTerm subterms
  *			- the query has a twovalue result in the given structure
  */
-double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
 
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);
@@ -122,6 +122,9 @@ Formula* substituteTerm(Formula*, Term*, Variable*);
 
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+/** Non-recursively move all function and aggregate terms */
+Formula* unnestFuncsAndAggsNonRecursive(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
@@ -167,6 +170,9 @@ AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+/** Non-recursively move all function and aggregate terms */
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);

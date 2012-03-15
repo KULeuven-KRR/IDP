@@ -136,7 +136,6 @@ private:
 		}
 		set->subformula(0)->accept(this);
 		auto subform = _currformula;
-		std::cerr << "HEY, IFOUND" << toString(subform)<< "for"<< toString(set->subformula(0))<<nt();
 		set->subterm(0)->accept(this);
 		auto subterm = _currterm;
 		_dbrmapping = savedmapping;
