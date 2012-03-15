@@ -53,8 +53,7 @@ private:
 	}
 
 	void visit(const FOBDDAggKernel*) {
-		throw notyetimplemented("CheckIsAirhtmeticFormula for bdds with aggregates");
-		//TODO: what should happen here.  Is an aggregate allowed in a "arithmetic formula" or not?
+		return;
 	}
 
 	void visit(const FOBDDVariable* variable) {
@@ -76,8 +75,7 @@ private:
 		_result = _result && Vocabulary::std()->contains(functerm->func());
 	}
 	void visit(const FOBDDAggTerm* aggterm) {
-		throw notyetimplemented("CheckIsAirhtmeticFormula for bdds with aggregates");
-		//TODO: what should happen here.  Is an aggregate allowed in a "arithmetic formula" or not?
+		return;
 	}
 
 };

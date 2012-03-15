@@ -1553,6 +1553,21 @@ double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDV
 double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars,
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
+
+	if(sametypeid<FOBDDAggKernel>(*kernel)){
+		//TODO: very ad-hoc hack to get some result.  Think this throuh!!!
+		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
+		auto set = aggk->right()->setexpr();
+		double d =0;
+		for(int i = 0; i< set->size(); i++){
+			double extra = estimatedCostAll(set->subformula(i),vars,indices,structure);
+			d = (d + extra < maxdouble) ? d+extra:maxdouble;
+			if(d==maxdouble){
+				break;
+			}
+		}
+		return d;
+	}
 	if (isArithmetic(kernel, this)) {
 		vector<double> varunivsizes;
 		vector<double> indexunivsizes;
