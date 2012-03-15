@@ -74,7 +74,7 @@ private:
 		}
 		_result = _result && Vocabulary::std()->contains(functerm->func());
 	}
-	void visit(const FOBDDAggTerm* aggterm) {
+	void visit(const FOBDDAggTerm*) {
 		return;
 	}
 

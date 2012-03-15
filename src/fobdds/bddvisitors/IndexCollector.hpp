@@ -37,8 +37,10 @@ public:
 		--_minimaldepth;
 	}
 
-	void visit(const FOBDDAggKernel* ak){
-		throw notyetimplemented("Collecting indices from an agg kernel");
+	void visit(const FOBDDQuantSetExpr* qse){
+		_minimaldepth = _minimaldepth + qse->quantvarsorts().size();
+		FOBDDVisitor::visit(qse->subformula(0));
+		_minimaldepth = _minimaldepth - qse->quantvarsorts().size();
 	}
 
 	void visit(const FOBDDDeBruijnIndex* index) {

@@ -1369,6 +1369,11 @@ map<const FOBDDKernel*, tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, c
  * Estimates the chance that this kernel evaluates to true
  */
 double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractStructure* structure) {
+	if (sametypeid<FOBDDAggKernel>(*kernel)) {
+		return 0.5;
+		//TODO: very ad-hoc fix. Think about this!!!
+	}
+
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		double chance = 0;
