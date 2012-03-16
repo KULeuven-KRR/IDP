@@ -1355,7 +1355,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		map<const FOBDDKernel*, double> subkernels = kernelAnswers(quantkernel->bdd(), structure);
 		map<const FOBDDKernel*, tablesize> subunivs = kernelUnivs(quantkernel->bdd(), structure);
 
-		srand(global_seed);
+		srand(getOption(IntType::RANDOMSEED));
 		double sum = 0; // stores the sum of the chances obtained by each experiment
 		int sumcount = 0; // stores the number of succesfull experiments
 		for (unsigned int experiment = 0; experiment < 10; ++experiment) { // do 10 experiments

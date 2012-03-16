@@ -23,9 +23,6 @@
 
 using namespace std;
 
-// seed
-int global_seed; //!< seed used for bdd estimators
-
 // Parser stuff
 extern void parsefile(const string&);
 extern void parsestdin();
@@ -48,7 +45,6 @@ void usage() {
 	cout << "    -d <dirpath>         search for datafiles in the given directory\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
-	cout << "    --seed=N             use N as seed for the random generator\n";
 	cout << "    -I                   read from stdin\n";
 	cout << "    -v, --version        show version number and stop\n";
 	cout << "    -h, --help           show this help message\n\n";
@@ -111,8 +107,6 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			argv++;
 		} else if (str == "--nowarnings") {
 			setOption(BoolType::SHOWWARNINGS, false);
-		} else if (str.substr(0, 7) == "--seed=") {
-			global_seed = toInt(str.substr(7, str.size()));
 		} else if (str == "-v" || str == "--version") {
 			cout << GIDLVERSION << "\n";
 			exit(0);
