@@ -12,5 +12,8 @@
 #define FWSTRUCTURE_HPP_
 
 #include "DomainElement.hpp"
+#include "Universe.hpp"
+#include "Compound.hpp"
+#include "DomainElementFactory.hpp"
 
 #endif /* FWSTRUCTURE_HPP_ */

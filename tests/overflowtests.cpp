@@ -15,7 +15,7 @@
 
 #include "generators/ArithmeticOperatorsGenerator.hpp"
 
-#include "structure/structure.hpp"
+#include "structure/DomainElementFactory.hpp"
 #include <exception>
 
 using namespace std;

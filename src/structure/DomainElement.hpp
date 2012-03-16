@@ -84,9 +84,6 @@ public:
 	friend class DomElemContainer;
 };
 
-class Compound;
-class DomainAtom;
-
 typedef std::vector<const DomainElement*> ElementTuple;
 typedef std::vector<ElementTuple> ElementTable;
 
