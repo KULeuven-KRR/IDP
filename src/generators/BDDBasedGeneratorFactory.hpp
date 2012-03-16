@@ -75,13 +75,15 @@ private:
 	 * Creates an instance generator from a aggform (i.e.~an aggkernel).
 	 * branchToGenerate determines whether all instances for which the predform evaluates to true
 	 * or all instances for which the aggform evaluates to false are generated
+	 * PRECONDITION: the first argument is an aggform of which the left term is no aggregate nor functerm
 	 */
 	InstGenerator* createFromAggForm(AggForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
 			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
 
 	/*
 	 * Creates an instance generator from a formula
-	 * PRECONDITION: f is either a predform or an aggform (i.e.~is the direct translation of an atomkernel or an aggkernel)
+	 * PRECONDITION: f is either a predform or an aggform of which the left term is no
+	 * aggregate nor functerm (i.e.~is the direct translation of an atomkernel or an aggkernel)
 	 */
 	InstGenerator* createFromFormula(Formula* f, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
 			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
