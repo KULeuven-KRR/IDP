@@ -48,7 +48,7 @@ std::ostream& FOBDDQuantSetExpr::put(std::ostream& output) const {
 std::ostream& FOBDDEnumSetExpr::put(std::ostream& output) const {
 	output << "ENUMSET WITH:";
 	pushtab();
-	for (int i = 0; i < _subformulas.size(); i++) {
+	for (unsigned int i = 0; i < _subformulas.size(); i++) {
 		output << nt() << "* Formula:";
 		pushtab();
 		output << nt() << toString(_subformulas[i]);

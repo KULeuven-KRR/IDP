@@ -46,11 +46,11 @@ public:
 	const std::vector<Sort*>& quantvarsorts() const{
 		return _quantvarsorts;
 	}
-	const FOBDD* subformula(int i) const {
+	const FOBDD* subformula(unsigned int i) const {
 		Assert(i<_subformulas.size());
 		return _subformulas[i];
 	}
-	const FOBDDTerm* subterm(int i) const {
+	const FOBDDTerm* subterm(unsigned int i) const {
 		Assert(i<_subterms.size());
 		return _subterms[i];
 	}

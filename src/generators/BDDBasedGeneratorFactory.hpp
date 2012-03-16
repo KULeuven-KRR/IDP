@@ -16,6 +16,7 @@
 
 class FOBDDManager;
 class FOBDDVariable;
+class FOBDDAggKernel;
 class FOBDD;
 class FOBDDKernel;
 class GeneratorNode;

@@ -175,7 +175,7 @@ private:
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
 
-	void visit(const FOBDDAggKernel* aggkernel) {
+	void visit(const FOBDDAggKernel* ) {
 
 		throw notyetimplemented("BDDToFO for aggregates");
 	}

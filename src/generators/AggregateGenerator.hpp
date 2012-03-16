@@ -36,7 +36,7 @@ private:
 
 	//Executes the next on the ith formulagenerator,...
 	//Returns false if no value is possible (if this one determines the generator to be at end.
-	void next(int i) {
+	void next(unsigned int i) {
 		for (_formulagenerators[i]->begin(); not _formulagenerators[i]->isAtEnd() && not isAtEnd(); _formulagenerators[i]->operator ++()) {
 			_termgenerators[i]->begin();
 			Assert(not _termgenerators[i]->isAtEnd());
@@ -61,20 +61,33 @@ private:
 		case AggFunction::MIN:
 			return getMaxElem<double>();
 		}
+		Assert(false);
+		return 42;
 	}
+
+	void setValue(const DomainElement* d) {
+		if (d == NULL) {
+			notifyAtEnd();
+			return;
+		}
+		if (d->type() == DomainElementType::DET_INT) {
+			_result = d->value()._int;
+		} else {
+			Assert(d->type() == DomainElementType::DET_DOUBLE);
+			_result = d->value()._double;
+		}
+	}
+
 	void doOperation(double d) {
-		double maxdouble = getMaxElem<double>();
-		double mindouble = getMinElem<double>();
-		DomainElement* newresult;
 		switch (_func) {
 		case AggFunction::CARD:
-			newresult = sum<int>(_result, 1);
+			setValue(sum<int>(_result, 1));
 			break;
 		case AggFunction::SUM:
-			newresult = sum<double>(_result, d);
+			setValue(sum<double>(_result, d));
 			break;
 		case AggFunction::PROD:
-			newresult = product<double>(_result, d);
+			setValue(product<double>(_result, d));
 			break;
 		case AggFunction::MAX:
 			_result = _result > d ? _result : d;
@@ -83,23 +96,13 @@ private:
 			_result = _result < d ? _result : d;
 			return;
 		}
-		if (newresult == NULL) {
-			notifyAtEnd();
-			return;
-		}
-		if (newresult->type() == DomainElementType::DET_INT) {
-			_result = newresult->value()._int;
-		} else {
-			Assert(newresult->type() == DomainElementType::DET_DOUBLE);
-			_result = newresult->value()._double;
-		}
 	}
 
 public:
 	// NOTE: takes ownership of the table
 	AggGenerator(const DomElemContainer* left, AggFunction func, std::vector<InstGenerator*> formulagenerators, std::vector<InstGenerator*> termgenerators,
 			std::vector<const DomElemContainer*> terms)
-			: _left(left), _func(func), _formulagenerators(formulagenerators), _termgenerators(termgenerators), _terms(terms), _reset(true), _result(0) {
+			: _left(left), _func(func), _formulagenerators(formulagenerators), _termgenerators(termgenerators), _terms(terms), _result(0), _reset(true) {
 		Assert(_formulagenerators.size()==_termgenerators.size());
 		Assert(_termgenerators.size() == _terms.size());
 	}
@@ -127,11 +130,11 @@ public:
 		}
 		_result = getEmptySetValue();
 		_reset = false;
-		for (int i = 0; i < _formulagenerators.size() && not isAtEnd(); i++) {
+		for (unsigned int i = 0; i < _formulagenerators.size() && not isAtEnd(); i++) {
 			next(i);
 		}
 		if (not isAtEnd()) {
-			_left = createDomElem(_result);
+			_left->operator =(createDomElem(_result));
 		}
 
 	}

@@ -36,7 +36,7 @@ public:
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
 
-	const FOBDDKernel* change(const FOBDDAggKernel* kernel){
+	const FOBDDKernel* change(const FOBDDAggKernel*){
 		throw notyetimplemented("Bumpindices for bdds with aggregates");
 	}
 
