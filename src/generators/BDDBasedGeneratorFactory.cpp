@@ -545,20 +545,21 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 
 }
 
-InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& origpattern, const vector<const DomElemContainer*>& origvars,
-		const vector<const FOBDDVariable*>& origkernelvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& origuniverse) {
+InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
+		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	if (sametypeid<FOBDDAggKernel>(*kernel)) {
-		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), origpattern, origvars, origkernelvars, structure, branchToGenerate, origuniverse);
+		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), pattern, vars, fobddvars, structure, branchToGenerate,
+				universe);
 	}
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		auto formula = _manager->toFormula(kernel);
 		Assert(sametypeid<PredForm>(*formula) || sametypeid<AggForm>(*formula));
 		vector<Variable*> atomvars;
-		for (auto it = origkernelvars.cbegin(); it != origkernelvars.cend(); ++it) {
+		for (auto it = fobddvars.cbegin(); it != fobddvars.cend(); ++it) {
 			atomvars.push_back((*it)->variable());
 		}
-		auto gen = createFromFormula(formula, origpattern, origvars, atomvars, structure, branchToGenerate, origuniverse);
+		auto gen = createFromFormula(formula, pattern, vars, atomvars, structure, branchToGenerate, universe);
 		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 			clog << "Created kernel generator: " << toString(gen) << "\n";
 		}
@@ -583,22 +584,22 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	// Create a generator for the quantified formula
 	if (branchToGenerate == BRANCH::FALSEBRANCH) {
 		//To create a falsebranchgenerator, we need a checker of the subformula
-		quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::INPUT);
+		quantdata.pattern = vector<Pattern>(pattern.size(), Pattern::INPUT);
 	} else {
 		//To get all positive answers, we generate tuples satisfying the subformula (same input pattern as always)
-		quantdata.pattern = origpattern;
+		quantdata.pattern = pattern;
 	}
 
 	//The quantvar is output, both in the checker for falsebranch as the generator for truebranch
 	quantdata.pattern.push_back(Pattern::OUTPUT);
 
-	quantdata.vars = origvars;
+	quantdata.vars = vars;
 	quantdata.vars.push_back(new const DomElemContainer());
 
-	quantdata.bddvars = origkernelvars;
+	quantdata.bddvars = fobddvars;
 	quantdata.bddvars.push_back(bddquantvar);
 
-	quantdata.universe = origuniverse.tables();
+	quantdata.universe = universe.tables();
 	quantdata.universe.addTable(structure->inter(quantkernel->sort()));
 
 	BDDToGenerator btg(_manager);
@@ -608,7 +609,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		vector<const DomElemContainer*> univgenvars;
 		vector<SortTable*> univgentables;
 		for (unsigned int n = 0; n < quantdata.pattern.size() - 1; ++n) {
-			if (origpattern[n] == Pattern::OUTPUT) {
+			if (pattern[n] == Pattern::OUTPUT) {
 				univgenvars.push_back(quantdata.vars[n]);
 				univgentables.push_back(quantdata.universe.tables()[n]);
 			}
@@ -619,9 +620,9 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		return new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
 	} else {
 		vector<const DomElemContainer*> outvars;
-		for (unsigned int n = 0; n < origpattern.size(); ++n) {
-			if (origpattern[n] == Pattern::OUTPUT) {
-				outvars.push_back(origvars[n]);
+		for (unsigned int n = 0; n < pattern.size(); ++n) {
+			if (pattern[n] == Pattern::OUTPUT) {
+				outvars.push_back(vars[n]);
 			}
 		}
 		auto bddtruegenerator = btg.create(quantdata);
@@ -631,36 +632,24 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 
 InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
-	//First, we create a generator for all the free variables (that are output), since the AggregateGenerator assumes everything input
-	//EXCEPTION: if left of the aggform is one of those variables
-	std::vector<const DomElemContainer*> freevars;
-	std::vector<SortTable*> freetables;
-	for (unsigned int n = 0; n < vars.size(); n++) {
-		if (pattern[n] == Pattern::OUTPUT) {
-			if (af->left()->type() != TermType::TT_VAR || dynamic_cast<VarTerm*>(af->left())->var() != fovars[n]) {
-				freevars.push_back(vars[n]);
-				freetables.push_back(universe.tables()[n]);
-			}
-		}
-	}
-	auto freegenerator = GeneratorFactory::create(freevars, freetables); //TODO: simplify if no free vars!
 
-	//Now, we create the generators for formulas and terms.
-	std::vector<InstGenerator*> formulagenerators;
-	std::vector<InstGenerator*> termgenerators;
-	std::vector<const DomElemContainer*> _terms; //Generated by the _termgenerators
-	auto set = af->right()->set();
+	//Now, make all variables input and turn the aggterm into bdd.
 	BddGeneratorData data;
 	int i = 0;
-	for (auto form = set->subformulas().cbegin(); form != set->subformulas().cend(); form++, i++) {
-		FOBDDFactory factory(_manager);
-		auto bdd = factory.turnIntoBdd(*form);
-		formulagenerators.push_back(create)
-
-
+	FOBDDFactory factory(_manager);
+	data.bdd = factory.turnIntoBdd(af);
+	data.bdd = branchToGenerate == BRANCH::FALSEBRANCH ? _manager->negation(data.bdd) : data.bdd;
+	std::vector<const FOBDDVariable*> bddvars(fovars.size());
+	int i = 0;
+	for (auto var = fovars.cbegin(); var != fovars.cend(); ++var, i++) {
+		bddvars[i] = _manager->getVariable(*var);
 	}
+	data.bddvars = bddvars;
+	data.pattern = pattern;
+	data.structure = structure;
+	data.universe = universe;
 
-	return NULL; //TODO
+	return create(data);
 }
 
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
@@ -671,4 +660,65 @@ InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<P
 	}Assert(sametypeid<AggForm>(*f));
 	auto newf = dynamic_cast<AggForm*>(f);
 	return createFromAggForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
+}
+
+InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, const std::vector<Pattern>& pattern,
+		const std::vector<const DomElemContainer*>& vars, const std::vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure,
+		BRANCH branchToGenerate, const Universe& universe) {
+	//First, we create a generator for all the free variables (that are output), since the AggregateGenerator assumes everything input
+		//EXCEPTION: if left of the aggform is one of those variables
+		std::vector<const DomElemContainer*> freevars;
+		std::vector<SortTable*> freetables;
+		std::vector<Pattern> newpattern(vars.size(), Pattern::INPUT);
+		for (unsigned int n = 0; n < vars.size(); n++) {
+			if (pattern[n] == Pattern::OUTPUT) {
+				if (not sametypeid<FOBDDVariable>(ak->left()) || ak->left() != fobddvars[n]) {
+					freevars.push_back(vars[n]);
+					freetables.push_back(universe.tables()[n]);
+				} else {
+					newpattern[n] = Pattern::OUTPUT;
+				}
+			}
+		}
+		auto freegenerator = GeneratorFactory::create(freevars, freetables); //TODO: simplify if no free vars!
+
+		//Now, we start creating the formulagenerators and termgenerators for the agggenerator
+		auto set = ak->right()->setexpr();
+		std::vector<InstGenerator*> formulagenerators(set->size());
+		std::vector<InstGenerator*> termgenerators(set->size());
+		std::vector<const DomElemContainer*> terms(set->size());
+
+		BddGeneratorData data;
+		//data.bdd = TODO
+		data.vars = vars; //TODO: optimize for every formula separately: remove vars that dont appear in subformula or subterm.
+		data.bddvars = fobddvars;
+		data.pattern = newpattern;
+		data.structure = structure;
+		data.universe = universe;
+
+		//Biggerpattern serves for the termgenerators: one extra slot for the new variable
+		std::vector<Pattern> biggerpattern = pattern;
+		biggerpattern.push_back(Pattern::INPUT);
+		for (int i = 0; i < set->size(); i++) {
+			data.bdd = set->subformula(i);
+			formulagenerators[i] = create(data);
+
+			const DomElemContainer* newvar = new DomElemContainer();
+			terms[i] = newvar;
+
+			auto sort = set->subterm(i)->sort();
+			auto newfobddvar = _manager->getVariable(new Variable(sort));
+			auto equalpred = VocabularyUtils::equal(sort); //TODO: depends on comparison!!!
+			auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED, { newfobddvar, set->subterm(i) });
+			auto newvars = vars;
+			newvars.push_back(newvar);
+			auto newfobddvars = fobddvars;
+			newfobddvars.push_back(newfobddvar);
+			std::vector<SortTable*> tables = universe.tables();
+			tables.push_back(sort->interpretation());
+			termgenerators[i] = createFromKernel(equalkernel,biggerpattern,newvars,newfobddvars,structure,BRANCH::TRUEBRANCH,newuniverse);
+
+		}
+
+		return NULL;
 }
