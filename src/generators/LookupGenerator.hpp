@@ -32,7 +32,12 @@ public:
 	}
 
 	LookupGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
+		auto gen = new LookupGenerator(*this);
+		return gen;
+	}
+
+	virtual void setVarsAgain(){
+		// NO-OP
 	}
 
 	~LookupGenerator(){

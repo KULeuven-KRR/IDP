@@ -40,7 +40,7 @@ ADD_FLEX_BISON_DEPENDENCY(myscanner myparser)
 
 add_library(idp
 	vocabulary/vocabulary.cpp
-	structure/structure.cpp
+	structure/structure.cpp structure/NumericOperations.cpp
 	theory/term.cpp
 	theory/theory.cpp
 	options.cpp options.hpp

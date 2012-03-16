@@ -84,7 +84,6 @@ private:
 
 };
 
-// FIXME handle overflows
 class DivChecker: public ArithOpChecker {
 protected:
 	ARITHRESULT doCalculation(double left, double right, double& result) const {

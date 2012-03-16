@@ -13,6 +13,7 @@
 
 #include "common.hpp"
 #include "InstGenerator.hpp"
+#include "structure/structure.hpp"
 
 enum class ARITHRESULT {
 	VALID, INVALID
@@ -72,14 +73,20 @@ public:
 		}
 
 		double result;
+		// FIXME code duplication with calculations with overflow checking in NumericOperations.hpp (add outputtype to those functions)
 		ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
+		if (getOutType() == DET_INT && not isInt(result)) { // NOTE: checks whether no overflow occurred
+			status = ARITHRESULT::INVALID;
+		}
 		if (status != ARITHRESULT::VALID) {
 			notifyAtEnd();
+			*_out = (const DomainElement*)NULL;
 			return;
 		}
 		*_out = createDomElem(getOutType() == DET_INT ? int(result) : result, _requestedType);
 		if (not _outdom->contains(_out->get())) {
 			notifyAtEnd();
+			*_out = (const DomainElement*)NULL;
 		}
 		alreadyrun = true;
 	}
@@ -103,7 +110,6 @@ private:
 
 };
 
-// FIXME handle overflows
 class DivGenerator: public ArithOpGenerator {
 protected:
 	ARITHRESULT doCalculation(double left, double right, double& result) const {

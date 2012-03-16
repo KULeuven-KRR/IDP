@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include "InstGenerator.hpp"
 #include "structure/fwstructure.hpp"
+#include "structure/HashElementTuple.hpp"
 
 typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> LookupTable;
 //typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
