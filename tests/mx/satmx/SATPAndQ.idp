@@ -8,7 +8,10 @@ procedure getExpectedAModel(){
 *************************************************************/
 vocabulary V{
  
-P Q A B
+P 
+Q 
+A 
+B
 
 }
 
