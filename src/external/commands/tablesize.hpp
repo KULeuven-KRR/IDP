@@ -8,11 +8,11 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef TABLESIZE_HPP_
-#define TABLESIZE_HPP_
+#ifndef TABLESIZEINFERENCE_HPP_
+#define TABLESIZEINFERENCE_HPP_
 
 #include "commandinterface.hpp"
-#include "IncludeComponents.hpp"
+#include "structure/TableSize.hpp"
 
 class TableSizeInference: public PredTableBase {
 public:
@@ -45,4 +45,4 @@ public:
 	}
 };
 
-#endif /* TABLESIZE_HPP_ */
+#endif /* TABLESIZEINFERENCE_HPP_ */

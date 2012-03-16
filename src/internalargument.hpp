@@ -42,6 +42,7 @@ class PredInter;
 class FuncInter;
 class TableIterator;
 class SortIterator;
+class DomainAtom;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
