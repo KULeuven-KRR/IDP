@@ -83,7 +83,6 @@ public:
 	}
 
 	inline const DomainElement* get() const {
-		Assert(domelem_!=NULL);
 		return domelem_;
 	}
 
@@ -112,7 +111,7 @@ inline bool operator==(const DomainElement& d1, const DomainElement& d2) {
 }
 
 inline bool operator!=(const DomainElement& d1, const DomainElement& d2) {
-	return not (d1==d2);
+	return not (d1 == d2);
 }
 
 inline bool operator<=(const DomainElement& d1, const DomainElement& d2) {
@@ -120,7 +119,7 @@ inline bool operator<=(const DomainElement& d1, const DomainElement& d2) {
 }
 
 inline bool operator>=(const DomainElement& d1, const DomainElement& d2) {
-	return d1==d2 || d1 > d2;
+	return d1 == d2 || d1 > d2;
 }
 
 std::ostream& operator<<(std::ostream&, const DomainElement&);
@@ -263,12 +262,6 @@ template<typename Function, typename Value>
 const Compound* createCompound(Function* f, const Value& tuple) {
 	return GlobalData::getGlobalDomElemFactory()->compound(f, tuple);
 }
-
-const DomainElement* domElemSum(const DomainElement* d1, const DomainElement* d2);
-const DomainElement* domElemProd(const DomainElement* d1, const DomainElement* d2);
-const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2);
-const DomainElement* domElemAbs(const DomainElement* d);
-const DomainElement* domElemUmin(const DomainElement* d);
 
 /*******************
  Domain atoms
@@ -882,8 +875,6 @@ public:
 	InternalPredTable()
 			: _nrRefs(0) {
 	}
-	virtual ~InternalPredTable() {
-	}
 
 	// Visitor
 	virtual void accept(StructureVisitor* v) const = 0;
@@ -892,6 +883,10 @@ public:
 	friend class SortTable;
 
 	virtual void put(std::ostream&) const;
+
+protected:
+	virtual ~InternalPredTable() {
+	}
 };
 
 class ProcInternalPredTable: public InternalPredTable {
@@ -1300,11 +1295,13 @@ public:
 	virtual const DomainElement* last() const = 0;
 	virtual bool isRange() const = 0;
 
-	virtual ~InternalSortTable() {
-	}
-
 	// Visitor
 	virtual void accept(StructureVisitor* v) const = 0;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	virtual ~InternalSortTable() {
+	}
 
 };
 
@@ -1326,12 +1323,15 @@ public:
 	InternalSortIterator* sortBegin() const;
 	InternalSortIterator* sortIterator(const DomainElement*) const;
 
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~UnionInternalSortTable();
+
 public:
 	UnionInternalSortTable();
 	UnionInternalSortTable(const std::vector<SortTable*>& in, const std::vector<SortTable*>& out)
 			: _intables(in), _outtables(out) {
 	}
-	~UnionInternalSortTable();
 	void addInTable(SortTable* t) {
 		_intables.push_back(t);
 	}
@@ -1351,7 +1351,7 @@ public:
 };
 
 class InfiniteInternalSortTable: public InternalSortTable {
-private:
+public:
 	InternalSortTable* add(const DomainElement*);
 	InternalSortTable* remove(const DomainElement*);
 	bool finite() const {
@@ -1370,6 +1370,7 @@ private:
 		return tablesize(TST_INFINITE, 0);
 	}
 protected:
+	// SortTable is responsible for ref management and deletion!
 	virtual ~InfiniteInternalSortTable() {
 	}
 };
@@ -1378,14 +1379,11 @@ protected:
  *	All natural numbers
  */
 class AllNaturalNumbers: public InfiniteInternalSortTable {
-private:
+public:
 	bool contains(const DomainElement*) const;
 	InternalSortIterator* sortBegin() const;
 	InternalSortIterator* sortIterator(const DomainElement*) const;
 
-protected:
-	~AllNaturalNumbers() {
-	}
 	InternalSortTable* add(int i1, int i2);
 	const DomainElement* first() const;
 	const DomainElement* last() const;
@@ -1395,20 +1393,22 @@ protected:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~AllNaturalNumbers() {
+	}
 };
 
 /**
  * All integers
  */
 class AllIntegers: public InfiniteInternalSortTable {
-private:
+public:
 	bool contains(const DomainElement*) const;
 	InternalSortIterator* sortBegin() const;
 	InternalSortIterator* sortIterator(const DomainElement*) const;
 
-protected:
-	~AllIntegers() {
-	}
 	InternalSortTable* add(int i1, int i2);
 	const DomainElement* first() const;
 	const DomainElement* last() const;
@@ -1418,20 +1418,22 @@ protected:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~AllIntegers() {
+	}
 };
 
 /**
  * All floating point numbers
  */
 class AllFloats: public InfiniteInternalSortTable {
-private:
+public:
 	bool contains(const DomainElement*) const;
 	InternalSortIterator* sortBegin() const;
 	InternalSortIterator* sortIterator(const DomainElement*) const;
 
-protected:
-	~AllFloats() {
-	}
 	InternalSortTable* add(int i1, int i2);
 	const DomainElement* first() const;
 	const DomainElement* last() const;
@@ -1441,20 +1443,22 @@ protected:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~AllFloats() {
+	}
 };
 
 /**
  * All strings
  */
 class AllStrings: public InfiniteInternalSortTable {
-private:
+public:
 	bool contains(const DomainElement*) const;
 	InternalSortIterator* sortBegin() const;
 	InternalSortIterator* sortIterator(const DomainElement*) const;
 
-protected:
-	~AllStrings() {
-	}
 	InternalSortTable* add(int i1, int i2);
 	const DomainElement* first() const;
 	const DomainElement* last() const;
@@ -1464,13 +1468,18 @@ protected:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~AllStrings() {
+	}
 };
 
 /**
  * All characters
  */
 class AllChars: public InternalSortTable {
-private:
+public:
 	bool contains(const DomainElement*) const;
 	InternalSortTable* add(const DomainElement*);
 	InternalSortTable* remove(const DomainElement*);
@@ -1492,9 +1501,7 @@ private:
 		return false;
 	}
 	tablesize size() const;
-protected:
-	~AllChars() {
-	}
+
 	const DomainElement* first() const;
 	const DomainElement* last() const;
 	bool isRange() const {
@@ -1503,6 +1510,11 @@ protected:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+protected:
+	// SortTable is responsible for ref management and deletion!
+	~AllChars() {
+	}
 };
 
 /**
@@ -1533,10 +1545,11 @@ private:
 		return tablesize(TST_EXACT, _table.size());
 	}
 protected:
+	// SortTable is responsible for ref management and deletion!
+	~EnumeratedInternalSortTable() {
+	}
 public:
 	EnumeratedInternalSortTable() {
-	}
-	~EnumeratedInternalSortTable() {
 	}
 	EnumeratedInternalSortTable(const SortedElementTuple& d)
 			: _table(d) {
@@ -1559,6 +1572,8 @@ class IntRangeInternalSortTable: public InternalSortTable {
 private:
 	int _first; //!< first element in the range
 	int _last; //!< last element in the range
+protected:
+	~IntRangeInternalSortTable(){}
 public:
 	IntRangeInternalSortTable(int f, int l)
 			: _first(f), _last(l) {
@@ -1772,8 +1787,8 @@ public:
 
 class PlusInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	PlusInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	PlusInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1784,8 +1799,8 @@ public:
 
 class MinusInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	MinusInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	MinusInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1796,8 +1811,8 @@ public:
 
 class TimesInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	TimesInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	TimesInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1808,8 +1823,8 @@ public:
 
 class DivInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	DivInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	DivInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1820,8 +1835,8 @@ public:
 
 class AbsInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	AbsInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	AbsInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -1832,8 +1847,8 @@ public:
 
 class UminInternalFuncTable: public IntFloatInternalFuncTable {
 public:
-	UminInternalFuncTable(bool i)
-			: IntFloatInternalFuncTable(i) {
+	UminInternalFuncTable(bool isint)
+			: IntFloatInternalFuncTable(isint) {
 	}
 	const DomainElement* operator[](const ElementTuple&) const;
 	InternalTableIterator* begin(const Universe&) const;
@@ -2094,14 +2109,14 @@ public:
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		Assert(tuple.size()==arity());
 #ifndef NDEBUG
-		for(auto i=tuple.cbegin(); i<tuple.cend(); ++i){
+		for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
 			Assert(*i!=NULL);
 		}
 #endif
 		auto result = _table->operator[](tuple);
-		if(universe().tables().back()->contains(result)){
+		if (universe().tables().back()->contains(result)) {
 			return result;
-		}else{
+		} else {
 			return NULL;
 		}
 	}

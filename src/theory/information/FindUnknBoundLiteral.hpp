@@ -92,6 +92,12 @@ protected:
 		}
 		return;
 	}
+	virtual void visit(const EquivForm* formula){
+		_context = Context::BOTH;
+		_start = false;
+		formula->left()->accept(this);
+		return;
+	}
 	virtual void visit(const QuantForm* formula){
 		if(_start){
 			_quantvars = formula->quantVars();
@@ -130,10 +136,6 @@ protected:
 
 	// NOTE: DEFAULTS: just return
 	virtual void visit(const EqChainForm*){
-		_start = false;
-		return;
-	}
-	virtual void visit(const EquivForm*){
 		_start = false;
 		return;
 	}

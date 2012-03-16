@@ -1,4 +1,5 @@
 #include <mx>
+#include <table_utils>
 
 vocabulary V{
 	type Vtx
@@ -7,29 +8,34 @@ vocabulary V{
 
 	Connected
 	Path(Vtx, Vtx)
-	L(Vtx, Vtx, int)
-	R1(Vtx, Vtx)
+	type Test isa nat
+	L(Vtx, Vtx, Test)
 	R2(Vtx, Vtx)
-	ValidLevel(Vtx, Vtx)
 }
 theory T:V{
-	!a x: Path(a, x) <=> R1(a, x) | R2(a, x).
-	!a x: R1(a, x) <=> Edge(a, x) & L(a, x, 0).
-	!a x: R2(a, x) <=> Path(a, y) & Edge(y, x) & ValidLevel(a, x) /* & ?l: L(a, x, l)*/.
-	//!a x l1 l2: ValidLevel(a, x) & L(a, x, l1) & L(a, y, l2) => l1=l2+1. 
+	!a x: Path(a, x) <=> Edge(a, x) | ?y: Path(a, y) & Edge(y, x).
+	!a x y: Reaches(a, y) & Path(a, x) => (Edge(a, x) & L(a, x, 0)) | R2(a, x).
+	!a x: R2(a, x) => ?l: L(a, x, l).
+	//!a x l l2: L(a, x, l) & L(a, x, l2) => l=l2. // This makes it run indefinetely?
+	
+	!a x y l l2: L(a, x, l) & L(a, y, l2) & R2(a, x) & Edge(y, x) & Path(a, y) & Path(a, x) => l>l2.
+
 	Connected <=> ?a b: Reaches(a,b) & Path(a,b).
 }
 
 procedure main(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
-	stdoptions.groundverbosity=1
+	stdoptions.groundverbosity=2
 	stdoptions.satverbosity=1
 	sol = modelexpandpartial(T, S)
-	mx::printtuples("Connected", sol[V::Connected].ct)
-	mx::printtuples("Connected", sol[V::Connected].cf)
-	mx::printtuples("Path", sol[V::Path].ct)
-	mx::printtuples("Path", sol[V::Path].cf)
+	mx::printtuples("Connected<ct>", sol[V::Connected].ct)
+	mx::printtuples("Connected<cf>", sol[V::Connected].cf)
+	mx::printtuples("Path<ct>", sol[V::Path].ct)
+	mx::printtuples("Path<cf>", sol[V::Path].cf)
+	mx::printtuples("L<ct>", sol[V::L].ct)
+	mx::printtuples("L<cf>", sol[V::L].cf)
 }
 
 structure S:V{
+	Test = {0..1000000}

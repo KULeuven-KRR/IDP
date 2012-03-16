@@ -46,9 +46,15 @@ public:
 		_predchecker = new LookupGenerator(table, vars, table->universe());
 	}
 
-	// FIXME reimplement clone
 	InverseInstGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
+		auto gen = new InverseInstGenerator(*this);
+		gen->_universegen = _universegen->clone();
+		gen->_predchecker = _predchecker->clone();
+		return gen;
+	}
+
+	virtual void setVarsAgain(){
+		return _universegen->setVarsAgain();
 	}
 
 	void reset() {

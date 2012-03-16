@@ -50,5 +50,5 @@ void InstChecker::put(std::ostream& stream) {
 void InstGenerator::setVarsAgain(){
 	std::stringstream ss;
 	ss << "Resetting variables for " << (typeid(*this).name()) << "\n";
-	notyetimplemented(ss.str());
+	throw notyetimplemented(ss.str());
 }
