@@ -10,7 +10,7 @@
 
 #include "StructureVisitor.hpp"
 
-#include "structure/structure.hpp"
+#include "structure/StructureComponents.hpp"
 
 void StructureVisitor::visit(const PredTable* pt) {
 	pt->internTable()->accept(this);

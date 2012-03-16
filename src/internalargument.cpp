@@ -9,7 +9,7 @@
  ****************************************************************/
 
 #include <set>
-#include "structure/structure.hpp"
+#include "structure/DomainElement.hpp"
 #include "internalargument.hpp"
 
 // Note: following containers are used for garbage collection.

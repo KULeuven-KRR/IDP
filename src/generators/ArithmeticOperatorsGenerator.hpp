@@ -13,7 +13,8 @@
 
 #include "common.hpp"
 #include "InstGenerator.hpp"
-#include "structure/structure.hpp"
+#include "structure/DomainElement.hpp"
+#include "structure/StructureComponents.hpp"
 
 enum class ARITHRESULT {
 	VALID, INVALID

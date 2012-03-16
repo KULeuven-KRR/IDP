@@ -18,7 +18,6 @@
 #include "rungidl.hpp"
 #include "insert.hpp"
 #include "GlobalData.hpp"
-#include "structure/structure.hpp"
 
 #include "utils/StringUtils.hpp"
 
