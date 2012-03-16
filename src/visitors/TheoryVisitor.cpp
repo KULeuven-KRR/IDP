@@ -90,6 +90,7 @@ void DefaultTraversingTheoryVisitor::visit(const AggForm* af) {
 }
 
 void DefaultTraversingTheoryVisitor::visit(const Rule* r) {
+	r->head()->accept(this);
 	r->body()->accept(this);
 }
 
