@@ -28,6 +28,7 @@
 #include "LookupGenerator.hpp"
 #include "EnumLookupGenerator.hpp"
 #include "BasicGenerators.hpp"
+#include "AggregateGenerator.hpp"
 #include "GeneratorFactory.hpp"
 #include "FalseQuantKernelGenerator.hpp"
 #include "TrueQuantKernelGenerator.hpp"
