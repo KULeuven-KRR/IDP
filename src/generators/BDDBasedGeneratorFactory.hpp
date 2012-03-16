@@ -94,6 +94,12 @@ private:
 	InstGenerator* createFromKernel(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
 			const std::vector<const FOBDDVariable*>&, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe&);
 
+	/*
+	 * Same as createfromKernel, but for aggkernels only.
+	 */
+	InstGenerator* createFromAggKernel(const FOBDDAggKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
+			const std::vector<const FOBDDVariable*>&, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe&);
+
 	std::vector<InstGenerator*> turnConjunctionIntoGenerators(const std::vector<Pattern> & pattern, const std::vector<const DomElemContainer*> & vars,
 			const std::vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure,
 			std::vector<Formula*> conjunction, Formula *origatom, BRANCH branchToGenerate);
