@@ -14,7 +14,7 @@
 #include <cmath>
 
 #include "DomainElement.hpp"
-#include "structure/structure.hpp"
+#include "structure/StructureComponents.hpp"
 
 template<typename CheckType, typename RealType>
 bool isNum(const RealType& value);

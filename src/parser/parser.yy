@@ -116,6 +116,7 @@ typedef std::list<isp>				lisp;
 %token ISA
 %token LFD
 %token GFD
+%token NEWLINE
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -261,11 +262,11 @@ vocab_pointer		: pointer_name	{ getInserter().setvocab(*$1,@1); delete($1); }
 					;
 
 vocab_content		: /* empty */
-					| vocab_content symbol_declaration
-					| vocab_content EXTERN extern_symbol 
-					| vocab_content EXTERNVOCABULARY pointer_name	{ getInserter().externvocab(*$3,@3); delete($3);	}
-					| vocab_content using
-					| vocab_content error
+					| vocab_content NEWLINE
+					| vocab_content symbol_declaration NEWLINE
+					| vocab_content EXTERN extern_symbol NEWLINE 
+					| vocab_content EXTERNVOCABULARY pointer_name	{ getInserter().externvocab(*$3,@3); delete($3);	} NEWLINE
+					| vocab_content using NEWLINE
 					;
 
 symbol_declaration	: sort_decl
@@ -412,8 +413,6 @@ def_forms	: /* empty */
 			| def_forms formula '.'		{ getInserter().sentence($2);		}
 			| def_forms fixpdef			{ getInserter().fixpdef($2);		}
 			| def_forms using
-			| def_forms error '.' 
-			| def_forms '{' error '}'
 			;
 
 /** Definitions **/
@@ -588,7 +587,6 @@ interpretation	: empty_inter
 				| func_inter
 				| proc_inter
 				| three_inter
-				| error
 				;
 
 /** Empty interpretations **/

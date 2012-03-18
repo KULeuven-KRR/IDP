@@ -350,6 +350,8 @@ COMMENTLINE		"//".*
 								  return EXTERN;			}
 <vocabulary>"extern vocabulary"	{ data.advancecol();
 								  return EXTERNVOCABULARY;	}
+<vocabulary>\n                  { data.advanceline(); 
+									return NEWLINE; 		}
 
 	/*************
 		Theory
@@ -511,7 +513,7 @@ COMMENTLINE		"//".*
 							}
 <*>.                        { data.advancecol();
 							  return *yytext;			}
-<*>\n                       { data.advanceline();			}
+<*>\n                       { data.advanceline(); 		}
 
 <<EOF>>						{ BEGIN(INITIAL);
 							  if(not data.include_buffer_stack.empty())	

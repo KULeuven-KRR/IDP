@@ -13,7 +13,7 @@
 
 #include <set>
 #include "InstGenerator.hpp"
-#include "structure/structure.hpp"
+#include "structure/DomainElement.hpp"
 
 /**
  * Generate all y such that such that ?x phi(x,y) is true.

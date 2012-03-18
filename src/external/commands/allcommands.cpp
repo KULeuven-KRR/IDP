@@ -39,6 +39,7 @@
 #include "options.hpp"
 #include "createdummytuple.hpp"
 #include "minimize.hpp"
+#include "parse.hpp"
 
 #include <vector>
 
@@ -101,6 +102,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 		inferences.push_back(make_shared<CreateTupleInference>());
 		inferences.push_back(make_shared<MinimizeInference>());
 		inferences.push_back(make_shared<GetOptionsInference>());
+		inferences.push_back(make_shared<ParseInference>());
 	}
 	return inferences;
 }

@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef STRUCTURE_HPP
-#define STRUCTURE_HPP
+#ifndef STRUCTURECOMPONENTS_HPP
+#define STRUCTURECOMPONENTS_HPP
 
 #include <cstdlib>
 #include "parseinfo.hpp"
@@ -166,33 +166,6 @@ struct StrictWeakNTupleOrdering {
 	bool operator()(const ElementTuple&, const ElementTuple&) const;
 };
 
-class Function;
-
-/**
- *	The value of a domain element that consists of a function applied to domain elements.
- */
-class Compound {
-private:
-	Function* _function;
-	ElementTuple _arguments;
-
-	Compound(Function* function, const ElementTuple& arguments);
-
-public:
-	~Compound();
-
-	Function* function() const; //!< Returns the function of the compound
-	const DomainElement* arg(unsigned int n) const; //!< Returns the n'th argument of the compound
-	const ElementTuple& args() const {
-		return _arguments;
-	}
-
-	std::ostream& put(std::ostream&) const;
-	std::string toString() const;
-
-	friend class DomainElementFactory;
-};
-
 bool operator<(const Compound&, const Compound&);
 bool operator>(const Compound&, const Compound&);
 bool operator==(const Compound&, const Compound&);
@@ -201,67 +174,6 @@ bool operator<=(const Compound&, const Compound&);
 bool operator>=(const Compound&, const Compound&);
 
 std::ostream& operator<<(std::ostream&, const Compound&);
-
-/**
- *	Class to create domain elements. This class is a singleton class that ensures all domain elements
- *	with the same value are stored at the same address in memory. As a result, two domain elements are
- *	equal iff they have the same address. It also ensures that all Compounds with the same function
- *	and arguments are stored at the same address.
- *
- *	Obtaining the address of a domain element with a given value and type should take logaritmic time
- *	in the number of created domain elements of that type. For a specified integer range, obtaining
- *	the address is optimized to constant time.
- */
-class DomainElementFactory {
-private:
-	std::map<Function*, std::map<ElementTuple, Compound*> > _compounds;
-	//!< Maps a function and tuple of elements to the corresponding compound.
-
-	int _firstfastint; //!< The first integer in the optimized range
-	int _lastfastint; //!< One past the last integer in the optimized range
-	std::vector<DomainElement*> _fastintelements; //!< Stores pointers to integers in the optimized range.
-												  //!< The domain element with value n is stored at
-												  //!< _fastintelements[n+_firstfastint]
-
-	std::map<int, DomainElement*> _intelements;
-	//!< Maps an integer outside of the optimized range to its corresponding doman element address.
-	std::map<double, DomainElement*> _doubleelements;
-	//!< Maps a floating point number to its corresponding domain element address.
-	std::map<const std::string*, DomainElement*> _stringelements;
-	//!< Maps a string pointer to its corresponding domain element address.
-	std::map<const Compound*, DomainElement*> _compoundelements;
-	//!< Maps a compound pointer to its corresponding domain element address.
-
-	DomainElementFactory(int firstfastint = 0, int lastfastint = 10001);
-
-public:
-	~DomainElementFactory();
-
-	static DomainElementFactory* createGlobal();
-
-	const DomainElement* create(int value);
-	const DomainElement* create(double value, NumType type = NumType::POSSIBLYINT);
-	const DomainElement* create(const std::string* value, bool certnotdouble = false);
-	const DomainElement* create(const Compound* value);
-	const DomainElement* create(Function*, const ElementTuple&);
-
-	const Compound* compound(Function*, const ElementTuple&);
-};
-
-template<typename Value>
-const DomainElement* createDomElem(const Value& value) {
-	return GlobalData::getGlobalDomElemFactory()->create(value);
-}
-
-template<typename Value, typename Type>
-const DomainElement* createDomElem(const Value& value, const Type& t) {
-	return GlobalData::getGlobalDomElemFactory()->create(value, t);
-}
-
-template<typename Function, typename Value>
-const Compound* createCompound(Function* f, const Value& tuple) {
-	return GlobalData::getGlobalDomElemFactory()->compound(f, tuple);
-}
 
 /*******************
  Domain atoms
@@ -471,56 +383,6 @@ public:
 class SortTable;
 class PredTable;
 class InternalPredTable;
-
-enum TableSizeType {
-	TST_APPROXIMATED, TST_INFINITE, TST_EXACT, TST_UNKNOWN
-};
-
-struct tablesize {
-	TableSizeType _type;
-	size_t _size;
-	tablesize(TableSizeType tp, size_t sz)
-			: _type(tp), _size(sz) {
-	}
-	tablesize()
-			: _type(TST_UNKNOWN), _size(0) {
-	}
-};
-
-bool isFinite(const tablesize& tsize);
-
-class Universe {
-private:
-	std::vector<SortTable*> _tables;
-public:
-	Universe() {
-	}
-	Universe(const std::vector<SortTable*>& tables)
-			: _tables(tables) {
-	}
-	Universe(const Universe& univ)
-			: _tables(univ.tables()) {
-	}
-	~Universe() {
-	}
-
-	const std::vector<SortTable*>& tables() const {
-		return _tables;
-	}
-	void addTable(SortTable* table) {
-		_tables.push_back(table);
-	}
-	unsigned int arity() const {
-		return _tables.size();
-	}
-
-	bool empty() const;
-	bool finite() const;
-	bool approxEmpty() const;
-	bool approxFinite() const;
-	bool contains(const ElementTuple&) const;
-	tablesize size() const;
-};
 
 class InternalFuncTable;
 
@@ -2431,159 +2293,6 @@ public:
 	InvSuccInterGenerator* get(const std::vector<Sort*>&);
 };
 
-/*****************
- Structures
- *****************/
-
-/** Abstract base class **/
-
-class Predicate;
-
-class AbstractStructure {
-protected:
-
-	std::string _name; // The name of the structure
-	ParseInfo _pi; // The place where this structure was parsed.
-	Vocabulary* _vocabulary; // The vocabulary of the structure.
-
-public:
-	AbstractStructure(std::string name, const ParseInfo& pi)
-			: _name(name), _pi(pi), _vocabulary(0) {
-	}
-	virtual ~AbstractStructure() {
-	}
-
-	// Mutators
-	virtual void vocabulary(Vocabulary* v) {
-		_vocabulary = v;
-	} // set the vocabulary
-
-	virtual void inter(Predicate* p, PredInter* i) = 0; //!< set the interpretation of p to i
-	virtual void inter(Function* f, FuncInter* i) = 0; //!< set the interpretation of f to i
-	virtual void clean() = 0; //!< make three-valued interpretations that are in fact
-							  //!< two-valued, two-valued.
-
-	virtual void materialize() = 0; //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
-
-	// Inspectors
-	const std::string& name() const {
-		return _name;
-	}
-	ParseInfo pi() const {
-		return _pi;
-	}
-	Vocabulary* vocabulary() const {
-		return _vocabulary;
-	}
-	virtual SortTable* inter(Sort* s) const = 0; // Return the domain of s.
-	virtual PredInter* inter(Predicate* p) const = 0; // Return the interpretation of p.
-	virtual FuncInter* inter(Function* f) const = 0; // Return the interpretation of f.
-	virtual PredInter* inter(PFSymbol* s) const = 0; // Return the interpretation of s.
-	virtual const std::map<Predicate*, PredInter*>& getPredInters() const = 0;
-	virtual const std::map<Function*, FuncInter*>& getFuncInters() const = 0;
-
-	virtual AbstractStructure* clone() const = 0; // take a clone of this structure
-
-	virtual Universe universe(const PFSymbol*) const = 0;
-
-	virtual bool approxTwoValued() const =0;
-
-	// Note: loops over all tuples of all tables, SLOW!
-	virtual bool isConsistent() const = 0;
-
-	virtual void makeTwoValued() = 0;
-
-	void put(std::ostream& s);
-};
-
-/** Structures as constructed by the parser **/
-
-class Structure: public AbstractStructure {
-private:
-	std::map<Sort*, SortTable*> _sortinter; //!< The domains of the structure.
-	std::map<Predicate*, PredInter*> _predinter; //!< The interpretations of the predicate symbols.
-	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
-
-	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
-	void canIncrement(TableIterator & domainIterator) const;
-
-public:
-	Structure(const std::string& name, const ParseInfo& pi)
-			: AbstractStructure(name, pi) {
-	}
-	~Structure();
-
-	// Mutators
-	void vocabulary(Vocabulary* v); //!< set the vocabulary of the structure
-	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
-	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
-	void addStructure(AbstractStructure*);
-
-	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
-	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
-
-	void functionCheck(); //!< check the correctness of the function tables
-	void autocomplete(); //!< make the domains consistent with the predicate and function tables
-
-	// Inspectors
-	SortTable* inter(Sort* s) const; //!< Return the domain of s.
-
-	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
-	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
-	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
-	Structure* clone() const; //!< take a clone of this structure
-	bool approxTwoValued() const;
-	bool isConsistent() const;
-
-	virtual const std::map<Predicate*, PredInter*>& getPredInters() const {
-		return _predinter;
-	}
-	virtual const std::map<Function*, FuncInter*>& getFuncInters() const {
-		return _funcinter;
-	}
-
-	void makeTwoValued();
-
-	Universe universe(const PFSymbol*) const;
-};
-
-/**Class to represent inconsistent structures **/
-class InconsistentStructure: public AbstractStructure {
-public:
-	InconsistentStructure()
-			: AbstractStructure("Inconsistent Structure", ParseInfo()) {
-	}
-	InconsistentStructure(const std::string& name, const ParseInfo& pi)
-			: AbstractStructure(name, pi) {
-	}
-	~InconsistentStructure() {
-	}
-	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
-	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
-	void clean() {
-	} //!< make three-valued interpretations that are in fact
-	  //!< two-valued, two-valued.
-	void materialize() {
-	} //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
-
-	SortTable* inter(Sort* s) const; // Return the domain of s.
-	PredInter* inter(Predicate* p) const; // Return the interpretation of p.
-	FuncInter* inter(Function* f) const; // Return the interpretation of f.
-	PredInter* inter(PFSymbol* s) const; // Return the interpretation of s.
-
-	const std::map<Predicate*, PredInter*>& getPredInters() const;
-	const std::map<Function*, FuncInter*>& getFuncInters() const;
-
-	AbstractStructure* clone() const; // take a clone of this structure
-
-	Universe universe(const PFSymbol*) const;
-
-	bool approxTwoValued() const;
-	bool isConsistent() const;
-
-	void makeTwoValued();
-};
-
 // Contents ownership to receiver
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& s);
 
@@ -2600,6 +2309,8 @@ Universe fullUniverse(unsigned int arity);
 
 bool approxTotalityCheck(const FuncInter*);
 //!< Check whether there is a value for every tuple in the given function interpretation.
+
+bool approxIsInverse(const PredTable* pt1, const PredTable* pt2);
 }
 
 #endif
