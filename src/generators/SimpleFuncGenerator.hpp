@@ -83,7 +83,21 @@ public:
 
 	// FIXME reimplement
 	SimpleFuncGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
+		auto gen = new SimpleFuncGenerator(*this);
+		gen->_univgen = _univgen->clone();
+		return gen;
+	}
+
+	void setVarsAgain(){
+		auto result = _function->operator [](_currenttuple);
+		if (result != NULL) {
+			if (_universe.tables().back()->contains(result)) {
+				//TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
+				_rangevar->operator =(result);
+				return;
+			}
+		}
+		_univgen->setVarsAgain();
 	}
 
 	void reset() {
