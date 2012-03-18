@@ -555,13 +555,16 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
-		const GroundingContext& context) {
+		const GroundingContext& context, bool allliterals) {
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
+	if(allliterals){
+		mightdolazy = false;
+	}
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
 	// TODO: to increase performance and for debugging, currently turning this off
-	mightdolazy = false;
+	//mightdolazy = false;
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
@@ -591,7 +594,15 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 		RestoreContext();
 		sub.push_back(_topgrounder);
 	}
-	auto boolgrounder = createB(_grounding, sub, newbf->freeVars(), newbf->sign(), true, _context);
+
+	bool allliterals = true;
+	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
+		if(dynamic_cast<PredForm*>(*i)==NULL){
+			allliterals = false;
+		}
+	}
+
+	auto boolgrounder = createB(_grounding, sub, newbf->freeVars(), newbf->sign(), true, _context, allliterals);
 	boolgrounder->setOrig(bf, varmapping());
 	_topgrounder = boolgrounder;
 	deleteDeep(newbf);
@@ -615,7 +626,15 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 	if (recursive(bf)) {
 		_context._tseitin = TsType::RULE;
 	}
-	_formgrounder = createB(_grounding, sub, bf->freeVars(), bf->sign(), bf->conj(), _context);
+
+	bool allliterals = true;
+	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
+		if(dynamic_cast<PredForm*>(*i)==NULL){
+			allliterals = false;
+		}
+	}
+
+	_formgrounder = createB(_grounding, sub, bf->freeVars(), bf->sign(), bf->conj(), _context, allliterals);
 	RestoreContext();
 	_formgrounder->setOrig(bf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
@@ -716,6 +735,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
 	const PredForm* twindelayablepf = NULL;
+	_context._allowDelaySearch = false; // TODO satisfiability delaying turned off
 	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
 		Context lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
@@ -742,7 +762,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if(delayablepf!=NULL){
 		_context._allowDelaySearch = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY)) {
+	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
 		// TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
 		//  one example is when functions are unnested
 
@@ -1214,6 +1234,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	vector<Variable*> headvars;
 	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
 			&& _grounding->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
+	groundlazily = false; // TODO satisfiability delaying turned off
 	if (groundlazily) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
