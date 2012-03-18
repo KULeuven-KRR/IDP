@@ -72,6 +72,8 @@ public:
 	const GroundingContext& context() const {
 		return _context;
 	}
+
+	virtual void put(std::ostream&) const = 0;
 };
 
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula);

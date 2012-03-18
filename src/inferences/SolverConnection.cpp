@@ -29,7 +29,7 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
 	modes.polarity = MinisatID::POL_STORED;
-	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE) || getOption(BoolType::GROUNDLAZILY)){
+	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)){
 		modes.polarity = MinisatID::POL_RAND;
 	}
 
