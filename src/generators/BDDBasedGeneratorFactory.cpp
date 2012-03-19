@@ -778,12 +778,13 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	auto agggenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
 
 	//Finally, we construct the sortchecker and the comparisongenerator
-	auto sortchecker = new SortLookUpGenerator(structure->inter(ak->left()->sort())->internTable(), rightvalue);
 	auto compgenerator = new ComparisonGenerator(structure->inter(ak->left()->sort()), structure->inter(ak->right()->sort()), left, rightvalue,
 			(leftpattern == Pattern::INPUT ? Input::BOTH : Input::RIGHT), comp);
+	auto sortchecker = new SortLookUpGenerator(structure->inter(ak->left()->sort())->internTable(), left);
+
 
 	return new TreeInstGenerator(
 			new OneChildGeneratorNode(freegenerator,
-					new OneChildGeneratorNode(agggenerator, new OneChildGeneratorNode(sortchecker, new LeafGeneratorNode(compgenerator)))));
+					new OneChildGeneratorNode(agggenerator, new OneChildGeneratorNode(compgenerator, new LeafGeneratorNode(sortchecker)))));
 
 }
