@@ -53,10 +53,11 @@ void GroundTheory<Policy>::closeTheory() {
 	}
 	// TODO arbitrary values?
 	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
-	Assert(not getOption(BoolType::GROUNDLAZILY));
 	addFalseDefineds();
-	addFuncConstraints();
-	Policy::polEndTheory();
+	if(not getOption(BoolType::GROUNDLAZILY)){
+		addFuncConstraints();
+		Policy::polEndTheory();
+	}
 }
 
 // TODO important: before each add, do transformforadd, after each do addfuncconstraints!
@@ -424,7 +425,7 @@ void GroundTheory<Policy>::addFalseDefineds() {
 	 * It also works lazily because when delaying, the symbol is also added to the translator
 	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
 	 */
-	for (auto sit=translator()->getDefinedSymbols().cbegin(); sit!=translator()->getDefinedSymbols().cend(); ++sit) {
+	for (auto sit=getNeedFalseDefinedSymbols().cbegin(); sit!=getNeedFalseDefinedSymbols().cend(); ++sit) {
 		CHECKTERMINATION
 		auto pt = structure()->inter(*sit)->pt();
 		auto it = _defined.find(*sit);

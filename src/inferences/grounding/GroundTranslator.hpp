@@ -67,8 +67,6 @@ private:
 	std::queue<int> newsymbols;
 	std::vector<SymbolInfo> symbols; // Each symbol added to the translated is associated a unique number, the index into this vector, at which the symbol is also stored
 
-	std::set<PFSymbol*> definedsymbols;
-
 	std::vector<AtomType> atomtype;
 	std::vector<SymbolAndTuple*> atom2Tuple; // Pointers manager by the translator!
 	std::vector<tspair> atom2TsBody; // Pointers manager by the translator!
@@ -118,11 +116,6 @@ public:
 	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.
 	 */
 	void notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder);
-
-	void notifyDefined(PFSymbol* pfs){
-		definedsymbols.insert(pfs);
-	}
-	const std::set<PFSymbol*>& getDefinedSymbols() const { return definedsymbols; }
 
 	unsigned int addSymbol(PFSymbol* pfs);
 
