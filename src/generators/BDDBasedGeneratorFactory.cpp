@@ -322,7 +322,6 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm *atom, const vector<Patter
 bool checkInput(uint size1, uint size2, uint size3, const Universe& universe) {
 	for (auto it = universe.tables().cbegin(); it != universe.tables().cend(); ++it) {
 		if (*it == NULL) {
-			std::cerr << "containing NULL";
 			return false;
 		}
 	}
@@ -688,7 +687,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	//First, we create a generator for all the free variables (that are output), since the AggregateGenerator assumes everything input
 	//EXCEPTION: if left of the aggform is one of those variables
 	Assert(checkInput(pattern, vars, fobddvars, universe));
-	auto comp = (branchToGenerate == BRANCH::FALSEBRANCH ?  negateComp(ak->comp()) : ak->comp() );
+	auto comp = (branchToGenerate == BRANCH::FALSEBRANCH ? negateComp(ak->comp()) : ak->comp());
 	std::vector<const DomElemContainer*> freevars;
 	std::vector<SortTable*> freetables;
 	std::vector<Pattern> newpattern(vars.size(), Pattern::INPUT);
@@ -701,7 +700,16 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 				freetables.push_back(universe.tables()[n]);
 			}
 		} else {
-			newpattern[n] = pattern[n];
+			//If the left term of the aggkernel appears in the righthand, we cannot make it output of the agggenerator.
+			//In this case, we also add it to the freegenerator
+			if (_manager->contains(ak->right(), fobddvars[n])) {
+				if (pattern[n] == Pattern::OUTPUT) {
+					freevars.push_back(vars[n]);
+					freetables.push_back(universe.tables()[n]);
+				}
+			} else {
+				newpattern[n] = pattern[n];
+			}
 			leftpattern = pattern[n];
 			left = vars[n];
 		}
@@ -721,7 +729,8 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	//TODO: add quantvars
 	auto subformvars = vars;
 	auto subformbddvars = fobddvars;
-	auto subformpattern = newpattern;
+	//For subformulas, everything is input
+	std::vector<Pattern> subformpattern(subformvars.size(), Pattern::INPUT);
 	auto subformtables = universe.tables();
 	std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*> deBruynMapping;
 	int i = 0;
@@ -743,18 +752,16 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 
 	//Biggerpattern serves for the termgenerators: one extra slot for the new variable
 
-	for (int i = 0; i < set->size(); i++) {
-
-		data.bdd = _manager->substitute(set->subformula(i), deBruynMapping);
-		formulagenerators[i] = create(data);
-
+	for (int j = 0; j < set->size(); j++) {
+		data.bdd = _manager->substitute(set->subformula(j), deBruynMapping);
+		formulagenerators[j] = create(data);
 		const DomElemContainer* newvar = new DomElemContainer();
-		terms[i] = newvar;
-		auto sort = set->subterm(i)->sort();
+		terms[j] = newvar;
+		auto sort = set->subterm(j)->sort();
 		auto newfobddvar = _manager->getVariable(new Variable(sort));
 		auto equalpred = VocabularyUtils::equal(sort); //TODO: depends on comparison!!!
 		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED,
-				{ newfobddvar, _manager->substitute(set->subterm(i), deBruynMapping) });
+				{ newfobddvar, _manager->substitute(set->subterm(j), deBruynMapping) });
 		auto newvars = subformvars;
 		newvars.push_back(newvar);
 		auto newfobddvars = subformbddvars;
@@ -764,7 +771,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		auto newtables = subformtables;
 		newtables.push_back(structure->inter(sort));
 		auto newuniverse = new Universe(newtables);
-		termgenerators[i] = createFromKernel(equalkernel, biggerpattern, newvars, newfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
+		termgenerators[j] = createFromKernel(equalkernel, biggerpattern, newvars, newfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
 	}
 	auto rightvalue = new DomElemContainer();
 	auto agggenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
@@ -777,4 +784,5 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	return new TreeInstGenerator(
 			new OneChildGeneratorNode(freegenerator,
 					new OneChildGeneratorNode(agggenerator, new OneChildGeneratorNode(sortchecker, new LeafGeneratorNode(compgenerator)))));
+
 }
