@@ -701,7 +701,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 			}
 		} else {
 			//If the left term of the aggkernel appears in the righthand, we cannot make it output of the agggenerator.
-			//In this case, we also add it to the freegenerator
+			//In this case, we also add it to the freegenerator. Otherwise, we let the agggenerator decide it's value.
 			if (_manager->contains(ak->right(), fobddvars[n])) {
 				if (pattern[n] == Pattern::OUTPUT) {
 					freevars.push_back(vars[n]);
@@ -726,7 +726,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 
 	BddGeneratorData data;
 	//TODO: optimize for every formula separately: remove vars that dont appear in subformula or subterm.
-	//TODO: add quantvars
+	//Will this help?
 	auto subformvars = vars;
 	auto subformbddvars = fobddvars;
 	//For subformulas, everything is input
@@ -750,8 +750,6 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	data.structure = structure;
 	data.universe = Universe(subformtables);
 
-	//Biggerpattern serves for the termgenerators: one extra slot for the new variable
-
 	for (int j = 0; j < set->size(); j++) {
 		data.bdd = _manager->substitute(set->subformula(j), deBruynMapping);
 		formulagenerators[j] = create(data);
@@ -762,29 +760,27 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		auto equalpred = VocabularyUtils::equal(sort); //TODO: depends on comparison!!!
 		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED,
 				{ newfobddvar, _manager->substitute(set->subterm(j), deBruynMapping) });
-		auto newvars = subformvars;
-		newvars.push_back(newvar);
-		auto newfobddvars = subformbddvars;
-		newfobddvars.push_back(newfobddvar);
+		auto termvars = subformvars;
+		termvars.push_back(newvar);
+		auto termfobddvars = subformbddvars;
+		termfobddvars.push_back(newfobddvar);
 		//For the term: everything is input, except for the newly created variable. It is calculated in function of all other variables.
-		std::vector<Pattern> biggerpattern(subformpattern.size(),Pattern::INPUT);
-		biggerpattern.push_back(Pattern::OUTPUT);
-		auto newtables = subformtables;
-		newtables.push_back(structure->inter(sort));
-		auto newuniverse = new Universe(newtables);
-		termgenerators[j] = createFromKernel(equalkernel, biggerpattern, newvars, newfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
+		std::vector<Pattern> termpattern(subformpattern.size(), Pattern::INPUT);
+		termpattern.push_back(Pattern::OUTPUT);
+		auto termtables = subformtables;
+		termtables.push_back(structure->inter(sort));
+		auto newuniverse = new Universe(termtables);
+		termgenerators[j] = createFromKernel(equalkernel, termpattern, termvars, termfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
 	}
 	auto rightvalue = new DomElemContainer();
-	auto agggenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
+	//AggGenerator calculates the value of the set and stores it in "rightvalue".
+	auto aggGenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
 
-	//Finally, we construct the sortchecker and the comparisongenerator
+	//Finally, we construct the  comparisongenerator
+	//We want left to be comp than the value of the set (i.e.~rightvalue)
 	auto compgenerator = new ComparisonGenerator(structure->inter(ak->left()->sort()), structure->inter(ak->right()->sort()), left, rightvalue,
 			(leftpattern == Pattern::INPUT ? Input::BOTH : Input::RIGHT), comp);
-	auto sortchecker = new SortLookUpGenerator(structure->inter(ak->left()->sort())->internTable(), left);
 
-
-	return new TreeInstGenerator(
-			new OneChildGeneratorNode(freegenerator,
-					new OneChildGeneratorNode(agggenerator, new OneChildGeneratorNode(compgenerator, new LeafGeneratorNode(sortchecker)))));
+	return new TreeInstGenerator(new OneChildGeneratorNode(freegenerator, new OneChildGeneratorNode(aggGenerator, new LeafGeneratorNode(compgenerator))));
 
 }
