@@ -19,11 +19,16 @@ public:
 	LazyRuleGrounder(const Rule* rule, const std::vector<Term*>& vars, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	void run(DefId defid, GroundDefinition* grounddefinition) const;
 
+	virtual tablesize getGroundedSize() const;
+
 private:
 	enum class Substitutable { UNIFIABLE, NO_UNIFIER};
 	Substitutable createInst(const ElementTuple& headargs, dominstlist& domlist);
 
 	void doGround(const Lit& head, const ElementTuple& headargs);
+
+	int grounded;
+
 };
 
 #endif /* LAZYRULEGROUNDER_HPP_ */

@@ -16,7 +16,7 @@ structure S: V {
 #include <mx>
 
 procedure getasol(){
-	stdoptions.groundlazily=false
+	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
 	stdoptions.groundverbosity=1
 	stdoptions.satverbosity=1

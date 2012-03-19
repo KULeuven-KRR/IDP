@@ -47,3 +47,7 @@ procedure run(lazy){
 	sol = getasol(lazy)
 	print(sol)
 }
+
+procedure main(){
+	run(true)
+}
