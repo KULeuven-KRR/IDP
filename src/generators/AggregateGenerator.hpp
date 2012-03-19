@@ -89,13 +89,10 @@ private:
 		switch (_func) {
 		case AggFunction::CARD:
 			return setValue(sum<int>(_result, 1));
-			break;
 		case AggFunction::SUM:
 			return setValue(sum<double>(_result, d));
-			break;
 		case AggFunction::PROD:
 			return setValue(product<double>(_result, d));
-			break;
 		case AggFunction::MAX:
 			_result = _result > d ? _result : d;
 			return true;
@@ -103,6 +100,8 @@ private:
 			_result = _result < d ? _result : d;
 			return true;
 		}
+		Assert(false);
+		return true;
 	}
 
 public:

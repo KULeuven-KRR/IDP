@@ -62,11 +62,11 @@ void FOBDDFactory::visit(const AggTerm* at) {
 	_term = _manager->getAggTerm(function, _set);
 }
 void FOBDDFactory::visit(const EnumSetExpr* se) {
-	int size = se->subformulas().size();
+	unsigned int size = se->subformulas().size();
 	Assert(size == se->subterms().size());
 	std::vector<const FOBDD*> subforms(size);
 	std::vector<const FOBDDTerm*> subterms(size);
-	for (int i = 0; i < size; i++) {
+	for (unsigned int i = 0; i < size; i++) {
 		se->subformulas()[i]->accept(this);
 		subforms[i] = _bdd;
 		se->subterms()[i]->accept(this);
