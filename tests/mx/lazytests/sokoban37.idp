@@ -1,3 +1,5 @@
+//duthen-990602.37.steps.14
+// SAT
 Step = {1; 10; 11; 12; 13; 14; 2; 3; 4; 5; 6; 7; 8; 9}
 Next = {1,2; 10,11; 11,12; 12,13; 13,14; 2,3; 3,4; 4,5; 5,6; 6,7; 7,8; 8,9; 9,10}
 Loc = {Col2row3; Col2row4; Col2row5; Col3row1; Col3row2; Col3row3; Col3row5; Col4row1; Col4row2; Col4row3; Col4row4; Col4row5; Col5row1; Col5row2; Col5row3; Col6row1; Col6row2; Col6row3; Col6row4; Col7row2; Col7row3; Col7row4}

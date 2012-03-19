@@ -168,7 +168,7 @@ void GrounderFactory::RestoreContext() {
 	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
 		auto found = _varmapping.find(*it);
 		if (found != _varmapping.end()) {
-			_varmapping.erase(found);
+			//_varmapping.erase(found);
 		}
 	}
 	_context._mappedvars.clear();
@@ -739,7 +739,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
 	const PredForm* twindelayablepf = NULL;
-	_context._allowDelaySearch = false; // TODO satisfiability delaying turned off
+	//_context._allowDelaySearch = false; // TODO satisfiability delaying turned off
 	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
 		Context lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
@@ -772,9 +772,12 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 		// Research to get up-to-date predforms!
 		Context lazycontext = Context::BOTH;
-		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+
+		auto latestqf = QuantForm(newqf->sign(), newqf->quant(), newqf->quantVars(), subformula, newqf->pi());
+
+		auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		if (tuple.size()!=2) {
-			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+			delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
 			twindelayablepf = tuple[1];
@@ -1245,7 +1248,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	vector<Variable*> headvars;
 	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
 			&& _grounding->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
-	groundlazily = false; // TODO satisfiability delaying turned off
+	//groundlazily = false; // TODO satisfiability delaying turned off
 	if (groundlazily) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!

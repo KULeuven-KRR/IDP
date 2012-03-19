@@ -44,15 +44,16 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// FIXME currently skipping if working lazily!
 	auto clonetheory = theory->clone();
 	AbstractStructure* newstructure = NULL;
-	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
+	// FIXME add again
+/*	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (not newstructure->isConsistent()) {
 			delete(newstructure);
 			return std::vector<AbstractStructure*> { };
 		}
-	}else{
+	}else{*/
 		newstructure = structure->clone();
-	}
+	//}
 
 	// Create solver and grounder
 	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
