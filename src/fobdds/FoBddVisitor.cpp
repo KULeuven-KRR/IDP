@@ -140,11 +140,14 @@ const FOBDDTerm* FOBDDVisitor::change(const FOBDDAggTerm* term) {
 }
 
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
-	notyetimplemented("fobddvisitors for sets");
+	std::stringstream ss;
+	ss<<"fobddvisitors for sets( needed here for a" << typeid(*this).name() << ")";
+	notyetimplemented(ss.str());
 	return set;
 
 }
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
-	notyetimplemented("fobddvisitors for sets");
-	return set;
+	std::stringstream ss;
+	ss<<"fobddvisitors for sets( needed here for a" << typeid(*this).name() << ")";
+	notyetimplemented(ss.str());	return set;
 }

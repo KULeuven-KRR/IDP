@@ -36,9 +36,16 @@ public:
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
 
-	const FOBDDKernel* change(const FOBDDAggKernel*){
-		throw notyetimplemented("Bumpindices for bdds with aggregates");
+	const FOBDDSetExpr* change(const FOBDDQuantSetExpr* qse) {
+		_depth += qse->_quantvarsorts.size();
+		auto newsetexpr =  FOBDDVisitor::change(qse);
+		_depth -= qse->_quantvarsorts.size();
+		throw notyetimplemented("Bumpindices for quantsetexpr");
+		//TODO: before removing notyetimplemented: check that fobddvisitor is implemented consistent with this approach.
+		//TODO: I think the above is wrong. Since indices are bumped, what happens with the indices that are quantified???
+		return newsetexpr;
 	}
+
 
 	const FOBDDTerm* change(const FOBDDVariable* var) {
 		if (var == _variable) {
