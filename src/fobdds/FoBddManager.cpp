@@ -1547,8 +1547,15 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = aggk->right()->setexpr();
 		double d = 0;
+		auto newvars = vars;
+
+		if(sametypeid<FOBDDVariable>(*(aggk->left()))){
+			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
+			newvars.erase(leftvar);
+		}
+		//TODO: fix the indices before passing to lower...
 		for (int i = 0; i < set->size(); i++) {
-			double extra = estimatedCostAll(set->subformula(i), vars, indices, structure);
+			double extra = estimatedCostAll(set->subformula(i), newvars, indices, structure);
 			d = (d + extra < maxdouble) ? d + extra : maxdouble;
 			if (d == maxdouble) {
 				break;
