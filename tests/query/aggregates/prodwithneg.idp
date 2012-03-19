@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x,x)
+}
+
+query Q : V {
+	{y: prod{x: p(x,y): x}=2}
+}
+
+structure S:V{
+	x = {-1..2}
+	p = {1,-1;
+		0,1;2,1;
+		2,2}
+}
+
+procedure getExpectedSet(){
+  return {{2}}
+}

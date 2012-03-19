@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x, x)
+	q(x)
+}
+
+query Q:V{
+	{x: min[(true,3);(?y: p(x, y),2);(q(x),4)]=3 & x>2}
+}
+
+structure S:V{
+	x = {0..4}
+	p = {1,2;3,4}
+	q = {1;4}
+}
+
+procedure getExpectedSet(){
+  return {{4}}
+}
