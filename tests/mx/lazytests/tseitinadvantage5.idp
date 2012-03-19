@@ -26,7 +26,7 @@ structure S: V {
 	state = {1..10}
 	Party = 10
 	initial = 5
-	time = {0..20}
+	time = {0..50}
 	action = {1..10}
 }
 
@@ -45,5 +45,5 @@ procedure getasol(lazy){
 
 procedure run(lazy){
 	sol = getasol(lazy)
-	//print(sol)
+	print(sol)
 }
