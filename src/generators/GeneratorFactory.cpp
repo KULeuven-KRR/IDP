@@ -79,7 +79,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe, const Formula*) {
 	GeneratorFactory factory;
-
+	Assert(universe.tables().size()== pattern.size());
 	// Check for infinite grounding
 	bool certainlyfinite = true;
 	for (size_t i = 0; i < universe.tables().size() && certainlyfinite; ++i) {

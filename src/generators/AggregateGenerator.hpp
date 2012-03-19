@@ -35,19 +35,25 @@ private:
 	bool _reset;
 
 	//Executes the next on the ith formulagenerator,...
-	//Returns false if no value is possible (if this one determines the generator to be at end.
-	void next(unsigned int i) {
-		for (_formulagenerators[i]->begin(); not _formulagenerators[i]->isAtEnd() && not isAtEnd(); _formulagenerators[i]->operator ++()) {
+	//Returns false if no value is possible (if this one determines the generator to be at end).
+	bool next(unsigned int i) {
+		bool goOn = true;
+		for (_formulagenerators[i]->begin(); not _formulagenerators[i]->isAtEnd() && goOn; _formulagenerators[i]->operator ++()) {
 			_termgenerators[i]->begin();
-			Assert(not _termgenerators[i]->isAtEnd());
+			if(_termgenerators[i]->isAtEnd()){
+				//TODO: what with partial functions?
+				goOn = false;
+				notifyAtEnd();
+			}
 			auto domelem = (*_terms[i]).get();
 			if (domelem->type() == DomainElementType::DET_INT) {
-				doOperation(domelem->value()._int);
+				goOn = doOperation(domelem->value()._int);
 			} else {
 				Assert(domelem->type() == DomainElementType::DET_DOUBLE);
-				doOperation(domelem->value()._double);
+				goOn = doOperation(domelem->value()._double);
 			}
 		}
+		return goOn;
 	}
 	double getEmptySetValue() {
 		switch (_func) {
@@ -65,10 +71,10 @@ private:
 		return 42;
 	}
 
-	void setValue(const DomainElement* d) {
+	bool setValue(const DomainElement* d) {
 		if (d == NULL) {
 			notifyAtEnd();
-			return;
+			return false;
 		}
 		if (d->type() == DomainElementType::DET_INT) {
 			_result = d->value()._int;
@@ -76,25 +82,26 @@ private:
 			Assert(d->type() == DomainElementType::DET_DOUBLE);
 			_result = d->value()._double;
 		}
+		return true;
 	}
 
-	void doOperation(double d) {
+	bool doOperation(double d) {
 		switch (_func) {
 		case AggFunction::CARD:
-			setValue(sum<int>(_result, 1));
+			return setValue(sum<int>(_result, 1));
 			break;
 		case AggFunction::SUM:
-			setValue(sum<double>(_result, d));
+			return setValue(sum<double>(_result, d));
 			break;
 		case AggFunction::PROD:
-			setValue(product<double>(_result, d));
+			return setValue(product<double>(_result, d));
 			break;
 		case AggFunction::MAX:
 			_result = _result > d ? _result : d;
-			return;
+			return true;
 		case AggFunction::MIN:
 			_result = _result < d ? _result : d;
-			return;
+			return true;
 		}
 	}
 
@@ -130,10 +137,12 @@ public:
 		}
 		_result = getEmptySetValue();
 		_reset = false;
-		for (unsigned int i = 0; i < _formulagenerators.size() && not isAtEnd(); i++) {
-			next(i);
+		//goOn could be simplified by using the atEnd method.  However, this conflicts with initDone...
+		bool goOn = true;
+		for (unsigned int i = 0; i < _formulagenerators.size() && goOn; i++) {
+			goOn = next(i);
 		}
-		if (not isAtEnd()) {
+		if (goOn) {
 			_left->operator =(createDomElem(_result));
 		}
 

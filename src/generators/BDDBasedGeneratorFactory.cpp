@@ -319,13 +319,30 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm *atom, const vector<Patter
 	return atom;
 }
 
+bool checkInput(uint size1, uint size2, uint size3, const Universe& universe) {
+	for (auto it = universe.tables().cbegin(); it != universe.tables().cend(); ++it) {
+		if (*it == NULL) {
+			std::cerr << "containing NULL";
+			return false;
+		}
+	}
+	return size1 == size2 && size2 == size3 && size3 == universe.tables().size();
+}
+
+bool checkInput(const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const vector<const FOBDDVariable*>& bddvars,
+		const Universe& universe) {
+	return checkInput(pattern.size(), vars.size(), bddvars.size(), universe);
+}
+bool checkInput(const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars, const vector<Variable*>& atomvars, const Universe& universe) {
+	return checkInput(pattern.size(), vars.size(), atomvars.size(), universe);
+
+}
 InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
-
+	Assert(checkInput(pattern, vars, atomvars, universe));
 	//Check the precondition
 	Assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
 	// Create the pattern for an atom with only Var and DomainTerms.
-
 	vector<Pattern> atompattern;
 	vector<const DomElemContainer*> datomvars;
 	vector<SortTable*> atomtables;
@@ -470,6 +487,7 @@ vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vecto
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+	Assert(checkInput(pattern, vars, atomvars, universe));
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
 	}
@@ -550,6 +568,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+	Assert(checkInput(pattern, vars, fobddvars, universe));
 	if (sametypeid<FOBDDAggKernel>(*kernel)) {
 		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), pattern, vars, fobddvars, structure, branchToGenerate, universe);
 	}
@@ -633,8 +652,8 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 
 InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
-
 	//Now, make all variables input and turn the aggterm into bdd.
+	Assert(checkInput(pattern, vars, fovars, universe));
 	BddGeneratorData data;
 	FOBDDFactory factory(_manager);
 	data.bdd = factory.turnIntoBdd(af);
@@ -649,12 +668,12 @@ InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<
 	data.pattern = pattern;
 	data.structure = structure;
 	data.universe = universe;
-
 	return create(data);
 }
 
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+	Assert(checkInput(pattern, vars, fovars, universe));
 	if (sametypeid<PredForm>(*f)) {
 		auto newf = dynamic_cast<PredForm*>(f);
 		return createFromPredForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
@@ -668,7 +687,8 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		BRANCH branchToGenerate, const Universe& universe) {
 	//First, we create a generator for all the free variables (that are output), since the AggregateGenerator assumes everything input
 	//EXCEPTION: if left of the aggform is one of those variables
-	auto comp = (branchToGenerate==BRANCH::FALSEBRANCH? ak->comp(): negateComp(ak->comp()));
+	Assert(checkInput(pattern, vars, fobddvars, universe));
+	auto comp = (branchToGenerate == BRANCH::FALSEBRANCH ?  negateComp(ak->comp()) : ak->comp() );
 	std::vector<const DomElemContainer*> freevars;
 	std::vector<SortTable*> freetables;
 	std::vector<Pattern> newpattern(vars.size(), Pattern::INPUT);
@@ -697,32 +717,52 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	std::vector<const DomElemContainer*> terms(set->size());
 
 	BddGeneratorData data;
-	data.vars = vars; //TODO: optimize for every formula separately: remove vars that dont appear in subformula or subterm.
-	data.bddvars = fobddvars;
-	data.pattern = newpattern;
+	//TODO: optimize for every formula separately: remove vars that dont appear in subformula or subterm.
+	//TODO: add quantvars
+	auto subformvars = vars;
+	auto subformbddvars = fobddvars;
+	auto subformpattern = newpattern;
+	auto subformtables = universe.tables();
+	std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*> deBruynMapping;
+	int i = 0;
+	for (auto it = set->quantvarsorts().crbegin(); it != set->quantvarsorts().crend(); it++, i++) {
+		auto newquantvar = new DomElemContainer();
+		auto newfobddvar = _manager->getVariable((new Variable(*it)));
+		subformvars.push_back(newquantvar);
+		subformpattern.push_back(Pattern::OUTPUT);
+		subformbddvars.push_back(newfobddvar);
+		deBruynMapping[_manager->getDeBruijnIndex(*it, i)] = newfobddvar;
+		subformtables.push_back(structure->inter(*it));
+	}
+
+	data.vars = subformvars;
+	data.bddvars = subformbddvars;
+	data.pattern = subformpattern;
 	data.structure = structure;
-	data.universe = universe;
+	data.universe = Universe(subformtables);
 
 	//Biggerpattern serves for the termgenerators: one extra slot for the new variable
-	std::vector<Pattern> biggerpattern = pattern;
-	biggerpattern.push_back(Pattern::INPUT);
+
 	for (int i = 0; i < set->size(); i++) {
-		data.bdd = set->subformula(i);
+
+		data.bdd = _manager->substitute(set->subformula(i), deBruynMapping);
 		formulagenerators[i] = create(data);
 
 		const DomElemContainer* newvar = new DomElemContainer();
 		terms[i] = newvar;
-
 		auto sort = set->subterm(i)->sort();
 		auto newfobddvar = _manager->getVariable(new Variable(sort));
 		auto equalpred = VocabularyUtils::equal(sort); //TODO: depends on comparison!!!
-		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED, { newfobddvar, set->subterm(i) });
-		auto newvars = vars;
+		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED,
+				{ newfobddvar, _manager->substitute(set->subterm(i), deBruynMapping) });
+		auto newvars = subformvars;
 		newvars.push_back(newvar);
-		auto newfobddvars = fobddvars;
+		auto newfobddvars = subformbddvars;
 		newfobddvars.push_back(newfobddvar);
-		auto newtables = universe.tables();
-		newtables.push_back(sort->interpretation());
+		std::vector<Pattern> biggerpattern = subformpattern;
+		biggerpattern.push_back(Pattern::INPUT);
+		auto newtables = subformtables;
+		newtables.push_back(structure->inter(sort));
 		auto newuniverse = new Universe(newtables);
 		termgenerators[i] = createFromKernel(equalkernel, biggerpattern, newvars, newfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
 	}
@@ -730,8 +770,8 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	auto agggenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
 
 	//Finally, we construct the sortchecker and the comparisongenerator
-	auto sortchecker = new SortLookUpGenerator(ak->left()->sort()->interpretation()->internTable(), rightvalue);
-	auto compgenerator = new ComparisonGenerator(ak->left()->sort()->interpretation(), ak->right()->sort()->interpretation(), left, rightvalue,
+	auto sortchecker = new SortLookUpGenerator(structure->inter(ak->left()->sort())->internTable(), rightvalue);
+	auto compgenerator = new ComparisonGenerator(structure->inter(ak->left()->sort()), structure->inter(ak->right()->sort()), left, rightvalue,
 			(leftpattern == Pattern::INPUT ? Input::BOTH : Input::RIGHT), comp);
 
 	return new TreeInstGenerator(
