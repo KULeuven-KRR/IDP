@@ -766,8 +766,9 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		newvars.push_back(newvar);
 		auto newfobddvars = subformbddvars;
 		newfobddvars.push_back(newfobddvar);
-		std::vector<Pattern> biggerpattern = subformpattern;
-		biggerpattern.push_back(Pattern::INPUT);
+		//For the term: everything is input, except for the newly created variable. It is calculated in function of all other variables.
+		std::vector<Pattern> biggerpattern(subformpattern.size(),Pattern::INPUT);
+		biggerpattern.push_back(Pattern::OUTPUT);
 		auto newtables = subformtables;
 		newtables.push_back(structure->inter(sort));
 		auto newuniverse = new Universe(newtables);
