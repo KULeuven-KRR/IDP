@@ -88,9 +88,7 @@ void Grounder::toplevelRun() const {
 	ConjOrDisj formula;
 	run(formula);
 	addToGrounding(getGrounding(), formula);
-	if(not getOption(BoolType::GROUNDLAZILY)){
-		getGrounding()->closeTheory(); // TODO very important and easily forgotten
-	}
+	getGrounding()->closeTheory(); // TODO very important and easily forgotten
 }
 
 Lit Grounder::groundAndReturnLit() const {
