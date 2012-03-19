@@ -45,9 +45,10 @@ struct GenAndChecker {
 	const std::vector<const DomElemContainer*> _vars;
 	InstGenerator* const _generator;
 	InstChecker* const _checker;
+	Universe _universe;
 
-	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker)
-			: _vars(vars), _generator(generator), _checker(checker) {
+	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker, const Universe& universe)
+			: _vars(vars), _generator(generator), _checker(checker), _universe(universe) {
 	}
 };
 

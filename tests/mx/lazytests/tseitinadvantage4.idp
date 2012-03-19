@@ -7,8 +7,7 @@ vocabulary V{
 theory T: V{
 	!n: ?p: in(p, n).
 	!p n: in(p, n) => !p2: in(p2, n) => p=p2.
-	!p n: in(p, n) => ?n2: n~=n2 & in(p, n2).
-	//!p n: in(p, n) => !n2: n~=n2 & in(p, n2) & number(n+n2) => ~in(p, n+n2).
+	//!p n: in(p, n) => ?n2: n~=n2 & in(p, n2).
 }
 
 structure S: V {
@@ -32,4 +31,8 @@ procedure getasol(lazy){
 procedure run(lazy){
 	sol = getasol(lazy)
 	//print(sol)
+}
+
+procedure main(){
+	run(true)
 }

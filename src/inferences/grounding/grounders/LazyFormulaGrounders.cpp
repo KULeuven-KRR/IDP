@@ -52,16 +52,25 @@ void LazyGroundingManager::groundMore() const {
 }
 
 LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct)
-		: ClauseGrounder(groundtheory, sign, conj, ct), freevars(freevars) {
+		: ClauseGrounder(groundtheory, sign, conj, ct), freevars(freevars), alreadyground(tablesize(TableSizeType::TST_EXACT, 0)) {
 
 }
 
+tablesize LazyGrounder::getGroundedSize() const{
+	return alreadyground*getSubGroundingSize();
+}
+
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
-		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
+		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct, const tablesize& quantunivsize)
 		: LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	if (getOption(GROUNDVERBOSITY) > 0) {
 		clog << "Lazy quant grounder for " << toString(this) << "\n";
 	}
+	setMaxGroundSize(quantunivsize*sub->getMaxGroundSize());
+}
+
+tablesize LazyQuantGrounder::getSubGroundingSize() const{
+	return getSubGrounder()->getGroundedSize();
 }
 
 LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
@@ -70,6 +79,19 @@ LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, Abstract
 	if (getOption(GROUNDVERBOSITY) > 0) {
 		clog << "Lazy bool grounder for " << toString(this) << "\n";
 	}
+	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=sub.cbegin(); i<sub.cend(); ++i){
+		size = size + (*i)->getMaxGroundSize();
+	}
+	setMaxGroundSize(size);
+}
+
+tablesize LazyBoolGrounder::getSubGroundingSize() const{
+	auto t = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=getSubGrounders().cbegin(); i<getSubGrounders().cend();++i){
+		t = t+(*i)->getGroundedSize();
+	}
+	return t;
 }
 
 void LazyGrounder::internalRun(ConjOrDisj& formula) const {
@@ -195,6 +217,8 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		clause.push_back(groundedlit);
 	}
 
+	alreadyground = alreadyground + counter;
+
 	Lit oldtseitin = instance->residual;
 	auto tseitintype = context()._tseitin;
 
@@ -234,6 +258,8 @@ LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, 
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		_varcontainers.push_back(varmapping.at(var));
 	}
+
+	// FIXME set max ground size
 }
 
 void LazyUnknUnivGrounder::run(ConjOrDisj& formula) const {
@@ -339,6 +365,8 @@ LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std
 		Assert(varmapping.find(var)!=varmapping.cend());
 		_varcontainers.push_back(varmapping.at(var));
 	}
+
+	// FIXME set max ground size
 }
 
 void LazyTwinDelayUnivGrounder::run(ConjOrDisj& formula) const {

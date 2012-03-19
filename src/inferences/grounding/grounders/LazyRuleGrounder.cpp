@@ -17,7 +17,7 @@
 using namespace std;
 
 LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(rule, hgr, bgr, big, ct), DelayGrounder(rule->head()->symbol(), headterms, Context::BOTH, ct.getCurrentDefID(), hgr->grounding()) {
+		: RuleGrounder(rule, hgr, bgr, big, ct), DelayGrounder(rule->head()->symbol(), headterms, Context::BOTH, ct.getCurrentDefID(), hgr->grounding()), grounded(0) {
 	if(verbosity()>1){
 		clog <<"Lazily grounding " <<toString(rule) <<" by unknown-delay of the head.\n";
 	}
@@ -44,6 +44,10 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 	return Substitutable::UNIFIABLE;
 }
 
+tablesize LazyRuleGrounder::getGroundedSize() const{
+	return grounded*bodygrounder()->getGroundedSize();
+}
+
 void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
 
@@ -58,6 +62,8 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	if(subst==Substitutable::NO_UNIFIER){
 		return;
 	}
+
+	grounded++;
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, headvarinstlist);
