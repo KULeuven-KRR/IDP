@@ -42,8 +42,7 @@ private:
 			_termgenerators[i]->begin();
 			if(_termgenerators[i]->isAtEnd()){
 				//TODO: what with partial functions?
-				goOn = false;
-				notifyAtEnd();
+				continue;
 			}
 			auto domelem = (*_terms[i]).get();
 			if (domelem->type() == DomainElementType::DET_INT) {
@@ -143,6 +142,11 @@ public:
 		}
 		if (goOn) {
 			_left->operator =(createDomElem(_result));
+		}
+		else{
+			//Think about the meaning of this. We want maxdouble? or mindouble in this case?
+			notyetimplemented("Overflows in aggregategenerators");
+			Assert(false);
 		}
 
 	}
