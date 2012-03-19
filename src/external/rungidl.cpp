@@ -382,7 +382,7 @@ int run(int argc, char* argv[]) {
 
 	DataManager m;
 
-	bool readfromstdin;
+	bool readfromstdin = false;
 	// Only read from stdin if no inputfiles were provided (otherwise, we would have file ordering issues anyway)
 	// and we are not running interactively (in that case, the user can provide the files)
 	if(inputfiles.size()==0 && not cloptions._interactive){

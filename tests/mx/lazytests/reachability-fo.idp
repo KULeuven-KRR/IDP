@@ -8,17 +8,16 @@ vocabulary V{
 
 	Connected
 	Path(Vtx, Vtx)
-	type Test isa nat
-	L(Vtx, Vtx, Test)
+	L(Vtx, Vtx, nat)
 	R2(Vtx, Vtx)
 }
 theory T:V{
 	!a x: Path(a, x) <=> Edge(a, x) | ?y: Path(a, y) & Edge(y, x).
-	!a x y: Reaches(a, y) & Path(a, x) => (Edge(a, x) & L(a, x, 0)) | R2(a, x).
-	!a x: R2(a, x) => ?l: L(a, x, l).
-	//!a x l l2: L(a, x, l) & L(a, x, l2) => l=l2. // This makes it run indefinetely?
+	!a x y: Reaches(a, y) & Path(a, x) => (Edge(a, x) & L(a, x, 0)) | R2(a, x). // Remaining issue: grounds this completely as it cannot be delayed
+	//!a x: R2(a, x) => ?l: L(a, x, l).
+	//!a x l l2: L(a, x, l) & L(a, x, l2) => l=l2.
 	
-	!a x y l l2: L(a, x, l) & L(a, y, l2) & R2(a, x) & Edge(y, x) & Path(a, y) & Path(a, x) => l>l2.
+	//!a x y l l2: L(a, x, l) & L(a, y, l2) & R2(a, x) & Edge(y, x) & Path(a, y) & Path(a, x) => l>l2.
 
 	Connected <=> ?a b: Reaches(a,b) & Path(a,b).
 }
@@ -38,4 +37,3 @@ procedure main(){
 }
 
 structure S:V{
-	Test = {0..1000000}
