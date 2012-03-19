@@ -28,6 +28,19 @@ using namespace std;
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
 		: Grounder(gt, context), _subgrounders(subgr) {
 	Assert(context.getCurrentDefID()!=getIDForUndefined());
+	auto t = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=subgr.cbegin(); i<subgr.cend(); ++i){
+		t = t + (*i)->getMaxGroundSize();
+	}
+	setMaxGroundSize(t);
+}
+
+tablesize DefinitionGrounder::getGroundedSize() const{
+	auto t = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=_subgrounders.cbegin(); i<_subgrounders.cend(); ++i){
+		t = t + (*i)->getGroundedSize();
+	}
+	return t;
 }
 
 DefinitionGrounder::~DefinitionGrounder() {
@@ -55,6 +68,10 @@ void RuleGrounder::put(std::stringstream& stream) {
 	stream << toString(origrule);
 }
 
+tablesize RuleGrounder::getMaxGroundSize() const {
+	return headgrounder()->getUniverse().size() * bodygrounder()->getMaxGroundSize();
+}
+
 RuleGrounder::~RuleGrounder() {
 	delete (_headgrounder);
 	delete (_bodygrounder);
@@ -62,7 +79,7 @@ RuleGrounder::~RuleGrounder() {
 }
 
 FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(rule, hgr, bgr, big, ct), _headgenerator(hig) {
+		: RuleGrounder(rule, hgr, bgr, big, ct), _headgenerator(hig), done(false) {
 	Assert(hig!=NULL);
 	hgr->grounding()->notifyNeedFalseDefineds(hgr->pfsymbol()); // FIXME very ugly hack to get addFalseDefineds correct, see more info there (groundtheory.cpp)
 }
@@ -71,7 +88,12 @@ FullRuleGrounder::~FullRuleGrounder() {
 	delete (_headgenerator);
 }
 
+tablesize FullRuleGrounder::getGroundedSize() const{
+	return hasRun()?getMaxGroundSize():tablesize(TableSizeType::TST_EXACT, 0);
+}
+
 void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
+	notifyRun();
 	Assert(defid == grounddefinition->id());
 	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {

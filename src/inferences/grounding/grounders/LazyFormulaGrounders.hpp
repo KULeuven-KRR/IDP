@@ -31,11 +31,14 @@ class LazyGrounder: public ClauseGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
 	LazyGroundingManager lazyManager;
+	mutable tablesize alreadyground;
 public:
 	LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
 	virtual ~LazyGrounder() {
 	}
 	bool groundMore(ResidualAndFreeInst* instance) const;
+
+	virtual tablesize getGroundedSize() const;
 
 protected:
 	virtual void internalRun(ConjOrDisj& formula) const;
@@ -46,6 +49,8 @@ protected:
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const = 0;
 	virtual void initializeGroundMore(ResidualAndFreeInst*) const {
 	}
+
+	virtual tablesize getSubGroundingSize() const = 0;
 };
 
 class LazyQuantGrounder: public LazyGrounder {
@@ -55,7 +60,7 @@ private:
 	InstChecker* _checker;
 public:
 	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
-			InstChecker* checker, const GroundingContext& ct);
+			InstChecker* checker, const GroundingContext& ct, const tablesize& quantunivsize);
 
 protected:
 	virtual bool grounderIsEmpty() const;
@@ -64,6 +69,8 @@ protected:
 	virtual void increment(ResidualAndFreeInst* instance) const;
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
 	virtual void initializeGroundMore(ResidualAndFreeInst* instance) const;
+
+	virtual tablesize getSubGroundingSize() const;
 
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
@@ -83,6 +90,8 @@ protected:
 	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const;
 	virtual void increment(ResidualAndFreeInst* instance) const;
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
+
+	virtual tablesize getSubGroundingSize() const;
 
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
@@ -146,6 +155,10 @@ public:
 
 	virtual void run(ConjOrDisj& formula) const;
 
+	tablesize getGroundedSize() const{
+		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
+	}
+
 protected:
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
@@ -168,6 +181,10 @@ private:
 public:
 	LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory,
 			FormulaGrounder* sub, const GroundingContext& ct);
+
+	tablesize getGroundedSize() const{
+		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
+	}
 
 	virtual void run(ConjOrDisj& formula) const;
 

@@ -55,6 +55,8 @@ public:
 	virtual void put(std::ostream& stream) const{
 		// TODO not yet implemented.
 	}
+
+	tablesize getGroundedSize() const;
 };
 
 class HeadGrounder;
@@ -89,11 +91,20 @@ public:
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const = 0;
 
 	void put(std::stringstream& stream);
+
+	virtual tablesize getGroundedSize() const = 0;
+	tablesize getMaxGroundSize() const;
 };
 
 class FullRuleGrounder: public RuleGrounder {
 private:
 	InstGenerator* _headgenerator;
+
+	mutable bool done;
+	void notifyRun() const {
+		done = true;
+	}
+	bool hasRun() const { return done; }
 
 protected:
 	InstGenerator* headgenerator() const {
@@ -104,6 +115,8 @@ public:
 	FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~FullRuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
+
+	virtual tablesize getGroundedSize() const;
 };
 
 /** Grounder for a head of a rule **/
@@ -131,6 +144,8 @@ public:
 	AbstractGroundTheory* grounding() const {
 		return _grounding;
 	}
+
+	Universe getUniverse() const { return Universe(_tables); }
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

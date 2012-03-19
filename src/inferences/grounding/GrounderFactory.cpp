@@ -702,7 +702,7 @@ void checkGeneratorInfinite(InstChecker* gen) {
 }
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars,
-		const GenAndChecker& gc, const GroundingContext& context) {
+		const GenAndChecker& gc, const GroundingContext& context, const tablesize& quantunivsize) {
 	bool conj = quant == QUANT::UNIV;
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
@@ -713,14 +713,14 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
+		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context, quantunivsize);
 	} else {
 		if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
 			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
 			checkGeneratorInfinite(gc._generator);
 			checkGeneratorInfinite(gc._checker);
 		}
-		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
+		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context, quantunivsize);
 	}
 }
 
@@ -794,8 +794,9 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		}
 	}
 	if (grounder == NULL) {
-		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext());
-	}Assert(grounder!=NULL);
+		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext(), gc._universe.size());
+	}
+	Assert(grounder!=NULL);
 
 	grounder->setOrig(qf, varmapping());
 
@@ -819,7 +820,8 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 		_context._tseitin = TsType::RULE;
 	}
 
-	_formgrounder = createQ(_grounding, _formgrounder, qf->sign(), qf->quant(), qf->freeVars(), gc, getContext());
+	// FIXME tablesize!
+	_formgrounder = createQ(_grounding, _formgrounder, qf->sign(), qf->quant(), qf->freeVars(), gc, getContext(), gc._universe.size());
 	RestoreContext();
 
 	_formgrounder->setOrig(qf, varmapping());
@@ -1115,7 +1117,13 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-	return GenAndChecker(vars, gen, check);
+
+	vector<SortTable*> directquanttables;
+	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
+		directquanttables.push_back(_structure->inter((*it)->sort()));
+	}
+
+	return GenAndChecker(vars, gen, check, Universe(directquanttables));
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {

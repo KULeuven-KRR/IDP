@@ -46,6 +46,7 @@ add_library(idp
 	structure/AbstractStructure.cpp
 	structure/InconsistentStructure.cpp
 	structure/Universe.cpp
+	structure/TableSize.cpp
 	structure/DomainElementFactory.cpp
 	theory/term.cpp
 	theory/theory.cpp
