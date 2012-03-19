@@ -555,16 +555,17 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
-		const GroundingContext& context, bool allliterals) {
+		const GroundingContext& context, bool trydelay) {
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
-	if(allliterals){
+	if(context._tseitin==TsType::RULE){ // TODO currently, the many restarts of the SCC detection etc. are too expensive!
 		mightdolazy = false;
 	}
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	// TODO: to increase performance and for debugging, currently turning this off
-	//mightdolazy = false;
+	if(not trydelay){
+		mightdolazy = false;
+	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
@@ -595,14 +596,14 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 		sub.push_back(_topgrounder);
 	}
 
-	bool allliterals = true;
+	bool somequant = false;
 	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<PredForm*>(*i)==NULL){
-			allliterals = false;
+		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+			somequant = true;
 		}
 	}
 
-	auto boolgrounder = createB(_grounding, sub, newbf->freeVars(), newbf->sign(), true, _context, allliterals);
+	auto boolgrounder = createB(_grounding, sub, newbf->freeVars(), newbf->sign(), true, _context, somequant);
 	boolgrounder->setOrig(bf, varmapping());
 	_topgrounder = boolgrounder;
 	deleteDeep(newbf);
@@ -627,14 +628,14 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 		_context._tseitin = TsType::RULE;
 	}
 
-	bool allliterals = true;
+	bool somequant = false;
 	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<PredForm*>(*i)==NULL){
-			allliterals = false;
+		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+			somequant = true;
 		}
 	}
 
-	_formgrounder = createB(_grounding, sub, bf->freeVars(), bf->sign(), bf->conj(), _context, allliterals);
+	_formgrounder = createB(_grounding, sub, bf->freeVars(), bf->sign(), bf->conj(), _context, somequant);
 	RestoreContext();
 	_formgrounder->setOrig(bf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
@@ -706,6 +707,9 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
+	}
+	if(context._tseitin==TsType::RULE){ // TODO currently, the many restarts of the SCC detection etc. are too expensive!
+		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
@@ -1230,7 +1234,6 @@ void GrounderFactory::visit(const Rule* rule) {
 	// TODO apparently cannot safely delete temprule here, even if different from newrule
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 
-	// NOTE: when commenting this, also comment that when grounding lazily, no false defineds are added!
 	vector<Variable*> headvars;
 	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
 			&& _grounding->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());

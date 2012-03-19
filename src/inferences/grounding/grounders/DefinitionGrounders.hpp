@@ -59,6 +59,7 @@ public:
 
 class HeadGrounder;
 
+// NOTE: any rule grounder NOT guaranteed to add false for all false defineds, should request adding them to the groundtheory!
 class RuleGrounder {
 private:
 	Rule* origrule;

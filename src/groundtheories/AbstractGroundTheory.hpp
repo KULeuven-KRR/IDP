@@ -60,6 +60,8 @@ public:
 
 	virtual void addOptimization(AggFunction function, int setid) = 0;
 
+	virtual void notifyNeedFalseDefineds(PFSymbol* pfs) = 0;
+
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) = 0;
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) = 0;
 

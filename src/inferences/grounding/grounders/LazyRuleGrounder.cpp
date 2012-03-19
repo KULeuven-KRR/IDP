@@ -21,7 +21,6 @@ LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headte
 	if(verbosity()>1){
 		clog <<"Lazily grounding " <<toString(rule) <<" by unknown-delay of the head.\n";
 	}
-	getGrounding()->translator()->notifyDefined(rule->head()->symbol()); // FIXME very ugly hack to get addFalseDefineds correct, see more info there (groundtheory.cpp)
 }
 
 LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple& headargs, dominstlist& domlist) {

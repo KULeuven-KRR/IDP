@@ -25,6 +25,8 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<CPTerm*> _foldedterms;
 	std::map<PFSymbol*, std::set<int> > _defined; //!< List of defined symbols and the heads which have a rule.
 
+	std::set<PFSymbol*> needfalsedefinedsymbols;
+
 public:
 	GroundTheory(AbstractStructure* str);
 	GroundTheory(Vocabulary* voc, AbstractStructure* str);
@@ -64,6 +66,11 @@ public:
 
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);
+
+	virtual void notifyNeedFalseDefineds(PFSymbol* pfs){
+		needfalsedefinedsymbols.insert(pfs);
+	}
+	const std::set<PFSymbol*>& getNeedFalseDefinedSymbols() const { return needfalsedefinedsymbols; }
 
 protected:
 	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false);
