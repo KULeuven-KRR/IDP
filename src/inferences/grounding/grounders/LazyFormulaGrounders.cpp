@@ -59,11 +59,17 @@ LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTh
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign,
 		QUANT q, InstGenerator* gen, InstChecker* checker, const GroundingContext& ct) :
 		LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
+	if(getOption(GROUNDVERBOSITY)>0){
+		clog <<"Lazy quant grounder for " <<toString(this) <<"\n";
+	}
 }
 
 LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign,
 		bool conj, const GroundingContext& ct) :
 		LazyGrounder(freevars, groundtheory, sign, conj, ct), _subgrounders(sub) {
+	if(getOption(GROUNDVERBOSITY)>0){
+		clog <<"Lazy bool grounder for " <<toString(this) <<"\n";
+	}
 }
 
 void LazyGrounder::internalRun(ConjOrDisj& formula) const {
@@ -163,7 +169,10 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	initializeGroundMore(instance);
 
 	Lit groundedlit = redundantLiteral();
-	while (groundedlit == redundantLiteral() && not isAtEnd(instance)) {
+	int maxit = dynamic_cast<const LazyQuantGrounder*>(this)!=NULL?10:1;
+	int counter = 0;
+	while ((counter<maxit || groundedlit == redundantLiteral()) && not isAtEnd(instance)) {
+		counter++;
 		ConjOrDisj formula;
 		formula = ConjOrDisj();
 		formula.setType(conjunctive());
