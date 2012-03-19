@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x,x)
+}
+
+query Q : V {
+	{y : prod{x: p(y,x): x}=1}
+}
+
+structure S:V{
+	x = {0..2}
+	p = { 1,1;2,1;2,2 }
+}
+
+//we test for product of empty sets: solutions are {} and {1}
+procedure getExpectedSet(){
+  return {{0},{1}}
+}
