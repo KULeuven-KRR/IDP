@@ -19,7 +19,7 @@
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains functions
+ * Checks whether something contains a term
  */
 class ContainsTerm: public FOBDDVisitor {
 private:
@@ -31,7 +31,8 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	bool contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
+	template<typename T>
+	bool contains(const T* super, const FOBDDTerm* arg) {
 		_result = false;
 		_arg = arg;
 		super->accept(this);

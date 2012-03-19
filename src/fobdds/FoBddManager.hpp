@@ -166,6 +166,8 @@ public:
 
 	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
+	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
+	const FOBDDTerm* substitute(const FOBDDTerm*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDTerm*>&);

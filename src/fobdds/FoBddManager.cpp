@@ -907,9 +907,10 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 
 }
 const FOBDDSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
-	if(vars.size()==0){
+	if (vars.size() == 0) {
 		throw notyetimplemented("FOBDDQUANTSET without variables");
-		Assert(false);//TODO what does this mean?  Enumsetexpr with one?
+		Assert(false);
+		//TODO what does this mean?  Enumsetexpr with one?
 	}
 	std::vector<Sort*> sorts(vars.size());
 	int i = 0;
@@ -985,6 +986,16 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDVariable*>& mvv) {
 	SubstituteTerms<FOBDDVariable, FOBDDVariable> s(this, mvv);
 	return s.FOBDDVisitor::change(bdd);
+}
+
+const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
+	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(this, miv);
+	return s.FOBDDVisitor::change(bdd);
+}
+
+const FOBDDTerm* FOBDDManager::substitute(const FOBDDTerm* bddt, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
+	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(this, miv);
+	return bddt->acceptchange(&s);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDTerm*>& mvv) {
@@ -1172,52 +1183,24 @@ bool FOBDDManager::containsPartialFunctions(const FOBDDTerm* arg) {
  * Returns true iff the bdd contains the variable
  */
 bool FOBDDManager::contains(const FOBDD* bdd, const FOBDDVariable* v) {
-	if (bdd == _truebdd || bdd == _falsebdd)
-		return false;
-	else {
-		if (contains(bdd->kernel(), v))
-			return true;
-		else if (contains(bdd->truebranch(), v))
-			return true;
-		else if (contains(bdd->falsebranch(), v))
-			return true;
-		else
-			return false;
-	}
+	ContainsTerm ct(this);
+	return ct.contains(bdd, v);
 }
 
 /**
  * Returns true iff the kernel contains the variable
  */
 bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
-		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-		for (unsigned int n = 0; n < atomkernel->symbol()->sorts().size(); ++n) {
-			if (contains(atomkernel->args(n), v))
-				return true;
-		}
-		return false;
-	} else {
-		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
-		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
-		return contains(quantkernel->bdd(), v);
-	}
+	ContainsTerm ct(this);
+	return ct.contains(kernel, v);
 }
 
 /**
  * Returns true iff the argument contains the variable
  */
 bool FOBDDManager::contains(const FOBDDTerm* arg, const FOBDDVariable* v) {
-	if (sametypeid<FOBDDVariable>(*arg))
-		return arg == v;
-	else if (sametypeid<FOBDDFuncTerm>(*arg)) {
-		const FOBDDFuncTerm* farg = dynamic_cast<const FOBDDFuncTerm*>(arg);
-		for (unsigned int n = 0; n < farg->func()->arity(); ++n) {
-			if (contains(farg->args(n), v))
-				return true;
-		}
-	}
-	return false;
+	ContainsTerm ct(this);
+	return ct.contains(arg, v);
 }
 
 /**
@@ -1559,15 +1542,15 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 
-	if(sametypeid<FOBDDAggKernel>(*kernel)){
+	if (sametypeid<FOBDDAggKernel>(*kernel)) {
 		//TODO: very ad-hoc hack to get some result.  Think this throuh!!!
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = aggk->right()->setexpr();
-		double d =0;
-		for(int i = 0; i< set->size(); i++){
-			double extra = estimatedCostAll(set->subformula(i),vars,indices,structure);
-			d = (d + extra < maxdouble) ? d+extra:maxdouble;
-			if(d==maxdouble){
+		double d = 0;
+		for (int i = 0; i < set->size(); i++) {
+			double extra = estimatedCostAll(set->subformula(i), vars, indices, structure);
+			d = (d + extra < maxdouble) ? d + extra : maxdouble;
+			if (d == maxdouble) {
 				break;
 			}
 		}
