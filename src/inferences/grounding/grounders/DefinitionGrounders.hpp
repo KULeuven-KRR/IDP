@@ -51,6 +51,10 @@ public:
 	DefId id() const {
 		return context().getCurrentDefID();
 	}
+
+	virtual void put(std::ostream& stream) const{
+		// TODO not yet implemented.
+	}
 };
 
 class HeadGrounder;

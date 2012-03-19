@@ -51,6 +51,10 @@ public:
 
 	void printorig() const;
 	std::string printFormula() const;
+
+	virtual void put(std::ostream& stream) const{
+		stream <<printFormula();
+	}
 };
 
 class AtomGrounder: public FormulaGrounder {

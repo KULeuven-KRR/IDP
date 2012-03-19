@@ -1682,12 +1682,16 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	Assert(not _table.empty());
+	if(_table.empty()){
+		return NULL;
+	}
 	return *(_table.cbegin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	Assert(not _table.empty());
+	if(_table.empty()){
+		return NULL;
+	}
 	return *(_table.rbegin());
 }
 

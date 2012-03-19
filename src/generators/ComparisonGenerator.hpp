@@ -62,7 +62,17 @@ public:
 	}
 
 	ComparisonGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
+		auto gen = new ComparisonGenerator(*this);
+		return gen;
+	}
+
+	void setVarsAgain(){
+		if (not leftIsInput()) {
+			_leftvar->operator =(*_left);
+		}
+		if (not rightIsInput()) {
+			_rightvar->operator =(*_right);
+		}
 	}
 
 	void reset() {
