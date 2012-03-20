@@ -106,7 +106,7 @@ private:
 	void visit(const FOBDDAggTerm* aggterm) {
 		aggterm->setexpr()->accept(this);
 		auto set = _currset;
-		_currterm = new AggTerm(set,aggterm->aggfunction(),TermParseInfo());
+		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());
 	}
 
 	void visit(const FOBDDEnumSetExpr* set) {
@@ -125,21 +125,21 @@ private:
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
 		std::set<Variable*> vars;
-		int i=0;
-		for(auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rend(); it++,i++){
+		int i = 0;
+		for (auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rend(); it++, i++) {
 			auto v = new Variable(*it);
-			_dbrmapping[_manager->getDeBruijnIndex(*it,i)] = v;
+			_dbrmapping[_manager->getDeBruijnIndex(*it, i)] = v;
 			vars.insert(v);
 		}
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
-			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size()+1)] = it->second;
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size() + 1)] = it->second;
 		}
 		set->subformula(0)->accept(this);
 		auto subform = _currformula;
 		set->subterm(0)->accept(this);
 		auto subterm = _currterm;
 		_dbrmapping = savedmapping;
-		_currset= new QuantSetExpr(vars,subform,subterm,SetParseInfo());
+		_currset = new QuantSetExpr(vars, subform, subterm, SetParseInfo());
 	}
 
 	void visit(const FOBDDAtomKernel* atom) {
@@ -175,9 +175,13 @@ private:
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
 
-	void visit(const FOBDDAggKernel* ) {
-
-		throw notyetimplemented("BDDToFO for aggregates");
+	void visit(const FOBDDAggKernel* fak) {
+		fak->left()->accept(this);
+		auto left = _currterm;
+		fak->right()->accept(this);
+		Assert(sametypeid<AggTerm>(*_currterm));
+		auto right = dynamic_cast<AggTerm*>(_currterm);
+		_currformula =  new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
 	}
 
 	void visit(const FOBDD* bdd) {
