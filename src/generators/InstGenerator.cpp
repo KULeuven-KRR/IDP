@@ -10,7 +10,6 @@
 
 #include "common.hpp"
 #include "InstGenerator.hpp"
-#include "GlobalData.hpp"
 
 template<>
 std::string toString(const Pattern& type){

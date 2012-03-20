@@ -14,6 +14,8 @@
 #include <typeinfo>
 #include <sstream>
 #include <iostream>
+#include "GlobalData.hpp"
+
 
 enum class Pattern {
 	INPUT, OUTPUT
@@ -95,7 +97,7 @@ public:
 	}
 
 	inline void operator++(){
-		//CHECKTERMINATION
+		CHECKTERMINATION
 		Assert(initdone);
 		Assert(not isAtEnd());
 		next();
