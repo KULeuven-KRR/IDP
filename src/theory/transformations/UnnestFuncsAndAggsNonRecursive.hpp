@@ -22,13 +22,18 @@ class Term;
  * Unnests functions and aggregates.  This method does not recursively nested fucntions and aggregates.
  * For Example P(F(G(x),y) & Q(H(j)), with P and Q predicats, F,G,H functions will be unnested to
  * ? z: z= F(G(x)) & P(z,y) & ? v: v=H(j) & Q(j)
+ * TODO: do we want no recursion OR no recursion IN aggregates?
+ * Currenty implemented: NO RECURSION IN AGGREGATES!!!!
  */
 class UnnestFuncsAndAggsNonRecursive: public UnnestFuncsAndAggs {
 	VISITORFRIENDS()
 
 protected:
 	virtual Term* traverse(Term* term){
-		return term;
+		if(sametypeid<AggTerm>(*term)){
+			return term;
+		}
+		return UnnestTerms::traverse(term);
 	}
 };
 
