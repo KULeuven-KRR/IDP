@@ -18,7 +18,10 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddIndex.hpp"
 
-// TODO what does it do?
+/*
+ * Increases the indices of all free variables of a bdd with one (so that index 0 can be used
+ * for a newly quantified variable
+ */
 class BumpIndices: public FOBDDVisitor {
 private:
 	unsigned int _depth;
@@ -37,12 +40,9 @@ public:
 	}
 
 	const FOBDDSetExpr* change(const FOBDDQuantSetExpr* qse) {
-		_depth += qse->_quantvarsorts.size();
+		_depth += qse->quantvarsorts().size();
 		auto newsetexpr =  FOBDDVisitor::change(qse);
-		_depth -= qse->_quantvarsorts.size();
-		throw notyetimplemented("Bumpindices for quantsetexpr");
-		//TODO: before removing notyetimplemented: check that fobddvisitor is implemented consistent with this approach.
-		//TODO: I think the above is wrong. Since indices are bumped, what happens with the indices that are quantified???
+		_depth -= qse->quantvarsorts().size();
 		return newsetexpr;
 	}
 

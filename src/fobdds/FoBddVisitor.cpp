@@ -142,11 +142,15 @@ const FOBDDTerm* FOBDDVisitor::change(const FOBDDAggTerm* term) {
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
 	auto formula = change(set->subformula(0));
 	auto term = set->subterm(0)->acceptchange(this);
-	return _manager->getQuantSetExpr(set->quantvarsorts(), formula,term ,set->sort());
+	return _manager->getQuantSetExpr(set->quantvarsorts(), formula, term, set->sort());
 }
 
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
-	std::stringstream ss;
-	ss<<"fobddvisitors for sets( needed here for a" << typeid(*this).name() << ")";
-	notyetimplemented(ss.str());	return set;
+	std::vector<const FOBDD*> subformulas(set->size()); //!< The direct subformulas of the set expression
+	std::vector<const FOBDDTerm*> subterms(set->size());
+	for (int i = 0; i < set->size(); i++) {
+		subformulas[i] = change(set->subformula(i));
+		subterms[i] = set->subterm(i)->acceptchange(this);
+	}
+	return _manager->getEnumSetExpr(subformulas,subterms,set->sort());
 }
