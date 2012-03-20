@@ -65,6 +65,7 @@ public:
 	}
 
 	void visit(const BDDInternalPredTable*) {
+		throw notyetimplemented("Estimating bdd inferencecost for bddinternalpredtables");
 		// TODO
 	}
 

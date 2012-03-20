@@ -4,7 +4,7 @@ vocabulary V{
 }
 
 query Q : V {
-	{y[nat] : y =< min{x: p(x): x}}
+	{y[nat] : y =< min{x[x]: p(x): x}}
 }
 
 structure S:V{

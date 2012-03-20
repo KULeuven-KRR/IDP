@@ -1419,8 +1419,8 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 			else
 				quantsize = quanttablesize._size;
 		} else {
-			if (!quantsorttable->approxFinite()) {
-				// if the sort is infinite, the kernel is true if the chance of the bdd is nonzero.
+			if (not quantsorttable->approxFinite()) {
+				// if the sort is infinite, the kernel is true iff the chance of the bdd is nonzero.
 				double bddchance = estimatedChance(quantkernel->bdd(), structure);
 				return bddchance == 0 ? 0 : 1;
 			} else {
@@ -1552,7 +1552,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 	double maxdouble = getMaxElem<double>();
 
 	if (sametypeid<FOBDDAggKernel>(*kernel)) {
-		//TODO: very ad-hoc hack to get some result.  Think this throuh!!!
+		//TODO: very ad-hoc hack to get some result.  Think this through!!!
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = aggk->right()->setexpr();
 		double d = 0;
@@ -1562,9 +1562,20 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
 			newvars.erase(leftvar);
 		}
-		//TODO: fix the indices before passing to lower...
+		std::set<const FOBDDDeBruijnIndex*> newindices;
+		if (set->size() != 0) {
+			for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
+				newindices.insert(getDeBruijnIndex((*it)->sort(), (*it)->index() + set->size()));
+			}
+			int i = 0;
+			for (auto it = set->quantvarsorts().crbegin(); it != set->quantvarsorts().crend(); ++it, i++) {
+				newindices.insert(getDeBruijnIndex(*it, i));
+			}
+		} else {
+			newindices = indices;
+		};
 		for (int i = 0; i < set->size(); i++) {
-			double extra = estimatedCostAll(set->subformula(i), newvars, indices, structure);
+			double extra = estimatedCostAll(set->subformula(i), newvars, newindices, structure);
 			d = (d + extra < maxdouble) ? d + extra : maxdouble;
 			if (d == maxdouble) {
 				break;
@@ -1708,6 +1719,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		double result = tce.run(pt, pattern);
 		return result;
 	} else {
+		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
 		// NOTE: implement a better estimator if backjumping on bdds is implemented
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		set<const FOBDDDeBruijnIndex*> newindices;
