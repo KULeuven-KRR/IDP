@@ -15,5 +15,5 @@ structure S:V{
 }
 
 procedure getExpectedSet(){
-  return {{0},{1}}
+  return {{1}}
 }
