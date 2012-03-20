@@ -362,7 +362,7 @@ public:
 	}
 
 	// Inspectors
-	virtual Sort* sort() const = 0; //!< Returns the sort of the set
+	Sort* sort() const; //!< Returns the sort of the set
 	virtual tablesize maxSize(const AbstractStructure* str = NULL) const = 0;
 
 	bool contains(const Variable*) const;
@@ -407,7 +407,6 @@ public:
 	EnumSetExpr* negativeSubset() const;
 	EnumSetExpr* zeroSubset() const;
 
-	Sort* sort() const;
 	tablesize maxSize(const AbstractStructure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
@@ -428,7 +427,6 @@ public:
 	QuantSetExpr* negativeSubset() const;
 	QuantSetExpr* zeroSubset() const;
 
-	Sort* sort() const;
 	tablesize maxSize(const AbstractStructure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
