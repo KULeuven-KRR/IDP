@@ -20,7 +20,7 @@
 
 /*
  * Increases the indices of all free variables of a bdd with one (so that index 0 can be used
- * for a newly quantified variable
+ * for a newly quantified variable)
  */
 class BumpIndices: public FOBDDVisitor {
 private:

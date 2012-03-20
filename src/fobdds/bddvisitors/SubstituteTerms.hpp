@@ -61,6 +61,7 @@ public:
 		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() - 1);
 		return _manager->getQuantKernel(k->sort(), nbdd);
 	}
+
 	const FOBDDSetExpr* change (const FOBDDQuantSetExpr* qse){
 		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() + qse->quantvarsorts().size());
 		auto newset = FOBDDVisitor::change(qse);
