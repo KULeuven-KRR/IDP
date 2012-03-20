@@ -20,7 +20,7 @@
 #include "fobdds/FoBddUtils.hpp"
 
 /**
- *	Return a list of all terms which are currently in one long multiplication.
+ *	Return a list of all terms which are currently in one long "Operation".
  *	@post: the list is in left-to-right order! (depth first visitation)
  *	If the list might only contain one elment which is not a domainelement, the neutral element is added at the start.
  */

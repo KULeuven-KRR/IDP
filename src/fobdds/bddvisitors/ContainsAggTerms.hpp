@@ -11,15 +11,13 @@
 #ifndef CONTAINSAGGCTERMS_HPP_
 #define CONTAINSAGGCTERMS_HPP_
 
-#include <vector>
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
-#include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains functions
+ * Checks whether the given term contains Aggregates
  */
 class ContainsAggTerms: public FOBDDVisitor {
 private:

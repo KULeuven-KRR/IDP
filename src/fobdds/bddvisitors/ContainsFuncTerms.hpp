@@ -17,7 +17,7 @@
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains Aggregates
+ * Checks whether the given term contains Functions
  */
 class ContainsFuncTerms: public FOBDDVisitor {
 private:

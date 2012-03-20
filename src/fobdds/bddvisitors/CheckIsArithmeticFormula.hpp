@@ -53,7 +53,8 @@ private:
 	}
 
 	void visit(const FOBDDAggKernel*) {
-		return;
+		//TODO : is this right: is an AGGKERNEL an arithmetic formula???
+		return; //If result was true, it still is true.
 	}
 
 	void visit(const FOBDDVariable* variable) {
@@ -75,6 +76,7 @@ private:
 		_result = _result && Vocabulary::std()->contains(functerm->func());
 	}
 	void visit(const FOBDDAggTerm*) {
+		//TODO: right?
 		return;
 	}
 
