@@ -398,6 +398,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		const AbstractStructure *& structure) {
 	vector<Formula*> orderedconjunction;
 	while (!atoms_to_order.empty()) {
+		std::cerr << "-----------------------------------------\n";
 		Formula *bestatom = 0;
 		double bestcost = getMaxElem<double>();
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
@@ -414,6 +415,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			}
 
 			double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
+			std::cerr <<toString(*it)<<" with vars "<<toString(projectedfree) << "h as cost"<<currcost<<nt();
 			if (currcost < bestcost) {
 				bestcost = currcost;
 				bestatom = *it;
@@ -519,6 +521,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	}
 	//CASE 2A
 	//We unnest non-recursive since we don't want to pull functerms outside of aggregates.
+
+	//TODO: create a generalised "solve" method that also rewrites y-v<0 to y<v in order to avoid creating unnecessary variables AND ALSO
+	//to avoid introducing variables of type int that lead to infinte groundings.
 	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(atom, NULL, Context::NEGATIVE);
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform);
