@@ -22,7 +22,8 @@
 
 /**
  * Recursively from leaves to top do:
- * 		If it is an addition, order the leaves in reverse SWO order
+ * Order terms that are reachable by a certain function (ordering::getFuncName)
+ * Can be used for example for Multiplication or Addition
  */
 template<typename Ordering>
 class OrderTerms: public FOBDDVisitor {
