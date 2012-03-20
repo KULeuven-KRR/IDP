@@ -140,12 +140,11 @@ const FOBDDTerm* FOBDDVisitor::change(const FOBDDAggTerm* term) {
 }
 
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
-	std::stringstream ss;
-	ss<<"fobddvisitors for sets( needed here for a" << typeid(*this).name() << ")";
-	notyetimplemented(ss.str());
-	return set;
-
+	auto formula = change(set->subformula(0));
+	auto term = set->subterm(0)->acceptchange(this);
+	return _manager->getQuantSetExpr(set->quantvarsorts(), formula,term ,set->sort());
 }
+
 const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
 	std::stringstream ss;
 	ss<<"fobddvisitors for sets( needed here for a" << typeid(*this).name() << ")";
