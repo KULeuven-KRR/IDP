@@ -38,8 +38,6 @@
 
 using namespace std;
 
-extern int global_seed; // TODO part of global data or options!
-
 KernelOrder FOBDDManager::newOrder(KernelOrderCategory category) {
 	KernelOrder order(category, _nextorder[category]);
 	++_nextorder[category];
@@ -1353,8 +1351,16 @@ map<const FOBDDKernel*, tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, c
  */
 double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractStructure* structure) {
 	if (sametypeid<FOBDDAggKernel>(*kernel)) {
-		return 0.5;
-		//TODO: very ad-hoc fix. Think about this!!!
+		//In principle, Aggkernels have exactly one lefthandside for every other tuple of variables.
+		//Hence the chance that an aggkernel succeeds is 1/leftsize
+		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
+		auto sortinter = structure->inter(aggk->left()->sort());
+		tablesize sortsize = sortinter->size();
+		if (sortsize._type == TST_APPROXIMATED || sortsize._type == TST_EXACT) {
+			double size = double(sortsize._size);
+			return size > 0 ? 1 / size : 0;
+		}
+		return 0;
 	}
 
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
@@ -1362,9 +1368,10 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		double chance = 0;
 		PFSymbol* symbol = atomkernel->symbol();
 		PredInter* pinter;
-		if (typeid(*symbol) == typeid(Predicate)) {
+		if (sametypeid<Predicate>(*symbol)) {
 			pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
 		} else {
+			Assert(sametypeid<Function>(*symbol));
 			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct();
@@ -1373,7 +1380,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		for (auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
 			tablesize argsize = structure->inter((*it)->sort())->size();
 			if (argsize._type == TST_APPROXIMATED || argsize._type == TST_EXACT) {
-				univsize = univsize * argsize._size;
+				univsize = univsize * argsize._size > getMaxElem<double>() ? getMaxElem<double>() : univsize * argsize._size;
 			} else {
 				univsize = getMaxElem<double>();
 				break;
@@ -1397,7 +1404,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		}
 		return chance;
 	} else { // case of a quantification kernel
-		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
+		Assert(sametypeid<FOBDDQuantKernel> (*kernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 		// get the table of the sort of the quantified variable
@@ -1515,13 +1522,15 @@ double FOBDDManager::estimatedChance(const FOBDD* bdd, const AbstractStructure* 
 double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
 	// TODO: improve this if functional dependency is known
+	// TODO For example aggkernels typically have only one answer, for the left variable.
 	double maxdouble = getMaxElem<double>();
 	double kernelchance = estimatedChance(kernel, structure);
 	tablesize univanswers = univNrAnswers(vars, indices, structure);
 	if (univanswers._type == TST_INFINITE || univanswers._type == TST_UNKNOWN) {
 		return (kernelchance > 0 ? maxdouble : 0);
-	} else
+	} else {
 		return kernelchance * univanswers._size;
+	}
 }
 
 /**
@@ -1549,7 +1558,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		double d = 0;
 		auto newvars = vars;
 
-		if(sametypeid<FOBDDVariable>(*(aggk->left()))){
+		if (sametypeid<FOBDDVariable>(*(aggk->left()))) {
 			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
 			newvars.erase(leftvar);
 		}
