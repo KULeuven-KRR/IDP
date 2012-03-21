@@ -38,8 +38,6 @@ public:
 	}
 	bool groundMore(ResidualAndFreeInst* instance) const;
 
-	virtual tablesize getGroundedSize() const;
-
 protected:
 	virtual void internalRun(ConjOrDisj& formula) const;
 	virtual bool grounderIsEmpty() const = 0;
@@ -49,8 +47,6 @@ protected:
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const = 0;
 	virtual void initializeGroundMore(ResidualAndFreeInst*) const {
 	}
-
-	virtual tablesize getSubGroundingSize() const = 0;
 };
 
 class LazyQuantGrounder: public LazyGrounder {
@@ -60,7 +56,7 @@ private:
 	InstChecker* _checker;
 public:
 	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
-			InstChecker* checker, const GroundingContext& ct, const tablesize& quantunivsize);
+			InstChecker* checker, const GroundingContext& ct);
 
 protected:
 	virtual bool grounderIsEmpty() const;
@@ -69,8 +65,6 @@ protected:
 	virtual void increment(ResidualAndFreeInst* instance) const;
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
 	virtual void initializeGroundMore(ResidualAndFreeInst* instance) const;
-
-	virtual tablesize getSubGroundingSize() const;
 
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
@@ -90,8 +84,6 @@ protected:
 	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const;
 	virtual void increment(ResidualAndFreeInst* instance) const;
 	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
-
-	virtual tablesize getSubGroundingSize() const;
 
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;

@@ -766,12 +766,12 @@ void varcouldbeconst(const string& name, const ParseInfo& thisplace) {
 
 /** Free variables **/
 void freevars(const string& fv, const ParseInfo& thisplace) {
-	warning(thisplace);
+	/*warning(thisplace);
 	if (fv.size() > 1) {
 		clog << "Variables" << fv << " are not quantified.\n";
 	} else {
 		clog << "Variable" << fv[0] << " is not quantified.\n";
-	}
+	}*/
 }
 
 /** Unexpeded type derivation **/

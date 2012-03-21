@@ -168,7 +168,7 @@ void GrounderFactory::RestoreContext() {
 	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
 		auto found = _varmapping.find(*it);
 		if (found != _varmapping.end()) {
-			_varmapping.erase(found);
+		//	_varmapping.erase(found); FIXME
 		}
 	}
 	_context._mappedvars.clear();
@@ -566,6 +566,9 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if(not trydelay){
 		mightdolazy = false;
 	}
+	if(not getOption(TSEITINDELAY)){
+		mightdolazy = false;
+	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
@@ -702,7 +705,7 @@ void checkGeneratorInfinite(InstChecker* gen) {
 }
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, SIGN sign, QUANT quant, const set<Variable*>& freevars,
-		const GenAndChecker& gc, const GroundingContext& context, const tablesize& quantunivsize) {
+		const GenAndChecker& gc, const GroundingContext& context) {
 	bool conj = quant == QUANT::UNIV;
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
@@ -711,17 +714,22 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	if(context._tseitin==TsType::RULE){ // TODO currently, the many restarts of the SCC detection etc. are too expensive!
 		mightdolazy = false;
 	}
+	if(not getOption(TSEITINDELAY)){
+		mightdolazy = false;
+	}
+	ClauseGrounder* grounder = NULL;
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		return new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context, quantunivsize);
+		grounder = new LazyQuantGrounder(freevars, solvertheory, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	} else {
 		if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
 			// If not grounding with bounds, we will certainly ground infinitely, so do not even start
 			checkGeneratorInfinite(gc._generator);
 			checkGeneratorInfinite(gc._checker);
 		}
-		return new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context, quantunivsize);
+		grounder = new QuantGrounder(grounding, subgrounder, sign, quant, gc._generator, gc._checker, context);
 	}
+	return grounder;
 }
 
 void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
@@ -739,8 +747,10 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
 	const PredForm* twindelayablepf = NULL;
-	_context._allowDelaySearch = false; // TODO satisfiability delaying turned off
-	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
+	if(not getOption(SATISFIABILITYDELAY)){
+		_context._allowDelaySearch = false;
+	}
+	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
 		Context lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
 		if (tuple.size()!=2) {
@@ -766,15 +776,17 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if(delayablepf!=NULL){
 		_context._allowDelaySearch = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
+	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
 		// TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
 		//  one example is when functions are unnested
 
+		auto latestqf = QuantForm(newqf->sign(), newqf->quant(), newqf->quantVars(), subformula, newqf->pi());
+
 		// Research to get up-to-date predforms!
 		Context lazycontext = Context::BOTH;
-		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+		auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		if (tuple.size()!=2) {
-			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
+			delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
 			twindelayablepf = tuple[1];
@@ -784,9 +796,6 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 			if (twindelayablepf != NULL) {
 				auto terms = delayablepf->args();
 				terms.insert(terms.end(), twindelayablepf->args().cbegin(), twindelayablepf->args().cend());
-				//cerr <<"Delaying " <<toString(newqf);
-				//cerr <<"on " <<toString(delayablepf) <<" and " <<toString(twindelayablepf) <<"\n";
-				//cerr <<"With varmapping " <<toString(varmapping()) <<"\n";
 				grounder = new LazyTwinDelayUnivGrounder(delayablepf->symbol(), terms, lazycontext, varmapping(), _grounding, subgrounder, getContext());
 			} else {
 				grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), _grounding, subgrounder, getContext());
@@ -794,10 +803,11 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		}
 	}
 	if (grounder == NULL) {
-		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext(), gc._universe.size());
+		grounder = createQ(_grounding, subgrounder, newqf->sign(), newqf->quant(), newqf->freeVars(), gc, getContext());
 	}
 	Assert(grounder!=NULL);
 
+	grounder->setMaxGroundSize(gc._universe.size() * subgrounder->getMaxGroundSize());
 	grounder->setOrig(qf, varmapping());
 
 	_topgrounder = grounder;
@@ -820,8 +830,10 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 		_context._tseitin = TsType::RULE;
 	}
 
-	// FIXME tablesize!
-	_formgrounder = createQ(_grounding, _formgrounder, qf->sign(), qf->quant(), qf->freeVars(), gc, getContext(), gc._universe.size());
+	auto subsize = _formgrounder->getMaxGroundSize();
+	_formgrounder = createQ(_grounding, _formgrounder, qf->sign(), qf->quant(), qf->freeVars(), gc, getContext());
+	_formgrounder->setMaxGroundSize(gc._universe.size() * subsize);
+
 	RestoreContext();
 
 	_formgrounder->setOrig(qf, varmapping());
@@ -1245,7 +1257,9 @@ void GrounderFactory::visit(const Rule* rule) {
 	vector<Variable*> headvars;
 	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
 			&& _grounding->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
-	groundlazily = false; // TODO satisfiability delaying turned off
+	if(not getOption(SATISFIABILITYDELAY)){
+		groundlazily = false;
+	}
 	if (groundlazily) {
 		Assert(sametypeid<SolverTheory>(*_grounding));
 		// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!

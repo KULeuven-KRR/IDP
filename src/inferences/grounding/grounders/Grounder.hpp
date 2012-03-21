@@ -77,21 +77,22 @@ public:
 
 	void setMaxGroundSize(const tablesize& maxsize);
 
-	// FIXME remove
-	virtual tablesize getGroundedSize() const = 0;
-
 	static int _groundedatoms;
+	static tablesize _fullgroundsize;
 	static int groundedAtoms() {
 		return _groundedatoms;
 	}
 	static void notifyGroundedAtom(){
 		_groundedatoms++;
 	}
+	static const tablesize& getFullGroundSize(){
+		return _fullgroundsize;
+	}
+	static void addToFullGroundSize(const tablesize& size){
+		_fullgroundsize = _fullgroundsize + size;
+	}
 	tablesize getMaxGroundSize() const {
 		return _maxsize;
-	}
-	tablesize getUnGroundedSize() const{
-		return getMaxGroundSize()-groundedAtoms();
 	}
 };
 

@@ -35,14 +35,6 @@ DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<Rul
 	setMaxGroundSize(t);
 }
 
-tablesize DefinitionGrounder::getGroundedSize() const{
-	auto t = tablesize(TableSizeType::TST_EXACT, 0);
-	for(auto i=_subgrounders.cbegin(); i<_subgrounders.cend(); ++i){
-		t = t + (*i)->getGroundedSize();
-	}
-	return t;
-}
-
 DefinitionGrounder::~DefinitionGrounder() {
 	deleteList(_subgrounders);
 }
@@ -86,10 +78,6 @@ FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaG
 
 FullRuleGrounder::~FullRuleGrounder() {
 	delete (_headgenerator);
-}
-
-tablesize FullRuleGrounder::getGroundedSize() const{
-	return hasRun()?getMaxGroundSize():tablesize(TableSizeType::TST_EXACT, 0);
 }
 
 void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {

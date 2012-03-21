@@ -55,8 +55,6 @@ public:
 	virtual void put(std::ostream& stream) const{
 		// TODO not yet implemented.
 	}
-
-	tablesize getGroundedSize() const;
 };
 
 class HeadGrounder;
@@ -92,7 +90,6 @@ public:
 
 	void put(std::stringstream& stream);
 
-	virtual tablesize getGroundedSize() const = 0;
 	tablesize getMaxGroundSize() const;
 };
 
@@ -115,8 +112,6 @@ public:
 	FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~FullRuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
-
-	virtual tablesize getGroundedSize() const;
 };
 
 /** Grounder for a head of a rule **/

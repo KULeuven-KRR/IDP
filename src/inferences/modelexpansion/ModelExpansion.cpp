@@ -125,12 +125,16 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	if(verbosity()>0){
-		auto maxsize = grounder->getMaxGroundSize();
-		clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";
+	if(verbosity()>-1){
+		auto maxsize = grounder->getFullGroundSize();
+		cout <<"full|grounded|%|time\n";
+		cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";
+		//clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";
 		if(maxsize._type==TableSizeType::TST_EXACT){
-			clog <<">>> " <<(double)grounder->groundedAtoms()/maxsize._size <<"% of the full grounding.\n";
+			cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
+			//clog <<">>> " <<(double)grounder->groundedAtoms()/maxsize._size <<"% of the full grounding.\n";
 		}
+		cout <<"|";
 	}
 
 	// Collect solutions

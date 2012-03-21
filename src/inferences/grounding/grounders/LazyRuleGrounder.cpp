@@ -44,10 +44,6 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 	return Substitutable::UNIFIABLE;
 }
 
-tablesize LazyRuleGrounder::getGroundedSize() const{
-	return grounded*bodygrounder()->getGroundedSize();
-}
-
 void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
 

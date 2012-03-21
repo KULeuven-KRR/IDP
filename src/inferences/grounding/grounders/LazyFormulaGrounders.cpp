@@ -56,21 +56,12 @@ LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTh
 
 }
 
-tablesize LazyGrounder::getGroundedSize() const{
-	return alreadyground*getSubGroundingSize();
-}
-
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
-		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct, const tablesize& quantunivsize)
+		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
 		: LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 	if (getOption(GROUNDVERBOSITY) > 0) {
 		clog << "Lazy quant grounder for " << toString(this) << "\n";
 	}
-	setMaxGroundSize(quantunivsize*sub->getMaxGroundSize());
-}
-
-tablesize LazyQuantGrounder::getSubGroundingSize() const{
-	return getSubGrounder()->getGroundedSize();
 }
 
 LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
@@ -84,14 +75,6 @@ LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, Abstract
 		size = size + (*i)->getMaxGroundSize();
 	}
 	setMaxGroundSize(size);
-}
-
-tablesize LazyBoolGrounder::getSubGroundingSize() const{
-	auto t = tablesize(TableSizeType::TST_EXACT, 0);
-	for(auto i=getSubGrounders().cbegin(); i<getSubGrounders().cend();++i){
-		t = t+(*i)->getGroundedSize();
-	}
-	return t;
 }
 
 void LazyGrounder::internalRun(ConjOrDisj& formula) const {
@@ -254,12 +237,11 @@ LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, 
 	if (verbosity() > 2) {
 		clog << "Delaying the grounding " << sub->printFormula() << " on " << toString(pf) << ".\n";
 	}
+
 	for (auto i = pf->args().cbegin(); i < pf->args().cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		_varcontainers.push_back(varmapping.at(var));
 	}
-
-	// FIXME set max ground size
 }
 
 void LazyUnknUnivGrounder::run(ConjOrDisj& formula) const {
@@ -360,13 +342,9 @@ LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std
 	for (auto i = terms.cbegin(); i < terms.cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		Assert(var!=NULL);
-		//cerr <<"Searching " <<toString(var) <<" in " <<toString(varmapping) <<"\n";
-		//cerr <<"Searching " <<var <<"\n";
 		Assert(varmapping.find(var)!=varmapping.cend());
 		_varcontainers.push_back(varmapping.at(var));
 	}
-
-	// FIXME set max ground size
 }
 
 void LazyTwinDelayUnivGrounder::run(ConjOrDisj& formula) const {

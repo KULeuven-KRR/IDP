@@ -96,7 +96,7 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)),
-			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()), done(false) {
+			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
@@ -107,12 +107,7 @@ AtomGrounder::~AtomGrounder() {
 	delete (_ctchecker);
 }
 
-tablesize AtomGrounder::getGroundedSize() const {
-	return tablesize(TST_EXACT, hasRun() ? 1 : 0);
-}
-
 Lit AtomGrounder::run() const {
-	notifyRun();
 	notifyGroundedAtom();
 
 	if (verbosity() > 2) {
@@ -240,12 +235,7 @@ ComparisonGrounder::~ComparisonGrounder() {
 	delete (_righttermgrounder);
 }
 
-tablesize ComparisonGrounder::getGroundedSize() const {
-	return tablesize(TST_EXACT, hasRun() ? 1 : 0);
-}
-
 Lit ComparisonGrounder::run() const {
-	notifyRun();
 	auto left = _lefttermgrounder->run();
 	auto right = _righttermgrounder->run();
 
@@ -310,7 +300,7 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 
 // TODO incorrect groundsize
 AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
-		: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign), done(false) {
+		: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
 	bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
 	bool signPosIfStrict = isPos(_sign) == not noAggComp;
 	_doublenegtseitin = (gc._tseitin == TsType::RULE)
@@ -553,12 +543,8 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	}
 }
 
-tablesize AggGrounder::getGroundedSize() const {
-	return tablesize(TST_UNKNOWN, 0);
-}
-
+// TODO aggrounder estimate of fullgrounding is incorrect!
 Lit AggGrounder::run() const {
-	notifyRun();
 	// Run subgrounders
 	int setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
@@ -834,7 +820,7 @@ BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Gr
 	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
 		size = size + (*i)->getMaxGroundSize();
 	}
-	setMaxGroundSize(size);
+	setMaxGroundSize(size); // TODO move
 }
 
 BoolGrounder::~BoolGrounder() {
@@ -864,18 +850,9 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 }
 
-tablesize BoolGrounder::getGroundedSize() const {
-	auto t = tablesize(TableSizeType::TST_EXACT, 0);
-	for (auto i = getSubGrounders().cbegin(); i < getSubGrounders().cend(); ++i) {
-		t = t + (*i)->getGroundedSize();
-	}
-	return t;
-}
-
 QuantGrounder::QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-		const GroundingContext& ct, const tablesize& quantunivsize)
-		: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker), _quantunivsize(quantunivsize) {
-	setMaxGroundSize(quantunivsize * sub->getMaxGroundSize());
+		const GroundingContext& ct)
+		: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
 }
 
 QuantGrounder::~QuantGrounder() {
@@ -917,10 +894,6 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 }
 
-tablesize QuantGrounder::getGroundedSize() const {
-	return getSubGrounder()->getGroundedSize() * _quantunivsize;
-}
-
 EquivGrounder::EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
 		: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
 	auto lsize = lg->getMaxGroundSize();
@@ -931,10 +904,6 @@ EquivGrounder::EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* l
 EquivGrounder::~EquivGrounder() {
 	delete (_leftgrounder);
 	delete (_rightgrounder);
-}
-
-tablesize EquivGrounder::getGroundedSize() const {
-	return _leftgrounder->getGroundedSize()+_rightgrounder->getGroundedSize();
 }
 
 void EquivGrounder::internalRun(ConjOrDisj& formula) const {

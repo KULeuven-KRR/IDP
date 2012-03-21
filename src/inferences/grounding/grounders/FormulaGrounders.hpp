@@ -74,18 +74,12 @@ protected:
 
 	Lit run() const;
 
-	mutable bool done;
-	bool hasRun() const { return done; }
-	void notifyRun() const { done = true; }
-
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
 			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&,
 			const GroundingContext&);
 	~AtomGrounder();
 	void run(ConjOrDisj& formula) const;
-
-	virtual tablesize getGroundedSize() const;
 };
 
 class ComparisonGrounder: public FormulaGrounder {
@@ -97,20 +91,14 @@ private:
 
 	Lit run() const;
 
-	mutable bool done;
-	bool hasRun() const { return done; }
-	void notifyRun() const { done = true; }
-
 public:
 	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg,
 			const GroundingContext& gc)
-			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp), done(false) {
+			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 	}
 	~ComparisonGrounder();
 	void run(ConjOrDisj& formula) const;
-
-	virtual tablesize getGroundedSize() const;
 };
 
 class AggGrounder: public FormulaGrounder {
@@ -132,16 +120,10 @@ private:
 
 	Lit run() const;
 
-	mutable bool done;
-	bool hasRun() const { return done; }
-	void notifyRun() const { done = true; }
-
 public:
 	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign);
 	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
-
-	virtual tablesize getGroundedSize() const;
 };
 
 enum class FormStat {
@@ -216,13 +198,10 @@ public:
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
-
-	virtual tablesize getGroundedSize() const;
 };
 
 class QuantGrounder: public ClauseGrounder {
 protected:
-	const tablesize _quantunivsize;
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
@@ -230,13 +209,11 @@ protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
 public:
 	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-			const GroundingContext& ct, const tablesize& quantunivsize);
+			const GroundingContext& ct);
 	~QuantGrounder();
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
 	}
-
-	virtual tablesize getGroundedSize() const;
 };
 
 class EquivGrounder: public ClauseGrounder {
@@ -248,8 +225,6 @@ protected:
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct);
 	~EquivGrounder();
-
-	virtual tablesize getGroundedSize() const;
 };
 
 #endif /* FORMULAGROUNDERS_HPP_ */

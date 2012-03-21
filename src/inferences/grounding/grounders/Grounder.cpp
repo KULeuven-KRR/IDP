@@ -84,6 +84,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 }
 
 int Grounder::_groundedatoms = 0;
+tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
 		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_UNKNOWN, 0)) {
@@ -95,8 +96,10 @@ void Grounder::toplevelRun() const {
 	run(formula);
 	addToGrounding(getGrounding(), formula);
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+
+	addToFullGroundSize(getMaxGroundSize());
 	if(verbosity()>0){
-		clog <<"Already grounded " <<toString(groundedAtoms()) <<" for a full grounding of " <<toString(getMaxGroundSize()) <<"\n";
+		clog <<"Already grounded " <<toString(groundedAtoms()) <<" for a full grounding of " <<toString(getFullGroundSize()) <<"\n";
 	}
 }
 
@@ -117,6 +120,5 @@ Lit Grounder::groundAndReturnLit() const {
 }
 
 void Grounder::setMaxGroundSize(const tablesize& maxsize){
-	clog <<"Setting max ground size to " <<toString(maxsize) <<" for " <<toString(this) <<"\n";
 	_maxsize = maxsize;
 }
