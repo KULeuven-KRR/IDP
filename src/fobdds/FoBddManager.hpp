@@ -209,10 +209,13 @@ public:
 	/**
 	 * Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
 	 * and such that the given argument does not occur in the left-hand side.
+	 * Returns an FOBDDTerm "term" such that the given arithmetic kernel is equivalent to
+	 * term op rhs
+	 * where op is kernel.symbol
 	 * Returns a null-pointer in case this is impossible.
 	 * Only guaranteed to work correctly on variables and indices with a FOBDDAtomKernel.
 	 */
-	const FOBDDTerm* solve(const FOBDDKernel*, const FOBDDTerm*); //TODO review, currently only works for  "="...
+	const FOBDDTerm* solve(const FOBDDKernel* kernel, const FOBDDTerm* rhs); //TODO review, currently only works for  "="...
 
 	bool containsPartialFunctions(const FOBDDTerm*); //!< Returns true iff the given term is partial
 

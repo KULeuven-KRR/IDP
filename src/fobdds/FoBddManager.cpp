@@ -1069,82 +1069,147 @@ bool FOBDDManager::contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
 }
 
 const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm* argument) {
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
-		const FOBDDAtomKernel* atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-		if (atom->symbol()->name() == "=/2") {
-			if (atom->args(0) == argument) {
-				if (not contains(atom->args(1), argument)) {
-					return atom->args(1);
-				}
-			}
-			if (atom->args(1) == argument) {
-				if (not contains(atom->args(0), argument)) {
-					return atom->args(0);
-				}
-			}
-			if (SortUtils::isSubsort(atom->symbol()->sorts()[0], VocabularyUtils::floatsort())) {
-				CollectSameOperationTerms<Addition> fa(this);
-				vector<const FOBDDTerm*> terms = fa.getTerms(atom->args(0));
-				unsigned int occcounter = 0;
-				unsigned int occterm;
-				for (size_t n = 0; n < terms.size(); ++n) {
-					if (contains(terms[n], argument)) {
-						++occcounter;
-						occterm = n;
-					}
-				}
-				if (occcounter == 1) {
-					CollectSameOperationTerms<Multiplication> fm(this);
-					vector<const FOBDDTerm*> factors = fm.getTerms(terms[occterm]);
-					if (factors.size() == 2 && factors[1] == argument) {
-						const FOBDDTerm* currterm = 0;
-						for (size_t n = 0; n < terms.size(); ++n) {
-							if (n != occterm) {
-								if (not currterm) {
-									currterm = terms[n];
-								} else {
-									Function* plus = Vocabulary::std()->func("+/2");
-									plus = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(currterm->sort(), terms[n]->sort())), 0);
-									vector<const FOBDDTerm*> newargs(2);
-									newargs[0] = currterm;
-									newargs[1] = terms[n];
-									currterm = getFuncTerm(plus, newargs);
-								}
-							}
-						}
-						if (not currterm) {
-							return atom->args(1);
-						} else {
-							const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
-							if (constant->value()->type() == DET_INT) {
-								int constval = constant->value()->value()._int;
-								if (constval == -1) {
-									return currterm;
-								} else if (constval == 1) {
-									return invert(currterm);
-								}
-							}
-							if (SortUtils::isSubsort(currterm->sort(), VocabularyUtils::intsort())) {
-								// TODO: try if constval divides all constant factors
-							} else {
-								Function* times = Vocabulary::std()->func("*/2");
-								times = times->disambiguate(vector<Sort*>(3, VocabularyUtils::floatsort()), 0);
-								vector<const FOBDDTerm*> timesargs(2);
-								timesargs[0] = currterm;
-								double d =
-										constant->value()->type() == DET_INT ?
-												(double(1) / double(constant->value()->value()._int)) : (double(1) / constant->value()->value()._double);
-								timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(), createDomElem(d));
-								d = -d;
-								return getFuncTerm(times, timesargs);
-							}
-						}
-					}
-				}
+	if (not sametypeid<FOBDDAtomKernel>(*kernel)) {
+		return NULL;
+	}
+	auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+	if (not VocabularyUtils::isComparisonPredicate(atom->symbol())) {
+		return NULL;
+	}
+
+	if (atom->args(0) == argument) {
+		if (not contains(atom->args(1), argument)) {
+			return atom->symbol()->name() == "=/2" ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
+		}
+	}
+	if (atom->args(1) == argument) {
+		if (not contains(atom->args(0), argument)) {
+			return atom->args(0);
+		}
+	}
+	if (not SortUtils::isSubsort(atom->symbol()->sorts()[0], VocabularyUtils::floatsort())) {
+		//We only do arithmetic on float and subsorts
+		return NULL;
+	}
+	if (not SortUtils::isSubsort(argument->sort(), VocabularyUtils::floatsort())) {
+			//We only do arithmetic on float and subsorts
+			return NULL;
+		}
+#ifndef NDEBUG
+	Assert(sametypeid<FOBDDDomainTerm>(*(atom->args(1))));
+	auto nill = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
+	Assert(
+			(nill->value()->type() == DET_DOUBLE && nill->value()->value()._double == 0) || (nill->value()->type() == DET_INT && nill->value()->value()._int == 0));
+	//The rewritings in getatomkernel should guarantee this.
+#endif
+
+	CollectSameOperationTerms<Addition> fa(this);
+	//Collect all occurrences of the wanted argument in the lhs
+	vector<const FOBDDTerm*> terms = fa.getTerms(atom->args(0));
+	unsigned int occcounter = 0;
+	unsigned int occterm;
+	unsigned int invertedOcccounter = 0;
+	unsigned int invertedOccterm;
+	for (size_t n = 0; n < terms.size(); ++n) {
+		if (contains(terms[n], argument)) {
+			++occcounter;
+			occterm = n;
+		}
+		if (contains(terms[n], invert(argument))) {
+			++invertedOcccounter;
+			invertedOccterm = n;
+		}
+	}
+	//If there is more than one occurence of the given argument, we don't do anything
+	if (occcounter != 1 && invertedOcccounter != 1) {
+		return NULL;
+	}
+	//Now we know that atom is of the form x_1 + x_2 + t[argument] + x_4 + ... op 0,
+	//where the x_i do not contain argument and op is either =, < or >
+	CollectSameOperationTerms<Multiplication> fm(this);
+	vector<const FOBDDTerm*> factors;
+	if (occcounter == 1) {
+		factors = fm.getTerms(terms[occterm]);
+	} else if (invertedOcccounter == 1) {
+		factors = fm.getTerms(terms[invertedOccterm]);
+		factors[1] = invert(factors[1]);
+	}
+	if (not (factors.size() == 2 && factors[1] == argument)) {
+		return NULL;
+	}
+	if (not sametypeid<FOBDDDomainTerm>(*(factors[0]))) {
+		return NULL;
+	}
+	const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
+	double constval;
+	if (constant->value()->type() == DET_INT) {
+		constval = constant->value()->value()._int;
+	} else if (constant->value()->type() == DET_DOUBLE) {
+		constval = constant->value()->value()._double;
+	}
+	if(invertedOcccounter != 0 && occcounter == 0){
+		constval = -constval;
+		occterm = invertedOccterm;
+	}
+	//Now we know that atom is of the form x_1 + x_2 + constval * argument + x_4 + ... op 0,
+	//where the x_i do not contain argument and op is either =, < or >
+
+	//rewrite to constval * argument + restterm op 0,
+	const FOBDDTerm* restterm = 0;
+	for (size_t n = 0; n < terms.size(); ++n) {
+		if (n != occterm) {
+			if (not restterm) {
+				restterm = terms[n];
+			} else {
+				Function* plus = Vocabulary::std()->func("+/2");
+				plus = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(restterm->sort(), terms[n]->sort())), 0);
+				vector<const FOBDDTerm*> newargs(2);
+				newargs[0] = restterm;
+				newargs[1] = terms[n];
+				restterm = getFuncTerm(plus, newargs);
 			}
 		}
 	}
-	return 0;
+	if (restterm == NULL) {
+		//atom is of the form  constval * argument op 0,
+		if (constval < 0) {
+			return atom->args(1);
+		} else if (atom->symbol()->name() == "=/2") {
+			return atom->args(1);
+		} else {
+			//d *arg <0 cannot be rewritten to x < arg if d is positive
+			return NULL;
+		}
+	}
+
+	if (constval == -1) {
+		// restterm - d op 0 --> resterm op d
+		return restterm;
+	} else if (constval == 1) {
+		if (atom->symbol()->name() == "=/2") {
+			return invert(restterm);
+		} else {
+			return NULL;
+		}
+	}
+
+	if (SortUtils::isSubsort(restterm->sort(), VocabularyUtils::intsort())) {
+		// TODO: try if constval divides all constant factors
+	} else {
+		//constval * argument + restterm op 0
+		if (constval > 0 && atom->symbol()->name() != "=/2") {
+			return NULL;
+		}
+		Function* times = Vocabulary::std()->func("*/2");
+		times = times->disambiguate(vector<Sort*>(3, VocabularyUtils::floatsort()), 0);
+		vector<const FOBDDTerm*> timesargs(2);
+		timesargs[0] = restterm;
+		double d = -double(1) / constval;
+		timesargs[1] = getDomainTerm(VocabularyUtils::floatsort(), createDomElem(d));
+		return getFuncTerm(times, timesargs);
+	}
+
+	return NULL;
 }
 
 Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
@@ -1621,6 +1686,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			return maxdouble;
 		} else if (nrinfinite == 1) {
 			if (infinitevar) {
+				//TODO: solve method changed, now also includes < and >... Handle this!
 				if (!solve(kernel, infinitevar))
 					return maxdouble;
 			} else {
@@ -1651,6 +1717,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			if (maxresult < maxdouble) {
 				double bestresult = maxresult;
 				for (unsigned int n = 0; n < varsvector.size(); ++n) {
+					//TODO: solve method changed, now also includes < and >... Handle this!
 					if (solve(kernel, varsvector[n])) {
 						double currresult = maxresult / varunivsizes[n];
 						if (currresult < bestresult) {

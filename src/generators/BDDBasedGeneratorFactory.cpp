@@ -41,16 +41,30 @@
 using namespace std;
 
 /*
- * Tries to rewrite the given predform (which should be "=/2") with var in the right hand side.
+ * Tries to rewrite the given predform with var in the right hand side. Or -var in the righthandside (depending on bool invert)
  * If it is not possible to rewrite it this way, this returns NULL
  */
-Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var) {
+Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var, bool invert) {
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(atom);
 	Assert(not manager.isTruebdd(bdd));
 	Assert(not manager.isFalsebdd(bdd));
 	auto kernel = bdd->kernel();
-	auto arg = manager.getVariable(var);
+	const FOBDDTerm* arg = manager.getVariable(var);
+	if (invert) {
+		if (not SortUtils::isSubsort(arg->sort(), VocabularyUtils::floatsort())) {
+			//We only do arithmetic on float and subsorts
+			return NULL;
+		}
+		const DomainElement* minus_one = createDomElem(-1);
+		const FOBDDTerm* minus_one_term = manager.getDomainTerm(VocabularyUtils::intsort(), minus_one);
+		Function* times = Vocabulary::std()->func("*/2");
+		times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(VocabularyUtils::intsort(), arg->sort())), 0);
+		vector<const FOBDDTerm*> timesterms(2);
+		timesterms[0] = minus_one_term;
+		timesterms[1] = arg;
+		arg = manager.getFuncTerm(times, timesterms);
+	}
 	auto rewrittenarg = manager.solve(kernel, arg);
 	if (rewrittenarg != NULL) {
 		return manager.toTerm(rewrittenarg);
@@ -204,17 +218,46 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 }
 
 /*
- * Given matchingPattern (input or output), try to rewrite atom as ... = x
+ * Given matchingPattern (input or output), try to rewrite atom as ... op x
  * with x a variable with the right pattern
  * If it is not possible, the original atom is returned
  */
 PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
-			auto solvedterm = solve(*manager, atom, atomvars[n]);
+			auto solvedterm = solve(*manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
-				PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), { varterm, solvedterm }, atom->pi());
+				PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), { solvedterm, varterm }, atom->pi());
+				delete (atom);
+				return newatom;
+			}
+			auto invertedSolvedTerm = solve(*manager, atom, atomvars[n], true);
+			if (invertedSolvedTerm != NULL) {
+				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
+				PFSymbol* newsymbol;
+				if (atom->symbol()->name() == ">/2") {
+					newsymbol = VocabularyUtils::lessThan(atom->symbol()->sort(0));
+				} else {
+					// "=/2" should already have been handled by "solvedterm"
+					Assert(atom->symbol()->name() == "</2");
+					newsymbol = VocabularyUtils::greaterThan(atom->symbol()->sort(0));
+				}
+				if (invertedSolvedTerm->type() == TermType::TT_DOM) {
+					auto solvedEl = domElemUmin(dynamic_cast<DomainTerm*>(invertedSolvedTerm)->value());
+					solvedterm = new DomainTerm(SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort()), solvedEl, TermParseInfo());
+				} else {
+					auto minus_one = createDomElem(-1);
+					auto minusOneTerm = new DomainTerm(VocabularyUtils::intsort(),minus_one,TermParseInfo());
+					Function* times = Vocabulary::std()->func("*/2");
+					times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort())), 0);
+					vector<Term*> timesterms(2);
+					timesterms[0] = minusOneTerm;
+					timesterms[1] = invertedSolvedTerm;
+					solvedterm = new FuncTerm(times, timesterms, TermParseInfo());
+				}
+
+				PredForm* newatom = new PredForm(atom->sign(), newsymbol, { solvedterm, varterm }, atom->pi());
 				delete (atom);
 				return newatom;
 			}
@@ -247,7 +290,7 @@ PredForm* graphOneFunction(PredForm* atom) {
 		rangeTerm = atom->subterms()[0];
 		return graphOneFunction(atom, ft, rangeTerm);
 	} else {
-		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
+		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
 		ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		rangeTerm = atom->subterms()[1];
 	}
@@ -398,7 +441,6 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		const AbstractStructure *& structure) {
 	vector<Formula*> orderedconjunction;
 	while (!atoms_to_order.empty()) {
-		std::cerr << "-----------------------------------------\n";
 		Formula *bestatom = 0;
 		double bestcost = getMaxElem<double>();
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
@@ -415,7 +457,6 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			}
 
 			double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
-			std::cerr <<toString(*it)<<" with vars "<<toString(projectedfree) << "h as cost"<<currcost<<nt();
 			if (currcost < bestcost) {
 				bestcost = currcost;
 				bestatom = *it;
@@ -496,8 +537,10 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		if (FormulaUtils::containsFuncTermsOutsideOfSets(atom)) {
 			atom = smartGraphFunction(atom, pattern, atomvars);
 		}
+	} else if (atom->symbol()->name() == "</2" || atom->symbol()->name() == ">/2") {
+		atom = solveAndReplace(atom, pattern, atomvars, _manager, Pattern::OUTPUT);
 	}
-	// NOW atom is of one of the forms:
+	// NOW, atom is of one of the forms:
 	// 1* a = b where a and b are no functerms (hence, aggterm, domainterm or varterm)
 	// 2* P(x,y,z,...) with P no equality
 	// -> In this case: two possibilities:
@@ -511,19 +554,19 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			Assert(sametypeid<AggForm>(*newform));
 			auto transform = dynamic_cast<AggForm*>(newform);
 			return createFromAggForm(transform, pattern, vars, atomvars, structure, branchToGenerate, universe);
-		}Assert(not FormulaUtils::containsFuncTerms(atom));
+		}
+
+		Assert(not FormulaUtils::containsFuncTerms(atom));
 		return createFromSimplePredForm(atom, pattern, vars, atomvars, structure, branchToGenerate, universe);
 	}
 
 	//CASE 2B
-	if (!FormulaUtils::containsFuncTerms(atom) && !FormulaUtils::containsAggTerms(atom)) {
+	if (not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom)) {
 		return createFromSimplePredForm(atom, pattern, vars, atomvars, structure, branchToGenerate, universe);
 	}
 	//CASE 2A
 	//We unnest non-recursive since we don't want to pull functerms outside of aggregates.
 
-	//TODO: create a generalised "solve" method that also rewrites y-v<0 to y<v in order to avoid creating unnecessary variables AND ALSO
-	//to avoid introducing variables of type int that lead to infinte groundings.
 	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(atom, NULL, Context::NEGATIVE);
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform);
