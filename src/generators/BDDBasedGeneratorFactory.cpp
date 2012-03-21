@@ -24,7 +24,7 @@
 #include "InstGenerator.hpp"
 #include "SimpleFuncGenerator.hpp"
 #include "TreeInstGenerator.hpp"
-#include "InverseInstGenerator.hpp"
+#include "UnionGenerator.hpp"
 #include "SortInstGenerator.hpp"
 #include "LookupGenerator.hpp"
 #include "EnumLookupGenerator.hpp"
@@ -201,6 +201,19 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 		return new OneChildGeneratorNode(kernelgenerator, falsegenerator);
 	}
 
+	if (data.bdd->truebranch() == _manager->truebdd()) {
+		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
+		branchdata.bdd = data.bdd->falsebranch();
+		branchdata.pattern = data.pattern;
+		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
+				Universe(kerntables));
+		auto falsegenerator = createnode(branchdata);
+		std::vector<InstGenerator*> vec(2);
+		vec[0] = kernelgenerator;
+		vec[1] = new TreeInstGenerator(falsegenerator);
+		return new LeafGeneratorNode(new UnionGenerator(vec));
+	}
+
 	// Both branches possible: create a checker and a generator for all possibilities
 	vector<Pattern> checkerpattern(kernpattern.size(), Pattern::INPUT);
 	auto kernelchecker = createFromKernel(data.bdd->kernel(), checkerpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH, Universe(kerntables));
@@ -248,7 +261,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 					solvedterm = new DomainTerm(SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort()), solvedEl, TermParseInfo());
 				} else {
 					auto minus_one = createDomElem(-1);
-					auto minusOneTerm = new DomainTerm(VocabularyUtils::intsort(),minus_one,TermParseInfo());
+					auto minusOneTerm = new DomainTerm(VocabularyUtils::intsort(), minus_one, TermParseInfo());
 					Function* times = Vocabulary::std()->func("*/2");
 					times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort())), 0);
 					vector<Term*> timesterms(2);
