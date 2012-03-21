@@ -82,7 +82,7 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 	return output;
 }
 std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
-	output << "EXISTS(" << toString(_sort) << ") {\n";
+	output << "EXISTS(" << toString(_sort) << ") {";
 	pushtab();
 	output << "" << nt() << toString(_bdd);
 	poptab();
