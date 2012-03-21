@@ -368,6 +368,7 @@ SortIterator::~SortIterator() {
 }
 
 SortIterator& SortIterator::operator++() {
+	CHECKTERMINATION
 	_iterator->operator++();
 	return *this;
 }
