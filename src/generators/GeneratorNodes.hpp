@@ -237,16 +237,23 @@ public:
 	}
 
 	virtual void put(std::ostream& stream) {
-		stream << "generate: " << toString(_generator) << nt();
-		stream << "if result is in " << toString(_checker) << nt();
-		pushtab();
-		stream << "THEN" << nt();
-		poptab();
-		stream << toString(_truecheckbranch) << nt();
-		stream << "ELSE" << nt();
-		pushtab();
-		stream << toString(_falsecheckbranch);
-		poptab();
+		stream << "generate: ";
+			pushtab();
+			stream << toString(_generator);
+			poptab();
+		stream<< nt() << "if result is in ";
+			pushtab();
+			toString(_checker);
+			poptab();
+
+		stream<< nt() << "THEN";
+			pushtab();
+			stream<< nt() << toString(_truecheckbranch);
+			poptab();
+		stream  << nt() << "ELSE";
+			pushtab();
+			stream<< nt() << toString(_falsecheckbranch);
+			poptab();
 	}
 };
 
