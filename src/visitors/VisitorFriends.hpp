@@ -72,6 +72,7 @@ class SplitIntoMonotoneAgg;
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
+		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class RemoveEquivalences; \

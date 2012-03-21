@@ -109,6 +109,9 @@ Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str = NULL, Context co
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
 
+/** Calculate all operations on domainelements */
+Formula* calculateArithmetic(Formula* f) ;
+
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
@@ -158,6 +161,9 @@ int nrSubformulas(AbstractTheory*);
 
 /** Push negations inside */
 void pushNegations(AbstractTheory*);
+
+/** Calculate all operations on domainelements */
+AbstractTheory* calculateArithmetic(AbstractTheory*) ;
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 AbstractTheory* pushQuantifiers(AbstractTheory*);

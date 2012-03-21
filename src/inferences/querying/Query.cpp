@@ -6,6 +6,8 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
+#include "theory/TheoryUtils.hpp"
+
 
 PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	// translate the formula to a bdd
@@ -14,7 +16,8 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
 	std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
 	std::set<const FOBDDDeBruijnIndex*> bddindices;
-	const FOBDD* bdd = factory.turnIntoBdd(q->query());
+	auto newquery = FormulaUtils::calculateArithmetic( q->query());
+	const FOBDD* bdd = factory.turnIntoBdd(newquery);
 	Assert(bdd != NULL);
 	// optimize the query
 	manager.optimizeQuery(bdd, bddvars, bddindices, structure);

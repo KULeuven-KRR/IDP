@@ -42,6 +42,7 @@
 #include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
+#include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
@@ -154,6 +155,10 @@ Formula* pushNegations(Formula* f) {
 	return transform<PushNegations, Formula*>(f);
 }
 
+Formula* calculateArithmetic(Formula* f) {
+	return transform<CalculateKnownArithmetic, Formula*>(f);
+}
+
 Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
@@ -213,6 +218,10 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Con
 void pushNegations(AbstractTheory* t) {
 	auto newt = transform<PushNegations, AbstractTheory*>(t);
 	Assert(newt==t);
+}
+
+AbstractTheory* calculateArithmetic(AbstractTheory* t) {
+	return transform<CalculateKnownArithmetic, AbstractTheory*>(t);
 }
 
 AbstractTheory* pushQuantifiers(AbstractTheory* t) {
