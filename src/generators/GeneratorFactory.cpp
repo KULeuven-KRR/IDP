@@ -302,8 +302,8 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 
 	//TODO: this doesn't work currently (wrong version of gcc? thus it is commented)
 	/*if(_pattern.size()>0 && invars.size()>0){
-		lookuptab.reserve(_table->size()._size* (invars.size()/_pattern.size())); // Prevents too many rehashes
-	}*/
+	 lookuptab.reserve(_table->size()._size* (invars.size()/_pattern.size())); // Prevents too many rehashes
+	 }*/
 
 	for (auto it = _table->begin(); not it.isAtEnd(); ++it) {
 		CHECKTERMINATION
@@ -388,7 +388,35 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 		_generator = new EmptyGenerator();
 	} else {
 		PredTable* temp = new PredTable(iip->table(), _universe);
-		_generator = new InverseInstGenerator(temp, _pattern, _vars);
+		//Optimization for Comparisonpredtables
+		if (dynamic_cast<ComparisonInternalPredTable*>(temp->internTable()) != NULL) {
+			Assert(_pattern.size() == 2);
+			Input input;
+			if (_pattern[0] == Pattern::INPUT) {
+				if (_pattern[1] == Pattern::INPUT) {
+					input = Input::BOTH;
+				} else {
+					input = Input::LEFT;
+				}
+			} else {
+				if (_pattern[1] == Pattern::INPUT) {
+					input = Input::RIGHT;
+				} else {
+					input = Input::NONE;
+				}
+			}
+			if (sametypeid<StrLessInternalPredTable>(*temp->internTable())) {
+				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::GEQ);
+			} else if (sametypeid<StrGreaterInternalPredTable>(*temp->internTable())) {
+				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::LEQ);
+			}
+			else{
+				Assert(sametypeid<EqualInternalPredTable>(*temp->internTable()));
+				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::NEQ);
+			}
+		} else {
+			_generator = new InverseInstGenerator(temp, _pattern, _vars);
+		}
 	}
 }
 
