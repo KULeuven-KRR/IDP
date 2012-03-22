@@ -294,7 +294,7 @@ private:
 	InterpretationFactory* _factory; //!< Manages and creates domains for formulas
 	FOPropScheduler* _scheduler; //!< Schedules propagations
 	std::map<const Formula*, ThreeValuedDomain<Domain> > _domains; //!< Map each formula to its current domain
-	std::map<const Formula*, std::set<Variable*> > _quantvars;
+	std::map<const Formula*, std::set<Variable*> > _quantvars; //What is this?
 	std::map<PFSymbol*, PredForm*> _leafconnectors;
 	std::map<const PredForm*, LeafConnectData<Domain> > _leafconnectdata;
 	std::map<const Formula*, const Formula*> _upward;
