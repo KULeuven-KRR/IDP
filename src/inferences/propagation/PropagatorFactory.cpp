@@ -39,7 +39,7 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	//propagator->doPropagation(); TODO check and uncomment
+	propagator->doPropagation();
 	return propagator->symbolicstructure();
 }
 
