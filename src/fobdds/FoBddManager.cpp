@@ -402,13 +402,6 @@ FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int inde
 }
 
 const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FOBDDTerm*>& args) {
-
-//clog << "Get functerm on function " << *func << " and arguments ";
-//for(auto it = args.cbegin(); it != args.cend(); ++it) {
-//	put(clog,*it); clog << "   ";
-//}
-//clog << endl;
-
 	// Arithmetic rewriting TODO: we might want to use a non-recurive version of "RewriteMinus-visitors and so on..."
 	// 1. Remove unary minus
 	if (func->name() == "-/1" && Vocabulary::std()->contains(func)) {
@@ -1092,9 +1085,9 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 	if (not SortUtils::isSubsort(argument->sort(), VocabularyUtils::floatsort())) {
-			//We only do arithmetic on float and subsorts
-			return NULL;
-		}
+		//We only do arithmetic on float and subsorts
+		return NULL;
+	}
 #ifndef NDEBUG
 	Assert(sametypeid<FOBDDDomainTerm>(*(atom->args(1))));
 	auto nill = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
@@ -1147,7 +1140,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	} else if (constant->value()->type() == DET_DOUBLE) {
 		constval = constant->value()->value()._double;
 	}
-	if(invertedOcccounter != 0 && occcounter == 0){
+	if (invertedOcccounter != 0 && occcounter == 0) {
 		constval = -constval;
 		occterm = invertedOccterm;
 	}
