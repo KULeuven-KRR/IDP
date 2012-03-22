@@ -92,6 +92,7 @@ add_library(idp
 	external/rungidl.cpp
 	external/commands/allcommands.cpp
 	generators/InstGenerator.cpp
+	generators/TreeInstGenerator.cpp
 	generators/GeneratorFactory.cpp
 	generators/BDDBasedGeneratorFactory.cpp
 	visitors/StructureVisitor.cpp

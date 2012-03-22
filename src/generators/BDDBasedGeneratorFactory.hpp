@@ -105,7 +105,7 @@ private:
 			const std::vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure,
 			std::vector<Formula*> conjunction, Formula *origatom, BRANCH branchToGenerate);
 
-	GeneratorNode* createnode(const BddGeneratorData& data);
+	InstGenerator* createFromBDD(const BddGeneratorData& data);
 
 public:
 	BDDToGenerator(FOBDDManager* manager);

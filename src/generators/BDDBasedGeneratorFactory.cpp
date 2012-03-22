@@ -128,15 +128,15 @@ InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
 		return GeneratorFactory::create(outvars, tables);
 	}
 
-	return new TreeInstGenerator(createnode(data));
+	return createFromBDD(data);
 }
 
-GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
+InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	Assert(data.check());
 
 	//The base-cases are already covered in BDDToGenerator::create
 	if (data.bdd == _manager->falsebdd() || data.bdd == _manager->truebdd()) {
-		return new LeafGeneratorNode(create(data));
+		return create(data);
 	}
 
 	// Otherwise: recursive case
@@ -188,8 +188,8 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 		branchdata.bdd = data.bdd->truebranch();
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
-		auto truegenerator = createnode(branchdata);
-		return new OneChildGeneratorNode(kernelgenerator, truegenerator);
+		auto truegenerator = createFromBDD(branchdata);
+		return new OneChildGenerator(kernelgenerator, truegenerator);
 	}
 
 	if (data.bdd->truebranch() == _manager->falsebdd()) {
@@ -197,8 +197,8 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 		branchdata.bdd = data.bdd->falsebranch();
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::FALSEBRANCH,
 				Universe(kerntables));
-		auto falsegenerator = createnode(branchdata);
-		return new OneChildGeneratorNode(kernelgenerator, falsegenerator);
+		auto falsegenerator = createFromBDD(branchdata);
+		return new OneChildGenerator(kernelgenerator, falsegenerator);
 	}
 
 	if (data.bdd->truebranch() == _manager->truebdd()) {
@@ -207,11 +207,11 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 		branchdata.pattern = data.pattern;
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
-		auto falsegenerator = createnode(branchdata);
+		auto falsegenerator = createFromBDD(branchdata);
 		std::vector<InstGenerator*> vec(2);
 		vec[0] = kernelgenerator;
-		vec[1] = new TreeInstGenerator(falsegenerator);
-		return new LeafGeneratorNode(new UnionGenerator(vec));
+		vec[1] = falsegenerator;
+		return new UnionGenerator(vec);
 	}
 
 	// Both branches possible: create a checker and a generator for all possibilities
@@ -222,12 +222,12 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
 
 	branchdata.bdd = data.bdd->falsebranch();
-	auto falsegenerator = createnode(branchdata);
+	auto falsegenerator = createFromBDD(branchdata);
 
 	branchdata.bdd = data.bdd->truebranch();
-	auto truegenerator = createnode(branchdata);
+	auto truegenerator = createFromBDD(branchdata);
 
-	return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
+	return new TwoChildGenerator(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
 
 /*
@@ -614,14 +614,14 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	if (generators.size() == 1)
 		return generators[0];
 	else {
-		GeneratorNode* node = 0;
+		InstGenerator* result = 0;
 		for (auto it = generators.rbegin(); it != generators.rend(); ++it) {
-			if (node)
-				node = new OneChildGeneratorNode(*it, node);
+			if (result != NULL)
+				result = new OneChildGenerator(*it, result);
 			else
-				node = new LeafGeneratorNode(*it);
+				result = *it;
 		}
-		return new TreeInstGenerator(node);
+		return result;
 	}
 
 }
@@ -842,6 +842,6 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	auto compgenerator = new ComparisonGenerator(structure->inter(ak->left()->sort()), structure->inter(ak->right()->sort()), left, rightvalue,
 			(leftpattern == Pattern::INPUT ? Input::BOTH : Input::RIGHT), comp);
 
-	return new TreeInstGenerator(new OneChildGeneratorNode(freegenerator, new OneChildGeneratorNode(aggGenerator, new LeafGeneratorNode(compgenerator))));
+	return new OneChildGenerator(freegenerator, new OneChildGenerator(aggGenerator, compgenerator));
 
 }

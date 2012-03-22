@@ -12,55 +12,90 @@
 #define TREEINSTGENERATOR_HPP_
 
 #include "InstGenerator.hpp"
-#include "GeneratorNodes.hpp"
 
 class TreeInstGenerator: public InstGenerator {
 private:
-	GeneratorNode* _root;
+protected:
 	bool _reset;
 
 public:
-	TreeInstGenerator(GeneratorNode* r)
-			: _root(r), _reset(true) {
-		Assert(r!=NULL);
+	TreeInstGenerator()
+			: _reset(true) {
 	}
 
-	TreeInstGenerator* clone() const {
-		auto t = new TreeInstGenerator(*this);
-		t->_root = _root->clone();
-		Assert(t->_reset==_reset);
-		return t;
-	}
-
-	~TreeInstGenerator(){
-		delete(_root);
+	~TreeInstGenerator() {
 	}
 
 	void reset() {
 		_reset = true;
 	}
 
-	void next() {
-		if (_reset) {
-			_reset = false;
-			_root->begin();
-		} else {
-			_root->next();
-		}
-		if (_root->isAtEnd()) {
-			notifyAtEnd();
-		}
+};
+
+/**OneChildGenerators are in fact generators for the logical operation "and" */
+class OneChildGenerator: public TreeInstGenerator {
+private:
+	InstGenerator* _generator;
+	InstGenerator* _child;
+
+public:
+	OneChildGenerator(InstGenerator* generator, InstGenerator* child)
+			: _generator(generator), _child(child) {
 	}
 
-	void setVarsAgain(){
-		_root->setVarsAgain();
+	~OneChildGenerator() {
+		delete (_generator);
+		delete (_child);
 	}
 
-	virtual void put(std::ostream& stream) {
-		pushtab();
-		stream << "TreeInstGenerator" <<nt() << toString(_root);
-		poptab();
+	virtual OneChildGenerator* clone() const;
+
+	void setVarsAgain() {
+		_generator->setVarsAgain();
+		_child->setVarsAgain();
 	}
+
+	virtual void next();
+
+	virtual void put(std::ostream& stream);
+};
+
+/**
+ * Generator for a general bdd
+ * _generator generates the universe
+ * _checker checks whether or not a kernel is satisfied.
+ * Depending on this answer the generator for the false or the true branch is called
+ */
+class TwoChildGenerator: public TreeInstGenerator {
+private:
+	InstChecker* _checker;
+	InstGenerator* _generator;
+	InstGenerator *_falsecheckbranch, *_truecheckbranch;
+
+public:
+	TwoChildGenerator(InstChecker* c, InstGenerator* g, InstGenerator* falsecheckbranch, InstGenerator* truecheckbranch)
+			: _checker(c), _generator(g), _falsecheckbranch(falsecheckbranch), _truecheckbranch(truecheckbranch) {
+	}
+
+	~TwoChildGenerator() {
+		delete (_checker);
+		delete (_generator);
+		delete (_falsecheckbranch);
+		delete (_truecheckbranch);
+	}
+
+	virtual TwoChildGenerator* clone() const;
+
+	void setVarsAgain() {
+		_generator->setVarsAgain();
+		_truecheckbranch->setVarsAgain();
+		_falsecheckbranch->setVarsAgain();
+	}
+
+	virtual void next();
+
+	virtual void put(std::ostream& stream);
+
 };
 
 #endif /* TREEINSTGENERATOR_HPP_ */

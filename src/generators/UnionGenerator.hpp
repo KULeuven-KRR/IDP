@@ -20,7 +20,7 @@ class UnionGenerator: public InstGenerator {
 private:
 	std::vector<InstGenerator*> _generators;
 	bool _reset;
-	int _current;
+	unsigned int _current;
 
 public:
 	UnionGenerator(std::vector<InstGenerator*>& generators)
