@@ -65,6 +65,7 @@ public:
 	virtual ~Term() {
 	} //!< Shallow destructor. Does not delete subterms and subsets of the term.
 	void recursiveDelete(); //!< Delete the term, its subterms, and subsets.
+	void recursiveDeleteKeepVars(); //!< Delete the term, its subterms, and subsets. But don't delete variables
 
 	// Mutators
 	virtual void sort(Sort*) {
@@ -338,6 +339,7 @@ public:
 	virtual ~SetExpr() {
 	} //!< Delete the set, but not its subformulas and subterms
 	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
+	void recursiveDeleteKeepVars(); //!< Delete the set and its subformulas and subterms but don't delete variables
 
 	// Mutators
 	void subterm(size_t n, Term* t) {

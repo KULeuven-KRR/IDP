@@ -98,6 +98,8 @@ public:
 
 	// Destructor
 	void recursiveDelete(); //!< delete the formula and all its children (subformulas, subterms, etc)
+	void recursiveDeleteKeepVars(); //!< delete the formula and all its children (subformulas, subterms, etc) except for free variables
+
 	virtual ~Formula() {
 	}
 	//!< delete the formula, but not its children

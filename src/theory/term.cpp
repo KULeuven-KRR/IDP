@@ -45,6 +45,15 @@ void Term::recursiveDelete() {
 	}
 	delete (this);
 }
+void Term::recursiveDeleteKeepVars() {
+	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
+	}
+	for (auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
+	}
+	delete (this);
+}
 
 bool Term::contains(const Variable* v) const {
 	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
@@ -274,6 +283,16 @@ void SetExpr::recursiveDelete() {
 	}
 	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		delete (*it);
+	}
+	delete (this);
+}
+
+void SetExpr::recursiveDeleteKeepVars() {
+	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
+	}
+	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
 	}
 	delete (this);
 }

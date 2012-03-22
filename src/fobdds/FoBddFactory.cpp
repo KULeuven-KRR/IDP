@@ -22,14 +22,11 @@
 
 using namespace std;
 
-// TODO why clone the formula and not clone the term?
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	cf->accept(this);
-	//cf->recursiveDelete();
-	//FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
-	//Possible solution: cf->recursiveDeleteKeepVars();
+	cf->recursiveDeleteKeepVars();
 	return _bdd;
 }
 
@@ -192,7 +189,7 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 	auto efclone = ef->cloneKeepVars(); //We are not allowed to change the vars, since the manager keeps a vars->bddvars mapping.
 	auto f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
 	f->accept(this);
-	// f->recursiveDelete(); TODO deletes variables also!
+	f->recursiveDeleteKeepVars();
 }
 
 void FOBDDFactory::visit(const AggForm* af) {
