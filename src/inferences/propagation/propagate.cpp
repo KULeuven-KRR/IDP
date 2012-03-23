@@ -239,14 +239,14 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -421,14 +421,16 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
+	//disjunction -> Make the domains larger (thus the unknown part smaller)
 
 	if ((not _factory->approxequals(olddom, newdom)) && admissible(newdom, olddom)) {
 		ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
 		if (dir == DOWN) {
 			for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
+				//Propagate the newly found domain further down.
 				schedule(f, DOWN, ct, *it);
 			}
-			if (typeid(*f) == typeid(PredForm)) {
+			if (sametypeid<PredForm>(*f)) {
 				const PredForm* pf = dynamic_cast<const PredForm*>(f);
 				auto it = _leafupward.find(pf);
 				if (it != _leafupward.cend()) {
@@ -437,7 +439,7 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 							schedule(*jt, UP, ct, f);
 						}
 					}
-				} else {
+				} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
 					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
 					schedule(pf, DOWN, ct, 0);
 				}

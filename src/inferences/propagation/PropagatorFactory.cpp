@@ -271,11 +271,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 		lcd._connector = leafconnector;
 		lcd._equalities = _propagator->getFactory()->trueDomain(leafconnector);
 		for (unsigned int n = 0; n < symbol->sorts().size(); ++n) {
-			if (typeid(*(pf->subterms()[n])) != typeid(VarTerm)) {
-				std::cerr << n << nt();
-				std::cerr << toString(pf);
-
-			}Assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
+			Assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
 			Assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());
 			Variable* connectvar = *(leafconnector->subterms()[n]->freeVars().cbegin());

@@ -46,7 +46,8 @@ public:
 
 /**
  * 	Factory class for creating a FOPropagator and initializing the scheduler
- * 	and domains for formulas in a theory.
+ * 	and domains for formulas in a theory. Initially schedules bottom-up propagation of domain
+ * 	knowledge and top-down knowledge that sentence are true (if bool as is true)
  */
 template<class InterpretationFactory, class PropDomain>
 class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {

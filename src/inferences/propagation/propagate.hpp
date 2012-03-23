@@ -212,14 +212,24 @@ struct ThreeValuedDomain {
 	bool _twovalued;
 	//ThreeValuedDomain() : _ctdomain(NULL), _cfdomain(NULL), _twovalued(false) { }
 
+	//If ctdom == true, then this represents the domain where f is always true
+	//If cfdom == true, this represents a domain where f is always false
+	//If ctdom==cfdom==false, this represents a domain where f is unknown
+	//If ctdom==cfdom==true, this represents a domain where f is inconsistent (shouldn't happen!)
+	//TODO: rename the booleans!!!
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, bool ctdom, bool cfdom, const Formula* f) {
 		_ctdomain = ctdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_cfdomain = cfdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_twovalued = ctdom || cfdom;
+		Assert(not (ctdom && cfdom));
 		Assert(_ctdomain!=NULL);
 		Assert(_cfdomain!=NULL);
 	}
 
+	/**
+	 * Creates a domain represented by a formula. _ctdomain are all tuples (over free vars of f) where f is true,
+	 * _cfdomain are all tuples where f is false
+	 */
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const Formula* f) {
 		_ctdomain = factory->formuladomain(f);
 		Formula* negf = f->clone();
@@ -288,7 +298,7 @@ template<class InterpretationFactory, class Domain>
 class TypedFOPropagator: public FOPropagator {
 	VISITORFRIENDS()
 private:
-	Options* _options;
+	Options* _options; //TODO: remove options, verbosity and maxsteps. They belong to the globaldata
 	int _verbosity;
 	int _maxsteps; //!< Maximum number of propagations
 	InterpretationFactory* _factory; //!< Manages and creates domains for formulas
@@ -297,7 +307,7 @@ private:
 	std::map<const Formula*, std::set<Variable*> > _quantvars; //What is this?
 	std::map<PFSymbol*, PredForm*> _leafconnectors;
 	std::map<const PredForm*, LeafConnectData<Domain> > _leafconnectdata;
-	std::map<const Formula*, const Formula*> _upward;
+	std::map<const Formula*, const Formula*> _upward; //!<mapping from a formula to it's parent
 	std::map<const PredForm*, std::set<const PredForm*> > _leafupward;
 	std::vector<AdmissibleBoundChecker<Domain>*> _admissiblecheckers;
 
