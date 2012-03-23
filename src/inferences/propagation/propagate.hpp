@@ -305,6 +305,9 @@ private:
 	FOPropScheduler* _scheduler; //!< Schedules propagations
 	std::map<const Formula*, ThreeValuedDomain<Domain> > _domains; //!< Map each formula to its current domain
 	std::map<const Formula*, std::set<Variable*> > _quantvars; //What is this?
+	//Every symbol has exactly one "connector". A "prototype" of an atom by this symbol
+	//If we want the interpretation of an other PredForm over the same symbol, we should
+	//first replace all it's subterms by the ones given in leafconnectdata
 	std::map<PFSymbol*, PredForm*> _leafconnectors;
 	std::map<const PredForm*, LeafConnectData<Domain> > _leafconnectdata;
 	std::map<const Formula*, const Formula*> _upward; //!<mapping from a formula to it's parent
