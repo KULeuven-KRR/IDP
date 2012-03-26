@@ -25,7 +25,7 @@ typedef int DefId;
 
 class ResidualAndFreeInst;
 class LazyGroundingManager;
-class LazyUnknBoundGrounder;
+class DelayGrounder;
 
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
