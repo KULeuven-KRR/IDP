@@ -94,8 +94,7 @@ Options::Options() {
 	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
-	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name,
-			PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
