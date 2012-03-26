@@ -61,7 +61,7 @@ private:
 	bool _ct; //!< Indicates which domain is propagated
 			  //!< If _direction == DOWN and _ct == true,
 			  //!< then the ct-domain of the parent is propagated to the child, etc.
-	const Formula* _child; //!< The subformula // NOTE child can be NULL
+	const Formula* _child; //!< The subformula // NOTE child can be NULL if child == NULL, propagate to all childs.
 public:
 	FOPropagation(const Formula* p, FOPropDirection dir, bool ct, const Formula* c)
 			: _parent(p), _direction(dir), _ct(ct), _child(c) {

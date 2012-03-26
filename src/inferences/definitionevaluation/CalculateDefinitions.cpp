@@ -28,8 +28,9 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
+	auto newstr = structure->clone();
+	auto symstructure = generateBounds(&theory, newstr );//TODO: clone is here to avoid modifications of structure
 
-	auto symstructure = generateBounds(&theory, structure);
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
@@ -42,10 +43,13 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 		throw IdpException("Solver was terminated");
 	}
 
+	bool success;
+
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {
-		return false;
+		success= false;
 	} else {
+		success = true;
 		Assert(abstractsolutions->getModels().size() == 1);
 		auto model = *(abstractsolutions->getModels().cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
@@ -59,8 +63,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (abstractsolutions);
 	delete (grounder);
 	delete (symstructure);
-
-	return structure->isConsistent();
+	return success;
 }
 
 AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
@@ -105,7 +108,7 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			}
 		}
 	}
-	Assert(structure->isConsistent()); // NOTE: oherwise early exit
+	Assert(structure->isConsistent()); // NOTE: otherwise early exit
 	return structure;
 }
 

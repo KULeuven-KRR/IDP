@@ -64,9 +64,19 @@ public:
 			_result = maxdouble;
 	}
 
-	void visit(const BDDInternalPredTable*) {
-		throw notyetimplemented("Estimating bdd inferencecost for bddinternalpredtables");
-		// TODO
+	void visit(const BDDInternalPredTable* bipt) {
+		auto manager = bipt->manager();
+		auto bdd = bipt->bdd();
+		auto vars = bipt->vars();
+		std::set<const FOBDDVariable*> bddvars;
+		int i = 0;
+		Assert(_pattern.size() == vars.size());
+		for (auto v = vars.cbegin(); v != vars.cend(); ++v, ++i) {
+			if (not _pattern[i]) {
+				bddvars.insert(manager->getVariable(*v));
+			}
+		}
+		_result = manager->estimatedCostAll(bdd, bddvars, { }, bipt->structure());
 	}
 
 	void visit(const FullInternalPredTable*) {
@@ -96,10 +106,12 @@ public:
 	}
 
 	void visit(const UnionInternalPredTable*) {
+		throw notyetimplemented("EstimateBDDInference for UnionInternalPredTable");
 		// TODO
 	}
 
 	void visit(const UnionInternalSortTable*) {
+		throw notyetimplemented("EstimateBDDInference for UnionInternalSortTable");
 		// TODO
 	}
 

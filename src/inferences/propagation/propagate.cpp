@@ -306,8 +306,10 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 		PFSymbol* symbol = connector->symbol();
 		vector<Variable*> vv;
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
+			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
 		}
+		Assert(_domains.find(connector) != _domains.cend());
 		PredInter* pinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (typeid(*symbol) == typeid(Predicate)) {
 			res->inter(dynamic_cast<Predicate*>(symbol), pinter);
@@ -534,8 +536,13 @@ void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
 	Assert(ef!=NULL && ef->left()!=NULL && ef->right()!=NULL);
-	// FIXME child can be NULL, code should handle this?
-	Assert(_child!=NULL);
+//TODO improve: ad hoc method for solving the _child==NULL case. Smarter things can be done.
+	if(_child==NULL){
+		_child = ef->left();
+		visit(ef);
+		_child=ef->right();
+		visit(ef);
+	}
 
 	Formula* otherchild = (_child == ef->left() ? ef->right() : ef->left());
 	const ThreeValuedDomain<Domain>& tvd = getDomain(otherchild);
