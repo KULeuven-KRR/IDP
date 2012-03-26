@@ -680,37 +680,37 @@ public:
 		}
 	}
 
-	void printasfunc(const PredTable* table) {
-		Assert(isTheoryOpen());
-		if (table->approxFinite()) {
-			TableIterator kt = table->begin();
-			output() << "{ ";
-			if (not kt.isAtEnd()) {
-				ElementTuple tuple = *kt;
-				if (tuple.size() > 1) {
-					output() << toString(tuple[0]);
-				}
-				for (size_t n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << toString(tuple[n]);
-				}
-				output() << "->" << toString(tuple.back());
-				++kt;
-				for (; not kt.isAtEnd(); ++kt) {
-					output() << "; ";
-					tuple = *kt;
-					if (tuple.size() > 1) {
-						output() << toString(tuple[0]);
-					}
-					for (size_t n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << toString(tuple[n]);
-					}
-					output() << "->" << toString(tuple.back());
-				}
-			}
-			output() << " }";
-		} else
-			output() << "possibly infinite table";
-	}
+//	void printasfunc(const PredTable* table) {
+//		Assert(isTheoryOpen());
+//		if (table->approxFinite()) {
+//			TableIterator kt = table->begin();
+//			output() << "{ ";
+//			if (not kt.isAtEnd()) {
+//				ElementTuple tuple = *kt;
+//				if (tuple.size() > 1) {
+//					output() << toString(tuple[0]);
+//				}
+//				for (size_t n = 1; n < tuple.size() - 1; ++n) {
+//					output() << ',' << toString(tuple[n]);
+//				}
+//				output() << "->" << toString(tuple.back());
+//				++kt;
+//				for (; not kt.isAtEnd(); ++kt) {
+//					output() << "; ";
+//					tuple = *kt;
+//					if (tuple.size() > 1) {
+//						output() << toString(tuple[0]);
+//					}
+//					for (size_t n = 1; n < tuple.size() - 1; ++n) {
+//						output() << ',' << toString(tuple[n]);
+//					}
+//					output() << "->" << toString(tuple.back());
+//				}
+//			}
+//			output() << " }";
+//		} else
+//			output() << "possibly infinite table";
+//	}
 
 	void visit(FuncTable* table) {
 		Assert(isTheoryOpen());

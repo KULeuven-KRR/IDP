@@ -27,19 +27,19 @@ std::string str(Language choice) {
 		return "tptp";
 	case Language::FLATZINC:
 		return "flatzinc";
+	case Language::ASP:
+		return "asp";
 	default:
 		return "unknown";
 		//case Language::CNF:
 		//	return "cnf";
-		//case Language::ASP:
-		//	return "asp";
 		//case Language::LATEX:
 		//	return "latex";
 	}
 }
 
 std::set<Language> possibleLanguageValues(){
-	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF};
+	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF,Language::ASP};
 }
 std::set<std::string> possibleLanguageStringValues(){
 	std::set<std::string> s;
