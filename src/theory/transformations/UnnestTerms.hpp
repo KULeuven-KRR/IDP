@@ -70,7 +70,14 @@ public:
 
 protected:
 	template<typename T>
-	Formula* doRewrite(T origformula);
+	Formula* doRewrite(T origformula) {
+		auto rewrittenformula = rewrite(origformula);
+		if (rewrittenformula == origformula) {
+			return origformula;
+		} else {
+			return rewrittenformula->accept(this);
+		}
+	}
 
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);

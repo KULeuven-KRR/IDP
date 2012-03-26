@@ -46,13 +46,3 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	return doRewrite(newf);
 }
 
-//FIXME: This is just a copy of the code from UnnestTerms, to make the above work.
-template<typename T>
-Formula* UnnestTerms::doRewrite(T origformula) {
-	auto rewrittenformula = rewrite(origformula);
-	if (rewrittenformula == origformula) {
-		return origformula;
-	} else {
-		return rewrittenformula->accept(this);
-	}
-}

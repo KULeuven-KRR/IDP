@@ -114,16 +114,6 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 	return formula;
 }
 
-template<typename T>
-Formula* UnnestTerms::doRewrite(T origformula) {
-	auto rewrittenformula = rewrite(origformula);
-	if (rewrittenformula == origformula) {
-		return origformula;
-	} else {
-		return rewrittenformula->accept(this);
-	}
-}
-
 /**
  *	Visit all parts of the theory, assuming positive context for sentences
  */
