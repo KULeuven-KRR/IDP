@@ -317,6 +317,9 @@ VarTerm* UnnestTerms::visit(VarTerm* t) {
 }
 
 Term* UnnestTerms::visit(DomainTerm* t) {
+	if(shouldMove(t)){
+		return move(t);
+	}
 	return t;
 }
 

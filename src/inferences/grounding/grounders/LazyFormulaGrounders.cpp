@@ -20,12 +20,7 @@
 
 using namespace std;
 
-void LazyGroundingManager::notifyBoundSatisfied(ResidualAndFreeInst * instance) {
-	notifyBoundSatisfiedInternal(instance);
-}
-
-// NOTE: code structure to prevent recursion
-void LazyGroundingManager::notifyBoundSatisfiedInternal(ResidualAndFreeInst* instance) const {
+void LazyGroundingManager::notifyDelayTriggered(ResidualAndFreeInst * instance) const {
 	queuedtseitinstoground.push(instance);
 	if (not currentlyGrounding) {
 		groundMore();
@@ -56,19 +51,47 @@ void LazyGroundingManager::groundMore() const {
 	currentlyGrounding = false;
 }
 
-LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct) :
-		ClauseGrounder(groundtheory, sign, conj, ct), freevars(freevars) {
+LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct)
+		: ClauseGrounder(groundtheory, sign, conj, ct), freevars(freevars), alreadyground(tablesize(TableSizeType::TST_EXACT, 0)) {
 
 }
 
-LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign,
-		QUANT q, InstGenerator* gen, const GroundingContext& ct) :
-		LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen) {
+tablesize LazyGrounder::getGroundedSize() const{
+	return alreadyground*getSubGroundingSize();
 }
 
-LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign,
-		bool conj, const GroundingContext& ct) :
-		LazyGrounder(freevars, groundtheory, sign, conj, ct), _subgrounders(sub) {
+LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
+		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct, const tablesize& quantunivsize)
+		: LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
+	if (getOption(GROUNDVERBOSITY) > 0) {
+		clog << "Lazy quant grounder for " << toString(this) << "\n";
+	}
+	setMaxGroundSize(quantunivsize*sub->getMaxGroundSize());
+}
+
+tablesize LazyQuantGrounder::getSubGroundingSize() const{
+	return getSubGrounder()->getGroundedSize();
+}
+
+LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
+		const GroundingContext& ct)
+		: LazyGrounder(freevars, groundtheory, sign, conj, ct), _subgrounders(sub) {
+	if (getOption(GROUNDVERBOSITY) > 0) {
+		clog << "Lazy bool grounder for " << toString(this) << "\n";
+	}
+	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=sub.cbegin(); i<sub.cend(); ++i){
+		size = size + (*i)->getMaxGroundSize();
+	}
+	setMaxGroundSize(size);
+}
+
+tablesize LazyBoolGrounder::getSubGroundingSize() const{
+	auto t = tablesize(TableSizeType::TST_EXACT, 0);
+	for(auto i=getSubGrounders().cbegin(); i<getSubGrounders().cend();++i){
+		t = t+(*i)->getGroundedSize();
+	}
+	return t;
 }
 
 void LazyGrounder::internalRun(ConjOrDisj& formula) const {
@@ -99,7 +122,7 @@ void LazyGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 	formula.literals.push_back(inst->residual);
 
-	if (verbosity() > 1) {
+	if (verbosity() > 3) {
 		clog << "Added lazy tseitin: " << toString(inst->residual) << toString(tseitintype) << printFormula() << nt();
 	}
 
@@ -122,6 +145,7 @@ void LazyBoolGrounder::initializeInst(ResidualAndFreeInst* inst) const {
 
 void LazyQuantGrounder::initializeInst(ResidualAndFreeInst* inst) const {
 	inst->generator = _generator->clone();
+	//inst->checker = _checker->clone(); // TODO add checker support
 }
 
 Grounder* LazyQuantGrounder::getLazySubGrounder(ResidualAndFreeInst*) const {
@@ -135,7 +159,9 @@ Grounder* LazyBoolGrounder::getLazySubGrounder(ResidualAndFreeInst* instance) co
 }
 
 void LazyQuantGrounder::increment(ResidualAndFreeInst* instance) const {
+	//do{
 	instance->generator->operator ++();
+	//}while(not instance->checker->check() && not instance->generator->isAtEnd());  // TODO add checker support
 }
 
 void LazyBoolGrounder::increment(ResidualAndFreeInst* instance) const {
@@ -164,19 +190,36 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 
 	initializeGroundMore(instance);
 
+	GroundClause clause;
+
 	Lit groundedlit = redundantLiteral();
-	while (groundedlit == redundantLiteral() && not isAtEnd(instance)) {
+	int maxit = dynamic_cast<const LazyQuantGrounder*>(this) != NULL ? 10 : 1;
+	int counter = 0;
+	while (counter < maxit && not isAtEnd(instance)) {
+		counter++;
 		ConjOrDisj formula;
 		formula = ConjOrDisj();
 		formula.setType(conjunctive());
 
-		runSubGrounder(getLazySubGrounder(instance), context()._conjunctivePathFromRoot, formula);
+		auto subgrounder = getLazySubGrounder(instance);
+
+		if (getOption(GROUNDVERBOSITY) > 1) {
+			clog << "Grounding additional subformula " << toString(subgrounder) << "\n";
+		}
+
+		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
 		groundedlit = getReification(formula, getTseitinType());
 		increment(instance);
+
+		if (groundedlit == redundantLiteral() || decidesFormula(groundedlit)) {
+			break;
+		}
+		clause.push_back(groundedlit);
 	}
 
-	Lit oldtseitin = instance->residual;
+	alreadyground = alreadyground + counter;
 
+	Lit oldtseitin = instance->residual;
 	auto tseitintype = context()._tseitin;
 
 	if (decidesFormula(groundedlit)) {
@@ -189,16 +232,13 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 		return true; // Formula is false, so do not need to continue grounding
 	}
 
-	GroundClause clause;
-	clause.push_back(groundedlit);
-
 	if (not isAtEnd(instance)) {
 		auto newresidual = translator()->createNewUninterpretedNumber();
 		clause.push_back(newresidual);
 		instance->residual = newresidual;
-		if (verbosity() > 1) {
-			clog << "Added lazy tseitin: " << toString(instance->residual) << toString(tseitintype) << printFormula() << "[[" << instance->index
-					<< " to end ]]" << nt();
+		if (verbosity() > 3) {
+			clog << "Added lazy tseitin: " << toString(instance->residual) << toString(tseitintype) << printFormula() << "[[" << instance->index << " to end ]]"
+					<< nt();
 		}
 		getGrounding()->notifyLazyResidual(instance, tseitintype, &lazyManager); // set on not-decide and add to watchlist
 	}
@@ -208,13 +248,18 @@ bool LazyGrounder::groundMore(ResidualAndFreeInst* instance) const {
 	return isAtEnd(instance);
 }
 
-LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, const var2dommap& varmapping,
-		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct) :
-		FormulaGrounder(groundtheory, ct), LazyUnknBoundGrounder(pf->symbol(), -1, groundtheory), _subgrounder(sub) {
-	for(auto i=pf->args().cbegin(); i<pf->args().cend(); ++i) {
+LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory,
+		FormulaGrounder* sub, const GroundingContext& ct)
+		: FormulaGrounder(groundtheory, ct), DelayGrounder(pf->symbol(), pf->args(), context, -1, groundtheory), _subgrounder(sub) {
+	if (verbosity() > 2) {
+		clog << "Delaying the grounding " << sub->printFormula() << " on " << toString(pf) << ".\n";
+	}
+	for (auto i = pf->args().cbegin(); i < pf->args().cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();
 		_varcontainers.push_back(varmapping.at(var));
 	}
+
+	// FIXME set max ground size
 }
 
 void LazyUnknUnivGrounder::run(ConjOrDisj& formula) const {
@@ -230,28 +275,55 @@ dominstlist LazyUnknUnivGrounder::createInst(const ElementTuple& args) {
 	return domlist;
 }
 
-LazyUnknBoundGrounder::LazyUnknBoundGrounder(PFSymbol* symbol, unsigned int id, AbstractGroundTheory* gt) :
-		_id(id), _isGrounding(false), _grounding(gt) {
+// Returns a list of indices in List which contain the same variable
+std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms) {
+	std::vector<pair<int, int> > sameargs;
+	std::map<Variable*, int> vartofirstocc;
+	int index = 0;
+	//cerr <<"Args: ";
+	for (auto i = terms.cbegin(); i < terms.cend(); ++i, ++index) {
+		//cerr <<toString(*i) <<", ";
+		auto varterm = dynamic_cast<VarTerm*>(*i);
+		if (varterm == NULL) { // If not a var, it cannot contain free variables!
+			Assert((*i)->freeVars().size()==0);
+			continue;
+		}
+
+		auto first = vartofirstocc.find(varterm->var());
+		if (first == vartofirstocc.cend()) {
+			vartofirstocc[varterm->var()] = index;
+		} else {
+			//cerr <<"[=" <<first->second <<"]";
+			sameargs.push_back( { first->second, index });
+		}
+	}
+	return sameargs;
+}
+
+DelayGrounder::DelayGrounder(PFSymbol* symbol, const vector<Term*>& terms, Context context, int id, AbstractGroundTheory* gt)
+		: _id(id), _context(context), _isGrounding(false), _grounding(gt) {
 	Assert(gt!=NULL);
-	getGrounding()->translator()->notifyDelayUnkn(symbol, this);
+	getGrounding()->translator()->notifyDelay(symbol, this);
+	sameargs = findSameArgs(terms);
 }
 
-void LazyUnknBoundGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<LazyUnknBoundGrounder*>& grounders) {
-	getGrounding()->notifyUnknBound(lit, args, grounders);
+void DelayGrounder::notify(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders) {
+	getGrounding()->notifyUnknBound(_context, lit, args, grounders);
 }
 
-void LazyUnknBoundGrounder::ground(const Lit& boundlit, const ElementTuple& args) {
+void DelayGrounder::ground(const Lit& boundlit, const ElementTuple& args) {
 	_stilltoground.push( { boundlit, args });
 	if (not _isGrounding) {
 		doGrounding();
 	}
 }
 
-void LazyUnknBoundGrounder::doGrounding() {
+void DelayGrounder::doGrounding() {
 	_isGrounding = true;
 	while (not _stilltoground.empty()) {
 		auto elem = _stilltoground.front();
 		_stilltoground.pop();
+
 		doGround(elem.first, elem.second);
 	}
 	_isGrounding = false;
@@ -259,6 +331,12 @@ void LazyUnknBoundGrounder::doGrounding() {
 
 void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
+
+	for (auto i = getSameargs().cbegin(); i < getSameargs().cend(); ++i) {
+		if (headargs[i->first] != headargs[i->second]) {
+			return;
+		}
+	}
 
 	dominstlist boundvarinstlist = createInst(headargs);
 
@@ -270,4 +348,69 @@ void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headarg
 	addToGrounding(Grounder::getGrounding(), formula);
 
 	restoreOrigVars(originst, boundvarinstlist);
+}
+
+// @Precon: terms should be first those of the first predform, followed by those of the second
+LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping,
+		AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct)
+		: FormulaGrounder(groundtheory, ct), DelayGrounder(symbol, terms, context, -1, groundtheory), _subgrounder(sub) {
+	if (verbosity() > 1) {
+		clog << "Delaying the grounding " << sub->printFormula() << " on " << "TODO" << " and " << "TODO" << ".\n"; // TODO
+	}
+	for (auto i = terms.cbegin(); i < terms.cend(); ++i) {
+		auto var = dynamic_cast<VarTerm*>(*i)->var();
+		Assert(var!=NULL);
+		//cerr <<"Searching " <<toString(var) <<" in " <<toString(varmapping) <<"\n";
+		//cerr <<"Searching " <<var <<"\n";
+		Assert(varmapping.find(var)!=varmapping.cend());
+		_varcontainers.push_back(varmapping.at(var));
+	}
+
+	// FIXME set max ground size
+}
+
+void LazyTwinDelayUnivGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
+}
+
+// set the variable instantiations
+dominstlist LazyTwinDelayUnivGrounder::createInst(const ElementTuple& args) {
+	dominstlist domlist;
+	for (size_t i = 0; i < args.size(); ++i) {
+		domlist.push_back(dominst { _varcontainers[i], args[i] });
+	}
+	return domlist;
+}
+
+void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
+	Assert(head!=_true && head!=_false);
+
+	_seen.push_back(headargs);
+
+	for (auto other = _seen.cbegin(); other < _seen.cend(); ++other) {
+		auto tuple = *other;
+		tuple.insert(tuple.end(), headargs.cbegin(), headargs.cend());
+
+		// If multiple vars are the same, checks that their instantiation are also the same!
+		bool different = false;
+		for (auto i = getSameargs().cbegin(); not different && i < getSameargs().cend(); ++i) {
+			if (tuple[i->first] != tuple[i->second]) {
+				different = true;
+			}
+		}
+		if (different) {
+			continue;
+		}
+
+		dominstlist boundvarinstlist = createInst(tuple);
+
+		vector<const DomainElement*> originst;
+		overwriteVars(originst, boundvarinstlist);
+
+		ConjOrDisj formula;
+		_subgrounder->run(formula);
+		addToGrounding(Grounder::getGrounding(), formula);
+
+		restoreOrigVars(originst, boundvarinstlist);
+	}
 }

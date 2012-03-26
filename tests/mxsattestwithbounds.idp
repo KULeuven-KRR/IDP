@@ -1,0 +1,24 @@
+#include <mx>
+
+procedure main(){
+	stdoptions.nbmodels=1
+	stdoptions.timeout = 100
+	stdoptions.groundwithbounds = false
+	stdoptions.groundverbosity=0
+	solution = mx::one(T, S)
+	if solution == nil then
+		io.stderr:write("Found UNSAT, expected ")
+	else
+		io.stderr:write("Found SAT, expected ")
+	end
+	if getExpectedAModel() then
+		io.stderr:write("SAT\n")
+	else
+		io.stderr:write("UNSAT\n")
+	end
+	
+	if(getExpectedAModel() == (solution ~= nil))
+		then return 1
+	else return 0
+	end
+}

@@ -267,6 +267,29 @@ std::string toString(const TsType& type) {
 	return output.str();
 }
 
+template<>
+std::string toString(const AggFunction& type) {
+	std::stringstream output;
+	switch (type) {
+	case AggFunction::CARD:
+		output << "card";
+		break;
+	case AggFunction::SUM:
+		output << "sum";
+		break;
+	case AggFunction::PROD:
+		output << "prod";
+		break;
+	case AggFunction::MAX:
+		output << "max";
+		break;
+	case AggFunction::MIN:
+		output << "min";
+		break;
+	}
+	return output.str();
+}
+
 /*********************
  Shared strings
  *********************/

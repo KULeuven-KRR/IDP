@@ -81,7 +81,7 @@ std::string FormulaGrounder::printFormula() const {
 	stringstream ss;
 	ss << toString(_origform);
 	if (not _origform->freeVars().empty()) {
-		ss <<"[";
+		ss << "[";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
 			ss << toString(*it) << " = ";
 			const DomainElement* e = _origvarmap.find(*it)->second->get();
@@ -95,9 +95,10 @@ std::string FormulaGrounder::printFormula() const {
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)), _tables(vst), _sign(sign),
-			_checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
+		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)),
+			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()), done(false) {
 	gentype = ct.gentype;
+	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
 
 AtomGrounder::~AtomGrounder() {
@@ -106,7 +107,14 @@ AtomGrounder::~AtomGrounder() {
 	delete (_ctchecker);
 }
 
+tablesize AtomGrounder::getGroundedSize() const {
+	return tablesize(TST_EXACT, hasRun() ? 1 : 0);
+}
+
 Lit AtomGrounder::run() const {
+	notifyRun();
+	notifyGroundedAtom();
+
 	if (verbosity() > 2) {
 		printorig();
 		if (_origform != NULL) {
@@ -124,17 +132,17 @@ Lit AtomGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 			// Check partial functions
 			if (args[n] == NULL) {
-				throw notyetimplemented("Partial function issue in grounding an atom.");
+				//throw notyetimplemented("Partial function issue in grounding an atom.");
 				// FIXME what should happen here?
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
-				 }
-				 if(verbosity() > 2) {
-				 clog << "Partial function went out of bounds\n";
-				 clog << "Result is " << (context()._funccontext != Context::NEGATIVE  ? "true" : "false") << "\n";
-				 }
-				 return context()._funccontext != Context::NEGATIVE  ? _true : _false;*/
+				 }*/
+				if(verbosity() > 2) {
+					clog << tabs() << "Partial function went out of bounds\n";
+					clog << tabs() << "Result is " << "false" << "\n";
+				}
+				return _false;
 			}
 
 			// Checking out-of-bounds
@@ -212,9 +220,14 @@ ComparisonGrounder::~ComparisonGrounder() {
 	delete (_righttermgrounder);
 }
 
+tablesize ComparisonGrounder::getGroundedSize() const {
+	return tablesize(TST_EXACT, hasRun() ? 1 : 0);
+}
+
 Lit ComparisonGrounder::run() const {
-	const GroundTerm& left = _lefttermgrounder->run();
-	const GroundTerm& right = _righttermgrounder->run();
+	notifyRun();
+	auto left = _lefttermgrounder->run();
+	auto right = _righttermgrounder->run();
 
 	//TODO Is following check necessary??
 //	if ((left._domelement == NULL && not left.isVariable) || (right._domelement == NULL && not right.isVariable)) {
@@ -273,6 +286,16 @@ Lit ComparisonGrounder::run() const {
 void ComparisonGrounder::run(ConjOrDisj& formula) const {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run()); // TODO can do better?
+}
+
+// TODO incorrect groundsize
+AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
+		: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign), done(false) {
+	bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
+	bool signPosIfStrict = isPos(_sign) == not noAggComp;
+	_doublenegtseitin = (gc._tseitin == TsType::RULE)
+			&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
+	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
 
 AggGrounder::~AggGrounder() {
@@ -389,7 +412,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
  * This method is only made because the solver cannot handle products with sets containing zeros or negative values.
  * If the solver improves, this should be deleted.
  *
- * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often ayway.
+ * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often anyway.
  */
 Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, int setnr) const {
 	Assert(_type==AggFunction::PROD);
@@ -503,7 +526,12 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	}
 }
 
+tablesize AggGrounder::getGroundedSize() const {
+	return tablesize(TST_UNKNOWN, 0);
+}
+
 Lit AggGrounder::run() const {
+	notifyRun();
 	// Run subgrounders
 	SetId setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
@@ -662,7 +690,7 @@ bool ClauseGrounder::isRedundantInFormula(Lit l) const {
 }
 
 Lit ClauseGrounder::redundantLiteral() const {
-	return conjunctive() == Conn::CONJ?_true:_false;
+	return conjunctive() == Conn::CONJ ? _true : _false;
 }
 
 /**
@@ -686,11 +714,11 @@ bool ClauseGrounder::makesFormulaFalse(Lit l) const {
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
-	return conjunctive() == Conn::CONJ? _true : _false;
+	return conjunctive() == Conn::CONJ ? _true : _false;
 }
 
 bool ClauseGrounder::decidesFormula(Lit lit) const {
-	return conjunctive()==Conn::CONJ? lit==_false : lit==_true;
+	return conjunctive() == Conn::CONJ ? lit == _false : lit == _true;
 }
 
 TsType ClauseGrounder::getTseitinType() const {
@@ -701,7 +729,7 @@ Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype
 	return getOneLiteralRepresenting(formula, tseitintype);
 }
 Lit ClauseGrounder::getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const {
-	return getOneLiteralRepresenting(formula, tseitintype==TsType::RULE?TsType::RULE:TsType::EQ);
+	return getOneLiteralRepresenting(formula, tseitintype == TsType::RULE ? TsType::RULE : TsType::EQ);
 }
 
 Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const {
@@ -739,18 +767,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	ConjOrDisj subformula;
 	subgrounder->run(subformula);
 	if (subformula.literals.size() == 0) {
-		Lit value = subformula.getType() == Conn::CONJ ? _true : _false;
-		if (makesFormulaTrue(value)) {
-			formula.literals = litlist { _true };
-			return FormStat::DECIDED;
-		} else if (makesFormulaFalse(value)) {
-			formula.literals = litlist { _false };
-			return FormStat::DECIDED;
-		} else if (subformula.getType() != formula.getType()) {
-			formula.literals.push_back(value);
-		}
-		return (FormStat::UNKNOWN);
-	} else if (subformula.literals.size() == 1) {
+		subformula.literals.push_back(subformula.getType() == Conn::CONJ ? _true : _false);
+	}
+	if (subformula.literals.size() == 1) {
 		Lit l = subformula.literals[0];
 		if (makesFormulaFalse(l)) {
 			formula.literals = litlist { _false };
@@ -782,6 +801,15 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	return FormStat::UNKNOWN;
 }
 
+BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct)
+		: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
+	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
+	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
+		size = size + (*i)->getMaxGroundSize();
+	}
+	setMaxGroundSize(size);
+}
+
 BoolGrounder::~BoolGrounder() {
 	deleteList(_subgrounders);
 }
@@ -809,6 +837,20 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 }
 
+tablesize BoolGrounder::getGroundedSize() const {
+	auto t = tablesize(TableSizeType::TST_EXACT, 0);
+	for (auto i = getSubGrounders().cbegin(); i < getSubGrounders().cend(); ++i) {
+		t = t + (*i)->getGroundedSize();
+	}
+	return t;
+}
+
+QuantGrounder::QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
+		const GroundingContext& ct, const tablesize& quantunivsize)
+		: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker), _quantunivsize(quantunivsize) {
+	setMaxGroundSize(quantunivsize * sub->getMaxGroundSize());
+}
+
 QuantGrounder::~QuantGrounder() {
 	delete (_subgrounder);
 	delete (_generator);
@@ -818,6 +860,7 @@ QuantGrounder::~QuantGrounder() {
 void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
+		std::cerr << "conjunctive grounder? " << toString(conjunctive() == Conn::CONJ);
 		if (_origform != NULL) {
 			pushtab();
 		}
@@ -828,8 +871,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
-			clog << toString(_checker);
-			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _false : _true };
+			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _true : _false };
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 				clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
@@ -848,9 +890,24 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 }
 
+tablesize QuantGrounder::getGroundedSize() const {
+	return getSubGrounder()->getGroundedSize() * _quantunivsize;
+}
+
+EquivGrounder::EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
+		: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
+	auto lsize = lg->getMaxGroundSize();
+	auto rsize = rg->getMaxGroundSize();
+	setMaxGroundSize(lsize + rsize);
+}
+
 EquivGrounder::~EquivGrounder() {
 	delete (_leftgrounder);
 	delete (_rightgrounder);
+}
+
+tablesize EquivGrounder::getGroundedSize() const {
+	return _leftgrounder->getGroundedSize()+_rightgrounder->getGroundedSize();
 }
 
 void EquivGrounder::internalRun(ConjOrDisj& formula) const {
@@ -906,17 +963,17 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		if(context()._conjunctivePathFromRoot){
-			if(isPositive()){
+		if (context()._conjunctivePathFromRoot) {
+			if (isPositive()) {
 				getGrounding()->add(aornotb);
 				getGrounding()->add(notaorb);
-				formula.literals = litlist{_true};
-			}else{
-				getGrounding()->add({left, right});
-				getGrounding()->add({-left, -right});
-				formula.literals = litlist{_false};
+				formula.literals = litlist { _true };
+			} else {
+				getGrounding()->add( { left, right });
+				getGrounding()->add( { -left, -right });
+				formula.literals = litlist { _false };
 			}
-		}else{
+		} else {
 			auto ts1 = translator()->translate(aornotb, false, context()._tseitin);
 			auto ts2 = translator()->translate(notaorb, false, context()._tseitin);
 			formula.literals = litlist { ts1, ts2 };

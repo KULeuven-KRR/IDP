@@ -27,6 +27,10 @@ public:
 	EmptyGenerator* clone() const {
 		return new EmptyGenerator(*this);
 	}
+
+	virtual void setVarsAgain(){
+
+	}
 };
 
 class FullGenerator: public InstGenerator {
@@ -50,6 +54,10 @@ public:
 	}
 	virtual void reset() {
 		first = true;
+	}
+
+	virtual void setVarsAgain(){
+
 	}
 };
 

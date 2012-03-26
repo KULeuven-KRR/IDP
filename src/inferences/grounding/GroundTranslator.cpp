@@ -15,27 +15,6 @@
 
 using namespace std;
 
-inline size_t HashTuple::operator()(const ElementTuple& tuple) const {
-	size_t seed = 1;
-	for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
-		switch ((*i)->type()) {
-		case DomainElementType::DET_INT:
-			seed += (*i)->value()._int;
-			break;
-		case DomainElementType::DET_DOUBLE:
-			seed += (*i)->value()._double;
-			break;
-		case DomainElementType::DET_STRING:
-			seed += reinterpret_cast<size_t>((*i)->value()._string);
-			break;
-		case DomainElementType::DET_COMPOUND:
-			seed += reinterpret_cast<size_t>((*i)->value()._compound);
-			break;
-		}
-	}
-	return seed % 104729;
-}
-
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
@@ -132,30 +111,34 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const {
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const{
 	auto symbolID = getSymbol(pfs);
-	if(symbolID==-1){
-		return false;
+	if(symbolID==-1){ // there is no such symbol yet
+		return true;
 	}
 	auto& grounders = symbols[symbolID].assocGrounders;
 	if(grounders.empty()){
-		return false;
+		return true;
 	}
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if((*i)->getID()!=id || (id==-1 && (*i)->getID()==-1)){
-			return true;
+		if(context==Context::BOTH){ // If unknown-delay, can only delay if in same DEFINITION
+			if(id==-1 || (*i)->getID()!=id){
+				return false;
+			}
+		}else if((*i)->getContext()!=context){ // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
+			return false;
 		}
 	}
-	return false;
+	return true;
 }
 
-void GroundTranslator::notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder) {
+void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder) {
 	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
 	auto& grounders = symbols[symbolID].assocGrounders;
 #ifndef NDEBUG
-	Assert(not isAlreadyDelayedOnDifferentID(pfs, grounder->getID()));
+	Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
 		Assert(grounder != *i);
 	}

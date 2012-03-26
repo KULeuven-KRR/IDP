@@ -172,10 +172,10 @@ GeneratorNode* BDDToGenerator::createnode(const BddGeneratorData& data) {
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
 
 	branchdata.bdd = data.bdd->falsebranch();
-	auto truegenerator = createnode(branchdata);
+	auto falsegenerator = createnode(branchdata);
 
 	branchdata.bdd = data.bdd->truebranch();
-	auto falsegenerator = createnode(branchdata);
+	auto truegenerator = createnode(branchdata);
 
 	return new TwoChildGeneratorNode(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
@@ -227,7 +227,7 @@ PredForm* graphFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
  * TODO can only call on specific predforms
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars,const  AbstractStructure* structure, bool inverse, const Universe& universe) {
+		const vector<Variable*>& atomvars, const AbstractStructure* structure, bool inverse, const Universe& universe) {
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(atom) << "\n";
@@ -274,6 +274,10 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 			} else { // Case (B)
 				auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 				atom = graphFunction(atom, ft, atom->subterms()[0]);
+			}
+			//If the symbol still is "=/2", we need to call recursively.  This means there were nested functions. (ex =(+(z,+(x,y)),0))
+			if (atom->symbol()->name() == "=/2") {
+				return createFromPredForm(atom, pattern, vars, atomvars, structure, inverse, universe);
 			}
 		}
 
@@ -565,11 +569,15 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	quantdata.bdd = _manager->substitute(quantkernel->bdd(), quantindex, bddquantvar);
 
 	// Create a generator for the quantified formula
-	if (generateFalsebranch) { // NOTE if generating the false branch, we implement a generator for the universe and check the false branch
+	if (generateFalsebranch) {
+		//To create a falsebranchgenerator, we need a checker of the subformula
 		quantdata.pattern = vector<Pattern>(origpattern.size(), Pattern::INPUT);
 	} else {
+		//To get all positive answers, we generate tuples satisfying the subformula (same input pattern as always)
 		quantdata.pattern = origpattern;
 	}
+
+	//The quantvar is output, both in the checker for falsebranch as the generator for truebranch
 	quantdata.pattern.push_back(Pattern::OUTPUT);
 
 	quantdata.vars = origvars;
@@ -587,17 +595,24 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	if (generateFalsebranch) {
 		vector<const DomElemContainer*> univgenvars;
 		vector<SortTable*> univgentables;
-		for (unsigned int n = 0; n < quantdata.pattern.size(); ++n) {
-			if (quantdata.pattern[n] == Pattern::OUTPUT) {
+		for (unsigned int n = 0; n < quantdata.pattern.size() - 1; ++n) {
+			if (origpattern[n] == Pattern::OUTPUT) {
 				univgenvars.push_back(quantdata.vars[n]);
 				univgentables.push_back(quantdata.universe.tables()[n]);
 			}
 		}
 		auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
+
 		auto bddtruechecker = btg.create(quantdata);
 		return new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
 	} else {
-		auto quantgenerator = btg.create(quantdata);
-		return new TrueQuantKernelGenerator(quantgenerator);
+		vector<const DomElemContainer*> outvars;
+		for(unsigned int n=0; n<origpattern.size();++n){
+			if(origpattern[n]==Pattern::OUTPUT){
+				outvars.push_back(origvars[n]);
+			}
+		}
+		auto bddtruegenerator = btg.create(quantdata);
+		return new TrueQuantKernelGenerator(bddtruegenerator, outvars);
 	}
 }

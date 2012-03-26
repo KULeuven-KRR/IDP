@@ -12,15 +12,15 @@ vocabulary V{
 }
 
 theory T : V { 
-{ 	
-	Sp(x ,y ,l ) <- l = min{u : Cp(x ,y ,u) : u }.
-	Cp(x ,y ,l ) <-  Edge(x ,y ,l ).
-	Cp(x ,y ,l1 + l2) <- Sp(x ,y ,l1) & Edge(x ,y ,l2). 
-}
+	{ 	
+		Sp(x ,y ,l ) <- l = min{u : Cp(x ,y ,u) : u}.
+		Cp(x ,y ,l ) <- Edge(x ,y ,l ).
+		Cp(x ,y ,l1 + l2) <- Sp(x ,y ,l1) & Edge(x ,y ,l2). 
+	}
 }
 
-structure S : V{ 
-	Vtx = { a..b }
-	Length = { 0..1 }
+structure S : V{
+	Length = { 0..1 } 
+	Vtx = { a..b }	
 	Edge = {a,b,1; }
 }

@@ -1,0 +1,98 @@
+
+procedure totable(input){
+  local output = {}
+  if type(input) == "table" then
+    output = input
+	elseif type(input) == "domain" then
+    for element in elements(input) do
+      table.insert(output,element)
+    end
+  elseif type(input) == "predicate_table" then
+    for tuple in tuples(input) do
+      table.insert(output,totable(tuple))
+    end
+  elseif type(input) == "tuple" then
+    for _,element in ipairs(input) do
+      table.insert(output,element)
+    end
+  else
+    print("Error: Unable to convert input to a table")
+  end
+  return output
+
+}
+
+procedure tablecontains(table, element){
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
+
+}
+
+// Following function are copied from http://lua-users.org/wiki/TableUtils
+
+// Convert a table to a string.
+// Produces a compact, uncluttered representation of a table Mutual recursion is employed.
+procedure tableval_to_str ( v ){
+  if "string" == type( v ) then
+    v = string.gsub( v, "\n", "\\n" )
+    if string.match( string.gsub(v,"[^'\"]",""), '^"+$' ) then
+      return "'" .. v .. "'"
+    end
+    return '"' .. string.gsub(v,'"', '\\"' ) .. '"'
+  else
+    return "table" == type( v ) and tabletostring( v ) or
+      tostring( v )
+  end
+
+}
+
+
+procedure tablekey_to_str ( k ){
+  if "string" == type( k ) and string.match( k, "^[_%a][_%a%d]*$" ) then
+    return k
+  else
+    return "[" .. tableval_to_str( k ) .. "]"
+  end
+
+}
+
+procedure tabletostring( tbl ){
+  local result, done = {}, {}
+  for k, v in ipairs( tbl ) do
+    table.insert( result, tableval_to_str( v ) )
+    done[ k ] = true
+  end
+  for k, v in pairs( tbl ) do
+    if not done[ k ] then
+      table.insert( result,
+        tablekey_to_str( k ) .. "=" .. tableval_to_str( v ) )
+    end
+  end
+  return "{" .. table.concat( result, "," ) .. "}"
+
+}
+
+// Generate combinations from list - iterator version
+// By RichardWarburton.
+procedure tablecombo(t,n){
+  local n,max,tn,output=n,#t,{},{}
+  for x=1,n do tn[x],output[x]=x,t[x] end -- Generate 1st combo
+  tn[n]=tn[n]-1 -- Needed to output 1st combo
+  return function() -- Iterator fn
+    local t,tn,output,x,n,max=t,tn,output,n,n,max
+    while tn[x]==max+x-n do x=x-1 end -- Locate update point
+    if x==0 then return nil end -- Return if no update point
+    tn[x]=tn[x]+1 -- Add 1 to update point (UP)
+    output[x]=t[tn[x]] -- Update output at UP
+    for i=x+1,n do 
+      tn[i]=tn[i-1]+1 -- Update points to right of UP
+      output[i]=t[tn[i]] -- Update output to refect change in points
+    end
+    return output
+  end
+
+}

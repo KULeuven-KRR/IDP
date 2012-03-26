@@ -66,6 +66,13 @@ GroundTerm DomTermGrounder::run() const {
 	return GroundTerm(_value);
 }
 
+/*GroundTerm VarTermGrounder::run() const {
+ if (_verbosity > 2) {
+ clog <<"value="<<toString(_value->get());
+ }
+ return GroundTerm(_value->get());
+ }*/
+
 GroundTerm FuncTermGrounder::run() const {
 	if (verbosity() > 2) {
 		printOrig();
@@ -84,16 +91,23 @@ GroundTerm FuncTermGrounder::run() const {
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}
-	if (calculable && _functable != NULL) { // All ground subterms are domain elements!
-		auto domelem = (*_functable)[args];
-		if (domelem) {
-			if (verbosity() > 2) {
+	if (calculable && _functable) { // All ground subterms are domain elements!
+		auto result = (*_functable)[args];
+		if (verbosity() > 2) {
+			if (result) {
 				poptab();
-				clog << tabs() << "Result = " << toString(domelem) << "\n";
+				clog << tabs() << "Result = " << toString(result) << "\n";
+			} else {
+				if (verbosity() > 2) {
+					poptab();
+					clog << tabs() << "Result = **invalid term**" << "\n";
+				}
 			}
-			return GroundTerm(domelem);
 		}
+		return GroundTerm(result);
 	}
+
+	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
@@ -104,7 +118,7 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
 	if (type == ST_MINUS) {
-		return new CPWSumTerm({ left, right }, { 1, -1 });
+		return new CPWSumTerm( { left, right }, { 1, -1 });
 	} else {
 		return new CPSumTerm(left, right);
 	}
@@ -123,7 +137,7 @@ GroundTerm SumTermGrounder::run() const {
 
 	// Compute domain for the sum term
 	//TODO can we do this using the deriveSort(Term*) from UnnestTerms?
-	if (getDomain()==NULL || not getDomain()->approxFinite()) {
+	if (getDomain() == NULL || not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
 			leftdomain = new SortTable(new EnumeratedInternalSortTable());
 			leftdomain->add(left._domelement);

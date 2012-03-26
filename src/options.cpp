@@ -71,15 +71,16 @@ Options::Options() {
 	//BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name); DOET NIETS!
 	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
 	BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //show? bugged: when grounding: write out the information about which string belongs to which cnf number
 	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //belongs to bdds : something about random seeds
 	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	//BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //Verwijderd: is nu automatisch wanneer nbmodels == 1
 
+	IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
 	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::DONOTPRINT);
@@ -103,8 +104,8 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	_name2type[name] = type;
 	auto newoption = new RangeOption<EnumType, ValueType>(type, name, lowerbound, upperbound, visible);
 	newoption->setValue(defaultValue);
-	std::vector<TypedOption<EnumType, ValueType>*>& options = _options;
-	if (options.size() <= type) {
+	auto& options = _options;
+	if (options.size() <= (unsigned int) type) {
 		options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
 		option2name[type] = name;
@@ -118,8 +119,8 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
-	std::vector<TypedOption<EnumType, ValueType>*>& options = _options;
-	if (options.size() <= type) {
+	auto& options = _options;
+	if (options.size() <= (unsigned int) type) {
 		options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
 		option2name[type] = name;

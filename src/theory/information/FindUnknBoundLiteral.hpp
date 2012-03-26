@@ -27,30 +27,48 @@ private:
 	bool _allquantvars;
 	const GroundTranslator* _translator;
 	const AbstractStructure* _structure;
+
 	const PredForm* _resultingliteral;
 	std::set<Variable*> _quantvars, _containingquantvars;
+	Context _context, _resultingContext;
+
 public:
 	template<typename T>
-	const PredForm* execute(T t, const AbstractStructure* structure, const GroundTranslator* trans) {
+	const PredForm* execute(T t, const AbstractStructure* structure, const GroundTranslator* trans, Context& context) {
 		_start = true;
 		_resultingliteral = NULL;
 		_translator = trans;
 		_structure = structure;
+		_context = Context::POSITIVE;
 		t->accept(this);
+		if(_resultingliteral!=NULL){
+			context = _resultingContext;
+		}
 		return _resultingliteral;
 	}
 
 protected:
 	virtual void traverse(const Formula* f) {
+		auto tempcontext = _context;
+		if(f->sign()==SIGN::NEG){
+			_context = not _context;
+		}
+
 		for (size_t n = 0; n < f->subterms().size(); ++n) {
 			f->subterms()[n]->accept(this);
 		}
 		for (size_t n = 0; n < f->subformulas().size() && _resultingliteral==NULL; ++n) {
 			f->subformulas()[n]->accept(this);
 		}
+
+		_context = tempcontext;
 	}
 	virtual void visit(const PredForm* pf){
-		if(_translator->isAlreadyDelayedOnDifferentID(pf->symbol(), -1)){
+		auto context = _context;
+		if(isNeg(pf->sign())){
+			context = not context;
+		}
+		if(not _translator->canBeDelayedOn(pf->symbol(), context, -1)){
 			return;
 		}
 		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
@@ -64,6 +82,7 @@ protected:
 		}
 		if(_allquantvars && _containingquantvars.size()==_quantvars.size()){
 			_resultingliteral = pf;
+			_resultingContext = context;
 		}
 		return;
 	}
@@ -71,6 +90,12 @@ protected:
 		if(not formula->conj()){
 			traverse(formula);
 		}
+		return;
+	}
+	virtual void visit(const EquivForm* formula){
+		_context = Context::BOTH;
+		_start = false;
+		formula->left()->accept(this);
 		return;
 	}
 	virtual void visit(const QuantForm* formula){
@@ -111,10 +136,6 @@ protected:
 
 	// NOTE: DEFAULTS: just return
 	virtual void visit(const EqChainForm*){
-		_start = false;
-		return;
-	}
-	virtual void visit(const EquivForm*){
 		_start = false;
 		return;
 	}

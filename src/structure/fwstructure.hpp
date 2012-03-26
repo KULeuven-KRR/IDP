@@ -11,15 +11,9 @@
 #ifndef FWSTRUCTURE_HPP_
 #define FWSTRUCTURE_HPP_
 
-#include <vector>
-
-class DomElemContainer;
-class DomainElement;
-
-class Compound;
-class DomainAtom;
-
-typedef std::vector<const DomainElement*> ElementTuple;
-typedef std::vector<ElementTuple> ElementTable;
+#include "DomainElement.hpp"
+#include "Universe.hpp"
+#include "Compound.hpp"
+#include "DomainElementFactory.hpp"
 
 #endif /* FWSTRUCTURE_HPP_ */

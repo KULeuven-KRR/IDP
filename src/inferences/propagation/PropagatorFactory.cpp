@@ -24,11 +24,22 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure* structure) {
+	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+		return generateApproxBounds(theory, structure);
+	}else{
+		return generateNaiveApproxBounds(theory, structure);
+	}
+}
+
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure) {
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	//propagator->doPropagation();
+	//propagator->doPropagation(); TODO check and uncomment
 	return propagator->symbolicstructure();
 }
 
@@ -141,6 +152,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	FormulaUtils::unnestTerms(newtheo); // FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo);
+	FormulaUtils::unnestDomainTerms(newtheo);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
@@ -257,6 +269,11 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 		lcd._connector = leafconnector;
 		lcd._equalities = _propagator->getFactory()->trueDomain(leafconnector);
 		for (unsigned int n = 0; n < symbol->sorts().size(); ++n) {
+			if (not sametypeid<VarTerm>(*(pf->subterms()[n]))){
+				std::cerr << tabs() << n << "\n";
+				std::cerr << tabs() << toString(pf) << "\n";
+
+			}
 			Assert(sametypeid<VarTerm>(*(pf->subterms()[n])));
 			Assert(sametypeid<VarTerm>(*(leafconnector->subterms()[n])));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());

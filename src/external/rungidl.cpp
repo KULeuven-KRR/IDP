@@ -18,14 +18,10 @@
 #include "rungidl.hpp"
 #include "insert.hpp"
 #include "GlobalData.hpp"
-#include "structure/structure.hpp"
 
 #include "utils/StringUtils.hpp"
 
 using namespace std;
-
-// seed
-int global_seed; //!< seed used for bdd estimators
 
 // Parser stuff
 extern void parsefile(const string&);
@@ -49,7 +45,6 @@ void usage() {
 	cout << "    -d <dirpath>         search for datafiles in the given directory\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
-	cout << "    --seed=N             use N as seed for the random generator\n";
 	cout << "    -I                   read from stdin\n";
 	cout << "    -v, --version        show version number and stop\n";
 	cout << "    -h, --help           show this help message\n\n";
@@ -63,9 +58,8 @@ void usage() {
 struct CLOptions {
 	string _exec;
 	bool _interactive;
-	bool _readfromstdin;
 	CLOptions()
-			: _exec(""), _interactive(false), _readfromstdin(false) {
+			: _exec(""), _interactive(false) {
 	}
 };
 
@@ -113,10 +107,6 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			argv++;
 		} else if (str == "--nowarnings") {
 			setOption(BoolType::SHOWWARNINGS, false);
-		} else if (str.substr(0, 7) == "--seed=") {
-			global_seed = toInt(str.substr(7, str.size()));
-		} else if (str == "-I") {
-			cloptions._readfromstdin = true;
 		} else if (str == "-v" || str == "--version") {
 			cout << GIDLVERSION << "\n";
 			exit(0);
@@ -392,9 +382,11 @@ int run(int argc, char* argv[]) {
 
 	DataManager m;
 
-	// NOTE: if no input is given, we abort soon, because otherwise we get an error that no main could be found, which is a but ugly
-	if (inputfiles.size() == 0 && not cloptions._readfromstdin && not cloptions._interactive) {
-		return 0;
+	bool readfromstdin = false;
+	// Only read from stdin if no inputfiles were provided (otherwise, we would have file ordering issues anyway)
+	// and we are not running interactively (in that case, the user can provide the files)
+	if(inputfiles.size()==0 && not cloptions._interactive){
+		readfromstdin = true;
 	}
 
 	try {
@@ -406,8 +398,9 @@ int run(int argc, char* argv[]) {
 		clog.flush();
 	}
 
-	if (cloptions._readfromstdin)
+	if (readfromstdin){
 		parsestdin();
+	}
 	if (cloptions._exec == "") {
 		stringstream ss;
 		ss << "return " << getGlobalNamespaceName() << ".main()";

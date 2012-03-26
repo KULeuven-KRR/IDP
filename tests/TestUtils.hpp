@@ -10,9 +10,15 @@
 
 #ifndef TESTS_UTILS_HPP_
 #define TESTS_UTILS_HPP_
-
 #include <string>
 
 std::string getTestDirectory();
+
+namespace Tests {
+
+void runTests(const char* inferencefilename, const std::string& instancefile);
+}
+
+void throwexc();
 
 #endif /* TESTS_UTILS_HPP_ */

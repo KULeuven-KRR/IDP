@@ -37,10 +37,12 @@
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
+#include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
+#include "information/FindDoubleDelayLiteral.hpp"
 
 using namespace std;
 
@@ -120,8 +122,13 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator){
-	return transform<FindUnknownBoundLiteral, const PredForm*>(f, structure, translator);
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context){
+	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
+	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure, translator, context);
+}
+std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context){
+	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
+	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure, translator, context);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {
@@ -160,6 +167,10 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
+Formula* unnestDomainTerms(Formula* f, AbstractStructure* str,  Context con ) {
+	return transform<UnnestDomainTerms, Formula*>(f, str, con);
+}
+
 
 Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
@@ -206,6 +217,10 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
+}
+
+AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<UnnestDomainTerms, AbstractTheory*>(t, str, con);
 }
 
 /*AbstractTheory* mergeRulesOnSameSymbol(AbstractTheory* t) {

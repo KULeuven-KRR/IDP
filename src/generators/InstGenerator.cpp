@@ -12,6 +12,20 @@
 #include "InstGenerator.hpp"
 #include "GlobalData.hpp"
 
+template<>
+std::string toString(const Pattern& type){
+	std::stringstream output;
+	switch (type) {
+	case Pattern::INPUT:
+		output << "in";
+		break;
+	case Pattern::OUTPUT:
+		output << "out";
+		break;
+	}
+	return output.str();
+}
+
 void InstChecker::put(std::ostream& stream) {
 	stream << "generate: " << typeid(*this).name();
 }
@@ -36,5 +50,5 @@ void InstChecker::put(std::ostream& stream) {
 void InstGenerator::setVarsAgain(){
 	std::stringstream ss;
 	ss << "Resetting variables for " << (typeid(*this).name()) << "\n";
-	notyetimplemented(ss.str());
+	throw notyetimplemented(ss.str());
 }

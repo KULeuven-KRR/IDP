@@ -13,48 +13,72 @@
 
 #include <set>
 #include "InstGenerator.hpp"
+#include "structure/DomainElement.hpp"
 
 /**
- * Generate all x such that ?x phi(x) is true.
- * Given is a generator which returns tuples for which phi(x) is false.
+ * Generate all y such that such that ?x phi(x,y) is true.
+ * (y might be input or output)
+ * Given are:
+ * 	* A generator which returns all tuples (x,y) such that phi(x,y) is true.
+ * He keeps a set of all y he has already generated; to avoid doubles...
  */
+
 class TrueQuantKernelGenerator: public InstGenerator {
 private:
-	InstGenerator* _quantgenerator;
+	InstGenerator* _subBddTrueGenerator;
+	set<ElementTuple, Compare<ElementTuple> > _alreadySeen;
+	vector<const DomElemContainer*> _outvars;
+	bool _reset;
+
+	ElementTuple getDomainElements() {
+		ElementTuple tuple;
+		for (auto i = _outvars.cbegin(); i < _outvars.cend(); ++i) {
+			tuple.push_back((*i)->get());
+		}
+		return tuple;
+	}
+
 public:
-	TrueQuantKernelGenerator(InstGenerator* gen)
-			: _quantgenerator(gen) {
+	TrueQuantKernelGenerator(InstGenerator* subBddTrueGenerator, vector<const DomElemContainer*> outvars)
+			: _subBddTrueGenerator(subBddTrueGenerator), _alreadySeen(), _outvars(outvars), _reset(true) {
 	}
 
 	TrueQuantKernelGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
-	}
-
-	bool check() const {
-		return not _quantgenerator->check();
+		throw notyetimplemented("Cloning TrueQuantKernelGenerators.");
 	}
 
 	void reset() {
-		_quantgenerator->begin();
-		if (_quantgenerator->isAtEnd()) {
+		_reset = true;
+		_alreadySeen.clear();
+		_subBddTrueGenerator->begin();
+		if (_subBddTrueGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
 
 	void next() {
-		while (not _quantgenerator->isAtEnd()) {
-			_quantgenerator->operator ++();
+		if (_reset) {
+			_reset = false;
+		} else {
+			_subBddTrueGenerator->operator ++();
 		}
-		if (_quantgenerator->isAtEnd()) {
+		for (; not _subBddTrueGenerator->isAtEnd(); _subBddTrueGenerator->operator ++()) {
+			auto elements = getDomainElements();
+			if (_alreadySeen.find(elements) == _alreadySeen.cend()) {
+				_alreadySeen.insert(elements);
+				return;
+			}
+		}
+		if (_subBddTrueGenerator->isAtEnd()) {
 			notifyAtEnd();
 		}
 	}
-
 	virtual void put(std::ostream& stream) {
 		pushtab();
-		stream << "generate: TrueQuantKernelGenerator = " << toString(_quantgenerator);
+		stream << "all true instances of: " << nt() << toString(_subBddTrueGenerator);
 		poptab();
 	}
+
 };
 
 #endif /* TRUEQUANTKERNELGENERATOR_HPP_ */

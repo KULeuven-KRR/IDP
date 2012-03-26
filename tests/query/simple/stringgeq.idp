@@ -1,0 +1,15 @@
+vocabulary V{
+	type x isa string
+	b:x
+}
+
+query Q:V {
+	{a[x] : a>=b => a = "Hello"}
+}
+structure S:V{
+	x = {"Hello";"ABC";ABB}
+	b = "ABC"
+}
+procedure getExpectedSet(){
+  return {{"Hello"},{"ABB"}}
+}

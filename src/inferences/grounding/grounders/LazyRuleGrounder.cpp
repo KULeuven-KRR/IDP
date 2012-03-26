@@ -12,26 +12,14 @@
 #include "TermGrounders.hpp"
 #include "generators/InstGenerator.hpp"
 #include "IncludeComponents.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 using namespace std;
 
 LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(rule, hgr, bgr, big, ct), LazyUnknBoundGrounder(rule->head()->symbol(), ct.getCurrentDefID(), hgr->grounding()) {
-	std::map<Variable*, int> vartofirstocc;
-	int index = 0;
-	for(auto i=headterms.cbegin(); i<headterms.cend(); ++i, ++index){
-		auto varterm = dynamic_cast<VarTerm*>(*i);
-		if(varterm==NULL){
-			Assert((*i)->freeVars().size()==0);
-			continue;
-		}
-
-		auto first = vartofirstocc.find(varterm->var());
-		if(first==vartofirstocc.cend()){
-			vartofirstocc[varterm->var()] = index;
-		}else{
-			sameargs.push_back({first->second, index});
-		}
+		: RuleGrounder(rule, hgr, bgr, big, ct), DelayGrounder(rule->head()->symbol(), headterms, Context::BOTH, ct.getCurrentDefID(), hgr->grounding()), grounded(0) {
+	if(verbosity()>1){
+		clog <<"Lazily grounding " <<toString(rule) <<" by unknown-delay of the head.\n";
 	}
 }
 
@@ -56,11 +44,14 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 	return Substitutable::UNIFIABLE;
 }
 
+tablesize LazyRuleGrounder::getGroundedSize() const{
+	return grounded*bodygrounder()->getGroundedSize();
+}
+
 void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
 
-	// NOTE: If multiple vars are the same, it is not checked that their instantiation is also the same!
-	for(auto i=sameargs.cbegin(); i<sameargs.cend(); ++i){
+	for(auto i=getSameargs().cbegin(); i<getSameargs().cend(); ++i){
 		if(headargs[i->first]!=headargs[i->second]){
 			return;
 		}
@@ -71,6 +62,8 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	if(subst==Substitutable::NO_UNIFIER){
 		return;
 	}
+
+	grounded++;
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, headvarinstlist);

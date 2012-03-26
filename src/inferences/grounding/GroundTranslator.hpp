@@ -16,18 +16,15 @@
 
 #include <unordered_map>
 #include <bits/functional_hash.h>
+#include "structure/HashElementTuple.hpp"
 
-class LazyUnknBoundGrounder;
+class DelayGrounder;
 class TsSet;
 class CPTerm;
 class LazyGroundingManager;
 class CPBound;
 class ResidualAndFreeInst;
 class TsSet;
-
-struct HashTuple {
-	size_t operator()(const ElementTuple& tuple) const;
-};
 
 //typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
@@ -38,7 +35,7 @@ typedef size_t SymbolOffset;
 struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
-	std::vector<LazyUnknBoundGrounder*> assocGrounders;
+	std::vector<DelayGrounder*> assocGrounders;
 
 	SymbolInfo(PFSymbol* symbol)
 			: symbol(symbol) {
@@ -110,8 +107,17 @@ public:
 	Lit translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
 	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
 
-	bool isAlreadyDelayedOnDifferentID(PFSymbol* pfs, unsigned int id) const;
-	void notifyDelayUnkn(PFSymbol* pfs, LazyUnknBoundGrounder* const grounder);
+	/*
+	 * @precon: defid==-1 if a FORMULA will be delayed
+	 * @precon: context==POS if pfs occurs monotonously, ==NEG if anti-..., otherwise BOTH
+	 * Returns true iff delaying pfs in the given context cannot violate satisfiability because of existing watches
+	 */
+	bool canBeDelayedOn(PFSymbol* pfs, Context context, int defid) const;
+	/**
+	 * Same preconditions as canBeDelayedOn
+	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.
+	 */
+	void notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder);
 
 	SymbolOffset addSymbol(PFSymbol* pfs);
 

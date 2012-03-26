@@ -26,6 +26,8 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<VarId> _printedvarids;
 	std::map<PFSymbol*, std::set<Atom> > _defined; //!< List of defined symbols and the heads which have a rule.
 
+	std::set<PFSymbol*> needfalsedefinedsymbols;
+
 public:
 	GroundTheory(AbstractStructure* str);
 	GroundTheory(Vocabulary* voc, AbstractStructure* str);
@@ -58,13 +60,18 @@ public:
 
 	virtual void addOptimization(AggFunction function, int setid);
 
-	virtual void notifyUnknBound(const Lit& boundlit, const ElementTuple& args, std::vector<LazyUnknBoundGrounder*> grounders);
+	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
 
 	std::ostream& put(std::ostream& s) const;
 
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);
+
+	virtual void notifyNeedFalseDefineds(PFSymbol* pfs){
+		needfalsedefinedsymbols.insert(pfs);
+	}
+	const std::set<PFSymbol*>& getNeedFalseDefinedSymbols() const { return needfalsedefinedsymbols; }
 
 protected:
 	void transformForAdd(const litlist& vi, VIType /*vit*/, DefId defnr, bool skipfirst = false);

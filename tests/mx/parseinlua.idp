@@ -1,0 +1,9 @@
+procedure main(){
+	file = assert(io.open("testparsing", "w"))
+	file:write("vocabulary V{ \n type x isa int\n P(x)\n}")
+	file:close()
+	parse("testparsing")
+	os.remove("testparsing")
+	print(V)
+	return 1
+}

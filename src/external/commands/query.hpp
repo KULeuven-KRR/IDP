@@ -19,7 +19,6 @@ class QueryInference: public QueryInferenceBase {
 public:
 	QueryInference()
 			: QueryInferenceBase("query", "Generate all solutions to the given query in the given structure.") {
-		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

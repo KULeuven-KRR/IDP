@@ -1,0 +1,53 @@
+vocabulary V{
+	type state
+	type time isa int
+	type action
+	initial:state
+	holds(time, state)
+	starts(time, state)
+	do(time, action)
+	
+	Party:state
+}
+
+theory T: V{
+	?t: holds(t, Party).
+	{
+		holds(0, initial()).
+		holds(t+1, s) <- holds(t, s) | starts(t, s). 
+	}
+	
+	!t s: starts(t, s) => ?t2 t3 a a2: do(t2, a) & do(t3, a2) & a~=a2 & t2<t & t3<t.
+	
+	!t: #{a: do(t, a)}<2.
+}
+
+structure S: V {
+	state = {1..10}
+	Party = 10
+	initial = 5
+	time = {0..50}
+	action = {1..10}
+}
+
+// works great for large n and small p, certainly if it chooses false for atoms by default.
+
+#include <mx>
+
+procedure getasol(lazy){
+	stdoptions.groundlazily=lazy
+	stdoptions.groundwithbounds=true
+	stdoptions.groundverbosity=1
+	stdoptions.satverbosity=1
+	//stdoptions.symmetry=1 only for non-builtin types!
+	return modelexpandpartial(T, S, stdoptions)
+}
+
+procedure run(lazy){
+	sol = getasol(lazy)
+	print(sol)
+}
+
+procedure main(){
+	run(true)
+}

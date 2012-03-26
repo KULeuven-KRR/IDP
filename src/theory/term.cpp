@@ -220,7 +220,25 @@ Sort* AggTerm::sort() const {
 	if (_function == AggFunction::CARD) {
 		return VocabularyUtils::natsort();
 	} else {
-		return set()->sort();
+		auto setsort = set()->sort();
+		if (setsort != NULL) {
+			if(function() == AggFunction::MAX || function() == AggFunction::MIN){
+				return setsort;
+			}
+			if (SortUtils::isSubsort(setsort, VocabularyUtils::natsort())) {
+				return VocabularyUtils::natsort();
+			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::intsort())) {
+				return VocabularyUtils::intsort();
+			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::floatsort())) {
+				return VocabularyUtils::floatsort();
+			} else {
+				Error::notsubsort(setsort->name(), VocabularyUtils::floatsort()->name(), pi());
+				return NULL;
+			}
+		} else {
+			//TODO There should be some error or warning thrown here!
+			return NULL;
+		}
 	}
 }
 
@@ -258,6 +276,29 @@ void SetExpr::recursiveDelete() {
 		delete (*it);
 	}
 	delete (this);
+}
+
+Sort* SetExpr::sort() const {
+	auto it = _subterms.cbegin();
+	Sort* currsort;
+	if ((*it)->sort()) {
+		currsort = (*it)->sort();
+	} else {
+		return NULL;
+	}
+	++it;
+	for (; it != _subterms.cend(); ++it) {
+		if ((*it)->sort()) {
+			currsort = SortUtils::resolve(currsort, (*it)->sort());
+		} else {
+			return NULL;
+		}
+	}
+	if (currsort == NULL) {
+		throw notyetimplemented("Sets with terms with sorts without common ancestor");
+	} else {
+		return currsort;
+	}
 }
 
 bool SetExpr::contains(const Variable* v) const {
@@ -370,32 +411,6 @@ EnumSetExpr* EnumSetExpr::zeroSubset() const {
 	return new EnumSetExpr(newsubforms, newsubterms, _pi);
 }
 
-Sort* EnumSetExpr::sort() const {
-	Sort* currsort = VocabularyUtils::natsort();
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		if ((*it)->sort()) {
-			currsort = SortUtils::resolve(currsort, (*it)->sort());
-		} else {
-			return NULL;
-		}
-	}
-	if (currsort != NULL) {
-		if (SortUtils::isSubsort(currsort, VocabularyUtils::natsort())) {
-			return VocabularyUtils::natsort();
-		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::intsort())) {
-			return VocabularyUtils::intsort();
-		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::floatsort())) {
-			return VocabularyUtils::floatsort();
-		} else {
-			Error::notsubsort(currsort->name(), VocabularyUtils::floatsort()->name(), pi());
-			return NULL;
-		}
-	} else {
-		//TODO There should be some error or warning thrown here!
-		return NULL;
-	}
-}
-
 tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
 	return tablesize(TST_EXACT, subformulas().size());
 }
@@ -493,25 +508,6 @@ QuantSetExpr* QuantSetExpr::zeroSubset() const {
 	newset->subterm(0, nulterm);
 	delete term;
 	return newset;
-}
-
-Sort* QuantSetExpr::sort() const {
-	Sort* termsort = (*_subterms.cbegin())->sort();
-	if (termsort != NULL) {
-		if (SortUtils::isSubsort(termsort, VocabularyUtils::natsort())) {
-			return VocabularyUtils::natsort();
-		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::intsort())) {
-			return VocabularyUtils::intsort();
-		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::floatsort())) {
-			return VocabularyUtils::floatsort();
-		} else {
-			Error::notsubsort(termsort->name(), VocabularyUtils::floatsort()->name(), pi());
-			return NULL;
-		}
-	} else {
-		//TODO There should be some error or warning thrown here!
-		return NULL;
-	}
 }
 
 tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {

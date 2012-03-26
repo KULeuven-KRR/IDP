@@ -29,6 +29,7 @@ private:
 private:
 	std::vector<const DomElemContainer*> _outvars;
 	std::vector<unsigned int> _outpos;
+
 	const DomElemContainer* _rangevar;
 	bool _reset;
 
@@ -42,9 +43,9 @@ private:
 
 public:
 	// NOTE: takes ownership of table
-	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ,
-			const std::vector<unsigned int>& firstocc)
-			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
+	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
+			const Universe& univ, const std::vector<unsigned int>& firstocc) :
+			_function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
 		Assert(pattern.back() == Pattern::OUTPUT);
 		auto domainpattern = pattern;
 		domainpattern.pop_back();
@@ -75,13 +76,28 @@ public:
 	}
 
 	~SimpleFuncGenerator() {
-		delete (_function);
-		delete (_univgen);
+		//delete (_function);
+		//delete (_univgen);
+		//TODO: memory management
 	}
 
 	// FIXME reimplement
 	SimpleFuncGenerator* clone() const {
-		throw notyetimplemented("Cloning generators.");
+		auto gen = new SimpleFuncGenerator(*this);
+		gen->_univgen = _univgen->clone();
+		return gen;
+	}
+
+	void setVarsAgain(){
+		auto result = _function->operator [](_currenttuple);
+		if (result != NULL) {
+			if (_universe.tables().back()->contains(result)) {
+				//TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
+				_rangevar->operator =(result);
+				return;
+			}
+		}
+		_univgen->setVarsAgain();
 	}
 
 	void reset() {
@@ -89,7 +105,6 @@ public:
 	}
 
 	void next() {
-		pushtab();
 		if (_reset) {
 			_reset = false;
 			_univgen->begin();
@@ -100,20 +115,27 @@ public:
 			for (unsigned int i = 0; i < _inpos.size(); ++i) {
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
-		}
-		else{
+		} else {
 			_univgen->operator ++();
 		}
 
-		if (_univgen->isAtEnd()) {
-			notifyAtEnd();
+		while (not _univgen->isAtEnd()) {
+			for (unsigned int i = 0; i < _outpos.size(); ++i) {
+				_currenttuple[_outpos[i]] = _outvars[i]->get();
+			}
+			auto result = _function->operator [](_currenttuple);
+			if (result != NULL) {
+				if (_universe.tables().back()->contains(result)) {
+					//TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
+					_rangevar->operator =(result);
+					return;
+				}
+			}
+			_univgen->operator ++();
 		}
 
-		for (unsigned int i = 0; i < _outpos.size(); ++i) {
-			_currenttuple[_outpos[i]] = _outvars[i]->get();
-		}
-		_rangevar->operator =(_function->operator [](_currenttuple));
-		poptab();
+		//No valid result found
+		notifyAtEnd();
 	}
 
 	virtual void put(std::ostream& stream) {

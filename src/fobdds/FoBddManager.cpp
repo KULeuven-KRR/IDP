@@ -785,7 +785,15 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	if (result != NULL) {
 		return result;
 	}
-
+	if(kernel == _truekernel){
+		return truebranch;
+	}
+	if(kernel == _falsekernel){
+		return falsebranch;
+	}
+	if(truebranch == falsebranch){
+		return truebranch;
+	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
 	const FOBDDKernel* falsekernel = falsebranch->kernel();
 
@@ -864,7 +872,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	// base case
 	if (bdd == _truebdd || bdd == _falsebdd) {
 		if (sort->builtin()) {
-			return sort->interpretation()->empty() ? bdd : negation(bdd);
+			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}
 		auto sortNotEmpty = getQuantKernel(sort,
 				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_CT, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
@@ -1180,6 +1188,7 @@ vector<Path> FOBDDManager::pathsToFalse(const FOBDD* bdd) {
  * Return all kernels of the given bdd
  */
 set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
+	Assert(bdd != NULL);
 	set<const FOBDDKernel*> result;
 	if (bdd != _truebdd && bdd != _falsebdd) {
 		auto falsekernels = allkernels(bdd->falsebranch());
@@ -1346,7 +1355,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		map<const FOBDDKernel*, double> subkernels = kernelAnswers(quantkernel->bdd(), structure);
 		map<const FOBDDKernel*, tablesize> subunivs = kernelUnivs(quantkernel->bdd(), structure);
 
-		srand(global_seed);
+		srand(getOption(IntType::RANDOMSEED));
 		double sum = 0; // stores the sum of the chances obtained by each experiment
 		int sumcount = 0; // stores the number of succesfull experiments
 		for (unsigned int experiment = 0; experiment < 10; ++experiment) { // do 10 experiments
@@ -1691,6 +1700,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 
 void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
+	Assert(query != NULL);
 	if (query != _truebdd && query != _falsebdd) {
 		set<const FOBDDKernel*> kernels = allkernels(query);
 		for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
@@ -1883,7 +1893,6 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDD
 	 return bdd;
 	 }
 
-	 /*
 	 if(isFalsebdd(bdd)) {
 	 return bdd;
 	 }
@@ -2056,39 +2065,39 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 	 return bdd;
 	 }
 	 // Simplify quantification kernels
-	 /*		if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
-	 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-	 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
-	 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
-	 if(isTruebdd(bdd)) return bdd;
-	 else {
-	 Assert(!isFalsebdd(bdd));
-	 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
-	 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
+	 if(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel)) {
+		 const FOBDD* newfalse = make_more_true(bdd->falsebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+		 const FOBDD* newtrue = make_more_true(bdd->truebranch(),branchvars,branchindices,structure,max_cost_per_ans);
+		 bdd = getBDD(bdd->kernel(),newtrue,newfalse);
+		 if(isTruebdd(bdd)) return bdd;
+		 else {
+			 Assert(!isFalsebdd(bdd));
+			 Assert(typeid(*(bdd->kernel())) == typeid(FOBDDQuantKernel));
+			 const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel());
 
-	 set<const FOBDDVariable*> emptyvars;
-	 set<const FOBDDDeBruijnIndex*> zeroindices;
-	 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
-	 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
-	 if(quantans < 1) quantans = 1;
-	 double quant_per_ans = max_cost_per_ans / quantans;
+			 set<const FOBDDVariable*> emptyvars;
+			 set<const FOBDDDeBruijnIndex*> zeroindices;
+			 zeroindices.insert(getDeBruijnIndex(quantkernel->sort(),0));
+			 double quantans = estimatedNrAnswers(quantkernel,emptyvars,zeroindices,structure);
+			 if(quantans < 1) quantans = 1;
+			 double quant_per_ans = max_cost_per_ans / quantans;
 
-	 if(isTruebdd(bdd->falsebranch())) {
-	 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 if(isTruebdd(bdd->falsebranch())) {
+				 const FOBDD* newquant = make_more_false(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 }
+			 else if(isTruebdd(bdd->truebranch())) {
+				 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
+				 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
+				 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
+			 }
+	 	 }
+	 	 if(isTruebdd(bdd)) return bdd;
 	 }
-	 else if(isTruebdd(bdd->truebranch())) {
-	 const FOBDD* newquant = make_more_true(quantkernel->bdd(),kernelvars,kernelindices,structure,quant_per_ans);
-	 const FOBDDKernel* newkernel = getQuantKernel(quantkernel->sort(),newquant);
-	 bdd = getBDD(newkernel,bdd->truebranch(),bdd->falsebranch());
-	 }
-	 }
-	 if(isTruebdd(bdd)) return bdd;
-	 }
-	 */
+
 	// Recursive call
-	/*		double branch_cost_ans;
+	double branch_cost_ans;
 	 if(isFalsebdd(bdd->falsebranch())) {
 	 double kernelcost = estimatedCostAll(true,bdd->kernel(),kernelvars,kernelindices,structure);
 	 double kernelans = estimatedNrAnswers(bdd->kernel(),kernelvars,kernelindices,structure);

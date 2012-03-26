@@ -12,9 +12,13 @@
 #define ENUMLOOKUPGENERATOR_HPP_
 
 #include <map>
+#include <unordered_map>
 #include "InstGenerator.hpp"
+#include "structure/fwstructure.hpp"
+#include "structure/HashElementTuple.hpp"
 
-typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
+typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> LookupTable;
+//typedef std::map<ElementTuple, std::vector<ElementTuple>, Compare<ElementTuple> > LookupTable;
 
 /**
  * Given a map from tuples to a list of tuples, with given input variables and output variables, go over the list of tuples of the corresponding input tuple.
@@ -47,7 +51,10 @@ public:
 
 	// TODO quite expensive
 	EnumLookupGenerator* clone() const {
-		auto g = new EnumLookupGenerator(_table, _invars, _outvars);
+		auto g = new EnumLookupGenerator(*this);
+		g->_outvars = _outvars;
+		g->_invars = _invars;
+		g->_table = _table;
 		g->_reset = _reset;
 		g->_currargs = _currargs;
 		g->_currpos = g->_table.find(g->_currargs);
@@ -65,7 +72,7 @@ public:
 	void next() {
 		if (_reset) {
 			_reset = false;
-			for (uint i=0; i < _invars.size(); ++i) {
+			for (unsigned int i=0; i < _invars.size(); ++i) {
 				_currargs[i]=_invars[i]->get();
 			}
 			_currpos = _table.find(_currargs);
@@ -86,6 +93,18 @@ public:
 		}
 		++_iter;
 	}
+
+	void setVarsAgain(){
+		if(_iter != _currpos->second.cend()){
+			for (unsigned int i=0; i < _invars.size(); ++i) {
+				*(_invars[i]) = _currargs[i];
+			}
+			for (unsigned int n = 0; n < _outvars.size(); ++n) {
+				*(_outvars[n]) = (*_iter)[n];
+			}
+		}
+	}
+
 	virtual void put(std::ostream& stream){
 		stream << toString(_table);
 	}

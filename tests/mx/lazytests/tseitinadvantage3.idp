@@ -1,0 +1,29 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q(x, x, x)
+}
+
+theory T: V{
+	?x: p(x).
+	!x: p(x) => !y: x~=y & p(y) => !z: q(x, y, z).
+}
+
+structure S: V {
+	x = {1..200}
+}
+
+#include <mx>
+
+procedure getasol(){
+	stdoptions.groundlazily=true
+	stdoptions.groundwithbounds=true
+	stdoptions.groundverbosity=1
+	stdoptions.satverbosity=1
+	return modelexpandpartial(T, S, stdoptions)
+}
+
+procedure main(){
+	sol = getasol()
+	//print(sol)
+}

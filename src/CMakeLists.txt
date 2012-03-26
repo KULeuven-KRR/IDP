@@ -21,7 +21,7 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION_MAJOR}-${idp_VERSION_MINOR}\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION}\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_PREFIX}/\\\"\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
@@ -40,7 +40,14 @@ ADD_FLEX_BISON_DEPENDENCY(myscanner myparser)
 
 add_library(idp
 	vocabulary/vocabulary.cpp
-	structure/structure.cpp
+	structure/StructureComponents.cpp 
+	structure/NumericOperations.cpp
+	structure/Structure.cpp
+	structure/AbstractStructure.cpp
+	structure/InconsistentStructure.cpp
+	structure/Universe.cpp
+	structure/TableSize.cpp
+	structure/DomainElementFactory.cpp
 	theory/term.cpp
 	theory/theory.cpp
 	options.cpp options.hpp
@@ -103,6 +110,8 @@ add_library(idp
 	theory/transformations/PushQuantifications.cpp
 	theory/transformations/RemoveEquivalences.cpp
 	theory/transformations/SplitComparisonChains.cpp
+	theory/transformations/UnnestFuncsAndAggs.cpp
+	theory/transformations/UnnestDomainTerms.cpp
 	theory/transformations/UnnestTerms.cpp
 	theory/transformations/UnnestThreeValuedTerms.cpp
 	GlobalData.cpp
@@ -133,7 +142,7 @@ target_link_libraries(idp-bin idp)
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 set_target_properties(
-	idp-bin PROPERTIES
+	idp idp-bin PROPERTIES
 	VERSION ${idp_VERSION}
 )
 
@@ -145,6 +154,7 @@ install (FILES ${PROJECT_SOURCE_DIR}/data/var/.idprc DESTINATION var)
 install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/mx.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.idp 
 				${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
+				${PROJECT_SOURCE_DIR}/data/share/std/table_utils.idp 
 		DESTINATION share/std)
 
 #?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} idp runidp.bat runidp.sh")

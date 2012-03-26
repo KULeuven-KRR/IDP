@@ -14,6 +14,7 @@
 #include "GroundUtils.hpp"
 #include <iostream>
 #include <typeinfo>
+#include "structure/TableSize.hpp"
 
 enum class Conn {
 	DISJ, CONJ
@@ -51,11 +52,10 @@ class Grounder {
 private:
 	AbstractGroundTheory* _grounding;
 	GroundingContext _context;
+	tablesize _maxsize;
 
 public:
-	Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-			: _grounding(gt), _context(context) {
-	}
+	Grounder(AbstractGroundTheory* gt, const GroundingContext& context);
 	virtual ~Grounder() {
 	}
 
@@ -71,6 +71,27 @@ public:
 
 	const GroundingContext& context() const {
 		return _context;
+	}
+
+	virtual void put(std::ostream&) const = 0;
+
+	void setMaxGroundSize(const tablesize& maxsize);
+
+	// FIXME remove
+	virtual tablesize getGroundedSize() const = 0;
+
+	static int _groundedatoms;
+	static int groundedAtoms() {
+		return _groundedatoms;
+	}
+	static void notifyGroundedAtom(){
+		_groundedatoms++;
+	}
+	tablesize getMaxGroundSize() const {
+		return _maxsize;
+	}
+	tablesize getUnGroundedSize() const{
+		return getMaxGroundSize()-groundedAtoms();
 	}
 };
 

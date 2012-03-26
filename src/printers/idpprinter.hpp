@@ -847,7 +847,7 @@ private:
 			return;
 		}
 
-		PFSymbol* pfs = _translator->getSymbol(atomnr);
+		auto pfs = _translator->getSymbol(atomnr);
 
 		// Print the symbol's name.
 		output() << pfs->name().substr(0, pfs->name().find('/'));

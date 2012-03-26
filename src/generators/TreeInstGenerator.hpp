@@ -28,6 +28,7 @@ public:
 	TreeInstGenerator* clone() const {
 		auto t = new TreeInstGenerator(*this);
 		t->_root = _root->clone();
+		Assert(t->_reset==_reset);
 		return t;
 	}
 

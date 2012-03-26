@@ -12,6 +12,7 @@
 #define MODELEXPANSION_HPP_
 
 #include <vector>
+#include <cstdlib>
 
 class AbstractStructure;
 class AbstractTheory;

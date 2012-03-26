@@ -79,7 +79,6 @@ public:
 
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
-GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure* structure);
 
 #endif /* PROPAGATORFACTORY_HPP_ */

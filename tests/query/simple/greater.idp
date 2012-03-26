@@ -1,0 +1,16 @@
+vocabulary V{
+	type x
+}
+
+
+query Q:V {
+	{x[x] y[x]: x>y}
+}
+
+structure S:V {
+	x = {1..3}
+}
+
+procedure getExpectedSet(){
+  return {{2,1},{3,2},{3,1}}
+}

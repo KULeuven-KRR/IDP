@@ -1,0 +1,29 @@
+vocabulary V{
+	type Time isa int
+		
+	TakeOff(Time)
+	Flying(Time)
+	Landed(Time)
+	Done(Time)
+	Start(Time)
+}
+theory T:V{
+	?t: Done(t).
+	
+	{
+		TakeOff(t) <- Start(t).
+		Flying(t) <- TakeOff(t-1).
+		Flying(t) <- Flying(t-1).
+		Landed(t) <- Flying(t-10).
+		Done(t) <- Landed(t-1).
+	}
+}
+structure S:V{
+	Time = {0..10000000}
+}
+procedure main(){
+	stdoptions.groundverbosity=0
+	stdoptions.satverbosity=0
+	stdoptions.groundlazily=true
+	print(modelexpandpartial(T, S))
+}

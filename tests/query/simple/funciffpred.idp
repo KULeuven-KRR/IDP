@@ -1,0 +1,19 @@
+vocabulary V{
+	type t isa int
+	f(t):t
+	p(t,t)
+}
+
+query Q:V{
+	{x y :f(x)=y <=> p(x,y)}
+}
+
+structure S:V{
+	t = {1..2}
+	f = {1->1;2->2}
+	p = {1,1;2,1}
+}
+
+procedure getExpectedSet(){
+  return {{1,1},{1,2}}
+}

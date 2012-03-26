@@ -1,0 +1,26 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+vocabulary V{
+	type Vtx
+	type Length isa int
+	Edge(Vtx,Vtx,Length)
+ 
+	Sp(Vtx,Vtx,Length)
+	Cp(Vtx,Vtx,Length)
+}
+
+theory T : V { 
+	{ 	
+		Sp(x ,y ,l ) <- l = min{u : Cp(x ,y ,u) : u}.
+		Cp(x ,y ,l ) <- Edge(x ,y ,l ).
+		Cp(x ,y ,l1 + l2) <- Sp(x ,y ,l1) & Edge(x ,y ,l2). 
+	}
+}
+
+structure S : V{  
+	Length = { 1..5}
+	Vtx = { a;b;c}
+	Edge = { a,b,2;a,b,1;b,c,1;b,b,1}
+}
