@@ -542,7 +542,7 @@ void UnionInternalIterator::setcurriterator() {
 		}
 		++_curriterator;
 	}
-	if (_curriterator->isAtEnd()) {
+	if (_curriterator== _iterators.end()) {
 		return;
 	}
 	auto jt = _curriterator;
@@ -553,7 +553,7 @@ void UnionInternalIterator::setcurriterator() {
 			continue;
 		}
 		if (contains(*(*jt))) {
-			Compare<ElementTuple> swto;
+			Compare < ElementTuple > swto;
 			if (swto(*(*jt), *(*_curriterator))) {
 				_curriterator = jt;
 			} else if (not swto(*(*_curriterator), *(*jt))) {
@@ -1683,14 +1683,14 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	if(_table.empty()){
+	if (_table.empty()) {
 		return NULL;
 	}
 	return *(_table.cbegin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	if(_table.empty()){
+	if (_table.empty()) {
 		return NULL;
 	}
 	return *(_table.rbegin());
@@ -1715,7 +1715,7 @@ InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
 		InternalSortTable* ist = eist->add(d);
 		InternalSortTable* ist2 = ist->add(_first, _last);
 		if (ist2 != eist) {
-			delete(new SortTable(eist));
+			delete (new SortTable(eist));
 		}
 		return ist2;
 	} else {
@@ -1769,7 +1769,7 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 		}
 		InternalSortTable* ist = eist->add(i1, i2);
 		if (ist != eist) {
-			delete(new SortTable(eist));
+			delete (new SortTable(eist));
 		}
 		return ist;
 	}
@@ -2031,7 +2031,7 @@ InternalSortTable* InfiniteInternalSortTable::add(const DomainElement* d) {
 		upt->addInTable(new SortTable(this));
 		InternalSortTable* temp = upt->add(d);
 		if (temp != upt) {
-			delete(new SortTable(upt));
+			delete (new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -2045,7 +2045,7 @@ InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
 		upt->addOutTable(new SortTable(this));
 		InternalSortTable* temp = upt->remove(d);
 		if (temp != upt) {
-			delete(new SortTable(upt));
+			delete (new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -3210,9 +3210,9 @@ bool PredInter::isConsistent() const {
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
-
 	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
-	auto largest = smallest == _ct ? _cf : _ct;
+	auto largest = (smallest == _ct) ? _cf : _ct;
+
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
@@ -3233,8 +3233,7 @@ bool PredInter::isConsistent() const {
 		}
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			return false;
-		}
-		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+		}Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
@@ -3486,8 +3485,10 @@ void FuncInter::materialize() {
 bool FuncInter::isConsistent() const {
 	if (_functable != NULL) {
 		return true;
-	} else
+	} else {
+		Assert(_graphinter != NULL);
 		return _graphinter->isConsistent();
+	}
 }
 
 FuncInter* FuncInter::clone(const Universe& univ) const {
@@ -3611,8 +3612,6 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 
 /** Destructor **/
 
-
-
 bool needFixedNumberOfModels() {
 	auto expected = getOption(IntType::NBMODELS);
 	return expected != 0 && expected < getMaxElem<int>();
@@ -3658,8 +3657,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
-	}
-	Assert(newstructs.size()>0);
+	}Assert(newstructs.size()>0);
 	extensions = newstructs;
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
 }
@@ -3730,6 +3728,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 		auto ct = inter->graphInter()->ct();
 		auto cf = inter->graphInter()->cf();
+		std::cerr << toString(ct->internTable()) << "of type "<<typeid(ct->internTable()).name()<<nt();
 
 		//Now, choose an image for this domainelement
 		ElementTuple domainElementWithoutValue;
@@ -3804,7 +3803,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 		(*j)->clean();
-		Assert((*j)->approxTwoValued());
+		//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
 	}
 
 	// TODO delete all structures which were cloned and discarded
