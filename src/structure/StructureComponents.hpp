@@ -131,7 +131,10 @@ struct Compare {
 	bool operator()(const T& t1, const T& t2) const {
 		if (t1.size() < t2.size()) {
 			return true;
+		} else if (t1.size() > t2.size()) {
+			return false; //TODO: right?
 		}
+
 		for (size_t n = 0; n < t1.size(); ++n) {
 			if (*(t1[n]) < *(t2[n])) {
 				return true;

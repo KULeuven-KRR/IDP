@@ -24,6 +24,7 @@
 #include "InverseInstGenerator.hpp"
 #include "SortInstGenerator.hpp"
 #include "EnumLookupGenerator.hpp"
+#include "UnionGenerator.hpp"
 #include "SortLookupGenerator.hpp"
 #include "TableGenerator.hpp"
 #include "ComparisonGenerator.hpp"
@@ -224,8 +225,28 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 	visit(fipt->table());
 }
 
-void GeneratorFactory::visit(const UnionInternalPredTable*) {
-	throw notyetimplemented("Create a generator from a union pred table");
+void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
+	std::vector<InstGenerator*> ingenerators(uipt->inTables().size());
+	std::vector<InstGenerator*> outcheckers(uipt->outTables().size());
+	unsigned int i = 0;
+	for (auto it = uipt->inTables().cbegin(); it != uipt->inTables().cend(); ++it, ++i) {
+		(*it)->accept(this);
+		ingenerators[i] = _generator;
+	}
+	auto backuppattern = _pattern;
+	for(int k = 0; k<_pattern.size();k++){
+		_pattern[k]=Pattern::INPUT;
+	}
+	i = 0;
+	for (auto it = uipt->outTables().cbegin(); it != uipt->outTables().cend(); ++it, ++i) {
+		(*it)->accept(this);
+		outcheckers[i] = _generator;
+	}
+	_pattern= backuppattern;
+
+	auto ingenereator = new UnionGenerator(ingenerators);
+	auto outchecker = new UnionGenerator(outcheckers);
+	_generator = new TwoChildGenerator(outchecker,ingenereator,new FullGenerator(),new EmptyGenerator());
 }
 
 void GeneratorFactory::visit(const UnionInternalSortTable*) {
@@ -382,7 +403,8 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 	} else if (typeid(*interntable) == typeid(BDDInternalPredTable)) {
 		BDDInternalPredTable* bddintern = dynamic_cast<BDDInternalPredTable*>(interntable);
 		const FOBDD* invertedbdd = bddintern->manager()->negation(bddintern->bdd());
-		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(), bddintern->structure());
+		BDDInternalPredTable* invertedbddtable = new BDDInternalPredTable(invertedbdd, bddintern->manager(), bddintern->vars(),
+				bddintern->structure());
 		visit(invertedbddtable);
 	} else if (typeid(*interntable) == typeid(FullInternalPredTable)) {
 		_generator = new EmptyGenerator();
@@ -613,13 +635,15 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 			auto temp = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 			auto varzero = new DomElemContainer();
 			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto ynotzerochecker = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+			auto ynotzerochecker = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH,
+					CompType::NEQ);
 			auto standardsolution = new OneChildGenerator(temp, ynotzerochecker);
 
 			auto xiszero = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
 			auto ziszero = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
 			auto xandzarezero = new OneChildGenerator(xiszero, ziszero);
-			auto ynotzerogenerator = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT, CompType::NEQ);
+			auto ynotzerogenerator = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT,
+					CompType::NEQ);
 			_generator = new TwoChildGenerator(xandzarezero, new FullGenerator(), standardsolution, ynotzerogenerator);
 		}
 	} else if (_pattern[1] == Pattern::INPUT) {
@@ -638,13 +662,15 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 			auto temp = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
 			auto varzero = new DomElemContainer();
 			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto ynotzerochecker = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
+			auto ynotzerochecker = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH,
+					CompType::NEQ);
 			auto standardsolution = new OneChildGenerator(temp, ynotzerochecker);
 
 			auto xiszero = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
 			auto ziszero = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
 			auto xandzarezero = new OneChildGenerator(xiszero, ziszero);
-			auto ynotzerogenerator = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT, CompType::NEQ);
+			auto ynotzerogenerator = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT,
+					CompType::NEQ);
 			_generator = new TwoChildGenerator(xandzarezero, xgen, standardsolution, ynotzerogenerator);
 		} else {
 			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
