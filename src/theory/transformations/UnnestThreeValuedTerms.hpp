@@ -69,8 +69,9 @@ public:
 	}
 
 protected:
-	bool shouldMove(Term* t);
-	Formula* visit(PredForm* predform);
+	bool shouldMove(Term*);
+	Formula* visit(PredForm*);
+	Rule* visit(Rule*);
 
 private:
 	bool getAllowedToLeave() const {

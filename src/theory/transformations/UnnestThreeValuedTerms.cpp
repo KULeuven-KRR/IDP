@@ -46,3 +46,11 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	return doRewrite(newf);
 }
 
+Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(),_vocabulary));
+	auto newrule = UnnestTerms::visit(rule);
+	setAllowedToLeave(saveAllowedToLeave);
+	return newrule;
+}
+
