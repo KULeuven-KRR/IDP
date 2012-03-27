@@ -514,7 +514,7 @@ void deleteDeep(T& object) {
  * POSTCONDITIONS
  *		According to _context, the created grounder is assigned to
  *			CompContext::SENTENCE:	_toplevelgrounder
- *			CompContext::FORMULA:		_formgrounder
+ *			CompContext::FORMULA:	_formgrounder
  *			CompContext::HEAD is not possible
  */
 void GrounderFactory::visit(const BoolForm* bf) {
@@ -816,10 +816,6 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 		_topgrounder = _formgrounder;
 	}
 	//newsubformula->recursiveDelete();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		poptab();
-	}
-
 }
 
 const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Variable*>& fovars, double mcpa) {
