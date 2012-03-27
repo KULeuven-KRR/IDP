@@ -60,6 +60,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
+	//std::cerr << "FOUND:"<<toString(newstructure)<<nt();
+	//std::cerr << "BOUND:"<<toString(symstructure)<<nt();
+	if(sametypeid<InconsistentStructure>(*newstructure)){
+		return {};
+	}
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
@@ -124,7 +129,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
-
 	if(verbosity()>0){
 		auto maxsize = grounder->getMaxGroundSize();
 		clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";

@@ -294,12 +294,12 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 
 template<class Factory, class Domain>
 AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStructure* structure) const {
-	Vocabulary* vocabulary = new Vocabulary("");
-	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
-		vocabulary->add(it->first->symbol());
-	}
+	/*Vocabulary* vocabulary = new Vocabulary("");
+	 for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
+	 vocabulary->add(it->first->symbol());
+	 }*/
 	AbstractStructure* res = structure->clone();
-	res->vocabulary(vocabulary);
+	//res->vocabulary(vocabulary);
 
 	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
 		const PredForm* connector = it->first;
@@ -308,14 +308,52 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
 			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
+		}Assert(_domains.find(connector) != _domains.cend());
+		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
+		auto oldinter = structure->inter(symbol);
+
+		auto oldcts = new EnumeratedInternalPredTable();
+		auto oldcfs = new EnumeratedInternalPredTable();
+		bool foundct = false;
+		bool foundcf = false;
+		for (auto trueEl = oldinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
+			if (bddinter->isFalse(*trueEl)) {
+				return new InconsistentStructure();
+			}
+			if (not bddinter->isTrue(*trueEl)) {
+				oldcts->add(*trueEl);
+				foundct = true;
+			}
 		}
-		Assert(_domains.find(connector) != _domains.cend());
-		PredInter* pinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-		if (typeid(*symbol) == typeid(Predicate)) {
-			res->inter(dynamic_cast<Predicate*>(symbol), pinter);
-		} else {
-			FuncInter* finter = new FuncInter(pinter);
-			res->inter(dynamic_cast<Function*>(symbol), finter);
+		for (auto falseEl = oldinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
+			if (bddinter->isTrue(*falseEl)) {
+				return new InconsistentStructure();
+			}
+			if (not bddinter->isFalse(*falseEl)) {
+				oldcfs->add(*falseEl);
+				foundcf = true;
+			}
+		}
+		if (not oldinter->approxTwoValued()) {
+			PredTable* newct;
+			if (foundct) {
+				newct = new PredTable(new UnionInternalPredTable( { bddinter->ct()->internTable(), oldcts }, { }), oldinter->universe());
+			} else {
+				newct = new PredTable(*bddinter->ct());
+			}
+			PredTable* newcf;
+			if (foundcf) {
+				newcf = new PredTable(new UnionInternalPredTable( { bddinter->cf()->internTable(), oldcfs }, { }), oldinter->universe());
+			} else {
+				newcf = new PredTable(*bddinter->cf());
+			}
+			auto newinter = new PredInter(newct, newcf, true, true);
+			if (sametypeid<Predicate>(*symbol)) {
+				res->inter(dynamic_cast<Predicate*>(symbol), newinter);
+			} else {
+				FuncInter* finter = new FuncInter(newinter);
+				res->inter(dynamic_cast<Function*>(symbol), finter);
+			}
 		}
 	}
 	return res;
@@ -537,10 +575,10 @@ template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
 	Assert(ef!=NULL && ef->left()!=NULL && ef->right()!=NULL);
 //TODO improve: ad hoc method for solving the _child==NULL case. Smarter things can be done.
-	if(_child==NULL){
+	if (_child == NULL) {
 		_child = ef->left();
 		visit(ef);
-		_child=ef->right();
+		_child = ef->right();
 		visit(ef);
 	}
 

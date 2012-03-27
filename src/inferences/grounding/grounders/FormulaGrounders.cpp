@@ -887,7 +887,6 @@ QuantGrounder::~QuantGrounder() {
 void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
-		std::cerr << "conjunctive grounder? " << toString(conjunctive() == Conn::CONJ);
 		if (_origform != NULL) {
 			pushtab();
 		}

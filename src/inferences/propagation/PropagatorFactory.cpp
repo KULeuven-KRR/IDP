@@ -41,6 +41,10 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	auto propagator = createPropagator(theory, structure, mpi);
 	propagator->doPropagation();
 	structure =propagator->currstructure(structure);
+	//The next two lines really mean a speadup.
+	//Apparently, BDDinternalpredtables are slow for the makeTrue action.
+	structure->materialize();
+	structure->clean();
 	return propagator->symbolicstructure();
 }
 

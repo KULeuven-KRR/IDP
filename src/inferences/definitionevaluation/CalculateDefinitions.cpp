@@ -28,9 +28,11 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-	auto newstr = structure->clone();
-	auto symstructure = generateBounds(&theory, newstr );//TODO: clone is here to avoid modifications of structure
-
+	auto clonestr = structure->clone();
+	auto symstructure = generateBounds(&theory, clonestr);//TODO: clone is here to avoid that structure starts pointing to another object. FIX THIS!
+	if(sametypeid<InconsistentStructure>(*clonestr)){
+		return false;
+	}
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
@@ -44,7 +46,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	}
 
 	bool success;
-
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {
 		success= false;

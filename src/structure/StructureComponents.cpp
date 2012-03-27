@@ -3668,9 +3668,10 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
-	}Assert(newstructs.size()>0);
+	}
 	extensions = newstructs;
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+	Assert(extensions.size()>0);
 }
 
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
