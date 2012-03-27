@@ -3110,7 +3110,7 @@ TableIterator FuncTable::begin() const {
  *	- ctpf	: the certainly true or possibly false tuples
  *	- cfpt	: the certainly false or possibly true tuples
  *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
- *	- cf	: if true (false), ctpf stores the certainly false (possibly true) tuples
+ *	- cf	: if true (false), cfpt stores the certainly false (possibly true) tuples
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
@@ -3728,7 +3728,6 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 		auto ct = inter->graphInter()->ct();
 		auto cf = inter->graphInter()->cf();
-		std::cerr << toString(ct->internTable()) << "of type "<<typeid(ct->internTable()).name()<<nt();
 
 		//Now, choose an image for this domainelement
 		ElementTuple domainElementWithoutValue;
