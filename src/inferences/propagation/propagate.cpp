@@ -337,13 +337,17 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 		if (not oldinter->approxTwoValued()) {
 			PredTable* newct;
 			if (foundct) {
-				newct = new PredTable(new UnionInternalPredTable( { bddinter->ct()->internTable(), oldcts }, { }), oldinter->universe());
+				std::vector<InternalPredTable*> empty(0);
+				std::vector<InternalPredTable*> all = { bddinter->ct()->internTable(), oldcts };
+				newct = new PredTable(new UnionInternalPredTable(all, empty), oldinter->universe());
 			} else {
 				newct = new PredTable(*bddinter->ct());
 			}
 			PredTable* newcf;
 			if (foundcf) {
-				newcf = new PredTable(new UnionInternalPredTable( { bddinter->cf()->internTable(), oldcfs }, { }), oldinter->universe());
+				std::vector<InternalPredTable*> empty(0);
+				std::vector<InternalPredTable*> all =  { bddinter->cf()->internTable(), oldcfs };
+				newcf = new PredTable(new UnionInternalPredTable(all, empty), oldinter->universe());
 			} else {
 				newcf = new PredTable(*bddinter->cf());
 			}
