@@ -2013,6 +2013,9 @@ private:
 	PredTable* _cf; //!< stores certainly false tuples
 	PredTable* _pt; //!< stores possibly true tuples
 	PredTable* _pf; //!< stores possibly false tuples
+	std::set<const ElementTuple*> _inconsistentElements; //!<stores all elements that are inconsistent in this interpretation
+
+	void checkConsistency();
 
 public:
 	PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf);

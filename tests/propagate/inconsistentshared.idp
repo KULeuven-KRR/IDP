@@ -17,12 +17,12 @@ structure S:V{
 }
 
 procedure weakassertions(newS){
-	if  isconsistent(newS)  then
-		return	(assertEmpty(newS[V.P].ct,"P<ct>")  and assertNotEmpty(newS[V.P].cf,"P<cf>"))
-	else
-		return 	  true
+	if  newS ~= nil then
+		if isconsistent(newS)  then
+			return	(assertEmpty(newS[V.P].ct,"P<ct>")  and assertNotEmpty(newS[V.P].cf,"P<cf>"))
+		end
 	end
-	
+	return 	  true
 }
 
 procedure strongassertions(newS){
