@@ -46,13 +46,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
-		if(defCalculated.size() == 0){
-			delete(newstructure);
+		if (defCalculated.size() == 0) {
+			delete (newstructure);
 			return std::vector<AbstractStructure*> { };
-		}
-		Assert(defCalculated[0]->isConsistent());
+		}Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
-	}else{
+	} else {
 		newstructure = structure->clone();
 	}
 
@@ -62,15 +61,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
-	//std::cerr << "FOUND:"<<toString(newstructure)<<nt();
-	//std::cerr << "BOUND:"<<toString(symstructure)<<nt();
-	if(sametypeid<InconsistentStructure>(*newstructure)){
-		return {};
+	if (not newstructure->isConsistent()) {
+		return std::vector<AbstractStructure*> { };
 	}
+
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
-	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, solver);
+	auto grounder = GrounderFactory::create( { clonetheory, newstructure, symstructure }, solver);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
@@ -81,14 +79,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// TODO refactor optimization!
 
-	if(minimizeterm!=NULL){
+	if (minimizeterm != NULL) {
 		auto term = dynamic_cast<AggTerm*>(minimizeterm);
-		if(term!=NULL){
-			auto setgrounder = GrounderFactory::create(term->set(), {newstructure, symstructure}, grounding);
+		if (term != NULL) {
+			auto setgrounder = GrounderFactory::create(term->set(), { newstructure, symstructure }, grounding);
 			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
 			optimgrounder.setOrig(minimizeterm);
 			optimgrounder.run();
-		}else{
+		} else {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
@@ -131,24 +129,23 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
-	if(verbosity()>0){
+	if (verbosity() > 0) {
 		auto maxsize = grounder->getMaxGroundSize();
-		clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";
-		if(maxsize._type==TableSizeType::TST_EXACT){
-			clog <<">>> " <<(double)grounder->groundedAtoms()/maxsize._size <<"% of the full grounding.\n";
+		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
+		if (maxsize._type == TableSizeType::TST_EXACT) {
+			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size << "% of the full grounding.\n";
 		}
 	}
 
 	// Collect solutions
-	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if(minimizeterm!=NULL){ // Optimizing
-		if(abstractsolutions->getModels().size()>0){
+	if (minimizeterm != NULL) { // Optimizing
+		if (abstractsolutions->getModels().size() > 0) {
 			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
 		}
-	}else{
+	} else {
 		if (verbosity() >= 1) {
-			clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
+			clog << "Solver generated " << abstractsolutions->getModels().size() << " models.\n";
 		}
 		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 			solutions.push_back(handleSolution(newstructure, **model, grounding));
@@ -167,7 +164,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	return solutions;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding){
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);

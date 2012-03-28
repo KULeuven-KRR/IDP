@@ -37,7 +37,7 @@ public:
 	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual AbstractStructure* currstructure(AbstractStructure* str) const = 0;
+	virtual void applyPropagationToStructure(AbstractStructure* str) const = 0;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 

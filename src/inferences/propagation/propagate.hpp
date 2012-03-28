@@ -341,7 +341,7 @@ public:
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
-	AbstractStructure* currstructure(AbstractStructure* str) const;
+	void applyPropagationToStructure(AbstractStructure* str) const;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 	GenerateBDDAccordingToBounds* symbolicstructure() const;

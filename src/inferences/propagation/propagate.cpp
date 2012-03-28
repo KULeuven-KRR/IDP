@@ -239,14 +239,14 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -293,14 +293,7 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 }
 
 template<class Factory, class Domain>
-AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStructure* structure) const {
-	/*Vocabulary* vocabulary = new Vocabulary("");
-	 for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
-	 vocabulary->add(it->first->symbol());
-	 }*/
-	AbstractStructure* res = structure->clone();
-	//res->vocabulary(vocabulary);
-
+void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure) const {
 	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
 		const PredForm* connector = it->first;
 		PFSymbol* symbol = connector->symbol();
@@ -310,57 +303,15 @@ AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStr
 			vv.push_back(*((*jt)->freeVars().cbegin()));
 		}Assert(_domains.find(connector) != _domains.cend());
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-		auto oldinter = structure->inter(symbol);
+		auto newinter = structure->inter(symbol);
 
-		auto oldcts = new EnumeratedInternalPredTable();
-		auto oldcfs = new EnumeratedInternalPredTable();
-		bool foundct = false;
-		bool foundcf = false;
-		for (auto trueEl = oldinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
-			if (bddinter->isFalse(*trueEl)) {
-				return new InconsistentStructure();
-			}
-			if (not bddinter->isTrue(*trueEl)) {
-				oldcts->add(*trueEl);
-				foundct = true;
-			}
+		for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
+			newinter->makeTrue(*trueEl);
 		}
-		for (auto falseEl = oldinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
-			if (bddinter->isTrue(*falseEl)) {
-				return new InconsistentStructure();
-			}
-			if (not bddinter->isFalse(*falseEl)) {
-				oldcfs->add(*falseEl);
-				foundcf = true;
-			}
-		}
-		if (not oldinter->approxTwoValued()) {
-			PredTable* newct;
-			if (foundct) {
-				std::vector<InternalPredTable*> empty(0);
-				std::vector<InternalPredTable*> all = { bddinter->ct()->internTable(), oldcts };
-				newct = new PredTable(new UnionInternalPredTable(all, empty), oldinter->universe());
-			} else {
-				newct = new PredTable(*bddinter->ct());
-			}
-			PredTable* newcf;
-			if (foundcf) {
-				std::vector<InternalPredTable*> empty(0);
-				std::vector<InternalPredTable*> all =  { bddinter->cf()->internTable(), oldcfs };
-				newcf = new PredTable(new UnionInternalPredTable(all, empty), oldinter->universe());
-			} else {
-				newcf = new PredTable(*bddinter->cf());
-			}
-			auto newinter = new PredInter(newct, newcf, true, true);
-			if (sametypeid<Predicate>(*symbol)) {
-				res->inter(dynamic_cast<Predicate*>(symbol), newinter);
-			} else {
-				FuncInter* finter = new FuncInter(newinter);
-				res->inter(dynamic_cast<Function*>(symbol), finter);
-			}
+		for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
+			newinter->makeFalse(*falseEl);
 		}
 	}
-	return res;
 }
 
 template<class Factory, class Domain>
