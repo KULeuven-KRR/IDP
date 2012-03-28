@@ -26,7 +26,7 @@
  */
 class OptimalPropagation {
 public:
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<AbstractStructure*>  propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: make a clean version of the implementation (should call ModelExpansion)
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
@@ -55,7 +55,7 @@ public:
 
 		std::set<int> intersection;
 		if (abstractsolutions->getModels().empty()) {
-			return new InconsistentStructure(structure->name(), structure->pi());
+			return std::vector<AbstractStructure*> { };
 		}
 		// Take the intersection of all models
 		auto firstmodel = *(abstractsolutions->getModels().cbegin());
@@ -102,7 +102,10 @@ public:
 		grounding->recursiveDelete();
 		delete (symstructure);
 
-		return result;
+		if(not result->isConsistent()){
+			return std::vector<AbstractStructure*> { };
+		}
+		return {result};
 	}
 };
 

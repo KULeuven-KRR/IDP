@@ -89,8 +89,11 @@ procedure assert2(table, values, name){
 }
 
 procedure consistent(expected, Struct){
-	if not Struct then Struct = S end
 	if expected == 1 then
+		if Struct == nil then
+			io.stderr:write("Recieved no structure, hence propagation found inconsistency which was not expected\n")
+			return false
+		end
 		if isconsistent(Struct) == true then
 			return true
 		else
@@ -98,7 +101,7 @@ procedure consistent(expected, Struct){
 			return false
 		end
 	else
-		if isconsistent(Struct) == false then
+		if Struct == nil then
 			return true
 		else
 			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")

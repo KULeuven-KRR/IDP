@@ -28,11 +28,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-	auto clonestr = structure->clone();
-	auto symstructure = generateBounds(&theory, clonestr);//TODO: clone is here to avoid that structure starts pointing to another object. FIX THIS!
-	if(sametypeid<InconsistentStructure>(*clonestr)){
-		return false;
-	}
+
+	auto symstructure = generateBounds(&theory, structure);
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
 	grounder->toplevelRun();
@@ -45,12 +42,10 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 		throw IdpException("Solver was terminated");
 	}
 
-	bool success;
 	// Collect solutions
 	if (abstractsolutions->getModels().empty()) {
-		success= false;
+		return false;
 	} else {
-		success = true;
 		Assert(abstractsolutions->getModels().size() == 1);
 		auto model = *(abstractsolutions->getModels().cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
@@ -64,10 +59,11 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (abstractsolutions);
 	delete (grounder);
 	delete (symstructure);
-	return success;
+
+	return structure->isConsistent();
 }
 
-AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
+std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
 	auto structure = originalStructure->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";
@@ -99,7 +95,7 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 					if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
-					return new InconsistentStructure(structure->name(), structure->pi());
+					return std::vector<AbstractStructure*> { };
 				}
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
@@ -109,7 +105,9 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			}
 		}
 	}
-	Assert(structure->isConsistent()); // NOTE: otherwise early exit
-	return structure;
+	if(not structure->isConsistent()){
+		return std::vector<AbstractStructure*> { };
+	}
+	return {structure};
 }
 

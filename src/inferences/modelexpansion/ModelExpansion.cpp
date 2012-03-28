@@ -45,11 +45,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto clonetheory = theory->clone();
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
-		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
-		if (not newstructure->isConsistent()) {
+		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
+		if(defCalculated.size() == 0){
 			delete(newstructure);
 			return std::vector<AbstractStructure*> { };
 		}
+		Assert(defCalculated[0]->isConsistent());
+		newstructure = defCalculated[0];
 	}else{
 		newstructure = structure->clone();
 	}
