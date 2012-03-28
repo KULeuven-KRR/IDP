@@ -67,6 +67,7 @@ class SplitIntoMonotoneAgg;
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
 		friend class AddCompletion; \
+		friend class AddFuncConstraints; \
 		friend class DeriveSorts; \
 		friend class Flatten; \
 		friend class GraphAggregates; \

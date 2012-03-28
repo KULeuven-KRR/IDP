@@ -146,6 +146,9 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, b
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
 
+/** Add func constraints for all functions. */
+void addFuncConstraints(AbstractTheory*);
+
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);
 

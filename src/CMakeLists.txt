@@ -106,6 +106,7 @@ add_library(idp
 	theory/transformations/Flatten.cpp
 	theory/transformations/DeriveSorts.cpp
 	theory/transformations/AddCompletion.cpp
+	theory/transformations/AddFuncConstraints.cpp
 	theory/transformations/GraphFuncsAndAggs.cpp
 	theory/transformations/PushQuantifications.cpp
 	theory/transformations/RemoveEquivalences.cpp

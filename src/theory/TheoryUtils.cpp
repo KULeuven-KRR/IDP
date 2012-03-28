@@ -30,6 +30,7 @@
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
 #include "transformations/AddCompletion.hpp"
+#include "transformations/AddFuncConstraints.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
@@ -203,6 +204,11 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 
 void addCompletion(AbstractTheory* t) {
 	auto newt = transform<AddCompletion, AbstractTheory*>(t);
+	Assert(newt==t);
+}
+
+void addFuncConstraints(AbstractTheory* t) {
+	auto newt = transform<AddFuncConstraints, AbstractTheory*>(t);
 	Assert(newt==t);
 }
 

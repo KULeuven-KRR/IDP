@@ -30,8 +30,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	theory.add(definition);
 
 	auto symstructure = generateBounds(&theory, structure);
-	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
@@ -100,8 +100,6 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
 				fixpoint = false;
-				//cerr <<"Current structure after evaluating a definition: \n";
-				//cerr <<toString(structure) <<"\n";
 			}
 		}
 	}
