@@ -25,6 +25,7 @@ class Sort;
 class SortTable;
 class Vocabulary;
 
+
 class AbstractStructure {
 protected:
 

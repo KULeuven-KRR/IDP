@@ -29,7 +29,7 @@
  */
 class GroundingPropagation {
 public:
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: make a clean version of this implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		auto monitor = new PropagateMonitor();
@@ -39,7 +39,7 @@ public:
 
 		//Create and execute grounder
 		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure}, solver);
+		auto grounder = GrounderFactory::create( { theory, structure, symstructure }, solver);
 		monitor->setTranslator(grounder->getTranslator());
 		monitor->setSolver(solver);
 		grounder->toplevelRun();
@@ -85,8 +85,10 @@ public:
 		result->clean();
 		delete (monitor);
 		delete (solver);
-
-		return result;
+		if (not result->isConsistent()) {
+			return std::vector<AbstractStructure*> { };
+		}
+		return {result};
 	}
 };
 
