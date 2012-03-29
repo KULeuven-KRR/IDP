@@ -204,6 +204,7 @@ const FOBDDTerm* FOBDDManager::invert(const FOBDDTerm* arg) {
 
 const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType akt, const vector<const FOBDDTerm*>& args) {
 	// Simplification
+	Assert(symbol != NULL);
 	if (symbol->name() == "=/2") {
 		if (args[0] == args[1]) {
 			return _truekernel;
@@ -221,7 +222,11 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 	if (sametypeid<Function>(*symbol) && akt == AtomKernelType::AKT_TWOVALUED) {
 		Function* f = dynamic_cast<Function*>(symbol);
 		Sort* s = SortUtils::resolve(f->outsort(), args.back()->sort());
+		if(s == NULL){
+			return _falsekernel;
+		}
 		Predicate* equal = VocabularyUtils::equal(s);
+		Assert(equal != NULL);
 		vector<const FOBDDTerm*> funcargs = args;
 		funcargs.pop_back();
 		const FOBDDTerm* functerm = getFuncTerm(f, funcargs);

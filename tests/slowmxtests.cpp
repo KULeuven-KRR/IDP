@@ -35,7 +35,7 @@ class MXsatTest: public ::testing::TestWithParam<string> {
 
 class SlowMXsatTest: public ::testing::TestWithParam<string> {
 };
-TEST_P(SlowMXsatTest, DoesSlowMX) {
+TEST_P(SlowMXsatTest, DoesSlowMXBasic) {
 	runTests("mxsattestslow.idp", GetParam());
 }
 TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {

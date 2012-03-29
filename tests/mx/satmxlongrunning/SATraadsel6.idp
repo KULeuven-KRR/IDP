@@ -3,10 +3,8 @@ procedure getExpectedAModel(){
 }
 
 vocabulary V{
-	type Time
- isa int
-	type Position
- isa int
+	type Time isa int
+	type Position isa int
 	type Person
 	type Act
 	A1: Person

@@ -123,6 +123,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 	auto akt = AtomKernelType::AKT_TWOVALUED;
 	auto invert = isNeg(pf->sign());
 	auto symbol = pf->symbol();
+	Assert(symbol != NULL);
 
 	checkIfBoundedPredicate(symbol, akt, invert);
 

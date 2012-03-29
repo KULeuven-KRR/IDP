@@ -108,7 +108,7 @@ public:
 	void negate() {
 		_sign = !_sign;
 		//if (_pi.originalobject())
-			// FIXME _pi.originalobject()->negate();
+		// FIXME _pi.originalobject()->negate();
 	}
 	//!< swap the sign of the formula
 
@@ -198,6 +198,7 @@ public:
 	// Constructors
 	PredForm(SIGN sign, PFSymbol* s, const std::vector<Term*>& a, const FormulaParseInfo& pi)
 			: Formula(sign, pi), _symbol(s) {
+		Assert(_symbol!=NULL);
 		subterms(a);
 	}
 
