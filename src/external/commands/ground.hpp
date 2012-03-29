@@ -16,7 +16,7 @@
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
-#include "external/FlatZincRewriter.hpp"
+//#include "external/FlatZincRewriter.hpp"
 
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
 class GroundInference: public GroundBase {
