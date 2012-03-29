@@ -18,6 +18,8 @@
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 
+#include "inferences/SolverInclude.hpp"
+
 class PFSymbol;
 class Variable;
 class AbstractStructure;
@@ -35,11 +37,6 @@ class FormulaGrounder;
 class GenerateBDDAccordingToBounds;
 class Grounder;
 class FOBDD;
-
-namespace MinisatID{
-class WrappedPCSolver;
-class FlatZincRewriter;
-}
 
 struct GenAndChecker {
 	const std::vector<const DomElemContainer*> _vars;
@@ -132,8 +129,8 @@ public:
 
 	// Factory methods which return a toplevelgrounder able to generate the full grounding
 	static Grounder* create(const GroundInfo& data);
-	static Grounder* create(const GroundInfo& data, MinisatID::WrappedPCSolver* satsolver);
-	static Grounder* create(const GroundInfo& data, MinisatID::FlatZincRewriter* flatzincprinter);
+	static Grounder* create(const GroundInfo& data, PCSolver* satsolver);
+	//static Grounder* create(const GroundInfo& data, FZRewriter* flatzincprinter);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
 	static SetGrounder* create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
 

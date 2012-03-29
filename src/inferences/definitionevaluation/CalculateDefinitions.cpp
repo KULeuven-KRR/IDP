@@ -25,24 +25,25 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
 	// TODO duplicate code with modelexpansion
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver(1);
+	auto data = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 
 	auto symstructure = generateBounds(&theory, structure);
-	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, data);
 
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
 	// Run solver
-	MinisatID::Solution* abstractsolutions = SolverConnection::initsolution();
-	solver->solve(abstractsolutions);
+	auto mx = SolverConnection::initsolution(data, 1);
+	mx->execute();
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
 
 	// Collect solutions
+	auto abstractsolutions = mx->getSolutions();
 	if (abstractsolutions->getModels().empty()) {
 		return false;
 	} else {
@@ -55,7 +56,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
 	// Cleanup
 	grounding->recursiveDelete();
-	delete (solver);
+	delete (data);
+	delete (mx);
 	delete (abstractsolutions);
 	delete (grounder);
 	delete (symstructure);

@@ -14,6 +14,8 @@
 
 #include "inferences/symmetrybreaking/symmetry.hpp"
 
+#include "inferences/SolverInclude.hpp"
+
 #include "theory/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
@@ -32,9 +34,14 @@ using namespace std;
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
 
 class SolverTermination: public TerminateMonitor {
+private:
+	PCModelExpand* solver;
 public:
+	SolverTermination(PCModelExpand* solver): solver(solver){
+
+	}
 	void notifyTerminateRequested() {
-		requestTermination();
+		solver->notifyTerminateRequested();
 	}
 };
 
@@ -55,7 +62,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
+	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
@@ -63,11 +70,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
-	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, solver);
-	SolverConnection::setTranslator(solver, grounder->getTranslator());
+	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, data);
+	SolverConnection::setTranslator(data, grounder->getTranslator());
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
-		tracemonitor->setSolver(solver);
+		tracemonitor->setSolver(data);
 	}
 	grounder->toplevelRun();
 	auto grounding = grounder->getGrounding();
@@ -115,12 +122,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Run solver
-	auto abstractsolutions = SolverConnection::initsolution();
+	auto mx = SolverConnection::initsolution(data, 0);
 	if (verbosity() >= 1) {
 		clog << "Solving\n";
 	}
-	getGlobal()->addTerminationMonitor(new SolverTermination());
-	solver->solve(abstractsolutions);
+	getGlobal()->addTerminationMonitor(new SolverTermination(mx));
+	mx->execute();
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
@@ -138,6 +145,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Collect solutions
+	auto abstractsolutions = mx->getSolutions();
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
 	if(minimizeterm!=NULL){ // Optimizing
@@ -154,13 +162,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Clean up: remove all objects that are only used here.
-	delete (solver);
 	grounding->recursiveDelete();
 	// delete (grounder); TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
-	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	delete (newstructure);
 	delete (symstructure);
+	delete(data);
+	delete(mx);
 
 	return solutions;
 }

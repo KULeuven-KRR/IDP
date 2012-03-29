@@ -280,7 +280,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  *		One or more models of the ground theory can be obtained by calling solve() on
  *		the solver.
  */
-Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSolver* solver) {
+Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
@@ -291,8 +291,8 @@ Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSo
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
-Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRewriter* printer) {
-	auto groundtheory = new GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+/*Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
+	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	// Find functions that can be passed to CP solver.
@@ -301,7 +301,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRew
 	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
-}
+}*/
 
 SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
 	GrounderFactory g(data, grounding);
@@ -752,6 +752,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
 		Context lazycontext = Context::BOTH;
+		// FIXME BUG BUG: for functions, should ALSO consider the implicit function constraint!!!!!
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
 		if (tuple.size()!=2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);

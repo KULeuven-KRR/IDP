@@ -13,8 +13,7 @@
 
 #include "GroundTheory.hpp"
 #include "SolverPolicy.hpp"
-#include "external/ExternalInterface.hpp"
 
-typedef GroundTheory<SolverPolicy<MinisatID::WrappedPCSolver> > SolverTheory;
+typedef GroundTheory<SolverPolicy<PCSolver> > SolverTheory;
 
 #endif /* SOLVERTHEORY_HPP_ */

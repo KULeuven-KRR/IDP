@@ -13,17 +13,15 @@
 
 #include <iostream>
 #include "tracemonitor.hpp"
-#include "external/SearchMonitor.hpp"
-#include "external/ExternalInterface.hpp"
 
 class PropagateMonitor: public TraceMonitor {
 private:
 	std::vector<MinisatID::Literal> _partialmodel;
-	MinisatID::SearchMonitor* _solvermonitor;
+	SearchMonitor* _solvermonitor;
 public:
 	PropagateMonitor() {
 		cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &PropagateMonitor::propagate);
-		_solvermonitor = new MinisatID::SearchMonitor();
+		_solvermonitor = new SearchMonitor();
 		_solvermonitor->setPropagateCB(callbackprop);
 	}
 	virtual ~PropagateMonitor() {
@@ -37,7 +35,7 @@ public:
 		_partialmodel.push_back(lit);
 	}
 
-	virtual void setSolver(MinisatID::WrappedPCSolver* solver) {
+	virtual void setSolver(PCSolver* solver) {
 		solver->addMonitor(_solvermonitor);
 	}
 	const std::vector<MinisatID::Literal>& model() {

@@ -35,37 +35,29 @@ public:
 		auto monitor = new PropagateMonitor();
 
 		//Set MinisatID solver options
-		auto solver = SolverConnection::createsolver(0);
+		auto data = SolverConnection::createsolver(0);
 
 		//Create and execute grounder
 		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure}, solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, data);
 		monitor->setTranslator(grounder->getTranslator());
-		monitor->setSolver(solver);
+		monitor->setSolver(data);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
-		//Set MinisatID mx options
-		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = 0;
-		opts.printmodels = MinisatID::PRINT_NONE;
-		opts.savemodels = MinisatID::SAVE_ALL;
-		opts.inference = MinisatID::PROPAGATE;
-		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
+		auto mx = SolverConnection::initpropsolution(data, 0);
+		mx->execute();
 
-		//Execute MinisatID
-		solver->solve(abstractsolutions);
-
-		GroundTranslator* translator = grounding->translator();
-		AbstractStructure* result = structure->clone();
+		auto translator = grounding->translator();
+		auto result = structure->clone();
 		// Use the propagation monitor to assert everything that was propagated without search
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
 			int atomnr = literal->getAtom().getValue();
 			if (translator->isInputAtom(atomnr)) {
-				PFSymbol* symbol = translator->getSymbol(atomnr);
-				const ElementTuple& args = translator->getArgs(atomnr);
+				auto symbol = translator->getSymbol(atomnr);
+				auto args = translator->getArgs(atomnr);
 				if (sametypeid<Predicate>(*symbol)) {
-					Predicate* pred = dynamic_cast<Predicate*>(symbol);
+					auto pred = dynamic_cast<Predicate*>(symbol);
 					if (literal->hasSign()) {
 						result->inter(pred)->makeFalse(args);
 					} else {
@@ -73,7 +65,7 @@ public:
 					}
 				} else {
 					Assert(sametypeid<Function>(*symbol));
-					Function* func = dynamic_cast<Function*>(symbol);
+					auto func = dynamic_cast<Function*>(symbol);
 					if (literal->hasSign()) {
 						result->inter(func)->graphInter()->makeFalse(args);
 					} else {
@@ -84,7 +76,8 @@ public:
 		}
 		result->clean();
 		delete (monitor);
-		delete (solver);
+		delete (data);
+		delete (mx);
 
 		return result;
 	}

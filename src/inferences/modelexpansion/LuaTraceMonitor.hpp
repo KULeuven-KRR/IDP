@@ -14,10 +14,6 @@
 #include "tracemonitor.hpp"
 #include "lua.hpp"
 
-namespace MinisatID {
-class WrappedPCSolver;
-}
-
 //for i,v in pairs(trace) do print(v["atom"]) print(v["value"]) end
 class LuaTraceMonitor: public TraceMonitor {
 private:
@@ -32,7 +28,7 @@ public:
 	void setTranslator(GroundTranslator* translator) {
 		_translator = translator;
 	}
-	void setSolver(MinisatID::WrappedPCSolver* solver);
+	void setSolver(PCSolver* solver);
 
 	void backtrack(int dl);
 	void propagate(MinisatID::Literal lit, int dl);

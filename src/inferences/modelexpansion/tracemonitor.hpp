@@ -12,13 +12,12 @@
 #define TRACEMONITOR_HPP_
 
 #include <string>
+#include "inferences/SolverInclude.hpp"
 
 class GroundTranslator;
 
 namespace MinisatID {
-class Literal;
-class WrappedPCSolver;
-typedef WrappedPCSolver SATSolver;
+	class Literal;
 }
 
 class TraceMonitor {
@@ -31,7 +30,7 @@ public:
 
 	//NOTE: should be called BEFORE the grounding
 	//(else, we don't keep track of propagations that occur immediately after adding a unit clause)
-	virtual void setSolver(MinisatID::WrappedPCSolver* solver) = 0;
+	virtual void setSolver(PCSolver* solver) = 0;
 };
 
 #endif /* TRACEMONITOR_HPP_ */

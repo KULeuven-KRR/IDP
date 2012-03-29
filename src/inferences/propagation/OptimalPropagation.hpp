@@ -17,6 +17,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/SolverConnection.hpp"
 #include "PropagatorFactory.hpp"
 
 /**
@@ -31,27 +32,21 @@ public:
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
 
-		//MinisatID solveroptions
-		MinisatID::SolverOption modes;
-		modes.nbmodels = 0;
-		modes.verbosity = 0;
-		//modes.remap = false;
-		MinisatID::WrappedPCSolver solver(modes);
+		auto data = SolverConnection::createsolver(0);
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure}, &solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, data);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
-		//MinisatID modelexpandoptions
-		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = 0;
-		opts.printmodels = MinisatID::PRINT_NONE;
-		opts.savemodels = MinisatID::SAVE_ALL;
-		opts.inference = MinisatID::MODELEXPAND;
-		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-		solver.solve(abstractsolutions);
+		auto mx = SolverConnection::initsolution(data, 0);
+		mx->execute();
+
+		auto abstractsolutions = mx->getSolutions();
+
+		delete(mx);
+		delete(data);
 
 		std::set<int> intersection;
 		if (abstractsolutions->getModels().empty()) {

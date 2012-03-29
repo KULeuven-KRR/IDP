@@ -11,7 +11,7 @@
 #ifndef INFERENCESOLVERCONN_HPP_
 #define INFERENCESOLVERCONN_HPP_
 
-#include "external/ExternalInterface.hpp"
+#include "SolverInclude.hpp"
 
 class AbstractStructure;
 class GroundTranslator;
@@ -26,9 +26,10 @@ namespace MinisatID {
 
 namespace SolverConnection {
 	// Note: default find all models
-	MinisatID::WrappedPCSolver* createsolver(int nbmodels = 0);
-	void setTranslator(MinisatID::WrappedPCSolver*, GroundTranslator* translator);
-	MinisatID::Solution* initsolution();
+	PCSolver* createsolver(int nbmodels = 0);
+	void setTranslator(PCSolver*, GroundTranslator* translator);
+	PCModelExpand* initsolution(PCSolver*, int nbmodels);
+	PCModelExpand* initpropsolution(PCSolver*, int nbmodels);
 
 	// Parse model into structure
 	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);

@@ -72,7 +72,7 @@ protected:
 			return;
 		}
 		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
-			// TODO checks here whether NO tupels are known about the predicate. This can obvious be done better, by checking if it is only a small number AND adding those to the grounding explitly!!!
+			// TODO checks here whether NO tuples are known about the predicate. This can obvious be done better, by checking if it is only a small number AND adding those to the grounding explicitly!!!
 			return;
 		}
 		_allquantvars = true;

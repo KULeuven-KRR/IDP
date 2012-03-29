@@ -10,8 +10,6 @@
 
 #include "IncludeComponents.hpp"
 #include "LuaTraceMonitor.hpp"
-#include "external/SearchMonitor.hpp"
-#include "external/ExternalInterface.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "lua/luaconnection.hpp"
 
@@ -24,10 +22,10 @@ LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 	std::clog << *_registryindex << "\n";
 }
 
-void LuaTraceMonitor::setSolver(MinisatID::WrappedPCSolver* solver) {
+void LuaTraceMonitor::setSolver(PCSolver* solver) {
 	cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
 	cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &LuaTraceMonitor::propagate);
-	auto solvermonitor_ = new MinisatID::SearchMonitor();
+	auto solvermonitor_ = new SearchMonitor();
 	solvermonitor_->setBacktrackCB(callbackback);
 	solvermonitor_->setPropagateCB(callbackprop);
 	solver->addMonitor(solvermonitor_);

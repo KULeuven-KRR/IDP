@@ -16,8 +16,7 @@
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
-#include "external/ExternalInterface.hpp"
-#include "external/FlatZincRewriter.hpp"
+#include "external/Constraints.hpp"
 
 #include <cmath>
 
@@ -50,10 +49,10 @@ template<typename Solver>
 void SolverPolicy<Solver>::polEndTheory(){
 }
 
-template<>
+/*template<>
 void SolverPolicy<MinisatID::FlatZincRewriter>::polEndTheory(){
 	getSolver().finishParsing();
-}
+}*/
 
 double test;
 
@@ -71,7 +70,7 @@ void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 	for (size_t n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
 	}
-	getSolver().add(clause);
+	add(getSolver(), clause);
 }
 
 template<typename Solver>
@@ -82,7 +81,7 @@ void SolverPolicy<Solver>::polAdd(const TsSet& tsset, int setnr, bool weighted) 
 		for (size_t n = 0; n < tsset.size(); ++n) {
 			set.literals.push_back(createLiteral(tsset.literal(n)));
 		}
-		getSolver().add(set);
+		add(getSolver(), set);
 	} else {
 		MinisatID::WSet set;
 		set.setID = setnr;
@@ -90,7 +89,7 @@ void SolverPolicy<Solver>::polAdd(const TsSet& tsset, int setnr, bool weighted) 
 			set.literals.push_back(createLiteral(tsset.literal(n)));
 			set.weights.push_back(createWeight(tsset.weight(n)));
 		}
-		getSolver().add(set);
+		add(getSolver(), set);
 	}
 }
 
@@ -125,7 +124,7 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 	sentence.weights = weights;
 	sentence.bound = bound;
 	sentence.rel = rel;
-	getSolver().add(sentence);
+	add(getSolver(), sentence);
 }
 
 template<typename Solver>
@@ -133,22 +132,22 @@ void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch (body->comp()) {
 	case CompType::EQ:
-		comp = MinisatID::MEQ;
+		comp = MinisatID::EqType::EQ;
 		break;
 	case CompType::NEQ:
-		comp = MinisatID::MNEQ;
+		comp = MinisatID::EqType::NEQ;
 		break;
 	case CompType::LEQ:
-		comp = MinisatID::MLEQ;
+		comp = MinisatID::EqType::LEQ;
 		break;
 	case CompType::GEQ:
-		comp = MinisatID::MGEQ;
+		comp = MinisatID::EqType::GEQ;
 		break;
 	case CompType::LT:
-		comp = MinisatID::ML;
+		comp = MinisatID::EqType::L;
 		break;
 	case CompType::GT:
-		comp = MinisatID::MG;
+		comp = MinisatID::EqType::G;
 		break;
 	}
 	CPTerm* left = body->left();
@@ -163,14 +162,14 @@ void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
 			sentence.lhsvarID = term->varid();
 			sentence.rhsvarID = right._varid;
 			sentence.rel = comp;
-			getSolver().add(sentence);
+			add(getSolver(), sentence);
 		} else {
 			MinisatID::CPBinaryRel sentence;
 			sentence.head = createAtom(tseitin);
 			sentence.varID = term->varid();
 			sentence.bound = right._bound;
 			sentence.rel = comp;
-			getSolver().add(sentence);
+			add(getSolver(), sentence);
 		}
 	} else if (sametypeid<CPSumTerm>(*left)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
@@ -227,26 +226,26 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 		impltype = MinisatID::ImplicationType::EQUIVALENT;
 		break;
 	}
-	getSolver().add(MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
+	add(getSolver(), MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
 MinisatID::AggType convert(AggFunction agg){
 	MinisatID::AggType type = MinisatID::AggType::CARD;
 	switch (agg) {
 	case AggFunction::CARD:
-		type= MinisatID::CARD;
+		type= MinisatID::AggType::CARD;
 		break;
 	case AggFunction::SUM:
-		type= MinisatID::SUM;
+		type= MinisatID::AggType::SUM;
 		break;
 	case AggFunction::PROD:
-		type= MinisatID::PROD;
+		type= MinisatID::AggType::PROD;
 		break;
 	case AggFunction::MIN:
-		type= MinisatID::MIN;
+		type= MinisatID::AggType::MIN;
 		break;
 	case AggFunction::MAX:
-		type= MinisatID::MAX;
+		type= MinisatID::AggType::MAX;
 		break;
 	}
 	return type;
@@ -255,7 +254,7 @@ MinisatID::AggType convert(AggFunction agg){
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
 	MinisatID::Aggregate agg;
-	agg.sign = lowerbound ? MinisatID::AGGSIGN_LB : MinisatID::AGGSIGN_UB;
+	agg.sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
 	agg.setID = setnr;
 	agg.type = convert(aggtype);
 	if (_verbosity > 1){
@@ -265,10 +264,10 @@ void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowe
 	case TsType::EQ:
 	case TsType::IMPL:
 	case TsType::RIMPL:
-		agg.sem = MinisatID::COMP;
+		agg.sem = MinisatID::AggSem::COMP;
 		break;
 	case TsType::RULE:
-		agg.sem = MinisatID::DEF;
+		agg.sem = MinisatID::AggSem::DEF;
 		break;
 	}
 	if (_verbosity > 1)
@@ -276,7 +275,7 @@ void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowe
 	agg.defID = definitionID;
 	agg.head = createAtom(head);
 	agg.bound = createWeight(bound);
-	getSolver().add(agg);
+	add(getSolver(), agg);
 }
 
 template<typename Solver>
@@ -301,7 +300,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 			cpvar.maxvalue = domain->last()->value()._int;
 			if (_verbosity > 0)
 				std::clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
-			getSolver().add(cpvar);
+			add(getSolver(), cpvar);
 		} else {
 			// the domain is not a complete range.
 			MinisatID::CPIntVarEnum cpvar;
@@ -316,7 +315,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 			}
 			if (_verbosity > 0)
 				std::clog << "}";
-			getSolver().add(cpvar);
+			add(getSolver(), cpvar);
 		}
 		if (_verbosity > 0)
 			std::clog << "\n";
@@ -332,7 +331,7 @@ void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> bo
 	}
 	rule.conjunctive = conjunctive;
 	rule.definitionID = defnr;
-	getSolver().add(rule);
+	add(getSolver(), rule);
 }
 
 template<typename Solver>
@@ -340,7 +339,7 @@ void SolverPolicy<Solver>::polAddOptimization(AggFunction function, int setid){
 	MinisatID::MinimizeAgg minim;
 	minim.setid = setid;
 	minim.type = convert(function);
-	getSolver().add(minim);
+	add(getSolver(), minim);
 }
 
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {
@@ -365,17 +364,14 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
-
-template<>
-void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
+void SolverPolicy<PCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
 	auto mon = new LazyRuleMon(delaylit, args, grounders);
 	auto literal = createLiteral(delaylit);
 	if(context==Context::POSITIVE){ // In a positive context, should watch when the literal becomes false, or it's negation becomes true
 		literal = not literal;
 	}
 	MinisatID::LazyGroundLit lc(context==Context::BOTH, literal, mon);
-	getSolver().add(lc);
+	add(getSolver(), lc);
 }
 
 typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
@@ -398,12 +394,7 @@ public:
 };
 
 template<>
-void SolverPolicy<MinisatID::FlatZincRewriter>::polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const) {
-
-}
-
-template<>
-void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
+void SolverPolicy<PCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
 	auto mon = new LazyClauseMon(inst, grounder);
 	auto watchboth = type==TsType::RULE || type==TsType::EQ;
 	auto lit = createLiteral(inst->residual);
@@ -411,9 +402,8 @@ void SolverPolicy<MinisatID::WrappedPCSolver>::polNotifyLazyResidual(ResidualAnd
 		lit = not lit;
 	}
 	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
-	getSolver().add(lc);
+	add(getSolver(), lc);
 }
 
 // Explicit instantiations
-template class SolverPolicy<MinisatID::WrappedPCSolver>;
-template class SolverPolicy<MinisatID::FlatZincRewriter>;
+template class SolverPolicy<PCSolver>;

@@ -15,6 +15,8 @@
 #include "PrintGroundPolicy.hpp"
 #include "GroundPolicy.hpp"
 
+#include "inferences/SolverInclude.hpp"
+
 using namespace std;
 
 template<class Policy>
@@ -464,11 +466,7 @@ AbstractTheory* GroundTheory<Policy>::accept(TheoryMutatingVisitor* v) {
 	return v->visit(this);
 }
 
-#include "external/FlatZincRewriter.hpp"
-#include "external/ExternalInterface.hpp"
-
 // Explicit instantiations
 template class GroundTheory<GroundPolicy> ;
-template class GroundTheory<SolverPolicy<MinisatID::WrappedPCSolver> > ;
-template class GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> > ;
+template class GroundTheory<SolverPolicy<PCSolver> > ;
 template class GroundTheory<PrintGroundPolicy> ;

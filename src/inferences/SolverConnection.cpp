@@ -20,7 +20,7 @@ namespace SolverConnection {
 
 typedef cb::Callback1<std::string, int> callbackprinting;
 
-MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
+PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
@@ -28,33 +28,44 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
-	modes.polarity = MinisatID::POL_STORED;
+	modes.polarity = MinisatID::Polarity::STORED;
 	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)){
-		modes.polarity = MinisatID::POL_RAND;
+		modes.polarity = MinisatID::Polarity::RAND;
 	}
 
 	if (options->getValue(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
 	}
 
-	startInference(); // NOTE: have to tell the solver to reset its instance
-	CHECKTERMINATION
-	return new MinisatID::WrappedPCSolver(modes);
+	auto solver = new PCSolver(modes);
+	//solver->resetTerminationFlag(); // NOTE: have to tell the solver to reset its instance
+	//CHECKTERMINATION
+	return solver;
 }
 
-void setTranslator(MinisatID::WrappedPCSolver* solver, GroundTranslator* translator){
+void setTranslator(PCSolver* solver, GroundTranslator* translator){
 	callbackprinting cbprint(translator, &GroundTranslator::print);
-	solver->setTranslator(cbprint);
+	solver->setCallBackTranslator(cbprint);
 }
 
-MinisatID::Solution* initsolution() {
+PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::ModelExpandOptions opts;
-	opts.nbmodelstofind = options->getValue(IntType::NBMODELS);
-	opts.printmodels = MinisatID::PRINT_NONE;
-	opts.savemodels = MinisatID::SAVE_ALL;
-	opts.inference = MinisatID::MODELEXPAND;
-	return new MinisatID::Solution(opts);
+	opts.nbmodelstofind = nbmodels;
+	opts.printmodels = MinisatID::Models::NONE;
+	opts.savemodels = MinisatID::Models::ALL;
+	opts.inference = MinisatID::Inference::MODELEXPAND;
+	return new PCModelExpand(solver, opts);
+}
+
+PCModelExpand* initpropsolution(PCSolver* solver, int nbmodels) {
+	auto options = GlobalData::instance()->getOptions();
+	MinisatID::ModelExpandOptions opts;
+	opts.nbmodelstofind = nbmodels;
+	opts.printmodels = MinisatID::Models::NONE;
+	opts.savemodels = MinisatID::Models::ALL;
+	opts.inference = MinisatID::Inference::PROPAGATE; // TODO should become propagate inference!
+	return new PCModelExpand(solver, opts);
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {

@@ -12,7 +12,7 @@
 #define SOLVERPOLICY_HPP_
 
 #include "IncludeComponents.hpp"
-#include "external/ExternalInterface.hpp"
+#include "inferences/SolverInclude.hpp"
 
 class TsSet;
 class LazyGroundingManager;
