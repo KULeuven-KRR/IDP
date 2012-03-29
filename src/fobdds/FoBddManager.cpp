@@ -1488,7 +1488,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		}
 
 		// collect the paths that lead to node 'false'
-		vector<Path> paths = pathsToFalse(quantkernel->bdd());
+		vector<Path> pathstofalse = pathsToFalse(quantkernel->bdd());
 
 		// collect all kernels and their estimated number of answers
 		map<const FOBDDKernel*, double> subkernels = kernelAnswers(quantkernel->bdd(), structure);
@@ -1501,23 +1501,32 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 			// An experiment consists of trying to reach N times node 'false',
 			// where N is the size of the domain of the quantified variable.
 
-			map<const FOBDDKernel*, double> dynsubkernels = subkernels;
+			map<const FOBDDKernel*, double> nbAnswersOfKernels = subkernels;
 			bool fail = false;
 
 			double chance = 1;
+			//TODO What is this element for?
 			for (int element = 0; element < quantsize; ++element) {
 				// Compute possibility of each path
 				vector<double> cumulative_pathsposs;
 				double cumulative_chance = 0;
-				for (unsigned int pathnr = 0; pathnr < paths.size(); ++pathnr) {
+				for (unsigned int pathnr = 0; pathnr < pathstofalse.size(); ++pathnr) {
 					double currchance = 1;
-					for (unsigned int nodenr = 0; nodenr < paths[pathnr].size(); ++nodenr) {
-						tablesize ts = subunivs[paths[pathnr][nodenr].second];
+					for (unsigned int nodenr = 0; nodenr < pathstofalse[pathnr].size(); ++nodenr) {
+						tablesize ts = subunivs[pathstofalse[pathnr][nodenr].second];
 						double nodeunivsize = (ts._type == TST_EXACT || ts._type == TST_APPROXIMATED) ? ts._size : getMaxElem<double>();
-						if (paths[pathnr][nodenr].first)
-							currchance = currchance * dynsubkernels[paths[pathnr][nodenr].second] / double(nodeunivsize - element);
-						else
-							currchance = currchance * (nodeunivsize - element - dynsubkernels[paths[pathnr][nodenr].second]) / double(nodeunivsize - element);
+						if (pathstofalse[pathnr][nodenr].first) {
+							//If the path takes the true branch, kernel chance is its number of answers divided by its universe. TODO: WHY "-element"?
+							//currchance = currchance * nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] / double(nodeunivsize - element);
+							currchance = currchance * nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] / double(nodeunivsize);
+							Assert(currchance>=0);
+						} else {
+							//currchance = currchance * (nodeunivsize - nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] ) / double(nodeunivsize - element);
+							Assert(nodeunivsize >= nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]);
+							Assert(nodeunivsize >= 0);
+							currchance = currchance * (nodeunivsize - nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]) / double(nodeunivsize);
+							Assert(currchance>=0);
+						}
 					}
 					cumulative_chance += currchance;
 					cumulative_pathsposs.push_back(cumulative_chance);
@@ -1526,6 +1535,8 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 				// TODO there is a bug in the probability code, leading to P > 1, such that the following check is necessary
 				if (cumulative_chance > 1) {
 					//Warning::cumulchance(cumulative_chance);
+					Assert(false);
+					//TODO I think i might have fixed it.
 					cumulative_chance = 1;
 				}
 				if (cumulative_chance > 0) { // there is a possible path to false
@@ -1534,9 +1545,11 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 					// randomly choose a path
 					double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
 					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss) - cumulative_pathsposs.cbegin();
-					for (unsigned int nodenr = 0; nodenr < paths[chosenpathnr].size(); ++nodenr) {
-						if (paths[chosenpathnr][nodenr].first)
-							dynsubkernels[paths[chosenpathnr][nodenr].second] += -(1.0);
+					for (unsigned int nodenr = 0; nodenr < pathstofalse[chosenpathnr].size(); ++nodenr) {
+						if (pathstofalse[chosenpathnr][nodenr].first) {
+							auto newNbAnswers = nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] - (1.0);
+							nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] = newNbAnswers > 0 ? newNbAnswers : 0;
+						}
 					}
 				} else { // the experiment failed
 					fail = true;
@@ -1797,10 +1810,12 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 	double maxdouble = getMaxElem<double>();
 	if (bdd == _truebdd) {
 		tablesize univsize = univNrAnswers(vars, indices, structure);
-		if (univsize._type == TST_INFINITE || univsize._type == TST_UNKNOWN)
+		if (univsize._type == TST_INFINITE || univsize._type == TST_UNKNOWN) {
 			return maxdouble;
-		else
+		} else {
 			return double(univsize._size);
+		}
+
 	} else if (bdd == _falsebdd) {
 		return 1;
 	} else {
@@ -1810,22 +1825,26 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 		set<const FOBDDVariable*> bddvars;
 		set<const FOBDDDeBruijnIndex*> bddindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
-			if (kernelvars.find(*it) == kernelvars.cend())
+			if (kernelvars.find(*it) == kernelvars.cend()) {
 				bddvars.insert(*it);
+			}
 		}
 		for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
-			if (kernelindices.find(*it) == kernelindices.cend())
+			if (kernelindices.find(*it) == kernelindices.cend()) {
 				bddindices.insert(*it);
+			}
 		}
 		set<const FOBDDVariable*> removevars;
 		set<const FOBDDDeBruijnIndex*> removeindices;
 		for (auto it = kernelvars.cbegin(); it != kernelvars.cend(); ++it) {
-			if (vars.find(*it) == vars.cend())
+			if (vars.find(*it) == vars.cend()) {
 				removevars.insert(*it);
+			}
 		}
 		for (auto it = kernelindices.cbegin(); it != kernelindices.cend(); ++it) {
-			if (indices.find(*it) == indices.cend())
+			if (indices.find(*it) == indices.cend()) {
 				removeindices.insert(*it);
+			}
 		}
 		for (auto it = removevars.cbegin(); it != removevars.cend(); ++it) {
 			kernelvars.erase(*it);
@@ -1833,7 +1852,6 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 		for (auto it = removeindices.cbegin(); it != removeindices.cend(); ++it) {
 			kernelindices.erase(*it);
 		}
-
 		// recursive case
 		if (bdd->falsebranch() == _falsebdd) {
 			double kernelcost = estimatedCostAll(true, bdd->kernel(), kernelvars, kernelindices, structure);
@@ -1841,8 +1859,9 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			double truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices, structure);
 			if (kernelcost < maxdouble && kernelans < maxdouble && truecost < maxdouble && kernelcost + (kernelans * truecost) < maxdouble) {
 				return kernelcost + (kernelans * truecost);
-			} else
+			} else {
 				return maxdouble;
+			}
 		} else if (bdd->truebranch() == _falsebdd) {
 			double kernelcost = estimatedCostAll(false, bdd->kernel(), kernelvars, kernelindices, structure);
 			double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
@@ -1852,8 +1871,9 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices, structure);
 			if (kernelcost + (invkernans * falsecost) < maxdouble) {
 				return kernelcost + (invkernans * falsecost);
-			} else
+			} else {
 				return maxdouble;
+			}
 		} else {
 			tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
 			set<const FOBDDVariable*> emptyvars;
@@ -1862,14 +1882,15 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			double truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices, structure);
 			double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices, structure);
 			double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
-			if (kernelunivsize._type == TST_UNKNOWN || kernelunivsize._type == TST_INFINITE)
+			if (kernelunivsize._type == TST_UNKNOWN || kernelunivsize._type == TST_INFINITE) {
 				return maxdouble;
-			else {
+			} else {
 				if ((double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost)
 						< maxdouble) {
 					return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost);
-				} else
+				} else {
 					return maxdouble;
+				}
 			}
 		}
 	}
@@ -1912,8 +1933,9 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 			// move to best position
 			Assert(bestposition <= 0);
 			//if (bestposition < 0) {
-			for (int n = 0; n > bestposition; --n)
+			for (int n = 0; n > bestposition; --n) {
 				moveUp(*it);
+			}
 			/*} else if (bestposition > 0) {
 			 for (int n = 0; n < bestposition; ++n)
 			 moveDown(*it);
