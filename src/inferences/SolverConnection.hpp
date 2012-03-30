@@ -29,7 +29,7 @@ namespace SolverConnection {
 	PCSolver* createsolver(int nbmodels = 0);
 	void setTranslator(PCSolver*, GroundTranslator* translator);
 	PCModelExpand* initsolution(PCSolver*, int nbmodels);
-	PCModelExpand* initpropsolution(PCSolver*, int nbmodels);
+	PCUnitPropagation* initpropsolution(PCSolver*, int nbmodels);
 
 	// Parse model into structure
 	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);

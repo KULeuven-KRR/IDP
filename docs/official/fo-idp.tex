@@ -179,4 +179,35 @@ Voorstellen?
   \item tupels: te vertalen naar gedefinieerd type met gepaste functies om elementen op te vragen
 \end{itemize}
 
+\section{Samensmelting theorie en structuur}
+Als je kijkt naar hoe in praktijk informatie voorgesteld wordt dan zijn er twee manieren:
+\begin{itemize}
+  \item structuren / databases / zoals de datasectie van een IDPproblem : een manier om eenvoudige zeer volledige informatie voor te stellen
+  \item zinnen, theorieen, definities. 
+\end{itemize}
+
+Dit lijken entiteiten van volkomen verschillende aard en toch dienen ze voor hetzelfde: informatie voorstellen, zij het van verschillende aard.
+
+En inderdaad, we zien dat er tussenvormen zijn.
+\begin{itemize}
+  \item databases met null values
+  \item databases met definitie
+  \item 3 waardige databases 
+\end{itemize}
+
+In praktijk gebeurt het frequent dat we in een theorie een stukske volledige kennis hebben over een predicaat.  Dan zou het vaak tof zijn om de compacte syntax van structuren te kunnen gebruiken om dat te definieren:
+
+\[P = \{ ... \}\]
+
+Er zijn nog andere zaken. Soms is een array gegeven. Daaruit wil je bepaalde domeinen, of bepaalde groottes van domeinen halen.
+
+Wat je hier ziet is dat beide concepten (structuren/theorieen) versmelten. In ons IDP framework is dat staalhard en principieel vastgegoten. Dit is niet het geval in ASP. Noch in Zinc. Het is nuttig om nu en dan eens na te denken hierover.
+
+Bart:
+Dit heeft veel te maken met iets waar we al eerder over nagedacht hebben.  Vroeger stonden er soms (impliciet) UNA en DCA axiomas in het vocabularium.  Nu is dit meer mogelijk; voor veel problemen is dit echter problematisch.  Dingen als "horizontaal en vertikaal" bijvoorbeeld zijn zaken die je in je theorie wil gebruiken, en je wil je theorie ook schrijven met de wetenschap dat dit de enige mogelijke richtingen zijn (bijvoorbeeld in zeeslag)
+
+Eén van de voorstellen was om dit expliciet te maken in de theorie, door bijvoorbeeld
+\[Direction = UNADCA\{...\}\]
+We zouden dergelijke dingen dan inderdaad kunnen veralgemenen naar willekeurige predicaten ipv ons te beperken tot types.
+
 \end{document}

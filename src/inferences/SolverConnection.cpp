@@ -54,18 +54,11 @@ PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 	opts.nbmodelstofind = nbmodels;
 	opts.printmodels = MinisatID::Models::NONE;
 	opts.savemodels = MinisatID::Models::ALL;
-	opts.inference = MinisatID::Inference::MODELEXPAND;
-	return new PCModelExpand(solver, opts);
+	return new PCModelExpand(solver, opts, {});
 }
 
-PCModelExpand* initpropsolution(PCSolver* solver, int nbmodels) {
-	auto options = GlobalData::instance()->getOptions();
-	MinisatID::ModelExpandOptions opts;
-	opts.nbmodelstofind = nbmodels;
-	opts.printmodels = MinisatID::Models::NONE;
-	opts.savemodels = MinisatID::Models::ALL;
-	opts.inference = MinisatID::Inference::PROPAGATE; // TODO should become propagate inference!
-	return new PCModelExpand(solver, opts);
+PCUnitPropagation* initpropsolution(PCSolver* solver, int nbmodels) {
+	return new PCUnitPropagation(solver, {});
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {

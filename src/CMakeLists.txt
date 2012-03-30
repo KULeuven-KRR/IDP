@@ -7,8 +7,6 @@ if(USEINTERACTIVE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D USEINTERACTIVE")
 endif()
 
-MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
-
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/source"
@@ -39,8 +37,8 @@ FLEX_TARGET(myscanner parser/lex.ll  ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc)
 ADD_FLEX_BISON_DEPENDENCY(myscanner myparser)
 
 set(LIBGIDLCPPFILES "")
-file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}" "*.cpp")
-LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/external/main.cpp")
+file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src" "*.cpp")
+LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
 
 add_library(idp
 	${LIBGIDLCPPFILES}

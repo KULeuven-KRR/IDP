@@ -44,11 +44,11 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
 	// Collect solutions
 	auto abstractsolutions = mx->getSolutions();
-	if (abstractsolutions->getModels().empty()) {
+	if (abstractsolutions.empty()) {
 		return false;
 	} else {
-		Assert(abstractsolutions->getModels().size() == 1);
-		auto model = *(abstractsolutions->getModels().cbegin());
+		Assert(abstractsolutions.size() == 1);
+		auto model = *(abstractsolutions.cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
 		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
@@ -58,7 +58,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	grounding->recursiveDelete();
 	delete (data);
 	delete (mx);
-	delete (abstractsolutions);
 	delete (grounder);
 	delete (symstructure);
 
