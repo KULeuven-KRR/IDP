@@ -66,13 +66,6 @@ GroundTerm DomTermGrounder::run() const {
 	return GroundTerm(_value);
 }
 
-//GroundTerm VarTermGrounder::run() const {
-//	if (verbosity > 2) {
-//		clog << "value=" << toString(_value->get());
-//	}
-//	return GroundTerm(_value->get());
-//}
-
 GroundTerm FuncTermGrounder::run() const {
 	if (verbosity() > 2) {
 		printOrig();
@@ -107,7 +100,7 @@ GroundTerm FuncTermGrounder::run() const {
 		return GroundTerm(result);
 	}
 
-	// Assert(isCPSymbol(_function->symbol())) && some of the ground subterms are CP terms.
+	Assert(getOption(BoolType::CPSUPPORT));
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
@@ -118,25 +111,15 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
 	if (type == ST_MINUS) {
-		return new CPWSumTerm( { left, right }, { 1, -1 });
+		return new CPWSumTerm({ left, right }, { 1, -1 });
 	} else {
 		return new CPSumTerm(left, right);
 	}
 }
 
-GroundTerm SumTermGrounder::run() const {
-	if (verbosity() > 2) {
-		printOrig();
-		pushtab();
-	}
-	// Run subtermgrounders
-	auto left = _lefttermgrounder->run();
-	auto right = _righttermgrounder->run();
+void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 	auto leftdomain = _lefttermgrounder->getDomain();
 	auto rightdomain = _righttermgrounder->getDomain();
-
-	// Compute domain for the sum term
-	//TODO can we do this using the deriveSort(Term*) from UnnestTerms?
 	if (getDomain() == NULL || not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
 			leftdomain = new SortTable(new EnumeratedInternalSortTable());
@@ -175,6 +158,19 @@ GroundTerm SumTermGrounder::run() const {
 			throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
 		}
 	}
+}
+
+GroundTerm SumTermGrounder::run() const {
+	if (verbosity() > 2) {
+		printOrig();
+		pushtab();
+	}
+	// Run subtermgrounders
+	auto left = _lefttermgrounder->run();
+	auto right = _righttermgrounder->run();
+
+	// Compute domain for the sum term
+	computeDomain(left, right);
 
 	VarId varid;
 	if (left.isVariable) {
@@ -184,10 +180,6 @@ GroundTerm SumTermGrounder::run() const {
 		} else {
 			Assert(not right.isVariable);
 			auto rightvarid = _termtranslator->translate(right._domelement);
-			// Create tseitin
-//			auto cpelement = _termtranslator->cprelation(rightvarid);
-//			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
-//			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, left._varid, rightvarid);
 			varid = _termtranslator->translate(sumterm, getDomain());
@@ -196,10 +188,6 @@ GroundTerm SumTermGrounder::run() const {
 		Assert(not left.isVariable);
 		if (right.isVariable) {
 			auto leftvarid = _termtranslator->translate(left._domelement);
-			// Create tseitin
-//			auto cpelement = _termtranslator->cprelation(leftvarid);
-//			auto tseitin = _grounding->translator()->translate(cpelement->left(), cpelement->comp(), cpelement->right(), TsType::EQ);
-//			_grounding->addUnitClause(tseitin);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
 			varid = _termtranslator->translate(sumterm, getDomain());

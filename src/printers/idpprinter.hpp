@@ -819,14 +819,17 @@ public:
 	void visit(const GroundSet* s) {
 		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
-		for (unsigned int n = 0; n < s->size(); ++n) {
-			if (s->weighted())
+		for (size_t n = 0; n < s->size(); ++n) {
+			if (s->weighted()) {
 				output() << '(';
+			}
 			printAtom(s->literal(n));
-			if (s->weighted())
+			if (s->weighted()) {
 				output() << ',' << s->weight(n) << ')';
-			if (n < s->size() - 1)
+			}
+			if (n < s->size() - 1) {
 				output() << "; ";
+			}
 		}
 		output() << " ]\n";
 	}

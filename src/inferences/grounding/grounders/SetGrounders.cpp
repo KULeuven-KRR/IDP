@@ -35,13 +35,13 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	const auto& groundweight = subtermgrounder.run();
 
 	if (groundweight.isVariable) {
-		Assert(l == _true);
+		Assert(l == _true); //FIXME: this is not always the case...
 		varids.push_back(groundweight._varid);
 		return;
 	}
 
 	const auto& d = groundweight._domelement;
-	Weight w = d->type() == DET_INT ? (double) d->value()._int : d->value()._double;
+	Weight w = (d->type() == DET_INT) ? (double) d->value()._int : d->value()._double;
 
 	if (l == _true) {
 		trueweights.push_back(w);

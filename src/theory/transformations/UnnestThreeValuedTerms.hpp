@@ -13,10 +13,7 @@
 
 #include "IncludeComponents.hpp"
 #include "UnnestTerms.hpp"
-
 #include "utils/CPUtils.hpp"
-
-//#include <set>
 
 class Vocabulary;
 class Variable;
@@ -26,10 +23,8 @@ class Formula;
 class PredForm;
 class Term;
 
-//FIXME description still says non-recursively!!
-
 /**
- *	Non-recursively moves terms that are three-valued according to a given structure
+ *	Moves terms that are three-valued according to a given structure
  *	outside a given atom. The applied rewriting depends on the given context:
  *		- positive context:
  *			P(t) becomes	! x : t = x => P(x).
@@ -38,13 +33,12 @@ class Term;
  *	The fact that the rewriting is non-recursive means that in the above example, term t
  *	can still contain terms that are three-valued according to the structure.
  *
- *	\param pf			the given atom
- *	\param str			the given structure
- *	\param Context	true iff we are in a positive context
- *	\param usingcp
+ *	\param t			given object
+ *	\param str			given structure
+ *	\param context		given context
  *
- *	\return The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
- *	If rewriting was needed, pf can be deleted, but not recursively.
+ *	\return The rewritten formula. If no rewriting was needed, it is the same pointer as t.
+ *	If rewriting was needed, t can be deleted, but not recursively (TODO).
  *
  */
 class UnnestThreeValuedTerms: public UnnestTerms {

@@ -138,7 +138,7 @@ Lit AtomGrounder::run() const {
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
 				 }*/
-				if(verbosity() > 2) {
+				if (verbosity() > 2) {
 					clog << tabs() << "Partial function went out of bounds\n";
 					clog << tabs() << "Result is " << "false" << "\n";
 				}
@@ -226,13 +226,12 @@ tablesize ComparisonGrounder::getGroundedSize() const {
 
 Lit ComparisonGrounder::run() const {
 	notifyRun();
+	if (verbosity() > 2) {
+		printorig();
+		if (_origform != NULL) { pushtab(); }
+	}
 	auto left = _lefttermgrounder->run();
 	auto right = _righttermgrounder->run();
-
-	//TODO Is following check necessary??
-//	if ((left._domelement == NULL && not left.isVariable) || (right._domelement == NULL && not right.isVariable)) {
-//		return context()._funccontext != Context::NEGATIVE ? _true : _false;
-//	}
 
 	//TODO out-of-bounds check?
 
@@ -258,27 +257,12 @@ Lit ComparisonGrounder::run() const {
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
-			switch (_comparator) {
-			case CompType::EQ:
-				result = leftvalue == rightvalue ? _true : _false;
-				break;
-			case CompType::NEQ:
-				result = leftvalue != rightvalue ? _true : _false;
-				break;
-			case CompType::LEQ:
-				result = leftvalue <= rightvalue ? _true : _false;
-				break;
-			case CompType::GEQ:
-				result = leftvalue >= rightvalue ? _true : _false;
-				break;
-			case CompType::LT:
-				result = leftvalue < rightvalue ? _true : _false;
-				break;
-			case CompType::GT:
-				result = leftvalue > rightvalue ? _true : _false;
-				break;
-			}
+			result = compare(leftvalue,_comparator,rightvalue) ? _true : _false;
 		}
+	}
+	if (verbosity() > 2) {
+		if (_origform != NULL) { poptab(); }
+		clog << tabs() << "Result is " << translator()->printLit(result) << "\n";
 	}
 	return result;
 }

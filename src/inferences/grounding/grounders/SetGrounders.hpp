@@ -31,6 +31,17 @@ public:
 	virtual SetId run() const = 0;
 };
 
+class EnumSetGrounder: public SetGrounder {
+private:
+	std::vector<FormulaGrounder*> _subgrounders;
+	std::vector<TermGrounder*> _subtermgrounders;
+public:
+	EnumSetGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*>& subgr, const std::vector<TermGrounder*>& subtgr)
+			: SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) {
+	}
+	SetId run() const;
+};
+
 class QuantSetGrounder: public SetGrounder {
 private:
 	FormulaGrounder* _subgrounder;
@@ -40,17 +51,6 @@ private:
 public:
 	QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
 			: SetGrounder(gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
-	}
-	SetId run() const;
-};
-
-class EnumSetGrounder: public SetGrounder {
-private:
-	std::vector<FormulaGrounder*> _subgrounders;
-	std::vector<TermGrounder*> _subtermgrounders;
-public:
-	EnumSetGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*>& subgr, const std::vector<TermGrounder*>& subtgr)
-			: SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) {
 	}
 	SetId run() const;
 };

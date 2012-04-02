@@ -188,7 +188,7 @@ void deriveSorts(Vocabulary*, Term*);
 /** Derive bounds of the given term in the given structure */
 std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
 
-/** Check whether the term is partial (contains partial functions) */
+/** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
 }
 

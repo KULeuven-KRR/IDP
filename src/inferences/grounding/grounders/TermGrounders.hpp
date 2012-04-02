@@ -107,16 +107,18 @@ protected:
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	SumType _type;
-
-	AbstractGroundTheory* _grounding;
 public:
-	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
-			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type), _grounding(g) {
+	SumTermGrounder(GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
 	}
 	GroundTerm run() const;
+private:
+	void computeDomain(GroundTerm& left, GroundTerm& right) const;
 };
 
 class SetGrounder;
+
+CPTerm* createCPAggTerm(const AggFunction&, const varidlist&);
 
 class AggTermGrounder: public TermGrounder {
 private:
