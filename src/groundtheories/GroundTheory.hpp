@@ -58,7 +58,8 @@ public:
 	virtual void add(Lit head, AggTsBody* body);
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr);
 
-	virtual void addOptimization(AggFunction function, int setid);
+	virtual void addOptimization(AggFunction function, SetId setid);
+	virtual void addOptimization(VarId varid);
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);

@@ -544,6 +544,9 @@ public:
 	CPTerm* left() const {
 		return _left;
 	}
+	void left(CPTerm* newleft) {
+		_left = newleft;
+	}
 	CompType comp() const {
 		return _comp;
 	}
@@ -616,11 +619,9 @@ public:
 	CPVarTerm(const VarId& varid)
 			: _varid(varid) {
 	}
-
 	const VarId& varid() const {
 		return _varid;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };
@@ -639,14 +640,12 @@ public:
 	CPSumTerm(const varidlist& varids)
 			: _varids(varids) {
 	}
-
 	const varidlist& varids() const {
 		return _varids;
 	}
 	void varids(const varidlist& newids) {
 		_varids = newids;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };
@@ -663,14 +662,12 @@ public:
 	CPWSumTerm(const varidlist& varids, const intweightlist& weights)
 			: _varids(varids), _weights(weights) {
 	}
-
 	const varidlist& varids() const {
 		return _varids;
 	}
 	const intweightlist& weights() const {
 		return _weights;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };

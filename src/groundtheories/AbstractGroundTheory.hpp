@@ -58,7 +58,8 @@ public:
 	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr) = 0;
 
-	virtual void addOptimization(AggFunction function, int setid) = 0;
+	virtual void addOptimization(AggFunction, SetId) = 0;
+	virtual void addOptimization(VarId) = 0;
 
 	virtual void notifyNeedFalseDefineds(PFSymbol* pfs) = 0;
 

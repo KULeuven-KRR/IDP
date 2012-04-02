@@ -307,7 +307,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool) {
+void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive, bool) {
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
 	for (size_t n = 0; n < body.size(); ++n) {
@@ -319,10 +319,17 @@ void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> bo
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddOptimization(AggFunction function, int setid){
+void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid) {
 	MinisatID::MinimizeAgg minim;
 	minim.setid = setid;
 	minim.type = convert(function);
+	getSolver().add(minim);
+}
+
+template<typename Solver>
+void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
+	MinisatID::MinimizeVar minim;
+	minim.varID = varid;
 	getSolver().add(minim);
 }
 

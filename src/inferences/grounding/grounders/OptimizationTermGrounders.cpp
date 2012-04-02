@@ -11,6 +11,7 @@
 #include "OptimizationTermGrounders.hpp"
 
 #include "SetGrounders.hpp"
+#include "TermGrounders.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -35,9 +36,12 @@ GroundTranslator* OptimizationGrounder::getTranslator() const {
 	return getGrounding()->translator();
 }
 
+GroundTermTranslator* OptimizationGrounder::getTermTranslator() const {
+	return getGrounding()->termtranslator();
+}
+
 void OptimizationGrounder::printOrig() const {
-	clog << "" << nt() << "Grounding optimization over term " << toString(_origterm);
-	clog << "" << nt();
+	clog << tabs() << "Grounding optimization over term " << toString(_origterm) << "\n";
 }
 
 void AggregateOptimizationGrounder::run() const {
@@ -46,5 +50,19 @@ void AggregateOptimizationGrounder::run() const {
 		printOrig();
 		pushtab();
 	}
-	getGrounding()->addOptimization(_type, _setgrounder->run());
+	auto setid = _setgrounder->run();
+	auto tsset = getTranslator()->groundset(setid);
+
+	if (not tsset.varids().empty()) {
+		Assert(getOption(BoolType::CPSUPPORT) && tsset.trueweights().empty());
+		auto sumterm = createCPAggTerm(_type, tsset.varids());
+		auto varid = getTermTranslator()->translate(sumterm, NULL); //FIXME domain of the term!!!
+		getGrounding()->addOptimization(varid);
+	} else {
+		getGrounding()->addOptimization(_type, setid);
+	}
+
+	if (verbosity() > 2) {
+		poptab();
+	}
 }

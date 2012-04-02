@@ -16,8 +16,7 @@
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
-typedef int SetId;
-typedef int DefId;
+typedef unsigned int VarId;
 
 class GroundDefinition;
 class GroundFixpDef;
@@ -87,7 +86,8 @@ public:
 	void polAdd(DefId defnr, PCGroundRule* rule);
 	void polAdd(DefId defnr, AggGroundRule* rule);
 
-	void polAddOptimization(AggFunction function, int setid);
+	void polAddOptimization(AggFunction, SetId);
+	void polAddOptimization(VarId);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 

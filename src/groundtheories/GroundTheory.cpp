@@ -128,20 +128,18 @@ template<class Policy>
 void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	//TODO also add variables (in a separate container?)
 
-	auto foldedbody = new CPTsBody(body->type(), foldCPTerm(body->left()), body->comp(), body->right());
-	//FIXME possible leaks!!
+	body->left(foldCPTerm(body->left()));
 
-	//TODO refactor the following...
+	//Add constraint for right hand side if necessary. TODO refactor
 	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
 		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
 			_printedvarids.insert(body->right()._varid);
 			auto cprelation = termtranslator()->cprelation(body->right()._varid);
-			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),TsType::EQ);
+			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),cprelation->type());
 			addUnitClause(tseitin2);
 		}
 	}
-
-	Policy::polAdd(tseitin, foldedbody);
+	Policy::polAdd(tseitin, body);
 	addFuncConstraints();
 }
 
@@ -153,10 +151,6 @@ void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	_printedsets.insert(setnr);
 	auto tsset = translator()->groundset(setnr);
 	transformForAdd(tsset.literals(), VIT_SET, defnr);
-	//weightlist weights;
-	//if (weighted) {
-	//	weights = tsset.weights();
-	//}
 	Policy::polAdd(tsset, setnr, weighted);
 	addFuncConstraints();
 }
@@ -205,9 +199,14 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addOptimization(AggFunction function, int setid){
+void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 	add(setid, getIDForUndefined(), function!=AggFunction::CARD);
 	Policy::polAddOptimization(function, setid);
+}
+
+template<class Policy>
+void GroundTheory<Policy>::addOptimization(VarId varid) {
+	Policy::polAddOptimization(varid);
 }
 
 template<class Policy>
@@ -245,12 +244,8 @@ void GroundTheory<Policy>::transformForAdd(const std::vector<int>& vi, VIType /*
 			}
 		} else if (sametypeid<CPTsBody>(*tsbody)) {
 			CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
-			if (body->type() == TsType::RULE) {
-				notyetimplemented("Definition rules in CP constraints.");
-				//TODO Does this ever happen?
-			} else {
-				add(atom, body);
-			}
+			Assert(body->type() != TsType::RULE);
+			add(atom, body);
 		} else {
 			Assert(sametypeid<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
