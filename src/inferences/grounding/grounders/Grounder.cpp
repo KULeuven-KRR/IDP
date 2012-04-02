@@ -117,8 +117,8 @@ Lit Grounder::groundAndReturnLit() const {
 }
 
 void Grounder::setMaxGroundSize(const tablesize& maxsize) {
-	if (verbosity() > 0) {
-		clog << "Setting max ground size to " << toString(maxsize) <<" for " << toString(this) << "\n";
+	if (verbosity() > 2) {
+		clog << "Setting max ground size to " << toString(maxsize) << " for " << toString(this) << "\n";
 	}
 	_maxsize = maxsize;
 }

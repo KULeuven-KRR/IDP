@@ -77,7 +77,7 @@ procedure consistent(expected){
 			return 0
 		end
 	else
-		if isconsistent(S) == false then
+		if S == nil then
 			return 1
 		else
 			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")

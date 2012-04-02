@@ -25,6 +25,7 @@ class Sort;
 class SortTable;
 class Vocabulary;
 
+
 class AbstractStructure {
 protected:
 
@@ -79,7 +80,7 @@ public:
 
 	virtual void makeTwoValued() = 0;
 
-	void put(std::ostream& s);
+	void put(std::ostream& s) const;
 };
 
 #endif /* ABSTRACTSTRUCTURE_HPP_ */

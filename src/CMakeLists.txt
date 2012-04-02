@@ -44,7 +44,6 @@ add_library(idp
 	structure/NumericOperations.cpp
 	structure/Structure.cpp
 	structure/AbstractStructure.cpp
-	structure/InconsistentStructure.cpp
 	structure/Universe.cpp
 	structure/TableSize.cpp
 	structure/DomainElementFactory.cpp
