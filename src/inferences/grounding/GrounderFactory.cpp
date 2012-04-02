@@ -80,34 +80,6 @@ GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* gro
 GrounderFactory::~GrounderFactory() {
 }
 
-set<const Function*> GrounderFactory::findCPSymbols(const AbstractTheory* theory) {
-	Vocabulary* vocabulary = theory->vocabulary();
-	for (auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
-		Function* function = funcit->second;
-		bool passtocp = false;
-		// Check whether the (user-defined) function's outsort is over integers
-		if (function->overloaded()) {
-			set<Function*> nonbuiltins = function->nonbuiltins();
-			for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-				passtocp = FuncUtils::isIntFunc(*nbfit, vocabulary);
-			}
-		} else if (not function->builtin()) {
-			passtocp = FuncUtils::isIntFunc(function, vocabulary);
-		}
-		if (passtocp) {
-			_cpfuncsymbols.insert(function);
-		}
-	}
-	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		clog << tabs() << "User-defined symbols that can be handled by the constraint solver: ";
-		for (auto it = _cpfuncsymbols.cbegin(); it != _cpfuncsymbols.cend(); ++it) {
-			clog << toString(*it) << " ";
-		}
-		clog << "\n";
-	}
-	return _cpfuncsymbols;
-}
-
 /**
  * 	Finds out whether a formula contains recursively defined symbols.
  */
@@ -241,10 +213,6 @@ void GrounderFactory::descend(T* child) {
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		g.findCPSymbols(data.theory);
-	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
@@ -252,10 +220,6 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		g.findCPSymbols(data.theory);
-	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
@@ -281,10 +245,6 @@ Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::WrappedPCSo
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		g.findCPSymbols(data.theory);
-	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
@@ -292,10 +252,6 @@ Grounder* GrounderFactory::create(const GroundInfo& data, MinisatID::FlatZincRew
 	auto groundtheory = new GroundTheory<SolverPolicy<MinisatID::FlatZincRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
 	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	// Find functions that can be passed to CP solver.
-	if (getOption(BoolType::CPSUPPORT)) {
-		g.findCPSymbols(data.theory);
-	}
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
@@ -422,8 +378,14 @@ void GrounderFactory::visit(const PredForm* pf) {
 			comp = isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
 		}
 
+		SaveContext();
+		if (recursive(newpf)) {
+			_context._tseitin = TsType::RULE;
+		}
 		_formgrounder = new ComparisonGrounder(_grounding, _grounding->termtranslator(), subtermgrounders[0], comp, subtermgrounders[1], _context);
 		_formgrounder->setOrig(newpf, varmapping());
+		RestoreContext();
+
 		if (_context._component == CompContext::SENTENCE) { // TODO Refactor outside (also other occurences)
 			_topgrounder = _formgrounder;
 		}
@@ -545,7 +507,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
 		const GroundingContext& context, bool trydelay) {
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
-	if(context._tseitin==TsType::RULE){ // TODO currently, the many restarts of the SCC detection etc. are too expensive!
+	if (context._tseitin == TsType::RULE) { // TODO currently, the many restarts of the SCC detection etc. are too expensive!
 		mightdolazy = false;
 	}
 	if (context._monotone == Context::BOTH) {
@@ -695,7 +657,7 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if(context._tseitin==TsType::RULE){ // TODO currently, the many restarts of the SCC detection etc. are too expensive!
+	if (context._tseitin == TsType::RULE) { // TODO currently, the many restarts of the SCC detection etc. are too expensive!
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
@@ -915,8 +877,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if (recursive(ef)) {
 		_context._tseitin = TsType::RULE;
 	}/*else{
-	 _context._tseitin = TsType::EQ;
-	 }*/
+		_context._tseitin = TsType::EQ;
+	}*/
 	_formgrounder = new EquivGrounder(_grounding, leftgrounder, rightgrounder, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
@@ -1013,9 +975,9 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (function->name() == "-/2") {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
+			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
-			_termgrounder = new SumTermGrounder(_grounding, _grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
 	} else {
 		_termgrounder = new FuncTermGrounder(_grounding->termtranslator(), function, ftable, domain, subtermgrounders);

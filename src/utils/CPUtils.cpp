@@ -16,7 +16,7 @@
 using namespace std;
 
 namespace CPSupport {
-//TODO Keep a list of CP symbols in GlobalData? Or in Translators?
+//TODO Where to keep a list of CP symbols? GlobalData? Translators?
 std::set<const PFSymbol*> _cppredsymbols;
 std::set<const Function*> _cpfuncsymbols;
 

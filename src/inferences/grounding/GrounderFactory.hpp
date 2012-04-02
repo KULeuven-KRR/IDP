@@ -36,7 +36,7 @@ class GenerateBDDAccordingToBounds;
 class Grounder;
 class FOBDD;
 
-namespace MinisatID{
+namespace MinisatID {
 class WrappedPCSolver;
 class FlatZincRewriter;
 }
@@ -72,9 +72,6 @@ private:
 
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;
-
-	// Symbols passed to CP solver
-	std::set<const Function*> _cpfuncsymbols;
 
 	// Variable mapping
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
@@ -136,9 +133,6 @@ public:
 	static Grounder* create(const GroundInfo& data, MinisatID::FlatZincRewriter* flatzincprinter);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
 	static SetGrounder* create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
-
-	// Determine what should be passed to CP solver
-	std::set<const Function*> findCPSymbols(const AbstractTheory*);
 
 	bool recursive(const Formula*);
 
