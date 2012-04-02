@@ -13,6 +13,7 @@
 
 #include "errorhandling/error.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "theory/term.hpp"
 
 #include <numeric> // for accumulate
 #include <functional> // for multiplies
@@ -41,20 +42,10 @@ bool UnnestTerms::shouldMove(Term* t) {
 /**
  * Tries to derive a sort for the term given a structure.
  */
-//TODO Move this to TermUtils or SortUtils!!
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), _vocabulary)) {
-		auto bounds = TermUtils::deriveTermBounds(term, _structure);
-		Assert(bounds.size()==2);
-		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
-			auto intmin = bounds[0]->value()._int;
-			auto intmax = bounds[1]->value()._int;
-			stringstream ss;
-			ss << "_sort«" << intmin << '-' << intmax << "»";
-			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
-			sort->addParent(VocabularyUtils::intsort());
-		}
+		sort = TermUtils::deriveIntSort(term,_structure);
 	}
 	return sort;
 }
@@ -317,7 +308,7 @@ VarTerm* UnnestTerms::visit(VarTerm* t) {
 }
 
 Term* UnnestTerms::visit(DomainTerm* t) {
-	if(shouldMove(t)){
+	if (shouldMove(t)) {
 		return move(t);
 	}
 	return t;
@@ -330,9 +321,8 @@ Term* UnnestTerms::visit(AggTerm* t) {
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
 		return move(result);
-	} else {
-		return result;
 	}
+	return result;
 }
 
 Term* UnnestTerms::visit(FuncTerm* t) {
@@ -350,9 +340,8 @@ Term* UnnestTerms::visit(FuncTerm* t) {
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
 		return move(result);
-	} else {
-		return result;
 	}
+	return result;
 }
 
 SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
