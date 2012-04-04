@@ -149,14 +149,15 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
 	if(minimizeterm!=NULL){ // Optimizing
-		if(abstractsolutions->getModels().size()>0){
-			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
+		if(abstractsolutions.size()>0){
+			Assert(mx->getBestSolutionsFound().size()>0); // FIXME handle multiple optimal solutions
+			solutions.push_back(handleSolution(newstructure, *mx->getBestSolutionsFound()[0], grounding));
 		}
 	}else{
 		if (verbosity() >= 1) {
-			clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
+			clog << "Solver generated " <<abstractsolutions.size() <<" models.\n";
 		}
-		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
+		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
 			solutions.push_back(handleSolution(newstructure, **model, grounding));
 		}
 	}

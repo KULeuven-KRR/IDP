@@ -45,7 +45,7 @@ public:
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
-		auto mx = SolverConnection::initpropsolution(data, 0);
+		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();
 
 		auto translator = grounding->translator();

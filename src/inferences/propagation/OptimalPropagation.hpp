@@ -45,19 +45,16 @@ public:
 
 		auto abstractsolutions = mx->getSolutions();
 
-		delete(mx);
-		delete(data);
-
 		std::set<int> intersection;
-		if (abstractsolutions->getModels().empty()) {
+		if (abstractsolutions.empty()) {
 			return new InconsistentStructure(structure->name(), structure->pi());
 		}
 		// Take the intersection of all models
-		auto firstmodel = *(abstractsolutions->getModels().cbegin());
+		auto firstmodel = *(abstractsolutions.cbegin());
 		for (auto it = firstmodel->literalinterpretations.cbegin(); it != firstmodel->literalinterpretations.cend(); ++it) {
 			intersection.insert(it->getValue());
 		}
-		for (auto currmodel = (abstractsolutions->getModels().cbegin()); currmodel != abstractsolutions->getModels().cend(); ++currmodel) {
+		for (auto currmodel = (abstractsolutions.cbegin()); currmodel != abstractsolutions.cend(); ++currmodel) {
 			for (auto it = (*currmodel)->literalinterpretations.cbegin(); it != (*currmodel)->literalinterpretations.cend(); ++it) {
 				if (intersection.find(it->getValue()) == intersection.cend()) {
 					intersection.erase((-1) * it->getValue());
@@ -96,6 +93,8 @@ public:
 		delete (grounder);
 		grounding->recursiveDelete();
 		delete (symstructure);
+		delete(mx);
+		delete(data);
 
 		return result;
 	}
