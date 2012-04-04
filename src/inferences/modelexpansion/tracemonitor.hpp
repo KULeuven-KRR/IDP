@@ -16,10 +16,6 @@
 
 class GroundTranslator;
 
-namespace MinisatID {
-	class Literal;
-}
-
 class TraceMonitor {
 public:
 	virtual ~TraceMonitor() {

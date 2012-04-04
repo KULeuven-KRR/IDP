@@ -52,13 +52,13 @@ public:
 		auto result = structure->clone();
 		// Use the propagation monitor to assert everything that was propagated without search
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
-			int atomnr = literal->getAtom().getValue();
+			int atomnr = var(*literal);
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
 				auto args = translator->getArgs(atomnr);
 				if (sametypeid<Predicate>(*symbol)) {
 					auto pred = dynamic_cast<Predicate*>(symbol);
-					if (literal->hasSign()) {
+					if (sign(*literal)) {
 						result->inter(pred)->makeFalse(args);
 					} else {
 						result->inter(pred)->makeTrue(args);
@@ -66,7 +66,7 @@ public:
 				} else {
 					Assert(sametypeid<Function>(*symbol));
 					auto func = dynamic_cast<Function*>(symbol);
-					if (literal->hasSign()) {
+					if (sign(*literal)) {
 						result->inter(func)->graphInter()->makeFalse(args);
 					} else {
 						result->inter(func)->graphInter()->makeTrue(args);

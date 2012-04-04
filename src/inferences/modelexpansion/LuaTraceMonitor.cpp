@@ -56,15 +56,15 @@ void LuaTraceMonitor::propagate(MinisatID::Literal lit, int dl) {
 	lua_pushboolean(_state, !lit.hasSign());
 	lua_setfield(_state, -2, "value");
 
-	int atomnr = lit.getAtom().getValue();
+	int atomnr = var(lit);
 	if (_translator->isInputAtom(atomnr)) {
 		auto s = _translator->getSymbol(atomnr);
-		auto args = _translator->getArgs(lit.getAtom().getValue());
+		auto args = _translator->getArgs(var(lit));
 		auto atom = DomainAtomFactory::instance()->create(s, args);
 		InternalArgument ia(atom);
 		LuaConnection::convertToLua(_state, ia);
 	} else {
-		lua_pushstring(_state, _translator->printLit(lit.getAtom().getValue()).c_str());
+		lua_pushstring(_state, _translator->printLit(var(lit)).c_str());
 	}
 	lua_setfield(_state, -2, "atom");
 	lua_call(_state, 2, 0);

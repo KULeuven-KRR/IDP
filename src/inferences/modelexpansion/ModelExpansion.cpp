@@ -124,7 +124,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Run solver
-	auto mx = SolverConnection::initsolution(data);
+	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
 		clog << "Solving\n";
 	}

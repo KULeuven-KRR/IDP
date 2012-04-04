@@ -28,7 +28,7 @@ inline MinisatID::Atom createAtom(int lit) {
 }
 
 inline MinisatID::Literal createLiteral(int lit) {
-	return MinisatID::Literal(abs(lit), lit < 0);
+	return MinisatID::mkLit(abs(lit), lit < 0);
 }
 
 MinisatID::literallist createList(const litlist& origlist){
@@ -77,18 +77,17 @@ void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted) {
 	if (not weighted) {
-		MinisatID::Set set;
+		MinisatID::WLSet set;
 		set.setID = setnr;
 		for (size_t n = 0; n < tsset.size(); ++n) {
-			set.literals.push_back(createLiteral(tsset.literal(n)));
+			set.wl.push_back(MinisatID::WLtuple{createLiteral(tsset.literal(n)), MinisatID::Weight(1)});
 		}
 		add(getSolver(), set);
 	} else {
-		MinisatID::WSet set;
+		MinisatID::WLSet set;
 		set.setID = setnr;
 		for (size_t n = 0; n < tsset.size(); ++n) {
-			set.literals.push_back(createLiteral(tsset.literal(n)));
-			set.weights.push_back(createWeight(tsset.weight(n)));
+			set.wl.push_back(MinisatID::WLtuple{createLiteral(tsset.literal(n)), createWeight(tsset.weight(n))});
 		}
 		add(getSolver(), set);
 	}
@@ -288,14 +287,14 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 		Assert(domain->approxFinite());
 		if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
-			MinisatID::CPIntVarRange cpvar;
+			MinisatID::IntVarRange cpvar;
 			cpvar.varID = varid;
 			cpvar.minvalue = domain->first()->value()._int;
 			cpvar.maxvalue = domain->last()->value()._int;
 			add(getSolver(), cpvar);
 		} else {
 			// the domain is not a complete range.
-			MinisatID::CPIntVarEnum cpvar;
+			MinisatID::IntVarEnum cpvar;
 			cpvar.varID = varid;
 			for (SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 				int value = (*it)->value()._int;

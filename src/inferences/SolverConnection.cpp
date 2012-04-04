@@ -64,7 +64,7 @@ PCUnitPropagate* initpropsolution(PCSolver* solver) {
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
 	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
-		int atomnr = literal->getAtom().getValue();
+		int atomnr = var(*literal);
 
 		if (translator->isInputAtom(atomnr)) {
 			PFSymbol* symbol = translator->getSymbol(atomnr);

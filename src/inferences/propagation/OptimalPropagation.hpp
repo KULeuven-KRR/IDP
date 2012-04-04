@@ -52,12 +52,12 @@ public:
 		// Take the intersection of all models
 		auto firstmodel = *(abstractsolutions.cbegin());
 		for (auto it = firstmodel->literalinterpretations.cbegin(); it != firstmodel->literalinterpretations.cend(); ++it) {
-			intersection.insert(it->getValue());
+			intersection.insert(var(*it));
 		}
 		for (auto currmodel = (abstractsolutions.cbegin()); currmodel != abstractsolutions.cend(); ++currmodel) {
 			for (auto it = (*currmodel)->literalinterpretations.cbegin(); it != (*currmodel)->literalinterpretations.cend(); ++it) {
-				if (intersection.find(it->getValue()) == intersection.cend()) {
-					intersection.erase((-1) * it->getValue());
+				if (intersection.find(var(*it)) == intersection.cend()) {
+					intersection.erase((-1) * var(*it));
 				}
 			}
 		}

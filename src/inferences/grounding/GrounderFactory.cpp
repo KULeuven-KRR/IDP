@@ -137,7 +137,7 @@ void GrounderFactory::RestoreContext() {
 	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
 		auto found = _varmapping.find(*it);
 		if (found != _varmapping.end()) {
-		//	_varmapping.erase(found); FIXME
+			_varmapping.erase(found); // FIXME: this should be disabled currenlty for lazy grounding
 		}
 	}
 	_context._mappedvars.clear();
