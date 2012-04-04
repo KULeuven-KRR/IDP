@@ -26,6 +26,7 @@
 #include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/LazyRuleGrounder.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
+#include "inferences/SolverConnection.hpp"
 
 #include "generators/BasicGenerators.hpp"
 #include "generators/TableGenerator.hpp"
@@ -246,7 +247,9 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
-	return g.getTopGrounder();
+	auto grounder = g.getTopGrounder();
+	SolverConnection::setTranslator(solver, grounder->getTranslator());
+	return grounder;
 }
 /*Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
 	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());

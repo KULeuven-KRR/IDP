@@ -73,7 +73,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Grounding\n";
 	}
 	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, data);
-	SolverConnection::setTranslator(data, grounder->getTranslator());
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(data);
