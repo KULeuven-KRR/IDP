@@ -70,6 +70,14 @@ public:
 	void addTerminationMonitor(TerminateMonitor* m) {
 		_monitors.push_back(m);
 	}
+	void removeTerminationMonitor(TerminateMonitor* m) {
+		for(auto i=_monitors.begin(); i<_monitors.end(); ++i) {
+			if(*i==m){
+				_monitors.erase(i);
+				break;
+			}
+		}
+	}
 	void reset() {
 		_terminateRequested = false;
 	}

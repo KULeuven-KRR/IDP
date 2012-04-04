@@ -126,8 +126,16 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (verbosity() >= 1) {
 		clog << "Solving\n";
 	}
-	getGlobal()->addTerminationMonitor(new SolverTermination(mx));
-	mx->execute();
+	auto terminator = new SolverTermination(mx);
+	getGlobal()->addTerminationMonitor(terminator);
+	try{
+		mx->execute();
+	}catch(MinisatID::idpexception& error){
+		std::stringstream ss;
+		ss <<"Solver was aborted with message \"" <<error.what() <<"\"";
+		throw IdpException(ss.str());
+	}
+
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
@@ -166,6 +174,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	grounding->recursiveDelete();
 	// delete (grounder); TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
 	clonetheory->recursiveDelete();
+	getGlobal()->removeTerminationMonitor(terminator);
+	delete(terminator);
 	delete (newstructure);
 	delete (symstructure);
 	delete(data);
