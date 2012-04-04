@@ -10,6 +10,8 @@
 
 #ifndef CALCDEF_HPP_
 #define CALCDEF_HPP_
+#include <vector>
+
 
 class AbstractStructure;
 class Theory;
@@ -18,7 +20,7 @@ class Definition;
 class CalculateDefinitions {
 public:
 	//!Removes calculated definitions from the theory.  Clone your theory before doing this!
-	static AbstractStructure* doCalculateDefinitions(Theory* theory, AbstractStructure* structure) {
+	static std::vector<AbstractStructure*> doCalculateDefinitions(Theory* theory, AbstractStructure* structure) {
 		CalculateDefinitions c;
 		return c.calculateKnownDefinitions(theory, structure);
 	}
@@ -26,7 +28,7 @@ private:
 
 	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
 
-	AbstractStructure* calculateKnownDefinitions(Theory* theory, const AbstractStructure* structure) const;
+	std::vector<AbstractStructure*> calculateKnownDefinitions(Theory* theory, const AbstractStructure* structure) const;
 
 };
 

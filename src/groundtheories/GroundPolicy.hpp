@@ -16,6 +16,8 @@
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
+typedef unsigned int VarId;
+
 class GroundDefinition;
 class GroundFixpDef;
 class GroundSet;
@@ -37,7 +39,7 @@ class DelayGrounder;
 class GroundPolicy {
 private:
 	std::vector<GroundClause> _clauses;
-	std::map<int, GroundDefinition*> _definitions;
+	std::map<DefId, GroundDefinition*> _definitions;
 	std::vector<GroundFixpDef*> _fixpdefs;
 	std::vector<GroundSet*> _sets;
 	std::vector<GroundAggregate*> _aggregates;
@@ -78,13 +80,14 @@ public:
 	void polRecursiveDelete();
 
 	void polAdd(const GroundClause& cl);
-	void polAdd(int head, AggTsBody* body);
-	void polAdd(int tseitin, CPTsBody* body);
-	void polAdd(const TsSet& tsset, int setnr, bool);
-	void polAdd(int defnr, PCGroundRule* rule);
-	void polAdd(int defnr, AggGroundRule* rule);
+	void polAdd(Lit tseitin, AggTsBody* body);
+	void polAdd(Lit tseitin, CPTsBody* body);
+	void polAdd(const TsSet& tsset, SetId setnr, bool);
+	void polAdd(DefId defnr, PCGroundRule* rule);
+	void polAdd(DefId defnr, AggGroundRule* rule);
 
-	void polAddOptimization(AggFunction function, int setid);
+	void polAddOptimization(AggFunction, SetId);
+	void polAddOptimization(VarId);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 

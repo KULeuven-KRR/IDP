@@ -529,7 +529,7 @@ Predicate* Predicate::resolve(const vector<Sort*>& sorts) {
 	} else if (_sorts == sorts) {
 		return this;
 	} else {
-		return 0;
+		return NULL;
 	}
 }
 
@@ -548,7 +548,7 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& sorts, const Vocabulary*
 	} else {
 		for (size_t n = 0; n < _sorts.size(); ++n) {
 			if (_sorts[n] && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) {
-				return 0;
+				return NULL;
 			}
 		}
 		return this;
@@ -1804,6 +1804,19 @@ Predicate* greaterThan(Sort* s) {
 bool isComparisonPredicate(const PFSymbol* symbol) {
 	string name = symbol->name();
 	return (sametypeid<Predicate>(*symbol)) && (name == "=/2" || name == "</2" || name == ">/2");
+}
+
+bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
+	string name = symbol->name();
+	if ((sametypeid<Predicate>(*symbol)) && (name == "=/2" || name == "</2" || name == ">/2")) {
+		for (auto it = symbol->sorts().cbegin(); it != symbol->sorts().cend(); ++it) {
+			if (not SortUtils::isSubsort(*it, VocabularyUtils::intsort(), voc)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 bool isNumeric(Sort* s) {

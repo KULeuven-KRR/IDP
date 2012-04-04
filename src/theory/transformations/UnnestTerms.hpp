@@ -23,8 +23,6 @@ class Term;
 
 /**
  * Moves nested terms out
- *
- * NOTE: equality is NOT rewritten! (rewriting f(x)=y to ?z: f(x)=z & z=y is quite useless)
  */
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
@@ -37,11 +35,12 @@ private:
 	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
 	std::set<Variable*> _variables; //!< used to temporarily store the freshly introduced variables
-	Sort* _chosenVarSort;
 
 	void contextProblem(Term* t);
 
 protected:
+	Sort* _chosenVarSort;
+
 	virtual bool shouldMove(Term* t);
 
 	bool getAllowedToUnnest() const {
@@ -70,14 +69,19 @@ public:
 	}
 
 protected:
-	Formula* rewrite(Formula*);
-
-	VarTerm* move(Term*);
+	template<typename T>
+	Formula* doRewrite(T origformula) {
+		auto rewrittenformula = rewrite(origformula);
+		if (rewrittenformula == origformula) {
+			return origformula;
+		} else {
+			return rewrittenformula->accept(this);
+		}
+	}
 
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);
 	virtual Formula* traverse(Formula*);
-	virtual Formula* traverse(PredForm*);
 	virtual Formula* visit(EquivForm*);
 	virtual Formula* visit(AggForm*);
 	virtual Formula* visit(EqChainForm*);
@@ -91,10 +95,11 @@ protected:
 	virtual SetExpr* visit(QuantSetExpr*);
 
 	void visitRuleHead(Rule* rule); // Split to allow reuse
+	Formula* specialTraverse(PredForm* predform);
 
 private:
-	template<typename T>
-	Formula* doRewrite(T origformula);
+	Formula* rewrite(Formula*);
+	VarTerm* move(Term*);
 
 	Sort* deriveSort(Term*);
 };

@@ -12,6 +12,7 @@
 #include "errorhandling/error.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
+#include "TheoryUtils.hpp"
 
 using namespace std;
 
@@ -220,7 +221,25 @@ Sort* AggTerm::sort() const {
 	if (_function == AggFunction::CARD) {
 		return VocabularyUtils::natsort();
 	} else {
-		return set()->sort();
+		auto setsort = set()->sort();
+		if (setsort != NULL) {
+			if(function() == AggFunction::MAX || function() == AggFunction::MIN){
+				return setsort;
+			}
+			if (SortUtils::isSubsort(setsort, VocabularyUtils::natsort())) {
+				return VocabularyUtils::natsort();
+			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::intsort())) {
+				return VocabularyUtils::intsort();
+			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::floatsort())) {
+				return VocabularyUtils::floatsort();
+			} else {
+				Error::notsubsort(setsort->name(), VocabularyUtils::floatsort()->name(), pi());
+				return NULL;
+			}
+		} else {
+			//TODO There should be some error or warning thrown here!
+			return NULL;
+		}
 	}
 }
 
@@ -258,6 +277,29 @@ void SetExpr::recursiveDelete() {
 		delete (*it);
 	}
 	delete (this);
+}
+
+Sort* SetExpr::sort() const {
+	auto it = _subterms.cbegin();
+	Sort* currsort;
+	if ((*it)->sort()) {
+		currsort = (*it)->sort();
+	} else {
+		return NULL;
+	}
+	++it;
+	for (; it != _subterms.cend(); ++it) {
+		if ((*it)->sort()) {
+			currsort = SortUtils::resolve(currsort, (*it)->sort());
+		} else {
+			return NULL;
+		}
+	}
+	if (currsort == NULL) {
+		throw notyetimplemented("Sets with terms with sorts without common ancestor");
+	} else {
+		return currsort;
+	}
 }
 
 bool SetExpr::contains(const Variable* v) const {
@@ -370,32 +412,6 @@ EnumSetExpr* EnumSetExpr::zeroSubset() const {
 	return new EnumSetExpr(newsubforms, newsubterms, _pi);
 }
 
-Sort* EnumSetExpr::sort() const {
-	Sort* currsort = VocabularyUtils::natsort();
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		if ((*it)->sort()) {
-			currsort = SortUtils::resolve(currsort, (*it)->sort());
-		} else {
-			return NULL;
-		}
-	}
-	if (currsort != NULL) {
-		if (SortUtils::isSubsort(currsort, VocabularyUtils::natsort())) {
-			return VocabularyUtils::natsort();
-		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::intsort())) {
-			return VocabularyUtils::intsort();
-		} else if (SortUtils::isSubsort(currsort, VocabularyUtils::floatsort())) {
-			return VocabularyUtils::floatsort();
-		} else {
-			Error::notsubsort(currsort->name(), VocabularyUtils::floatsort()->name(), pi());
-			return NULL;
-		}
-	} else {
-		//TODO There should be some error or warning thrown here!
-		return NULL;
-	}
-}
-
 tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
 	return tablesize(TST_EXACT, subformulas().size());
 }
@@ -495,25 +511,6 @@ QuantSetExpr* QuantSetExpr::zeroSubset() const {
 	return newset;
 }
 
-Sort* QuantSetExpr::sort() const {
-	Sort* termsort = (*_subterms.cbegin())->sort();
-	if (termsort != NULL) {
-		if (SortUtils::isSubsort(termsort, VocabularyUtils::natsort())) {
-			return VocabularyUtils::natsort();
-		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::intsort())) {
-			return VocabularyUtils::intsort();
-		} else if (SortUtils::isSubsort(termsort, VocabularyUtils::floatsort())) {
-			return VocabularyUtils::floatsort();
-		} else {
-			Error::notsubsort(termsort->name(), VocabularyUtils::floatsort()->name(), pi());
-			return NULL;
-		}
-	} else {
-		//TODO There should be some error or warning thrown here!
-		return NULL;
-	}
-}
-
 tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 	if (structure == NULL) {
 		return tablesize(TST_UNKNOWN, 0);
@@ -567,6 +564,23 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 		terms.push_back(new VarTerm(*it, TermParseInfo()));
 	}
 	return terms;
+}
+
+Sort* deriveIntSort(Term* term, AbstractStructure* structure) {
+	Sort* sort = term->sort();
+	if (structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), structure->vocabulary())) {
+		auto bounds = TermUtils::deriveTermBounds(term, structure);
+		Assert(bounds.size()==2);
+		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
+			auto intmin = bounds[0]->value()._int;
+			auto intmax = bounds[1]->value()._int;
+			stringstream ss;
+			ss << "_sort«" << intmin << '-' << intmax << "»";
+			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
+			sort->addParent(VocabularyUtils::intsort());
+		}
+	}
+	return sort;
 }
 
 }

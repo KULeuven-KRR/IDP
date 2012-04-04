@@ -28,5 +28,12 @@ Building and installing is then achieved by executing the following commands:
 Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 
 
+*** Adding constraint solving support by Gecode
+Assume Gecode is installed in <gecodedir>. This directory should have include and lib subdirectories containing Gecode's header 
+files and libraries. Execute the following command in your <builddir> to enable support by Gecode:
+
+    cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release" -DCP=on -DGECODE_DIR=<gecodedir>
+
+
 *** Further information
 For more information on using the system, see the documentation, which can be found in docs/documentation/idp-manual.pdf

@@ -69,7 +69,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 		if (translator->isInputAtom(atomnr)) {
 			PFSymbol* symbol = translator->getSymbol(atomnr);
 			const ElementTuple& args = translator->getArgs(atomnr);
-			if (typeid(*symbol) == typeid(Predicate)) {
+			if (sametypeid<Predicate>(*symbol)) {
 				Predicate* pred = dynamic_cast<Predicate*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(pred)->makeFalse(args);
@@ -77,6 +77,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 					init->inter(pred)->makeTrue(args);
 				}
 			} else {
+				Assert(sametypeid<Function>(*symbol));
 				Function* func = dynamic_cast<Function*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(func)->graphInter()->makeFalse(args);
@@ -89,6 +90,12 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 }
 
 void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+	// Convert vector of variableassignments to a map
+	map<VarId,int> variable2valuemap;
+	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
+		variable2valuemap[cpvar->variable] = cpvar->value;
+	}
+	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		Function* function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
@@ -98,7 +105,7 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = model.variableassignments[it->_varid].value;
+				int value = variable2valuemap[it->_varid];
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

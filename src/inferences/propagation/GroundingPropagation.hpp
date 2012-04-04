@@ -29,7 +29,7 @@
  */
 class GroundingPropagation {
 public:
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: make a clean version of this implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		auto monitor = new PropagateMonitor();
@@ -79,7 +79,10 @@ public:
 		delete (data);
 		delete (mx);
 
-		return result;
+		if (not result->isConsistent()) {
+			return std::vector<AbstractStructure*> { };
+		}
+		return {result};
 	}
 };
 

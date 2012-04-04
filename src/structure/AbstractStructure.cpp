@@ -11,7 +11,7 @@
 #include "AbstractStructure.hpp"
 #include "printers/idpprinter.hpp"
 
-void AbstractStructure::put(std::ostream& s) {
+void AbstractStructure::put(std::ostream& s) const {
 	auto p = IDPPrinter<std::ostream>(s);
 	p.startTheory();
 	p.visit(this);

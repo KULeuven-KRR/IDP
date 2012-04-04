@@ -51,14 +51,15 @@ public:
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
 	virtual void add(const GroundDefinition& d) = 0;
-	virtual void add(int defid, PCGroundRule* rule) = 0;
+	virtual void add(DefId defid, PCGroundRule* rule) = 0;
 	virtual void add(GroundFixpDef*) = 0;
-	virtual void add(int head, AggTsBody* body) = 0;
-	virtual void add(int tseitin, CPTsBody* body) = 0;
-	virtual void add(int setnr, unsigned int defnr, bool weighted) = 0;
-	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr) = 0;
+	virtual void add(Lit head, AggTsBody* body) = 0;
+	virtual void add(Lit tseitin, CPTsBody* body) = 0;
+	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
+	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr) = 0;
 
-	virtual void addOptimization(AggFunction function, int setid) = 0;
+	virtual void addOptimization(AggFunction, SetId) = 0;
+	virtual void addOptimization(VarId) = 0;
 
 	virtual void notifyNeedFalseDefineds(PFSymbol* pfs) = 0;
 

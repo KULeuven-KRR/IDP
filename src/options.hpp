@@ -13,11 +13,12 @@
 
 #include "common.hpp"
 #include "parseinfo.hpp"
+#include "errorhandling/error.hpp"
 
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language {/* TXT,*/
-	IDP, ECNF, /*LATEX, ASP, CNF, */TPTP, FLATZINC
+	IDP, ECNF, /*LATEX, CNF, */TPTP, FLATZINC, ASP
 };
 enum Format {
 	THREEVALUED, ALL, TWOVALUED
@@ -168,7 +169,8 @@ public:
 	}
 	void setStrValue(const std::string& name, const ValueType& value) {
 		Assert(isOption(name));
-		_options.at(_name2type.at(name))->setValue(value);
+		//_options.at(_name2type.at(name))->setValue(value);
+		setValue(_name2type.at(name),value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
 		_options.at(type)->setValue(value);
@@ -187,6 +189,18 @@ public:
 
 	void copyValues(Options* opts);
 };
+
+// Note: Makes sure users cannot set the CPSUPPORT option when there is no cp solver available.
+#ifndef WITHCP
+template<>
+inline void OptionPolicy<BoolType, bool>::setValue(BoolType type, const bool& value) {
+	if (type == BoolType::CPSUPPORT and value != false) {
+		Warning::warning("CP support is not available. Option cpsupport is ignored.\n");
+	} else {
+		_options.at(type)->setValue(value);
+	}
+}
+#endif
 
 typedef OptionPolicy<IntType, int> IntPol;
 typedef OptionPolicy<BoolType, bool> BoolPol;
