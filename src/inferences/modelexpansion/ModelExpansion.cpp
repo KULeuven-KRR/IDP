@@ -61,6 +61,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
+
 	if (not newstructure->isConsistent()) {
 		return std::vector<AbstractStructure*> { };
 	}
@@ -75,6 +76,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		tracemonitor->setSolver(solver);
 	}
 	grounder->toplevelRun();
+
 	auto grounding = grounder->getGrounding();
 
 	// TODO refactor optimization!
@@ -90,6 +92,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
+
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -118,7 +121,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			std::clog << "Unknown symmetry option...\n";
 		}
 	}
-
 	// Run solver
 	auto abstractsolutions = SolverConnection::initsolution();
 	if (verbosity() >= 1) {
@@ -126,6 +128,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
 	solver->solve(abstractsolutions);
+
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
@@ -160,6 +163,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	clonetheory->recursiveDelete();
 	delete (newstructure);
 	delete (symstructure);
+	//ProfilerStop();
 
 	return solutions;
 }

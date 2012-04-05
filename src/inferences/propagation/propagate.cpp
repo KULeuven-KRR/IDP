@@ -294,16 +294,21 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure) const {
-	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
-		const PredForm* connector = it->first;
+	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
+		auto connector = it->second;
 		PFSymbol* symbol = connector->symbol();
+		auto newinter = structure->inter(symbol);
+		if (newinter->approxTwoValued()) {
+			Assert(getDomain(connector)._twovalued);
+			continue;
+		}
 		vector<Variable*> vv;
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
 			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
-		}Assert(_domains.find(connector) != _domains.cend());
+		}CHECKTERMINATION
+		Assert(_domains.find(connector) != _domains.cend());
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-		auto newinter = structure->inter(symbol);
 
 		for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
 			newinter->makeTrue(*trueEl);
@@ -413,7 +418,6 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
 		_factory->put(clog, newdomain);
 	}
-
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
 	//disjunction -> Make the domains larger (thus the unknown part smaller)
@@ -477,6 +481,10 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 	auto lcd = _leafconnectdata[pf];
 	PredForm* connector = lcd._connector;
 	Assert(connector!=NULL);
+	if (getDomain(connector)._twovalued) {
+		return;
+	}
+
 	Domain* deriveddomain;
 	Domain* temp;
 	if (_direction == DOWN) {
@@ -498,6 +506,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		 delete(temp);
 		 deriveddomain = addToExists(deriveddomain,freevars);*/
 		updateDomain(connector, DOWN, (_ct == isPos(pf->sign())), deriveddomain, pf);
+
 	} else {
 		Assert(_direction == UP);
 		Assert(_domains.find(connector) != _domains.cend());
@@ -674,7 +683,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const AggForm*) {
-	// TODO
+// TODO
 }
 
 bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) const { // FIXME second domain?
