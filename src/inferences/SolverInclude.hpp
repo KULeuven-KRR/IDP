@@ -10,8 +10,10 @@
 #include "external/Space.hpp"
 #include "inferences/Tasks.hpp"
 #include "external/SearchMonitor.hpp"
+#include "external/Translator.hpp"
 
 typedef MinisatID::Space PCSolver;
+typedef MinisatID::Translator PCPrinter;
 typedef MinisatID::ModelExpand PCModelExpand;
 typedef MinisatID::UnitPropagate PCUnitPropagate;
 typedef MinisatID::PropAndBackMonitor SearchMonitor;

@@ -120,7 +120,13 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 	MinisatID::CPSumWeighted sentence;
 	sentence.head = head;
 	sentence.varIDs = varids;
-	sentence.weights = weights;
+
+	vector<MinisatID::Weight> w;
+	for(auto i=weights.cbegin(); i<weights.cend(); ++i) {
+		w.push_back(MinisatID::Weight(*i));
+	}
+	sentence.weights = w;
+
 	sentence.bound = bound;
 	sentence.rel = rel;
 	add(getSolver(), sentence);
@@ -251,24 +257,19 @@ MinisatID::AggType convert(AggFunction agg){
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
-	MinisatID::Aggregate agg;
-	agg.sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
-	agg.setID = setnr;
-	agg.type = convert(aggtype);
+	auto sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
+	auto msem = MinisatID::AggSem::COMP;
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
 	case TsType::RIMPL:
-		agg.sem = MinisatID::AggSem::COMP;
+		msem = MinisatID::AggSem::COMP;
 		break;
 	case TsType::RULE:
-		agg.sem = MinisatID::AggSem::DEF;
+		msem = MinisatID::AggSem::DEF;
 		break;
 	}
-	agg.defID = definitionID;
-	agg.head = createAtom(head);
-	agg.bound = createWeight(bound);
-	add(getSolver(), agg);
+	add(getSolver(), MinisatID::Aggregate(createAtom(head), setnr, createWeight(bound), convert(aggtype), sign, msem, definitionID));
 }
 
 template<typename Solver>
@@ -319,17 +320,12 @@ void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> 
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid) {
-	MinisatID::MinimizeAgg minim;
-	minim.setid = setid;
-	minim.type = convert(function);
-	add(getSolver(), minim);
+	add(getSolver(), MinisatID::MinimizeAgg(1, setid, convert(function)));
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
-	MinisatID::MinimizeVar minim;
-	minim.varID = varid;
-	add(getSolver(), minim);
+	add(getSolver(), MinisatID::MinimizeVar(1, varid));
 }
 
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {

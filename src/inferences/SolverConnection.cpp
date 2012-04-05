@@ -20,6 +20,22 @@ namespace SolverConnection {
 
 typedef cb::Callback1<std::string, int> callbackprinting;
 
+class CallBackTranslator: public PCPrinter{
+private:
+	callbackprinting cb;
+public:
+	CallBackTranslator(callbackprinting cb): cb(cb){
+
+	}
+	virtual std::string toString(const MinisatID::Lit& lit) const{
+		std::stringstream ss;
+		ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
+		return ss.str();
+	}
+};
+
+
+
 PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
@@ -37,15 +53,13 @@ PCSolver* createsolver(int nbmodels) {
 		modes.lazy = true;
 	}
 
-	auto solver = new PCSolver(modes);
-	//solver->resetTerminationFlag(); // NOTE: have to tell the solver to reset its instance
-	//CHECKTERMINATION
-	return solver;
+	return new PCSolver(modes);
 }
 
 void setTranslator(PCSolver* solver, GroundTranslator* translator){
-	callbackprinting cbprint(translator, &GroundTranslator::print);
-	solver->setCallBackTranslator(cbprint);
+	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::print));
+	solver->setTranslator(trans);
+	// FIXME trans is not deleted anywhere
 }
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
