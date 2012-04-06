@@ -28,8 +28,8 @@
 template<typename Ordering>
 class OrderTerms: public FOBDDVisitor {
 public:
-	OrderTerms(FOBDDManager* m)
-			: FOBDDVisitor(m) {
+	OrderTerms(FOBDDManager* m) :
+			FOBDDVisitor(m) {
 	}
 
 	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
@@ -47,13 +47,19 @@ public:
 		std::sort(terms.begin(), terms.end(), mtswo);
 
 		const FOBDDTerm* currarg = terms.back();
+		bool begin = true;
 		for (auto i = terms.crbegin(); i < terms.crend(); ++i) { // NOTE: reverse!
-			auto nextarg = *i;
-			auto sort = SortUtils::resolve(currarg->sort(), nextarg->sort());
-			auto add = Vocabulary::std()->func(Ordering::getFuncName());
-			add = add->disambiguate(std::vector<Sort*>(3, sort), NULL);
-			Assert(add!=NULL);
-			currarg = _manager->getFuncTerm(add, { nextarg, currarg });
+			if (not begin) {
+				auto nextarg = *i;
+				auto sort = SortUtils::resolve(currarg->sort(),
+						nextarg->sort());
+				auto add = Vocabulary::std()->func(Ordering::getFuncName());
+				add = add->disambiguate(std::vector<Sort*>(3, sort), NULL);
+				Assert(add!=NULL);
+				currarg = _manager->getFuncTerm(add, { nextarg, currarg });
+			} else {
+				begin = false;
+			}
 		}
 		return currarg;
 	}
