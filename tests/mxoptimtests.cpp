@@ -32,14 +32,6 @@ TEST_P(MXOptimTest, DoesMX) {
 	runTests("mxoptimize.idp", GetParam());
 }
 
-TEST(MXnbmodelsTest, DoesMX) {
-	string testfile(getTestDirectory() + "mx/nbmodels.idp");
-	cerr << "Testing " << testfile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { testfile }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 INSTANTIATE_TEST_CASE_P(ModelOptimization, MXOptimTest, ::testing::ValuesIn(generateListOfMXOptimFiles()));
 
 }
