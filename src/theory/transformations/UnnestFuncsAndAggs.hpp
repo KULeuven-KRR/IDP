@@ -12,7 +12,6 @@
 #define UNNESTFUNCSANDAGGS_HPP_
 
 #include "UnnestTerms.hpp"
-
 #include "IncludeComponents.hpp"
 
 class AbstractStructure;
@@ -28,7 +27,9 @@ public:
 	}
 
 protected:
-	bool shouldMove(Term* t);
+	bool shouldMove(Term* t) {
+		return getAllowedToUnnest() && (t->type() == TT_FUNC || t->type() == TT_AGG);
+	}
 };
 
 #endif /* UNNESTFUNCSANDAGGS_HPP_ */

@@ -27,7 +27,7 @@
  */
 class OptimalPropagation {
 public:
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<AbstractStructure*>  propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: make a clean version of the implementation (should call ModelExpansion)
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
@@ -45,22 +45,19 @@ public:
 
 		auto abstractsolutions = mx->getSolutions();
 
-		delete(mx);
-		delete(data);
-
 		std::set<int> intersection;
 		if (abstractsolutions.empty()) {
-			return new InconsistentStructure(structure->name(), structure->pi());
+			return std::vector<AbstractStructure*> { };
 		}
 		// Take the intersection of all models
 		auto firstmodel = *(abstractsolutions.cbegin());
 		for (auto it = firstmodel->literalinterpretations.cbegin(); it != firstmodel->literalinterpretations.cend(); ++it) {
-			intersection.insert(it->getValue());
+			intersection.insert(getIntLit(*it));
 		}
 		for (auto currmodel = (abstractsolutions.cbegin()); currmodel != abstractsolutions.cend(); ++currmodel) {
 			for (auto it = (*currmodel)->literalinterpretations.cbegin(); it != (*currmodel)->literalinterpretations.cend(); ++it) {
-				if (intersection.find(it->getValue()) == intersection.cend()) {
-					intersection.erase((-1) * it->getValue());
+				if (intersection.find(getIntLit(*it)) == intersection.cend()) {
+					intersection.erase(-1*getIntLit(*it));
 				}
 			}
 		}
@@ -96,8 +93,13 @@ public:
 		delete (grounder);
 		grounding->recursiveDelete();
 		delete (symstructure);
+		delete(mx);
+		delete(data);
 
-		return result;
+		if(not result->isConsistent()){
+			return std::vector<AbstractStructure*> { };
+		}
+		return {result};
 	}
 };
 

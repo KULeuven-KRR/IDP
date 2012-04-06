@@ -36,6 +36,7 @@ endif()
 option(CP  "Enable cp support" OFF)
 if(CP)
 	set(WITHCP ON CACHE BOOL "")
+	addToCXX("-D WITHCP")
 endif()
 
 
@@ -86,7 +87,8 @@ endif()
 
 option(GPERF  "Enable profiling support with google-perftools" OFF)
 if(GPERF)
-	set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -lprofiler -ltcmalloc")
+	include(cmake/perftools.cmake)
+	set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${PERFTOOLSLIBDIR} -ltcmalloc_and_profiler")
 endif()
 
 ### Printing information

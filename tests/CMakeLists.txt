@@ -24,6 +24,7 @@ if(${BUILDTESTS})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
 	add_executable(idptests
 		mxtests.cpp
+		mxoptimtests.cpp
 		querytests.cpp
 		generatortests.cpp
 		bddtests.cpp
@@ -39,6 +40,7 @@ if(${BUILDTESTS})
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp
 		simpletests.cpp
+		cptests.cpp
 	)
 	add_executable(lazytests
 		lazymxtests.cpp

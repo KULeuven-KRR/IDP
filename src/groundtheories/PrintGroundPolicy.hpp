@@ -96,7 +96,11 @@ public:
 		delete (reif);
 	}
 
-	void polAddOptimization(AggFunction, int){
+	void polAddOptimization(AggFunction, int) {
+		throw notyetimplemented("Printing an optimization constraint.\n");
+	}
+
+	void polAddOptimization(VarId) {
 		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 

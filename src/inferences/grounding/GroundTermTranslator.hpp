@@ -20,6 +20,8 @@ class CPTsBody;
 class SortTable;
 class CPTerm;
 
+typedef size_t SymbolOffset;
+
 class GroundTermTranslator {
 private:
 	AbstractStructure* _structure;
@@ -29,7 +31,7 @@ private:
 	std::vector<std::vector<GroundTerm> > _varid2args; //!< map CP varid to the terms of its corresponding term
 
 	std::vector<Function*> _offset2function;
-	std::map<Function*, size_t> _function2offset;
+	std::map<Function*, SymbolOffset> _function2offset;
 
 	std::map<VarId, CPTsBody*> _varid2cprelation;
 
@@ -44,14 +46,14 @@ public:
 	}
 
 	// Methods for translating terms to variable identifiers
-	VarId translate(size_t offset, const std::vector<GroundTerm>&);
+	VarId translate(SymbolOffset offset, const std::vector<GroundTerm>&);
 	VarId translate(Function*, const std::vector<GroundTerm>&);
 	VarId translate(CPTerm*, SortTable*);
 	VarId translate(const DomainElement*);
 
 	// Adding variable identifiers and functions
-	size_t nextNumber();
-	size_t addFunction(Function*);
+	VarId nextNumber();
+	SymbolOffset addFunction(Function*);
 
 	// Methods for translating variable identifiers to terms
 	Function* function(const VarId& varid) const {
@@ -70,10 +72,10 @@ public:
 	size_t nrOffsets() const {
 		return _offset2function.size();
 	}
-	size_t getOffset(Function* func) const {
+	SymbolOffset getOffset(Function* func) const {
 		return _function2offset.at(func);
 	}
-	const Function* getFunction(size_t offset) const {
+	const Function* getFunction(SymbolOffset offset) const {
 		return _offset2function[offset];
 	}
 

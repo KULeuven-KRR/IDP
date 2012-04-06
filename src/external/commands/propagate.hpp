@@ -47,7 +47,11 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		GroundingPropagation propagator;
-		return InternalArgument(propagator.propagate(get<0>(args), get<1>(args)));
+		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		if (sols.size() == 0) {
+			return InternalArgument();
+		}Assert(sols.size()==1 && sols[0]->isConsistent());
+		return InternalArgument(sols[0]);
 	}
 };
 
@@ -67,7 +71,11 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		OptimalPropagation propagator;
-		return InternalArgument(propagator.propagate(get<0>(args), get<1>(args)));
+		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		if (sols.size() == 0) {
+			return InternalArgument();
+		}Assert(sols.size()==1 && sols[0]->isConsistent());
+		return InternalArgument(sols[0]);
 	}
 };
 

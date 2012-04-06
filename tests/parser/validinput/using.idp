@@ -1,0 +1,17 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type A isa int
+	P(A)
+}
+
+vocabulary V2{
+	using vocabulary V
+	Cost:A
+}
+
+procedure main(){
+	return 1
+}

@@ -79,8 +79,8 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		} else if (function->name() == "-/1") {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
-		}else{
-			// TODO better solution for what's not handled!
+		} else {
+			Assert(false); //FIXME: All operations should be covered...
 			_minimum = NULL;
 			_maximum = NULL;
 		}
@@ -88,7 +88,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		Assert(t->sort() != NULL);
 		auto domain = _structure->inter(t->sort());
 		Assert(domain != NULL);
-		if (not domain->approxFinite()) {
+		if (not domain->approxFinite()) { //FIXME: Never return NULL... return infinity thingies.
 			_minimum = NULL;
 			_maximum = NULL;
 		} else {

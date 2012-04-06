@@ -20,6 +20,32 @@ namespace SolverConnection {
 
 typedef cb::Callback1<std::string, int> callbackprinting;
 
+class CallBackTranslator: public PCPrinter{
+private:
+	callbackprinting cb;
+public:
+	CallBackTranslator(callbackprinting cb): cb(cb){
+
+	}
+
+	virtual bool hasTranslation(const MinisatID::Lit&) const {
+		return true;
+	}
+
+	virtual std::string toString(const MinisatID::Lit& lit) const{
+		std::stringstream ss;
+		auto l = var(lit);
+		if(lit.hasSign()){
+			l = -l;
+		}
+		//ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
+		ss <<cb(l);
+		return ss.str();
+	}
+};
+
+
+
 PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
@@ -37,15 +63,13 @@ PCSolver* createsolver(int nbmodels) {
 		modes.lazy = true;
 	}
 
-	auto solver = new PCSolver(modes);
-	//solver->resetTerminationFlag(); // NOTE: have to tell the solver to reset its instance
-	//CHECKTERMINATION
-	return solver;
+	return new PCSolver(modes);
 }
 
 void setTranslator(PCSolver* solver, GroundTranslator* translator){
-	callbackprinting cbprint(translator, &GroundTranslator::print);
-	solver->setCallBackTranslator(cbprint);
+	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::print));
+	solver->setTranslator(trans);
+	// FIXME trans is not deleted anywhere
 }
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
@@ -57,18 +81,19 @@ PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 	return new PCModelExpand(solver, opts, {});
 }
 
-PCUnitPropagation* initpropsolution(PCSolver* solver, int nbmodels) {
-	return new PCUnitPropagation(solver, {});
+PCUnitPropagate* initpropsolution(PCSolver* solver) {
+	auto options = GlobalData::instance()->getOptions();
+	return new PCUnitPropagate(solver, {});
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
 	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
-		int atomnr = literal->getAtom().getValue();
+		int atomnr = var(*literal);
 
 		if (translator->isInputAtom(atomnr)) {
 			PFSymbol* symbol = translator->getSymbol(atomnr);
 			const ElementTuple& args = translator->getArgs(atomnr);
-			if (typeid(*symbol) == typeid(Predicate)) {
+			if (sametypeid<Predicate>(*symbol)) {
 				Predicate* pred = dynamic_cast<Predicate*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(pred)->makeFalse(args);
@@ -76,6 +101,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 					init->inter(pred)->makeTrue(args);
 				}
 			} else {
+				Assert(sametypeid<Function>(*symbol));
 				Function* func = dynamic_cast<Function*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(func)->graphInter()->makeFalse(args);
@@ -88,6 +114,12 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 }
 
 void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+	// Convert vector of variableassignments to a map
+	map<VarId,int> variable2valuemap;
+	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
+		variable2valuemap[cpvar->variable] = cpvar->value;
+	}
+	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		Function* function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
@@ -97,7 +129,7 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = model.variableassignments[it->_varid].value;
+				int value = variable2valuemap[it->_varid];
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

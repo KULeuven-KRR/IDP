@@ -29,7 +29,7 @@
  */
 class GroundingPropagation {
 public:
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: make a clean version of this implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		auto monitor = new PropagateMonitor();
@@ -45,20 +45,20 @@ public:
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
-		auto mx = SolverConnection::initpropsolution(data, 0);
+		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();
 
 		auto translator = grounding->translator();
 		auto result = structure->clone();
 		// Use the propagation monitor to assert everything that was propagated without search
 		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
-			int atomnr = literal->getAtom().getValue();
+			int atomnr = var(*literal);
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
 				auto args = translator->getArgs(atomnr);
 				if (sametypeid<Predicate>(*symbol)) {
 					auto pred = dynamic_cast<Predicate*>(symbol);
-					if (literal->hasSign()) {
+					if (sign(*literal)) {
 						result->inter(pred)->makeFalse(args);
 					} else {
 						result->inter(pred)->makeTrue(args);
@@ -66,7 +66,7 @@ public:
 				} else {
 					Assert(sametypeid<Function>(*symbol));
 					auto func = dynamic_cast<Function*>(symbol);
-					if (literal->hasSign()) {
+					if (sign(*literal)) {
 						result->inter(func)->graphInter()->makeFalse(args);
 					} else {
 						result->inter(func)->graphInter()->makeTrue(args);
@@ -79,7 +79,10 @@ public:
 		delete (data);
 		delete (mx);
 
-		return result;
+		if (not result->isConsistent()) {
+			return std::vector<AbstractStructure*> { };
+		}
+		return {result};
 	}
 };
 

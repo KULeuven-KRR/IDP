@@ -20,8 +20,12 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
+typedef int SetId;
+typedef int DefId;
+
 class ResidualAndFreeInst;
 class LazyGroundingManager;
+class DelayGrounder;
 
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
@@ -31,9 +35,9 @@ class SolverPolicy {
 private:
 	GroundTermTranslator* _termtranslator;
 	Solver* _solver; // The SAT solver
-	std::map<PFSymbol*, std::set<int> > _defined; // Symbols that are defined in the theory. This set is used to
+	std::map<PFSymbol*, std::set<Atom> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
-	std::set<unsigned int> _addedvarids; // Variable ids that have already been added, together with their domain.
+	std::set<VarId> _addedvarids; // Variable ids that have already been added, together with their domain.
 
 	int _verbosity;
 
@@ -57,19 +61,19 @@ protected:
 	}
 	void polEndTheory();
 
-	MinisatID::Weight createWeight(double weight);
+	MinisatID::Weight createWeight(Weight weight);
 
 	void polAdd(const GroundClause& cl);
-	void polAdd(const TsSet& tsset, int setnr, bool weighted);
-	void polAdd(int defnr, PCGroundRule* rule);
-	void polAdd(int defnr, AggGroundRule* rule);
-	void polAdd(int defnr, int head, AggGroundRule* body, bool);
-	void polAdd(int head, AggTsBody* body);
-	void polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
-			MinisatID::EqType rel);
-	void polAdd(int tseitin, CPTsBody* body);
+	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
+	void polAdd(DefId defnr, PCGroundRule* rule);
+	void polAdd(DefId defnr, AggGroundRule* rule);
+	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
+	void polAdd(Lit head, AggTsBody* body);
+	void polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel);
+	void polAdd(Lit tseitin, CPTsBody* body);
 
-	void polAddOptimization(AggFunction function, int setid);
+	void polAddOptimization(AggFunction function, SetId setid);
+	void polAddOptimization(VarId varid);
 
 	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction);
@@ -84,10 +88,10 @@ protected:
 	}
 
 private:
-	void polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound);
-	void polAddCPVariables(const std::vector<VarId>& varids, GroundTermTranslator* termtranslator);
+	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
+	void polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator);
 	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
-	void polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool);
+	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive, bool);
 };
 
 #endif /* SOLVERPOLICY_HPP_ */

@@ -13,6 +13,7 @@
 
 #include "errorhandling/error.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "theory/term.hpp"
 
 #include <numeric> // for accumulate
 #include <functional> // for multiplies
@@ -44,16 +45,7 @@ bool UnnestTerms::shouldMove(Term* t) {
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), _vocabulary)) {
-		auto bounds = TermUtils::deriveTermBounds(term, _structure);
-		Assert(bounds.size()==2);
-		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
-			auto intmin = bounds[0]->value()._int;
-			auto intmax = bounds[1]->value()._int;
-			stringstream ss;
-			ss << "_sort«" << intmin << '-' << intmax << "»";
-			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
-			sort->addParent(VocabularyUtils::intsort());
-		}
+		sort = TermUtils::deriveIntSort(term,_structure);
 	}
 	return sort;
 }
@@ -111,16 +103,6 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
 		_variables.clear();
 	}
 	return formula;
-}
-
-template<typename T>
-Formula* UnnestTerms::doRewrite(T origformula) {
-	auto rewrittenformula = rewrite(origformula);
-	if (rewrittenformula == origformula) {
-		return origformula;
-	} else {
-		return rewrittenformula->accept(this);
-	}
 }
 
 /**
@@ -199,11 +181,6 @@ Formula* UnnestTerms::traverse(Formula* f) {
 	return f;
 }
 
-Formula* UnnestTerms::traverse(PredForm* f) {
-//TODO Very ugly static cast!! XXX This needs to be done differently!! FIXME
-	return traverse(static_cast<Formula*>(f));
-}
-
 Formula* UnnestTerms::visit(EquivForm* ef) {
 	Context savecontext = getContext();
 	setContext(Context::BOTH);
@@ -257,9 +234,9 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 	}
 }
 
-Formula* UnnestTerms::visit(PredForm* predform) {
+Formula* UnnestTerms::specialTraverse(PredForm* predform) {
+	// Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool savemovecontext = getAllowedToUnnest();
-// Special treatment for (in)equalities: possibly only one side needs to be moved
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
 	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
@@ -284,11 +261,10 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 				_chosenVarSort = rightsort;
 			}
 		}
-
 	} else {
 		setAllowedToUnnest(true);
 	}
-// Traverse the atom
+	// Traverse the atom
 	Formula* newf = predform;
 	if (moveonlyleft) {
 		predform->subterm(1, predform->subterms()[1]->accept(this));
@@ -301,9 +277,15 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 	} else {
 		newf = traverse(predform);
 	}
-
 	_chosenVarSort = NULL;
 	setAllowedToUnnest(savemovecontext);
+	// Return result
+	return newf;
+}
+
+Formula* UnnestTerms::visit(PredForm* predform) {
+// Special treatment for (in)equalities: possibly only one side needs to be moved
+	auto newf = specialTraverse(predform);
 	return doRewrite(newf);
 }
 
@@ -326,7 +308,7 @@ VarTerm* UnnestTerms::visit(VarTerm* t) {
 }
 
 Term* UnnestTerms::visit(DomainTerm* t) {
-	if(shouldMove(t)){
+	if (shouldMove(t)) {
 		return move(t);
 	}
 	return t;
@@ -339,9 +321,8 @@ Term* UnnestTerms::visit(AggTerm* t) {
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
 		return move(result);
-	} else {
-		return result;
 	}
+	return result;
 }
 
 Term* UnnestTerms::visit(FuncTerm* t) {
@@ -359,9 +340,8 @@ Term* UnnestTerms::visit(FuncTerm* t) {
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
 		return move(result);
-	} else {
-		return result;
 	}
+	return result;
 }
 
 SetExpr* UnnestTerms::visit(EnumSetExpr* s) {

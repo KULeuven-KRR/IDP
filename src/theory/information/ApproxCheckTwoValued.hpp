@@ -23,7 +23,7 @@ private:
 	bool _returnvalue;
 public:
 	template<typename T>
-	bool execute(AbstractStructure* str, const T f) {
+	bool execute(const T f, AbstractStructure* str) {
 		_structure = str;
 		_returnvalue = true;
 		f->accept(this);

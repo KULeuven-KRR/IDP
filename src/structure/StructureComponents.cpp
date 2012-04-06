@@ -427,7 +427,7 @@ GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* ge
 }
 
 void GeneratorInternalTableIterator::operator++() {
-	_generator->operator ++();
+	_generator->operator++();
 	_hasNext = not _generator->isAtEnd();
 }
 
@@ -552,7 +552,7 @@ void UnionInternalIterator::setcurriterator() {
 			continue;
 		}
 		if (contains(*(*jt))) {
-			Compare<ElementTuple> swto;
+			Compare < ElementTuple > swto;
 			if (swto(*(*jt), *(*_curriterator))) {
 				_curriterator = jt;
 			} else if (not swto(*(*_curriterator), *(*jt))) {
@@ -1682,14 +1682,14 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 }
 
 const DomainElement* EnumeratedInternalSortTable::first() const {
-	if(_table.empty()){
+	if (_table.empty()) {
 		return NULL;
 	}
 	return *(_table.cbegin());
 }
 
 const DomainElement* EnumeratedInternalSortTable::last() const {
-	if(_table.empty()){
+	if (_table.empty()) {
 		return NULL;
 	}
 	return *(_table.rbegin());
@@ -1714,7 +1714,7 @@ InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
 		InternalSortTable* ist = eist->add(d);
 		InternalSortTable* ist2 = ist->add(_first, _last);
 		if (ist2 != eist) {
-			delete(new SortTable(eist));
+			delete (new SortTable(eist));
 		}
 		return ist2;
 	} else {
@@ -1768,7 +1768,7 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 		}
 		InternalSortTable* ist = eist->add(i1, i2);
 		if (ist != eist) {
-			delete(new SortTable(eist));
+			delete (new SortTable(eist));
 		}
 		return ist;
 	}
@@ -2030,7 +2030,7 @@ InternalSortTable* InfiniteInternalSortTable::add(const DomainElement* d) {
 		upt->addInTable(new SortTable(this));
 		InternalSortTable* temp = upt->add(d);
 		if (temp != upt) {
-			delete(new SortTable(upt));
+			delete (new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -2044,7 +2044,7 @@ InternalSortTable* InfiniteInternalSortTable::remove(const DomainElement* d) {
 		upt->addOutTable(new SortTable(this));
 		InternalSortTable* temp = upt->remove(d);
 		if (temp != upt) {
-			delete(new SortTable(upt));
+			delete (new SortTable(upt));
 		}
 		return temp;
 	} else {
@@ -2512,10 +2512,11 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
-	if (a2 == 0)
-		return 0;
-	else
+	if (a2 == 0) {
+		return NULL;
+	} else {
 		return createDomElem(a1 % a2);
+	}
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
@@ -2604,10 +2605,11 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		if (a2 == 0)
-			return 0;
-		else
+		if (a2 == 0) {
+			return NULL;
+		} else {
 			return createDomElem(a1 / a2, NumType::POSSIBLYINT);
+		}
 	}
 }
 
@@ -3115,6 +3117,7 @@ TableIterator FuncTable::begin() const {
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), ctpf->universe());
+	_inconsistentElements  = {};
 	if (ct) {
 		_ct = ctpf;
 		_pf = inverseCtpf;
@@ -3129,6 +3132,7 @@ PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
 		_pt = cfpt;
 		_cf = inverseCfpt;
 	}
+	checkConsistency();
 }
 
 /**
@@ -3143,6 +3147,7 @@ PredInter::PredInter(PredTable* ctpf, bool ct) {
 	PredTable* cfpt = new PredTable(ctpf->internTable(), ctpf->universe());
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), cfpt->universe());
+	_inconsistentElements  = {};
 	if (ct) {
 		_ct = ctpf;
 		_pt = cfpt;
@@ -3198,14 +3203,15 @@ bool PredInter::isUnknown(const ElementTuple& tuple) const {
  * \brief Returns true iff the tuple is inconsistent according to the predicate interpretation
  */
 bool PredInter::isInconsistent(const ElementTuple& tuple) const {
-	if (approxTwoValued()) {
-		return false;
-	} else {
-		return (isFalse(tuple) && isTrue(tuple));
-	}
+	return _inconsistentElements.find(&tuple) != _inconsistentElements.cend();
 }
 
 bool PredInter::isConsistent() const {
+	return _inconsistentElements.size() == 0;
+}
+
+void PredInter::checkConsistency() {
+	_inconsistentElements.clear();
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
@@ -3224,20 +3230,17 @@ bool PredInter::isConsistent() const {
 		CHECKTERMINATION
 		// get unassigned domain element
 		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
-			CHECKTERMINATION
-			Assert(sPossTable->size()._size>1000 || not sPossTable->contains(*largeIt));
+			CHECKTERMINATION;Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
 		}
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
-			return false;
-		}
-		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+			_inconsistentElements.insert(&(*largeIt));
+		}Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
-	return true;
 }
 
 /**
@@ -3252,15 +3255,24 @@ bool PredInter::approxTwoValued() const {
 }
 
 void PredInter::makeUnknown(const ElementTuple& tuple) {
+	if (_inconsistentElements.find(&tuple) != _inconsistentElements.cend()) {
+		_inconsistentElements.erase(&tuple);
+	}
 	moveTupleFromTo(tuple, _cf, _pt);
 	moveTupleFromTo(tuple, _ct, _pf);
 }
 
 void PredInter::makeTrue(const ElementTuple& tuple) {
+	if (_cf->contains(tuple)) {
+		_inconsistentElements.insert(&tuple);
+	}
 	moveTupleFromTo(tuple, _pf, _ct);
 }
 
 void PredInter::makeFalse(const ElementTuple& tuple) {
+	if (_ct->contains(tuple)) {
+		_inconsistentElements.insert(&tuple);
+	}
 	moveTupleFromTo(tuple, _pt, _cf);
 }
 
@@ -3305,6 +3317,7 @@ void PredInter::ct(PredTable* t) {
 	delete (_pf);
 	_ct = t;
 	_pf = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	checkConsistency();
 }
 
 void PredInter::cf(PredTable* t) {
@@ -3312,6 +3325,7 @@ void PredInter::cf(PredTable* t) {
 	delete (_pt);
 	_cf = t;
 	_pt = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	checkConsistency();
 }
 
 void PredInter::pt(PredTable* t) {
@@ -3319,6 +3333,7 @@ void PredInter::pt(PredTable* t) {
 	delete (_cf);
 	_pt = t;
 	_cf = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	checkConsistency();
 }
 
 void PredInter::pf(PredTable* t) {
@@ -3326,12 +3341,14 @@ void PredInter::pf(PredTable* t) {
 	delete (_ct);
 	_pf = t;
 	_ct = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	checkConsistency();
 }
 
 void PredInter::ctpt(PredTable* t) {
 	ct(t);
 	PredTable* npt = new PredTable(t->internTable(), t->universe());
 	pt(npt);
+	checkConsistency();
 }
 
 void PredInter::materialize() {
@@ -3610,8 +3627,6 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 
 /** Destructor **/
 
-
-
 bool needFixedNumberOfModels() {
 	auto expected = getOption(IntType::NBMODELS);
 	return expected != 0 && expected < getMaxElem<int>();
@@ -3657,8 +3672,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
-	}
-	Assert(newstructs.size()>0);
+	}Assert(newstructs.size()>0);
 	extensions = newstructs;
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
 }
@@ -3677,7 +3691,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if (getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
+	if(getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())){
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

@@ -1,0 +1,21 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type A isa int
+	P(A)
+}
+
+vocabulary V2{
+	extern vocabulary V
+	Cost:A
+}
+
+theory T2: V2{
+	sum{x: P(x): -x} = Cost.
+}
+
+procedure main(){
+	return 1
+}

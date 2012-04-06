@@ -2,10 +2,15 @@ procedure main(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	S1=groundpropagate(T,S)
+	if not weakassertions(S1) then
+		io.stderr:write("Error in groundpropagate.\n")
+		return 0
+	end
 	S2=optimalpropagate(T,S)
-	if weakassertions(S1) and weakassertions(S2) and strongassertions(S2) then
+	if weakassertions(S2) and strongassertions(S2) then
 		return 1
 	else
+		io.stderr:write("Error in optimalpropagate.\n")
 		return 0
 	end
 }
@@ -82,15 +87,18 @@ procedure assert2(table, values, name){
 		index = index+1
 	end 
 	if result == false or #values ~= index-1 then
-			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
 	end
 	return result
 	
 }
 
 procedure consistent(expected, Struct){
-	if not Struct then Struct = S end
 	if expected == 1 then
+		if Struct == nil then
+			io.stderr:write("Recieved no structure, hence propagation found inconsistency which was not expected\n")
+			return false
+		end
 		if isconsistent(Struct) == true then
 			return true
 		else
@@ -98,7 +106,7 @@ procedure consistent(expected, Struct){
 			return false
 		end
 	else
-		if isconsistent(Struct) == false then
+		if Struct == nil then
 			return true
 		else
 			io.stderr:write("FAIL!  expected an inconsistent structure, but was consistent\n")

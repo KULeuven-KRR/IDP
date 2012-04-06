@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef INFERENCESOLVERCONN_HPP_
-#define INFERENCESOLVERCONN_HPP_
+#ifndef INFERENCE_SOLVERCONN_HPP_
+#define INFERENCE_SOLVERCONN_HPP_
 
 #include "SolverInclude.hpp"
 
@@ -18,18 +18,12 @@ class GroundTranslator;
 class GroundTermTranslator;
 class TraceMonitor;
 
-namespace MinisatID {
-	class Solution;
-	class Model;
-	class WrappedPCSolver;
-}
-
 namespace SolverConnection {
 	// Note: default find all models
 	PCSolver* createsolver(int nbmodels = 0);
 	void setTranslator(PCSolver*, GroundTranslator* translator);
 	PCModelExpand* initsolution(PCSolver*, int nbmodels);
-	PCUnitPropagation* initpropsolution(PCSolver*, int nbmodels);
+	PCUnitPropagate* initpropsolution(PCSolver*);
 
 	// Parse model into structure
 	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);
@@ -38,4 +32,4 @@ namespace SolverConnection {
 	void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init);
 }
 
-#endif //INFERENCESOLVERCONN_HPP_
+#endif //INFERENCE_SOLVERCONN_HPP_

@@ -25,6 +25,7 @@ class Sort;
 class SortTable;
 class Vocabulary;
 
+
 class AbstractStructure {
 protected:
 
@@ -72,14 +73,14 @@ public:
 
 	virtual Universe universe(const PFSymbol*) const = 0;
 
-	virtual bool approxTwoValued() const =0;
+	virtual bool approxTwoValued() const = 0;
 
 	// Note: loops over all tuples of all tables, SLOW!
 	virtual bool isConsistent() const = 0;
 
 	virtual void makeTwoValued() = 0;
 
-	void put(std::ostream& s);
+	void put(std::ostream& s) const;
 };
 
 #endif /* ABSTRACTSTRUCTURE_HPP_ */

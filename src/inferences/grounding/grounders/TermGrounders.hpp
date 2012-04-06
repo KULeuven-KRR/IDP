@@ -12,6 +12,8 @@
 #define TERMGROUNDERS_HPP_
 
 #include "IncludeComponents.hpp" // TODO too general
+#include "GroundUtils.hpp"
+
 class AbstractGroundTheory;
 class SortTable;
 class Term;
@@ -29,16 +31,16 @@ class TermGrounder {
 private:
 	mutable SortTable* _domain;
 	Term* _origterm;
-	std::map<Variable*, const DomElemContainer*> _varmap;
+	var2dommap _varmap;
 public:
 	// @parameter dom: the sort of the position the term occurs in
-	TermGrounder(SortTable* dom = NULL) :
-			_domain(dom) {
+	TermGrounder(SortTable* dom = NULL)
+			: _domain(dom) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
 
-	void setOrig(const Term* t, const std::map<Variable*, const DomElemContainer*>& mvd);
+	void setOrig(const Term* t, const var2dommap& mvd);
 	void printOrig() const;
 
 	SortTable* getDomain() const {
@@ -105,26 +107,28 @@ protected:
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	SumType _type;
-
-	AbstractGroundTheory* _grounding;
 public:
-	SumTermGrounder(AbstractGroundTheory* g, GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg,
-			SumType type = ST_PLUS) :
-			TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type), _grounding(g) {
+	SumTermGrounder(GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
 	}
 	GroundTerm run() const;
+private:
+	void computeDomain(GroundTerm& left, GroundTerm& right) const;
 };
 
 class SetGrounder;
 
+CPTerm* createCPAggTerm(const AggFunction&, const varidlist&);
+
 class AggTermGrounder: public TermGrounder {
 private:
 	GroundTranslator* _translator;
+	GroundTermTranslator* _termtranslator;
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SetGrounder* gr) :
-			_translator(gt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SetGrounder* gr) :
+			_translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };

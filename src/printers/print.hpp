@@ -78,13 +78,13 @@ protected:
 	virtual void visit(const Vocabulary*) = 0;
 	virtual void visit(const AbstractStructure*) = 0;
 	virtual void visit(const Namespace*) = 0;
-	virtual void visit(const GroundClause& g) = 0;
+	virtual void visit(const GroundClause&) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
 	virtual void visit(const GroundSet*) = 0;
-	virtual void visit(const PCGroundRule* b) = 0;
-	virtual void visit(const AggGroundRule* b) = 0;
-	virtual void visit(const GroundAggregate* cpr) = 0;
-	virtual void visit(const CPReification* cpr) = 0;
+	virtual void visit(const PCGroundRule*) = 0;
+	virtual void visit(const AggGroundRule*) = 0;
+	virtual void visit(const GroundAggregate*) = 0;
+	virtual void visit(const CPReification*) = 0;
 
 public:
 	virtual ~Printer(){}

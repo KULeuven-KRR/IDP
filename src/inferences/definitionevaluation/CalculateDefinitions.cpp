@@ -64,7 +64,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	return structure->isConsistent();
 }
 
-AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
+std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
 	auto structure = originalStructure->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";
@@ -96,7 +96,7 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 					if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
-					return new InconsistentStructure(structure->name(), structure->pi());
+					return std::vector<AbstractStructure*> { };
 				}
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
@@ -106,7 +106,9 @@ AbstractStructure* CalculateDefinitions::calculateKnownDefinitions(Theory* theor
 			}
 		}
 	}
-	Assert(structure->isConsistent()); // NOTE: oherwise early exit
-	return structure;
+	if(not structure->isConsistent()){
+		return std::vector<AbstractStructure*> { };
+	}
+	return {structure};
 }
 

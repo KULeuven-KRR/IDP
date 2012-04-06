@@ -8,13 +8,14 @@
 #define SOLVERINCLUDE_HPP_
 
 #include "external/Space.hpp"
-#include "external/DataAndInference.hpp"
+#include "inferences/Tasks.hpp"
 #include "external/SearchMonitor.hpp"
+#include "external/Translator.hpp"
 
 typedef MinisatID::Space PCSolver;
+typedef MinisatID::Translator PCPrinter;
 typedef MinisatID::ModelExpand PCModelExpand;
-typedef MinisatID::UnitPropagate PCUnitPropagation;
-typedef MinisatID::Transform PCTransform;
+typedef MinisatID::UnitPropagate PCUnitPropagate;
 typedef MinisatID::PropAndBackMonitor SearchMonitor;
 
 #endif /* SOLVERINCLUDE_HPP_ */

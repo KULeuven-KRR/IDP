@@ -14,25 +14,28 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "parseinfo.hpp"
 #include "commontypes.hpp"
+#include "utils/CPUtils.hpp"
+#include "IncludeComponents.hpp"
 
 class AbstractStructure;
-
-//TODO issue #23
-//TODO Check recursion issue... Think about nested aggregates!
-//TODO if this transformer works completely like it should, 
-// then we should probably remove graphFunctions and graphAggregates, 
-// because they should not be used anymore..
 
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	AbstractStructure* _structure;
+	Vocabulary* _vocabulary;
 	Context _context;
+	bool _cpsupport;
 public:
 	template<typename T>
 	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {
 		_structure = str;
+		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
+		_cpsupport = getOption(BoolType::CPSUPPORT);
+		if (_cpsupport and _vocabulary != NULL) {
+			CPSupport::findCPSymbols(_vocabulary);
+		}
 		return t->accept(this);
 	}
 protected:

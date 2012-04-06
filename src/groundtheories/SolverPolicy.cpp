@@ -17,6 +17,7 @@
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "external/Constraints.hpp"
+#include "theorysolvers/PCSolver.hpp"
 
 #include <cmath>
 
@@ -27,7 +28,7 @@ inline MinisatID::Atom createAtom(int lit) {
 }
 
 inline MinisatID::Literal createLiteral(int lit) {
-	return MinisatID::Literal(abs(lit), lit < 0);
+	return MinisatID::mkLit(abs(lit), lit < 0);
 }
 
 MinisatID::literallist createList(const litlist& origlist){
@@ -74,61 +75,65 @@ void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(const TsSet& tsset, int setnr, bool weighted) {
+void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted) {
 	if (not weighted) {
-		MinisatID::Set set;
+		MinisatID::WLSet set;
 		set.setID = setnr;
 		for (size_t n = 0; n < tsset.size(); ++n) {
-			set.literals.push_back(createLiteral(tsset.literal(n)));
+			set.wl.push_back(MinisatID::WLtuple{createLiteral(tsset.literal(n)), MinisatID::Weight(1)});
 		}
 		add(getSolver(), set);
 	} else {
-		MinisatID::WSet set;
+		MinisatID::WLSet set;
 		set.setID = setnr;
 		for (size_t n = 0; n < tsset.size(); ++n) {
-			set.literals.push_back(createLiteral(tsset.literal(n)));
-			set.weights.push_back(createWeight(tsset.weight(n)));
+			set.wl.push_back(MinisatID::WLtuple{createLiteral(tsset.literal(n)), createWeight(tsset.weight(n))});
 		}
 		add(getSolver(), set);
 	}
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(int defnr, PCGroundRule* rule) {
+void SolverPolicy<Solver>::polAdd(DefId defnr, PCGroundRule* rule) {
 	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RuleType::CONJ), rule->recursive());
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(int defnr, AggGroundRule* rule) {
+void SolverPolicy<Solver>::polAdd(DefId defnr, AggGroundRule* rule) {
 	polAddAggregate(defnr, rule->head(), rule->lower(), rule->setnr(), rule->aggtype(), TsType::RULE, rule->bound());
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(int defnr, int head, AggGroundRule* body, bool) {
+void SolverPolicy<Solver>::polAdd(DefId defnr, Lit head, AggGroundRule* body, bool) {
 	polAddAggregate(defnr, head, body->lower(), body->setnr(), body->aggtype(), TsType::RULE, body->bound());
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(int head, AggTsBody* body) {
+void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 	Assert(body->type() != TsType::RULE);
 	//FIXME getIDForUndefined() should be replaced by the number the SOLVER takes as undefined
 	polAddAggregate(getIDForUndefined(), head, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound,
-		MinisatID::EqType rel) {
+void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel) {
 	MinisatID::CPSumWeighted sentence;
 	sentence.head = head;
 	sentence.varIDs = varids;
-	sentence.weights = weights;
+
+	vector<MinisatID::Weight> w;
+	for(auto i=weights.cbegin(); i<weights.cend(); ++i) {
+		w.push_back(MinisatID::Weight(*i));
+	}
+	sentence.weights = w;
+
 	sentence.bound = bound;
 	sentence.rel = rel;
 	add(getSolver(), sentence);
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
+void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	MinisatID::EqType comp;
 	switch (body->comp()) {
 	case CompType::EQ:
@@ -176,9 +181,8 @@ void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _termtranslator);
-			std::vector<VarId> varids = term->varids();
-			std::vector<int> weights;
-			weights.resize(1, term->varids().size());
+			varidlist varids = term->varids();
+			intweightlist weights(term->varids().size(),1);
 
 			int bound = 0;
 			varids.push_back(right._varid);
@@ -186,7 +190,7 @@ void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
 
 			polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp);
 		} else {
-			std::vector<int> weights { (int) term->varids().size() };
+			intweightlist weights(term->varids().size(),1);
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp);
 		}
 	} else {
@@ -195,8 +199,8 @@ void SolverPolicy<Solver>::polAdd(int tseitin, CPTsBody* body) {
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _termtranslator);
-			std::vector<VarId> varids = term->varids();
-			std::vector<int> weights = term->weights();
+			varidlist varids = term->varids();
+			intweightlist weights = term->weights();
 
 			int bound = 0;
 			varids.push_back(right._varid);
@@ -252,34 +256,24 @@ MinisatID::AggType convert(AggFunction agg){
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddAggregate(int definitionID, int head, bool lowerbound, int setnr, AggFunction aggtype, TsType sem, double bound) {
-	MinisatID::Aggregate agg;
-	agg.sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
-	agg.setID = setnr;
-	agg.type = convert(aggtype);
-	if (_verbosity > 1){
-		std::clog <<toString(aggtype) << setnr << ' ';
-	}
+void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
+	auto sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
+	auto msem = MinisatID::AggSem::COMP;
 	switch (sem) {
 	case TsType::EQ:
 	case TsType::IMPL:
 	case TsType::RIMPL:
-		agg.sem = MinisatID::AggSem::COMP;
+		msem = MinisatID::AggSem::COMP;
 		break;
 	case TsType::RULE:
-		agg.sem = MinisatID::AggSem::DEF;
+		msem = MinisatID::AggSem::DEF;
 		break;
 	}
-	if (_verbosity > 1)
-		std::clog << (lowerbound ? " >= " : " =< ") << bound << "\n";
-	agg.defID = definitionID;
-	agg.head = createAtom(head);
-	agg.bound = createWeight(bound);
-	add(getSolver(), agg);
+	add(getSolver(), MinisatID::Aggregate(createAtom(head), setnr, createWeight(bound), convert(aggtype), sign, msem, definitionID));
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddCPVariables(const std::vector<VarId>& varids, GroundTermTranslator* termtranslator) {
+void SolverPolicy<Solver>::polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator) {
 	for (auto it = varids.begin(); it != varids.end(); ++it) {
 		polAddCPVariable(*it, termtranslator);
 	}
@@ -290,43 +284,33 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 	if (_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		SortTable* domain = termtranslator->domain(varid);
-		Assert(domain);
+		Assert(domain != NULL);
 		Assert(domain->approxFinite());
 		if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
-			MinisatID::CPIntVarRange cpvar;
+			MinisatID::IntVarRange cpvar;
 			cpvar.varID = varid;
 			cpvar.minvalue = domain->first()->value()._int;
 			cpvar.maxvalue = domain->last()->value()._int;
-			if (_verbosity > 0)
-				std::clog << "[" << cpvar.minvalue << "," << cpvar.maxvalue << "]";
 			add(getSolver(), cpvar);
 		} else {
 			// the domain is not a complete range.
-			MinisatID::CPIntVarEnum cpvar;
+			MinisatID::IntVarEnum cpvar;
 			cpvar.varID = varid;
-			if (_verbosity > 0)
-				std::clog << "{ ";
 			for (SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
 				int value = (*it)->value()._int;
 				cpvar.values.push_back(value);
-				if (_verbosity > 0)
-					std::clog << value << "; ";
 			}
-			if (_verbosity > 0)
-				std::clog << "}";
 			add(getSolver(), cpvar);
 		}
-		if (_verbosity > 0)
-			std::clog << "\n";
 	}
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> body, bool conjunctive, bool) {
+void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> body, bool conjunctive, bool arg_n) {
 	MinisatID::Rule rule;
 	rule.head = createAtom(head);
-	for (unsigned int n = 0; n < body.size(); ++n) {
+	for (size_t n = 0; n < body.size(); ++n) {
 		rule.body.push_back(createLiteral(body[n]));
 	}
 	rule.conjunctive = conjunctive;
@@ -335,11 +319,13 @@ void SolverPolicy<Solver>::polAddPCRule(int defnr, int head, std::vector<int> bo
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddOptimization(AggFunction function, int setid){
-	MinisatID::MinimizeAgg minim;
-	minim.setid = setid;
-	minim.type = convert(function);
-	add(getSolver(), minim);
+void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid) {
+	add(getSolver(), MinisatID::MinimizeAgg(1, setid, convert(function)));
+}
+
+template<typename Solver>
+void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
+	add(getSolver(), MinisatID::MinimizeVar(1, varid));
 }
 
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {

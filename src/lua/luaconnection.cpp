@@ -70,15 +70,13 @@ bool init = false;
 
 const char* toCString(ArgType type) {
 	if (not init) {
-		map_init(argType2Name)
-				(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")
-				(AT_VOCABULARY,	"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")
-				(AT_PREDTABLE, "predicate_table")(AT_PREDINTER, "predicate_interpretation")(AT_FUNCINTER, "function_interpretation")
-				(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")
-				(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY, "theory")
-				(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")
-				(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")
-				(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
+		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
+				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
+				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR,
+				"predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(
+				AT_FORMULA, "formula")(AT_THEORY, "theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(
+				AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED,
+				"overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -270,7 +268,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
 		if (arg._value._structure->pi().linenumber() == 0) {
-			if (_luastructures.find(arg._value._structure) != _luastructures.cend()){
+			if (_luastructures.find(arg._value._structure) != _luastructures.cend()) {
 				++_luastructures[arg._value._structure];
 			} else {
 				_luastructures[arg._value._structure] = 1;
@@ -293,7 +291,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
 		if (arg._value._theory->pi().linenumber() == 0) {
-			if (_luatheories.find(arg._value._theory) != _luatheories.cend()){
+			if (_luatheories.find(arg._value._theory) != _luatheories.cend()) {
 				++_luatheories[arg._value._theory];
 			} else {
 				_luatheories[arg._value._theory] = 1;
@@ -576,7 +574,8 @@ vector<ArgType> getArgTypes(lua_State* L, unsigned int arg) {
 			result = os->types();
 		} else {
 			result.push_back(type);
-		}lua_pop(L, 2);
+		}
+		lua_pop(L, 2);
 		break;
 	}
 	case LUA_TTHREAD:
@@ -870,8 +869,9 @@ int predicateIndex(lua_State* L) {
 			}
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
-					if ((*it)->resolve(currsorts))
+					if ((*it)->resolve(currsorts)) {
 						newpred->insert(*it);
+					}
 				}
 			}
 			size_t c = 0;
@@ -995,56 +995,51 @@ int symbolIndex(lua_State* L) {
  * Index function for vocabularies
  */
 int vocabularyIndex(lua_State* L) {
-	Vocabulary* voc = *(Vocabulary**) lua_touserdata(L, 1);
-	InternalArgument index = createArgument(2, L);
-	if (index._type == AT_STRING) {
-		unsigned int emptycounter = 0;
-		Sort* sort = voc->sort(*(index._value._string));
-		if (sort == NULL) {
-			++emptycounter;
-		}
-		set<Predicate*> preds = voc->pred_no_arity(*(index._value._string));
-		if (preds.empty()) {
-			++emptycounter;
-		}
-		set<Function*> funcs = voc->func_no_arity(*(index._value._string));
-		if (funcs.empty()) {
-			++emptycounter;
-		}
-		if (emptycounter == 3) {
-			return 0;
-		} else if (emptycounter == 2) {
-			if (sort != NULL) {
-				set<Sort*>* newsorts = new set<Sort*> { sort };
-				InternalArgument ns(newsorts);
-				return convertToLua(L, ns);
-			} else if (not preds.empty()) {
-				set<Predicate*>* newpreds = new set<Predicate*>(preds);
-				InternalArgument np(newpreds);
-				return convertToLua(L, np);
-			} else {
-				Assert(not funcs.empty());
-				set<Function*>* newfuncs = new set<Function*>(funcs);
-				InternalArgument nf(newfuncs);
-				return convertToLua(L, nf);
-			}
-		} else {
-			OverloadedSymbol* os = new OverloadedSymbol();
-			if (sort != NULL) {
-				os->insert(sort);
-			}
-			for (auto it = preds.cbegin(); it != preds.cend(); ++it) {
-				os->insert(*it);
-			}
-			for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
-				os->insert(*it);
-			}
-			InternalArgument s(os);
-			return convertToLua(L, s);
-		}
-	} else {
+	auto voc = *(Vocabulary**) lua_touserdata(L, 1);
+	auto index = createArgument(2, L);
+	if (index._type != AT_STRING) {
 		lua_pushstring(L, "A vocabulary can only be indexed by a string");
 		return lua_error(L);
+	}
+	unsigned int emptycounter = 0;
+	auto sort = voc->sort(*(index._value._string));
+	if (sort == NULL) {
+		++emptycounter;
+	}
+	auto preds = voc->pred_no_arity(*(index._value._string));
+	if (preds.empty()) {
+		++emptycounter;
+	}
+	auto funcs = voc->func_no_arity(*(index._value._string));
+	if (funcs.empty()) {
+		++emptycounter;
+	}
+	if (emptycounter == 3) {
+		return 0;
+	} else if (emptycounter == 2) {
+		if (sort != NULL) {
+			auto newsorts = new set<Sort*> { sort };
+			return convertToLua(L, InternalArgument(newsorts));
+		} else if (not preds.empty()) {
+			auto newpreds = new set<Predicate*>(preds);
+			return convertToLua(L, InternalArgument(newpreds));
+		} else {
+			Assert(not funcs.empty());
+			auto newfuncs = new set<Function*>(funcs);
+			return convertToLua(L, InternalArgument(newfuncs));
+		}
+	} else {
+		auto os = new OverloadedSymbol();
+		if (sort != NULL) {
+			os->insert(sort);
+		}
+		for (auto it = preds.cbegin(); it != preds.cend(); ++it) {
+			os->insert(*it);
+		}
+		for (auto it = funcs.cbegin(); it != funcs.cend(); ++it) {
+			os->insert(*it);
+		}
+		return convertToLua(L, InternalArgument(os));
 	}
 }
 
@@ -1054,30 +1049,30 @@ int vocabularyIndex(lua_State* L) {
 int domainatomIndex(lua_State* L) {
 	const DomainAtom* atom = *(const DomainAtom**) lua_touserdata(L, 1);
 	InternalArgument index = createArgument(2, L);
-	if (index._type == AT_STRING) {
-		string str = *index._value._string;
-		if (str == "symbol") {
-			PFSymbol* s = atom->symbol();
-			if (sametypeid<Predicate>(*s)) {
-				set<Predicate*>* sp = new set<Predicate*>();
-				sp->insert(dynamic_cast<Predicate*>(s));
-				return convertToLua(L, InternalArgument(sp));
-			} else {
-				Assert(sametypeid<Function>(*s));
-				set<Function*>* sf = new set<Function*>();
-				sf->insert(dynamic_cast<Function*>(s));
-				return convertToLua(L, InternalArgument(sf));
-			}
-		} else if (str == "args") {
-			ElementTuple* tuple = new ElementTuple(atom->args());
-			InternalArgument ia;
-			ia._type = AT_TUPLE;
-			ia._value._tuple = tuple;
-			return convertToLua(L, ia);
+	if (index._type != AT_STRING) {
+		lua_pushstring(L, "A domain atom can only be indexed by the strings \"symbol\" and \"args\"");
+		return lua_error(L);
+	}
+
+	auto str = *index._value._string;
+	if (str == "symbol") {
+		auto s = atom->symbol();
+		if (sametypeid<Predicate>(*s)) {
+			auto sp = new set<Predicate*>();
+			sp->insert(dynamic_cast<Predicate*>(s));
+			return convertToLua(L, InternalArgument(sp));
 		} else {
-			lua_pushstring(L, "A domain atom can only be indexed by the strings \"symbol\" and \"args\"");
-			return lua_error(L);
+			Assert(sametypeid<Function>(*s));
+			auto sf = new set<Function*>();
+			sf->insert(dynamic_cast<Function*>(s));
+			return convertToLua(L, InternalArgument(sf));
 		}
+	} else if (str == "args") {
+		auto tuple = new ElementTuple(atom->args());
+		InternalArgument ia;
+		ia._type = AT_TUPLE;
+		ia._value._tuple = tuple;
+		return convertToLua(L, ia);
 	} else {
 		lua_pushstring(L, "A domain atom can only be indexed by the strings \"symbol\" and \"args\"");
 		return lua_error(L);
@@ -1206,7 +1201,7 @@ InternalArgument getValue(Options* opts, const string& name) {
 		return InternalArgument(new string(opts->getValueOfType<std::string>(name)));
 	} else if (opts->isOptionOfType<bool>(name)) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
-	} else if(opts->isOptionOfType<double>(name)) {
+	} else if (opts->isOptionOfType<double>(name)) {
 		return InternalArgument(opts->getValueOfType<double>(name));
 	} else {
 		throw IdpException("Requesting non-existing option " + name);
@@ -1521,7 +1516,7 @@ int structureNewIndex(lua_State* L) {
 
 int invalidOption(Options* options, lua_State* L, const string& option, const string& value) {
 	stringstream ss;
-	ss << "\"" << value << "\" is not a valid value for " << option << ".\n";
+	ss << "\"" << value << "\" is not a valid value for option " << option << ".\n";
 	ss << options->printAllowedValues(option) << ".\n";
 	lua_pushstring(L, ss.str().c_str());
 	return lua_error(L);
@@ -1560,7 +1555,7 @@ int optionsNewIndex(lua_State* L) {
 	switch (value._type) {
 	case AT_INT:
 		return attempToSetValue(L, opts, option, value._value._int);
-	/*case AT_DOUBLE: // TODO currently there are no float options
+		/*case AT_DOUBLE: // TODO currently there are no float options
 		 return attempToSetValue(L, opts, option, value._value._double);*/
 	case AT_STRING:
 		return attempToSetValue(L, opts, option, *value._value._string);
@@ -1734,7 +1729,7 @@ int symbolArity(lua_State* L) {
 	}
 }
 
-typedef pair<int(*)(lua_State*), string> tablecolheader;
+typedef pair<int (*)(lua_State*), string> tablecolheader;
 
 void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements) {
 	bool newtable = luaL_newmetatable(L, toCString(type)) != 0;
