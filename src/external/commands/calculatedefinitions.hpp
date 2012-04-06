@@ -14,6 +14,7 @@
 #include "commandinterface.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "errorhandling/error.hpp"
+#include <vector>
 
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> CalculateDefinitionInferenceBase;
 class CalculateDefinitionInference: public CalculateDefinitionInferenceBase {
@@ -33,7 +34,12 @@ public:
 			return nilarg();
 		}
 		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
-		return InternalArgument(CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)));
+		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args));
+		if(sols.size()==0 ){
+			return InternalArgument();
+		}
+		Assert(sols.size() == 1 && sols[0] != NULL);
+		return InternalArgument(sols[0]);
 	}
 };
 

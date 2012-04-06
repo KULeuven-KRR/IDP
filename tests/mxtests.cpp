@@ -47,6 +47,12 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
 }
 
+#ifdef WITHCP
+TEST_P(MXnbTest, DoesMXWithCP) {
+	runTests("mxnbofmodelstestwithcp.idp", GetParam());
+}
+#endif
+
 TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
 	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
 }
@@ -63,7 +69,11 @@ TEST(MXnbmodelsTest, DoesMX) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
-
+#ifdef WITHCP
+TEST_P(MXsatTest, DoesMXWithCP) {
+	runTests("mxsattestwithcp.idp", GetParam());
+}
+#endif
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));

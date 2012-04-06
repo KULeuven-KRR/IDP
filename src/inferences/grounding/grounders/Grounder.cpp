@@ -95,8 +95,8 @@ void Grounder::toplevelRun() const {
 	run(formula);
 	addToGrounding(getGrounding(), formula);
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
-	if(verbosity()>0){
-		clog <<"Already grounded " <<toString(groundedAtoms()) <<" for a full grounding of " <<toString(getMaxGroundSize()) <<"\n";
+	if (verbosity() > 0) {
+		clog << "Already grounded " << toString(groundedAtoms()) <<" for a full grounding of " << toString(getMaxGroundSize()) << "\n";
 	}
 }
 
@@ -116,7 +116,9 @@ Lit Grounder::groundAndReturnLit() const {
 	}
 }
 
-void Grounder::setMaxGroundSize(const tablesize& maxsize){
-	clog <<"Setting max ground size to " <<toString(maxsize) <<" for " <<toString(this) <<"\n";
+void Grounder::setMaxGroundSize(const tablesize& maxsize) {
+	if (verbosity() > 2) {
+		clog << "Setting max ground size to " << toString(maxsize) << " for " << toString(this) << "\n";
+	}
 	_maxsize = maxsize;
 }

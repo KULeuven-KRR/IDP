@@ -27,19 +27,19 @@ std::string str(Language choice) {
 		return "tptp";
 	case Language::FLATZINC:
 		return "flatzinc";
+	case Language::ASP:
+		return "asp";
 	default:
 		return "unknown";
 		//case Language::CNF:
 		//	return "cnf";
-		//case Language::ASP:
-		//	return "asp";
 		//case Language::LATEX:
 		//	return "latex";
 	}
 }
 
 std::set<Language> possibleLanguageValues(){
-	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF};
+	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF,Language::ASP};
 }
 std::set<std::string> possibleLanguageStringValues(){
 	std::set<std::string> s;
@@ -94,8 +94,7 @@ Options::Options() {
 	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
-	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name,
-			PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
@@ -142,8 +141,9 @@ std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => between " << lower() << " and " << upper() << ".\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 template<>
@@ -162,8 +162,9 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 		}
 		ss << "]\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 template<class EnumType, class ConcreteType>
@@ -182,8 +183,9 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 		}
 		ss << "]\n";
 		return ss.str();
-	} else
+	} else {
 		return "";
+	}
 }
 
 Language Options::language() const {

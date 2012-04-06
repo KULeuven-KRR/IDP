@@ -22,6 +22,18 @@
  *	\file This file contains some frequently used typedefs and enumerations
  */
 
+typedef int Lit;
+typedef unsigned int Atom;
+typedef double Weight;
+typedef std::vector<Lit> litlist;
+typedef std::vector<Weight> weightlist;
+
+typedef int SetId;
+typedef int DefId;
+
+class DomainElement;
+typedef std::vector<const DomainElement*> ElementTuple;
+
 /**
  * The different aggregate functions
  *	- AGGCARD:	card
@@ -82,10 +94,5 @@ enum class TruthType {
 enum class NumType {
 	CERTAINLYINT, POSSIBLYINT
 };
-
-typedef int Lit;
-typedef double Weight;
-typedef std::vector<Lit> litlist;
-typedef std::vector<double> weightlist;
 
 #endif

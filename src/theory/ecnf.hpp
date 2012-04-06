@@ -15,9 +15,10 @@
 #include <ostream>
 
 #include "theory.hpp"
-#include "visitors/TheoryVisitor.hpp" // TODO calls should go into cpp
-#include "visitors/TheoryMutatingVisitor.hpp" // TODO calls should go into cpp
 #include "visitors/VisitorFriends.hpp"
+
+class TheoryVisitor;
+
 class GroundTranslator;
 class GroundTermTranslator;
 class PCTsBody;
@@ -32,8 +33,6 @@ class InstGenerator;
 
 typedef unsigned int VarId;
 typedef std::vector<VarId> varidlist;
-typedef std::vector<Lit> litlist;
-typedef std::vector<double> weightlist;
 typedef std::vector<int> intweightlist;
 
 /******************
@@ -45,27 +44,27 @@ typedef litlist GroundClause;
 class GroundSet {
 ACCEPTNONMUTATING()
 private:
-	unsigned int _setnr;
+	SetId _setnr;
 	litlist _setlits; // All literals in the ground set
 	weightlist _litweights; // For each literal a corresponding weight
 
 public:
-	GroundSet(int setnr, const litlist& s, const weightlist& lw)
+	GroundSet(SetId setnr, const litlist& s, const weightlist& lw)
 			: _setnr(setnr), _setlits(s), _litweights(lw) {
 	}
 	virtual ~GroundSet(){}
 
 	// Inspectors
-	unsigned int setnr() const {
+	SetId setnr() const {
 		return _setnr;
 	}
-	unsigned int size() const {
+	size_t size() const {
 		return _setlits.size();
 	}
-	int literal(unsigned int n) const {
+	Lit literal(size_t n) const {
 		return _setlits[n];
 	}
-	double weight(unsigned int n) const {
+	Weight weight(size_t n) const {
 		return (not _litweights.empty()) ? _litweights[n] : 1;
 	}
 	bool weighted() const {
@@ -93,17 +92,17 @@ class GroundAggregate {
 ACCEPTNONMUTATING()
 private:
 	// Attributes
-	int _head; // the head literal
+	Lit _head; // the head literal
 	TsType _arrow; // the relation between head and aggregate expression
 				   // INVARIANT: this should never be TsType::RULE
 	double _bound; // the bound
 	bool _lower; // true iff the bound is a lower bound for the aggregate
 	AggFunction _type; // the aggregate function
-	int _set; // the set id
+	SetId _set; // the set id
 
 public:
 	// Constructors
-	GroundAggregate(AggFunction t, bool l, TsType e, int h, int s, double b)
+	GroundAggregate(AggFunction t, bool l, TsType e, Lit h, SetId s, double b)
 			: _head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
 		Assert(e != TsType::RULE);
 	}
@@ -114,7 +113,7 @@ public:
 	virtual ~GroundAggregate(){}
 
 	// Inspectors
-	int head() const {
+	Lit head() const {
 		return _head;
 	}
 	TsType arrow() const {
@@ -129,7 +128,7 @@ public:
 	AggFunction type() const {
 		return _type;
 	}
-	unsigned int setnr() const {
+	SetId setnr() const {
 		return _set;
 	}
 };
@@ -150,12 +149,12 @@ enum class RuleType {
 class GroundRule {
 ACCEPTDECLAREBOTH(GroundRule)
 private:
-	int _head;
+	Lit _head;
 	RuleType _type; // The rule type (disjunction, conjunction, or aggregate
 	bool _recursive; // True iff the rule body contains defined literals
 
 protected:
-	GroundRule(int head, RuleType type, bool rec)
+	GroundRule(Lit head, RuleType type, bool rec)
 			: _head(head), _type(type), _recursive(rec) {
 	}
 
@@ -164,7 +163,7 @@ public:
 	}
 
 	// Inspectors
-	int head() const {
+	Lit head() const {
 		return _head;
 	}
 	RuleType type() const {
@@ -176,7 +175,7 @@ public:
 	virtual bool isFalse() const = 0;
 	virtual bool isTrue() const = 0;
 
-	void head(int head) {
+	void head(Lit head) {
 		_head = head;
 	}
 	void type(RuleType type) {
@@ -194,10 +193,10 @@ private:
 
 public:
 	// Constructors
-	PCGroundRule(int head, RuleType type, const litlist& body, bool rec)
+	PCGroundRule(Lit head, RuleType type, const litlist& body, bool rec)
 			: GroundRule(head, type, rec), _body(body) {
 	}
-	PCGroundRule(int head, PCTsBody* body, bool rec);
+	PCGroundRule(Lit head, PCTsBody* body, bool rec);
 	PCGroundRule(const PCGroundRule& grb)
 			: GroundRule(grb.head(), grb.type(), grb.recursive()), _body(grb._body) {
 	}
@@ -215,13 +214,13 @@ public:
 	void body(const litlist& body) {
 		_body = body;
 	}
-	unsigned int size() const {
+	size_t size() const {
 		return _body.size();
 	}
 	bool empty() const {
 		return _body.empty();
 	}
-	int literal(unsigned int n) const {
+	Lit literal(size_t n) const {
 		return _body[n];
 	}
 	bool isFalse() const {
@@ -235,17 +234,17 @@ public:
 class AggGroundRule: public GroundRule {
 ACCEPTBOTH(GroundRule)
 private:
-	int _setnr; // The id of the set of the aggregate
+	SetId _setnr; // The id of the set of the aggregate
 	AggFunction _aggtype; // The aggregate type (cardinality, sum, product, min, or max)
 	bool _lower; // True iff the bound is a lower bound
 	double _bound; // The bound on the aggregate
 
 public:
 	// Constructors
-	AggGroundRule(int head, int setnr, AggFunction at, bool lower, double bound, bool rec)
+	AggGroundRule(Lit head, SetId setnr, AggFunction at, bool lower, double bound, bool rec)
 			: GroundRule(head, RuleType::AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
-	AggGroundRule(int head, AggTsBody* body, bool rec);
+	AggGroundRule(Lit head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
 			: GroundRule(grb.head(), RuleType::AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
 	}
@@ -254,7 +253,7 @@ public:
 	}
 
 	// Inspectors
-	unsigned int setnr() const {
+	SetId setnr() const {
 		return _setnr;
 	}
 	AggFunction aggtype() const {
@@ -277,28 +276,28 @@ public:
 class GroundDefinition: public AbstractDefinition {
 ACCEPTBOTH(AbstractDefinition)
 private:
-	unsigned int _id;
+	DefId _id;
 	GroundTranslator* _translator;
 	std::map<int, GroundRule*> _rules;
 
 public:
-	GroundDefinition(unsigned int id, GroundTranslator* tr)
+	GroundDefinition(DefId id, GroundTranslator* tr)
 			: _id(id), _translator(tr) {
 	}
 	GroundDefinition* clone() const;
 	void recursiveDelete();
 
 	// Mutators
-	void addTrueRule(int head);
-	void addFalseRule(int head);
-	void addPCRule(int head, const litlist& body, bool conj, bool recursive);
-	void addAggRule(int head, int setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
+	void addTrueRule(Lit head);
+	void addFalseRule(Lit head);
+	void addPCRule(Lit head, const litlist& body, bool conj, bool recursive);
+	void addAggRule(Lit head, SetId setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
 
-	unsigned int id() const {
+	DefId id() const {
 		return _id;
 	}
 
-	unsigned int getNumberOfRules() const {
+	size_t getNumberOfRules() const {
 		return _rules.size();
 	}
 
@@ -349,9 +348,9 @@ public:
 class CPReification {
 ACCEPTNONMUTATING()
 public:
-	int _head;
+	Lit _head;
 	CPTsBody* _body;
-	CPReification(int head, CPTsBody* body)
+	CPReification(Lit head, CPTsBody* body)
 			: _head(head), _body(body) {
 	}
 	virtual ~CPReification();
@@ -377,6 +376,7 @@ struct GroundTerm {
 	}
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);
+	std::ostream& put(std::ostream&) const;
 };
 
 /**
@@ -386,13 +386,14 @@ class TsSet {
 private:
 	litlist _setlits; // All literals in the ground set
 	weightlist _litweights; // For each literal a corresponding weight
-	weightlist _trueweights; // The weights of the true literals in the set
+	weightlist _trueweights; // The weights corresponding to true literals in the set
+	varidlist _varids; // CP variable ids corresponding to true literals in the set
 public:
 	// Modifiers
-	void setWeight(unsigned int n, double w) {
+	void setWeight(size_t n, Weight w) {
 		_litweights[n] = w;
 	}
-	void removeLit(unsigned int n) {
+	void removeLit(size_t n) {
 		_setlits[n] = _setlits.back();
 		_litweights[n] = _litweights.back();
 		_setlits.pop_back();
@@ -408,16 +409,19 @@ public:
 	const weightlist& trueweights() const {
 		return _trueweights;
 	}
-	unsigned int size() const {
+	const varidlist& varids() const {
+		return _varids;
+	}
+	size_t size() const {
 		return _setlits.size();
 	}
 	bool empty() const {
 		return _setlits.empty();
 	}
-	int literal(unsigned int n) const {
+	Lit literal(size_t n) const {
 		return _setlits[n];
 	}
-	double weight(unsigned int n) const {
+	Weight weight(size_t n) const {
 		return _litweights[n];
 	}
 	friend class GroundTranslator;
@@ -458,10 +462,10 @@ public:
 	litlist body() const {
 		return _body;
 	}
-	unsigned int size() const {
+	size_t size() const {
 		return _body.size();
 	}
-	int literal(unsigned int n) const {
+	Lit literal(size_t n) const {
 		return _body[n];
 	}
 	bool conj() const {
@@ -473,17 +477,17 @@ public:
 
 class AggTsBody: public TsBody {
 private:
-	int _setnr;
+	SetId _setnr;
 	AggFunction _aggtype;
 	bool _lower; //comptype == CompType::LT
 	double _bound; //The other side of the equation.
 	//If _lower is true this means CARD{_setnr}=<_bound
 	//If _lower is false this means CARD{_setnr}>=_bound
 public:
-	AggTsBody(TsType type, double bound, bool lower, AggFunction at, int setnr)
+	AggTsBody(TsType type, double bound, bool lower, AggFunction at, SetId setnr)
 			: TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
 	}
-	int setnr() const {
+	SetId setnr() const {
 		return _setnr;
 	}
 	AggFunction aggtype() const {
@@ -539,6 +543,9 @@ public:
 	~CPTsBody();
 	CPTerm* left() const {
 		return _left;
+	}
+	void left(CPTerm* newleft) {
+		_left = newleft;
 	}
 	CompType comp() const {
 		return _comp;
@@ -612,11 +619,9 @@ public:
 	CPVarTerm(const VarId& varid)
 			: _varid(varid) {
 	}
-
 	const VarId& varid() const {
 		return _varid;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };
@@ -630,19 +635,17 @@ private:
 	varidlist _varids;
 public:
 	CPSumTerm(const VarId& left, const VarId& right)
-			: _varids( { left, right }) {
+			: _varids({ left, right }) {
 	}
 	CPSumTerm(const varidlist& varids)
 			: _varids(varids) {
 	}
-
 	const varidlist& varids() const {
 		return _varids;
 	}
 	void varids(const varidlist& newids) {
 		_varids = newids;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };
@@ -659,14 +662,12 @@ public:
 	CPWSumTerm(const varidlist& varids, const intweightlist& weights)
 			: _varids(varids), _weights(weights) {
 	}
-
 	const varidlist& varids() const {
 		return _varids;
 	}
 	const intweightlist& weights() const {
 		return _weights;
 	}
-
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 };

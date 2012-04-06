@@ -14,7 +14,6 @@
 #include "common.hpp"
 #include "structure/StructureComponents.hpp"
 #include "structure/Universe.hpp"
-#include "structure/InconsistentStructure.hpp"
 #include "structure/Structure.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "theory/theory.hpp"

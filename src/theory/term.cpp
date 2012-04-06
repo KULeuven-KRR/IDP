@@ -12,6 +12,7 @@
 #include "errorhandling/error.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
+#include "TheoryUtils.hpp"
 
 using namespace std;
 
@@ -563,6 +564,23 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 		terms.push_back(new VarTerm(*it, TermParseInfo()));
 	}
 	return terms;
+}
+
+Sort* deriveIntSort(Term* term, AbstractStructure* structure) {
+	Sort* sort = term->sort();
+	if (structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), structure->vocabulary())) {
+		auto bounds = TermUtils::deriveTermBounds(term, structure);
+		Assert(bounds.size()==2);
+		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
+			auto intmin = bounds[0]->value()._int;
+			auto intmax = bounds[1]->value()._int;
+			stringstream ss;
+			ss << "_sort«" << intmin << '-' << intmax << "»";
+			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
+			sort->addParent(VocabularyUtils::intsort());
+		}
+	}
+	return sort;
 }
 
 }
