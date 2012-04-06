@@ -1,0 +1,16 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type A isa int
+	P(A)
+}
+
+theory T2: V{
+	sum{x: P(x): -x}=-10.
+}
+
+structure S : V{ 
+	A = {1..10}
+}

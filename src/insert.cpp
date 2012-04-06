@@ -250,6 +250,9 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 	Sort* s = NULL;
 	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
 		auto temp = _usingvocab[n]->sort(name);
+		if(temp==NULL){
+			continue;
+		}
 		if (s != NULL) {
 			Error::overloadedsort(s->name(), s->pi(), temp->pi(), pi);
 		} else {

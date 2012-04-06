@@ -61,14 +61,6 @@ TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
 }
 
-TEST(MXnbmodelsTest, DoesMX) {
-	string testfile(getTestDirectory() + "mx/nbmodels.idp");
-	cerr << "Testing " << testfile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { testfile }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 #ifdef WITHCP
 TEST_P(MXsatTest, DoesMXWithCP) {
 	runTests("mxsattestwithcp.idp", GetParam());
@@ -81,6 +73,14 @@ INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateL
 TEST(MakeTrueTest, Correct) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
+TEST(MXnbmodelsTest, DoesMX) {
+	string testfile(getTestDirectory() + "mx/nbmodels.idp");
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { testfile }););
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
