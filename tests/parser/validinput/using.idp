@@ -11,3 +11,7 @@ vocabulary V2{
 	using vocabulary V
 	Cost:A
 }
+
+procedure main(){
+	return 1
+}

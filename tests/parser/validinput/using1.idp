@@ -15,3 +15,7 @@ vocabulary V2{
 theory T2: V2{
 	sum{x: P(x): -x} = Cost.
 }
+
+procedure main(){
+	return 1
+}
