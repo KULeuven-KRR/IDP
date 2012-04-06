@@ -8,16 +8,12 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "IncludeComponents.hpp"
 #include "UnnestThreeValuedTerms.hpp"
+#include "IncludeComponents.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
-
-bool UnnestThreeValuedTerms::isCPSymbol(const PFSymbol* symbol) const {
-	return (VocabularyUtils::isComparisonPredicate(symbol)) || (_cpsymbols.find(symbol) != _cpsymbols.cend());
-}
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	if (getAllowedToUnnest()) {
@@ -26,33 +22,35 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
 			Function* func = ft->function();
 			FuncInter* finter = _structure->inter(func);
-			return (not finter->approxTwoValued());
+			return not finter->approxTwoValued()
+				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft,_vocabulary));
 		}
 		case TT_AGG: {
-			//TODO include test for CPSymbols...
 			AggTerm* at = dynamic_cast<AggTerm*>(t);
-			return (not SetUtils::approxTwoValued(at->set(), _structure));
+			return not SetUtils::approxTwoValued(at->set(), _structure)
+				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at,_structure));
 		}
-		default:
+		case TT_VAR:
+		case TT_DOM:
 			break;
 		}
 	}
 	return false;
 }
 
-Formula* UnnestThreeValuedTerms::traverse(PredForm* f) {
-	Context savecontext = getContext();
-	bool savemovecontext = getAllowedToUnnest();
-	if (isNeg(f->sign())) {
-		setContext(not getContext());
-	}
-	for (size_t n = 0; n < f->subterms().size(); ++n) {
-		if (_cpsupport) {
-			setAllowedToUnnest(not isCPSymbol(f->symbol()));
-		}
-		f->subterm(n, f->subterms()[n]->accept(this));
-	}
-	setContext(savecontext);
-	setAllowedToUnnest(savemovecontext);
-	return f;
+Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
+	auto newf = specialTraverse(predform);
+	setAllowedToLeave(saveAllowedToLeave);
+	return doRewrite(newf);
 }
+
+Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(),_vocabulary));
+	auto newrule = UnnestTerms::visit(rule);
+	setAllowedToLeave(saveAllowedToLeave);
+	return newrule;
+}
+

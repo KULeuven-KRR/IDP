@@ -45,12 +45,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto clonetheory = theory->clone();
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
-		newstructure = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
-		if (not newstructure->isConsistent()) {
+		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
+		if(defCalculated.size() == 0){
 			delete(newstructure);
 			return std::vector<AbstractStructure*> { };
 		}
-	}else{
+		Assert(defCalculated[0]->isConsistent());
+		newstructure = defCalculated[0];
+	} else {
 		newstructure = structure->clone();
 	}
 
@@ -74,14 +76,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// TODO refactor optimization!
 
-	if(minimizeterm!=NULL){
+	if (minimizeterm != NULL) {
 		auto term = dynamic_cast<AggTerm*>(minimizeterm);
-		if(term!=NULL){
+		if (term != NULL) {
 			auto setgrounder = GrounderFactory::create(term->set(), {newstructure, symstructure}, grounding);
 			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
 			optimgrounder.setOrig(minimizeterm);
 			optimgrounder.run();
-		}else{
+		} else {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
@@ -116,7 +118,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	auto abstractsolutions = SolverConnection::initsolution();
-	if (verbosity() >= 1) {
+	if (verbosity() > 0) {
 		clog << "Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
@@ -125,24 +127,24 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	if(verbosity()>0){
+	if (verbosity() > 0) {
 		auto maxsize = grounder->getMaxGroundSize();
-		clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";
-		if(maxsize._type==TableSizeType::TST_EXACT){
-			clog <<">>> " <<(double)grounder->groundedAtoms()/maxsize._size <<"% of the full grounding.\n";
+		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
+		if (maxsize._type==TableSizeType::TST_EXACT) {
+			clog << ">>> " << (double)grounder->groundedAtoms()/maxsize._size << "% of the full grounding.\n";
 		}
 	}
 
 	// Collect solutions
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if(minimizeterm!=NULL){ // Optimizing
-		if(abstractsolutions->getModels().size()>0){
+	if (minimizeterm != NULL) { // Optimizing
+		if (abstractsolutions->getModels().size() > 0) {
 			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
 		}
-	}else{
-		if (verbosity() >= 1) {
-			clog << "Solver generated " <<abstractsolutions->getModels().size() <<" models.\n";
+	} else {
+		if (verbosity() > 0) {
+			clog << "Solver generated " << abstractsolutions->getModels().size() << " models.\n";
 		}
 		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {
 			solutions.push_back(handleSolution(newstructure, **model, grounding));

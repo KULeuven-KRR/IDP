@@ -53,7 +53,7 @@ public:
 	std::string printFormula() const;
 
 	virtual void put(std::ostream& stream) const{
-		stream <<printFormula();
+		stream << printFormula();
 	}
 };
 
@@ -102,8 +102,7 @@ private:
 	void notifyRun() const { done = true; }
 
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg,
-			const GroundingContext& gc)
+	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
 			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp), done(false) {
 		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 	}
@@ -121,14 +120,14 @@ private:
 	CompType _comp;
 	SIGN _sign;
 	bool _doublenegtseitin;
-	Lit handleDoubleNegation(double boundvalue, int setnr) const;
-	Lit finishCard(double truevalue, double boundvalue, int setnr) const;
-	Lit finishSum(double truevalue, double boundvalue, int setnr) const;
-	Lit finishProduct(double truevalue, double boundvalue, int setnr) const;
-	Lit finishMaximum(double truevalue, double boundvalue, int setnr) const;
-	Lit finishMinimum(double truevalue, double boundvalue, int setnr) const;
-	Lit splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const;
-	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, int setnr) const;
+	Lit handleDoubleNegation(double boundvalue, SetId setnr) const;
+	Lit finishCard(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishSum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishProduct(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishMaximum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit finishMinimum(double truevalue, double boundvalue, SetId setnr) const;
+	Lit splitproducts(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, SetId setnr) const;
+	Lit finish(double boundvalue, double newboundvalue, double maxpossvalue, double minpossvalue, SetId setnr) const;
 
 	Lit run() const;
 
@@ -222,10 +221,10 @@ public:
 
 class QuantGrounder: public ClauseGrounder {
 protected:
-	const tablesize _quantunivsize;
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
+	const tablesize _quantunivsize;
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
 public:

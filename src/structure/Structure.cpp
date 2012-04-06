@@ -396,7 +396,8 @@ void Structure::autocomplete() {
 					if (dynamic_cast<AllIntegers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL) {
 						continue;
 					}
-					if (dynamic_cast<AllNaturalNumbers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL
+					if (dynamic_cast<AllNaturalNumbers*>(kst->internTable()) != NULL
+							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL
 							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int > -1) {
 						continue;
 					}
@@ -475,8 +476,7 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}
-	Assert(s != NULL);
+	}Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	}
@@ -587,6 +587,9 @@ void Structure::clean() {
 		it->second->pt(npt);
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
+		if (it->second->approxTwoValued()) {
+			continue;
+		}
 		if (it->first->partial()) {
 			auto lastsorttable = it->second->universe().tables().back();
 			for (auto ctit = it->second->graphInter()->ct()->begin(); not ctit.isAtEnd(); ++ctit) {
@@ -603,10 +606,6 @@ void Structure::clean() {
 			}
 		}
 
-		if (it->second->approxTwoValued()) {
-			continue;
-		}
-
 		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
 				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
@@ -614,6 +613,7 @@ void Structure::clean() {
 			for (auto jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
 				eift->add(*jt);
 			}
+			//TODO: too expensive. We should be able to directly transform ct-table to functable!
 			it->second->funcTable(new FuncTable(eift, it->second->graphInter()->ct()->universe()));
 		}
 	}

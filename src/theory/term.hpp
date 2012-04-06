@@ -255,13 +255,11 @@ public:
 };
 
 namespace TermUtils {
-std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&); //!< Make a vector of fresh variable terms
+/** Make a vector of fresh variable terms */
+std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
 
-/**
- * Returns false if the value of the term is defined
- * for all possible instantiations of its free variables
- */
-bool isPartial(Term*);
+/** Derive a sort for a given term */
+Sort* deriveIntSort(Term*, AbstractStructure*);
 }
 
 /*************

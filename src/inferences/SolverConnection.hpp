@@ -8,8 +8,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef INFERENCESOLVERCONN_HPP_
-#define INFERENCESOLVERCONN_HPP_
+#ifndef INFERENCE_SOLVERCONN_HPP_
+#define INFERENCE_SOLVERCONN_HPP_
 
 #include "external/ExternalInterface.hpp"
 
@@ -37,4 +37,4 @@ namespace SolverConnection {
 	void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init);
 }
 
-#endif //INFERENCESOLVERCONN_HPP_
+#endif //INFERENCE_SOLVERCONN_HPP_

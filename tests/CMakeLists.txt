@@ -39,6 +39,7 @@ if(${BUILDTESTS})
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp
 		simpletests.cpp
+		cptests.cpp
 	)
 	add_executable(lazytests
 		lazymxtests.cpp

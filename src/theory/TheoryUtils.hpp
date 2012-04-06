@@ -37,13 +37,13 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog << "" <<nt() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
 		pushtab();
 	}
 	ReturnType result = t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog << "" <<nt() << "Resulted in: " << toString(result) <<nt();
+		std::clog << tabs() << "Resulted in: " << nt() << toString(result) << "\n\n";
 	}
 	return result;
 }
@@ -52,13 +52,13 @@ template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		std::clog <<nt() << "Executing " << typeid(Transformer).name() << " on: " << toString(object);
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
 		pushtab();
 	}
 	t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
-		std::clog <<nt() << "Resulted in: " << toString(object) <<nt();
+		std::clog << tabs() << "Resulted in: " << nt() << toString(object) << "\n\n";
 	}
 }
 
@@ -74,6 +74,10 @@ BoolForm* trueFormula();
 
 /** Create the formula 'false' */
 BoolForm* falseFormula();
+
+/** Returns false if the formula is not two-valued in the given structure.
+ May return true if the formula is two-valued in the structure. */
+bool approxTwoValued(const Formula*, AbstractStructure*);
 
 /** Check sorts in the given formula */
 void checkSorts(Vocabulary* v, Formula* f);
@@ -140,8 +144,7 @@ Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractS
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport = false,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -186,8 +189,7 @@ AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, bool cpsupport = false,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
 }
 
 namespace TermUtils {
@@ -200,18 +202,17 @@ void deriveSorts(Vocabulary*, Term*);
 /** Derive bounds of the given term in the given structure */
 std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
 
-/** Check whether the term is partial (contains partial functions) */
+/** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
 }
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
  May return true if the set expression is two-valued in the structure. */
-bool approxTwoValued(SetExpr*, AbstractStructure*);
+bool approxTwoValued(const SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport = false,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context);
 }
 
 namespace DefinitionUtils {
@@ -225,8 +226,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport = false,
-		const std::set<const PFSymbol*> cpsymbols = std::set<const PFSymbol*>());
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context);
 
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
 }

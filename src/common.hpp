@@ -181,6 +181,7 @@ std::string toString(const AggFunction& type);
  * 		after each newline you put yourself, put tabs().
  * 		when you have done printing, the cursor should be at the END of the last INFORMATION you printed. No newlines or tabs!
  */
+std::string tabs();
 std::string nt();
 void pushtab();
 void poptab();
