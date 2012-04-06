@@ -680,37 +680,37 @@ public:
 		}
 	}
 
-	void printasfunc(const PredTable* table) {
-		Assert(isTheoryOpen());
-		if (table->approxFinite()) {
-			TableIterator kt = table->begin();
-			output() << "{ ";
-			if (not kt.isAtEnd()) {
-				ElementTuple tuple = *kt;
-				if (tuple.size() > 1) {
-					output() << toString(tuple[0]);
-				}
-				for (size_t n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << toString(tuple[n]);
-				}
-				output() << "->" << toString(tuple.back());
-				++kt;
-				for (; not kt.isAtEnd(); ++kt) {
-					output() << "; ";
-					tuple = *kt;
-					if (tuple.size() > 1) {
-						output() << toString(tuple[0]);
-					}
-					for (size_t n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << toString(tuple[n]);
-					}
-					output() << "->" << toString(tuple.back());
-				}
-			}
-			output() << " }";
-		} else
-			output() << "possibly infinite table";
-	}
+//	void printasfunc(const PredTable* table) {
+//		Assert(isTheoryOpen());
+//		if (table->approxFinite()) {
+//			TableIterator kt = table->begin();
+//			output() << "{ ";
+//			if (not kt.isAtEnd()) {
+//				ElementTuple tuple = *kt;
+//				if (tuple.size() > 1) {
+//					output() << toString(tuple[0]);
+//				}
+//				for (size_t n = 1; n < tuple.size() - 1; ++n) {
+//					output() << ',' << toString(tuple[n]);
+//				}
+//				output() << "->" << toString(tuple.back());
+//				++kt;
+//				for (; not kt.isAtEnd(); ++kt) {
+//					output() << "; ";
+//					tuple = *kt;
+//					if (tuple.size() > 1) {
+//						output() << toString(tuple[0]);
+//					}
+//					for (size_t n = 1; n < tuple.size() - 1; ++n) {
+//						output() << ',' << toString(tuple[n]);
+//					}
+//					output() << "->" << toString(tuple.back());
+//				}
+//			}
+//			output() << " }";
+//		} else
+//			output() << "possibly infinite table";
+//	}
 
 	void visit(FuncTable* table) {
 		Assert(isTheoryOpen());
@@ -819,14 +819,17 @@ public:
 	void visit(const GroundSet* s) {
 		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
-		for (unsigned int n = 0; n < s->size(); ++n) {
-			if (s->weighted())
+		for (size_t n = 0; n < s->size(); ++n) {
+			if (s->weighted()) {
 				output() << '(';
+			}
 			printAtom(s->literal(n));
-			if (s->weighted())
+			if (s->weighted()) {
 				output() << ',' << s->weight(n) << ')';
-			if (n < s->size() - 1)
+			}
+			if (n < s->size() - 1) {
 				output() << "; ";
+			}
 		}
 		output() << " ]\n";
 	}

@@ -42,6 +42,7 @@ public:
 
 	AbstractGroundTheory* getGrounding() const { return _grounding; }
 	GroundTranslator* getTranslator() const;
+	GroundTermTranslator* getTermTranslator() const;
 };
 
 class SetGrounder;

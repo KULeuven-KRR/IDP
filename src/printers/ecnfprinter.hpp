@@ -201,7 +201,7 @@ public:
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
-		if (typeid(*left) == typeid(CPVarTerm)) {
+		if (sametypeid<CPVarTerm>(*left)) {
 			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
@@ -210,7 +210,7 @@ public:
 			} else { // CPBinaryRel
 				printCPReification("BINTRI", cpr->_head, term->varid(), comp, right._bound);
 			}
-		} else if (typeid(*left) == typeid(CPSumTerm)) {
+		} else if (sametypeid<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 			std::vector<int> weights;
 			weights.resize(term->varids().size(), 1);
@@ -226,7 +226,7 @@ public:
 				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
 			}
 		} else {
-			Assert(typeid(*left) == typeid(CPWSumTerm));
+			Assert(sametypeid<CPWSumTerm>(*left));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if (right._isvarid) {
 				std::vector<VarId> varids = term->varids();

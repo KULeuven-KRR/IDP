@@ -96,7 +96,7 @@ void Grounder::toplevelRun() const {
 	addToGrounding(getGrounding(), formula);
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
 	if (verbosity() > 0) {
-		clog << "Already grounded " << toString(groundedAtoms()) << " for a full grounding of " << toString(getMaxGroundSize()) << "\n";
+		clog << "Already grounded " << toString(groundedAtoms()) <<" for a full grounding of " << toString(getMaxGroundSize()) << "\n";
 	}
 }
 

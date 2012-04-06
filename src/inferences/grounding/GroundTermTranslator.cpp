@@ -13,7 +13,7 @@
 
 using namespace std;
 
-VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& args) {
+VarId GroundTermTranslator::translate(SymbolOffset offset, const vector<GroundTerm>& args) {
 	map<vector<GroundTerm>, VarId>::iterator it = _functerm2varid_table[offset].lower_bound(args);
 	if (it != _functerm2varid_table[offset].cend() && it->first == args) {
 		return it->second;
@@ -28,7 +28,7 @@ VarId GroundTermTranslator::translate(size_t offset, const vector<GroundTerm>& a
 }
 
 VarId GroundTermTranslator::translate(Function* function, const vector<GroundTerm>& args) {
-	size_t offset = addFunction(function);
+	SymbolOffset offset = addFunction(function);
 	return translate(offset, args);
 }
 
@@ -59,22 +59,22 @@ VarId GroundTermTranslator::translate(const DomainElement* element) {
 	return varid;
 }
 
-size_t GroundTermTranslator::nextNumber() {
-	size_t nr = _varid2function.size();
-	_varid2function.push_back(0);
+VarId GroundTermTranslator::nextNumber() {
+	VarId nr = _varid2function.size();
+	_varid2function.push_back(NULL);
 	_varid2args.push_back(vector<GroundTerm>(0));
-	_varid2domain.push_back(0);
+	_varid2domain.push_back(NULL);
 	return nr;
 }
 
-size_t GroundTermTranslator::addFunction(Function* func) {
-	map<Function*, size_t>::const_iterator found = _function2offset.find(func);
+SymbolOffset GroundTermTranslator::addFunction(Function* func) {
+	map<Function*, SymbolOffset>::const_iterator found = _function2offset.find(func);
 	if (found != _function2offset.cend()) {
 		// Simply return number when function is already known
 		return found->second;
 	} else {
 		// Add function and number when function is unknown
-		size_t offset = _offset2function.size();
+		SymbolOffset offset = _offset2function.size();
 		_function2offset[func] = offset;
 		_offset2function.push_back(func);
 		_functerm2varid_table.push_back(map<vector<GroundTerm>, VarId>());

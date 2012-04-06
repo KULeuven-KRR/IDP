@@ -428,7 +428,7 @@ GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* ge
 }
 
 void GeneratorInternalTableIterator::operator++() {
-	_generator->operator ++();
+	_generator->operator++();
 	_hasNext = not _generator->isAtEnd();
 }
 
@@ -2519,10 +2519,11 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;
-	if (a2 == 0)
-		return 0;
-	else
+	if (a2 == 0) {
+		return NULL;
+	} else {
 		return createDomElem(a1 % a2);
+	}
 }
 
 InternalFuncTable* ModInternalFuncTable::add(const ElementTuple&) {
@@ -2612,10 +2613,11 @@ const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple)
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);
 		double a2 = tuple[1]->type() == DET_DOUBLE ? tuple[1]->value()._double : double(tuple[1]->value()._int);
-		if (a2 == 0)
-			return 0;
-		else
+		if (a2 == 0) {
+			return NULL;
+		} else {
 			return createDomElem(a1 / a2, NumType::POSSIBLYINT);
+		}
 	}
 }
 
@@ -3714,7 +3716,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if (getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
+	if(getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())){
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

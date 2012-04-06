@@ -13,8 +13,7 @@
 
 #include "IncludeComponents.hpp"
 #include "UnnestTerms.hpp"
-
-#include <set>
+#include "utils/CPUtils.hpp"
 
 class Vocabulary;
 class Variable;
@@ -25,7 +24,7 @@ class PredForm;
 class Term;
 
 /**
- *	Non-recursively moves terms that are three-valued according to a given structure
+ *	Moves terms that are three-valued according to a given structure
  *	outside a given atom. The applied rewriting depends on the given context:
  *		- positive context:
  *			P(t) becomes	! x : t = x => P(x).
@@ -34,40 +33,47 @@ class Term;
  *	The fact that the rewriting is non-recursive means that in the above example, term t
  *	can still contain terms that are three-valued according to the structure.
  *
- *	\param pf			the given atom
- *	\param str			the given structure
- *	\param Context	true iff we are in a positive context
- *	\param usingcp
+ *	\param t			given object
+ *	\param str			given structure
+ *	\param context		given context
  *
- *	\return The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
- *	If rewriting was needed, pf can be deleted, but not recursively.
+ *	\return The rewritten formula. If no rewriting was needed, it is the same pointer as t.
+ *	If rewriting was needed, t can be deleted, but not recursively (TODO).
  *
  */
 class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool _cpsupport;
-	std::set<const PFSymbol*> _cpsymbols;
+	bool _allowedToLeave;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, const std::set<const PFSymbol*>& cpsymbols) {
+	T execute(T t, AbstractStructure* str, Context context) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
-		_cpsupport = cpsupport;
-		_cpsymbols = cpsymbols;
+		setAllowedToLeave(true);
+		_cpsupport = getOption(BoolType::CPSUPPORT);
+		if (_cpsupport and _vocabulary != NULL) {
+			CPSupport::findCPSymbols(_vocabulary);
+		}
 		return t->accept(this);
 	}
 
 protected:
-	bool shouldMove(Term* t);
-
-	Formula* traverse(PredForm* f);
+	bool shouldMove(Term*);
+	Formula* visit(PredForm*);
+	Rule* visit(Rule*);
 
 private:
-	bool isCPSymbol(const PFSymbol* symbol) const;
+	bool getAllowedToLeave() const {
+		return _allowedToLeave;
+	}
+	void setAllowedToLeave(bool allowed) {
+		_allowedToLeave = allowed;
+	}
 };
 
 #endif /* REMOVETHREEVALUEDTERMS_HPP_ */

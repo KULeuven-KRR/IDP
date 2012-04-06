@@ -2310,9 +2310,9 @@ public:
 // Contents ownership to receiver
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& s);
 
-/************************
- Auxiliary methods
- ************************/
+/*********************
+ * Auxiliary methods
+ *********************/
 
 namespace TableUtils {
 PredInter* leastPredInter(const Universe& univ);

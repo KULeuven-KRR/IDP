@@ -72,12 +72,12 @@ bool isPartial(Term* term) {
 
 /* SetUtils */
 namespace SetUtils {
-bool approxTwoValued(SetExpr* exp, AbstractStructure* str) {
-	return transform<ApproxCheckTwoValued, bool>(str, exp);
+bool approxTwoValued(const SetExpr* exp, AbstractStructure* str) {
+	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, cpsymbols);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context);
 }
 }
 
@@ -96,8 +96,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport, cpsymbols);
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context);
 }
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
 	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
@@ -106,6 +106,10 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 
 /* FormulaUtils */
 namespace FormulaUtils {
+bool approxTwoValued(const Formula* f, AbstractStructure* str) {
+	return transform<ApproxCheckTwoValued,bool>(f,str);
+}
+
 void checkSorts(Vocabulary* v, Formula* f) {
 	transform<CheckSorts>(f, v);
 }
@@ -197,9 +201,8 @@ Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport, const std::set<const PFSymbol*> cpsymbols) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport, cpsymbols);
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context);
 }
 
 void addCompletion(AbstractTheory* t) {
@@ -263,9 +266,8 @@ void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabul
 	Assert(newt==t);
 }
 
-void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str, bool cpsupport,
-		const std::set<const PFSymbol*> cpsymbols) {
-	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport, cpsymbols);
+void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str) {
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con);
 	Assert(newt==t);
 }
 

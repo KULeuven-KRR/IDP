@@ -121,7 +121,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	// Run solver
 	auto abstractsolutions = SolverConnection::initsolution();
-	if (verbosity() >= 1) {
+	if (verbosity() > 0) {
 		clog << "Solving\n";
 	}
 	getGlobal()->addTerminationMonitor(new SolverTermination());
@@ -145,7 +145,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			solutions.push_back(handleSolution(newstructure, abstractsolutions->getBestModelFound(), grounding));
 		}
 	} else {
-		if (verbosity() >= 1) {
+		if (verbosity() > 0) {
 			clog << "Solver generated " << abstractsolutions->getModels().size() << " models.\n";
 		}
 		for (auto model = abstractsolutions->getModels().cbegin(); model != abstractsolutions->getModels().cend(); ++model) {

@@ -1,3 +1,13 @@
+/****************************************************************
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
+
 #include "GroundTheory.hpp"
 
 #include "IncludeComponents.hpp"
@@ -7,6 +17,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "visitors/TheoryVisitor.hpp"
+#include "visitors/TheoryMutatingVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 #include "utils/ListUtils.hpp"
@@ -41,7 +52,7 @@ void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, TsType 
 
 template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
-	deleteList(_foldedterms);
+	//deleteList(_foldedterms);
 	Policy::polRecursiveDelete();
 	delete (this);
 }
@@ -84,21 +95,21 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(int defid, PCGroundRule* rule) {
+void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 	transformForAdd(rule->body(), (rule->type() == RuleType::CONJ ? VIT_CONJ : VIT_DISJ), defid);
 	Policy::polAdd(defid, rule);
 	notifyDefined(rule->head());
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyDefined(int inputatom) {
+void GroundTheory<Policy>::notifyDefined(Atom inputatom) {
 	if (not translator()->isInputAtom(inputatom)) {
 		return;
 	}
 	PFSymbol* symbol = translator()->getSymbol(inputatom);
 	auto it = _defined.find(symbol);
 	if (it == _defined.end()) {
-		it = _defined.insert(std::pair<PFSymbol*, std::set<int>> { symbol, std::set<int>() }).first;
+		it = _defined.insert(std::pair<PFSymbol*, std::set<Atom>> { symbol, std::set<Atom>() }).first;
 	}
 	(*it).second.insert(inputatom);
 }
@@ -110,32 +121,36 @@ void GroundTheory<Policy>::add(GroundFixpDef*) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(int tseitin, CPTsBody* body) {
+void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	//TODO also add variables (in a separate container?)
 
-	CPTsBody* foldedbody = new CPTsBody(body->type(), foldCPTerm(body->left()), body->comp(), body->right());
-	//FIXME possible leaks!!
+	body->left(foldCPTerm(body->left()));
 
-	Policy::polAdd(tseitin, foldedbody);
+	//Add constraint for right hand side if necessary. TODO refactor
+	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
+		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
+			_printedvarids.insert(body->right()._varid);
+			auto cprelation = termtranslator()->cprelation(body->right()._varid);
+			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),cprelation->type());
+			addUnitClause(tseitin2);
+		}
+	}
+	Policy::polAdd(tseitin, body);
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(int setnr, unsigned int defnr, bool weighted) {
+void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	if (_printedsets.find(setnr) != _printedsets.end()) {
 		return;
 	}
 	_printedsets.insert(setnr);
 	auto tsset = translator()->groundset(setnr);
 	transformForAdd(tsset.literals(), VIT_SET, defnr);
-	std::vector<double> weights;
-	if (weighted) {
-		weights = tsset.weights();
-	}
 	Policy::polAdd(tsset, setnr, weighted);
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(int head, AggTsBody* body) {
+void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 	add(body->setnr(), getIDForUndefined(), (body->aggtype() != AggFunction::CARD));
 	Policy::polAdd(head, body);
 }
@@ -176,9 +191,14 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addOptimization(AggFunction function, int setid){
+void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 	add(setid, getIDForUndefined(), function!=AggFunction::CARD);
 	Policy::polAddOptimization(function, setid);
+}
+
+template<class Policy>
+void GroundTheory<Policy>::addOptimization(VarId varid) {
+	Policy::polAddOptimization(varid);
 }
 
 template<class Policy>
@@ -216,12 +236,8 @@ void GroundTheory<Policy>::transformForAdd(const std::vector<int>& vi, VIType /*
 			}
 		} else if (sametypeid<CPTsBody>(*tsbody)) {
 			CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
-			if (body->type() == TsType::RULE) {
-				notyetimplemented("Definition rules in CP constraints.");
-				//TODO Does this ever happen?
-			} else {
-				add(atom, body);
-			}
+			Assert(body->type() != TsType::RULE);
+			add(atom, body);
 		} else {
 			Assert(sametypeid<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
@@ -236,12 +252,13 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		return cpterm;
 	}
 	_foldedterms.insert(cpterm);
+
 	if (sametypeid<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (not termtranslator()->function(varterm->varid())) {
+		if (termtranslator()->function(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
-			if ((typeid(*left) == typeid(CPSumTerm) || typeid(*left) == typeid(CPWSumTerm)) && cprelation->comp() == CompType::EQ) {
+			if ((sametypeid<CPSumTerm>(*left) || sametypeid<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
 				Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
 				return left;
 			}
@@ -250,16 +267,14 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto sumterm = dynamic_cast<CPSumTerm*>(cpterm);
 		std::vector<VarId> newvarids;
 		for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
-			if (not termtranslator()->function(*it)) {
+			if (termtranslator()->function(*it) == NULL) {
 				CPTsBody* cprelation = termtranslator()->cprelation(*it);
 				CPTerm* left = foldCPTerm(cprelation->left());
 				if (sametypeid<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
 					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
-				}
-				//TODO Need to do something special in other cases?
-				else {
+				} else { //TODO Need to do something special in other cases?
 					newvarids.push_back(*it);
 				}
 			} else {
@@ -273,6 +288,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 	}
 	return cpterm;
 }
+
 
 template<class Policy>
 void GroundTheory<Policy>::addFalseDefineds() {
@@ -302,9 +318,9 @@ void GroundTheory<Policy>::addFalseDefineds() {
 template<class Policy>
 void GroundTheory<Policy>::addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable) {
 	CHECKTERMINATION
-	std::vector<double> lw(set.size(), 1);
-	int setnr = translator()->translateSet(set, lw, { });
-	int tseitin;
+	weightlist lw(set.size(), 1);
+	SetId setnr = translator()->translateSet(set, lw, { }, { });
+	Lit tseitin;
 	if (f->partial() || (not outSortTable->finite())) {
 		tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
 	} else {

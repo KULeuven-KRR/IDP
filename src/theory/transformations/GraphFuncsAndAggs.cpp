@@ -52,14 +52,19 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		Term* subterm1 = pf->subterms()[0];
 		Term* subterm2 = pf->subterms()[1];
 
-		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG) && (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)) {
+		bool eligibleForCP = _cpsupport && VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_vocabulary)
+				&& CPSupport::eligibleForCP(subterm1,_structure) && CPSupport::eligibleForCP(subterm2,_structure);
+
+		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG)
+				&& (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)
+				&& not eligibleForCP) {
 			auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf, _structure, _context);
 			return splitformula->accept(this);
 		}
 
 		Formula* newformula = NULL;
 
-		if (pf->symbol()->name() == "=/2") {
+		if (pf->symbol()->name() == "=/2" && not eligibleForCP) {
 			if (subterm1->type() == TT_FUNC) {
 				newformula = makeFuncGraph(pf->sign(), subterm1, subterm2, pf->pi());
 				delete (pf);
@@ -68,11 +73,11 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 				delete (pf);
 			}
 			if (newformula != NULL) {
-				return newformula;
+				return traverse(newformula);
 			}
 		}
 
-		if (subterm1->type() == TT_AGG) {
+		if (subterm1->type() == TT_AGG  && not eligibleForCP) {
 			newformula = makeAggForm(subterm2, invertComp(getCompType(pf)), subterm1, pf->pi());
 			delete (pf);
 		} else if (subterm2->type() == TT_AGG) {
@@ -80,11 +85,11 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 			delete (pf);
 		}
 		if (newformula != NULL) {
-			return newformula;
+			return traverse(newformula);
 		}
 	}
 
-	return pf;
+	return traverse(pf);
 }
 
 Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
@@ -100,7 +105,7 @@ Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 		auto newformula = FormulaUtils::splitComparisonChains(ef);
 		return newformula->accept(this);
 	} else {
-		return ef;
+		return traverse(ef);
 	}
 }
 

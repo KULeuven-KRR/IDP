@@ -19,11 +19,12 @@ class LazyGroundingManager;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
-	std::set<int> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
-	std::set<int> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
+	std::set<Lit> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
+	std::set<SetId> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
-	std::map<PFSymbol*, std::set<int> > _defined; //!< List of defined symbols and the heads which have a rule.
+	std::set<VarId> _printedvarids;
+	std::map<PFSymbol*, std::set<Atom> > _defined; //!< List of defined symbols and the heads which have a rule.
 
 	std::set<PFSymbol*> needfalsedefinedsymbols;
 
@@ -50,14 +51,15 @@ public:
 
 	virtual void add(const GroundClause& cl, bool skipfirst = false);
 	virtual void add(const GroundDefinition& def);
-	virtual void add(int defid, PCGroundRule* rule);
+	virtual void add(DefId defid, PCGroundRule* rule);
 	virtual void add(GroundFixpDef*);
-	virtual void add(int tseitin, CPTsBody* body);
-	virtual void add(int setnr, unsigned int defnr, bool weighted);
-	virtual void add(int head, AggTsBody* body);
-	virtual void add(const Lit& head, TsType tstype, const std::vector<Lit>& clause, bool conj, int defnr);
+	virtual void add(Lit tseitin, CPTsBody* body);
+	virtual void add(Lit setnr, DefId defnr, bool weighted);
+	virtual void add(Lit head, AggTsBody* body);
+	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr);
 
-	virtual void addOptimization(AggFunction function, int setid);
+	virtual void addOptimization(AggFunction function, SetId setid);
+	virtual void addOptimization(VarId varid);
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
@@ -73,14 +75,14 @@ public:
 	const std::set<PFSymbol*>& getNeedFalseDefinedSymbols() const { return needfalsedefinedsymbols; }
 
 protected:
-	void transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst = false);
+	void transformForAdd(const litlist& vi, VIType /*vit*/, DefId defnr, bool skipfirst = false);
 
 	CPTerm* foldCPTerm(CPTerm* cpterm);
 
 	void addFalseDefineds();
 
 private:
-	void notifyDefined(int inputatom);
+	void notifyDefined(Atom inputatom);
 	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable);
 };
 

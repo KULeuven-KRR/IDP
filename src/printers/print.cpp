@@ -16,6 +16,7 @@
 #include "printers/idpprinter.hpp"
 #include "printers/ecnfprinter.hpp"
 #include "printers/tptpprinter.hpp"
+#include "printers/aspprinter.hpp"
 using namespace std;
 using namespace rel_ops;
 
@@ -28,6 +29,8 @@ Printer* Printer::create(Stream& stream) {
 		return new EcnfPrinter<Stream>(getOption(BoolType::CREATETRANSLATION), stream);
 	case Language::TPTP:
 		return new TPTPPrinter<Stream>(false, stream);
+	case Language::ASP:
+		return new ASPPrinter<Stream>(stream);
 	default:
 		Assert(false);
 		return NULL;

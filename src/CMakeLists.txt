@@ -111,7 +111,6 @@ add_library(idp
 	theory/transformations/PushQuantifications.cpp
 	theory/transformations/RemoveEquivalences.cpp
 	theory/transformations/SplitComparisonChains.cpp
-	theory/transformations/UnnestFuncsAndAggs.cpp
 	theory/transformations/UnnestDomainTerms.cpp
 	theory/transformations/UnnestTerms.cpp
 	theory/transformations/UnnestThreeValuedTerms.cpp
@@ -129,6 +128,7 @@ add_library(idp
 	utils/NumericLimits.cpp
 	theory/TheoryUtils.cpp
 	utils/StringUtils.cpp
+	utils/CPUtils.cpp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
