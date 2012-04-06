@@ -1,5 +1,5 @@
 procedure getExpectedNbOfModels(){
-	return 8
+	return 4
 }
 
 vocabulary V{
@@ -10,19 +10,16 @@ vocabulary V{
 
 theory T : V {
 	!x: P(x) => Q(x).
-	?>2 x: P(x).
-	?>2 x: ~P(x).
 }
 
 structure S : V{ 
-	A = {1..10}
+	A = {1..2}
 }
 
 term t: V{
-	sum{x: P(x): -x}
+	sum{x: P(x): x}
 }
-// optimum = -10-9-8-7-6-5-4 = -49
 
 theory T2: V{
-	sum{x: P(x): -x}=-49.
+	sum{x: P(x): x}=0.
 }

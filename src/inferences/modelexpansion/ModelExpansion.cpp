@@ -159,8 +159,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	std::vector<AbstractStructure*> solutions;
 	if (minimizeterm != NULL) { // Optimizing
 		if (abstractsolutions.size() > 0) {
-			Assert(mx->getBestSolutionsFound().size()>0); // FIXME handle multiple optimal solutions
-			solutions.push_back(handleSolution(newstructure, *mx->getBestSolutionsFound()[0], grounding));
+			Assert(mx->getBestSolutionsFound().size()>0);
+			auto list = mx->getBestSolutionsFound();
+			for(auto i=list.cbegin(); i<list.cend(); ++i) {
+				solutions.push_back(handleSolution(newstructure, **i, grounding));
+			}
 		}
 	} else {
 		if (verbosity() > 0) {

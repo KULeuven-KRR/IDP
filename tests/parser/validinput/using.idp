@@ -11,7 +11,3 @@ vocabulary V2{
 	using vocabulary V
 	Cost:A
 }
-
-theory T2: V2{
-	sum{x: P(x): -x} = Cost.
-}

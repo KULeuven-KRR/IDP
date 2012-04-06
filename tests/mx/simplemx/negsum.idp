@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-	return true
+procedure getExpectedNbOfModels(){
+	return 4
 }
 
 vocabulary V{
@@ -7,8 +7,8 @@ vocabulary V{
 	P(A)
 }
 
-theory T2: V{
-	sum{x: P(x): -x}=-10.
+theory T: V{
+	sum{x: P(x): -x}=-49.
 }
 
 structure S : V{ 

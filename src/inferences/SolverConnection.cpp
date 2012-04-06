@@ -27,9 +27,19 @@ public:
 	CallBackTranslator(callbackprinting cb): cb(cb){
 
 	}
+
+	virtual bool hasTranslation(const MinisatID::Lit&) const {
+		return true;
+	}
+
 	virtual std::string toString(const MinisatID::Lit& lit) const{
 		std::stringstream ss;
-		ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
+		auto l = var(lit);
+		if(lit.hasSign()){
+			l = -l;
+		}
+		//ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
+		ss <<cb(l);
 		return ss.str();
 	}
 };
