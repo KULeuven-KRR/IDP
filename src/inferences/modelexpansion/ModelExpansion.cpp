@@ -54,14 +54,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	} else {
 		newstructure = structure->clone();
 	}
-
 	// Create solver and grounder
 	auto solver = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
-
 	if (not newstructure->isConsistent()) {
 		return std::vector<AbstractStructure*> { };
 	}
@@ -163,7 +161,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	clonetheory->recursiveDelete();
 	delete (newstructure);
 	delete (symstructure);
-	//ProfilerStop();
 
 	return solutions;
 }

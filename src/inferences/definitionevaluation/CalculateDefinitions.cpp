@@ -28,9 +28,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto solver = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-
 	auto symstructure = generateBounds(&theory, structure);
-
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
@@ -52,7 +50,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
 	}
-
 	// Cleanup
 	grounding->recursiveDelete();
 	delete (solver);

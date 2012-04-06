@@ -14,6 +14,7 @@
 #include "fobdds/FoBddFactory.hpp"
 #include "propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
+#include <ctime> //TODO REMOVE
 
 using namespace std;
 
@@ -239,14 +240,14 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -306,10 +307,19 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
 			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
-		}CHECKTERMINATION
-		Assert(_domains.find(connector) != _domains.cend());
+		}
+		CHECKTERMINATION;Assert(_domains.find(connector) != _domains.cend());
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-
+		if (newinter->ct()->empty() && newinter->cf()->empty()) {
+			bddinter->materialize();
+			if (sametypeid<Function>(*symbol)) {
+				structure->inter(dynamic_cast<Function*>(symbol), new FuncInter(bddinter));
+			} else {
+				Assert(sametypeid<Predicate>(*symbol));
+				structure->inter(dynamic_cast<Predicate*>(symbol), bddinter);
+			}
+			continue;
+		}
 		for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
 			newinter->makeTrue(*trueEl);
 		}
