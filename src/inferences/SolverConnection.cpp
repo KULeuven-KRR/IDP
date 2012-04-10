@@ -73,16 +73,11 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator){
 }
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
-	auto options = GlobalData::instance()->getOptions();
-	MinisatID::ModelExpandOptions opts;
-	opts.nbmodelstofind = nbmodels;
-	opts.printmodels = MinisatID::Models::NONE;
-	opts.savemodels = MinisatID::Models::ALL;
+	MinisatID::ModelExpandOptions opts(nbmodels, MinisatID::Models::NONE, MinisatID::Models::ALL);
 	return new PCModelExpand(solver, opts, {});
 }
 
 PCUnitPropagate* initpropsolution(PCSolver* solver) {
-	auto options = GlobalData::instance()->getOptions();
 	return new PCUnitPropagate(solver, {});
 }
 
