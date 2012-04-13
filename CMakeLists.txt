@@ -97,7 +97,7 @@ message(STATUS "${CMAKE_CXX_FLAGS}")
 message(STATUS "build idp shared ${BUILD_SHARED_LIBS}")
 if(BUILD_IDP_STATIC)
 	message(STATUS "build idp allstatic")
-	# TODO does not work as option( call comes later: set(STATIC_LUA ON)
+	SET(STATIC_LUA ON CACHE BOOL "Build lua static library") # only this works correctly
 endif()
 message(STATUS "Rpath for building is \"${CMAKE_BUILD_RPATH}\"")
 message(STATUS "Rpath for installation is \"${CMAKE_INSTALL_RPATH}\"")

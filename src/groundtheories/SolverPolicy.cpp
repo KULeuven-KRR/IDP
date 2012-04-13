@@ -16,8 +16,7 @@
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
-#include "external/Constraints.hpp"
-#include "theorysolvers/PCSolver.hpp"
+#include "inferences/SolverInclude.hpp"
 
 #include <cmath>
 

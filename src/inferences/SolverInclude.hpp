@@ -7,10 +7,11 @@
 #ifndef SOLVERINCLUDE_HPP_
 #define SOLVERINCLUDE_HPP_
 
-#include "external/Space.hpp"
-#include "inferences/Tasks.hpp"
-#include "external/SearchMonitor.hpp"
-#include "external/Translator.hpp"
+#include "Space.hpp"
+#include "Tasks.hpp"
+#include "SearchMonitor.hpp"
+#include "Translator.hpp"
+#include "Constraints.hpp"
 
 typedef MinisatID::Space PCSolver;
 typedef MinisatID::Translator PCPrinter;

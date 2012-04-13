@@ -10,7 +10,7 @@ endif()
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/source"
-	"${PROJECT_SOURCE_DIR}/lib/minisatid/src/"
+	"${PROJECT_SOURCE_DIR}/lib/minisatid/src/external"
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/include"
 	"${PROJECT_SOURCE_DIR}/lib/lua/src"
 	"${PROJECT_SOURCE_DIR}/src"
