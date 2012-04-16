@@ -10,5 +10,6 @@ structure S:V{
 
 
 procedure getExpectedSet(){
+print("See issue 118, improvement of generators")
   return {{1},{2}}
 }

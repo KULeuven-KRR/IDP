@@ -22,10 +22,11 @@
  */
 class PropagateInference: public TheoryStructureBase {
 public:
-	PropagateInference() :
-			TheoryStructureBase(
+	PropagateInference()
+			: TheoryStructureBase(
 					"propagate",
 					"Return a structure, made more precise than the input by doing symbolic propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -43,8 +44,8 @@ public:
  */
 class GroundPropagateInference: public TheoryStructureBase {
 public:
-	GroundPropagateInference() :
-			TheoryStructureBase(
+	GroundPropagateInference()
+			: TheoryStructureBase(
 					"groundpropagate",
 					"Return a structure, made more precise than the input by grounding and unit propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
@@ -67,8 +68,8 @@ public:
 
 class OptimalPropagateInference: public TheoryStructureBase {
 public:
-	OptimalPropagateInference() :
-			TheoryStructureBase(
+	OptimalPropagateInference()
+			: TheoryStructureBase(
 					"optimalpropagate",
 					"Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());

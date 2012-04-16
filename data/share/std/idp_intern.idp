@@ -154,7 +154,8 @@ procedure idptype(something){
 
 /**
 * Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.
-*This propagation is complete: everything that can be derived from the theory will be derived.*/ 
+* This propagation is complete: everything that can be derived from the theory will be derived. 
+* Returns nil when propagation results in an inconsistent structure.*/ 
 procedure optimalpropagate(theory,structure){
 	if type(theory) == "theory" then
 		if type(structure) == "structure" then
@@ -172,7 +173,8 @@ procedure optimalpropagate(theory,structure){
 }
 
 /**
-* Return a structure, made more precise than the input by grounding and unit propagation on the theory.*/
+* Return a structure, made more precise than the input by grounding and unit propagation on the theory. 
+* Returns nil when propagation results in an inconsistent structure.*/
 procedure groundpropagate(theory,structure){
 	if type(theory) == "theory" then
 		if type(structure) == "structure" then
@@ -180,6 +182,25 @@ procedure groundpropagate(theory,structure){
 			pushnegations(clonetheo)
 			flatten(clonetheo)
 			local struc = idpintern.groundpropagate(clonetheo,structure) 
+			return struc
+		else
+			print("Error: structure expected")
+		end
+	else
+		print("Error: theory expected")
+	end
+}
+
+/**
+* Return a structure, made more precise than the input by doing symbolic propagation on the theory. 
+* Returns nil when propagation results in an inconsistent structure.*/
+procedure propagate(theory,structure){
+	if type(theory) == "theory" then
+		if type(structure) == "structure" then
+			local clonetheo = clone(theory)
+			pushnegations(clonetheo)
+			flatten(clonetheo)
+			local struc = idpintern.propagate(clonetheo,structure) 
 			return struc
 		else
 			print("Error: structure expected")
