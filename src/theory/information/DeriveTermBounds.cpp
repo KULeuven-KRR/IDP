@@ -60,7 +60,7 @@ void DeriveTermBounds::visit(const VarTerm* t) {
 void DeriveTermBounds::visit(const FuncTerm* t) {
 	Assert(_structure != NULL);
 
-	// Derive bounds on subterms of the set
+	// Derive bounds on subterms
 	traverse(t);
 
 	auto function = t->function();
@@ -79,8 +79,29 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		} else if (function->name() == "-/1") {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
+		} else if (function->name() == "*/2") {
+			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
+			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[0], _subtermminimums[1] }], (*functable)[ElementTuple {
+					_subtermminimums[0], _subtermmaximums[1] }], (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }],
+					(*functable)[ElementTuple { _subtermmaximums[0], _subtermmaximums[1] }] };
+			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
+			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
+		} else if (function->name() == "MAX/0") {
+			auto domain = _structure->inter(t->sort());
+			Assert(domain != NULL);
+			_maximum = domain->last();
+			_minimum = domain->last();
+
+		} else if (function->name() == "MIN/0") {
+			auto domain = _structure->inter(t->sort());
+			Assert(domain != NULL);
+			_maximum = domain->first();
+			_minimum = domain->first();
 		} else {
-			Assert(false); //FIXME: All operations should be covered...
+			std::stringstream ss;
+			ss << "Deriving term bounds for function" << function->name() << ".";
+			throw notyetimplemented(ss.str());
+			//FIXME: All operations should be covered...
 			_minimum = NULL;
 			_maximum = NULL;
 		}
