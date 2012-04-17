@@ -20,6 +20,7 @@
 #include "BDDBasedGeneratorFactory.hpp"
 
 #include "SimpleFuncGenerator.hpp"
+#include "UnionGenerator.hpp"
 #include "TreeInstGenerator.hpp"
 #include "InverseInstGenerator.hpp"
 #include "SortInstGenerator.hpp"
@@ -614,29 +615,18 @@ void GeneratorFactory::visit(const TimesInternalFuncTable* pift) {
 		throw notyetimplemented("Create a generator for x*x=y, with x output");
 	} else {
 		if (_universe.tables()[0]->approxFinite()) {
-			//same as before, but now generate x instead of fullgenerator
+			//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
-			auto standardsolution = new DivGenerator(_vars[2], _vars[0], _vars[1], pift->getType(), _universe.tables()[1]);
-			auto varzero = new DomElemContainer();
-			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto xiszero = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
-			auto ziszero = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
-			auto xandzarezero = new OneChildGenerator(xiszero, ziszero);
-			auto yisanything = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
-			_generator = new TwoChildGenerator(xandzarezero, xgen, standardsolution, yisanything);
+			_pattern[0] = Pattern::INPUT;
+			visit(pift);
+			_generator = new OneChildGenerator(xgen, _generator);
 		} else {
-			//same as before, but now generate y instead of fullgenerator
 			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
 			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
-			auto standardsolution = new DivGenerator(_vars[2], _vars[1], _vars[0], pift->getType(), _universe.tables()[0]);
-			auto varzero = new DomElemContainer();
-			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto yiszero = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::EQ);
-			auto ziszero = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
-			auto yandzarezero = new OneChildGenerator(yiszero, ziszero);
-			auto xisanything = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
-			_generator = new TwoChildGenerator(yandzarezero, ygen, standardsolution, xisanything);
+			_pattern[1] = Pattern::INPUT;
+			visit(pift);
+			_generator = new OneChildGenerator(ygen, _generator);
 		}
 	}
 }
@@ -673,33 +663,30 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		_generator = new OneChildGenerator(temp, notzero);
 	} else if (_firstocc[1] == 0) {
 		throw notyetimplemented("Create a generator for x/x=z, with x output");
+		//x/x=z with x output, z input
+		//Thus, if z = 1: x =/= 0 generator, otherwise emptygenerator
+		auto varzero = new DomElemContainer();
+		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+		auto varone = new DomElemContainer();
+		varone->operator =(GlobalData::getGlobalDomElemFactory()->create(1, NumType::POSSIBLYINT));
+		auto natSortTable = VocabularyUtils::natsort()->interpretation();
+		auto zIsOneChecker = new ComparisonGenerator(natSortTable, natSortTable, _vars[2], varone, Input::BOTH, CompType::EQ);
+		auto xNotZeroGenerator = new ComparisonGenerator(natSortTable,_universe.tables()[0],varzero,_vars[0],Input::LEFT,CompType::NEQ);
+		_generator = new TwoChildGenerator(zIsOneChecker, new FullGenerator(),  new EmptyGenerator(), xNotZeroGenerator);
 	} else {
 		if (_universe.tables()[0]->approxFinite()) {
 			//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator
 			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
-
-			auto temp = new DivGenerator(_vars[0], _vars[2], _vars[1], pift->getType(), _universe.tables()[1]);
-			auto varzero = new DomElemContainer();
-			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto ynotzerochecker = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
-			auto standardsolution = new OneChildGenerator(temp, ynotzerochecker);
-
-			auto xiszero = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[0], _vars[0], varzero, Input::BOTH, CompType::EQ);
-			auto ziszero = new ComparisonGenerator(_universe.tables()[2], _universe.tables()[2], _vars[2], varzero, Input::BOTH, CompType::EQ);
-			auto xandzarezero = new OneChildGenerator(xiszero, ziszero);
-			auto ynotzerogenerator = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::RIGHT, CompType::NEQ);
-			_generator = new TwoChildGenerator(xandzarezero, xgen, standardsolution, ynotzerogenerator);
+			_pattern[0] = Pattern::INPUT;
+			visit(pift);
+			_generator = new OneChildGenerator(xgen, _generator);
 		} else {
 			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
 			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
 			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
-			auto xgen = new TimesGenerator(_vars[1], _vars[2], _vars[0], pift->getType(), _universe.tables()[0]);
-			auto varzero = new DomElemContainer();
-			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-			auto notzero = new ComparisonGenerator(_universe.tables()[1], _universe.tables()[1], _vars[1], varzero, Input::BOTH, CompType::NEQ);
-			auto temp = new OneChildGenerator(ygen, xgen);
-			_generator = new OneChildGenerator(temp, notzero);
-
+			_pattern[1] = Pattern::INPUT;
+			visit(pift);
+			_generator = new OneChildGenerator(ygen, _generator);
 		}
 	}
 }
@@ -708,8 +695,84 @@ void GeneratorFactory::visit(const ExpInternalFuncTable*) {
 	throw notyetimplemented("Infinite generator for exponentiation pattern (?,?,in)");
 }
 
-void GeneratorFactory::visit(const ModInternalFuncTable*) {
-	throw notyetimplemented("Infinite generator for remainder pattern (?,?,in)");
+void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
+	if (_pattern[0] == Pattern::INPUT) {
+		if (_pattern[1] == Pattern::INPUT) {
+			_generator = new ModChecker(_vars[0], _vars[1], _vars[2], _universe);
+		} else {
+			//x%y=z with x and z input.
+			//Thus, qy+z=x for some q integer
+			//Thus, either x-z = 0 and any y is fine
+			//Or, y needs to be between -(x-z) and (x-z) and qy = x-z
+			auto xMinusZ = new DomElemContainer();
+			auto varzero = new DomElemContainer();
+			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+
+			auto intSortTable = VocabularyUtils::intsort()->interpretation();
+			auto calcXMinusZ = new MinusGenerator(_vars[0], _vars[2], xMinusZ, NumType::CERTAINLYINT, intSortTable);
+			auto xMinusZis0Checker = new ComparisonGenerator(intSortTable, intSortTable, xMinusZ, varzero, Input::BOTH, CompType::EQ);
+			//TODO: optimize: y needs to be between -(x-z) and (x-z) and qy = x-z
+			auto fullYGenerator = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+
+			auto q = new DomElemContainer();
+			_vars[0] = q;
+			_vars[2] = xMinusZ;
+			std::vector<SortTable*> newtables = { intSortTable, _universe.tables()[1], intSortTable };
+			_universe = Universe(newtables );
+			_pattern = {Pattern::OUTPUT,Pattern::OUTPUT,Pattern::INPUT};
+			visit(new TimesInternalFuncTable(true));
+
+			_generator = new TwoChildGenerator(xMinusZis0Checker, calcXMinusZ, _generator, fullYGenerator);
+		}
+	} else if (_pattern[1] == Pattern::INPUT) {
+		//x%y=z with x and z input.
+		//Thus, qy+z=x for some q integer
+		//Generate all q between -y and y and then generate the x
+		auto q = new DomElemContainer();
+		auto natSortTable = VocabularyUtils::natsort()->interpretation();
+		auto intSortTable = VocabularyUtils::intsort()->interpretation();
+		auto positiveQGenerator = new ComparisonGenerator(natSortTable, _universe.tables()[1], q, _vars[1], Input::RIGHT, CompType::LEQ);
+
+		auto varzero = new DomElemContainer();
+		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+		auto minusQ = new DomElemContainer();
+		auto positiveMinusQGenerator = new ComparisonGenerator(natSortTable, _universe.tables()[1], minusQ, _vars[1], Input::RIGHT, CompType::LEQ);
+		auto minusQIsZeroChecker = new ComparisonGenerator(natSortTable, natSortTable, minusQ, varzero, Input::BOTH, CompType::EQ);
+		auto qFromMinusQGenerator = new MinusGenerator(varzero, minusQ, q, NumType::CERTAINLYINT, intSortTable);
+		auto negativeQGenerator = new TwoChildGenerator(minusQIsZeroChecker, positiveMinusQGenerator, qFromMinusQGenerator, new EmptyGenerator);
+		std::vector<InstGenerator*> allqs = { positiveQGenerator, negativeQGenerator };
+		auto allQGenerator = new UnionGenerator(allqs);
+		auto qTimesY = new DomElemContainer();
+		auto qTimesYGenerator = new TimesGenerator(q, _vars[1], qTimesY, NumType::CERTAINLYINT, intSortTable);
+		auto finalGenerator = new PlusGenerator(qTimesY, _vars[2], _vars[0], NumType::CERTAINLYINT, _universe.tables()[0]);
+
+		_generator = new OneChildGenerator(allQGenerator, new OneChildGenerator(qTimesYGenerator, finalGenerator));
+
+	} else if (_firstocc[1] == 0) {
+		//x%x=z with x output, z input
+		//Thus, if z = 0: fullgenerator, otherwise emptygenerator
+		auto varzero = new DomElemContainer();
+		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
+		auto natSortTable = VocabularyUtils::natsort()->interpretation();
+		auto zIsZeroChecker = new ComparisonGenerator(natSortTable, natSortTable, _vars[2], varzero, Input::BOTH, CompType::EQ);
+		auto fullXGenerator = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+		_generator = new TwoChildGenerator(zIsZeroChecker, new FullGenerator(), new EmptyGenerator(), fullXGenerator);
+	} else {
+		if (_universe.tables()[0]->approxFinite()) {
+			//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator
+			auto xgen = new SortInstGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+			_pattern[0] = Pattern::INPUT;
+			visit(mift);
+			_generator = new OneChildGenerator(xgen, _generator);
+		} else {
+			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
+			auto ygen = new SortInstGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+			_pattern[1] = Pattern::INPUT;
+			visit(mift);
+			_generator = new OneChildGenerator(ygen, _generator);
+		}
+	}
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {

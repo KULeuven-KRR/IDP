@@ -99,7 +99,7 @@ public:
 			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
-	DivGenerator* clone() const {
+	DivChecker* clone() const {
 		throw notyetimplemented("Cloning generators.");
 	}
 
@@ -120,7 +120,7 @@ public:
 			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
-	TimesGenerator* clone() const {
+	TimesChecker* clone() const {
 		throw notyetimplemented("Cloning generators.");
 	}
 
@@ -141,7 +141,7 @@ public:
 			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
-	MinusGenerator* clone() const {
+	MinusChecker* clone() const {
 		throw notyetimplemented("Cloning generators.");
 	}
 
@@ -162,12 +162,39 @@ public:
 			: ArithOpChecker(in1, in2, in3, univ) {
 	}
 
-	PlusGenerator* clone() const {
+	PlusChecker* clone() const {
 		throw notyetimplemented("Cloning generators.");
 	}
 
 	virtual void put(std::ostream& stream) {
 		stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	}
+};
+
+class ModChecker: public ArithOpChecker {
+protected:
+	ARITHRESULT doCalculation(double left, double right, double& result) const {
+		if (right == 0) { // cannot divide by zero
+			return ARITHRESULT::INVALID;
+		}
+		result = (int)left % (int)right;
+		if(result < 0){
+			result += right;
+		}
+		return ARITHRESULT::VALID;
+	}
+	;
+public:
+	ModChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ)
+			: ArithOpChecker(in1, in2, in3, univ) {
+	}
+
+	ModChecker* clone() const {
+		throw notyetimplemented("Cloning generators.");
+	}
+
+	virtual void put(std::ostream& stream) {
+		stream << toString(getIn1()) << "(in)" << " % " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 	}
 };
 

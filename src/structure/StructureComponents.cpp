@@ -2522,7 +2522,11 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 	if (a2 == 0) {
 		return NULL;
 	} else {
-		return createDomElem(a1 % a2);
+		int cppModulo = a1 % a2;
+		if(cppModulo < 0 ){
+			return createDomElem(cppModulo + a2);
+		}
+		return createDomElem(cppModulo);
 	}
 }
 
