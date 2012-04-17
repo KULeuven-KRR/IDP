@@ -43,9 +43,9 @@ private:
 
 public:
 	// NOTE: takes ownership of table
-	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
-			const Universe& univ, const std::vector<unsigned int>& firstocc) :
-			_function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
+	SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ,
+			const std::vector<unsigned int>& firstocc)
+			: _function(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
 		Assert(pattern.back() == Pattern::OUTPUT);
 		auto domainpattern = pattern;
 		domainpattern.pop_back();
@@ -57,9 +57,8 @@ public:
 				if (firstocc[n] == n) {
 					_outvars.push_back(vars[n]);
 					outtabs.push_back(univ.tables()[n]);
+					_outpos.push_back(n);
 				}
-				_outpos.push_back(n);
-
 				break;
 			case Pattern::INPUT:
 				_invars.push_back(vars[n]);
@@ -88,7 +87,7 @@ public:
 		return gen;
 	}
 
-	void setVarsAgain(){
+	void setVarsAgain() {
 		auto result = _function->operator [](_currenttuple);
 		if (result != NULL) {
 			if (_universe.tables().back()->contains(result)) {
@@ -110,9 +109,12 @@ public:
 			_univgen->begin();
 
 			for (unsigned int i = 0; i < _vars.size() - 1; ++i) {
+				Assert(_currenttuple.size()>i);
 				_currenttuple[i] = _vars[i]->get();
 			}
 			for (unsigned int i = 0; i < _inpos.size(); ++i) {
+				Assert(_currenttuple.size()>_inpos[i]);
+				Assert(_invars.size()>i);
 				_currenttuple[_inpos[i]] = _invars[i]->get();
 			}
 		} else {
@@ -121,6 +123,9 @@ public:
 
 		while (not _univgen->isAtEnd()) {
 			for (unsigned int i = 0; i < _outpos.size(); ++i) {
+				Assert(_currenttuple.size()>_outpos[i]);
+				Assert(_outvars.size()>i);
+				Assert(_outvars[i]!=NULL);
 				_currenttuple[_outpos[i]] = _outvars[i]->get();
 			}
 			auto result = _function->operator [](_currenttuple);

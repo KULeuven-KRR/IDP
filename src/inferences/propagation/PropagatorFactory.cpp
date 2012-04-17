@@ -24,22 +24,23 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure);
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure* structure) {
-	if(getOption(BoolType::GROUNDWITHBOUNDS)){
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure) {
+	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		return generateApproxBounds(theory, structure);
-	}else{
+	} else {
 		return generateNaiveApproxBounds(theory, structure);
 	}
 }
 
-GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure* structure) {
+GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	//propagator->doPropagation(); TODO check and uncomment
+	propagator->doPropagation();
+	propagator->applyPropagationToStructure(structure);
 	return propagator->symbolicstructure();
 }
 
@@ -100,6 +101,7 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 //	}
 }
 
+//TODO: is as useful?  Why wouldn't we assert sentences?
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
@@ -149,7 +151,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo);
-	FormulaUtils::unnestTerms(newtheo); // FIXME: remove nesting does not change F(x)=y to F(x,y) anymore, which is probably needed here
+	FormulaUtils::unnestTerms(newtheo);
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo);
 	FormulaUtils::unnestDomainTerms(newtheo);
@@ -162,18 +164,18 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		Function* function = dynamic_cast<Function*>(it->first);
 
 		// Add  (! x : ? y : F(x) = y)
-		vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
-		vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
-		PredForm* atom = new PredForm(SIGN::POS, function, terms, FormulaParseInfo());
-		Variable* y = vars.back();
-		set<Variable*> yset;
-		yset.insert(y);
-		QuantForm* exists = new QuantForm(SIGN::POS, QUANT::EXIST, yset, atom, FormulaParseInfo());
-		vars.pop_back();
-		set<Variable*> xset;
-		xset.insert(vars.cbegin(), vars.cend());
-		QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
-		newtheo->add(univ1);
+		if (not function->partial()) {
+			vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
+			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
+			PredForm* atom = new PredForm(SIGN::POS, function, terms, FormulaParseInfo());
+			Variable* y = vars.back();
+			set<Variable*> yset = { y };
+			QuantForm* exists = new QuantForm(SIGN::POS, QUANT::EXIST, yset, atom, FormulaParseInfo());
+			vars.pop_back();
+			set<Variable*> xset(vars.cbegin(), vars.cend());
+			QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
+			newtheo->add(univ1);
+		}
 
 		// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
 		vector<Variable*> zvars = VarUtils::makeNewVariables(function->insorts());
@@ -203,8 +205,9 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	}
 
 	// Multiply maxsteps if requested
-	if (_multiplymaxsteps)
+	if (_multiplymaxsteps) {
 		_propagator->setMaxSteps(_propagator->getMaxSteps() * FormulaUtils::nrSubformulas(newtheo));
+	}
 
 	// create leafconnectors
 	Vocabulary* voc = newtheo->vocabulary();
@@ -233,6 +236,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const Theory* theory) {
 		Formula* sentence = theory->sentences()[n];
 		if (_assertsentences) {
 			_propagator->schedule(sentence, DOWN, true, 0);
+			//What is the meaning of the true and false?  They determine to choose which domain?
 			_propagator->setDomain(sentence, ThreeValuedDomain<Domain>(_propagator->getFactory(), true, false, sentence));
 		}
 		sentence->accept(this);
@@ -269,13 +273,8 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 		lcd._connector = leafconnector;
 		lcd._equalities = _propagator->getFactory()->trueDomain(leafconnector);
 		for (unsigned int n = 0; n < symbol->sorts().size(); ++n) {
-			if (not sametypeid<VarTerm>(*(pf->subterms()[n]))){
-				std::cerr << tabs() << n << "\n";
-				std::cerr << tabs() << toString(pf) << "\n";
-
-			}
-			Assert(sametypeid<VarTerm>(*(pf->subterms()[n])));
-			Assert(sametypeid<VarTerm>(*(leafconnector->subterms()[n])));
+			Assert(typeid(*(pf->subterms()[n])) == typeid(VarTerm));
+			Assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());
 			Variable* connectvar = *(leafconnector->subterms()[n]->freeVars().cbegin());
 			if (lcd._leaftoconnector.find(leafvar) == lcd._leaftoconnector.cend()) {
@@ -337,8 +336,8 @@ void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 	for (auto it = ef->right()->freeVars().cbegin(); it != ef->right()->freeVars().cend(); ++it) {
 		rightqv.erase(*it);
 	}
-	_propagator->setQuantVar(ef->left(), leftqv);
-	_propagator->setQuantVar(ef->right(), rightqv);
+	_propagator->setQuantVar(ef->left(), leftqv); //SetQuantVar?  Looks more like setNonFreeVars to me!
+	_propagator->setQuantVar(ef->right(), rightqv); //SetQuantVar?  Looks more like setNonFreeVars to me!
 	initFalse(ef);
 	traverse(ef);
 }
@@ -351,7 +350,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const BoolForm* bf) {
 		for (auto jt = (*it)->freeVars().cbegin(); jt != (*it)->freeVars().cend(); ++jt) {
 			sv.erase(*jt);
 		}
-		_propagator->setQuantVar(*it, sv);
+		_propagator->setQuantVar(*it, sv); //SetQuantVar?  Looks more like setNonFreeVars to me!
 	}
 	initFalse(bf);
 	traverse(bf);

@@ -61,7 +61,7 @@ private:
 	bool _ct; //!< Indicates which domain is propagated
 			  //!< If _direction == DOWN and _ct == true,
 			  //!< then the ct-domain of the parent is propagated to the child, etc.
-	const Formula* _child; //!< The subformula // NOTE child can be NULL
+	const Formula* _child; //!< The subformula // NOTE child can be NULL if child == NULL, propagate to all childs.
 public:
 	FOPropagation(const Formula* p, FOPropDirection dir, bool ct, const Formula* c)
 			: _parent(p), _direction(dir), _ct(ct), _child(c) {
@@ -212,14 +212,24 @@ struct ThreeValuedDomain {
 	bool _twovalued;
 	//ThreeValuedDomain() : _ctdomain(NULL), _cfdomain(NULL), _twovalued(false) { }
 
+	//If ctdom == true, then this represents the domain where f is always true
+	//If cfdom == true, this represents a domain where f is always false
+	//If ctdom==cfdom==false, this represents a domain where f is unknown
+	//If ctdom==cfdom==true, this represents a domain where f is inconsistent (shouldn't happen!)
+	//TODO: rename the booleans!!!
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, bool ctdom, bool cfdom, const Formula* f) {
 		_ctdomain = ctdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_cfdomain = cfdom ? factory->trueDomain(f) : factory->falseDomain(f);
 		_twovalued = ctdom || cfdom;
+		Assert(not (ctdom && cfdom));
 		Assert(_ctdomain!=NULL);
 		Assert(_cfdomain!=NULL);
 	}
 
+	/**
+	 * Creates a domain represented by a formula. _ctdomain are all tuples (over free vars of f) where f is true,
+	 * _cfdomain are all tuples where f is false
+	 */
 	ThreeValuedDomain(const FOPropDomainFactory<DomainType>* factory, const Formula* f) {
 		_ctdomain = factory->formuladomain(f);
 		Formula* negf = f->clone();
@@ -288,16 +298,19 @@ template<class InterpretationFactory, class Domain>
 class TypedFOPropagator: public FOPropagator {
 	VISITORFRIENDS()
 private:
-	Options* _options;
+	Options* _options; //TODO: remove options, verbosity and maxsteps. They belong to the globaldata
 	int _verbosity;
 	int _maxsteps; //!< Maximum number of propagations
 	InterpretationFactory* _factory; //!< Manages and creates domains for formulas
 	FOPropScheduler* _scheduler; //!< Schedules propagations
 	std::map<const Formula*, ThreeValuedDomain<Domain> > _domains; //!< Map each formula to its current domain
-	std::map<const Formula*, std::set<Variable*> > _quantvars;
+	std::map<const Formula*, std::set<Variable*> > _quantvars; //What is this?
+	//Every symbol has exactly one "connector". A "prototype" of an atom by this symbol
+	//If we want the interpretation of an other PredForm over the same symbol, we should
+	//first replace all it's subterms by the ones given in leafconnectdata
 	std::map<PFSymbol*, PredForm*> _leafconnectors;
 	std::map<const PredForm*, LeafConnectData<Domain> > _leafconnectdata;
-	std::map<const Formula*, const Formula*> _upward;
+	std::map<const Formula*, const Formula*> _upward; //!<mapping from a formula to it's parent
 	std::map<const PredForm*, std::set<const PredForm*> > _leafupward;
 	std::vector<AdmissibleBoundChecker<Domain>*> _admissiblecheckers;
 
@@ -328,7 +341,7 @@ public:
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
-	AbstractStructure* currstructure(AbstractStructure* str) const;
+	void applyPropagationToStructure(AbstractStructure* str) const;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 	GenerateBDDAccordingToBounds* symbolicstructure() const;

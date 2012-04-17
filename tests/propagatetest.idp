@@ -7,15 +7,24 @@ procedure main(){
 		return 0
 	end
 	S2=optimalpropagate(T,S)
-	if weakassertions(S2) and strongassertions(S2) then
-		return 1
-	else
-		io.stderr:write("Error in optimalpropagate.\n")
-		return 0
+	S3=propagate(T,S)
+	returnvalue = 1
+	if  not weakassertions(S1) then
+		returnvalue = 0
+		io.stderr:write("Groundpropagate failed.\n")
 	end
+	if not weakassertions(S3) then
+		returnvalue = 0
+		io.stderr:write("Symbolic propagation failed.\n")
+	end
+	if  not (weakassertions(S2) and strongassertions(S2)) then
+		returnvalue = 0
+		io.stderr:write("optimalpropagate failed.\n")
+	end
+	return returnvalue 
 }
 
-procedure assert(table,valuefirst,name,dexpected){
+procedure assert(table,valuefirst,name,expected){
 	for t in tuples(table) do 
 		if t[1] == valuefirst then 
 			return true	

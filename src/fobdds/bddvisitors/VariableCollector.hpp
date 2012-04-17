@@ -19,7 +19,9 @@
 
 /**
  * Class to obtain all variables of a bdd.
+ * NOTE: this does not collect indices.
  */
+
 class VariableCollector: public FOBDDVisitor {
 private:
 	std::set<const FOBDDVariable*> _result;

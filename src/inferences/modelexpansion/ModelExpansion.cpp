@@ -53,22 +53,24 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
-		if(defCalculated.size() == 0){
-			delete(newstructure);
+		if (defCalculated.size() == 0) {
+			delete (newstructure);
 			return std::vector<AbstractStructure*> { };
-		}
-		Assert(defCalculated[0]->isConsistent());
+		}Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
 		newstructure = structure->clone();
 	}
-
 	// Create solver and grounder
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	if (verbosity() >= 1) {
 		clog << "Approximation\n";
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
+	if (not newstructure->isConsistent()) {
+		return std::vector<AbstractStructure*> { };
+	}
+
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
@@ -78,6 +80,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		tracemonitor->setSolver(data);
 	}
 	grounder->toplevelRun();
+
 	auto grounding = grounder->getGrounding();
 
 	// TODO refactor optimization!
@@ -85,7 +88,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (minimizeterm != NULL) {
 		auto term = dynamic_cast<AggTerm*>(minimizeterm);
 		if (term != NULL) {
-			auto setgrounder = GrounderFactory::create(term->set(), {newstructure, symstructure}, grounding);
+			auto setgrounder = GrounderFactory::create(term->set(), { newstructure, symstructure }, grounding);
 			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
 			optimgrounder.setOrig(minimizeterm);
 			optimgrounder.run();
@@ -93,6 +96,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
+
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -121,7 +125,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			std::clog << "Unknown symmetry option...\n";
 		}
 	}
-
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
@@ -188,7 +191,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	return solutions;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding){
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);

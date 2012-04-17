@@ -13,11 +13,14 @@
 #include "FoBddVisitor.hpp"
 #include "FoBddManager.hpp"
 #include "FoBddFuncTerm.hpp"
+#include "FoBddAggTerm.hpp"
+#include "FoBddSetExpr.hpp"
 #include "FoBddDomainTerm.hpp"
 #include "FoBddVariable.hpp"
 #include "FoBddIndex.hpp"
 #include "FoBddAtomKernel.hpp"
 #include "FoBddQuantKernel.hpp"
+#include "FoBddAggKernel.hpp"
 #include "FoBddUtils.hpp"
 #include "FoBdd.hpp"
 
@@ -41,6 +44,11 @@ void FOBDDVisitor::visit(const FOBDDQuantKernel* kernel) {
 	visit(kernel->bdd());
 }
 
+void FOBDDVisitor::visit(const FOBDDAggKernel* kernel) {
+	kernel->left()->accept(this);
+	kernel->right()->accept(this);
+}
+
 void FOBDDVisitor::visit(const FOBDDVariable*) {
 	// do nothing
 }
@@ -57,6 +65,21 @@ void FOBDDVisitor::visit(const FOBDDFuncTerm* term) {
 	for (auto it = term->args().cbegin(); it != term->args().cend(); ++it) {
 		(*it)->accept(this);
 	}
+}
+void FOBDDVisitor::visit(const FOBDDAggTerm* term) {
+	term->setexpr()->accept(this);
+}
+
+void FOBDDVisitor::visit(const FOBDDEnumSetExpr* set) {
+	for (int i = 0; i < set->size(); i++) {
+		set->subformula(i)->accept(this);
+		set->subterm(i)->accept(this);
+	}
+}
+
+void FOBDDVisitor::visit(const FOBDDQuantSetExpr* set) {
+	set->subformula(0)->accept(this);
+	set->subterm(0)->accept(this);
 }
 
 const FOBDD* FOBDDVisitor::change(const FOBDD* bdd) {
@@ -85,6 +108,12 @@ const FOBDDKernel* FOBDDVisitor::change(const FOBDDQuantKernel* kernel) {
 	return _manager->getQuantKernel(kernel->sort(), nbdd);
 }
 
+const FOBDDKernel* FOBDDVisitor::change(const FOBDDAggKernel* kernel) {
+	const FOBDDTerm* left = kernel->left()->acceptchange(this);
+	const FOBDDTerm* right = kernel->right()->acceptchange(this);
+	return _manager->getAggKernel(left, kernel->comp(), right);
+}
+
 const FOBDDTerm* FOBDDVisitor::change(const FOBDDVariable* variable) {
 	return variable;
 }
@@ -103,4 +132,25 @@ const FOBDDTerm* FOBDDVisitor::change(const FOBDDFuncTerm* term) {
 		args.push_back((*it)->acceptchange(this));
 	}
 	return _manager->getFuncTerm(term->func(), args);
+}
+
+const FOBDDTerm* FOBDDVisitor::change(const FOBDDAggTerm* term) {
+	auto set = term->setexpr()->acceptchange(this);
+	return _manager->getAggTerm(term->aggfunction(), set);
+}
+
+const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
+	auto formula = change(set->subformula(0));
+	auto term = set->subterm(0)->acceptchange(this);
+	return _manager->getQuantSetExpr(set->quantvarsorts(), formula, term, set->sort());
+}
+
+const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
+	std::vector<const FOBDD*> subformulas(set->size()); //!< The direct subformulas of the set expression
+	std::vector<const FOBDDTerm*> subterms(set->size());
+	for (int i = 0; i < set->size(); i++) {
+		subformulas[i] = change(set->subformula(i));
+		subterms[i] = set->subterm(i)->acceptchange(this);
+	}
+	return _manager->getEnumSetExpr(subformulas,subterms,set->sort());
 }

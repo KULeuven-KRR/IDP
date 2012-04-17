@@ -28,7 +28,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto data = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-
 	auto symstructure = generateBounds(&theory, structure);
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, data);
 
@@ -53,7 +52,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
 	}
-
 	// Cleanup
 	grounding->recursiveDelete();
 	delete (data);
@@ -101,8 +99,6 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 				theory->remove(currentdefinition->first);
 				opens.erase(currentdefinition);
 				fixpoint = false;
-				//cerr <<"Current structure after evaluating a definition: \n";
-				//cerr <<toString(structure) <<"\n";
 			}
 		}
 	}

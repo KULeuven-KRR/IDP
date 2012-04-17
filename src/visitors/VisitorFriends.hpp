@@ -26,7 +26,6 @@ class FOBDDFactory;
 class FOPropagator;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 template<class InterpretationFactory, class PropDomain> class FOPropagatorFactory;
-class FormulaFuncTermChecker;
 class GenerateBDDAccordingToBounds;
 class GrounderFactory;
 class Printer;
@@ -45,6 +44,8 @@ class SplitIntoMonotoneAgg;
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
 		friend class CheckContainsFuncTerms; \
+		friend class CheckContainsDomainTerms; \
+		friend class CheckContainsFuncTermsOutsideOfSets; \
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
@@ -55,7 +56,6 @@ class SplitIntoMonotoneAgg;
 		friend class FOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class TypedFOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class FOPropagatorFactory; \
-		friend class FormulaFuncTermChecker; \
 		friend class GenerateBDDAccordingToBounds; \
 		friend class GrounderFactory; \
 		friend class Printer; \
@@ -67,11 +67,13 @@ class SplitIntoMonotoneAgg;
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
 		friend class AddCompletion; \
+		friend class AddFuncConstraints; \
 		friend class DeriveSorts; \
 		friend class Flatten; \
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
+		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class RemoveEquivalences; \

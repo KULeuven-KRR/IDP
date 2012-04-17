@@ -15,11 +15,12 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddUtils.hpp"
 
 /**
- *	Return a list of all terms which are currently in one long multiplication.
+ *	Return a list of all terms which are currently in one long "Operation".
  *	@post: the list is in left-to-right order! (depth first visitation)
  *	If the list might only contain one elment which is not a domainelement, the neutral element is added at the start.
  */
@@ -44,6 +45,12 @@ private:
 		avoidempty();
 		_result.push_back(i);
 	}
+
+	void visit(const FOBDDAggTerm* at) {
+		avoidempty();
+		_result.push_back(at);
+	}
+
 	void visit(const FOBDDFuncTerm* ft) {
 		if (ft->func()->name() == Operation::getFuncName()) {
 			ft->args(0)->accept(this);

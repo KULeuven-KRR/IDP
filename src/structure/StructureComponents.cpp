@@ -368,6 +368,7 @@ SortIterator::~SortIterator() {
 }
 
 SortIterator& SortIterator::operator++() {
+	CHECKTERMINATION
 	_iterator->operator++();
 	return *this;
 }
@@ -536,12 +537,12 @@ bool UnionInternalIterator::contains(const ElementTuple& tuple) const {
 
 void UnionInternalIterator::setcurriterator() {
 	for (_curriterator = _iterators.begin(); _curriterator != _iterators.end();) {
-		if (not _curriterator->isAtEnd() && contains(*(*_curriterator))) {
+		if (not ((*_curriterator).isAtEnd()) && contains(*(*_curriterator))) {
 			break;
 		}
 		++_curriterator;
 	}
-	if (_curriterator->isAtEnd()) {
+	if (_curriterator == _iterators.end()) {
 		return;
 	}
 	auto jt = _curriterator;
@@ -552,12 +553,17 @@ void UnionInternalIterator::setcurriterator() {
 			continue;
 		}
 		if (contains(*(*jt))) {
-			Compare < ElementTuple > swto;
+			Compare<ElementTuple> swto;
 			if (swto(*(*jt), *(*_curriterator))) {
 				_curriterator = jt;
 			} else if (not swto(*(*_curriterator), *(*jt))) {
-				++(*jt);
+				if (jt != _curriterator) {
+					++(*jt);
+				}
 				++jt;
+				if (_curriterator->isAtEnd()) {
+				} else {
+				}
 			} else {
 				++jt;
 			}
@@ -588,6 +594,7 @@ const ElementTuple& UnionInternalIterator::operator*() const {
 void UnionInternalIterator::operator++() {
 	++(*_curriterator);
 	setcurriterator();
+	Assert(_curriterator == _iterators.cend()|| not _curriterator->isAtEnd());
 }
 
 InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its, InternalPredTable* out, const Universe& univ)
@@ -2586,6 +2593,7 @@ InternalTableIterator* MinusInternalFuncTable::begin(const Universe& univ) const
 }
 
 const DomainElement* TimesInternalFuncTable::operator[](const ElementTuple& tuple) const {
+	Assert(tuple.size()==2);
 	if (getType() == NumType::CERTAINLYINT) {
 		return product<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
@@ -3111,13 +3119,13 @@ TableIterator FuncTable::begin() const {
  *	- ctpf	: the certainly true or possibly false tuples
  *	- cfpt	: the certainly false or possibly true tuples
  *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
- *	- cf	: if true (false), ctpf stores the certainly false (possibly true) tuples
+ *	- cf	: if true (false), cfpt stores the certainly false (possibly true) tuples
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), ctpf->universe());
-	_inconsistentElements  = {};
+	_inconsistentElements = {};
 	if (ct) {
 		_ct = ctpf;
 		_pf = inverseCtpf;
@@ -3147,7 +3155,7 @@ PredInter::PredInter(PredTable* ctpf, bool ct) {
 	PredTable* cfpt = new PredTable(ctpf->internTable(), ctpf->universe());
 	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
 	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), cfpt->universe());
-	_inconsistentElements  = {};
+	_inconsistentElements = {};
 	if (ct) {
 		_ct = ctpf;
 		_pt = cfpt;
@@ -3215,9 +3223,9 @@ void PredInter::checkConsistency() {
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
-
 	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
-	auto largest = smallest == _ct ? _cf : _ct;
+	auto largest = (smallest == _ct) ? _cf : _ct;
+
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
@@ -3376,20 +3384,34 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		nctpf = new PredTable(_pf->internTable(), univ);
 		ct = false;
 	}
-	if (approxTwoValued())
-		return new PredInter(nctpf, ct);
-	else {
-		PredTable* ncfpt;
-		bool cf;
-		if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
-			ncfpt = new PredTable(_cf->internTable(), univ);
-			cf = true;
-		} else {
-			ncfpt = new PredTable(_pt->internTable(), univ);
-			cf = false;
-		}
-		return new PredInter(nctpf, ncfpt, ct, cf);
+	auto result = new PredInter(nctpf, ct);
+	if (approxTwoValued()) {
+		return result;
 	}
+
+	PredTable* ncfpt;
+	bool cf;
+	if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
+
+		ncfpt = new PredTable(_cf->internTable(), univ);
+		cf = true;
+	} else {
+		ncfpt = new PredTable(_pt->internTable(), univ);
+		cf = false;
+	}
+	auto inverseCfpt = new PredTable(new InverseInternalPredTable(ncfpt->internTable()), univ);
+	delete(result->_cf);
+	delete(result->_pt);
+	if (cf) {
+		result->_cf = ncfpt;
+		result->_pt = inverseCfpt;
+	} else {
+		result->_pt = ncfpt;
+		result->_cf = inverseCfpt;
+	}
+	result->_inconsistentElements=_inconsistentElements; //OPTIMIZATION!
+	return result;
+
 }
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
@@ -3502,8 +3524,10 @@ void FuncInter::materialize() {
 bool FuncInter::isConsistent() const {
 	if (_functable != NULL) {
 		return true;
-	} else
+	} else {
+		Assert(_graphinter != NULL);
 		return _graphinter->isConsistent();
+	}
 }
 
 FuncInter* FuncInter::clone(const Universe& univ) const {
@@ -3672,9 +3696,10 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			CHECKTERMINATION
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
-	}Assert(newstructs.size()>0);
+	}
 	extensions = newstructs;
 	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+	Assert(extensions.size()>0);
 }
 
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
@@ -3817,7 +3842,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 		(*j)->clean();
-		Assert((*j)->approxTwoValued());
+		//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
 	}
 
 	// TODO delete all structures which were cloned and discarded

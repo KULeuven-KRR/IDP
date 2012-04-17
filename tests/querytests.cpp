@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfQueryFiles() {
-	vector<string> testdirs {"simple/"};
+	vector<string> testdirs {"simple/", "aggregates/"/*, "threevalued/"*/};
 	return getAllFilesInDirs(getTestDirectory() + "query/", testdirs);
 }
 
@@ -34,7 +34,7 @@ TEST_P(QueryTest, DoesQuerying) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(ModelExpansion, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
+INSTANTIATE_TEST_CASE_P(Querying, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
 
 
 }

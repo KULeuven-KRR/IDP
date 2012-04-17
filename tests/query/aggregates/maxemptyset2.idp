@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+query Q : V {
+	{y[x]: max{x: p(x): x}~=y}
+}
+
+structure S:V{
+	x = {0..1}
+	p = {}
+
+}
+
+procedure getExpectedSet(){
+  return {{0},{1}}
+}

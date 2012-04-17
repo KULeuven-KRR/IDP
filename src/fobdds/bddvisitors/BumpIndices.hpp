@@ -18,7 +18,10 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddIndex.hpp"
 
-// TODO what does it do?
+/*
+ * Increases the indices of all free variables of a bdd with one (so that index 0 can be used
+ * for a newly quantified variable)
+ */
 class BumpIndices: public FOBDDVisitor {
 private:
 	unsigned int _depth;
@@ -35,6 +38,14 @@ public:
 		--_depth;
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
+
+	const FOBDDSetExpr* change(const FOBDDQuantSetExpr* qse) {
+		_depth += qse->quantvarsorts().size();
+		auto newsetexpr =  FOBDDVisitor::change(qse);
+		_depth -= qse->quantvarsorts().size();
+		return newsetexpr;
+	}
+
 
 	const FOBDDTerm* change(const FOBDDVariable* var) {
 		if (var == _variable) {

@@ -14,6 +14,7 @@
 #include "fobdds/FoBddFactory.hpp"
 #include "propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
+#include <ctime> //TODO REMOVE
 
 using namespace std;
 
@@ -239,14 +240,14 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
+		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -293,30 +294,39 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 }
 
 template<class Factory, class Domain>
-AbstractStructure* TypedFOPropagator<Factory, Domain>::currstructure(AbstractStructure* structure) const {
-	Vocabulary* vocabulary = new Vocabulary("");
-	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
-		vocabulary->add(it->first->symbol());
-	}
-	AbstractStructure* res = structure->clone();
-	res->vocabulary(vocabulary);
-
-	for (auto it = _leafupward.cbegin(); it != _leafupward.cend(); ++it) {
-		const PredForm* connector = it->first;
+void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure) const {
+	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
+		auto connector = it->second;
 		PFSymbol* symbol = connector->symbol();
+		auto newinter = structure->inter(symbol);
+		if (newinter->approxTwoValued()) {
+			Assert(getDomain(connector)._twovalued);
+			continue;
+		}
 		vector<Variable*> vv;
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
+			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
 		}
-		PredInter* pinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-		if (typeid(*symbol) == typeid(Predicate)) {
-			res->inter(dynamic_cast<Predicate*>(symbol), pinter);
-		} else {
-			FuncInter* finter = new FuncInter(pinter);
-			res->inter(dynamic_cast<Function*>(symbol), finter);
+		CHECKTERMINATION;Assert(_domains.find(connector) != _domains.cend());
+		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
+		if (newinter->ct()->empty() && newinter->cf()->empty()) {
+			bddinter->materialize();
+			if (sametypeid<Function>(*symbol)) {
+				structure->inter(dynamic_cast<Function*>(symbol), new FuncInter(bddinter));
+			} else {
+				Assert(sametypeid<Predicate>(*symbol));
+				structure->inter(dynamic_cast<Predicate*>(symbol), bddinter);
+			}
+			continue;
+		}
+		for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
+			newinter->makeTrue(*trueEl);
+		}
+		for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
+			newinter->makeFalse(*falseEl);
 		}
 	}
-	return res;
 }
 
 template<class Factory, class Domain>
@@ -418,17 +428,18 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
 		_factory->put(clog, newdomain);
 	}
-
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
+	//disjunction -> Make the domains larger (thus the unknown part smaller)
 
 	if ((not _factory->approxequals(olddom, newdom)) && admissible(newdom, olddom)) {
 		ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
 		if (dir == DOWN) {
 			for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
+				//Propagate the newly found domain further down.
 				schedule(f, DOWN, ct, *it);
 			}
-			if (typeid(*f) == typeid(PredForm)) {
+			if (sametypeid<PredForm>(*f)) {
 				const PredForm* pf = dynamic_cast<const PredForm*>(f);
 				auto it = _leafupward.find(pf);
 				if (it != _leafupward.cend()) {
@@ -437,7 +448,7 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 							schedule(*jt, UP, ct, f);
 						}
 					}
-				} else {
+				} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
 					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
 					schedule(pf, DOWN, ct, 0);
 				}
@@ -480,6 +491,10 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 	auto lcd = _leafconnectdata[pf];
 	PredForm* connector = lcd._connector;
 	Assert(connector!=NULL);
+	if (getDomain(connector)._twovalued) {
+		return;
+	}
+
 	Domain* deriveddomain;
 	Domain* temp;
 	if (_direction == DOWN) {
@@ -501,6 +516,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		 delete(temp);
 		 deriveddomain = addToExists(deriveddomain,freevars);*/
 		updateDomain(connector, DOWN, (_ct == isPos(pf->sign())), deriveddomain, pf);
+
 	} else {
 		Assert(_direction == UP);
 		Assert(_domains.find(connector) != _domains.cend());
@@ -532,8 +548,13 @@ void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
 	Assert(ef!=NULL && ef->left()!=NULL && ef->right()!=NULL);
-	// FIXME child can be NULL, code should handle this?
-	Assert(_child!=NULL);
+//TODO improve: ad hoc method for solving the _child==NULL case. Smarter things can be done.
+	if (_child == NULL) {
+		_child = ef->left();
+		visit(ef);
+		_child = ef->right();
+		visit(ef);
+	}
 
 	Formula* otherchild = (_child == ef->left() ? ef->right() : ef->left());
 	const ThreeValuedDomain<Domain>& tvd = getDomain(otherchild);
@@ -672,7 +693,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const AggForm*) {
-	// TODO
+// TODO
 }
 
 bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) const { // FIXME second domain?

@@ -17,6 +17,7 @@
  * Generate all x such that ?x phi(x) is false.
  * Given is a generator for the universe and a checker which returns true if phi(x) is true.
  */
+//TODO: might be seen as a special case of a twochildgenerator...
 class FalseQuantKernelGenerator: public InstGenerator {
 private:
 	InstGenerator* _universeGenerator;

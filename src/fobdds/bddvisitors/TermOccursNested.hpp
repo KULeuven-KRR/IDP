@@ -19,6 +19,7 @@
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddIndex.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 
 class TermOccursNested: public FOBDDVisitor {
 private:
@@ -50,6 +51,13 @@ private:
 					break;
 				}
 			}
+		}
+	}
+	void visit(const FOBDDAggTerm* at) {
+		if (at == _arg) {
+			_result = true;
+		} else {
+			at->setexpr()->accept(this);
 		}
 	}
 public:

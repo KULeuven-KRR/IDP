@@ -37,8 +37,7 @@ public:
 			lhs = _manager->getFuncTerm(dynamic_cast<Function*>(atom->symbol()), lhsterms);
 			rhs = atom->args().back();
 		} else { // x op y
-			auto predname = atom->symbol()->name();
-			if (predname == "=/2" || predname == "</2" || predname == ">/2") { // FIXME ugly, create a function ISCOMPARISON
+			if (VocabularyUtils::isComparisonPredicate(atom->symbol())) {
 				lhs = atom->args(0);
 				rhs = atom->args(1);
 			}

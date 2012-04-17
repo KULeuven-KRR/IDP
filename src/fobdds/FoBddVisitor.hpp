@@ -21,6 +21,11 @@ class FOBDDDomainTerm;
 class FOBDDFuncTerm;
 class FOBDDTerm;
 class FOBDDKernel;
+class FOBDDAggKernel;
+class FOBDDAggTerm;
+class FOBDDQuantSetExpr;
+class FOBDDEnumSetExpr;
+class FOBDDSetExpr;
 
 class FOBDDVisitor {
 protected:
@@ -35,18 +40,26 @@ public:
 	virtual void visit(const FOBDD*);
 	virtual void visit(const FOBDDAtomKernel*);
 	virtual void visit(const FOBDDQuantKernel*);
+	virtual void visit(const FOBDDAggKernel*);
 	virtual void visit(const FOBDDVariable*);
 	virtual void visit(const FOBDDDeBruijnIndex*);
 	virtual void visit(const FOBDDDomainTerm*);
 	virtual void visit(const FOBDDFuncTerm*);
+	virtual void visit(const FOBDDAggTerm*);
+	virtual void visit(const FOBDDQuantSetExpr*);
+	virtual void visit(const FOBDDEnumSetExpr*);
 
 	virtual const FOBDD* change(const FOBDD*);
 	virtual const FOBDDKernel* change(const FOBDDAtomKernel*);
 	virtual const FOBDDKernel* change(const FOBDDQuantKernel*);
+	virtual const FOBDDKernel* change(const FOBDDAggKernel*);
 	virtual const FOBDDTerm* change(const FOBDDVariable*);
 	virtual const FOBDDTerm* change(const FOBDDDeBruijnIndex*);
 	virtual const FOBDDTerm* change(const FOBDDDomainTerm*);
 	virtual const FOBDDTerm* change(const FOBDDFuncTerm*);
+	virtual const FOBDDTerm* change(const FOBDDAggTerm*);
+	virtual const FOBDDSetExpr* change(const FOBDDQuantSetExpr*);
+	virtual const FOBDDSetExpr* change(const FOBDDEnumSetExpr*);
 };
 
 #endif /* FOBDDVISITOR_HPP_ */

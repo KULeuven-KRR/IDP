@@ -174,6 +174,11 @@ public:
 			for (; not _right.isAtEnd(); ++_right) {
 				if (checkAndSet() == CompResult::VALID) {
 					break;
+				} else if(comparison == CompType::GEQ || comparison == CompType::GT){
+					//Uses the fact that we generate in < order
+					//TODO: do the same for input both
+					notifyAtEnd();
+					break;
 				}
 			}
 			if (_right.isAtEnd()) {

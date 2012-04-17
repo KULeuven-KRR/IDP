@@ -277,6 +277,7 @@ SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureIn
 void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
+	FormulaUtils::addFuncConstraints(tmptheory);
 
 	Assert(not getOption(BoolType::GROUNDLAZILY) || not getOption(BoolType::CPSUPPORT));
 	// TODO currently not both

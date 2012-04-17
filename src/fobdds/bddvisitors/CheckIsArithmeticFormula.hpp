@@ -52,6 +52,11 @@ private:
 		_result = false;
 	}
 
+	void visit(const FOBDDAggKernel*) {
+		//TODO : is this right: is an AGGKERNEL an arithmetic formula???
+		return; //If result was true, it still is true.
+	}
+
 	void visit(const FOBDDVariable* variable) {
 		_result = _result && SortUtils::isSubsort(variable->sort(), VocabularyUtils::floatsort());
 	}
@@ -69,6 +74,10 @@ private:
 			(*it)->accept(this);
 		}
 		_result = _result && Vocabulary::std()->contains(functerm->func());
+	}
+	void visit(const FOBDDAggTerm*) {
+		//TODO: right?
+		return;
 	}
 
 };

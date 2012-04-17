@@ -821,14 +821,12 @@ QuantGrounder::~QuantGrounder() {
 void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 2) {
 		printorig();
-		std::cerr << "conjunctive grounder? " << toString(conjunctive() == Conn::CONJ) << "\n";
 		if (_origform != NULL) {
 			pushtab();
 		}
 	}
 
 	formula.setType(conjunctive());
-
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {

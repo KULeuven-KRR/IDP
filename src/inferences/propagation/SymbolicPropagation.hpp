@@ -25,11 +25,13 @@
 class SymbolicPropagation {
 public:
 	// TODO: free allocated memory
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
-		auto mpi = propagateVocabulary(theory, structure);
-		auto propagator = createPropagator(theory, structure, mpi);
+	std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
+		auto result = structure->clone();
+		auto mpi = propagateVocabulary(theory, result);
+		auto propagator = createPropagator(theory, result, mpi);
 		propagator->doPropagation();
-		return propagator->currstructure(structure);
+		propagator->applyPropagationToStructure(result);
+		return {result};
 	}
 
 	/** Collect symbolic propagation vocabulary **/

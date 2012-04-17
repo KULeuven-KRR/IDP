@@ -12,6 +12,7 @@ structure S:V{
 }
 
 procedure weakassertions(newS){
+	print("See issue 141")
 	return (
 		assert(newS[V.p].cf,10,"p(10)","false")
 		and assert(newS[V.p].cf,9,"p(9)","false")

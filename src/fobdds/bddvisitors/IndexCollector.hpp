@@ -37,6 +37,13 @@ public:
 		--_minimaldepth;
 	}
 
+	void visit(const FOBDDQuantSetExpr* qse){
+		_minimaldepth = _minimaldepth + qse->quantvarsorts().size();
+		FOBDDVisitor::visit(qse->subformula(0));
+		qse->subterm(0)->accept(this);
+		_minimaldepth = _minimaldepth - qse->quantvarsorts().size();
+	}
+
 	void visit(const FOBDDDeBruijnIndex* index) {
 		if (index->index() >= _minimaldepth) {
 			auto i = _manager->getDeBruijnIndex(index->sort(), index->index() - _minimaldepth);

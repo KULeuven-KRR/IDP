@@ -1,0 +1,18 @@
+vocabulary V {
+	type x
+	p(x)
+}
+
+query Q:V {
+	{x : ~(~p(x))}
+}
+
+structure S:V {
+	x = {1..4}
+	p<ct> = {1..2}
+	p<cf> = {3}
+}
+
+procedure getExpectedSet(){
+  return {{1},{2}}
+}

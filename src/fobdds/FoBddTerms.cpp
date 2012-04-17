@@ -11,6 +11,7 @@
 #include "IncludeComponents.hpp"
 #include "FoBddIndex.hpp"
 #include "FoBddFuncTerm.hpp"
+#include "FoBddAggTerm.hpp"
 #include "FoBddDomainTerm.hpp"
 #include "FoBddVariable.hpp"
 #include "FoBddVisitor.hpp"
@@ -39,33 +40,27 @@ void FOBDDDomainTerm::accept(FOBDDVisitor* v) const {
 void FOBDDFuncTerm::accept(FOBDDVisitor* v) const {
 	v->visit(this);
 }
+void FOBDDAggTerm::accept(FOBDDVisitor* v) const {
+	v->visit(this);
+}
 
 const FOBDDTerm* FOBDDVariable::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
-std::ostream& FOBDDVariable::put(std::ostream& output) const {
-	output << toString(_variable);
-	return output;
-}
 
 const FOBDDTerm* FOBDDDeBruijnIndex::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
-}
-std::ostream& FOBDDDeBruijnIndex::put(std::ostream& output) const {
-	output << "<" << toString(_index) << ">[" << toString(_sort) << "]";
-	return output;
 }
 
 const FOBDDTerm* FOBDDDomainTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 
-std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
-	output << toString(_value) << "[" << toString(_sort) << "]";
-	return output;
+const FOBDDTerm* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
+	return v->change(this);
 }
 
-const FOBDDTerm* FOBDDFuncTerm::acceptchange(FOBDDVisitor* v) const {
+const FOBDDTerm* FOBDDAggTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
@@ -80,6 +75,31 @@ std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
 	}
 	return output;
 }
+
+std::ostream& FOBDDVariable::put(std::ostream& output) const {
+	output << toString(_variable);
+	return output;
+}
+
+std::ostream& FOBDDDeBruijnIndex::put(std::ostream& output) const {
+	output << "<" << toString(_index) << ">[" << toString(_sort) << "]";
+	return output;
+}
+
+std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
+	output << toString(_value) << "[" << toString(_sort) << "]";
+	return output;
+}
+
+std::ostream& FOBDDAggTerm::put(std::ostream& output) const {
+	output << toString(_aggfunction)<<"{ "<<toString(_setexpr)<<nt()<<"}";
+	return output;
+}
+
+Sort* FOBDDAggTerm::sort() const{
+	return _setexpr->sort();
+}
+
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2) {
 	auto addsort = SortUtils::resolve(d1->sort(), d2->sort());

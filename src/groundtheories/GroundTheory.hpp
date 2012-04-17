@@ -79,12 +79,6 @@ protected:
 
 	CPTerm* foldCPTerm(CPTerm* cpterm);
 
-	/**
-	 *	Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
-	 *	This method should be called before running the SAT solver and after grounding.
-	 */
-	void addFuncConstraints();
-
 	void addFalseDefineds();
 
 private:

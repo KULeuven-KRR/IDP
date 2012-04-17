@@ -7,6 +7,7 @@
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
+#include <algorithm>
 
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -21,14 +22,11 @@
 
 using namespace std;
 
-// TODO why clone the formula and not clone the term?
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
 	cf->accept(this);
-	//cf->recursiveDelete();
-	//FIXME variables from the cloned cf are used in the bdd, and they are deleted when using recursive delete. What should be the solution? Use variables from f?
-	//Possible solution: cf->recursiveDeleteKeepVars();
+	cf->recursiveDeleteKeepVars();
 	return _bdd;
 }
 
@@ -55,11 +53,36 @@ void FOBDDFactory::visit(const FuncTerm* ft) {
 	_term = _manager->getFuncTerm(ft->function(), args);
 }
 
-void FOBDDFactory::visit(const AggTerm*) {
-	throw notyetimplemented("Creating a bdd for aggregate terms has not yet been implemented.");
-	//TODO
+void FOBDDFactory::visit(const AggTerm* at) {
+	auto function = at->function();
+	at->set()->accept(this);
+	_term = _manager->getAggTerm(function, _set);
 }
-
+void FOBDDFactory::visit(const EnumSetExpr* se) {
+	unsigned int size = se->subformulas().size();
+	Assert(size == se->subterms().size());
+	std::vector<const FOBDD*> subforms(size);
+	std::vector<const FOBDDTerm*> subterms(size);
+	for (unsigned int i = 0; i < size; i++) {
+		se->subformulas()[i]->accept(this);
+		subforms[i] = _bdd;
+		se->subterms()[i]->accept(this);
+		subterms[i] = _term;
+	}
+	_set = _manager->getEnumSetExpr(subforms, subterms, se->sort());
+}
+void FOBDDFactory::visit(const QuantSetExpr* se) {
+	se->subformulas()[0]->accept(this);
+	auto formula = _bdd;
+	se->subterms()[0]->accept(this);
+	auto term = _term;
+	std::vector<const FOBDDVariable*> variables(se->quantVars().size());
+	int i = 0;
+	for (auto it = se->quantVars().cbegin(); it != se->quantVars().cend(); it.operator ++(), i++) {
+		variables[i] = _manager->getVariable((*it));
+	}
+	_set = _manager->setquantify(variables, formula, term, se->sort());
+}
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,
  * if so, set the relevant kerneltype and inversion.
@@ -100,6 +123,7 @@ void FOBDDFactory::visit(const PredForm* pf) {
 	auto akt = AtomKernelType::AKT_TWOVALUED;
 	auto invert = isNeg(pf->sign());
 	auto symbol = pf->symbol();
+	Assert(symbol != NULL);
 
 	checkIfBoundedPredicate(symbol, akt, invert);
 
@@ -166,10 +190,23 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 	auto efclone = ef->cloneKeepVars(); //We are not allowed to change the vars, since the manager keeps a vars->bddvars mapping.
 	auto f = FormulaUtils::splitComparisonChains(efclone, _vocabulary);
 	f->accept(this);
-	// f->recursiveDelete(); TODO deletes variables also!
+	f->recursiveDeleteKeepVars();
 }
 
-void FOBDDFactory::visit(const AggForm*) {
-	throw notyetimplemented("Creating a bdd for aggregate formulas has not yet been implemented.");
-	//TODO
+void FOBDDFactory::visit(const AggForm* af) {
+#ifndef NDEBUG
+	if (af->left()->type() != TermType::TT_DOM && af->left()->type() != TermType::TT_VAR) {
+		throw notyetimplemented("Creating a bdd for unnested aggregate formulas has not yet been implemented.");
+	}
+#endif
+	auto invert = isNeg(af->sign());
+	af->left()->accept(this);
+	auto left = _term;
+	af->right()->accept(this);
+	_kernel = _manager->getAggKernel(left, af->comp(), _term);
+	if (invert) {
+		_bdd = _manager->ifthenelse(_kernel, _manager->falsebdd(), _manager->truebdd());
+	} else {
+		_bdd = _manager->ifthenelse(_kernel, _manager->truebdd(), _manager->falsebdd());
+	}
 }

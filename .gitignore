@@ -13,6 +13,8 @@
 *.log
 *.tex.backup
 *.tex~
+*.pdf
+*.toc
 *depend.mk
 builds/*
 *.settings/*

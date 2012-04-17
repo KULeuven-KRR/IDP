@@ -2,9 +2,8 @@
 
 procedure main(){
 	stdoptions.nbmodels=1
-	stdoptions.timeout = 100
-	stdoptions.groundwithbounds = false
-	stdoptions.groundverbosity=0
+	stdoptions.timeout = 200
+	stdoptions.groundwithbounds = true
 	solution = mx::one(T, S)
 	if solution == nil then
 		io.stderr:write("Found UNSAT, expected ")

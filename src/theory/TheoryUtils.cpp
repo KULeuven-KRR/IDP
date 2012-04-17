@@ -18,8 +18,9 @@
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
+#include "information/CheckContainsDomainTerms.hpp"
+#include "information/CheckContainsFuncTermsOutsideOfSets.hpp"
 #include "information/CheckContainsAggTerms.hpp"
-#include "information/CheckFuncTerms.hpp"
 #include "information/CheckPartialTerm.hpp"
 #include "information/CheckSorts.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
@@ -29,17 +30,20 @@
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
 #include "transformations/AddCompletion.hpp"
+#include "transformations/AddFuncConstraints.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
+#include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
 #include "transformations/UnnestTerms.hpp"
 #include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
+#include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
@@ -114,6 +118,14 @@ bool containsFuncTerms(Formula* f) {
 	return transform<CheckContainsFuncTerms, bool>(f);
 }
 
+bool containsDomainTerms(Formula* f) {
+	return transform<CheckContainsDomainTerms, bool>(f);
+}
+
+bool containsFuncTermsOutsideOfSets(Formula* f) {
+	return transform<CheckContainsFuncTermsOutsideOfSets, bool>(f);
+}
+
 bool containsAggTerms(Formula* f) {
 	return transform<CheckContainsAggTerms, bool>(f);
 }
@@ -148,6 +160,10 @@ Formula* pushNegations(Formula* f) {
 	return transform<PushNegations, Formula*>(f);
 }
 
+Formula* calculateArithmetic(Formula* f) {
+	return transform<CalculateKnownArithmetic, Formula*>(f);
+}
+
 Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
@@ -167,6 +183,11 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
+
+Formula* unnestFuncsAndAggsNonRecursive(Formula* f, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
+}
+
 Formula* unnestDomainTerms(Formula* f, AbstractStructure* str,  Context con ) {
 	return transform<UnnestDomainTerms, Formula*>(f, str, con);
 }
@@ -189,6 +210,11 @@ void addCompletion(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
+void addFuncConstraints(AbstractTheory* t) {
+	auto newt = transform<AddFuncConstraints, AbstractTheory*>(t);
+	Assert(newt==t);
+}
+
 void flatten(AbstractTheory* t) {
 	auto newt = transform<Flatten, AbstractTheory*>(t);
 	Assert(newt==t);
@@ -201,6 +227,10 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Con
 void pushNegations(AbstractTheory* t) {
 	auto newt = transform<PushNegations, AbstractTheory*>(t);
 	Assert(newt==t);
+}
+
+AbstractTheory* calculateArithmetic(AbstractTheory* t) {
+	return transform<CalculateKnownArithmetic, AbstractTheory*>(t);
 }
 
 AbstractTheory* pushQuantifiers(AbstractTheory* t) {
@@ -217,6 +247,10 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
+}
+
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, AbstractStructure* str, Context con) {
+	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
 }
 
 AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Context con) {
@@ -262,7 +296,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);

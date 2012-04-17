@@ -68,18 +68,16 @@ void GroundTheory<Policy>::closeTheory() {
 	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
 	if(not getOption(BoolType::GROUNDLAZILY)){
-		addFuncConstraints();
 		Policy::polEndTheory();
 	}
 }
 
-// TODO important: before each add, do transformforadd, after each do addfuncconstraints!
+// TODO important: before each add, do transformforadd
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 	transformForAdd(cl, VIT_DISJ, getIDForUndefined(), skipfirst);
 	Policy::polAdd(cl);
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -96,7 +94,6 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 			notifyDefined(rule->head());
 		}
 	}
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -104,7 +101,6 @@ void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 	transformForAdd(rule->body(), (rule->type() == RuleType::CONJ ? VIT_CONJ : VIT_DISJ), defid);
 	Policy::polAdd(defid, rule);
 	notifyDefined(rule->head());
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -142,7 +138,6 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 		}
 	}
 	Policy::polAdd(tseitin, body);
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -154,14 +149,12 @@ void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	auto tsset = translator()->groundset(setnr);
 	transformForAdd(tsset.literals(), VIT_SET, defnr);
 	Policy::polAdd(tsset, setnr, weighted);
-	addFuncConstraints();
 }
 
 template<class Policy>
 void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 	add(body->setnr(), getIDForUndefined(), (body->aggtype() != AggFunction::CARD));
 	Policy::polAdd(head, body);
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -197,7 +190,6 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 		Assert(defnr != getIDForUndefined());
 		add(defnr, new PCGroundRule(head, conj ? RuleType::CONJ : RuleType::DISJ, body, true)); //TODO true (recursive) might not always be the case?
 	}
-	addFuncConstraints();
 }
 
 template<class Policy>
@@ -299,138 +291,6 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 	return cpterm;
 }
 
-/**
- *	Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
- *	This method should be called before running the SAT solver and after grounding.
- */
-template<class Policy>
-void GroundTheory<Policy>::addFuncConstraints() {
-	while(translator()->hasNewSymbols()){
-		CHECKTERMINATION
-		auto n = translator()->getNextNewSymbol();
-		auto pfs = translator()->getManagedSymbol(n);
-		if (not sametypeid<Function>(*pfs)) {
-			continue;
-		}
-		auto f = dynamic_cast<Function*>(pfs);
-
-		FirstNElementsEqual equalDomain(f->arity());
-		StrictWeakNTupleOrdering tuplesFirstNSmaller(f->arity());
-
-		auto ct = structure()->inter(f)->graphInter()->ct();
-		auto pt = structure()->inter(f)->graphInter()->pt();
-		auto outSortTable = structure()->inter(f->outsort());
-		if (not pt->finite()) {
-			throw notyetimplemented("Cannot ground functions with infinite sorts.");
-			//FIXME make this work for functions with infintie domains and/or infinite out-sorts.  Take a look at lower code...
-		}
-
-		ElementTuple domainElement, certainly;
-		TableIterator ctIterator = ct->begin();
-		bool begin = true, newdomain = true, testcertainly = false;
-		litlist tupleset; // Set of tuples with same domain but different range, for which the cardinality should be 1
-		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			CHECKTERMINATION
-			ElementTuple current((*ptIterator));
-
-			if (begin) {
-				domainElement = current;
-				begin = false;
-			}
-
-			if (not equalDomain(current, domainElement)) {
-				newdomain = true;
-				if (not testcertainly) {
-					addRangeConstraint(f, tupleset, outSortTable);
-				}
-				tupleset.clear();
-			}
-
-			if (newdomain) {
-				domainElement = current;
-				newdomain = false;
-
-				// CERTAINLY TRUE OPTIMIZATION / PROPAGATION: if some in the domain is certainly true, assert all other ones false
-				while (not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, current)) {
-					CHECKTERMINATION
-					++ctIterator;
-				}
-				if (not ctIterator.isAtEnd() && equalDomain(*ctIterator, current)) {
-					certainly = *ctIterator;
-					testcertainly = true;
-				} else {
-					testcertainly = false;
-				}
-			}
-
-			if (testcertainly && equalDomain(certainly, current)) {
-				if (current != certainly) { // Assert current false
-					Lit translation = translator()->translate(n, current);
-					addUnitClause(-translation);
-				}
-				continue;
-			} else {
-				Lit translation = translator()->translate(n, current);
-				tupleset.push_back(translation);
-			}
-		}
-		if (not testcertainly) {
-			addRangeConstraint(f, tupleset, outSortTable);
-		}
-
-		//OLD CODE that might work for infinite domains... First we should find out what exactly is the meaning of the grounding in case of infinite domains...
-		//FIXME implement for infinite domains
-		/*std::vector<bool> weak;
-		 for (auto it = tuples.begin(); it != tuples.end();) {
-		 //NOTE: DE checks whether or not a tuple (x1,x2,x3,x4,y) starts with (x1,x2,x3,x4)
-		 //IMPORTANT: tableiterator respects lexicographic ordering!!!
-
-		 if (tuplesFirstNEqual(it->first, domainElement) && !sets.empty()) {
-		 sets.back().push_back(it->second);
-		 while (*outSortIterator != it->first.back()) {
-		 ElementTuple temp = domainElement;
-		 temp.push_back(*outSortIterator);
-		 if (pt->contains(temp)) {
-		 weak.back() = true;
-		 break;
-		 }
-		 ++outSortIterator;
-		 }
-		 ++it;
-		 if (not outSortIterator.isAtEnd()) {
-		 ++outSortIterator;
-		 }
-		 } else {
-		 if (not sets.empty() && not outSortIterator.isAtEnd()) {
-		 weak.back() = true;
-		 }
-		 if (not ctIterator.isAtEnd()) {
-		 const ElementTuple& tuple = *ctIterator;
-		 if (tuplesFirstNEqual(tuple, it->first)) {
-		 do {
-		 if (it->first != tuple) {
-		 addUnitClause(-(it->second));
-		 std::clog << "add unit clause " << -(it->second) << "\n";
-		 }
-		 ++it;
-		 } while (it != tuples.end() && tuplesFirstNEqual(tuple, it->first));
-		 continue;
-		 } else if (tuplesFirstNSmaller(tuple, it->first)) {
-		 do {
-		 ++ctIterator;
-		 } while (not ctIterator.isAtEnd() && tuplesFirstNSmaller(*ctIterator, it->first));
-		 continue;
-		 }
-		 }
-		 sets.push_back(std::vector<int>(0));
-		 weak.push_back(false);
-		 domainElement = it->first;
-		 domainElement.pop_back();
-		 outSortIterator = outSortTable->sortBegin();
-		 }
-		 }*/
-	}
-}
 
 template<class Policy>
 void GroundTheory<Policy>::addFalseDefineds() {

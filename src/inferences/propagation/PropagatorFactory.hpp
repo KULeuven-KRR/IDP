@@ -37,16 +37,18 @@ public:
 	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual AbstractStructure* currstructure(AbstractStructure* str) const = 0;
+	virtual void applyPropagationToStructure(AbstractStructure* str) const = 0;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+
 	virtual GenerateBDDAccordingToBounds* symbolicstructure() const = 0;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 };
 
 /**
  * 	Factory class for creating a FOPropagator and initializing the scheduler
- * 	and domains for formulas in a theory.
+ * 	and domains for formulas in a theory. Initially schedules bottom-up propagation of domain
+ * 	knowledge and top-down knowledge that sentence are true (if bool as is true)
  */
 template<class InterpretationFactory, class PropDomain>
 class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {
@@ -79,6 +81,6 @@ public:
 
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure* structure);
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure);
 
 #endif /* PROPAGATORFACTORY_HPP_ */

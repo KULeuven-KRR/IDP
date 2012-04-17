@@ -64,6 +64,16 @@ void Formula::recursiveDelete() {
 	delete (this);
 }
 
+void Formula::recursiveDeleteKeepVars() {
+	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
+	}
+	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+		(*it)->recursiveDeleteKeepVars();
+	}
+	delete (this);
+}
+
 bool Formula::contains(const Variable* v) const {
 	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
 		if (*it == v) {
