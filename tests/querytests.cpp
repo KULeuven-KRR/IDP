@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfQueryFiles() {
-	vector<string> testdirs {"simple/", "aggregates/"};
+	vector<string> testdirs {"simple/", "aggregates/"/*, "threevalued/"*/};
 	return getAllFilesInDirs(getTestDirectory() + "query/", testdirs);
 }
 

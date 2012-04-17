@@ -1,0 +1,21 @@
+vocabulary V {
+	type x
+	p(x)
+	q(x)
+}
+
+query Q:V {
+	{x : p(x) <=> q(x)}
+}
+
+structure S:V {
+	x = {1..5}
+	p<ct> = {1..2}
+	p<cf> = {3..4}
+	q<ct> = {2..3}
+	q<cf> = {4..5}
+}
+
+procedure getExpectedSet(){
+  return {{2},{4}}
+}
