@@ -21,11 +21,9 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	std::set<const FOBDDDeBruijnIndex*> bddindices;
 	auto newquery = FormulaUtils::calculateArithmetic( q->query());
 	const FOBDD* bdd = factory.turnIntoBdd(newquery);
-	std::cerr << toString(bdd)<<endl;
 	Assert(bdd != NULL);
 	// optimize the query
 	manager.optimizeQuery(bdd, bddvars, bddindices, structure);
-	std::cerr << toString(bdd)<<endl;
 
 	// create a generator
 	BddGeneratorData data;
@@ -40,8 +38,6 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	BDDToGenerator btg(&manager);
 
 	InstGenerator* generator = btg.create(data);
-	std::cerr << toString(generator)<<endl;
-
 
 	// Create an empty table
 	EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();
