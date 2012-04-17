@@ -79,8 +79,8 @@ procedure assert2multi(table, values, name){
 		index = index+1
 	end 
 	if result == false or #values ~= index-1 then
-			result = false
-			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+		result = false
+		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
 	end
 	return result
 	
@@ -96,6 +96,7 @@ procedure assert2(table, values, name){
 		index = index+1
 	end 
 	if result == false or #values ~= index-1 then
+		result = false
 		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
 	end
 	return result
