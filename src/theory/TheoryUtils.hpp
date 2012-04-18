@@ -124,6 +124,11 @@ Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
+/**
+ * Removes all functions occurring in literals of defined symbols and replace them by new literals which are equivalent.
+ */
+AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory*);
+
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
 

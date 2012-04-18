@@ -36,6 +36,7 @@ template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
 class SplitIntoMonotoneAgg;
+class ReplaceNestedWithTseitinTerm;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -86,7 +87,8 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestHeadTermsContainingVars;\
 		friend class FindUnknownBoundLiteral;\
 		friend class FindDoubleDelayLiteral;\
-		friend class SplitIntoMonotoneAgg;
+		friend class SplitIntoMonotoneAgg;\
+		friend class ReplaceNestedWithTseitinTerm;
 
 class AbstractTheory;
 class Theory;

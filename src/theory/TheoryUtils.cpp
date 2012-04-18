@@ -48,6 +48,8 @@
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
 
+#include "transformations/ReplaceNestedWithTseitin.hpp"
+
 using namespace std;
 
 /* TermUtils */
@@ -174,6 +176,10 @@ Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
 
 Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
+}
+
+AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t){
+	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
