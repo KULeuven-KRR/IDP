@@ -22,15 +22,13 @@ enum class Input {
 };
 
 /**
- * Formula: x op y, with op one of {=<, <, =>, >, =}, possibly different domains
- *
- * TODO can halve runtime in the case of NONE input and of enumerating according to < order (by storing the previous first match).
+ * Formula: x op y, with op one of {=<, <, =>, >, =, ~=}, possibly different domains
  */
 class ComparisonGenerator: public InstGenerator {
 private:
 	SortTable *_leftsort, *_rightsort;
 	const DomElemContainer *_leftvar, *_rightvar;
-	CompType comparison;
+	CompType _comparison;
 	Input _input; // NOTE: is never RIGHT after initialization
 	SortIterator _left, _right;
 
@@ -43,7 +41,7 @@ private:
 public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
 			CompType type)
-			: _leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), comparison(type), _input(input),
+			: _leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), _comparison(type), _input(input),
 				_left(leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), increaseouter(false) {
 		if (_input == Input::RIGHT) {
 			_leftsort = rightsort;
@@ -51,13 +49,13 @@ public:
 			_leftvar = rightvalue;
 			_rightvar = leftvalue;
 			_input = Input::LEFT;
-			comparison = invertComp(comparison);
+			_comparison = invertComp(_comparison);
 		}
 	}
 
 	virtual void put(std::ostream& stream) {
 		stream << _leftvar << "[" << toString(_leftsort) << "]" << (_input != Input::NONE ? "(in)" : "(out)");
-		stream << toString(comparison);
+		stream << toString(_comparison);
 		stream << _rightvar << "[" << toString(_rightsort) << "]" << (_input == Input::BOTH ? "(in)" : "(out)");
 	}
 
@@ -66,7 +64,7 @@ public:
 		return gen;
 	}
 
-	void setVarsAgain(){
+	void setVarsAgain() {
 		if (not leftIsInput()) {
 			_leftvar->operator =(*_left);
 		}
@@ -85,14 +83,17 @@ public:
 	 * NOTE: optimized for EQ comparison
 	 */
 	void findNext(SortIterator* finiteside, SortIterator* undefinedside, SortTable* undefinedSort, const DomElemContainer* finiteContainer,
-			const DomElemContainer* undefinedContainer) {
+			const DomElemContainer* undefinedContainer, bool finiteGTorGEQundef) {
 		bool stop = false;
 		for (; not finiteside->isAtEnd() && not stop; ++(*finiteside)) {
-			if (comparison != CompType::EQ) {
+			if (_comparison != CompType::EQ) {
 				for (; not (*undefinedside).isAtEnd() && not stop; ++(*undefinedside)) {
 					if (checkAndSet() == CompResult::VALID) {
 						stop = true;
 						break; // NOTE: essential to prevent ++
+					} else if (finiteGTorGEQundef) {
+						//in case l>r, we can stop increasing r whenever this fails
+						break;
 					}
 				}
 				if (stop) {
@@ -145,16 +146,16 @@ public:
 				}
 			}
 			if (_leftsort->finite()) { // NOTE: optimized for looping over non-finite sort first (if available)
-				findNext(&_left, &_right, _rightsort, _leftvar, _rightvar);
+				findNext(&_left, &_right, _rightsort, _leftvar, _rightvar, (_comparison == CompType::GT or _comparison == CompType::GEQ));
 			} else {
-				findNext(&_right, &_left, _leftsort, _rightvar, _leftvar);
+				findNext(&_right, &_left, _leftsort, _rightvar, _leftvar, (_comparison == CompType::LT or _comparison == CompType::LEQ));
 			}
 			break;
 		}
 		case Input::LEFT: // NOTE: optimized EQ comparison
 			if (_reset) {
 				_reset = false;
-				if (comparison == CompType::EQ) {
+				if (_comparison == CompType::EQ) {
 					if (_rightsort->contains(_leftvar->get())) {
 						_rightvar->operator =(_leftvar->get());
 					} else {
@@ -165,7 +166,7 @@ public:
 					_right = _rightsort->sortBegin();
 				}
 			} else {
-				if (comparison == CompType::EQ) {
+				if (_comparison == CompType::EQ) {
 					notifyAtEnd();
 					break;
 				}
@@ -174,7 +175,7 @@ public:
 			for (; not _right.isAtEnd(); ++_right) {
 				if (checkAndSet() == CompResult::VALID) {
 					break;
-				} else if(comparison == CompType::GEQ || comparison == CompType::GT){
+				} else if (_comparison == CompType::GEQ || _comparison == CompType::GT) {
 					//Uses the fact that we generate in < order
 					//TODO: do the same for input both
 					notifyAtEnd();
@@ -226,7 +227,7 @@ private:
 			rightelem = *_right;
 		}
 		bool compsuccess = false;
-		switch (comparison) {
+		switch (_comparison) {
 		case CompType::LT:
 			if (*leftelem < *rightelem) {
 				compsuccess = true;
