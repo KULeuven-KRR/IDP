@@ -2,28 +2,41 @@
 
 #include "IncludeComponents.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
+#include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "generators/InstGenerator.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "theory/TheoryUtils.hpp"
 
-
 PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	// translate the formula to a bdd
-	if(not structure->approxTwoValued()){
-		throw notyetimplemented("Querying a structure that is not two-valued.");
+	FOBDDManager* manager;
+	const FOBDD* bdd;
+	auto newquery = FormulaUtils::calculateArithmetic(q->query());
+
+	if (not structure->approxTwoValued()) {
+		auto generateBDDaccToBounds = generateNaiveApproxBounds(NULL, structure);
+		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
+		manager = generateBDDaccToBounds->manager();
+	} else {
+		//When working two-valued, we can simply turn formula to BDD
+		manager = new FOBDDManager();
+		FOBDDFactory factory(manager);
+		bdd = factory.turnIntoBdd(newquery);
+
 	}
-	FOBDDManager manager;
-	FOBDDFactory factory(&manager);
-	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
-	std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
-	std::set<const FOBDDDeBruijnIndex*> bddindices;
-	auto newquery = FormulaUtils::calculateArithmetic( q->query());
-	const FOBDD* bdd = factory.turnIntoBdd(newquery);
+
 	Assert(bdd != NULL);
+	Assert(manager != NULL);
+	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
+	std::set<const FOBDDVariable*> bddvars = manager->getVariables(vars);
+	std::set<const FOBDDDeBruijnIndex*> bddindices;
+
 	// optimize the query
-	manager.optimizeQuery(bdd, bddvars, bddindices, structure);
+	manager->optimizeQuery(bdd, bddvars, bddindices, structure);
+	Assert(bdd != NULL);
 
 	// create a generator
 	BddGeneratorData data;
@@ -32,10 +45,10 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 		data.pattern.push_back(Pattern::OUTPUT);
 		data.vars.push_back(new const DomElemContainer());
-		data.bddvars.push_back(manager.getVariable(*it));
+		data.bddvars.push_back(manager->getVariable(*it));
 		data.universe.addTable(structure->inter((*it)->sort()));
 	}
-	BDDToGenerator btg(&manager);
+	BDDToGenerator btg(manager);
 
 	InstGenerator* generator = btg.create(data);
 
