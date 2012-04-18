@@ -19,8 +19,9 @@ using namespace std;
 Formula* RemoveEquivalences::visit(EquivForm* ef) {
 	auto nl = ef->left()->accept(this);
 	auto nr = ef->right()->accept(this);
-	nl->negate();
-	vector<Formula*> vf1 = {nl, nr};
+	auto newl = nl->clone();
+	newl->negate();
+	vector<Formula*> vf1 = {newl, nr->clone()};
 	auto newr = nr->clone();
 	newr->negate();
 	vector<Formula*> vf2 = {nl->clone(), newr};
