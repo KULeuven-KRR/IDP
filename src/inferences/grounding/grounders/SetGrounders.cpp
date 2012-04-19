@@ -14,7 +14,7 @@
 #include "TermGrounders.hpp"
 #include "FormulaGrounders.hpp"
 #include "generators/InstGenerator.hpp"
-#include "generators/BasicCheckers.hpp"
+#include "generators/BasicCheckersAndGenerators.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 
 using namespace std;

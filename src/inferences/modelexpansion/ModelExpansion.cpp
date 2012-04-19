@@ -156,7 +156,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	delete (solver);
 	grounding->recursiveDelete();
-	// delete (grounder); TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
+	delete (grounder); //TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
 	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	delete (newstructure);

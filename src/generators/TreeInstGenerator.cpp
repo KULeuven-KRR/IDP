@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "TreeInstGenerator.hpp"
 
@@ -38,8 +38,19 @@ void OneChildGenerator::next() {
 		if (not _child->isAtEnd()) {
 			return;
 		}
-	}Assert(_generator->isAtEnd());
+	}
+	Assert(_generator->isAtEnd());
 	notifyAtEnd();
+}
+
+OneChildGenerator::~OneChildGenerator() {
+	delete (_generator);
+	delete (_child);
+}
+
+void OneChildGenerator::setVarsAgain() {
+	_generator->setVarsAgain();
+	_child->setVarsAgain();
 }
 
 void OneChildGenerator::put(std::ostream& stream) {
@@ -105,6 +116,19 @@ void TwoChildGenerator::next() {
 	if (_generator->isAtEnd()) {
 		notifyAtEnd();
 	}
+}
+
+TwoChildGenerator::~TwoChildGenerator() {
+	delete (_checker);
+	delete (_generator);
+	delete (_falsecheckbranch);
+	delete (_truecheckbranch);
+}
+
+void TwoChildGenerator::setVarsAgain() {
+	_generator->setVarsAgain();
+	_truecheckbranch->setVarsAgain();
+	_falsecheckbranch->setVarsAgain();
 }
 
 void TwoChildGenerator::put(std::ostream& stream) {

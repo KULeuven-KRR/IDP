@@ -27,8 +27,8 @@
 #include "grounders/LazyRuleGrounder.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-#include "generators/BasicGenerators.hpp"
-#include "generators/TableGenerator.hpp"
+#include "generators/BasicCheckersAndGenerators.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
 
 #include "theory/TheoryUtils.hpp"
 

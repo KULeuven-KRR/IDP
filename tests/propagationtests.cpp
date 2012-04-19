@@ -14,12 +14,10 @@
 #include <exception>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
-#include "generators/ComparisonGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
+#include "external/rungidl.hpp".
 #include "IncludeComponents.hpp"
+#include "generators/ComparisonGenerator.hpp"
+#include "generators/SortGenAndChecker.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
@@ -28,6 +26,8 @@
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "TestUtils.hpp"
 #include "utils/FileManagement.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
+
 
 using namespace std;
 

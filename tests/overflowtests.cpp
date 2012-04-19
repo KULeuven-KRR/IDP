@@ -13,7 +13,8 @@
 #include "gtest/gtest.h"
 #include "TestUtils.hpp"
 
-#include "generators/ArithmeticOperatorsGenerator.hpp"
+#include "generators/BinaryArithmeticOperatorsGenerator.hpp"
+#include "structure/StructureComponents.hpp"
 
 #include "structure/DomainElementFactory.hpp"
 #include <exception>

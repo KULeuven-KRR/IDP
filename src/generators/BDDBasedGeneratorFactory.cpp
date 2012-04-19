@@ -9,6 +9,7 @@
 ****************************************************************/
 
 #include "IncludeComponents.hpp"
+#include "structure/NumericOperations.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -25,16 +26,14 @@
 #include "SimpleFuncGenerator.hpp"
 #include "TreeInstGenerator.hpp"
 #include "UnionGenerator.hpp"
-#include "SortInstGenerator.hpp"
-#include "LookupGenerator.hpp"
+#include "SortGenAndChecker.hpp"
+#include "TableCheckerAndGenerators.hpp"
 #include "EnumLookupGenerator.hpp"
-#include "SortLookupGenerator.hpp"
-#include "BasicGenerators.hpp"
+#include "BasicCheckersAndGenerators.hpp"
 #include "AggregateGenerator.hpp"
 #include "ComparisonGenerator.hpp"
 #include "GeneratorFactory.hpp"
-#include "FalseQuantKernelGenerator.hpp"
-#include "TrueQuantKernelGenerator.hpp"
+#include "QuantKernelGenerators.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -207,11 +206,14 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 		branchdata.pattern = data.pattern;
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
+		auto kernelchecker = createFromKernel(data.bdd->kernel(), vector<Pattern>(kernpattern.size(),Pattern::INPUT), kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
+						Universe(kerntables));
 		auto falsegenerator = createFromBDD(branchdata);
-		std::vector<InstGenerator*> vec(2);
-		vec[0] = kernelgenerator;
-		vec[1] = falsegenerator;
-		return new UnionGenerator(vec);
+		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(),Pattern::INPUT);
+		auto falsechecker = createFromBDD(branchdata);
+		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator};
+		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker};
+		return new UnionGenerator(generators,checkers);
 	}
 
 	// Both branches possible: create a checker and a generator for all possibilities

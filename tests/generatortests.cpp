@@ -12,12 +12,11 @@
 
 #include "gtest/gtest.h"
 #include "external/rungidl.hpp"
-#include "generators/ComparisonGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
-#include "generators/EnumLookupGenerator.hpp"
 #include "IncludeComponents.hpp"
+#include "generators/ComparisonGenerator.hpp"
+#include "generators/SortGenAndChecker.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
+#include "generators/EnumLookupGenerator.hpp"
 
 using namespace std;
 
@@ -101,7 +100,7 @@ namespace Tests{
 	TEST(SortGenerator, FiniteSort){
 		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto var = new DomElemContainer();
-		auto gen = new SortInstGenerator(sort->internTable(), var);
+		auto gen = new SortGenerator(sort->internTable(), var);
 		set<int> genvalues;
 		for(gen->begin(); not gen->isAtEnd(); gen->operator ++()){
 			auto value = var->get()->value()._int;
@@ -115,7 +114,7 @@ namespace Tests{
 	TEST(SortGenerator, CloneFiniteSort){
 		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto var = new DomElemContainer();
-		auto gen = new SortInstGenerator(sort->internTable(), var);
+		auto gen = new SortGenerator(sort->internTable(), var);
 
 		gen->begin();
 		gen->operator ++();
@@ -132,11 +131,11 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 3);
 	}
 
-	TEST(LookupGenerator, FiniteSort){
+	TEST(TableChecker, FiniteSort){
 		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto var = new DomElemContainer();
 		Universe universe({sort});
-		auto gen = new LookupGenerator(new PredTable(new FullInternalPredTable(), universe), {var}, universe);
+		auto gen = new TableChecker(new PredTable(new FullInternalPredTable(), universe), {var}, universe);
 
 		var->operator =(createDomElem(-2));
 		ASSERT_TRUE(gen->check());
@@ -163,7 +162,7 @@ namespace Tests{
 		ASSERT_EQ(count, 0);
 	}
 
-	TEST(LookupGenerator, Enum){
+	TEST(TableChecker, Enum){
 		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
 		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
 
@@ -177,7 +176,7 @@ namespace Tests{
 		});
 		auto predtable = new PredTable(new EnumeratedInternalPredTable(elemTable), universe);
 
-		auto gen = new LookupGenerator(predtable, {var1, var2}, universe);
+		auto gen = new TableChecker(predtable, {var1, var2}, universe);
 
 		var1->operator =(createDomElem(-2));
 		var2->operator =(createDomElem(0));
@@ -220,7 +219,7 @@ namespace Tests{
 			{domelem(-2), domelem(0)}
 		});
 		auto predtable = new PredTable(new EnumeratedInternalPredTable(elemTable), universe);
-		auto gen = new InverseInstGenerator(predtable, {Pattern::INPUT, Pattern::OUTPUT}, {var1, var2});
+		auto gen = new InverseTableGenerator(predtable, {Pattern::INPUT, Pattern::OUTPUT}, {var1, var2});
 
 		set<int> genvalues;
 		var1->operator =(createDomElem(1));

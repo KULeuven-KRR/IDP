@@ -91,7 +91,18 @@ add_library(idp
 	external/rungidl.cpp
 	external/commands/allcommands.cpp
 	generators/InstGenerator.cpp
+	generators/TableCheckerAndGenerators.cpp
+	generators/AggregateGenerator.cpp
 	generators/TreeInstGenerator.cpp
+	generators/ComparisonGenerator.cpp
+	generators/UnionGenerator.cpp
+	generators/EnumLookupGenerator.cpp
+	generators/UnaryArithmeticOperators.cpp
+	generators/InverseUnaFunctionGenerator.cpp
+	generators/SimpleFuncGenerator.cpp
+	generators/SortGenAndChecker.cpp
+	generators/QuantKernelGenerators.cpp
+	generators/BinaryArithmeticOperatorsCheckersAndGenerators.cpp
 	generators/GeneratorFactory.cpp
 	generators/BDDBasedGeneratorFactory.cpp
 	visitors/StructureVisitor.cpp

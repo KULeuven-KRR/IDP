@@ -8,14 +8,31 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef BASICGENERATOR_HPP_
-#define BASICGENERATOR_HPP_
+#ifndef BASICCHECKERS_HPP_
+#define BASICCHECKERS_HPP_
 
 #include "InstGenerator.hpp"
 
-/**
- * Generates an empty set of instances
- */
+class FalseInstChecker: public InstChecker {
+public:
+	bool check() {
+		return false;
+	}
+	FalseInstChecker* clone() const {
+		return new FalseInstChecker(*this);
+	}
+};
+
+class TrueInstChecker: public InstChecker {
+public:
+	bool check() {
+		return true;
+	}
+	TrueInstChecker* clone() const {
+		return new TrueInstChecker(*this);
+	}
+};
+
 class EmptyGenerator: public InstGenerator {
 public:
 	virtual void next() {
@@ -61,4 +78,4 @@ public:
 	}
 };
 
-#endif /* BASICGENERATOR_HPP_ */
+#endif /* BASICCHECKERS_HPP_ */
