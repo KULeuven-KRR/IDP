@@ -228,16 +228,21 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 
 void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 	std::vector<InstGenerator*> ingenerators(uipt->inTables().size());
+	std::vector<InstGenerator*> incheckers(uipt->inTables().size());
 	std::vector<InstGenerator*> outcheckers(uipt->outTables().size());
 	unsigned int i = 0;
 	for (auto it = uipt->inTables().cbegin(); it != uipt->inTables().cend(); ++it, ++i) {
 		(*it)->accept(this);
 		ingenerators[i] = _generator;
+		auto backuppattern = _pattern;
+		_pattern = vector<Pattern>(_pattern.size(),Pattern::INPUT);
+		(*it)->accept(this);
+		incheckers[i]=_generator;
+		_pattern = backuppattern;
 	}
 	auto backuppattern = _pattern;
-	for (int k = 0; k < _pattern.size(); k++) {
-		_pattern[k] = Pattern::INPUT;
-	}
+	_pattern = vector<Pattern>(_pattern.size(),Pattern::INPUT);
+
 	i = 0;
 	for (auto it = uipt->outTables().cbegin(); it != uipt->outTables().cend(); ++it, ++i) {
 		(*it)->accept(this);
@@ -245,8 +250,8 @@ void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 	}
 	_pattern = backuppattern;
 
-	auto ingenereator = new UnionGenerator(ingenerators);
-	auto outchecker = new UnionGenerator(outcheckers);
+	auto ingenereator = new UnionGenerator(ingenerators, incheckers);
+	auto outchecker = new UnionGenerator(outcheckers,outcheckers);
 	_generator = new TwoChildGenerator(outchecker, ingenereator, new FullGenerator(), new EmptyGenerator());
 }
 
@@ -740,8 +745,11 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		auto minusQIsZeroChecker = new ComparisonGenerator(natSortTable, natSortTable, minusQ, varzero, Input::BOTH, CompType::EQ);
 		auto qFromMinusQGenerator = new MinusGenerator(varzero, minusQ, q, NumType::CERTAINLYINT, intSortTable);
 		auto negativeQGenerator = new TwoChildGenerator(minusQIsZeroChecker, positiveMinusQGenerator, qFromMinusQGenerator, new EmptyGenerator);
-		std::vector<InstGenerator*> allqs = { positiveQGenerator, negativeQGenerator };
-		auto allQGenerator = new UnionGenerator(allqs);
+
+		std::vector<InstGenerator*> allqs = {negativeQGenerator, positiveQGenerator };
+		std::vector<InstGenerator*> trivial = {new EmptyGenerator(), new EmptyGenerator()};
+		//By construction, we know that the trivial checkers suffice
+		auto allQGenerator = new UnionGenerator(allqs, trivial );
 		auto qTimesY = new DomElemContainer();
 		auto qTimesYGenerator = new TimesGenerator(q, _vars[1], qTimesY, NumType::CERTAINLYINT, intSortTable);
 		auto finalGenerator = new PlusGenerator(qTimesY, _vars[2], _vars[0], NumType::CERTAINLYINT, _universe.tables()[0]);
