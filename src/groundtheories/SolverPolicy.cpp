@@ -76,15 +76,13 @@ void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted) {
 	if (not weighted) {
-		MinisatID::WLSet set;
-		set.setID = setnr;
+		MinisatID::WLSet set(setnr);
 		for (size_t n = 0; n < tsset.size(); ++n) {
 			set.wl.push_back(MinisatID::WLtuple { createLiteral(tsset.literal(n)), MinisatID::Weight(1) });
 		}
 		extAdd(getSolver(), set);
 	} else {
-		MinisatID::WLSet set;
-		set.setID = setnr;
+		MinisatID::WLSet set(setnr);
 		for (size_t n = 0; n < tsset.size(); ++n) {
 			set.wl.push_back(MinisatID::WLtuple { createLiteral(tsset.literal(n)), createWeight(tsset.weight(n)) });
 		}
@@ -289,14 +287,11 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> body, bool conjunctive, bool arg_n) {
-	MinisatID::Rule rule;
-	rule.head = createAtom(head);
+	MinisatID::litlist list;
 	for (size_t n = 0; n < body.size(); ++n) {
-		rule.body.push_back(createLiteral(body[n]));
+		list.push_back(createLiteral(body[n]));
 	}
-	rule.conjunctive = conjunctive;
-	rule.definitionID = defnr;
-	extAdd(getSolver(), rule);
+	extAdd(getSolver(), MinisatID::Rule(createAtom(head), list, conjunctive, defnr));
 }
 
 template<typename Solver>
