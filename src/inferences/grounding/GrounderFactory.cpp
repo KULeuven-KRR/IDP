@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "GrounderFactory.hpp"
 #include "IncludeComponents.hpp"
@@ -310,7 +310,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
 
 	// Clean up: delete the theory clone.
-	//TODO newtheory->recursiveDelete();
+	newtheory->recursiveDelete();
 }
 
 /**
@@ -367,7 +367,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	RestoreContext();
 
 	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(),_structure->vocabulary())) {
+	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		string name = newpf->symbol()->name();
 		CompType comp;
 		if (name == "=/2") {
@@ -428,7 +428,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
 		const FOBDD* possTrueBdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
 		const FOBDD* certTrueBdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
-		;
 		possTrueTable = new PredTable(new BDDInternalPredTable(possTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		certTrueTable = new PredTable(new BDDInternalPredTable(certTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
@@ -438,6 +437,9 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	auto possTrueChecker = GeneratorFactory::create(possTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certTrueChecker = GeneratorFactory::create(certTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
+	delete (possTrueTable);
+	delete (certTrueTable);
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << tabs() << "Possible checker: \n" << tabs() << toString(possTrueChecker) << "\n";
 		clog << tabs() << "Certain checker: \n" << tabs() << toString(certTrueChecker) << "\n";
@@ -514,7 +516,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if(not trydelay){
+	if (not trydelay) {
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
@@ -548,8 +550,8 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 	}
 
 	bool somequant = false;
-	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+		if (dynamic_cast<QuantForm*>(*i) != NULL) {
 			somequant = true;
 		}
 	}
@@ -580,8 +582,8 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 	}
 
 	bool somequant = false;
-	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+		if (dynamic_cast<QuantForm*>(*i) != NULL) {
 			somequant = true;
 		}
 	}
@@ -693,14 +695,14 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
 		Context lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
-		if (tuple.size()!=2) {
+		if (tuple.size() != 2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
 			twindelayablepf = tuple[1];
 		}
 	}
-	if(delayablepf!=NULL){
+	if (delayablepf != NULL) {
 		_context._allowDelaySearch = false;
 	}
 
@@ -713,7 +715,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	Assert(subgrounder!=NULL);
 
 	FormulaGrounder* grounder = NULL;
-	if(delayablepf!=NULL){
+	if (delayablepf != NULL) {
 		_context._allowDelaySearch = true;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && getContext()._allowDelaySearch) {
@@ -723,7 +725,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		// Research to get up-to-date predforms!
 		Context lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
-		if (tuple.size()!=2) {
+		if (tuple.size() != 2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
@@ -878,8 +880,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if (recursive(ef)) {
 		_context._tseitin = TsType::RULE;
 	}/*else{
-		_context._tseitin = TsType::EQ;
-	}*/
+	 _context._tseitin = TsType::EQ;
+	 }*/
 	_formgrounder = new EquivGrounder(_grounding, leftgrounder, rightgrounder, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
@@ -996,7 +998,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(_grounding->translator(),_grounding->termtranslator(), t->function(), _setgrounder);
+	_termgrounder = new AggTermGrounder(_grounding->translator(), _grounding->termtranslator(), t->function(), _setgrounder);
 	_termgrounder->setOrig(t, varmapping());
 }
 
@@ -1056,12 +1058,14 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
 		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
-		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+		checktable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-
+	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
+	delete (gentable);
+	delete (checktable);
 	vector<SortTable*> directquanttables;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
 		directquanttables.push_back(_structure->inter((*it)->sort()));
@@ -1173,8 +1177,8 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	auto temprule = rule->clone();
-	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext);
+	auto newrule = rule->clone();
+	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext);
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding rules with variables within functerms
 		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
 	}
@@ -1253,5 +1257,5 @@ void GrounderFactory::visit(const Rule* rule) {
 		poptab();
 	}
 
-	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
+	newrule->recursiveDelete(); //INCORRECT, as it deletes its quantvars, which might have been used elsewhere already! TODO: looks quite correct to me (it's quantvars do not appear on other places)
 }

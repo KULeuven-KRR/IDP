@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
@@ -52,28 +52,44 @@ void Formula::setFreeVars() {
 }
 
 void Formula::recursiveDelete() {
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDelete();
-	}
-	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		(*it)->recursiveDelete();
-	}
-	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-		delete (*it);
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(true);
 	}
 	delete (this);
 }
 
 void Formula::recursiveDeleteKeepVars() {
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
-	}
-	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(false);
 	}
 	delete (this);
 }
+Formula::~Formula() {
+	if (_allwaysDeleteRecursively) {
+		deleteChildren(true);
+	}
+}
 
+void Formula::deleteChildren(bool deleteVars) {
+	if (deleteVars) {
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+		for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+		for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
+			delete (*it);
+		}
+	} else {
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+		for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+	}
+}
 bool Formula::contains(const Variable* v) const {
 	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
 		if (*it == v) {
@@ -412,7 +428,8 @@ ostream& operator<<(ostream& output, const Rule& r) {
  Definitions
  ******************/
 
-Definition::Definition(): id(getGlobal()->getNewID()) {
+Definition::Definition()
+		: id(getGlobal()->getNewID()) {
 }
 
 Definition* Definition::clone() const {
@@ -449,7 +466,7 @@ ostream& Definition::put(ostream& output) const {
 		_rules[0]->put(output);
 		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output <<nt();
+			output << nt();
 			_rules[n]->put(output);
 		}
 		poptab();
@@ -502,14 +519,14 @@ ostream& FixpDef::put(ostream& output) const {
 		_rules[0]->put(output);
 		pushtab();
 		for (size_t n = 1; n < _rules.size(); ++n) {
-			output <<nt();
+			output << nt();
 			_rules[n]->put(output);
 		}
 		poptab();
 	}
 	pushtab();
 	for (auto it = _defs.cbegin(); it != _defs.cend(); ++it) {
-		output <<nt();
+		output << nt();
 		(*it)->put(output);
 	}
 	poptab();
@@ -560,13 +577,13 @@ vector<TheoryComponent*> Theory::components() const {
 	}
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		auto quantform = dynamic_cast<QuantForm*>(*it);
-		if(quantform!=NULL && quantform->isUniv()){
+		if (quantform != NULL && quantform->isUniv()) {
 			stc.push_back(*it);
 		}
 	}
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		auto quantform = dynamic_cast<QuantForm*>(*it);
-		if(quantform==NULL || not quantform->isUniv()){
+		if (quantform == NULL || not quantform->isUniv()) {
 			stc.push_back(*it);
 		}
 	}
@@ -596,16 +613,16 @@ std::ostream& Theory::put(std::ostream& output) const {
 	pushtab();
 	output << " {";
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		output <<nt() << toString(*it);
+		output << nt() << toString(*it);
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		output <<nt() << toString(*it);
+		output << nt() << toString(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		output <<nt() << toString(*it);
+		output << nt() << toString(*it);
 	}
 	poptab();
-	output <<nt() << "}";
+	output << nt() << "}";
 	return output;
 }
 

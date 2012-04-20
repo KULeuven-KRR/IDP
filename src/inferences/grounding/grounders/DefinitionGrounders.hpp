@@ -52,7 +52,7 @@ public:
 		return context().getCurrentDefID();
 	}
 
-	virtual void put(std::ostream& stream) const{
+	virtual void put(std::ostream& ) const{
 		// TODO not yet implemented.
 	}
 
@@ -64,7 +64,7 @@ class HeadGrounder;
 // NOTE: any rule grounder NOT guaranteed to add false for all false defineds, should request adding them to the groundtheory!
 class RuleGrounder {
 private:
-	Rule* origrule;
+	Rule* _origrule;
 
 	HeadGrounder* _headgrounder;
 	FormulaGrounder* _bodygrounder;

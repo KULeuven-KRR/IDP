@@ -450,7 +450,7 @@ void GeneratorFactory::visit(const FuncTable* ft) {
 		return;
 	}
 	bool finite = true;
-	for (int i = 0; i < _pattern.size() - 1; i++) {
+	for (unsigned int i = 0; i < _pattern.size() - 1; i++) {
 		if (_pattern[i] == Pattern::OUTPUT) {
 			if (not _universe.tables()[i]->approxFinite()) {
 				finite = false;
@@ -460,7 +460,7 @@ void GeneratorFactory::visit(const FuncTable* ft) {
 	}
 	if (not finite && _universe.tables().back()->approxFinite()) {
 		Assert(_pattern.back() == Pattern::OUTPUT);
-		int lastindex = _pattern.size() - 1;
+		unsigned int lastindex = _pattern.size() - 1;
 		Assert(_universe.tables().size()==lastindex+1 && _vars.size()==lastindex+1);
 		_pattern[lastindex] = Pattern::INPUT;
 		ft->internTable()->accept(this);
@@ -729,6 +729,11 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		//x%y=z with x and z input.
 		//Thus, qy+z=x for some q integer
 		//Generate all q between -y and y and then generate the x
+		throw notyetimplemented("Infinite generator for modulo pattern (?,in,in)");
+		//TODO: code below not yet good:
+		//* use Unary minus instead of binary minus
+		//* Order of generation...
+
 		auto q = new DomElemContainer();
 		auto natSortTable = VocabularyUtils::natsort()->interpretation();
 		auto intSortTable = VocabularyUtils::intsort()->interpretation();
@@ -787,8 +792,8 @@ void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {
 	}
 }
 
-void GeneratorFactory::visit(const UminInternalFuncTable* uift) {
+void GeneratorFactory::visit(const UminInternalFuncTable*) {
 	Assert(_pattern[0]==Pattern::OUTPUT);
-	_generator = new InvertNumericGenerator(_vars[1], _vars[0], _universe);
+	_generator = new UnaryMinusGenerator(_vars[1], _vars[0], _universe);
 }
 

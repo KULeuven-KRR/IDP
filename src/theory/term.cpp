@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
@@ -38,22 +38,40 @@ void Term::setFreeVars() {
 }
 
 void Term::recursiveDelete() {
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDelete();
-	}
-	for (auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
-		(*it)->recursiveDelete();
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(true);
 	}
 	delete (this);
 }
 void Term::recursiveDeleteKeepVars() {
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
-	}
-	for (auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(false);
 	}
 	delete (this);
+}
+
+Term::~Term() {
+	if (_allwaysDeleteRecursively) {
+		deleteChildren(true);
+	}
+}
+
+void Term::deleteChildren(bool varsalso) {
+	if (varsalso) {
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+		for (auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+	} else {
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+		for (auto it = _subsets.cbegin(); it != _subsets.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+	}
 }
 
 bool Term::contains(const Variable* v) const {
@@ -232,7 +250,7 @@ Sort* AggTerm::sort() const {
 	} else {
 		auto setsort = set()->sort();
 		if (setsort != NULL) {
-			if(function() == AggFunction::MAX || function() == AggFunction::MIN){
+			if (function() == AggFunction::MAX || function() == AggFunction::MIN) {
 				return setsort;
 			}
 			if (SortUtils::isSubsort(setsort, VocabularyUtils::natsort())) {
@@ -276,26 +294,44 @@ void SetExpr::setFreeVars() {
 }
 
 void SetExpr::recursiveDelete() {
-	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		(*it)->recursiveDelete();
-	}
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDelete();
-	}
-	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-		delete (*it);
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(true);
 	}
 	delete (this);
 }
 
 void SetExpr::recursiveDeleteKeepVars() {
-	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
-	}
-	for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
-		(*it)->recursiveDeleteKeepVars();
+	if (not _allwaysDeleteRecursively) {
+		deleteChildren(false);
 	}
 	delete (this);
+}
+
+SetExpr::~SetExpr() {
+	if (_allwaysDeleteRecursively) {
+		deleteChildren(true);
+	}
+}
+
+void SetExpr::deleteChildren(bool andvars) {
+	if (andvars) {
+		for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDelete();
+		}
+		for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
+			delete (*it);
+		}
+	} else {
+		for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
+			(*it)->recursiveDeleteKeepVars();
+		}
+	}
 }
 
 Sort* SetExpr::sort() const {

@@ -1230,6 +1230,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 				}
 				PredForm* pipf = new PredForm(SIGN::POS, p, vtpi, FormulaParseInfo());
 				FormulaParseInfo pi = formparseinfo(pipf, l);
+				delete(pipf); //the needed things for the pi are cloned
 				pf = new PredForm(SIGN::POS, p, vt, pi);
 			}
 		} else

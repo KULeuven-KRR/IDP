@@ -65,7 +65,7 @@ public:
 	}
 	ObjectInfo(unsigned int line, unsigned int col, std::string* file, const RepresentedObject& original)
 			: ParseInfo(line, col, file), _original(std::shared_ptr<RepresentedObject>(original.clone())) {
-		// TODO _original->alwaysRecursiveDelete(true);
+		_original->allwaysDeleteRecursively(true);
 	}
 
 	const RepresentedObject& originalobject() const {

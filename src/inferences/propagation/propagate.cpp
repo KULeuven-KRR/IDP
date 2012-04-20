@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBdd.hpp"
@@ -15,7 +15,6 @@
 #include "propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include <ctime> //TODO REMOVE
-
 using namespace std;
 
 /****************************
@@ -43,6 +42,10 @@ FOPropagation* FOPropScheduler::next() {
 
 FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 	_manager = new FOBDDManager();
+}
+
+FOPropBDDDomainFactory::~FOPropBDDDomainFactory() {
+	//delete(_manager);?????
 }
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {
@@ -240,14 +243,27 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
  *****************/
 
 template<class Factory, class DomainType>
-TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s), _theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
+
+template<class Factory, class DomainType>
+TypedFOPropagator<Factory, DomainType>::~TypedFOPropagator() {
+	delete (_scheduler);
+	for (auto it = _admissiblecheckers.cbegin(); it != _admissiblecheckers.cend(); ++it) {
+		delete (*it);
+	}
+	delete (_factory);
+	if (_theory != NULL) {
+		_theory->recursiveDelete();
+	}
+}
+
 template<>
-TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts) :
-		_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s) {
+TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
+		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s), _theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -308,7 +324,8 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
 			vv.push_back(*((*jt)->freeVars().cbegin()));
 		}
-		CHECKTERMINATION;Assert(_domains.find(connector) != _domains.cend());
+		CHECKTERMINATION;
+		Assert(_domains.find(connector) != _domains.cend());
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
@@ -352,9 +369,9 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 
 template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToConjunction(Domain* conjunction, Domain* newconjunct) {
-	FOPropDomain* temp = conjunction;
+	FOPropDomain* old = conjunction;
 	conjunction = _factory->conjunction(conjunction, newconjunct);
-	delete (temp);
+	delete (old);
 	return conjunction;
 }
 

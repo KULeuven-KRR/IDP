@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef THEORY_HPP
 #define THEORY_HPP
@@ -78,14 +78,15 @@ private:
 	std::vector<Term*> _subterms; //!< the direct subterms of the formula
 	std::vector<Formula*> _subformulas; //!< the direct subformulas of the formula
 	FormulaParseInfo _pi; //!< the place where the formula was parsed
+	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
 
 public:
 	// Constructor
 	Formula(SIGN sign)
-			: _sign(sign) {
+			: _sign(sign), _allwaysDeleteRecursively(false) {
 	}
 	Formula(SIGN sign, const FormulaParseInfo& pi)
-			: _sign(sign), _pi(pi) {
+			: _sign(sign), _pi(pi), _allwaysDeleteRecursively(false) {
 	}
 
 	// Virtual constructors
@@ -100,9 +101,8 @@ public:
 	void recursiveDelete(); //!< delete the formula and all its children (subformulas, subterms, etc)
 	void recursiveDeleteKeepVars(); //!< delete the formula and all its children (subformulas, subterms, etc) except for free variables
 
-	virtual ~Formula() {
-	}
-	//!< delete the formula, but not its children
+	virtual ~Formula();
+	//!< delete the formula, but not its children UNLESS _allwaysDeleteRecursively is true, then also deletes children
 
 	// Mutators
 	void negate() {
@@ -144,6 +144,9 @@ public:
 		_quantvars = sv;
 		setFreeVars();
 	}
+	void allwaysDeleteRecursively(bool aRD) {
+		_allwaysDeleteRecursively = aRD;
+	}
 
 	// Inspectors
 	SIGN sign() const {
@@ -181,6 +184,7 @@ public:
 
 private:
 	void setFreeVars(); //!< compute the free variables of the formula
+	void deleteChildren(bool deleteVars); //Deletes all children of this formula (and depending on the boolean also the vars)
 };
 
 std::ostream& operator<<(std::ostream&, const Formula&);

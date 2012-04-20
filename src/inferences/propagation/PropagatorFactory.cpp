@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "PropagatorFactory.hpp"
 
@@ -40,11 +40,13 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	auto propagator = createPropagator(theory, structure, mpi);
 	propagator->doPropagation();
 	propagator->applyPropagationToStructure(structure);
-	return propagator->symbolicstructure();
+	auto result = propagator->symbolicstructure();
+	delete (propagator);
+	return result;
 }
 
-void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars
-		, Bound& ctbounds, Bound& cfbounds) {
+void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars,
+		Bound& ctbounds, Bound& cfbounds) {
 	auto pinter = structure->inter(symbol);
 	if (pinter->approxTwoValued()) {
 		return;
@@ -202,7 +204,8 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		QuantForm* univ2 = new QuantForm(SIGN::POS, QUANT::UNIV, zy1y2set, disjunction, FormulaParseInfo());
 		newtheo->add(univ2);
 	}
-
+	//From now on, newtheo is the responsability of _propagator
+	_propagator->setTheory(newtheo);
 	// Multiply maxsteps if requested
 	if (_multiplymaxsteps) {
 		_propagator->setMaxSteps(_propagator->getMaxSteps() * FormulaUtils::nrSubformulas(newtheo));
@@ -225,7 +228,6 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 
 	// visit sentences
 	newtheo->accept(this);
-
 	return _propagator;
 }
 
@@ -295,9 +297,9 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 				VarTerm* vt = new VarTerm(connectvar, TermParseInfo());
 				PredForm* as = new PredForm(SIGN::POS, leafvar->sort()->pred(), vector<Term*>(1, vt), FormulaParseInfo());
 				Domain* asd = _propagator->getFactory()->formuladomain(as);
-				as->recursiveDelete();
 				FOPropDomain* temp = lcd._equalities;
 				lcd._equalities = _propagator->getFactory()->conjunction(lcd._equalities, asd);
+				as->recursiveDelete();
 				delete (temp);
 				delete (asd);
 			}

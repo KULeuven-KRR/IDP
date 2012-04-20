@@ -48,9 +48,9 @@ public:
 	void next();
 };
 
-class InvertNumericGenerator: public UnaryArithmeticOperatorsGenerator {
+class UnaryMinusGenerator: public UnaryArithmeticOperatorsGenerator {
 public:
-	InvertNumericGenerator(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
+	UnaryMinusGenerator(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
 protected:
 	void doOperation();
 };

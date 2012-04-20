@@ -62,10 +62,10 @@ void UnaryArithmeticOperatorsGenerator::next() {
 	}
 }
 
-InvertNumericGenerator::InvertNumericGenerator(const DomElemContainer* in, const DomElemContainer* out, Universe universe)
+UnaryMinusGenerator::UnaryMinusGenerator(const DomElemContainer* in, const DomElemContainer* out, Universe universe)
 		: UnaryArithmeticOperatorsGenerator(in, out, universe) {
 }
-void InvertNumericGenerator::doOperation() {
+void UnaryMinusGenerator::doOperation() {
 	auto var = _in->get();
 	if (var->type() == DET_INT) {
 		int newvalue = -var->value()._int;

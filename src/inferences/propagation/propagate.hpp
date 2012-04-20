@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef PROPAGATE_HPP
 #define PROPAGATE_HPP
@@ -163,6 +163,7 @@ private:
 	FOBDDManager* _manager;
 public:
 	FOPropBDDDomainFactory();
+	~FOPropBDDDomainFactory();
 	FOBDDManager* manager() const {
 		return _manager;
 	}
@@ -313,6 +314,7 @@ private:
 	std::map<const Formula*, const Formula*> _upward; //!<mapping from a formula to it's parent
 	std::map<const PredForm*, std::set<const PredForm*> > _leafupward;
 	std::vector<AdmissibleBoundChecker<Domain>*> _admissiblecheckers;
+	AbstractTheory* _theory;
 
 	// Variables to temporarily store a propagation
 	FOPropDirection _direction;
@@ -337,7 +339,11 @@ protected:
 	void visit(const AggForm*);
 
 public:
+	//Elements from the theory are used during propagation.
+	//NOTE theory is responsibility of the propagator. Hence clone before giving one!
 	TypedFOPropagator(InterpretationFactory*, FOPropScheduler*, Options*);
+
+	~TypedFOPropagator();
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
@@ -373,6 +379,12 @@ public:
 
 	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
 		_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
+	}
+	void setTheory(AbstractTheory* t) {
+		if(_theory != NULL){
+			_theory->recursiveDelete();
+		}
+		_theory = t;
 	}
 	void setQuantVar(const Formula* key, const std::set<Variable*>& value) {
 		_quantvars[key] = value;
