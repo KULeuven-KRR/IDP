@@ -761,7 +761,7 @@ void Insert::closequery(Query* q) {
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
 		FormulaUtils::checkSorts(_currvocabulary, qf);
-		delete (qf);
+		qf->recursiveDelete();
 		_currspace->add(_currquery, q);
 		if (_currspace->isGlobal())
 			LuaConnection::addGlobal(_currquery, q);
@@ -1226,7 +1226,7 @@ Formula* Insert::trueform(YYLTYPE l) const {
 	// FIXME implement deep clone of formula to prevent having double calls here (the first one just saves an original copy to refer to later)
 	auto temp = new BoolForm(SIGN::POS, true, vf, FormulaParseInfo());
 	FormulaParseInfo pi = formparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new BoolForm(SIGN::POS, true, vf, pi);
 }
 
@@ -1234,7 +1234,7 @@ Formula* Insert::falseform(YYLTYPE l) const {
 	vector<Formula*> vf(0);
 	auto temp = new BoolForm(SIGN::POS, false, vf, FormulaParseInfo());
 	FormulaParseInfo pi = formparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new BoolForm(SIGN::POS, false, vf, pi);
 }
 
@@ -1315,7 +1315,7 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 	}
 	auto temp = new PredForm(SIGN::POS, functerm->function(), vtpi, FormulaParseInfo());
 	FormulaParseInfo pi = formparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new PredForm(SIGN::POS, functerm->function(), vt2, pi);
 }
 
@@ -1353,7 +1353,7 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 				}
 				auto temp = new PredForm(SIGN::POS, f, vtpi, FormulaParseInfo());
 				FormulaParseInfo pi = formparseinfo(temp, l);
-				delete temp;
+				temp->recursiveDelete();
 				pf = new PredForm(SIGN::POS, f, vt2, pi);
 			}
 		} else {
@@ -1388,14 +1388,14 @@ Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) const {
 		Formula* rfpi = rf->clone();
 		auto temp = new EquivForm(SIGN::POS, lfpi, rfpi, FormulaParseInfo());
 		FormulaParseInfo pi = formparseinfo(temp, l);
-		delete temp;
+		temp->recursiveDelete();
 		return new EquivForm(SIGN::POS, lf, rf, pi);
 	} else {
 		if (lf) {
-			delete (lf);
+			lf->recursiveDelete();
 		}
 		if (rf) {
-			delete (rf);
+			rf->recursiveDelete();
 		}
 		return 0;
 	}
@@ -1412,14 +1412,14 @@ Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) const 
 		auto tempbf = new BoolForm(SIGN::POS, conj, pivf, FormulaParseInfo());
 		FormulaParseInfo pi = formparseinfo(tempbf, l);
 		//All necessary things from tempbf are cloned
-		delete tempbf;
+		tempbf->recursiveDelete();
 		return new BoolForm(SIGN::POS, conj, vf, pi);
 	} else {
 		if (lf) {
-			delete (lf);
+			lf->recursiveDelete();
 		}
 		if (rf) {
-			delete (rf);
+			rf->recursiveDelete();
 		}
 		return 0;
 	}
@@ -1486,7 +1486,7 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 		Term* pib = b->clone();
 		auto temp = new AggForm(SIGN::POS, pib, invertComp(c), pia, FormulaParseInfo());
 		FormulaParseInfo pi = formparseinfo(temp, l);
-		delete temp;
+		temp->recursiveDelete();
 		return new AggForm(SIGN::POS, b, invertComp(c), a, pi);
 	} else
 		return 0;
@@ -1514,7 +1514,7 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 		auto fpi = formparseinfo(ecfpi, l);
 		auto ecf = new EqChainForm(SIGN::POS, true, left, fpi);
 		ecf->add(c, right);
-		delete ecfpi;
+		ecfpi->recursiveDelete();
 		return ecf;
 	} else {
 		return NULL;
@@ -1587,7 +1587,7 @@ Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 				}
 				auto temp = new FuncTerm(f, vtpi, TermParseInfo());
 				TermParseInfo pi = termparseinfo(temp, nst->_pi);
-				delete (temp);
+				temp->recursiveDelete();
 				t = new FuncTerm(f, vt, pi);
 			}
 		} else {
@@ -1635,7 +1635,7 @@ Term* Insert::functerm(NSPair* nst) {
 			}
 			auto temp = new VarTerm(v, TermParseInfo());
 			t = new VarTerm(v, termparseinfo(temp, nst->_pi));
-			delete temp;
+			temp->recursiveDelete();
 			delete (nst);
 		} else if (f != NULL) {
 			vector<Term*> vt(0);
@@ -1649,7 +1649,7 @@ Term* Insert::functerm(NSPair* nst) {
 			v = quantifiedvar(name, l);
 			auto temp = new VarTerm(v, TermParseInfo());
 			t = new VarTerm(v, termparseinfo(temp, nst->_pi));
-			delete temp;
+			temp->recursiveDelete();
 			delete (nst);
 		}
 		return t;
@@ -1666,14 +1666,14 @@ Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 		pivt[1] = rt->clone();
 		auto temp = new FuncTerm(f, pivt, TermParseInfo());
 		auto pi = termparseinfo(temp, l);
-		delete temp;
+		temp->recursiveDelete();
 		return new FuncTerm(f, vt, pi);
 	} else {
 		if (lt) {
-			delete (lt);
+			lt->recursiveDelete();
 		}
 		if (rt) {
-			delete (rt);
+			rt->recursiveDelete();
 		}
 		return NULL;
 	}
@@ -1687,10 +1687,10 @@ Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 		vector<Term*> pivt(1, t->clone());
 		auto temp = new FuncTerm(f, pivt, TermParseInfo());
 		auto res = new FuncTerm(f, vt, termparseinfo(temp, l));
-		delete temp;
+		temp->recursiveDelete();
 		return res;
 	} else {
-		delete (t);
+		t->recursiveDelete();
 		return NULL;
 	}
 }
@@ -1700,7 +1700,7 @@ Term* Insert::domterm(int i, YYLTYPE l) const {
 	Sort* s = (i >= 0 ? VocabularyUtils::natsort() : VocabularyUtils::intsort());
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new DomainTerm(s, d, pi);
 }
 
@@ -1709,7 +1709,7 @@ Term* Insert::domterm(double f, YYLTYPE l) const {
 	Sort* s = VocabularyUtils::floatsort();
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new DomainTerm(s, d, pi);
 }
 
@@ -1718,7 +1718,7 @@ Term* Insert::domterm(std::string* e, YYLTYPE l) const {
 	Sort* s = VocabularyUtils::stringsort();
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new DomainTerm(s, d, pi);
 }
 
@@ -1727,7 +1727,7 @@ Term* Insert::domterm(char c, YYLTYPE l) const {
 	Sort* s = VocabularyUtils::charsort();
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new DomainTerm(s, d, pi);
 }
 
@@ -1735,7 +1735,7 @@ Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(e);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
-	delete temp;
+	temp->recursiveDelete();
 	return new DomainTerm(s, d, pi);
 }
 
@@ -1744,7 +1744,7 @@ Term* Insert::aggregate(AggFunction f, SetExpr* s, YYLTYPE l) const {
 		SetExpr* pis = s->clone();
 		auto temp = new AggTerm(pis, f, TermParseInfo());
 		TermParseInfo pi = termparseinfo(temp, l);
-		delete temp;
+		temp->recursiveDelete();
 		return new AggTerm(s, f, pi);
 	} else
 		return 0;
@@ -1776,7 +1776,7 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 		Formula* pif = f->clone(mvv);
 		auto temp = new QuantSetExpr(pivv, pif, picounter, SetParseInfo());
 		SetParseInfo pi = setparseinfo(temp, l);
-		delete temp;
+		temp->recursiveDelete();
 		return new QuantSetExpr(vv, f, counter, pi);
 	} else {
 		if (f) {
@@ -1805,7 +1805,7 @@ SetExpr* Insert::set(EnumSetExpr* s) const {
 EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 	EnumSetExpr* pis = new EnumSetExpr(SetParseInfo());
 	SetParseInfo pi = setparseinfo(pis, l);
-	delete pis;
+	pis->recursiveDelete();
 	return new EnumSetExpr(pi);
 }
 
