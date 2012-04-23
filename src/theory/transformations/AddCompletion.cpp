@@ -92,7 +92,7 @@ Rule* AddCompletion::visit(Rule* rule) {
 			}
 		}
 	}
-	Formula* b = rule->body();
+	Formula* b = rule->body()->clone(mvv);
 	if (!vf.empty()) {
 		vf.push_back(b);
 		b = new BoolForm(SIGN::POS, true, vf, FormulaParseInfo());
@@ -100,8 +100,10 @@ Rule* AddCompletion::visit(Rule* rule) {
 	if (!freevars.empty()) {
 		b = new QuantForm(SIGN::POS, QUANT::EXIST, freevars, b, FormulaParseInfo());
 	}
-	b = b->clone(mvv);
-	_interres[rule->head()->symbol()].push_back(b);
+	auto c = b->clone(mvv);
+	//Not complete (some variables might be useless), but better than no memorymanagement. TODO improve
+	b->recursiveDeleteKeepVars();
+	_interres[rule->head()->symbol()].push_back(c);
 
 	return rule;
 }

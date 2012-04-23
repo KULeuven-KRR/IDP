@@ -209,7 +209,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		QuantForm* univ2 = new QuantForm(SIGN::POS, QUANT::UNIV, zy1y2set, disjunction, FormulaParseInfo());
 		newtheo->add(univ2);
 	}
-	//From now on, newtheo is the responsability of _propagator
+	//From now on, newtheo is the responsibility of _propagator
 	_propagator->setTheory(newtheo);
 	// Multiply maxsteps if requested
 	if (_multiplymaxsteps) {

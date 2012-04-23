@@ -1118,6 +1118,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 		checkGeneratorInfinite(gc._generator);
 		checkGeneratorInfinite(gc._checker);
 	}
+	delete newqs;
 	_setgrounder = new QuantSetGrounder(_grounding->translator(), subgr, gc._generator, gc._checker, wgr);
 }
 
