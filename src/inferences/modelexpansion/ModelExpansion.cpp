@@ -49,6 +49,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
+			clonetheory->recursiveDelete();
 			return std::vector<AbstractStructure*> { };
 		}
 		Assert(defCalculated[0]->isConsistent());
@@ -63,6 +64,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
 	if (not newstructure->isConsistent()) {
+		clonetheory->recursiveDelete();
+		delete (newstructure);
+		delete symstructure->manager();
+		delete (symstructure);
 		return std::vector<AbstractStructure*> { };
 	}
 
