@@ -844,6 +844,12 @@ Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* 
 	_sorts.push_back(os);
 }
 
+Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
+		: PFSymbol("", is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
+	_sorts.push_back(os);
+	_name = "_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size()+1);
+}
+
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding)
 		: PFSymbol(name, sorts, pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL),
 			_binding(binding) {

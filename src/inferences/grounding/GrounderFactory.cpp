@@ -277,6 +277,8 @@ SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureIn
 void GrounderFactory::visit(const Theory* theory) {
 	AbstractTheory* tmptheory = theory->clone();
 	tmptheory = FormulaUtils::splitComparisonChains(tmptheory, _structure->vocabulary());
+	tmptheory = FormulaUtils::skolemize(tmptheory);
+	tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 	FormulaUtils::addFuncConstraints(tmptheory);
 
 	Assert(not getOption(BoolType::GROUNDLAZILY) || not getOption(BoolType::CPSUPPORT));

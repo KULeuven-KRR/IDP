@@ -313,10 +313,10 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
 			if (sametypeid<Function>(*symbol)) {
-				structure->inter(dynamic_cast<Function*>(symbol), new FuncInter(bddinter));
+				structure->changeInter(dynamic_cast<Function*>(symbol), new FuncInter(bddinter));
 			} else {
 				Assert(sametypeid<Predicate>(*symbol));
-				structure->inter(dynamic_cast<Predicate*>(symbol), bddinter);
+				structure->changeInter(dynamic_cast<Predicate*>(symbol), bddinter);
 			}
 			continue;
 		}

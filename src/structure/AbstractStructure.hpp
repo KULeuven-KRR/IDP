@@ -41,12 +41,14 @@ public:
 	}
 
 	// Mutators
-	virtual void vocabulary(Vocabulary* v) {
+	// FIXME should be an invariant that a structure always interprets its vocabulary
+	// solution: implement monitors in vocabulary
+	virtual void changeVocabulary(Vocabulary* v) {
 		_vocabulary = v;
 	} // set the vocabulary
 
-	virtual void inter(Predicate* p, PredInter* i) = 0; //!< set the interpretation of p to i
-	virtual void inter(Function* f, FuncInter* i) = 0; //!< set the interpretation of f to i
+	virtual void changeInter(Predicate* p, PredInter* i) = 0; //!< CHANGE the interpretation of p to i
+	virtual void changeInter(Function* f, FuncInter* i) = 0; //!< CHANGE the interpretation of f to i
 	virtual void clean() = 0; //!< make three-valued interpretations that are in fact
 							  //!< two-valued, two-valued.
 

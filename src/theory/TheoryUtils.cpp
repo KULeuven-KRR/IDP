@@ -49,6 +49,7 @@
 #include "information/FindDoubleDelayLiteral.hpp"
 
 #include "transformations/ReplaceNestedWithTseitin.hpp"
+#include "transformations/Skolemize.hpp"
 
 using namespace std;
 
@@ -178,8 +179,12 @@ Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
 }
 
-AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t){
-	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t);
+AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructure* s){
+	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t, s);
+}
+
+AbstractTheory* skolemize(AbstractTheory* t){
+	return transform<Skolemize, AbstractTheory*>(t);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {

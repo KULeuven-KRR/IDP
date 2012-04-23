@@ -37,6 +37,8 @@ template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
 class SplitIntoMonotoneAgg;
 class ReplaceNestedWithTseitinTerm;
+class ConstructNewReducedForm;
+class Skolemize;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -88,7 +90,9 @@ class ReplaceNestedWithTseitinTerm;
 		friend class FindUnknownBoundLiteral;\
 		friend class FindDoubleDelayLiteral;\
 		friend class SplitIntoMonotoneAgg;\
-		friend class ReplaceNestedWithTseitinTerm;
+		friend class ReplaceNestedWithTseitinTerm;\
+		friend class ConstructNewReducedForm;\
+		friend class Skolemize;
 
 class AbstractTheory;
 class Theory;

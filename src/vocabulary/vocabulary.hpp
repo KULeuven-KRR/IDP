@@ -402,6 +402,7 @@ public:
 	Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding = 0);
 	Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding = 0);
 	Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator*, unsigned int binding);
+	Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding = 0);
 	Function(FuncGenerator*);
 
 	~Function();

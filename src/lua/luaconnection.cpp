@@ -1454,21 +1454,21 @@ int funcinterNewIndex(lua_State* L) {
  * NewIndex function for structures
  */
 int structureNewIndex(lua_State* L) {
-	AbstractStructure* structure = *(AbstractStructure**) lua_touserdata(L, 1);
+	auto structure = *(AbstractStructure**) lua_touserdata(L, 1);
 	InternalArgument index = createArgument(2, L);
 	InternalArgument value = createArgument(3, L);
 	switch (index._type) {
 	case AT_SORT: {
-		set<Sort*>* ss = index._value._sort;
+		auto ss = index._value._sort;
 		if (ss->size() == 1) {
-			Sort* s = *(ss->begin());
+			auto s = *(ss->begin());
 			if (value._type == AT_DOMAIN) {
-				SortTable* st = structure->inter(s);
+				auto st = structure->inter(s);
 				st->internTable(value._value._domain->internTable());
 				return 0;
 			} else if (value._type == AT_TABLE) {
-				SortTable* dom = toDomain(value._value._table, L);
-				SortTable* st = structure->inter(s);
+				auto dom = toDomain(value._value._table, L);
+				auto st = structure->inter(s);
 				st->internTable(dom->internTable());
 				delete (dom);
 				return 0;
@@ -1480,11 +1480,11 @@ int structureNewIndex(lua_State* L) {
 		break;
 	}
 	case AT_PREDICATE: {
-		set<Predicate*>* sp = index._value._predicate;
+		auto sp = index._value._predicate;
 		if (sp->size() == 1) {
-			Predicate* p = *(sp->begin());
+			auto p = *(sp->begin());
 			if (value._type == AT_PREDINTER) {
-				structure->inter(p, value._value._predinter->clone(structure->universe(p)));
+				structure->changeInter(p, value._value._predinter->clone(structure->universe(p)));
 				return 0;
 			} else {
 				lua_pushstring(L, "Expected a predicate interpretation");
@@ -1494,11 +1494,11 @@ int structureNewIndex(lua_State* L) {
 		break;
 	}
 	case AT_FUNCTION: {
-		set<Function*>* sf = index._value._function;
+		auto sf = index._value._function;
 		if (sf->size() == 1) {
-			Function* f = *(sf->begin());
+			auto f = *(sf->begin());
 			if (value._type == AT_FUNCINTER) {
-				structure->inter(f, value._value._funcinter->clone(structure->universe(f)));
+				structure->changeInter(f, value._value._funcinter->clone(structure->universe(f)));
 				return 0;
 			} else {
 				lua_pushstring(L, "Expected a function interpretation");

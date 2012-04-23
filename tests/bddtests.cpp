@@ -47,7 +47,7 @@ TEST(BddGenerator, PredForm){
 		vocabulary->add(sort);
 		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
 
 		//P<ct> = {-2,1}
@@ -98,7 +98,7 @@ TEST(BddGenerator, PredForm){
 		auto zeroterm = new DomainTerm(sort, zero, TermParseInfo());
 		Formula* formula = new PredForm(SIGN::POS, less, {sortterm, zeroterm}, FormulaParseInfo()); //x<0
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
@@ -170,7 +170,7 @@ TEST(BddGenerator, PredForm){
 		vocabulary->add(sort);
 		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
 		predinter->makeTrue({createDomElem(1)});
 		predinter->makeFalse({createDomElem(2)});

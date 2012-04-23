@@ -38,7 +38,7 @@ class VarTerm;
 class Term {
 ACCEPTDECLAREBOTH(Term)
 private:
-	std::set<Variable*> _freevars; //!< the set of free variables of the term
+	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<SetExpr*> _subsets; //!< the subsets of the term
 
@@ -306,7 +306,7 @@ struct tablesize;
 class SetExpr {
 ACCEPTDECLAREBOTH(SetExpr)
 protected:
-	std::set<Variable*> _freevars; //!< The free variables of the set expression
+	std::set<Variable*> _freevars; //!< The EXACT set of free variables ocurring unquantified IN this set expression
 	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
 	std::vector<Formula*> _subformulas; //!< The direct subformulas of the set expression
 	std::vector<Term*> _subterms; //!< The direct subterms of the set expression

@@ -31,7 +31,7 @@ TestingSet1 getTestingSet1() {
 	testingSet.vocabulary->add(testingSet.q);
 	testingSet.vocabulary->add(testingSet.r);
 	testingSet.structure = new Structure("S", ParseInfo());
-	testingSet.structure->vocabulary(testingSet.vocabulary);
+	testingSet.structure->changeVocabulary(testingSet.vocabulary);
 
 	testingSet.px = new PredForm(SIGN::POS, testingSet.p, { testingSet.sortterm }, FormulaParseInfo()); //P(x)
 	testingSet.qx = new PredForm(SIGN::POS, testingSet.q, { testingSet.sortterm }, FormulaParseInfo()); //Q(x)

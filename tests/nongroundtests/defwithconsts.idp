@@ -1,0 +1,21 @@
+vocabulary V{
+	type x isa int
+	P(x)
+	Q(x)
+	A:x
+	B:x
+	C:x
+	R(x, x)
+}
+
+theory T:V{
+	{ 
+		P(A) <- ?y: R(A, y).
+		P(B) <- ?y: R(y, B).
+		Q(x) <- P(C).
+	}
+}
+
+structure S:V{
+	x = {0..4}
+}
