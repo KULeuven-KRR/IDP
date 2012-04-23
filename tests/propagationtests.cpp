@@ -84,7 +84,7 @@ vector<string> generateListOfPropagationFiles() {
 class LuaPropagationTest: public ::testing::TestWithParam<string> {
 };
 
-TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {
+TEST_P(LuaPropagationTest, ThreeDifferentPropagations) {
 	string testfile(getTestDirectory() + "propagatetest.idp");
 	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;
