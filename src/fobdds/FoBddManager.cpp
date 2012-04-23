@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "utils/NumericLimits.hpp"
 #include "commontypes.hpp"
@@ -141,6 +141,7 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 
 		}
 		for (unsigned int n = 0; n < falseerase.size(); ++n) {
+			//deleteAllMatching<FOBDD>(_bddtable[kernel][falseerase[n]], trueerase[n]); TODO: correct?
 			_bddtable[kernel][falseerase[n]].erase(trueerase[n]);
 			if (_bddtable[kernel][falseerase[n]].empty()) {
 				_bddtable[kernel].erase(falseerase[n]);
@@ -222,7 +223,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 	if (sametypeid<Function>(*symbol) && akt == AtomKernelType::AKT_TWOVALUED) {
 		Function* f = dynamic_cast<Function*>(symbol);
 		Sort* s = SortUtils::resolve(f->outsort(), args.back()->sort());
-		if(s == NULL){
+		if (s == NULL) {
 			return _falsekernel;
 		}
 		Predicate* equal = VocabularyUtils::equal(s);
@@ -1907,6 +1908,7 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 	if (query != _truebdd && query != _falsebdd) {
 		set<const FOBDDKernel*> kernels = allkernels(query);
 		for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
+			CHECKTERMINATION;
 			double bestscore = estimatedCostAll(query, vars, indices, structure);
 			int bestposition = 0;
 			// move upward
@@ -2045,3 +2047,23 @@ FOBDDManager::FOBDDManager() {
 	_truebdd = new TrueFOBDD(_truekernel);
 	_falsebdd = new FalseFOBDD(_falsekernel);
 }
+FOBDDManager::~FOBDDManager() {
+	delete _truebdd;
+	delete _falsebdd; //!< the BDD 'false'
+	delete _truekernel; //!< the kernel 'true'
+	delete _falsekernel; //!< the kernel 'false'
+
+	// Global tables
+	deleteAll<FOBDD>(_bddtable);
+	deleteAll<FOBDDKernel>(_kernels);
+	/*deleteAll<FOBDDAtomKernel>(_atomkerneltable);
+	 deleteAll<FOBDDQuantKernel>(_quantkerneltable);
+	 deleteAll<FOBDDAggKernel>(_aggkerneltable);*/ //THOSE THREE ARE DELETED BY THE PREVIOUS deletall
+	deleteAll<FOBDDVariable>(_variabletable);
+	deleteAll<FOBDDDeBruijnIndex>(_debruijntable);
+	deleteAll<FOBDDFuncTerm>(_functermtable);
+	deleteAll<FOBDDAggTerm>(_aggtermtable);
+	deleteAll<FOBDDDomainTerm>(_domaintermtable);
+
+}
+

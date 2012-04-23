@@ -114,6 +114,7 @@ private:
 
 public:
 	FOBDDManager();
+	~FOBDDManager();
 
 	const FOBDD* truebdd() const {
 		return _truebdd;

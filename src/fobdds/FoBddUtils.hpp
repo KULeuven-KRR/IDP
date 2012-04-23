@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef KERNELORDER_HPP_
 #define KERNELORDER_HPP_
@@ -113,24 +113,54 @@ struct TermOrder {
 	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager);
 };
 
-
-
 template<typename ReturnType, typename T1, typename T2, typename Something, typename ... MoreTypes>
-ReturnType* lookup(std::map<T1,map<T2, Something> > m, T1 x, T2 y, MoreTypes ... parameters){
-	auto res= m.find(x) ;
-	if(res == m.cend()){
+ReturnType* lookup(std::map<T1, map<T2, Something> > m, T1 x, T2 y, MoreTypes ... parameters) {
+	auto res = m.find(x);
+	if (res == m.cend()) {
 		return NULL;
 	}
-	return lookup<ReturnType>(res->second,y,parameters...);
+	return lookup<ReturnType>(res->second, y, parameters...);
 }
 
 template<typename ReturnType, typename T1>
-ReturnType* lookup(std::map<T1,ReturnType*> m, T1 x){
-	auto res= m.find(x) ;
-	if(res == m.cend()){
+ReturnType* lookup(std::map<T1, ReturnType*> m, T1 x) {
+	auto res = m.find(x);
+	if (res == m.cend()) {
 		return NULL;
 	}
 	return res->second;
+}
+
+template<typename FinalType, typename T1, typename T2, typename Something>
+void deleteAll(std::map<T1, map<T2, Something> > m) {
+	for (auto i = m.cbegin(); i != m.cend(); ++i) {
+		deleteAll<FinalType>((*i).second);
+	}
+	m.clear();
+}
+
+template<typename FinalType, typename T1>
+void deleteAll(std::map<T1, FinalType*> m) {
+	for (auto i = m.cbegin(); i != m.cend(); ++i) {
+		delete ((*i).second);
+	}
+	m.clear();
+}
+
+template<typename FinalType, typename T1, typename T2, typename Something>
+void deleteAllMatching(std::map<T1, map<T2, Something> > m, T1 k) {
+	auto res = m.find(k);
+	if (res != m.cend()) {
+		deleteAll<FinalType>(res->second);
+	}
+}
+
+template<typename FinalType, typename T1>
+void deleteAllMatching(std::map<T1, FinalType*> m, T1 k) {
+	auto res = m.find(k);
+	if (res != m.cend()) {
+		delete (res->second);
+	}
 }
 
 #endif /* KERNELORDER_HPP_ */

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "ModelExpansion.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
@@ -17,6 +17,7 @@
 #include "theory/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
@@ -49,7 +50,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
 			return std::vector<AbstractStructure*> { };
-		}Assert(defCalculated[0]->isConsistent());
+		}
+		Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
 		newstructure = structure->clone();
@@ -90,7 +92,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
-
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -156,10 +157,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	delete (solver);
 	grounding->recursiveDelete();
-	delete (grounder); //TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
+	delete (grounder);
 	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	delete (newstructure);
+	delete symstructure->manager();
 	delete (symstructure);
 
 	return solutions;

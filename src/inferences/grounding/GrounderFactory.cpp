@@ -421,13 +421,15 @@ void GrounderFactory::visit(const PredForm* pf) {
 		tables.push_back(_structure->inter((*it)->sort()));
 	}
 
+	std::vector<Variable*> fovars;
+	vector<Term*> foterms;
 	PredTable *certTrueTable = NULL, *possTrueTable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS) && checksorts.size() > 0) { //TODO: didn't work for size 0, i.e. for propositional symbols.  Fix this!
-		auto fovars = VarUtils::makeNewVariables(checksorts);
-		auto foterms = TermUtils::makeNewVarTerms(fovars);
-		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-		const FOBDD* possTrueBdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
-		const FOBDD* certTrueBdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
+		fovars = VarUtils::makeNewVariables(checksorts);
+		foterms = TermUtils::makeNewVarTerms(fovars);
+		auto checkpf = PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+		const FOBDD* possTrueBdd = _symstructure->evaluate(&checkpf, TruthType::POSS_TRUE);
+		const FOBDD* certTrueBdd = _symstructure->evaluate(&checkpf, TruthType::CERTAIN_TRUE);
 		possTrueTable = new PredTable(new BDDInternalPredTable(possTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		certTrueTable = new PredTable(new BDDInternalPredTable(certTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
@@ -437,9 +439,15 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	auto possTrueChecker = GeneratorFactory::create(possTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certTrueChecker = GeneratorFactory::create(certTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+
+	//Cleanup.
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
+	//Also, the fovars and foterms should no longer be used.
 	delete (possTrueTable);
 	delete (certTrueTable);
+	deleteList(fovars);
+	deleteList(foterms);
+
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << tabs() << "Possible checker: \n" << tabs() << toString(possTrueChecker) << "\n";
 		clog << tabs() << "Certain checker: \n" << tabs() << toString(certTrueChecker) << "\n";
@@ -452,7 +460,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = _formgrounder;
 	}
-	//newpf->recursiveDelete(); //TODO: this is suspicious since the bdds use variables from newpf...
+	newpf->recursiveDelete(); //TODO: this is suspicious since the bdds use variables from newpf...
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
@@ -642,6 +650,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
+	newsubformula->recursiveDelete();
 }
 
 void checkGeneratorInfinite(InstChecker* gen) {

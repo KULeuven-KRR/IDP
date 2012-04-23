@@ -1230,7 +1230,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 				}
 				PredForm* pipf = new PredForm(SIGN::POS, p, vtpi, FormulaParseInfo());
 				FormulaParseInfo pi = formparseinfo(pipf, l);
-				delete(pipf); //the needed things for the pi are cloned
+				pipf->recursiveDelete(); //the needed things for the pi are cloned
 				pf = new PredForm(SIGN::POS, p, vt, pi);
 			}
 		} else
@@ -1389,7 +1389,10 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 		}
 		Formula* pif = f->clone(mvv);
 		QUANT quant = univ ? QUANT::UNIV : QUANT::EXIST;
-		FormulaParseInfo pi = formparseinfo(new QuantForm(SIGN::POS, quant, pivv, pif, FormulaParseInfo()), l);
+		auto tempqf = new QuantForm(SIGN::POS, quant, pivv, pif, FormulaParseInfo());
+		FormulaParseInfo pi = formparseinfo(tempqf, l);
+		//All necessary things from tempqf are cloned
+		tempqf->recursiveDelete();
 		return new QuantForm(SIGN::POS, quant, vv, f, pi);
 	} else {
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it)

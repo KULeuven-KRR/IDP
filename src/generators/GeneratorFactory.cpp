@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "parseinfo.hpp"
@@ -73,7 +73,6 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 	return gen;
 }
 
-// NOTE: becomes predtable owner!
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe, const Formula*) {
 	GeneratorFactory factory;
@@ -131,7 +130,6 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	return GeneratorFactory::create(table, pattern, vars, universe, atom);
 }
 
-// NOTE: becomes predtable owner!
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,
 		const Universe& universe) {
 	Assert(pt->arity()==pattern.size());
@@ -196,13 +194,11 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 			outvars.insert(var);
 		}
 	}
-
 	set<const FOBDDDeBruijnIndex*> indices;
 	optimizemanager.optimizeQuery(data.bdd, outvars, indices, table->structure());
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);
-
 	_generator = btg.create(data);
 }
 
@@ -231,13 +227,13 @@ void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 		(*it)->accept(this);
 		ingenerators[i] = _generator;
 		auto backuppattern = _pattern;
-		_pattern = vector<Pattern>(_pattern.size(),Pattern::INPUT);
+		_pattern = vector<Pattern>(_pattern.size(), Pattern::INPUT);
 		(*it)->accept(this);
-		incheckers[i]=_generator;
+		incheckers[i] = _generator;
 		_pattern = backuppattern;
 	}
 	auto backuppattern = _pattern;
-	_pattern = vector<Pattern>(_pattern.size(),Pattern::INPUT);
+	_pattern = vector<Pattern>(_pattern.size(), Pattern::INPUT);
 
 	i = 0;
 	for (auto it = uipt->outTables().cbegin(); it != uipt->outTables().cend(); ++it, ++i) {
@@ -247,7 +243,7 @@ void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 	_pattern = backuppattern;
 
 	auto ingenereator = new UnionGenerator(ingenerators, incheckers);
-	auto outchecker = new UnionGenerator(outcheckers,outcheckers);
+	auto outchecker = new UnionGenerator(outcheckers, outcheckers);
 	_generator = new TwoChildGenerator(outchecker, ingenereator, new FullGenerator(), new EmptyGenerator());
 }
 
@@ -672,8 +668,8 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		varone->operator =(GlobalData::getGlobalDomElemFactory()->create(1, NumType::POSSIBLYINT));
 		auto natSortTable = VocabularyUtils::natsort()->interpretation();
 		auto zIsOneChecker = new ComparisonGenerator(natSortTable, natSortTable, _vars[2], varone, Input::BOTH, CompType::EQ);
-		auto xNotZeroGenerator = new ComparisonGenerator(natSortTable,_universe.tables()[0],varzero,_vars[0],Input::LEFT,CompType::NEQ);
-		_generator = new TwoChildGenerator(zIsOneChecker, new FullGenerator(),  new EmptyGenerator(), xNotZeroGenerator);
+		auto xNotZeroGenerator = new ComparisonGenerator(natSortTable, _universe.tables()[0], varzero, _vars[0], Input::LEFT, CompType::NEQ);
+		_generator = new TwoChildGenerator(zIsOneChecker, new FullGenerator(), new EmptyGenerator(), xNotZeroGenerator);
 	} else {
 		if (_universe.tables()[0]->approxFinite()) {
 			//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator
@@ -719,7 +715,7 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 			_vars[0] = q;
 			_vars[2] = xMinusZ;
 			std::vector<SortTable*> newtables = { intSortTable, _universe.tables()[1], intSortTable };
-			_universe = Universe(newtables );
+			_universe = Universe(newtables);
 			_pattern = {Pattern::OUTPUT,Pattern::OUTPUT,Pattern::INPUT};
 			visit(new TimesInternalFuncTable(true));
 
@@ -747,10 +743,10 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		auto qFromMinusQGenerator = new MinusGenerator(varzero, minusQ, q, NumType::CERTAINLYINT, intSortTable);
 		auto negativeQGenerator = new TwoChildGenerator(minusQIsZeroChecker, positiveMinusQGenerator, qFromMinusQGenerator, new EmptyGenerator);
 
-		std::vector<InstGenerator*> allqs = {negativeQGenerator, positiveQGenerator };
-		std::vector<InstGenerator*> trivial = {new EmptyGenerator(), new EmptyGenerator()};
+		std::vector<InstGenerator*> allqs = { negativeQGenerator, positiveQGenerator };
+		std::vector<InstGenerator*> trivial = { new EmptyGenerator(), new EmptyGenerator() };
 		//By construction, we know that the trivial checkers suffice
-		auto allQGenerator = new UnionGenerator(allqs, trivial );
+		auto allQGenerator = new UnionGenerator(allqs, trivial);
 		auto qTimesY = new DomElemContainer();
 		auto qTimesYGenerator = new TimesGenerator(q, _vars[1], qTimesY, NumType::CERTAINLYINT, intSortTable);
 		auto finalGenerator = new PlusGenerator(qTimesY, _vars[2], _vars[0], NumType::CERTAINLYINT, _universe.tables()[0]);

@@ -17,6 +17,7 @@
 #include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 
@@ -102,7 +103,6 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 //	}
 }
 
-//TODO: is as useful?  Why wouldn't we assert sentences?
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
@@ -110,6 +110,11 @@ FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(Inte
 	auto options = GlobalData::instance()->getOptions();
 	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
 	_multiplymaxsteps = options->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
+}
+
+template<class InterpretationFactory, class PropDomain>
+FOPropagatorFactory<InterpretationFactory, PropDomain>::~FOPropagatorFactory() {
+	//deleteList(_leafconnectors); Do not delete connectors, they are passed to the propagator.
 }
 
 template<class Factory, class Domain>

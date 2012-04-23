@@ -14,6 +14,7 @@
 #include "fobdds/FoBddFactory.hpp"
 #include "propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
+#include "utils/ListUtils.hpp"
 #include <ctime> //TODO REMOVE
 using namespace std;
 
@@ -45,7 +46,7 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 }
 
 FOPropBDDDomainFactory::~FOPropBDDDomainFactory() {
-	//delete(_manager);?????
+	//do not delete manager: is passed to symbolicstructure (GenerateBDDAccordingToBounds)
 }
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {
@@ -188,7 +189,6 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 		}
 	}
 	Universe univ(vst);
-
 	// Construct the ct-table and cf-table
 	const FOBDD* newctbdd = _manager->substitute(dom._ctdomain->bdd(), ctmvv);
 	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd, _manager, newctvars, str), univ);
@@ -252,9 +252,8 @@ TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropSche
 template<class Factory, class DomainType>
 TypedFOPropagator<Factory, DomainType>::~TypedFOPropagator() {
 	delete (_scheduler);
-	for (auto it = _admissiblecheckers.cbegin(); it != _admissiblecheckers.cend(); ++it) {
-		delete (*it);
-	}
+	deleteList(_admissiblecheckers);
+	deleteList(_leafconnectors);
 	delete (_factory);
 	if (_theory != NULL) {
 		_theory->recursiveDelete();
@@ -326,6 +325,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		}
 		CHECKTERMINATION;
 		Assert(_domains.find(connector) != _domains.cend());
+
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();

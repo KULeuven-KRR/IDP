@@ -79,5 +79,6 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 		}
 		result->add(currtuple);
 	}
+	delete(manager);
 	return result;
 }

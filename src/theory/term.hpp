@@ -53,7 +53,7 @@ private:
 public:
 	// Constructors
 	Term(const TermParseInfo& pi)
-			: _pi(pi), _allwaysDeleteRecursively(false) {
+			: _allwaysDeleteRecursively(false) ,_pi(pi){
 	}
 
 	virtual Term* clone() const = 0;

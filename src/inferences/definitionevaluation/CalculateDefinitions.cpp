@@ -10,6 +10,7 @@
 
 #include "CalculateDefinitions.hpp"
 #include "inferences/SolverConnection.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -55,6 +56,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (solver);
 	delete (abstractsolutions);
 	delete (grounder);
+	delete (symstructure->manager());
 	delete (symstructure);
 
 	return structure->isConsistent();

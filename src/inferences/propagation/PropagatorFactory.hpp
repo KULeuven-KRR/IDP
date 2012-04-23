@@ -57,7 +57,7 @@ class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {
 private:
 	int _verbosity;
 	Propagator* _propagator;
-	std::map<PFSymbol*, PredForm*> _leafconnectors;
+	std::map<PFSymbol*, PredForm*> _leafconnectors; //_propagator is responsible for deleting this
 	std::map<PFSymbol*, InitBoundType> _initbounds;
 	bool _assertsentences;
 	bool _multiplymaxsteps;
@@ -75,6 +75,7 @@ protected:
 	void visit(const AggForm*);
 public:
 	FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*, InitBoundType>&);
+	~FOPropagatorFactory();
 
 	Propagator* create(const AbstractTheory*);
 };
