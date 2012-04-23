@@ -237,7 +237,7 @@ struct ThreeValuedDomain {
 		negf->negate();
 		_cfdomain = factory->formuladomain(negf);
 		_twovalued = true;
-		delete(negf);
+		negf->recursiveDelete();
 		Assert(_ctdomain!=NULL);
 		Assert(_cfdomain!=NULL);
 	}

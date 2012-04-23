@@ -97,6 +97,7 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 					return std::vector<AbstractStructure*> { };
 				}
 				theory->remove(currentdefinition->first);
+				currentdefinition->first->recursiveDelete();
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}
