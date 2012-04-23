@@ -761,7 +761,7 @@ void Insert::closequery(Query* q) {
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
 		FormulaUtils::checkSorts(_currvocabulary, qf);
-		qf->recursiveDelete();
+		delete(qf); //No recursive delete, the rest of the query should still exist!
 		_currspace->add(_currquery, q);
 		if (_currspace->isGlobal())
 			LuaConnection::addGlobal(_currquery, q);
