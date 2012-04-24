@@ -138,7 +138,7 @@ void GrounderFactory::RestoreContext() {
 	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
 		auto found = _varmapping.find(*it);
 		if (found != _varmapping.end()) {
-			_varmapping.erase(found); // FIXME: this should be disabled currenlty for lazy grounding
+			_varmapping.erase(found); // FIXME: this should be disabled currently for lazy grounding
 		}
 	}
 	_context._mappedvars.clear();
@@ -740,6 +740,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 		// Research to get up-to-date predforms!
 		Context lazycontext = Context::BOTH;
+
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		if (tuple.size()!=2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);

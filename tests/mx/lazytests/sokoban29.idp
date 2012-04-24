@@ -1,0 +1,9 @@
+//duthen-990602.29.steps.11
+// UNSAT
+Step = {1; 10; 11; 2; 3; 4; 5; 6; 7; 8; 9}
+Loc = {Col2row2; Col2row3; Col2row4; Col3row1; Col3row2; Col3row4; Col4row1; Col4row2; Col4row3; Col4row4; Col5row1; Col5row2; Col5row4; Col6row1; Col6row2; Col6row3; Col6row4; Col7row2; Col7row3}
+Top = {Col2row3,Col2row2; Col2row4,Col2row3; Col3row2,Col3row1; Col4row2,Col4row1; Col4row3,Col4row2; Col4row4,Col4row3; Col5row2,Col5row1; Col6row2,Col6row1; Col6row3,Col6row2; Col6row4,Col6row3; Col7row3,Col7row2}
+Right = {Col2row2,Col3row2; Col2row4,Col3row4; Col3row1,Col4row1; Col3row2,Col4row2; Col3row4,Col4row4; Col4row1,Col5row1; Col4row2,Col5row2; Col4row4,Col5row4; Col5row1,Col6row1; Col5row2,Col6row2; Col5row4,Col6row4; Col6row2,Col7row2; Col6row3,Col7row3}
+Solution = {Col2row4; Col3row1; Col7row2}
+Box = {Col4row2; Col5row2; Col6row2}
+Sokoban = {Col7row2}
