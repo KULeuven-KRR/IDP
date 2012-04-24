@@ -15,67 +15,23 @@
 
 /**
  * Generate all x such that one of the subgenerators succeeds.
+ * The checkers should satisfy the condition that they check iff the corresponding generator would generate the current tuple
+ * (thus, they are the same as the corresponding generator, but with all input variables)
  */
 class UnionGenerator: public InstGenerator {
 private:
 	std::vector<InstGenerator*> _generators;
+	std::vector<InstGenerator*> _checkers;
 	bool _reset;
 	unsigned int _current;
 
 public:
-	UnionGenerator(std::vector<InstGenerator*>& generators)
-			: _generators(generators), _reset(false), _current(0) {
-	}
-
-	// FIXME reimplemnt clone
-	UnionGenerator* clone() const {
-		throw notyetimplemented("Cloning UnionGenerator.");
-	}
-
-	void reset() {
-		_reset = true;
-		_current = 0;
-	}
-
-	void next() {
-		if (_reset) {
-			_reset = false;
-			if (_generators.size() == 0) {
-				notifyAtEnd();
-				return;
-			} else {
-				_generators[0]->begin();
-			}
-		} else {
-			_generators[_current]->operator ++();
-		}
-
-		while (_generators[_current]->isAtEnd()) {
-			_current++;
-			if (_current < _generators.size()) {
-				_generators[_current]->begin();
-			} else {
-				notifyAtEnd();
-				return;
-			}
-		}
-	}
-	virtual void put(std::ostream& stream) {
-		stream << "Union generator: union of ";
-		pushtab();
-		stream << nt();
-		bool first = true;
-		for (auto it = _generators.cbegin(); it != _generators.cend(); ++it) {
-			if (not first) {
-				stream << nt();
-			} else {
-				first = false;
-			}
-			stream << "*" << toString(*it);
-		}
-		poptab();
-	}
-
+	UnionGenerator(std::vector<InstGenerator*>& generators, std::vector<InstGenerator*>& checkers);
+	UnionGenerator* clone() const;
+	void reset();
+	bool alreadySeen();
+	void next();
+	virtual void put(std::ostream& stream);
 };
 
 #endif /* UNIONQUANTKERNELGENERATOR_HPP_ */

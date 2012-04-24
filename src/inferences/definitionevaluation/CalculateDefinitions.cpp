@@ -6,10 +6,11 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "CalculateDefinitions.hpp"
 #include "inferences/SolverConnection.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -57,6 +58,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (data);
 	delete (mx);
 	delete (grounder);
+	delete (symstructure->manager());
 	delete (symstructure);
 
 	return structure->isConsistent();
@@ -97,6 +99,7 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 					return std::vector<AbstractStructure*> { };
 				}
 				theory->remove(currentdefinition->first);
+				currentdefinition->first->recursiveDelete();
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}

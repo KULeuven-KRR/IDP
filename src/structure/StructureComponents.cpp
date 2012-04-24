@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include <cmath> // double std::abs(double) and double std::pow(double,double)
 #include <cstdlib> // int std::abs(int)
@@ -2522,7 +2522,11 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 	if (a2 == 0) {
 		return NULL;
 	} else {
-		return createDomElem(a1 % a2);
+		int cppModulo = a1 % a2;
+		if(cppModulo < 0 ){
+			return createDomElem(cppModulo + a2);
+		}
+		return createDomElem(cppModulo);
 	}
 }
 

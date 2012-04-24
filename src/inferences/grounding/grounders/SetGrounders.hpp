@@ -39,6 +39,7 @@ public:
 	EnumSetGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*>& subgr, const std::vector<TermGrounder*>& subtgr)
 			: SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) {
 	}
+	~EnumSetGrounder();
 	SetId run() const;
 };
 
@@ -52,6 +53,7 @@ public:
 	QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
 			: SetGrounder(gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
 	}
+	~QuantSetGrounder();
 	SetId run() const;
 };
 

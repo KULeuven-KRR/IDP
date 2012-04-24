@@ -12,52 +12,42 @@
 #define SORTINSTGENERATOR_HPP_
 
 #include "InstGenerator.hpp"
+#include "structure/StructureComponents.hpp"
+
+class InternalSortTable;
+class DomElemContainer;
+
+/**
+ * Generate a domelem if the input is in the sorttable (TODO is in fact a checker).
+ */
+class SortChecker: public InstGenerator {
+private:
+	const InternalSortTable* _table;
+	const DomElemContainer* _invar;
+	bool _reset;
+public:
+	SortChecker(const InternalSortTable* t, const DomElemContainer* in);
+	SortChecker* clone() const;
+	void reset();
+	void next();
+};
 
 /**
  * Instantiate a given variable with all possible values for the given sort
  */
-class SortInstGenerator: public InstGenerator {
+class SortGenerator: public InstGenerator {
 private:
 	const InternalSortTable* _table;
 	const DomElemContainer* _var;
 	SortIterator _curr;
 	bool _reset;
 public:
-	SortInstGenerator(const InternalSortTable* table, const DomElemContainer* var)
-			: _table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
-	}
-
-	SortInstGenerator* clone() const {
-		return new SortInstGenerator(*this);
-	}
-
-	void reset() {
-		_reset = true;
-	}
-
-	void setVarsAgain() {
-		*_var = *_curr;
-	}
-
-	void next() {
-		if (_reset) {
-			_reset = false;
-			_curr = _table->sortBegin();
-		} else {
-			++_curr;
-		}
-		if (_curr.isAtEnd()) {
-			notifyAtEnd();
-		} else {
-			*_var = *_curr;
-		}
-	}
-
-	virtual void put(std::ostream& stream) {
-		pushtab();
-		stream << "generator for sort: " << toString(_table);
-		poptab();
-	}
+	SortGenerator(const InternalSortTable* table, const DomElemContainer* var);
+	SortGenerator* clone() const;
+	void reset();
+	void setVarsAgain();
+	void next();
+	virtual void put(std::ostream& stream);
 };
 
 #endif /* SORTINSTGENERATOR_HPP_ */

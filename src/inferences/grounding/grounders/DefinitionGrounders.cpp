@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "DefinitionGrounders.hpp"
 
@@ -50,14 +50,14 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 }
 
 RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: origrule(rule->clone()), _headgrounder(hgr), _bodygrounder(bgr), _bodygenerator(big), _context(ct) {
+		: _origrule(rule->clone()), _headgrounder(hgr), _bodygrounder(bgr), _bodygenerator(big), _context(ct) {
 	Assert(_headgrounder!=NULL);
 	Assert(_bodygrounder!=NULL);
 	Assert(_bodygenerator!=NULL);
 }
 
 void RuleGrounder::put(std::stringstream& stream) {
-	stream << toString(origrule);
+	stream << toString(_origrule);
 }
 
 tablesize RuleGrounder::getMaxGroundSize() const {
@@ -68,6 +68,7 @@ RuleGrounder::~RuleGrounder() {
 	delete (_headgrounder);
 	delete (_bodygrounder);
 	delete (_bodygenerator);
+	_origrule->recursiveDelete();
 }
 
 FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)

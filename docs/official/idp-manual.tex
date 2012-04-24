@@ -865,11 +865,11 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	%\item[{groundlazily = [false, true]}] Enable/disable lazy grounding
 	%\item[{printtypes = [false, true]}] \todo{doet niets voor de moment?}
 	%\item[{provertimeout = [0..2147483647]}] \todo{?}
-	%\item[{randomvaluechoice =  [false, true]}] \todo{?}
 	%\item[{showwarnings = [false, true]}] Enable/disable the warnings.
 	%\item[{symmetry = [0..2147483647]}] \todo{?} 1 is static, 0 is none, higher = ?
 	\item[{timeout = [0..max(int)]}] Set the timeout for inferences (in seconds)
 	\item[{seed = [0..max(int)]}] Set the seed for the random generator (used in the estimators for BDDs and in the SAT-solver)
+	\item[{randomvaluechoice = [false, true]}] Controls the solver: if set to true, the assignment to choice literals is random, if set to false, the solver default assigns false to choice literals.
 \end{description}
 
 

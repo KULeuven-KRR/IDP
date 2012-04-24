@@ -1,11 +1,11 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include <cmath>
@@ -14,12 +14,10 @@
 #include <exception>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
-#include "generators/ComparisonGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
+#include "external/rungidl.hpp".
 #include "IncludeComponents.hpp"
+#include "generators/ComparisonGenerator.hpp"
+#include "generators/SortGenAndChecker.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
@@ -28,6 +26,8 @@
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "TestUtils.hpp"
 #include "utils/FileManagement.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
+
 
 using namespace std;
 
@@ -84,7 +84,7 @@ vector<string> generateListOfPropagationFiles() {
 class LuaPropagationTest: public ::testing::TestWithParam<string> {
 };
 
-TEST_P(LuaPropagationTest, OptimalAndGroundPropagation) {
+TEST_P(LuaPropagationTest, ThreeDifferentPropagations) {
 	string testfile(getTestDirectory() + "propagatetest.idp");
 	cerr << "Testing " << GetParam() << "\n";
 	Status result = Status::FAIL;

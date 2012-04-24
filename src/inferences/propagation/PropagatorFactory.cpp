@@ -17,6 +17,7 @@
 #include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 
@@ -25,7 +26,6 @@ using namespace std;
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure);
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 
 GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure) {
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
@@ -41,11 +41,13 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	auto propagator = createPropagator(theory, structure, mpi);
 	propagator->doPropagation();
 	propagator->applyPropagationToStructure(structure);
-	return propagator->symbolicstructure();
+	auto result = propagator->symbolicstructure();
+	delete (propagator);
+	return result;
 }
 
-void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars
-		, Bound& ctbounds, Bound& cfbounds) {
+void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars,
+		Bound& ctbounds, Bound& cfbounds) {
 	auto pinter = structure->inter(symbol);
 	if (pinter->approxTwoValued()) {
 		return;
@@ -101,7 +103,6 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 //	}
 }
 
-//TODO: is as useful?  Why wouldn't we assert sentences?
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
@@ -109,6 +110,11 @@ FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(Inte
 	auto options = GlobalData::instance()->getOptions();
 	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
 	_multiplymaxsteps = options->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
+}
+
+template<class InterpretationFactory, class PropDomain>
+FOPropagatorFactory<InterpretationFactory, PropDomain>::~FOPropagatorFactory() {
+	//deleteList(_leafconnectors); Do not delete connectors, they are passed to the propagator.
 }
 
 template<class Factory, class Domain>
@@ -203,7 +209,8 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		QuantForm* univ2 = new QuantForm(SIGN::POS, QUANT::UNIV, zy1y2set, disjunction, FormulaParseInfo());
 		newtheo->add(univ2);
 	}
-
+	//From now on, newtheo is the responsibility of _propagator
+	_propagator->setTheory(newtheo);
 	// Multiply maxsteps if requested
 	if (_multiplymaxsteps) {
 		_propagator->setMaxSteps(_propagator->getMaxSteps() * FormulaUtils::nrSubformulas(newtheo));
@@ -226,7 +233,6 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 
 	// visit sentences
 	newtheo->accept(this);
-
 	return _propagator;
 }
 
@@ -296,9 +302,9 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 				VarTerm* vt = new VarTerm(connectvar, TermParseInfo());
 				PredForm* as = new PredForm(SIGN::POS, leafvar->sort()->pred(), vector<Term*>(1, vt), FormulaParseInfo());
 				Domain* asd = _propagator->getFactory()->formuladomain(as);
-				as->recursiveDelete();
 				FOPropDomain* temp = lcd._equalities;
 				lcd._equalities = _propagator->getFactory()->conjunction(lcd._equalities, asd);
+				as->recursiveDelete();
 				delete (temp);
 				delete (asd);
 			}

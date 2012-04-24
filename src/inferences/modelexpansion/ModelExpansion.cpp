@@ -19,6 +19,7 @@
 #include "theory/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
@@ -55,8 +56,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
+			clonetheory->recursiveDelete();
 			return std::vector<AbstractStructure*> { };
-		}Assert(defCalculated[0]->isConsistent());
+		}
+		Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
 		newstructure = structure->clone();
@@ -68,6 +71,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
 	if (not newstructure->isConsistent()) {
+		clonetheory->recursiveDelete();
+		delete (newstructure);
+		delete symstructure->manager();
+		delete (symstructure);
 		return std::vector<AbstractStructure*> { };
 	}
 
@@ -96,7 +103,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
 		}
 	}
-
 
 	// Execute symmetry breaking
 	if (opts->getValue(IntType::SYMMETRY) != 0) {
@@ -179,11 +185,13 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Clean up: remove all objects that are only used here.
 	grounding->recursiveDelete();
-	// delete (grounder); TODO UNCOMMENT AND FIX MEM MANAG FOR BDDs
+	delete (grounder);
+	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
 	delete(terminator);
 	delete (newstructure);
+	delete symstructure->manager();
 	delete (symstructure);
 	delete(data);
 	delete(mx);

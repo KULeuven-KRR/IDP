@@ -1,8 +1,8 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
@@ -28,8 +28,8 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "inferences/SolverConnection.hpp"
 
-#include "generators/BasicGenerators.hpp"
-#include "generators/TableGenerator.hpp"
+#include "generators/BasicCheckersAndGenerators.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -315,7 +315,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	_topgrounder = new BoolGrounder(_grounding, children, SIGN::POS, true, _context);
 
 	// Clean up: delete the theory clone.
-	//TODO newtheory->recursiveDelete();
+	newtheory->recursiveDelete();
 }
 
 /**
@@ -372,7 +372,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	RestoreContext();
 
 	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(),_structure->vocabulary())) {
+	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		string name = newpf->symbol()->name();
 		CompType comp;
 		if (name == "=/2") {
@@ -426,14 +426,15 @@ void GrounderFactory::visit(const PredForm* pf) {
 		tables.push_back(_structure->inter((*it)->sort()));
 	}
 
+	std::vector<Variable*> fovars;
+	vector<Term*> foterms;
 	PredTable *certTrueTable = NULL, *possTrueTable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS) && checksorts.size() > 0) { //TODO: didn't work for size 0, i.e. for propositional symbols.  Fix this!
-		auto fovars = VarUtils::makeNewVariables(checksorts);
-		auto foterms = TermUtils::makeNewVarTerms(fovars);
-		auto checkpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-		const FOBDD* possTrueBdd = _symstructure->evaluate(checkpf, TruthType::POSS_TRUE);
-		const FOBDD* certTrueBdd = _symstructure->evaluate(checkpf, TruthType::CERTAIN_TRUE);
-		;
+		fovars = VarUtils::makeNewVariables(checksorts);
+		foterms = TermUtils::makeNewVarTerms(fovars);
+		auto checkpf = PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+		const FOBDD* possTrueBdd = _symstructure->evaluate(&checkpf, TruthType::POSS_TRUE);
+		const FOBDD* certTrueBdd = _symstructure->evaluate(&checkpf, TruthType::CERTAIN_TRUE);
 		possTrueTable = new PredTable(new BDDInternalPredTable(possTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 		certTrueTable = new PredTable(new BDDInternalPredTable(certTrueBdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
@@ -443,6 +444,15 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	auto possTrueChecker = GeneratorFactory::create(possTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
 	auto certTrueChecker = GeneratorFactory::create(certTrueTable, vector<Pattern>(checkargs.size(), Pattern::INPUT), checkargs, Universe(tables), pf);
+
+	//Cleanup.
+	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
+	//Also, the fovars and foterms should no longer be used.
+	delete (possTrueTable);
+	delete (certTrueTable);
+	deleteList(fovars);
+	deleteList(foterms);
+
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << tabs() << "Possible checker: \n" << tabs() << toString(possTrueChecker) << "\n";
 		clog << tabs() << "Certain checker: \n" << tabs() << toString(certTrueChecker) << "\n";
@@ -455,7 +465,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = _formgrounder;
 	}
-	//newpf->recursiveDelete(); //TODO: this is suspicious since the bdds use variables from newpf...
+	newpf->recursiveDelete(); //TODO: this is suspicious since the bdds use variables from newpf...
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
@@ -519,7 +529,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if(not trydelay){
+	if (not trydelay) {
 		mightdolazy = false;
 	}
 	if(not getOption(TSEITINDELAY)){
@@ -556,8 +566,8 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 	}
 
 	bool somequant = false;
-	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+		if (dynamic_cast<QuantForm*>(*i) != NULL) {
 			somequant = true;
 		}
 	}
@@ -588,8 +598,8 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 	}
 
 	bool somequant = false;
-	for(auto i=bf->subformulas().cbegin(); i<bf->subformulas().cend(); ++i){
-		if(dynamic_cast<QuantForm*>(*i)!=NULL){
+	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+		if (dynamic_cast<QuantForm*>(*i) != NULL) {
 			somequant = true;
 		}
 	}
@@ -648,6 +658,7 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		poptab();
 	}
+	newsubformula->recursiveDelete();
 }
 
 void checkGeneratorInfinite(InstChecker* gen) {
@@ -709,14 +720,14 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		Context lazycontext = Context::BOTH;
 		// FIXME BUG BUG: for functions, should ALSO consider the implicit function constraint!!!!!
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, _grounding->translator(), lazycontext);
-		if (tuple.size()!=2) {
+		if (tuple.size() != 2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
 			twindelayablepf = tuple[1];
 		}
 	}
-	if(delayablepf!=NULL){
+	if (delayablepf != NULL) {
 		_context._allowDelaySearch = false;
 	}
 
@@ -729,7 +740,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	Assert(subgrounder!=NULL);
 
 	FormulaGrounder* grounder = NULL;
-	if(delayablepf!=NULL){
+	if (delayablepf != NULL) {
 		_context._allowDelaySearch = true;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
@@ -742,7 +753,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		Context lazycontext = Context::BOTH;
 
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
-		if (tuple.size()!=2) {
+		if (tuple.size() != 2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, _grounding->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
@@ -897,8 +908,8 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if (recursive(ef)) {
 		_context._tseitin = TsType::RULE;
 	}/*else{
-		_context._tseitin = TsType::EQ;
-	}*/
+	 _context._tseitin = TsType::EQ;
+	 }*/
 	_formgrounder = new EquivGrounder(_grounding, leftgrounder, rightgrounder, ef->sign(), _context);
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {
@@ -1015,7 +1026,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	t->set()->accept(this);
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(_grounding->translator(),_grounding->termtranslator(), t->function(), _setgrounder);
+	_termgrounder = new AggTermGrounder(_grounding->translator(), _grounding->termtranslator(), t->function(), _setgrounder);
 	_termgrounder->setOrig(t, varmapping());
 }
 
@@ -1075,12 +1086,14 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
 	} else {
 		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
-		checktable = new PredTable(new InverseInternalPredTable(new FullInternalPredTable), Universe(tables));
+		checktable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
 
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
-
+	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
+	delete (gentable);
+	delete (checktable);
 	vector<SortTable*> directquanttables;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
 		directquanttables.push_back(_structure->inter((*it)->sort()));
@@ -1124,6 +1137,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 		checkGeneratorInfinite(gc._generator);
 		checkGeneratorInfinite(gc._checker);
 	}
+	delete newqs;
 	_setgrounder = new QuantSetGrounder(_grounding->translator(), subgr, gc._generator, gc._checker, wgr);
 }
 
@@ -1192,8 +1206,8 @@ void GrounderFactory::visit(const Rule* rule) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	auto temprule = rule->clone();
-	auto newrule = DefinitionUtils::unnestThreeValuedTerms(temprule, _structure, _context._funccontext);
+	auto newrule = rule->clone();
+	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext);
 	if (getOption(BoolType::GROUNDLAZILY)) { // TODO currently, no support for lazy grounding rules with variables within functerms
 		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
 	}
@@ -1274,5 +1288,5 @@ void GrounderFactory::visit(const Rule* rule) {
 		poptab();
 	}
 
-	//newrule->recursiveDelete(); INCORRECT, as it deletes its quantvars, which might have been used elsewhere already!
+	newrule->recursiveDelete(); //INCORRECT, as it deletes its quantvars, which might have been used elsewhere already! TODO: looks quite correct to me (it's quantvars do not appear on other places)
 }

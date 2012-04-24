@@ -14,13 +14,15 @@
 #include "TermGrounders.hpp"
 #include "FormulaGrounders.hpp"
 #include "generators/InstGenerator.hpp"
-#include "generators/BasicCheckers.hpp"
+#include "generators/BasicCheckersAndGenerators.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights, varidlist& varids, InstChecker& checker) {
+void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights,
+		varidlist& varids, InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
 		l = _true;
@@ -35,7 +37,8 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	const auto& groundweight = subtermgrounder.run();
 
 	if (groundweight.isVariable) {
-		Assert(l == _true); //FIXME: this is not always the case...
+		Assert(l == _true);
+		//FIXME: this is not always the case...
 		varids.push_back(groundweight._varid);
 		return;
 	}
@@ -50,7 +53,10 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		literals.push_back(l);
 	}
 }
-
+EnumSetGrounder::~EnumSetGrounder() {
+		deleteList(_subgrounders);
+		deleteList(_subtermgrounders);
+	}
 SetId EnumSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;
@@ -63,7 +69,12 @@ SetId EnumSetGrounder::run() const {
 	SetId s = _translator->translateSet(literals, weights, trueweights, varids);
 	return s;
 }
-
+QuantSetGrounder::~QuantSetGrounder() {
+	delete _subgrounder;
+	delete _generator;
+	delete _checker;
+	delete _weightgrounder;
+}
 SetId QuantSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;

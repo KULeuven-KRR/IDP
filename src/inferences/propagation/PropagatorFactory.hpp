@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef PROPAGATORFACTORY_HPP_
 #define PROPAGATORFACTORY_HPP_
@@ -57,7 +57,7 @@ class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {
 private:
 	int _verbosity;
 	Propagator* _propagator;
-	std::map<PFSymbol*, PredForm*> _leafconnectors;
+	std::map<PFSymbol*, PredForm*> _leafconnectors; //_propagator is responsible for deleting this
 	std::map<PFSymbol*, InitBoundType> _initbounds;
 	bool _assertsentences;
 	bool _multiplymaxsteps;
@@ -75,6 +75,7 @@ protected:
 	void visit(const AggForm*);
 public:
 	FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*, InitBoundType>&);
+	~FOPropagatorFactory();
 
 	Propagator* create(const AbstractTheory*);
 };
@@ -82,5 +83,8 @@ public:
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
 GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure);
+
+GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+
 
 #endif /* PROPAGATORFACTORY_HPP_ */

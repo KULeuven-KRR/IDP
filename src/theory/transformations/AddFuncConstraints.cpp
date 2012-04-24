@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "AddFuncConstraints.hpp"
 #include "IncludeComponents.hpp"
@@ -40,7 +40,7 @@ Theory* AddFuncConstraints::visit(Theory* t) {
 			}
 
 			//#{y|F(x) = y} (= or =<) 1
-			auto aggform = new AggForm(SIGN::POS, oneterm, comp, new AggTerm(set, AggFunction::CARD, TermParseInfo()), FormulaParseInfo());
+			auto aggform = new AggForm(SIGN::POS, oneterm->clone(), comp, new AggTerm(set, AggFunction::CARD, TermParseInfo()), FormulaParseInfo()); //double usage of oneterm ===> clone!
 			Formula* final;
 			if (function->sorts().size() == 1) {
 				final = aggform;
