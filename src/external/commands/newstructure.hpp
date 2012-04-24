@@ -23,7 +23,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto s = new Structure(*get<1>(args), ParseInfo());
-		s->vocabulary(get<0>(args));
+		s->changeVocabulary(get<0>(args));
 		return InternalArgument(s);
 	}
 };

@@ -670,7 +670,7 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 		usevocabulary(v);
 		_currvocabulary = v;
 		if (_currstructure){
-			_currstructure->vocabulary(v);
+			_currstructure->changeVocabulary(v);
 		}else if (_currtheory){
 			_currtheory->vocabulary(v);
 		}
@@ -678,7 +678,7 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 		Error::undeclvoc(toString(vs), pi);
 		_currvocabulary = Vocabulary::std();
 		if (_currstructure){
-			_currstructure->vocabulary(Vocabulary::std());
+			_currstructure->changeVocabulary(Vocabulary::std());
 		}else if (_currtheory){
 			_currtheory->vocabulary(Vocabulary::std());
 		}

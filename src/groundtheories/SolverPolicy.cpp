@@ -253,7 +253,7 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 		msem = MinisatID::AggSem::DEF;
 		break;
 	}
-	extAdd(getSolver(), MinisatID::Aggregate(createAtom(head), setnr, createWeight(bound), convert(aggtype), sign, msem, definitionID));
+	extAdd(getSolver(), MinisatID::Aggregate(createLiteral(head), setnr, createWeight(bound), convert(aggtype), sign, msem, definitionID));
 }
 
 template<typename Solver>

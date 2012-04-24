@@ -26,7 +26,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		get<0>(args)->vocabulary(get<1>(args));
+		get<0>(args)->changeVocabulary(get<1>(args));
 		return nilarg();
 	}
 };
