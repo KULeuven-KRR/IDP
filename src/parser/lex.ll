@@ -17,6 +17,7 @@ using namespace std;
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
 extern int yyparse();
+extern std::string getInstalledFilePath(std::string filename);
 
 Insert& getInserter();
 
@@ -298,8 +299,8 @@ COMMENTLINE		"//".*
 								  BEGIN(data.includecaller);
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ data.advancecol();
-								  char* temp = yytext; ++temp;
-								  string str = getInstallDirectoryPath() + "share/std/" + string(temp,yyleng-2) + ".idp";
+								  char* temp = yytext; ++temp;								  
+								  string str = getInstalledFilePath(string(temp,yyleng-2));
 								  data.start_include(str);	
 								  BEGIN(data.includecaller);
 								}
