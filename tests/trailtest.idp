@@ -1,0 +1,34 @@
+#include <mx>
+#include <table_utils>
+
+vocabulary V{
+	P
+	Q
+}
+
+theory T:V{
+	P | Q.
+}
+
+structure S:V{
+	
+}
+
+procedure main() {
+	stdoptions.trace = true
+	solution, trace = mx::all(T,S)
+	return #trace==7 and trace[1]["type"]=="assign" 
+					and trace[2]["type"]=="assign" 
+					and trace[3]["type"]=="backtrack"
+					and trace[4]["type"]=="assign"
+					and trace[5]["type"]=="assign"
+					and trace[6]["type"]=="backtrack"
+					and trace[7]["type"]=="assign"
+					and trace[1]["dl"]==1 
+					and trace[2]["dl"]==1
+					and trace[3]["dl"]==0
+					and trace[4]["dl"]==0
+					and trace[5]["dl"]==1
+					and trace[6]["dl"]==0
+					and trace[7]["dl"]==0
+}

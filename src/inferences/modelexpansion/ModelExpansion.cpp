@@ -49,10 +49,12 @@ public:
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
-	// FIXME currently skipping if working lazily!
 	auto clonetheory = theory->clone();
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
+		if (verbosity() >= 1) {
+			clog << "Evaluating definitions\n";
+		}
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
@@ -89,8 +91,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	grounder->toplevelRun();
 
 	auto grounding = grounder->getGrounding();
-
-	// TODO refactor optimization!
 
 	if (minimizeterm != NULL) {
 		auto term = dynamic_cast<AggTerm*>(minimizeterm);
@@ -186,7 +186,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	grounding->recursiveDelete();
 	delete (grounder);
-	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
 	delete(terminator);

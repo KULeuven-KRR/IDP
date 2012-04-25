@@ -76,6 +76,12 @@ TEST(MakeTrueTest, Correct) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
+TEST(TrailTest, NonEmptyTrail) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "trailtest.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 TEST(MXnbmodelsTest, DoesMX) {
 	string testfile(getTestDirectory() + "mx/nbmodels.idp");
 	cerr << "Testing " << testfile << "\n";

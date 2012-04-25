@@ -30,9 +30,7 @@
 class GroundingPropagation {
 public:
 	 std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
-		// TODO: make a clean version of this implementation
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
-		auto monitor = new PropagateMonitor();
 
 		//Set MinisatID solver options
 		auto data = SolverConnection::createsolver(0);
@@ -40,8 +38,6 @@ public:
 		//Create and execute grounder
 		auto symstructure = generateBounds(theory, structure);
 		auto grounder = GrounderFactory::create({theory, structure, symstructure}, data);
-		monitor->setTranslator(grounder->getTranslator());
-		monitor->setSolver(data);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
@@ -50,8 +46,8 @@ public:
 
 		auto translator = grounding->translator();
 		auto result = structure->clone();
-		// Use the propagation monitor to assert everything that was propagated without search
-		for (auto literal = monitor->model().cbegin(); literal != monitor->model().cend(); ++literal) {
+		auto entailed = mx->getEntailedLiterals();
+		for (auto literal = entailed.cbegin(); literal < entailed.cend(); ++literal) {
 			int atomnr = var(*literal);
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
@@ -75,7 +71,6 @@ public:
 			}
 		}
 		result->clean();
-		delete (monitor);
 		delete (data);
 		delete (mx);
 
