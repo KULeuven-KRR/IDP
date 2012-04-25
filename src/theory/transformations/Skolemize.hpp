@@ -70,16 +70,16 @@ protected:
 			quantified.insert(quantified.end(), qf->quantVars().cbegin(), qf->quantVars().cend());
 			return qf;
 		}else{
-			for(auto existsvar: qf->quantVars()){
+			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i) {
 				std::vector<Term*> varterms;
 				std::vector<Sort*> sorts;
-				for(auto univvar: quantified){
-					varterms.push_back(new VarTerm(univvar, TermParseInfo())); // TODO correct parse info?
-					sorts.push_back(univvar->sort());
+				for(auto j=quantified.cbegin(); j<quantified.cend(); ++j) {
+					varterms.push_back(new VarTerm(*j, TermParseInfo())); // TODO correct parse info?
+					sorts.push_back((*j)->sort());
 				}
-				auto func = new Function(sorts, existsvar->sort(), ParseInfo()); // TODO correct parse info?
+				auto func = new Function(sorts, (*i)->sort(), ParseInfo()); // TODO correct parse info?
 				vocabulary->add(func);
-				replace.insert({existsvar, new FuncTerm(func, varterms, TermParseInfo())}); // TODO correct parse info?
+				replace.insert({*i, new FuncTerm(func, varterms, TermParseInfo())}); // TODO correct parse info?
 			}
 			return qf->subformula()->accept(this);
 		}

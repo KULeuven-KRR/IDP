@@ -186,7 +186,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	grounding->recursiveDelete();
 	delete (grounder);
-	delete (abstractsolutions);
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
 	delete(terminator);
