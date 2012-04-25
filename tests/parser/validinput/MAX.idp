@@ -1,0 +1,17 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type X isa int
+}
+theory T:V{
+	?x[X]: MAX[:int]-3000000000>x.
+}
+structure S:V{
+	X = {1000000000}
+}
+procedure main(){
+	stdoptions.groundwithbounds=false
+	return #modelexpand(T, S)==0
+}

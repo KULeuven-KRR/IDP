@@ -864,7 +864,6 @@ std::string getInstalledFilePath(std::string filename){
 }
 
 void parsefile(const std::string& str) {
-	std::cerr <<"Parsing file " <<str <<"\n";
 	reset();
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
