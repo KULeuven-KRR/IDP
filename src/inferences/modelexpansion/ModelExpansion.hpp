@@ -31,13 +31,13 @@ public:
 	}
 
 private:
-	AbstractTheory* theory;
-	AbstractStructure* structure;
-	TraceMonitor* tracemonitor;
-	Term* minimizeterm; // if NULL, no optimization is done
+	AbstractTheory* _theory;
+	AbstractStructure* _structure;
+	TraceMonitor* _tracemonitor;
+	Term* _minimizeterm; // if NULL, no optimization is done
 
 	ModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
-			: theory(theory), structure(structure), tracemonitor(tracemonitor), minimizeterm(minimize) {
+			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize) {
 	}
 	std::vector<AbstractStructure*> expand() const;
 };

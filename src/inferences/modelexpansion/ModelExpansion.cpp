@@ -49,13 +49,16 @@ public:
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
-	auto clonetheory = theory->clone();
+	auto clonetheory = _theory->clone();
+
+#warning "Buggy code in mx: testing with new transformation"
+
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
 		if (verbosity() >= 1) {
 			clog << "Evaluating definitions\n";
 		}
-		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
+		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), _structure);
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
 			clonetheory->recursiveDelete();
@@ -64,7 +67,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
-		newstructure = structure->clone();
+		newstructure = _structure->clone();
 	}
 	// Create solver and grounder
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
@@ -85,19 +88,19 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, data);
 	if (getOption(BoolType::TRACE)) {
-		tracemonitor->setTranslator(grounder->getTranslator());
-		tracemonitor->setSolver(data);
+		_tracemonitor->setTranslator(grounder->getTranslator());
+		_tracemonitor->setSolver(data);
 	}
 	grounder->toplevelRun();
 
 	auto grounding = grounder->getGrounding();
 
-	if (minimizeterm != NULL) {
-		auto term = dynamic_cast<AggTerm*>(minimizeterm);
+	if (_minimizeterm != NULL) {
+		auto term = dynamic_cast<AggTerm*>(_minimizeterm);
 		if (term != NULL) {
 			auto setgrounder = GrounderFactory::create(term->set(), { newstructure, symstructure }, grounding);
 			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
-			optimgrounder.setOrig(minimizeterm);
+			optimgrounder.setOrig(_minimizeterm);
 			optimgrounder.run();
 		} else {
 			throw notyetimplemented("Optimization over non-aggregate terms.");
@@ -166,7 +169,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto abstractsolutions = mx->getSolutions();
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if (minimizeterm != NULL) { // Optimizing
+	if (_minimizeterm != NULL) { // Optimizing
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();

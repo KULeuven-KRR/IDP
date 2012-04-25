@@ -44,6 +44,7 @@
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/CalculateKnownArithmetic.hpp"
+#include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
@@ -186,6 +187,11 @@ AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructu
 AbstractTheory* skolemize(AbstractTheory* t){
 	return transform<Skolemize, AbstractTheory*>(t);
 }
+
+AbstractTheory* sharedTseitinTransform(AbstractTheory* t){
+	return transform<IntroduceSharedTseitins, AbstractTheory*>(t);
+}
+
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
