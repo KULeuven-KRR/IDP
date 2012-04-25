@@ -752,6 +752,10 @@ void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const st
 	clog << "Warning: tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
 }
 
+void emptySort(const std::string& sortname){
+	clog <<"Warning: sort " <<sortname <<" has an empty interpretation.\n";
+}
+
 /** Ambiguous partial term **/
 void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
 	warning(thisplace);

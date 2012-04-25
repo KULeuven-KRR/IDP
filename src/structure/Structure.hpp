@@ -41,6 +41,7 @@ public:
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
+	void sortCheck() const; // Checks whether any sorts are empty and throws a warning for those
 	void functionCheck(); //!< check the correctness of the function tables
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
 

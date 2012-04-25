@@ -1,0 +1,5 @@
+procedure main(){
+	s = "}#..{}"
+	s2 = '}'
+	return #s==6
+}

@@ -812,6 +812,7 @@ void Insert::closestructure() {
 	if (getOption(BoolType::AUTOCOMPLETE)) {
 		_currstructure->autocomplete();
 	}
+	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
 	if (_currspace->isGlobal()) {
 		LuaConnection::addGlobal(_currstructure);

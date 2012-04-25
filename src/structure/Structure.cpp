@@ -406,6 +406,14 @@ void Structure::addStructure(AbstractStructure*) {
 	throw notyetimplemented("Add a structure to another one.");
 }
 
+void Structure::sortCheck() const {
+	for(auto i=_sortinter.cbegin(); i<_sortinter.cend(); ++i) {
+		if((*i).second->empty()){
+			Warning::emptySort(i->first->name());
+		}
+	}
+}
+
 void Structure::functionCheck() {
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		Function* f = it->first;
