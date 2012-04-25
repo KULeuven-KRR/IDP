@@ -188,6 +188,12 @@ COMMENTLINE		"//".*
 
 <*>{COMMENTLINE}			{							}
 
+// When encountering nested comment starts, ignore them (removes the need for bookkeeping lexer states with a stack)
+<comment>"/*"				{ data.advancecol(); }
+<description>"/*"			{ data.advancecol(); }
+<comment>"/**"/[^*]			{ data.advancecol(); }
+<description>"/**"/[^*]		{ data.advancecol(); }
+
 <*>"/**"/[^*]				{ data.commentcaller = YY_START;
 							  BEGIN(description);
 							  data.advancecol();
@@ -205,7 +211,7 @@ COMMENTLINE		"//".*
 							  data.advancecol();				}
 
 <*>"/*"						{ data.commentcaller = YY_START;
-							  BEGIN(comment);	
+							  BEGIN(comment);
 							  data.advancecol();				}
 <comment>[^*\n]*			{ data.advancecol();				}
 <comment>[^*\n]*\n			{ data.advanceline();			}
