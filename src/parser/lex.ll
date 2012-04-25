@@ -17,6 +17,7 @@ using namespace std;
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
 extern int yyparse();
+extern std::string getInstalledFilePath(std::string filename);
 
 Insert& getInserter();
 
@@ -187,6 +188,12 @@ COMMENTLINE		"//".*
 
 <*>{COMMENTLINE}			{							}
 
+	/* When encountering nested comment starts, ignore them (removes the need for bookkeeping lexer states with a stack)*/
+<comment>"/*"				{ data.advancecol(); }
+<description>"/*"			{ data.advancecol(); }
+<comment>"/**"/[^*]			{ data.advancecol(); }
+<description>"/**"/[^*]		{ data.advancecol(); }
+
 <*>"/**"/[^*]				{ data.commentcaller = YY_START;
 							  BEGIN(description);
 							  data.advancecol();
@@ -204,7 +211,7 @@ COMMENTLINE		"//".*
 							  data.advancecol();				}
 
 <*>"/*"						{ data.commentcaller = YY_START;
-							  BEGIN(comment);	
+							  BEGIN(comment);
 							  data.advancecol();				}
 <comment>[^*\n]*			{ data.advancecol();				}
 <comment>[^*\n]*\n			{ data.advanceline();			}
@@ -232,30 +239,34 @@ COMMENTLINE		"//".*
 							  data.luacode = new stringstream();
 							  return *yytext;
 							}
-<lua>"::"					{ data.advancecol(); (*data.luacode) << '.'; }
-<lua>"{"					{ data.advancecol(); 
-							  ++data.bracketcounter;
-							  (*data.luacode) << '{';
-							}
-<lua>"}"					{ data.advancecol();
-							  --data.bracketcounter;
-							  if(data.bracketcounter == 0) { 
-								  yylval.sstr = data.luacode;
-								  BEGIN(INITIAL); 
-								  delete(yylloc.descr);
-								  yylloc.descr = 0;
-								  return LUACHUNK;	
-							  }
-							  else (*data.luacode) << '}';
-							}
-<lua>\n						{ data.advanceline(); (*data.luacode) << '\n';	}
-<lua>[^/{}:\n*]*				{  // //, :, { and } and \n are matched before (single / FALLS THROUGH to last one (.) )
-								data.advancecol();	
-								(*data.luacode) << yytext;
-							}
-<lua>{STR}					{ data.advancecol(); (*data.luacode) << yytext;	}
-<lua>{CHR}					{ data.advancecol();	(*data.luacode) << yytext;	}
-<lua>.						{ data.advancecol(); (*data.luacode) << *yytext;	}
+							
+	/* NOTE: important to have these before matches which work on lua syntax */
+<lua>{STR}				{ data.advancecol(); (*data.luacode) << yytext;	}
+<lua>{CHR}				{ data.advancecol(); (*data.luacode) << yytext;	}
+
+<lua>"::"				{ data.advancecol(); (*data.luacode) << '.'; }
+<lua>"{"				{ data.advancecol();
+							 ++data.bracketcounter;
+							 (*data.luacode) << '{';
+						}
+<lua>"}"				{ data.advancecol();
+						  --data.bracketcounter;
+				 		 if(data.bracketcounter == 0) { 
+							  yylval.sstr = data.luacode;
+							  BEGIN(INITIAL); 
+							  delete(yylloc.descr);
+							  yylloc.descr = 0;
+							  return LUACHUNK;	
+						  }
+						  else (*data.luacode) << '}';
+						}
+<lua>\n					{ data.advanceline(); (*data.luacode) << '\n';	}
+<lua>[^/{}:\n\"\'*]* 	{
+							// \', \", //, :, { and } and \n are matched before (single / FALLS THROUGH to last one (.) )
+							data.advancecol();	
+							(*data.luacode) << yytext;
+						}
+<lua>.					{ data.advancecol(); (*data.luacode) << *yytext;	}
 
 
 	/***************
@@ -298,8 +309,8 @@ COMMENTLINE		"//".*
 								  BEGIN(data.includecaller);
 								}
 <include>"<"[a-zA-Z0-9_/]*">"	{ data.advancecol();
-								  char* temp = yytext; ++temp;
-								  string str = getInstallDirectoryPath() + "share/std/" + string(temp,yyleng-2) + ".idp";
+								  char* temp = yytext; ++temp;								  
+								  string str = getInstalledFilePath(string(temp,yyleng-2));
 								  data.start_include(str);	
 								  BEGIN(data.includecaller);
 								}

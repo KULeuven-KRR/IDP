@@ -11,6 +11,8 @@ extern int yylex();
 
 Insert& getInserter();
 
+std::string getInstalledFilePath(std::string filename);
+
 // Errors
 void yyerror(const char* s);
 
@@ -857,13 +859,21 @@ void yyerror(const char* s) {
 	std::clog << s << std::endl;
 }
 
+std::string getInstalledFilePath(std::string filename){
+	return getInstallDirectoryPath() + "share/std/" + filename + ".idp"; 
+}
+
 void parsefile(const std::string& str) {
+	std::cerr <<"Parsing file " <<str <<"\n";
 	reset();
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
 	delete(yylloc.descr);
 	yylloc.descr = NULL;
 	yyrestart(GlobalData::instance()->openFile(str.c_str(),"r"));
+	if(not yyin){
+		yyrestart(GlobalData::instance()->openFile(getInstalledFilePath(str).c_str(),"r"));
+	}
 	if(yyin) {
 		getInserter().currfile(str);
 		yyparse();

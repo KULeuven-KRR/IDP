@@ -54,7 +54,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
-			it = _sortinter.erase(it);
+			_sortinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
 		}else{
 			++it;
 		}
@@ -62,7 +62,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 	for (auto it = _predinter.begin(); it != _predinter.end();) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
-			it = _predinter.erase(it);
+			_predinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
 		}else{
 			++it;
 		}
@@ -70,7 +70,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 	for (auto it = _funcinter.begin(); it != _funcinter.end();) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
-			it = _funcinter.erase(it);
+			_funcinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
 		}else{
 			++it;
 		}

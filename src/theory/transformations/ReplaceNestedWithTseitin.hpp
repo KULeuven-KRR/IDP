@@ -57,23 +57,23 @@ public:
 			return;
 		}
 		std::vector<Sort*> sorts;
-		for (auto i : reduced->remainingargs) {
-			sorts.push_back(i->sort());
+		for (auto i = reduced->remainingargs.cbegin(); i < reduced->remainingargs.cend(); ++i) {
+			sorts.push_back((*i)->sort());
 		}
 		bool identicalfound = false;
 		auto manag = FOBDDManager();
 		auto fact = FOBDDFactory(&manag, vocabulary);
-		for (auto i : list) {
-			if (i->origpf->symbol() != reduced->origpf->symbol()) {
+		for (auto i = list.cbegin(); i != list.cend(); ++i) {
+			if ((*i)->origpf->symbol() != reduced->origpf->symbol()) {
 				continue;
 			}
-			if (i->remainingargs.size() != reduced->remainingargs.size()) {
+			if ((*i)->remainingargs.size() != reduced->remainingargs.size()) {
 				continue;
 			}
-			auto ibdd = fact.turnIntoBdd(i->origpf);
+			auto ibdd = fact.turnIntoBdd((*i)->origpf);
 			auto testbdd = fact.turnIntoBdd(reduced->origpf);
 			if (ibdd == testbdd) {
-				reduced = i;
+				reduced = *i;
 				identicalfound = true;
 			}
 		}
@@ -95,18 +95,18 @@ public:
 	}
 
 	virtual void visit(const PredForm* pf) {
-		for (auto i : pf->args()) {
+		for (auto i = pf->args().cbegin(); i < pf->args().cend(); ++i) {
 			varfreeterm = true;
-			i->accept(this);
+			(*i)->accept(this);
 			if (not cantransform) {
 				break;
 			}
 			if (varfreeterm) {
-				reduced->arglist.push_back(i);
+				reduced->arglist.push_back(*i);
 			} else {
 				reduced->arglist.push_back(NULL);
-				reduced->remainingargs.push_back(i);
-				Assert(dynamic_cast<VarTerm*>(i) != NULL);
+				reduced->remainingargs.push_back(*i);
+				Assert(dynamic_cast<VarTerm*>(*i) != NULL);
 			}
 		}
 		Assert(reduced->arglist.size() == pf->args().size());
@@ -161,18 +161,18 @@ protected:
 		}
 		Assert(listit->second.size() > 0);
 		std::vector<Formula*> subforms;
-		for (auto i : listit->second) {
-			Assert(i->arglist.size() == pf->args().size());
+		for (auto i = listit->second.cbegin(); i < listit->second.cend(); ++i) {
+			Assert((*i)->arglist.size() == pf->args().size());
 			std::vector<Term*> arglist;
 			std::vector<Formula*> equalities;
 			for (uint j = 0; j < pf->args().size(); ++j) {
-				if (i->arglist[j] == NULL) {
+				if ((*i)->arglist[j] == NULL) {
 					arglist.push_back(pf->args()[j]);
 				} else {
-					equalities.push_back(new PredForm(SIGN::POS, vocabulary->pred("=/2"), { i->arglist[j], pf->args()[j] }, pf->pi()));
+					equalities.push_back(new PredForm(SIGN::POS, vocabulary->pred("=/2"), { (*i)->arglist[j], pf->args()[j] }, pf->pi()));
 				}
 			}
-			equalities.push_back(new PredForm(pf->sign(), i->newpf->symbol(), arglist, pf->pi()));
+			equalities.push_back(new PredForm(pf->sign(), (*i)->newpf->symbol(), arglist, pf->pi()));
 			subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
 		}
 		return new BoolForm(SIGN::POS, false, subforms, pf->pi());
@@ -188,28 +188,28 @@ protected:
 		 */
 		std::set<ReducedPF*> reducedlist;
 		std::vector<PredForm*> newheads; // NOTE: in order of rule iteration!
-		for (auto rule : d->rules()) {
+		for (auto i = d->rules().cbegin(); i < d->rules().cend(); ++i) {
 			ConstructNewReducedForm t;
-			t.execute(rule->head(), reducedlist, vocabulary);
+			t.execute((*i)->head(), reducedlist, vocabulary);
 			if (t.isReducable()) {
 				reducedlist.insert(t.getResult());
 				newheads.push_back(t.getResult()->newpf);
 			} else {
-				newheads.push_back(rule->head());
+				newheads.push_back((*i)->head());
 			}
 		}
 
-		for (auto i : reducedlist) {
-			symbol2reduction[i->origpf->symbol()].push_back(i);
+		for (auto i = reducedlist.cbegin(); i != reducedlist.cend(); ++i) {
+			symbol2reduction[(*i)->origpf->symbol()].push_back(*i);
 		}
 
 		auto newdef = new Definition();
 		int i = 0;
-		for (auto rule : d->rules()) {
+		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
 			visiting = true;
-			auto newbody = rule->body()->accept(this);
+			auto newbody = (*j)->body()->accept(this);
 			visiting = false;
-			newdef->add(new Rule(rule->quantVars(), newheads[i], newbody, rule->pi()));
+			newdef->add(new Rule((*j)->quantVars(), newheads[i], newbody, (*j)->pi()));
 			i++;
 		}
 		auto result = newdef->clone();
