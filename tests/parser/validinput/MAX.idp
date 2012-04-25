@@ -1,7 +1,3 @@
-procedure getExpectedAModel(){
-	return true
-}
-
 vocabulary V{
 	type X isa int
 }
@@ -13,5 +9,7 @@ structure S:V{
 }
 procedure main(){
 	stdoptions.groundwithbounds=false
-	return #modelexpand(T, S)==0
+	if #modelexpand(T, S)==0 then return 1
+	else return 0
+	end
 }
