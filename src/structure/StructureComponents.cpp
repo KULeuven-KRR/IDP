@@ -2676,7 +2676,11 @@ void FuncTable::put(std::ostream& stream) const {
 }
 
 void SortTable::put(std::ostream& stream) const {
-	stream << toString(_table) << "[" << toString(first()) << ", " << toString(last()) << "]";
+	if(empty()){
+		stream <<	toString(_table) <<" is empty";
+	}else{
+		stream << toString(_table) << "[" << toString(first()) << ", " << toString(last()) << "]";
+	}
 }
 
 /****************

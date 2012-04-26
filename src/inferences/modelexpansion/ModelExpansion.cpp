@@ -32,13 +32,33 @@
 
 using namespace std;
 
+std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) {
+	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
+	if (t == NULL) {
+		throw notyetimplemented("Modelexpansion of already ground theories.\n");
+	}
+	cerr <<"Passed the cast phase\n";
+	ModelExpansion m(t, structure, NULL, tracemonitor);
+	return m.expand();
+}
+std::vector<AbstractStructure*> ModelExpansion::doOptimization(AbstractTheory* theory, AbstractStructure* structure, Term* term,
+		TraceMonitor* tracemonitor) {
+	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
+	if (t == NULL) {
+		throw notyetimplemented("Modelexpansion of already ground theories.\n");
+	}
+	ModelExpansion m(t, structure, term, tracemonitor);
+	return m.expand();
+}
+
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
 
 class SolverTermination: public TerminateMonitor {
 private:
 	PCModelExpand* solver;
 public:
-	SolverTermination(PCModelExpand* solver): solver(solver){
+	SolverTermination(PCModelExpand* solver)
+			: solver(solver) {
 
 	}
 	void notifyTerminateRequested() {
@@ -50,8 +70,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
 	auto clonetheory = theory->clone();
+	Assert(sametypeid<Theory>(*clonetheory));
 	AbstractStructure* newstructure = NULL;
-	if (not opts->getValue(BoolType::GROUNDLAZILY) && sametypeid<Theory>(*clonetheory)) {
+	if (not opts->getValue(BoolType::GROUNDLAZILY)) {
 		if (verbosity() >= 1) {
 			clog << "Evaluating definitions\n";
 		}
@@ -83,7 +104,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	if (verbosity() >= 1) {
 		clog << "Grounding\n";
 	}
-	auto grounder = GrounderFactory::create({clonetheory, newstructure, symstructure}, data);
+	auto grounder = GrounderFactory::create( { clonetheory, newstructure, symstructure }, data);
 	if (getOption(BoolType::TRACE)) {
 		tracemonitor->setTranslator(grounder->getTranslator());
 		tracemonitor->setSolver(data);
@@ -138,11 +159,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
-	try{
+	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
-	}catch(MinisatID::idpexception& error){
+	} catch (MinisatID::idpexception& error) {
 		std::stringstream ss;
-		ss <<"Solver was aborted with message \"" <<error.what() <<"\"";
+		ss << "Solver was aborted with message \"" << error.what() << "\"";
 		throw IdpException(ss.str());
 	}
 
@@ -150,16 +171,16 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	if(verbosity()>0){
+	if (verbosity() > 0) {
 		auto maxsize = grounder->getFullGroundSize();
 		//cout <<"full|grounded|%|time\n";
 		//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";
-		clog <<"Grounded " <<toString(grounder->groundedAtoms()) <<" for a full grounding of " <<toString(maxsize) <<"\n";
-		if(maxsize._type==TableSizeType::TST_EXACT){
+		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
+		if (maxsize._type == TableSizeType::TST_EXACT) {
 			//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
-			clog <<">>> " <<(double)grounder->groundedAtoms()/maxsize._size <<"% of the full grounding.\n";
+			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size << "% of the full grounding.\n";
 		}
-		cout <<"|";
+		cout << "|";
 	}
 
 	// Collect solutions
@@ -170,7 +191,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
-			for(auto i=list.cbegin(); i<list.cend(); ++i) {
+			for (auto i = list.cbegin(); i < list.cend(); ++i) {
 				solutions.push_back(handleSolution(newstructure, **i, grounding));
 			}
 		}
@@ -188,12 +209,12 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	delete (grounder);
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
-	delete(terminator);
+	delete (terminator);
 	delete (newstructure);
 	delete symstructure->manager();
 	delete (symstructure);
-	delete(data);
-	delete(mx);
+	delete (data);
+	delete (mx);
 
 	return solutions;
 }

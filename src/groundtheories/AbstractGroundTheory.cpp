@@ -34,6 +34,5 @@ void AbstractGroundTheory::addUnitClause(Lit l) {
 	add(GroundClause { l });
 }
 AbstractGroundTheory* AbstractGroundTheory::clone() const {
-	Assert(false);
-	return NULL;/* TODO */
+	throw notyetimplemented("Cloning ground theories.\n");
 }

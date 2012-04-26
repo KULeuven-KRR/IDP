@@ -129,7 +129,7 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 			rightdomain = new SortTable(new EnumeratedInternalSortTable());
 			rightdomain->add(right._domelement);
 		}
-		if (leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
+		if (leftdomain && rightdomain && leftdomain->isRange() && rightdomain->isRange() && not leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			int leftmin = leftdomain->first()->value()._int;
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;
