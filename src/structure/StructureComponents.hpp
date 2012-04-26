@@ -1163,9 +1163,12 @@ public:
 		return begin();
 	}
 
-	virtual const DomainElement* first() const = 0;
-	virtual const DomainElement* last() const = 0;
+	// Returns true if non-empty and is a range
 	virtual bool isRange() const = 0;
+	// Returns NULL if empty or not a range
+	virtual const DomainElement* first() const = 0;
+	// Returns NULL if empty or not a range
+	virtual const DomainElement* last() const = 0;
 
 	// Visitor
 	virtual void accept(StructureVisitor* v) const = 0;
@@ -1448,8 +1451,13 @@ protected:
 	~IntRangeInternalSortTable() {
 	}
 public:
+	// Takes the non-empty interval, regardless of the order
 	IntRangeInternalSortTable(int f, int l) :
 			_first(f), _last(l) {
+		if(_first>_last){
+			_last = f;
+			_first = l;
+		}
 	}
 	bool finite() const {
 		return approxFinite();
@@ -1928,16 +1936,18 @@ public:
 	SortIterator sortBegin() const;
 	SortIterator sortIterator(const DomainElement*) const;
 
-	// TODO: first and last should only be called AFTER checking that the table is not empty!
-	//   also should isRange==true imply that the table is not empty?
+	// Returns true if non-empty and a range
+	bool isRange() const {
+		return _table->isRange();
+	}
+	// NOTE: first and last are guaranteed NOT NULL if the table is not empty
 	const DomainElement* first() const {
+		Assert(not empty());
 		return _table->first();
 	}
 	const DomainElement* last() const {
+		Assert(not empty());
 		return _table->last();
-	}
-	bool isRange() const {
-		return _table->isRange();
 	}
 
 	InternalSortTable* internTable() const {
