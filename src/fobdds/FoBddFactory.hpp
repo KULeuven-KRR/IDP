@@ -61,7 +61,7 @@ private:
 	void visit(const EquivForm* af);
 
 public:
-	FOBDDFactory(FOBDDManager* m, Vocabulary* v = 0)
+	FOBDDFactory(FOBDDManager* m, Vocabulary* v = NULL)
 			: _manager(m), _vocabulary(v) {
 	}
 

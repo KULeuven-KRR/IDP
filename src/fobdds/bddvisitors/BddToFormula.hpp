@@ -16,6 +16,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddAggTerm.hpp"
+#include "fobdds/FoBddAggKernel.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -33,7 +34,7 @@
  * Given a bddterm, creates the associated term.
  */
 class BDDToFO: public FOBDDVisitor {
-private:
+protected:
 	Formula* _currformula;
 	Term* _currterm;
 	SetExpr* _currset;
@@ -53,9 +54,9 @@ public:
 	}
 
 	template<typename BddNode>
-	Formula* createFormula(const BddNode* kernel) {
+	Formula* createFormula(const BddNode* object) {
 		reset();
-		kernel->accept(this);
+		object->accept(this);
 		return _currformula;
 	}
 
@@ -73,8 +74,8 @@ public:
 		return _currset;
 	}
 
-private:
-	void visit(const FOBDDDeBruijnIndex* index) {
+protected:
+	virtual void visit(const FOBDDDeBruijnIndex* index) {
 		auto it = _dbrmapping.find(index);
 		Variable* v;
 		if (it == _dbrmapping.cend()) {
@@ -86,15 +87,15 @@ private:
 		_currterm = new VarTerm(v, TermParseInfo());
 	}
 
-	void visit(const FOBDDVariable* var) {
+	virtual void visit(const FOBDDVariable* var) {
 		_currterm = new VarTerm(var->variable(), TermParseInfo());
 	}
 
-	void visit(const FOBDDDomainTerm* dt) {
+	virtual void visit(const FOBDDDomainTerm* dt) {
 		_currterm = new DomainTerm(dt->sort(), dt->value(), TermParseInfo());
 	}
 
-	void visit(const FOBDDFuncTerm* ft) {
+	virtual void visit(const FOBDDFuncTerm* ft) {
 		std::vector<Term*> args;
 		for (auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {
 			(*it)->accept(this);
@@ -103,13 +104,13 @@ private:
 		_currterm = new FuncTerm(ft->func(), args, TermParseInfo());
 	}
 
-	void visit(const FOBDDAggTerm* aggterm) {
+	virtual void visit(const FOBDDAggTerm* aggterm) {
 		aggterm->setexpr()->accept(this);
 		auto set = _currset;
 		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());
 	}
 
-	void visit(const FOBDDEnumSetExpr* set) {
+	virtual void visit(const FOBDDEnumSetExpr* set) {
 		std::vector<Formula*> formulas(set->size());
 		std::vector<Term*> terms(set->size());
 		for (int i = 0; i < set->size(); i++) {
@@ -121,7 +122,7 @@ private:
 		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
 	}
 
-	void visit(const FOBDDQuantSetExpr* set) {
+	virtual void visit(const FOBDDQuantSetExpr* set) {
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
 		std::set<Variable*> vars;
@@ -142,7 +143,7 @@ private:
 		_currset = new QuantSetExpr(vars, subform, subterm, SetParseInfo());
 	}
 
-	void visit(const FOBDDAtomKernel* atom) {
+	virtual void visit(const FOBDDAtomKernel* atom) {
 		std::vector<Term*> args;
 		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
 			(*it)->accept(this);
@@ -161,7 +162,7 @@ private:
 		}
 	}
 
-	void visit(const FOBDDQuantKernel* quantkernel) {
+	virtual void visit(const FOBDDQuantKernel* quantkernel) {
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
@@ -175,7 +176,7 @@ private:
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
 
-	void visit(const FOBDDAggKernel* fak) {
+	virtual void visit(const FOBDDAggKernel* fak) {
 		fak->left()->accept(this);
 		auto left = _currterm;
 		fak->right()->accept(this);
@@ -184,7 +185,7 @@ private:
 		_currformula =  new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
 	}
 
-	void visit(const FOBDD* bdd) {
+	virtual void visit(const FOBDD* bdd) {
 		if (_manager->isTruebdd(bdd)) {
 			_currformula = FormulaUtils::trueFormula();
 			return;
