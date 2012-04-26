@@ -224,6 +224,7 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 		}
 		vector<Term*> atomargs = { ecf->subterms()[0], ecf->subterms()[1] };
 		PredForm* atom = new PredForm(atomsign, comppred, atomargs, ecf->pi());
+		delete ecf;
 		return atom->accept(this);
 	} else { // Simple recursive call
 		bool savemovecontext = getAllowedToUnnest();

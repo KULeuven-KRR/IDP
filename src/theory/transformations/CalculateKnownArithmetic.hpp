@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef CALCULATE_HPP_
 #define CALCULATE_HPP_
@@ -41,14 +41,16 @@ protected:
 					break;
 				}
 			}
-			if(allDomainElements){
+			if (allDomainElements) {
 				auto result = f->interpretation(NULL)->funcTable()->operator [](tuple);
-				if(result == NULL){
+				if (result == NULL) {
 					//TODO: what should happen here?
 					//I think smarter things can be done (like passing on the NULL to the superformula)
 					return newFuncTerm;
 				}
-				return new DomainTerm(ft->sort(),result,ft->pi());;
+				auto finalresult = new DomainTerm(ft->sort(), result, ft->pi());
+				newFuncTerm->recursiveDelete();
+				return finalresult;
 			}
 		}
 		return newFuncTerm;
