@@ -2335,6 +2335,7 @@ bool approxTotalityCheck(const FuncInter*);
 //!< Check whether there is a value for every tuple in the given function interpretation.
 
 bool approxIsInverse(const PredTable* pt1, const PredTable* pt2);
-}
+
+} /* namespace TableUtils */
 
 #endif

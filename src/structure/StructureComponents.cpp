@@ -2477,7 +2477,7 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple
 	ElementTuple key = tuple;
 	const DomainElement* mappedvalue = key.back();
 	key.pop_back();
-	const DomainElement* computedvalue = this->operator[](key);
+	const DomainElement* computedvalue = operator[](key);
 	if (computedvalue == NULL) {
 		if (_nrRefs > 1) {
 			Tuple2Elem newtable = _table;
@@ -3635,8 +3635,9 @@ bool approxIsInverse(const PredTable* pt1, const PredTable* pt2) {
 	tablesize pt2size = pt2->size();
 	if (univsize._type == TST_EXACT && pt1size._type == TST_EXACT && pt2size._type == TST_EXACT) {
 		return pt1size._size + pt2size._size == univsize._size;
-	} else
+	} else {
 		return false;
+	}
 }
 
 bool approxTotalityCheck(const FuncInter* funcinter) {
@@ -3648,10 +3649,12 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 //clog << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
 	if (nroftuples._type == TST_EXACT && nrofvalues._type == TST_EXACT) {
 		return nroftuples._size == nrofvalues._size;
-	} else
+	} else {
 		return false;
+	}
 }
-}
+
+} /* namespace TableUtils */
 
 /*****************
  Structures
