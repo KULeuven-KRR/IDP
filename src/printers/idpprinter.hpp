@@ -21,6 +21,7 @@
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
 //TODO is not guaranteed to generate correct idp files!
+	// FIXME do we want this? Because printing cp constraints etc. should be done correctly then!
 //TODO usage of stored parameters might be incorrect in some cases.
 
 template<typename Stream>
@@ -61,6 +62,22 @@ public:
 		closeTheory();
 	}
 
+	template<typename T>
+	std::string printFullyQualified(T o) const {
+		std::stringstream ss;
+		ss << o->name() <<"[";
+		bool begin = true;
+		for(auto i=o->sorts().cbegin(); i<o->sorts().cend(); ++i){
+			if(not begin){
+				ss <<",";
+			}
+			begin = false;
+			ss <<toString(*i);
+		}
+		ss << "]";
+		return ss.str();
+	}
+
 	void visit(const AbstractStructure* structure) {
 		Assert(isTheoryOpen());
 
@@ -68,64 +85,86 @@ public:
 			output() << "INCONSISTENT STRUCTURE";
 			return;
 		}
-		Vocabulary* voc = structure->vocabulary();
 
+		auto voc = structure->vocabulary();
+
+		printTab();
+		output() << "structure " << structure->name() << " : " << voc->name() << " {" <<'\n';
+		indent();
+
+		auto origlongnameoption = getOption(BoolType::LONGNAMES);
+		setOption(BoolType::LONGNAMES, true);
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
-			Sort* s = it->second;
+			auto s = it->second;
 			if (not s->builtin()) {
-				output() << toString(s) << " = ";
-				SortTable* st = structure->inter(s);
+				printTab();
+				output() << toString(s) <<"[" <<toString(s) <<"]" << " = ";
+				auto st = structure->inter(s);
 				visit(st);
-				output() << '\n';
+				output() <<'\n';
 			}
 		}
 		for (auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
-			std::set<Predicate*> sp = it->second->nonbuiltins();
+			auto sp = it->second->nonbuiltins();
 			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
-				Predicate* p = *jt;
+				auto p = *jt;
 				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
 					auto pi = structure->inter(p);
 					if (pi->approxTwoValued()) {
-						output() << toString(p) << " = ";
+						printTab();
+						output() << printFullyQualified(p) <<" = ";
 						visit(pi->ct());
-						output() << '\n';
+						output() <<'\n';
 					} else {
-						output() << toString(p) << "<ct> = ";
+						printTab();
+						output() << printFullyQualified(p) << "<ct> = ";
 						visit(pi->ct());
-						output() << '\n';
-						output() << toString(p) << "<cf> = ";
+						output() <<'\n';
+						printTab();
+						output() << printFullyQualified(p) << "<cf> = ";
 						visit(pi->cf());
-						output() << '\n';
+						output() <<'\n';
 					}
 				}
 			}
 		}
 		for (auto it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
-			std::set<Function*> sf = it->second->nonbuiltins();
+			auto sf = it->second->nonbuiltins();
 			for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
-				Function* f = *jt;
-				FuncInter* fi = structure->inter(f);
+				auto f = *jt;
+				auto fi = structure->inter(f);
 				if (fi->approxTwoValued()) {
-					FuncTable* ft = fi->funcTable();
-					output() << toString(f) << " = ";
+					auto ft = fi->funcTable();
+					printTab();
+					output() << printFullyQualified(f) << " = ";
 					visit(ft);
-					output() << '\n';
+					output() <<'\n';
 				} else {
-					PredInter* pi = fi->graphInter();
-					const PredTable* ct = pi->ct();
-					output() << toString(f) << "<ct> = ";
+					auto pi = fi->graphInter();
+					auto ct = pi->ct();
+					printTab();
+					output() << printFullyQualified(f) << "<ct> = ";
 					printAsFunc(ct);
-					output() << '\n';
-					const PredTable* cf = pi->cf();
-					output() << toString(f) << "<cf> = ";
+					output() <<'\n';
+					auto cf = pi->cf();
+					printTab();
+					output() << printFullyQualified(f) << "<cf> = ";
 					printAsFunc(cf);
-					output() << '\n';
+					output() <<'\n';
 				}
 			}
 		}
+		setOption(BoolType::LONGNAMES, origlongnameoption);
+		unindent();
+		printTab();
+		output() << "}" <<'\n';
 	}
 
 	void visit(const Vocabulary* v) {
+		printTab();
+		output() << "vocabulary " << v->name() << " {" <<'\n';
+		indent();
+
 		Assert(isTheoryOpen());
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
 			if (not it->second->builtin() || v == Vocabulary::std()) {
@@ -138,51 +177,38 @@ public:
 			}
 		}
 		for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
-			if (not it->second->builtin() || v == Vocabulary::std()) {
+			if (not it->second->builtin() || v == Vocabulary::std()) {  // FIXME apparently, </2 etc still get printed?
 				visit(it->second);
 			}
 		}
+
+		unindent();
+		printTab();
+		output() << "}" <<'\n';
 	}
 
 	void visit(const Namespace* s) {
+		printTab();
+		output() << "namespace " << s->name() << " {" <<'\n';
+		indent();
+
 		Assert(isTheoryOpen());
 		for (auto i = s->vocabularies().cbegin(); i != s->vocabularies().cend(); ++i) {
-			printTab();
-			output() << "vocabulary " << (*i).second->name() << " {\n";
-			indent();
 			visit((*i).second);
-			unindent();
-			printTab();
-			output() << "}\n";
 		}
 		for (auto i = s->theories().cbegin(); i != s->theories().cend(); ++i) {
-			printTab();
-			output() << "theory " << (*i).second->name() << " : " << (*i).second->vocabulary()->name() << " {\n";
-			indent();
-			Printer::visit((*i).second);
-			unindent();
-			printTab();
-			output() << "}\n";
+			(*i).second->accept(this);
 		}
 		for (auto i = s->structures().cbegin(); i != s->structures().cend(); ++i) {
-			printTab();
-			output() << "structure " << (*i).second->name();
-			output() << " : " << (*i).second->vocabulary()->name() << " {\n";
-			indent();
 			visit((*i).second);
-			unindent();
-			printTab();
-			output() << "}\n";
 		}
 		for (auto i = s->subspaces().cbegin(); i != s->subspaces().cend(); ++i) {
-			printTab();
-			output() << "namespace " << (*i).second->name() << " {\n";
-			indent();
 			visit((*i).second);
-			unindent();
-			printTab();
-			output() << "}\n";
 		}
+
+		unindent();
+		printTab();
+		output() << "}" <<'\n';
 	}
 
 	void visit(const GroundFixpDef*) {
@@ -192,19 +218,27 @@ public:
 	}
 
 	void visit(const Theory* t) {
+		printTab();
+		output() << "theory " << t->name() << " : " << t->vocabulary()->name() << " {" <<'\n';
+		indent();
+
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 			(*it)->accept(this);
-			output() << "" <<nt();
+			output() << "" <<'\n';
 		}
 		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 			(*it)->accept(this);
-			output() << "" <<nt();
+			output() << "" <<'\n';
 		}
 		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 			(*it)->accept(this);
-			output() << "" <<nt();
+			output() << "" <<'\n';
 		}
+
+		unindent();
+		printTab();
+		output() << "}" <<'\n';
 	}
 
 	template<typename Visitor, typename List>
@@ -648,8 +682,8 @@ public:
 
 	void visit(const PredTable* table) {
 		Assert(isTheoryOpen());
-		if (not table->approxFinite()) {
-			output() << "possibly infinite table";
+		if (not table->finite()) {
+			std::clog << "Requested to print infinite table, did not do this.\n";
 		}
 		TableIterator kt = table->begin();
 		if (table->arity() > 0) {
@@ -765,7 +799,7 @@ public:
 	void visit(const Predicate* p) {
 		Assert(isTheoryOpen());
 		printTab();
-		if (p->overloaded()) {
+		if (p->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
 			output() << "overloaded predicate " << p->name() << '\n';
 		} else {
 			output() << p->name().substr(0, p->name().find('/'));
@@ -782,7 +816,7 @@ public:
 	void visit(const Function* f) {
 		Assert(isTheoryOpen());
 		printTab();
-		if (f->overloaded()) {
+		if (f->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
 			output() << "overloaded function " << f->name() << '\n';
 		} else {
 			if (f->partial())
@@ -967,8 +1001,8 @@ private:
 	}
 
 	void printAsFunc(const PredTable* table) {
-		if (not table->approxFinite()) {
-			output() << "possibly infinite table";
+		if (not table->finite()) {
+			std::clog << "Requested to print infinite predtable, did not print it.\n";
 			return;
 		}
 		TableIterator kt = table->begin();
