@@ -1020,7 +1020,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	_context._conjunctivePathFromRoot = _context._conjPathUntilNode;
 	_context._conjPathUntilNode = false;
 
-	Assert(getOption(BoolType::CPSUPPORT));
+	Assert(SetUtils::approxTwoValued(t->set(),_structure) or getOption(BoolType::CPSUPPORT));
 
 	// Create set grounder
 	t->set()->accept(this);
