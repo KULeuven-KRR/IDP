@@ -345,7 +345,7 @@ public:
  *
  * NOTE: for any test, it has to have a main() method which returns 1 if success, even for parser tests!
  */
-Status test(const std::vector<std::string>& inputfileurls) {
+Status test(const std::vector<std::string>& inputfileurls, const std::string& executioncommand) {
 	DataManager m;
 
 	setOption(BoolType::SHOWWARNINGS, false); //XXX Temporary solution to disable warnings...
@@ -362,7 +362,11 @@ Status test(const std::vector<std::string>& inputfileurls) {
 	Status result = Status::FAIL;
 	if (Error::nr_of_errors() == 0) {
 		stringstream ss;
-		ss << "return " << getGlobalNamespaceName() << ".main()";
+		if(executioncommand==""){
+			ss << "return " << getGlobalNamespaceName() << ".main()";
+		}else{
+			ss << executioncommand;
+		}
 		auto value = executeProcedure(ss.str());
 		if (value != NULL && value->type() == DomainElementType::DET_INT && value->value()._int == 1) {
 			result = Status::SUCCESS;

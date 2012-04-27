@@ -61,8 +61,6 @@ protected:
 	}
 	void polEndTheory();
 
-	MinisatID::Weight createWeight(Weight weight);
-
 	void polAdd(const GroundClause& cl);
 	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
 	void polAdd(DefId defnr, PCGroundRule* rule);

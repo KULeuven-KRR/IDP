@@ -23,6 +23,6 @@ std::ostream& operator<<(std::ostream& stream, Status status);
 
 int run(int argc, char* argv[]);
 
-Status test(const std::vector<std::string>& inputfileurls);
+Status test(const std::vector<std::string>& inputfileurls, const std::string& executioncommand = "");
 
 #endif /* RUNGIDL_HPP_ */

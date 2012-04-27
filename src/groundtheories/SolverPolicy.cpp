@@ -16,27 +16,12 @@
 
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
-#include "inferences/SolverInclude.hpp"
+#include "inferences/SolverConnection.hpp"
 
 #include <cmath>
 
 using namespace std;
-
-inline MinisatID::Atom createAtom(int lit) {
-	return MinisatID::Atom(abs(lit));
-}
-
-inline MinisatID::Literal createLiteral(int lit) {
-	return MinisatID::mkLit(abs(lit), lit < 0);
-}
-
-MinisatID::literallist createList(const litlist& origlist) {
-	MinisatID::literallist list;
-	for (auto i = origlist.cbegin(); i < origlist.cend(); i++) {
-		list.push_back(createLiteral(*i));
-	}
-	return list;
-}
+using namespace SolverConnection;
 
 template<typename Solver>
 void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator) {
@@ -47,21 +32,6 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermT
 
 template<typename Solver>
 void SolverPolicy<Solver>::polEndTheory() {
-}
-
-/*template<>
- void SolverPolicy<MinisatID::FlatZincRewriter>::polEndTheory(){
- getSolver().finishParsing();
- }*/
-
-double test;
-
-template<typename Solver>
-inline MinisatID::Weight SolverPolicy<Solver>::createWeight(double weight) {
-	if (modf(weight, &test) != 0) {
-		throw notyetimplemented("MinisatID does not support doubles yet.");
-	}
-	return int(weight);
 }
 
 template<typename Solver>
@@ -216,27 +186,6 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	extAdd(getSolver(), MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
 }
 
-MinisatID::AggType convert(AggFunction agg) {
-	MinisatID::AggType type = MinisatID::AggType::CARD;
-	switch (agg) {
-	case AggFunction::CARD:
-		type = MinisatID::AggType::CARD;
-		break;
-	case AggFunction::SUM:
-		type = MinisatID::AggType::SUM;
-		break;
-	case AggFunction::PROD:
-		type = MinisatID::AggType::PROD;
-		break;
-	case AggFunction::MIN:
-		type = MinisatID::AggType::MIN;
-		break;
-	case AggFunction::MAX:
-		type = MinisatID::AggType::MAX;
-		break;
-	}
-	return type;
-}
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem,

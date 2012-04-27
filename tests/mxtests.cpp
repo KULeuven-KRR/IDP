@@ -6,9 +6,10 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <cmath>
+#include <cstdio>
 
 #include "gtest/gtest.h"
 #include "external/rungidl.hpp"
@@ -22,11 +23,11 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/", "numberknown/", "nontotal/"};
+	vector<string> testdirs { "simplemx/", "numberknown/", "nontotal/" };
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 vector<string> generateListOfMXsatFiles() {
-	vector<string> testdirs {"satmx/"};
+	vector<string> testdirs { "satmx/" };
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 
@@ -89,5 +90,16 @@ TEST(MXnbmodelsTest, DoesMX) {
 	ASSERT_NO_THROW( result = test( { testfile }););
 	ASSERT_EQ(Status::SUCCESS, result);
 }
+
+/*TEST_P(MXnbTest, WriteOutAndSolve) {
+	string testfile(getTestDirectory() + GetParam());
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+
+	auto tempfile = string(tmpnam(NULL));
+	stringstream ss;
+	ss << "main(" << tempfile << ")";
+	ASSERT_NO_THROW( result = test({GetParam(), testfile}, ss.str()););
+}*/
 
 }
