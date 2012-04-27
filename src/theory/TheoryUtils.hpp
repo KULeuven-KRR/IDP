@@ -131,7 +131,7 @@ AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory*, AbstractStructure
 
 AbstractTheory* skolemize(AbstractTheory* t);
 
-AbstractTheory* sharedTseitinTransform(AbstractTheory* t);
+Theory* sharedTseitinTransform(Theory* t);
 
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);

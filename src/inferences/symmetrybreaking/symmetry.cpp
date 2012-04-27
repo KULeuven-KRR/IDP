@@ -778,13 +778,13 @@ void TheorySymmetryAnalyzer::visit(const PredForm* f) {
 void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 	if (t->function()->builtin() || t->function()->overloaded()) {
 		if (t->function()->name() == "MIN/0") {
-			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if (not st->approxEmpty()) {
+			auto st = getStructure()->inter(t->function()->outsort());
+			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->first());
 			}
 		} else if (t->function()->name() == "MAX/0") {
-			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if (not st->approxEmpty()) {
+			auto st = getStructure()->inter(t->function()->outsort());
+			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->last());
 			}
 		} else {

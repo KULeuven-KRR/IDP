@@ -16,27 +16,22 @@
 
 class AbstractStructure;
 class AbstractTheory;
+class Theory;
 class TraceMonitor;
 class Term;
 
 class ModelExpansion {
 public:
-	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) {
-		ModelExpansion m(theory, structure, NULL, tracemonitor);
-		return m.expand();
-	}
-	static std::vector<AbstractStructure*> doOptimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor) {
-		ModelExpansion m(theory, structure, term, tracemonitor);
-		return m.expand();
-	}
+	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor);
+	static std::vector<AbstractStructure*> doOptimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor);
 
 private:
-	AbstractTheory* _theory;
+	Theory* _theory;
 	AbstractStructure* _structure;
 	TraceMonitor* _tracemonitor;
 	Term* _minimizeterm; // if NULL, no optimization is done
 
-	ModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
+	ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize) {
 	}
 	std::vector<AbstractStructure*> expand() const;

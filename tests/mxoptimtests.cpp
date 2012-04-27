@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfMXOptimFiles() {
-	vector<string> testdirs {"minimize/"};
+	vector<string> testdirs {"minimization/"};
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 class MXOptimTest: public ::testing::TestWithParam<string> {

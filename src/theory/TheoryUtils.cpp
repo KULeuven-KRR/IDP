@@ -188,8 +188,8 @@ AbstractTheory* skolemize(AbstractTheory* t){
 	return transform<Skolemize, AbstractTheory*>(t);
 }
 
-AbstractTheory* sharedTseitinTransform(AbstractTheory* t){
-	return transform<IntroduceSharedTseitins, AbstractTheory*>(t);
+Theory* sharedTseitinTransform(Theory* t){
+	return transform<IntroduceSharedTseitins, Theory*>(t);
 }
 
 
