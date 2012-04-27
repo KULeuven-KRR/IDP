@@ -13,25 +13,28 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include <set>
+
 class Function;
+class Vocabulary;
 
 class AddFuncConstraints: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	std::set<Function*> _symbols;
+	std::set<const Function*> _cpfuncsymbols;
+	Vocabulary* _vocabulary;
 
 public:
-
 	template<typename T>
 	T execute(T t) {
+		_vocabulary = NULL;
 		return t->accept(this);
 	}
 
 protected:
 	Theory* visit(Theory*);
-
-	Term* visit(FuncTerm* ft);
-
 	Formula* visit(PredForm* pf);
+	Term* visit(FuncTerm* ft);
 };
+
 #endif /* ADDFUNCCON_HPP_ */

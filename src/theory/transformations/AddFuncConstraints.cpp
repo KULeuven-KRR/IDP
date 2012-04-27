@@ -10,14 +10,18 @@
 
 #include "AddFuncConstraints.hpp"
 #include "IncludeComponents.hpp"
+#include "utils/CPUtils.hpp"
 
 using namespace std;
 
 Theory* AddFuncConstraints::visit(Theory* t) {
+	if (getOption(BoolType::CPSUPPORT)) {
+		_cpfuncsymbols = CPSupport::findCPSymbols(t->vocabulary());
+	}
 	TheoryMutatingVisitor::visit(t);
 	for (auto it = _symbols.begin(); it != _symbols.end(); ++it) {
 		Function* function = *it;
-		if (not function->builtin()) { //TODO: CP support restrictions
+		if (not function->builtin()) {
 
 			//Atom: F(x)=y
 			auto vars = VarUtils::makeNewVariables(function->sorts());
@@ -56,11 +60,14 @@ Theory* AddFuncConstraints::visit(Theory* t) {
 
 Term* AddFuncConstraints::visit(FuncTerm* t) {
 	auto f = t->function();
+	if (not getOption(BoolType::CPSUPPORT) || (_vocabulary != NULL && not CPSupport::eligibleForCP(t,_vocabulary))) {
 		_symbols.insert(f);
+	}
 	return traverse(t);
 }
 
 Formula* AddFuncConstraints::visit(PredForm* pf) {
+	//TODO: Check for CP support?
 	if (sametypeid<Function>(*(pf->symbol()))) {
 		_symbols.insert(dynamic_cast<Function*>(pf->symbol()));
 	}

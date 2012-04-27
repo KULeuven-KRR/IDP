@@ -37,7 +37,6 @@ std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory*
 	if (t == NULL) {
 		throw notyetimplemented("Modelexpansion of already ground theories.\n");
 	}
-	cerr <<"Passed the cast phase\n";
 	ModelExpansion m(t, structure, NULL, tracemonitor);
 	return m.expand();
 }
