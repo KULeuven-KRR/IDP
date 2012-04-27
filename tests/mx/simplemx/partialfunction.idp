@@ -1,0 +1,18 @@
+vocabulary V {
+  type A isa nat
+  partial F(A): A
+  C: A
+}
+
+theory T : V {
+  C = 2.
+  ? x : F(x) = C.
+}
+
+structure S : V {
+  A = { 1..2 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 5
+}

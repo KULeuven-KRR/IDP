@@ -1,0 +1,17 @@
+vocabulary V {
+  type A
+  C1: A
+  C2: A
+}
+
+theory T : V {
+  C1 = C2.
+}
+
+structure S : V {
+  A = { a..c }
+}
+
+procedure getExpectedNbOfModels() {
+	return 3
+}

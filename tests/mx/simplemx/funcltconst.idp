@@ -1,0 +1,16 @@
+vocabulary V {
+  type A isa nat
+  F(A): A
+}
+
+theory T : V {
+  ! x : F(x) < 2.
+}
+
+structure S : V {
+  A = { 1..3 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 1
+}

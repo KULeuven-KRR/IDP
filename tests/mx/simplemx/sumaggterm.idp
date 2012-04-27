@@ -1,0 +1,21 @@
+vocabulary V {
+  type Id
+  type Nr isa nat
+  P(Id)
+  F(Id): Nr
+  Q(Nr)
+}
+
+theory T : V {
+  Q(sum{ id : P(id) : F(id) }).
+  { P(id) <- true. }
+}
+
+structure S : V {
+  Id = { a..c }
+  Nr = { 1..3 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 4
+}
