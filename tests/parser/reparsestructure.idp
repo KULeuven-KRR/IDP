@@ -1,0 +1,16 @@
+namespace A{
+	vocabulary V{ 
+		type Color
+		type Node
+		Color(Color, Node)
+	}	
+}
+namespace B{
+	structure S : A::V{
+	}	
+}
+
+procedure main(){
+	print(A)
+	print(B)
+}
