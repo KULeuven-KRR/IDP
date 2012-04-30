@@ -148,6 +148,7 @@ Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con 
 
 /** Recursively move all partial terms outside atoms */
 Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Recursively remove all nested terms */
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
