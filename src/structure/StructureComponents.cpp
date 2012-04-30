@@ -3375,118 +3375,124 @@ void PredInter::ctpt(PredTable* newct) {
 }
 
 void PredInter::materialize() {
-	auto prt = _ct->materialize();
-	if (prt) {
-		ctpt(prt);
-	}
-	if (not approxTwoValued()) {
+	if (approxTwoValued()) {
+		auto prt = _ct->materialize();
+		if (prt) {
+			ctpt(prt);
+		}
+	} else {
+		PredTable* prt = _ct->materialize();
+		if (prt) {
+			ct(prt);
+		}
 		auto prf = _cf->materialize();
 		if (prf) {
 			cf(prf);
 		}
 	}
 }
+}
 
 PredInter* PredInter::clone(const Universe& univ) const {
-	PredTable* nctpf;
-	bool ct;
-	if (typeid(*(_pf->internTable())) == typeid(InverseInternalPredTable)) {
-		nctpf = new PredTable(_ct->internTable(), univ);
-		ct = true;
-	} else {
-		nctpf = new PredTable(_pf->internTable(), univ);
-		ct = false;
-	}
-	auto result = new PredInter(nctpf, ct);
-	if (approxTwoValued()) {
-		return result;
-	}
-
-	PredTable* ncfpt;
-	bool cf;
-	if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
-
-		ncfpt = new PredTable(_cf->internTable(), univ);
-		cf = true;
-	} else {
-		ncfpt = new PredTable(_pt->internTable(), univ);
-		cf = false;
-	}
-	auto inverseCfpt = new PredTable(new InverseInternalPredTable(ncfpt->internTable()), univ);
-	delete (result->_cf);
-	delete (result->_pt);
-	if (cf) {
-		result->_cf = ncfpt;
-		result->_pt = inverseCfpt;
-	} else {
-		result->_pt = ncfpt;
-		result->_cf = inverseCfpt;
-	}
-	result->_inconsistentElements = _inconsistentElements; //OPTIMIZATION!
+PredTable* nctpf;
+bool ct;
+if (typeid(*(_pf->internTable())) == typeid(InverseInternalPredTable)) {
+	nctpf = new PredTable(_ct->internTable(), univ);
+	ct = true;
+} else {
+	nctpf = new PredTable(_pf->internTable(), univ);
+	ct = false;
+}
+auto result = new PredInter(nctpf, ct);
+if (approxTwoValued()) {
 	return result;
+}
+
+PredTable* ncfpt;
+bool cf;
+if (typeid(*(_pt->internTable())) == typeid(InverseInternalPredTable)) {
+
+	ncfpt = new PredTable(_cf->internTable(), univ);
+	cf = true;
+} else {
+	ncfpt = new PredTable(_pt->internTable(), univ);
+	cf = false;
+}
+auto inverseCfpt = new PredTable(new InverseInternalPredTable(ncfpt->internTable()), univ);
+delete (result->_cf);
+delete (result->_pt);
+if (cf) {
+	result->_cf = ncfpt;
+	result->_pt = inverseCfpt;
+} else {
+	result->_pt = ncfpt;
+	result->_cf = inverseCfpt;
+}
+result->_inconsistentElements = _inconsistentElements; //OPTIMIZATION!
+return result;
 
 }
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
-	stream << "Certainly true: " << toString(interpretation.ct()) << "\n";
-	stream << "Certainly false: " << toString(interpretation.cf()) << "\n";
-	stream << "Possibly true: " << toString(interpretation.pt()) << "\n";
-	stream << "Possibly false: " << toString(interpretation.pf()) << "\n";
-	return stream;
+stream << "Certainly true: " << toString(interpretation.ct()) << "\n";
+stream << "Certainly false: " << toString(interpretation.cf()) << "\n";
+stream << "Possibly true: " << toString(interpretation.pt()) << "\n";
+stream << "Possibly false: " << toString(interpretation.pf()) << "\n";
+return stream;
 }
 
 PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structure) {
-	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_predicate));
-	return new PredInter(emptytable, emptytable, false, false);
+auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_predicate));
+return new PredInter(emptytable, emptytable, false, false);
 }
 
 // FIXME better way of managing (the memory of) these interpretations?
 EqualInterGenerator::~EqualInterGenerator() {
-	deleteList(generatedInters);
+deleteList(generatedInters);
 }
 PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(2, st));
-	EqualInternalPredTable* eip = new EqualInternalPredTable();
-	PredTable* ct = new PredTable(eip, univ);
-	generatedInters.push_back(new PredInter(ct, true));
-	return generatedInters.back();
+SortTable* st = structure->inter(_sort);
+Universe univ(vector<SortTable*>(2, st));
+EqualInternalPredTable* eip = new EqualInternalPredTable();
+PredTable* ct = new PredTable(eip, univ);
+generatedInters.push_back(new PredInter(ct, true));
+return generatedInters.back();
 }
 
 StrLessThanInterGenerator::~StrLessThanInterGenerator() {
-	deleteList(generatedInters);
+deleteList(generatedInters);
 }
 PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(2, st));
-	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
-	PredTable* ct = new PredTable(eip, univ);
-	generatedInters.push_back(new PredInter(ct, true));
-	return generatedInters.back();
+SortTable* st = structure->inter(_sort);
+Universe univ(vector<SortTable*>(2, st));
+StrLessInternalPredTable* eip = new StrLessInternalPredTable();
+PredTable* ct = new PredTable(eip, univ);
+generatedInters.push_back(new PredInter(ct, true));
+return generatedInters.back();
 }
 
 StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator() {
-	deleteList(generatedInters);
+deleteList(generatedInters);
 }
 PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(2, st));
-	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
-	PredTable* ct = new PredTable(eip, univ);
-	generatedInters.push_back(new PredInter(ct, true));
-	return generatedInters.back();
+SortTable* st = structure->inter(_sort);
+Universe univ(vector<SortTable*>(2, st));
+StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
+PredTable* ct = new PredTable(eip, univ);
+generatedInters.push_back(new PredInter(ct, true));
+return generatedInters.back();
 }
 
 EqualInterGenerator* EqualInterGeneratorGenerator::get(const std::vector<Sort*>& sorts) {
-	return new EqualInterGenerator(sorts[0]);
+return new EqualInterGenerator(sorts[0]);
 }
 
 StrGreaterThanInterGenerator* StrGreaterThanInterGeneratorGenerator::get(const std::vector<Sort*>& sorts) {
-	return new StrGreaterThanInterGenerator(sorts[0]);
+return new StrGreaterThanInterGenerator(sorts[0]);
 }
 
 StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::vector<Sort*>& sorts) {
-	return new StrLessThanInterGenerator(sorts[0]);
+return new StrLessThanInterGenerator(sorts[0]);
 }
 
 /*******************************
@@ -3494,122 +3500,122 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
  *******************************/
 
 FuncInter::FuncInter(FuncTable* ft)
-		: _functable(ft) {
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
-	_graphinter = new PredInter(ct, true);
+	: _functable(ft) {
+PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
+_graphinter = new PredInter(ct, true);
 }
 
 FuncInter::~FuncInter() {
-	if (_functable) {
-		delete (_functable);
-	}
-	delete (_graphinter);
+if (_functable) {
+	delete (_functable);
+}
+delete (_graphinter);
 }
 
 void FuncInter::graphInter(PredInter* pt) {
-	delete (_graphinter);
-	_graphinter = pt;
-	if (_functable) {
-		delete (_functable);
-	}
-	_functable = 0;
+delete (_graphinter);
+_graphinter = pt;
+if (_functable) {
+	delete (_functable);
+}
+_functable = 0;
 }
 
 void FuncInter::funcTable(FuncTable* ft) {
-	delete (_functable);
-	delete (_graphinter);
-	_functable = ft;
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
-	_graphinter = new PredInter(ct, true);
+delete (_functable);
+delete (_graphinter);
+_functable = ft;
+PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
+_graphinter = new PredInter(ct, true);
 }
 
 void FuncInter::materialize() {
-	if (approxTwoValued()) {
-		auto ft = _functable->materialize();
-		if (ft) {
-			funcTable(ft);
-		}
-	} else {
-		_graphinter->materialize();
+if (approxTwoValued()) {
+	auto ft = _functable->materialize();
+	if (ft) {
+		funcTable(ft);
 	}
+} else {
+	_graphinter->materialize();
+}
 }
 
 bool FuncInter::isConsistent() const {
-	if (_functable != NULL) {
-		return true;
-	} else {
-		Assert(_graphinter != NULL);
-		return _graphinter->isConsistent();
-	}
+if (_functable != NULL) {
+	return true;
+} else {
+	Assert(_graphinter != NULL);
+	return _graphinter->isConsistent();
+}
 }
 
 FuncInter* FuncInter::clone(const Universe& univ) const {
-	if (_functable) {
-		FuncTable* nft = new FuncTable(_functable->internTable(), univ);
-		return new FuncInter(nft);
-	} else {
-		PredInter* npi = _graphinter->clone(univ);
-		return new FuncInter(npi);
-	}
+if (_functable) {
+	FuncTable* nft = new FuncTable(_functable->internTable(), univ);
+	return new FuncInter(nft);
+} else {
+	PredInter* npi = _graphinter->clone(univ);
+	return new FuncInter(npi);
+}
 }
 
 FuncInter* InconsistentFuncInterGenerator::get(const AbstractStructure* structure) {
-	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
-	return new FuncInter(new PredInter(emptytable, emptytable, false, false));
+auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
+return new FuncInter(new PredInter(emptytable, emptytable, false, false));
 }
 
 FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(1, st));
-	ElementTuple t;
-	Tuple2Elem ef;
-	ef[t] = st->first();
-	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
-	FuncTable* ft = new FuncTable(ift, univ);
-	return new FuncInter(ft);
+SortTable* st = structure->inter(_sort);
+Universe univ(vector<SortTable*>(1, st));
+ElementTuple t;
+Tuple2Elem ef;
+ef[t] = st->first();
+EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
+FuncTable* ft = new FuncTable(ift, univ);
+return new FuncInter(ft);
 }
 
 FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	Universe univ(vector<SortTable*>(1, st));
-	ElementTuple t;
-	Tuple2Elem ef;
-	ef[t] = st->last();
-	EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
-	FuncTable* ft = new FuncTable(ift, univ);
-	return new FuncInter(ft);
+SortTable* st = structure->inter(_sort);
+Universe univ(vector<SortTable*>(1, st));
+ElementTuple t;
+Tuple2Elem ef;
+ef[t] = st->last();
+EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable(ef);
+FuncTable* ft = new FuncTable(ift, univ);
+return new FuncInter(ft);
 }
 
 FuncInter* SuccInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	vector<SortTable*> univ(2, st);
-	FuncTable* ft = 0; // TODO
-	notyetimplemented("successor function");
-	return new FuncInter(ft);
+SortTable* st = structure->inter(_sort);
+vector<SortTable*> univ(2, st);
+FuncTable* ft = 0; // TODO
+notyetimplemented("successor function");
+return new FuncInter(ft);
 }
 
 FuncInter* InvSuccInterGenerator::get(const AbstractStructure* structure) {
-	SortTable* st = structure->inter(_sort);
-	vector<SortTable*> univ(2, st);
-	FuncTable* ft = 0; // TODO
-	notyetimplemented("successor function");
-	return new FuncInter(ft);
+SortTable* st = structure->inter(_sort);
+vector<SortTable*> univ(2, st);
+FuncTable* ft = 0; // TODO
+notyetimplemented("successor function");
+return new FuncInter(ft);
 }
 
 MinInterGenerator* MinInterGeneratorGenerator::get(const vector<Sort*>& sorts) {
-	return new MinInterGenerator(sorts[0]);
+return new MinInterGenerator(sorts[0]);
 }
 
 MaxInterGenerator* MaxInterGeneratorGenerator::get(const vector<Sort*>& sorts) {
-	return new MaxInterGenerator(sorts[0]);
+return new MaxInterGenerator(sorts[0]);
 }
 
 SuccInterGenerator* SuccInterGeneratorGenerator::get(const vector<Sort*>& sorts) {
-	return new SuccInterGenerator(sorts[0]);
+return new SuccInterGenerator(sorts[0]);
 }
 
 InvSuccInterGenerator* InvSuccInterGeneratorGenerator::get(const vector<Sort*>& sorts) {
-	return new InvSuccInterGenerator(sorts[0]);
+return new InvSuccInterGenerator(sorts[0]);
 }
 
 /*****************
@@ -3619,44 +3625,44 @@ InvSuccInterGenerator* InvSuccInterGeneratorGenerator::get(const vector<Sort*>& 
 namespace TableUtils {
 
 PredInter* leastPredInter(const Universe& univ) {
-	PredTable* t1 = new PredTable(new EnumeratedInternalPredTable(), univ);
-	PredTable* t2 = new PredTable(new EnumeratedInternalPredTable(), univ);
-	return new PredInter(t1, t2, true, true);
+PredTable* t1 = new PredTable(new EnumeratedInternalPredTable(), univ);
+PredTable* t2 = new PredTable(new EnumeratedInternalPredTable(), univ);
+return new PredInter(t1, t2, true, true);
 }
 
 FuncInter* leastFuncInter(const Universe& univ) {
-	PredInter* pt = leastPredInter(univ);
-	return new FuncInter(pt);
+PredInter* pt = leastPredInter(univ);
+return new FuncInter(pt);
 }
 
 Universe fullUniverse(unsigned int arity) {
-	vector<SortTable*> vst(arity, VocabularyUtils::stringsort()->interpretation());
-	return Universe(vst);
+vector<SortTable*> vst(arity, VocabularyUtils::stringsort()->interpretation());
+return Universe(vst);
 }
 
 bool approxIsInverse(const PredTable* pt1, const PredTable* pt2) {
-	tablesize univsize = pt1->universe().size();
-	tablesize pt1size = pt1->size();
-	tablesize pt2size = pt2->size();
-	if (univsize._type == TST_EXACT && pt1size._type == TST_EXACT && pt2size._type == TST_EXACT) {
-		return pt1size._size + pt2size._size == univsize._size;
-	} else {
-		return false;
-	}
+tablesize univsize = pt1->universe().size();
+tablesize pt1size = pt1->size();
+tablesize pt2size = pt2->size();
+if (univsize._type == TST_EXACT && pt1size._type == TST_EXACT && pt2size._type == TST_EXACT) {
+	return pt1size._size + pt2size._size == univsize._size;
+} else {
+	return false;
+}
 }
 
 bool approxTotalityCheck(const FuncInter* funcinter) {
-	vector<SortTable*> vst = funcinter->universe().tables();
-	vst.pop_back();
-	tablesize nroftuples = Universe(vst).size();
-	tablesize nrofvalues = funcinter->graphInter()->ct()->size();
+vector<SortTable*> vst = funcinter->universe().tables();
+vst.pop_back();
+tablesize nroftuples = Universe(vst).size();
+tablesize nrofvalues = funcinter->graphInter()->ct()->size();
 //clog << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
 //clog << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
-	if (nroftuples._type == TST_EXACT && nrofvalues._type == TST_EXACT) {
-		return nroftuples._size == nrofvalues._size;
-	} else {
-		return false;
-	}
+if (nroftuples._type == TST_EXACT && nrofvalues._type == TST_EXACT) {
+	return nroftuples._size == nrofvalues._size;
+} else {
+	return false;
+}
 }
 
 } /* namespace TableUtils */
@@ -3668,77 +3674,77 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 /** Destructor **/
 
 bool needFixedNumberOfModels() {
-	auto expected = getOption(IntType::NBMODELS);
-	return expected != 0 && expected < getMaxElem<int>();
+auto expected = getOption(IntType::NBMODELS);
+return expected != 0 && expected < getMaxElem<int>();
 }
 
 bool needMoreModels(unsigned int found) {
-	auto expected = getOption(IntType::NBMODELS);
-	return expected == 0 || (needFixedNumberOfModels() && found < (unsigned int) expected);
+auto expected = getOption(IntType::NBMODELS);
+return expected == 0 || (needFixedNumberOfModels() && found < (unsigned int) expected);
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		vector<AbstractStructure*>& extensions) {
-	int currentnb = extensions.size();
+	vector<AbstractStructure*>& extensions) {
+int currentnb = extensions.size();
 
-	// go over all saved structures and generate a new structure for each possible value for it
-	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
-	vector<AbstractStructure*> partialfalsestructs;
-	if (function->partial()) {
-		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-			CHECKTERMINATION
-			partialfalsestructs.push_back((*j)->clone());
-		}
-	}
-
-	vector<AbstractStructure*> newstructs;
-	for (; not imageIterator.isAtEnd(); ++imageIterator) {
+// go over all saved structures and generate a new structure for each possible value for it
+auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
+vector<AbstractStructure*> partialfalsestructs;
+if (function->partial()) {
+	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 		CHECKTERMINATION
-		ElementTuple tuple(domainElementWithoutValue);
-		tuple.push_back(*imageIterator);
-		if (cf->contains(tuple)) {
-			continue;
-		}
-
-		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
-			CHECKTERMINATION
-			auto news = (*j)->clone();
-			news->inter(function)->graphInter()->makeTrue(tuple);
-			news->clean();
-			newstructs.push_back(news);
-			currentnb++;
-		}
-		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
-			CHECKTERMINATION
-			(*j)->inter(function)->graphInter()->makeFalse(tuple);
-		}
+		partialfalsestructs.push_back((*j)->clone());
 	}
-	extensions = newstructs;
-	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
-	Assert(extensions.size()>0);
+}
+
+vector<AbstractStructure*> newstructs;
+for (; not imageIterator.isAtEnd(); ++imageIterator) {
+	CHECKTERMINATION
+	ElementTuple tuple(domainElementWithoutValue);
+	tuple.push_back(*imageIterator);
+	if (cf->contains(tuple)) {
+		continue;
+	}
+
+	for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
+		CHECKTERMINATION
+		auto news = (*j)->clone();
+		news->inter(function)->graphInter()->makeTrue(tuple);
+		news->clean();
+		newstructs.push_back(news);
+		currentnb++;
+	}
+	for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
+		CHECKTERMINATION
+		(*j)->inter(function)->graphInter()->makeFalse(tuple);
+	}
+}
+extensions = newstructs;
+extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+Assert(extensions.size()>0);
 }
 
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
 
 // Contents ownership to receiver
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& partialstructures) {
-	auto result = std::vector<AbstractStructure*>();
-	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
-		if (not (*i)->approxTwoValued()) {
-			auto extensions = generateEnoughTwoValuedExtensions(*i);
-			result.insert(result.end(), extensions.begin(), extensions.end());
-		} else {
-			result.push_back(*i);
-		}
+auto result = std::vector<AbstractStructure*>();
+for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
+	if (not (*i)->approxTwoValued()) {
+		auto extensions = generateEnoughTwoValuedExtensions(*i);
+		result.insert(result.end(), extensions.begin(), extensions.end());
+	} else {
+		result.push_back(*i);
 	}
+}
 
-	if (getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
-		stringstream ss;
-		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
-		Warning::warning(ss.str());
-	}
+if (getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
+	stringstream ss;
+	ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
+	Warning::warning(ss.str());
+}
 
-	return result;
+return result;
 }
 
 /*
@@ -3746,124 +3752,124 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
  * TODO refactor into clean methods!
  */
 std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original) {
-	vector<AbstractStructure*> extensions;
+vector<AbstractStructure*> extensions;
 
-	extensions.push_back(original->clone());
+extensions.push_back(original->clone());
 
-	if (original->approxTwoValued()) {
-		return extensions;
+if (original->approxTwoValued()) {
+	return extensions;
+}
+
+if (not original->isConsistent()) {
+	throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
+}
+
+// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
+for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
+	CHECKTERMINATION
+	auto function = (*i).first;
+	auto inter = (*i).second;
+	if (inter->approxTwoValued()) {
+		continue;
 	}
+	// create a generator for the interpretation
+	auto universe = inter->graphInter()->universe();
+	const auto& sorts = universe.tables();
 
-	if (not original->isConsistent()) {
-		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
-	}
-
-	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
-	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
+	vector<SortIterator> domainIterators;
+	bool allempty = true;
+	for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
 		CHECKTERMINATION
-		auto function = (*i).first;
-		auto inter = (*i).second;
-		if (inter->approxTwoValued()) {
-			continue;
-		}
-		// create a generator for the interpretation
-		auto universe = inter->graphInter()->universe();
-		const auto& sorts = universe.tables();
-
-		vector<SortIterator> domainIterators;
-		bool allempty = true;
-		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
-			CHECKTERMINATION
-			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
-			domainIterators.push_back(temp);
-			if (not temp.isAtEnd()) {
-				allempty = false;
-			}
-		}
-		domainIterators.pop_back();
-
-		auto ct = inter->graphInter()->ct();
-		auto cf = inter->graphInter()->cf();
-
-		//Now, choose an image for this domainelement
-		ElementTuple domainElementWithoutValue;
-		if (sorts.size() > 0) {
-			auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
-			TableIterator domainIterator(internaliterator);
-
-			auto ctIterator = ct->begin();
-			FirstNElementsEqual eq((*i).first->arity());
-			StrictWeakNTupleOrdering so((*i).first->arity());
-
-			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
-				CHECKTERMINATION
-				// get unassigned domain element
-				domainElementWithoutValue = *domainIterator;
-				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
-					++ctIterator;
-				}
-				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
-					continue;
-				}
-				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
-			}
-		} else {
-			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+		const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
+		domainIterators.push_back(temp);
+		if (not temp.isAtEnd()) {
+			allempty = false;
 		}
 	}
+	domainIterators.pop_back();
 
-	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
-	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
-		CHECKTERMINATION
-		auto pred = (*i).first;
-		auto inter = (*i).second;
-		Assert(inter!=NULL);
-		if (inter->approxTwoValued()) {
-			continue;
-		}
+	auto ct = inter->graphInter()->ct();
+	auto cf = inter->graphInter()->cf();
 
-		const PredTable* pf = inter->pf();
-		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+	//Now, choose an image for this domainelement
+	ElementTuple domainElementWithoutValue;
+	if (sorts.size() > 0) {
+		auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
+		TableIterator domainIterator(internaliterator);
+
+		auto ctIterator = ct->begin();
+		FirstNElementsEqual eq((*i).first->arity());
+		StrictWeakNTupleOrdering so((*i).first->arity());
+
+		for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
 			CHECKTERMINATION
-			if (not pf->contains(*ptIterator)) {
+			// get unassigned domain element
+			domainElementWithoutValue = *domainIterator;
+			while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
+				++ctIterator;
+			}
+			if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 				continue;
 			}
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+		}
+	} else {
+		generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+	}
+}
 
-			vector<AbstractStructure*> newstructs;
-			int count = 0;
-			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
-				CHECKTERMINATION
-				auto news = (*j)->clone();
-				news->inter(pred)->makeTrue(*ptIterator);
-				newstructs.push_back(news);
-				count++;
-				if (not needMoreModels(count)) {
-					break;
-				}
-				news = (*j)->clone();
-				news->inter(pred)->makeFalse(*ptIterator);
-				newstructs.push_back(news);
-				count++;
+//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
+for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
+	CHECKTERMINATION
+	auto pred = (*i).first;
+	auto inter = (*i).second;
+	Assert(inter!=NULL);
+	if (inter->approxTwoValued()) {
+		continue;
+	}
+
+	const PredTable* pf = inter->pf();
+	for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+		CHECKTERMINATION
+		if (not pf->contains(*ptIterator)) {
+			continue;
+		}
+
+		vector<AbstractStructure*> newstructs;
+		int count = 0;
+		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
+			CHECKTERMINATION
+			auto news = (*j)->clone();
+			news->inter(pred)->makeTrue(*ptIterator);
+			newstructs.push_back(news);
+			count++;
+			if (not needMoreModels(count)) {
+				break;
 			}
-			extensions = newstructs;
+			news = (*j)->clone();
+			news->inter(pred)->makeFalse(*ptIterator);
+			newstructs.push_back(news);
+			count++;
 		}
+		extensions = newstructs;
 	}
+}
 
-	if (needFixedNumberOfModels()) {
-		// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
-		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-			(*j)->makeTwoValued();
-		}
-	}
-
+if (needFixedNumberOfModels()) {
+	// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
 	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-		(*j)->clean();
-		//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
+		(*j)->makeTwoValued();
 	}
+}
 
-	// TODO delete all structures which were cloned and discarded
+for (auto j = extensions.begin(); j < extensions.end(); ++j) {
+	(*j)->clean();
+	//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
+}
 
-	return extensions;
+// TODO delete all structures which were cloned and discarded
+
+return extensions;
 }
 
 /**************
@@ -3871,91 +3877,91 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
  **************/
 
 void ProcInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void BDDInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void FullInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void FuncInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void UnionInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void EnumeratedInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void EqualInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void StrLessInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void StrGreaterInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void InverseInternalPredTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void UnionInternalSortTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AllNaturalNumbers::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AllIntegers::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AllFloats::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AllChars::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AllStrings::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void EnumeratedInternalSortTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void IntRangeInternalSortTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void ProcInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void UNAInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void EnumeratedInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void PlusInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void MinusInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void TimesInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void DivInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void AbsInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void UminInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void ExpInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 void ModInternalFuncTable::accept(StructureVisitor* v) const {
-	v->visit(this);
+v->visit(this);
 }
 
 /******************
@@ -3963,15 +3969,15 @@ void ModInternalFuncTable::accept(StructureVisitor* v) const {
  ******************/
 
 SortTable* SortTable::materialize() const {
-	EnumerateSymbolicTable m;
-	return m.run(this);
+EnumerateSymbolicTable m;
+return m.run(this);
 }
 PredTable* PredTable::materialize() const {
-	EnumerateSymbolicTable m;
-	return m.run(this);
+EnumerateSymbolicTable m;
+return m.run(this);
 }
 FuncTable* FuncTable::materialize() const {
-	EnumerateSymbolicTable m;
-	return m.run(this);
+EnumerateSymbolicTable m;
+return m.run(this);
 }
 
