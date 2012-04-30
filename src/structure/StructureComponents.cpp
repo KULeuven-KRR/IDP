@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <cmath> // double std::abs(double) and double std::pow(double,double)
 #include <cstdlib> // int std::abs(int)
@@ -2523,7 +2523,7 @@ const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple)
 		return NULL;
 	} else {
 		int cppModulo = a1 % a2;
-		if(cppModulo < 0 ){
+		if (cppModulo < 0) {
 			return createDomElem(cppModulo + a2);
 		}
 		return createDomElem(cppModulo);
@@ -2676,9 +2676,9 @@ void FuncTable::put(std::ostream& stream) const {
 }
 
 void SortTable::put(std::ostream& stream) const {
-	if(empty()){
-		stream <<	toString(_table) <<" is empty";
-	}else{
+	if (empty()) {
+		stream << toString(_table) << " is empty";
+	} else {
 		stream << toString(_table) << "[" << toString(first()) << ", " << toString(last()) << "]";
 	}
 }
@@ -3246,14 +3246,16 @@ void PredInter::checkConsistency() {
 		CHECKTERMINATION
 		// get unassigned domain element
 		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
-			CHECKTERMINATION;Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
+			CHECKTERMINATION;
+			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
 		}
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			_inconsistentElements.insert(&(*largeIt));
-		}Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+		}
+		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
@@ -3360,25 +3362,28 @@ void PredInter::pf(PredTable* t) {
 	checkConsistency();
 }
 
-void PredInter::ctpt(PredTable* t) {
-	ct(t);
-	PredTable* npt = new PredTable(t->internTable(), t->universe());
-	pt(npt);
-	checkConsistency();
+// Direct implementation to prevent checking consistency unnecessarily
+void PredInter::ctpt(PredTable* newct) {
+	delete (_ct);
+	delete (_pf);
+	delete (_pt);
+	delete (_cf);
+	_ct = newct;
+	_pt = new PredTable(_ct->internTable(), _ct->universe());
+	_pf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
+	_cf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
 }
 
 void PredInter::materialize() {
-	if (approxTwoValued()) {
-		PredTable* prt = _ct->materialize();
-		if (prt)
-			ctpt(prt);
-	} else {
-		PredTable* prt = _ct->materialize();
-		if (prt)
-			ct(prt);
-		PredTable* prf = _cf->materialize();
-		if (prf)
+	auto prt = _ct->materialize();
+	if (prt) {
+		ctpt(prt);
+	}
+	if (not approxTwoValued()) {
+		auto prf = _cf->materialize();
+		if (prf) {
 			cf(prf);
+		}
 	}
 }
 
@@ -3408,8 +3413,8 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		cf = false;
 	}
 	auto inverseCfpt = new PredTable(new InverseInternalPredTable(ncfpt->internTable()), univ);
-	delete(result->_cf);
-	delete(result->_pt);
+	delete (result->_cf);
+	delete (result->_pt);
 	if (cf) {
 		result->_cf = ncfpt;
 		result->_pt = inverseCfpt;
@@ -3417,7 +3422,7 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		result->_pt = ncfpt;
 		result->_cf = inverseCfpt;
 	}
-	result->_inconsistentElements=_inconsistentElements; //OPTIMIZATION!
+	result->_inconsistentElements = _inconsistentElements; //OPTIMIZATION!
 	return result;
 
 }
@@ -3727,7 +3732,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if(getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())){
+	if (getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

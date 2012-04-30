@@ -13,6 +13,7 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include <set>
+#include <cstdio>
 
 class Function;
 class Vocabulary;

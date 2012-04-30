@@ -47,7 +47,7 @@ add_library(idp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
-target_link_libraries(idp minisatid lua linenoise tinythread)
+target_link_libraries(idp minisatid lua linenoise tinythread dl)
 
 add_executable(idp-bin external/main.cpp)
 if(BUILD_IDP_STATIC)
