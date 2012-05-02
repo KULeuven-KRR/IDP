@@ -26,7 +26,7 @@ void runTests(const char* inferencefilename, const string& instancefile) {
 	cerr << "Testing " << instancefile << "\n";
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( {instancefile, testfile}););
-	ASSERT_EQ(result, Status::SUCCESS);
+	ASSERT_EQ(Status::SUCCESS, result);
 }
 void throwexc() {
 	throw exception();

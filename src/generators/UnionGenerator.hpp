@@ -27,6 +27,14 @@ private:
 
 public:
 	UnionGenerator(std::vector<InstGenerator*>& generators, std::vector<InstGenerator*>& checkers);
+	~UnionGenerator() {
+		for (auto it = _generators.cbegin(); it != _generators.cend(); ++it) {
+			delete (*it);
+		}
+		for (auto it = _checkers.cbegin(); it != _checkers.cend(); ++it) {
+			delete (*it);
+		}
+	}
 	UnionGenerator* clone() const;
 	void reset();
 	bool alreadySeen();

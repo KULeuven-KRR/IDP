@@ -14,9 +14,74 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
+#include <cmath>
+
 using namespace std;
 
 namespace SolverConnection {
+
+MinisatID::AggType convert(AggFunction agg) {
+	MinisatID::AggType type = MinisatID::AggType::CARD;
+	switch (agg) {
+	case AggFunction::CARD:
+		type = MinisatID::AggType::CARD;
+		break;
+	case AggFunction::SUM:
+		type = MinisatID::AggType::SUM;
+		break;
+	case AggFunction::PROD:
+		type = MinisatID::AggType::PROD;
+		break;
+	case AggFunction::MIN:
+		type = MinisatID::AggType::MIN;
+		break;
+	case AggFunction::MAX:
+		type = MinisatID::AggType::MAX;
+		break;
+	}
+	return type;
+}
+MinisatID::EqType convert(CompType rel) {
+	switch (rel) {
+	case CompType::EQ:
+		return MinisatID::EqType::EQ;
+	case CompType::NEQ:
+		return MinisatID::EqType::NEQ;
+	case CompType::GEQ:
+		return MinisatID::EqType::GEQ;
+	case CompType::LEQ:
+		return MinisatID::EqType::LEQ;
+	case CompType::GT:
+		return MinisatID::EqType::G;
+	case CompType::LT:
+		return MinisatID::EqType::L;
+	}
+}
+
+MinisatID::Atom createAtom(int lit) {
+	return MinisatID::Atom(abs(lit));
+}
+
+MinisatID::Literal createLiteral(int lit) {
+	return MinisatID::mkLit(abs(lit), lit < 0);
+}
+
+MinisatID::literallist createList(const litlist& origlist) {
+	MinisatID::literallist list;
+	for (auto i = origlist.cbegin(); i < origlist.cend(); i++) {
+		list.push_back(createLiteral(*i));
+	}
+	return list;
+}
+
+
+MinisatID::Weight createWeight(double weight) {
+	double test;
+	if (modf(weight, &test) != 0) {
+		throw notyetimplemented("MinisatID does not support doubles yet.");
+	}
+	return int(weight);
+}
 
 typedef cb::Callback1<std::string, int> callbackprinting;
 

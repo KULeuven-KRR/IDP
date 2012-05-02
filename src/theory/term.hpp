@@ -285,6 +285,14 @@ public:
 			: _variables(vars), _query(q), _pi(pi) {
 	}
 
+	//Destructors
+	~Query(){
+	}
+
+	void recursiveDelete(){
+		_query->recursiveDelete(); //also deletes the variables.
+	}
+
 	// Inspectors
 	Formula* query() const {
 		return _query;

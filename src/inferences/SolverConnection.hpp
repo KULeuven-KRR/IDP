@@ -12,6 +12,7 @@
 #define INFERENCE_SOLVERCONN_HPP_
 
 #include "SolverInclude.hpp"
+#include "commontypes.hpp"
 
 class AbstractStructure;
 class GroundTranslator;
@@ -19,6 +20,13 @@ class GroundTermTranslator;
 class TraceMonitor;
 
 namespace SolverConnection {
+	MinisatID::AggType convert(AggFunction agg);
+	MinisatID::EqType convert(CompType rel);
+	MinisatID::Atom createAtom(int lit);
+	MinisatID::Literal createLiteral(int lit);
+	MinisatID::literallist createList(const litlist& origlist);
+	MinisatID::Weight createWeight(double weight);
+
 	// Note: default find all models
 	PCSolver* createsolver(int nbmodels = 0);
 	void setTranslator(PCSolver*, GroundTranslator* translator);

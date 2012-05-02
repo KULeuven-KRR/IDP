@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "Query.hpp"
 
@@ -25,19 +25,21 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	// translate the formula to a bdd
 	FOBDDManager* manager;
 	const FOBDD* bdd;
-	auto newquery = FormulaUtils::calculateArithmetic(q->query());
+	auto newquery = q->query()->clone();
+	newquery = FormulaUtils::calculateArithmetic(newquery);
 
 	if (not structure->approxTwoValued()) {
 		auto generateBDDaccToBounds = generateNaiveApproxBounds(NULL, structure);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
 		manager = generateBDDaccToBounds->manager();
+		delete generateBDDaccToBounds;
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
 		manager = new FOBDDManager();
 		FOBDDFactory factory(manager);
 		bdd = factory.turnIntoBdd(newquery);
-
 	}
+	newquery->recursiveDelete();
 
 	Assert(bdd != NULL);
 	Assert(manager != NULL);
@@ -80,6 +82,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 		}
 		result->add(currtuple);
 	}
-	delete(manager);
+	delete generator;
+	delete (manager);
 	return result;
 }
