@@ -575,6 +575,12 @@ public:
 	void recursiveDelete();
 
 	void add(Rule*); //!< add a rule to the definition
+	template<typename List>
+	void add(const List& list){
+		for(auto i=list.cbegin(); i!=list.cend(); ++i){
+			add(*i);
+		}
+	}
 	void rule(unsigned int n, Rule* r); //!< Replace the n'th rule of the definition
 
 	const std::vector<Rule*>& rules() const {

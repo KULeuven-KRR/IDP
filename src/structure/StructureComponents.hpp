@@ -2057,16 +2057,16 @@ public:
 	void makeUnknown(const ElementTuple&); //!< Make the given tuple unknown
 
 	// Inspectors
-	const PredTable* ct() const {
+	PredTable* ct() const {
 		return _ct;
 	}
-	const PredTable* cf() const {
+	PredTable* cf() const {
 		return _cf;
 	}
-	const PredTable* pt() const {
+	PredTable* pt() const {
 		return _pt;
 	}
-	const PredTable* pf() const {
+	PredTable* pf() const {
 		return _pf;
 	}
 	bool isTrue(const ElementTuple& tuple) const;

@@ -12,7 +12,7 @@
 
 #include "IncludeComponents.hpp"
 
-namespace Tests {
+namespace Gen {
 
 Sort* sort(const std::string& name, int min, int max) {
 	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
@@ -86,8 +86,15 @@ Formula& operator not(Formula& f) {
 	return f;
 }
 
-Formula& all(Variable* var, Formula& formula) {
-	return all(std::set<Variable*>{var}, formula);
+Formula& disj(const std::vector<Formula*>& formulas){
+	return *new BoolForm(SIGN::POS, false, formulas, FormulaParseInfo());
+}
+Formula& conj(const std::vector<Formula*>& formulas){
+	return *new BoolForm(SIGN::POS, true, formulas, FormulaParseInfo());
+}
+
+Formula& forall(Variable* var, Formula& formula) {
+	return forall(std::set<Variable*>{var}, formula);
 }
 Formula& exists(Variable* var, Formula& formula) {
 	return exists(std::set<Variable*>{var}, formula);
@@ -101,7 +108,7 @@ Formula& exists(const std::set<Variable*>& vars, Formula& formula) {
 	return quant(QUANT::EXIST, vars, formula);
 }
 
-Formula& all(const std::set<Variable*>& vars, Formula& formula) {
+Formula& forall(const std::set<Variable*>& vars, Formula& formula) {
 	return quant(QUANT::UNIV, vars, formula);
 }
 

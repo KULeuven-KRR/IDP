@@ -3364,23 +3364,30 @@ void PredInter::pf(PredTable* t) {
 }
 
 // Direct implementation to prevent checking consistency unnecessarily
-void PredInter::ctpt(PredTable* newct) {
+void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: it is possible that an already assigned table is assigned otherwise, so it gets
+	// deleted in the process!!!
+	auto clone = new PredTable(newct->internTable(), newct->universe());
 	delete (_ct);
 	delete (_pf);
 	delete (_pt);
 	delete (_cf);
-	_ct = newct;
+	_ct = clone;
 	_pt = new PredTable(_ct->internTable(), _ct->universe());
 	_pf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
 	_cf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
 }
 
 void PredInter::materialize() {
-	auto prt = _ct->materialize();
-	if (prt) {
-		ctpt(prt);
-	}
-	if (not approxTwoValued()) {
+	if (approxTwoValued()) {
+		auto prt = _ct->materialize();
+		if (prt) {
+			ctpt(prt);
+		}
+	} else {
+		auto prt = _ct->materialize();
+		if (prt) {
+			ct(prt);
+		}
 		auto prf = _cf->materialize();
 		if (prf) {
 			cf(prf);
@@ -3682,7 +3689,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		vector<AbstractStructure*>& extensions) {
 	int currentnb = extensions.size();
 
-	// go over all saved structures and generate a new structure for each possible value for it
+// go over all saved structures and generate a new structure for each possible value for it
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
 	vector<AbstractStructure*> partialfalsestructs;
 	if (function->partial()) {
@@ -3759,7 +3766,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
 	}
 
-	// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
+// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
 	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
 		CHECKTERMINATION
 		auto function = (*i).first;
@@ -3813,7 +3820,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		}
 	}
 
-	//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
+//If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
 		CHECKTERMINATION
 		auto pred = (*i).first;
@@ -3862,7 +3869,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
 	}
 
-	// TODO delete all structures which were cloned and discarded
+// TODO delete all structures which were cloned and discarded
 
 	return extensions;
 }

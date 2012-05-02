@@ -39,6 +39,8 @@ class SplitIntoMonotoneAgg;
 class ReplaceNestedWithTseitinTerm;
 class ConstructNewReducedForm;
 class Skolemize;
+class TopDownApproximatingDefinition;
+class BottomUpApproximatingDefinition;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -92,6 +94,8 @@ class Skolemize;
 		friend class SplitIntoMonotoneAgg;\
 		friend class ReplaceNestedWithTseitinTerm;\
 		friend class ConstructNewReducedForm;\
+		friend class TopDownApproximatingDefinition;\
+		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;
 
 class AbstractTheory;

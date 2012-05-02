@@ -14,6 +14,8 @@
 /**
  * Preliminary version of an interface to easily create vocs, theories and structures from c++
  *
+ * TODO currently loses all available parseinfo!
+ *
  * It allows for example the following declaration:
  auto s = sort("x", -2, 2);
  auto p = pred("p", {s});
@@ -49,7 +51,7 @@ class Vocabulary;
 class PFSymbol;
 class PredForm;
 
-namespace Tests {
+namespace Gen {
 
 Sort* sort(const std::string& name, int min, int max);
 
@@ -72,9 +74,12 @@ Formula& operator&(Formula& left, Formula& right);
 Formula& operator|(Formula& left, Formula& right);
 Formula& operator not(Formula&);
 
-Formula& all(Variable*, Formula&);
+Formula& disj(const std::vector<Formula*>& formulas);
+Formula& conj(const std::vector<Formula*>& formulas);
+
+Formula& forall(Variable*, Formula&);
 Formula& exists(Variable*, Formula&);
-Formula& all(const std::set<Variable*>&, Formula&);
+Formula& forall(const std::set<Variable*>&, Formula&);
 Formula& exists(const std::set<Variable*>& vars, Formula& formula);
 PredForm& atom(Predicate*, const std::vector<Variable*>&);
 

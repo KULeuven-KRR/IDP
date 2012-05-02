@@ -35,7 +35,6 @@ if(${BUILDTESTS})
 		transformationtests.cpp
 		overflowtests.cpp
 		commandtests.cpp
-		cppinterface.hpp cppinterface.cpp
 		testingtools.hpp testingtools.cpp		
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp

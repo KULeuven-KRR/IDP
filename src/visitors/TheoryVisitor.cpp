@@ -45,7 +45,7 @@ void TheoryVisitor::traverse(const SetExpr* s) {
 	}
 }
 
-void DefaultTraversingTheoryVisitor::visit(const Theory* t) {
+void TheoryVisitor::traverse(const Theory* t) {
 	for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
 		(*it)->accept(this);
 	}
@@ -55,6 +55,10 @@ void DefaultTraversingTheoryVisitor::visit(const Theory* t) {
 	for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
 		(*it)->accept(this);
 	}
+}
+
+void DefaultTraversingTheoryVisitor::visit(const Theory* t) {
+	traverse(t);
 }
 
 void DefaultTraversingTheoryVisitor::visit(const AbstractGroundTheory*) {
