@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <cstdlib>
+#include <memory>
 
 class AbstractStructure;
 class AbstractTheory;
@@ -30,8 +31,8 @@ class Vocabulary;
  */
 class ModelExpansion {
 public:
-	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor = NULL);
-	static std::vector<AbstractStructure*> doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor = NULL);
+	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
+	static std::vector<AbstractStructure*> doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
 
 private:
 	Theory* theory;
@@ -40,6 +41,7 @@ private:
 	Term* minimizeterm; // if NULL, no optimization is done
 	Vocabulary* outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
 
+	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor);
 	ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor);
 
 	void setOutputVocabulary(Vocabulary* v);

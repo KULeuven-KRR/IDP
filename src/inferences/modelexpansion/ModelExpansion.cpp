@@ -32,47 +32,49 @@
 
 using namespace std;
 
-std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) {
-	if(theory==NULL || structure==NULL){
-		throw IdpException("Unexpected NULL-pointer.");
-	}
-	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
-	if (t == NULL) {
-		throw notyetimplemented("Modelexpansion of already ground theories.\n");
-	}
-	if(t->vocabulary()!=structure->vocabulary()){
-		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
-	}
-	ModelExpansion m(t, structure, NULL, tracemonitor);
-	return m.expand();
+std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc, TraceMonitor* tracemonitor) {
+	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor);
+	return m->expand();
 }
-std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor) {
-	if(theory==NULL || structure==NULL || term==NULL){
+std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor) {
+	if (term == NULL) {
+		throw IdpException("Unexpected NULL-pointer.");
+	}
+	auto m = createMX(theory, structure, term, outputvoc, tracemonitor);
+	return m->expand();
+}
+
+shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor){
+	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
 	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 	if (t == NULL) {
 		throw notyetimplemented("Modelexpansion of already ground theories.\n");
 	}
-	if(t->vocabulary()!=structure->vocabulary()){
+	if (t->vocabulary() != structure->vocabulary()) {
 		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
 	}
-	ModelExpansion m(t, structure, term, tracemonitor);
-	return m.expand();
+	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor));
+	if(outputvoc!=NULL){
+		m->setOutputVocabulary(outputvoc);
+	}
+	return m;
 }
 
 ModelExpansion::ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
 		: 	theory(theory),
 			structure(structure),
 			tracemonitor(tracemonitor),
-			minimizeterm(minimize), outputvoc(NULL) {
+			minimizeterm(minimize),
+			outputvoc(NULL) {
 }
 
-void ModelExpansion::setOutputVocabulary(Vocabulary* v){
-		if(VocabularyUtils::isSubVocabulary(v, theory->vocabulary())){
-			throw IdpException("The output-vocabulary of model expansion can only be a subvocabulary of the theory.");
-		}
-		outputvoc = v;
+void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
+	if (VocabularyUtils::isSubVocabulary(v, theory->vocabulary())) {
+		throw IdpException("The output-vocabulary of model expansion can only be a subvocabulary of the theory.");
+	}
+	outputvoc = v;
 }
 
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
@@ -184,6 +186,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
 	try {
+		// TODO here, make all ground atoms in the output vocabulary decision vars. (and set the option that not everything has to be decided)
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
 	} catch (MinisatID::idpexception& error) {
 		std::stringstream ss;
