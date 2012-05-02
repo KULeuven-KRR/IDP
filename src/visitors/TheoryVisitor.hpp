@@ -22,6 +22,7 @@ public:
 	}
 
 protected:
+	virtual void traverse(const Theory*);
 	virtual void traverse(const Formula*);
 	virtual void traverse(const Term*);
 	virtual void traverse(const SetExpr*);

@@ -32,7 +32,8 @@ private:
 	ApproxData* data;
 	vector<Rule*> topdownrules;
 public:
-	const std::vector<Rule*>& execute(Formula* f, ApproxData * approxdata) {
+	template<typename T>
+	const std::vector<Rule*>& execute(T f, ApproxData * approxdata) {
 		topdownrules.clear();
 		data = approxdata;
 		f->accept(this);
@@ -78,6 +79,7 @@ public:
 			}
 			add(topdownrules, (*second)[*i], f, data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
 		}
+		traverse(bf);
 	}
 
 	/**
@@ -109,6 +111,7 @@ public:
 		auto& quant = Gen::forall(vars, Gen::disj(forms));
 
 		add(topdownrules, (*second)[qf->subformula()], &Gen::conj({&quant, (*first)[qf]}), data);
+		traverse(qf);
 	}
 
 	void visit(const PredForm*) {
@@ -119,12 +122,12 @@ public:
 	void visit(const EqChainForm*) {
 		throw IdpException("Generating an approximating definition does not work for comparison chains.");
 	}
+	virtual void visit(const Theory* t) {
+		traverse(t);
+	}
 
 	// NOTE: should have been transformed away
 	void visit(const EquivForm*) {
-		throw IdpException("Illegal execution path, aborting.");
-	}
-	virtual void visit(const Theory*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
 	virtual void visit(const AbstractGroundTheory*) {
@@ -194,7 +197,8 @@ private:
 	ApproxData* data;
 	vector<Rule*> bottomuprules;
 public:
-	const std::vector<Rule*>& execute(Formula* f, ApproxData * approxdata) {
+	template<class T>
+	const std::vector<Rule*>& execute(T* f, ApproxData * approxdata) {
 		bottomuprules.clear();
 		data = approxdata;
 		f->accept(this);
@@ -226,6 +230,7 @@ public:
 			forms.push_back((*second)[*i]);
 		}
 		add(bottomuprules, (*second)[bf], &Gen::conj(forms), data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
+		traverse(bf);
 	}
 
 	/**
@@ -248,6 +253,7 @@ public:
 		}
 		add(bottomuprules, (*exists)[qf], &Gen::exists(qf->quantVars(), *(*exists)[qf->subformula()]), data);
 		add(bottomuprules, (*univ)[qf], &Gen::forall(qf->quantVars(), *(*univ)[qf->subformula()]), data);
+		traverse(qf);
 	}
 
 	void visit(const PredForm*) {
@@ -258,11 +264,11 @@ public:
 	void visit(const EqChainForm*) {
 		throw IdpException("Generating an approximating definition does not work for comparison chains.");
 	}
+	virtual void visit(const Theory* t) {
+		traverse(t);
+	}
 
 	void visit(const EquivForm*) {
-		throw IdpException("Illegal execution path, aborting.");
-	}
-	virtual void visit(const Theory*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
 	virtual void visit(const AbstractGroundTheory*) {
@@ -327,37 +333,33 @@ public:
 	}
 };
 
-Definition* GenerateApproximatingDefinition::getallRules(const std::vector<Formula*>& constraintsentences, const std::vector<Formula*>& assertsentences, Direction dir) {
-	// FIXME generate tseitins
-	// FIXME what with new vocabulary?
+Definition* GenerateApproximatingDefinition::getallRules(Direction dir) {
 	auto d = new Definition();
 	if (dir != Direction::DOWN) {
-		d->add(getallUpRules(constraintsentences));
-		d->add(getallUpRules(assertsentences));
+		d->add(getallUpRules());
 	}
 	if (dir != Direction::UP) {
-		d->add(getallDownRules(constraintsentences));
-		d->add(getallDownRules(assertsentences));
+		d->add(getallDownRules());
 	}
-	for (auto i = assertsentences.cbegin(); i < assertsentences.cend(); ++i) {
+	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto tr = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
 		auto ts = data->formula2ct[*i];
 		d->add(new Rule(ts->freeVars(), ts, tr, ParseInfo()));
 	}
 	return d;
 }
-std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules(const std::vector<Formula*>& sentences) {
+std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
 	std::vector<Rule*> result;
-	for (auto i = sentences.cbegin(); i < sentences.cend(); ++i) {
+	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto rules = TopDownApproximatingDefinition().execute(*i, data);
 		result.insert(result.end(), rules.cbegin(), rules.cend());
 	}
 	return result;
 }
 
-std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules(const std::vector<Formula*>& sentences) {
+std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 	std::vector<Rule*> result;
-	for (auto i = sentences.cbegin(); i < sentences.cend(); ++i) {
+	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto rules = BottomUpApproximatingDefinition().execute(*i, data);
 		result.insert(result.end(), rules.cbegin(), rules.cend());
 	}

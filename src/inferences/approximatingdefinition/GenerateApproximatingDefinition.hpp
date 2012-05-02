@@ -20,28 +20,34 @@ class GenerateApproximatingDefinition {
 private:
 	std::map<Formula*, Predicate*> formula2tseitin;
 	ApproxData* data;
-	std::vector<Formula*> constraints, assertions; // Sentences!
+	std::vector<Formula*> _sentences;
 
 public:
-	GenerateApproximatingDefinition(const std::vector<Formula*>& constraints, const std::vector<Formula*>& assertions, const std::set<PFSymbol*> actions)
-			: 	data(new ApproxData(actions)),
-				constraints(constraints),
-				assertions(assertions) {
-		// TODO do transformations on the sentences!
+	enum class Direction {
+		UP, DOWN, BOTH
+	};
+
+	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& freesymbols, Direction dir){
+		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
+		// FIXME what with new vocabulary?
+		return g.getallRules(dir);
+	}
+
+private:
+	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions)
+			: 	data(new ApproxData(actions)) {
+		// TODO do transformations on the sentences
+		// TODO do tseitin introduction + generate new vocabulary
+		_sentences = sentences;
 	}
 	~GenerateApproximatingDefinition() {
 		delete (data);
 	}
 
-	enum class Direction {
-		UP, DOWN, BOTH
-	};
+	Definition* getallRules(Direction dir);
 
-	Definition* getallRules(const std::vector<Formula*>& constraintsentences, const std::vector<Formula*>& assertsentences, Direction dir);
-
-private:
-	std::vector<Rule*> getallDownRules(const std::vector<Formula*>& sentences);
-	std::vector<Rule*> getallUpRules(const std::vector<Formula*>& sentences);
+	std::vector<Rule*> getallDownRules();
+	std::vector<Rule*> getallUpRules();
 };
 
 #endif /* APPROXIMATINGDEFINITIONGENERATION_HPP_ */
