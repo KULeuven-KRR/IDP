@@ -3391,7 +3391,6 @@ void PredInter::materialize() {
 		}
 	}
 }
-}
 
 PredInter* PredInter::clone(const Universe& univ) const {
 PredTable* nctpf;

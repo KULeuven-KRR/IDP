@@ -145,7 +145,11 @@ class linked_ptr {
   // Copy an existing linked_ptr<>, adding ourselves to the list of references.
   template <typename U> linked_ptr(linked_ptr<U> const& ptr) { copy(&ptr); }
   linked_ptr(linked_ptr const& ptr) {  // NOLINT
-    assert(&ptr != this);
+	#ifdef __APPLE__
+		#warning "Assert statement Left out to compile OS X. May explain strange test results."
+	#else
+	  assert(&ptr != this);
+	#endif
     copy(&ptr);
   }
 

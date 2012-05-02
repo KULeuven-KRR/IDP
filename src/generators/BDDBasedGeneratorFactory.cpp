@@ -37,6 +37,10 @@
 
 #include "theory/TheoryUtils.hpp"
 
+#ifdef __APPLE__
+#include <sys/types.h>
+#endif
+
 using namespace std;
 
 /*

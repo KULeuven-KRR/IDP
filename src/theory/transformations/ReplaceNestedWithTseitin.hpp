@@ -11,6 +11,9 @@
 #ifndef REPLACENESTEDWITHTSEITIN_HPP_
 #define REPLACENESTEDWITHTSEITIN_HPP_
 
+#ifdef __APPLE__
+#include <sys/types.h>
+#endif
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "structure/StructureComponents.hpp"
 
