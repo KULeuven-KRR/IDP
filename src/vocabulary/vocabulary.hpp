@@ -562,6 +562,16 @@ bool isIntSum(const Function* function, const Vocabulary* voc);
 
 class Namespace;
 
+enum class STDSYMBOL{
+	STD,
+	NATSORT, INTSORT, FLOATSORT, CHARSORT, STRINGSORT,
+	EQ, GT, LT,
+	MINUS,
+	ADDITION, SUBSTRACTION, PRODUCT, DIVISION, ABS, MODULO, EXPONENTIAL,
+	MINELEM, MAXELEM, SUCCESSOR, PREDECESSOR
+};
+std::string getSymbolName(STDSYMBOL s);
+
 class Vocabulary {
 private:
 	std::string _name; //!< Name of the vocabulary. Default name is the empty string.

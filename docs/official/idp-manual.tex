@@ -498,7 +498,7 @@ A (three-valued) structure with name \code{MyStruct} over a vocabulary \code{MyV
 \end{lstlisting}
 or by 
 \begin{lstlisting}
-	asp_structure MyStruct: MyVoc {
+	aspstructure MyStruct: MyVoc {
 		//contents of the structures
 	}
 \end{lstlisting}
@@ -591,7 +591,6 @@ Shorthands like `{\tt MyType = \{1..10; 15..20\}}' or `{\tt MyType = \{ a..e; A.
 \subsection{ASP structures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 An ASP structure consists of a list of facts in the usual ASP syntax.  In particular, everything from a \code{\%} till the end of the line is considered a comment, and \code{-} before an atom denotes classical negation (negation as failure is not available).  A fact about functions is written like \code{F(a)=b} or \code{-F(c)=d}.
-
 
 
 
