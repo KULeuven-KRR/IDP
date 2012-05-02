@@ -12,6 +12,7 @@
 #define FOBDDVARIABLE_HPP_
 
 #include "fobdds/FoBddTerm.hpp"
+#include "vocabulary/vocabulary.hpp"
 
 class FOBDDManager;
 class Variable;
@@ -40,6 +41,25 @@ public:
 	const FOBDDTerm* acceptchange(FOBDDVisitor*) const;
 	virtual std::ostream& put(std::ostream& output) const;
 
+};
+
+//This struct is needed in order to always quantify !x y in the same order.
+struct CompareBDDVars {
+	bool operator()(const FOBDDVariable* v1, const FOBDDVariable* v2) const {
+		if (v1->sort() < v2->sort()) {
+			return true;
+		}
+		if (v1->sort() > v2->sort()) {
+			return false;
+		}
+		if (v1->variable()->name() < v2->variable()->name()) {
+			return true;
+		}
+		if (v1->variable()->name() > v2->variable()->name()) {
+			return false;
+		}
+		return v1 < v2;
+	}
 };
 
 #endif /* FOBDDVARIABLE_HPP_ */

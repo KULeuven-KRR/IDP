@@ -822,7 +822,7 @@ const FOBDD* GrounderFactory::improveGenerator(const FOBDD* bdd, const vector<Va
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
-	set<const FOBDDVariable*> copyvars;
+	set<const FOBDDVariable*, CompareBDDVars> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
@@ -854,7 +854,7 @@ const FOBDD* GrounderFactory::improveChecker(const FOBDD* bdd, double mcpa) {
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
-	set<const FOBDDVariable*> copyvars;
+	set<const FOBDDVariable*, CompareBDDVars> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
 	optimizemanager.optimizeQuery(copybdd, copyvars, indices, _structure);
 

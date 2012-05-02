@@ -374,8 +374,8 @@ const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	return addVariable(var);
 }
 
-set<const FOBDDVariable*> FOBDDManager::getVariables(const set<Variable*>& vars) {
-	set<const FOBDDVariable*> bddvars;
+set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::getVariables(const set<Variable*>& vars) {
+	set<const FOBDDVariable*, CompareBDDVars> bddvars;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		bddvars.insert(getVariable(*it));
 	}
@@ -931,7 +931,7 @@ const FOBDD* FOBDDManager::univquantify(const FOBDDVariable* var, const FOBDD* b
 	return negation(quantbdd);
 }
 
-const FOBDD* FOBDDManager::univquantify(const set<const FOBDDVariable*>& qvars, const FOBDD* bdd) {
+const FOBDD* FOBDDManager::univquantify(const set<const FOBDDVariable*, CompareBDDVars>& qvars, const FOBDD* bdd) {
 	const FOBDD* negatedbdd = negation(bdd);
 	const FOBDD* quantbdd = existsquantify(qvars, negatedbdd);
 	return negation(quantbdd);
@@ -944,10 +944,21 @@ const FOBDD* FOBDDManager::existsquantify(const FOBDDVariable* var, const FOBDD*
 	return q;
 }
 
-const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*>& qvars, const FOBDD* bdd) {
+const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*, CompareBDDVars>& qvars, const FOBDD* bdd) {
 	const FOBDD* result = bdd;
 	for (auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
 		result = existsquantify(*it, result);
+	}
+	return result;
+}
+
+const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>& vars, const FOBDD* bdd) {
+	auto result = bdd;
+	for (auto it = vars.crbegin(); it != vars.crend(); ++it) {
+		BumpIndices b(this, *it, 0);
+		result = b.FOBDDVisitor::change(result);
+		auto index = getDeBruijnIndex((*it)->sort(),0);
+		result = substitute(result,*it,index);
 	}
 	return result;
 }
@@ -1009,6 +1020,13 @@ const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOB
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
 	SubstituteIndex s(this, index, variable);
+	return s.FOBDDVisitor::change(bdd);
+}
+
+const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* variable, const FOBDDDeBruijnIndex* index) {
+	std::map<const FOBDDVariable*, const FOBDDDeBruijnIndex*> m;
+	m[variable]=index;
+	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(this,m);
 	return s.FOBDDVisitor::change(bdd);
 }
 
@@ -1276,7 +1294,8 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, Variable* v) {
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-tablesize univNrAnswers(const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
+tablesize univNrAnswers(const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+		const AbstractStructure* structure) {
 	vector<SortTable*> vst;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it)
 		vst.push_back(structure->inter((*it)->variable()->sort()));
@@ -1357,8 +1376,8 @@ map<const FOBDDKernel*, double> FOBDDManager::kernelAnswers(const FOBDD* bdd, co
 	map<const FOBDDKernel*, double> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
-		set<const FOBDDVariable*> vars = variables(*it);
-		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
+		auto vars = variables(*it);
+		auto indices = FOBDDManager::indices(*it);
 		result[*it] = estimatedNrAnswers(*it, vars, indices, structure);
 	}
 	return result;
@@ -1367,7 +1386,7 @@ map<const FOBDDKernel*, double> FOBDDManager::kernelAnswers(const FOBDD* bdd, co
 /**
  * Returns all variables that occur in the given bdd
  */
-set<const FOBDDVariable*> FOBDDManager::variables(const FOBDD* bdd) {
+set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::variables(const FOBDD* bdd) {
 	VariableCollector vc(this);
 	return vc.getVariables(bdd);
 }
@@ -1375,7 +1394,7 @@ set<const FOBDDVariable*> FOBDDManager::variables(const FOBDD* bdd) {
 /**
  * Returns all variables that occur in the given kernel
  */
-set<const FOBDDVariable*> FOBDDManager::variables(const FOBDDKernel* kernel) {
+set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::variables(const FOBDDKernel* kernel) {
 	VariableCollector vc(this);
 	return vc.getVariables(kernel);
 }
@@ -1403,7 +1422,7 @@ map<const FOBDDKernel*, tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, c
 	map<const FOBDDKernel*, tablesize> result;
 	set<const FOBDDKernel*> kernels = nonnestedkernels(bdd);
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
-		set<const FOBDDVariable*> vars = variables(*it);
+		auto vars = variables(*it);
 		set<const FOBDDDeBruijnIndex*> indices = FOBDDManager::indices(*it);
 		result[*it] = univNrAnswers(vars, indices, structure);
 	}
@@ -1596,8 +1615,8 @@ double FOBDDManager::estimatedChance(const FOBDD* bdd, const AbstractStructure* 
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | kernel } in the given structure
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		const AbstractStructure* structure) {
+double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*, CompareBDDVars>& vars,
+		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
 	// TODO: improve this if functional dependency is known
 	// TODO For example aggkernels typically have only one answer, for the left variable.
 	double maxdouble = getMaxElem<double>();
@@ -1613,7 +1632,7 @@ double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<con
 /**
  * \brief Returns an estimate of the number of answers to the query { vars | bdd } in the given structure
  */
-double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 	double bddchance = estimatedChance(bdd, structure);
@@ -1624,7 +1643,7 @@ double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDV
 		return bddchance * univanswers._size;
 }
 
-double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*>& vars,
+double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const set<const FOBDDVariable*, CompareBDDVars>& vars,
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 
@@ -1811,7 +1830,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 	}
 }
 
-double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 	if (bdd == _truebdd) {
@@ -1826,9 +1845,9 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 		return 1;
 	} else {
 		// split variables
-		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
-		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
-		set<const FOBDDVariable*> bddvars;
+		auto kernelvars = variables(bdd->kernel());
+		auto kernelindices = FOBDDManager::indices(bdd->kernel());
+		set<const FOBDDVariable*, CompareBDDVars> bddvars;
 		set<const FOBDDDeBruijnIndex*> bddindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 			if (kernelvars.find(*it) == kernelvars.cend()) {
@@ -1882,7 +1901,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 			}
 		} else {
 			tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
-			set<const FOBDDVariable*> emptyvars;
+			set<const FOBDDVariable*, CompareBDDVars> emptyvars;
 			set<const FOBDDDeBruijnIndex*> emptyindices;
 			double kernelcost = estimatedCostAll(true, bdd->kernel(), emptyvars, emptyindices, structure);
 			double truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices, structure);
@@ -1902,7 +1921,7 @@ double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVar
 	}
 }
 
-void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
 	Assert(query != NULL);
 	if (query != _truebdd && query != _falsebdd) {
@@ -1951,15 +1970,15 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 	}
 }
 
-const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		const AbstractStructure* structure, double weightPerAns) {
+const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
+		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure, double weightPerAns) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
 		// Split variables
-		set<const FOBDDVariable*> kernelvars = variables(bdd->kernel());
+		auto kernelvars = variables(bdd->kernel());
 		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
-		set<const FOBDDVariable*> branchvars;
+		set<const FOBDDVariable*, CompareBDDVars> branchvars;
 		set<const FOBDDDeBruijnIndex*> branchindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 			if (kernelvars.find(*it) == kernelvars.cend())
@@ -2025,12 +2044,12 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 	}
 }
 
-const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	return makeMore(false, bdd, vars, indices, structure, weightPerAns);
 }
 
-const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	return makeMore(true, bdd, vars, indices, structure, weightPerAns);
 }

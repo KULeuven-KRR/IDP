@@ -16,22 +16,34 @@
 //TODO: fix the parseinfo!
 /**
  * Given a bdd or a kernel, creates the associated formula.
- * Given a bddterm, creates the associated term.
+ * Makes use of _counter to count how many times certain bdds occur in the theory.
+ * If the count is high, a Tseitin is created for this formula.
+ * Finally, adds all tseitin-defining equivalences to the theory.
  */
 class BDDToFOWithTseitins: public BDDToFO {
 private:
 	CountOccurences* _counter;
 	std::map<const FOBDD*, Predicate*> _bddtseitins;
 	std::map<const FOBDDKernel*, Predicate*> _kerneltseitins;
-	std::vector<const FOBDD*> _bddtseitinsWithoutConstraints;
-	std::vector<const FOBDDKernel*> _kerneltseitinsWithoutConstraints;
-	int _boundary; //Only formulas that occur more than this number are tseitinified. Initially, this is 2 (since many formulas occur twice e.g. in equivalences).
+	std::set<const FOBDD*> _bddtseitinsWithoutConstraints;
+	std::set<const FOBDDKernel*> _kerneltseitinsWithoutConstraints;
+	std::set<const FOBDD*> _definedbddtseitins;
+	std::set<const FOBDDKernel*> _definedkerneltseitins;
+	bool _inDefinition;
+	int _boundary; //Only formulas that occur more than this number are tseitinified. Initially, this is 1
 
 public:
-	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter)
-			: BDDToFO(m), _counter(counter), _boundary(2) {
-	}
 
+	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter)
+			: BDDToFO(m), _counter(counter), _boundary(1), _inDefinition(false) {
+	}
+	template<typename BddNode>
+	Formula* createFormulaWithFreeVars(const BddNode* object, set<const FOBDDVariable*, CompareBDDVars> freebddvars) {
+		reset();
+		setDBRMappingToMatch(freebddvars);
+		object->accept(this);
+		return _currformula;
+	}
 	/**
 	 * Forget all tseitin-symbols.
 	 */
@@ -43,33 +55,68 @@ public:
 	}
 
 	Theory* addTseitinConstraints(Theory* t) {
-		Assert(_bddtseitinsWithoutConstraints.size()==_bddtseitins.size());
-		Assert(_kerneltseitinsWithoutConstraints.size()==_kerneltseitins.size());
-
 		bool changed = true;
 		while (changed) {
 			changed = false;
 			while (not _bddtseitinsWithoutConstraints.empty()) {
 				changed = true;
-				auto bdd = _bddtseitinsWithoutConstraints[_bddtseitinsWithoutConstraints.size() - 1];
-				Assert(_bddtseitins.find(bdd) != _bddtseitins.cend());
+				auto bdd = *(_bddtseitinsWithoutConstraints.cbegin());
+				_bddtseitinsWithoutConstraints.erase(bdd);
+				auto res = _bddtseitins.find(bdd);
+				Assert(res != _bddtseitins.cend());
 				auto pred = _bddtseitins[bdd];
 				auto newForm = tseitinFormula(pred, bdd);
-				_bddtseitinsWithoutConstraints.pop_back();
 				t->add(newForm);
 			}
 			while (not _kerneltseitinsWithoutConstraints.empty()) {
 				changed = true;
-				auto kernel = _kerneltseitinsWithoutConstraints[_kerneltseitinsWithoutConstraints.size() - 1];
+				auto kernel = *(_kerneltseitinsWithoutConstraints.cbegin());
+				_kerneltseitinsWithoutConstraints.erase(kernel);
 				Assert(_kerneltseitins.find(kernel) != _kerneltseitins.cend());
 				auto pred = _kerneltseitins[kernel];
 				auto newForm = tseitinFormula(pred, kernel);
-				_kerneltseitinsWithoutConstraints.pop_back();
 				t->add(newForm);
 			}
 		}
 		return t;
 	}
+
+	void startDefinition() {
+		_definedbddtseitins.clear();
+		_definedkerneltseitins.clear();
+		_inDefinition = true;
+	}
+
+	void stopDefinitionAndAddConstraints(Definition* def) {
+		bool changed = true;
+		while (changed) {
+			changed = false;
+			while (not _definedbddtseitins.empty()) {
+				changed = true;
+				auto bdd = *(_definedbddtseitins.cbegin());
+				_definedbddtseitins.erase(bdd);
+				_bddtseitinsWithoutConstraints.erase(bdd);
+				auto res = _bddtseitins.find(bdd);
+				Assert(res != _bddtseitins.cend());
+				auto pred = _bddtseitins[bdd];
+				auto newRule = tseitinRule(pred, bdd);
+				def->add(newRule);
+
+			}
+			while (not _definedkerneltseitins.empty()) {
+				changed = true;
+				auto kernel = *(_definedkerneltseitins.cbegin());
+				_definedkerneltseitins.erase(kernel);
+				_kerneltseitinsWithoutConstraints.erase(kernel);
+				Assert(_kerneltseitins.find(kernel) != _kerneltseitins.cend());
+				auto pred = _kerneltseitins[kernel];
+				auto newRule = tseitinRule(pred, kernel);
+				def->add(newRule);
+			}
+		}
+		_inDefinition = false;
+	}
+
 private:
 	template<typename BDDConstruct>
 	Formula* tseitinFormula(Predicate* pred, const BDDConstruct* arg) {
@@ -78,11 +125,29 @@ private:
 		setDBRMappingToMatch(vars);
 		createTseitinAtom(pred);
 		auto tseitinAtom = _currformula;
+		auto backup = _boundary;
 		_boundary = _counter->getCount(arg);
 		arg->accept(this);
+		_boundary = backup;
 		auto tseitinDefinition = _currformula;
 		auto tseitinEquiv = new EquivForm(SIGN::POS, tseitinAtom, tseitinDefinition, FormulaParseInfo());
 		return new QuantForm(SIGN::POS, QUANT::UNIV, varsset, tseitinEquiv, FormulaParseInfo());
+	}
+
+	template<typename BDDConstruct>
+	Rule* tseitinRule(Predicate* pred, const BDDConstruct* arg) {
+		auto vars = VarUtils::makeNewVariables(pred->sorts());
+		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
+		setDBRMappingToMatch(vars);
+		createTseitinAtom(pred);
+		Assert(sametypeid<PredForm>(*_currformula));
+		auto tseitinAtom = dynamic_cast<PredForm*>(_currformula);
+		auto backup = _boundary;
+		_boundary = _counter->getCount(arg);
+		arg->accept(this);
+		_boundary = backup;
+		auto tseitinDefinition = _currformula;
+		return new Rule(varsset, tseitinAtom, tseitinDefinition, ParseInfo());
 	}
 
 	void setDBRMappingToMatch(std::vector<Variable*> vars) {
@@ -93,7 +158,16 @@ private:
 		}
 	}
 
-	void createTseitinAtom(Predicate* p) {
+	void setDBRMappingToMatch(set<const FOBDDVariable*, CompareBDDVars> bddvars) {
+		_dbrmapping.clear();
+		size_t i = 0;
+		for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it, ++i) {
+			auto dbrindex = _manager->getDeBruijnIndex((*it)->sort(), i);
+			_dbrmapping[dbrindex] = (*it)->variable();
+		}
+	}
+
+	void createTseitinAtom(Predicate* p, bool negate = false) {
 		Assert(p->arity() == _dbrmapping.size());
 		std::vector<Term*> terms(_dbrmapping.size(), NULL);
 		for (auto it = _dbrmapping.cbegin(); it != _dbrmapping.cend(); ++it) {
@@ -102,7 +176,8 @@ private:
 			auto nb = index->index();
 			terms[nb] = new VarTerm(var, TermParseInfo());
 		}
-		_currformula = new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
+
+		_currformula = new PredForm(negate ? SIGN::NEG : SIGN::POS, p, terms, FormulaParseInfo());
 	}
 
 	std::vector<Sort*> getDbrMappingSorts() {
@@ -116,16 +191,34 @@ private:
 		return sorts;
 	}
 
-	bool tseitinifyFormula(const FOBDD* bdd) {
-		if (not (_counter->getCount(bdd) > _boundary)) {
+	bool shouldTseitinifyFormula(const FOBDD* bdd) {
+		if (_manager->isTruebdd(bdd) || _manager->isFalsebdd(bdd)) {
 			return false;
-			//TODO
-			BDDToFO::visit(bdd);
 		}
-		auto res = _bddtseitins.find(bdd);
+		return _counter->getCount(bdd) > _boundary;
+	}
+	bool shouldTseitinifyFormula(const FOBDDKernel* kernel) {
+		//NOTE: truekernels should not be appear here...
+		return _counter->getCount(kernel) > _boundary;
+	}
 
+	void tseitinifyFormula(const FOBDD* bdd) {
+		auto negated = _manager->negation(bdd);
+		auto res = _bddtseitins.find(negated);
+		if (res != _bddtseitins.cend()) {
+			createTseitinAtom((*res).second, true);
+			if (_inDefinition) {
+				_definedbddtseitins.insert(negated);
+			}
+			return;
+		}
+		if (_inDefinition) {
+			_definedbddtseitins.insert(bdd);
+		}
+		res = _bddtseitins.find(bdd);
 		if (res != _bddtseitins.cend()) {
 			createTseitinAtom((*res).second);
+			return;
 		}
 
 		//In this case, we need to create a new tseitin symbol.
@@ -137,18 +230,17 @@ private:
 		auto tseitinsymbol = new Predicate(ss.str(), sorts, false);
 
 		addTseitin(bdd, tseitinsymbol);
-		createTseitinAtom((*res).second);
-		return true;
+		createTseitinAtom(tseitinsymbol);
 	}
-	bool tseitinifyFormula(const FOBDDKernel* kernel) {
-		if (not (_counter->getCount(kernel) > _boundary)) {
-			return false;
-			//TODO
-			kernel->accept(this);
+
+	void tseitinifyFormula(const FOBDDKernel* kernel) {
+		if (_inDefinition) {
+			_definedkerneltseitins.insert(kernel);
 		}
 		auto res = _kerneltseitins.find(kernel);
 		if (res != _kerneltseitins.cend()) {
 			createTseitinAtom((*res).second);
+			return;
 		}
 
 		//In this case, we need to create a new tseitin symbol.
@@ -161,16 +253,15 @@ private:
 
 		_kerneltseitins[kernel] = tseitinsymbol;
 		createTseitinAtom((*res).second);
-		return true;
 	}
 
 	void addTseitin(const FOBDD* bdd, Predicate* tseitinsymbol) {
 		_bddtseitins[bdd] = tseitinsymbol;
-		_bddtseitinsWithoutConstraints.push_back(bdd);
+		_bddtseitinsWithoutConstraints.insert(bdd);
 	}
 	void addTseitin(const FOBDDKernel* kernel, Predicate* tseitinsymbol) {
 		_kerneltseitins[kernel] = tseitinsymbol;
-		_kerneltseitinsWithoutConstraints.push_back(kernel);
+		_kerneltseitinsWithoutConstraints.insert(kernel);
 	}
 
 	void visit(const FOBDDAtomKernel* atom) {
@@ -178,26 +269,30 @@ private:
 	}
 
 	void visit(const FOBDDQuantKernel* quantkernel) {
-		if (tseitinifyFormula(quantkernel)) {
+		if (shouldTseitinifyFormula(quantkernel)) {
+			tseitinifyFormula(quantkernel);
 			return;
 		}
 		BDDToFO::visit(quantkernel);
 	}
 
 	void visit(const FOBDDAggKernel* fak) {
-		if (tseitinifyFormula(fak)) {
+		if (shouldTseitinifyFormula(fak)) {
+			tseitinifyFormula(fak);
 			return;
 		}
 		BDDToFO::visit(fak);
 	}
 
 	void visit(const FOBDD* bdd) {
-		if (tseitinifyFormula(bdd)) {
+		if (shouldTseitinifyFormula(bdd)) {
+			tseitinifyFormula(bdd);
 			return;
 		}
 		BDDToFO::visit(bdd);
 	}
 
-};
+}
+;
 
 #endif /* BDDTOTSEITINFORMULA554578_HPP_ */

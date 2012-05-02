@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <algorithm>
 
@@ -174,14 +174,13 @@ void FOBDDFactory::visit(const EquivForm* ef) {
 
 void FOBDDFactory::visit(const QuantForm* qf) {
 	qf->subformula()->accept(this);
-	for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
-		const FOBDDVariable* qvar = _manager->getVariable(*it);
-		if (qf->isUniv()) {
-			_bdd = _manager->univquantify(qvar, _bdd);
-		} else {
-			_bdd = _manager->existsquantify(qvar, _bdd);
-		}
+	auto fobddvars = _manager->getVariables(qf->quantVars());
+	if (qf->isUniv()) {
+		_bdd = _manager->univquantify(fobddvars, _bdd);
+	} else {
+		_bdd = _manager->existsquantify(fobddvars, _bdd);
 	}
+
 	if (isNeg(qf->sign())) {
 		_bdd = _manager->negation(_bdd);
 	}

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
@@ -78,6 +78,7 @@ protected:
 	virtual void visit(const FOBDDDeBruijnIndex* index) {
 		auto it = _dbrmapping.find(index);
 		Variable* v;
+		Assert(it != _dbrmapping.cend());
 		if (it == _dbrmapping.cend()) {
 			v = new Variable(index->sort());
 			_dbrmapping[index] = v;
@@ -168,10 +169,11 @@ protected:
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
 			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + 1)] = it->second;
 		}
-
+		auto index = _manager->getDeBruijnIndex(quantkernel->sort(), 0);
+		auto quantvar = new Variable(index->sort());
+		_dbrmapping[index] = quantvar;
 		quantkernel->bdd()->accept(this);
 
-		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
 	}
@@ -182,7 +184,7 @@ protected:
 		fak->right()->accept(this);
 		Assert(sametypeid<AggTerm>(*_currterm));
 		auto right = dynamic_cast<AggTerm*>(_currterm);
-		_currformula =  new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
+		_currformula = new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
 	}
 
 	virtual void visit(const FOBDD* bdd) {
@@ -207,11 +209,10 @@ protected:
 			bdd->truebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
-
 		} else if (_manager->isFalsebdd(bdd->truebranch())) {
 			_currformula->negate();
 
-			if (_manager->isTruebdd(bdd->truebranch())) {
+			if (_manager->isTruebdd(bdd->falsebranch())) {
 				return; // \lnot kernel is the whole formula
 			}
 
@@ -219,7 +220,6 @@ protected:
 			bdd->falsebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
-
 		} else { // No branch is false
 			auto kernelformula = _currformula;
 			auto negkernelformula = kernelformula->clone();

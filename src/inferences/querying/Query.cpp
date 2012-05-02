@@ -18,6 +18,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "theory/TheoryUtils.hpp"
 
 PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
@@ -41,7 +42,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	Assert(bdd != NULL);
 	Assert(manager != NULL);
 	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
-	std::set<const FOBDDVariable*> bddvars = manager->getVariables(vars);
+	auto bddvars = manager->getVariables(vars);
 	std::set<const FOBDDDeBruijnIndex*> bddindices;
 
 	// optimize the query

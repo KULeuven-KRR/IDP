@@ -15,6 +15,7 @@
 #include "utils/ListUtils.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "lua/luaconnection.hpp" //TODO break connection with lua!
 #include "visitors/StructureVisitor.hpp"
 #include "information/EnumerateSymbolicTable.hpp"
@@ -1212,7 +1213,7 @@ bool BDDInternalPredTable::approxFinite(const Universe& univ) const {
 		set<const FOBDDDeBruijnIndex*> indices;
 		set<Variable*> fovars;
 		fovars.insert(_vars.cbegin(), _vars.cend());
-		set<const FOBDDVariable*> bddvars = _manager->getVariables(fovars);
+		auto bddvars = _manager->getVariables(fovars);
 		double estimate = _manager->estimatedNrAnswers(_bdd, bddvars, indices, _structure);
 		return estimate < getMaxElem<double>();
 	}
@@ -1232,7 +1233,7 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 	set<const FOBDDDeBruijnIndex*> indices;
 	set<Variable*> fovars;
 	fovars.insert(_vars.cbegin(), _vars.cend());
-	set<const FOBDDVariable*> bddvars = _manager->getVariables(fovars);
+	auto bddvars = _manager->getVariables(fovars);
 	double estimate = _manager->estimatedNrAnswers(_bdd, bddvars, indices, _structure);
 	if (estimate < getMaxElem<double>()) {
 		unsigned int es = estimate;

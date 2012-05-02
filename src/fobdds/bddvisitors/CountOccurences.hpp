@@ -52,10 +52,18 @@ public:
 
 private:
 	void visit(const FOBDD* bdd) {
+		auto negatedbdd = _manager->negation(bdd);
 		if (_bddcount.find(bdd) != _bddcount.cend()) {
 			_bddcount[bdd]++;
+			//std::cerr << "occurs more than once:"<<toString(bdd)<<nt();
 		} else {
 			_bddcount[bdd] = 1;
+		}
+		if (_bddcount.find(negatedbdd) != _bddcount.cend()) {
+			_bddcount[negatedbdd]++;
+			//std::cerr << "occurs more than once (neg):"<<toString(bdd)<<nt();
+		} else {
+			_bddcount[negatedbdd] = 1;
 		}
 		FOBDDVisitor::visit(bdd);
 	}

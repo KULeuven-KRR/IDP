@@ -12,32 +12,58 @@
 
 #include "IncludeComponents.hpp"
 
-
 IntroduceSharedTseitins::IntroduceSharedTseitins()
 		: _manager(), _factory(&_manager), _counter(&_manager), _bddtofo(&_manager, &_counter) {
 }
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo) {
 	std::cerr << "Executing on " << endl << toString(theo);
-	auto clonetheo = theo->clone();
-	//For easy counting, we count on the completion.
-	FormulaUtils::addCompletion(clonetheo);
-	for (auto it = clonetheo->sentences().cbegin(); it != clonetheo->sentences().cend(); ++it) {
+
+	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
 		auto bdd = _factory.turnIntoBdd(*it);
 		_counter.count(bdd);
 	}
-	//Now counter has counted everything, the completed theory is no longer needed
-	delete clonetheo;
-	//Visit the theory:
+	for (auto def = theo->definitions().cbegin(); def != theo->definitions().cend(); ++def) {
+		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule) {
+			auto bdd = _factory.turnIntoBdd((*rule)->body());
+			auto bddvars = _manager.getVariables((*rule)->quantVars());
+			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
+			_counter.count(bdd);
+		}
+	}
+	//Go over the theory again, and tseitinify everything that occurs a lot.
+	//First go over the definitions, because every definition defines all tseitins it uses.
+	//When this is done, go over the sentences.
+
+	for (auto def = theo->definitions().cbegin(); def != theo->definitions().cend(); ++def) {
+			_bddtofo.startDefinition();
+			for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule) {
+				auto bdd = _factory.turnIntoBdd((*rule)->body());
+				auto bddvars = _manager.getVariables((*rule)->quantVars());
+				bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
+				//TODO: set debruyn mapping
+				std::cerr<<toString(bdd)<<endl<<endl;
+				auto newbody = _bddtofo.createFormulaWithFreeVars(bdd,bddvars);
+				(*rule)->body(newbody);
+			}
+			_bddtofo.stopDefinitionAndAddConstraints(*def);
+		}
+
+		std::cerr << "After defs " << endl << toString(theo);
+
 	std::vector<Formula*>& sentences = theo->sentences();
 	for (size_t i = 0; i < sentences.size(); i++) {
 		auto bdd = _factory.turnIntoBdd(sentences[i]);
-		delete sentences[i];
-		sentences[i] = _bddtofo.createFormula(bdd);
+		//delete sentences[i]; TODO mem manag
+		std::cerr<<toString(bdd)<<endl<<endl;
+		auto newsentence = _bddtofo.createFormula(bdd);
+		theo->sentence(i, newsentence);
 	}
 	std::cerr << "so far " << endl << toString(theo);
 
-	return _bddtofo.addTseitinConstraints(theo);
+
+
+	theo = _bddtofo.addTseitinConstraints(theo);
 	std::cerr << "now " << endl << toString(theo);
 
 	//theo = TheoryMutatingVisitor::visit(theo);
