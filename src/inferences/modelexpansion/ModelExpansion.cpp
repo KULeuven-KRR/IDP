@@ -28,26 +28,51 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 
-#include "tracemonitor.hpp"
+#include "TraceMonitor.hpp"
 
 using namespace std;
 
 std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, TraceMonitor* tracemonitor) {
+	if(theory==NULL || structure==NULL){
+		throw IdpException("Unexpected NULL-pointer.");
+	}
 	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 	if (t == NULL) {
 		throw notyetimplemented("Modelexpansion of already ground theories.\n");
+	}
+	if(t->vocabulary()!=structure->vocabulary()){
+		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
 	}
 	ModelExpansion m(t, structure, NULL, tracemonitor);
 	return m.expand();
 }
-std::vector<AbstractStructure*> ModelExpansion::doOptimization(AbstractTheory* theory, AbstractStructure* structure, Term* term,
-		TraceMonitor* tracemonitor) {
+std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor) {
+	if(theory==NULL || structure==NULL || term==NULL){
+		throw IdpException("Unexpected NULL-pointer.");
+	}
 	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 	if (t == NULL) {
 		throw notyetimplemented("Modelexpansion of already ground theories.\n");
 	}
+	if(t->vocabulary()!=structure->vocabulary()){
+		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
+	}
 	ModelExpansion m(t, structure, term, tracemonitor);
 	return m.expand();
+}
+
+ModelExpansion::ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
+		: 	theory(theory),
+			structure(structure),
+			tracemonitor(tracemonitor),
+			minimizeterm(minimize), outputvoc(NULL) {
+}
+
+void ModelExpansion::setOutputVocabulary(Vocabulary* v){
+		if(VocabularyUtils::isSubVocabulary(v, theory->vocabulary())){
+			throw IdpException("The output-vocabulary of model expansion can only be a subvocabulary of the theory.");
+		}
+		outputvoc = v;
 }
 
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);

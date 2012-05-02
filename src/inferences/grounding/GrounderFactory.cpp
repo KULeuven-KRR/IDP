@@ -212,13 +212,13 @@ void GrounderFactory::descend(T* child) {
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
-	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
+	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
-	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
+	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
@@ -243,7 +243,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  *		the solver.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
-	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
+	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
@@ -373,14 +373,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
-		string name = newpf->symbol()->name();
 		CompType comp;
-		if (name == "=/2") {
+		if (is(newpf->symbol(),STDPRED::EQ)) {
 			comp = isPos(pf->sign()) ? CompType::EQ : CompType::NEQ;
-		} else if (name == "</2") {
+		} else if (is(newpf->symbol(),STDPRED::LT)) {
 			comp = isPos(pf->sign()) ? CompType::LT : CompType::GEQ;
 		} else {
-			Assert(name == ">/2");
+			Assert(is(newpf->symbol(),STDPRED::GT));
 			comp = isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
 		}
 
@@ -1005,7 +1004,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto ftable = _structure->inter(function)->funcTable();
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
-		if (function->name() == "-/2") {
+		if (is(function, STDFUNC::SUBSTRACTION)) {
 			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);

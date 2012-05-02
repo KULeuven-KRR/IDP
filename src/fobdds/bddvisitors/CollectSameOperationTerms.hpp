@@ -31,7 +31,7 @@ private:
 
 	void avoidempty() {
 		if (_result.empty()) {
-			_result.push_back(_manager->getDomainTerm(VocabularyUtils::natsort(), Operation::getNeutralElement()));
+			_result.push_back(_manager->getDomainTerm(get(STDSORT::NATSORT), Operation::getNeutralElement()));
 		}
 	}
 	void visit(const FOBDDDomainTerm* dt) {

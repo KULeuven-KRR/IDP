@@ -25,15 +25,15 @@ Formula* SplitComparisonChains::visit(EqChainForm* ef) {
 		switch (*it) {
 		case CompType::EQ:
 		case CompType::NEQ:
-			p = Vocabulary::std()->pred("=/2");
+			p = get(STDPRED::EQ);
 			break;
 		case CompType::LT:
 		case CompType::GEQ:
-			p = Vocabulary::std()->pred("</2");
+			p = get(STDPRED::LT);
 			break;
 		case CompType::GT:
 		case CompType::LEQ:
-			p = Vocabulary::std()->pred(">/2");
+			p = get(STDPRED::GT);
 			break;
 		}
 		SIGN sign = (*it == CompType::EQ || *it == CompType::LT || *it == CompType::GT) ? SIGN::POS : SIGN::NEG;

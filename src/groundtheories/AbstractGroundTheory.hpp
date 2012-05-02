@@ -37,13 +37,16 @@ class DelayGrounder;
 class AbstractGroundTheory: public AbstractTheory {
 	VISITORS()
 private:
-	AbstractStructure* _structure; //!< The ground theory may be partially reduced with respect to this structure.
+	AbstractStructure* _structure; // OWNER! The ground theory might be partially reduced with respect to this structure.
+
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.
 	GroundTermTranslator* _termtranslator; //!< Link between ground terms and CP-solver variables.
 
 public:
-	AbstractGroundTheory(AbstractStructure* str);
-	AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
+	// Non-owning structure pointer, can be NULL!
+	AbstractGroundTheory(AbstractStructure const * const str);
+	// Non-owning structure pointer, can be NULL!
+	AbstractGroundTheory(Vocabulary* voc, AbstractStructure const * const str);
 
 	~AbstractGroundTheory();
 

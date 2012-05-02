@@ -31,13 +31,13 @@
 using namespace std;
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(AbstractStructure* str)
+GroundTheory<Policy>::GroundTheory(AbstractStructure const * const str)
 		: AbstractGroundTheory(str) {
 	Policy::polStartTheory(translator());
 }
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure* str)
+GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * const str)
 		: AbstractGroundTheory(voc, str) {
 	Policy::polStartTheory(translator());
 }
@@ -54,7 +54,7 @@ void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, TsType 
 
 template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
-	//deleteList(_foldedterms);
+	//deleteList(_foldedterms); TODO
 	Policy::polRecursiveDelete();
 	delete (this);
 }

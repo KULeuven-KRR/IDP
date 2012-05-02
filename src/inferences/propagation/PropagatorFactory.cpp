@@ -11,7 +11,7 @@
 #include "PropagatorFactory.hpp"
 
 #include "IncludeComponents.hpp"
-#include "propagate.hpp"
+#include "Propagate.hpp"
 #include "GlobalData.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "SymbolicPropagation.hpp"
@@ -200,7 +200,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		vector<Formula*> atoms;
 		atoms.push_back(new PredForm(SIGN::NEG, function, zy1terms, FormulaParseInfo()));
 		atoms.push_back(new PredForm(SIGN::NEG, function, zy2terms, FormulaParseInfo()));
-		atoms.push_back(new PredForm(SIGN::POS, VocabularyUtils::equal(function->outsort()), y1y2terms, FormulaParseInfo()));
+		atoms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, function->outsort()), y1y2terms, FormulaParseInfo()));
 		BoolForm* disjunction = new BoolForm(SIGN::POS, false, atoms, FormulaParseInfo());
 		set<Variable*> zy1y2set;
 		zy1y2set.insert(zvars.cbegin(), zvars.cend());

@@ -444,9 +444,9 @@ public:
 		Assert(isTheoryOpen());
 		std::string str = toString(t->value());
 		if (t->sort()) {
-			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::charsort())) {
+			if (SortUtils::isSubsort(t->sort(), get(STDSORT::CHARSORT))) {
 				output() << '\'' << str << '\'';
-			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::stringsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), get(STDSORT::STRINGSORT))) {
 				output() << '\"' << str << '\"';
 			} else {
 				output() << str;

@@ -58,15 +58,15 @@ private:
 	}
 
 	void visit(const FOBDDVariable* variable) {
-		_result = _result && SortUtils::isSubsort(variable->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(variable->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDDeBruijnIndex* index) {
-		_result = _result && SortUtils::isSubsort(index->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(index->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDDomainTerm* domainterm) {
-		_result = _result && SortUtils::isSubsort(domainterm->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(domainterm->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDFuncTerm* functerm) {

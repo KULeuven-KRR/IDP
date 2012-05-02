@@ -12,7 +12,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
-#include "propagate.hpp"
+#include "Propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 #include <ctime> //TODO REMOVE

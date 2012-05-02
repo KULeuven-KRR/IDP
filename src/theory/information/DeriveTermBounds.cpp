@@ -67,32 +67,32 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 	if (function->builtin()) {
 		Assert(function->interpretation(_structure) != NULL);
 		auto functable = function->interpretation(_structure)->funcTable();
-		if (function->name() == "+/2") {
+		if (is(function, STDFUNC::ADDITION)) {
 			_minimum = (*functable)[_subtermminimums];
 			_maximum = (*functable)[_subtermmaximums];
-		} else if (function->name() == "-/2") {
+		} else if (is(function, STDFUNC::SUBSTRACTION)) {
 			_minimum = (*functable)[ElementTuple { _subtermminimums[0], _subtermmaximums[1] }];
 			_maximum = (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }];
-		} else if (function->name() == "abs/1") {
+		} else if (is(function, STDFUNC::ABS)) {
 			_minimum = createDomElem(0);
 			_maximum = std::max((*functable)[_subtermminimums], (*functable)[_subtermmaximums]);
-		} else if (function->name() == "-/1") {
+		} else if (is(function, STDFUNC::MINUS)) {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
-		} else if (function->name() == "*/2") {
+		} else if (is(function, STDFUNC::PRODUCT)) {
 			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
 			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[0], _subtermminimums[1] }], (*functable)[ElementTuple {
 					_subtermminimums[0], _subtermmaximums[1] }], (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }],
 					(*functable)[ElementTuple { _subtermmaximums[0], _subtermmaximums[1] }] };
 			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
-		} else if (function->name() == "MAX/0") {
+		} else if (is(function, STDFUNC::MAXELEM)) {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			_maximum = domain->last();
 			_minimum = domain->last();
 
-		} else if (function->name() == "MIN/0") {
+		} else if (is(function, STDFUNC::MINELEM)) {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			_maximum = domain->first();

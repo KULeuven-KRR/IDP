@@ -44,7 +44,7 @@ bool UnnestTerms::shouldMove(Term* t) {
  */
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
-	if (_structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), _vocabulary)) {
+	if (_structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), _vocabulary)) {
 		sort = TermUtils::deriveIntSort(term,_structure);
 	}
 	return sort;
@@ -69,7 +69,7 @@ VarTerm* UnnestTerms::move(Term* term) {
 	}
 
 	auto introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
-	auto equalpred = VocabularyUtils::equal(term->sort());
+	auto equalpred = get(STDPRED::EQ, term->sort());
 	auto equalatom = new PredForm(SIGN::POS, equalpred, { introduced_eq_term, term }, FormulaParseInfo());
 	_equalities.push_back(equalatom);
 
@@ -201,24 +201,24 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 		Predicate* comppred;
 		switch (ecf->comps()[0]) {
 		case CompType::EQ:
-			comppred = VocabularyUtils::equal(atomsort);
+			comppred = get(STDPRED::EQ, atomsort);
 			break;
 		case CompType::LT:
-			comppred = VocabularyUtils::lessThan(atomsort);
+			comppred = get(STDPRED::LT, atomsort);
 			break;
 		case CompType::GT:
-			comppred = VocabularyUtils::greaterThan(atomsort);
+			comppred = get(STDPRED::GT, atomsort);
 			break;
 		case CompType::NEQ:
-			comppred = VocabularyUtils::equal(atomsort);
+			comppred = get(STDPRED::EQ, atomsort);
 			atomsign = not atomsign;
 			break;
 		case CompType::LEQ:
-			comppred = VocabularyUtils::greaterThan(atomsort);
+			comppred = get(STDPRED::GT, atomsort);
 			atomsign = not atomsign;
 			break;
 		case CompType::GEQ:
-			comppred = VocabularyUtils::lessThan(atomsort);
+			comppred = get(STDPRED::LT, atomsort);
 			atomsign = not atomsign;
 			break;
 		}
@@ -247,13 +247,13 @@ Formula* UnnestTerms::specialTraverse(PredForm* predform) {
 			moveonlyright = true;
 		} else if (rightterm->type() == TT_AGG) {
 			moveonlyleft = true;
-		} else if (predform->symbol()->name() == "=/2") {
+		} else if (is(predform->symbol(), STDPRED::EQ)) {
 			moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
 		} else {
 			setAllowedToUnnest(true);
 		}
 
-		if (predform->symbol()->name() == "=/2") {
+		if (is(predform->symbol(), STDPRED::EQ)) {
 			auto leftsort = leftterm->sort();
 			auto rightsort = rightterm->sort();
 			if (SortUtils::isSubsort(leftsort, rightsort)) {

@@ -66,7 +66,7 @@ void CheckSorts::visit(const EqChainForm* ef) {
 }
 
 bool isNumeric(Sort* sort, Vocabulary* voc) {
-	return SortUtils::resolve(sort, VocabularyUtils::floatsort(), voc);
+	return SortUtils::resolve(sort, get(STDSORT::FLOATSORT), voc);
 }
 
 void CheckSorts::visit(const AggTerm* at) {

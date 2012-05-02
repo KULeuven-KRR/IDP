@@ -172,7 +172,7 @@ protected:
 				if ((*i)->arglist[j] == NULL) {
 					arglist.push_back(pf->args()[j]);
 				} else {
-					equalities.push_back(new PredForm(SIGN::POS, vocabulary->pred("=/2"), { (*i)->arglist[j], pf->args()[j] }, pf->pi()));
+					equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->arglist[j], pf->args()[j] }, pf->pi()));
 				}
 			}
 			equalities.push_back(new PredForm(pf->sign(), (*i)->newpf->symbol(), arglist, pf->pi()));

@@ -12,7 +12,7 @@
 #define PROPAGATEMONITOR_HPP_
 
 #include <iostream>
-#include "tracemonitor.hpp"
+#include "TraceMonitor.hpp"
 
 class PropagateMonitor: public TraceMonitor {
 private:

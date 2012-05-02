@@ -103,7 +103,7 @@ Sort* FOBDDAggTerm::sort() const{
 
 const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2) {
 	auto addsort = SortUtils::resolve(d1->sort(), d2->sort());
-	auto addfunc = Vocabulary::std()->func("+/2");
+	auto addfunc = get(STDFUNC::ADDITION);
 	addfunc = addfunc->disambiguate(std::vector<Sort*>(3, addsort), NULL);
 	Assert(addfunc!=NULL);
 	auto inter = addfunc->interpretation(NULL);

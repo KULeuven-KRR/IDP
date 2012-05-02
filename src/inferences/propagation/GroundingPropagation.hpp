@@ -12,7 +12,7 @@
 #define INFERENCES_GROUNDINGPROPAGATE_HPP_
 
 #include "IncludeComponents.hpp"
-#include "inferences/modelexpansion/propagatemonitor.hpp"
+#include "inferences/modelexpansion/PropagateMonitor.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
