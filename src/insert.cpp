@@ -260,7 +260,7 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 	Sort* s = NULL;
 	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
 		auto temp = _usingvocab[n]->sort(name);
-		if(temp==NULL){
+		if (temp == NULL) {
 			continue;
 		}
 		if (s != NULL) {
@@ -682,17 +682,17 @@ void Insert::setvocab(const longname& vs, YYLTYPE l) {
 	if (v != NULL) {
 		usevocabulary(v);
 		_currvocabulary = v;
-		if (_currstructure){
+		if (_currstructure) {
 			_currstructure->changeVocabulary(v);
-		}else if (_currtheory){
+		} else if (_currtheory) {
 			_currtheory->vocabulary(v);
 		}
 	} else {
 		Error::undeclvoc(toString(vs), pi);
 		_currvocabulary = Vocabulary::std();
-		if (_currstructure){
+		if (_currstructure) {
 			_currstructure->changeVocabulary(Vocabulary::std());
-		}else if (_currtheory){
+		} else if (_currtheory) {
 			_currtheory->vocabulary(Vocabulary::std());
 		}
 	}
@@ -764,7 +764,7 @@ void Insert::closequery(Query* q) {
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
 		FormulaUtils::checkSorts(_currvocabulary, qf);
-		delete(qf); //No recursive delete, the rest of the query should still exist!
+		delete (qf); //No recursive delete, the rest of the query should still exist!
 		_currspace->add(_currquery, q);
 		if (_currspace->isGlobal())
 			LuaConnection::addGlobal(_currquery, q);
@@ -1482,18 +1482,19 @@ Formula* Insert::existform(const std::set<Variable*>& vv, Formula* f, YYLTYPE l)
 }
 
 Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
-	if (f) {
-		SetExpr* se = set(vv, f, l);
-		AggTerm* a = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, se, l));
-		Term* b = domterm(bound, l);
-		AggTerm* pia = a->clone();
-		Term* pib = b->clone();
-		auto temp = new AggForm(SIGN::POS, pib, invertComp(c), pia, FormulaParseInfo());
-		FormulaParseInfo pi = formparseinfo(temp, l);
-		temp->recursiveDelete();
-		return new AggForm(SIGN::POS, b, invertComp(c), a, pi);
-	} else
-		return 0;
+	if (f == NULL) {
+		return f;
+	}
+	auto aggset = set(vv, f, l);
+	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, aggset, l));
+	auto boundterm = domterm(bound, l);
+
+	// Create parseinfo (TODO UGLY!)
+	auto temp = new AggForm(SIGN::POS, boundterm->clone(), invertComp(c), aggterm->clone(), FormulaParseInfo());
+	auto pi = formparseinfo(temp, l);
+	temp->recursiveDelete();
+
+	return new AggForm(SIGN::POS, boundterm, invertComp(c), aggterm, pi);
 }
 
 void Insert::negate(Formula* f) const {

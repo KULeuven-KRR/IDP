@@ -344,7 +344,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 		break;
 	}
 	if (isNeg(_sign)) {
-		tp = reverseImplication(tp);
+		tp = invertImplication(tp);
 	}
 	if (simplify) {
 		if (_doublenegtseitin) {
@@ -423,7 +423,7 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
 
 	auto tp = context()._tseitin;
 	if (isNeg(_sign)) {
-		tp = reverseImplication(tp);
+		tp = invertImplication(tp);
 	}
 	Lit tseitin;
 	if (newboundvalue == 0) {
@@ -493,7 +493,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		Lit tseitin;
 		TsType tp = context()._tseitin;
 		if (isNeg(_sign)) {
-			tp = reverseImplication(tp);
+			tp = invertImplication(tp);
 		}
 		tseitin = translator()->translate(newboundvalue, _comp, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;

@@ -230,7 +230,7 @@ bool compare(NumberType a, CompType comp, NumberType2 b) {
 	return true;
 }
 
-TsType reverseImplication(TsType type);
+TsType invertImplication(TsType type);
 
 bool isPos(SIGN s);
 bool isNeg(SIGN s);
