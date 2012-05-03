@@ -55,14 +55,14 @@ Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var, bool invert) {
 	auto kernel = bdd->kernel();
 	const FOBDDTerm* arg = manager.getVariable(var);
 	if (invert) {
-		if (not SortUtils::isSubsort(arg->sort(), VocabularyUtils::floatsort())) {
+		if (not SortUtils::isSubsort(arg->sort(), get(STDSORT::FLOATSORT))) {
 			//We only do arithmetic on float and subsorts
 			return NULL;
 		}
 		const DomainElement* minus_one = createDomElem(-1);
-		const FOBDDTerm* minus_one_term = manager.getDomainTerm(VocabularyUtils::intsort(), minus_one);
-		Function* times = Vocabulary::std()->func("*/2");
-		times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(VocabularyUtils::intsort(), arg->sort())), 0);
+		const FOBDDTerm* minus_one_term = manager.getDomainTerm(get(STDSORT::INTSORT), minus_one);
+		Function* times = get(STDFUNC::PRODUCT);
+		times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(get(STDSORT::INTSORT), arg->sort())), 0);
 		vector<const FOBDDTerm*> timesterms(2);
 		timesterms[0] = minus_one_term;
 		timesterms[1] = arg;
@@ -206,17 +206,25 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	if (data.bdd->truebranch() == _manager->truebdd()) {
 		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
-		branchdata.bdd = data.bdd->falsebranch();
-		branchdata.pattern = data.pattern;
+
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
+
 		auto kernelchecker = createFromKernel(data.bdd->kernel(), vector<Pattern>(kernpattern.size(), Pattern::INPUT), kernvars, kernbddvars, data.structure,
 				BRANCH::TRUEBRANCH, Universe(kerntables));
+		branchdata.bdd = data.bdd->truebranch();
+		//branchdata.pattern = data.pattern;
+		kernelgenerator = new OneChildGenerator(kernelgenerator,createFromBDD(branchdata));
+		kernelchecker = new OneChildGenerator(kernelchecker,new FullGenerator());
+		//Truegenerator for instatiating all output vars of of truebdd.
+
+		branchdata.bdd = data.bdd->falsebranch();
+		branchdata.pattern = data.pattern;
 		auto falsegenerator = createFromBDD(branchdata);
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
-		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator };
-		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker };
+		std::vector<InstGenerator*> generators = {kernelgenerator,falsegenerator};
+		std::vector<InstGenerator*> checkers = { kernelchecker ,falsechecker};
 		return new UnionGenerator(generators, checkers);
 	}
 
@@ -226,7 +234,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	//Generator for the universe of kerneloutput
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
-
 	branchdata.bdd = data.bdd->falsebranch();
 	auto falsegenerator = createFromBDD(branchdata);
 
@@ -255,21 +262,21 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 			if (invertedSolvedTerm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PFSymbol* newsymbol;
-				if (atom->symbol()->name() == ">/2") {
-					newsymbol = VocabularyUtils::lessThan(atom->symbol()->sort(0));
+				if (is(atom->symbol(), STDPRED::GT)) {
+					newsymbol = get(STDPRED::LT, atom->symbol()->sort(0));
 				} else {
 					// "=/2" should already have been handled by "solvedterm"
-					Assert(atom->symbol()->name() == "</2");
-					newsymbol = VocabularyUtils::greaterThan(atom->symbol()->sort(0));
+					Assert(is(atom->symbol(), STDPRED::LT));
+					newsymbol = get(STDPRED::GT, atom->symbol()->sort(0));
 				}
 				if (invertedSolvedTerm->type() == TermType::TT_DOM) {
 					auto solvedEl = domElemUmin(dynamic_cast<DomainTerm*>(invertedSolvedTerm)->value());
-					solvedterm = new DomainTerm(SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort()), solvedEl, TermParseInfo());
+					solvedterm = new DomainTerm(SortUtils::resolve(get(STDSORT::INTSORT), invertedSolvedTerm->sort()), solvedEl, TermParseInfo());
 				} else {
 					auto minus_one = createDomElem(-1);
-					auto minusOneTerm = new DomainTerm(VocabularyUtils::intsort(), minus_one, TermParseInfo());
-					Function* times = Vocabulary::std()->func("*/2");
-					times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(VocabularyUtils::intsort(), invertedSolvedTerm->sort())), 0);
+					auto minusOneTerm = new DomainTerm(get(STDSORT::INTSORT), minus_one, TermParseInfo());
+					Function* times = get(STDFUNC::PRODUCT);
+					times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(get(STDSORT::INTSORT), invertedSolvedTerm->sort())), 0);
 					vector<Term*> timesterms(2);
 					timesterms[0] = minusOneTerm;
 					timesterms[1] = invertedSolvedTerm;
@@ -301,7 +308,7 @@ PredForm* graphOneFunction(PredForm* atom, FuncTerm* ft, Term* rangeTerm) {
  * NOTE:Graphs an atom.  Precondition: atom is an equality symbol and one of its arguments is a functerm
  */
 PredForm* graphOneFunction(PredForm* atom) {
-	Assert(atom->symbol()->name() == "=/2");
+	Assert(is(atom->symbol(), STDPRED::EQ));
 	FuncTerm* ft;
 	Term* rangeTerm;
 	if (sametypeid<FuncTerm>(*(atom->subterms()[1]))) {
@@ -351,12 +358,12 @@ PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Patt
 //  (C)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
 //  (D)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
 PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars) {
-	Assert(atom->symbol()->name() == "=/2");
+	Assert(is(atom->symbol(), STDPRED::EQ));
 	Assert(FormulaUtils::containsFuncTermsOutsideOfSets(atom));
 	if (sametypeid<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-		if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (D)
+		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (D)
 			return rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
 		} else { // Case B
 			return graphOneFunction(atom, ft, atom->subterms()[0]);
@@ -364,7 +371,7 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Patter
 	} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-		if (SortUtils::resolve(ft->sort(), VocabularyUtils::floatsort()) && (ft->function()->name() == "*/2" || ft->function()->name() == "+/2")) { // Case (C)
+		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (C)
 			return rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
 		} else { // Case (B)
 			return graphOneFunction(atom, ft, atom->subterms()[1]);
@@ -430,7 +437,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			*domelement = domterm->value();
 			auto var = new Variable(domterm->sort());
 			auto newatom = dynamic_cast<PredForm*>(FormulaUtils::substituteTerm(atom, domterm, var));
-#ifndef NDEBUG // Check that the var has really been added in place of the domainterm
+#ifdef DEBUG // Check that the var has really been added in place of the domainterm
 			bool found = false;
 			for (auto it = newatom->subterms().cbegin(); it != newatom->subterms().cend(); ++it) {
 				if (sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var() == var) {
@@ -555,11 +562,11 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";
 	}
-	if (newatom->symbol()->name() == "=/2") {
+	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsFuncTermsOutsideOfSets(newatom)) {
 			newatom = smartGraphFunction(newatom, pattern, atomvars);
 		}
-	} else if (newatom->symbol()->name() == "</2" || newatom->symbol()->name() == ">/2") {
+	} else if (is(newatom->symbol(), STDPRED::LT) || is(newatom->symbol(), STDPRED::GT)) {
 		newatom = solveAndReplace(newatom, pattern, atomvars, _manager, Pattern::OUTPUT);
 	}
 	// NOW, atom is of one of the forms:
@@ -571,7 +578,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 
 	//CASE 1
 	InstGenerator* result = NULL;
-	if (newatom->symbol()->name() == "=/2") {
+	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsAggTerms(newatom)) {
 			auto newform = FormulaUtils::graphFuncsAndAggs(newatom);
 			Assert(sametypeid<AggForm>(*newform));
@@ -839,7 +846,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		terms[j] = newvar;
 		auto sort = set->subterm(j)->sort();
 		auto newfobddvar = _manager->getVariable(new Variable(sort));
-		auto equalpred = VocabularyUtils::equal(sort); //TODO: depends on comparison!!!
+		auto equalpred = get(STDPRED::EQ, sort); //TODO: depends on comparison!!!
 		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED,
 				{ newfobddvar, _manager->substitute(set->subterm(j), deBruynMapping) });
 		auto termvars = subformvars;

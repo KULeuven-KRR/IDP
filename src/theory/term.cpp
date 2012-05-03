@@ -112,6 +112,7 @@ void VarTerm::sort(Sort* s) {
 
 VarTerm::VarTerm(Variable* v, const TermParseInfo& pi)
 		: Term(pi), _var(v) {
+	Assert(v!=NULL);
 	setFreeVars();
 }
 
@@ -246,21 +247,21 @@ AggTerm* AggTerm::clone(const map<Variable*, Variable*>& mvv) const {
 
 Sort* AggTerm::sort() const {
 	if (_function == AggFunction::CARD) {
-		return VocabularyUtils::natsort();
+		return get(STDSORT::NATSORT);
 	} else {
 		auto setsort = set()->sort();
 		if (setsort != NULL) {
 			if (function() == AggFunction::MAX || function() == AggFunction::MIN) {
 				return setsort;
 			}
-			if (SortUtils::isSubsort(setsort, VocabularyUtils::natsort())) {
-				return VocabularyUtils::natsort();
-			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::intsort())) {
-				return VocabularyUtils::intsort();
-			} else if (SortUtils::isSubsort(setsort, VocabularyUtils::floatsort())) {
-				return VocabularyUtils::floatsort();
+			if (SortUtils::isSubsort(setsort, get(STDSORT::NATSORT))) {
+				return get(STDSORT::NATSORT);
+			} else if (SortUtils::isSubsort(setsort, get(STDSORT::INTSORT))) {
+				return get(STDSORT::INTSORT);
+			} else if (SortUtils::isSubsort(setsort, get(STDSORT::FLOATSORT))) {
+				return get(STDSORT::FLOATSORT);
 			} else {
-				Error::notsubsort(setsort->name(), VocabularyUtils::floatsort()->name(), pi());
+				Error::notsubsort(setsort->name(), get(STDSORT::FLOATSORT)->name(), pi());
 				return NULL;
 			}
 		} else {
@@ -445,7 +446,7 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
 		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, (*term)->pi());
-		auto minSymbol = (*((*term)->sort()->firstVocabulary()))->func("-/1");
+		auto minSymbol = get(STDFUNC::UNARYMINUS);
 		newsubterms.push_back(new FuncTerm(minSymbol, { (*term)->clone() }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::LT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termneg }, (*form)->pi()));
@@ -546,7 +547,7 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto termneg = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
 	newset->subformula(0, newform);
-	auto minSymbol = (*(term->sort()->firstVocabulary()))->func("-/1");
+	auto minSymbol = get(STDFUNC::UNARYMINUS);
 	auto newterm = new FuncTerm(minSymbol, { term }, term->pi());
 	newset->subterm(0, newterm);
 	return newset;
@@ -623,7 +624,7 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 
 Sort* deriveIntSort(Term* term, AbstractStructure* structure) {
 	Sort* sort = term->sort();
-	if (structure != NULL && SortUtils::isSubsort(term->sort(), VocabularyUtils::intsort(), structure->vocabulary())) {
+	if (structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary())) {
 		auto bounds = TermUtils::deriveTermBounds(term, structure);
 		Assert(bounds.size()==2);
 		if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
@@ -632,7 +633,7 @@ Sort* deriveIntSort(Term* term, AbstractStructure* structure) {
 			stringstream ss;
 			ss << "_sort«" << intmin << '-' << intmax << "»";
 			sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
-			sort->addParent(VocabularyUtils::intsort());
+			sort->addParent(get(STDSORT::INTSORT));
 		}
 	}
 	return sort;

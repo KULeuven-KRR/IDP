@@ -212,13 +212,13 @@ void GrounderFactory::descend(T* child) {
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
-	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure->clone());
+	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
 	return g.getTopGrounder();
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
-	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure->clone());
+	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
@@ -243,7 +243,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  *		the solver.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
-	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure->clone());
+	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
@@ -252,12 +252,12 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	return grounder;
 }
 /*Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
-	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
-	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	data.theory->accept(&g);
-	return g.getTopGrounder();
-}*/
+ auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+ groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+ GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+ data.theory->accept(&g);
+ return g.getTopGrounder();
+ }*/
 
 SetGrounder* GrounderFactory::create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
 	GrounderFactory g(data, grounding);
@@ -373,14 +373,13 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
-		string name = newpf->symbol()->name();
 		CompType comp;
-		if (name == "=/2") {
+		if (is(newpf->symbol(), STDPRED::EQ)) {
 			comp = isPos(pf->sign()) ? CompType::EQ : CompType::NEQ;
-		} else if (name == "</2") {
+		} else if (is(newpf->symbol(), STDPRED::LT)) {
 			comp = isPos(pf->sign()) ? CompType::LT : CompType::GEQ;
 		} else {
-			Assert(name == ">/2");
+			Assert(is(newpf->symbol(),STDPRED::GT));
 			comp = isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
 		}
 
@@ -532,7 +531,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (not trydelay) {
 		mightdolazy = false;
 	}
-	if(not getOption(TSEITINDELAY)){
+	if (not getOption(TSEITINDELAY)) {
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
@@ -680,7 +679,7 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	if (context._tseitin == TsType::RULE) { // TODO currently, the many restarts of the SCC detection etc. are too expensive!
 		mightdolazy = false;
 	}
-	if(not getOption(TSEITINDELAY)){
+	if (not getOption(TSEITINDELAY)) {
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
@@ -713,7 +712,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
 	const PredForm* twindelayablepf = NULL;
-	if(not getOption(SATISFIABILITYDELAY)){
+	if (not getOption(SATISFIABILITYDELAY)) {
 		_context._allowDelaySearch = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
@@ -1005,7 +1004,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto ftable = _structure->inter(function)->funcTable();
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
-		if (function->name() == "-/2") {
+		if (is(function, STDFUNC::SUBSTRACTION)) {
 			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(_grounding->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
@@ -1057,7 +1056,6 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 	vector<SortTable*> tables;
 	vector<Variable*> fovars, quantfovars;
 	vector<Pattern> pattern;
-
 	for (auto it = subformula->freeVars().cbegin(); it != subformula->freeVars().cend(); ++it) {
 		if (orig->quantVars().find(*it) == orig->quantVars().cend()) { // It is a free var of the quantified formula
 			Assert(varmapping().find(*it) != varmapping().cend());
@@ -1080,6 +1078,7 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto generatorbdd = _symstructure->evaluate(subformula, generatortype); // !x phi(x) => generate all x possibly false
 		auto checkerbdd = _symstructure->evaluate(subformula, checkertype); // !x phi(x) => check for x certainly false
+
 		generatorbdd = improveGenerator(generatorbdd, quantfovars, MCPA);
 		checkerbdd = improveChecker(checkerbdd, MCPA);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), fovars, _structure), Universe(tables));
@@ -1088,7 +1087,6 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		gentable = new PredTable(new FullInternalPredTable(), Universe(tables));
 		checktable = new PredTable(new EnumeratedInternalPredTable(), Universe(tables));
 	}
-
 	auto gen = GeneratorFactory::create(gentable, pattern, vars, Universe(tables), subformula);
 	auto check = GeneratorFactory::create(checktable, vector<Pattern>(vars.size(), Pattern::INPUT), vars, Universe(tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other also useless
@@ -1098,7 +1096,6 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
 		directquanttables.push_back(_structure->inter((*it)->sort()));
 	}
-
 	return GenAndChecker(vars, gen, check, Universe(directquanttables));
 }
 
@@ -1217,7 +1214,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	vector<Variable*> headvars;
 	auto groundlazily = getOption(BoolType::GROUNDLAZILY)
 			&& _grounding->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
-	if(not getOption(SATISFIABILITYDELAY)){
+	if (not getOption(SATISFIABILITYDELAY)) {
 		groundlazily = false;
 	}
 	if (groundlazily) {

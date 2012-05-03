@@ -72,7 +72,7 @@ Rule* AddCompletion::visit(Rule* rule) {
 			vector<Term*> args;
 			args.push_back(bvt);
 			args.push_back(t->clone());
-			Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2, vv[n]->sort()));
+			Predicate* p = get(STDPRED::EQ, vv[n]->sort());
 			PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
 			vf.push_back(pf);
 		} else {
@@ -86,7 +86,7 @@ Rule* AddCompletion::visit(Rule* rule) {
 				vector<Term*> args;
 				args.push_back(bvt1);
 				args.push_back(bvt2);
-				Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2, v->sort()));
+				Predicate* p = get(STDPRED::EQ, v->sort());
 				PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
 				vf.push_back(pf);
 			}

@@ -51,12 +51,12 @@ public:
 				auto leftconst = cte.run(functerm->args(0));
 				auto rightconst = cte.run(rightterm->args(0));
 				auto addterm = add(_manager, leftconst, rightconst);
-				auto mult = Vocabulary::std()->func("*/2");
+				auto mult = get(STDFUNC::PRODUCT);
 				auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 				mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
 				Assert(mult!=NULL);
 				auto newterm = _manager->getFuncTerm(mult, { addterm, leftncte });
-				auto plus = Vocabulary::std()->func("+/2");
+				auto plus = get(STDFUNC::ADDITION);
 				auto plussort = SortUtils::resolve(newterm->sort(), rightterm->args(1)->sort());
 				plus = plus->disambiguate(std::vector<Sort*>(3, plussort), NULL);
 				Assert(plus!=NULL);
@@ -71,7 +71,7 @@ public:
 			auto leftconst = cte.run(functerm->args(0));
 			auto rightconst = cte.run(functerm->args(1));
 			auto addterm = add(_manager, leftconst, rightconst);
-			auto mult = Vocabulary::std()->func("*/2");
+			auto mult = get(STDFUNC::PRODUCT);
 			auto multsort = SortUtils::resolve(addterm->sort(), leftncte->sort());
 			mult = mult->disambiguate(std::vector<Sort*>(3, multsort), NULL);
 			Assert(mult!=NULL);

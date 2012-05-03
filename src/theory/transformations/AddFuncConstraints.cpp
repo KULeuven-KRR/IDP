@@ -33,7 +33,7 @@ Theory* AddFuncConstraints::visit(Theory* t) {
 			set<Variable*> xset(vars.cbegin(), vars.cend());
 
 			//{y|F(x)=y}
-			auto natsort = VocabularyUtils::natsort();
+			auto natsort = get(STDSORT::NATSORT);
 			auto one = createDomElem(1);
 			auto oneterm = new DomainTerm(natsort, one, TermParseInfo());
 			auto set = new QuantSetExpr(yset, atom, oneterm, SetParseInfo());

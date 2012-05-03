@@ -97,7 +97,7 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	}
 	case TT_VAR:
 	case TT_DOM:
-		SortUtils::isSubsort(t->sort(),VocabularyUtils::intsort(),voc);
+		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT),voc);
 		return true;
 	}
 }

@@ -34,8 +34,7 @@ public:
 
 		auto function = dynamic_cast<Function*>(atom->symbol());
 		auto outsort = SortUtils::resolve(function->outsort(), atom->args().back()->sort());
-		Predicate* equalpred = Vocabulary::std()->pred("=/2");
-		equalpred = equalpred->disambiguate(std::vector<Sort*>(2, outsort));
+		Predicate* equalpred = get(STDPRED::EQ, outsort);
 		auto funcargs = atom->args();
 		funcargs.pop_back();
 		auto functerm = _manager->getFuncTerm(function, funcargs);

@@ -93,7 +93,7 @@ TEST(BddGenerator, PredForm){
 		auto sortterm = new VarTerm(variable, TermParseInfo()); //var x
 		auto vocabulary = new Vocabulary("V");
 		vocabulary->add(sort);
-		auto less = VocabularyUtils::lessThan(sort);
+		auto less = get(STDPRED::LT, sort);
 		auto zero = createDomElem(0);
 		auto zeroterm = new DomainTerm(sort, zero, TermParseInfo());
 		Formula* formula = new PredForm(SIGN::POS, less, {sortterm, zeroterm}, FormulaParseInfo()); //x<0

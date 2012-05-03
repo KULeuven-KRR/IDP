@@ -43,7 +43,7 @@ public:
 			}
 		}
 
-		if (lhs == NULL || rhs == NULL || not SortUtils::isSubsort(rhs->sort(), VocabularyUtils::floatsort())) {
+		if (lhs == NULL || rhs == NULL || not SortUtils::isSubsort(rhs->sort(), get(STDSORT::FLOATSORT))) {
 			return atom;
 		}
 
@@ -59,7 +59,7 @@ public:
 
 		// => got a comparison lhs op rhs, rhs is the only term not on the left (op is =, < or >
 		// so move it by negating and setting the other side to 0
-		auto minus = Vocabulary::std()->func("-/2");
+		auto minus = get(STDFUNC::SUBSTRACTION);
 		minus = minus->disambiguate(std::vector<Sort*>(2, sort), NULL);
 		Assert(minus!=NULL);
 		auto newlhs = _manager->getFuncTerm(minus, { lhs, rhs });

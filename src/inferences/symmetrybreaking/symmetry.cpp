@@ -706,9 +706,10 @@ private:
 public:
 	TheorySymmetryAnalyzer(const AbstractStructure* s)
 			: structure_(s) {
-		markAsUnfitForSymmetry(VocabularyUtils::intsort());
-		markAsUnfitForSymmetry(VocabularyUtils::floatsort());
-		markAsUnfitForSymmetry(VocabularyUtils::natsort());
+		// FIXME remove this dependency (and are string and char not missing?)
+		markAsUnfitForSymmetry(get(STDSORT::INTSORT));
+		markAsUnfitForSymmetry(get(STDSORT::FLOATSORT));
+		markAsUnfitForSymmetry(get(STDSORT::NATSORT));
 	}
 
 	void analyze(const AbstractTheory* t) {
@@ -763,7 +764,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const DomainElement* e) {
 
 void TheorySymmetryAnalyzer::visit(const PredForm* f) {
 	if (f->symbol()->builtin() || f->symbol()->overloaded()) {
-		if (f->symbol()->name() != "=/2") {
+		if (not is(f->symbol(), STDPRED::EQ)) {
 			for (unsigned int it = 0; it < f->args().size(); it++) {
 				markAsUnfitForSymmetry(f->subterms().at(it)->sort());
 			}
@@ -777,12 +778,12 @@ void TheorySymmetryAnalyzer::visit(const PredForm* f) {
 
 void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 	if (t->function()->builtin() || t->function()->overloaded()) {
-		if (t->function()->name() == "MIN/0") {
+		if (is(t->function(), STDFUNC::MINELEM)) {
 			auto st = getStructure()->inter(t->function()->outsort());
 			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->first());
 			}
-		} else if (t->function()->name() == "MAX/0") {
+		} else if (is(t->function(), STDFUNC::MAXELEM)) {
 			auto st = getStructure()->inter(t->function()->outsort());
 			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->last());

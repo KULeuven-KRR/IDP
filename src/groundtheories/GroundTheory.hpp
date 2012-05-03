@@ -29,8 +29,8 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<PFSymbol*> needfalsedefinedsymbols;
 
 public:
-	GroundTheory(AbstractStructure* str);
-	GroundTheory(Vocabulary* voc, AbstractStructure* str);
+	GroundTheory(AbstractStructure const * const str);
+	GroundTheory(Vocabulary* voc, AbstractStructure const * const str);
 
 	virtual ~GroundTheory() {
 	}

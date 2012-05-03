@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef ORDERTERMS_HPP_
 #define ORDERTERMS_HPP_
@@ -28,8 +28,8 @@
 template<typename Ordering>
 class OrderTerms: public FOBDDVisitor {
 public:
-	OrderTerms(FOBDDManager* m) :
-			FOBDDVisitor(m) {
+	OrderTerms(FOBDDManager* m)
+			: FOBDDVisitor(m) {
 	}
 
 	const FOBDDTerm* change(const FOBDDFuncTerm* functerm) {
@@ -51,8 +51,7 @@ public:
 		for (auto i = terms.crbegin(); i < terms.crend(); ++i) { // NOTE: reverse!
 			if (not begin) {
 				auto nextarg = *i;
-				auto sort = SortUtils::resolve(currarg->sort(),
-						nextarg->sort());
+				auto sort = SortUtils::resolve(currarg->sort(), nextarg->sort());
 				auto add = Vocabulary::std()->func(Ordering::getFuncName());
 				add = add->disambiguate(std::vector<Sort*>(3, sort), NULL);
 				Assert(add!=NULL);

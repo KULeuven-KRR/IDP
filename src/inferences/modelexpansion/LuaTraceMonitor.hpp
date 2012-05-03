@@ -11,7 +11,7 @@
 #ifndef LUATRACEMONITOR_HPP_
 #define LUATRACEMONITOR_HPP_
 
-#include "tracemonitor.hpp"
+#include "TraceMonitor.hpp"
 #include "lua.hpp"
 
 //for i,v in pairs(trace) do print(v["atom"]) print(v["value"]) end

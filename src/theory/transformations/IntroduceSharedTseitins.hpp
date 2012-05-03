@@ -32,6 +32,8 @@ private:
 	BDDToFOWithTseitins _bddtofo;
 public:
 	IntroduceSharedTseitins();
+
+	//Introduces Tseitins for subformulas of the Theory that occur a lot. Modifies the theory's vocabulary (by adding tseitin symbols)
 	Theory* execute(Theory* t);
 };
 #endif /* SHAREDTSEITINS354654_HPP_ */

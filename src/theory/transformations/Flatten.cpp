@@ -18,7 +18,10 @@ using namespace std;
 
 Formula* Flatten::visit(BoolForm* bf) {
 	vector<Formula*> newsubf;
+	std::cerr << toString(bf);
+
 	traverse(bf);
+	std::cerr << toString(bf);
 	for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 		if (sametypeid<BoolForm>(*(*it))) {
 			BoolForm* sbf = dynamic_cast<BoolForm*>(*it);

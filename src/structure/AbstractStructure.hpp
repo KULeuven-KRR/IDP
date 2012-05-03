@@ -28,14 +28,17 @@ class Vocabulary;
 
 class AbstractStructure {
 protected:
-
 	std::string _name; // The name of the structure
 	ParseInfo _pi; // The place where this structure was parsed.
 	Vocabulary* _vocabulary; // The vocabulary of the structure.
 
 public:
 	AbstractStructure(std::string name, const ParseInfo& pi)
-			: _name(name), _pi(pi), _vocabulary(0) {
+			: _name(name), _pi(pi), _vocabulary(NULL) {
+	}
+	AbstractStructure(std::string name, Vocabulary* v, const ParseInfo& pi)
+			: _name(name), _pi(pi), _vocabulary(NULL) {
+		changeVocabulary(v);
 	}
 	virtual ~AbstractStructure() {
 	}

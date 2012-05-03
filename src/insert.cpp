@@ -1701,7 +1701,7 @@ Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 
 Term* Insert::domterm(int i, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(i);
-	Sort* s = (i >= 0 ? VocabularyUtils::natsort() : VocabularyUtils::intsort());
+	Sort* s = (i >= 0 ? get(STDSORT::NATSORT) : get(STDSORT::INTSORT));
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
 	temp->recursiveDelete();
@@ -1710,7 +1710,7 @@ Term* Insert::domterm(int i, YYLTYPE l) const {
 
 Term* Insert::domterm(double f, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(f);
-	Sort* s = VocabularyUtils::floatsort();
+	Sort* s = get(STDSORT::FLOATSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
 	temp->recursiveDelete();
@@ -1719,7 +1719,7 @@ Term* Insert::domterm(double f, YYLTYPE l) const {
 
 Term* Insert::domterm(std::string* e, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(e);
-	Sort* s = VocabularyUtils::stringsort();
+	Sort* s = get(STDSORT::STRINGSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
 	temp->recursiveDelete();
@@ -1728,7 +1728,7 @@ Term* Insert::domterm(std::string* e, YYLTYPE l) const {
 
 Term* Insert::domterm(char c, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(StringPointer(string(1, c)));
-	Sort* s = VocabularyUtils::charsort();
+	Sort* s = get(STDSORT::CHARSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
 	temp->recursiveDelete();
@@ -1798,7 +1798,7 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 
 SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
 	const DomainElement* d = createDomElem(1);
-	Term* counter = new DomainTerm(VocabularyUtils::natsort(), d, TermParseInfo());
+	Term* counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	return set(vv, f, counter, l);
 }
 
@@ -1837,7 +1837,7 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 
 void Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 	const DomainElement* d = createDomElem(1);
-	Term* t = new DomainTerm(VocabularyUtils::natsort(), d, TermParseInfo());
+	Term* t = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	addFT(s, f, t);
 }
 

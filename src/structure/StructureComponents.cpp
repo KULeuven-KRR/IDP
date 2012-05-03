@@ -3638,7 +3638,7 @@ FuncInter* leastFuncInter(const Universe& univ) {
 }
 
 Universe fullUniverse(unsigned int arity) {
-	vector<SortTable*> vst(arity, VocabularyUtils::stringsort()->interpretation());
+	vector<SortTable*> vst(arity, get(STDSORT::STRINGSORT)->interpretation());
 	return Universe(vst);
 }
 

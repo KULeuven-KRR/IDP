@@ -22,6 +22,7 @@
  */
 class BDDToFOWithTseitins: public BDDToFO {
 private:
+	Vocabulary* _vocabulary;
 	CountOccurences* _counter;
 	std::map<const FOBDD*, Predicate*> _bddtseitins;
 	std::map<const FOBDDKernel*, Predicate*> _kerneltseitins;
@@ -34,8 +35,8 @@ private:
 
 public:
 
-	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter)
-			: BDDToFO(m), _counter(counter), _boundary(1), _inDefinition(false) {
+	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter, Vocabulary* voc = NULL)
+			: BDDToFO(m), _counter(counter), _boundary(1), _inDefinition(false), _vocabulary(voc) {
 	}
 	template<typename BddNode>
 	Formula* createFormulaWithFreeVars(const BddNode* object, set<const FOBDDVariable*, CompareBDDVars> freebddvars) {
@@ -52,6 +53,10 @@ public:
 		_kerneltseitins.clear();
 		_bddtseitinsWithoutConstraints.clear();
 		_kerneltseitinsWithoutConstraints.clear();
+	}
+
+	void setVocabulary(Vocabulary* v) {
+		_vocabulary = v;
 	}
 
 	Theory* addTseitinConstraints(Theory* t) {
@@ -87,7 +92,7 @@ public:
 		_inDefinition = true;
 	}
 
-	void stopDefinitionAndAddConstraints(Definition* def) {
+	void finishDefinitionAndAddConstraints(Definition* def) {
 		bool changed = true;
 		while (changed) {
 			changed = false;
@@ -225,10 +230,9 @@ private:
 		auto sorts = getDbrMappingSorts();
 
 		//TODO: following should be improved!
-		stringstream ss;
-		ss << "Tseitin_" << _bddtseitins.size();
-		auto tseitinsymbol = new Predicate(ss.str(), sorts, false);
-
+		Assert(_vocabulary !=NULL);
+		auto tseitinsymbol = new Tseitin(sorts);
+		_vocabulary->add(tseitinsymbol);
 		addTseitin(bdd, tseitinsymbol);
 		createTseitinAtom(tseitinsymbol);
 	}

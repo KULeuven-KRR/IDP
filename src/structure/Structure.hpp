@@ -28,6 +28,9 @@ public:
 	Structure(const std::string& name, const ParseInfo& pi)
 			: AbstractStructure(name, pi) {
 	}
+	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
+			: AbstractStructure(name, v, pi) {
+	}
 	~Structure();
 
 	// Mutators

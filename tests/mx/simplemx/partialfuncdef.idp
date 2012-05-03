@@ -1,0 +1,18 @@
+vocabulary V{
+	type X
+	partial f(X):X
+	P(X)
+}
+
+theory T:V{
+	{
+		!x y: f(x)=y <- P(y).
+	}
+}
+
+structure S:V{
+	X = {1..2}
+}
+procedure getExpectedNbOfModels(){
+	return 3
+}

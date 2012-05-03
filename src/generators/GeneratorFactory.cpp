@@ -667,7 +667,7 @@ void GeneratorFactory::visit(const DivInternalFuncTable* pift) {
 		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
 		auto varone = new DomElemContainer();
 		varone->operator =(GlobalData::getGlobalDomElemFactory()->create(1, NumType::POSSIBLYINT));
-		auto natSortTable = VocabularyUtils::natsort()->interpretation();
+		auto natSortTable = get(STDSORT::NATSORT)->interpretation();
 		auto zIsOneChecker = new ComparisonGenerator(natSortTable, natSortTable, _vars[2], varone, Input::BOTH, CompType::EQ);
 		auto xNotZeroGenerator = new ComparisonGenerator(natSortTable, _universe.tables()[0], varzero, _vars[0], Input::LEFT, CompType::NEQ);
 		_generator = new TwoChildGenerator(zIsOneChecker, new FullGenerator(), new EmptyGenerator(), xNotZeroGenerator);
@@ -706,7 +706,7 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 			auto varzero = new DomElemContainer();
 			varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
 
-			auto intSortTable = VocabularyUtils::intsort()->interpretation();
+			auto intSortTable = get(STDSORT::INTSORT)->interpretation();
 			auto calcXMinusZ = new MinusGenerator(_vars[0], _vars[2], xMinusZ, NumType::CERTAINLYINT, intSortTable);
 			auto xMinusZis0Checker = new ComparisonGenerator(intSortTable, intSortTable, xMinusZ, varzero, Input::BOTH, CompType::EQ);
 			//TODO: optimize: y needs to be between -(x-z) and (x-z) and qy = x-z
@@ -732,8 +732,8 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		//* Order of generation...
 
 		auto q = new DomElemContainer();
-		auto natSortTable = VocabularyUtils::natsort()->interpretation();
-		auto intSortTable = VocabularyUtils::intsort()->interpretation();
+		auto natSortTable = get(STDSORT::NATSORT)->interpretation();
+		auto intSortTable = get(STDSORT::INTSORT)->interpretation();
 		auto positiveQGenerator = new ComparisonGenerator(natSortTable, _universe.tables()[1], q, _vars[1], Input::RIGHT, CompType::LEQ);
 
 		auto varzero = new DomElemContainer();
@@ -759,7 +759,7 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		//Thus, if z = 0: fullgenerator, otherwise emptygenerator
 		auto varzero = new DomElemContainer();
 		varzero->operator =(GlobalData::getGlobalDomElemFactory()->create(0, NumType::POSSIBLYINT));
-		auto natSortTable = VocabularyUtils::natsort()->interpretation();
+		auto natSortTable = get(STDSORT::NATSORT)->interpretation();
 		auto zIsZeroChecker = new ComparisonGenerator(natSortTable, natSortTable, _vars[2], varzero, Input::BOTH, CompType::EQ);
 		auto fullXGenerator = new SortGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 		_generator = new TwoChildGenerator(zIsZeroChecker, new FullGenerator(), new EmptyGenerator(), fullXGenerator);

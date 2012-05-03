@@ -17,7 +17,7 @@ namespace Gen {
 Sort* sort(const std::string& name, int min, int max) {
 	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
 	auto sort = new Sort(name, sorttable);
-	sort->addParent(VocabularyUtils::intsort());
+	sort->addParent(get(STDSORT::INTSORT));
 	return sort;
 }
 
@@ -62,14 +62,14 @@ Term& functerm(Function* f, const std::vector<Term*>& terms) {
 Formula& operator==(Term& left, Term& right) {
 	auto sort = SortUtils::resolve(left.sort(),right.sort());
 	Assert(sort != NULL);
-	auto eq = VocabularyUtils::equal(sort);
+	auto eq = get(STDPRED::EQ, sort);
 	return *new PredForm(SIGN::POS, eq, { &left, &right }, FormulaParseInfo());
 }
 
 Formula& operator<(Term& left, Term& right) {
 	auto sort = SortUtils::resolve(left.sort(),right.sort());
 	Assert(sort != NULL);
-	auto lt = VocabularyUtils::lessThan(sort);
+	auto lt = get(STDPRED::LT, sort);
 	return *new PredForm(SIGN::POS, lt, { &left, &right }, FormulaParseInfo());
 }
 

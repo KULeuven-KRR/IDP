@@ -42,7 +42,7 @@ void SortGenerator::next() {
 
 void SortGenerator::put(std::ostream& stream) {
 	pushtab();
-	stream << "generator for sort: " << toString(_table);
+	stream << "generator for sort: " << toString(_table)<<" starting from " << toString(_table->first());
 	poptab();
 }
 
