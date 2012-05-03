@@ -206,17 +206,25 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	if (data.bdd->truebranch() == _manager->truebdd()) {
 		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
-		branchdata.bdd = data.bdd->falsebranch();
-		branchdata.pattern = data.pattern;
+
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
+
 		auto kernelchecker = createFromKernel(data.bdd->kernel(), vector<Pattern>(kernpattern.size(), Pattern::INPUT), kernvars, kernbddvars, data.structure,
 				BRANCH::TRUEBRANCH, Universe(kerntables));
+		branchdata.bdd = data.bdd->truebranch();
+		//branchdata.pattern = data.pattern;
+		kernelgenerator = new OneChildGenerator(kernelgenerator,createFromBDD(branchdata));
+		kernelchecker = new OneChildGenerator(kernelchecker,new FullGenerator());
+		//Truegenerator for instatiating all output vars of of truebdd.
+
+		branchdata.bdd = data.bdd->falsebranch();
+		branchdata.pattern = data.pattern;
 		auto falsegenerator = createFromBDD(branchdata);
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
-		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator };
-		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker };
+		std::vector<InstGenerator*> generators = {kernelgenerator,falsegenerator};
+		std::vector<InstGenerator*> checkers = { kernelchecker ,falsechecker};
 		return new UnionGenerator(generators, checkers);
 	}
 
@@ -226,7 +234,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	//Generator for the universe of kerneloutput
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
-
 	branchdata.bdd = data.bdd->falsebranch();
 	auto falsegenerator = createFromBDD(branchdata);
 
@@ -256,11 +263,11 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PFSymbol* newsymbol;
 				if (is(atom->symbol(), STDPRED::GT)) {
-					newsymbol = get(STDPRED::LT,atom->symbol()->sort(0));
+					newsymbol = get(STDPRED::LT, atom->symbol()->sort(0));
 				} else {
 					// "=/2" should already have been handled by "solvedterm"
 					Assert(is(atom->symbol(), STDPRED::LT));
-					newsymbol = get(STDPRED::GT,atom->symbol()->sort(0));
+					newsymbol = get(STDPRED::GT, atom->symbol()->sort(0));
 				}
 				if (invertedSolvedTerm->type() == TermType::TT_DOM) {
 					auto solvedEl = domElemUmin(dynamic_cast<DomainTerm*>(invertedSolvedTerm)->value());
@@ -356,8 +363,7 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Patter
 	if (sametypeid<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
-		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT))
-				&& (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (D)
+		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (D)
 			return rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
 		} else { // Case B
 			return graphOneFunction(atom, ft, atom->subterms()[0]);
@@ -365,8 +371,7 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Patter
 	} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
 		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
-		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT))
-				&& (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (C)
+		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (C)
 			return rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
 		} else { // Case (B)
 			return graphOneFunction(atom, ft, atom->subterms()[1]);
