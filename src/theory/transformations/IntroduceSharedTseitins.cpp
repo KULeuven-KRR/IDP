@@ -17,7 +17,6 @@ IntroduceSharedTseitins::IntroduceSharedTseitins()
 }
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo) {
-	std::cerr << "Executing on " << endl << toString(theo);
 	_bddtofo.setVocabulary(theo->vocabulary());
 	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
 		auto bdd = _factory.turnIntoBdd(*it);
@@ -41,30 +40,25 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo) {
 			auto bdd = _factory.turnIntoBdd((*rule)->body());
 			auto bddvars = _manager.getVariables((*rule)->quantVars());
 			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
-			//TODO: set debruyn mapping
-			std::cerr << toString(bdd) << endl << endl;
 			auto newbody = _bddtofo.createFormulaWithFreeVars(bdd, bddvars);
-			//(*rule)->body()->recursiveDeleteKeepVars();
+			(*rule)->body()->recursiveDeleteKeepVars();
 			(*rule)->body(newbody);
 		}
 		_bddtofo.finishDefinitionAndAddConstraints(*def);
 	}
 
-	std::cerr << "After defs " << endl << toString(theo);
 
 	std::vector<Formula*>& sentences = theo->sentences();
 	for (size_t i = 0; i < sentences.size(); i++) {
 		auto bdd = _factory.turnIntoBdd(sentences[i]);
-		//sentences[i]->recursiveDelete();
-		std::cerr << toString(bdd) << endl << endl;
+		sentences[i]->recursiveDelete();
 		auto newsentence = _bddtofo.createFormula(bdd);
 		theo->sentence(i, newsentence);
 	}
-	std::cerr << "so far " << endl << toString(theo);
 
 	theo = _bddtofo.addTseitinConstraints(theo);
-	std::cerr << "now " << endl << toString(theo);
-
+	FormulaUtils::flatten(theo);
+	FormulaUtils::pushNegations(theo);
 	return theo;
 }
 
