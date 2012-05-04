@@ -11,31 +11,33 @@
 #ifndef ADDFUNCCON_HPP_
 #define ADDFUNCCON_HPP_
 
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 #include <set>
 #include <cstdio>
 
 class Function;
 class Vocabulary;
 
-class AddFuncConstraints: public TheoryMutatingVisitor {
+class AddFuncConstraints: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	std::set<Function*> _symbols;
 	std::set<const Function*> _cpfuncsymbols;
-	Vocabulary* _vocabulary;
+	const Vocabulary* _vocabulary;
 
 public:
-	template<typename T>
-	T execute(T t) {
-		_vocabulary = NULL;
-		return t->accept(this);
+	// Returns a new theory containing the func constraints
+	template<class T>
+	Theory* execute(const T* t, const Vocabulary* v){
+		_vocabulary = v;
+		t->accept(this);
+		return createTheory(t->pi());
 	}
 
 protected:
-	Theory* visit(Theory*);
-	Formula* visit(PredForm* pf);
-	Term* visit(FuncTerm* ft);
+	Theory* createTheory(const ParseInfo& pi) const;
+	void visit(const PredForm* pf);
+	void visit(const FuncTerm* ft);
 };
 
 #endif /* ADDFUNCCON_HPP_ */

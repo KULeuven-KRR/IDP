@@ -1,0 +1,23 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+vocabulary V{
+	type A isa int
+	f(A):A
+}
+
+theory T : V {
+}
+
+structure S : V{ 
+	A = {1..3}
+}
+
+term t: V{
+	sum{x: true: f(x)}
+}
+
+theory T2: V{
+	sum{x: true: f(x)}=3.
+}

@@ -743,9 +743,8 @@ void cumulchance(double c) {
 	clog << "Chance of " << c << " is impossible. Using chance 1 instead\n";
 }
 
-void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula) {
+void possiblyInfiniteGrounding(const std::string& formula) {
 	clog << "Warning: infinite grounding of formula " << formula << "\n";
-	clog << "\t Internal representation: " << internalformula << "\n";
 }
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {

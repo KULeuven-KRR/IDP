@@ -30,7 +30,6 @@
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
 #include "transformations/AddCompletion.hpp"
-#include "transformations/AddFuncConstraints.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
@@ -221,16 +220,14 @@ void addCompletion(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-void addFuncConstraints(AbstractTheory* t) {
-	auto newt = transform<AddFuncConstraints, AbstractTheory*>(t);
-	Assert(newt==t);
-}
-
 void flatten(AbstractTheory* t) {
 	auto newt = transform<Flatten, AbstractTheory*>(t);
 	Assert(newt==t);
 }
 
+Theory* graphFuncsAndAggs(Theory* t, AbstractStructure* str, Context con) {
+	return transform<GraphFuncsAndAggs, Theory*>(t, str, con);
+}
 AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, con);
 }

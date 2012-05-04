@@ -33,9 +33,6 @@ public:
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
 		_cpsupport = getOption(BoolType::CPSUPPORT);
-		if (_cpsupport and _vocabulary != NULL) {
-			CPSupport::findCPSymbols(_vocabulary);
-		}
 		return t->accept(this);
 	}
 protected:

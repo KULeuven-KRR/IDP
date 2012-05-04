@@ -59,15 +59,7 @@ private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
 		auto symstructure = generateBounds(theory, structure);
 
-		std::shared_ptr<Grounder> grounder;
-		// FIXME
-		//if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)
-		//	MinisatID::SolverOption modes;
-		//	grounder = std::shared_ptr<Grounder>(
-		//			GrounderFactory::create( { theory, structure, symstructure }, new MinisatID::FlatZincRewriter(modes)));
-		//} else {
-			grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }, monitor));
-		//}
+		auto grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }, monitor));
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 		grounding->recursiveDelete();

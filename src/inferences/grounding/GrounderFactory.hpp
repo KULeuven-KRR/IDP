@@ -36,6 +36,7 @@ class RuleGrounder;
 class FormulaGrounder;
 class GenerateBDDAccordingToBounds;
 class Grounder;
+class Grounder;
 class FOBDD;
 
 struct GenAndChecker {
@@ -66,6 +67,9 @@ private:
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
 	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
+	AbstractGroundTheory* getGrounding() const {
+		return _grounding;
+	}
 
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;
@@ -88,7 +92,7 @@ private:
 	void DeeperContext(SIGN sign);
 
 	// Descend in the parse tree while taking care of the context
-	template <typename T> void descend(T* child);
+	template <typename T> void descend(T child);
 
 	AbstractStructure* structure() const {
 		return _structure;
@@ -113,23 +117,35 @@ private:
 	template<typename Grounding>
 	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding);
 
-	Grounder* getTopGrounder() const { return _topgrounder; }
+	Grounder* getTopGrounder() const {
+		Assert(_topgrounder!=NULL);
+		return _topgrounder;
+	}
 	FormulaGrounder* getFormGrounder() {
+		Assert(_formgrounder!=NULL);
 		return _formgrounder;
 	}
 	SetGrounder* getSetGrounder() {
+		Assert(_setgrounder!=NULL);
 		return _setgrounder;
+	}
+	RuleGrounder* getRuleGrounder() {
+		Assert(_rulegrounder!=NULL);
+		return _rulegrounder;
+	}
+	TermGrounder* getTermGrounder() {
+		Assert(_termgrounder!=NULL);
+		return _termgrounder;
 	}
 
 public:
 	virtual ~GrounderFactory();
 
-	// Factory methods which return a toplevelgrounder able to generate the full grounding
+	// Factory methods which return a Grounder able to generate the full grounding
 	static Grounder* create(const GroundInfo& data);
 	static Grounder* create(const GroundInfo& data, PCSolver* satsolver);
-	//static Grounder* create(const GroundInfo& data, FZRewriter* flatzincprinter);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
-	static SetGrounder* create(const SetExpr* set, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
+	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
 
 	bool recursive(const Formula*);
 
@@ -140,6 +156,10 @@ public:
 	}
 
 protected:
+	// IMPORTANT: only method (next to the visit methods) allowed to call "accept"!
+	template<class T>
+	void ground(T root, const Vocabulary* v);
+
 	void visit(const Theory*);
 
 	void visit(const PredForm*);

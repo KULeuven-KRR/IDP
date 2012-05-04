@@ -68,7 +68,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 			if (formula.getType() == Conn::CONJ && l == _false) { // UNSAT
 				gt->addUnitClause(1);
 				gt->addUnitClause(-1);
-			} // else SAT or irrelevant (TODO correct?)
+			} // else SAT or irrelevant
 		} else {
 			gt->addUnitClause(l);
 		}
@@ -91,11 +91,10 @@ Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
 }
 
 void Grounder::toplevelRun() const {
-	//Assert(context()._conjunctivePathFromRoot);
 	ConjOrDisj formula;
 	run(formula);
 	addToGrounding(getGrounding(), formula);
-	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+	getGrounding()->closeTheory(); // FIXME should move or be reentrant, as multiple grounders write to the same theory!
 
 	addToFullGroundSize(getMaxGroundSize());
 	if (verbosity() > 0) {

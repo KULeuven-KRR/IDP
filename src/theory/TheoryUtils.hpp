@@ -17,6 +17,8 @@
 #include <typeinfo>
 #include <iostream>
 
+#include "transformations/AddFuncConstraints.hpp"
+
 class Definition;
 class SetExpr;
 class PFSymbol;
@@ -156,14 +158,18 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
 
-/** Add func constraints for all functions. */
-void addFuncConstraints(AbstractTheory*);
+/** Returns a new theory containing the func constraints for all functions. */
+template<class T>
+Theory* getFuncConstraints(T t, const Vocabulary* v) {
+	return transform<AddFuncConstraints, Theory*>(t, v);
+}
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
+Theory* graphFuncsAndAggs(Theory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Merge two theories */

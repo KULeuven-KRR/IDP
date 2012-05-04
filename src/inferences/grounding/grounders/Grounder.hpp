@@ -61,6 +61,8 @@ public:
 
 	void toplevelRun() const; // Guaranteed toplevel run.
 	Lit groundAndReturnLit() const; // Explicitly request one literal equisat with subgrounding. NOTE: interprets returnvalue as if in conjunction (false is unsat, true is sat)
+
+	// NOTE: it is IMPERATIVE to set the type of the formula within run!
 	virtual void run(ConjOrDisj& formula) const = 0;
 
 	AbstractGroundTheory* getGrounding() const {

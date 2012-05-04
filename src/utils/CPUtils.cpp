@@ -16,51 +16,31 @@
 using namespace std;
 
 namespace CPSupport {
-//TODO Where to keep a list of CP symbols? GlobalData? Translators?
-std::set<const PFSymbol*> _cppredsymbols;
-std::set<const Function*> _cpfuncsymbols;
-
-std::set<const Function*> findCPSymbols(const Vocabulary* vocabulary) {
-	Assert(vocabulary != NULL);
-	if (_cpfuncsymbols.empty()) {
-		for (auto funcit = vocabulary->firstFunc(); funcit != vocabulary->lastFunc(); ++funcit) {
-			Function* function = funcit->second;
-			bool passtocp = false;
-			// Check whether the (user-defined) function's outsort is over integers
-			if (function->overloaded()) {
-				set<Function*> nonbuiltins = function->nonbuiltins();
-				for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-					passtocp = FuncUtils::isIntFunc(*nbfit, vocabulary);
-				}
-			} else if (not function->builtin()) {
-				passtocp = FuncUtils::isIntFunc(function, vocabulary);
-			}
-			if (passtocp) {
-				_cpfuncsymbols.insert(function);
-			}
-		}
-	}
-	return _cpfuncsymbols;
-}
 
 bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
-	if (_cppredsymbols.find(pf->symbol()) != _cppredsymbols.cend()) {
-		return true;
-	} else if (VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc)) {
-		_cppredsymbols.insert(pf->symbol());
-		return true;
-	}
-	return false;
+	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc);
 }
 
 bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
-	if (_cpfuncsymbols.find(ft->function()) != _cpfuncsymbols.cend()) {
-		return true;
-	} else if (FuncUtils::isIntFunc(ft->function(),voc)) {
-		_cpfuncsymbols.insert(ft->function());
+	auto function = ft->function();
+	if(FuncUtils::isIntFunc(function,voc)){
 		return true;
 	}
-	return false;
+	bool passtocp = false;
+	// Check whether the (user-defined) function's outsort is over integers
+	if (function->overloaded()) {
+		auto nonbuiltins = function->nonbuiltins();
+		auto allint = true;
+		for (auto nbfit = nonbuiltins.cbegin(); allint && nbfit != nonbuiltins.cend(); ++nbfit) {
+			if(not FuncUtils::isIntFunc(*nbfit, voc)){
+				allint = false;
+			}
+		}
+		passtocp = allint;
+	} else if (not function->builtin()) {
+		passtocp = FuncUtils::isIntFunc(function, voc);
+	}
+	return passtocp;
 }
 
 bool eligibleForCP(const AggFunction& f) {

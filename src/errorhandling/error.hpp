@@ -191,7 +191,7 @@ void readingfromstdin();
 /** Wrong cumulative chance (due to rounding errors?) **/
 void cumulchance(double c);
 
-void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula);
+void possiblyInfiniteGrounding(const std::string& formula);
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname);
 

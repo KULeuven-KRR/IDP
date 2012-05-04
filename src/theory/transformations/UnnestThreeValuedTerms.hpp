@@ -56,9 +56,6 @@ public:
 		setAllowedToUnnest(false);
 		setAllowedToLeave(true);
 		_cpsupport = getOption(BoolType::CPSUPPORT);
-		if (_cpsupport and _vocabulary != NULL) {
-			CPSupport::findCPSymbols(_vocabulary);
-		}
 		return t->accept(this);
 	}
 

@@ -28,7 +28,10 @@ namespace Tests {
 
 Grounder* getGrounder(Theory& t, AbstractStructure* s){
 	auto gddatb = generateBounds(&t, s);
-	return dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, s, gddatb})))->getSubGrounders().at(0);
+	auto topboolgrounder = dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, s, gddatb})));
+	//ASSERT_TRUE(topboolgrounder!=NULL);
+	//ASSERT_TRUE(topboolgrounder->getSubGrounders().size()>0);
+	return topboolgrounder->getSubGrounders().at(0);
 }
 
 TEST(Grounderfactory, Context) {
@@ -37,8 +40,7 @@ TEST(Grounderfactory, Context) {
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.p0vq0);
 	auto context = getGrounder(t, ts.structure)->context();
-	ASSERT_TRUE(CompContext::SENTENCE == context._component);
-	//FIXME: ASSERTEQ didn't work since there is no tostring for enum classes
+	ASSERT_TRUE(CompContext::SENTENCE == context._component); //FIXME: ASSERTEQ didn't work since there is no tostring for enum classes
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 

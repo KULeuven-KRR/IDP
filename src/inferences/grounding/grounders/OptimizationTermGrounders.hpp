@@ -12,6 +12,7 @@
 #define OPTIMTERMGROUNDERS_HPP_
 
 #include "IncludeComponents.hpp" // TODO too general
+#include "inferences/grounding/grounders/Grounder.hpp"
 
 class AbstractGroundTheory;
 class SortTable;
@@ -26,21 +27,18 @@ class Function;
 class GroundTranslator;
 class GroundTermTranslator;
 
-class OptimizationGrounder {
+class OptimizationGrounder: public Grounder {
 private:
-	AbstractGroundTheory* _grounding;
 	Term* _origterm;
 protected:
 	void printOrig() const;
 public:
-	OptimizationGrounder(AbstractGroundTheory* g)
-			: _grounding(g) {
+	OptimizationGrounder(AbstractGroundTheory* g, const GroundingContext& context)
+			: Grounder(g, context) {
 	}
 	virtual ~OptimizationGrounder();
-	virtual void run() const = 0;
 	void setOrig(const Term* t);
 
-	AbstractGroundTheory* getGrounding() const { return _grounding; }
 	GroundTranslator* getTranslator() const;
 	GroundTermTranslator* getTermTranslator() const;
 };
@@ -52,10 +50,14 @@ private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggregateOptimizationGrounder(AbstractGroundTheory* grounding, AggFunction tp, SetGrounder* gr)
-			: OptimizationGrounder(grounding), _type(tp), _setgrounder(gr) {
+	// NOTE: passes grounder ownership!
+	AggregateOptimizationGrounder(AbstractGroundTheory* grounding, AggFunction tp, SetGrounder* gr, const GroundingContext& context)
+			: OptimizationGrounder(grounding, context), _type(tp), _setgrounder(gr) {
 	}
-	void run() const;
+	~AggregateOptimizationGrounder();
+	virtual void run(ConjOrDisj& formula) const;
+
+	virtual void put(std::ostream&) const;
 };
 
 #endif /* OPTIMTERMGROUNDERS_HPP_ */

@@ -438,6 +438,10 @@ ACCEPTBOTH(SetExpr)
 public:
 	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
 
+	Formula* getCondition() const{
+		return subformulas()[0];
+	}
+
 	QuantSetExpr* clone() const;
 	QuantSetExpr* cloneKeepVars() const;
 	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;

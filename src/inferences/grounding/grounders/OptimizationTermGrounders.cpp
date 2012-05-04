@@ -44,8 +44,13 @@ void OptimizationGrounder::printOrig() const {
 	clog << tabs() << "Grounding optimization over term " << toString(_origterm) << "\n";
 }
 
-void AggregateOptimizationGrounder::run() const {
-//TODO Should this grounder return a VarId in some cases?
+AggregateOptimizationGrounder::~AggregateOptimizationGrounder(){
+	delete(_setgrounder);
+}
+
+void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const{
+	formula.setType(Conn::CONJ);
+	// TODO cp support?
 	if (verbosity() > 2) {
 		printOrig();
 		pushtab();
@@ -65,4 +70,8 @@ void AggregateOptimizationGrounder::run() const {
 	if (verbosity() > 2) {
 		poptab();
 	}
+}
+
+void AggregateOptimizationGrounder::put(std::ostream&) const{
+	throw notyetimplemented("Printing aggregate optimization grounder");
 }

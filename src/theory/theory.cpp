@@ -36,7 +36,7 @@ IMPLACCEPTBOTH(PredForm, Formula)
 IMPLACCEPTBOTH(Definition, Definition)
 IMPLACCEPTBOTH(FixpDef, FixpDef)
 IMPLACCEPTBOTH(Rule, Rule)
-IMPLACCEPTBOTH(Theory, AbstractTheory)
+IMPLACCEPTBOTH(Theory, Theory)
 
 void Formula::setFreeVars() {
 	_freevars.clear();

@@ -713,7 +713,7 @@ std::ostream& operator<<(std::ostream&, const AbstractTheory&);
  * \brief Class to represent first-order theories
  */
 class Theory: public AbstractTheory {
-ACCEPTBOTH(AbstractTheory)
+ACCEPTBOTH(Theory)
 private:
 	std::vector<Formula*> _sentences; //!< the sentences of the theory
 	std::vector<Definition*> _definitions; //!< the definitions of the theory

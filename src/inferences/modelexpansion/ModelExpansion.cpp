@@ -26,7 +26,6 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
-#include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 
 #include "TraceMonitor.hpp"
 
@@ -95,20 +94,22 @@ public:
 	}
 };
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options){
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options) {
 	switch (options->symmetryBreaking()) {
 	case SymmetryBreaking::NONE:
 		break;
-	case SymmetryBreaking::STATIC:{
+	case SymmetryBreaking::STATIC: {
 		auto ivsets = findIVSets(theory, structure);
 		addSymBreakingPredicates(grounding, ivsets);
-		break;}
-	case SymmetryBreaking::DYNAMIC:{
+		break;
+	}
+	case SymmetryBreaking::DYNAMIC: {
 		auto ivsets = findIVSets(theory, structure);
 		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
 		}
-		break;}
+		break;
+	}
 	}
 }
 
@@ -160,15 +161,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto grounding = grounder->getGrounding();
 
 	if (minimizeterm != NULL) {
-		auto term = dynamic_cast<AggTerm*>(minimizeterm);
-		if (term != NULL) {
-			auto setgrounder = GrounderFactory::create(term->set(), { newstructure, symstructure }, grounding);
-			auto optimgrounder = AggregateOptimizationGrounder(grounding, term->function(), setgrounder);
-			optimgrounder.setOrig(minimizeterm);
-			optimgrounder.run();
-		} else {
-			throw notyetimplemented("Optimization over non-aggregate terms.");
-		}
+		auto optimgrounder = GrounderFactory::create(minimizeterm, clonetheory->vocabulary(), { newstructure, symstructure }, grounding);
+		optimgrounder->toplevelRun();
 	}
 
 	// Execute symmetry breaking
