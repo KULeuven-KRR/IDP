@@ -327,18 +327,9 @@ Term* UnnestTerms::visit(AggTerm* t) {
 }
 
 Term* UnnestTerms::visit(FuncTerm* t) {
-	bool savemovecontext = getAllowedToUnnest();
 	auto function = t->function();
-	if (not getOption(BoolType::GROUNDWITHBOUNDS) && _structure != NULL) {
-		auto finter = _structure->inter(function);
-		if (finter->approxTwoValued()) {
-			setAllowedToUnnest(false);
-		}
-	} else {
-		setAllowedToUnnest(true);
-	}
+
 	auto result = traverse(t);
-	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
 		return move(result);
 	}
