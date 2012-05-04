@@ -69,6 +69,7 @@ protected:
 	void polAdd(Lit head, AggTsBody* body);
 	void polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel);
 	void polAdd(Lit tseitin, CPTsBody* body);
+	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	void polAddOptimization(AggFunction function, SetId setid);
 	void polAddOptimization(VarId varid);

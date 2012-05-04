@@ -274,8 +274,8 @@ public:
 	}
 };
 
-template<>
-void SolverPolicy<PCSolver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args,
+template<class Solver>
+void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args,
 		std::vector<DelayGrounder*> grounders) {
 	auto mon = new LazyRuleMon(delaylit, args, grounders);
 	auto literal = createLiteral(delaylit);
@@ -305,8 +305,8 @@ public:
 	}
 };
 
-template<>
-void SolverPolicy<PCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
+template<class Solver>
+void SolverPolicy<Solver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
 	auto mon = new LazyClauseMon(inst, grounder);
 	auto watchboth = type == TsType::RULE || type == TsType::EQ;
 	auto lit = createLiteral(inst->residual);
@@ -315,6 +315,18 @@ void SolverPolicy<PCSolver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, Ts
 	}
 	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
 	extAdd(getSolver(), lc);
+}
+
+template<class Solver>
+void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries){
+	MinisatID::Symmetry s({});
+	for (auto bs_it = symmetries.cbegin(); bs_it != symmetries.cend(); ++bs_it) {
+		s.symmetry.push_back({});
+		for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
+			s.symmetry.back().push_back(SolverConnection::createLiteral(s_it->first));
+		}
+	}
+	getSolver().add(s);
 }
 
 // Explicit instantiations

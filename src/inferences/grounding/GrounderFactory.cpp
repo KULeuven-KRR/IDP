@@ -170,7 +170,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 		_context.gentype = not _context.gentype;
 		_context._funccontext = not _context._funccontext;
 		_context._monotone = not _context._monotone;
-		_context._tseitin = reverseImplication(_context._tseitin);
+		_context._tseitin = invertImplication(_context._tseitin);
 	}
 }
 
@@ -951,7 +951,7 @@ void GrounderFactory::visit(const AggForm* af) {
 			_context._tseitin = TsType::RULE;
 		}
 		if (isNeg(newaf->sign())) {
-			_context._tseitin = reverseImplication(_context._tseitin);
+			_context._tseitin = invertImplication(_context._tseitin);
 		}
 		_formgrounder = new AggGrounder(_grounding, _context, newaf->right()->function(), setgrounder, boundgrounder, newaf->comp(), newaf->sign());
 		RestoreContext();

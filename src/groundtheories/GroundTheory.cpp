@@ -204,6 +204,11 @@ void GroundTheory<Policy>::addOptimization(VarId varid) {
 }
 
 template<class Policy>
+void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry){
+	Policy::polAdd(symmetry);
+}
+
+template<class Policy>
 std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 	return Policy::polPut(s, translator(), termtranslator());
 }

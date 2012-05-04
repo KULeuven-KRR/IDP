@@ -58,11 +58,11 @@ MinisatID::EqType convert(CompType rel) {
 	}
 }
 
-MinisatID::Atom createAtom(int lit) {
+MinisatID::Atom createAtom(const int lit) {
 	return MinisatID::Atom(abs(lit));
 }
 
-MinisatID::Literal createLiteral(int lit) {
+MinisatID::Literal createLiteral(const int lit) {
 	return MinisatID::mkLit(abs(lit), lit < 0);
 }
 

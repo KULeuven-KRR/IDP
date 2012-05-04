@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
@@ -18,23 +18,39 @@
 // TODO enum class does not yet support comparison operators in 4.4.3
 
 enum Language {/* TXT,*/
-	IDP, ECNF, /*LATEX, CNF, */TPTP, FLATZINC, ASP
+	IDP,
+	ECNF, /*LATEX, CNF, */
+	TPTP,
+	FLATZINC,
+	ASP,
+	FIRST = IDP,
+	LAST = ASP
 };
 enum Format {
-	THREEVALUED, ALL, TWOVALUED
+	THREEVALUED,
+	ALL,
+	TWOVALUED
 };
 
 enum StringType {
-	LANGUAGE
+	LANGUAGE,
+	SYMMETRYBREAKING
 };
 
 enum IntType {
-	SATVERBOSITY, GROUNDVERBOSITY, PROPAGATEVERBOSITY, NBMODELS, NRPROPSTEPS, LONGESTBRANCH, SYMMETRY, PROVERTIMEOUT, TIMEOUT, RANDOMSEED
+	SATVERBOSITY,
+	GROUNDVERBOSITY,
+	PROPAGATEVERBOSITY,
+	NBMODELS,
+	NRPROPSTEPS,
+	LONGESTBRANCH,
+	PROVERTIMEOUT,
+	TIMEOUT,
+	RANDOMSEED
 };
 
 enum BoolType {
 	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
-	//PRINTTYPES,
 	TRACE,
 	AUTOCOMPLETE,
 	LONGNAMES,
@@ -45,7 +61,6 @@ enum BoolType {
 	TSEITINDELAY,
 	SATISFIABILITYDELAY,
 	GROUNDWITHBOUNDS,
-	//MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
 	CPSUPPORT
 };
 
@@ -53,8 +68,17 @@ enum DoubleType {
 
 };
 
+enum class SymmetryBreaking {
+	NONE,
+	STATIC,
+	DYNAMIC,
+	FIRST = NONE,
+	LAST = DYNAMIC
+};
+
 enum class PrintBehaviour {
-	PRINT, DONOTPRINT
+	PRINT,
+	DONOTPRINT
 };
 
 template<class EnumType, class ConcreteType>
@@ -67,7 +91,9 @@ private:
 
 public:
 	TypedOption(EnumType type, const std::string& name, PrintBehaviour visible)
-			: type(type), name(name), _visible(visible) {
+			: 	type(type),
+				name(name),
+				_visible(visible) {
 	}
 	virtual ~TypedOption() {
 	}
@@ -109,7 +135,9 @@ private:
 
 public:
 	RangeOption(EnumType type, const std::string& name, const ConcreteType& lowerbound, const ConcreteType& upperbound, PrintBehaviour visible)
-			: TypedOption<EnumType, ConcreteType>(type, name, visible), lowerbound_(lowerbound), upperbound_(upperbound) {
+			: 	TypedOption<EnumType, ConcreteType>(type, name, visible),
+				lowerbound_(lowerbound),
+				upperbound_(upperbound) {
 	}
 
 	bool isAllowedValue(const ConcreteType& value) {
@@ -129,7 +157,8 @@ private:
 
 public:
 	EnumeratedOption(EnumType type, const std::string& name, const std::set<ConcreteType>& allowedvalues, PrintBehaviour visible)
-			: TypedOption<EnumType, ConcreteType>(type, name, visible), allowedvalues_(allowedvalues) {
+			: 	TypedOption<EnumType, ConcreteType>(type, name, visible),
+				allowedvalues_(allowedvalues) {
 	}
 
 	bool isAllowedValue(const ConcreteType& value) {
@@ -170,7 +199,7 @@ public:
 	void setStrValue(const std::string& name, const ValueType& value) {
 		Assert(isOption(name));
 		//_options.at(_name2type.at(name))->setValue(value);
-		setValue(_name2type.at(name),value);
+		setValue(_name2type.at(name), value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
 		_options.at(type)->setValue(value);
@@ -292,6 +321,7 @@ public:
 	std::ostream& put(std::ostream&) const;
 
 	Language language() const;
+	SymmetryBreaking symmetryBreaking() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>
