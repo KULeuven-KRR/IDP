@@ -65,7 +65,7 @@ protected:
 	}
 
 	Formula* visit(QuantForm* qf){
-		Assert(qf->sign()==SIGN::POS); // TODO require pushed negations
+		Assert(qf->sign()==SIGN::POS); // FIXME require pushed negations!
 		if(qf->isUniv()){
 			quantified.insert(quantified.end(), qf->quantVars().cbegin(), qf->quantVars().cend());
 			return qf;

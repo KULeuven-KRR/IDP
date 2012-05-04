@@ -17,8 +17,6 @@ using namespace std;
 
 std::string str(Language choice) {
 	switch (choice) {
-	//case Language::TXT:
-	//	return "txt";
 	case Language::IDP:
 		return "idp";
 	case Language::ECNF:
@@ -30,7 +28,7 @@ std::string str(Language choice) {
 	case Language::ASP:
 		return "asp";
 	default:
-		return "unknown";
+		throw IdpException("Invalid code path.");
 		//case Language::CNF:
 		//	return "cnf";
 		//case Language::LATEX:
@@ -38,12 +36,36 @@ std::string str(Language choice) {
 	}
 }
 
-std::set<Language> possibleLanguageValues(){
-	return {Language::IDP,Language::FLATZINC,Language::TPTP,Language::ECNF,Language::ASP};
+std::string str(SymmetryBreaking choice) {
+	switch (choice) {
+	case SymmetryBreaking::NONE:
+		return "none";
+	case SymmetryBreaking::STATIC:
+		return "static";
+	case SymmetryBreaking::DYNAMIC:
+		return "dynamic";
+	default:
+		throw IdpException("Invalid code path.");
+	}
 }
-std::set<std::string> possibleLanguageStringValues(){
+
+inline Language operator++( Language& x ) { return x = (Language)(((int)(x) + 1)); }
+inline SymmetryBreaking operator++( SymmetryBreaking& x ) { return x = (SymmetryBreaking)(((int)(x) + 1)); }
+inline Language operator*( Language& x ) { return x; }
+inline SymmetryBreaking operator*( SymmetryBreaking& x ) { return x; }
+
+template<class T>
+std::set<T> possibleValues(){
+	std::set<T> s;
+	for(auto i=T::FIRST; i<=T::LAST; ++i){
+		s.insert(*i);
+	}
+	return s;
+}
+template<class T>
+std::set<std::string> possibleStringValues(){
 	std::set<std::string> s;
-	auto values = possibleLanguageValues();
+	auto values = possibleValues<T>();
 	for(auto i=values.cbegin(); i!=values.cend(); ++i){
 		s.insert(str(*i));
 	}
@@ -67,8 +89,7 @@ std::string str(Format choice) {
 
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
-	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO Temporary solution to be able to disable warnings in tests
-	//BoolPol::createOption(BoolType::PRINTTYPES, "printtypes", boolvalues, true, _option2name); DOET NIETS!
+	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
@@ -84,20 +105,18 @@ Options::Options() {
 	IntPol::createOption(IntType::PROPAGATEVERBOSITY, "propagateverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, PrintBehaviour::PRINT);
 
-	//BoolPol::createOption(BoolType::MODELCOUNTEQUIVALENCE, "nbmodelequivalent", boolvalues, false, _option2name, PrintBehaviour::PRINT); //Verwijderd: is nu automatisch wanneer nbmodels == 1
-
 	IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
 	IntPol::createOption(IntType::SATVERBOSITY, "satverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
-	IntPol::createOption(IntType::SYMMETRY, "symmetry", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 
 	// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 	// Afterwards, setting them to 0 stops the timing
 	IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
-	StringPol::createOption(StringType::LANGUAGE, "language", possibleLanguageStringValues(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmbreak", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name, PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
@@ -140,7 +159,7 @@ void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
 template<class EnumType, class ConcreteType>
 std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {
-		std::stringstream ss; // TODO correct usage
+		std::stringstream ss;
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => between " << lower() << " and " << upper() << ".\n";
 		return ss.str();
@@ -192,8 +211,8 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 }
 
 Language Options::language() const {
-	auto values = possibleLanguageValues();
-	const std::string& value = StringPol::getValue(StringType::LANGUAGE);
+	auto values = possibleValues<Language>();
+	auto value = StringPol::getValue(StringType::LANGUAGE);
 	for(auto i=values.cbegin(); i!=values.cend(); ++i) {
 		if (value.compare(str(*i)) == 0) {
 			return *i;
@@ -201,6 +220,18 @@ Language Options::language() const {
 	}
 	Warning::warning("Encountered unsupported language option, assuming ECNF.\n");
 	return Language::ECNF;
+}
+
+SymmetryBreaking Options::symmetryBreaking() const{
+	auto values = possibleValues<SymmetryBreaking>();
+	const std::string& value = StringPol::getValue(StringType::SYMMETRYBREAKING);
+	for(auto i=values.cbegin(); i!=values.cend(); ++i) {
+		if (value.compare(str(*i)) == 0) {
+			return *i;
+		}
+	}
+	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
+	return SymmetryBreaking::NONE;
 }
 
 std::string Options::printAllowedValues(const std::string& name) const {

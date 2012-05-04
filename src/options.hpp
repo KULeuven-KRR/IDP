@@ -22,7 +22,9 @@ enum Language {/* TXT,*/
 	ECNF, /*LATEX, CNF, */
 	TPTP,
 	FLATZINC,
-	ASP
+	ASP,
+	FIRST = IDP,
+	LAST = ASP
 };
 enum Format {
 	THREEVALUED,
@@ -31,7 +33,8 @@ enum Format {
 };
 
 enum StringType {
-	LANGUAGE
+	LANGUAGE,
+	SYMMETRYBREAKING
 };
 
 enum IntType {
@@ -41,7 +44,6 @@ enum IntType {
 	NBMODELS,
 	NRPROPSTEPS,
 	LONGESTBRANCH,
-	SYMMETRY,
 	PROVERTIMEOUT,
 	TIMEOUT,
 	RANDOMSEED
@@ -49,7 +51,6 @@ enum IntType {
 
 enum BoolType {
 	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
-	//PRINTTYPES,
 	TRACE,
 	AUTOCOMPLETE,
 	LONGNAMES,
@@ -60,12 +61,19 @@ enum BoolType {
 	TSEITINDELAY,
 	SATISFIABILITYDELAY,
 	GROUNDWITHBOUNDS,
-	//MODELCOUNTEQUIVALENCE, // TODO the equivalence might in fact become an enum itself?
 	CPSUPPORT
 };
 
 enum DoubleType {
 
+};
+
+enum class SymmetryBreaking {
+	NONE,
+	STATIC,
+	DYNAMIC,
+	FIRST = NONE,
+	LAST = DYNAMIC
 };
 
 enum class PrintBehaviour {
@@ -313,6 +321,7 @@ public:
 	std::ostream& put(std::ostream&) const;
 
 	Language language() const;
+	SymmetryBreaking symmetryBreaking() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>

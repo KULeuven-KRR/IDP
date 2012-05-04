@@ -60,6 +60,7 @@ public:
 	virtual void add(Lit tseitin, CPTsBody* body) = 0;
 	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr) = 0;
+	virtual void addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) = 0;
 
 	virtual void addOptimization(AggFunction, SetId) = 0;
 	virtual void addOptimization(VarId) = 0;
