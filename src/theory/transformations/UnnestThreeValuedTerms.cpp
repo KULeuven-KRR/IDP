@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "UnnestThreeValuedTerms.hpp"
 #include "IncludeComponents.hpp"
@@ -19,16 +19,18 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	if (getAllowedToUnnest()) {
 		switch (t->type()) {
 		case TT_FUNC: {
+			std::cerr << toString(t) << "is a functerm"<<endl;
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
 			Function* func = ft->function();
 			FuncInter* finter = _structure->inter(func);
-			return not finter->approxTwoValued()
-				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft,_vocabulary));
+			std::cerr << "approxtwoval" << finter->approxTwoValued()<<endl;
+
+			return not finter->approxTwoValued() and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary));
 		}
 		case TT_AGG: {
 			AggTerm* at = dynamic_cast<AggTerm*>(t);
 			return not SetUtils::approxTwoValued(at->set(), _structure)
-				and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at,_structure));
+					and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at, _structure));
 		}
 		case TT_VAR:
 		case TT_DOM:
@@ -40,7 +42,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	bool saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform,_vocabulary));
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform, _vocabulary));
 	auto newf = specialTraverse(predform);
 	setAllowedToLeave(saveAllowedToLeave);
 	return doRewrite(newf);
@@ -48,7 +50,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 
 Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
 	bool saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(),_vocabulary));
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(), _vocabulary));
 	auto newrule = UnnestTerms::visit(rule);
 	setAllowedToLeave(saveAllowedToLeave);
 	return newrule;

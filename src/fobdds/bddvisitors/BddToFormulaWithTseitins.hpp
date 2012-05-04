@@ -231,7 +231,7 @@ private:
 
 		//TODO: following should be improved!
 		Assert(_vocabulary !=NULL);
-		auto tseitinsymbol = new Tseitin(sorts);
+		auto tseitinsymbol = new Predicate(sorts, true);
 		_vocabulary->add(tseitinsymbol);
 		addTseitin(bdd, tseitinsymbol);
 		createTseitinAtom(tseitinsymbol);

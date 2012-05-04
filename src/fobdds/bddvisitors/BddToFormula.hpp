@@ -134,7 +134,7 @@ protected:
 			vars.insert(v);
 		}
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
-			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size() + 1)] = it->second;
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size())] = it->second;
 		}
 		set->subformula(0)->accept(this);
 		auto subform = _currformula;

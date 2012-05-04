@@ -2803,9 +2803,6 @@ InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const 
 
 InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
 		: InternalPredTable(), _invtable(inv) {
-	/*if(dynamic_cast<InverseInternalPredTable*>(inv)!=NULL){
-	 cerr <<"Inverting an inverted table\n";
-	 }*/
 	inv->incrementRef();
 }
 

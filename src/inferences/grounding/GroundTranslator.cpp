@@ -33,7 +33,7 @@ GroundTranslator::~GroundTranslator() {
 	}
 }
 
-Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args, bool tseitin) {
+Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args) {
 	Lit lit = 0;
 	//auto jt = symbols[n].tuple2atom.lower_bound(args);
 	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
@@ -42,7 +42,7 @@ Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args,
 	if (jt != symbolinfo.tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
-		lit = nextNumber(tseitin ? AtomType::TSEITINWITHSUBFORMULA : AtomType::INPUT);
+		lit = nextNumber( AtomType::INPUT);
 		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
 		if (symbolinfo.tuple2atom.size() == 1) {
 			newsymbols.push(symbolID);
@@ -82,7 +82,7 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 	SymbolOffset offset = addSymbol(s);
-	return translate(offset, args, sametypeid<Tseitin>(*s));
+	return translate(offset, args);
 }
 
 Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype) {

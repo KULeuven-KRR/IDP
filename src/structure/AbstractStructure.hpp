@@ -38,7 +38,7 @@ public:
 	}
 	AbstractStructure(std::string name, Vocabulary* v, const ParseInfo& pi)
 			: _name(name), _pi(pi), _vocabulary(NULL) {
-		changeVocabulary(v);
+		//changeVocabulary(v) virtual cannot be called in constructor. Should be called in Structure.
 	}
 	virtual ~AbstractStructure() {
 	}

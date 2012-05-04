@@ -98,7 +98,7 @@ public:
 		return newsymbols.size();
 	}
 
-	Lit translate(SymbolOffset, const ElementTuple&, bool tseitin=false);
+	Lit translate(SymbolOffset, const ElementTuple&);
 	Lit translate(const litlist& cl, bool conj, TsType tp);
 	Lit translate(const Lit& head, const litlist& clause, bool conj, TsType tstype);
 	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);

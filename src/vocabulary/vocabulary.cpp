@@ -329,15 +329,15 @@ PFSymbol::~PFSymbol() {
 }
 
 PFSymbol::PFSymbol(const string& name, size_t nrsorts, bool infix)
-		: _name(name), _sorts(nrsorts, 0), _infix(infix) {
+		: _name(name), _sorts(nrsorts, 0), _infix(infix), _isTseitin(false) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, bool infix)
-		: _name(name), _sorts(sorts), _infix(infix) {
+		: _name(name), _sorts(sorts), _infix(infix), _isTseitin(false) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
-		: _name(name), _pi(pi), _sorts(sorts), _infix(infix) {
+		: _name(name), _pi(pi), _sorts(sorts), _infix(infix), _isTseitin(false) {
 }
 
 const string& PFSymbol::name() const {
@@ -442,13 +442,18 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
-Predicate::Predicate(const vector<Sort*>& sorts)
+Predicate::Predicate(const vector<Sort*>& sorts, bool isTseitin)
 		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
+	if (isTseitin) {
+		_isTseitin = isTseitin;
+		_name = "_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
+	} else {
+		_name = "_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
+	}
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
-		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0) {
+		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0){
 }
 
 Predicate::Predicate(PredGenerator* generator)
@@ -603,15 +608,6 @@ ostream& Predicate::put(ostream& output) const {
 
 ostream& operator<<(ostream& output, const Predicate& p) {
 	return p.put(output);
-}
-
-Tseitin::Tseitin(const std::vector<Sort*>& sorts)
-		: Predicate(sorts) {
-	_name = "_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
-}
-
-Tseitin::~Tseitin() {
-
 }
 
 PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix)

@@ -327,16 +327,23 @@ Term* UnnestTerms::visit(AggTerm* t) {
 }
 
 Term* UnnestTerms::visit(FuncTerm* t) {
+	std::cerr << "visit"<<toString(t);
 	bool savemovecontext = getAllowedToUnnest();
 	auto function = t->function();
 
 	setAllowedToUnnest(true);
 
 	auto result = traverse(t);
+	std::cerr << "can i unnest now?"<<getAllowedToUnnest();
+
+	std::cerr << "result:"<<toString(result)<<"of type"<<typeid(*result).name()<<endl;
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {
+		std::cerr << " move"<<toString(t)<<endl;
 		return move(result);
 	}
+	std::cerr << "dont move"<<toString(t)<<endl;
+
 	return result;
 }
 

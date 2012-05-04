@@ -343,10 +343,11 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Move all functions and aggregates that are three-valued according
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
-	Formula* temppf = pf->clone();
-	Formula* transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext);
-	// TODO can we delete temppf here if different from transpf? APPARANTLY NOT!
+	Formula* transpf = pf->clone();
+	std::cerr << "visit"<<toString(transpf)<<endl;
+	transpf = FormulaUtils::unnestThreeValuedTerms(transpf, _structure, _context._funccontext);
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
+	std::cerr << "unnested"<<toString(transpf)<<endl;
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);

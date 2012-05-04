@@ -17,6 +17,7 @@ IntroduceSharedTseitins::IntroduceSharedTseitins()
 }
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo) {
+	std::cerr << "execute on "<<toString(theo)<<endl;
 	_bddtofo.setVocabulary(theo->vocabulary());
 	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
 		auto bdd = _factory.turnIntoBdd(*it);
@@ -59,6 +60,8 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo) {
 	theo = _bddtofo.addTseitinConstraints(theo);
 	FormulaUtils::flatten(theo);
 	FormulaUtils::pushNegations(theo);
+	std::cerr << "result is "<<toString(theo)<<endl;
+
 	return theo;
 }
 
