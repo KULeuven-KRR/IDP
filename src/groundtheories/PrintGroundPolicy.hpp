@@ -104,6 +104,10 @@ public:
 		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 
+	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+		throw notyetimplemented("Printing symmetries.\n");
+	}
+
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
 		Assert(false);
 		return s;

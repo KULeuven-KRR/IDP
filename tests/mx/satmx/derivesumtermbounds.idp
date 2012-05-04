@@ -1,0 +1,22 @@
+vocabulary V{
+	type state isa int
+	type action isa int
+	map(state, action):state
+}
+
+theory T: V{
+	!s a: s=a & state(s+1) => map(s, a) = s+1.
+}
+
+structure S: V {
+	state = {1..3}
+	action = {1..3}
+}
+
+#include <mx>
+
+procedure getExpectedAModel(){
+	print("see issue 127")
+	return true
+}
+

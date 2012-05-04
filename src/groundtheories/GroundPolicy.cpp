@@ -80,6 +80,10 @@ void GroundPolicy::polAddOptimization(VarId /*varid*/) {
 	throw notyetimplemented("Adding optimization to the grounding\n");
 }
 
+void GroundPolicy::polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+	throw notyetimplemented("Adding symmetries to the grounding\n");
+}
+
 std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
 	std::clog << "Printing ground theory\n";
 	std::clog << "Has " << _clauses.size() << " clauses." << "\n";

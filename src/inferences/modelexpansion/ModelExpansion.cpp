@@ -32,11 +32,13 @@
 
 using namespace std;
 
-std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc, TraceMonitor* tracemonitor) {
+std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc,
+		TraceMonitor* tracemonitor) {
 	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor);
 	return m->expand();
 }
-std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor) {
+std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
+		TraceMonitor* tracemonitor) {
 	if (term == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
@@ -44,7 +46,8 @@ std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* t
 	return m->expand();
 }
 
-shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor){
+shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
+		TraceMonitor* tracemonitor) {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
@@ -56,7 +59,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
 	}
 	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor));
-	if(outputvoc!=NULL){
+	if (outputvoc != NULL) {
 		m->setOutputVocabulary(outputvoc);
 	}
 	return m;
@@ -91,6 +94,23 @@ public:
 		solver->notifyTerminateRequested();
 	}
 };
+
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options){
+	switch (options->symmetryBreaking()) {
+	case SymmetryBreaking::NONE:
+		break;
+	case SymmetryBreaking::STATIC:{
+		auto ivsets = findIVSets(theory, structure);
+		addSymBreakingPredicates(grounding, ivsets);
+		break;}
+	case SymmetryBreaking::DYNAMIC:{
+		auto ivsets = findIVSets(theory, structure);
+		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
+			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
+		}
+		break;}
+	}
+}
 
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
@@ -155,32 +175,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	// Execute symmetry breaking
-	if (opts->getValue(IntType::SYMMETRY) != 0) {
-		if (verbosity() >= 1) {
-			clog << "Symmetry breaking\n";
-		}
-		auto ivsets = findIVSets(clonetheory, newstructure);
-		if (opts->getValue(IntType::SYMMETRY) == 1) {
-			addSymBreakingPredicates(grounding, ivsets);
-		} else if (opts->getValue(IntType::SYMMETRY) == 2) {
-			std::clog << "Dynamic symmetry breaking not yet implemented...\n";
-//			for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-//				std::vector<std::map<int, int> > breakingSymmetries = (*ivsets_it)->getBreakingSymmetries(grounding);
-//				for (auto bs_it = breakingSymmetries.cbegin(); bs_it != breakingSymmetries.cend(); ++bs_it) {
-//					MinisatID::Symmetry symmetry;
-//					for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
-//						MinisatID::Atom a1 = MinisatID::Atom(s_it->first);
-//						MinisatID::Atom a2 = MinisatID::Atom(s_it->second);
-//						std::pair<MinisatID::Atom, MinisatID::Atom> entry = std::pair<MinisatID::Atom, MinisatID::Atom>(a1, a2);
-//						symmetry.symmetry.insert(entry);
-//					}
-//					solver->add(symmetry);
-//				}
-//			}
-		} else {
-			std::clog << "Unknown symmetry option...\n";
-		}
-	}
+	addSymmetryBreaking(clonetheory, newstructure, grounding, opts);
+
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
