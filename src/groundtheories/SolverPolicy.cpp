@@ -321,7 +321,8 @@ template<class Solver>
 void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries){
 	MinisatID::Symmetry s({});
 	for (auto bs_it = symmetries.cbegin(); bs_it != symmetries.cend(); ++bs_it) {
-		s.symmetry.push_back({});
+		std::vector<MinisatID::Lit> newOne = {};
+		s.symmetry.push_back(newOne);
 		for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
 			s.symmetry.back().push_back(SolverConnection::createLiteral(s_it->first));
 		}
