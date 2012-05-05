@@ -12,7 +12,7 @@
 #define BDDTOTSEITINFORMULA554578_HPP_
 #include "BddToFormula.hpp"
 #include "CountOccurences.hpp"
-
+#include "IndexCollector.hpp"
 //TODO: fix the parseinfo!
 /**
  * Given a bdd or a kernel, creates the associated formula.
@@ -128,7 +128,7 @@ private:
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars);
-		createTseitinAtom(pred);
+		createTseitinAtom(pred,arg);
 		auto tseitinAtom = _currformula;
 		auto backup = _boundary;
 		_boundary = _counter->getCount(arg);
@@ -144,7 +144,7 @@ private:
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars);
-		createTseitinAtom(pred);
+		createTseitinAtom(pred,arg);
 		Assert(sametypeid<PredForm>(*_currformula));
 		auto tseitinAtom = dynamic_cast<PredForm*>(_currformula);
 		auto backup = _boundary;
@@ -171,27 +171,39 @@ private:
 			_dbrmapping[dbrindex] = (*it)->variable();
 		}
 	}
+	template<typename FOBDDConstruct>
+	void createTseitinAtom(Predicate* p, FOBDDConstruct bdd, bool negate = false) {
+		auto ic = IndexCollector(_manager);
+		auto freeindices = ic.getVariables(bdd);
+		std::map<unsigned int, Variable*> inttovar;
+		for (auto it = freeindices.cbegin(); it != freeindices.cend(); it++) {
+			Assert(_dbrmapping.find(*it) != _dbrmapping.cend());
+			inttovar[(*it)->index()] = _dbrmapping[*it];
+		}
 
-	void createTseitinAtom(Predicate* p, bool negate = false) {
-		Assert(p->arity() == _dbrmapping.size());
-		std::vector<Term*> terms(_dbrmapping.size(), NULL);
-		for (auto it = _dbrmapping.cbegin(); it != _dbrmapping.cend(); ++it) {
-			auto index = it->first;
-			auto var = it->second;
-			auto nb = index->index();
-			terms[nb] = new VarTerm(var, TermParseInfo());
+		Assert(p->arity() == inttovar.size());
+		std::vector<Term*> terms(inttovar.size(), NULL);
+		for (auto it = inttovar.cbegin(); it != inttovar.cend(); ++it) {
+			terms[it->first] = new VarTerm(it->second, TermParseInfo());
 		}
 
 		_currformula = new PredForm(negate ? SIGN::NEG : SIGN::POS, p, terms, FormulaParseInfo());
 	}
 
-	std::vector<Sort*> getDbrMappingSorts() {
-		std::vector<Sort*> sorts(_dbrmapping.size(), NULL);
-		for (auto it = _dbrmapping.cbegin(); it != _dbrmapping.cend(); ++it) {
-			auto index = it->first;
-			auto var = it->second;
-			auto nb = index->index();
-			sorts[nb] = var->sort();
+	template<typename FOBDDConstruct>
+	std::vector<Sort*> getRelevantDbrMappingSorts(const FOBDDConstruct* bdd) {
+		auto ic = IndexCollector(_manager);
+		auto freeindices = ic.getVariables(bdd);
+		std::map<unsigned int, const FOBDDDeBruijnIndex*> inttoindex;
+		for (auto it = freeindices.cbegin(); it != freeindices.cend(); it++) {
+			inttoindex[(*it)->index()] = (*it);
+			Assert(_dbrmapping.find(*it) != _dbrmapping.cend());
+		}
+
+		std::vector<Sort*> sorts(freeindices.size(), NULL);
+
+		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); ++it) {
+			sorts[it->first] = it->second->sort();
 		}
 		return sorts;
 	}
@@ -200,18 +212,18 @@ private:
 		if (_manager->isTruebdd(bdd) || _manager->isFalsebdd(bdd)) {
 			return false;
 		}
-		return _counter->getCount(bdd) > _boundary;
+		return _manager->longestbranch(bdd)>2&&_counter->getCount(bdd) > _boundary;
 	}
 	bool shouldTseitinifyFormula(const FOBDDKernel* kernel) {
 		//NOTE: truekernels should not be appear here...
-		return _counter->getCount(kernel) > _boundary;
+		return _manager->longestbranch(kernel	)>2&&_counter->getCount(kernel) > _boundary;
 	}
 
 	void tseitinifyFormula(const FOBDD* bdd) {
 		auto negated = _manager->negation(bdd);
 		auto res = _bddtseitins.find(negated);
 		if (res != _bddtseitins.cend()) {
-			createTseitinAtom((*res).second, true);
+			createTseitinAtom((*res).second,bdd, true);
 			if (_inDefinition) {
 				_definedbddtseitins.insert(negated);
 			}
@@ -222,19 +234,18 @@ private:
 		}
 		res = _bddtseitins.find(bdd);
 		if (res != _bddtseitins.cend()) {
-			createTseitinAtom((*res).second);
+			createTseitinAtom((*res).second,bdd);
 			return;
 		}
-
 		//In this case, we need to create a new tseitin symbol.
-		auto sorts = getDbrMappingSorts();
+		auto sorts = getRelevantDbrMappingSorts(bdd);
 
 		//TODO: following should be improved!
 		Assert(_vocabulary !=NULL);
 		auto tseitinsymbol = new Predicate(sorts, true);
 		_vocabulary->add(tseitinsymbol);
 		addTseitin(bdd, tseitinsymbol);
-		createTseitinAtom(tseitinsymbol);
+		createTseitinAtom(tseitinsymbol,bdd);
 	}
 
 	void tseitinifyFormula(const FOBDDKernel* kernel) {
@@ -243,12 +254,12 @@ private:
 		}
 		auto res = _kerneltseitins.find(kernel);
 		if (res != _kerneltseitins.cend()) {
-			createTseitinAtom((*res).second);
+			createTseitinAtom((*res).second,kernel);
 			return;
 		}
 
 		//In this case, we need to create a new tseitin symbol.
-		auto sorts = getDbrMappingSorts();
+		auto sorts = getRelevantDbrMappingSorts(kernel);
 
 		//TODO: following should be improved!
 		stringstream ss;
@@ -256,7 +267,7 @@ private:
 		auto tseitinsymbol = new Predicate(ss.str(), sorts, false);
 
 		_kerneltseitins[kernel] = tseitinsymbol;
-		createTseitinAtom((*res).second);
+		createTseitinAtom((*res).second, kernel);
 	}
 
 	void addTseitin(const FOBDD* bdd, Predicate* tseitinsymbol) {

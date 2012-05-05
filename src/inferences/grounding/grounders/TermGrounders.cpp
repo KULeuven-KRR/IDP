@@ -80,7 +80,9 @@ GroundTerm FuncTermGrounder::run() const {
 		if (groundsubterms[n].isVariable) {
 			calculable = false;
 		} else {
-			Assert(groundsubterms[n]._domelement != NULL);
+			if(groundsubterms[n]._domelement == NULL){
+				return groundsubterms[n]._domelement;
+			}
 			args[n] = groundsubterms[n]._domelement;
 		}
 	}

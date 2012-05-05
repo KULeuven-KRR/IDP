@@ -291,7 +291,6 @@ void GrounderFactory::visit(const Theory* theory) {
 	}
 
 	tmptheory = FormulaUtils::graphFuncsAndAggs(tmptheory, _structure);
-
 	Assert(sametypeid<Theory>(*tmptheory));
 	auto newtheory = dynamic_cast<Theory*>(tmptheory);
 
@@ -344,10 +343,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// to _structure outside the atom. To avoid changing the original atom,
 	// we first clone it.
 	Formula* transpf = pf->clone();
-	std::cerr << "visit"<<toString(transpf)<<endl;
 	transpf = FormulaUtils::unnestThreeValuedTerms(transpf, _structure, _context._funccontext);
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
-	std::cerr << "unnested"<<toString(transpf)<<endl;
 
 	if (not sametypeid<PredForm>(*transpf)) { // The rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);

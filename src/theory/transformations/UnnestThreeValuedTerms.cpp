@@ -16,15 +16,16 @@
 using namespace std;
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
+	//std::cerr <<"should i move"<<toString(t)<<endl;
 	if (getAllowedToUnnest()) {
+	//	std::cerr <<"i can"<<endl;
+
 		switch (t->type()) {
 		case TT_FUNC: {
-			std::cerr << toString(t) << "is a functerm"<<endl;
 			FuncTerm* ft = dynamic_cast<FuncTerm*>(t);
 			Function* func = ft->function();
 			FuncInter* finter = _structure->inter(func);
-			std::cerr << "approxtwoval" << finter->approxTwoValued()<<endl;
-
+		//	std::cerr <<(not finter->approxTwoValued() and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary)))<<endl;
 			return not finter->approxTwoValued() and not (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary));
 		}
 		case TT_AGG: {
