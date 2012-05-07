@@ -956,8 +956,8 @@ const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const std::set<const FO
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it) {
 		BumpIndices b(this, *it, 0);
 		result = b.FOBDDVisitor::change(result);
-		auto index = getDeBruijnIndex((*it)->sort(),0);
-		result = substitute(result,*it,index);
+		auto index = getDeBruijnIndex((*it)->sort(), 0);
+		result = substitute(result, *it, index);
 	}
 	return result;
 }
@@ -1024,18 +1024,27 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* variable, const FOBDDDeBruijnIndex* index) {
 	std::map<const FOBDDVariable*, const FOBDDDeBruijnIndex*> m;
-	m[variable]=index;
-	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(this,m);
+	m[variable] = index;
+	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(this, m);
 	return s.FOBDDVisitor::change(bdd);
 }
 
 int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
 	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
 		return 1;
-	} else {
-		Assert(sametypeid < FOBDDQuantKernel > (*kernel));
+	} else if (sametypeid<FOBDDQuantKernel>(*kernel)) {
 		const FOBDDQuantKernel* qk = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return longestbranch(qk->bdd()) + 1;
+	} else {
+		Assert(sametypeid<FOBDDAggKernel>(*kernel));
+		const FOBDDAggKernel* ak = dynamic_cast<const FOBDDAggKernel*>(kernel);
+		auto set = ak->right()->setexpr();
+		int result = 0;
+		for (int i = 0; i < set->size(); i++) {
+			int oneres = longestbranch(set->subformula(i)) + 1;
+			result = oneres > result ? oneres : result;
+		}
+		return result;
 	}
 }
 
