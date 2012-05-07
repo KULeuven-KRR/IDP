@@ -256,7 +256,16 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 				vector<const FOBDDTerm*> newargs(2);
 				newargs[0] = plusterm;
 				newargs[1] = zero_term;
-				return getAtomKernel(symbol, akt, newargs);
+				Predicate* newsymbol = dynamic_cast<Predicate*>(symbol);
+				auto sort = SortUtils::resolve(newargs[0]->sort(),newargs[1]->sort());
+				if (is(symbol, STDPRED::LT)) {
+					newsymbol = get(STDPRED::LT, sort);
+				} else if (is(symbol, STDPRED::GT)) {
+					newsymbol = get(STDPRED::GT, sort);
+				} else if (is(symbol, STDPRED::EQ)) {
+					newsymbol = get(STDPRED::EQ, sort);
+				}
+				return getAtomKernel(newsymbol, akt, newargs);
 			}
 		}
 	}
@@ -269,7 +278,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 			newargs[1] = args[0];
 			Predicate* newsymbol = dynamic_cast<Predicate*>(symbol);
 			if (is(symbol, STDPRED::LT)) {
-				newsymbol = get(STDPRED::LT, symbol->sorts()[0]);
+				newsymbol = get(STDPRED::GT, symbol->sorts()[0]);
 			} else if (is(symbol, STDPRED::GT)) {
 				newsymbol = get(STDPRED::LT, symbol->sorts()[0]);
 			}

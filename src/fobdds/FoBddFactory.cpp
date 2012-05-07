@@ -23,6 +23,10 @@
 
 using namespace std;
 
+//FIXME: check manager and all visitors for re-use of symbols. For example: if one creates a BDD from
+// a<b, where the < symbol is a < for sort x and x, but the formula is rewritten to
+// a-b<0, then probably we should get the < for int,nat, or int [0,0] NOT for x,x...
+
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE);
