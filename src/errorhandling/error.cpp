@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include <iostream>
 #include "parseinfo.hpp"
@@ -750,6 +750,10 @@ void possiblyInfiniteGrounding(const std::string& formula, const std::string& in
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
 	clog << "Warning: tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
+}
+
+void emptySort(const std::string& sortname){
+	clog <<"Warning: sort " <<sortname <<" has an empty interpretation.\n";
 }
 
 /** Ambiguous partial term **/

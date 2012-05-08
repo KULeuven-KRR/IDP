@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef ABSTRACTGROUNDTHEORY_HPP_
 #define ABSTRACTGROUNDTHEORY_HPP_
@@ -37,13 +37,16 @@ class DelayGrounder;
 class AbstractGroundTheory: public AbstractTheory {
 	VISITORS()
 private:
-	AbstractStructure* _structure; //!< The ground theory may be partially reduced with respect to this structure.
+	AbstractStructure* _structure; // OWNER! The ground theory might be partially reduced with respect to this structure.
+
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.
 	GroundTermTranslator* _termtranslator; //!< Link between ground terms and CP-solver variables.
 
 public:
-	AbstractGroundTheory(AbstractStructure* str);
-	AbstractGroundTheory(Vocabulary* voc, AbstractStructure* str);
+	// Non-owning structure pointer, can be NULL!
+	AbstractGroundTheory(AbstractStructure const * const str);
+	// Non-owning structure pointer, can be NULL!
+	AbstractGroundTheory(Vocabulary* voc, AbstractStructure const * const str);
 
 	~AbstractGroundTheory();
 
@@ -57,6 +60,7 @@ public:
 	virtual void add(Lit tseitin, CPTsBody* body) = 0;
 	virtual void add(SetId setnr, DefId defnr, bool weighted) = 0;
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr) = 0;
+	virtual void addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) = 0;
 
 	virtual void addOptimization(AggFunction, SetId) = 0;
 	virtual void addOptimization(VarId) = 0;

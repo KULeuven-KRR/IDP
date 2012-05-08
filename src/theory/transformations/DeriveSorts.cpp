@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "DeriveSorts.hpp"
 
@@ -85,7 +85,7 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 
 Term* DeriveSorts::visit(AggTerm* t) {
 	if (_assertsort != NULL) {
-		Assert(SortUtils::resolve(_assertsort, VocabularyUtils::intsort())!=NULL);
+		Assert(SortUtils::resolve(_assertsort, get(STDSORT::INTSORT))!=NULL);
 	}
 	_assertsort = NULL;
 	return TheoryMutatingVisitor::visit(t);
@@ -143,7 +143,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 
 		if (p->builtin()) {
 			Sort* temp = NULL;
-			if (not _firstvisit && p->name() == "=/2") {
+			if (not _firstvisit && is(p, STDPRED::EQ)) {
 				for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
 					if ((*i)->sort() != NULL) {
 						if (temp == NULL) {

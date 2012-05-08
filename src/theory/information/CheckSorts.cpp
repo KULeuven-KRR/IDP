@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "CheckSorts.hpp"
 
@@ -66,7 +66,7 @@ void CheckSorts::visit(const EqChainForm* ef) {
 }
 
 bool isNumeric(Sort* sort, Vocabulary* voc) {
-	return SortUtils::resolve(sort, VocabularyUtils::floatsort(), voc);
+	return SortUtils::resolve(sort, get(STDSORT::FLOATSORT), voc);
 }
 
 void CheckSorts::visit(const AggTerm* at) {

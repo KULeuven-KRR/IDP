@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef GROUNDTHEORY_HPP_
 #define GROUNDTHEORY_HPP_
@@ -88,6 +88,7 @@ public:
 
 	void polAddOptimization(AggFunction, SetId);
 	void polAddOptimization(VarId);
+	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
 

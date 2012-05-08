@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef BDDTOFORMULA_HPP_
 #define BDDTOFORMULA_HPP_
@@ -15,6 +15,7 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -22,27 +23,32 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddUtils.hpp"
 #include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
 #include "theory/TheoryUtils.hpp"
+
+#include <vector>
 
 /**
  * Given a bdd or a kernel, creates the associated formula.
  * Given a bddterm, creates the associated term.
  */
-class BDDToFormula: public FOBDDVisitor {
+class BDDToFO: public FOBDDVisitor {
 private:
 	Formula* _currformula;
 	Term* _currterm;
+	SetExpr* _currset;
 	std::map<const FOBDDDeBruijnIndex*, Variable*> _dbrmapping;
 
 	void reset() {
 		_currformula = NULL;
 		_currterm = NULL;
+		_currset = NULL;
 		_dbrmapping.clear();
 	}
 
 public:
-	BDDToFormula(FOBDDManager* m)
-			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL) {
+	BDDToFO(FOBDDManager* m)
+			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL), _currset(NULL) {
 		_dbrmapping.clear();
 	}
 
@@ -58,6 +64,13 @@ public:
 		reset();
 		arg->accept(this);
 		return _currterm;
+	}
+
+	template<typename BddSet>
+	SetExpr* createSet(const BddSet* arg) {
+		reset();
+		arg->accept(this);
+		return _currset;
 	}
 
 private:
@@ -90,6 +103,45 @@ private:
 		_currterm = new FuncTerm(ft->func(), args, TermParseInfo());
 	}
 
+	void visit(const FOBDDAggTerm* aggterm) {
+		aggterm->setexpr()->accept(this);
+		auto set = _currset;
+		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());
+	}
+
+	void visit(const FOBDDEnumSetExpr* set) {
+		std::vector<Formula*> formulas(set->size());
+		std::vector<Term*> terms(set->size());
+		for (int i = 0; i < set->size(); i++) {
+			set->subformula(i)->accept(this);
+			formulas[i] = _currformula;
+			set->subterm(i)->accept(this);
+			terms[i] = _currterm;
+		}
+		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
+	}
+
+	void visit(const FOBDDQuantSetExpr* set) {
+		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
+		_dbrmapping.clear();
+		std::set<Variable*> vars;
+		int i = 0;
+		for (auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rend(); it++, i++) {
+			auto v = new Variable(*it);
+			_dbrmapping[_manager->getDeBruijnIndex(*it, i)] = v;
+			vars.insert(v);
+		}
+		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
+			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size() + 1)] = it->second;
+		}
+		set->subformula(0)->accept(this);
+		auto subform = _currformula;
+		set->subterm(0)->accept(this);
+		auto subterm = _currterm;
+		_dbrmapping = savedmapping;
+		_currset = new QuantSetExpr(vars, subform, subterm, SetParseInfo());
+	}
+
 	void visit(const FOBDDAtomKernel* atom) {
 		std::vector<Term*> args;
 		for (auto it = atom->args().cbegin(); it != atom->args().cend(); ++it) {
@@ -116,11 +168,20 @@ private:
 			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + 1)] = it->second;
 		}
 
-		FOBDDVisitor::visit(quantkernel->bdd());
+		quantkernel->bdd()->accept(this);
 
 		auto quantvar = _dbrmapping[_manager->getDeBruijnIndex(quantkernel->sort(), 0)];
 		_dbrmapping = savedmapping;
 		_currformula = new QuantForm(SIGN::POS, QUANT::EXIST, { quantvar }, _currformula, FormulaParseInfo());
+	}
+
+	void visit(const FOBDDAggKernel* fak) {
+		fak->left()->accept(this);
+		auto left = _currterm;
+		fak->right()->accept(this);
+		Assert(sametypeid<AggTerm>(*_currterm));
+		auto right = dynamic_cast<AggTerm*>(_currterm);
+		_currformula =  new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
 	}
 
 	void visit(const FOBDD* bdd) {
@@ -142,7 +203,7 @@ private:
 				return; // kernel is the whole formula
 			}
 			auto kernelformula = _currformula;
-			FOBDDVisitor::visit(bdd->truebranch());
+			bdd->truebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
@@ -154,7 +215,7 @@ private:
 			}
 
 			auto kernelformula = _currformula;
-			FOBDDVisitor::visit(bdd->falsebranch());
+			bdd->falsebranch()->accept(this);
 			auto branchformula = _currformula;
 			_currformula = new BoolForm(SIGN::POS, true, kernelformula, branchformula, FormulaParseInfo());
 
@@ -164,17 +225,17 @@ private:
 			negkernelformula->negate();
 
 			if (_manager->isTruebdd(bdd->falsebranch())) {
-				FOBDDVisitor::visit(bdd->truebranch());
+				bdd->truebranch()->accept(this);
 				auto bf = new BoolForm(SIGN::POS, true, kernelformula, _currformula, FormulaParseInfo());
 				_currformula = new BoolForm(SIGN::POS, false, negkernelformula, bf, FormulaParseInfo());
 			} else if (_manager->isTruebdd(bdd->truebranch())) {
-				FOBDDVisitor::visit(bdd->falsebranch());
+				bdd->falsebranch()->accept(this);
 				auto bf = new BoolForm(SIGN::POS, true, negkernelformula, _currformula, FormulaParseInfo());
 				_currformula = new BoolForm(SIGN::POS, false, kernelformula, bf, FormulaParseInfo());
 			} else {
-				FOBDDVisitor::visit(bdd->truebranch());
+				bdd->truebranch()->accept(this);
 				auto trueform = _currformula;
-				FOBDDVisitor::visit(bdd->falsebranch());
+				bdd->falsebranch()->accept(this);
 				auto falseform = _currformula;
 				auto bf1 = new BoolForm(SIGN::POS, true, kernelformula, trueform, FormulaParseInfo());
 				auto bf2 = new BoolForm(SIGN::POS, true, negkernelformula, falseform, FormulaParseInfo());

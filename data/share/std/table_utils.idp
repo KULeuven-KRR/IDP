@@ -1,4 +1,27 @@
 
+/**
+ * Given a predicate name and a relationship table, prints all tuples in the table
+ */
+procedure printtuples(name, table) {
+	local s = name.."<"
+	for tuple in tuples(table)
+	do
+		begin = true
+		for i,v in pairs(tuple)
+		do
+			if begin==false
+			then
+				s = s..","
+			end
+			begin = false
+			s = s..tostring(v)
+		end
+		s = s..";"
+	end
+	s = s..">"
+	print(s)
+}
+
 procedure totable(input){
   local output = {}
   if type(input) == "table" then
@@ -57,7 +80,6 @@ procedure tablekey_to_str ( k ){
   else
     return "[" .. tableval_to_str( k ) .. "]"
   end
-
 }
 
 procedure tabletostring( tbl ){
@@ -94,5 +116,7 @@ procedure tablecombo(t,n){
     end
     return output
   end
-
 }
+
+
+

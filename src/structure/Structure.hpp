@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef STRUCTURE_HPP_
 #define STRUCTURE_HPP_
@@ -28,23 +28,28 @@ public:
 	Structure(const std::string& name, const ParseInfo& pi)
 			: AbstractStructure(name, pi) {
 	}
+	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
+			: AbstractStructure(name, v, pi) {
+	}
 	~Structure();
 
 	// Mutators
-	void vocabulary(Vocabulary* v); //!< set the vocabulary of the structure
-	void inter(Predicate* p, PredInter* i); //!< set the interpretation of p to i
-	void inter(Function* f, FuncInter* i); //!< set the interpretation of f to i
+	void changeVocabulary(Vocabulary* v); //!< CHANGE the vocabulary of the structure
+
 	void addStructure(AbstractStructure*);
+
+	void changeInter(Predicate* p, PredInter* i); //!< CHANGES the interpretation of p to i
+	void changeInter(Function* f, FuncInter* i); //!< CHANGES the interpretation of f to i
 
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
+	void sortCheck() const; // Checks whether any sorts are empty and throws a warning for those
 	void functionCheck(); //!< check the correctness of the function tables
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
 	SortTable* inter(Sort* s) const; //!< Return the domain of s.
-
 	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
 	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
 	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.

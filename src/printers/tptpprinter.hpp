@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef TPTPPRINTER_HPP_
 #define TPTPPRINTER_HPP_
@@ -331,11 +331,11 @@ protected:
 			if (_types.find((*it)->sort()) == _types.cend()) {
 				_types.insert((*it)->sort());
 			}
-			if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::natsort())) {
+			if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::NATSORT))) {
 				_nats = true;
-			} else if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::intsort())) {
+			} else if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::INTSORT))) {
 				_ints = true;
-			} else if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::FLOATSORT))) {
 				_floats = true;
 			}
 			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
@@ -374,11 +374,11 @@ protected:
 		if (t->sort() && _typedDomainElements.find(const_cast<DomainElement*>(t->value())) == _typedDomainElements.cend()) {
 			_typedDomainElements.insert(const_cast<DomainElement*>(t->value()));
 			_typedDomainTerms.insert(const_cast<DomainTerm*>(t));
-			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::natsort())) {
+			if (SortUtils::isSubsort(t->sort(), get(STDSORT::NATSORT))) {
 				_nats = true;
-			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::intsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT))) {
 				_ints = true;
-			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), get(STDSORT::FLOATSORT))) {
 				_floats = true;
 			}
 		}
@@ -543,17 +543,10 @@ private:
 			(*_os) << domainTermNameString(*it);
 			(*_os) << ")";
 			endAxiom();
-			if (SortUtils::isSubsort((*it)->sort(), VocabularyUtils::stringsort())) {
+			if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::STRINGSORT))) {
 				strings.push_back((*it));
 			}
 			_count++;
-			// if(_arithmetic && sortName != "int" && sortName != "nat" && sortName != "float" && sortName != "string") {
-			// 	_typeStream << "tff(dtt" << _count << ",type,(";
-			// 	_typeStream << domainTermNameString(*it) << ": ";
-			// 	_typeStream << "$tType";
-			// 	_typeStream << ")).\n";
-			// }
-			// _count ++;
 		}
 		if (_arithmetic) {
 			for (auto it = _types.cbegin(); it != _types.cend(); ++it) {
@@ -613,11 +606,11 @@ private:
 	}
 
 	std::string TFFTypeString(const Sort* s) {
-		if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::natsort())) {
+		if (SortUtils::isSubsort(const_cast<Sort*>(s), get(STDSORT::NATSORT))) {
 			return "$int";
-		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::intsort())) {
+		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), get(STDSORT::INTSORT))) {
 			return "$int";
-		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), VocabularyUtils::floatsort())) {
+		} else if (SortUtils::isSubsort(const_cast<Sort*>(s), get(STDSORT::FLOATSORT))) {
 			return "$float";
 		} else {
 			return "$i";
@@ -627,11 +620,11 @@ private:
 	std::string domainTermNameString(const DomainTerm* t) {
 		std::string str = toString(t->value());
 		if (t->sort()) {
-			if (SortUtils::isSubsort(t->sort(), VocabularyUtils::stringsort())) {
+			if (SortUtils::isSubsort(t->sort(), get(STDSORT::STRINGSORT))) {
 				std::stringstream result;
 				result << "str_" << t->value()->value()._string;
 				return result.str();
-			} else if (SortUtils::isSubsort(t->sort(), VocabularyUtils::floatsort())) {
+			} else if (SortUtils::isSubsort(t->sort(), get(STDSORT::FLOATSORT))) {
 				return str;
 			} else {
 				return "tt_" + str;

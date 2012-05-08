@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef TABLECOSTESTIMATOR_HPP_
 #define TABLECOSTESTIMATOR_HPP_
@@ -64,8 +64,19 @@ public:
 			_result = maxdouble;
 	}
 
-	void visit(const BDDInternalPredTable*) {
-		// TODO
+	void visit(const BDDInternalPredTable* bipt) {
+		auto manager = bipt->manager();
+		auto bdd = bipt->bdd();
+		auto vars = bipt->vars();
+		std::set<const FOBDDVariable*> bddvars;
+		int i = 0;
+		Assert(_pattern.size() == vars.size());
+		for (auto v = vars.cbegin(); v != vars.cend(); ++v, ++i) {
+			if (not _pattern[i]) {
+				bddvars.insert(manager->getVariable(*v));
+			}
+		}
+		_result = manager->estimatedCostAll(bdd, bddvars, { }, bipt->structure());
 	}
 
 	void visit(const FullInternalPredTable*) {
@@ -94,11 +105,22 @@ public:
 		t->table()->internTable()->accept(this);
 	}
 
-	void visit(const UnionInternalPredTable*) {
-		// TODO
+	void visit(const UnionInternalPredTable* uipt) {
+		double result = 0;
+		double maxdouble = maxCost();
+		for (auto it = uipt->inTables().cbegin(); result < maxCost() && it != uipt->inTables().cend(); ++it) {
+			(*it)->accept(this);
+			result = result+_result>maxdouble? maxdouble:result+_result;
+		}
+		for (auto it = uipt->outTables().cbegin(); result < maxCost() && it != uipt->outTables().cend(); ++it) {
+			(*it)->accept(this);
+			result = result+_result>maxdouble? maxdouble:result+_result;
+		}
+		_result = result;
 	}
 
 	void visit(const UnionInternalSortTable*) {
+		throw notyetimplemented("EstimateBDDInference for UnionInternalSortTable");
 		// TODO
 	}
 

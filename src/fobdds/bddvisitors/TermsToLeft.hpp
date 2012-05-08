@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef TERMSTOLEFT_HPP_
 #define TERMSTOLEFT_HPP_
@@ -37,14 +37,13 @@ public:
 			lhs = _manager->getFuncTerm(dynamic_cast<Function*>(atom->symbol()), lhsterms);
 			rhs = atom->args().back();
 		} else { // x op y
-			auto predname = atom->symbol()->name();
-			if (predname == "=/2" || predname == "</2" || predname == ">/2") { // FIXME ugly, create a function ISCOMPARISON
+			if (VocabularyUtils::isComparisonPredicate(atom->symbol())) {
 				lhs = atom->args(0);
 				rhs = atom->args(1);
 			}
 		}
 
-		if (lhs == NULL || rhs == NULL || not SortUtils::isSubsort(rhs->sort(), VocabularyUtils::floatsort())) {
+		if (lhs == NULL || rhs == NULL || not SortUtils::isSubsort(rhs->sort(), get(STDSORT::FLOATSORT))) {
 			return atom;
 		}
 
@@ -60,7 +59,7 @@ public:
 
 		// => got a comparison lhs op rhs, rhs is the only term not on the left (op is =, < or >
 		// so move it by negating and setting the other side to 0
-		auto minus = Vocabulary::std()->func("-/2");
+		auto minus = get(STDFUNC::SUBSTRACTION);
 		minus = minus->disambiguate(std::vector<Sort*>(2, sort), NULL);
 		Assert(minus!=NULL);
 		auto newlhs = _manager->getFuncTerm(minus, { lhs, rhs });

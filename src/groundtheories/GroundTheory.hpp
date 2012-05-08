@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef GROUNDING_GROUNDTHEORY_HPP_
 #define GROUNDING_GROUNDTHEORY_HPP_
@@ -29,8 +29,8 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<PFSymbol*> needfalsedefinedsymbols;
 
 public:
-	GroundTheory(AbstractStructure* str);
-	GroundTheory(Vocabulary* voc, AbstractStructure* str);
+	GroundTheory(AbstractStructure const * const str);
+	GroundTheory(Vocabulary* voc, AbstractStructure const * const str);
 
 	virtual ~GroundTheory() {
 	}
@@ -57,6 +57,7 @@ public:
 	virtual void add(Lit setnr, DefId defnr, bool weighted);
 	virtual void add(Lit head, AggTsBody* body);
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr);
+	virtual void addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	virtual void addOptimization(AggFunction function, SetId setid);
 	virtual void addOptimization(VarId varid);
@@ -78,12 +79,6 @@ protected:
 	void transformForAdd(const litlist& vi, VIType /*vit*/, DefId defnr, bool skipfirst = false);
 
 	CPTerm* foldCPTerm(CPTerm* cpterm);
-
-	/**
-	 *	Adds constraints to the theory that state that each of the functions that occur in the theory is indeed a function.
-	 *	This method should be called before running the SAT solver and after grounding.
-	 */
-	void addFuncConstraints();
 
 	void addFalseDefineds();
 

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef NONCONSTTERMEXTRACTOR_HPP_
 #define NONCONSTTERMEXTRACTOR_HPP_
@@ -15,6 +15,7 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -43,8 +44,11 @@ public:
 	void visit(const FOBDDVariable* vt) {
 		_result = vt;
 	}
-	void visit(const FOBDDDeBruijnIndex* dt) {
-		_result = dt;
+	void visit(const FOBDDDeBruijnIndex* i) {
+		_result = i;
+	}
+	void visit(const FOBDDAggTerm* at) {
+		_result = at;
 	}
 	void visit(const FOBDDFuncTerm* ft) {
 		if (isMultiplication(ft) && sametypeid<FOBDDDomainTerm>(*(ft->args(0)))) {
@@ -53,6 +57,7 @@ public:
 			_result = ft;
 		}
 	}
+
 };
 
 #endif /* NONCONSTTERMEXTRACTOR_HPP_ */

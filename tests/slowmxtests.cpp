@@ -1,11 +1,11 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include <cmath>
@@ -35,7 +35,7 @@ class MXsatTest: public ::testing::TestWithParam<string> {
 
 class SlowMXsatTest: public ::testing::TestWithParam<string> {
 };
-TEST_P(SlowMXsatTest, DoesSlowMX) {
+TEST_P(SlowMXsatTest, DoesSlowMXBasic) {
 	runTests("mxsattestslow.idp", GetParam());
 }
 TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {

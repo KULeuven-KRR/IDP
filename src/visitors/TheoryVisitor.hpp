@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef THEORYVISITOR_HPP
 #define THEORYVISITOR_HPP
@@ -22,6 +22,7 @@ public:
 	}
 
 protected:
+	virtual void traverse(const Theory*);
 	virtual void traverse(const Formula*);
 	virtual void traverse(const Term*);
 	virtual void traverse(const SetExpr*);

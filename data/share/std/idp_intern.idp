@@ -25,7 +25,7 @@ procedure help(namespace) {
  * iterates over all tuples in the given predicate table. */
 procedure tuples(table) {
 	if type(table) == "predicate_table" then
-		return deref_and_increment, iterator(table), createdummytuple()
+		return idpintern.deref_and_increment, iterator(table), createdummytuple()
 	else
 		print("Error: predicate table expected")
 	end
@@ -37,7 +37,7 @@ procedure tuples(table) {
  * iterates over all elements in the given domain d. */
 procedure elements(d) {
 	if type(d) == "domain" then
-		return deref_and_increment, iterator(d), 0
+		return idpintern.deref_and_increment, iterator(d), 0
 	else 
 		print("Error: domain expected")
 	end
@@ -46,11 +46,20 @@ procedure elements(d) {
 /**********************
 	Basic inference
 **********************/
+
 /**
- * Apply model expansion to theory T, structure S.
- * The result is a table of (possibly 3-valued) structures and, if getoptions().trace == true, a trace of the solver 
- */
-procedure expand(theory, structure){
+ * Apply model expansion to theory T, structure S over the same vocabulary.
+ * The result is a table of two-valued structures and, if getoptions().trace == true, a trace of the solver */
+procedure modelexpand(theory, structure) {
+	local solutions, trace = modelexpandpartial(theory,structure)
+	local solutions2 = alltwovaluedextensions(solutions)
+	return solutions2, trace
+}
+
+/**
+ * Apply model expansion to theory T, structure S over the same vocabulary.
+ * The result is a table of (possibly three-valued) structures and, if getoptions().trace == true, a trace of the solver */
+procedure modelexpandpartial(theory, structure) {
 	if type(theory) ~= "theory" then
 		print("Error: theory expected")
 		return
@@ -63,31 +72,25 @@ procedure expand(theory, structure){
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.modelexpand(clonetheo,structure) 
+	return idpintern.modelexpand(clonetheo,structure)
 }
 
 /**
- * Apply model expansion to theory T, structure S.
- * The result is a table of structures and, if getoptions().trace == true, a trace of the solver */
-procedure modelexpand(theory, structure) {
-	local solutions, trace = expand(theory,structure)
-	local solutions2 = alltwovaluedextensions(solutions)
-	return solutions2, trace
-}
-
-procedure modelexpandpartial(theory, structure) {
-	local solutions, trace = expand(theory,structure)
-	if(#solutions==0)then
-		return nil
-	end
-	return solutions[1],trace 
-}
-
+ * Checks satisfiability of the given theory-structure combination over the same vocabulary. 
+ * Returns true if and only if there exists a model extending the structure satisfying the theory.
+ */
 procedure sat(theory, structure) {
-	local solutions, trace = expand(theory,structure)
+	Opts = getoptions()
+	local oldnbmodels = Opts.nbmodels
+	Opts.nbmodels = 1
+	local solutions = modelexpandpartial(theory,structure)
+	Opts.nbmodels = oldnbmodels
 	return #solutions>0
 }
 
+/**
+ *  Returns all models of the theory that extend the given structure and such that the term is minimal.
+ */
 procedure minimize(theory, structure, term){
 	if type(theory) ~= "theory" then
 		print("Error: theory expected")
@@ -101,7 +104,6 @@ procedure minimize(theory, structure, term){
 		print("Error: term expected")
 		return
 	end
-	
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
@@ -113,18 +115,18 @@ procedure minimize(theory, structure, term){
 /**
  * Create the reduced grounding of the given theory and structure */
 procedure ground(theory, structure) {
-	if type(theory) == "theory" then
-		if type(structure) == "structure" then
-			local clonetheo = clone(theory)
-			pushnegations(clonetheo)
-			flatten(clonetheo)
-			return idpintern.ground(clonetheo,structure) 
-		else
-			print("Error: structure expected")
-		end
-	else
+	if type(theory) ~= "theory" then
 		print("Error: theory expected")
+		return
 	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	return idpintern.ground(clonetheo,structure) 
 }
 
 
@@ -132,18 +134,18 @@ procedure ground(theory, structure) {
  * Print the reduced grounding of the given theory and structure
  * MEMORY EFFICIENT: does not store the grounding internally */
 procedure printgrounding(theory, structure) {
-	if type(theory) == "theory" then
-		if type(structure) == "structure" then
-			local clonetheo = clone(theory)
-			pushnegations(clonetheo)
-			flatten(clonetheo)
-			return idpintern.printgrounding(clonetheo,structure) 
-		else
-			print("Error: structure expected")
-		end
-	else
+	if type(theory) ~= "theory" then
 		print("Error: theory expected")
+		return
 	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	return idpintern.printgrounding(clonetheo,structure) 
 }
 
 /**
@@ -154,39 +156,57 @@ procedure idptype(something){
 
 /**
 * Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.
-*This propagation is complete: everything that can be derived from the theory will be derived.*/ 
+* This propagation is complete: everything that can be derived from the theory will be derived. 
+* Returns nil when propagation results in an inconsistent structure.*/ 
 procedure optimalpropagate(theory,structure){
-	if type(theory) == "theory" then
-		if type(structure) == "structure" then
-			local clonetheo = clone(theory)
-			pushnegations(clonetheo)
-			flatten(clonetheo)
-			local struc = idpintern.optimalpropagate(clonetheo,structure) 
-			return struc
-		else
-			print("Error: structure expected")
-		end
-	else
+	if type(theory) ~= "theory" then
 		print("Error: theory expected")
+		return
 	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	return idpintern.optimalpropagate(clonetheo,structure) 
 }
 
 /**
-* Return a structure, made more precise than the input by grounding and unit propagation on the theory.*/
+* Return a structure, made more precise than the input by grounding and unit propagation on the theory. 
+* Returns nil when propagation results in an inconsistent structure.*/
 procedure groundpropagate(theory,structure){
-	if type(theory) == "theory" then
-		if type(structure) == "structure" then
-			local clonetheo = clone(theory)
-			pushnegations(clonetheo)
-			flatten(clonetheo)
-			local struc = idpintern.groundpropagate(clonetheo,structure) 
-			return struc
-		else
-			print("Error: structure expected")
-		end
-	else
+	if type(theory) ~= "theory" then
 		print("Error: theory expected")
+		return
 	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	return idpintern.groundpropagate(clonetheo,structure) 
+}
+
+/**
+* Return a structure, made more precise than the input by doing symbolic propagation on the theory. 
+* Returns nil when propagation results in an inconsistent structure.*/
+procedure propagate(theory,structure){
+	if type(theory) ~= "theory" then
+		print("Error: theory expected")
+		return
+	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
+	local clonetheo = clone(theory)
+	pushnegations(clonetheo)
+	flatten(clonetheo)
+	return idpintern.propagate(clonetheo,structure) 
 }
 
 /*/**

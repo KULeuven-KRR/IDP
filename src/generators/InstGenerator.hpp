@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef INSTGENERATOR_HPP_
 #define INSTGENERATOR_HPP_
@@ -14,6 +14,8 @@
 #include <typeinfo>
 #include <sstream>
 #include <iostream>
+#include "GlobalData.hpp"
+
 
 enum class Pattern {
 	INPUT, OUTPUT
@@ -78,6 +80,7 @@ public:
 	// Can also be used for resets
 	// SETS the instance to the FIRST value if it exists
 	inline void begin(){
+		CHECKTERMINATION
 		end = false;
 		reset();
 		if (not end) {
@@ -95,7 +98,7 @@ public:
 	}
 
 	inline void operator++(){
-		//CHECKTERMINATION
+		CHECKTERMINATION
 		Assert(initdone);
 		Assert(not isAtEnd());
 		next();

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef VARIABLECOLLECTOR_HPP_
 #define VARIABLECOLLECTOR_HPP_
@@ -19,7 +19,9 @@
 
 /**
  * Class to obtain all variables of a bdd.
+ * NOTE: this does not collect indices.
  */
+
 class VariableCollector: public FOBDDVisitor {
 private:
 	std::set<const FOBDDVariable*> _result;

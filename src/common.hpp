@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef COMMON_HPP
 #define COMMON_HPP
@@ -230,7 +230,7 @@ bool compare(NumberType a, CompType comp, NumberType2 b) {
 	return true;
 }
 
-TsType reverseImplication(TsType type);
+TsType invertImplication(TsType type);
 
 bool isPos(SIGN s);
 bool isNeg(SIGN s);
@@ -292,7 +292,7 @@ template<class T2, class T>
 bool sametypeid(const T& object) {
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, CannotCompareTypeIDofPointers);
-	return typeid(object) == typeid(T2);
+	return (dynamic_cast<const T2*>(&object) != NULL);
 }
 
 #endif /* COMMON_HPP */

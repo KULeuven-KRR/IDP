@@ -1,0 +1,50 @@
+/****************************
+   Graph Colouring Problem
+****************************/
+
+vocabulary V{
+	type Colour 
+	type Vtx
+	Edge(Vtx,Vtx)
+	Colouring(Vtx):Colour
+	P
+}
+
+theory T: V{
+	// Neighbours cannot have the same colour.
+	{
+		P <- Edge(n1,n2) & Colouring(n1)=Colouring(n2).
+	}
+	~P.
+}
+
+aspstructure S: V{
+	Colour(red).
+	Colour( blue).
+	Colour(yellow).
+	Vtx(1).
+	Vtx(2).
+	Vtx(3).
+	Vtx(4).
+	-Edge(1,1).
+	Edge(1,2).
+	Edge(1,3).
+	-Edge(1,4).
+	-Edge(2,1).
+	-Edge(2,2).
+	-Edge(2,3).
+	Edge(2,4).
+	-Edge(3,1).
+	-Edge(3,2).
+	-Edge(3,3).
+	-Edge(3,4).
+	-Edge(4,1).
+	-Edge(4,2).
+	-Edge(4,3).
+	-Edge(4,4).
+	Colouring(1)=blue.
+}
+
+procedure getExpectedNbOfModels(){
+	return 24
+}

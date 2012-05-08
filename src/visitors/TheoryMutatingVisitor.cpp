@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "TheoryMutatingVisitor.hpp"
 
@@ -68,6 +68,9 @@ Formula* TheoryMutatingVisitor::visit(AggForm* af) {
 }
 
 Rule* TheoryMutatingVisitor::visit(Rule* r) {
+	auto newhead = r->head()->accept(this);
+	Assert(sametypeid<PredForm>(*newhead));
+	r->head(dynamic_cast<PredForm*>(newhead));
 	r->body(r->body()->accept(this));
 	return r;
 }

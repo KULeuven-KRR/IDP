@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef SUBSTITUTE_HPP_
 #define SUBSTITUTE_HPP_
@@ -60,6 +60,13 @@ public:
 		const FOBDD* nbdd = FOBDDVisitor::change(k->bdd());
 		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() - 1);
 		return _manager->getQuantKernel(k->sort(), nbdd);
+	}
+
+	const FOBDDSetExpr* change (const FOBDDQuantSetExpr* qse){
+		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() + qse->quantvarsorts().size());
+		auto newset = FOBDDVisitor::change(qse);
+		_index = _manager->getDeBruijnIndex(_index->sort(), _index->index() - qse->quantvarsorts().size());
+		return newset;
 	}
 };
 

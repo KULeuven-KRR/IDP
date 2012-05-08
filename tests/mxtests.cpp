@@ -1,14 +1,15 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
 
 #include <cmath>
+#include <cstdio>
 
 #include "gtest/gtest.h"
 #include "external/rungidl.hpp"
@@ -22,11 +23,11 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfMXnbFiles() {
-	vector<string> testdirs {"simplemx/", "numberknown/", "nontotal/"};
+	vector<string> testdirs { "simplemx/", "numberknown/", "nontotal/" };
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 vector<string> generateListOfMXsatFiles() {
-	vector<string> testdirs {"satmx/"};
+	vector<string> testdirs { "satmx/" };
 	return getAllFilesInDirs(getTestDirectory() + "mx/", testdirs);
 }
 
@@ -61,14 +62,6 @@ TEST_P(MXsatTest, DoesMX) {
 	runTests("mxsattest.idp", GetParam());
 }
 
-TEST(MXnbmodelsTest, DoesMX) {
-	string testfile(getTestDirectory() + "mx/nbmodels.idp");
-	cerr << "Testing " << testfile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { testfile }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 #ifdef WITHCP
 TEST_P(MXsatTest, DoesMXWithCP) {
 	runTests("mxsattestwithcp.idp", GetParam());
@@ -83,5 +76,30 @@ TEST(MakeTrueTest, Correct) {
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
 	ASSERT_EQ(Status::SUCCESS, result);
 }
+
+TEST(TrailTest, NonEmptyTrail) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "trailtest.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
+TEST(MXnbmodelsTest, DoesMX) {
+	string testfile(getTestDirectory() + "mx/nbmodels.idp");
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { testfile }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
+/*TEST_P(MXnbTest, WriteOutAndSolve) {
+	string testfile(getTestDirectory() + GetParam());
+	cerr << "Testing " << testfile << "\n";
+	Status result = Status::FAIL;
+
+	auto tempfile = string(tmpnam(NULL));
+	stringstream ss;
+	ss << "main(" << tempfile << ")";
+	ASSERT_NO_THROW( result = test({GetParam(), testfile}, ss.str()););
+}*/
 
 }

@@ -1,0 +1,7 @@
+procedure main(){
+	s = "}#..{}"
+	s2 = '}'
+	if #s==6 then return 1
+	else return 0
+	end
+}

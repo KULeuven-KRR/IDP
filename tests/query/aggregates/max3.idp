@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+query Q : V {
+	{ y[x] :!x[x] :max {z[x] : p(z) : z} = x}
+}
+
+structure S:V{
+	x = {45..50}
+	p = {46;49}
+	
+}
+
+procedure getExpectedSet(){
+  return {}
+}

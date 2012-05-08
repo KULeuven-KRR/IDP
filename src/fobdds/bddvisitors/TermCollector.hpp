@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef TERMEXTRACTOR_HPP_
 #define TERMEXTRACTOR_HPP_
@@ -15,6 +15,7 @@
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddTerm.hpp"
+#include "fobdds/FoBddAggTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
 #include "fobdds/FoBddIndex.hpp"
@@ -41,6 +42,10 @@ public:
 
 	void visit(const FOBDDDomainTerm* domterm) {
 		_terms.push_back(domterm);
+	}
+
+	void visit(const FOBDDAggTerm* aggterm) {
+		_terms.push_back(aggterm);
 	}
 
 	void visit(const FOBDDDeBruijnIndex* dbrterm) {

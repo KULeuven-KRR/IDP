@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
@@ -50,9 +50,6 @@ private:
 	void generatePred(SortTable*); //!< Generate the predicate that corresponds to the sort
 
 protected:
-	Sort();
-	virtual ~Sort();
-
 	void setPred(Predicate* p) {
 		_pred = p;
 	}
@@ -60,6 +57,9 @@ protected:
 public:
 	Sort(const std::string& name, SortTable* inter = NULL); //!< Create an internal sort
 	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = NULL); //!< Create a user-declared sort
+
+	// NOTE: only allowed for testing purposes, a sort deletes itself when it has no more vocabularies.
+	virtual ~Sort();
 
 	// Mutators
 	void addParent(Sort* p); //!< Adds p as a parent. Also adds this as a child of p.
@@ -402,6 +402,7 @@ public:
 	Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding = 0);
 	Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding = 0);
 	Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator*, unsigned int binding);
+	Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding = 0);
 	Function(FuncGenerator*);
 
 	~Function();
@@ -561,6 +562,36 @@ bool isIntSum(const Function* function, const Vocabulary* voc);
 
 class Namespace;
 
+enum class STDSORT{
+	NATSORT, INTSORT, FLOATSORT, CHARSORT, STRINGSORT
+};
+enum class STDPRED{
+	EQ, GT, LT
+};
+enum class STDFUNC{
+	MINUS,
+	ADDITION, SUBSTRACTION, PRODUCT, DIVISION, ABS, MODULO, EXPONENTIAL,
+	MINELEM, MAXELEM, SUCCESSOR, PREDECESSOR
+};
+template<class S>
+std::string getSymbolName(S s);
+template<>
+std::string getSymbolName(STDFUNC s);
+template<>
+std::string getSymbolName(STDSORT s);
+template<>
+std::string getSymbolName(STDPRED s);
+
+template<typename SymbolType>
+bool is(const PFSymbol* symbol, SymbolType type){
+	return symbol->name()==getSymbolName(type);
+}
+
+Sort* get(STDSORT type);
+Function* get(STDFUNC type);
+Predicate* get(STDPRED type);
+Predicate* get(STDPRED type, Sort* sort);
+
 class Vocabulary {
 private:
 	std::string _name; //!< Name of the vocabulary. Default name is the empty string.
@@ -662,20 +693,13 @@ public:
 std::ostream& operator<<(std::ostream&, const Vocabulary&);
 
 namespace VocabularyUtils {
-Sort* natsort(); //!< returns the sort 'nat' of the standard vocabulary
-Sort* intsort(); //!< returns the sort 'int' of the standard vocabulary
-Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
-Sort* floatsort(); //!< returns the sort 'float' of the standard vocabulary
-Sort* stringsort(); //!< returns the sort 'string' of the standard vocabulary
-Sort* charsort(); //!< returns the sort 'char' of the standard vocabulary
+	Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
 
-Predicate* equal(Sort* s); //!< returns the predicate =/2 with sorts (s,s)
-Predicate* lessThan(Sort* s); //!< returns the predicate </2 with sorts (s,s)
-Predicate* greaterThan(Sort* s); //!< returns the predicate >/2 with sorts (s,s)
+	bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
+	bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
+	bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 
-bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
-bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
-bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
+	bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 }
 
 #endif

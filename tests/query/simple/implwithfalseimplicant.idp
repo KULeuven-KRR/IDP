@@ -1,6 +1,5 @@
 vocabulary V {
 	type x
-	p(x)
 	q(x)
 }
 

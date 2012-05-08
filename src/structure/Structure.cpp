@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "Structure.hpp"
 #include "IncludeComponents.hpp"
@@ -29,32 +29,17 @@ Structure::~Structure() {
 }
 
 Structure* Structure::clone() const {
-	/*std::clog << "CLONING";
-	 IDPPrinter<std::ostream> p = IDPPrinter<std::ostream>(std::clog);
-	 p.startTheory();
-	 p.visit(this);
-	 p.endTheory();
-	 pushtab();*/
-	Structure* s = new Structure("", ParseInfo());
-	//std::clog << endl << tabs() << "1";
-	s->vocabulary(_vocabulary);
-	//std::clog << endl << tabs() << "2";
-
-	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
-		//std::clog << endl << tabs() << "3";
+	auto s = new Structure("", ParseInfo());
+	s->changeVocabulary(_vocabulary);
+	for (auto it = _sortinter.begin(); it != _sortinter.end(); ++it) {
 		s->inter(it->first)->internTable(it->second->internTable());
 	}
-	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		//std::clog << endl << tabs() << "4";
-		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
+	for (auto it = _predinter.begin(); it != _predinter.end(); ++it) {
+		s->changeInter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
-	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		//std::clog << endl << tabs() << "5";
-		s->inter(it->first, it->second->clone(s->inter(it->first)->universe()));
+	for (auto it = _funcinter.begin(); it != _funcinter.end(); ++it) {
+		s->changeInter(it->first, it->second->clone(s->inter(it->first)->universe()));
 	}
-	/*std::clog << endl << tabs() << "6";
-	 poptab();
-	 std::clog << endl << "DONE CLONING" << endl;*/
 	return s;
 }
 
@@ -63,31 +48,31 @@ Structure* Structure::clone() const {
  * All tables of symbols that do not occur in the new vocabulary are deleted.
  * Empty tables are created for symbols that occur in the new vocabulary, but did not occur in the old one.
  */
-void Structure::vocabulary(Vocabulary* v) {
+void Structure::changeVocabulary(Vocabulary* v) {
 	_vocabulary = v;
 	// Delete tables for symbols that do not occur anymore
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
-		map<Sort*, SortTable*>::iterator jt = it;
-		++it;
-		if (not v->contains(jt->first)) {
-			delete (jt->second);
-			_sortinter.erase(jt);
+		if (not v->contains(it->first)) {
+			delete (it->second);
+			_sortinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
+		}else{
+			++it;
 		}
 	}
 	for (auto it = _predinter.begin(); it != _predinter.end();) {
-		map<Predicate*, PredInter*>::iterator jt = it;
-		++it;
-		if (not v->contains(jt->first)) {
-			delete (jt->second);
-			_predinter.erase(jt);
+		if (not v->contains(it->first)) {
+			delete (it->second);
+			_predinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
+		}else{
+			++it;
 		}
 	}
 	for (auto it = _funcinter.begin(); it != _funcinter.end();) {
-		map<Function*, FuncInter*>::iterator jt = it;
-		++it;
-		if (not v->contains(jt->first)) {
-			delete (jt->second);
-			_funcinter.erase(jt);
+		if (not v->contains(it->first)) {
+			delete (it->second);
+			_funcinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
+		}else{
+			++it;
 		}
 	}
 	// Create empty tables for new symbols
@@ -95,16 +80,16 @@ void Structure::vocabulary(Vocabulary* v) {
 		auto sort = it->second;
 		if (not sort->builtin()) {
 			if (_sortinter.find(sort) == _sortinter.cend()) {
-				SortTable* st = new SortTable(new EnumeratedInternalSortTable());
+				auto st = new SortTable(new EnumeratedInternalSortTable());
 				_sortinter[sort] = st;
 				vector<SortTable*> univ(1, st);
-				PredTable* pt = new PredTable(new FullInternalPredTable(), Universe(univ));
+				auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
 				_predinter[sort->pred()] = new PredInter(pt, true);
 			}
 		}
 	}
 	for (auto it = _vocabulary->firstPred(); it != _vocabulary->lastPred(); ++it) {
-		set<Predicate*> sp = it->second->nonbuiltins();
+		auto sp = it->second->nonbuiltins();
 		for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 			if (_predinter.find(*jt) == _predinter.cend()) {
 				vector<SortTable*> univ;
@@ -116,7 +101,7 @@ void Structure::vocabulary(Vocabulary* v) {
 		}
 	}
 	for (auto it = _vocabulary->firstFunc(); it != _vocabulary->lastFunc(); ++it) {
-		set<Function*> sf = it->second->nonbuiltins();
+		auto sf = it->second->nonbuiltins();
 		for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
 			if (_funcinter.find(*jt) == _funcinter.cend()) {
 				vector<SortTable*> univ;
@@ -129,12 +114,14 @@ void Structure::vocabulary(Vocabulary* v) {
 	}
 }
 
-void Structure::inter(Predicate* p, PredInter* i) {
+void Structure::changeInter(Predicate* p, PredInter* i) {
+	Assert(_predinter[p]!=NULL);
 	delete (_predinter[p]);
 	_predinter[p] = i;
 }
 
-void Structure::inter(Function* f, FuncInter* i) {
+void Structure::changeInter(Function* f, FuncInter* i) {
+	Assert(_funcinter[f]!=NULL);
 	delete (_funcinter[f]);
 	_funcinter[f] = i;
 }
@@ -419,6 +406,14 @@ void Structure::addStructure(AbstractStructure*) {
 	throw notyetimplemented("Add a structure to another one.");
 }
 
+void Structure::sortCheck() const {
+	for(auto i=_sortinter.cbegin(); i!=_sortinter.cend(); ++i) {
+		if((*i).second->empty()){
+			Warning::emptySort(i->first->name());
+		}
+	}
+}
+
 void Structure::functionCheck() {
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		Function* f = it->first;
@@ -503,7 +498,9 @@ PredInter* Structure::inter(Predicate* p) const {
 	if (p->type() == ST_NONE) {
 		auto it = _predinter.find(p);
 		if (it == _predinter.cend()) {
-			throw IdpException("The structure does not contain the predicate ");
+			stringstream ss;
+			ss <<"The structure does not contain the predicate " <<p->name();
+			throw IdpException(ss.str());
 		}
 		return it->second;
 	}

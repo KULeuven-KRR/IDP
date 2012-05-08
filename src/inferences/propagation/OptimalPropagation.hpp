@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef INFERENCES_OPTIMALPROPAGATE_HPP_
 #define INFERENCES_OPTIMALPROPAGATE_HPP_
@@ -17,6 +17,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/SolverConnection.hpp"
 #include "PropagatorFactory.hpp"
 
 /**
@@ -31,41 +32,32 @@ public:
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
 
-		//MinisatID solveroptions
-		MinisatID::SolverOption modes;
-		modes.nbmodels = 0;
-		modes.verbosity = 0;
-		//modes.remap = false;
-		MinisatID::WrappedPCSolver solver(modes);
+		auto data = SolverConnection::createsolver(0);
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure}, &solver);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure}, data);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 
-		//MinisatID modelexpandoptions
-		MinisatID::ModelExpandOptions opts;
-		opts.nbmodelstofind = 0;
-		opts.printmodels = MinisatID::PRINT_NONE;
-		opts.savemodels = MinisatID::SAVE_ALL;
-		opts.inference = MinisatID::MODELEXPAND;
-		MinisatID::Solution* abstractsolutions = new MinisatID::Solution(opts);
-		solver.solve(abstractsolutions);
+		auto mx = SolverConnection::initsolution(data, 0);
+		mx->execute();
+
+		auto abstractsolutions = mx->getSolutions();
 
 		std::set<int> intersection;
-		if (abstractsolutions->getModels().empty()) {
+		if (abstractsolutions.empty()) {
 			return std::vector<AbstractStructure*> { };
 		}
 		// Take the intersection of all models
-		auto firstmodel = *(abstractsolutions->getModels().cbegin());
+		auto firstmodel = *(abstractsolutions.cbegin());
 		for (auto it = firstmodel->literalinterpretations.cbegin(); it != firstmodel->literalinterpretations.cend(); ++it) {
-			intersection.insert(it->getValue());
+			intersection.insert(getIntLit(*it));
 		}
-		for (auto currmodel = (abstractsolutions->getModels().cbegin()); currmodel != abstractsolutions->getModels().cend(); ++currmodel) {
+		for (auto currmodel = (abstractsolutions.cbegin()); currmodel != abstractsolutions.cend(); ++currmodel) {
 			for (auto it = (*currmodel)->literalinterpretations.cbegin(); it != (*currmodel)->literalinterpretations.cend(); ++it) {
-				if (intersection.find(it->getValue()) == intersection.cend()) {
-					intersection.erase((-1) * it->getValue());
+				if (intersection.find(getIntLit(*it)) == intersection.cend()) {
+					intersection.erase(-1*getIntLit(*it));
 				}
 			}
 		}
@@ -101,6 +93,8 @@ public:
 		delete (grounder);
 		grounding->recursiveDelete();
 		delete (symstructure);
+		delete(mx);
+		delete(data);
 
 		if(not result->isConsistent()){
 			return std::vector<AbstractStructure*> { };

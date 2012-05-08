@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "symmetry.hpp"
 #include "IncludeComponents.hpp"
@@ -709,7 +709,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const DomainElement* e) {
 
 void TheorySymmetryAnalyzer::visit(const PredForm* f) {
 	if (f->symbol()->builtin() || f->symbol()->overloaded()) {
-		if (f->symbol()->name() != "=/2") {
+		if (not is(f->symbol(), STDPRED::EQ)) {
 			for (unsigned int it = 0; it < f->args().size(); it++) {
 				markAsUnfitForSymmetry(f->subterms().at(it)->sort());
 			}
@@ -723,14 +723,14 @@ void TheorySymmetryAnalyzer::visit(const PredForm* f) {
 
 void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 	if (t->function()->builtin() || t->function()->overloaded()) {
-		if (t->function()->name() == "MIN/0") {
-			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if (not st->approxEmpty()) {
+		if (is(t->function(), STDFUNC::MINELEM)) {
+			auto st = getStructure()->inter(t->function()->outsort());
+			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->first());
 			}
-		} else if (t->function()->name() == "MAX/0") {
-			SortTable* st = getStructure()->inter(t->function()->outsort());
-			if (not st->approxEmpty()) {
+		} else if (is(t->function(), STDFUNC::MAXELEM)) {
+			auto st = getStructure()->inter(t->function()->outsort());
+			if (not st->empty()) {
 				markAsUnfitForSymmetry(st->last());
 			}
 		} else {

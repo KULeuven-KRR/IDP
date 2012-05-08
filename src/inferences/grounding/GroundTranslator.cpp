@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
@@ -158,20 +158,26 @@ void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder,
 
 Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype) {
 	if (comp == CompType::EQ) {
-		litlist cl(2);
-		cl[0] = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
-		cl[1] = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
-		return translate(cl, true, tstype);
+		auto l = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
+		auto l2 = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
+		return translate({l, l2}, true, tstype);
 	} else if (comp == CompType::NEQ) {
-		litlist cl(2);
-		cl[0] = translate(bound, CompType::GT, aggtype, setnr, tstype);
-		cl[1] = translate(bound, CompType::LT, aggtype, setnr, tstype);
-		return translate(cl, false, tstype);
+		auto l = translate(bound, CompType::GT, aggtype, setnr, tstype);
+		auto l2 = translate(bound, CompType::LT, aggtype, setnr, tstype);
+		return translate({l, l2}, false, tstype);
 	} else {
-		Lit head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		AggTsBody* tsbody = new AggTsBody(tstype, bound, (comp == CompType::LEQ || comp == CompType::GT), aggtype, setnr);
+		auto head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+		if(comp == CompType::LT){
+			bound += 1;
+			comp = CompType::LEQ;
+		}else if(comp == CompType::GT){
+			bound -= 1;
+			comp = CompType::GEQ;
+		}
+		MAssert(comp==CompType::LEQ || comp==CompType::GEQ);
+		auto tsbody = new AggTsBody(tstype, bound, comp == CompType::LEQ, aggtype, setnr);
 		atom2TsBody[head] = tspair(head, tsbody);
-		return (comp == CompType::LT || comp == CompType::GT) ? -head : head;
+		return head;
 	}
 }
 

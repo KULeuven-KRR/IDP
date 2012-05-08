@@ -1,23 +1,19 @@
 vocabulary V{
-A
+	A
 }
 
 theory T:V{
-false | A.
+	false | A.
 }
 
 structure S:V{
 
 }
 
-
-
-	
 procedure weakassertions(newS){
 	return
 		(assertNotEmpty(newS[V.A].ct,"A<ct>") 
 		and assertEmpty(newS[V.A].cf,"A<cf>") )
-	
 }
 
 procedure strongassertions(newS){

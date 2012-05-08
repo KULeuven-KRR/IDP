@@ -1,0 +1,28 @@
+#include <mx>
+
+// voc V, theory T, minimization term t, structure S
+// getExpectedAModel() if at least one model exists
+// additional theory T2 (should get better support in future): T2 = { t=optimumvalue. }
+
+procedure main() {
+	stdoptions.nbmodels = 0
+	stdoptions.timeout = 20
+	stdoptions.groundverbosity = 0
+	stdoptions.satverbosity = 0
+	
+	sols = minimize(T, S, t)
+	
+	if(getExpectedNbOfModels() ~= #sols) then
+		io.stderr:write("Found "..#sols..", expected "..getExpectedNbOfModels().." models.\n")
+		return 0
+	end
+	
+	for i,model in pairs(sols) do
+		if(#modelexpand(T2, model)==0) then
+			io.stderr:write("Found an invalid optimum model.\n")
+			return 0
+		end
+	end
+	
+	return 1
+}

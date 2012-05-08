@@ -1,26 +1,26 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include <cmath>
 
 #include "gtest/gtest.h"
 #include "external/rungidl.hpp"
-#include "generators/ComparisonGenerator.hpp"
-#include "generators/SortInstGenerator.hpp"
-#include "generators/InverseInstGenerator.hpp"
-#include "generators/LookupGenerator.hpp"
 #include "IncludeComponents.hpp"
+#include "generators/ComparisonGenerator.hpp"
+#include "generators/SortGenAndChecker.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
+#include "generators/TableCheckerAndGenerators.hpp"
+
 
 using namespace std;
 
@@ -47,7 +47,7 @@ TEST(BddGenerator, PredForm){
 		vocabulary->add(sort);
 		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
 
 		//P<ct> = {-2,1}
@@ -93,12 +93,12 @@ TEST(BddGenerator, PredForm){
 		auto sortterm = new VarTerm(variable, TermParseInfo()); //var x
 		auto vocabulary = new Vocabulary("V");
 		vocabulary->add(sort);
-		auto less = VocabularyUtils::lessThan(sort);
+		auto less = get(STDPRED::LT, sort);
 		auto zero = createDomElem(0);
 		auto zeroterm = new DomainTerm(sort, zero, TermParseInfo());
 		Formula* formula = new PredForm(SIGN::POS, less, {sortterm, zeroterm}, FormulaParseInfo()); //x<0
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 
 		FOBDDManager manager;
 		FOBDDFactory bddfactory(&manager, NULL);
@@ -170,7 +170,7 @@ TEST(BddGenerator, PredForm){
 		vocabulary->add(sort);
 		vocabulary->add(symbol);
 		auto structure = new Structure("S", ParseInfo());
-		structure->vocabulary(vocabulary);
+		structure->changeVocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
 		predinter->makeTrue({createDomElem(1)});
 		predinter->makeFalse({createDomElem(2)});

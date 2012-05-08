@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef PROPAGATE_HPP_
 #define PROPAGATE_HPP_
@@ -23,14 +23,19 @@
 class PropagateInference: public TheoryStructureBase {
 public:
 	PropagateInference()
-			: TheoryStructureBase("propagate", "Return a structure, made more precise than the input by doing symbolic propagation on the theory.") {
+			: TheoryStructureBase(
+					"propagate",
+					"Return a structure, made more precise than the input by doing symbolic propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
-
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		SymbolicPropagation propagator;
-		return InternalArgument(propagator.propagate(get<0>(args), get<1>(args)));
+		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		if (sols.size() == 0) {
+			return InternalArgument();
+		}Assert(sols.size()==1 && sols[0]->isConsistent());
+		return InternalArgument(sols[0]);
 	}
 };
 
@@ -40,7 +45,9 @@ public:
 class GroundPropagateInference: public TheoryStructureBase {
 public:
 	GroundPropagateInference()
-			: TheoryStructureBase("groundpropagate", "Return a structure, made more precise than the input by grounding and unit propagation on the theory.") {
+			: TheoryStructureBase(
+					"groundpropagate",
+					"Return a structure, made more precise than the input by grounding and unit propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
 
 	}
@@ -64,7 +71,7 @@ public:
 	OptimalPropagateInference()
 			: TheoryStructureBase(
 					"optimalpropagate",
-					"Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived.") {
+					"Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
 
 	}

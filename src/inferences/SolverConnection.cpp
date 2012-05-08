@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "SolverConnection.hpp"
 
@@ -14,13 +14,104 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
+#include <cmath>
+
 using namespace std;
 
 namespace SolverConnection {
 
+MinisatID::AggType convert(AggFunction agg) {
+	MinisatID::AggType type = MinisatID::AggType::CARD;
+	switch (agg) {
+	case AggFunction::CARD:
+		type = MinisatID::AggType::CARD;
+		break;
+	case AggFunction::SUM:
+		type = MinisatID::AggType::SUM;
+		break;
+	case AggFunction::PROD:
+		type = MinisatID::AggType::PROD;
+		break;
+	case AggFunction::MIN:
+		type = MinisatID::AggType::MIN;
+		break;
+	case AggFunction::MAX:
+		type = MinisatID::AggType::MAX;
+		break;
+	}
+	return type;
+}
+MinisatID::EqType convert(CompType rel) {
+	switch (rel) {
+	case CompType::EQ:
+		return MinisatID::EqType::EQ;
+	case CompType::NEQ:
+		return MinisatID::EqType::NEQ;
+	case CompType::GEQ:
+		return MinisatID::EqType::GEQ;
+	case CompType::LEQ:
+		return MinisatID::EqType::LEQ;
+	case CompType::GT:
+		return MinisatID::EqType::G;
+	case CompType::LT:
+		return MinisatID::EqType::L;
+	}
+}
+
+MinisatID::Atom createAtom(const int lit) {
+	return MinisatID::Atom(abs(lit));
+}
+
+MinisatID::Literal createLiteral(const int lit) {
+	return MinisatID::mkLit(abs(lit), lit < 0);
+}
+
+MinisatID::literallist createList(const litlist& origlist) {
+	MinisatID::literallist list;
+	for (auto i = origlist.cbegin(); i < origlist.cend(); i++) {
+		list.push_back(createLiteral(*i));
+	}
+	return list;
+}
+
+
+MinisatID::Weight createWeight(double weight) {
+	double test;
+	if (modf(weight, &test) != 0) {
+		throw notyetimplemented("MinisatID does not support doubles yet.");
+	}
+	return int(weight);
+}
+
 typedef cb::Callback1<std::string, int> callbackprinting;
 
-MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
+class CallBackTranslator: public PCPrinter{
+private:
+	callbackprinting cb;
+public:
+	CallBackTranslator(callbackprinting cb): cb(cb){
+
+	}
+
+	virtual bool hasTranslation(const MinisatID::Lit&) const {
+		return true;
+	}
+
+	virtual std::string toString(const MinisatID::Lit& lit) const{
+		std::stringstream ss;
+		auto l = var(lit);
+		if(lit.hasSign()){
+			l = -l;
+		}
+		//ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
+		ss <<cb(l);
+		return ss.str();
+	}
+};
+
+
+
+PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
@@ -28,38 +119,36 @@ MinisatID::WrappedPCSolver* createsolver(int nbmodels) {
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
-	modes.polarity = MinisatID::POL_STORED;
+	modes.polarity = MinisatID::Polarity::STORED;
 	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)){
-		modes.polarity = MinisatID::POL_RAND;
+		modes.polarity = MinisatID::Polarity::RAND;
 	}
 
 	if (options->getValue(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
 	}
 
-	startInference(); // NOTE: have to tell the solver to reset its instance
-	CHECKTERMINATION
-	return new MinisatID::WrappedPCSolver(modes);
+	return new PCSolver(modes);
 }
 
-void setTranslator(MinisatID::WrappedPCSolver* solver, GroundTranslator* translator){
-	callbackprinting cbprint(translator, &GroundTranslator::print);
-	solver->setTranslator(cbprint);
+void setTranslator(PCSolver* solver, GroundTranslator* translator){
+	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::print));
+	solver->setTranslator(trans);
+	// FIXME trans is not deleted anywhere
 }
 
-MinisatID::Solution* initsolution() {
-	auto options = GlobalData::instance()->getOptions();
-	MinisatID::ModelExpandOptions opts;
-	opts.nbmodelstofind = options->getValue(IntType::NBMODELS);
-	opts.printmodels = MinisatID::PRINT_NONE;
-	opts.savemodels = MinisatID::SAVE_ALL;
-	opts.inference = MinisatID::MODELEXPAND;
-	return new MinisatID::Solution(opts);
+PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
+	MinisatID::ModelExpandOptions opts(nbmodels, MinisatID::Models::NONE, MinisatID::Models::ALL);
+	return new PCModelExpand(solver, opts, {});
+}
+
+PCUnitPropagate* initpropsolution(PCSolver* solver) {
+	return new PCUnitPropagate(solver, {});
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
 	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
-		int atomnr = literal->getAtom().getValue();
+		int atomnr = var(*literal);
 
 		if (translator->isInputAtom(atomnr)) {
 			PFSymbol* symbol = translator->getSymbol(atomnr);

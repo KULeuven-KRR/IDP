@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
@@ -79,13 +79,6 @@ void Sort::generatePred(SortTable* inter) {
 	} else {
 		_pred = new Predicate(predname, predsorts, _pi);
 	}
-}
-
-/**
- * Only to be used from unionsort!
- */
-Sort::Sort()
-		: _name(""), _pi(), _interpretation(NULL) {
 }
 
 /**
@@ -207,7 +200,7 @@ ostream& Sort::put(ostream& output) const {
 }
 
 UnionSort::UnionSort(const std::vector<Sort*>& sorts)
-		: sorts(sorts) {
+		: Sort("union"), sorts(sorts) {
 	stringstream ss;
 	for (auto i = sorts.cbegin(); i < sorts.cend(); ++i) {
 		ss << (*i)->name() << "-";
@@ -844,6 +837,12 @@ Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* 
 	_sorts.push_back(os);
 }
 
+Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
+		: PFSymbol("", is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
+	_sorts.push_back(os);
+	_name = "_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size()+1);
+}
+
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding)
 		: PFSymbol(name, sorts, pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL),
 			_binding(binding) {
@@ -1171,9 +1170,9 @@ bool IntFloatFuncGenerator::contains(const Function* function) const {
 Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	Assert(sorts.size() == 2 || sorts.size() == 3);
 	if (sorts[0] == sorts[1] && (sorts.size() == 2 || sorts[1] == sorts[2])) {
-		if (sorts[0] == VocabularyUtils::intsort()) {
+		if (sorts[0] == get(STDSORT::INTSORT)) {
 			return _intfunction;
-		} else if (sorts[0] == VocabularyUtils::floatsort()) {
+		} else if (sorts[0] == get(STDSORT::FLOATSORT)) {
 			return _floatfunction;
 		} else {
 			return NULL;
@@ -1191,8 +1190,8 @@ Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
 Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
 	size_t zerocounter = 0;
 	bool isfloatbutnotint = false;
-	auto intsort = VocabularyUtils::intsort();
-	auto floatsort = VocabularyUtils::floatsort();
+	auto intsort = get(STDSORT::INTSORT);
+	auto floatsort = get(STDSORT::FLOATSORT);
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
 		if (*it == NULL) {
 			if (++zerocounter > 1) {
@@ -1214,10 +1213,7 @@ Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const 
  * \brief Returns sorts int and float
  */
 set<Sort*> IntFloatFuncGenerator::allsorts() const {
-	set<Sort*> ss;
-	ss.insert(VocabularyUtils::intsort());
-	ss.insert(VocabularyUtils::floatsort());
-	return ss;
+	return {get(STDSORT::INTSORT), get(STDSORT::FLOATSORT)};
 }
 
 void IntFloatFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
@@ -1360,14 +1356,14 @@ Function* overload(const set<Function*>& sf) {
 }
 
 bool isIntFunc(const Function* func, const Vocabulary* voc) {
-	return SortUtils::isSubsort(func->outsort(), VocabularyUtils::intsort(), voc);
+	return SortUtils::isSubsort(func->outsort(), get(STDSORT::INTSORT), voc);
 }
 
 bool isIntSum(const Function* function, const Vocabulary* voc) {
-	if (function->name() == "+/2" || function->name() == "-/2") {
+	if (is(function, STDFUNC::ADDITION) || is(function, STDFUNC::SUBSTRACTION)) {
 		bool allintsorts = isIntFunc(function, voc);
 		for (auto it = function->insorts().cbegin(); it != function->insorts().cend(); ++it) {
-			allintsorts *= SortUtils::isSubsort(*it, VocabularyUtils::intsort(), voc);
+			allintsorts *= SortUtils::isSubsort(*it, get(STDSORT::INTSORT), voc);
 		}
 		return allintsorts;
 	}
@@ -1482,6 +1478,83 @@ void Vocabulary::add(Vocabulary* v) {
 
 Vocabulary* Vocabulary::_std = 0;
 
+template<>
+std::string getSymbolName(STDFUNC s){
+	switch(s){
+	case STDFUNC::MINUS:
+		return "-/1";
+	case STDFUNC::ADDITION:
+		return "+/2";
+	case STDFUNC::SUBSTRACTION:
+		return "-/2";
+	case STDFUNC::PRODUCT:
+		return "*/2";
+	case STDFUNC::DIVISION:
+		return "//2";
+	case STDFUNC::ABS:
+		return "abs/1";
+	case STDFUNC::MODULO:
+		return "%/2";
+	case STDFUNC::EXPONENTIAL:
+		return "^/2";
+	case STDFUNC::MINELEM:
+		return "MIN/0";
+	case STDFUNC::MAXELEM:
+		return "MAX/0";
+	case STDFUNC::SUCCESSOR:
+		return "SUCC/1";
+	case STDFUNC::PREDECESSOR:
+		return "PRED/1";
+	}
+	Assert(false);
+	return "";
+}
+
+template<>
+std::string getSymbolName(STDSORT s){
+	switch(s){
+	case STDSORT::NATSORT:
+		return "nat";
+	case STDSORT::INTSORT:
+		return "int";
+	case STDSORT::FLOATSORT:
+		return "float";
+	case STDSORT::CHARSORT:
+		return "char";
+	case STDSORT::STRINGSORT:
+		return "string";
+	}
+	Assert(false);
+	return "";
+}
+
+template<>
+std::string getSymbolName(STDPRED s){
+	switch(s){
+	case STDPRED::EQ:
+		return "=/2";
+	case STDPRED::GT:
+		return ">/2";
+	case STDPRED::LT:
+		return "</2";
+	}
+	Assert(false);
+	return "";
+}
+
+Predicate* get(STDPRED type){
+	return Vocabulary::std()->pred(getSymbolName(type));
+}
+Predicate* get(STDPRED type, Sort* sort){
+	return Vocabulary::std()->pred(getSymbolName(type))->resolve({sort,sort});
+}
+Function* get(STDFUNC type){
+	return Vocabulary::std()->func(getSymbolName(type));
+}
+Sort* get(STDSORT type){
+	return Vocabulary::std()->sort(getSymbolName(type));
+}
+
 Vocabulary* Vocabulary::std() {
 	if (not _std) {
 		_std = new Vocabulary("std");
@@ -1494,11 +1567,11 @@ Vocabulary* Vocabulary::std() {
 		SortTable* allchars = new SortTable(new AllChars());
 
 		// Create sorts
-		Sort* natsort = new Sort("nat", allnats);
-		Sort* intsort = new Sort("int", allints);
-		Sort* floatsort = new Sort("float", allfloats);
-		Sort* charsort = new Sort("char", allchars);
-		Sort* stringsort = new Sort("string", allstrings);
+		Sort* natsort = new Sort(getSymbolName(STDSORT::NATSORT), allnats);
+		Sort* intsort = new Sort(getSymbolName(STDSORT::INTSORT), allints);
+		Sort* floatsort = new Sort(getSymbolName(STDSORT::FLOATSORT), allfloats);
+		Sort* charsort = new Sort(getSymbolName(STDSORT::CHARSORT), allchars);
+		Sort* stringsort = new Sort(getSymbolName(STDSORT::STRINGSORT), allstrings);
 
 		// Add the sorts
 		_std->add(natsort);
@@ -1513,14 +1586,14 @@ Vocabulary* Vocabulary::std() {
 		charsort->addParent(stringsort);
 
 		// Create predicate interpretations
-		EqualInterGeneratorGenerator* eqgen = new EqualInterGeneratorGenerator();
-		StrLessThanInterGeneratorGenerator* ltgen = new StrLessThanInterGeneratorGenerator();
-		StrGreaterThanInterGeneratorGenerator* gtgen = new StrGreaterThanInterGeneratorGenerator();
+		auto eqgen = new EqualInterGeneratorGenerator();
+		auto ltgen = new StrLessThanInterGeneratorGenerator();
+		auto gtgen = new StrGreaterThanInterGeneratorGenerator();
 
 		// Create predicate overloaders
-		ComparisonPredGenerator* eqpgen = new ComparisonPredGenerator("=/2", eqgen);
-		ComparisonPredGenerator* ltpgen = new ComparisonPredGenerator("</2", ltgen);
-		ComparisonPredGenerator* gtpgen = new ComparisonPredGenerator(">/2", gtgen);
+		auto eqpgen = new ComparisonPredGenerator(getSymbolName(STDPRED::EQ), eqgen);
+		auto ltpgen = new ComparisonPredGenerator(getSymbolName(STDPRED::LT), ltgen);
+		auto gtpgen = new ComparisonPredGenerator(getSymbolName(STDPRED::GT), gtgen);
 
 		// Add predicates
 		_std->add(new Predicate(eqpgen));
@@ -1533,65 +1606,65 @@ Vocabulary* Vocabulary::std() {
 		Universe threeint(vector<SortTable*>(3, allints));
 		Universe threefloat(vector<SortTable*>(3, allfloats));
 
-		SingleFuncInterGenerator* modgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ModInternalFuncTable(), threeint)));
-		SingleFuncInterGenerator* expgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ExpInternalFuncTable(), threefloat)));
+		auto modgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ModInternalFuncTable(), threeint)));
+		auto expgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new ExpInternalFuncTable(), threefloat)));
 
 		vector<Sort*> twoints(2, intsort);
 		vector<Sort*> twofloats(2, floatsort);
 		vector<Sort*> threeints(3, intsort);
 		vector<Sort*> threefloats(3, floatsort);
 
-		SingleFuncInterGenerator* intplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false), threefloat)));
-		Function* intplus = new Function("+/2", threeints, intplusgen, 200);
-		Function* floatplus = new Function("+/2", threefloats, floatplusgen, 200);
+		auto intplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(true), threeint)));
+		auto floatplusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new PlusInternalFuncTable(false), threefloat)));
+		auto intplus = new Function(getSymbolName(STDFUNC::ADDITION), threeints, intplusgen, 200);
+		auto floatplus = new Function(getSymbolName(STDFUNC::ADDITION), threefloats, floatplusgen, 200);
 
-		SingleFuncInterGenerator* intminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false), threefloat)));
-		Function* intminus = new Function("-/2", threeints, intminusgen, 200);
-		Function* floatminus = new Function("-/2", threefloats, floatminusgen, 200);
+		auto intminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(true), threeint)));
+		auto floatminusgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new MinusInternalFuncTable(false), threefloat)));
+		auto intminus = new Function(getSymbolName(STDFUNC::SUBSTRACTION), threeints, intminusgen, 200);
+		auto floatminus = new Function(getSymbolName(STDFUNC::SUBSTRACTION), threefloats, floatminusgen, 200);
 
-		SingleFuncInterGenerator* inttimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floattimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false), threefloat)));
-		Function* inttimes = new Function("*/2", threeints, inttimesgen, 300);
-		Function* floattimes = new Function("*/2", threefloats, floattimesgen, 300);
+		auto inttimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(true), threeint)));
+		auto floattimesgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new TimesInternalFuncTable(false), threefloat)));
+		auto inttimes = new Function(getSymbolName(STDFUNC::PRODUCT), threeints, inttimesgen, 300);
+		auto floattimes = new Function(getSymbolName(STDFUNC::PRODUCT), threefloats, floattimesgen, 300);
 
 		//SingleFuncInterGenerator* intdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(true), threeint)));
-		SingleFuncInterGenerator* floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
+		auto floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
 		//Function* intdiv = new Function("//2", threeints, intdivgen, 300);
-		Function* floatdiv = new Function("//2", threefloats, floatdivgen, 300);
+		auto floatdiv = new Function(getSymbolName(STDFUNC::DIVISION), threefloats, floatdivgen, 300);
 
-		SingleFuncInterGenerator* intabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true), twoint)));
-		SingleFuncInterGenerator* floatabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false), twofloat)));
-		Function* intabs = new Function("abs/1", twoints, intabsgen, 0);
-		Function* floatabs = new Function("abs/1", twofloats, floatabsgen, 0);
+		auto intabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true), twoint)));
+		auto floatabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false), twofloat)));
+		auto intabs = new Function(getSymbolName(STDFUNC::ABS), twoints, intabsgen, 0);
+		auto floatabs = new Function(getSymbolName(STDFUNC::ABS), twofloats, floatabsgen, 0);
 
-		SingleFuncInterGenerator* intumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true), twoint)));
-		SingleFuncInterGenerator* floatumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false), twofloat)));
-		Function* intumin = new Function("-/1", twoints, intumingen, 500);
-		Function* floatumin = new Function("-/1", twofloats, floatumingen, 500);
+		auto intumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true), twoint)));
+		auto floatumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false), twofloat)));
+		auto intumin = new Function(getSymbolName(STDFUNC::MINUS), twoints, intumingen, 500);
+		auto floatumin = new Function(getSymbolName(STDFUNC::MINUS), twofloats, floatumingen, 500);
 
-		MinInterGeneratorGenerator* minigengen = new MinInterGeneratorGenerator();
-		MaxInterGeneratorGenerator* maxigengen = new MaxInterGeneratorGenerator();
-		SuccInterGeneratorGenerator* succigengen = new SuccInterGeneratorGenerator();
-		InvSuccInterGeneratorGenerator* predigengen = new InvSuccInterGeneratorGenerator();
+		auto minigengen = new MinInterGeneratorGenerator();
+		auto maxigengen = new MaxInterGeneratorGenerator();
+		auto succigengen = new SuccInterGeneratorGenerator();
+		auto predigengen = new InvSuccInterGeneratorGenerator();
 
 		// Create function overloaders
-		IntFloatFuncGenerator* plusgen = new IntFloatFuncGenerator(intplus, floatplus);
-		IntFloatFuncGenerator* minusgen = new IntFloatFuncGenerator(intminus, floatminus);
-		IntFloatFuncGenerator* timesgen = new IntFloatFuncGenerator(inttimes, floattimes);
+		auto plusgen = new IntFloatFuncGenerator(intplus, floatplus);
+		auto minusgen = new IntFloatFuncGenerator(intminus, floatminus);
+		auto timesgen = new IntFloatFuncGenerator(inttimes, floattimes);
 		//IntFloatFuncGenerator* divgen = new IntFloatFuncGenerator(intdiv, floatdiv);
-		IntFloatFuncGenerator* absgen = new IntFloatFuncGenerator(intabs, floatabs);
-		IntFloatFuncGenerator* umingen = new IntFloatFuncGenerator(intumin, floatumin);
-		OrderFuncGenerator* mingen = new OrderFuncGenerator("MIN/0", 0, minigengen);
-		OrderFuncGenerator* maxgen = new OrderFuncGenerator("MAX/0", 0, maxigengen);
-		OrderFuncGenerator* succgen = new OrderFuncGenerator("SUCC/1", 1, succigengen);
-		OrderFuncGenerator* predgen = new OrderFuncGenerator("PRED/1", 1, predigengen);
+		auto absgen = new IntFloatFuncGenerator(intabs, floatabs);
+		auto umingen = new IntFloatFuncGenerator(intumin, floatumin);
+		auto mingen = new OrderFuncGenerator(getSymbolName(STDFUNC::MINELEM), 0, minigengen);
+		auto maxgen = new OrderFuncGenerator(getSymbolName(STDFUNC::MAXELEM), 0, maxigengen);
+		auto succgen = new OrderFuncGenerator(getSymbolName(STDFUNC::SUCCESSOR), 1, succigengen);
+		auto predgen = new OrderFuncGenerator(getSymbolName(STDFUNC::PREDECESSOR), 1, predigengen);
 
 		// Add functions
-		Function* modfunc = new Function(string("%/2"), threeints, modgen, 100);
+		auto modfunc = new Function(getSymbolName(STDFUNC::MODULO), threeints, modgen, 100);
 		modfunc->partial(true);
-		Function* expfunc = new Function(string("^/2"), threefloats, expgen, 400);
+		auto expfunc = new Function(getSymbolName(STDFUNC::EXPONENTIAL), threefloats, expgen, 400);
 		_std->add(modfunc);
 		_std->add(expfunc);
 		_std->add(floatdiv);
@@ -1762,55 +1835,23 @@ ostream& operator<<(ostream& output, const Vocabulary& voc) {
 }
 
 namespace VocabularyUtils {
-Sort* natsort() {
-	return Vocabulary::std()->sort("nat");
-}
-Sort* intsort() {
-	return Vocabulary::std()->sort("int");
-}
-
 Sort* intRangeSort(int min, int max) {
 	stringstream ss;
 	ss << "_sort_" << min << '_' << max;
 	auto sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(min, max)));
-	sort->addParent(VocabularyUtils::intsort());
+	sort->addParent(get(STDSORT::INTSORT));
 	return sort;
-}
-Sort* floatsort() {
-	return Vocabulary::std()->sort("float");
-}
-Sort* stringsort() {
-	return Vocabulary::std()->sort("string");
-}
-Sort* charsort() {
-	return Vocabulary::std()->sort("char");
-}
-
-Predicate* equal(Sort* s) {
-	vector<Sort*> sorts(2, s);
-	return Vocabulary::std()->pred("=/2")->resolve(sorts);
-}
-
-Predicate* lessThan(Sort* s) {
-	vector<Sort*> sorts(2, s);
-	return Vocabulary::std()->pred("</2")->resolve(sorts);
-}
-
-Predicate* greaterThan(Sort* s) {
-	vector<Sort*> sorts(2, s);
-	return Vocabulary::std()->pred(">/2")->resolve(sorts);
 }
 
 bool isComparisonPredicate(const PFSymbol* symbol) {
-	string name = symbol->name();
-	return (sametypeid<Predicate>(*symbol)) && (name == "=/2" || name == "</2" || name == ">/2");
+	return (sametypeid<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
 }
 
 bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 	string name = symbol->name();
-	if ((sametypeid<Predicate>(*symbol)) && (name == "=/2" || name == "</2" || name == ">/2")) {
+	if (isComparisonPredicate(symbol)) {
 		for (auto it = symbol->sorts().cbegin(); it != symbol->sorts().cend(); ++it) {
-			if (not SortUtils::isSubsort(*it, VocabularyUtils::intsort(), voc)) {
+			if (not SortUtils::isSubsort(*it, get(STDSORT::INTSORT), voc)) {
 				return false;
 			}
 		}
@@ -1820,7 +1861,48 @@ bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 }
 
 bool isNumeric(Sort* s) {
-	return SortUtils::isSubsort(s, floatsort());
+	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
+}
+
+bool isSubVocabulary(Vocabulary* child, Vocabulary* parent){
+	if(child==NULL || parent==NULL){
+		return false;
+	}
+	for(auto i=child->firstSort(); i!=child->lastSort(); ++i){
+		auto parentsort = parent->sort(i->second->name());
+		if(parentsort==NULL){
+			return false;
+		}
+	}
+	for(auto i=child->firstPred(); i!=child->lastPred(); ++i){
+		auto childpred = i->second;
+		auto parentpred = parent->pred(i->second->name());
+		if(parentpred==NULL || childpred->arity()!=parentpred->arity()){
+			return false;
+		}
+		for(uint j=0; j<parentpred->sorts().size(); ++j){
+			if(parentpred->sorts()[j]->name()!=childpred->sorts()[j]->name()){
+				return false;
+			}
+		}
+	}
+	for(auto i=child->firstFunc(); i!=child->lastFunc(); ++i){
+		auto childfunc = i->second;
+		auto parentfunc = parent->func(i->second->name());
+		if(parentfunc==NULL || childfunc->arity()!=parentfunc->arity()){
+			return false;
+		}
+		for(uint j=0; j<parentfunc->sorts().size(); ++j){
+			if(parentfunc->sorts()[j]->name()!=childfunc->sorts()[j]->name()){
+				return false;
+			}
+		}
+		if(parentfunc->outsort()->name()!=childfunc->outsort()->name()){
+			return false;
+		}
+	}
+	// FIXME should check that the parents of all symbols are also the same!
+	return true;
 }
 
 } /* VocabularyUtils */

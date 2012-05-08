@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef PRINTGROUNDTHEORY_HPP_
 #define PRINTGROUNDTHEORY_HPP_
@@ -102,6 +102,10 @@ public:
 
 	void polAddOptimization(VarId) {
 		throw notyetimplemented("Printing an optimization constraint.\n");
+	}
+
+	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+		throw notyetimplemented("Printing symmetries.\n");
 	}
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {

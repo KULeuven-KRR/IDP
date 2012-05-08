@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+query Q : V {
+	{y[x]: min{x: p(x): x}~=y}
+}
+
+structure S:V{
+	x = {3;7}
+	p = {}
+
+}
+
+	//empty set has no minimum all others do
+procedure getExpectedSet(){
+  return {{3},{7}}
+}

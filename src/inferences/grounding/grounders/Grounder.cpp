@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "common.hpp"
 #include "Grounder.hpp"
@@ -84,6 +84,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 }
 
 int Grounder::_groundedatoms = 0;
+tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
 		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_UNKNOWN, 0)) {
@@ -95,6 +96,8 @@ void Grounder::toplevelRun() const {
 	run(formula);
 	addToGrounding(getGrounding(), formula);
 	getGrounding()->closeTheory(); // TODO very important and easily forgotten
+
+	addToFullGroundSize(getMaxGroundSize());
 	if (verbosity() > 0) {
 		clog << "Already grounded " << toString(groundedAtoms()) <<" for a full grounding of " << toString(getMaxGroundSize()) << "\n";
 	}
@@ -117,8 +120,5 @@ Lit Grounder::groundAndReturnLit() const {
 }
 
 void Grounder::setMaxGroundSize(const tablesize& maxsize) {
-	if (verbosity() > 2) {
-		clog << "Setting max ground size to " << toString(maxsize) << " for " << toString(this) << "\n";
-	}
 	_maxsize = maxsize;
 }

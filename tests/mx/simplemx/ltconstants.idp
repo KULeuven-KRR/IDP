@@ -1,0 +1,17 @@
+vocabulary V {
+  type A isa nat
+  C1: A
+  C2: A
+}
+
+theory T : V {
+  C1 < C2.
+}
+
+structure S : V {
+  A = { 1..3 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 3
+}

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
@@ -52,11 +52,9 @@ public:
 		return context().getCurrentDefID();
 	}
 
-	virtual void put(std::ostream& stream) const{
+	virtual void put(std::ostream& ) const{
 		// TODO not yet implemented.
 	}
-
-	tablesize getGroundedSize() const;
 };
 
 class HeadGrounder;
@@ -64,7 +62,7 @@ class HeadGrounder;
 // NOTE: any rule grounder NOT guaranteed to add false for all false defineds, should request adding them to the groundtheory!
 class RuleGrounder {
 private:
-	Rule* origrule;
+	Rule* _origrule;
 
 	HeadGrounder* _headgrounder;
 	FormulaGrounder* _bodygrounder;
@@ -92,7 +90,6 @@ public:
 
 	void put(std::stringstream& stream);
 
-	virtual tablesize getGroundedSize() const = 0;
 	tablesize getMaxGroundSize() const;
 };
 
@@ -115,8 +112,6 @@ public:
 	FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~FullRuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
-
-	virtual tablesize getGroundedSize() const;
 };
 
 /** Grounder for a head of a rule **/

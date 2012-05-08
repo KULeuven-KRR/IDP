@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef VISITORFRIENDS_HPP_
 #define VISITORFRIENDS_HPP_
@@ -26,7 +26,6 @@ class FOBDDFactory;
 class FOPropagator;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
 template<class InterpretationFactory, class PropDomain> class FOPropagatorFactory;
-class FormulaFuncTermChecker;
 class GenerateBDDAccordingToBounds;
 class GrounderFactory;
 class Printer;
@@ -37,6 +36,11 @@ template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
 class SplitIntoMonotoneAgg;
+class ReplaceNestedWithTseitinTerm;
+class ConstructNewReducedForm;
+class Skolemize;
+class TopDownApproximatingDefinition;
+class BottomUpApproximatingDefinition;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -45,6 +49,8 @@ class SplitIntoMonotoneAgg;
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
 		friend class CheckContainsFuncTerms; \
+		friend class CheckContainsDomainTerms; \
+		friend class CheckContainsFuncTermsOutsideOfSets; \
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
@@ -55,7 +61,6 @@ class SplitIntoMonotoneAgg;
 		friend class FOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class TypedFOPropagator; \
 		template<class InterpretationFactory, class PropDomain> friend class FOPropagatorFactory; \
-		friend class FormulaFuncTermChecker; \
 		friend class GenerateBDDAccordingToBounds; \
 		friend class GrounderFactory; \
 		friend class Printer; \
@@ -67,11 +72,13 @@ class SplitIntoMonotoneAgg;
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
 		friend class AddCompletion; \
+		friend class AddFuncConstraints; \
 		friend class DeriveSorts; \
 		friend class Flatten; \
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
+		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class RemoveEquivalences; \
@@ -84,7 +91,12 @@ class SplitIntoMonotoneAgg;
 		friend class UnnestHeadTermsContainingVars;\
 		friend class FindUnknownBoundLiteral;\
 		friend class FindDoubleDelayLiteral;\
-		friend class SplitIntoMonotoneAgg;
+		friend class SplitIntoMonotoneAgg;\
+		friend class ReplaceNestedWithTseitinTerm;\
+		friend class ConstructNewReducedForm;\
+		friend class TopDownApproximatingDefinition;\
+		friend class BottomUpApproximatingDefinition;\
+		friend class Skolemize;
 
 class AbstractTheory;
 class Theory;

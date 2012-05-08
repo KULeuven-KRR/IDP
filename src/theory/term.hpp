@@ -38,20 +38,22 @@ class VarTerm;
 class Term {
 ACCEPTDECLAREBOTH(Term)
 private:
-	std::set<Variable*> _freevars; //!< the set of free variables of the term
+	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<SetExpr*> _subsets; //!< the subsets of the term
+	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
 
 protected:
 	TermParseInfo _pi; //!< the place where the term was parsed
 
 private:
 	virtual void setFreeVars(); //!< Compute the free variables of the term
+	void deleteChildren(bool deleteVars); //Deletes all children of this formula (and depending on the boolean also the vars)
 
 public:
 	// Constructors
 	Term(const TermParseInfo& pi)
-			: _pi(pi) {
+			: _allwaysDeleteRecursively(false) ,_pi(pi){
 	}
 
 	virtual Term* clone() const = 0;
@@ -62,9 +64,9 @@ public:
 	//!< create a copy of the term and substitute the free variables according to the given map
 
 	// Destructors
-	virtual ~Term() {
-	} //!< Shallow destructor. Does not delete subterms and subsets of the term.
+	virtual ~Term(); //!< Shallow destructor. Does not delete subterms and subsets of the term UNLESS _allwaysDeleteRecursively
 	void recursiveDelete(); //!< Delete the term, its subterms, and subsets.
+	void recursiveDeleteKeepVars(); //!< Delete the term, its subterms, and subsets. But don't delete variables
 
 	// Mutators
 	virtual void sort(Sort*) {
@@ -85,6 +87,9 @@ public:
 	void subterms(const std::vector<Term*>& vt) {
 		_subterms = vt;
 		setFreeVars();
+	}
+	void allwaysDeleteRecursively(bool aRD) {
+		_allwaysDeleteRecursively = aRD;
 	}
 
 	// Inspectors
@@ -280,6 +285,14 @@ public:
 			: _variables(vars), _query(q), _pi(pi) {
 	}
 
+	//Destructors
+	~Query(){
+	}
+
+	void recursiveDelete(){
+		_query->recursiveDelete(); //also deletes the variables.
+	}
+
 	// Inspectors
 	Formula* query() const {
 		return _query;
@@ -305,18 +318,19 @@ struct tablesize;
 class SetExpr {
 ACCEPTDECLAREBOTH(SetExpr)
 protected:
-	std::set<Variable*> _freevars; //!< The free variables of the set expression
+	std::set<Variable*> _freevars; //!< The EXACT set of free variables ocurring unquantified IN this set expression
 	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
 	std::vector<Formula*> _subformulas; //!< The direct subformulas of the set expression
 	std::vector<Term*> _subterms; //!< The direct subterms of the set expression
 	SetParseInfo _pi; //!< the place where the set was parsed
+	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
 
 	void setFreeVars(); //!< Compute the free variables of the set
 
 public:
 	// Constructors
 	SetExpr(const SetParseInfo& pi)
-			: _pi(pi) {
+			: _pi(pi), _allwaysDeleteRecursively(false) {
 	}
 
 	virtual SetExpr* clone() const = 0;
@@ -333,9 +347,9 @@ public:
 	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0:0})
 
 	// Destructors
-	virtual ~SetExpr() {
-	} //!< Delete the set, but not its subformulas and subterms
+	virtual ~SetExpr(); //!< Delete the set, but not its subformulas and subterms UNLESSS _allwaysDeleteRecursively is true
 	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
+	void recursiveDeleteKeepVars(); //!< Delete the set and its subformulas and subterms but don't delete variables
 
 	// Mutators
 	void subterm(size_t n, Term* t) {
@@ -357,6 +371,9 @@ public:
 	void addQuantVar(Variable* v) {
 		_quantvars.insert(v);
 		setFreeVars();
+	}
+	void allwaysDeleteRecursively(bool aRD) {
+		_allwaysDeleteRecursively = aRD;
 	}
 
 	// Inspectors
@@ -382,6 +399,9 @@ public:
 
 	// Output
 	virtual std::ostream& put(std::ostream&) const = 0;
+private:
+	void deleteChildren(bool deleteVars); //Deletes all children of this term (and depending on the boolean also the vars)
+
 };
 
 std::ostream& operator<<(std::ostream&, const SetExpr&);

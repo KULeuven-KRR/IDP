@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "GroundPolicy.hpp"
 #include "theory/ecnf.hpp"
@@ -78,6 +78,10 @@ void GroundPolicy::polAddOptimization(AggFunction /*function*/, SetId /*setid*/)
 
 void GroundPolicy::polAddOptimization(VarId /*varid*/) {
 	throw notyetimplemented("Adding optimization to the grounding\n");
+}
+
+void GroundPolicy::polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+	throw notyetimplemented("Adding symmetries to the grounding\n");
 }
 
 std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "GraphFuncsAndAggs.hpp"
 
@@ -17,12 +17,12 @@ using namespace std;
 
 CompType GraphFuncsAndAggs::getCompType(const PredForm* pf) const {
 	Assert(VocabularyUtils::isComparisonPredicate(pf->symbol()));
-	if (pf->symbol()->name() == "=/2") {
+	if (is(pf->symbol(), STDPRED::EQ)) {
 		return isPos(pf->sign()) ? CompType::EQ : CompType::NEQ;
-	} else if (pf->symbol()->name() == "</2") {
+	} else if (is(pf->symbol(), STDPRED::LT)) {
 		return isPos(pf->sign()) ? CompType::LT : CompType::GEQ;
 	} else {
-		Assert(pf->symbol()->name() == ">/2");
+		Assert(is(pf->symbol(), STDPRED::GT));
 		return isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
 	}
 }
@@ -64,7 +64,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 
 		Formula* newformula = NULL;
 
-		if (pf->symbol()->name() == "=/2" && not eligibleForCP) {
+		if (is(pf->symbol(), STDPRED::EQ) && not eligibleForCP) {
 			if (subterm1->type() == TT_FUNC) {
 				newformula = makeFuncGraph(pf->sign(), subterm1, subterm2, pf->pi());
 				delete (pf);

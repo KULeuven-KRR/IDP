@@ -6,12 +6,10 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "LuaTraceMonitor.hpp"
-#include "external/SearchMonitor.hpp"
-#include "external/ExternalInterface.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "lua/luaconnection.hpp"
 
@@ -21,13 +19,12 @@ LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 	_registryindex = StringPointer(std::string("sat_trace_") + convertToString(_tracenr));
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, _registryindex->c_str());
-	std::clog << *_registryindex << "\n";
 }
 
-void LuaTraceMonitor::setSolver(MinisatID::WrappedPCSolver* solver) {
+void LuaTraceMonitor::setSolver(PCSolver* solver) {
 	cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
 	cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &LuaTraceMonitor::propagate);
-	auto solvermonitor_ = new MinisatID::SearchMonitor();
+	auto solvermonitor_ = new SearchMonitor();
 	solvermonitor_->setBacktrackCB(callbackback);
 	solvermonitor_->setPropagateCB(callbackprop);
 	solver->addMonitor(solvermonitor_);
@@ -58,15 +55,15 @@ void LuaTraceMonitor::propagate(MinisatID::Literal lit, int dl) {
 	lua_pushboolean(_state, !lit.hasSign());
 	lua_setfield(_state, -2, "value");
 
-	int atomnr = lit.getAtom().getValue();
+	int atomnr = var(lit);
 	if (_translator->isInputAtom(atomnr)) {
 		auto s = _translator->getSymbol(atomnr);
-		auto args = _translator->getArgs(lit.getAtom().getValue());
+		auto args = _translator->getArgs(var(lit));
 		auto atom = DomainAtomFactory::instance()->create(s, args);
 		InternalArgument ia(atom);
 		LuaConnection::convertToLua(_state, ia);
 	} else {
-		lua_pushstring(_state, _translator->printLit(lit.getAtom().getValue()).c_str());
+		lua_pushstring(_state, _translator->printLit(var(lit)).c_str());
 	}
 	lua_setfield(_state, -2, "atom");
 	lua_call(_state, 2, 0);

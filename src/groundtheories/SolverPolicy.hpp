@@ -6,13 +6,13 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef SOLVERPOLICY_HPP_
 #define SOLVERPOLICY_HPP_
 
 #include "IncludeComponents.hpp"
-#include "external/ExternalInterface.hpp"
+#include "inferences/SolverInclude.hpp"
 
 class TsSet;
 class LazyGroundingManager;
@@ -61,8 +61,6 @@ protected:
 	}
 	void polEndTheory();
 
-	MinisatID::Weight createWeight(Weight weight);
-
 	void polAdd(const GroundClause& cl);
 	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
 	void polAdd(DefId defnr, PCGroundRule* rule);
@@ -71,6 +69,7 @@ protected:
 	void polAdd(Lit head, AggTsBody* body);
 	void polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel);
 	void polAdd(Lit tseitin, CPTsBody* body);
+	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	void polAddOptimization(AggFunction function, SetId setid);
 	void polAddOptimization(VarId varid);

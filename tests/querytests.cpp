@@ -1,11 +1,11 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include <cmath>
@@ -22,7 +22,7 @@ using namespace std;
 namespace Tests {
 
 vector<string> generateListOfQueryFiles() {
-	vector<string> testdirs {"simple/"};
+	vector<string> testdirs {"simple/", "aggregates/", "threevalued/"};
 	return getAllFilesInDirs(getTestDirectory() + "query/", testdirs);
 }
 
@@ -34,7 +34,7 @@ TEST_P(QueryTest, DoesQuerying) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(ModelExpansion, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
+INSTANTIATE_TEST_CASE_P(Querying, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
 
 
 }

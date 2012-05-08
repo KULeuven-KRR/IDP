@@ -1,11 +1,11 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include "testingtools.hpp"
@@ -31,7 +31,7 @@ TestingSet1 getTestingSet1() {
 	testingSet.vocabulary->add(testingSet.q);
 	testingSet.vocabulary->add(testingSet.r);
 	testingSet.structure = new Structure("S", ParseInfo());
-	testingSet.structure->vocabulary(testingSet.vocabulary);
+	testingSet.structure->changeVocabulary(testingSet.vocabulary);
 
 	testingSet.px = new PredForm(SIGN::POS, testingSet.p, { testingSet.sortterm }, FormulaParseInfo()); //P(x)
 	testingSet.qx = new PredForm(SIGN::POS, testingSet.q, { testingSet.sortterm }, FormulaParseInfo()); //Q(x)

@@ -21,6 +21,10 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/GroundTermTranslator.hpp"
 
+#include "inferences/SolverConnection.hpp"
+
+using namespace SolverConnection;
+
 template<typename Stream>
 class EcnfPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
@@ -31,6 +35,8 @@ private:
 	const GroundTermTranslator* _termtranslator;
 	std::set<unsigned int> _printedvarids;
 	bool writeTranslation_;
+
+	ECNFPrinter* printer;
 
 	bool writeTranlation() const {
 		return writeTranslation_;
@@ -50,19 +56,29 @@ private:
 
 public:
 	EcnfPrinter(bool writetranslation, Stream& stream)
-			: StreamPrinter<Stream>(stream), _currenthead(-1), _currentdefnr(0), _structure(NULL), _termtranslator(NULL), writeTranslation_(writetranslation) {
+			: 	StreamPrinter<Stream>(stream),
+				_currenthead(-1),
+				_currentdefnr(0),
+				_structure(NULL),
+				_termtranslator(NULL),
+				writeTranslation_(writetranslation),
+				printer(new ECNFPrinter(new MinisatID::LiteralPrinter(), std::clog, false)) {
 
+	}
+
+	~EcnfPrinter() {
+		delete (printer);
 	}
 
 	virtual void startTheory() {
 		if (!isTheoryOpen()) {
-			output() << "p ecnf\n";
+			printer->notifyStart();
 			openTheory();
 		}
 	}
 	virtual void endTheory() {
 		if (isTheoryOpen()) {
-			closeTheory();
+			printer->notifyEnd();
 		}
 	}
 
@@ -92,10 +108,7 @@ public:
 
 	void visit(const GroundClause& g) {
 		Assert(isTheoryOpen());
-		for (unsigned int m = 0; m < g.size(); ++m) {
-			output() << g[m] << ' ';
-		}
-		output() << '0' << "\n";
+		printer->add(MinisatID::Disjunction(createList(g)));
 	}
 
 	template<typename Visitor, typename List>
@@ -124,6 +137,7 @@ public:
 			closeDefinition();
 		}
 
+		// FIXME
 		if (writeTranlation()) {
 			output() << "=== Atomtranslation ===" << "\n";
 			GroundTranslator* translator = g->translator();
@@ -140,8 +154,7 @@ public:
 	}
 
 	void visit(const GroundFixpDef*) {
-		/*TODO not implemented*/
-		output() << "c Warning, fixpoint definitions are not printed yet\n";
+		throw notyetimplemented("Warning, fixpoint definitions are not printed yet.");
 	}
 
 	void openDefinition(int defid) {
@@ -164,12 +177,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		output() << (b->type() == RuleType::CONJ ? "C " : "D ");
-		output() << "<- " << _currentdefnr << ' ' << b->head() << ' ';
-		for (unsigned int n = 0; n < b->size(); ++n) {
-			output() << b->literal(n) << ' ';
-		}
-		output() << "0\n";
+		printer->add(MinisatID::Rule(createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr));
 	}
 
 	void visit(const AggGroundRule* a) {
@@ -187,13 +195,11 @@ public:
 
 	void visit(const GroundSet* s) {
 		Assert(isTheoryOpen());
-		output() << (s->weighted() ? "WSet" : "Set") << ' ' << s->setnr();
+		MinisatID::WLSet set(s->setnr());
 		for (unsigned int n = 0; n < s->size(); ++n) {
-			output() << ' ' << s->literal(n);
-			if (s->weighted())
-				output() << '=' << s->weight(n);
+			set.wl.push_back(MinisatID::WLtuple(createLiteral(s->literal(n)), s->weighted() ? createWeight(s->weight(n)) : 1));
 		}
-		output() << " 0\n";
+		printer->add(set);
 	}
 
 	void visit(const CPReification* cpr) {
@@ -206,9 +212,9 @@ public:
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);
-				printCPReification("BINTRT", cpr->_head, term->varid(), comp, right._varid);
+				printer->add(MinisatID::CPBinaryRelVar(createAtom(cpr->_head), term->varid(), convert(comp), right._varid));
 			} else { // CPBinaryRel
-				printCPReification("BINTRI", cpr->_head, term->varid(), comp, right._bound);
+				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid(), convert(comp), createWeight(right._bound)));
 			}
 		} else if (sametypeid<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
@@ -244,47 +250,45 @@ public:
 	}
 
 private:
-
 	void addWeightedSum(int head, const std::vector<VarId>& varids, const std::vector<int> weights, const int& bound, CompType rel) {
 		Assert(varids.size()==weights.size());
 		for (auto i = varids.cbegin(); i < varids.cend(); ++i) {
 			printCPVariable(*i);
 		}
-		printCPReification("SUMSTSIRI", head, varids, weights, rel, bound);
+		MinisatID::weightlist w;
+		for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
+			w.push_back(createWeight(*i));
+		}
+		printer->add(MinisatID::CPSumWeighted(createAtom(head), varids, w, convert(rel), createWeight(bound)));
 	}
 
-	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool lower, int head, unsigned int setnr, double bound) {
-		switch (aggtype) {
-		case AggFunction::CARD:
-			output() << "Card ";
-			break;
-		case AggFunction::SUM:
-			output() << "Sum ";
-			break;
-		case AggFunction::PROD:
-			output() << "Prod ";
-			break;
-		case AggFunction::MIN:
-			output() << "Min ";
-			break;
-		case AggFunction::MAX:
-			output() << "Max ";
-			break;
-		}
-		// FIXME:
-		Warning::warning("The ecnf output format does not support implications for aggregates yet, so currently replacing them with equivalences!\n");
+	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool geqthanbound, int head, unsigned int setnr, double bound) {
+		auto newsem = MinisatID::AggSem::COMP;
+		auto newhead = head;
+		auto newbound = bound;
+		auto newsign = geqthanbound ? MinisatID::AggSign::UB : MinisatID::AggSign::LB;
 		switch (arrow) {
 		case TsType::EQ:
-		case TsType::IMPL:
-		case TsType::RIMPL: // (Reverse) implication is not supported by solver (yet)
-			output() << "C ";
+			break;
+		case TsType::IMPL: // not head or aggregate
+			newsem = MinisatID::AggSem::OR;
+			newhead = -head;
+			break;
+		case TsType::RIMPL: // head or not aggregate
+			newsem = MinisatID::AggSem::OR;
+			if (newsign == MinisatID::AggSign::LB) {
+				newsign = MinisatID::AggSign::UB;
+				newbound -= 1;
+			} else {
+				newsign = MinisatID::AggSign::LB;
+				newbound += 1;
+			}
 			break;
 		case TsType::RULE:
-			Assert(isDefOpen(defnr));
-			output() << "<- " << defnr << ' ';
+			newsem = MinisatID::AggSem::DEF;
 			break;
 		}
-		output() << (lower ? 'G' : 'L') << ' ' << head << ' ' << setnr << ' ' << bound << " 0" << "\n";
+		printer->add(MinisatID::Aggregate(createLiteral(newhead), (int)setnr, createWeight(newbound), convert(aggtype), newsign, newsem, (int)defnr));
 	}
 
 	void printCPVariables(std::vector<unsigned int> varids) {
@@ -296,54 +300,21 @@ private:
 	void printCPVariable(unsigned int varid) {
 		if (_printedvarids.find(varid) == _printedvarids.cend()) {
 			_printedvarids.insert(varid);
-			SortTable* domain = _termtranslator->domain(varid);
+
+			auto domain = _termtranslator->domain(varid);
 			if (domain->isRange()) {
 				int minvalue = domain->first()->value()._int;
 				int maxvalue = domain->last()->value()._int;
-				output() << "INTVAR " << varid << ' ' << minvalue << ' ' << maxvalue << ' ';
+				printer->add(MinisatID::IntVarRange(varid, minvalue, maxvalue));
 			} else {
-				output() << "INTVARDOM " << varid << ' ';
-				for (SortIterator it = domain->sortBegin(); not it.isAtEnd(); ++it) {
-					int value = (*it)->value()._int;
-					output() << value << ' ';
+				std::vector<MinisatID::Weight> valuelist;
+				for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
+					Assert((*it)->type()==DomainElementType::DET_INT);
+					valuelist.push_back(createWeight((*it)->value()._int));
 				}
+				printer->add(MinisatID::IntVarEnum(varid, valuelist));
 			}
-			output() << '0' << "\n";
 		}
-	}
-
-	std::string toString(CompType comp) {
-		switch (comp) {
-		case CompType::EQ:
-			return "=";
-		case CompType::NEQ:
-			return "~=";
-		case CompType::LEQ:
-			return "=<";
-		case CompType::GEQ:
-			return ">=";
-		case CompType::GT:
-			return ">";
-		case CompType::LT:
-			return "<";
-		}Assert(false);
-		return "";
-	}
-
-	void printCPReification(std::string type, int head, unsigned int left, CompType comp, long right) {
-		output() << type << ' ' << head << ' ' << left << ' ' << toString(comp) << ' ' << right << " 0" << "\n";
-	}
-
-	void printCPReification(std::string type, int head, std::vector<unsigned int> varids, std::vector<int> weights, CompType comp, long right) {
-		output() << type << ' ' << head << ' ';
-		for (auto it = varids.cbegin(); it != varids.cend(); ++it) {
-			output() << *it << ' ';
-		}
-		output() << " | ";
-		for (auto it = weights.cbegin(); it != weights.cend(); ++it) {
-			output() << *it << ' ';
-		}
-		output() << toString(comp) << ' ' << right << " 0" << "\n";
 	}
 };
 

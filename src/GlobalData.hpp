@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef GLOBALDATA_HPP_
 #define GLOBALDATA_HPP_
@@ -69,6 +69,14 @@ public:
 	}
 	void addTerminationMonitor(TerminateMonitor* m) {
 		_monitors.push_back(m);
+	}
+	void removeTerminationMonitor(TerminateMonitor* m) {
+		for(auto i=_monitors.begin(); i<_monitors.end(); ++i) {
+			if(*i==m){
+				_monitors.erase(i);
+				break;
+			}
+		}
 	}
 	void reset() {
 		_terminateRequested = false;
@@ -135,8 +143,7 @@ int verbosity();
 
 // TODO improve check by bool flag!
 #define CHECKTERMINATION \
-	if(GlobalData::instance()->terminateRequested()){\
+		if(GlobalData::instance()->terminateRequested()){\
 			throw IdpException("Terminate requested");\
-	}
-
+		}
 #endif /* GLOBALDATA_HPP_ */

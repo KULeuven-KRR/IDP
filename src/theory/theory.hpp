@@ -78,14 +78,15 @@ private:
 	std::vector<Term*> _subterms; //!< the direct subterms of the formula
 	std::vector<Formula*> _subformulas; //!< the direct subformulas of the formula
 	FormulaParseInfo _pi; //!< the place where the formula was parsed
+	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
 
 public:
 	// Constructor
 	Formula(SIGN sign)
-			: _sign(sign) {
+			: _sign(sign), _allwaysDeleteRecursively(false) {
 	}
 	Formula(SIGN sign, const FormulaParseInfo& pi)
-			: _sign(sign), _pi(pi) {
+			: _sign(sign), _pi(pi), _allwaysDeleteRecursively(false) {
 	}
 
 	// Virtual constructors
@@ -98,15 +99,16 @@ public:
 
 	// Destructor
 	void recursiveDelete(); //!< delete the formula and all its children (subformulas, subterms, etc)
-	virtual ~Formula() {
-	}
-	//!< delete the formula, but not its children
+	void recursiveDeleteKeepVars(); //!< delete the formula and all its children (subformulas, subterms, etc) except for free variables
+
+	virtual ~Formula();
+	//!< delete the formula, but not its children UNLESS _allwaysDeleteRecursively is true, then also deletes children
 
 	// Mutators
 	void negate() {
 		_sign = !_sign;
 		//if (_pi.originalobject())
-			// FIXME _pi.originalobject()->negate();
+		// FIXME _pi.originalobject()->negate();
 	}
 	//!< swap the sign of the formula
 
@@ -141,6 +143,9 @@ public:
 	void quantVars(const std::set<Variable*>& sv) {
 		_quantvars = sv;
 		setFreeVars();
+	}
+	void allwaysDeleteRecursively(bool aRD) {
+		_allwaysDeleteRecursively = aRD;
 	}
 
 	// Inspectors
@@ -179,6 +184,7 @@ public:
 
 private:
 	void setFreeVars(); //!< compute the free variables of the formula
+	void deleteChildren(bool deleteVars); //Deletes all children of this formula (and depending on the boolean also the vars)
 };
 
 std::ostream& operator<<(std::ostream&, const Formula&);
@@ -196,6 +202,7 @@ public:
 	// Constructors
 	PredForm(SIGN sign, PFSymbol* s, const std::vector<Term*>& a, const FormulaParseInfo& pi)
 			: Formula(sign, pi), _symbol(s) {
+		Assert(_symbol!=NULL);
 		subterms(a);
 	}
 
@@ -568,6 +575,12 @@ public:
 	void recursiveDelete();
 
 	void add(Rule*); //!< add a rule to the definition
+	template<typename List>
+	void add(const List& list){
+		for(auto i=list.cbegin(); i!=list.cend(); ++i){
+			add(*i);
+		}
+	}
 	void rule(unsigned int n, Rule* r); //!< Replace the n'th rule of the definition
 
 	const std::vector<Rule*>& rules() const {

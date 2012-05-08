@@ -1,15 +1,15 @@
 /****************************************************************
-* Copyright 2010-2012 Katholieke Universiteit Leuven
-*  
-* Use of this software is governed by the GNU LGPLv3.0 license
-* 
-* Written by Broes De Cat, Stef De Pooter, Johan Wittocx
-* and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
-* Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
 #include "gtest/gtest.h"
-#include "cppinterface.hpp"
+#include "creation/cppinterface.hpp"
 
 #include <iostream>
 
@@ -21,7 +21,7 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
-using namespace Tests;
+using namespace Gen;
 
 // AddCompletion - theory
 //TODO
@@ -52,7 +52,7 @@ TEST(FlattenTest,QuantForm) {
 	auto y = var(s);
 	auto p = pred("P",{s,s});
 
-	Formula& axaypxy = all(x, all(y, p({x,y})));
+	Formula& axaypxy = forall(x, forall(y, p({x,y})));
 
 	// Flattening (! x : ! y : P(x,y)) to (! x y : P(x,y)).
 	auto result = FormulaUtils::flatten(&axaypxy);
@@ -77,7 +77,7 @@ TEST(FlattenTest,Theory) {
 	voc->add(q.p());
 	voc->add(r.p());
 
-	Formula& axaypvqvr = all(x, all(y, p({x,y}) | (q({x,y}) | r({x,y})) ));
+	Formula& axaypvqvr = forall(x, forall(y, p({x,y}) | (q({x,y}) | r({x,y})) ));
 
 	auto theory = new Theory("T",voc,ParseInfo());
 	theory->add(&axaypvqvr);
@@ -276,7 +276,7 @@ TEST(PushNegationsTest,QuantForm) {
 	auto x = var(s);
 	auto p = pred("P",{s});
 
-	Formula& qf = not all(x, p({x}));
+	Formula& qf = not forall(x, p({x}));
 
 	// Rewriting ~(! x : P(x)) to (? x : ~P(x))
 	auto result = FormulaUtils::pushNegations(&qf);
@@ -477,7 +477,7 @@ TEST(UnnestTermsTest,NestedFuncTerms) {
 	//std::clog << "Transforming " << toString(&eqfgxhx) << "\n";
 	auto result = FormulaUtils::unnestTerms(&eqfgxhx);
 	//std::clog << "Resulted in " << toString(result) << "\n";
-
+std::cerr << toString(result);
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));
 	ASSERT_EQ(1,result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
@@ -512,7 +512,7 @@ TEST(FindUnknTest,NestedQuantFormula) {
 	GroundTranslator translator;
 
 	auto& pf_p = p({x,y});
-	auto& formula = all(x, all(y, pf_p | (q({x,y}) | r({x,y}))));
+	auto& formula = forall(x, forall(y, pf_p | (q({x,y}) | r({x,y}))));
 
 	Context context = Context::BOTH;
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
@@ -534,7 +534,7 @@ TEST(FindUnknTest,QuantFormula) {
 	GroundTranslator translator;
 
 	auto& pf_p = p({x,y});
-	auto& formula = all({x, y}, pf_p | (q({x,y}) | r({x,y})));
+	auto& formula = forall({x, y}, pf_p | (q({x,y}) | r({x,y})));
 
 	Context context = Context::BOTH;
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
@@ -565,7 +565,7 @@ TEST(FindUnknTest,QuantFormulaFirstWatched) {
 
 	auto& pf_p = p({x,y});
 	auto& pf_q = not q({x,y});
-	auto& formula = all({x, y}, pf_p | pf_q | r({x,y}));
+	auto& formula = forall({x, y}, pf_p | pf_q | r({x,y}));
 
 	GroundTranslator translator;
 	TestGrounder grounder(pf_p, Context::BOTH);
@@ -590,7 +590,7 @@ TEST(FindUnknTest,QuantFormulaPred) {
 	GroundTranslator translator;
 
 	auto& pf_p = p({x,y});
-	auto& formula = all({x, y}, pf_p);
+	auto& formula = forall({x, y}, pf_p);
 
 	Context context = Context::BOTH;
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
@@ -611,7 +611,7 @@ TEST(FindUnknTest,WithMultipleMono) {
 	auto x2 = var(s);
 	auto& p1 = p({x1});
 	auto& p2 = p({x2});
-	auto& formula1 = all({x1}, p1);
+	auto& formula1 = forall({x1}, p1);
 	auto& formula2 = exists({x2}, p2);
 
 	Context context;

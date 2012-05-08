@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef MODELEXPAND_HPP_
 #define MODELEXPAND_HPP_
@@ -33,7 +33,7 @@ public:
 		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
 		}
-		auto models = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), tracer);
+		auto models = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), NULL, tracer);
 
 		// Convert to internal arguments
 		InternalArgument result;

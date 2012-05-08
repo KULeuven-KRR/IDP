@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef ERROR_HPP
 #define ERROR_HPP
@@ -194,6 +194,8 @@ void cumulchance(double c);
 void possiblyInfiniteGrounding(const std::string& formula, const std::string& internalformula);
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname);
+
+void emptySort(const std::string& sortname);
 
 }
 

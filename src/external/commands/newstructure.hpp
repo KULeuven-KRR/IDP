@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef NEWSTRUCTURE_HPP_
 #define NEWSTRUCTURE_HPP_
@@ -23,7 +23,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto s = new Structure(*get<1>(args), ParseInfo());
-		s->vocabulary(get<0>(args));
+		s->changeVocabulary(get<0>(args));
 		return InternalArgument(s);
 	}
 };

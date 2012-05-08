@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef FOBDDFACTORY_HPP_
 #define FOBDDFACTORY_HPP_
@@ -29,6 +29,7 @@ class EqChainForm;
 class AggForm;
 class Vocabulary;
 class FOBDDManager;
+class FOBDDSetExpr;
 
 /**
  * Class to transform first-order formulas to BDDs
@@ -43,11 +44,14 @@ private:
 	const FOBDD* _bdd;
 	const FOBDDKernel* _kernel;
 	const FOBDDTerm* _term;
+	const FOBDDSetExpr* _set;
 
 	void visit(const VarTerm* vt);
 	void visit(const DomainTerm* dt);
 	void visit(const FuncTerm* ft);
 	void visit(const AggTerm* at);
+	void visit(const EnumSetExpr* se);
+	void visit(const QuantSetExpr* se);
 
 	void visit(const PredForm* pf);
 	void visit(const BoolForm* bf);

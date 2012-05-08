@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef IDP_THEORYUTILS_HPP_
 #define IDP_THEORYUTILS_HPP_
@@ -84,6 +84,8 @@ void checkSorts(Vocabulary* v, Formula* f);
 
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula */
 bool containsFuncTerms(Formula* f);
+bool containsDomainTerms(Formula* f);
+bool containsFuncTermsOutsideOfSets(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
@@ -100,7 +102,7 @@ void deriveSorts(Vocabulary* v, Formula* f);
  *			- query does not contain any FuncTerm or AggTerm subterms
  *			- the query has a twovalue result in the given structure
  */
-double estimatedCostAll(PredForm* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
 
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);
@@ -111,6 +113,9 @@ Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str = NULL, Context co
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
 
+/** Calculate all operations on domainelements */
+Formula* calculateArithmetic(Formula* f) ;
+
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
@@ -119,11 +124,21 @@ Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
+/**
+ * Removes all functions occurring in literals of defined symbols and replace them by new literals which are equivalent.
+ */
+AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory*, AbstractStructure*);
+
+AbstractTheory* skolemize(AbstractTheory* t);
+
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
 
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+/** Non-recursively move all function and aggregate terms */
+Formula* unnestFuncsAndAggsNonRecursive(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
@@ -141,6 +156,9 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
 
+/** Add func constraints for all functions. */
+void addFuncConstraints(AbstractTheory*);
+
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);
 
@@ -157,6 +175,9 @@ int nrSubformulas(AbstractTheory*);
 /** Push negations inside */
 void pushNegations(AbstractTheory*);
 
+/** Calculate all operations on domainelements */
+AbstractTheory* calculateArithmetic(AbstractTheory*) ;
+
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 AbstractTheory* pushQuantifiers(AbstractTheory*);
 
@@ -168,6 +189,9 @@ AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+
+/** Non-recursively move all function and aggregate terms */
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);

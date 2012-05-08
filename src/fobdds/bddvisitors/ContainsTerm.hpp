@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef CONTAINSTERM_HPP_
 #define CONTAINSTERM_HPP_
@@ -19,7 +19,7 @@
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains functions
+ * Checks whether something contains a term
  */
 class ContainsTerm: public FOBDDVisitor {
 private:
@@ -31,7 +31,8 @@ public:
 			: FOBDDVisitor(m) {
 	}
 
-	bool contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
+	template<typename T>
+	bool contains(const T* super, const FOBDDTerm* arg) {
 		_result = false;
 		_arg = arg;
 		super->accept(this);
@@ -68,6 +69,15 @@ private:
 					return;
 				}
 			}
+		}
+	}
+
+	void visit(const FOBDDAggTerm* a) {
+		if (a == _arg) {
+			_result = true;
+			return;
+		} else {
+			a->setexpr()->accept(this);
 		}
 	}
 

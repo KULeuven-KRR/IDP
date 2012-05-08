@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef FINDUNKNBOUND_HPP_
 #define FINDUNKNBOUND_HPP_
@@ -72,7 +72,7 @@ protected:
 			return;
 		}
 		if(_structure!=NULL && (not _structure->inter(pf->symbol())->cf()->empty() || not _structure->inter(pf->symbol())->ct()->empty())){
-			// TODO checks here whether NO tupels are known about the predicate. This can obvious be done better, by checking if it is only a small number AND adding those to the grounding explitly!!!
+			// TODO checks here whether NO tuples are known about the predicate. This can obvious be done better, by checking if it is only a small number AND adding those to the grounding explicitly!!!
 			return;
 		}
 		_allquantvars = true;

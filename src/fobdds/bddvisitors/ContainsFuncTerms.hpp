@@ -6,20 +6,18 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef CONTAINSFUNCTERMS_HPP_
 #define CONTAINSFUNCTERMS_HPP_
 
-#include <vector>
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFuncTerm.hpp"
-#include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBdd.hpp"
 
 /**
- * Checks whether the given term contains functions
+ * Checks whether the given term contains Functions
  */
 class ContainsFuncTerms: public FOBDDVisitor {
 private:

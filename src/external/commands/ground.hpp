@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef GROUND_HPP_
 #define GROUND_HPP_
@@ -16,7 +16,7 @@
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
-#include "external/FlatZincRewriter.hpp"
+//#include "external/FlatZincRewriter.hpp"
 
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
 class GroundInference: public GroundBase {
@@ -60,13 +60,14 @@ private:
 		auto symstructure = generateBounds(theory, structure);
 
 		std::shared_ptr<Grounder> grounder;
-		if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)
-			MinisatID::SolverOption modes;
-			grounder = std::shared_ptr<Grounder>(
-					GrounderFactory::create( { theory, structure, symstructure }, new MinisatID::FlatZincRewriter(modes)));
-		} else {
+		// FIXME
+		//if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)
+		//	MinisatID::SolverOption modes;
+		//	grounder = std::shared_ptr<Grounder>(
+		//			GrounderFactory::create( { theory, structure, symstructure }, new MinisatID::FlatZincRewriter(modes)));
+		//} else {
 			grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }, monitor));
-		}
+		//}
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 		grounding->recursiveDelete();

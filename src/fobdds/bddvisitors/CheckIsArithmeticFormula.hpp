@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef ARITHCHECKER_HPP_
 #define ARITHCHECKER_HPP_
@@ -52,16 +52,21 @@ private:
 		_result = false;
 	}
 
+	void visit(const FOBDDAggKernel*) {
+		//TODO : is this right: is an AGGKERNEL an arithmetic formula???
+		return; //If result was true, it still is true.
+	}
+
 	void visit(const FOBDDVariable* variable) {
-		_result = _result && SortUtils::isSubsort(variable->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(variable->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDDeBruijnIndex* index) {
-		_result = _result && SortUtils::isSubsort(index->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(index->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDDomainTerm* domainterm) {
-		_result = _result && SortUtils::isSubsort(domainterm->sort(), VocabularyUtils::floatsort());
+		_result = _result && SortUtils::isSubsort(domainterm->sort(), get(STDSORT::FLOATSORT));
 	}
 
 	void visit(const FOBDDFuncTerm* functerm) {
@@ -69,6 +74,10 @@ private:
 			(*it)->accept(this);
 		}
 		_result = _result && Vocabulary::std()->contains(functerm->func());
+	}
+	void visit(const FOBDDAggTerm*) {
+		//TODO: right?
+		return;
 	}
 
 };

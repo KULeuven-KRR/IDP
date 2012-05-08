@@ -1,0 +1,17 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+query Q : V {
+	{y[x] : y = #[?x:p(x)]	 }
+}
+
+structure S:V{
+	x = {1..2}
+	p = {1}
+}
+
+procedure getExpectedSet(){
+  return {{1}}
+}

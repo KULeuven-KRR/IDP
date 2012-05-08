@@ -6,17 +6,13 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef LUATRACEMONITOR_HPP_
 #define LUATRACEMONITOR_HPP_
 
-#include "tracemonitor.hpp"
+#include "TraceMonitor.hpp"
 #include "lua.hpp"
-
-namespace MinisatID {
-class WrappedPCSolver;
-}
 
 //for i,v in pairs(trace) do print(v["atom"]) print(v["value"]) end
 class LuaTraceMonitor: public TraceMonitor {
@@ -32,7 +28,7 @@ public:
 	void setTranslator(GroundTranslator* translator) {
 		_translator = translator;
 	}
-	void setSolver(MinisatID::WrappedPCSolver* solver);
+	void setSolver(PCSolver* solver);
 
 	void backtrack(int dl);
 	void propagate(MinisatID::Literal lit, int dl);

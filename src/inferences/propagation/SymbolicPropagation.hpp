@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef INFERENCES_SYMBOLICPROPAGATE_HPP_
 #define INFERENCES_SYMBOLICPROPAGATE_HPP_
@@ -25,11 +25,13 @@
 class SymbolicPropagation {
 public:
 	// TODO: free allocated memory
-	AbstractStructure* propagate(AbstractTheory* theory, AbstractStructure* structure) {
-		auto mpi = propagateVocabulary(theory, structure);
-		auto propagator = createPropagator(theory, structure, mpi);
+	std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
+		auto result = structure->clone();
+		auto mpi = propagateVocabulary(theory, result);
+		auto propagator = createPropagator(theory, result, mpi);
 		propagator->doPropagation();
-		return propagator->currstructure(structure);
+		propagator->applyPropagationToStructure(result);
+		return {result};
 	}
 
 	/** Collect symbolic propagation vocabulary **/

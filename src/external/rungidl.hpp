@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef RUNGIDL_HPP_
 #define RUNGIDL_HPP_
@@ -23,6 +23,6 @@ std::ostream& operator<<(std::ostream& stream, Status status);
 
 int run(int argc, char* argv[]);
 
-Status test(const std::vector<std::string>& inputfileurls);
+Status test(const std::vector<std::string>& inputfileurls, const std::string& executioncommand = "");
 
 #endif /* RUNGIDL_HPP_ */

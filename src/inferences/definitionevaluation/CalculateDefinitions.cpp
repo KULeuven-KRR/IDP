@@ -6,10 +6,11 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "CalculateDefinitions.hpp"
 #include "inferences/SolverConnection.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -25,39 +26,39 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
 	// TODO duplicate code with modelexpansion
 	// Create solver and grounder
-	auto solver = SolverConnection::createsolver(1);
+	auto data = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-
 	auto symstructure = generateBounds(&theory, structure);
-	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, solver);
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, data);
 
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
 	// Run solver
-	MinisatID::Solution* abstractsolutions = SolverConnection::initsolution();
-	solver->solve(abstractsolutions);
+	auto mx = SolverConnection::initsolution(data, 1);
+	mx->execute();
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
 
 	// Collect solutions
-	if (abstractsolutions->getModels().empty()) {
+	auto abstractsolutions = mx->getSolutions();
+	if (abstractsolutions.empty()) {
 		return false;
 	} else {
-		Assert(abstractsolutions->getModels().size() == 1);
-		auto model = *(abstractsolutions->getModels().cbegin());
+		Assert(abstractsolutions.size() == 1);
+		auto model = *(abstractsolutions.cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
 		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
 		structure->clean();
 	}
-
 	// Cleanup
 	grounding->recursiveDelete();
-	delete (solver);
-	delete (abstractsolutions);
+	delete (data);
+	delete (mx);
 	delete (grounder);
+	delete (symstructure->manager());
 	delete (symstructure);
 
 	return structure->isConsistent();
@@ -98,10 +99,9 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 					return std::vector<AbstractStructure*> { };
 				}
 				theory->remove(currentdefinition->first);
+				currentdefinition->first->recursiveDelete();
 				opens.erase(currentdefinition);
 				fixpoint = false;
-				//cerr <<"Current structure after evaluating a definition: \n";
-				//cerr <<toString(structure) <<"\n";
 			}
 		}
 	}

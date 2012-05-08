@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "TermGrounders.hpp"
 
@@ -110,7 +110,7 @@ GroundTerm FuncTermGrounder::run() const {
 }
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
-	if (type == ST_MINUS) {
+	if (type == SumType::ST_MINUS) {
 		return new CPWSumTerm({ left, right }, { 1, -1 });
 	} else {
 		return new CPSumTerm(left, right);
@@ -129,16 +129,18 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 			rightdomain = new SortTable(new EnumeratedInternalSortTable());
 			rightdomain->add(right._domelement);
 		}
-		if (leftdomain && rightdomain && leftdomain->approxFinite() && rightdomain->approxFinite()) {
+		if (leftdomain && rightdomain && leftdomain->isRange() && rightdomain->isRange() && leftdomain->approxFinite() && rightdomain->approxFinite()) {
+			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
+			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 			int leftmin = leftdomain->first()->value()._int;
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
 			int min, max;
-			if (_type == ST_PLUS) {
+			if (_type == SumType::ST_PLUS) {
 				min = leftmin + rightmin;
 				max = leftmax + rightmax;
-			} else if (_type == ST_MINUS) {
+			} else if (_type == SumType::ST_MINUS) {
 				min = leftmin - rightmax;
 				max = leftmax - rightmin;
 			}
@@ -146,6 +148,24 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 				swap(min, max);
 			}
 			setDomain(new SortTable(new IntRangeInternalSortTable(min, max)));
+		} else if (leftdomain->approxFinite() && rightdomain->approxFinite()) {
+			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
+			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
+			auto newdomain = new SortTable(new EnumeratedInternalSortTable());
+			for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
+				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
+					int leftvalue = (*leftit)->value()._int;
+					int rightvalue = (*rightit)->value()._int;
+					int newvalue;
+					if (_type == SumType::ST_PLUS) {
+						newvalue = leftvalue + rightvalue;
+					} else if (_type == SumType::ST_MINUS) {
+						newvalue = leftvalue - rightvalue;
+					}
+					newdomain->add(createDomElem(newvalue));
+				}
+			}
+			setDomain(newdomain);
 		} else {
 			if (leftdomain && not leftdomain->approxFinite()) {
 				Warning::warning("Left domain is infinite...");
@@ -154,7 +174,7 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 				Warning::warning("Right domain is infinite...");
 			}
 			//TODO one of the domains is unknown or infinite...
-			//TODO one case when left or right is a domain element!
+			//setDomain(new SortTable(new AllIntegers()));
 			throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
 		}
 	}

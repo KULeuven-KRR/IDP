@@ -1,12 +1,12 @@
 /****************************************************************
  * Copyright 2010-2012 Katholieke Universiteit Leuven
- *
+ *  
  * Use of this software is governed by the GNU LGPLv3.0 license
- *
+ * 
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef ABSTRACTSTRUCTURE_HPP_
 #define ABSTRACTSTRUCTURE_HPP_
@@ -28,25 +28,30 @@ class Vocabulary;
 
 class AbstractStructure {
 protected:
-
 	std::string _name; // The name of the structure
 	ParseInfo _pi; // The place where this structure was parsed.
 	Vocabulary* _vocabulary; // The vocabulary of the structure.
 
 public:
 	AbstractStructure(std::string name, const ParseInfo& pi)
-			: _name(name), _pi(pi), _vocabulary(0) {
+			: _name(name), _pi(pi), _vocabulary(NULL) {
+	}
+	AbstractStructure(std::string name, Vocabulary* v, const ParseInfo& pi)
+			: _name(name), _pi(pi), _vocabulary(NULL) {
+		changeVocabulary(v);
 	}
 	virtual ~AbstractStructure() {
 	}
 
 	// Mutators
-	virtual void vocabulary(Vocabulary* v) {
+	// FIXME should be an invariant that a structure always interprets its vocabulary
+	// solution: implement monitors in vocabulary
+	virtual void changeVocabulary(Vocabulary* v) {
 		_vocabulary = v;
 	} // set the vocabulary
 
-	virtual void inter(Predicate* p, PredInter* i) = 0; //!< set the interpretation of p to i
-	virtual void inter(Function* f, FuncInter* i) = 0; //!< set the interpretation of f to i
+	virtual void changeInter(Predicate* p, PredInter* i) = 0; //!< CHANGE the interpretation of p to i
+	virtual void changeInter(Function* f, FuncInter* i) = 0; //!< CHANGE the interpretation of f to i
 	virtual void clean() = 0; //!< make three-valued interpretations that are in fact
 							  //!< two-valued, two-valued.
 

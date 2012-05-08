@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef PARSEINFO_HPP
 #define PARSEINFO_HPP
@@ -65,7 +65,7 @@ public:
 	}
 	ObjectInfo(unsigned int line, unsigned int col, std::string* file, const RepresentedObject& original)
 			: ParseInfo(line, col, file), _original(std::shared_ptr<RepresentedObject>(original.clone())) {
-		// TODO _original->alwaysRecursiveDelete(true);
+		_original->allwaysDeleteRecursively(true);
 	}
 
 	const RepresentedObject& originalobject() const {

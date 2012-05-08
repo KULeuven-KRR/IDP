@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #ifndef COPY_HPP_
 #define COPY_HPP_
@@ -18,6 +18,7 @@
 #include "fobdds/FoBddDomainTerm.hpp"
 #include "fobdds/FoBddUtils.hpp"
 #include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddAggKernel.hpp"
 
 class Copy: public FOBDDVisitor {
 private:
@@ -25,6 +26,7 @@ private:
 	FOBDDManager* _copymanager;
 	const FOBDDKernel* _kernel;
 	const FOBDDTerm* _argument;
+	const FOBDDSetExpr* _set;
 public:
 	Copy(FOBDDManager* orig, FOBDDManager* copy)
 			: FOBDDVisitor(orig), _originalmanager(orig), _copymanager(copy) {
@@ -50,9 +52,36 @@ public:
 		_argument = _copymanager->getFuncTerm(term->func(), newargs);
 	}
 
+	void visit(const FOBDDAggTerm* term) {
+		auto newset = copy(term->setexpr());
+		_argument = _copymanager->getAggTerm(term->aggfunction(), newset);
+	}
+
+	void visit(const FOBDDEnumSetExpr* set) {
+		std::vector<const FOBDD*> subformulas;
+		std::vector<const FOBDDTerm*> terms;
+		for (int i = 0; i < set->size(); i++) {
+			subformulas.push_back(copy(set->subformula(i)));
+			terms.push_back(copy(set->subterm(i)));
+		}
+		_set = _copymanager->getEnumSetExpr(subformulas, terms, set->sort());
+	}
+
+	void visit(const FOBDDQuantSetExpr* set) {
+		auto subformula = copy(set->subformula(0));
+		auto term = copy(set->subterm(0));
+		_set = _copymanager->getQuantSetExpr(set->quantvarsorts(),subformula,term,set->sort());
+	}
+
 	void visit(const FOBDDQuantKernel* kernel) {
 		auto newbdd = copy(kernel->bdd());
 		_kernel = _copymanager->getQuantKernel(kernel->sort(), newbdd);
+	}
+
+	void visit(const FOBDDAggKernel* kernel) {
+		auto newleft = copy(kernel->left());
+		auto newright = copy(kernel->right());
+		_kernel = _copymanager->getAggKernel(newleft, kernel->comp(), newright);
 	}
 
 	void visit(const FOBDDAtomKernel* kernel) {
@@ -84,6 +113,11 @@ public:
 			auto kernel = copy(bdd->kernel());
 			return _copymanager->ifthenelse(kernel, truebranch, falsebranch);
 		}
+	}
+
+	const FOBDDSetExpr* copy(const FOBDDSetExpr* set) {
+		set->accept(this);
+		return _set;
 	}
 };
 

@@ -1,23 +1,54 @@
+/****************************************************************
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
+
 #include "Query.hpp"
 
 #include "IncludeComponents.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
+#include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "generators/InstGenerator.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddFactory.hpp"
+#include "theory/TheoryUtils.hpp"
 
 PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	// translate the formula to a bdd
-	FOBDDManager manager;
-	FOBDDFactory factory(&manager);
-	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
-	std::set<const FOBDDVariable*> bddvars = manager.getVariables(vars);
-	std::set<const FOBDDDeBruijnIndex*> bddindices;
-	const FOBDD* bdd = factory.turnIntoBdd(q->query());
+	FOBDDManager* manager;
+	const FOBDD* bdd;
+	auto newquery = q->query()->clone();
+	newquery = FormulaUtils::calculateArithmetic(newquery);
+
+	if (not structure->approxTwoValued()) {
+		auto generateBDDaccToBounds = generateNaiveApproxBounds(NULL, structure);
+		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
+		manager = generateBDDaccToBounds->manager();
+		delete generateBDDaccToBounds;
+	} else {
+		//When working two-valued, we can simply turn formula to BDD
+		manager = new FOBDDManager();
+		FOBDDFactory factory(manager);
+		bdd = factory.turnIntoBdd(newquery);
+	}
+	newquery->recursiveDelete();
+
 	Assert(bdd != NULL);
+	Assert(manager != NULL);
+	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
+	std::set<const FOBDDVariable*> bddvars = manager->getVariables(vars);
+	std::set<const FOBDDDeBruijnIndex*> bddindices;
+
 	// optimize the query
-	manager.optimizeQuery(bdd, bddvars, bddindices, structure);
+	manager->optimizeQuery(bdd, bddvars, bddindices, structure);
+	Assert(bdd != NULL);
 
 	// create a generator
 	BddGeneratorData data;
@@ -26,10 +57,10 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 		data.pattern.push_back(Pattern::OUTPUT);
 		data.vars.push_back(new const DomElemContainer());
-		data.bddvars.push_back(manager.getVariable(*it));
+		data.bddvars.push_back(manager->getVariable(*it));
 		data.universe.addTable(structure->inter((*it)->sort()));
 	}
-	BDDToGenerator btg(&manager);
+	BDDToGenerator btg(manager);
 
 	InstGenerator* generator = btg.create(data);
 
@@ -50,5 +81,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 		}
 		result->add(currtuple);
 	}
+	delete generator;
+	delete (manager);
 	return result;
 }

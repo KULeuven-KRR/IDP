@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************/
+****************************************************************/
 
 #include "AddCompletion.hpp"
 
@@ -72,7 +72,7 @@ Rule* AddCompletion::visit(Rule* rule) {
 			vector<Term*> args;
 			args.push_back(bvt);
 			args.push_back(t->clone());
-			Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2, vv[n]->sort()));
+			Predicate* p = get(STDPRED::EQ, vv[n]->sort());
 			PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
 			vf.push_back(pf);
 		} else {
@@ -86,13 +86,13 @@ Rule* AddCompletion::visit(Rule* rule) {
 				vector<Term*> args;
 				args.push_back(bvt1);
 				args.push_back(bvt2);
-				Predicate* p = Vocabulary::std()->pred("=/2")->resolve(vector<Sort*>(2, v->sort()));
+				Predicate* p = get(STDPRED::EQ, v->sort());
 				PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
 				vf.push_back(pf);
 			}
 		}
 	}
-	Formula* b = rule->body();
+	Formula* b = rule->body()->clone(mvv);
 	if (!vf.empty()) {
 		vf.push_back(b);
 		b = new BoolForm(SIGN::POS, true, vf, FormulaParseInfo());
@@ -100,8 +100,10 @@ Rule* AddCompletion::visit(Rule* rule) {
 	if (!freevars.empty()) {
 		b = new QuantForm(SIGN::POS, QUANT::EXIST, freevars, b, FormulaParseInfo());
 	}
-	b = b->clone(mvv);
-	_interres[rule->head()->symbol()].push_back(b);
+	auto c = b->clone(mvv);
+	//Not complete (some variables might be useless), but better than no memorymanagement. TODO improve
+	b->recursiveDeleteKeepVars();
+	_interres[rule->head()->symbol()].push_back(c);
 
 	return rule;
 }

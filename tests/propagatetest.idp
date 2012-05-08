@@ -2,15 +2,29 @@ procedure main(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	S1=groundpropagate(T,S)
-	S2=optimalpropagate(T,S)
-	if weakassertions(S1) and weakassertions(S2) and strongassertions(S2) then
-		return 1
-	else
+	if not weakassertions(S1) then
+		io.stderr:write("Error in groundpropagate.\n")
 		return 0
 	end
+	S2=optimalpropagate(T,S)
+	S3=propagate(T,S)
+	returnvalue = 1
+	if  not weakassertions(S1) then
+		returnvalue = 0
+		io.stderr:write("Groundpropagate failed.\n")
+	end
+	if not weakassertions(S3) then
+		returnvalue = 0
+		io.stderr:write("Symbolic propagation failed.\n")
+	end
+	if  not (weakassertions(S2) and strongassertions(S2)) then
+		returnvalue = 0
+		io.stderr:write("optimalpropagate failed.\n")
+	end
+	return returnvalue 
 }
 
-procedure assert(table,valuefirst,name,dexpected){
+procedure assert(table,valuefirst,name,expected){
 	for t in tuples(table) do 
 		if t[1] == valuefirst then 
 			return true	
@@ -65,8 +79,8 @@ procedure assert2multi(table, values, name){
 		index = index+1
 	end 
 	if result == false or #values ~= index-1 then
-			result = false
-			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+		result = false
+		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
 	end
 	return result
 	
@@ -82,7 +96,8 @@ procedure assert2(table, values, name){
 		index = index+1
 	end 
 	if result == false or #values ~= index-1 then
-			io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+		result = false
+		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
 	end
 	return result
 	
