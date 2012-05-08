@@ -14,12 +14,9 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include <list>
 
-#include "visitors/TheoryVisitor.hpp"
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
-
-// TODO: detection of symmetry using intricated type hierarchies may not yet be correct. Please verify the detected symmetries manually...
 
 /**********
  * Miscellaneous methods
@@ -679,64 +676,13 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 	return result;
 }
 
-/**
- * 	Theory analyzing visitor which extracts information relevant for symmetry detection.
- *	More specifically, it will extract
- *		a set of domain elements which should not be permuted by a symmetry,
- *		a set of sorts whose domain elements should not be permuted by a symmetry, and
- *		a set of relations which are used in the theory (to exclude unused but nonetheless defined relations)
- */
+/**********
+ * Implementation of TheorySymmetryAnalyzer methods
+ **********/
 
-class TheorySymmetryAnalyzer: public DefaultTraversingTheoryVisitor {
-	VISITORFRIENDS()
-private:
-	const AbstractStructure* structure_;
-	set<const Sort*> forbiddenSorts_;
-	set<const DomainElement*> forbiddenElements_;
-	set<PFSymbol*> usedRelations_;
-
-	void markAsUnfitForSymmetry(const vector<Term*>&);
-	void markAsUnfitForSymmetry(const Sort*);
-	void markAsUnfitForSymmetry(const DomainElement*);
-
-	const AbstractStructure* getStructure() const {
-		return structure_;
-	}
-
-public:
-	TheorySymmetryAnalyzer(const AbstractStructure* s)
-			: structure_(s) {
-		markAsUnfitForSymmetry(VocabularyUtils::intsort());
-		markAsUnfitForSymmetry(VocabularyUtils::floatsort());
-		markAsUnfitForSymmetry(VocabularyUtils::natsort());
-	}
-
-	void analyze(const AbstractTheory* t) {
-		t->accept(this);
-	}
-
-	const set<const Sort*>& getForbiddenSorts() const {
-		return forbiddenSorts_;
-	}
-	const set<const DomainElement*>& getForbiddenElements() const {
-		return forbiddenElements_;
-	}
-	const set<PFSymbol*>& getUsedRelations() const {
-		return usedRelations_;
-	}
-
-	void addForbiddenSort(const Sort* sort) {
-		forbiddenSorts_.insert(sort);
-	}
-	void addUsedRelation(PFSymbol* relation) {
-		usedRelations_.insert(relation);
-	}
-protected:
-	void visit(const PredForm*);
-	void visit(const FuncTerm*);
-	void visit(const DomainTerm*);
-	void visit(const EqChainForm*);
-};
+void TheorySymmetryAnalyzer::analyze(const AbstractTheory* t) {
+	t->accept(this);
+}
 
 /**
  * 	mark the sorts of a collection of terms as unfit for symmetry
@@ -750,7 +696,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerm
 /**
  * 	mark a certain sort as unfit for symmetry
  */
-void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const Sort* s) {
+void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(Sort* s) {
 	addForbiddenSort(s);
 }
 
@@ -817,6 +763,14 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef) {
 	 */
 }
 
+void TheorySymmetryAnalyzer::visit(const AggForm* af){
+	if(af->right()->function()!=CARD){
+		markAsUnfitForSymmetry(af->right()->sort());
+	}
+	markAsUnfitForSymmetry(af->left()->sort());
+	traverse(af->right());
+}
+
 /**********
  * Symmetry detection methods
  **********/
@@ -875,9 +829,14 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  */
 set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t) {
 	Assert(t->vocabulary()==s->vocabulary());
+	cout << "token" << toString(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
-	tsa.analyze(t);
-	set<const Sort*> forbiddenSorts;
+	auto newt =t->clone();
+	FormulaUtils::graphFuncsAndAggs(newt);
+	tsa.analyze(newt);
+
+// Find out what sorts can not be used in symmetry:
+	set<Sort*> forbiddenSorts;
 	for (auto sort_it = tsa.getForbiddenSorts().cbegin(); sort_it != tsa.getForbiddenSorts().cend(); ++sort_it) {
 		forbiddenSorts.insert(*sort_it);
 		set<Sort*> descendents = (*sort_it)->descendents();
@@ -886,14 +845,33 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+//	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "forbiddenSorts: ";
 		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
 		clog << "\n";
+//	}
+
+// Extract domain elements from forbidden sorts:
+	set<const DomainElement*> forbiddenElements;
+	for (auto sort_it = forbiddenSorts.cbegin(); sort_it != forbiddenSorts.cend(); ++sort_it) {
+		if(isSortForSymmetry(*sort_it,s)){
+			for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it){
+				forbiddenElements.insert(*element_it);
+			}
+		}
 	}
 
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "forbiddenElements: ";
+		for (auto it = forbiddenElements.cbegin(); it != forbiddenElements.cend(); ++it) {
+			clog << toString(*it) << " ";
+		}
+		clog << "\n";
+	}
+
+// Find out what sorts are used in the given theory:
 	set<Sort*> allowedSorts;
 	for (auto relation_it = tsa.getUsedRelations().cbegin(); relation_it != tsa.getUsedRelations().cend(); ++relation_it) {
 		for (auto sort_it = (*relation_it)->sorts().cbegin(); sort_it != (*relation_it)->sorts().cend(); ++sort_it) {
@@ -911,8 +889,65 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		clog << "\n";
 	}
 
-	map<Sort*, set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
+// Extract elements that occur as interpretations of allowed sorts, and are not used in the forbidden sorts:
+	map<const DomainElement*, set<Sort*> > allowedElements;
+	for (auto sort_it = allowedSorts.cbegin(); sort_it != allowedSorts.cend(); ++sort_it) {
+		for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it){
+			if(!forbiddenElements.count(*element_it)){
+				if(!allowedElements.count(*element_it)){
+					allowedElements.insert(pair<const DomainElement*, set<Sort*> >(*element_it,set<Sort*>()));
+				}
+				allowedElements.at(*element_it).insert(*sort_it);
+			}
+		}
+	}
+
+// Group allowed domain elements by the sorts they occur in:
+	map<set<Sort*>, set<const DomainElement*> > initialIVSets;
+	for(auto elements_it = allowedElements.cbegin(); elements_it!=allowedElements.cend(); ++elements_it){
+		set<Sort*> sortset = elements_it->second;
+		if(!initialIVSets.count(sortset)){
+			initialIVSets.insert(pair<set<Sort*>, set<const DomainElement*> >(sortset,set<const DomainElement*>()));
+		}
+		initialIVSets.at(sortset).insert(elements_it->first);
+	}
+
+//	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "initialIVSets: \n";
+		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
+			clog << "Elements: " ;
+			for(auto elements_it=it->second.cbegin(); elements_it!=it->second.cend(); ++elements_it){
+				clog << toString(*elements_it) << " ";
+			}
+			clog << "\n";
+			clog << "Sorts: " ;
+			for(auto sorts_it=it->first.cbegin(); sorts_it!=it->first.cend(); ++sorts_it){
+				clog << toString(*sorts_it) << " ";
+			}
+			clog << "\n";
+		}
+//	}
+
+// Create invariant sets based on the grouped domain elements:
 	set<const IVSet*> result;
+	for(auto ivset_it = initialIVSets.cbegin(); ivset_it!=initialIVSets.cend(); ++ivset_it){
+		set<const DomainElement*> elements = ivset_it->second;
+		if(elements.size()>1){
+			set<Sort*> sorts = ivset_it->first;
+			set<PFSymbol*> relations = findNonTrivialRelationsWithSort(s, sorts, tsa.getUsedRelations());
+			IVSet* ivset = new IVSet(s, elements, sorts, relations);
+			if(ivset->isRelevantSymmetry()){
+				result.insert(ivset);
+			} else {
+				delete ivset;
+			}
+		}
+	}
+
+// old code:
+/*	map<Sort*, set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
+	set<const IVSet*> result;
+
 	for (auto ivset_it = elementsForSorts.cbegin(); ivset_it != elementsForSorts.cend(); ++ivset_it) {
 		set<Sort*> sorts;
 		sorts.insert(ivset_it->first);
@@ -932,6 +967,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 			}
 		}
 	}
+*/
 	return result;
 }
 
