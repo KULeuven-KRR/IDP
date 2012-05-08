@@ -229,15 +229,20 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 	g.ground(term->set(), vocabulary);
 	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 	optimgrounder->setOrig(minimizeterm);
-	return optimgrounder;
+	Grounder* grounder = optimgrounder;
+	if(g.getTopGrounder()!=NULL){
+		grounder = new BoolGrounder(g.getGrounding(), {optimgrounder, g.getTopGrounder()}, SIGN::POS, true, g.getContext());
+	}
+	return grounder;
 }
 
 template<class T>
 void GrounderFactory::ground(T root, const Vocabulary* v) {
 	InitContext();
-	auto functheory = FormulaUtils::getFuncConstraints(root, v);
+	auto functheory = FormulaUtils::getFuncConstraints(root, v); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
 	descend(functheory);
 	auto savedgrounder = getTopGrounder();
+	delete (functheory);
 	Assert(dynamic_cast<BoolGrounder*>(savedgrounder)!=NULL);
 
 	InitContext();
@@ -245,14 +250,15 @@ void GrounderFactory::ground(T root, const Vocabulary* v) {
 	if (_topgrounder != NULL) {
 		Assert(dynamic_cast<BoolGrounder*>(_topgrounder)!=NULL);
 		auto rootgr = dynamic_cast<BoolGrounder*>(_topgrounder);
+		Assert(rootgr->conjunctiveWithSign());
 		auto funcgr = dynamic_cast<BoolGrounder*>(savedgrounder);
+		Assert(funcgr->conjunctiveWithSign());
 		auto list = rootgr->getSubGrounders();
 		list.insert(list.end(), funcgr->getSubGrounders().cbegin(), funcgr->getSubGrounders().cend());
 		_topgrounder = new BoolGrounder(getGrounding(), list, SIGN::POS, true, getContext());
 	} else {
 		_topgrounder = savedgrounder;
 	}
-	delete (functheory);
 }
 
 template<class T>

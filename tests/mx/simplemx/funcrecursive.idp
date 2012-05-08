@@ -8,6 +8,7 @@ vocabulary V {
 
 theory T : V {
   P(f(g(B))).
+  ?x: f(g(B))=x.
   !x y: f(x)=y => g(x)=y.
   g(B) = 2.
   ?x: ~P(x).
@@ -18,5 +19,5 @@ structure S : V {
 }
 
 procedure getExpectedNbOfModels() {
-	return 32
+	return 8
 }

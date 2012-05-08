@@ -69,7 +69,6 @@ protected:
 	std::vector<const DomElemContainer*> _checkargs; // The variables representing the subterms of the atom. These are used in the generators and checkers
 	PredInter* _inter;
 
-	mutable std::vector<GroundTerm> groundsubterms;
 	mutable ElementTuple args;
 
 	Lit run() const;
@@ -148,6 +147,10 @@ public:
 	}
 	void run(ConjOrDisj& formula) const;
 
+	bool conjunctiveWithSign() const {
+		return (_conn == Conn::CONJ && isPositive()) || (_conn == Conn::DISJ && isNegative());
+	}
+
 protected:
 	TsType getTseitinType() const;
 
@@ -169,9 +172,6 @@ protected:
 
 	Conn conjunctive() const {
 		return _conn;
-	}
-	bool conjunctiveWithSign() const {
-		return (_conn == Conn::CONJ && isPositive()) || (_conn == Conn::DISJ && isNegative());
 	}
 
 	bool isPositive() const {

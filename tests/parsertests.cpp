@@ -52,10 +52,10 @@ TEST(RestartTest, FailAndContinue){
 	string testfile1(getTestDirectory() + "parser/invalidinput/parseerror.idp");
 	string testfile2(getTestDirectory() + "nonexistingfile.idp");
 	string testfile3(getTestDirectory() + "mx/simplemx/atom.idp");
-	string testfilemx(getTestDirectory() + "mxnbofmodelstest.idp");
+	string testfilemx(getTestDirectory() + "modelexpansion.idp");
 	ASSERT_EQ(Status::FAIL, test( { testfile1, testfilemx }));
 	ASSERT_EQ(Status::FAIL, test( { testfile2, testfilemx }));
-	ASSERT_EQ(Status::SUCCESS, test( { testfile3, testfilemx }));
+	ASSERT_EQ(Status::SUCCESS, test( { testfile3, testfilemx }, "mxnobounds()"));
 }
 
 TEST(MakeTrueTest, NoPerson){

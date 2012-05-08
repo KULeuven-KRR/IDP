@@ -123,16 +123,17 @@ HeadGrounder::~HeadGrounder() {
 Lit HeadGrounder::run() const {
 	// Run subterm grounders
 	bool alldomelts = true;
-	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
-	ElementTuple args(_subtermgrounders.size());
+	vector<GroundTerm> groundsubterms;
+	ElementTuple args;
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		CHECKTERMINATION
-		groundsubterms[n] = _subtermgrounders[n]->run();
-		if (groundsubterms[n].isVariable) {
+		auto term = _subtermgrounders[n]->run();
+		if (term.isVariable) {
 			alldomelts = false;
 		} else {
-			args[n] = groundsubterms[n]._domelement;
+			args.push_back(term._domelement);
 		}
+		groundsubterms.push_back(term);
 	}
 	// TODO guarantee that all subterm grounders return domain elements
 	Assert(alldomelts);

@@ -62,7 +62,7 @@ VarId GroundTermTranslator::translate(const DomainElement* element) {
 VarId GroundTermTranslator::nextNumber() {
 	VarId nr = _varid2function.size();
 	_varid2function.push_back(NULL);
-	_varid2args.push_back(vector<GroundTerm>(0));
+	_varid2args.push_back(vector<GroundTerm>{});
 	_varid2domain.push_back(NULL);
 	return nr;
 }

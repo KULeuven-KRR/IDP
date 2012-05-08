@@ -72,17 +72,18 @@ GroundTerm FuncTermGrounder::run() const {
 		pushtab();
 	}
 	bool calculable = true;
-	vector<GroundTerm> groundsubterms(_subtermgrounders.size());
+	vector<GroundTerm> groundsubterms;
 	ElementTuple args(_subtermgrounders.size());
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		CHECKTERMINATION
-		groundsubterms[n] = _subtermgrounders[n]->run();
-		if (groundsubterms[n].isVariable) {
+		auto groundterm = _subtermgrounders[n]->run();
+		if (groundterm.isVariable) {
 			calculable = false;
 		} else {
-			Assert(groundsubterms[n]._domelement != NULL);
-			args[n] = groundsubterms[n]._domelement;
+			Assert(groundterm._domelement != NULL);
+			args[n] = groundterm._domelement;
 		}
+		groundsubterms.push_back(groundterm);
 	}
 	if (calculable && _functable) { // All ground subterms are domain elements!
 		auto result = (*_functable)[args];

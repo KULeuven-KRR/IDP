@@ -363,16 +363,12 @@ struct GroundTerm {
 		const DomainElement* _domelement;
 		VarId _varid;
 	};
-	GroundTerm() {
-	}
 	GroundTerm(const DomainElement* domel)
 			: isVariable(false), _domelement(domel) {
+		Assert(domel!=NULL);
 	}
 	GroundTerm(const VarId& varid)
 			: isVariable(true), _varid(varid) {
-	}
-	bool isValid(){
-		return isVariable || (_domelement != NULL);
 	}
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);

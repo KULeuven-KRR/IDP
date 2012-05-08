@@ -328,7 +328,6 @@ Term* UnnestTerms::visit(AggTerm* t) {
 
 Term* UnnestTerms::visit(FuncTerm* t) {
 	bool savemovecontext = getAllowedToUnnest();
-	auto function = t->function();
 
 	setAllowedToUnnest(true);
 

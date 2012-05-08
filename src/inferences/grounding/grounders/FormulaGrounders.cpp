@@ -96,7 +96,7 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)),
-			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), groundsubterms(_subtermgrounders.size()), args(_subtermgrounders.size()) {
+			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
@@ -120,11 +120,11 @@ Lit AtomGrounder::run() const {
 	// Run subterm grounders
 	bool alldomelts = true;
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
-		groundsubterms[n] = _subtermgrounders[n]->run();
-		if (groundsubterms[n].isVariable) {
+		auto groundterm = _subtermgrounders[n]->run();
+		if (groundterm.isVariable) {
 			alldomelts = false;
 		} else {
-			args[n] = groundsubterms[n]._domelement;
+			args[n] = groundterm._domelement;
 			// Check partial functions
 			if (args[n] == NULL) {
 				//throw notyetimplemented("Partial function issue in grounding an atom.");
