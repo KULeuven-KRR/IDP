@@ -34,7 +34,7 @@ procedure satwithcp(){
 procedure satwithsymm(){
 	stdoptions.timeout = 20
 	stdoptions.groundwithbounds = false
-	stdoptions.symmetry = "static"
+	stdoptions.symmetrybreaking = "static"
 	return run()
 }
 

@@ -28,7 +28,7 @@ procedure mxwithcp(){
 procedure mxwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
-	stdoptions.symmetry = "static"
+	stdoptions.symmetrybreaking = "static"
 	return run()
 }
 

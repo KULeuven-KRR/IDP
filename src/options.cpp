@@ -156,7 +156,7 @@ Options::Options() {
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
-	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmbreak", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name,
+	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name,
 			PrintBehaviour::PRINT);
 }
 
