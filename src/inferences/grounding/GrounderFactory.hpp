@@ -17,6 +17,7 @@
 #include "Utils.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
+#include "generators/InstGenerator.hpp" // For PATTERN
 
 #include "inferences/SolverInclude.hpp"
 
@@ -108,11 +109,19 @@ private:
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
 	// NOTE: creates generators, which do a check on infinite grounding
+	struct GeneratorData{ // NOTE: all have the same order!
+		std::vector<SortTable*> tables;
+		std::vector<Variable*> fovars, quantfovars;
+		std::vector<Pattern> pattern;
+		std::vector<const DomElemContainer*> containers;
+	};
+	GeneratorData getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars);
+	InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data);
+	InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
-	const FOBDD* improveGenerator(const FOBDD*, const std::vector<Variable*>&, double);
-	const FOBDD* improveChecker(const FOBDD*, double);
+	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
 
 	template<typename Grounding>
 	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding);

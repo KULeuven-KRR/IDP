@@ -56,6 +56,7 @@ public:
 
 	/**
 	 * Generate a bdd which contains exactly all instances for which the given formula has the requested truth type.
+	 * @pre: GRAPHED functions and aggregates!
 	 */
 	const FOBDD* evaluate(Formula* formula, TruthType truthvalue);
 

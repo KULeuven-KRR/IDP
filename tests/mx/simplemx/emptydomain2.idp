@@ -3,11 +3,11 @@ vocabulary V{
 }
 
 theory T:V{
-	prod{x[x]: true: x}=0.
+	!x[x]: false.
 }
 
 structure S:V{
-	x = {0..5}
+	x = {}
 }
 
 procedure getExpectedNbOfModels(){

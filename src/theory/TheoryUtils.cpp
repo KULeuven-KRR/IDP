@@ -330,7 +330,7 @@ bool isMonotone(const AggForm* af) {
 		return false;
 	case CompType::LT:
 	case CompType::LEQ: {
-		switch (af->right()->function()) {
+		switch (af->getAggTerm()->function()) {
 		case AggFunction::CARD:
 		case AggFunction::MAX:
 			return isPos(af->sign());
@@ -345,7 +345,7 @@ bool isMonotone(const AggForm* af) {
 	}
 	case CompType::GT:
 	case CompType::GEQ: {
-		switch (af->right()->function()) {
+		switch (af->getAggTerm()->function()) {
 		case AggFunction::CARD:
 		case AggFunction::MAX:
 			return isNeg(af->sign());
@@ -369,7 +369,7 @@ bool isAntimonotone(const AggForm* af) {
 		return false;
 	case CompType::LT:
 	case CompType::LEQ: {
-		switch (af->right()->function()) {
+		switch (af->getAggTerm()->function()) {
 		case AggFunction::CARD:
 		case AggFunction::MAX:
 			return isNeg(af->sign());
@@ -384,7 +384,7 @@ bool isAntimonotone(const AggForm* af) {
 	}
 	case CompType::GT:
 	case CompType::GEQ: {
-		switch (af->right()->function()) {
+		switch (af->getAggTerm()->function()) {
 		case AggFunction::CARD:
 		case AggFunction::MAX:
 			return isPos(af->sign());

@@ -195,7 +195,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
 		if (maxsize._type == TableSizeType::TST_EXACT) {
 			//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
-			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size << "% of the full grounding.\n";
+			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size *100 << "% of the full grounding.\n";
 		}
 		cout << "|";
 	}

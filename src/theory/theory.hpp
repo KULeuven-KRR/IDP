@@ -458,27 +458,20 @@ public:
 	AggForm* cloneKeepVars() const;
 	AggForm* clone(const std::map<Variable*, Variable*>&) const;
 
-	// Destructor
-	~AggForm() {
-	}
+	//void getBound(Term* t) {
+	//	subterm(0, t);
+	//}
 
-	// Mutators
-	void left(Term* t) {
-		subterm(0, t);
-	}
-
-	// Inspectors
-	Term* left() const {
+	Term* getBound() const {
 		return subterms()[0];
 	}
-	AggTerm* right() const {
+	AggTerm* getAggTerm() const {
 		return _aggterm;
 	}
 	CompType comp() const {
 		return _comp;
 	}
 
-	// Output
 	std::ostream& put(std::ostream&) const;
 };
 

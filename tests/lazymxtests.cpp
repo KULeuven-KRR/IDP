@@ -36,11 +36,11 @@ class MXLazyMXTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(MXLazyMXTest, DoesLazyMX) {
-	runTests("mxlazymxtest.idp", GetParam());
+	runTests("lazymodelexpansion.idp", GetParam(), "mxlazy()");
 }
 
 TEST_P(MXLazySATTest, DoesLazyMX) {
-	runTests("mxlazysattest.idp", GetParam());
+	runTests("lazymodelexpansion.idp", GetParam(), "satlazy()");
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXLazySATTest, ::testing::ValuesIn(generateListOfMXsatFiles()));

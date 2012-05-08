@@ -29,7 +29,7 @@ class MXOptimTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(MXOptimTest, DoesMX) {
-	runTests("mxoptimize.idp", GetParam());
+	runTests("optimization.idp", GetParam());
 }
 
 INSTANTIATE_TEST_CASE_P(ModelOptimization, MXOptimTest, ::testing::ValuesIn(generateListOfMXOptimFiles()));

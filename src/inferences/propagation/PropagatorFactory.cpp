@@ -317,7 +317,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
-	SetExpr* s = af->right()->set();
+	SetExpr* s = af->getAggTerm()->set();
 	for (auto it = s->subformulas().cbegin(); it != s->subformulas().cend(); ++it) {
 		_propagator->setUpward(*it, af);
 	}

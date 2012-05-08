@@ -248,6 +248,26 @@ std::string toString(const CompType& type) {
 }
 
 template<>
+std::string toString(const TruthType& type){
+	std::stringstream output;
+	switch (type) {
+	case TruthType::CERTAIN_FALSE:
+		output << " cf ";
+		break;
+	case TruthType::CERTAIN_TRUE:
+		output << " ct ";
+		break;
+	case TruthType::POSS_FALSE:
+		output << " pf ";
+		break;
+	case TruthType::POSS_TRUE:
+		output << " pt ";
+		break;
+	}
+	return output.str();
+}
+
+template<>
 std::string toString(const TsType& type) {
 	std::stringstream output;
 	switch (type) {

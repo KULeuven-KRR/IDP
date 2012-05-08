@@ -21,11 +21,11 @@ std::string getTestDirectory() {
 }
 
 namespace Tests {
-void runTests(const char* inferencefilename, const string& instancefile) {
+void runTests(const char* inferencefilename, const string& instancefile, const std::string& command) {
 	string testfile(getTestDirectory() + inferencefilename);
 	cerr << "Testing " << instancefile << "\n";
 	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( {instancefile, testfile}););
+	ASSERT_NO_THROW( result = test( {instancefile, testfile}, command););
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 void throwexc() {

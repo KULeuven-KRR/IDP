@@ -36,18 +36,18 @@ class MXsatTest: public ::testing::TestWithParam<string> {
 class SlowMXsatTest: public ::testing::TestWithParam<string> {
 };
 TEST_P(SlowMXsatTest, DoesSlowMXBasic) {
-	runTests("mxsattestslow.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satnoboundslong()");
 }
 TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {
-	runTests("mxsattestwithbounds.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satwithboundslong()");
 }
 
 TEST_P(MXsatTest, DoesMXWithBounds) {
-	runTests("mxsattestwithbounds.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satwithbounds()");
 }
 
 TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxsattestwithsymmetrybreaking.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satwithsymm()");
 }
 
 INSTANTIATE_TEST_CASE_P(ModelExpansionLong, SlowMXsatTest, ::testing::ValuesIn(generateListOfSlowMXsatFiles()));

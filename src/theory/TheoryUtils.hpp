@@ -42,7 +42,7 @@ ReturnType transform(Construct* object, Values ... parameters) {
 		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
 		pushtab();
 	}
-	ReturnType result = t.execute(object, parameters...);
+	auto result = t.execute(object, parameters...);
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 		poptab();
 		std::clog << tabs() << "Resulted in: " << nt() << toString(result) << "\n\n";
@@ -152,7 +152,7 @@ Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractS
 /** Recursively remove all nested terms */
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
-/** Non-recursively move terms that are three-valued in a given structure outside of the given atom */
+/** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
 Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
 
 /** Replace all definitions in the theory by their completion */

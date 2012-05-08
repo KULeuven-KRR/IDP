@@ -26,5 +26,4 @@ TEST(SimpleTest, NegationOfTrueIsFalse) {
 	ASSERT_EQ(_false, -_true);
 }
 
-
 }

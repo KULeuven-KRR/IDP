@@ -45,9 +45,9 @@ public:
 		t->accept(this);
 		if(_resultingliteral2!=NULL){
 			context = _resultingContext;
-			return {_resultingliteral, _resultingliteral2};
+			return std::vector<const PredForm*>{_resultingliteral, _resultingliteral2};
 		}
-		return {};
+		return std::vector<const PredForm*>{};
 	}
 
 protected:

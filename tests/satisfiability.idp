@@ -1,0 +1,60 @@
+#include <mx>
+
+procedure satnobounds(){
+	stdoptions.groundwithbounds = false
+	stdoptions.timeout = 20
+	return run()
+}
+
+procedure satnoboundslong(){
+	stdoptions.groundwithbounds = false
+	stdoptions.timeout = 200
+	return run()
+}
+
+procedure satwithbounds(){
+	stdoptions.groundwithbounds = true
+	stdoptions.timeout = 20
+	return run()
+}
+
+procedure satwithboundslong(){
+	stdoptions.groundwithbounds = true
+	stdoptions.timeout = 200
+	return run()
+}
+
+procedure satwithcp(){
+	stdoptions.cpsupport = true
+	stdoptions.groundwithbounds = false
+	stdoptions.timeout = 20
+	return run()
+}
+
+procedure satwithsymm(){
+	stdoptions.timeout = 20
+	stdoptions.groundwithbounds = false
+	stdoptions.symmetry = "static"
+	return run()
+}
+
+procedure run() {	
+	solution = mx::one(T,S)
+	
+	if(solution==nil) then
+		if(getExpectedAModel()) then
+			io.stderr:write("Found UNSAT, expected SAT.\n")
+			return 0
+		else
+			io.stderr:write("Found UNSAT, expected UNSAT.\n")
+			return 1
+		end
+	end
+
+	if(#modelexpand(T, solution)==0) then
+		io.stderr:write("Found an invalid partial model.\n")
+		return 0
+	end
+	io.stderr:write("Found SAT, expected SAT.\n")
+	return 1
+}

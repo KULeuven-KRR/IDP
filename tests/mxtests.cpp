@@ -37,34 +37,38 @@ class MXsatTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(MXnbTest, DoesMX) {
-	runTests("mxnbofmodelstest.idp", GetParam());
+	runTests("modelexpansion.idp", GetParam(), "mxnobounds()");
 }
 
 TEST_P(MXnbTest, DoesMXWithBounds) {
-	runTests("mxnbofmodelstestwithbounds.idp", GetParam());
+	runTests("modelexpansion.idp", GetParam(), "mxwithbounds()");
 }
 
 TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
-	runTests("mxnbofmodelstestwithsymmetrybreaking.idp", GetParam());
+	runTests("modelexpansion.idp", GetParam(), "mxwithsymm()");
 }
 
 #ifdef WITHCP
 TEST_P(MXnbTest, DoesMXWithCP) {
-	runTests("mxnbofmodelstestwithcp.idp", GetParam());
+	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
 }
 #endif
 
 TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
-	runTests("mxnbofmodelstestwithoutpushingnegations.idp", GetParam());
+	runTests("modelexpansionwithoutpushingnegations.idp", GetParam());
 }
 
 TEST_P(MXsatTest, DoesMX) {
-	runTests("mxsattest.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satnobounds()");
+}
+
+TEST_P(MXsatTest, DoesMXWithBounds) {
+	runTests("satisfiability.idp", GetParam(), "satwithbounds()");
 }
 
 #ifdef WITHCP
 TEST_P(MXsatTest, DoesMXWithCP) {
-	runTests("mxsattestwithcp.idp", GetParam());
+	runTests("satisfiability.idp", GetParam(), "satwithcp()");
 }
 #endif
 

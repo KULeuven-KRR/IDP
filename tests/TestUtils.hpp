@@ -16,7 +16,7 @@ std::string getTestDirectory();
 
 namespace Tests {
 
-void runTests(const char* inferencefilename, const std::string& instancefile);
+void runTests(const char* inferencefilename, const std::string& instancefile, const std::string& command = "");
 }
 
 void throwexc();

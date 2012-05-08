@@ -29,8 +29,8 @@ protected:
 		}
 	}
 	Formula* splitInto(AggForm* f, CompType left, CompType right) {
-		auto aggone = new AggForm(f->sign(), f->left()->clone(), left, f->right()->clone(), FormulaParseInfo());
-		auto aggtwo = new AggForm(f->sign(), f->left()->clone(), right, f->right()->clone(), FormulaParseInfo());
+		auto aggone = new AggForm(f->sign(), f->getBound()->clone(), left, f->getAggTerm()->clone(), FormulaParseInfo());
+		auto aggtwo = new AggForm(f->sign(), f->getBound()->clone(), right, f->getAggTerm()->clone(), FormulaParseInfo());
 
 		checkMonotonicityAndThrow(aggone);
 		checkMonotonicityAndThrow(aggtwo);

@@ -349,15 +349,11 @@ const ParseInfo& PFSymbol::pi() const {
 }
 
 size_t PFSymbol::nrSorts() const {
-	return _sorts.size();
+	return sorts().size();
 }
 
 Sort* PFSymbol::sort(size_t n) const {
-	return _sorts[n];
-}
-
-const vector<Sort*>& PFSymbol::sorts() const {
-	return _sorts;
+	return sorts()[n];
 }
 
 bool PFSymbol::infix() const {
@@ -372,7 +368,7 @@ Predicate* PFSymbol::derivedSymbol(SymbolType type) {
 	Assert(type != ST_NONE);
 	auto it = _derivedsymbols.find(type);
 	if (it == _derivedsymbols.cend()) {
-		Predicate* derp = new Predicate(_name, _sorts, _pi, _infix);
+		auto derp = new Predicate(_name, sorts(), _pi, _infix);
 		derp->type(type, this);
 		_derivedsymbols[type] = derp;
 		return derp;
@@ -397,7 +393,7 @@ ostream& operator<<(ostream& output, const PFSymbol& s) {
 
 set<Sort*> Predicate::allsorts() const {
 	set<Sort*> ss;
-	ss.insert(_sorts.cbegin(), _sorts.cend());
+	ss.insert(sorts().cbegin(), sorts().cend());
 	if (_overpredgenerator) {
 		set<Sort*> os = _overpredgenerator->allsorts();
 		ss.insert(os.cbegin(), os.cend());
@@ -416,11 +412,11 @@ Predicate::~Predicate() {
 }
 
 bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
-	_vocabularies.erase(vocabulary);
+	getVocabularies().erase(vocabulary);
 	if (overloaded()) {
 		_overpredgenerator->removeVocabulary(vocabulary);
 	}
-	if (_vocabularies.empty()) {
+	if (not hasVocabularies()) {
 		delete (this);
 		return true;
 	}
@@ -428,7 +424,7 @@ bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
 }
 
 void Predicate::addVocabulary(const Vocabulary* vocabulary) {
-	_vocabularies.insert(vocabulary);
+	getVocabularies().insert(vocabulary);
 	if (overloaded()) {
 		_overpredgenerator->addVocabulary(vocabulary);
 	}
@@ -444,7 +440,7 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 
 Predicate::Predicate(const vector<Sort*>& sorts)
 		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	_name = "_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size());
+	setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
@@ -456,7 +452,7 @@ Predicate::Predicate(PredGenerator* generator)
 }
 
 unsigned int Predicate::arity() const {
-	return _sorts.size();
+	return sorts().size();
 }
 
 bool Predicate::builtin() const {
@@ -516,10 +512,10 @@ bool Predicate::contains(const Predicate* predicate) const {
  *		  and matches the given sorts.
  *		- Otherwise, the unique predicate that is overloaded by the predicate and matches the given sorts.
  */
-Predicate* Predicate::resolve(const vector<Sort*>& sorts) {
+Predicate* Predicate::resolve(const vector<Sort*>& ambigsorts) {
 	if (overloaded()) {
-		return _overpredgenerator->resolve(sorts);
-	} else if (_sorts == sorts) {
+		return _overpredgenerator->resolve(ambigsorts);
+	} else if (sorts() == ambigsorts) {
 		return this;
 	} else {
 		return NULL;
@@ -535,12 +531,12 @@ Predicate* Predicate::resolve(const vector<Sort*>& sorts) {
  *		- sorts:		the given sorts
  *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
  */
-Predicate* Predicate::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+Predicate* Predicate::disambiguate(const vector<Sort*>& ambigsorts, const Vocabulary* vocabulary) {
 	if (overloaded()) {
-		return _overpredgenerator->disambiguate(sorts, vocabulary);
+		return _overpredgenerator->disambiguate(ambigsorts, vocabulary);
 	} else {
-		for (size_t n = 0; n < _sorts.size(); ++n) {
-			if (_sorts[n] && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) {
+		for (size_t n = 0; n < sorts().size(); ++n) {
+			if (sorts()[n] && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
 				return NULL;
 			}
 		}
@@ -562,15 +558,15 @@ set<Predicate*> Predicate::nonbuiltins() {
 
 ostream& Predicate::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
-		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
-			if (not (*it)->pred(_name)->overloaded()) {
+		for (auto it = getVocabularies().cbegin(); it != getVocabularies().cend(); ++it) {
+			if (not (*it)->pred(name())->overloaded()) {
 				(*it)->putName(output);
 				output << "::";
 				break;
 			}
 		}
 	}
-	output << _name.substr(0, _name.rfind('/'));
+	output << name().substr(0, name().rfind('/'));
 	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
 		if (nrSorts() > 0) {
 			output << '[';
@@ -834,13 +830,13 @@ Predicate* overload(const set<Predicate*>& sp) {
 
 Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
 		: PFSymbol(name, is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
-	_sorts.push_back(os);
+	addSort(os);
 }
 
 Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
 		: PFSymbol("", is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
-	_sorts.push_back(os);
-	_name = "_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size()+1);
+	addSort(os);
+	setName("_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size()+1));
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding)
@@ -851,7 +847,7 @@ Function::Function(const std::string& name, const std::vector<Sort*>& sorts, con
 
 Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding)
 		: PFSymbol(name, is), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
-	_sorts.push_back(os);
+	addSort(os);
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding)
@@ -884,11 +880,11 @@ void Function::partial(bool b) {
 }
 
 bool Function::removeVocabulary(const Vocabulary* vocabulary) {
-	_vocabularies.erase(vocabulary);
+	getVocabularies().erase(vocabulary);
 	if (overloaded()) {
 		_overfuncgenerator->removeVocabulary(vocabulary);
 	}
-	if (_vocabularies.empty()) {
+	if (not hasVocabularies()) {
 		delete (this);
 		return true;
 	}
@@ -896,7 +892,7 @@ bool Function::removeVocabulary(const Vocabulary* vocabulary) {
 }
 
 void Function::addVocabulary(const Vocabulary* vocabulary) {
-	_vocabularies.insert(vocabulary);
+	getVocabularies().insert(vocabulary);
 	if (overloaded()) {
 		_overfuncgenerator->addVocabulary(vocabulary);
 	}
@@ -904,7 +900,7 @@ void Function::addVocabulary(const Vocabulary* vocabulary) {
 
 set<Sort*> Function::allsorts() const {
 	set<Sort*> ss;
-	ss.insert(_sorts.cbegin(), _sorts.cend());
+	ss.insert(sorts().cbegin(), sorts().cend());
 	if (_overfuncgenerator != NULL) {
 		set<Sort*> os = _overfuncgenerator->allsorts();
 		ss.insert(os.cbegin(), os.cend());
@@ -990,10 +986,10 @@ bool Function::contains(const Function* function) const {
  *		- Otherwise, the unique function that is overloaded by the function and matches the 
  *		  given sorts.
  */
-Function* Function::resolve(const vector<Sort*>& sorts) {
+Function* Function::resolve(const vector<Sort*>& ambigsorts) {
 	if (overloaded()) {
-		return _overfuncgenerator->resolve(sorts);
-	} else if (_sorts == sorts) {
+		return _overfuncgenerator->resolve(ambigsorts);
+	} else if (sorts() == ambigsorts) {
 		return this;
 	} else {
 		return NULL;
@@ -1009,12 +1005,13 @@ Function* Function::resolve(const vector<Sort*>& sorts) {
  *		- sorts:		the given sorts (includes the output sort)
  *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
  */
-Function* Function::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
+Function* Function::disambiguate(const vector<Sort*>& ambigsorts, const Vocabulary* vocabulary) {
+	Assert(ambigsorts.size()==sorts().size());
 	if (overloaded()) {
-		return _overfuncgenerator->disambiguate(sorts, vocabulary);
+		return _overfuncgenerator->disambiguate(ambigsorts, vocabulary);
 	} else {
-		for (size_t n = 0; n < _sorts.size(); ++n) {
-			if (sorts[n] != NULL && not SortUtils::resolve(sorts[n], _sorts[n], vocabulary)) {
+		for (size_t n = 0; n < sorts().size(); ++n) {
+			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
 				return NULL;
 			}
 		}
@@ -1036,15 +1033,15 @@ set<Function*> Function::nonbuiltins() {
 
 ostream& Function::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
-		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
-			if (not (*it)->func(_name)->overloaded()) {
+		for (auto it = getVocabularies().cbegin(); it != getVocabularies().cend(); ++it) {
+			if (not (*it)->func(name())->overloaded()) {
 				(*it)->putName(output);
 				output << "::";
 				break;
 			}
 		}
 	}
-	output << _name.substr(0, _name.rfind('/'));
+	output << name().substr(0, name().rfind('/'));
 	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
 		output << '[';
 		if (_insorts.empty()) {
@@ -1868,40 +1865,93 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent){
 	if(child==NULL || parent==NULL){
 		return false;
 	}
+	if(child==parent){
+		return true;
+	}
+	std::map<Sort*, Sort*> child2parentsort;
 	for(auto i=child->firstSort(); i!=child->lastSort(); ++i){
-		auto parentsort = parent->sort(i->second->name());
-		if(parentsort==NULL){
+		auto childsort = i->second;
+		auto parentsort = parent->sort(childsort->name());
+		if(parentsort==NULL || parentsort->parents().size()!=childsort->parents().size()){
 			return false;
+		}
+		child2parentsort[childsort]=parentsort;
+	}
+	for(auto i=child2parentsort.cbegin(); i!=child2parentsort.cend(); ++i){
+		auto childsort = i->first;
+		auto parentsort = i->second;
+		for(auto j=childsort->parents().cbegin(); j!=childsort->parents().cend(); ++j){
+			auto childparentit = child2parentsort.find(*j);
+			if(childparentit==child2parentsort.cend()){
+				return false;
+			}
+			bool found = false;
+			for(auto k=parentsort->parents().cbegin(); k!=parentsort->parents().cend(); ++k){
+				if(*k==childparentit->second){
+					found = true;
+				}
+			}
+			if(not found){
+				return false;
+			}
 		}
 	}
 	for(auto i=child->firstPred(); i!=child->lastPred(); ++i){
-		auto childpred = i->second;
-		auto parentpred = parent->pred(i->second->name());
-		if(parentpred==NULL || childpred->arity()!=parentpred->arity()){
-			return false;
+		auto generalchildpred = i->second;
+		if(generalchildpred->builtin()){
+			continue;
 		}
-		for(uint j=0; j<parentpred->sorts().size(); ++j){
-			if(parentpred->sorts()[j]->name()!=childpred->sorts()[j]->name()){
+		auto allpreds = generalchildpred->nonbuiltins();
+		for(auto j=allpreds.cbegin(); j!=allpreds.cend(); ++j){
+			auto childpred = *j;
+			Assert(not childpred->overloaded());
+			auto parentpred = parent->pred(childpred->name());
+			if(parentpred==NULL){
+				return false;
+			}
+			std::vector<Sort*> mappedsorts;
+			for(auto k=childpred->sorts().cbegin(); k<childpred->sorts().cend(); ++k){
+				auto sortit = child2parentsort.find(*k);
+				if(sortit==child2parentsort.cend()){
+					return false;
+				}
+				mappedsorts.push_back(sortit->second);
+			}
+			if(parentpred->disambiguate(mappedsorts)==NULL){
 				return false;
 			}
 		}
 	}
 	for(auto i=child->firstFunc(); i!=child->lastFunc(); ++i){
-		auto childfunc = i->second;
-		auto parentfunc = parent->func(i->second->name());
-		if(parentfunc==NULL || childfunc->arity()!=parentfunc->arity()){
-			return false;
+		auto generalchildfunc = i->second;
+		if(generalchildfunc->builtin()){
+			continue;
 		}
-		for(uint j=0; j<parentfunc->sorts().size(); ++j){
-			if(parentfunc->sorts()[j]->name()!=childfunc->sorts()[j]->name()){
+		auto allfuncs = generalchildfunc->nonbuiltins();
+		for(auto j=allfuncs.cbegin(); j!=allfuncs.cend(); ++j){
+			auto childfunc = *j;
+			Assert(not childfunc->overloaded());
+			auto parentfunc = parent->func(childfunc->name());
+			if(parentfunc==NULL){
+				return false;
+			}
+			std::vector<Sort*> mappedsorts;
+			for(auto k=childfunc->sorts().cbegin(); k<childfunc->sorts().cend(); ++k){
+				auto sortit = child2parentsort.find(*k);
+				if(sortit==child2parentsort.cend()){
+					return false;
+				}
+				mappedsorts.push_back(sortit->second);
+			}
+			auto disambigfunc = parentfunc->disambiguate(mappedsorts, parent);
+			if(disambigfunc==NULL){
+				return false;
+			}
+			if(disambigfunc->partial()!=childfunc->partial()){
 				return false;
 			}
 		}
-		if(parentfunc->outsort()->name()!=childfunc->outsort()->name()){
-			return false;
-		}
 	}
-	// FIXME should check that the parents of all symbols are also the same!
 	return true;
 }
 

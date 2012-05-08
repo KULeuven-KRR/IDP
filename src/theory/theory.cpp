@@ -357,14 +357,14 @@ AggForm* AggForm::clone() const {
 }
 
 AggForm* AggForm::cloneKeepVars() const {
-	auto nl = left()->cloneKeepVars();
-	auto nr = right()->cloneKeepVars();
+	auto nl = getBound()->cloneKeepVars();
+	auto nr = getAggTerm()->cloneKeepVars();
 	return new AggForm(sign(), nl, _comp, nr, pi());
 }
 
 AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {
-	Term* nl = left()->clone(mvv);
-	AggTerm* nr = right()->clone(mvv);
+	Term* nl = getBound()->clone(mvv);
+	AggTerm* nr = getAggTerm()->clone(mvv);
 	return new AggForm(sign(), nl, _comp, nr, pi());
 }
 
@@ -373,9 +373,9 @@ ostream& AggForm::put(ostream& output) const {
 		output << '~';
 	}
 	output << '(';
-	left()->put(output);
+	getBound()->put(output);
 	output << ' ' << toString(_comp) << ' ';
-	right()->put(output);
+	getAggTerm()->put(output);
 	output << ')';
 	return output;
 }

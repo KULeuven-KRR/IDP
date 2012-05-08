@@ -153,6 +153,8 @@ std::string toString(const std::unordered_map<Type1, Type2, Type3>& map) {
 template<>
 std::string toString(const CompType& type);
 template<>
+std::string toString(const TruthType& type);
+template<>
 std::string toString(const TsType& type);
 template<>
 std::string toString(const AggFunction& type);

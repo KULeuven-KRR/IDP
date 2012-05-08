@@ -196,14 +196,14 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 
 void FOBDDFactory::visit(const AggForm* af) {
 #ifndef NDEBUG
-	if (af->left()->type() != TermType::TT_DOM && af->left()->type() != TermType::TT_VAR) {
+	if (af->getBound()->type() != TermType::TT_DOM && af->getBound()->type() != TermType::TT_VAR) {
 		throw notyetimplemented("Creating a bdd for unnested aggregate formulas has not yet been implemented.");
 	}
 #endif
 	auto invert = isNeg(af->sign());
-	af->left()->accept(this);
+	af->getBound()->accept(this);
 	auto left = _term;
-	af->right()->accept(this);
+	af->getAggTerm()->accept(this);
 	_kernel = _manager->getAggKernel(left, af->comp(), _term);
 	if (invert) {
 		_bdd = _manager->ifthenelse(_kernel, _manager->falsebdd(), _manager->truebdd());

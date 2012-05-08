@@ -364,9 +364,9 @@ public:
 			output() << '~';
 		}
 		output() << '(';
-		f->left()->accept(this);
+		f->getBound()->accept(this);
 		output() << ' ' << toString(f->comp()) << ' ';
-		f->right()->accept(this);
+		f->getAggTerm()->accept(this);
 		output() << ')';
 	}
 

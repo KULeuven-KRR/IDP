@@ -342,8 +342,9 @@ public:
 /**
  * Runs the main method given a number of inputfiles and checks whether the main method returns the int 1.
  * In that case, test return SUCCESS, in all other cases it returns FAIL.
- *
  * NOTE: for any test, it has to have a main() method which returns 1 if success, even for parser tests!
+ *
+ * If a nonempty execution command is provided, that command is executed instead of main()
  */
 Status test(const std::vector<std::string>& inputfileurls, const std::string& executioncommand) {
 	DataManager m;
@@ -365,7 +366,7 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 		if(executioncommand==""){
 			ss << "return " << getGlobalNamespaceName() << ".main()";
 		}else{
-			ss << executioncommand;
+			ss << "return " <<executioncommand;
 		}
 		auto value = executeProcedure(ss.str());
 		if (value != NULL && value->type() == DomainElementType::DET_INT && value->value()._int == 1) {

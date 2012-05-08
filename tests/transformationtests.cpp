@@ -162,9 +162,9 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 
 	ASSERT_TRUE(sametypeid<AggForm>(*result));
 	auto resaggform = dynamic_cast<AggForm*>(result);
-	EXPECT_EQ(one,resaggform->left());
+	EXPECT_EQ(one,resaggform->getBound());
 	EXPECT_EQ(CompType::EQ,resaggform->comp());
-	EXPECT_EQ(sumterm,resaggform->right());
+	EXPECT_EQ(sumterm,resaggform->getAggTerm());
 
 	result->recursiveDelete();
 }

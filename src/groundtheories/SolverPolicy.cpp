@@ -319,9 +319,9 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsTy
 
 template<class Solver>
 void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries){
-	MinisatID::Symmetry s({});
+	MinisatID::Symmetry s(std::vector<std::vector<MinisatID::Literal> >{});
 	for (auto bs_it = symmetries.cbegin(); bs_it != symmetries.cend(); ++bs_it) {
-		s.symmetry.push_back({});
+		s.symmetry.push_back(std::vector<MinisatID::Literal>{});
 		for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
 			s.symmetry.back().push_back(SolverConnection::createLiteral(s_it->first));
 		}

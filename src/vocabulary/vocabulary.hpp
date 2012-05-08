@@ -170,16 +170,25 @@ enum SymbolType {
  *	\brief	Abstract base class to represent predicate and function symbols
  */
 class PFSymbol {
-protected:
+private:
 	std::string _name; //!< Name of the symbol (ending with the /arity)
 	ParseInfo _pi; //!< The place where the symbol was declared
 	std::set<const Vocabulary*> _vocabularies; //!< All vocabularies the symbol belongs to
 	std::vector<Sort*> _sorts; //!< Sorts of the arguments.
+		// IMPORTANT: for overloaded symbols, sorts can be NULL
 							   //!< For a function symbol, the last sort is the output sort.
 	bool _infix; //!< True iff the symbol is infix
 
 	std::map<SymbolType, Predicate*> _derivedsymbols; //!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
 
+protected:
+	void setName(const std::string& name){
+		_name = name;
+	}
+	void addSort(Sort* s){
+		_sorts.push_back(s);
+	}
+	std::set<const Vocabulary*>& getVocabularies() { return _vocabularies; }
 	virtual ~PFSymbol();
 
 public:
@@ -197,11 +206,20 @@ public:
 	const ParseInfo& pi() const; //!< Returns the parse info of the symbol
 	std::size_t nrSorts() const; //!< Returns the number of sorts of the symbol
 	//!< (arity for predicates, arity+1 for functions)
+
+	// IMPORTANT: for overloaded symbols, sorts can be NULL
 	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
-	const std::vector<Sort*>& sorts() const; //!< Returns the sorts of the symbol
+
+	// IMPORTANT: for overloaded symbols, sorts can be NULL
+	const std::vector<Sort*>& sorts() const{
+		return _sorts;
+	}
 	bool infix() const; //!< True iff the symbol is infix
+
 	bool hasVocabularies() const; //!< Returns true iff the symbol occurs in a
 								  //!< vocabulary
+	const std::set<const Vocabulary*>& getVocabularies() const { return _vocabularies; }
+
 	Predicate* derivedSymbol(SymbolType); //!< Return the derived symbol of the given type
 	std::vector<unsigned int> argumentNrs(const Sort*) const; //!< Returns the numbers of the arguments where this
 															  //!< PFSymbol ranges over the given sort
