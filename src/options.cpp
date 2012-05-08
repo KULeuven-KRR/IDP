@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <sstream>
 #include "options.hpp"
@@ -49,24 +49,64 @@ std::string str(SymmetryBreaking choice) {
 	}
 }
 
-inline Language operator++( Language& x ) { return x = (Language)(((int)(x) + 1)); }
-inline SymmetryBreaking operator++( SymmetryBreaking& x ) { return x = (SymmetryBreaking)(((int)(x) + 1)); }
-inline Language operator*( Language& x ) { return x; }
-inline SymmetryBreaking operator*( SymmetryBreaking& x ) { return x; }
+inline Language operator++(Language& x) {
+	return x = (Language) (((int) (x) + 1));
+}
+inline SymmetryBreaking operator++(SymmetryBreaking& x) {
+	return x = (SymmetryBreaking) (((int) (x) + 1));
+}
+inline Language operator*(Language& x) {
+	return x;
+}
+inline SymmetryBreaking operator*(SymmetryBreaking& x) {
+	return x;
+}
+inline bool operator<(Language x, Language y) {
+	if (y == IDP) {
+		return false;
+	}
+	if (y == ECNF) {
+		return x == IDP;
+	}
+	if (y == TPTP) {
+		return x == IDP || x == ECNF;
+	}
+	if (y == FLATZINC) {
+		return x != FLATZINC && x != ASP;
+	}
+	if (y == ASP) {
+		return x != ASP;
+	}
+	Assert(false);
+	return false;
+}
+inline bool operator<(SymmetryBreaking x, SymmetryBreaking y) {
+	if (y == SymmetryBreaking::NONE) {
+		return false;
+	}
+	if (y == SymmetryBreaking::STATIC) {
+		return x == SymmetryBreaking::NONE;
+	}
+	if (y == SymmetryBreaking::DYNAMIC) {
+		return x != SymmetryBreaking::DYNAMIC;
+	}
+	Assert( false);
+	return false;
+}
 
 template<class T>
-std::set<T> possibleValues(){
+std::set<T> possibleValues() {
 	std::set<T> s;
-	for(auto i=T::FIRST; i<=T::LAST; ++i){
+	for (auto i = T::FIRST; i != T::LAST; ++i) {
 		s.insert(*i);
 	}
 	return s;
 }
 template<class T>
-std::set<std::string> possibleStringValues(){
+std::set<std::string> possibleStringValues() {
 	std::set<std::string> s;
 	auto values = possibleValues<T>();
-	for(auto i=values.cbegin(); i!=values.cend(); ++i){
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
 		s.insert(str(*i));
 	}
 	return s;
@@ -116,7 +156,8 @@ Options::Options() {
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
-	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmbreak", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name, PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmbreak", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name,
+			PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
@@ -135,8 +176,8 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
-void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values,
-		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
+		std::vector<std::string>& option2name, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
@@ -213,7 +254,7 @@ std::string EnumeratedOption<EnumType, ConcreteType>::printOption() const {
 Language Options::language() const {
 	auto values = possibleValues<Language>();
 	auto value = StringPol::getValue(StringType::LANGUAGE);
-	for(auto i=values.cbegin(); i!=values.cend(); ++i) {
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
 		if (value.compare(str(*i)) == 0) {
 			return *i;
 		}
@@ -222,10 +263,10 @@ Language Options::language() const {
 	return Language::ECNF;
 }
 
-SymmetryBreaking Options::symmetryBreaking() const{
+SymmetryBreaking Options::symmetryBreaking() const {
 	auto values = possibleValues<SymmetryBreaking>();
 	const std::string& value = StringPol::getValue(StringType::SYMMETRYBREAKING);
-	for(auto i=values.cbegin(); i!=values.cend(); ++i) {
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
 		if (value.compare(str(*i)) == 0) {
 			return *i;
 		}

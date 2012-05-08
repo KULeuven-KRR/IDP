@@ -477,7 +477,7 @@ TEST(UnnestTermsTest,NestedFuncTerms) {
 	//std::clog << "Transforming " << toString(&eqfgxhx) << "\n";
 	auto result = FormulaUtils::unnestTerms(&eqfgxhx);
 	//std::clog << "Resulted in " << toString(result) << "\n";
-
+std::cerr << toString(result);
 	EXPECT_TRUE(sametypeid<QuantForm>(*result));
 	ASSERT_EQ(1,result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];

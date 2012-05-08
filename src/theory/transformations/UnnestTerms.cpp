@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "UnnestTerms.hpp"
@@ -45,7 +45,7 @@ bool UnnestTerms::shouldMove(Term* t) {
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), _vocabulary)) {
-		sort = TermUtils::deriveIntSort(term,_structure);
+		sort = TermUtils::deriveIntSort(term, _structure);
 	}
 	return sort;
 }
@@ -123,7 +123,7 @@ Theory* UnnestTerms::visit(Theory* theory) {
 	return theory;
 }
 
-void UnnestTerms::visitRuleHead(Rule* rule){
+void UnnestTerms::visitRuleHead(Rule* rule) {
 	Assert(_equalities.empty());
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
 		auto term = rule->head()->subterms()[termposition];
@@ -329,14 +329,9 @@ Term* UnnestTerms::visit(AggTerm* t) {
 Term* UnnestTerms::visit(FuncTerm* t) {
 	bool savemovecontext = getAllowedToUnnest();
 	auto function = t->function();
-	if (not getOption(BoolType::GROUNDWITHBOUNDS) && _structure != NULL) {
-		auto finter = _structure->inter(function);
-		if (finter->approxTwoValued()) {
-			setAllowedToUnnest(false);
-		}
-	} else {
-		setAllowedToUnnest(true);
-	}
+
+	setAllowedToUnnest(true);
+
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {

@@ -294,7 +294,7 @@ template<class T2, class T>
 bool sametypeid(const T& object) {
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, CannotCompareTypeIDofPointers);
-	return typeid(object) == typeid(T2);
+	return (dynamic_cast<const T2*>(&object) != NULL);
 }
 
 #endif /* COMMON_HPP */
