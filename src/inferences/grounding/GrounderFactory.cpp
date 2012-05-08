@@ -341,8 +341,8 @@ CompType getCompType(T symbol) {
 
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestPartialTerms(temppf, _context._funccontext, _structure, _structure->vocabulary());
-	transpf = FormulaUtils::unnestThreeValuedTerms(transpf, _structure, _context._funccontext);
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext);
+	// FIXME add? transpf = FormulaUtils::unnestPartialTerms(transpf, _context._funccontext, _structure, _structure->vocabulary());
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom

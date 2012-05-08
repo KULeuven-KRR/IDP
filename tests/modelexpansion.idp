@@ -29,7 +29,20 @@ procedure mxwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	stdoptions.symmetrybreaking = "static"
-	return run()
+	stdoptions.nbmodels = 0
+	solutions = mx::all(T,S)
+	io.stderr:write("Found "..#solutions.." models, expected at most "..getExpectedNbOfModels().." models.\n")
+	if(#solutions>getExpectedNbOfModels()) then
+		return 0
+	end 
+	
+	for i,v in ipairs(solutions) do
+		if(#modelexpand(T, v)==0) then
+			io.stderr:write("Found an invalid solution.\n")
+			return 0
+		end
+	end
+	return 1
 }
 
 procedure run() {
