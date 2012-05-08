@@ -95,20 +95,22 @@ public:
 	}
 };
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options){
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options) {
 	switch (options->symmetryBreaking()) {
 	case SymmetryBreaking::NONE:
 		break;
-	case SymmetryBreaking::STATIC:{
+	case SymmetryBreaking::STATIC: {
 		auto ivsets = findIVSets(theory, structure);
 		addSymBreakingPredicates(grounding, ivsets);
-		break;}
-	case SymmetryBreaking::DYNAMIC:{
+		break;
+	}
+	case SymmetryBreaking::DYNAMIC: {
 		auto ivsets = findIVSets(theory, structure);
 		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
 		}
-		break;}
+		break;
+	}
 	}
 }
 
@@ -117,7 +119,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Calculate known definitions
 	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
-	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
+	//clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
 #warning "Buggy code in mx: testing with sharedTseitinTransform"
 
 	AbstractStructure* newstructure = NULL;

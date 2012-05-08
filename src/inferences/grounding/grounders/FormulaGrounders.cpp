@@ -142,6 +142,8 @@ Lit AtomGrounder::run() const {
 
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
+				std::cerr << "for table "<<toString(_tables[n])<<endl;//TODO REMOVE
+
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) { poptab(); }

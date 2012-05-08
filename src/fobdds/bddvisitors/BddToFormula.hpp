@@ -161,6 +161,7 @@ protected:
 			_currformula = new PredForm(SIGN::POS, atom->symbol()->derivedSymbol(ST_CF), args, FormulaParseInfo());
 			break;
 		}
+
 	}
 
 	virtual void visit(const FOBDDQuantKernel* quantkernel) {

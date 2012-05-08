@@ -262,7 +262,8 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 					newsymbol = get(STDPRED::LT, sort);
 				} else if (is(symbol, STDPRED::GT)) {
 					newsymbol = get(STDPRED::GT, sort);
-				} else if (is(symbol, STDPRED::EQ)) {
+				} else {
+					Assert(is(symbol, STDPRED::EQ));
 					newsymbol = get(STDPRED::EQ, sort);
 				}
 				return getAtomKernel(newsymbol, akt, newargs);
@@ -282,6 +283,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 			} else if (is(symbol, STDPRED::GT)) {
 				newsymbol = get(STDPRED::LT, symbol->sorts()[0]);
 			}
+			//Here, it is ok to not disambiguate the sort again, since we do not change the types of the (in)equalities
 			return getAtomKernel(newsymbol, akt, newargs);
 		}
 	}
