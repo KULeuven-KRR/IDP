@@ -37,7 +37,7 @@ public:
 	virtual void setVarsAgain();
 	void reset();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 class TableGenerator: public InstGenerator {
@@ -82,7 +82,7 @@ public:
 	virtual void setVarsAgain();
 	void reset();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* GENERATEANDTESTGENERATOR_HPP_ */

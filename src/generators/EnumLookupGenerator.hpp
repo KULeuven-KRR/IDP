@@ -35,7 +35,7 @@ public:
 	// Increment is done AFTER returning a tuple!
 	void next();
 	void setVarsAgain();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* ENUMLOOKUPGENERATOR_HPP_ */

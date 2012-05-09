@@ -62,7 +62,7 @@ protected:
 public:
 	DivChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ);
 	DivChecker* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream)const;
 };
 
 class TimesChecker: public ArithOpChecker {
@@ -71,7 +71,7 @@ protected:
 public:
 	TimesChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ);
 	TimesChecker* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream)const;
 };
 
 class MinusChecker: public ArithOpChecker {
@@ -80,7 +80,7 @@ protected:
 public:
 	MinusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ);
 	MinusChecker* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream)const;
 };
 
 class PlusChecker: public ArithOpChecker {
@@ -89,7 +89,7 @@ protected:
 public:
 	PlusChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ);
 	PlusChecker* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream)const;
 };
 
 class ModChecker: public ArithOpChecker {
@@ -98,7 +98,7 @@ protected:
 public:
 	ModChecker(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* in3, const Universe univ);
 	ModChecker* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream)const;
 };
 
 #endif /* ARITHCH_HPP_ */

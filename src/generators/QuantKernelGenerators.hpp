@@ -38,7 +38,7 @@ public:
 	TrueQuantKernelGenerator* clone() const;
 	void reset();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 
 };
 
@@ -58,7 +58,7 @@ public:
 	FalseQuantKernelGenerator* clone() const;
 	void reset();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 
 };
 

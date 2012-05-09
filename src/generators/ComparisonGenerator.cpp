@@ -24,7 +24,7 @@ ComparisonGenerator::ComparisonGenerator(SortTable* leftsort, SortTable* rightso
 	}
 }
 
-void ComparisonGenerator::put(std::ostream& stream) {
+void ComparisonGenerator::put(std::ostream& stream) const {
 	stream << _leftvar << "[" << toString(_leftsort) << "]" << (_input != Input::NONE ? "(in)" : "(out)");
 	stream << toString(_comparison);
 	stream << _rightvar << "[" << toString(_rightsort) << "]" << (_input == Input::BOTH ? "(in)" : "(out)");

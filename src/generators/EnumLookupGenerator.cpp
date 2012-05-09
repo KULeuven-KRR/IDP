@@ -87,7 +87,7 @@ void EnumLookupGenerator::setVarsAgain() {
 	}
 }
 
-  void EnumLookupGenerator::put(std::ostream& stream) {
+  void EnumLookupGenerator::put(std::ostream& stream) const{
 	stream <<"enumerating table" <<toString(_table);
 }
 

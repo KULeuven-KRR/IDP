@@ -122,6 +122,6 @@ void AggGenerator::next() {
 
 }
 
-void AggGenerator::put(std::ostream& stream) {
+void AggGenerator::put(std::ostream& stream) const {
 	stream << "Generator for an aggregate (printing not yet implemented)";
 }

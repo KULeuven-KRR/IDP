@@ -57,7 +57,7 @@ void UnionGenerator::next() {
 		}
 	} while (alreadySeen());
 }
-void UnionGenerator::put(std::ostream& stream) {
+void UnionGenerator::put(std::ostream& stream)  const{
 	stream << "Union generator: union of ";
 	pushtab();
 	stream << nt();

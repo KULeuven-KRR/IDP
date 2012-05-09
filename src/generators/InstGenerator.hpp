@@ -38,7 +38,7 @@ public:
 	// NOTE: should be a deep clone
 	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
 
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 
 	void notifyIsInfiniteGenerator(){
 		generatesInfiniteDomain = true;

@@ -39,7 +39,7 @@ public:
 	void reset();
 	bool alreadySeen();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* UNIONQUANTKERNELGENERATOR_HPP_ */

@@ -49,7 +49,7 @@ public:
 	ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue, Input input,
 			CompType type);
 
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 	ComparisonGenerator* clone() const;
 	void setVarsAgain();
 	void reset();

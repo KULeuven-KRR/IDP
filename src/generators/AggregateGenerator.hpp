@@ -61,7 +61,7 @@ public:
 
 	void next();
 
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* AGGGENERATOR_HPP_ */

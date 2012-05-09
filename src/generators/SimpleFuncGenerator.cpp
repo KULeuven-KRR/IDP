@@ -110,7 +110,7 @@ void SimpleFuncGenerator::next() {
 	notifyAtEnd();
 }
 
-void SimpleFuncGenerator::put(std::ostream& stream) {
+void SimpleFuncGenerator::put(std::ostream& stream) const {
 	stream << toString(_functable) << "(";
 	bool begin = true;
 	for (size_t n = 0; n < _vars.size() - 1; ++n) {

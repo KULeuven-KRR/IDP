@@ -48,6 +48,7 @@ public:
 	void setVarsAgain();
 	void reset();
 	void next();
-	virtual void put(std::ostream& stream);};
+	virtual void put(std::ostream& stream) const;
+};
 
 #endif /* SIMPLEFUNCGENERATOR_HPP_ */

@@ -51,7 +51,7 @@ public:
 
 	virtual void next();
 
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 /**
@@ -79,7 +79,7 @@ public:
 
 	virtual void next();
 
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 
 };
 

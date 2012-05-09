@@ -68,7 +68,7 @@ DivChecker* DivChecker::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void DivChecker::put(std::ostream& stream) {
+void DivChecker::put(std::ostream& stream) const{
 	stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 }
 
@@ -84,7 +84,7 @@ TimesChecker* TimesChecker::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void TimesChecker::put(std::ostream& stream) {
+void TimesChecker::put(std::ostream& stream)const {
 	stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 }
 
@@ -100,7 +100,7 @@ MinusChecker* MinusChecker::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void MinusChecker::put(std::ostream& stream) {
+void MinusChecker::put(std::ostream& stream)const {
 	stream << toString(getIn1()) << "(in)" << " - " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 }
 
@@ -116,7 +116,7 @@ PlusChecker* PlusChecker::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void PlusChecker::put(std::ostream& stream) {
+void PlusChecker::put(std::ostream& stream) const{
 	stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 }
 
@@ -138,7 +138,7 @@ ModChecker* ModChecker::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void ModChecker::put(std::ostream& stream) {
+void ModChecker::put(std::ostream& stream)const {
 	stream << toString(getIn1()) << "(in)" << " % " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
 }
 
@@ -217,7 +217,7 @@ DivGenerator* DivGenerator::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void DivGenerator::put(std::ostream& stream) {
+void DivGenerator::put(std::ostream& stream) const {
 	stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
 			<< "(out)";
 }
@@ -244,7 +244,7 @@ TimesGenerator* TimesGenerator::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void TimesGenerator::put(std::ostream& stream) {
+void TimesGenerator::put(std::ostream& stream) const {
 	stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
 			<< "(out)";
 }
@@ -262,7 +262,7 @@ MinusGenerator* MinusGenerator::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void MinusGenerator::put(std::ostream& stream) {
+void MinusGenerator::put(std::ostream& stream) const {
 	stream << toString(getIn1()) << "(in)" << " - " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
 			<< "(out)";
 }
@@ -280,7 +280,7 @@ PlusGenerator* PlusGenerator::clone() const {
 	throw notyetimplemented("Cloning generators.");
 }
 
-void PlusGenerator::put(std::ostream& stream) {
+void PlusGenerator::put(std::ostream& stream) const {
 	stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
 			<< "(out)";
 }

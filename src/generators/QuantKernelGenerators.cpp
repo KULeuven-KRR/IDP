@@ -52,7 +52,7 @@ void TrueQuantKernelGenerator::next() {
 		notifyAtEnd();
 	}
 }
- void TrueQuantKernelGenerator::put(std::ostream& stream) {
+ void TrueQuantKernelGenerator::put(std::ostream& stream)  const{
 	pushtab();
 	stream << "all true instances of: " << nt() << toString(_subBddTrueGenerator);
 	poptab();
@@ -89,7 +89,7 @@ void FalseQuantKernelGenerator::next() {
 		notifyAtEnd();
 	}
 }
- void FalseQuantKernelGenerator::put(std::ostream& stream) {
+ void FalseQuantKernelGenerator::put(std::ostream& stream)  const{
 	pushtab();
 	stream << "all false instances of: " << nt() << toString(_quantKernelTrueChecker);
 	poptab();

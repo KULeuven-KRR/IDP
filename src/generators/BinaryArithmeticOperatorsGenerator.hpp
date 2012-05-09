@@ -70,7 +70,7 @@ protected:
 public:
 	DivGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom);
 	DivGenerator* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 	virtual DomainElementType getOutType();
 };
 
@@ -80,7 +80,7 @@ protected:
 public:
 	TimesGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom);
 	TimesGenerator* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 class MinusGenerator: public ArithOpGenerator {
@@ -89,7 +89,7 @@ protected:
 public:
 	MinusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom);
 	MinusGenerator* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 class PlusGenerator: public ArithOpGenerator {
@@ -98,7 +98,7 @@ protected:
 public:
 	PlusGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom);
 	PlusGenerator* clone() const;
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* PLUSGENERATOR_HPP_ */

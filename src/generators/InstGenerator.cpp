@@ -25,7 +25,7 @@ std::string toString(const Pattern& type){
 	return output.str();
 }
 
-void InstChecker::put(std::ostream& stream) {
+void InstChecker::put(std::ostream& stream) const {
 	stream << "generate: " << typeid(*this).name();
 }
 
