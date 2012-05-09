@@ -65,11 +65,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 }
 
 ModelExpansion::ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
-		: 	theory(theory),
-			structure(structure),
-			tracemonitor(tracemonitor),
-			minimizeterm(minimize),
-			outputvoc(NULL) {
+		: theory(theory), structure(structure), tracemonitor(tracemonitor), minimizeterm(minimize), outputvoc(NULL) {
 }
 
 void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
@@ -128,8 +124,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			delete (newstructure);
 			clonetheory->recursiveDelete();
 			return std::vector<AbstractStructure*> { };
-		}
-		Assert(defCalculated[0]->isConsistent());
+		}Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
 		newstructure = structure->clone();
@@ -141,6 +136,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto symstructure = generateBounds(clonetheory, newstructure);
 	if (not newstructure->isConsistent()) {
+		if (verbosity() > 0) {
+			clog << "approximation detected UNSAT" << endl;
+		}
 		clonetheory->recursiveDelete();
 		delete (newstructure);
 		delete symstructure->manager();
@@ -195,7 +193,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
 		if (maxsize._type == TableSizeType::TST_EXACT) {
 			//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
-			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size *100 << "% of the full grounding.\n";
+			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size * 100 << "% of the full grounding.\n";
 		}
 		cout << "|";
 	}
@@ -232,7 +230,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	delete (symstructure);
 	delete (data);
 	delete (mx);
-
 	return solutions;
 }
 
