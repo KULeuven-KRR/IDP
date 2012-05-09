@@ -1,6 +1,6 @@
 [submodule "lib/minisatid"]
 	path = lib/minisatid
-	url = git@bitbucket.org:broesdecat/minisatid.git
+	url = git://github.com/broesdecat/autotoolized-lua.git
 [submodule "lib/lua"]
 	path = lib/lua
 	url = git://github.com/broesdecat/autotoolized-lua.git
