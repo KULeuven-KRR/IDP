@@ -365,7 +365,7 @@ struct GroundTerm {
 	};
 	GroundTerm(const DomainElement* domel)
 			: isVariable(false), _domelement(domel) {
-		Assert(domel!=NULL);
+		Assert(domel!=NULL); //Correct?
 	}
 	GroundTerm(const VarId& varid)
 			: isVariable(true), _varid(varid) {
