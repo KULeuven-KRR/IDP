@@ -52,6 +52,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		std::cerr << "printgrounding"<<"\h";
 		ground(get<0>(args), get<1>(args), printmonitor());
 		return nilarg();
 	}
@@ -61,6 +62,8 @@ private:
 		/*REMOVE FROM HERE*/
 		auto clonetheory = dynamic_cast<Theory*>(theory->clone());
 		Assert(sametypeid<Theory>(*clonetheory));
+		std::cerr << "transform"<<"\h";
+
 		clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
 #warning "Buggy code in printground: testing with sharedTseitinTransform"
 		/*TILL HERE*/

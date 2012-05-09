@@ -13,12 +13,17 @@
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
-		: _manager(), _factory(&_manager), _counter(&_manager), _bddtofo(&_manager, &_counter) {
+		: _manager(false), _factory(&_manager), _counter(&_manager), _bddtofo(&_manager, &_counter) {
 }
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo) {
+	if (not getOption(BoolType::GROUNDWITHBOUNDS)){
+		Warning::warning("The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds could solve this problem\n");
+	}
 	std::cerr << "execute on "<<toString(theo)<<endl;
 	_bddtofo.setVocabulary(theo->vocabulary());
+	FormulaUtils::unnestPartialTerms(theo);
+	std::cerr << "now on "<<toString(theo)<<endl;
 	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
 		auto bdd = _factory.turnIntoBdd(*it);
 		_counter.count(bdd);

@@ -79,6 +79,9 @@ typedef vector<Choice> Path;
  */
 class FOBDDManager {
 private:
+	//Options
+	bool _rewriteArithmetic; //<!normally, this is true, only false if explicitly asked not to do rewritings
+
 	// Leaf nodes
 	FOBDD* _truebdd; //!< the BDD 'true'
 	FOBDD* _falsebdd; //!< the BDD 'false'
@@ -114,7 +117,9 @@ private:
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
 public:
-	FOBDDManager();
+	//NOTE: if rewriteArithmetic is false, a lot of operations on bdds are no longer as efficient (or even possible) (for example solve)
+	//Only set this to false is you want to simplify a formula by formula->bdd->formula
+	FOBDDManager(bool rewriteArithmetic = true);
 	~FOBDDManager();
 
 	const FOBDD* truebdd() const {

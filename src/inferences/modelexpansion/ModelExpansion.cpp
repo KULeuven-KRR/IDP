@@ -119,7 +119,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Calculate known definitions
 	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
-	//clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
+	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
 #warning "Buggy code in mx: testing with sharedTseitinTransform"
 
 	AbstractStructure* newstructure = NULL;

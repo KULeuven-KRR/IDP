@@ -132,6 +132,7 @@ Lit AtomGrounder::run() const {
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
+				  * NO! TODO: this is correct. If partial functions goes out of bounds, we should ground "false".
 				 }*/
 				if (verbosity() > 2) {
 					clog << tabs() << "Partial function went out of bounds\n";
@@ -142,8 +143,6 @@ Lit AtomGrounder::run() const {
 
 			// Checking out-of-bounds
 			if (not _tables[n]->contains(args[n])) {
-				std::cerr << "for table "<<toString(_tables[n])<<endl;//TODO REMOVE
-
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) { poptab(); }
