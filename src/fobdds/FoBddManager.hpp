@@ -41,6 +41,7 @@ class DomainTerm;
 class DomainElement;
 class tablesize;
 class Function;
+class CompareBDDVars;
 enum class CompType;
 
 typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;
@@ -78,6 +79,9 @@ typedef vector<Choice> Path;
  */
 class FOBDDManager {
 private:
+	//Options
+	bool _rewriteArithmetic; //<!normally, this is true, only false if explicitly asked not to do rewritings
+
 	// Leaf nodes
 	FOBDD* _truebdd; //!< the BDD 'true'
 	FOBDD* _falsebdd; //!< the BDD 'false'
@@ -113,7 +117,9 @@ private:
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
 public:
-	FOBDDManager();
+	//NOTE: if rewriteArithmetic is false, a lot of operations on bdds are no longer as efficient (or even possible) (for example solve)
+	//Only set this to false is you want to simplify a formula by formula->bdd->formula
+	FOBDDManager(bool rewriteArithmetic = true);
 	~FOBDDManager();
 
 	const FOBDD* truebdd() const {
@@ -151,16 +157,19 @@ public:
 	const FOBDDDomainTerm* getDomainTerm(const DomainTerm* dt);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
-	std::set<const FOBDDVariable*> getVariables(const std::set<Variable*>& vars);
+	std::set<const FOBDDVariable*, CompareBDDVars> getVariables(const std::set<Variable*>& vars);
 
 	const FOBDD* negation(const FOBDD*);
 	const FOBDD* conjunction(const FOBDD*, const FOBDD*);
 	const FOBDD* disjunction(const FOBDD*, const FOBDD*);
 	const FOBDD* univquantify(const FOBDDVariable*, const FOBDD*);
 	const FOBDD* existsquantify(const FOBDDVariable*, const FOBDD*);
-	const FOBDD* univquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
-	const FOBDD* existsquantify(const std::set<const FOBDDVariable*>&, const FOBDD*);
+	const FOBDD* univquantify(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
+	const FOBDD* existsquantify(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
+
+	const FOBDD* replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
+
 
 	const FOBDDSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
@@ -170,8 +179,10 @@ public:
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
 	const FOBDDTerm* substitute(const FOBDDTerm*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
 	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
+	const FOBDD* substitute(const FOBDD*, const FOBDDVariable*, const FOBDDDeBruijnIndex*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDTerm*>&);
+
 
 	bool contains(const FOBDDKernel*, Variable*);
 	bool contains(const FOBDDKernel*, const FOBDDVariable*);
@@ -188,17 +199,17 @@ public:
 	//these calculations (nranswers, chances, ...) seem to be non-manager-specific and might be moved to the bdd and kernel itself.
 	//TODO: Do this after some tests have been written
 	//NOTE: estimation-algorithms have not been reviewed yet
-	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*);
-	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
-	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
+	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*);
-	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
+	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
 
-	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
-	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
+	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
+	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
 			double weight_per_ans);
-	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
+	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
 			double weight_per_ans);
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
@@ -246,8 +257,8 @@ private:
 
 	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);
 
-	std::set<const FOBDDVariable*> variables(const FOBDDKernel*);
-	std::set<const FOBDDVariable*> variables(const FOBDD*);
+	std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel*);
+	std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD*);
 	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*);
 	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const AbstractStructure* structure);
@@ -261,11 +272,13 @@ private:
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
 
-	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
 };
+
+
 
 #endif

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <algorithm>
 
@@ -22,6 +22,10 @@
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
+
+//FIXME: check manager and all visitors for re-use of symbols. For example: if one creates a BDD from
+// a<b, where the < symbol is a < for sort x and x, but the formula is rewritten to
+// a-b<0, then probably we should get the < for int,nat, or int [0,0] NOT for x,x...
 
 const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f) {
 	auto cf = f->cloneKeepVars();
@@ -174,14 +178,13 @@ void FOBDDFactory::visit(const EquivForm* ef) {
 
 void FOBDDFactory::visit(const QuantForm* qf) {
 	qf->subformula()->accept(this);
-	for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
-		const FOBDDVariable* qvar = _manager->getVariable(*it);
-		if (qf->isUniv()) {
-			_bdd = _manager->univquantify(qvar, _bdd);
-		} else {
-			_bdd = _manager->existsquantify(qvar, _bdd);
-		}
+	auto fobddvars = _manager->getVariables(qf->quantVars());
+	if (qf->isUniv()) {
+		_bdd = _manager->univquantify(fobddvars, _bdd);
+	} else {
+		_bdd = _manager->existsquantify(fobddvars, _bdd);
 	}
+
 	if (isNeg(qf->sign())) {
 		_bdd = _manager->negation(_bdd);
 	}
@@ -197,7 +200,7 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 void FOBDDFactory::visit(const AggForm* af) {
 #ifndef NDEBUG
 	if (af->getBound()->type() != TermType::TT_DOM && af->getBound()->type() != TermType::TT_VAR) {
-		throw notyetimplemented("Creating a bdd for unnested aggregate formulas has not yet been implemented.");
+		throw notyetimplemented("Creating a bdd for nested aggregate formulas has not yet been implemented.");
 	}
 #endif
 	auto invert = isNeg(af->sign());

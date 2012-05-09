@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
@@ -329,15 +329,15 @@ PFSymbol::~PFSymbol() {
 }
 
 PFSymbol::PFSymbol(const string& name, size_t nrsorts, bool infix)
-		: _name(name), _sorts(nrsorts, 0), _infix(infix) {
+		: _name(name), _sorts(nrsorts, 0), _infix(infix), _isTseitin(false) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, bool infix)
-		: _name(name), _sorts(sorts), _infix(infix) {
+		: _name(name), _sorts(sorts), _infix(infix), _isTseitin(false) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
-		: _name(name), _pi(pi), _sorts(sorts), _infix(infix) {
+		: _name(name), _pi(pi), _sorts(sorts), _infix(infix), _isTseitin(false) {
 }
 
 const string& PFSymbol::name() const {
@@ -438,13 +438,18 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
-Predicate::Predicate(const vector<Sort*>& sorts)
+Predicate::Predicate(const vector<Sort*>& sorts, bool isTseitin)
 		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+	if (isTseitin) {
+		_isTseitin = isTseitin;
+		_setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+	} else {
+		_setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+	}
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
-		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0) {
+		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0){
 }
 
 Predicate::Predicate(PredGenerator* generator)
@@ -836,7 +841,7 @@ Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* 
 Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
 		: PFSymbol("", is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
 	addSort(os);
-	setName("_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size()+1));
+	setName("_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size() + 1));
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding)
@@ -1265,7 +1270,8 @@ Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
 		if (sorts[n] != sorts[n - 1]) {
 			return NULL;
 		}
-	}Assert(not sorts.empty());
+	}
+	Assert(not sorts.empty());
 	map<Sort*, Function*>::const_iterator it = _overfuncs.find(sorts[0]);
 	if (it == _overfuncs.cend()) {
 		return disambiguate(sorts);
@@ -1476,9 +1482,9 @@ void Vocabulary::add(Vocabulary* v) {
 Vocabulary* Vocabulary::_std = 0;
 
 template<>
-std::string getSymbolName(STDFUNC s){
-	switch(s){
-	case STDFUNC::MINUS:
+std::string getSymbolName(STDFUNC s) {
+	switch (s) {
+	case STDFUNC::UNARYMINUS:
 		return "-/1";
 	case STDFUNC::ADDITION:
 		return "+/2";
@@ -1508,8 +1514,8 @@ std::string getSymbolName(STDFUNC s){
 }
 
 template<>
-std::string getSymbolName(STDSORT s){
-	switch(s){
+std::string getSymbolName(STDSORT s) {
+	switch (s) {
 	case STDSORT::NATSORT:
 		return "nat";
 	case STDSORT::INTSORT:
@@ -1526,8 +1532,8 @@ std::string getSymbolName(STDSORT s){
 }
 
 template<>
-std::string getSymbolName(STDPRED s){
-	switch(s){
+std::string getSymbolName(STDPRED s) {
+	switch (s) {
 	case STDPRED::EQ:
 		return "=/2";
 	case STDPRED::GT:
@@ -1539,16 +1545,16 @@ std::string getSymbolName(STDPRED s){
 	return "";
 }
 
-Predicate* get(STDPRED type){
+Predicate* get(STDPRED type) {
 	return Vocabulary::std()->pred(getSymbolName(type));
 }
-Predicate* get(STDPRED type, Sort* sort){
-	return Vocabulary::std()->pred(getSymbolName(type))->resolve({sort,sort});
+Predicate* get(STDPRED type, Sort* sort) {
+	return Vocabulary::std()->pred(getSymbolName(type))->resolve( { sort, sort });
 }
-Function* get(STDFUNC type){
+Function* get(STDFUNC type) {
 	return Vocabulary::std()->func(getSymbolName(type));
 }
-Sort* get(STDSORT type){
+Sort* get(STDSORT type) {
 	return Vocabulary::std()->sort(getSymbolName(type));
 }
 
@@ -1638,8 +1644,8 @@ Vocabulary* Vocabulary::std() {
 
 		auto intumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(true), twoint)));
 		auto floatumingen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new UminInternalFuncTable(false), twofloat)));
-		auto intumin = new Function(getSymbolName(STDFUNC::MINUS), twoints, intumingen, 500);
-		auto floatumin = new Function(getSymbolName(STDFUNC::MINUS), twofloats, floatumingen, 500);
+		auto intumin = new Function(getSymbolName(STDFUNC::UNARYMINUS), twoints, intumingen, 500);
+		auto floatumin = new Function(getSymbolName(STDFUNC::UNARYMINUS), twofloats, floatumingen, 500);
 
 		auto minigengen = new MinInterGeneratorGenerator();
 		auto maxigengen = new MaxInterGeneratorGenerator();
@@ -1799,27 +1805,27 @@ ostream& Vocabulary::putName(ostream& output) const {
 
 ostream& Vocabulary::put(ostream& output) const {
 	pushtab();
-	output << "Vocabulary " << _name << ":" <<nt();
+	output << "Vocabulary " << _name << ":" << nt();
 	output << "Sorts:";
 	pushtab();
 	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
-		output <<nt();
+		output << nt();
 		(*it).second->put(output);
 	}
 	poptab();
-	output <<nt();
+	output << nt();
 	output << "Predicates:";
 	pushtab();
 	for (auto it = _name2pred.cbegin(); it != _name2pred.cend(); ++it) {
-		output <<nt();
+		output << nt();
 		it->second->put(output);
 	}
 	poptab();
-	output <<nt();
+	output << nt();
 	output << "Functions:";
 	pushtab();
 	for (auto it = _name2func.cbegin(); it != _name2func.cend(); ++it) {
-		output <<nt();
+		output << nt();
 		it->second->put(output);
 	}
 	poptab();
@@ -1861,8 +1867,8 @@ bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
 }
 
-bool isSubVocabulary(Vocabulary* child, Vocabulary* parent){
-	if(child==NULL || parent==NULL){
+bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
+	if (child == NULL || parent == NULL) {
 		return false;
 	}
 	if(child==parent){

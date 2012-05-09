@@ -35,11 +35,12 @@ public:
 	static std::vector<AbstractStructure*> doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
 
 private:
-	Theory* theory;
-	AbstractStructure* structure;
-	TraceMonitor* tracemonitor;
-	Term* minimizeterm; // if NULL, no optimization is done
-	Vocabulary* outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
+	Theory* _theory;
+	AbstractStructure* _structure;
+	TraceMonitor* _tracemonitor;
+	Term* _minimizeterm; // if NULL, no optimization is done
+
+	Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
 
 	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor);
 	ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor);

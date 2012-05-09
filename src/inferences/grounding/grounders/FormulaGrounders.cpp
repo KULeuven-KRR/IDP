@@ -132,6 +132,7 @@ Lit AtomGrounder::run() const {
 				/*//TODO: produce a warning!
 				 if(context()._funccontext == Context::BOTH) {
 				 // TODO: produce an error
+				  * NO! TODO: this is correct. If partial functions goes out of bounds, we should ground "false".
 				 }*/
 				if (verbosity() > 2) {
 					clog << tabs() << "Partial function went out of bounds\n";

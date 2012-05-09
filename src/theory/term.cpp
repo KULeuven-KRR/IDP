@@ -446,7 +446,7 @@ EnumSetExpr* EnumSetExpr::negativeSubset() const {
 	auto form = _subformulas.cbegin();
 	for (auto term = _subterms.cbegin(); form != _subformulas.cend(); ++term, ++form) {
 		auto nulterm = new DomainTerm(VocabularyUtils::intRangeSort(0, 0), nul, (*term)->pi());
-		auto minSymbol = get(STDFUNC::MINUS);
+		auto minSymbol = get(STDFUNC::UNARYMINUS);
 		newsubterms.push_back(new FuncTerm(minSymbol, { (*term)->clone() }, (*term)->pi()));
 		auto termneg = new EqChainForm(SIGN::POS, true, { (*term)->clone(), nulterm }, { CompType::LT }, (*form)->pi());
 		newsubforms.push_back(new BoolForm(SIGN::POS, true, { (*form)->clone(), termneg }, (*form)->pi()));
@@ -547,7 +547,7 @@ QuantSetExpr* QuantSetExpr::negativeSubset() const {
 	auto termneg = new EqChainForm(SIGN::POS, true, { term->clone(), nulterm }, { CompType::LT }, form->pi());
 	auto newform = new BoolForm(SIGN::POS, true, { form, termneg }, form->pi());
 	newset->subformula(0, newform);
-	auto minSymbol = get(STDFUNC::MINUS);
+	auto minSymbol = get(STDFUNC::UNARYMINUS);
 	auto newterm = new FuncTerm(minSymbol, { term }, term->pi());
 	newset->subterm(0, newterm);
 	return newset;

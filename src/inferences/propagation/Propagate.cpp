@@ -15,6 +15,7 @@
 #include "Propagate.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include <ctime> //TODO REMOVE
 using namespace std;
 
@@ -99,7 +100,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropBDDDomain* domain, const set<Variable*>& qvars) const {
-	set<const FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
+	auto bddqvars = _manager->getVariables(qvars);
 	const FOBDD* qbdd = _manager->existsquantify(bddqvars, domain->bdd());
 	vector<Variable*> vv;
 	for (auto it = domain->vars().cbegin(); it != domain->vars().cend(); ++it) {
@@ -111,7 +112,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropBDDDomain* domain, const s
 }
 
 FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropBDDDomain* domain, const std::set<Variable*>& qvars) const {
-	set<const FOBDDVariable*> bddqvars = _manager->getVariables(qvars);
+	auto bddqvars = _manager->getVariables(qvars);
 	const FOBDD* qbdd = _manager->univquantify(bddqvars, domain->bdd());
 	vector<Variable*> vv;
 	for (auto it = domain->vars().cbegin(); it != domain->vars().cend(); ++it) {

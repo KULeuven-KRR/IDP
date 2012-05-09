@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "TheoryUtils.hpp"
 
@@ -43,6 +43,7 @@
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
 #include "transformations/CalculateKnownArithmetic.hpp"
+#include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
@@ -109,7 +110,7 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 /* FormulaUtils */
 namespace FormulaUtils {
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {
-	return transform<ApproxCheckTwoValued,bool>(f,str);
+	return transform<ApproxCheckTwoValued, bool>(f, str);
 }
 
 void checkSorts(Vocabulary* v, Formula* f) {
@@ -136,13 +137,16 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context){
+const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context) {
 	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure, translator, context);
+	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure,
+			translator, context);
 }
-std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context){
+std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator,
+		Context& context) {
 	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure, translator, context);
+	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f,
+			structure, translator, context);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {
@@ -178,12 +182,16 @@ Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
 }
 
-AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructure* s){
+AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructure* s) {
 	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t, s);
 }
 
-AbstractTheory* skolemize(AbstractTheory* t){
+AbstractTheory* skolemize(AbstractTheory* t) {
 	return transform<Skolemize, AbstractTheory*>(t);
+}
+
+Theory* sharedTseitinTransform(Theory* t) {
+	return transform<IntroduceSharedTseitins, Theory*>(t);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
@@ -198,13 +206,16 @@ Formula* unnestFuncsAndAggsNonRecursive(Formula* f, AbstractStructure* str, Cont
 	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
 }
 
-Formula* unnestDomainTerms(Formula* f, AbstractStructure* str,  Context con ) {
+Formula* unnestDomainTerms(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestDomainTerms, Formula*>(f, str, con);
 }
 
-
 Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
+}
+
+AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+	return transform<UnnestPartialTerms, AbstractTheory*>(f, con, str, voc);
 }
 
 Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
@@ -266,8 +277,8 @@ AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Con
 }
 
 /*AbstractTheory* mergeRulesOnSameSymbol(AbstractTheory* t) {
-	return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
-}*/
+ return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
+ }*/
 
 void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
@@ -304,7 +315,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse, const AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);

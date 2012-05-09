@@ -80,7 +80,13 @@ GroundTerm FuncTermGrounder::run() const {
 		if (groundterm.isVariable) {
 			calculable = false;
 		} else {
-			Assert(groundterm._domelement != NULL);
+			if(groundterm._domelement == NULL){
+				if (verbosity() > 2) {
+					poptab();
+					clog << tabs() << "Result = **invalid term**" << "\n";
+				}
+				return groundterm._domelement;
+			}
 			args[n] = groundterm._domelement;
 		}
 		groundsubterms.push_back(groundterm);
@@ -98,7 +104,7 @@ GroundTerm FuncTermGrounder::run() const {
 				}
 			}
 		}
-		return GroundTerm(result);
+		return result;
 	}
 
 	Assert(getOption(BoolType::CPSUPPORT));

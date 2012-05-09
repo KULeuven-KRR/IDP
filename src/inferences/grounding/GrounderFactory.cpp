@@ -218,6 +218,13 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
 }
+/*Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
+ auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+ groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+ GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+ data.theory->accept(&g);
+ return g.getTopGrounder();
+ }*/
 
 Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
 	Assert(minimizeterm!=NULL);
@@ -348,7 +355,6 @@ CompType getCompType(T symbol) {
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext);
-	// FIXME add? transpf = FormulaUtils::unnestPartialTerms(transpf, _context._funccontext, _structure, _structure->vocabulary());
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom

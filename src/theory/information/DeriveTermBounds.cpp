@@ -88,7 +88,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		} else if (is(function, STDFUNC::ABS)) {
 			_minimum = createDomElem(0);
 			_maximum = std::max((*functable)[_subtermminimums], (*functable)[_subtermmaximums]);
-		} else if (is(function, STDFUNC::MINUS)) {
+		} else if (is(function, STDFUNC::UNARYMINUS)) {
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
 		} else if (is(function, STDFUNC::PRODUCT)) {

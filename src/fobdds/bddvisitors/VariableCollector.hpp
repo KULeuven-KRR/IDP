@@ -24,7 +24,7 @@
 
 class VariableCollector: public FOBDDVisitor {
 private:
-	std::set<const FOBDDVariable*> _result;
+	std::set<const FOBDDVariable*, CompareBDDVars> _result;
 public:
 	VariableCollector(FOBDDManager* m)
 			: FOBDDVisitor(m) {
@@ -34,7 +34,7 @@ public:
 	}
 
 	template<typename Node>
-	const std::set<const FOBDDVariable*>& getVariables(const Node* arg) {
+	const std::set<const FOBDDVariable*, CompareBDDVars>& getVariables(const Node* arg) {
 		_result.clear();
 		arg->accept(this);
 		return _result;

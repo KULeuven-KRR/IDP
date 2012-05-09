@@ -68,7 +68,7 @@ public:
 		auto manager = bipt->manager();
 		auto bdd = bipt->bdd();
 		auto vars = bipt->vars();
-		std::set<const FOBDDVariable*> bddvars;
+		std::set<const FOBDDVariable*, CompareBDDVars> bddvars;
 		int i = 0;
 		Assert(_pattern.size() == vars.size());
 		for (auto v = vars.cbegin(); v != vars.cend(); ++v, ++i) {

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
@@ -18,7 +18,7 @@ using namespace std;
 GroundTranslator::GroundTranslator()
 		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
 	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(tspair{ 0, (TsBody*) NULL });
+	atom2TsBody.push_back(tspair { 0, (TsBody*) NULL });
 }
 
 GroundTranslator::~GroundTranslator() {
@@ -42,15 +42,15 @@ Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args)
 	if (jt != symbolinfo.tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
-		lit = nextNumber(AtomType::INPUT);
+		lit = nextNumber( AtomType::INPUT);
 		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		if(symbolinfo.tuple2atom.size()==1){
+		if (symbolinfo.tuple2atom.size() == 1) {
 			newsymbols.push(symbolID);
 		}
 		atom2Tuple[lit] = new SymbolAndTuple(symbolinfo.symbol, args);
 
 		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
-		if(not symbolinfo.assocGrounders.empty()){
+		if (not symbolinfo.assocGrounders.empty()) {
 			symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
 		}
 	}
@@ -72,7 +72,7 @@ int GroundTranslator::getSymbol(PFSymbol* pfs) const {
 
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	auto n = getSymbol(pfs);
-	if(n == -1){
+	if (n == -1) {
 		symbols.push_back(SymbolInfo(pfs));
 		return symbols.size() - 1;
 	} else {
@@ -111,21 +111,21 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	return nr;
 }
 
-bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const{
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const {
 	auto symbolID = getSymbol(pfs);
-	if(symbolID==-1){ // there is no such symbol yet
+	if (symbolID == -1) { // there is no such symbol yet
 		return true;
 	}
 	auto& grounders = symbols[symbolID].assocGrounders;
-	if(grounders.empty()){
+	if (grounders.empty()) {
 		return true;
 	}
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if(context==Context::BOTH){ // If unknown-delay, can only delay if in same DEFINITION
-			if(id==-1 || (*i)->getID()!=id){
+		if (context == Context::BOTH) { // If unknown-delay, can only delay if in same DEFINITION
+			if (id == -1 || (*i)->getID() != id) {
 				return false;
 			}
-		}else if((*i)->getContext()!=context){ // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
+		} else if ((*i)->getContext() != context) { // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
 			return false;
 		}
 	}

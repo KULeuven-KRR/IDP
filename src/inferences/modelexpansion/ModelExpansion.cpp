@@ -65,14 +65,18 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 }
 
 ModelExpansion::ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
-		: theory(theory), structure(structure), tracemonitor(tracemonitor), minimizeterm(minimize), outputvoc(NULL) {
+		: 	_theory(theory),
+			_structure(structure),
+			_tracemonitor(tracemonitor),
+			_minimizeterm(minimize),
+			_outputvoc(NULL) {
 }
 
 void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
-	if (VocabularyUtils::isSubVocabulary(v, theory->vocabulary())) {
+	if (VocabularyUtils::isSubVocabulary(v, _theory->vocabulary())) {
 		throw IdpException("The output-vocabulary of model expansion can only be a subvocabulary of the theory.");
 	}
-	outputvoc = v;
+	_outputvoc = v;
 }
 
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
@@ -112,14 +116,17 @@ void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, A
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
-	auto clonetheory = theory->clone();
+	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
+	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
+#warning "Buggy code in mx: testing with sharedTseitinTransform"
+
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY)) {
 		if (verbosity() >= 1) {
 			clog << "Evaluating definitions\n";
 		}
-		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), structure);
+		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), _structure);
 		if (defCalculated.size() == 0) {
 			delete (newstructure);
 			clonetheory->recursiveDelete();
@@ -127,7 +134,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		}Assert(defCalculated[0]->isConsistent());
 		newstructure = defCalculated[0];
 	} else {
-		newstructure = structure->clone();
+		newstructure = _structure->clone();
 	}
 	// Create solver and grounder
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
@@ -151,8 +158,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 	auto grounder = GrounderFactory::create( { clonetheory, newstructure, symstructure }, data);
 	if (getOption(BoolType::TRACE)) {
-		tracemonitor->setTranslator(grounder->getTranslator());
-		tracemonitor->setSolver(data);
+		_tracemonitor->setTranslator(grounder->getTranslator());
+		_tracemonitor->setSolver(data);
 	}
 	grounder->toplevelRun();
 
@@ -202,7 +209,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto abstractsolutions = mx->getSolutions();
 	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
-	if (minimizeterm != NULL) { // Optimizing
+	if (_minimizeterm != NULL) { // Optimizing
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();

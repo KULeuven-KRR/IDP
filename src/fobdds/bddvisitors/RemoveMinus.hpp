@@ -53,7 +53,7 @@ public:
 	const FOBDDTerm *change(const FOBDDFuncTerm *functerm) {
 		if (is(functerm->func(), STDFUNC::SUBSTRACTION)) {
 			return rewriteBinaryMinus(functerm);
-		} else if (is(functerm->func(), STDFUNC::MINUS)) {
+		} else if (is(functerm->func(), STDFUNC::UNARYMINUS)) {
 			return rewriteUnaryMinus(functerm);
 		} else {
 			return FOBDDVisitor::change(functerm);

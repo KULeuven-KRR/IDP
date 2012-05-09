@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef VOCABULARY_HPP
 #define VOCABULARY_HPP
@@ -180,6 +180,7 @@ private:
 	bool _infix; //!< True iff the symbol is infix
 
 	std::map<SymbolType, Predicate*> _derivedsymbols; //!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
+	bool _isTseitin; //!< Whether or not the symbol represents a Tseitin
 
 protected:
 	void setName(const std::string& name){
@@ -228,12 +229,15 @@ public:
 	virtual bool overloaded() const = 0; //!< Returns true iff the symbol is in fact a set of overloaded
 										 //!< symbols
 	virtual std::set<Sort*> allsorts() const = 0; //!< Return all sorts that occur in the (overloaded) symbol(s)
+	bool isTseitin() {//!< Returns true iff the symbol represents a Tseitin
+		return _isTseitin;
+	}
 
-	// Disambiguate overloaded symbols
+// Disambiguate overloaded symbols
 	virtual PFSymbol* resolve(const std::vector<Sort*>&) = 0;
 	virtual PFSymbol* disambiguate(const std::vector<Sort*>&, const Vocabulary* v = 0) = 0;
 
-	// Output
+// Output
 	virtual std::ostream& put(std::ostream&) const = 0;
 
 	friend class Vocabulary;
@@ -263,7 +267,7 @@ public:
 	// Constructors
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, bool infix = false);
-	Predicate(const std::vector<Sort*>& sorts); //!< constructor for internal/tseitin predicates
+	Predicate(const std::vector<Sort*>& sorts, bool isTseitin = false); //!< constructor for internal/tseitin predicates
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix);
 	Predicate(PredGenerator* generator);
 
@@ -580,16 +584,14 @@ bool isIntSum(const Function* function, const Vocabulary* voc);
 
 class Namespace;
 
-enum class STDSORT{
+enum class STDSORT {
 	NATSORT, INTSORT, FLOATSORT, CHARSORT, STRINGSORT
 };
-enum class STDPRED{
+enum class STDPRED {
 	EQ, GT, LT
 };
-enum class STDFUNC{
-	MINUS,
-	ADDITION, SUBSTRACTION, PRODUCT, DIVISION, ABS, MODULO, EXPONENTIAL,
-	MINELEM, MAXELEM, SUCCESSOR, PREDECESSOR
+enum class STDFUNC {
+	UNARYMINUS, ADDITION, SUBSTRACTION, PRODUCT, DIVISION, ABS, MODULO, EXPONENTIAL, MINELEM, MAXELEM, SUCCESSOR, PREDECESSOR
 };
 template<class S>
 std::string getSymbolName(S s);
@@ -601,8 +603,8 @@ template<>
 std::string getSymbolName(STDPRED s);
 
 template<typename SymbolType>
-bool is(const PFSymbol* symbol, SymbolType type){
-	return symbol->name()==getSymbolName(type);
+bool is(const PFSymbol* symbol, SymbolType type) {
+	return symbol->name() == getSymbolName(type);
 }
 
 Sort* get(STDSORT type);
@@ -711,13 +713,13 @@ public:
 std::ostream& operator<<(std::ostream&, const Vocabulary&);
 
 namespace VocabularyUtils {
-	Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
+Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
 
-	bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
-	bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
-	bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
+bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
+bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
+bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 
-	bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
+bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 }
 
 #endif

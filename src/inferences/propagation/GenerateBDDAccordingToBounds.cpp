@@ -140,7 +140,7 @@ const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vect
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, _manager);
-	set<const FOBDDVariable*> copyvars;
+	set<const FOBDDVariable*, CompareBDDVars> copyvars;
 	set<const FOBDDDeBruijnIndex*> indices;
 	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable((*it)->variable()));

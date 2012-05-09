@@ -33,6 +33,7 @@
 #include "BinaryArithmeticOperatorsChecker.hpp"
 #include "InverseUnaFunctionGenerator.hpp"
 #include "UnaryArithmeticOperators.hpp"
+#include "fobdds/FoBddVariable.hpp"
 using namespace std;
 
 // NOTE original can be NULL
@@ -186,7 +187,7 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	data.bdd = optimizemanager.getBDD(table->bdd(), table->manager());
 
 	// Optimize the bdd for querying
-	set<const FOBDDVariable*> outvars;
+	set<const FOBDDVariable*, CompareBDDVars> outvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
 		const FOBDDVariable* var = optimizemanager.getVariable(table->vars()[n]);
 		data.bddvars.push_back(var);
