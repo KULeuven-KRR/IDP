@@ -1073,8 +1073,9 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	PredTable* gentable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		//tempsubformula = FormulaUtils::unnestThreeValuedTerms(tempsubformula, _structure, getContext()._funccontext);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext,_structure);
+				FormulaUtils::splitComparisonChains(tempsubformula);
+				tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
 
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
@@ -1100,8 +1101,9 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		//tempsubformula = FormulaUtils::unnestThreeValuedTerms(tempsubformula, _structure, getContext()._funccontext);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext,_structure);
+				FormulaUtils::splitComparisonChains(tempsubformula);
+				tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
 
 		checkerbdd = improve(approxastrue, checkerbdd, { });
