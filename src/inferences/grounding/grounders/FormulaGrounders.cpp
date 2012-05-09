@@ -825,7 +825,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 	}
-
+	printorig();
 	formula.setType(conjunctive());
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION

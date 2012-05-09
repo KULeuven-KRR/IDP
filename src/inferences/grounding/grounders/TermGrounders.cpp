@@ -96,6 +96,7 @@ GroundTerm FuncTermGrounder::run() const {
 					poptab();
 					clog << tabs() << "Result = **invalid term**" << "\n";
 				}
+				return NULL;
 			}
 		}
 		return GroundTerm(result);

@@ -11,6 +11,7 @@
 #include "SetGrounders.hpp"
 
 #include "IncludeComponents.hpp"
+#include "common.hpp"
 #include "TermGrounders.hpp"
 #include "FormulaGrounders.hpp"
 #include "generators/InstGenerator.hpp"
@@ -29,7 +30,6 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	} else {
 		l = sublitgrounder.groundAndReturnLit();
 	}
-
 	if (l == _false) {
 		return;
 	}
@@ -37,7 +37,8 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	const auto& groundweight = subtermgrounder.run();
 
 	if (groundweight.isVariable) {
-		Assert(l == _true); //FIXME: this is not always the case...
+		Assert(l == _true);
+		//FIXME: this is not always the case...
 		varids.push_back(groundweight._varid);
 		return;
 	}
@@ -54,9 +55,9 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	}
 }
 EnumSetGrounder::~EnumSetGrounder() {
-		deleteList(_subgrounders);
-		deleteList(_subtermgrounders);
-	}
+	deleteList(_subgrounders);
+	deleteList(_subtermgrounders);
+}
 SetId EnumSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;

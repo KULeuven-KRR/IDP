@@ -440,6 +440,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 				copyargs[0] = leftterm->value();
 				copyargs[1] = rightterm->value();
 				auto result = fi->funcTable()->operator[](copyargs);
+				Assert(result != NULL);
 				return getDomainTerm(func->outsort(), result);
 			}
 		} else if (sametypeid<FOBDDDomainTerm>(*(args[1]))) { // Second one is a domain term

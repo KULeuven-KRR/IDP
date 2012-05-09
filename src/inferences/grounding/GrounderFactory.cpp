@@ -1018,7 +1018,6 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 
 template<typename OrigConstruct>
 GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
-	vector<const DomElemContainer*> vars;
 	vector<Variable*> fovars, quantfovars;
 	vector<Pattern> pattern;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
@@ -1042,7 +1041,7 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		checkGeneratorInfinite(checker, orig);
 	}
 
-	return GenAndChecker(vars, generator, checker, Universe(directquanttables));
+	return GenAndChecker(data.containers, generator, checker, Universe(directquanttables));
 }
 
 GrounderFactory::GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars) {
@@ -1073,7 +1072,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	PredTable* gentable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		//tempsubformula = FormulaUtils::unnestThreeValuedTerms(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula,  getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
 
@@ -1100,7 +1099,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		//tempsubformula = FormulaUtils::unnestThreeValuedTerms(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula,  getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
 
@@ -1115,7 +1114,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		}
 	}
 
-	auto checker = GeneratorFactory::create(checktable, data.pattern, data.containers, Universe(data.tables), subformula);
+	auto checker = GeneratorFactory::create(checktable, std::vector<Pattern>(data.pattern.size(),Pattern::INPUT), data.containers, Universe(data.tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (checktable);
 

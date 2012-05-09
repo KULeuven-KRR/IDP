@@ -65,6 +65,7 @@ public:
 			auto rightconstant = castBddDomainTerm(functerm->args(1));
 			auto fi = functerm->func()->interpretation(NULL);
 			auto result = fi->funcTable()->operator[]( { leftconstant->value(), rightconstant->value() });
+			Assert(result != NULL);
 			return _manager->getDomainTerm(functerm->func()->outsort(), result);
 		}
 
@@ -74,6 +75,7 @@ public:
 				auto rightconstant = castBddDomainTerm(rightterm->args(0));
 				auto inter = functerm->func()->interpretation(0);
 				auto result = inter->funcTable()->operator[]( { leftconstant->value(), rightconstant->value() });
+				Assert(result != NULL);
 				auto resultterm = _manager->getDomainTerm(functerm->func()->outsort(), result);
 				auto newterm = _manager->getFuncTerm(rightterm->func(), { resultterm, rightterm->args(1) });
 				return newterm->acceptchange(this);
