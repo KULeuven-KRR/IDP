@@ -36,7 +36,11 @@ private:
 public:
 
 	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter, Vocabulary* voc = NULL)
-			: BDDToFO(m), _counter(counter), _boundary(1), _inDefinition(false), _vocabulary(voc) {
+			: 	BDDToFO(m),
+				_counter(counter),
+				_boundary(1),
+				_inDefinition(false),
+				_vocabulary(voc) {
 	}
 	template<typename BddNode>
 	Formula* createFormulaWithFreeVars(const BddNode* object, set<const FOBDDVariable*, CompareBDDVars> freebddvars) {
@@ -106,7 +110,6 @@ public:
 				auto pred = _bddtseitins[bdd];
 				auto newRule = tseitinRule(pred, bdd);
 				def->add(newRule);
-
 			}
 			while (not _definedkerneltseitins.empty()) {
 				changed = true;
@@ -128,7 +131,7 @@ private:
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars);
-		createTseitinAtom(pred,arg);
+		createTseitinAtom(pred, arg);
 		auto tseitinAtom = _currformula;
 		auto backup = _boundary;
 		_boundary = _counter->getCount(arg);
@@ -144,7 +147,7 @@ private:
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars);
-		createTseitinAtom(pred,arg);
+		createTseitinAtom(pred, arg);
 		Assert(sametypeid<PredForm>(*_currformula));
 		auto tseitinAtom = dynamic_cast<PredForm*>(_currformula);
 		auto backup = _boundary;
@@ -212,18 +215,18 @@ private:
 		if (_manager->isTruebdd(bdd) || _manager->isFalsebdd(bdd)) {
 			return false;
 		}
-		return _manager->longestbranch(bdd)>2&&_counter->getCount(bdd) > _boundary;
+		return _manager->longestbranch(bdd) > 2 && _counter->getCount(bdd) > _boundary;
 	}
 	bool shouldTseitinifyFormula(const FOBDDKernel* kernel) {
 		//NOTE: truekernels should not be appear here...
-		return _manager->longestbranch(kernel	)>2&&_counter->getCount(kernel) > _boundary;
+		return _manager->longestbranch(kernel) > 2 && _counter->getCount(kernel) > _boundary;
 	}
 
 	void tseitinifyFormula(const FOBDD* bdd) {
 		auto negated = _manager->negation(bdd);
 		auto res = _bddtseitins.find(negated);
 		if (res != _bddtseitins.cend()) {
-			createTseitinAtom((*res).second,bdd, true);
+			createTseitinAtom((*res).second, bdd, true);
 			if (_inDefinition) {
 				_definedbddtseitins.insert(negated);
 			}
@@ -234,7 +237,7 @@ private:
 		}
 		res = _bddtseitins.find(bdd);
 		if (res != _bddtseitins.cend()) {
-			createTseitinAtom((*res).second,bdd);
+			createTseitinAtom((*res).second, bdd);
 			return;
 		}
 		//In this case, we need to create a new tseitin symbol.
@@ -245,7 +248,7 @@ private:
 		auto tseitinsymbol = new Predicate(sorts, true);
 		_vocabulary->add(tseitinsymbol);
 		addTseitin(bdd, tseitinsymbol);
-		createTseitinAtom(tseitinsymbol,bdd);
+		createTseitinAtom(tseitinsymbol, bdd);
 	}
 
 	void tseitinifyFormula(const FOBDDKernel* kernel) {
@@ -254,7 +257,7 @@ private:
 		}
 		auto res = _kerneltseitins.find(kernel);
 		if (res != _kerneltseitins.cend()) {
-			createTseitinAtom((*res).second,kernel);
+			createTseitinAtom((*res).second, kernel);
 			return;
 		}
 
@@ -267,7 +270,7 @@ private:
 		auto tseitinsymbol = new Predicate(ss.str(), sorts, false);
 
 		_kerneltseitins[kernel] = tseitinsymbol;
-		createTseitinAtom((*res).second, kernel);
+		createTseitinAtom(tseitinsymbol, kernel);
 	}
 
 	void addTseitin(const FOBDD* bdd, Predicate* tseitinsymbol) {

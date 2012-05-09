@@ -1991,11 +1991,11 @@ public:
 	// !!! RETURNS NULL iff the given tuple does not map to a domainelement within the range sort
 	const DomainElement* operator[](const ElementTuple& tuple) const {
 		Assert(tuple.size()==arity());
+#ifdef DEBUG
 		for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
-			if(*i!=NULL){
-				return NULL;
-			}
+			Assert(*i!=NULL); // TODO this should be allowed (e.g. from a deeper function call, but crashes unexpectedly later in the program).
 		}
+#endif
 		auto result = _table->operator[](tuple);
 		if (universe().tables().back()->contains(result)) {
 			return result;
