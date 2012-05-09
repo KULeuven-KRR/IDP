@@ -33,12 +33,9 @@ protected:
 	Vocabulary* _vocabulary; // The vocabulary of the structure.
 
 public:
+	// NOTE: cannot call changevoc in constructor (as its virtual), so CALL IN CHILD!
 	AbstractStructure(std::string name, const ParseInfo& pi)
 			: _name(name), _pi(pi), _vocabulary(NULL) {
-	}
-	AbstractStructure(std::string name, Vocabulary* v, const ParseInfo& pi)
-			: _name(name), _pi(pi), _vocabulary(NULL) {
-		//changeVocabulary(v) virtual cannot be called in constructor. Should be called in Structure.
 	}
 	virtual ~AbstractStructure() {
 	}

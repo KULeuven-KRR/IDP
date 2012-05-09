@@ -29,7 +29,7 @@ public:
 			: AbstractStructure(name, pi) {
 	}
 	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
-			: AbstractStructure(name, v, pi) {
+			: AbstractStructure(name, pi) {
 		changeVocabulary(v);
 	}
 	~Structure();

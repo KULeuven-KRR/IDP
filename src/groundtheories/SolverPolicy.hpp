@@ -90,7 +90,7 @@ private:
 	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
 	void polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator);
 	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
-	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive, bool);
+	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive);
 };
 
 #endif /* SOLVERPOLICY_HPP_ */

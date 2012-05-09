@@ -441,10 +441,10 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 Predicate::Predicate(const vector<Sort*>& sorts, bool isTseitin)
 		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 	if (isTseitin) {
-		_isTseitin = isTseitin;
-		_setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+		setIsTseitin(isTseitin);
+		setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 	} else {
-		_setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+		setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 	}
 }
 

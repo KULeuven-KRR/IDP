@@ -165,8 +165,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	auto grounding = grounder->getGrounding();
 
-	if (minimizeterm != NULL) {
-		auto optimgrounder = GrounderFactory::create(minimizeterm, clonetheory->vocabulary(), { newstructure, symstructure }, grounding);
+	if (_minimizeterm != NULL) {
+		auto optimgrounder = GrounderFactory::create(_minimizeterm, clonetheory->vocabulary(), { newstructure, symstructure }, grounding);
 		optimgrounder->toplevelRun();
 	}
 

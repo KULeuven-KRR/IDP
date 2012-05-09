@@ -186,6 +186,9 @@ protected:
 	void setName(const std::string& name){
 		_name = name;
 	}
+	void setIsTseitin(bool istseitin){
+		_isTseitin = istseitin;
+	}
 	void addSort(Sort* s){
 		_sorts.push_back(s);
 	}

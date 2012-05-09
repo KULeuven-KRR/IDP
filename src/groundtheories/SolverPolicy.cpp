@@ -62,7 +62,7 @@ void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(DefId defnr, PCGroundRule* rule) {
-	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RuleType::CONJ), rule->recursive());
+	polAddPCRule(defnr, rule->head(), rule->body(), (rule->type() == RuleType::CONJ));
 }
 
 template<typename Solver>
@@ -235,7 +235,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> body, bool conjunctive, bool arg_n) {
+void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> body, bool conjunctive) {
 	MinisatID::litlist list;
 	for (size_t n = 0; n < body.size(); ++n) {
 		list.push_back(createLiteral(body[n]));
@@ -319,7 +319,8 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsTy
 
 template<class Solver>
 void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries){
-	MinisatID::Symmetry s(std::vector<std::vector<MinisatID::Literal> >{});
+	std::vector<std::vector<MinisatID::Literal> > list;
+	MinisatID::Symmetry s(list);
 	for (auto bs_it = symmetries.cbegin(); bs_it != symmetries.cend(); ++bs_it) {
 		s.symmetry.push_back(std::vector<MinisatID::Literal>{});
 		for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {

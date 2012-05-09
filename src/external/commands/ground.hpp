@@ -62,7 +62,7 @@ private:
 		/*REMOVE FROM HERE*/
 		auto clonetheory = dynamic_cast<Theory*>(theory->clone());
 		Assert(sametypeid<Theory>(*clonetheory));
-		std::cerr << "transform"<<"\h";
+		std::cerr << "transform"<<"\n";
 
 		clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
 #warning "Buggy code in printground: testing with sharedTseitinTransform"
