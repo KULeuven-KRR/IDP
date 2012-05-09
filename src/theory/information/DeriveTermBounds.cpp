@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "DeriveTermBounds.hpp"
 
@@ -62,11 +62,23 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 
 	// Derive bounds on subterms
 	traverse(t);
-
+	bool cancalculate = true;
+	//TODO: is this approach correct? Sometimes min might be calculated when Max = infty;..
+	for (auto it = _subtermmaximums.cbegin(); it != _subtermmaximums.cend(); it++) {
+		if (*it == NULL) {
+			cancalculate = false;
+		}
+	}
+	for (auto it = _subtermminimums.cbegin(); it != _subtermminimums.cend(); it++) {
+		if (*it == NULL) {
+			cancalculate = false;
+		}
+	}
 	auto function = t->function();
-	if (function->builtin()) {
+	if (function->builtin() && cancalculate) {
 		Assert(function->interpretation(_structure) != NULL);
 		auto functable = function->interpretation(_structure)->funcTable();
+
 		if (is(function, STDFUNC::ADDITION)) {
 			_minimum = (*functable)[_subtermminimums];
 			_maximum = (*functable)[_subtermmaximums];
