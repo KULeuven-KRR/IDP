@@ -212,7 +212,8 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 		}
 	} else if (args.size() == 1) {
 		if (symbol->sorts()[0]->pred() == symbol) {
-			if (SortUtils::isSubsort(args[0]->sort(), symbol->sorts()[0])) {
+			if (SortUtils::isSubsort(args[0]->sort(), symbol->sorts()[0]) && symbol->sorts()[0]->builtin()) {
+				//Builtin check: only return truekernel if sort is not empty.
 				return _truekernel;
 			}
 		}
@@ -1108,7 +1109,7 @@ bool FOBDDManager::contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
 }
 
 const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm* argument) {
-	if(not _rewriteArithmetic){
+	if (not _rewriteArithmetic) {
 		return NULL;
 	}
 	if (not sametypeid<FOBDDAtomKernel>(*kernel)) {
