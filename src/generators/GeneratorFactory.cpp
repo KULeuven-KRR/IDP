@@ -726,7 +726,7 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		//x%y=z with x and z input.
 		//Thus, qy+z=x for some q integer
 		//Generate all q between -y and y and then generate the x
-		throw notyetimplemented("Infinite generator for modulo pattern (?,in,in)");
+		throw notyetimplemented("Infinite generator for modulo pattern (out,in,in)");
 		//TODO: code below not yet good:
 		//* use Unary minus instead of binary minus
 		//* Order of generation...
