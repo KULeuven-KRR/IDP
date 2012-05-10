@@ -256,12 +256,17 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 	_useBuiltIns = useBuiltins;
 	_assertsort = NULL;
 	_vocab = v;
+	auto& head = *r->head();
 	// Set the sort of the terms in the head
-	auto jt = r->head()->symbol()->sorts().cbegin();
-	for (unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {
-		auto hs = r->head()->subterms()[n]->sort();
+	auto jt = head.symbol()->sorts().cbegin();
+	for (unsigned int n = 0; n < head.subterms().size(); ++n, ++jt) {
+		auto hs = head.subterms()[n]->sort();
 		if (hs == NULL) {
-			r->head()->subterms()[n]->sort(*jt);
+			head.subterms()[n]->sort(*jt);
+			auto varterm = dynamic_cast<VarTerm*>(head.subterms()[n]);
+			if(varterm!=NULL){
+				_untypedvariables.insert(varterm->var());
+			}
 			continue;
 		}
 		if (SortUtils::isSubsort(hs, *jt)) {
@@ -272,10 +277,10 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 		auto nvt1 = new VarTerm(nv, TermParseInfo());
 		auto nvt2 = new VarTerm(nv, TermParseInfo());
 		auto ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
-		ecf->add(CompType::EQ, r->head()->subterms()[n]);
+		ecf->add(CompType::EQ, head.subterms()[n]);
 		auto bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
 		r->body(bf);
-		r->head()->arg(n, nvt2);
+		head.arg(n, nvt2);
 		r->addvar(nv);
 	}
 	deriveSorts(r);
@@ -284,8 +289,9 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 void DeriveSorts::check() {
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
-			if (_useBuiltIns)
+			if (_useBuiltIns){
 				Error::novarsort((*i)->name(), (*i)->pi());
+			}
 		} else if (getOption(BoolType::SHOWWARNINGS)) {
 			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 		}
@@ -295,10 +301,12 @@ void DeriveSorts::check() {
 			Error::novarsort((*i)->name(), (*i)->pi());
 		}
 		for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
-			if (typeid(*((*it)->symbol())) == typeid(Predicate))
+			if (typeid(*((*it)->symbol())) == typeid(Predicate)){
 				Error::nopredsort((*it)->symbol()->name(), (*it)->pi());
-			else
+			}
+			else{
 				Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());
+			}
 		}
 		for (auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
 			Error::nofuncsort((*it)->function()->name(), (*it)->pi());
