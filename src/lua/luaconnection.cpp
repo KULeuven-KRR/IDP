@@ -2014,6 +2014,7 @@ void makeLuaConnection() {
 
 	// Add the global namespace and standard options
 	addGlobal(GlobalData::getGlobalNamespace());
+	addGlobal(Vocabulary::std());
 	addGlobal("stdoptions", GlobalData::instance()->getOptions()); // TODO string "stdoptions" used twice, also in data/idp_intern.lua
 
 	// Parse standard input file
