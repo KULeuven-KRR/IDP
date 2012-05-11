@@ -150,6 +150,7 @@ protected:
 	void visit(const DomainTerm*);
 	void visit(const EqChainForm*);
 	void visit(const AggForm*);
+	void visit(const AggTerm*);
 };
 
 #endif /* SYMMETRY_HPP_ */

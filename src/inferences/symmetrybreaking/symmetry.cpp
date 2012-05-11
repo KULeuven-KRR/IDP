@@ -681,16 +681,8 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
  **********/
 
 void TheorySymmetryAnalyzer::analyze(const AbstractTheory* t) {
+	toString(t); // Strangely enough, this makes the partialfunction.idp test succeed...
 	t->accept(this);
-}
-
-/**
- * 	mark the sorts of a collection of terms as unfit for symmetry
- */
-void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerms) {
-	for (unsigned int it = 0; it < subTerms.size(); it++) {
-		markAsUnfitForSymmetry(subTerms.at(it)->sort());
-	}
 }
 
 /**
@@ -707,7 +699,17 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const DomainElement* e) {
 	forbiddenElements_.insert(e);
 }
 
+/**
+ * 	mark the sorts of a collection of terms as unfit for symmetry
+ */
+void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerms) {
+	for (unsigned int it = 0; it < subTerms.size(); it++) {
+		markAsUnfitForSymmetry(subTerms.at(it)->sort());
+	}
+}
+
 void TheorySymmetryAnalyzer::visit(const PredForm* f) {
+//	clog << "Predform: " << toString(f) << "\n";
 	if (f->symbol()->builtin() || f->symbol()->overloaded()) {
 		if (not is(f->symbol(), STDPRED::EQ)) {
 			for (unsigned int it = 0; it < f->args().size(); it++) {
@@ -743,6 +745,7 @@ void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 }
 
 void TheorySymmetryAnalyzer::visit(const DomainTerm* t) {
+//	clog << "DomainTerm: " << toString(t) << "\n";
 	markAsUnfitForSymmetry(t->value());
 }
 
@@ -751,24 +754,19 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef) {
 	f = FormulaUtils::splitComparisonChains(f, getStructure()->vocabulary());
 	f->accept(this);
 	f->recursiveDelete();
-
-	/*
-	 * old code:
-	 * 	for(unsigned int i=0; i<f->comps().size(); i++){
-	 *		if(f->comps().at(i)!='=' || f->comps().at(i)!='!='){
-	 *			markAsUnfitForSymmetry(f->subterm(i)->sort());
-	 *			markAsUnfitForSymmetry(f->subterm(i+1)->sort());
-	 *		}
-	 *	}
-	 */
+	traverse(ef);
 }
 
 void TheorySymmetryAnalyzer::visit(const AggForm* af){
-	if(af->right()->function()!=CARD){
-		markAsUnfitForSymmetry(af->right()->sort());
-	}
 	markAsUnfitForSymmetry(af->left()->sort());
-	traverse(af->right());
+	traverse(af);
+}
+
+void TheorySymmetryAnalyzer::visit(const AggTerm* at){
+	if(at->function()!=CARD){
+		markAsUnfitForSymmetry(at->sort());
+	}
+	traverse(at);
 }
 
 /**********
@@ -829,7 +827,7 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  */
 set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t) {
 	Assert(t->vocabulary()==s->vocabulary());
-	cout << "token" << toString(t) << endl;
+	//cout << "token" << toString(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
 	auto newt =t->clone();
 	FormulaUtils::graphFuncsAndAggs(newt);
@@ -845,13 +843,13 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-//	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "forbiddenSorts: ";
 		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
 		clog << "\n";
-//	}
+	}
 
 // Extract domain elements from forbidden sorts:
 	set<const DomainElement*> forbiddenElements;
@@ -912,7 +910,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		initialIVSets.at(sortset).insert(elements_it->first);
 	}
 
-//	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "initialIVSets: \n";
 		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
 			clog << "Elements: " ;
@@ -926,7 +924,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 			}
 			clog << "\n";
 		}
-//	}
+	}
 
 // Create invariant sets based on the grouped domain elements:
 	set<const IVSet*> result;
@@ -943,31 +941,6 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 			}
 		}
 	}
-
-// old code:
-/*	map<Sort*, set<const DomainElement*> > elementsForSorts = findElementsForSorts(s, allowedSorts, tsa.getForbiddenElements());
-	set<const IVSet*> result;
-
-	for (auto ivset_it = elementsForSorts.cbegin(); ivset_it != elementsForSorts.cend(); ++ivset_it) {
-		set<Sort*> sorts;
-		sorts.insert(ivset_it->first);
-		set<Sort*> ancestors = ivset_it->first->ancestors(t->vocabulary());
-		for (auto ancestors_it = ancestors.cbegin(); ancestors_it != ancestors.cend(); ++ancestors_it) {
-			if (allowedSorts.count(*ancestors_it)) {
-				sorts.insert(*ancestors_it);
-			}
-		}
-		set<PFSymbol*> relations = findNonTrivialRelationsWithSort(s, sorts, tsa.getUsedRelations());
-		if (ivset_it->second.size() > 1) {
-			IVSet* ivset = new IVSet(s, ivset_it->second, sorts, relations);
-			if (ivset->isRelevantSymmetry()) {
-				result.insert(ivset);
-			} else {
-				delete ivset;
-			}
-		}
-	}
-*/
 	return result;
 }
 
