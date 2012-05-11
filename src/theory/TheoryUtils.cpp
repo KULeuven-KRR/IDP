@@ -190,8 +190,8 @@ AbstractTheory* skolemize(AbstractTheory* t) {
 	return transform<Skolemize, AbstractTheory*>(t);
 }
 
-Theory* sharedTseitinTransform(Theory* t) {
-	return transform<IntroduceSharedTseitins, Theory*>(t);
+Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s) {
+	return transform<IntroduceSharedTseitins, Theory*>(t,s);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {

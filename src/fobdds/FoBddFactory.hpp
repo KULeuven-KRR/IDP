@@ -65,7 +65,8 @@ public:
 			: _manager(m), _vocabulary(v) {
 	}
 
-	const FOBDD* turnIntoBdd(const Formula* f);
+	// if a structure is given, this can be used for efficiently unnesting terms (deriving term bounds)
+	const FOBDD* turnIntoBdd(const Formula* f, AbstractStructure* s = NULL);
 	const FOBDDTerm* turnIntoBdd(const Term* t);
 };
 

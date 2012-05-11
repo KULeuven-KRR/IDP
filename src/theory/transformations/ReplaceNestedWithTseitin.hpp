@@ -25,12 +25,13 @@
  * 			Then adding an equivalence with the original pred, which is only necessary if it occurs anywhere else.
  */
 struct ReducedPF {
-	PredForm* origpf, *newpf;
-	std::vector<Term*> arglist; // NULL if remaining, otherwise a varfree term
-	std::vector<Term*> remainingargs;
+	PredForm *_origpf, *_newpf;
+	std::vector<Term*> _arglist; // NULL if remaining, otherwise a varfree term
+	std::vector<Term*> _remainingargs;
 
-	ReducedPF(PredForm* origpf) :
-			origpf(origpf), newpf(NULL) {
+	ReducedPF(PredForm* origpf)
+			: 	_origpf(origpf),
+				_newpf(NULL) {
 
 	}
 };
@@ -38,45 +39,47 @@ struct ReducedPF {
 class ConstructNewReducedForm: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	bool cantransform, varfreeterm;
-	ReducedPF* reduced;
+	bool _cantransform, _varfreeterm;
+	ReducedPF* _reduced;
+
 public:
-	ConstructNewReducedForm() :
-			cantransform(false), reduced(NULL) {
+	ConstructNewReducedForm()
+			: 	_cantransform(false),
+				_reduced(NULL) {
 
 	}
 	void execute(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary) {
-		reduced = new ReducedPF(pf);
+		_reduced = new ReducedPF(pf);
 		if (pf->symbol()->builtin()) { // TODO handle builtins?
-			delete (reduced);
-			reduced = NULL;
+			delete (_reduced);
+			_reduced = NULL;
 			return;
 		}
-		cantransform = true;
+		_cantransform = true;
 		pf->accept(this);
-		if (not cantransform) {
-			delete (reduced);
-			reduced = NULL;
+		if (not _cantransform) {
+			delete (_reduced);
+			_reduced = NULL;
 			return;
 		}
 		std::vector<Sort*> sorts;
-		for (auto i = reduced->remainingargs.cbegin(); i < reduced->remainingargs.cend(); ++i) {
+		for (auto i = _reduced->_remainingargs.cbegin(); i < _reduced->_remainingargs.cend(); ++i) {
 			sorts.push_back((*i)->sort());
 		}
 		bool identicalfound = false;
 		auto manag = FOBDDManager();
 		auto fact = FOBDDFactory(&manag, vocabulary);
 		for (auto i = list.cbegin(); i != list.cend(); ++i) {
-			if ((*i)->origpf->symbol() != reduced->origpf->symbol()) {
+			if ((*i)->_origpf->symbol() != _reduced->_origpf->symbol()) {
 				continue;
 			}
-			if ((*i)->remainingargs.size() != reduced->remainingargs.size()) {
+			if ((*i)->_remainingargs.size() != _reduced->_remainingargs.size()) {
 				continue;
 			}
-			auto ibdd = fact.turnIntoBdd((*i)->origpf);
-			auto testbdd = fact.turnIntoBdd(reduced->origpf);
+			auto ibdd = fact.turnIntoBdd((*i)->_origpf);
+			auto testbdd = fact.turnIntoBdd(_reduced->_origpf);
 			if (ibdd == testbdd) {
-				reduced = *i;
+				_reduced = *i;
 				identicalfound = true;
 			}
 		}
@@ -85,48 +88,48 @@ public:
 		}
 		auto newsymbol = new Predicate(sorts);
 		vocabulary->add(newsymbol);
-		reduced->newpf = new PredForm(SIGN::POS, newsymbol, reduced->remainingargs, pf->pi());
+		_reduced->_newpf = new PredForm(SIGN::POS, newsymbol, _reduced->_remainingargs, pf->pi());
 	}
 
 	bool isReducable() const {
-		return reduced != NULL;
+		return _reduced != NULL;
 	}
 
 	ReducedPF* getResult() {
 		Assert(isReducable());
-		return reduced;
+		return _reduced;
 	}
 
 	virtual void visit(const PredForm* pf) {
 		for (auto i = pf->args().cbegin(); i < pf->args().cend(); ++i) {
-			varfreeterm = true;
+			_varfreeterm = true;
 			(*i)->accept(this);
-			if (not cantransform) {
+			if (not _cantransform) {
 				break;
 			}
-			if (varfreeterm) {
-				reduced->arglist.push_back(*i);
+			if (_varfreeterm) {
+				_reduced->_arglist.push_back(*i);
 			} else {
-				reduced->arglist.push_back(NULL);
-				reduced->remainingargs.push_back(*i);
+				_reduced->_arglist.push_back(NULL);
+				_reduced->_remainingargs.push_back(*i);
 				Assert(dynamic_cast<VarTerm*>(*i) != NULL);
 			}
 		}
-		Assert(reduced->arglist.size() == pf->args().size());
+		Assert(_reduced->_arglist.size() == pf->args().size());
 	}
 	virtual void visit(const VarTerm*) {
-		varfreeterm = false;
+		_varfreeterm = false;
 	}
 	virtual void visit(const FuncTerm* f) {
 		traverse(f);
-		if (not varfreeterm) {
-			cantransform = false; // TODO cannot transform functions which contain nested vars!
+		if (not _varfreeterm) {
+			_cantransform = false; // TODO cannot transform functions which contain nested vars!
 		}
 	}
 	virtual void visit(const DomainTerm*) {
 	}
 	virtual void visit(const AggTerm*) {
-		cantransform = false;
+		_cantransform = false;
 	}
 };
 
@@ -137,45 +140,45 @@ public:
 class ReplaceNestedWithTseitinTerm: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	bool visiting;
-	Vocabulary* vocabulary;
-	std::map<PFSymbol*, std::vector<ReducedPF*> > symbol2reduction;
+	bool _visiting;
+	Vocabulary* _vocabulary;
+	std::map<PFSymbol*, std::vector<ReducedPF*> > _symbol2reduction;
 
 public:
 	// FIXME clone voc and structure before call?
 	// NOTE: changes vocabulary and structure
 	template<typename T>
 	T execute(T t, AbstractStructure* s) {
-		visiting = false;
+		_visiting = false;
 		Assert(s->vocabulary()==t->vocabulary());
-		vocabulary = s->vocabulary();
+		_vocabulary = s->vocabulary();
 		auto result = t->accept(this);
-		s->changeVocabulary(vocabulary);
+		s->changeVocabulary(_vocabulary);
 		return result;
 	}
 protected:
 	Formula* visit(PredForm* pf) {
-		if (not visiting) {
+		if (not _visiting) {
 			return TheoryMutatingVisitor::visit(pf);
 		}
-		auto listit = symbol2reduction.find(pf->symbol());
-		if (listit == symbol2reduction.cend()) {
+		auto listit = _symbol2reduction.find(pf->symbol());
+		if (listit == _symbol2reduction.cend()) {
 			return pf;
 		}
 		Assert(listit->second.size() > 0);
 		std::vector<Formula*> subforms;
 		for (auto i = listit->second.cbegin(); i < listit->second.cend(); ++i) {
-			Assert((*i)->arglist.size() == pf->args().size());
+			Assert((*i)->_arglist.size() == pf->args().size());
 			std::vector<Term*> arglist;
 			std::vector<Formula*> equalities;
 			for (uint j = 0; j < pf->args().size(); ++j) {
-				if ((*i)->arglist[j] == NULL) {
+				if ((*i)->_arglist[j] == NULL) {
 					arglist.push_back(pf->args()[j]);
 				} else {
-					equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->arglist[j], pf->args()[j] }, pf->pi()));
+					equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->_arglist[j], pf->args()[j] }, pf->pi()));
 				}
 			}
-			equalities.push_back(new PredForm(pf->sign(), (*i)->newpf->symbol(), arglist, pf->pi()));
+			equalities.push_back(new PredForm(pf->sign(), (*i)->_newpf->symbol(), arglist, pf->pi()));
 			subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
 		}
 		return new BoolForm(SIGN::POS, false, subforms, pf->pi());
@@ -193,25 +196,25 @@ protected:
 		std::vector<PredForm*> newheads; // NOTE: in order of rule iteration!
 		for (auto i = d->rules().cbegin(); i < d->rules().cend(); ++i) {
 			ConstructNewReducedForm t;
-			t.execute((*i)->head(), reducedlist, vocabulary);
+			t.execute((*i)->head(), reducedlist, _vocabulary);
 			if (t.isReducable()) {
 				reducedlist.insert(t.getResult());
-				newheads.push_back(t.getResult()->newpf);
+				newheads.push_back(t.getResult()->_newpf);
 			} else {
 				newheads.push_back((*i)->head());
 			}
 		}
 
 		for (auto i = reducedlist.cbegin(); i != reducedlist.cend(); ++i) {
-			symbol2reduction[(*i)->origpf->symbol()].push_back(*i);
+			_symbol2reduction[(*i)->_origpf->symbol()].push_back(*i);
 		}
 
 		auto newdef = new Definition();
 		int i = 0;
 		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
-			visiting = true;
+			_visiting = true;
 			auto newbody = (*j)->body()->accept(this);
-			visiting = false;
+			_visiting = false;
 			newdef->add(new Rule((*j)->quantVars(), newheads[i], newbody, (*j)->pi()));
 			i++;
 		}
