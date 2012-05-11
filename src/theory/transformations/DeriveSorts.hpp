@@ -82,9 +82,7 @@ private:
 			derivepreds();
 			f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
 		}
-		if (_useBuiltIns) { // NOTE this is used to prevent too many warnings in places were it is quite(!) unambiguous, as all positions it occurs in have the same sort.
-			check();
-		}
+		check();
 	}
 
 	void derivesorts(); // derive the sorts of the variables, based on the sorts in _untyped
