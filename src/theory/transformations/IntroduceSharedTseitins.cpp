@@ -13,24 +13,27 @@
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
-		: _manager(false), _factory(&_manager), _counter(&_manager), _bddtofo(&_manager, &_counter) {
+		: 	_manager(false),
+			_factory(&_manager),
+			_counter(&_manager),
+			_bddtofo(&_manager, &_counter) {
 }
 
-Theory* IntroduceSharedTseitins::execute(Theory* theo) {
-	if (not getOption(BoolType::GROUNDWITHBOUNDS)){
-		Warning::warning("The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds could solve this problem\n");
+Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
+	if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
+//		Warning::warning("The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds could solve this problem\n");
+		//TODO: is this warning still needed?
 	}
-	//std::cerr << "execute on "<<toString(theo)<<endl;
+//	std::cerr << "INPUT:"<<toString(theo)<<endl;
 	_bddtofo.setVocabulary(theo->vocabulary());
-	FormulaUtils::unnestPartialTerms(theo);
-	//std::cerr << "now on "<<toString(theo)<<endl;
+
 	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
-		auto bdd = _factory.turnIntoBdd(*it);
+		auto bdd = _factory.turnIntoBdd(*it, s);
 		_counter.count(bdd);
 	}
 	for (auto def = theo->definitions().cbegin(); def != theo->definitions().cend(); ++def) {
 		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule) {
-			auto bdd = _factory.turnIntoBdd((*rule)->body());
+			auto bdd = _factory.turnIntoBdd((*rule)->body(), s);
 			auto bddvars = _manager.getVariables((*rule)->quantVars());
 			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
 			_counter.count(bdd);
@@ -40,10 +43,11 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo) {
 	//First go over the definitions, because every definition defines all tseitins it uses.
 	//When this is done, go over the sentences.
 
+	int i = 0;
 	for (auto def = theo->definitions().cbegin(); def != theo->definitions().cend(); ++def) {
 		_bddtofo.startDefinition();
-		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule) {
-			auto bdd = _factory.turnIntoBdd((*rule)->body());
+		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule, ++i) {
+			auto bdd = _factory.turnIntoBdd((*rule)->body(), s); //TODO: avoid double work by storing the bdds
 			auto bddvars = _manager.getVariables((*rule)->quantVars());
 			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
 			auto newbody = _bddtofo.createFormulaWithFreeVars(bdd, bddvars);
@@ -52,20 +56,17 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo) {
 		}
 		_bddtofo.finishDefinitionAndAddConstraints(*def);
 	}
-
-
 	std::vector<Formula*>& sentences = theo->sentences();
 	for (size_t i = 0; i < sentences.size(); i++) {
-		auto bdd = _factory.turnIntoBdd(sentences[i]);
+		auto bdd = _factory.turnIntoBdd(sentences[i], s);//TODO: avoid double work by storing the bdds
 		sentences[i]->recursiveDelete();
 		auto newsentence = _bddtofo.createFormula(bdd);
 		theo->sentence(i, newsentence);
 	}
-
 	theo = _bddtofo.addTseitinConstraints(theo);
 	FormulaUtils::flatten(theo);
 	FormulaUtils::pushNegations(theo);
-	//std::cerr << "result is "<<toString(theo)<<endl;
+//	std::cerr << "OUTPUT:"<<toString(theo)<<endl;
 
 	return theo;
 }

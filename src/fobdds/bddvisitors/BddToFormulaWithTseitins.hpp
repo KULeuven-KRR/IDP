@@ -130,7 +130,7 @@ private:
 	Formula* tseitinFormula(Predicate* pred, const BDDConstruct* arg) {
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
-		setDBRMappingToMatch(vars);
+		setDBRMappingToMatch(vars, arg);
 		createTseitinAtom(pred, arg);
 		auto tseitinAtom = _currformula;
 		auto backup = _boundary;
@@ -146,7 +146,7 @@ private:
 	Rule* tseitinRule(Predicate* pred, const BDDConstruct* arg) {
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
-		setDBRMappingToMatch(vars);
+		setDBRMappingToMatch(vars, arg);
 		createTseitinAtom(pred, arg);
 		Assert(sametypeid<PredForm>(*_currformula));
 		auto tseitinAtom = dynamic_cast<PredForm*>(_currformula);
@@ -158,12 +158,21 @@ private:
 		return new Rule(varsset, tseitinAtom, tseitinDefinition, ParseInfo());
 	}
 
-	void setDBRMappingToMatch(std::vector<Variable*> vars) {
+	template<typename BDDConstruct>
+	void setDBRMappingToMatch(std::vector<Variable*> vars, const BDDConstruct* arg) {
 		_dbrmapping.clear();
-		for (size_t i = 0; i < vars.size(); ++i) {
-			auto dbrindex = _manager->getDeBruijnIndex(vars[i]->sort(), i);
-			_dbrmapping[dbrindex] = vars[i];
+		auto ic = IndexCollector(_manager);
+		auto freeindices = ic.getVariables(arg);
+		std::map<unsigned int, const FOBDDDeBruijnIndex*> inttoindex;
+		for (auto it = freeindices.cbegin(); it != freeindices.cend(); it++) {
+			inttoindex[(*it)->index()] = (*it);
 		}
+		size_t i =0;
+		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); it++, i++) {
+			_dbrmapping[it->second] = vars[i];
+		}
+		Assert(vars.size() == _dbrmapping.size());
+
 	}
 
 	void setDBRMappingToMatch(set<const FOBDDVariable*, CompareBDDVars> bddvars) {
@@ -186,8 +195,10 @@ private:
 
 		Assert(p->arity() == inttovar.size());
 		std::vector<Term*> terms(inttovar.size(), NULL);
-		for (auto it = inttovar.cbegin(); it != inttovar.cend(); ++it) {
-			terms[it->first] = new VarTerm(it->second, TermParseInfo());
+		int i = 0;
+		for (auto it = inttovar.cbegin(); it != inttovar.cend(); ++it, ++i) {
+			//terms is an dbr-index sorted list of all relevant varterms
+			terms[i] = new VarTerm(it->second, TermParseInfo());
 		}
 
 		_currformula = new PredForm(negate ? SIGN::NEG : SIGN::POS, p, terms, FormulaParseInfo());
@@ -205,9 +216,11 @@ private:
 
 		std::vector<Sort*> sorts(freeindices.size(), NULL);
 
-		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); ++it) {
-			sorts[it->first] = it->second->sort();
+		int i = 0;
+		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); ++it, ++i) {
+			sorts[i] = it->second->sort();
 		}
+		//sorts is an dbr-index sorted list of all relevant sorts
 		return sorts;
 	}
 
@@ -243,7 +256,6 @@ private:
 		//In this case, we need to create a new tseitin symbol.
 		auto sorts = getRelevantDbrMappingSorts(bdd);
 
-		//TODO: following should be improved!
 		Assert(_vocabulary !=NULL);
 		auto tseitinsymbol = new Predicate(sorts, true);
 		_vocabulary->add(tseitinsymbol);
@@ -264,12 +276,10 @@ private:
 		//In this case, we need to create a new tseitin symbol.
 		auto sorts = getRelevantDbrMappingSorts(kernel);
 
-		//TODO: following should be improved!
-		stringstream ss;
-		ss << "KernelTseitin_" << _kerneltseitins.size();
-		auto tseitinsymbol = new Predicate(ss.str(), sorts, false);
-
-		_kerneltseitins[kernel] = tseitinsymbol;
+		Assert(_vocabulary !=NULL);
+		auto tseitinsymbol = new Predicate(sorts, true);
+		_vocabulary->add(tseitinsymbol);
+		addTseitin(kernel, tseitinsymbol);
 		createTseitinAtom(tseitinsymbol, kernel);
 	}
 

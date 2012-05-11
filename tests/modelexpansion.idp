@@ -36,13 +36,7 @@ procedure mxwithsymm(){
 		return 0
 	end 
 	
-	for i,v in ipairs(solutions) do
-		if(#modelexpand(T, v)==0) then
-			io.stderr:write("Found an invalid solution.\n")
-			return 0
-		end
-	end
-	return 1
+	return check(solutions)
 }
 
 procedure run() {
@@ -52,12 +46,18 @@ procedure run() {
 	if(#solutions~=getExpectedNbOfModels()) then
 		return 0
 	end 
-	
+	return check(solutions)
+}
+
+procedure check(solutions){
+local k  = 0
 	for i,v in ipairs(solutions) do
-		if(#modelexpand(T, v)==0) then
+		k = k +1
+		if( k <5 and #modelexpand(T, v)==0) then
 			io.stderr:write("Found an invalid solution.\n")
 			return 0
 		end
 	end
 	return 1
+
 }

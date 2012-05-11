@@ -118,8 +118,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Calculate known definitions
 	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
-	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
-#warning "Buggy code in mx: testing with sharedTseitinTransform"
+	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory, _structure);
+	_structure->changeVocabulary(clonetheory->vocabulary());
 
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY)) {

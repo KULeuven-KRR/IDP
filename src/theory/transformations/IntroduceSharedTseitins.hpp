@@ -31,9 +31,11 @@ private:
 	CountOccurences _counter;
 	BDDToFOWithTseitins _bddtofo;
 public:
+	//NOTE: if the structure is given, more efficient unnesting can happen (deriving of term bounds)
 	IntroduceSharedTseitins();
 
 	//Introduces Tseitins for subformulas of the Theory that occur a lot. Modifies the theory's vocabulary (by adding tseitin symbols)
-	Theory* execute(Theory* t);
+	//WARNING: modifies the vocabulary of the theory! Does not modify a structure.
+	Theory* execute(Theory* t, AbstractStructure* s = NULL);
 };
 #endif /* SHAREDTSEITINS354654_HPP_ */

@@ -106,7 +106,9 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
-		: _verbosity(getOption(IntType::PROPAGATEVERBOSITY)), _initbounds(init), _assertsentences(as) {
+		: 	_verbosity(getOption(IntType::PROPAGATEVERBOSITY)),
+			_initbounds(init),
+			_assertsentences(as) {
 	auto options = GlobalData::instance()->getOptions();
 	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
 	_multiplymaxsteps = options->getValue(BoolType::RELATIVEPROPAGATIONSTEPS);
@@ -272,7 +274,12 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 			_propagator->schedule(it->second, UP, false, pf);
 		}
 	} else {
+#ifndef NDEBUG
+		if (_leafconnectors.find(symbol) == _leafconnectors.cend()) {
+			std::cerr << toString(symbol);
+		}
 		Assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
+#endif
 		PredForm* leafconnector = _leafconnectors[symbol];
 		_propagator->addToLeafUpward(leafconnector, pf);
 		LeafConnectData<Domain> lcd;

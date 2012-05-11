@@ -109,6 +109,9 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			Assert(domain != NULL);
 			_maximum = domain->first();
 			_minimum = domain->first();
+		} else if (is(function, STDFUNC::MODULO)) {
+			_maximum = createDomElem(0);
+			_minimum = _subtermmaximums[1];
 		} else {
 			std::stringstream ss;
 			ss << "Deriving term bounds for function" << function->name() << ".";

@@ -14,5 +14,10 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	return 4
+	//return 4
+	return 8 
+		//volgens  Johan zijn thesis is de betekenis van het ambigu atoom P(f(x)) 
+		// 	!y: y=f(x) => P(y)
+		//, dus dit is ook voldaan als x geen beeld heeft onder f. 
+		//Naar analogie van de Woman(Spouse(John)) die betekent dat de spouse van John een vrouw is (zo die bestaat)
 }

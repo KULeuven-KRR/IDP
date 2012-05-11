@@ -927,7 +927,7 @@ const FOBDDSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVaria
 	int i = 0;
 	const FOBDD* bumpedformula = formula;
 	const FOBDDTerm* bumpedterm = term;
-	for (auto it = vars.crbegin(); it != vars.crend(); it.operator ++(), i++) {
+	for (auto it = vars.cbegin(); it != vars.cend(); it.operator ++(), i++) {
 		BumpIndices b(this, *it, 0);
 		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
 		bumpedterm = bumpedterm->acceptchange(&b);
@@ -984,7 +984,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}
 		auto sortNotEmpty = getQuantKernel(sort,
-				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_CT, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
+				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_TWOVALUED, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
 		return getBDD(sortNotEmpty, bdd, negation(bdd));
 	}
 
