@@ -20,6 +20,11 @@
 
 #include "loki/Typelist.h"
 
+std::string getInferenceNamespaceName();
+std::string getTheoryNamespaceName();
+std::string getOptionsNamespaceName();
+std::string getStructureNamespaceName();
+
 //TODO refactor the monitors as extra arguments
 
 template<typename T> struct Type2Value;
@@ -76,9 +81,7 @@ protected:
 		return printmonitor_;
 	}
 
-	void setNameSpace(const std::string& namespacename) {
-		_space = namespacename;
-	}
+	void setNameSpace(const std::string& namespacename);
 
 public:
 	Inference(const std::string& name, const std::string& description, bool needprintmonitor = false)

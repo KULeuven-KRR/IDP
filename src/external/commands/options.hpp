@@ -19,6 +19,7 @@ class SetOptionsInference: public OptionsBase {
 public:
 	SetOptionsInference()
 			: OptionsBase("setascurrentoptions", "Sets the given options as the current options, used by all other commands.") {
+		setNameSpace(getOptionsNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -32,6 +33,7 @@ class NewOptionsInference: public EmptyBase {
 public:
 	NewOptionsInference()
 			: EmptyBase("newoptions", "Create new options, equal to the standard options.") {
+		setNameSpace(getOptionsNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {
@@ -44,6 +46,7 @@ class GetOptionsInference: public EmptyBase {
 public:
 	GetOptionsInference()
 			: EmptyBase("getoptions", "Get the current options.") {
+		setNameSpace(getOptionsNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

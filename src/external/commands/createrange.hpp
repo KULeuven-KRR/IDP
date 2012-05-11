@@ -19,6 +19,7 @@ class CreateRangeInference: public CreateRangeInferenceBase {
 public:
 	CreateRangeInference()
 			: CreateRangeInferenceBase("range", "Create a domain containing all integers between First and Last") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

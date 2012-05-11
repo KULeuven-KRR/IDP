@@ -1745,12 +1745,16 @@ void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements)
 	}
 }
 
+const char* getInternalProcedureMetaTableName(){
+	return "internalprocedure";
+}
+
 void internProcMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
 	elements.push_back(tablecolheader { &gcInternProc, "__gc" });
 	elements.push_back(tablecolheader { &internalCall, "__call" });
 
-	bool newtable = luaL_newmetatable(L, "internalprocedure") != 0;
+	bool newtable = luaL_newmetatable(L, getInternalProcedureMetaTableName()) != 0;
 	Assert(newtable);
 	if (newtable) {
 		for (auto i = elements.cbegin(); i < elements.cend(); ++i) {
@@ -1952,38 +1956,54 @@ void createMetaTables(lua_State* L) {
  */
 typedef map<vector<ArgType>, InternalProcedure*> internalprocargmap;
 
-// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
-map<string, map<string, internalprocargmap>> ns2name2procedures;
-
-void addInternalProcedure(Inference* inf) {
+void addInternalProcedure(Inference* inf, map<string, map<string, internalprocargmap>>& ns2name2procedures) {
 	auto proc = new InternalProcedure(inf);
 	ns2name2procedures[inf->getNamespace()][inf->getName()][inf->getArgumentTypes()] = proc;
 }
 
 void addInternalProcedures(lua_State*) {
+	// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
+	map<string, map<string, internalprocargmap>> ns2name2fieldprocedures, ns2name2globalprocedures;
 	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
-		addInternalProcedure((*i).get());
+		addInternalProcedure((*i).get(), ns2name2fieldprocedures);
+		addInternalProcedure((*i).get(), ns2name2globalprocedures);
 	}
 
 	set<string> namespaces;
-	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
+	for (auto i = ns2name2fieldprocedures.cbegin(); i != ns2name2fieldprocedures.cend(); ++i) {
 		auto nsspace = i->first;
 		if (namespaces.find(nsspace) == namespaces.cend()) {
+		//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
 		}
 		lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
-			auto possiblearguments = new internalprocargmap(j->second);
-			// FIXME "internalprocedure" is the name of the metatable which is the type of the internal procedures, so should also not be hardcoded strings
-			addUserData(_state, possiblearguments, "internalprocedure");
-
-			// TODO this turned out to be the crucial part, any idea why??
-			if (nsspace == getGlobalNamespaceName()) {
-				lua_setglobal(_state, j->first.c_str());
-			} else {
+			if(nsspace != getGlobalNamespaceName()){
+				auto possiblearguments = new internalprocargmap(j->second);
+				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
+			//	cerr <<"Setting field " <<j->first.c_str() <<"\n";
 				lua_setfield(_state, -2, j->first.c_str());
+			}
+		}
+		lua_pop(_state, 1);
+	}
+	for (auto i = ns2name2globalprocedures.cbegin(); i != ns2name2globalprocedures.cend(); ++i) {
+		auto nsspace = i->first;
+		if (namespaces.find(nsspace) == namespaces.cend()) {
+		//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
+			lua_newtable(_state);
+			lua_setglobal(_state, nsspace.c_str());
+			namespaces.insert(nsspace);
+		}
+		lua_getglobal(_state, nsspace.c_str());
+		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
+			if (nsspace != getInternalNamespaceName()) {
+				auto possiblearguments = new internalprocargmap(j->second);
+				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
+			//	cerr <<"Setting global " <<j->first.c_str() <<"\n";
+				lua_setglobal(_state, j->first.c_str());
 			}
 		}
 		lua_pop(_state, 1);
@@ -2013,7 +2033,15 @@ void makeLuaConnection() {
 	}
 
 	// Add the global namespace and standard options
+	// IMPORTANT only add namespaces as global after inferences have been added
 	addGlobal(GlobalData::getGlobalNamespace());
+	addGlobal(GlobalData::getStdNamespace());
+	for(auto i=getGlobal()->getStdNamespace()->subspaces().cbegin(); i!=getGlobal()->getStdNamespace()->subspaces().cend(); ++i) {
+		// TODO there is something ugly, "idpintern" is NOT a namespace but only a table!
+		if(i->first != getInternalNamespaceName()){
+			addGlobal(i->second);
+		}
+	}
 	addGlobal(Vocabulary::std());
 	addGlobal("stdoptions", GlobalData::instance()->getOptions()); // TODO string "stdoptions" used twice, also in data/idp_intern.lua
 

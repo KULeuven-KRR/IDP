@@ -210,7 +210,7 @@ public:
 	void currfile(const std::string& s); //!< set the current filename
 	void currfile(std::string* s); //!< set the current filename
 
-	void openspace(const std::string& name, YYLTYPE); //!< Open a new namespace
+	void openNamespace(const std::string& name, YYLTYPE); //!< Open a new namespace
 	void openvocab(const std::string& name, YYLTYPE); //!< Open a new vocabulary
 	void opentheory(const std::string& tname, YYLTYPE); //!< Open a new theory
 	void openquery(const std::string& tname, YYLTYPE); //!< Open a new named query
@@ -218,7 +218,7 @@ public:
 	void openstructure(const std::string& name, YYLTYPE); //!< Open a new structure
 	void openprocedure(const std::string& name, YYLTYPE); //!< Open a procedure
 	void openexec(); //!< Start parsing a command
-	void closespace(); //!< Close the current namespace
+	void closeNamespace(); //!< Close the current namespace
 	void closevocab(); //!< Close the current vocabulary
 	void closetheory(); //!< Close the current theory
 	void closequery(Query*); //!< Close the current named query

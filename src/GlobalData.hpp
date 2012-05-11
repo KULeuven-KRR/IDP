@@ -34,7 +34,7 @@ public:
 
 class GlobalData {
 private:
-	Namespace* _globalNamespace;
+	Namespace *_globalNamespace, *_stdNamespace;
 	Insert _inserter;
 	std::map<std::string, CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
@@ -62,6 +62,7 @@ public:
 	static GlobalData* instance();
 	static DomainElementFactory* getGlobalDomElemFactory();
 	static Namespace* getGlobalNamespace();
+	static Namespace* getStdNamespace();
 	static void close();
 
 	bool terminateRequested() const {
@@ -90,6 +91,9 @@ public:
 
 	Namespace* getNamespace() {
 		return _globalNamespace;
+	}
+	Namespace* getStd() {
+		return _stdNamespace;
 	}
 
 	DomainElementFactory* getDomElemFactory() {

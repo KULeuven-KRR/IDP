@@ -235,10 +235,10 @@ idp		: /* empty */
 				| idp using
 		        ;
 	
-namespace		: NAMESPACE_HEADER namespace_name '{' idp '}'	{ getInserter().closespace();	}
+namespace		: NAMESPACE_HEADER namespace_name '{' idp '}'	{ getInserter().closeNamespace();	}
 				;
 
-namespace_name	: identifier									{ getInserter().openspace(*$1,@1); }
+namespace_name	: identifier									{ getInserter().openNamespace(*$1,@1); }
 				;
 
 using			: USINGNAMESPACE pointer_name					{ getInserter().usingspace(*$2,@1); delete($2);	}

@@ -16,7 +16,7 @@ structure S:V{
 
 procedure main() {
 	stdoptions.trace = true
-	solution, trace = mx::all(T,S)
+	solution, trace = allmodels(T,S)
 	// print(tabletostring(trace))
 	if (#trace==7 and 
 		trace[1]["type"]=="assign" and 

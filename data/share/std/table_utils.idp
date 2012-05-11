@@ -1,4 +1,5 @@
-
+namespace stdspace{
+namespace tables{
 /**
  * Given a predicate name and a relationship table, prints all tuples in the table
  */
@@ -118,5 +119,6 @@ procedure tablecombo(t,n){
   end
 }
 
+}
 
-
+}

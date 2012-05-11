@@ -2,5 +2,5 @@
 
 procedure main(){
 	stdoptions.nbmodels=0
-	mx::printsols(mx::all(T, S))
+	mx::printsols(allmodels(T, S))
 }

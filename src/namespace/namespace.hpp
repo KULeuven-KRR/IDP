@@ -67,6 +67,15 @@ public:
 	Namespace* super() const {
 		return _superspace;
 	}
+	bool hasParent(Namespace* ns) const{
+		if(super()==ns){
+			return true;
+		}
+		if(super()==NULL){
+			return false;
+		}
+		return super()->hasParent(ns);
+	}
 	const ParseInfo& pi() const {
 		return _pi;
 	}

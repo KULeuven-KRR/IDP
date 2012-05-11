@@ -85,8 +85,8 @@ procedure main() {
 	printgrounding(T2, S2)
 	setascurrentoptions(stdoptions)
 	mx::printmodels(modelexpand(T2, S2))
-	mx::printmodels(mx::all(T2, S2))
-	print(mx::one(T2, S2))
+	mx::printmodels(allmodels(T2, S2))
+	print(onemodel(T2, S2))
 	//entails
 	//range
 	//query

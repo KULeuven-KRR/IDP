@@ -23,7 +23,7 @@ procedure getonesol(){
 	stdoptions.groundlazily=true
 	stdoptions.groundverbosity=3
 	stdoptions.satverbosity=4
-	return mx::one(T, S)
+	return onemodel(T, S)
 }
 
 procedure main(){

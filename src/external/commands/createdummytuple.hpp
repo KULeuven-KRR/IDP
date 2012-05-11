@@ -17,6 +17,7 @@ class CreateTupleInference: public EmptyBase {
 public:
 	CreateTupleInference()
 			: EmptyBase("createdummytuple", "Create a dummy empty tuple") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>&) const {

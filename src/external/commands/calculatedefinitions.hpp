@@ -22,6 +22,7 @@ public:
 	CalculateDefinitionInference()
 			: CalculateDefinitionInferenceBase("calculatedefinitions",
 					"Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
+		setNameSpace(getInferenceNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

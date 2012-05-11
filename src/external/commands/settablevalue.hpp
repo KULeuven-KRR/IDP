@@ -39,6 +39,7 @@ public:
 
 	SetTableValueInference(const char* command, const char* description, SETVALUE value)
 			: SetTableValueInferenceBase(command, description, true), value_(value) {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

@@ -629,18 +629,32 @@ void Insert::closeblock() {
 	_currterm = "";
 }
 
-void Insert::openspace(const string& sname, YYLTYPE l) {
+Namespace* findNamespace(const std::string& name, Namespace* ns){
+	if(ns->name()==name){
+		return ns;
+	}
+	for(auto i=ns->subspaces().cbegin(); i!=ns->subspaces().cend(); ++i){
+		auto result = findNamespace(name, i->second);
+		if(result!=NULL){
+			return result;
+		}
+	}
+	return NULL;
+}
+
+void Insert::openNamespace(const string& sname, YYLTYPE l) {
 	openblock();
 	auto pi = parseinfo(l);
-	auto ns = new Namespace(sname, _currspace, pi);
+	auto globalns = getGlobal()->getGlobalNamespace();
+	auto ns = findNamespace(sname, globalns);
+	if(ns==NULL){
+		ns = new Namespace(sname, _currspace, pi);
+	}
 	_currspace = ns;
 	usenamespace(ns);
 }
 
-void Insert::closespace() {
-	if (_currspace->super()->isGlobal()) {
-		LuaConnection::addGlobal(_currspace);
-	}
+void Insert::closeNamespace() {
 	_currspace = _currspace->super();
 	Assert(_currspace);
 	closeblock();
@@ -823,8 +837,8 @@ void Insert::closestructure() {
 void Insert::openprocedure(const string& name, YYLTYPE l) {
 	// open block
 	openblock();
-	ParseInfo pi = parseinfo(l);
-	UserProcedure* p = procedureInScope(name, pi);
+	auto pi = parseinfo(l);
+	auto p = procedureInScope(name, pi);
 	if (p) {
 		Error::multdeclproc(name, pi, p->pi());
 	}
@@ -863,8 +877,11 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 void Insert::closeprocedure(stringstream* chunk) {
 	_currprocedure->add(chunk->str());
 	LuaConnection::compile(_currprocedure);
-	if (_currspace->isGlobal())
+	if (_currspace->isGlobal()
+			|| _currspace == getGlobal()->getStdNamespace()
+			|| _currspace->hasParent(getGlobal()->getStdNamespace())){
 		LuaConnection::addGlobal(_currprocedure);
+	}
 	closeblock();
 }
 

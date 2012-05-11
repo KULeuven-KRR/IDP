@@ -17,7 +17,7 @@ structure S: V {
 procedure getonesol(){
 	stdoptions.groundlazily=true
 	stdoptions.satverbosity=1
-	return mx::one(T, S)
+	return onemodel(T, S)
 }
 
 procedure main(){
