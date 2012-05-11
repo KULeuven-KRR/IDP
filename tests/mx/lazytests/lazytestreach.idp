@@ -29,7 +29,7 @@ procedure getonesol(){
 	stdoptions.groundverbosity=4
 	stdoptions.randomvaluechoice = true
 	stdoptions.longnames = false
-	return mx::one(T, S)
+	return onemodel(T, S)
 }
 
 procedure main(){

@@ -20,6 +20,7 @@ GlobalData::GlobalData()
 		: _globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _idcounter(1),
 			_terminateRequested(false), _options(new Options()), _tabsizestack(), _errorcount(0) {
 	_tabsizestack.push(0);
+	_stdNamespace = new Namespace("stdspace", _globalNamespace, ParseInfo());
 }
 
 GlobalData::~GlobalData() {
@@ -57,6 +58,10 @@ DomainElementFactory* GlobalData::getGlobalDomElemFactory() {
 }
 Namespace* GlobalData::getGlobalNamespace() {
 	return instance()->getNamespace();
+}
+
+Namespace* GlobalData::getStdNamespace(){
+	return instance()->getStd();
 }
 
 void GlobalData::close() {

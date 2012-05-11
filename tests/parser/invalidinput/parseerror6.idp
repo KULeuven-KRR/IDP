@@ -1,0 +1,24 @@
+#include <mx>
+
+vocabulary V{
+	type op
+	not:op
+	type symbol
+	type node contains op, symbol
+	type time isa int
+	type formula
+	hasnode(formula, node, time)
+	affected(formula, time)
+}
+theory T : V{
+	{
+		hasnode(n, f, t+1) <- ~affected(f, t). // NOTE: bug because of swapping of variables
+	}
+}
+structure S:V {
+	formula = {1..10}
+	op = {AND; OR; NOT}
+	not = NOT
+	symbol = {P}
+	time = {1..10}
+}

@@ -22,6 +22,7 @@ class TableIteratorInference: public PredTableBase {
 public:
 	TableIteratorInference()
 			: PredTableBase("iterator", "Create an iterator for the given predtable.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -38,6 +39,7 @@ class DomainIteratorInference: public SortTableBase {
 public:
 	DomainIteratorInference()
 			: SortTableBase("iterator", "Create an iterator for the given sorttable.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -58,7 +60,6 @@ public:
 	TableDerefAndIncrementInference()
 			: TableDerefAndIncrementInferenceBase("deref_and_increment", "Returns the current value and increments the tableiterator.") {
 		setNameSpace(getInternalNamespaceName());
-
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -81,7 +82,6 @@ class DomainDerefAndIncrementInference: public Inference {
 public:
 	DomainDerefAndIncrementInference()
 			: Inference("deref_and_increment", "Returns the current value and increments the sortiterator.") {
-		setNameSpace(getInternalNamespaceName());
 		setNameSpace(getInternalNamespaceName());
 		addType(Type2Value<SortIterator*>::get());
 		addType(Type2Value<T>::get());

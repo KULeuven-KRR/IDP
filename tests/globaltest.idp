@@ -1,0 +1,8 @@
+#include <table_utils>
+
+procedure main() {
+	if std==nil then
+		return 0
+	end
+	return 1
+}

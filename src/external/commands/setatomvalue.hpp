@@ -39,6 +39,7 @@ public:
 
 	SetAtomValueInference(const char* command, const char* description, SETVALUE value)
 			: SetAtomValueInferenceBase(command, description, true), value_(value) {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

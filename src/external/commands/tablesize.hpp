@@ -18,6 +18,7 @@ class TableSizeInference: public PredTableBase {
 public:
 	TableSizeInference()
 			: PredTableBase("size", "Get the size of the given table.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

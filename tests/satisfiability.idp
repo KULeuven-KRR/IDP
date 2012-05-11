@@ -39,7 +39,7 @@ procedure satwithsymm(){
 }
 
 procedure run() {	
-	solution = mx::one(T,S)
+	solution = onemodel(T,S)
 	
 	if(solution==nil) then
 		if(getExpectedAModel()) then

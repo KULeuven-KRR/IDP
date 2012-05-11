@@ -25,7 +25,6 @@ public:
 	SimplifyInference()
 			: QueryBase("simplify", "Simplifies the given query if applicable, using bdds.") {
 		setNameSpace(getInternalNamespaceName());
-
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

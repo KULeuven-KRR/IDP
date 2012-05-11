@@ -20,7 +20,7 @@ class MergeTheoriesInference: public MergeTheoriesInferenceBase {
 public:
 	MergeTheoriesInference()
 			: MergeTheoriesInferenceBase("merge", "Create a new theory which is the result of combining both input theories.") {
-		//TODO: intern?
+		setNameSpace(getTheoryNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

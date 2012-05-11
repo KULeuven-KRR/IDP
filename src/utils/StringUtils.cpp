@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "StringUtils.hpp"
 
@@ -56,16 +56,24 @@ string replaceAllIn(const string& text, const string& find, const string& replac
 }
 
 string replaceAllAndTrimEachLine(const string& text, const string& find, const string& replacement) {
-	stringstream ss;
-	string::size_type prevpos = 0;
-	string::size_type position = text.find("\n");
-	while (position != string::npos) {
-		if (prevpos < position - 1) { // Remove empty lines
-			ss << trim(text.substr(prevpos, position - 1)) << "\n";
+	std::stringstream input(text);
+	stringstream trimmedlines;
+	bool begin = true;
+	while (true) {
+		if(not begin){
+			trimmedlines<<"\n";
 		}
-		prevpos = position;
-		position = text.find(find, position + 1);
+		begin = false;
+		std::string line;
+		std::getline(input, line);
+		if(input.eof()){
+			trimmedlines << trim(line);
+			break;
+		}
+		if (not input.good()) {
+			break;
+		}
+		trimmedlines << trim(line);
 	}
-	ss << trim(text.substr(prevpos));
-	return replaceAllIn(ss.str(), find, replacement);
+	return replaceAllIn(trimmedlines.str(), find, replacement);
 }

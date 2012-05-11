@@ -31,7 +31,6 @@ class Vocabulary;
  * 	TODO domelem = domelem ?
  */
 
-// TODO default behavior by macros
 class DeriveSorts: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
@@ -83,9 +82,7 @@ private:
 			derivepreds();
 			f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
 		}
-		if (_useBuiltIns) {
-			check();
-		}
+		check();
 	}
 
 	void derivesorts(); // derive the sorts of the variables, based on the sorts in _untyped

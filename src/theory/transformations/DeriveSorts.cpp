@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "DeriveSorts.hpp"
 
@@ -49,17 +49,19 @@ SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 }
 
 Term* DeriveSorts::visit(VarTerm* vt) {
+	//cerr <<"Visiting varterm " <<toString(vt) <<"\n";
 	if (_underivable) {
 		_underivableVariables.insert(vt->var());
 		return vt;
 	}
-	if (_assertsort != NULL && _untypedvariables.find(vt->var()) != _untypedvariables.end()) {
+	if (_assertsort != NULL && _untypedvariables.find(vt->var()) != _untypedvariables.cend()) {
 		Sort* newsort = NULL;
 		if (vt->sort() == NULL) {
 			newsort = _assertsort;
 		} else {
 			newsort = SortUtils::resolve(vt->sort(), _assertsort);
 		}
+		//cerr <<"\tnewsort = " <<toString(newsort) <<"\n";
 		if (newsort == NULL) {
 			_underivableVariables.insert(vt->var());
 		} else if (vt->sort() != newsort) {
@@ -93,84 +95,87 @@ Term* DeriveSorts::visit(AggTerm* t) {
 
 Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
-	if (_useBuiltIns || not f->builtin()) {
-		if (_assertsort != NULL && term->sort() != NULL) {
-			Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
+	if (not _useBuiltIns && f->builtin()) {
+		return term;
+	}
+	if (_assertsort != NULL && term->sort() != NULL) {
+		Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
+	}
+	_assertsort = NULL;
+
+	auto origunderivable = _underivable;
+
+	if (f->overloaded()) {
+		_overloadedterms.insert(term);
+		if (not f->builtin()) {
+			_underivable = true;
 		}
-		_assertsort = NULL;
+	}
 
-		auto origunderivable = _underivable;
-
-		if (f->overloaded()) {
-			_overloadedterms.insert(term);
-			if (not f->builtin()) {
-				_underivable = true;
-			}
-		}
-
-		// Currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but the arguments of the builtins, eg +/2:, are set too broadly (int+int:int)
-		// TODO review if more builtins are added?
-		if (f->builtin() && _useBuiltIns) {
-			for (auto i = term->subterms().cbegin(); i != term->subterms().cend(); ++i) {
-				(*i)->accept(this);
-				_assertsort = NULL;
-			}
-			return term;
-		}
-
-		auto it = f->insorts().cbegin();
-		auto jt = term->subterms().cbegin();
-		for (; it != f->insorts().cend(); ++it, ++jt) {
-			_assertsort = *it;
-			(*jt)->accept(this);
+	// Currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but the arguments of the builtins, eg +/2:, are set too broadly (int+int:int)
+	// TODO review if more builtins are added?
+	if (f->builtin() && _useBuiltIns) {
+		for (auto i = term->subterms().cbegin(); i != term->subterms().cend(); ++i) {
+			(*i)->accept(this);
 			_assertsort = NULL;
 		}
-		_underivable = origunderivable;
+		return term;
 	}
+
+	auto it = f->insorts().cbegin();
+	auto jt = term->subterms().cbegin();
+	for (; it != f->insorts().cend(); ++it, ++jt) {
+		_assertsort = *it;
+		(*jt)->accept(this);
+		_assertsort = NULL;
+	}
+	_underivable = origunderivable;
 	return term;
 }
 
 Formula* DeriveSorts::visit(PredForm* f) {
+	//cerr << "Visiting " << toString(f) << "\n";
 	auto p = f->symbol();
-	if (_useBuiltIns || not p->builtin()) {
-		auto origunderivable = _underivable;
-		if (p->overloaded()) {
-			_overloadedatoms.insert(f);
-			if (not p->builtin()) {
-				_underivable = true;
-			}
+	if (not _useBuiltIns && p->builtin()) {
+		return f;
+	}
+	auto origunderivable = _underivable;
+	if (p->overloaded()) {
+		_overloadedatoms.insert(f);
+		if (not p->builtin()) {
+			_underivable = true;
 		}
+	}
 
-		if (p->builtin()) {
-			Sort* temp = NULL;
-			if (not _firstvisit && is(p, STDPRED::EQ)) {
-				for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
-					if ((*i)->sort() != NULL) {
-						if (temp == NULL) {
-							temp = (*i)->sort();
-						} else {
-							temp = SortUtils::resolve(temp, (*i)->sort());
-						}
+	if (p->builtin()) {
+		Sort* temp = NULL;
+		if (not _firstvisit && is(p, STDPRED::EQ)) {
+			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
+				if ((*i)->sort() != NULL) {
+					if (temp == NULL) {
+						temp = (*i)->sort();
+					} else {
+						temp = SortUtils::resolve(temp, (*i)->sort());
 					}
 				}
 			}
-			for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
-				_assertsort = temp;
-				(*i)->accept(this);
-				_assertsort = NULL;
-			}
-		} else {
-			auto it = p->sorts().cbegin();
-			auto jt = f->subterms().cbegin();
-			for (; it != p->sorts().cend(); ++it, ++jt) {
-				_assertsort = *it;
-				(*jt)->accept(this);
-				_assertsort = NULL;
-			}
 		}
-
-		_underivable = origunderivable;
+		for (auto i = f->subterms().cbegin(); i != f->subterms().cend(); ++i) {
+			_assertsort = temp;
+			(*i)->accept(this);
+			_assertsort = NULL;
+		}
+	} else {
+		auto it = p->sorts().cbegin();
+		auto jt = f->subterms().cbegin();
+		for (; it != p->sorts().cend(); ++it, ++jt) {
+			_assertsort = *it;
+			(*jt)->accept(this);
+			_assertsort = NULL;
+		}
 	}
+
+	_underivable = origunderivable;
 	return f;
 }
 
@@ -256,12 +261,17 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 	_useBuiltIns = useBuiltins;
 	_assertsort = NULL;
 	_vocab = v;
+	auto& head = *r->head();
 	// Set the sort of the terms in the head
-	auto jt = r->head()->symbol()->sorts().cbegin();
-	for (unsigned int n = 0; n < r->head()->subterms().size(); ++n, ++jt) {
-		auto hs = r->head()->subterms()[n]->sort();
+	auto jt = head.symbol()->sorts().cbegin();
+	for (unsigned int n = 0; n < head.subterms().size(); ++n, ++jt) {
+		auto hs = head.subterms()[n]->sort();
 		if (hs == NULL) {
-			r->head()->subterms()[n]->sort(*jt);
+			head.subterms()[n]->sort(*jt);
+			auto varterm = dynamic_cast<VarTerm*>(head.subterms()[n]);
+			if (varterm != NULL) {
+				_untypedvariables.insert(varterm->var());
+			}
 			continue;
 		}
 		if (SortUtils::isSubsort(hs, *jt)) {
@@ -272,10 +282,10 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 		auto nvt1 = new VarTerm(nv, TermParseInfo());
 		auto nvt2 = new VarTerm(nv, TermParseInfo());
 		auto ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
-		ecf->add(CompType::EQ, r->head()->subterms()[n]);
+		ecf->add(CompType::EQ, head.subterms()[n]);
 		auto bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
 		r->body(bf);
-		r->head()->arg(n, nvt2);
+		head.arg(n, nvt2);
 		r->addvar(nv);
 	}
 	deriveSorts(r);
@@ -284,27 +294,27 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 void DeriveSorts::check() {
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
-			if (_useBuiltIns)
-				Error::novarsort((*i)->name(), (*i)->pi());
+			Error::novarsort((*i)->name(), (*i)->pi());
 		} else if (getOption(BoolType::SHOWWARNINGS)) {
-			Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
+			if (_useBuiltIns) { // NOTE this is used to prevent too many warnings in places were it is quite(!) unambiguous, as all positions it occurs in have the same sort.
+				Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
+			}
 		}
 	}
-	if (_useBuiltIns) {
-		for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
-			Error::novarsort((*i)->name(), (*i)->pi());
+	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
+		Error::novarsort((*i)->name(), (*i)->pi());
+	}
+	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
+		if (typeid(*((*it)->symbol())) == typeid(Predicate)) {
+			Error::nopredsort((*it)->symbol()->name(), (*it)->pi());
+		} else {
+			Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());
 		}
-		for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
-			if (typeid(*((*it)->symbol())) == typeid(Predicate))
-				Error::nopredsort((*it)->symbol()->name(), (*it)->pi());
-			else
-				Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());
-		}
-		for (auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
-			Error::nofuncsort((*it)->function()->name(), (*it)->pi());
-		}
-		for (auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
-			Error::nodomsort(toString(*it), (*it)->pi());
-		}
+	}
+	for (auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
+		Error::nofuncsort((*it)->function()->name(), (*it)->pi());
+	}
+	for (auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
+		Error::nodomsort(toString(*it), (*it)->pi());
 	}
 }

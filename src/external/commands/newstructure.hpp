@@ -19,6 +19,7 @@ class NewStructureInference: public NewStructureInferenceBase {
 public:
 	NewStructureInference()
 			: NewStructureInferenceBase("newstructure", "Create an empty structure with the given name over the given vocabulary.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

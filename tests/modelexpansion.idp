@@ -30,7 +30,7 @@ procedure mxwithsymm(){
 	stdoptions.groundwithbounds = false
 	stdoptions.symmetrybreaking = "static"
 	stdoptions.nbmodels = 0
-	solutions = mx::all(T,S)
+	solutions = allmodels(T,S)
 	io.stderr:write("Found "..#solutions.." models, expected at most "..getExpectedNbOfModels().." models.\n")
 	if(#solutions>getExpectedNbOfModels()) then
 		return 0
@@ -41,7 +41,7 @@ procedure mxwithsymm(){
 
 procedure run() {
 	stdoptions.nbmodels = 0
-	solutions = mx::all(T,S)
+	solutions = allmodels(T,S)
 	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
 	if(#solutions~=getExpectedNbOfModels()) then
 		return 0

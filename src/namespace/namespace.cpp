@@ -21,16 +21,21 @@ Namespace* Namespace::createGlobal() {
 }
 
 Namespace::~Namespace() {
-	for (auto it = _subspaces.cbegin(); it != _subspaces.cend(); ++it)
+	for (auto it = _subspaces.cbegin(); it != _subspaces.cend(); ++it){
 		delete (it->second);
-	for (auto it = _structures.cbegin(); it != _structures.cend(); ++it)
+	}
+	for (auto it = _structures.cbegin(); it != _structures.cend(); ++it){
 		delete (it->second);
-	for (auto it = _theories.cbegin(); it != _theories.cend(); ++it)
+	}
+	for (auto it = _theories.cbegin(); it != _theories.cend(); ++it){
 		it->second->recursiveDelete();
-	for (auto it = _procedures.cbegin(); it != _procedures.cend(); ++it)
+	}
+	for (auto it = _procedures.cbegin(); it != _procedures.cend(); ++it){
 		delete (it->second);
-	for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it)
+	}
+	for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it){
 		delete (it->second);
+	}
 }
 
 void Namespace::add(Vocabulary* v) {

@@ -1,5 +1,7 @@
 // NOTE: the argument names are used literally in the help information, so they should be readable!
 
+namespace stdspace{
+	
 /***********
 	Help
 ***********/
@@ -20,9 +22,9 @@ procedure help(namespace) {
 **************************/
 
 /**
- * Returns a procedure, iterator, and a tuple such that 
+ * Returns a procedure, iterator, and a tuple such that
  * for t in tuples(table) do ... end
- * iterates over all tuples in the given predicate table. */
+ * iterates over all tuples in the given predicate table.*/
 procedure tuples(table) {
 	if type(table) == "predicate_table" then
 		return idpintern.deref_and_increment, iterator(table), createdummytuple()
@@ -34,7 +36,7 @@ procedure tuples(table) {
 /**
  * Returns a procedure, iterator, and 0 such that
  * for e in elements(d) do ... end
- * iterates over all elements in the given domain d. */
+ * iterates over all elements in the given domain d.*/
 procedure elements(d) {
 	if type(d) == "domain" then
 		return idpintern.deref_and_increment, iterator(d), 0
@@ -43,9 +45,13 @@ procedure elements(d) {
 	end
 }
 
-/**********************
-	Basic inference
-**********************/
+/**
+* Returns custom typeids for first-class idp citizens.*/
+procedure idptype(something){
+	return idpintern.idptype(something)
+}
+
+namespace inferences{
 
 /**
  * Apply model expansion to theory T, structure S over the same vocabulary.
@@ -149,12 +155,6 @@ procedure printgrounding(theory, structure) {
 }
 
 /**
-* Returns custom typeids for first-class idp citizens.*/
-procedure idptype(something){
-	return idpintern.idptype(something)
-}
-
-/**
 * Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.
 * This propagation is complete: everything that can be derived from the theory will be derived. 
 * Returns nil when propagation results in an inconsistent structure.*/ 
@@ -229,3 +229,7 @@ procedure propagate(theory,structure){
 	stdoptions.language = tmplang
 	return result
 }*/
+
+}
+
+}

@@ -52,7 +52,6 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		std::cerr << "printgrounding"<<"\h";
 		ground(get<0>(args), get<1>(args), printmonitor());
 		return nilarg();
 	}

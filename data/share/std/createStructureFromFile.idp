@@ -1,14 +1,19 @@
-procedure createStructureFromFile(inputfilename){
-	inputfile = io.open(inputfilename, "r")
-	if(inputfile==nil) then
-		print("File "..inputfilename.." does not exist.")
-		return nil
-	end
-	file = io.open("test", "w")
-	file:write("structure S:V{")
-	file:write(inputfile:read("*all"))
-	file:write("}")
-	file:close()
-	parse("test")
-	return S
+namespace stdspace{
+namespace structures{
+	procedure createStructureFromFile(inputfilename){
+		inputfile = io.open(inputfilename, "r")
+		if(inputfile==nil) then
+			print("File "..inputfilename.." does not exist.")
+			return nil
+		end
+		file = io.open("test", "w")
+		file:write("structure S:V{")
+		file:write(inputfile:read("*all"))
+		file:write("}")
+		file:close()
+		parse("test")
+		return S
+	}
+}
+
 }

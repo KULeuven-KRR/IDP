@@ -18,7 +18,7 @@ structure S : V{
 
 procedure main(){
 	maketrue(S[V::age], {"Jos", 50})
-	if(#(mx::all(T, S))==1)
+	if(#(allmodels(T, S))==1)
 	then
 		return 1
 	else

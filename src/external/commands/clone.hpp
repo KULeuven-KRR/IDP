@@ -18,6 +18,7 @@ class CloneStructureInference: public StructureBase {
 public:
 	CloneStructureInference()
 			: StructureBase("clone", "Clones the given structure.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -29,6 +30,7 @@ class CloneTheoryInference: public TheoryBase {
 public:
 	CloneTheoryInference()
 			: TheoryBase("clone", "Clones the given theory.") {
+		setNameSpace(getTheoryNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

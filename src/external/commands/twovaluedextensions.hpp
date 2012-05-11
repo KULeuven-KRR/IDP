@@ -18,6 +18,7 @@ class TwoValuedExtensionsOfStructureInference: public StructureBase {
 public:
 	TwoValuedExtensionsOfStructureInference()
 			: StructureBase("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument> & args) const {
@@ -41,6 +42,7 @@ class TwoValuedExtensionsOfTableInference: public TwoValuedExtensionsOfTableInfe
 public:
 	TwoValuedExtensionsOfTableInference()
 			: TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of all of the given structures.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

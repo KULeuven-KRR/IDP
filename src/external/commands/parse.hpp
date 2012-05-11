@@ -19,8 +19,7 @@ extern void parsefile(const std::string&);
 class ParseInference: public StringBase {
 public:
 	ParseInference()
-			: StringBase("parse",
-					"Parses the given file and adds its information into the datastructures.") {
+			: StringBase("parse", "Parses the given file and adds its information into the datastructures.") {
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

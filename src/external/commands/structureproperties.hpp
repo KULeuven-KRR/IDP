@@ -18,6 +18,7 @@ class IsConsistentInference: public StructureBase {
 public:
 	IsConsistentInference()
 			: StructureBase("isconsistent", "Check whether the structure is consistent.") {
+		setNameSpace(getStructureNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
