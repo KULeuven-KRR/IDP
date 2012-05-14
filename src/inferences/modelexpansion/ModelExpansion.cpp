@@ -118,8 +118,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Calculate known definitions
 	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
-	clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory, _structure);
-	_structure->changeVocabulary(clonetheory->vocabulary());
+	//TODO: add "sharedTseitinTransform to the idpintern-file or make it a seperate inference or make it optional
 
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY)) {

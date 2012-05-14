@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <iostream>
 #include "parseinfo.hpp"
@@ -33,11 +33,7 @@ void error(const std::string& message) {
 
 void error(const ParseInfo& p) {
 	GlobalData::instance()->notifyOfError();
-	clog << "ERROR at line " << p.linenumber() << ", column " << p.columnnumber();
-	if (p.filename()) {
-		clog << " of file " << *(p.filename());
-	}
-	clog << ": ";
+	clog << "ERROR at " << toString(p) << ": ";
 }
 
 /** Command line errors **/
@@ -281,76 +277,47 @@ void threevalsort(const string&, const ParseInfo& pi) {
 
 /** Multiple incompatible declarations of the same object **/
 
-void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+void multdeclsomething(string what, const string& whatname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
 	error(thisplace);
-	clog << "Namespace " << nsname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	clog << what << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << "." << "\n";
+}
+
+void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
+	multdeclsomething("Namespace", nsname, thisplace, prevdeclplace);
 }
 
 void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Vocabulary " << vocname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column "
-			<< prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Vocabulary", vocname, thisplace, prevdeclplace);
 }
 
 void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Theory " << thname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Theory", thname, thisplace, prevdeclplace);
+
 }
 
 void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Query " << fname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Query", fname, thisplace, prevdeclplace);
+
 }
 
 void multdeclterm(const string& tname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Term " << tname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename())
-		clog << " of file " << *(prevdeclplace.filename());
-	clog << "." << "\n";
+	multdeclsomething("Term", tname, thisplace, prevdeclplace);
+
 }
 
 void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Structure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Structure", sname, thisplace, prevdeclplace);
+
 }
 
 void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Options " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Options", sname, thisplace, prevdeclplace);
+
 }
 
 void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << "Procedure " << sname << " is already declared in this scope" << ", namely at line " << prevdeclplace.linenumber() << ", column " << prevdeclplace.columnnumber();
-	if (prevdeclplace.filename()) {
-		clog << " of file " << *(prevdeclplace.filename());
-	}
-	clog << "." << "\n";
+	multdeclsomething("Procedure", sname, thisplace, prevdeclplace);
+
 }
 
 /** Undeclared objects **/
@@ -443,145 +410,54 @@ void predorfuncsymbol(const string& name, const ParseInfo& pi) {
 	clog << name << " could be the predicate " << name << "/1 or the function " << name << "/0 at this place.\n";
 }
 
-void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+void overloadedsomething(string what, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
 	error(thisplace);
-	clog << "The sort " << name << " used here could be the sort declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the sort declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	clog << "The " << what << " " << name << " used here could be the " << what << " declared at " << toString(p1);
+	clog << " or the " << what << " declared at " << toString(p2) << ".\n";
+}
+
+void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
+	overloadedsomething("sort", name, p1, p2, thisplace);
 }
 
 void overloadedfunc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The function " << name << " used here could be the predicate declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the function declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("function", name, p1, p2, thisplace);
 }
 
 void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The predicate " << name << " used here could be the predicate declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the predicate declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("predicate", name, p1, p2, thisplace);
 }
 
 void overloadedspace(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The namespace " << name << " used here could be the namespace declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the namespace declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("namespace", name, p1, p2, thisplace);
 }
 
 void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The structure " << name << " used here could be the structure declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the structure declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("structure", name, p1, p2, thisplace);
 }
 
 void overloadedopt(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The options " << name << " used here could be the options declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the options declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("options", name, p1, p2, thisplace);
 }
 
 void overloadedproc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The procedure " << name << " used here could be the options declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the procedure declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("procedure", name, p1, p2, thisplace);
 }
 
 void overloadedquery(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The query " << name << " used here could be the query declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the query declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("query", name, p1, p2, thisplace);
 }
 
 void overloadedterm(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The term " << name << " used here could be the term declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename())
-		clog << " of file " << p1.filename();
-	clog << " or the term declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename())
-		clog << " of file " << p2.filename();
-	clog << ".\n";
+	overloadedsomething("term", name, p1, p2, thisplace);
 }
 
 void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The theory " << name << " used here could be the theory declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the theory declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("theory", name, p1, p2, thisplace);
 }
 
 void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The vocabulary " << name << " used here could be the vocabulary declared at " << "line " << p1.linenumber() << ", column " << p1.columnnumber();
-	if (p1.filename()) {
-		clog << " of file " << p1.filename();
-	}
-	clog << " or the vocabulary declared at " << "line " << p2.linenumber() << ", column " << p2.columnnumber();
-	if (p2.filename()) {
-		clog << " of file " << p2.filename();
-	}
-	clog << ".\n";
+	overloadedsomething("vocabulary", name, p1, p2, thisplace);
 }
 
 /** Sort hierarchy errors **/
@@ -731,11 +607,7 @@ void warning(const std::string& message) {
 
 void warning(const ParseInfo& p) {
 	warningcounter++;
-	clog << "WARNING at line " << p.linenumber() << ", column " << p.columnnumber();
-	if (p.filename()) {
-		clog << " of file " << *(p.filename());
-	}
-	clog << ": ";
+	clog << "WARNING at " << toString(p) << ": ";
 }
 
 void cumulchance(double c) {
@@ -751,8 +623,8 @@ void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const st
 	clog << "Warning: tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
 }
 
-void emptySort(const std::string& sortname){
-	clog <<"Warning: sort " <<sortname <<" has an empty interpretation.\n";
+void emptySort(const std::string& sortname) {
+	clog << "Warning: sort " << sortname << " has an empty interpretation.\n";
 }
 
 /** Ambiguous partial term **/
