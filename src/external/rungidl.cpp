@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <cstdio>
 #include <cstdlib>
@@ -59,7 +59,8 @@ struct CLOptions {
 	string _exec;
 	bool _interactive;
 	CLOptions()
-			: _exec(""), _interactive(false) {
+			: 	_exec(""),
+				_interactive(false) {
 	}
 };
 
@@ -86,7 +87,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 #endif
 		else if (str == "-d") {
 			if (argc == 0) {
-				Error::error("-d option should be followed by a directorypath\n");
+				Error::error("-d option should be followed by a directorypath.");
 				continue;
 			}
 			str = argv[0];
@@ -157,11 +158,11 @@ void handleAndRun(void* d) {
 		*data->result = Insert::exec(data->proc);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		ss << "Exception caught: " << ex.getMessage() << ".";
 		Error::error(ss.str());
 	} catch (const std::exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.what() << ".\n";
+		ss << "Exception caught: " << ex.what() << ".";
 		Error::error(ss.str());
 		throwfromexecution = true;
 	}
@@ -261,35 +262,45 @@ void monitorShutdown(void*) {
 const DomainElement* executeProcedure(const string& proc) {
 	const DomainElement* result = NULL;
 
-	if (proc != "") {
-		// NOTE: as we allow in lua to replace . with ::, we have to convert the other way here!
-		string temp = replaceAllIn(proc, "::", ".");
+	if (proc == "") {
+		return result;
+	}
 
-		setStop(false);
-		hasStopped = false;
-		running = true;
-		throwfromexecution = false;
-		getGlobal()->reset();
+	// NOTE: as we allow in lua to replace . with ::, we have to convert the other way here!
+	string temp = replaceAllIn(proc, "::", ".");
 
-		registerHandler(SIGINT_handler, SIGINT);
-		//TODO registerHandler(SIGUSR1_handler, SIGUSR1);
+	setStop(false);
+	hasStopped = false;
+	running = true;
+	throwfromexecution = false;
+	getGlobal()->reset();
 
-		thread signalhandling(&timeout, NULL);
+	registerHandler(SIGINT_handler, SIGINT);
+	//TODO registerHandler(SIGUSR1_handler, SIGUSR1);
 
-		RunData d;
-		d.proc = temp;
-		d.result = &result;
-		thread execution(&handleAndRun, &d);
-		executionhandle = execution.native_handle();
-		execution.join();
+	thread signalhandling(&timeout, NULL);
 
-		hasStopped = true;
-		running = false;
-		setStop(true);
-		signalhandling.join();
-		if (throwfromexecution) {
-			throw std::exception();
+	RunData d;
+	d.proc = temp;
+	d.result = &result;
+	thread execution(&handleAndRun, &d);
+	executionhandle = execution.native_handle();
+	execution.join();
+
+	hasStopped = true;
+	running = false;
+	setStop(true);
+	signalhandling.join();
+
+	if (Error::nr_of_errors() > 0) {
+		cerr << "Critical errors encountered:\n"; // NOTE: repeat the errors for easy retrieval in the output.
+		for (auto i = getGlobal()->getErrors().cbegin(); i < getGlobal()->getErrors().cend(); ++i) {
+			cerr << "\t" << *i;
 		}
+	}
+
+	if (throwfromexecution) {
+		throw std::exception();
 	}
 
 	return result;
@@ -355,7 +366,7 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 		parse(inputfileurls);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		ss << "Exception caught: " << ex.getMessage() << ".";
 		Error::error(ss.str());
 		clog.flush();
 	}
@@ -363,10 +374,10 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 	Status result = Status::FAIL;
 	if (Error::nr_of_errors() == 0) {
 		stringstream ss;
-		if(executioncommand==""){
+		if (executioncommand == "") {
 			ss << "return " << getGlobalNamespaceName() << ".main()";
-		}else{
-			ss << "return " <<executioncommand;
+		} else {
+			ss << "return " << executioncommand;
 		}
 		auto value = executeProcedure(ss.str());
 		if (value != NULL && value->type() == DomainElementType::DET_INT && value->value()._int == 1) {
@@ -390,7 +401,7 @@ int run(int argc, char* argv[]) {
 	bool readfromstdin = false;
 	// Only read from stdin if no inputfiles were provided (otherwise, we would have file ordering issues anyway)
 	// and we are not running interactively (in that case, the user can provide the files)
-	if(inputfiles.size()==0 && not cloptions._interactive){
+	if (inputfiles.size() == 0 && not cloptions._interactive) {
 		readfromstdin = true;
 	}
 
@@ -398,12 +409,12 @@ int run(int argc, char* argv[]) {
 		parse(inputfiles);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".\n";
+		ss << "Exception caught: " << ex.getMessage() << ".";
 		Error::error(ss.str());
 		clog.flush();
 	}
 
-	if (readfromstdin){
+	if (readfromstdin) {
 		parsestdin();
 	}
 	if (cloptions._exec == "") {

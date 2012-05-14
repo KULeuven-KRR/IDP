@@ -6,25 +6,32 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "GlobalData.hpp"
 #include "IncludeComponents.hpp"
 #include "parser/clconst.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"
+#include "insert.hpp"
 
 using namespace std;
 
 GlobalData::GlobalData()
-		: _globalNamespace(Namespace::createGlobal()), _inserter(_globalNamespace), _domainelemFactory(DomainElementFactory::createGlobal()), _idcounter(1),
-			_terminateRequested(false), _options(new Options()), _tabsizestack(), _errorcount(0) {
+		: 	_globalNamespace(Namespace::createGlobal()),
+			_inserter(new Insert(_globalNamespace)),
+			_domainelemFactory(DomainElementFactory::createGlobal()),
+			_idcounter(1),
+			_terminateRequested(false),
+			_options(new Options()),
+			_tabsizestack() {
 	_tabsizestack.push(0);
 	_stdNamespace = new Namespace("stdspace", _globalNamespace, ParseInfo());
 }
 
 GlobalData::~GlobalData() {
-	delete (_globalNamespace);
+	delete (_globalNamespace); // NOTE: also deletes stdnamespace as it is a child
+	delete(_inserter);
 	delete (_domainelemFactory);
 	for (auto i = _openfiles.cbegin(); i != _openfiles.cend(); ++i) {
 		fclose(*i);
@@ -60,7 +67,7 @@ Namespace* GlobalData::getGlobalNamespace() {
 	return instance()->getNamespace();
 }
 
-Namespace* GlobalData::getStdNamespace(){
+Namespace* GlobalData::getStdNamespace() {
 	return instance()->getStd();
 }
 

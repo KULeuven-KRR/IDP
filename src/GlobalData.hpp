@@ -11,7 +11,6 @@
 #ifndef GLOBALDATA_HPP_
 #define GLOBALDATA_HPP_
 
-#include "insert.hpp" // TODO remove inclusion (and make it a pointer)
 #include <cstdio>
 #include <set>
 #include <stack>
@@ -20,6 +19,7 @@
 
 #include "options.hpp"
 
+class Insert;
 class Namespace;
 class DomainElementFactory;
 class Options;
@@ -35,7 +35,7 @@ public:
 class GlobalData {
 private:
 	Namespace *_globalNamespace, *_stdNamespace;
-	Insert _inserter;
+	Insert* _inserter;
 	std::map<std::string, CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
 	int _idcounter;
@@ -45,7 +45,7 @@ private:
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
 
-	unsigned int _errorcount;
+	std::vector<std::string> _errors;
 	std::set<FILE*> _openfiles;
 
 	std::vector<TerminateMonitor*> _monitors;
@@ -101,7 +101,7 @@ public:
 	}
 
 	Insert& getInserter() {
-		return _inserter;
+		return *_inserter;
 	}
 
 	const std::map<std::string, CLConst*>& getConstValues() const {
@@ -115,12 +115,15 @@ public:
 	}
 	void setOptions(Options* options);
 
-	void notifyOfError() {
-		_errorcount++;
-	}
 
-	unsigned int getErrorCount() {
-		return _errorcount;
+	void notifyOfError(const std::string& errormessage) {
+		_errors.push_back(errormessage);
+	}
+	const std::vector<std::string>& getErrors() const {
+		return _errors;
+	}
+	unsigned int getErrorCount() const {
+		return _errors.size();
 	}
 
 	FILE* openFile(const char* filename, const char* mode);

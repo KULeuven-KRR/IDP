@@ -855,8 +855,7 @@ extern void reset();
 
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
-	Error::error(pi);
-	std::clog << s << std::endl;
+	Error::error(std::string(s), pi);
 }
 
 std::string getInstalledFilePath(std::string filename){

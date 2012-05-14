@@ -50,7 +50,7 @@ public:
 		data->axioms = get<0>(args)->clone();
 		data->conjectures = get<1>(args)->clone();
 		if (not sametypeid<Theory>(*data->axioms) || not sametypeid<Theory>(*data->conjectures)) {
-			Error::error("\"entails\" can only take regular Theory objects as axioms and conjectures.\n");
+			Error::error("\"entails\" can only take regular Theory objects as axioms and conjectures.");
 			return nilarg();
 		}
 

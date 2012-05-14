@@ -13,7 +13,6 @@
 
 #include "common.hpp"
 #include "parseinfo.hpp"
-#include "errorhandling/error.hpp"
 
 // TODO enum class does not yet support comparison operators in 4.4.3
 
@@ -223,8 +222,9 @@ public:
 #ifndef WITHCP
 template<>
 inline void OptionPolicy<BoolType, bool>::setValue(BoolType type, const bool& value) {
+	Assert(_options.size()>(uint)type);
 	if (type == BoolType::CPSUPPORT and value != false) {
-		Warning::warning("CP support is not available. Option cpsupport is ignored.\n");
+		std::clog <<"WARNING: CP support is not available. Option cpsupport is ignored.\n";
 	} else {
 		_options.at(type)->setValue(value);
 	}

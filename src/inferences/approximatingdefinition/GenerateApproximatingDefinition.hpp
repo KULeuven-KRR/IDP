@@ -5,6 +5,7 @@
 #include "visitors/TheoryVisitor.hpp"
 
 class PFSymbol;
+class Predicate;
 
 struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2ct;

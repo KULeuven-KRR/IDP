@@ -30,6 +30,7 @@ class AggForm;
 class Vocabulary;
 class FOBDDManager;
 class FOBDDSetExpr;
+class AbstractStructure;
 
 /**
  * Class to transform first-order formulas to BDDs

@@ -28,7 +28,7 @@ public:
 		InternalArgument ia;
 		ia._type = AT_DOMAIN;
 		if (n2 < n1) {
-			Error::error("Begin should be lower or equal than end");
+			Error::error("Begin should be lower or equal than end.");
 			return nilarg();
 		}
 		ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1, n2));

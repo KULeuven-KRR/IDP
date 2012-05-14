@@ -172,9 +172,10 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		//clog << "compiling:\n" << ss.str() << "\n";
 		int err = luaL_loadstring(state, ss.str().c_str());
 		if (err) {
-			Error::error(procedure->pi());
-			clog << string(lua_tostring(state,-1)) << "\n";
+			stringstream ss;
+			ss << string(lua_tostring(state,-1));
 			lua_pop(state, 1);
+			Error::error(ss.str(), procedure->pi());
 			return;
 		}
 		procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
@@ -2078,9 +2079,10 @@ const DomainElement* execute(const std::string& chunk) {
 	try {
 		int err = luaL_dostring(_state,chunk.c_str());
 		if (err) {
-			Error::error();
-			clog << string(lua_tostring(_state,-1)) << "\n";
+			stringstream ss;
+			ss << string(lua_tostring(_state,-1));
 			lua_pop(_state, 1);
+			Error::error(ss.str());
 			return NULL;
 		}
 	} catch (NoSuchProcedureException& e) {
@@ -2097,8 +2099,9 @@ void pushglobal(const vector<string>& name, const ParseInfo& pi) {
 			lua_getfield(_state, -1, name[n].c_str());
 			lua_remove(_state, -2);
 		} else {
-			Error::error(pi);
-			clog << "unknown object" << "\n";
+			stringstream ss;
+			ss << "Unknown object.";
+			Error::error(ss.str(), pi);
 		}
 	}
 }
@@ -2110,9 +2113,10 @@ InternalArgument* call(const vector<string>& proc, const vector<vector<string>>&
 	}
 	int err = lua_pcall(_state, args.size(), 1, 0);
 	if (err) {
-		Error::error(pi);
-		clog << lua_tostring(_state,-1) << "\n";
+		stringstream ss;
+		ss << lua_tostring(_state,-1);
 		lua_pop(_state, 1);
+		Error::error(ss.str(), pi);
 		return NULL;
 	} else {
 		InternalArgument* ia = new InternalArgument(createArgument(-1, _state));
@@ -2128,12 +2132,13 @@ const DomainElement* funccall(string* procedure, const ElementTuple& input) {
 	}
 	int err = lua_pcall(_state, input.size(), 1, 0);
 	if (err) {
-		Error::error();
-		clog << string(lua_tostring(_state,-1)) << "\n";
+		stringstream ss;
+		ss << string(lua_tostring(_state,-1));
 		lua_pop(_state, 1);
+		Error::error(ss.str());
 		return NULL;
 	} else {
-		const DomainElement* d = convertToElement(-1, _state);
+		auto d = convertToElement(-1, _state);
 		lua_pop(_state, 1);
 		return d;
 	}
@@ -2146,9 +2151,10 @@ bool predcall(string* procedure, const ElementTuple& input) {
 	}
 	int err = lua_pcall(_state, input.size(), 1, 0);
 	if (err) {
-		Error::error();
-		clog << string(lua_tostring(_state,-1)) << "\n";
+		stringstream ss;
+		ss << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
+		Error::error(ss.str());
 		return NULL;
 	} else {
 		bool b = lua_toboolean(_state, -1);

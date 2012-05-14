@@ -13,579 +13,312 @@
 #include "error.hpp"
 #include "GlobalData.hpp"
 using namespace std;
+using namespace Error;
 
-namespace Error {
-unsigned int nr_of_errors() {
+std::ostream& operator<<(std::ostream& stream, ComponentType t) {
+	switch (t) {
+	case ComponentType::Namespace:
+		stream << "Namespace";
+		break;
+	case ComponentType::Vocabulary:
+		stream << "Vocabulary";
+		break;
+	case ComponentType::Theory:
+		stream << "Theory";
+		break;
+	case ComponentType::Structure:
+		stream << "Structure";
+		break;
+	case ComponentType::Query:
+		stream << "Query";
+		break;
+	case ComponentType::Term:
+		stream << "Term";
+		break;
+	case ComponentType::Procedure:
+		stream << "Procedure";
+		break;
+	case ComponentType::Predicate:
+		stream << "Predicate";
+		break;
+	case ComponentType::Function:
+		stream << "Function";
+		break;
+	case ComponentType::Symbol:
+		stream << "Symbol";
+		break;
+	case ComponentType::Sort:
+		stream << "Sort";
+		break;
+	}
+	return stream;
+}
+
+unsigned int Error::nr_of_errors() {
 	return GlobalData::instance()->getErrorCount();
 }
 
 /** Global error messages **/
 
-void error() {
-	GlobalData::instance()->notifyOfError();
-	clog << "ERROR: ";
+void Error::error(const std::string& message) {
+	stringstream ss;
+	ss << "ERROR: " << message << "\n";
+	GlobalData::instance()->notifyOfError(ss.str());
+	clog << ss.str();
 }
 
-void error(const std::string& message) {
-	GlobalData::instance()->notifyOfError();
-	clog << "ERROR: " << message;
-}
-
-void error(const ParseInfo& p) {
-	GlobalData::instance()->notifyOfError();
-	clog << "ERROR at " << toString(p) << ": ";
+void Error::error(const std::string& message, const ParseInfo& p) {
+	stringstream ss;
+	ss << message << "\n";
+	ss << "\tEncountered at " << toString(p);
+	error(ss.str());
 }
 
 /** Command line errors **/
 
-void constnotset(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Constant '" << s << "' should be set at the command line." << "\n";
+void Error::unknoption(const string& s) {
+	stringstream ss;
+	ss << "'" << s << "' is an unknown option.";
+	error(ss.str());
 }
 
-void unknoption(const string& s) {
-	error();
-	clog << "'" << s << "' is an unknown option." << "\n";
+void Error::unknoption(const string& s, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "'" << s << "' is an unknown option.";
+	error(ss.str(), pi);
 }
 
-void unknoption(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "'" << s << "' is an unknown option." << "\n";
+void Error::constsetexp() {
+	stringstream ss;
+	ss << "Constant assignment expected after '-c'.";
+	error(ss.str());
 }
 
-void wrongvalue(const string& optname, const string& val, const ParseInfo& pi) {
-	error(pi);
-	clog << "'" << val << "' is not a valid value for option '" << optname << "'\n";
+void Error::stringconsexp(const string& c, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Command line constant " << c << " should be a string constant.";
+	error(ss.str(), pi);
 }
 
-void unknfilename(const string& s) {
-	error();
-	clog << "'" << s << "' is not a valid file name or not readable." << "\n";
-}
-
-void constsetexp() {
-	error();
-	clog << "Constant assignment expected after '-c'." << "\n";
-}
-
-void stringconsexp(const string& c, const ParseInfo& pi) {
-	error(pi);
-	clog << "Command line constant " << c << " should be a string constant.\n";
-}
-
-void twicestdin(const ParseInfo& pi) {
-	error(pi);
-	clog << "stdin can be parsed only once.\n";
-}
-
-void nbmodelsnegative() {
-	error();
-	clog << "Expected a non-negative integer after '-n'" << "\n";
+void Error::twicestdin(const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Stdin can be parsed only once.";
+	error(ss.str(), pi);
 }
 
 /** File errors **/
 
-void cyclicinclude(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "File " << s << " includes itself.\n";
+void Error::cyclicinclude(const string& s, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "File " << s << " includes itself.";
+	error(ss.str(), pi);
 }
 
-void unexistingfile(const string& s) {
-	clog << "Could not open file " << s << ".\n";
+void Error::unexistingfile(const string& s) {
+	stringstream ss;
+	ss << "Could not open file " << s << ".";
+	error(ss.str());
 }
 
-void unexistingfile(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Could not open file " << s << ".\n";
-}
-
-void unabletoopenfilename(const string& s) {
-	error();
-	clog << "Could not open file " << s << ".\n";
+void Error::unexistingfile(const string& s, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Could not open file " << s << ".";
+	error(ss.str(), pi);
 }
 
 /** Invalid ranges **/
-void invalidrange(int n1, int n2, const ParseInfo& pi) {
-	error(pi);
-	clog << n1 << ".." << n2 << " is an invalid range." << "\n";
+void Error::invalidrange(int n1, int n2, const ParseInfo& pi) {
+	stringstream ss;
+	ss << n1 << ".." << n2 << " is an invalid range.";
+	error(ss.str(), pi);
 }
 
-void invalidrange(char c1, char c2, const ParseInfo& pi) {
-	error(pi);
-	clog << "'" << c1 << ".." << c2 << "' is an invalid range." << "\n";
+void Error::invalidrange(char c1, char c2, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "'" << c1 << ".." << c2 << "' is an invalid range.";
+	error(ss.str(), pi);
 }
 
 /** Invalid tuples **/
-void wrongarity(const ParseInfo& pi) {
-	error(pi);
-	clog << "The tuples in this table have different lengths" << "\n";
+void Error::wrongarity(const ParseInfo& pi) {
+	stringstream ss;
+	ss << "The tuples in this table have different lengths.";
+	error(ss.str(), pi);
 }
 
-void wrongpredarity(const string& p, const ParseInfo& pi) {
-	error(pi);
-	clog << "Wrong number of terms given to predicate " << p << ".\n";
+void Error::incompatiblearity(const string& n, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "The arity of symbol " << n << " is different from the arity of the table assigned to it.";
+	error(ss.str(), pi);
 }
 
-void wrongfuncarity(const string& f, const ParseInfo& pi) {
-	error(pi);
-	clog << "Wrong number of terms given to function " << f << ".\n";
+void Error::prednameexpected(const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Expected a name of a predicate, instead of a function name.";
+	error(ss.str(), pi);
 }
 
-void incompatiblearity(const string& n, const ParseInfo& pi) {
-	error(pi);
-	clog << "The arity of symbol " << n << " is different from the arity of the table assigned to it.\n";
-}
-
-void prednameexpected(const ParseInfo& pi) {
-	error(pi);
-	clog << "Expected a name of a predicate, instead of a function name.\n";
-}
-
-void funcnameexpectedinhead(const ParseInfo& pi) {
-	error(pi);
-	clog << "The head of a rule can only be a predicate, function = term or term = function.\n";
-}
-
-void funcnameexpected(const ParseInfo& pi) {
-	error(pi);
-	clog << "Expected a name of a function, instead of a predicate name.\n";
-}
-
-void funcnotconstr(const string& f, const ParseInfo& pi) {
-	error(pi);
-	clog << "Function " << f << " is not a constructor.\n";
+void Error::funcnameexpected(const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Expected a name of a function, instead of a predicate name.";
+	error(ss.str(), pi);
 }
 
 /** Invalid interpretations **/
-void expectedutf(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Unexpected '" << s << "', expected 'u', 'ct' or 'cf'\n";
+void Error::expectedutf(const string& s, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Unexpected '" << s << "', expected 'u', 'ct' or 'cf'.";
+	error(ss.str(), pi);
 }
 
-void multpredinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for predicate " << s << ".\n";
+void Error::sortelnotinsort(const string& el, const string& p, const string& s, const string& str) {
+	stringstream ss;
+	ss << "In structure " << str << ", element " << el << " occurs in the domain of sort "
+			<< p << " but does not belong to the interpretation of sort " << s << ".";
+	error(ss.str());
 }
 
-void multfuncinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for function " << s << ".\n";
+void Error::predelnotinsort(const string& el, const string& p, const string& s, const string& str) {
+	stringstream ss;
+	ss << "In structure " << str << ", element " << el << " occurs in the interpretation of predicate " << p
+		<< " but does not belong to the interpretation of sort " << s << ".";
+	error(ss.str());
 }
 
-void emptyassign(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "I cannot assign the empty interpretation to symbol " << s << " because all symbols with that name do already have an interpretation." << "\n";
+void Error::funcelnotinsort(const string& el, const string& p, const string& s, const string& str) {
+	stringstream ss;
+	ss << "In structure " << str << ", element " << el << " occurs in the interpretation of function " << p
+			<< " but does not belong to the interpretation of sort " << s << ".";
+	error(ss.str());
 }
 
-void emptyambig(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "I cannot unambiguously assign the empty interpretation to symbol " << s
-			<< " because there is more than one symbol with that name and without an interpretation." << "\n";
-}
-
-void multunknpredinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for predicate " << s << "[u].\n";
-}
-
-void multunknfuncinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for function " << s << "[u].\n";
-}
-
-void multctpredinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for predicate " << s << "[ct].\n";
-}
-
-void multcfpredinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for predicate " << s << "[cf].\n";
-}
-
-void multctfuncinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for function " << s << "[ct].\n";
-}
-
-void multcffuncinter(const string& s, const ParseInfo& pi) {
-	error(pi);
-	clog << "Multiple interpretations for function " << s << "[cf].\n";
-}
-
-void threethreepred(const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", an interpretation for predicate " << s << "[ct], " << s << "[cf], and " << s << "[u] is given. \n";
-}
-
-void threethreefunc(const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", an interpretation for function " << s << "[ct], " << s << "[cf], and " << s << "[u] is given. \n";
-}
-
-void onethreepred(const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", an interpretation for predicate " << s << "[u] is given, but there is no interpretation for " << s << "[ct] or " << s
-			<< "[cf].\n";
-}
-
-void onethreefunc(const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", an interpretation for function " << s << "[u] is given, but there is no interpretation for " << s << "[ct] or " << s
-			<< "[cf].\n";
-}
-
-void sortelnotinsort(const string& el, const string& p, const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", element " << el << " occurs in the domain of sort " << p << " but does not belong to the interpretation of sort " << s
-			<< ".\n";
-}
-
-void predelnotinsort(const string& el, const string& p, const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", element " << el << " occurs in the interpretation of predicate " << p
-			<< " but does not belong to the interpretation of sort " << s << ".\n";
-}
-
-void funcelnotinsort(const string& el, const string& p, const string& s, const string& str) {
-	error();
-	clog << "In structure " << str << ", element " << el << " occurs in the interpretation of function " << p
-			<< " but does not belong to the interpretation of sort " << s << ".\n";
-}
-
-void notfunction(const string& f, const string& str, const vector<string>& el) {
-	error();
-	clog << "Tuple (";
+void Error::notfunction(const string& f, const string& str, const vector<string>& el) {
+	stringstream ss;
+	ss << "Tuple (";
 	if (el.size()) {
-		clog << el[0];
+		ss << el[0];
 		for (unsigned int n = 1; n < el.size(); ++n) {
-			clog << "," << el[n];
+			ss << "," << el[n];
 		}
 	}
-	clog << ") has more than one image in the interpretation of function " << f << " in structure " << str << ".\n";
+	ss << ") has more than one image in the interpretation of function " << f << " in structure " << str << ".";
+	error(ss.str());
 }
 
-void nottotal(const string& f, const string& str) {
-	error();
-	clog << "The interpretation of function " << f << " in structure " << str << " is non-total.\n";
+void Error::nottotal(const string& f, const string& str) {
+	stringstream ss;
+	ss << "The interpretation of function " << f << " in structure " << str << " is non-total.";
+	error(ss.str());
 }
 
-void threevalsort(const string&, const ParseInfo& pi) {
-	error(pi);
-	clog << "Not allowed to assign a three-valued interpretation to a sort.\n";
+void Error::threevalsort(const string&, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Not allowed to assign a three-valued interpretation to a sort.";
+	error(ss.str(), pi);
 }
 
 /** Multiple incompatible declarations of the same object **/
 
-void multdeclsomething(string what, const string& whatname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	error(thisplace);
-	clog << what << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << "." << "\n";
-}
-
-void multdeclns(const string& nsname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Namespace", nsname, thisplace, prevdeclplace);
-}
-
-void multdeclvoc(const string& vocname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Vocabulary", vocname, thisplace, prevdeclplace);
-}
-
-void multdecltheo(const string& thname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Theory", thname, thisplace, prevdeclplace);
-
-}
-
-void multdeclquery(const string& fname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Query", fname, thisplace, prevdeclplace);
-
-}
-
-void multdeclterm(const string& tname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Term", tname, thisplace, prevdeclplace);
-
-}
-
-void multdeclstruct(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Structure", sname, thisplace, prevdeclplace);
-
-}
-
-void multdeclopt(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Options", sname, thisplace, prevdeclplace);
-
-}
-
-void multdeclproc(const string& sname, const ParseInfo& thisplace, const ParseInfo& prevdeclplace) {
-	multdeclsomething("Procedure", sname, thisplace, prevdeclplace);
-
+void Error::declaredEarlier(ComponentType type, const string& whatname, const ParseInfo& pi, const ParseInfo& prevdeclplace) {
+	stringstream ss;
+	ss <<type << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << ".";
+	error(ss.str(), pi);
 }
 
 /** Undeclared objects **/
 
-void undeclvoc(const string& vocname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Vocabulary " << vocname << " is not declared in this scope." << "\n";
-}
-
-void undeclopt(const string& optname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Option " << optname << " is not declared in this scope." << "\n";
-}
-
-void undecltheo(const string& tname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Theory " << tname << " is not declared in this scope." << "\n";
-}
-
-void undeclstruct(const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Structure " << sname << " is not declared in this scope." << "\n";
-}
-
-void undeclspace(const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Namespace " << sname << " is not declared in this scope." << "\n";
-}
-
-void undeclsort(const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Sort " << sname << " is not declared in this scope." << "\n";
-}
-
-void undeclpred(const string& pname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Predicate " << pname << " is not declared in this scope." << "\n";
-}
-
-void undeclfunc(const string& fname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Function " << fname << " is not declared in this scope." << "\n";
-}
-
-void undeclsymb(const string& name, const ParseInfo& pi) {
-	error(pi);
-	clog << "Predicate or function " << name << " is not declared in this scope." << "\n";
+void Error::notDeclared(ComponentType type, const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type <<" " << name << " is not declared in this scope.";
+	error(ss.str(), pi);
 }
 
 /** Unavailable objects **/
 
-void sortnotintheovoc(const string& sname, const string& tname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Sort " << sname << " is not in the vocabulary of theory " << tname << "." << "\n";
-}
-
-void prednotintheovoc(const string& pname, const string& tname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Predicate " << pname << " is not in the vocabulary of theory " << tname << "." << "\n";
-}
-
-void funcnotintheovoc(const string& fname, const string& tname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Function " << fname << " is not in the vocabulary of theory " << tname << "." << "\n";
-}
-
-void symbnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Symbol " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
-}
-
-void sortnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Sort " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
-}
-
-void prednotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Predicate " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
-}
-
-void funcnotinstructvoc(const string& name, const string& sname, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Function " << name << " does not belong to the vocabulary of structure " << sname << "." << "\n";
+void Error::notInVocabularyOf(ComponentType type, ComponentType parentType, const string& name, const string& tname, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type <<" " << name << " is not in the vocabulary of " <<parentType <<" " << tname << ".";
+	error(ss.str(), pi);
 }
 
 /** Using overlapping symbols **/
-void predorfuncsymbol(const string& name, const ParseInfo& pi) {
-	error(pi);
-	clog << name << " could be the predicate " << name << "/1 or the function " << name << "/0 at this place.\n";
-}
-
-void overloadedsomething(string what, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "The " << what << " " << name << " used here could be the " << what << " declared at " << toString(p1);
-	clog << " or the " << what << " declared at " << toString(p2) << ".\n";
-}
-
-void overloadedsort(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("sort", name, p1, p2, thisplace);
-}
-
-void overloadedfunc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("function", name, p1, p2, thisplace);
-}
-
-void overloadedpred(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("predicate", name, p1, p2, thisplace);
-}
-
-void overloadedspace(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("namespace", name, p1, p2, thisplace);
-}
-
-void overloadedstructure(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("structure", name, p1, p2, thisplace);
-}
-
-void overloadedopt(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("options", name, p1, p2, thisplace);
-}
-
-void overloadedproc(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("procedure", name, p1, p2, thisplace);
-}
-
-void overloadedquery(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("query", name, p1, p2, thisplace);
-}
-
-void overloadedterm(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("term", name, p1, p2, thisplace);
-}
-
-void overloadedtheory(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("theory", name, p1, p2, thisplace);
-}
-
-void overloadedvocab(const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace) {
-	overloadedsomething("vocabulary", name, p1, p2, thisplace);
+void Error::overloaded(ComponentType type, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "The " << type << " " << name << " used here could be the " << type << " declared at " << toString(p1);
+	ss << " or the " << type << " declared at " << toString(p2) <<".";
+	error(ss.str(), pi);
 }
 
 /** Sort hierarchy errors **/
 
-void notsubsort(const string& c, const string& p, const ParseInfo& pi) {
-	error(pi);
-	clog << "Sort " << c << " is not a subsort of sort " << p << ".\n";
+void Error::notsubsort(const string& c, const string& p, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Sort " << c << " is not a subsort of sort " << p << ".";
+	error(ss.str(), pi);
 }
 
-void cyclichierarchy(const string& c, const string& p, const ParseInfo& pi) {
-	error(pi);
-	clog << "Cycle introduced between sort " << c << " and sort " << p << ".\n";
+void Error::cyclichierarchy(const string& c, const string& p, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Cycle introduced between sort " << c << " and sort " << p << ".";
+	error(ss.str(), pi);
 }
 
 /** Type checking **/
 
-void novarsort(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Could not derive the sort of variable " << name << ".\n";
+void Error::novarsort(const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Could not derive the sort of variable " << name << ".";
+	error(ss.str(), pi);
 }
 
-void nodomsort(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Could not derive the sort of domain element " << name << ".\n";
+void Error::nodomsort(const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Could not derive the sort of domain element " << name << ".";
+	error(ss.str(), pi);
 }
 
-void nopredsort(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Could not derive the sorts of predicate " << name << ".\n";
+void Error::nopredsort(const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Could not derive the sorts of predicate " << name << ".";
+	error(ss.str(), pi);
 }
 
-void nofuncsort(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Could not derive the sorts of function " << name << ".\n";
+void Error::nofuncsort(const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Could not derive the sorts of function " << name << ".";
+	error(ss.str(), pi);
 }
 
-void wrongsort(const string& termname, const string& termsort, const string& possort, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Term " << termname << " has sort " << termsort << " but occurs in a position with sort " << possort << ".\n";
+void Error::wrongsort(const string& termname, const string& termsort, const string& possort, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Term " << termname << " has sort " << termsort << " but occurs in a position with sort " << possort << ".";
+	error(ss.str(), pi);
 }
 
 /** Unknown commands or options **/
 
-void notcommand() {
-	error();
-	clog << "Attempt to call a non-function value." << "\n";
+void Error::unknopt(const string& name, ParseInfo* pi) {
+	stringstream ss;
+	ss << "Options " << name << " does not exist.";
+	pi ? error(ss.str(), *pi) : error(ss.str());
 }
 
-void unkncommand(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Procedure " << name << " does not exist." << "\n";
+void Error::ambigcommand(const string& name) {
+	stringstream ss;
+	ss << "Ambiguous call to overloaded procedure " << name << ".";
+	error(ss.str());
 }
 
-void unkncommand(const string& name) {
-	error();
-	clog << "Procedure " << name << " does not exist." << "\n";
+void Error::wrongvalue(const std::string& option, const std::string& value, const ParseInfo&){
+	stringstream ss;
+	ss << "Value " <<value <<" cannot be assigned to option " <<option << ".";
+	error(ss.str());
 }
 
-void unknopt(const string& name, ParseInfo* thisplace) {
-	thisplace ? error(*thisplace) : error();
-	clog << "Options " << name << " does not exist." << "\n";
-}
-
-void unkniat(const string& name, const ParseInfo& thisplace) {
-	error(thisplace);
-	clog << "Argument type " << name << " does not exist." << "\n";
-}
-
-void wrongvaluetype(const string& name, ParseInfo* thisplace) {
-	thisplace ? error(*thisplace) : error();
-	clog << "The value given to option " << name << " is of the wrong type.\n";
-}
-
-void wrongformat(const string& format, ParseInfo* thisplace) {
-	thisplace ? error(*thisplace) : error();
-	clog << format << " is not a valid output language.\n";
-}
-
-void wrongmodelformat(const string& format, ParseInfo* thisplace) {
-	thisplace ? error(*thisplace) : error();
-	clog << format << " is not a valid model format.\n";
-}
-
-void posintexpected(const string& name, ParseInfo* thisplace) {
-	thisplace ? error(*thisplace) : error();
-	clog << "The value given to option " << name << " should be a positive integer.\n";
-}
-
-void ambigcommand(const string& name) {
-	error();
-	clog << "Ambiguous call to overloaded procedure " << name << ".\n";
-}
-
-void indexoverloadedfunc() {
-	error();
-	clog << "Indexing a structure with an overloaded function.\n";
-}
-
-void indexoverloadedpred() {
-	error();
-	clog << "Indexing a structure with an overloaded predicate.\n";
-}
-
-void indexoverloadedsort() {
-	error();
-	clog << "Indexing a structure with an overloaded sort.\n";
-}
-
-void threevalcall() {
-	error();
-	clog << "Calling a three-valued function.\n";
-}
-
-void structureexpected(const ParseInfo& pi) {
-	error(pi);
-	clog << "Expected a structure.\n";
-}
-
-void theoryexpected(const ParseInfo& pi) {
-	error(pi);
-	clog << "Expected a theory.\n";
-}
-
-void vocabexpected(const ParseInfo& pi) {
-	error(pi);
-	clog << "Expected a vocabulary.\n";
-}
-
+void Error::expected(ComponentType type, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Expected a " <<type <<".";
+	error(ss.str(), pi);
 }
 
 namespace Warning {
@@ -628,20 +361,20 @@ void emptySort(const std::string& sortname) {
 }
 
 /** Ambiguous partial term **/
-void ambigpartialterm(const string& term, const ParseInfo& thisplace) {
-	warning(thisplace);
+void ambigpartialterm(const string& term, const ParseInfo& pi) {
+	warning(pi);
 	clog << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.\n";
 }
 
 /** Ambiguous statements **/
-void varcouldbeconst(const string& name, const ParseInfo& thisplace) {
-	warning(thisplace);
+void varcouldbeconst(const string& name, const ParseInfo& pi) {
+	warning(pi);
 	clog << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
 }
 
 /** Free variables **/
-void freevars(const string& fv, const ParseInfo& thisplace) {
-	warning(thisplace);
+void freevars(const string& fv, const ParseInfo& pi) {
+	warning(pi);
 	if (fv.size() > 1) {
 		clog << "Variables" << fv << " are not quantified.\n";
 	} else {
@@ -650,8 +383,8 @@ void freevars(const string& fv, const ParseInfo& thisplace) {
 }
 
 /** Unexpeded type derivation **/
-void derivevarsort(const string& varname, const string& sortname, const ParseInfo& thisplace) {
-	warning(thisplace);
+void derivevarsort(const string& varname, const string& sortname, const ParseInfo& pi) {
+	warning(pi);
 	clog << "Derived sort " << sortname << " for variable " << varname << ".\n";
 }
 

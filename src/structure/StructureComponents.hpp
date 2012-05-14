@@ -2111,6 +2111,7 @@ public:
 };
 
 class Sort;
+class Predicate;
 
 class InconsistentPredInterGenerator: public PredInterGenerator {
 private:
