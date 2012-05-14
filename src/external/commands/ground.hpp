@@ -58,14 +58,6 @@ public:
 private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
 		auto symstructure = generateBounds(theory, structure);
-		/*REMOVE FROM HERE*/
-		auto clonetheory = dynamic_cast<Theory*>(theory->clone());
-		Assert(sametypeid<Theory>(*clonetheory));
-		std::cerr << "transform"<<"\n";
-
-		clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory);
-#warning "Buggy code in printground: testing with sharedTseitinTransform"
-		/*TILL HERE*/
 		std::shared_ptr<Grounder> grounder;
 		// FIXME
 		//if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)
@@ -73,7 +65,7 @@ private:
 		//	grounder = std::shared_ptr<Grounder>(
 		//			GrounderFactory::create( { theory, structure, symstructure }, new MinisatID::FlatZincRewriter(modes)));
 		//} else {
-		grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { clonetheory, structure, symstructure }, monitor));
+		grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }, monitor));
 		//}
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();

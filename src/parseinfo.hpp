@@ -52,6 +52,15 @@ public:
 	std::string* filename() const {
 		return _file;
 	}
+
+	std::ostream& put(std::ostream& stream) const{
+		stream << "line " << _line << ", column "
+				<< _col;
+		if (_file) {
+			stream << " of file " << *(_file);
+		}
+		return stream;
+	}
 };
 
 template<typename RepresentedObject>
