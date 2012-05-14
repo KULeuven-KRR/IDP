@@ -1,0 +1,15 @@
+#include <mx>
+#include <mx>
+
+vocabulary V {
+}
+
+theory T : V {
+}
+
+structure S : V{
+}
+
+procedure main(){
+	return onemodel(T, S) ~= nil
+}

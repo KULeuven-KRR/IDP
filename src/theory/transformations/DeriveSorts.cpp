@@ -292,6 +292,12 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 }
 
 void DeriveSorts::check() {
+	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
+		Error::novarsort((*i)->name(), (*i)->pi());
+	}
+	if (not _useBuiltIns) {
+		return;
+	}
 	for (auto i = _untypedvariables.cbegin(); i != _untypedvariables.cend(); ++i) {
 		if ((*i)->sort() == NULL) {
 			Error::novarsort((*i)->name(), (*i)->pi());
@@ -300,9 +306,6 @@ void DeriveSorts::check() {
 				Warning::derivevarsort((*i)->name(), (*i)->sort()->name(), (*i)->pi());
 			}
 		}
-	}
-	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
-		Error::novarsort((*i)->name(), (*i)->pi());
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
 		if (typeid(*((*it)->symbol())) == typeid(Predicate)) {

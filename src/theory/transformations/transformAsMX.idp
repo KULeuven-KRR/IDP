@@ -14,16 +14,19 @@ vocabulary V{
 	push:action
 	do(action, formula, time)
 	affected(formula, time)
+	
+	initnode(formula, node)
+	initchild(formula, formula)
 }
 theory T : V{
 	{
 		affected(fp, t) <- do(action, fp, t).
 		affected(fc, t) <- do(action, fp, t) & ischildof(fc, fp, t).
-		//isreqchildof(f, fp, t) <- ischildof(f, fp, t).
-		//isreqchildof(f, fa, t) <- isreqchildof(fp, fa, t) & ischildof(f, fp, t).
 	}
 	{
-		hasnode(f, n, t+1) <- hasnode(f, n, t) & ~affected(f, t). // TODO BUG IN TYPE DERIVATION!
+		hasnode(f, n, 1) <- initnode(f, n).
+		ischildof(f, fp, 1) <- initchild(f, fp).
+		hasnode(f, n, t+1) <- hasnode(f, n, t) & ~affected(f, t).
 		ischildof(f, fp, t+1) <- ischildof(f, fp, t) & ~affected(f, t).
 		
 		hasnode(f, node, t+1) <- do(push, f, t) & hasnode(f, node, t) & node=not & ischildof(fc, f, t) & hasnode(fc, node, t).
@@ -34,12 +37,16 @@ theory T : V{
 	!fp t: hasnode(fp, not, t) & ischildof(fc, fp, t) => ~hasnode(fc, not, t).
 	
 	!f t: hasnode(f, not, t) => #{fc: ischildof(fc, f, t)}=1.
+	
+	?f: do(push, f, 1).
 }
 structure S:V {
-	formula = {1..10}
+	formula = {1..3}
 	op = {AND; OR; NOT}
 	not = NOT
 	symbol = {P}
-	time = {1..10}
+	time = {1..3}
 	action = {PUSH}
+	initnode = {1, NOT; 2, P}
+	initchild = {2,1}
 }

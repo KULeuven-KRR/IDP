@@ -13,6 +13,9 @@ assureOutOfSourceBuilds()
 option(BUILDTESTS  "Run the gtest tests" ON)
 enable_testing()
 
+message(STATUS "Install path (CMAKE_INSTALL_PREFIX): ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Build type (CMAKE_BUILD_TYPE): ${CMAKE_BUILD_TYPE}")
+
 ### Adding to cxx flags
 macro(addToCXX ARGUMENT)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARGUMENT}")
