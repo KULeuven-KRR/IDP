@@ -104,7 +104,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
-	addTseitinInterpretations(rule->body(), (rule->type() == RuleType::CONJ ? VIT_CONJ : VIT_DISJ), defid);
+	addTseitinInterpretations(rule->body(), defid);
 	Policy::polAdd(defid, rule);
 	notifyDefined(rule->head());
 }
@@ -153,7 +153,7 @@ void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	}
 	_printedsets.insert(setnr);
 	auto tsset = translator()->groundset(setnr);
-	addTseitinInterpretations(tsset.literals(), VIT_SET, defnr);
+	addTseitinInterpretations(tsset.literals(), defnr);
 	Policy::polAdd(tsset, setnr, weighted);
 }
 
