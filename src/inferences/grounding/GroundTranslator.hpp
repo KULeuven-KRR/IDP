@@ -21,7 +21,6 @@
 class DelayGrounder;
 class TsSet;
 class CPTerm;
-class LazyGrounder;
 class CPBound;
 class LazyStoredInstantiation;
 class TsSet;
@@ -105,7 +104,7 @@ public:
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
-	Lit translate(LazyGrounder const* const lazygrounder, LazyStoredInstantiation* instance, TsType type);
+	Lit translate(LazyStoredInstantiation* instance, TsType type);
 
 	/*
 	 * @precon: defid==-1 if a FORMULA will be delayed

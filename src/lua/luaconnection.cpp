@@ -2037,12 +2037,6 @@ void makeLuaConnection() {
 	// IMPORTANT only add namespaces as global after inferences have been added
 	addGlobal(GlobalData::getGlobalNamespace());
 	addGlobal(GlobalData::getStdNamespace());
-	for(auto i=getGlobal()->getStdNamespace()->subspaces().cbegin(); i!=getGlobal()->getStdNamespace()->subspaces().cend(); ++i) {
-		// TODO there is something ugly, "idpintern" is NOT a namespace but only a table!
-		if(i->first != getInternalNamespaceName()){
-			addGlobal(i->second);
-		}
-	}
 	addGlobal(Vocabulary::std());
 	addGlobal("stdoptions", GlobalData::instance()->getOptions()); // TODO string "stdoptions" used twice, also in data/idp_intern.lua
 

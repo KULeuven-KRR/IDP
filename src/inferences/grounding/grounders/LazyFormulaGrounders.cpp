@@ -20,13 +20,20 @@
 
 using namespace std;
 
-litlist LazyTseitinGrounderInterface::groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
+LazyTseitinGrounder::LazyTseitinGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct)
+		: 	ClauseGrounder(groundtheory, sign, conj, ct),
+			freevars(freevars),
+			alreadyground(tablesize(TableSizeType::TST_EXACT, 0)) {
+
+}
+
+void LazyTseitinGrounder::notifyGroundingRequested(int ID, bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
 	CHECKTERMINATION
 
 	vector<const DomainElement*> originst;
 	overwriteVars(originst, instance->freevarinst);
 
-	litlist result = instance->grounder->groundMore(groundall, instance, stilldelayed);
+	litlist result = groundMore(groundall, instance, stilldelayed);
 	if(groundall){
 		Assert(not stilldelayed);
 	}
@@ -34,22 +41,15 @@ litlist LazyTseitinGrounderInterface::groundMore(bool groundall, LazyStoredInsta
 	restoreOrigVars(originst, instance->freevarinst);
 
 	if (not stilldelayed) { // No more grounding necessary
-		delete (instance);
+		//delete (instance); TODO who has deletion authority?
 	}
-	return result;
-}
-
-LazyGrounder::LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct)
-		: 	ClauseGrounder(groundtheory, sign, conj, ct),
-			freevars(freevars),
-			alreadyground(tablesize(TableSizeType::TST_EXACT, 0)) {
-
+	getGrounding()->notifyLazyAddition(result, ID);
 }
 
 // TODO use the checker
 // NOTE: generators are CLONED, SAVED and REUSED!
 // @return true if no more grounding is necessary
-litlist LazyGrounder::groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
+litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
 	pushtab();
 
 	Assert(instance->grounder==this);
@@ -58,10 +58,10 @@ litlist LazyGrounder::groundMore(bool groundall, LazyStoredInstantiation * insta
 
 	litlist subfgrounding;
 
-	auto groundedlit = redundantLiteral();
 	auto nbiterations = dynamic_cast<const LazyQuantGrounder*>(this) != NULL ? 10 : 2;
 	auto counter = 0;
-	while ((groundall || counter < nbiterations) && not isAtEnd(instance)) {
+	auto decidedformula = false;
+	while ((groundall || counter < nbiterations) && not isAtEnd(instance) && not decidedformula) {
 		counter++;
 		ConjOrDisj formula;
 		formula.setType(conjunctive());
@@ -72,29 +72,29 @@ litlist LazyGrounder::groundMore(bool groundall, LazyStoredInstantiation * insta
 		}
 		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
 
-		groundedlit = getReification(formula, getTseitinType());
+		auto groundedlit = getReification(formula, getTseitinType());
 		increment(instance);
 
-		if (groundedlit == redundantLiteral() || decidesFormula(groundedlit)) {
-			break;
+		if (decidesFormula(groundedlit)) {
+			decidedformula = true;
+			continue;
+		}
+		if(groundedlit == redundantLiteral()){
+			continue;
 		}
 		subfgrounding.push_back(groundedlit);
 	}
 
 	alreadyground = alreadyground + counter;
 
-	if (decidesFormula(groundedlit)) {
+	if (decidedformula) {
 		stilldelayed = false;
 		poptab();
+		auto tseitin = getGrounding()->translator()->createNewUninterpretedNumber();
+		getGrounding()->add({tseitin});
 		// Formula is true, so do not need to continue grounding and can delete
 		// NOTE: if false, then can stop if non-ground part is true, so tseitin true
-		return { redundantLiteral()==_false?_true:_false};
-	} else if (groundedlit == redundantLiteral() && isAtEnd(instance)) {
-		stilldelayed = false;
-		poptab();
-		// Formula is false, so do not need to continue grounding
-		// NOTE: if false, then all are non-stoppable, so tseitin false
-		return { redundantLiteral()==_false?_false:_true};
+		return { redundantLiteral()==_false?tseitin:-tseitin};
 	}
 
 	if (isAtEnd(instance)) {
@@ -107,9 +107,9 @@ litlist LazyGrounder::groundMore(bool groundall, LazyStoredInstantiation * insta
 /**
  * Notifies the grounder that its tseitin occurs in the grounding and that it should add itself to the solver.
  */
-void LazyGrounder::notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const {
+void LazyTseitinGrounder::notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const {
 	// TODO prevent empty body by already grounding at least one?
-	getGrounding()->notifyLazyResidual(tseitin, instance, type, &lazyManager, conjunctive()==Conn::CONJ);
+	getGrounding()->notifyLazyResidual(tseitin, instance, type, conjunctive()==Conn::CONJ);
 }
 
 /**
@@ -118,7 +118,7 @@ void LazyGrounder::notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* 
  * Initially, we do not ground anything, but just create a tseitin representing the whole formula.
  * Only when it occurs in the ground theory, will we start lazy grounding anything.
  */
-void LazyGrounder::internalRun(ConjOrDisj& formula) const {
+void LazyTseitinGrounder::internalRun(ConjOrDisj& formula) const {
 	formula.setType(conjunctive());
 
 	if (grounderIsEmpty()) {
@@ -137,7 +137,7 @@ void LazyGrounder::internalRun(ConjOrDisj& formula) const {
 	initializeInst(inst);
 
 	auto tseitintype = context()._tseitin;
-	auto tseitin = translator()->translate(this, inst, tseitintype);
+	auto tseitin = translator()->translate(inst, tseitintype);
 
 	if (isNegative()) {
 		tseitin = -tseitin;
@@ -153,7 +153,7 @@ void LazyGrounder::internalRun(ConjOrDisj& formula) const {
 
 LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
 		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct)
-		: 	LazyGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct),
+		: 	LazyTseitinGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct),
 			_subgrounder(sub),
 			_generator(gen),
 			_checker(checker) {
@@ -164,7 +164,7 @@ LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, Abstra
 
 LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
 		const GroundingContext& ct)
-		: 	LazyGrounder(freevars, groundtheory, sign, conj, ct),
+		: 	LazyTseitinGrounder(freevars, groundtheory, sign, conj, ct),
 			_subgrounders(sub) {
 	if (getOption(GROUNDVERBOSITY) > 0) {
 		clog << "Lazy bool grounder for " << toString(this) << "\n";

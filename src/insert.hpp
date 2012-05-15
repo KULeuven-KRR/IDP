@@ -145,6 +145,8 @@ private:
 	std::vector<unsigned int> _nrvocabs; //!< the number of 'using vocabulary' statements in the current block
 	std::vector<unsigned int> _nrspaces; //!< the number of 'using namespace' statements in the current block
 
+	std::set<Namespace*> checkedAddToGlobal;
+
 	ParseInfo parseinfo(YYLTYPE l) const; //!< Convert a bison parse location to a parseinfo object
 	FormulaParseInfo formparseinfo(Formula*, YYLTYPE) const;
 	TermParseInfo termparseinfo(Term*, const ParseInfo&) const;

@@ -24,7 +24,6 @@ typedef int SetId;
 typedef int DefId;
 
 class LazyStoredInstantiation;
-class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 /**
@@ -51,7 +50,8 @@ private:
 public:
 	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
 	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
-	void polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction);
+	void polAddLazyAddition(const litlist& glist, int ID);
+	void polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction);
 
 protected:
 	void polRecursiveDelete() {

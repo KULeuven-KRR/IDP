@@ -158,11 +158,11 @@ void handleAndRun(void* d) {
 		*data->result = Insert::exec(data->proc);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".";
+		ss << "Exception caught: " << ex.getMessage();
 		Error::error(ss.str());
 	} catch (const std::exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.what() << ".";
+		ss << "Exception caught: " << ex.what();
 		Error::error(ss.str());
 		throwfromexecution = true;
 	}
@@ -367,7 +367,7 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 		parse(inputfileurls);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".";
+		ss << "Exception caught: " << ex.getMessage();
 		Error::error(ss.str());
 		clog.flush();
 	}
@@ -410,7 +410,7 @@ int run(int argc, char* argv[]) {
 		parse(inputfiles);
 	} catch (const Exception& ex) {
 		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage() << ".";
+		ss << "Exception caught: " << ex.getMessage();
 		Error::error(ss.str());
 		clog.flush();
 	}

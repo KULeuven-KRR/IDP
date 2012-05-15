@@ -13,31 +13,22 @@
 
 #include "FormulaGrounders.hpp"
 
-class LazyTseitinGrounderInterface {
-private:
-public:
-	LazyTseitinGrounderInterface() {
-	}
-
-	litlist groundMore(bool groundall, LazyStoredInstantiation* instance, bool& stilldelayed) const;
-};
-
-class LazyGrounder: public ClauseGrounder {
+class LazyTseitinGrounder: public ClauseGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
-	LazyTseitinGrounderInterface lazyManager;
-
 	mutable tablesize alreadyground; // Statistics
 
 public:
-	LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
-	virtual ~LazyGrounder() {
+	LazyTseitinGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
+	virtual ~LazyTseitinGrounder() {
 	}
 
+	void notifyGroundingRequested(int ID, bool groundall, LazyStoredInstantiation* instance, bool& stilldelayed) const;
 	void notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const;
-	litlist groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const;
 
 protected:
+	virtual litlist groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const;
+
 	virtual void internalRun(ConjOrDisj& formula) const;
 
 	virtual bool grounderIsEmpty() const = 0;
@@ -48,7 +39,7 @@ protected:
 	virtual void initializeGroundMore(LazyStoredInstantiation*) const = 0;
 };
 
-class LazyQuantGrounder: public LazyGrounder {
+class LazyQuantGrounder: public LazyTseitinGrounder {
 private:
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator;
@@ -70,7 +61,7 @@ protected:
 	}
 };
 
-class LazyBoolGrounder: public LazyGrounder {
+class LazyBoolGrounder: public LazyTseitinGrounder {
 private:
 	std::vector<Grounder*> _subgrounders;
 public:

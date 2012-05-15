@@ -28,7 +28,6 @@ enum VIType {
 };
 
 class LazyStoredInstantiation;
-class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 /**
@@ -68,7 +67,8 @@ public:
 	virtual void notifyNeedFalseDefineds(PFSymbol* pfs) = 0;
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) = 0;
-	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction) = 0;
+	virtual void notifyLazyAddition(const litlist& glist, int ID) = 0;
+	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

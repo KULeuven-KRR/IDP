@@ -452,7 +452,7 @@ bool CPBound::operator<(const CPBound& rhs) const {
 }
 
 void LazyTsBody::notifyTheoryOccurence(Lit tseitin) {
-	grounder_->notifyTheoryOccurrence(tseitin, inst, _type);
+	inst->grounder->notifyTheoryOccurrence(tseitin, inst, _type);
 }
 
 // TODO eclipse indentation problems below this line...

@@ -298,27 +298,30 @@ template<class Solver>
 class LazyClauseMon: public MinisatID::LazyGrounder{
 private:
 	LazyStoredInstantiation* inst;
-	LazyTseitinGrounderInterface const * const grounder;
 	Solver& solver;
 
 public:
-	LazyClauseMon(Solver& solver, LazyStoredInstantiation* inst, LazyTseitinGrounderInterface const * const grounder) :
-			inst(inst), grounder(grounder), solver(solver) {
+	LazyClauseMon(Solver& solver, LazyStoredInstantiation* inst) :
+			inst(inst), solver(solver) {
 	}
 
-	virtual void requestGrounding(bool groundall, bool& stilldelayed){
-		auto glist = grounder->groundMore(groundall, inst, stilldelayed);
-		MinisatID::litlist list;
-		for(auto i=glist.cbegin(); i<glist.cend(); ++i) {
-			list.push_back(createLiteral(*i));
-		}
-		extAdd(solver, MinisatID::LazyAddition(list, this));
+	virtual void requestGrounding(int ID, bool groundall, bool& stilldelayed){
+		inst->grounder->notifyGroundingRequested(ID, groundall, inst, stilldelayed);
 	}
 };
 
 template<class Solver>
-void SolverPolicy<Solver>::polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction) {
-	auto mon = new LazyClauseMon<Solver>(getSolver(), inst, grounder);
+void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID){
+	MinisatID::litlist list;
+	for(auto i=glist.cbegin(); i<glist.cend(); ++i) {
+		list.push_back(createLiteral(*i));
+	}
+	extAdd(getSolver(), MinisatID::LazyAddition(list, ID));
+}
+
+template<class Solver>
+void SolverPolicy<Solver>::polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction) {
+	auto mon = new LazyClauseMon<Solver>(getSolver(), inst);
 	auto watchboth = type == TsType::RULE || type == TsType::EQ;
 	auto lit = createLiteral(tseitin);
 	if (type == TsType::RIMPL) {

@@ -556,11 +556,10 @@ public:
 typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
-class LazyGrounder;
-class LazyTseitinGrounderInterface;
+class LazyTseitinGrounder;
 
 struct LazyStoredInstantiation {
-	const LazyGrounder* grounder;
+	const LazyTseitinGrounder* grounder;
 	InstGenerator* generator;
 	size_t index;
 	dominstlist freevarinst;
@@ -572,12 +571,11 @@ struct LazyStoredInstantiation {
 
 class LazyTsBody: public TsBody {
 public:
-	LazyGrounder const* const grounder_;
 	LazyStoredInstantiation* inst;
 
 public:
-	LazyTsBody(LazyGrounder const* const grounder, LazyStoredInstantiation* inst, TsType type)
-			: TsBody(type), grounder_(grounder), inst(inst) {
+	LazyTsBody(LazyStoredInstantiation* inst, TsType type)
+			: TsBody(type), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
