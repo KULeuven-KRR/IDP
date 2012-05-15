@@ -1629,6 +1629,9 @@ public:
 
 	// Visitor
 	void accept(StructureVisitor* v) const;
+
+	virtual void put(std::ostream& stream) const;
+
 };
 
 class IntFloatInternalFuncTable: public InternalFuncTable {

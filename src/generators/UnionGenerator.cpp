@@ -41,7 +41,6 @@ void UnionGenerator::next() {
 				return;
 			} else {
 				_generators[0]->begin();
-
 			}
 		} else {
 			_generators[_current]->operator ++();

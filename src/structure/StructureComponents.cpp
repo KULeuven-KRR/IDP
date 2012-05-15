@@ -2517,6 +2517,21 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 	return new EnumInternalFuncIterator(_table.cbegin(), _table.cend());
 }
 
+void EnumeratedInternalFuncTable::put(std::ostream& stream) const{
+	stream << "EnumeratedInternalFuncTable containing: (";
+	auto i = 0;
+	for (auto it = _table.cbegin(); i<5&&it != _table.cend(); i++,it++){
+		if(i!= 0){
+			stream<<", ";
+		}
+		stream << toString(it->first)<<"->"<<(toString(it->second));
+	}
+	if(_table.size()>i){
+		stream << ",...";
+	}
+	stream<<")";
+}
+
 const DomainElement* ModInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	int a1 = tuple[0]->value()._int;
 	int a2 = tuple[1]->value()._int;

@@ -27,7 +27,6 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	const FOBDD* bdd;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
-
 	if (not structure->approxTwoValued()) {
 		auto generateBDDaccToBounds = generateNaiveApproxBounds(NULL, structure);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);

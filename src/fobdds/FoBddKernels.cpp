@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "fobdds/FoBddAtomKernel.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
@@ -63,7 +63,24 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 				output << ",";
 				output << toString(args(n));
 			}
-			output << ")";
+			output << ")[";
+			output << toString(args(0)->sort());
+
+			for (size_t n = 1; n < _symbol->nrSorts(); ++n) {
+				output << ",";
+				output << toString(args(n)->sort());
+			}
+			output << "]{";
+			output << toString(_symbol->sort(0));
+
+			for (size_t n = 1; n < _symbol->nrSorts(); ++n) {
+				output << ",";
+				output << toString(_symbol->sort(n));
+			}
+			output << "}";
+
+#warning "too much output in FobddKernels.cpp"
+
 		}
 	} else {
 		Assert(sametypeid<Function>(*_symbol));

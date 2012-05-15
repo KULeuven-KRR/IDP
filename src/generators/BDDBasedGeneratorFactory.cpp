@@ -214,8 +214,8 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 				BRANCH::TRUEBRANCH, Universe(kerntables));
 		branchdata.bdd = data.bdd->truebranch();
 		//branchdata.pattern = data.pattern;
-		kernelgenerator = new OneChildGenerator(kernelgenerator,createFromBDD(branchdata));
-		kernelchecker = new OneChildGenerator(kernelchecker,new FullGenerator());
+		kernelgenerator = new OneChildGenerator(kernelgenerator, createFromBDD(branchdata));
+		kernelchecker = new OneChildGenerator(kernelchecker, new FullGenerator());
 		//Truegenerator for instatiating all output vars of of truebdd.
 
 		branchdata.bdd = data.bdd->falsebranch();
@@ -223,8 +223,8 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 		auto falsegenerator = createFromBDD(branchdata);
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
-		std::vector<InstGenerator*> generators = {kernelgenerator,falsegenerator};
-		std::vector<InstGenerator*> checkers = { kernelchecker ,falsechecker};
+		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator };
+		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker };
 		return new UnionGenerator(generators, checkers);
 	}
 
@@ -254,7 +254,14 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
-				PredForm* newatom = new PredForm(atom->sign(), atom->symbol(), { solvedterm, varterm }, atom->pi());
+				PredForm* newatom;
+				if (is(atom->symbol(), STDPRED::GT) && (n == 0)) {
+					newatom = new PredForm(atom->sign(), get(STDPRED::LT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
+				} else if (is(atom->symbol(), STDPRED::LT) && (n == 0)) {
+					newatom = new PredForm(atom->sign(), get(STDPRED::GT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
+				} else {
+					newatom = new PredForm(atom->sign(), atom->symbol(), { solvedterm, varterm }, atom->pi());
+				}
 				atom->recursiveDelete();
 				return newatom;
 			}
@@ -431,7 +438,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			datomvars.push_back(vars[pos]);
 			atomtables.push_back(universe.tables()[pos]);
 		} else { // Domain term
-			// For each domain term, create a new variable and substitute the domainterm with the new varterm
+				 // For each domain term, create a new variable and substitute the domainterm with the new varterm
 			auto domterm = dynamic_cast<DomainTerm*>(*it);
 			auto domelement = new const DomElemContainer();
 			*domelement = domterm->value();
@@ -453,6 +460,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			termvars.push_back(domelement);
 			vector<Variable*> fotermvars(atomvars);
 			fotermvars.push_back(var);
+			Assert(termpattern.size()==termvars.size()&&termvars.size()==fotermvars.size());
 			vector<SortTable*> termuniv(universe.tables());
 			termuniv.push_back(structure->inter(domterm->sort()));
 
@@ -569,6 +577,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	} else if (is(newatom->symbol(), STDPRED::LT) || is(newatom->symbol(), STDPRED::GT)) {
 		newatom = solveAndReplace(newatom, pattern, atomvars, _manager, Pattern::OUTPUT);
 	}
+
 	// NOW, atom is of one of the forms:
 	// 1* a = b where a and b are no functerms (hence, aggterm, domainterm or varterm)
 	// 2* P(x,y,z,...) with P no equality
