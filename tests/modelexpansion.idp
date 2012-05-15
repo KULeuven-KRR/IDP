@@ -33,6 +33,14 @@ procedure mxwithcp(){
 	return run()
 }
 
+
+procedure mxwithSharedTseitins(){
+	stdoptions.sharedtseitins = true
+	stdoptions.groundwithbounds = true
+	stdoptions.timeout = 5
+	return run()
+}
+
 procedure mxwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false

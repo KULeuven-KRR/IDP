@@ -44,6 +44,10 @@ TEST_P(MXnbTest, DoesMXWithBounds) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithbounds()");
 }
 
+TEST_P(MXnbTest, DoesMXWithSharedTseitinsAndBounds) {
+	runTests("modelexpansion.idp", GetParam(), "mxwithSharedTseitins()");
+}
+
 TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithsymm()");
 }
@@ -69,6 +73,7 @@ TEST_P(MXsatTest, DoesMX) {
 TEST_P(MXsatTest, DoesMXWithBounds) {
 	runTests("satisfiability.idp", GetParam(), "satwithbounds()");
 }
+
 
 #ifdef WITHCP
 TEST_P(MXsatTest, DoesMXWithCP) {

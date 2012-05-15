@@ -11,6 +11,5 @@ structure S:V{
 	b = "ABC"
 }
 procedure getExpectedSet(){
-print("See issue 132")
   return {{"Hello"},{"ABB"}}
 }

@@ -2,14 +2,11 @@ vocabulary V{
 	type X isa int
 }
 theory T:V{
-	?x[X]: MAX[:int]-3000000000>x.
+	?x[X]: MAX[:int]-1000000000-1000000000-1000000000>x.
 }
 structure S:V{
-	X = {1000000000}
+	X = {100000000}
 }
-procedure main(){
-	stdoptions.groundwithbounds=false
-	if #modelexpand(T, S)==0 then return 1
-	else return 0
-	end
+procedure getExpectedNbOfModels(){
+	return 0
 }

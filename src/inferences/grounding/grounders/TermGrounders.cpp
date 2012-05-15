@@ -63,6 +63,7 @@ void TermGrounder::printOrig() const {
 }
 
 GroundTerm DomTermGrounder::run() const {
+	Assert(_value != NULL);
 	return GroundTerm(_value);
 }
 
@@ -85,7 +86,7 @@ GroundTerm FuncTermGrounder::run() const {
 					poptab();
 					clog << tabs() << "Result = **invalid term**" << "\n";
 				}
-				return groundterm._domelement;
+				return groundterm;
 			}
 			args[n] = groundterm._domelement;
 		}

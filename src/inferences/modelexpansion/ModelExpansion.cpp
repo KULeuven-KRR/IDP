@@ -114,11 +114,18 @@ void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, A
 }
 
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
+	//TODO: everything starting from here until END belongs to the grounding inference
+	//MOve it there!
+	//see issue 161
+
 	auto opts = GlobalData::instance()->getOptions();
 	// Calculate known definitions
 	auto clonetheory = _theory->clone();
 	Assert(sametypeid<Theory>(*clonetheory));
-	//TODO: add "sharedTseitinTransform to the idpintern-file or make it a seperate inference or make it optional
+	if(getOption(BoolType::SHAREDTSEITIN)){
+		clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory,_structure);
+		_structure->changeVocabulary(clonetheory->vocabulary());
+	}
 
 	AbstractStructure* newstructure = NULL;
 	if (not opts->getValue(BoolType::GROUNDLAZILY)) {
@@ -172,6 +179,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Execute symmetry breaking
 	addSymmetryBreaking(clonetheory, newstructure, grounding, opts);
 
+	//TODO: END: until here
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
