@@ -32,8 +32,8 @@ class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
 
-class ResidualAndFreeInst;
-class LazyGroundingManager;
+class LazyStoredInstantiation;
+class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 class GroundPolicy {
@@ -51,8 +51,12 @@ private:
 	}
 
 protected:
-	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
-	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, LazyTseitinGrounderInterface const* const, bool){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
 
 public:
 	const std::vector<GroundClause>& getClauses() const {

@@ -149,11 +149,12 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 	newsymbols.push(symbolID); // NOTE: For defined functions, should add the func constraint anyway, because it is not guaranteed to have a model!
 }
 
-void GroundTranslator::translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType tstype) {
-	instance->residual = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+Lit GroundTranslator::translate(LazyGrounder const* const lazygrounder, LazyStoredInstantiation* instance, TsType tstype) {
+	auto tseitin = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
 	auto tsbody = new LazyTsBody(lazygrounder, instance, tstype);
-	atom2TsBody[instance->residual] = tspair(instance->residual, tsbody);
+	atom2TsBody[tseitin] = tspair(tseitin, tsbody);
+	return tseitin;
 }
 
 Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype) {

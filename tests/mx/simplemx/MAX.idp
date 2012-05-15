@@ -8,5 +8,8 @@ structure S:V{
 	X = {1000000000}
 }
 procedure main(){
-	return 1
+	stdoptions.groundwithbounds=false
+	if #modelexpand(T, S)==0 then return 1
+	else return 0
+	end
 }

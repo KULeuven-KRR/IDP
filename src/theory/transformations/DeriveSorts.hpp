@@ -77,7 +77,6 @@ private:
 		_firstvisit = false;
 		while (_changed) {
 			_changed = false;
-			derivesorts();
 			derivefuncs();
 			derivepreds();
 			f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
@@ -85,7 +84,6 @@ private:
 		check();
 	}
 
-	void derivesorts(); // derive the sorts of the variables, based on the sorts in _untyped
 	void derivefuncs(); // disambiguate the overloaded functions
 	void derivepreds(); // disambiguate the overloaded predicates
 

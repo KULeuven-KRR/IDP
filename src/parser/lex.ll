@@ -4,6 +4,7 @@
 
 #include <string>
 #include <iostream>
+#include <climits>
 #include <sstream>
 #include <typeinfo>
 #include "parser/clconst.hpp"
@@ -71,6 +72,7 @@ struct ParserData{
 	vector<unsigned int>	include_line_stack;			// line number of the corresponding buffer
 	vector<unsigned int>	include_col_stack;			// column number of the corresponding buffer
 	bool					stdin_included;
+	set<string>				earlierincludes;			// Files that have already been included
 	void start_include(string s) {
 		// check if we are including from the included file
 		for(unsigned int n = 0; n < include_buffer_filenames.size(); ++n) {
@@ -80,6 +82,12 @@ struct ParserData{
 				return;
 			}
 		}
+		// Check if we already included it
+		if(earlierincludes.find(s)!=earlierincludes.cend()){
+			return;
+		}
+		earlierincludes.insert(s);
+		
 		// store the current buffer
 		include_buffer_stack.push_back(YY_CURRENT_BUFFER);
 		include_buffer_filenames.push_back(getInserter().currfile());
@@ -468,10 +476,19 @@ COMMENTLINE		"//".*
 							  yylval.str = StringPointer(string(temp,yyleng-2));
 							  return STRINGCONS;		}
 <*>{INT}					{ data.advancecol();
-							  yylval.nmr = atoi(yytext);
-							  return INTEGER;		    }
+							  auto val = strtol(yytext, NULL, 10);
+							  if(errno==ERANGE || val>INT_MAX || val<INT_MIN){
+							  		Error::error("numeric value out of integer bounds");
+							  }
+							  yylval.nmr = val;
+							  return INTEGER;		    
+							}
 <*>{FL}						{ data.advancecol();
-							  yylval.dou = atof(yytext);
+							  auto val = strtod(yytext, NULL);
+							  if(errno==ERANGE){
+							  		Error::error("numeric value out of double bounds");
+							  }
+							  yylval.dou = val;
 							  return FLNUMBER;			}
 <*>{CHR}					{ data.advancecol();
 							  yylval.chr = (yytext)[1];

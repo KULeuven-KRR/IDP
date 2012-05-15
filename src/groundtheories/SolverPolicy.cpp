@@ -168,7 +168,10 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
+	auto newtseitin = tseitin;
 	MinisatID::ImplicationType impltype;
+	auto newconj = conjunction;
+	auto newrhs = rhs;
 	switch (type) {
 	case TsType::RULE:
 		Assert(false);
@@ -177,13 +180,18 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 		impltype = MinisatID::ImplicationType::IMPLIES;
 		break;
 	case TsType::RIMPL:
-		impltype = MinisatID::ImplicationType::IMPLIEDBY;
+		for(uint i=0; i<rhs.size(); ++i) {
+			newrhs[i] = -rhs[i];
+		}
+		newtseitin = -newtseitin;
+		newconj = not newconj;
+		impltype = MinisatID::ImplicationType::IMPLIES;
 		break;
 	case TsType::EQ:
 		impltype = MinisatID::ImplicationType::EQUIVALENT;
 		break;
 	}
-	extAdd(getSolver(), MinisatID::Implication(createLiteral(tseitin), impltype, createList(rhs), conjunction));
+	extAdd(getSolver(), MinisatID::Implication(createLiteral(newtseitin), impltype, createList(newrhs), newconj));
 }
 
 
@@ -286,35 +294,37 @@ void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delayl
 	extAdd(getSolver(), lc);
 }
 
-typedef cb::Callback1<void, ResidualAndFreeInst*> callbackgrounding;
-class LazyClauseMon: public MinisatID::LazyGroundingCommand {
+template<class Solver>
+class LazyClauseMon: public MinisatID::LazyGrounder{
 private:
-	ResidualAndFreeInst* inst;
-	LazyGroundingManager const * const grounder;
+	LazyStoredInstantiation* inst;
+	LazyTseitinGrounderInterface const * const grounder;
+	Solver& solver;
 
 public:
-	LazyClauseMon(ResidualAndFreeInst* inst, LazyGroundingManager const * const grounder) :
-			inst(inst), grounder(grounder) {
+	LazyClauseMon(Solver& solver, LazyStoredInstantiation* inst, LazyTseitinGrounderInterface const * const grounder) :
+			inst(inst), grounder(grounder), solver(solver) {
 	}
 
-	virtual void requestGrounding() {
-		if (not isAlreadyGround()) {
-			notifyGrounded();
-			grounder->notifyDelayTriggered(inst);
+	virtual void requestGrounding(bool groundall, bool& stilldelayed){
+		auto glist = grounder->groundMore(groundall, inst, stilldelayed);
+		MinisatID::litlist list;
+		for(auto i=glist.cbegin(); i<glist.cend(); ++i) {
+			list.push_back(createLiteral(*i));
 		}
+		extAdd(solver, MinisatID::LazyAddition(list, this));
 	}
 };
 
 template<class Solver>
-void SolverPolicy<Solver>::polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder) {
-	auto mon = new LazyClauseMon(inst, grounder);
+void SolverPolicy<Solver>::polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction) {
+	auto mon = new LazyClauseMon<Solver>(getSolver(), inst, grounder);
 	auto watchboth = type == TsType::RULE || type == TsType::EQ;
-	auto lit = createLiteral(inst->residual);
+	auto lit = createLiteral(tseitin);
 	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
-	MinisatID::LazyGroundLit lc(watchboth, lit, mon);
-	extAdd(getSolver(), lc);
+	extAdd(getSolver(), MinisatID::LazyGroundImpl(MinisatID::Implication(lit, watchboth?MinisatID::ImplicationType::EQUIVALENT:MinisatID::ImplicationType::IMPLIES, {}, conjunction), mon));
 }
 
 template<class Solver>

@@ -54,10 +54,8 @@ public:
 	}
 
 	std::ostream& put(std::ostream& stream) const{
-		stream << "line " << _line << ", column "
-				<< _col;
-		if (_file) {
-			stream << " of file " << *(_file);
+		if (_file!=NULL) {
+			stream << *(_file) <<":" <<_line <<":" <<_col;
 		}
 		return stream;
 	}
