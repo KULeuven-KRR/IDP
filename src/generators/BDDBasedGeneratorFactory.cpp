@@ -249,16 +249,24 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
  * If it is not possible, the original atom is returned
  */
 PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
+	if (not is(atom->symbol(), STDPRED::EQ)) {
+		return atom;
+		//FIXME: code below still contains bugs when not working with equality
+	}
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PredForm* newatom;
-				if (is(atom->symbol(), STDPRED::GT) && (n == 0)) {
-					newatom = new PredForm(atom->sign(), get(STDPRED::LT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
-				} else if (is(atom->symbol(), STDPRED::LT) && (n == 0)) {
-					newatom = new PredForm(atom->sign(), get(STDPRED::GT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
+				if (sametypeid<VarTerm>(*(atom->subterms()[0])) && dynamic_cast<VarTerm*>(atom->subterms()[0])->var() == atomvars[n]
+						&& (is(atom->symbol(), STDPRED::GT) || is(atom->symbol(), STDPRED::LT))) {
+					if (is(atom->symbol(), STDPRED::GT)) {
+						newatom = new PredForm(atom->sign(), get(STDPRED::LT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
+					} else {
+						Assert( is(atom->symbol(), STDPRED::LT));
+						newatom = new PredForm(atom->sign(), get(STDPRED::GT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
+					}
 				} else {
 					newatom = new PredForm(atom->sign(), atom->symbol(), { solvedterm, varterm }, atom->pi());
 				}
@@ -873,7 +881,6 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	auto rightvalue = new DomElemContainer();
 	//AggGenerator calculates the value of the set and stores it in "rightvalue".
 	auto aggGenerator = new AggGenerator(rightvalue, ak->right()->aggfunction(), formulagenerators, termgenerators, terms);
-
 	//Finally, we construct the  comparisongenerator
 	//We want left to be comp than the value of the set (i.e.~rightvalue)
 	auto compgenerator = new ComparisonGenerator(structure->inter(ak->left()->sort()), structure->inter(ak->right()->sort()), left, rightvalue,

@@ -72,7 +72,6 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	}
 	Universe univ(vst);
 	PredTable* result = new PredTable(interntable, univ);
-
 	// execute the query
 	ElementTuple currtuple(q->variables().size());
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
