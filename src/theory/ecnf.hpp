@@ -557,33 +557,32 @@ typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
 typedef std::vector<dominst> dominstlist;
 
 class LazyGrounder;
-class LazyGroundingManager;
+class LazyTseitinGrounderInterface;
 
-struct ResidualAndFreeInst {
+struct LazyStoredInstantiation {
 	const LazyGrounder* grounder;
 	InstGenerator* generator;
 	size_t index;
-	Lit residual;
 	dominstlist freevarinst;
 
-	/*	bool operator==(const ResidualAndFreeInst& rhs) const {
+	/*	bool operator==(const LazyStoredInstantiation& rhs) const {
 	 return rhs.residual == residual && freevarinst == rhs.freevarinst;
 	 }*/
 };
 
 class LazyTsBody: public TsBody {
 public:
-	LazyGroundingManager const* const grounder_;
-	ResidualAndFreeInst* inst;
+	LazyGrounder const* const grounder_;
+	LazyStoredInstantiation* inst;
 
 public:
-	LazyTsBody(LazyGroundingManager const* const grounder, ResidualAndFreeInst* inst, TsType type)
+	LazyTsBody(LazyGrounder const* const grounder, LazyStoredInstantiation* inst, TsType type)
 			: TsBody(type), grounder_(grounder), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
 
-	void notifyTheoryOccurence();
+	void notifyTheoryOccurence(Lit tseitin);
 };
 
 /* Sets and terms that will be handled by a constraint solver */

@@ -122,6 +122,9 @@ public:
 	const std::vector<std::string>& getErrors() const {
 		return _errors;
 	}
+	void clearErrors(){
+		_errors.clear();
+	}
 	unsigned int getErrorCount() const {
 		return _errors.size();
 	}

@@ -315,7 +315,7 @@ void interactive() {
 
 	idp_rl_start();
 	while (not idp_terminateInteractive()) {
-		char* userline = rl_gets();
+		auto userline = rl_gets();
 		if (userline == NULL) {
 			cout << "\n";
 			continue;
@@ -332,6 +332,7 @@ void interactive() {
 			command = "help()";
 		}
 		executeProcedure(command);
+		getGlobal()->clearErrors();
 	}
 }
 #endif
@@ -428,10 +429,10 @@ int run(int argc, char* argv[]) {
 		if (cloptions._interactive) {
 			interactive();
 		} else {
+#endif
 			executeProcedure(cloptions._exec);
+#ifdef USEINTERACTIVE
 		}
-#else
-		executeProcedure(cloptions._exec);
 #endif
 	}
 

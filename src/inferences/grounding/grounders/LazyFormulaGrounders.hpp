@@ -6,47 +6,46 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef LAZYQUANTGROUNDER_HPP_
 #define LAZYQUANTGROUNDER_HPP_
 
 #include "FormulaGrounders.hpp"
 
-class LazyGroundingManager {
+class LazyTseitinGrounderInterface {
 private:
-	mutable bool currentlyGrounding; // If true, groundMore is currently already on the stack, so do not call it again!
-	mutable std::queue<ResidualAndFreeInst *> queuedtseitinstoground; // Stack of what we still have to ground
-
 public:
-	LazyGroundingManager()
-			: currentlyGrounding(false) {
+	LazyTseitinGrounderInterface() {
 	}
-	void groundMore() const;
 
-	void notifyDelayTriggered(ResidualAndFreeInst* instance) const;
+	litlist groundMore(bool groundall, LazyStoredInstantiation* instance, bool& stilldelayed) const;
 };
 
 class LazyGrounder: public ClauseGrounder {
 private:
 	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
-	LazyGroundingManager lazyManager;
-	mutable tablesize alreadyground;
+	LazyTseitinGrounderInterface lazyManager;
+
+	mutable tablesize alreadyground; // Statistics
+
 public:
 	LazyGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
 	virtual ~LazyGrounder() {
 	}
-	bool groundMore(ResidualAndFreeInst* instance) const;
+
+	void notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const;
+	litlist groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const;
 
 protected:
 	virtual void internalRun(ConjOrDisj& formula) const;
+
 	virtual bool grounderIsEmpty() const = 0;
-	virtual void initializeInst(ResidualAndFreeInst* inst) const = 0;
-	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const = 0;
-	virtual void increment(ResidualAndFreeInst* instance) const = 0;
-	virtual bool isAtEnd(ResidualAndFreeInst* instance) const = 0;
-	virtual void initializeGroundMore(ResidualAndFreeInst*) const {
-	}
+	virtual void initializeInst(LazyStoredInstantiation* inst) const = 0;
+	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const = 0;
+	virtual void increment(LazyStoredInstantiation* instance) const = 0;
+	virtual bool isAtEnd(LazyStoredInstantiation* instance) const = 0;
+	virtual void initializeGroundMore(LazyStoredInstantiation*) const = 0;
 };
 
 class LazyQuantGrounder: public LazyGrounder {
@@ -60,11 +59,11 @@ public:
 
 protected:
 	virtual bool grounderIsEmpty() const;
-	virtual void initializeInst(ResidualAndFreeInst* inst) const;
-	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const;
-	virtual void increment(ResidualAndFreeInst* instance) const;
-	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
-	virtual void initializeGroundMore(ResidualAndFreeInst* instance) const;
+	virtual void initializeInst(LazyStoredInstantiation* inst) const;
+	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const;
+	virtual void increment(LazyStoredInstantiation* instance) const;
+	virtual bool isAtEnd(LazyStoredInstantiation* instance) const;
+	virtual void initializeGroundMore(LazyStoredInstantiation* instance) const;
 
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
@@ -80,10 +79,11 @@ public:
 
 protected:
 	virtual bool grounderIsEmpty() const;
-	virtual void initializeInst(ResidualAndFreeInst* inst) const;
-	virtual Grounder* getLazySubGrounder(ResidualAndFreeInst* instance) const;
-	virtual void increment(ResidualAndFreeInst* instance) const;
-	virtual bool isAtEnd(ResidualAndFreeInst* instance) const;
+	virtual void initializeInst(LazyStoredInstantiation* inst) const;
+	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const;
+	virtual void increment(LazyStoredInstantiation* instance) const;
+	virtual bool isAtEnd(LazyStoredInstantiation* instance) const;
+	virtual void initializeGroundMore(LazyStoredInstantiation*) const{}
 
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
@@ -125,7 +125,7 @@ protected:
 		return _grounding;
 	}
 
-	const std::vector<std::pair<int, int> >& getSameargs() const{
+	const std::vector<std::pair<int, int> >& getSameargs() const {
 		return sameargs;
 	}
 
@@ -147,7 +147,7 @@ public:
 
 	virtual void run(ConjOrDisj& formula) const;
 
-	tablesize getGroundedSize() const{
+	tablesize getGroundedSize() const {
 		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
 	}
 
@@ -171,10 +171,10 @@ private:
 	FormulaGrounder* _subgrounder;
 
 public:
-	LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping, AbstractGroundTheory* groundtheory,
-			FormulaGrounder* sub, const GroundingContext& ct);
+	LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std::vector<Term*>& terms, Context context, const var2dommap& varmapping,
+			AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
-	tablesize getGroundedSize() const{
+	tablesize getGroundedSize() const {
 		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
 	}
 

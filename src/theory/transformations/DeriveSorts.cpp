@@ -94,6 +94,7 @@ Term* DeriveSorts::visit(AggTerm* t) {
 }
 
 Term* DeriveSorts::visit(FuncTerm* term) {
+	//cerr << "Visiting " << toString(term) << "\n";
 	auto f = term->function();
 	if (not _useBuiltIns && f->builtin()) {
 		return term;
@@ -180,6 +181,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 }
 
 Formula* DeriveSorts::visit(EqChainForm* formula) {
+	//cerr << "Visiting " << toString(formula) << "\n";
 	if (_useBuiltIns) {
 		Sort* temp = NULL;
 		if (not _firstvisit) {
@@ -200,10 +202,6 @@ Formula* DeriveSorts::visit(EqChainForm* formula) {
 		}
 	}
 	return formula;
-}
-
-void DeriveSorts::derivesorts() {
-
 }
 
 void DeriveSorts::derivefuncs() {

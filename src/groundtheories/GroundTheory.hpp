@@ -14,8 +14,8 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
-class ResidualAndFreeInst;
-class LazyGroundingManager;
+class LazyStoredInstantiation;
+class LazyTseitinGrounderInterface;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
@@ -63,7 +63,7 @@ public:
 	virtual void addOptimization(VarId varid);
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
-	virtual void notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
+	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction);
 
 	std::ostream& put(std::ostream& s) const;
 

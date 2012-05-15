@@ -48,8 +48,8 @@ void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit,
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder){
-	Policy::polNotifyLazyResidual(inst, type, grounder);
+void GroundTheory<Policy>::notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction){
+	Policy::polNotifyLazyResidual(tseitin, inst, type, grounder, conjunction);
 }
 
 template<class Policy>
@@ -220,35 +220,35 @@ void GroundTheory<Policy>::transformForAdd(const std::vector<int>& vi, VIType /*
 		++n;
 	}
 	for (; n < vi.size(); ++n) {
-		int atom = abs(vi[n]);
+		int tseitin = abs(vi[n]);
 		// NOTE: checks whether the tseitin has already been added to the grounding
-		if (not translator()->isTseitinWithSubformula(atom) || _printedtseitins.find(atom) != _printedtseitins.end()) {
+		if (not translator()->isTseitinWithSubformula(tseitin) || _printedtseitins.find(tseitin) != _printedtseitins.end()) {
 			//clog <<"Tseitin" <<atom <<" already grounded" <<nt();
 			continue;
 		}
 		//clog <<"Adding tseitin" <<atom <<" to grounding" <<nt();
-		_printedtseitins.insert(atom);
-		auto tsbody = translator()->getTsBody(atom);
+		_printedtseitins.insert(tseitin);
+		auto tsbody = translator()->getTsBody(tseitin);
 		if (sametypeid<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
-			add(atom, body->type(), body->body(), body->conj(), defnr);
+			add(tseitin, body->type(), body->body(), body->conj(), defnr);
 		} else if (sametypeid<AggTsBody>(*tsbody)) {
 			AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
 				Assert(defnr != getIDForUndefined());
 				add(body->setnr(), defnr, (body->aggtype() != AggFunction::CARD));
-				Policy::polAdd(defnr, new AggGroundRule(atom, body, true)); //TODO true (recursive) might not always be the case?
+				Policy::polAdd(defnr, new AggGroundRule(tseitin, body, true)); //TODO true (recursive) might not always be the case?
 			} else {
-				add(atom, body);
+				add(tseitin, body);
 			}
 		} else if (sametypeid<CPTsBody>(*tsbody)) {
 			CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 			Assert(body->type() != TsType::RULE);
-			add(atom, body);
+			add(tseitin, body);
 		} else {
 			Assert(sametypeid<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
-			body->notifyTheoryOccurence();
+			body->notifyTheoryOccurence(tseitin);
 		}
 	}
 }

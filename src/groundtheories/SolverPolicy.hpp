@@ -15,7 +15,7 @@
 #include "inferences/SolverInclude.hpp"
 
 class TsSet;
-class LazyGroundingManager;
+class LazyTseitinGrounderInterface;
 class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
@@ -23,8 +23,8 @@ typedef std::vector<const DomainElement*> ElementTuple;
 typedef int SetId;
 typedef int DefId;
 
-class ResidualAndFreeInst;
-class LazyGroundingManager;
+class LazyStoredInstantiation;
+class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 /**
@@ -51,7 +51,7 @@ private:
 public:
 	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
 	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
-	void polNotifyLazyResidual(ResidualAndFreeInst* inst, TsType type, LazyGroundingManager const* const grounder);
+	void polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction);
 
 protected:
 	void polRecursiveDelete() {

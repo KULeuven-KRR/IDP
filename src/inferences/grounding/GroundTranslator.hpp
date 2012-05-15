@@ -21,9 +21,9 @@
 class DelayGrounder;
 class TsSet;
 class CPTerm;
-class LazyGroundingManager;
+class LazyGrounder;
 class CPBound;
-class ResidualAndFreeInst;
+class LazyStoredInstantiation;
 class TsSet;
 
 //typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
@@ -105,7 +105,7 @@ public:
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
-	void translate(LazyGroundingManager const* const lazygrounder, ResidualAndFreeInst* instance, TsType type);
+	Lit translate(LazyGrounder const* const lazygrounder, LazyStoredInstantiation* instance, TsType type);
 
 	/*
 	 * @precon: defid==-1 if a FORMULA will be delayed

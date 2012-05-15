@@ -21,8 +21,8 @@
 #include "options.hpp"
 #include "errorhandling/error.hpp"
 
-class ResidualAndFreeInst;
-class LazyGroundingManager;
+class LazyStoredInstantiation;
+class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 class TsSet;
@@ -36,8 +36,12 @@ private:
 	Printer* printer_;
 
 public:
-	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){}
-	void polNotifyLazyResidual(ResidualAndFreeInst*, TsType, LazyGroundingManager const* const){}
+	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
+		throw notyetimplemented("Printing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, LazyTseitinGrounderInterface const* const, bool){
+		throw notyetimplemented("Printing ground theories with lazy ground elements");
+	}
 
 	void polRecursiveDelete() {
 	}

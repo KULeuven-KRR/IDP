@@ -2,11 +2,13 @@ vocabulary V{
 	type X isa int
 }
 theory T:V{
-	?x[X]: MAX[:int]-3000000000>x.
 }
 structure S:V{
-	X = {1000000000}
+	X = {
+		-100000000000;		
+	}
 }
 procedure main(){
+	print(S)
 	return 1
 }
