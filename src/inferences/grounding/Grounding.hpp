@@ -37,7 +37,7 @@ class Term;
 class AbstractGroundTheory;
 
 template<typename GroundingReciever>
-void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, GroundingReciever* something) {
+void fixTraceMonitor(TraceMonitor*, Grounder*, GroundingReciever*) {
 	return; //Do nothing unless GroundingReciever is  PCSolver (see Grounding.cpp)
 }
 
@@ -52,6 +52,7 @@ private:
 	TraceMonitor* _tracemonitor;
 	Term* _minimizeterm; // if NULL, no optimization is done
 	GroundingReciever* _reciever;
+	Grounder* _grounder; //The grounder that is created by this inference. Is deleted together with the inference (for lazy grounding, can be needed when the ground method is finished)
 	bool _prepared;
 
 public:
@@ -79,9 +80,15 @@ public:
 				_tracemonitor(tracemonitor),
 				_minimizeterm(minimize),
 				_reciever(solver),
-				_prepared(false) {
+				_prepared(false),
+				_grounder(NULL){
 	}
 
+	~GroundingInference() {
+		if (_grounder != NULL) {
+			delete _grounder;
+		}
+	}
 //Grounds the theory with the given structure
 	AbstractGroundTheory* ground() {
 		// Calculate known definitions
@@ -100,7 +107,7 @@ public:
 			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
-		// Creategrounder
+		// Create grounder
 		if (verbosity() >= 1) {
 			std::clog << "Approximation\n";
 		}
@@ -116,17 +123,19 @@ public:
 		if (verbosity() >= 1) {
 			std::clog << "Grounding\n";
 		}
-		Grounder* grounder;
+		if (_grounder != NULL) {
+			delete (_grounder);
+		}
 		if (_reciever == NULL) {
-			grounder = GrounderFactory::create(GroundInfo { _theory, _structure, symstructure });
+			_grounder = GrounderFactory::create(GroundInfo { _theory, _structure, symstructure });
 		} else {
-			grounder = GrounderFactory::create( { _theory, _structure, symstructure }, _reciever);
+			_grounder = GrounderFactory::create( { _theory, _structure, symstructure }, _reciever);
 		}
 		if (getOption(BoolType::TRACE)) {
-			fixTraceMonitor(_tracemonitor, grounder, _reciever);
+			fixTraceMonitor(_tracemonitor, _grounder, _reciever);
 		}
-		grounder->toplevelRun();
-		auto grounding = grounder->getGrounding();
+		_grounder->toplevelRun();
+		auto grounding = _grounder->getGrounding();
 		if (_minimizeterm != NULL) {
 			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), GroundStructureInfo { _structure, symstructure }, grounding);
 			optimgrounder->toplevelRun();
@@ -134,18 +143,17 @@ public:
 		// Execute symmetry breaking
 		addSymmetryBreaking(_theory, _structure, grounding);
 		if (verbosity() > 0) {
-			auto maxsize = grounder->getFullGroundSize();
+			auto maxsize = _grounder->getFullGroundSize();
 			//cout <<"full|grounded|%|time\n";
 			//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";
-			std::clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
+			std::clog << "Grounded " << toString(_grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
 			if (maxsize._type == TableSizeType::TST_EXACT) {
 				//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
-				std::clog << ">>> " << (double) (grounder->groundedAtoms()) / maxsize._size * 100 << "% of the full grounding.\n";
+				std::clog << ">>> " << (double) (_grounder->groundedAtoms()) / maxsize._size * 100 << "% of the full grounding.\n";
 			}
 			std::cout << "|";
 		}
 
-		delete (grounder);
 		delete symstructure->manager();
 		delete (symstructure);
 

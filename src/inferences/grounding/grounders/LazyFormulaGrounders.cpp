@@ -20,7 +20,8 @@
 
 using namespace std;
 
-LazyTseitinGrounder::LazyTseitinGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct)
+LazyTseitinGrounder::LazyTseitinGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj,
+		const GroundingContext& ct)
 		: 	ClauseGrounder(groundtheory, sign, conj, ct),
 			freevars(freevars),
 			alreadyground(tablesize(TableSizeType::TST_EXACT, 0)) {
@@ -34,7 +35,9 @@ void LazyTseitinGrounder::notifyGroundingRequested(int ID, bool groundall, LazyS
 	overwriteVars(originst, instance->freevarinst);
 
 	litlist result = groundMore(groundall, instance, stilldelayed);
-	if(groundall){
+	std::cerr << "there" << endl;
+
+	if (groundall) {
 		Assert(not stilldelayed);
 	}
 
@@ -50,6 +53,8 @@ void LazyTseitinGrounder::notifyGroundingRequested(int ID, bool groundall, LazyS
 // NOTE: generators are CLONED, SAVED and REUSED!
 // @return true if no more grounding is necessary
 litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
+	std::cerr << "step 1" << endl;
+
 	pushtab();
 
 	Assert(instance->grounder==this);
@@ -79,7 +84,7 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
 			decidedformula = true;
 			continue;
 		}
-		if(groundedlit == redundantLiteral()){
+		if (groundedlit == redundantLiteral()) {
 			continue;
 		}
 		subfgrounding.push_back(groundedlit);
@@ -91,10 +96,10 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
 		stilldelayed = false;
 		poptab();
 		auto tseitin = getGrounding()->translator()->createNewUninterpretedNumber();
-		getGrounding()->add({tseitin});
+		getGrounding()->add( { tseitin });
 		// Formula is true, so do not need to continue grounding and can delete
 		// NOTE: if false, then can stop if non-ground part is true, so tseitin true
-		return { redundantLiteral()==_false?tseitin:-tseitin};
+		return {redundantLiteral()==_false?tseitin:-tseitin};
 	}
 
 	if (isAtEnd(instance)) {
@@ -109,7 +114,7 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
  */
 void LazyTseitinGrounder::notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const {
 	// TODO prevent empty body by already grounding at least one?
-	getGrounding()->notifyLazyResidual(tseitin, instance, type, conjunctive()==Conn::CONJ);
+	getGrounding()->notifyLazyResidual(tseitin, instance, type, conjunctive() == Conn::CONJ);
 }
 
 /**
