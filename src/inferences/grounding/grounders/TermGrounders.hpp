@@ -70,7 +70,7 @@ public:
 			_value(a) {
 	}
 	inline GroundTerm run() const {
-		Assert(_value->get() != NULL)
+		Assert(_value->get() != NULL);
 		return GroundTerm(_value->get());
 	}
 

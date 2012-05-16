@@ -58,11 +58,10 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
 
 	litlist subfgrounding;
 
-	auto nbiterations = dynamic_cast<const LazyQuantGrounder*>(this) != NULL ? 10 : 2;
+	auto nbiterations = dynamic_cast<const LazyQuantGrounder*>(this) != NULL ? 10 : 1;
 	auto counter = 0;
 	auto decidedformula = false;
 	while ((groundall || counter < nbiterations) && not isAtEnd(instance) && not decidedformula) {
-		counter++;
 		ConjOrDisj formula;
 		formula.setType(conjunctive());
 
@@ -82,8 +81,11 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
 		if(groundedlit == redundantLiteral()){
 			continue;
 		}
+		counter++;
 		subfgrounding.push_back(groundedlit);
 	}
+
+	Assert(isAtEnd(instance) || groundall || decidedformula || not subfgrounding.empty());
 
 	alreadyground = alreadyground + counter;
 
