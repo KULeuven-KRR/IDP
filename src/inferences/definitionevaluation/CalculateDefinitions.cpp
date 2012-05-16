@@ -64,8 +64,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	return structure->isConsistent();
 }
 
-std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, const AbstractStructure* originalStructure) const {
-	auto structure = originalStructure->clone();
+std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const{
 	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
 		clog << "Calculating known definitions\n";
 	}

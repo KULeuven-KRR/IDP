@@ -9,25 +9,18 @@
  ****************************************************************/
 
 #include "ModelExpansion.hpp"
-#include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "inferences/SolverConnection.hpp"
 
-#include "inferences/symmetrybreaking/symmetry.hpp"
+#include "inferences/grounding/Grounding.hpp"
 
 #include "inferences/SolverInclude.hpp"
 
-#include "theory/TheoryUtils.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
-#include "fobdds/FoBddManager.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
-#include "inferences/propagation/PropagatorFactory.hpp"
-#include "inferences/grounding/GrounderFactory.hpp"
-#include "inferences/grounding/grounders/Grounder.hpp"
-
-#include "TraceMonitor.hpp"
+#include "inferences/modelexpansion/TraceMonitor.hpp"
 
 using namespace std;
 
@@ -94,92 +87,20 @@ public:
 	}
 };
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, Options* options) {
-	switch (options->symmetryBreaking()) {
-	case SymmetryBreaking::NONE:
-		break;
-	case SymmetryBreaking::STATIC: {
-		auto ivsets = findIVSets(theory, structure);
-		addSymBreakingPredicates(grounding, ivsets);
-		break;
-	}
-	case SymmetryBreaking::DYNAMIC: {
-		auto ivsets = findIVSets(theory, structure);
-		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
-		}
-		break;
-	}
-	}
-}
-
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
-	//TODO: everything starting from here until END belongs to the grounding inference
-	//MOve it there!
-	//see issue 161
-
-	auto opts = GlobalData::instance()->getOptions();
-	// Calculate known definitions
-	auto clonetheory = _theory->clone();
-	Assert(sametypeid<Theory>(*clonetheory));
-	if(getOption(BoolType::SHAREDTSEITIN)){
-		clonetheory = FormulaUtils::sharedTseitinTransform(clonetheory,_structure);
-		_structure->changeVocabulary(clonetheory->vocabulary());
-	}
-
-	AbstractStructure* newstructure = NULL;
-	if (not opts->getValue(BoolType::GROUNDLAZILY)) {
-		if (verbosity() >= 1) {
-			clog << "Evaluating definitions\n";
-		}
-		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(clonetheory), _structure);
-		if (defCalculated.size() == 0) {
-			delete (newstructure);
-			clonetheory->recursiveDelete();
-			return std::vector<AbstractStructure*> { };
-		}Assert(defCalculated[0]->isConsistent());
-		newstructure = defCalculated[0];
-	} else {
-		newstructure = _structure->clone();
-	}
-	// Create solver and grounder
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
-	if (verbosity() >= 1) {
-		clog << "Approximation\n";
-	}
-	auto symstructure = generateBounds(clonetheory, newstructure);
-	if (not newstructure->isConsistent()) {
+	auto clonetheory = _theory->clone();
+	auto newstructure = _structure->clone();
+	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor, data);
+	AbstractGroundTheory* grounding = groundingInference->ground();
+
+	if(grounding == NULL){
 		if (verbosity() > 0) {
-			clog << "approximation detected UNSAT" << endl;
+			clog << "Unsat detected during grounding\n";
 		}
-		clonetheory->recursiveDelete();
-		delete (newstructure);
-		delete symstructure->manager();
-		delete (symstructure);
-		return std::vector<AbstractStructure*> { };
+		return std::vector<AbstractStructure*> {};
 	}
 
-	if (verbosity() >= 1) {
-		clog << "Grounding\n";
-	}
-	auto grounder = GrounderFactory::create( { clonetheory, newstructure, symstructure }, data);
-	if (getOption(BoolType::TRACE)) {
-		_tracemonitor->setTranslator(grounder->getTranslator());
-		_tracemonitor->setSolver(data);
-	}
-	grounder->toplevelRun();
-
-	auto grounding = grounder->getGrounding();
-
-	if (_minimizeterm != NULL) {
-		auto optimgrounder = GrounderFactory::create(_minimizeterm, clonetheory->vocabulary(), { newstructure, symstructure }, grounding);
-		optimgrounder->toplevelRun();
-	}
-
-	// Execute symmetry breaking
-	addSymmetryBreaking(clonetheory, newstructure, grounding, opts);
-
-	//TODO: END: until here
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
@@ -198,18 +119,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
-	}
-
-	if (verbosity() > 0) {
-		auto maxsize = grounder->getFullGroundSize();
-		//cout <<"full|grounded|%|time\n";
-		//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";
-		clog << "Grounded " << toString(grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
-		if (maxsize._type == TableSizeType::TST_EXACT) {
-			//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
-			clog << ">>> " << (double) grounder->groundedAtoms() / maxsize._size * 100 << "% of the full grounding.\n";
-		}
-		cout << "|";
 	}
 
 	// Collect solutions
@@ -235,13 +144,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Clean up: remove all objects that are only used here.
 	grounding->recursiveDelete();
-	delete (grounder);
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
 	delete (terminator);
 	delete (newstructure);
-	delete symstructure->manager();
-	delete (symstructure);
 	delete (data);
 	delete (mx);
 	return solutions;

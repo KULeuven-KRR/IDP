@@ -35,7 +35,7 @@ public:
 			return nilarg();
 		}
 		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
-		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args));
+		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)->clone());
 		if(sols.size()==0 ){
 			return InternalArgument();
 		}

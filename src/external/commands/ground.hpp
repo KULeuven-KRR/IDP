@@ -15,7 +15,9 @@
 #include "IncludeComponents.hpp"
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/Grounding.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
+
 #include "theory/TheoryUtils.hpp" //TODO REMOVE
 //#include "external/FlatZincRewriter.hpp"
 
@@ -33,11 +35,17 @@ public:
 	}
 private:
 	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure) const {
-		auto symstructure = generateBounds(theory, structure);
-		auto grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }));
-		grounder->toplevelRun();
-		auto grounding = grounder->getGrounding();
-		delete (symstructure);
+		auto t = theory->clone();
+		auto s = structure->clone();
+		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
+		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, NULL);
+		auto grounding = grounder->ground();
+		if (grounding == NULL) {
+			grounding = new GroundTheory<GroundPolicy>(NULL);
+			grounding->addEmptyClause();
+		}
+		t->recursiveDelete();
+		delete (s);
 		return grounding;
 	}
 };
@@ -57,20 +65,18 @@ public:
 	}
 private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
-		auto symstructure = generateBounds(theory, structure);
-		std::shared_ptr<Grounder> grounder;
-		// FIXME
-		//if (getGlobal()->getOptions()->language() == Language::FLATZINC) { // TODO necessary atm because we only have a solver interface for flatzinc (which writes out directly)
-		//	MinisatID::SolverOption modes;
-		//	grounder = std::shared_ptr<Grounder>(
-		//			GrounderFactory::create( { theory, structure, symstructure }, new MinisatID::FlatZincRewriter(modes)));
-		//} else {
-		grounder = std::shared_ptr<Grounder>(GrounderFactory::create( { theory, structure, symstructure }, monitor));
-		//}
-		grounder->toplevelRun();
-		auto grounding = grounder->getGrounding();
-		grounding->recursiveDelete();
-		delete (symstructure);
+		auto t = theory->clone();
+		auto s = structure->clone();
+		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, monitor);
+		auto grounding = grounder->ground();
+		t->recursiveDelete();
+		delete (s);
+		if (grounding != NULL) {
+			grounding->recursiveDelete();
+		}
+		else{
+			clog << "false\n";
+		}
 		monitor->flush();
 	}
 };

@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <memory>
 
+
 class AbstractStructure;
 class AbstractTheory;
 class Theory;
