@@ -18,6 +18,8 @@
 #include <list>
 #include <ostream>
 
+#include "visitors/TheoryVisitor.hpp"
+
 class DomainElement;
 class AbstractStructure;
 class AbstractTheory;
@@ -92,5 +94,63 @@ public:
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);
 
 void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>);
+
+/**
+ * 	Theory analyzing visitor which extracts information relevant for symmetry detection.
+ *	More specifically, it will extract
+ *		a set of domain elements which should not be permuted by a symmetry,
+ *		a set of sorts whose domain elements should not be permuted by a symmetry, and
+ *		a set of relations which are used in the theory (to exclude unused but nonetheless defined relations)
+ */
+class TheorySymmetryAnalyzer: public DefaultTraversingTheoryVisitor {
+	VISITORFRIENDS()
+private:
+	const AbstractStructure* structure_;
+	std::set<Sort*> forbiddenSorts_;
+	std::set<const DomainElement*> forbiddenElements_;
+	std::set<PFSymbol*> usedRelations_;
+
+	void markAsUnfitForSymmetry(const std::vector<Term*>&);
+	void markAsUnfitForSymmetry(Sort*);
+	void markAsUnfitForSymmetry(const DomainElement*);
+
+	const AbstractStructure* getStructure() const {
+		return structure_;
+	}
+
+public:
+	TheorySymmetryAnalyzer(const AbstractStructure* s)
+			: structure_(s) {
+/*		markAsUnfitForSymmetry(VocabularyUtils::intsort());
+		markAsUnfitForSymmetry(VocabularyUtils::floatsort());
+		markAsUnfitForSymmetry(VocabularyUtils::natsort());*/
+	}
+
+	void analyze(const AbstractTheory* t);
+
+	const std::set<Sort*>& getForbiddenSorts() const {
+		return forbiddenSorts_;
+	}
+	const std::set<const DomainElement*>& getForbiddenElements() const {
+		return forbiddenElements_;
+	}
+	const std::set<PFSymbol*>& getUsedRelations() const {
+		return usedRelations_;
+	}
+
+	void addForbiddenSort(Sort* sort) {
+		forbiddenSorts_.insert(sort);
+	}
+	void addUsedRelation(PFSymbol* relation) {
+		usedRelations_.insert(relation);
+	}
+protected:
+	void visit(const PredForm*);
+	void visit(const FuncTerm*);
+	void visit(const DomainTerm*);
+	void visit(const EqChainForm*);
+	void visit(const AggForm*);
+	void visit(const AggTerm*);
+};
 
 #endif /* SYMMETRY_HPP_ */
