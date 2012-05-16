@@ -758,7 +758,7 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef) {
 }
 
 void TheorySymmetryAnalyzer::visit(const AggForm* af){
-	markAsUnfitForSymmetry(af->left()->sort());
+	markAsUnfitForSymmetry(af->getBound()->sort());
 	traverse(af);
 }
 
