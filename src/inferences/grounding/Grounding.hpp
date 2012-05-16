@@ -36,10 +36,12 @@ class TraceMonitor;
 class Term;
 class AbstractGroundTheory;
 
-template<typename GroundingReciever>
-void fixTraceMonitor(TraceMonitor*, Grounder*, GroundingReciever*) {
-	return; //Do nothing unless GroundingReciever is  PCSolver (see Grounding.cpp)
+template<typename GroundingReceiver>
+void fixTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
+	return;
 }
+//Do nothing unless GroundingReciever is  PCSolver (see Grounding.cpp)
+template<> void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
 
 void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding);
 
@@ -89,7 +91,8 @@ public:
 			delete _grounder;
 		}
 	}
-//Grounds the theory with the given structure
+
+	//Grounds the theory with the given structure
 	AbstractGroundTheory* ground() {
 		// Calculate known definitions
 		if (getOption(BoolType::SHAREDTSEITIN)) {
@@ -159,7 +162,6 @@ public:
 
 		return grounding;
 	}
-
 };
 
 #endif //GROUNDINGINFERENCE16514_HPP_
