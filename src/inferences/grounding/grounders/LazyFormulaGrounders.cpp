@@ -35,8 +35,6 @@ void LazyTseitinGrounder::notifyGroundingRequested(int ID, bool groundall, LazyS
 	overwriteVars(originst, instance->freevarinst);
 
 	litlist result = groundMore(groundall, instance, stilldelayed);
-	std::cerr << "there" << endl;
-
 	if (groundall) {
 		Assert(not stilldelayed);
 	}
@@ -53,8 +51,6 @@ void LazyTseitinGrounder::notifyGroundingRequested(int ID, bool groundall, LazyS
 // NOTE: generators are CLONED, SAVED and REUSED!
 // @return true if no more grounding is necessary
 litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const {
-	std::cerr << "step 1" << endl;
-
 	pushtab();
 
 	Assert(instance->grounder==this);
@@ -267,9 +263,7 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms) {
 	std::vector<pair<int, int> > sameargs;
 	std::map<Variable*, int> vartofirstocc;
 	int index = 0;
-	//cerr <<"Args: ";
 	for (auto i = terms.cbegin(); i < terms.cend(); ++i, ++index) {
-		//cerr <<toString(*i) <<", ";
 		auto varterm = dynamic_cast<VarTerm*>(*i);
 		if (varterm == NULL) { // If not a var, it cannot contain free variables!
 			Assert((*i)->freeVars().size()==0);
@@ -280,7 +274,6 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms) {
 		if (first == vartofirstocc.cend()) {
 			vartofirstocc[varterm->var()] = index;
 		} else {
-			//cerr <<"[=" <<first->second <<"]";
 			sameargs.push_back( { first->second, index });
 		}
 	}
