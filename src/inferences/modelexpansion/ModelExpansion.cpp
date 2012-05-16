@@ -15,7 +15,6 @@
 
 #include "inferences/SolverInclude.hpp"
 
-
 #include "groundtheories/GroundTheory.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -94,11 +93,14 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor, data);
 	AbstractGroundTheory* grounding = groundingInference->ground();
 
-	if(grounding == NULL){
+	if (grounding == NULL) {
 		if (verbosity() > 0) {
 			clog << "Unsat detected during grounding\n";
 		}
-		return std::vector<AbstractStructure*> {};
+		clonetheory->recursiveDelete();
+		delete (newstructure);
+		delete (data);
+		return std::vector<AbstractStructure*> { };
 	}
 
 	// Run solver
