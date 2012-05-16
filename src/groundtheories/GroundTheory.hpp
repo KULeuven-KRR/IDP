@@ -15,7 +15,6 @@
 #include "AbstractGroundTheory.hpp"
 
 class LazyStoredInstantiation;
-class LazyTseitinGrounderInterface;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
@@ -63,7 +62,8 @@ public:
 	virtual void addOptimization(VarId varid);
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
-	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction);
+	virtual void notifyLazyAddition(const litlist& glist, int ID);
+	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction);
 
 	std::ostream& put(std::ostream& s) const;
 
@@ -76,7 +76,10 @@ public:
 	const std::set<PFSymbol*>& getNeedFalseDefinedSymbols() const { return needfalsedefinedsymbols; }
 
 protected:
-	void transformForAdd(const litlist& vi, VIType /*vit*/, DefId defnr, bool skipfirst = false);
+	/**
+	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.
+	 */
+	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false);
 
 	CPTerm* foldCPTerm(CPTerm* cpterm);
 

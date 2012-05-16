@@ -460,7 +460,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 }
 
 ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
-		const GroundingContext& context, bool trydelay) {
+		const GroundingContext& context, bool trydelay, bool recursive) {
 	auto mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
@@ -468,7 +468,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (not trydelay) {
 		mightdolazy = false;
 	}
-	if (not getOption(TSEITINDELAY)) {
+	if (not getOption(TSEITINDELAY) || recursive) { // FIXME tseitin introduction in definition is currently not supported
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
@@ -507,7 +507,7 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 		}
 	}
 
-	auto boolgrounder = createB(getGrounding(), sub, newbf->freeVars(), newbf->sign(), true, _context, somequant);
+	auto boolgrounder = createB(getGrounding(), sub, newbf->freeVars(), newbf->sign(), true, _context, somequant, recursive(bf));
 	boolgrounder->setOrig(bf, varmapping());
 	_topgrounder = boolgrounder;
 	deleteDeep(newbf);
@@ -538,7 +538,7 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 		}
 	}
 
-	_formgrounder = createB(getGrounding(), sub, bf->freeVars(), bf->sign(), bf->conj(), _context, somequant);
+	_formgrounder = createB(getGrounding(), sub, bf->freeVars(), bf->sign(), bf->conj(), _context, somequant, recursive(bf));
 	RestoreContext();
 	_formgrounder->setOrig(bf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
@@ -576,13 +576,13 @@ void checkGeneratorInfinite(InstChecker* gen, Object* original) {
 }
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, QuantForm const * const qf, const GenAndChecker& gc,
-		const GroundingContext& context) {
+		const GroundingContext& context, bool recursive) {
 	bool conj = qf->quant() == QUANT::UNIV;
 	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if (not getOption(TSEITINDELAY)) {
+	if (not getOption(TSEITINDELAY) || recursive) { // FIXME tseitin introduction in definition is currently not supported
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
@@ -669,7 +669,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		}
 	}
 	if (grounder == NULL) {
-		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext());
+		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
 	}
 	Assert(grounder!=NULL);
 
@@ -697,7 +697,7 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 	}
 
 	auto subsize = _formgrounder->getMaxGroundSize();
-	_formgrounder = createQ(getGrounding(), _formgrounder, qf, gc, getContext());
+	_formgrounder = createQ(getGrounding(), _formgrounder, qf, gc, getContext(), recursive(qf));
 	_formgrounder->setMaxGroundSize(gc._universe.size() * subsize);
 
 	RestoreContext();

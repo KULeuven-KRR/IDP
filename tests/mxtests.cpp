@@ -52,6 +52,10 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithsymm()");
 }
 
+TEST_P(MXnbTest, DoesMXWithLazyTseitinDelaying) {
+	runTests("modelexpansion.idp", GetParam(), "mxlazy()");
+}
+
 #ifdef WITHCP
 TEST_P(MXnbTest, DoesMXWithCP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");

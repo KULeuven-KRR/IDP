@@ -48,8 +48,14 @@ void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit,
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, LazyTseitinGrounderInterface const* const grounder, bool conjunction){
-	Policy::polNotifyLazyResidual(tseitin, inst, type, grounder, conjunction);
+void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID){
+	addTseitinInterpretations(glist, getIDForUndefined());
+	Policy::polAddLazyAddition(glist, ID);
+}
+
+template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction){
+	Policy::polNotifyLazyResidual(tseitin, inst, type, conjunction);
 }
 
 template<class Policy>
@@ -76,7 +82,7 @@ void GroundTheory<Policy>::closeTheory() {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
-	transformForAdd(cl, VIT_DISJ, getIDForUndefined(), skipfirst);
+	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst);
 	Policy::polAdd(cl);
 }
 
@@ -98,7 +104,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
-	transformForAdd(rule->body(), (rule->type() == RuleType::CONJ ? VIT_CONJ : VIT_DISJ), defid);
+	addTseitinInterpretations(rule->body(), defid);
 	Policy::polAdd(defid, rule);
 	notifyDefined(rule->head());
 }
@@ -147,7 +153,7 @@ void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	}
 	_printedsets.insert(setnr);
 	auto tsset = translator()->groundset(setnr);
-	transformForAdd(tsset.literals(), VIT_SET, defnr);
+	addTseitinInterpretations(tsset.literals(), defnr);
 	Policy::polAdd(tsset, setnr, weighted);
 }
 
@@ -214,7 +220,7 @@ std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::transformForAdd(const std::vector<int>& vi, VIType /*vit*/, int defnr, bool skipfirst) {
+void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, int defnr, bool skipfirst) {
 	size_t n = 0;
 	if (skipfirst) {
 		++n;

@@ -6,6 +6,14 @@ procedure mxnobounds(){
 	return run()
 }
 
+procedure mxlazy(){
+	stdoptions.groundwithbounds = false
+	stdoptions.groundlazily = true
+	stdoptions.tseitindelay = true
+	stdoptions.timeout = 0
+	return run()
+}
+
 procedure mxnoboundslong(){
 	stdoptions.groundwithbounds = false
 	stdoptions.timeout = 200

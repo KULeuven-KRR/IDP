@@ -103,7 +103,6 @@ public:
 		if(lit.hasSign()){
 			l = -l;
 		}
-		//ss <<(isPositive(lit)?"":"-") <<(isPositive(lit)?var(lit):-var(lit));
 		ss <<cb(l);
 		return ss.str();
 	}

@@ -22,7 +22,6 @@
 #include "errorhandling/error.hpp"
 
 class LazyStoredInstantiation;
-class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 class TsSet;
@@ -39,7 +38,10 @@ public:
 	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
 		throw notyetimplemented("Printing ground theories with lazy ground elements");
 	}
-	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, LazyTseitinGrounderInterface const* const, bool){
+	void polAddLazyAddition(const litlist&, int){
+		throw notyetimplemented("Printing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, bool){
 		throw notyetimplemented("Printing ground theories with lazy ground elements");
 	}
 

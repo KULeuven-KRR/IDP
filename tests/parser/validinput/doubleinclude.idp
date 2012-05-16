@@ -11,5 +11,7 @@ structure S : V{
 }
 
 procedure main(){
-	return onemodel(T, S) ~= nil
+	if onemodel(T, S) ~= nil then return 1
+	else return 0
+	end 
 }

@@ -33,7 +33,6 @@ class PCGroundRule;
 class AggGroundRule;
 
 class LazyStoredInstantiation;
-class LazyTseitinGrounderInterface;
 class DelayGrounder;
 
 class GroundPolicy {
@@ -54,7 +53,10 @@ protected:
 	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
-	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, LazyTseitinGrounderInterface const* const, bool){
+	void polAddLazyAddition(const litlist&, int){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, bool){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
 

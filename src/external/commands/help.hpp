@@ -42,9 +42,9 @@ private:
 		return prefix;
 	}
 
-	std::string printProcedure(std::string prefix, const std::string& name, const std::vector<std::string>& args, const std::string& description) const {
+	std::string printProcedure(const std::string& name, const std::vector<std::string>& args, const std::string& description) const {
 		std::stringstream sstr;
-		sstr << "\t\t* " << prefix << name << '(';
+		sstr <<name << '(';
 		bool begin = true;
 		for (auto i = args.cbegin(); i < args.cend(); ++i) {
 			if (!begin) {
@@ -56,7 +56,7 @@ private:
 
 		sstr << ")\n";
 		auto tempdesc = replaceAllAndTrimEachLine(description, "\n", "\n\t\t\t");
-		sstr << "\t\t\t" << tempdesc <<"\n";
+		sstr << "\t\t\t" << tempdesc;
 		return sstr.str();
 	}
 
@@ -91,8 +91,7 @@ private:
 		// FIXME additional blocks are not detected automatically!
 
 		// Printing procedures
-		auto prefix = "";//getPrefix(ns); TODO with prefix seems to make output more complex (and the user knows which namespace he is requesting
-		std::set<std::string> procedures;
+		std::map<std::string, std::string> procedures;
 		// Get text for each internal procedure in the given namespace
 		for (auto i = getAllInferences().cbegin(); i < getAllInferences().cend(); ++i) {
 			if ((*i)->getNamespace() == ns->name()) {
@@ -100,14 +99,14 @@ private:
 				for (auto j = (*i)->getArgumentTypes().cbegin(); j < (*i)->getArgumentTypes().cend(); ++j) {
 					args.push_back(toCString(*j));
 				}
-				auto text = printProcedure(prefix, (*i)->getName(), args, (*i)->getDescription());
-				procedures.insert(text);
+				auto text = printProcedure((*i)->getName(), args, (*i)->getDescription());
+				procedures.insert({text, ""});
 			}
 		}
 		// Get text for each user defined procedure in the given namespace
 		for (auto it = ns->procedures().cbegin(); it != ns->procedures().cend(); ++it) {
-			auto text = printProcedure(prefix, it->first, it->second->args(), it->second->description());
-			procedures.insert(text);
+			auto text = printProcedure(it->first, it->second->args(), it->second->description());
+			procedures.insert({text, ""});
 		}
 
 		if (procedures.empty()) {
@@ -119,10 +118,7 @@ private:
 				sstr << '\n';
 			}
 		} else {
-			sstr << "Procedures:\n";
-			for (auto i = procedures.cbegin(); i != procedures.cend(); ++i) {
-				sstr << *i;
-			}
+			printSubBlockInfo(procedures, "Procedures", sstr);
 		}
 
 		return sstr.str();
