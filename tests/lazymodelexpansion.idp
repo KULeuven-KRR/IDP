@@ -15,8 +15,8 @@ procedure run(expectsmodel) {
 	stdoptions.groundlazily = true
 	
 	partialsolution = modelexpandpartial(T,S)
-	
-	if(partialsolution==nil) then
+	print(partialsolution)
+	if(#partialsolution==0) then
 		if(expectsmodel) then
 			io.stderr:write("Found UNSAT, expected SAT.\n")
 			return 0
@@ -28,7 +28,7 @@ procedure run(expectsmodel) {
 
 	stdoptions.nbmodels = 1
 	stdoptions.groundlazily = false	
-	if(#modelexpand(T, partialsolution)==0)then
+	if(#modelexpand(T, partialsolution[1])==0)then
 		io.stderr:write("Found an invalid partial model.\n")
 		return 0
 	end
