@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "luaconnection.hpp"
 #include <set>
@@ -21,6 +21,7 @@
 #include "monitors/luainteractiveprintmonitor.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "utils/ListUtils.hpp"
+#include "insert.hpp"
 
 using namespace std;
 using namespace LuaConnection;
@@ -72,11 +73,11 @@ const char* toCString(ArgType type) {
 	if (not init) {
 		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
 				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
-				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR,
-				"predicate_table_iterator")(AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(
-				AT_FORMULA, "formula")(AT_THEORY, "theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(
-				AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED,
-				"overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(AT_TRACEMONITOR, "tracemonitor");
+				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
+				AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
+				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
+				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
+				AT_TRACEMONITOR, "tracemonitor");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -1746,7 +1747,7 @@ void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements)
 	}
 }
 
-const char* getInternalProcedureMetaTableName(){
+const char* getInternalProcedureMetaTableName() {
 	return "internalprocedure";
 }
 
@@ -1952,6 +1953,38 @@ void createMetaTables(lua_State* L) {
 	overloadedMetaTable(L);
 }
 
+std::set<Namespace*> _checkedAddToGlobal;
+std::set<Namespace*>& getCheckedGlobals(){
+	return _checkedAddToGlobal;
+}
+
+void checkedAddToGlobal(Namespace* ns){
+	auto& checkedglobals = getCheckedGlobals();
+	if(ns->name()==getInternalNamespaceName()){
+		return;
+	}
+	if (checkedglobals.find(ns) == checkedglobals.cend()) {
+		bool add = false;
+		if (ns == getGlobal()->getStdNamespace()) {
+			add = true;
+		} else if (ns == getGlobal()->getGlobalNamespace()) {
+			add = true;
+		} else if (ns->hasParent(getGlobal()->getStdNamespace())) {
+			add = true;
+		} else {
+			for (auto i = getGlobal()->getGlobalNamespace()->subspaces().cbegin(); i != getGlobal()->getGlobalNamespace()->subspaces().cend(); ++i) {
+				if (ns == (*i).second) {
+					add = true;
+				}
+			}
+		}
+		if (add) {
+			addGlobal(ns);
+		}
+		checkedglobals.insert(ns);
+	}
+}
+
 /**
  * map internal procedure names to the actual procedures
  */
@@ -1974,17 +2007,17 @@ void addInternalProcedures(lua_State*) {
 	for (auto i = ns2name2fieldprocedures.cbegin(); i != ns2name2fieldprocedures.cend(); ++i) {
 		auto nsspace = i->first;
 		if (namespaces.find(nsspace) == namespaces.cend()) {
-		//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
+			//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
 		}
 		lua_getglobal(_state, nsspace.c_str());
 		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
-			if(nsspace != getGlobalNamespaceName()){
+			if (nsspace != getGlobalNamespaceName()) {
 				auto possiblearguments = new internalprocargmap(j->second);
 				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
-			//	cerr <<"Setting field " <<j->first.c_str() <<"\n";
+				//	cerr <<"Setting field " <<j->first.c_str() <<"\n";
 				lua_setfield(_state, -2, j->first.c_str());
 			}
 		}
@@ -1993,7 +2026,7 @@ void addInternalProcedures(lua_State*) {
 	for (auto i = ns2name2globalprocedures.cbegin(); i != ns2name2globalprocedures.cend(); ++i) {
 		auto nsspace = i->first;
 		if (namespaces.find(nsspace) == namespaces.cend()) {
-		//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
+			//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
 			lua_newtable(_state);
 			lua_setglobal(_state, nsspace.c_str());
 			namespaces.insert(nsspace);
@@ -2003,7 +2036,7 @@ void addInternalProcedures(lua_State*) {
 			if (nsspace != getInternalNamespaceName()) {
 				auto possiblearguments = new internalprocargmap(j->second);
 				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
-			//	cerr <<"Setting global " <<j->first.c_str() <<"\n";
+				//	cerr <<"Setting global " <<j->first.c_str() <<"\n";
 				lua_setglobal(_state, j->first.c_str());
 			}
 		}
@@ -2018,6 +2051,8 @@ void makeLuaConnection() {
 	// Create the lua state
 	_state = lua_open();
 	luaL_openlibs(_state);
+
+	_checkedAddToGlobal.clear(); // TODO belongs to some singleton?
 
 	// Create all metatables
 	createMetaTables(_state);
@@ -2049,12 +2084,21 @@ void makeLuaConnection() {
 		clog << "Error in configuration file, searched in " << getPathOfConfigFile() << "\n";
 		exit(1);
 	}
+
+	for (auto i = GlobalData::getGlobalNamespace()->subspaces().cbegin(); i != GlobalData::getGlobalNamespace()->subspaces().cend(); ++i) {
+		checkedAddToGlobal(i->second);
+	}
+	// NOTE: nested std namespaces are NOT added!
+	for (auto i = GlobalData::getStdNamespace()->subspaces().cbegin(); i != GlobalData::getStdNamespace()->subspaces().cend(); ++i) {
+		checkedAddToGlobal(i->second);
+	}
 }
 
 /**
  * End the connection with lua
  */
 void closeLuaConnection() {
+	_checkedAddToGlobal.clear(); // TODO belongs to some singleton?
 	lua_close(_state);
 	//FIXME it seems that all of the Internal Procedures have been deleted by gc.
 	//FIXME no, they are not, just some are deleted...

@@ -8,8 +8,8 @@ namespace stdspace{
 
 /**
  * List the procedures in the given namespace  */
-procedure help(namespace) {
-	if (not namespace) then namespace = idpglobal end
+procedure help(namespace ) {
+	namespace = namespace or idpglobal
 	if type(namespace) == "namespace" then
 		idpintern.help(namespace)
 	else

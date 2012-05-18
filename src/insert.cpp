@@ -656,18 +656,7 @@ void Insert::openNamespace(const string& sname, YYLTYPE l) {
 }
 
 void Insert::closeNamespace() {
-	if(checkedAddToGlobal.find(_currspace)==checkedAddToGlobal.cend()){
-		if(_currspace->hasParent(getGlobal()->getStdNamespace())){
-			addGlobal(_currspace);
-		}else{
-			for(auto i=getGlobal()->getGlobalNamespace()->subspaces().cbegin(); i!=getGlobal()->getGlobalNamespace()->subspaces().cend(); ++i) {
-				if(_currspace==(*i).second){
-					addGlobal(_currspace);
-				}
-			}
-		}
-		checkedAddToGlobal.insert(_currspace);
-	}
+	LuaConnection::checkedAddToGlobal(_currspace);
 	_currspace = _currspace->super();
 	Assert(_currspace);
 	closeblock();

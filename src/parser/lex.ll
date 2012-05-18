@@ -241,6 +241,8 @@ COMMENTLINE		"//".*
 		Lua
 	**********/
 
+<procedure>"..."			{ data.advancecol();
+							  return LUAVARARG;	}
 <procedure>"{"				{ data.advancecol();
 							  BEGIN(lua);
 							  ++data.bracketcounter;		
