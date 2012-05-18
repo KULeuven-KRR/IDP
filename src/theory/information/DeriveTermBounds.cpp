@@ -133,16 +133,18 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			_minimum = domain->first();
 			break;
 		}
-		case STDFUNC::DIVISION:
-			throw BoundsUnderivableException();
 		case STDFUNC::MODULO:
-			throw BoundsUnderivableException();
+			_maximum = createDomElem(0);
+			_minimum = _subtermmaximums[1];
+			break;
+		case STDFUNC::DIVISION:
+			throw BoundsUnderivableException(); // TODO
 		case STDFUNC::EXPONENTIAL:
-			throw BoundsUnderivableException();
+			throw BoundsUnderivableException(); // TODO
 		case STDFUNC::SUCCESSOR:
-			throw BoundsUnderivableException();
+			throw BoundsUnderivableException(); // TODO
 		case STDFUNC::PREDECESSOR:
-			throw BoundsUnderivableException();
+			throw BoundsUnderivableException(); // TODO
 		}
 	} else {
 		Assert(t->sort() != NULL);
