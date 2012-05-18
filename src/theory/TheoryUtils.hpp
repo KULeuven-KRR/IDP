@@ -218,7 +218,9 @@ void checkSorts(Vocabulary*, Term*);
 /** Derive sorts in the given term */
 void deriveSorts(Vocabulary*, Term*);
 
-/** Derive bounds of the given term in the given structure */
+/** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
+ * 	If no bounds can be derived, NULL is returned for both bounds
+ */
 std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */

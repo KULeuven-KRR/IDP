@@ -163,7 +163,11 @@ std::vector<Variable*> makeNewVariables(const std::vector<Sort*>&);
  *********************************/
 
 enum SymbolType {
-	ST_NONE, ST_CT, ST_CF, ST_PT, ST_PF
+	ST_NONE,
+	ST_CT,
+	ST_CF,
+	ST_PT,
+	ST_PF
 };
 
 /** 
@@ -175,24 +179,26 @@ private:
 	ParseInfo _pi; //!< The place where the symbol was declared
 	std::set<const Vocabulary*> _vocabularies; //!< All vocabularies the symbol belongs to
 	std::vector<Sort*> _sorts; //!< Sorts of the arguments.
-		// IMPORTANT: for overloaded symbols, sorts can be NULL
-							   //!< For a function symbol, the last sort is the output sort.
+	// IMPORTANT: for overloaded symbols, sorts can be NULL
+	//!< For a function symbol, the last sort is the output sort.
 	bool _infix; //!< True iff the symbol is infix
 
 	std::map<SymbolType, Predicate*> _derivedsymbols; //!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
 	bool _isTseitin; //!< Whether or not the symbol represents a Tseitin
 
 protected:
-	void setName(const std::string& name){
+	void setName(const std::string& name) {
 		_name = name;
 	}
-	void setIsTseitin(bool istseitin){
+	void setIsTseitin(bool istseitin) {
 		_isTseitin = istseitin;
 	}
-	void addSort(Sort* s){
+	void addSort(Sort* s) {
 		_sorts.push_back(s);
 	}
-	std::set<const Vocabulary*>& getVocabularies() { return _vocabularies; }
+	std::set<const Vocabulary*>& getVocabularies() {
+		return _vocabularies;
+	}
 	virtual ~PFSymbol();
 
 public:
@@ -215,14 +221,16 @@ public:
 	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
 
 	// IMPORTANT: for overloaded symbols, sorts can be NULL
-	const std::vector<Sort*>& sorts() const{
+	const std::vector<Sort*>& sorts() const {
 		return _sorts;
 	}
 	bool infix() const; //!< True iff the symbol is infix
 
 	bool hasVocabularies() const; //!< Returns true iff the symbol occurs in a
 								  //!< vocabulary
-	const std::set<const Vocabulary*>& getVocabularies() const { return _vocabularies; }
+	const std::set<const Vocabulary*>& getVocabularies() const {
+		return _vocabularies;
+	}
 
 	Predicate* derivedSymbol(SymbolType); //!< Return the derived symbol of the given type
 	std::vector<unsigned int> argumentNrs(const Sort*) const; //!< Returns the numbers of the arguments where this
@@ -232,7 +240,7 @@ public:
 	virtual bool overloaded() const = 0; //!< Returns true iff the symbol is in fact a set of overloaded
 										 //!< symbols
 	virtual std::set<Sort*> allsorts() const = 0; //!< Return all sorts that occur in the (overloaded) symbol(s)
-	bool isTseitin() {//!< Returns true iff the symbol represents a Tseitin
+	bool isTseitin() { //!< Returns true iff the symbol represents a Tseitin
 		return _isTseitin;
 	}
 
@@ -481,7 +489,9 @@ public:
 	}
 
 	FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding)
-			: _name(name), _arity(arity), _binding(binding) {
+			: 	_name(name),
+				_arity(arity),
+				_binding(binding) {
 	}
 
 	const std::string& name() const; //!< Returns the name of the generated functions
@@ -588,13 +598,32 @@ bool isIntSum(const Function* function, const Vocabulary* voc);
 class Namespace;
 
 enum class STDSORT {
-	NATSORT, INTSORT, FLOATSORT, CHARSORT, STRINGSORT
+	NATSORT,
+	INTSORT,
+	FLOATSORT,
+	CHARSORT,
+	STRINGSORT
 };
 enum class STDPRED {
-	EQ, GT, LT
+	EQ,
+	GT,
+	LT
 };
 enum class STDFUNC {
-	UNARYMINUS, ADDITION, SUBSTRACTION, PRODUCT, DIVISION, ABS, MODULO, EXPONENTIAL, MINELEM, MAXELEM, SUCCESSOR, PREDECESSOR
+	UNARYMINUS,
+	ADDITION,
+	SUBSTRACTION,
+	PRODUCT,
+	DIVISION,
+	ABS,
+	MODULO,
+	EXPONENTIAL,
+	MINELEM,
+	MAXELEM,
+	SUCCESSOR,
+	PREDECESSOR,
+	FIRST = UNARYMINUS,
+	LAST = PREDECESSOR
 };
 template<class S>
 std::string getSymbolName(S s);

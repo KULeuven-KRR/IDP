@@ -114,6 +114,7 @@ public:
 	template<typename Visitor, typename List>
 	void visitList(Visitor v, const List& list) {
 		for (auto i = list.cbegin(); i < list.cend(); ++i) {
+			CHECKTERMINATION
 			(*i)->accept(v);
 		}
 	}
@@ -124,6 +125,7 @@ public:
 		setTermTranslator(g->termtranslator());
 		startTheory();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
+			CHECKTERMINATION
 			visit(*i);
 		}
 		visitList(this, g->getCPReifications());
@@ -131,13 +133,13 @@ public:
 		visitList(this, g->getAggregates());
 		visitList(this, g->getFixpDefinitions());
 		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
+			CHECKTERMINATION
 			_currentdefnr = (*i).second->id();
 			openDefinition(_currentdefnr);
 			(*i).second->accept(this);
 			closeDefinition();
 		}
 
-		// FIXME
 		if (writeTranlation()) {
 			output() << "=== Atomtranslation ===" << "\n";
 			GroundTranslator* translator = g->translator();
@@ -170,6 +172,7 @@ public:
 	void visit(const GroundDefinition* d) {
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
+			CHECKTERMINATION
 			(*it).second->accept(this);
 		}
 	}
@@ -309,6 +312,7 @@ private:
 			} else {
 				std::vector<MinisatID::Weight> valuelist;
 				for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
+					CHECKTERMINATION
 					Assert((*it)->type()==DomainElementType::DET_INT);
 					valuelist.push_back(createWeight((*it)->value()._int));
 				}

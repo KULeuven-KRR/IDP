@@ -77,6 +77,7 @@ public:
 		}
 		Vocabulary* voc = structure->vocabulary();
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
+			CHECKTERMINATION
 			auto sort = it->second;
 			if (not sort->builtin()) {
 				_currentSymbol = toString(sort);
@@ -85,6 +86,7 @@ public:
 			}
 		}
 		for (auto it = voc->firstPred(); it != voc->lastPred(); ++it) {
+			CHECKTERMINATION
 			auto udpreds = it->second->nonbuiltins();
 			for (auto jt = udpreds.cbegin(); jt != udpreds.cend(); ++jt) {
 				auto pred = *jt;
@@ -100,6 +102,7 @@ public:
 			}
 		}
 		for (auto it = voc->firstFunc(); it != voc->lastFunc(); ++it) {
+			CHECKTERMINATION
 			auto udfuncs = it->second->nonbuiltins();
 			for (auto jt = udfuncs.cbegin(); jt != udfuncs.cend(); ++jt) {
 				auto func = *jt;
@@ -132,6 +135,7 @@ public:
 		if (table->arity() > 0) {
 			if (not kt.isAtEnd()) {
 				for (; not kt.isAtEnd(); ++kt) {
+					CHECKTERMINATION
 					output() << _currentSymbol << "(";
 					auto tuple = *kt;
 					bool begintuple = true;
