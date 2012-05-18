@@ -57,6 +57,14 @@ namespace inferences{
  * Apply model expansion to theory T, structure S over the same vocabulary.
  * The result is a table of two-valued structures and, if getoptions().trace == true, a trace of the solver */
 procedure modelexpand(theory, structure) {
+	if type(theory) ~= "theory" then
+		print("Error: theory expected")
+		return
+	end
+	if type(structure) ~= "structure" then
+		print("Error: structure expected")
+		return
+	end
 	local solutions, trace = modelexpandpartial(theory,structure)
 	local solutions2 = alltwovaluedextensions(solutions)
 	return solutions2, trace
