@@ -63,24 +63,7 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 				output << ",";
 				output << toString(args(n));
 			}
-			output << ")[";
-			output << toString(args(0)->sort());
-
-			for (size_t n = 1; n < _symbol->nrSorts(); ++n) {
-				output << ",";
-				output << toString(args(n)->sort());
-			}
-			output << "]{";
-			output << toString(_symbol->sort(0));
-
-			for (size_t n = 1; n < _symbol->nrSorts(); ++n) {
-				output << ",";
-				output << toString(_symbol->sort(n));
-			}
-			output << "}";
-
-#warning "too much output in FobddKernels.cpp"
-
+			output << ")";
 		}
 	} else {
 		Assert(sametypeid<Function>(*_symbol));

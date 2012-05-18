@@ -30,6 +30,8 @@ public:
 	SortChecker* clone() const;
 	void reset();
 	void next();
+	virtual void put(std::ostream& stream) const;
+
 };
 
 /**
@@ -47,7 +49,7 @@ public:
 	void reset();
 	void setVarsAgain();
 	void next();
-	virtual void put(std::ostream& stream);
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* SORTINSTGENERATOR_HPP_ */

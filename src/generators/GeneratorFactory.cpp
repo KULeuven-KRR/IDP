@@ -108,7 +108,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 		}
 		switch (predicate->type()) {
 		case ST_NONE:
-			table = inverse ? inter->cf() : inter->ct();
+			table = inverse ? inter->pf() : inter->ct();
 			break;
 		case ST_CT:
 			table = inverse ? inter->pf() : inter->ct();
@@ -128,7 +128,46 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
-	return GeneratorFactory::create(table, pattern, vars, universe, atom);
+	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe, atom);
+
+	if (not inverse) {
+		return tablegenerator;
+	}
+
+	//If the universe does not match the universe of the predicate symbol,
+	//And if we are generating all false instances,
+	//we must also generate all out-of-bounds tuples.
+
+	InstGenerator* univgenerator = NULL;
+
+	auto predsorts = symbol->sorts();
+	for (size_t i = 0; i < vars.size(); i++) {
+		if (pattern[i] == Pattern::OUTPUT) {
+			if (univgenerator != NULL) {
+				univgenerator = new OneChildGenerator(univgenerator, new SortGenerator(universe.tables()[i]->internTable(), vars[i]));
+			} else {
+				univgenerator = new SortGenerator(universe.tables()[i]->internTable(), vars[i]);
+			}
+		}
+	}
+	if (univgenerator == NULL) { //No output
+		return tablegenerator;
+	}
+	InstGenerator* outofboundsgenerator = univgenerator;
+	for (size_t i = 0; i < vars.size(); i++) {
+		if (pattern[i] == Pattern::OUTPUT) {
+			auto sortchecker = new SortChecker(structure->inter(predsorts[i])->internTable(), vars[i]);
+			outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
+		}
+	}
+
+	std::vector<InstGenerator*> generators = { tablegenerator, outofboundsgenerator };
+	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe, atom);
+
+	std::vector<InstGenerator*> checkers = { tablechecker, new FullGenerator() };
+
+	return new UnionGenerator(generators, checkers);
+
 }
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,

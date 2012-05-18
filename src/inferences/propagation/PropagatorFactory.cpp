@@ -40,8 +40,8 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if(not getOption(BoolType::GROUNDLAZILY)){ // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
-		propagator->doPropagation();
-		propagator->applyPropagationToStructure(structure);
+		//propagator->doPropagation();
+		//propagator->applyPropagationToStructure(structure);
 	}
 	auto result = propagator->symbolicstructure();
 	delete (propagator);
@@ -278,7 +278,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 	} else {
 #ifndef NDEBUG
 		if (_leafconnectors.find(symbol) == _leafconnectors.cend()) {
-			std::cerr << toString(symbol);
+			clog << toString(symbol);
 		}
 		Assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
 #endif

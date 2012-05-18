@@ -1082,7 +1082,6 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
-
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
 		deleteDeep(tempsubformula);

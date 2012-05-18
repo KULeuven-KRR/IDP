@@ -40,7 +40,7 @@ void SortGenerator::next() {
 	}
 }
 
-void SortGenerator::put(std::ostream& stream) {
+void SortGenerator::put(std::ostream& stream) const {
 	pushtab();
 	stream << "generator for sort: " << toString(_table)<<" starting from " << toString(_table->first());
 	poptab();
@@ -67,5 +67,10 @@ void SortChecker::next() {
 		return;
 	}
 	notifyAtEnd();
+}
+void SortChecker::put(std::ostream& stream) const {
+	pushtab();
+	stream << "checker for sort: " << toString(_table)<<" starting from " << toString(_table->first());
+	poptab();
 }
 

@@ -573,7 +573,7 @@ vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vecto
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
-	Assert(checkInput(pattern, vars, atomvars, universe));
+Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";

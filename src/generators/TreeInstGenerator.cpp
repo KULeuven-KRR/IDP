@@ -53,7 +53,7 @@ void OneChildGenerator::setVarsAgain() {
 	_child->setVarsAgain();
 }
 
-void OneChildGenerator::put(std::ostream& stream) const{
+void OneChildGenerator::put(std::ostream& stream) const {
 	stream << "generate: " << toString(_generator) << nt();
 	stream << "then ";
 	pushtab();
@@ -138,7 +138,7 @@ void TwoChildGenerator::put(std::ostream& stream) const {
 	poptab();
 	stream << nt() << "if result is in ";
 	pushtab();
-	toString(_checker);
+	stream << toString(_checker);
 	poptab();
 
 	stream << nt() << "THEN";
