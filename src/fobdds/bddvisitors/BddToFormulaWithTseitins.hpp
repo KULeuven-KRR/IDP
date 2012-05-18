@@ -148,7 +148,7 @@ private:
 		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars, arg);
 		createTseitinAtom(pred, arg);
-		Assert(sametypeid<PredForm>(*_currformula));
+		Assert(isa<PredForm>(*_currformula));
 		auto tseitinAtom = dynamic_cast<PredForm*>(_currformula);
 		auto backup = _boundary;
 		_boundary = _counter->getCount(arg);

@@ -118,7 +118,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	}
 	CPTerm* left = body->left();
 	CPBound right = body->right();
-	if (sametypeid<CPVarTerm>(*left)) {
+	if (isa<CPVarTerm>(*left)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 		polAddCPVariable(term->varid(), _termtranslator);
 		if (right._isvarid) {
@@ -129,7 +129,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			MinisatID::CPBinaryRel sentence(createAtom(tseitin), term->varid(), comp, right._bound);
 			extAdd(getSolver(), sentence);
 		}
-	} else if (sametypeid<CPSumTerm>(*left)) {
+	} else if (isa<CPSumTerm>(*left)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {
@@ -147,7 +147,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp);
 		}
 	} else {
-		Assert(sametypeid<CPWSumTerm>(*left));
+		Assert(isa<CPWSumTerm>(*left));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 		polAddCPVariables(term->varids(), _termtranslator);
 		if (right._isvarid) {

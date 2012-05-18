@@ -168,7 +168,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
-		if (it->second == IBT_TWOVAL || not sametypeid<Function>(*(it->first))) {
+		if (it->second == IBT_TWOVAL || not isa<Function>(*(it->first))) {
 			continue;
 		}
 		Function* function = dynamic_cast<Function*>(it->first);

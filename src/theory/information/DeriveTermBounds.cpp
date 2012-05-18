@@ -172,14 +172,14 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	case AggFunction::SUM:
 		_minimum = accumulate(_subtermminimums.cbegin(), _subtermminimums.cend(), zero, sumNegative);
 		_maximum = accumulate(_subtermmaximums.cbegin(), _subtermmaximums.cend(), zero, sumPositive);
-		if (sametypeid<QuantSetExpr>(*(t->set()))) {
+		if (isa<QuantSetExpr>(*(t->set()))) {
 			if (maxsize._type != TST_EXACT) {
 				_maximum = NULL; // This means that the upperbound is unknown.
 			} else {
 				_maximum = domElemProd(maxsizeElem, _maximum);
 			}
 		} else {
-			Assert(sametypeid<EnumSetExpr>(*(t->set())));
+			Assert(isa<EnumSetExpr>(*(t->set())));
 		}
 		break;
 	case AggFunction::PROD:

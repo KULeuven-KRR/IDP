@@ -207,7 +207,7 @@ public:
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
-		if (sametypeid<CPVarTerm>(*left)) {
+		if (isa<CPVarTerm>(*left)) {
 			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
@@ -216,7 +216,7 @@ public:
 			} else { // CPBinaryRel
 				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid(), convert(comp), createWeight(right._bound)));
 			}
-		} else if (sametypeid<CPSumTerm>(*left)) {
+		} else if (isa<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 			std::vector<int> weights;
 			weights.resize(term->varids().size(), 1);
@@ -232,7 +232,7 @@ public:
 				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
 			}
 		} else {
-			Assert(sametypeid<CPWSumTerm>(*left));
+			Assert(isa<CPWSumTerm>(*left));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if (right._isvarid) {
 				std::vector<VarId> varids = term->varids();

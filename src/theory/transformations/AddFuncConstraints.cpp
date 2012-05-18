@@ -67,7 +67,7 @@ void AddFuncConstraints::visit(const FuncTerm* t) {
 }
 
 void AddFuncConstraints::visit(const PredForm* pf) {
-	if (sametypeid<Function>(*(pf->symbol()))) {
+	if (isa<Function>(*(pf->symbol()))) {
 		_symbols.insert(dynamic_cast<Function*>(pf->symbol()));
 	}
 	traverse(pf);

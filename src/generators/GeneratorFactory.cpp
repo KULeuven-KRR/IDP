@@ -98,7 +98,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;
-	if (sametypeid<Predicate>(*(atom->symbol()))) {
+	if (isa<Predicate>(*(atom->symbol()))) {
 		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
 		PredInter* inter;
 		if (predicate->type() == ST_NONE) {
@@ -124,7 +124,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 			break;
 		}
 	} else {
-		Assert(sametypeid<Function>(*(atom->symbol())));
+		Assert(isa<Function>(*(atom->symbol())));
 		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
@@ -159,7 +159,7 @@ InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Patt
 		}
 	}
 	/*if (firstout == pattern.size()) { // no output variables
-	 if (sametypeid<BDDInternalPredTable>(*(pt->internTable()))) {
+	 if (isa<BDDInternalPredTable>(*(pt->internTable()))) {
 	 return new LookupGenerator(pt, vars, _universe);
 	 } else {
 	 StructureVisitor::visit(pt);
@@ -425,12 +425,12 @@ void GeneratorFactory::visit(const InverseInternalPredTable* iip) {
 					input = Input::NONE;
 				}
 			}
-			if (sametypeid<StrLessInternalPredTable>(*temp->internTable())) {
+			if (isa<StrLessInternalPredTable>(*temp->internTable())) {
 				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::GEQ);
-			} else if (sametypeid<StrGreaterInternalPredTable>(*temp->internTable())) {
+			} else if (isa<StrGreaterInternalPredTable>(*temp->internTable())) {
 				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::LEQ);
 			} else {
-				Assert(sametypeid<EqualInternalPredTable>(*temp->internTable()));
+				Assert(isa<EqualInternalPredTable>(*temp->internTable()));
 				_generator = new ComparisonGenerator(_universe.tables()[0], _universe.tables()[1], _vars[0], _vars[1], input, CompType::NEQ);
 			}
 		} else {

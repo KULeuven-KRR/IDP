@@ -28,7 +28,7 @@ public:
 	}
 
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
-		if (not sametypeid<Function>(*(atom->symbol())) || atom->type() != AtomKernelType::AKT_TWOVALUED) {
+		if (not isa<Function>(*(atom->symbol())) || atom->type() != AtomKernelType::AKT_TWOVALUED) {
 			return atom;
 		}
 

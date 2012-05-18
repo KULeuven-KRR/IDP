@@ -1316,7 +1316,7 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 	if (left == NULL) {
 		return NULL;
 	}
-	if (not sametypeid<FuncTerm>(*left)) {
+	if (not isa<FuncTerm>(*left)) {
 		funcnameexpected(left->pi());
 		return NULL;
 	}
@@ -1517,7 +1517,7 @@ void Insert::negate(Formula* f) const {
 
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 	if (f && t) {
-		Assert(sametypeid<EqChainForm>(*f));
+		Assert(isa<EqChainForm>(*f));
 		auto ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
 	}

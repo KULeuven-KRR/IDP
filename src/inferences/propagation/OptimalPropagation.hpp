@@ -70,7 +70,7 @@ public:
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
 				const ElementTuple& args = translator->getArgs(atomnr);
-				if (sametypeid<Predicate>(*symbol)) {
+				if (isa<Predicate>(*symbol)) {
 					auto pred = dynamic_cast<Predicate*>(symbol);
 					if (*literal < 0) {
 						result->inter(pred)->makeFalse(args);
@@ -78,7 +78,7 @@ public:
 						result->inter(pred)->makeTrue(args);
 					}
 				} else {
-					Assert(sametypeid<Function>(*symbol));
+					Assert(isa<Function>(*symbol));
 					Function* func = dynamic_cast<Function*>(symbol);
 					if (*literal < 0) {
 						result->inter(func)->graphInter()->makeFalse(args);

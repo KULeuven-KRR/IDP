@@ -28,7 +28,7 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 	for (size_t i = 0; i < headargs.size(); ++i) {
 		auto grounder = headgrounder()->subtermgrounders()[i];
 		// NOTE: can only be a vartermgrounder or a two-valued termgrounder here
-		if (not sametypeid<VarTermGrounder>(*grounder)) {
+		if (not isa<VarTermGrounder>(*grounder)) {
 			auto result = grounder->run(); // TODO running the grounder each time again?
 			Assert(not result.isVariable);
 			if(headargs[i]!=result._domelement){

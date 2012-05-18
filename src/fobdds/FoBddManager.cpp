@@ -221,7 +221,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 	if (_rewriteArithmetic) {
 		// Arithmetic rewriting
 		// 1. Remove functions
-		if (sametypeid<Function>(*symbol) && akt == AtomKernelType::AKT_TWOVALUED) {
+		if (isa<Function>(*symbol) && akt == AtomKernelType::AKT_TWOVALUED) {
 			Function* f = dynamic_cast<Function*>(symbol);
 			Sort* s = SortUtils::resolve(f->outsort(), args.back()->sort());
 			if (s == NULL) {
@@ -243,7 +243,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 			const FOBDDTerm* rightarg = args[1];
 			if (VocabularyUtils::isNumeric(rightarg->sort())) {
 				Assert(VocabularyUtils::isNumeric(leftarg->sort()));
-				if (not sametypeid<FOBDDDomainTerm>(*rightarg) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
+				if (not isa<FOBDDDomainTerm>(*rightarg) || dynamic_cast<const FOBDDDomainTerm*>(rightarg)->value() != createDomElem(0)) {
 					const DomainElement* zero = createDomElem(0);
 					const FOBDDDomainTerm* zero_term = getDomainTerm(get(STDSORT::NATSORT), zero);
 					const FOBDDTerm* minus_rightarg = invert(rightarg);
@@ -345,7 +345,7 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 
 const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right) {
 #ifndef NDEBUG
-	if (not sametypeid<FOBDDAggTerm>(*right)) {
+	if (not isa<FOBDDAggTerm>(*right)) {
 		throw notyetimplemented("Creating aggkernel where right is nog aggterm ");
 		//this can happen when bdds are simplified...
 	}
@@ -438,7 +438,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 		}
 		if (is(func, STDFUNC::PRODUCT) && Vocabulary::std()->contains(func)) {
 			// 3. Execute computable multiplications
-			if (sametypeid<FOBDDDomainTerm>(*(args[0]))) { //First one is a domain term
+			if (isa<FOBDDDomainTerm>(*(args[0]))) { //First one is a domain term
 				auto leftterm = dynamic_cast<const FOBDDDomainTerm*>(args[0]);
 				if (leftterm->value()->type() == DET_INT) {
 					if (leftterm->value()->value()._int == 0) {
@@ -447,7 +447,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 						return args[1];
 					}
 				}
-				if (sametypeid<FOBDDDomainTerm>(*(args[1]))) { // Both are domain terms
+				if (isa<FOBDDDomainTerm>(*(args[1]))) { // Both are domain terms
 					auto rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
 					FuncInter* fi = func->interpretation(NULL);
 					vector<const DomainElement*> copyargs(2);
@@ -456,7 +456,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 					auto result = fi->funcTable()->operator[](copyargs);
 					return getDomainTerm(func->outsort(), result);
 				}
-			} else if (sametypeid<FOBDDDomainTerm>(*(args[1]))) { // Second one is a domain term
+			} else if (isa<FOBDDDomainTerm>(*(args[1]))) { // Second one is a domain term
 				auto rightterm = dynamic_cast<const FOBDDDomainTerm*>(args[1]);
 				if (rightterm->value()->type() == DET_INT) {
 					if (rightterm->value()->value()._int == 0) {
@@ -467,7 +467,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 				}
 			}
 			// 4. Apply distributivity of */2 with respect to +/2
-			if (sametypeid<FOBDDFuncTerm>(*(args[0]))) {
+			if (isa<FOBDDFuncTerm>(*(args[0]))) {
 				const FOBDDFuncTerm* leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
 				if (is(leftterm->func(), STDFUNC::ADDITION) && Vocabulary::std()->contains(leftterm->func())) {
 					vector<const FOBDDTerm*> newleftargs(2);
@@ -482,7 +482,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 					return getFuncTerm(leftterm->func(), newargs);
 				}
 			}
-			if (sametypeid<FOBDDFuncTerm>(*(args[1]))) {
+			if (isa<FOBDDFuncTerm>(*(args[1]))) {
 				auto rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
 				if (is(rightterm->func(), STDFUNC::ADDITION) && Vocabulary::std()->contains(rightterm->func())) {
 					vector<const FOBDDTerm*> newleftargs(2);
@@ -500,10 +500,10 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 			// 5. Apply commutativity and associativity to obtain
 			// a sorted multiplication of the form ((((t1 * t2) * t3) * t4) * ...)
 			//TODO: didn't review this code yet starting from here, first: I'll check Multiplication...
-			if (sametypeid<FOBDDFuncTerm>(*(args[0]))) {
+			if (isa<FOBDDFuncTerm>(*(args[0]))) {
 				auto leftterm = dynamic_cast<const FOBDDFuncTerm*>(args[0]);
 				if (is(leftterm->func(), STDFUNC::PRODUCT) && Vocabulary::std()->contains(leftterm->func())) {
-					if (sametypeid<FOBDDFuncTerm>(*(args[1]))) {
+					if (isa<FOBDDFuncTerm>(*(args[1]))) {
 						const FOBDDFuncTerm* rightterm = dynamic_cast<const FOBDDFuncTerm*>(args[1]);
 						if (is(rightterm->func(), STDFUNC::PRODUCT) && Vocabulary::std()->contains(rightterm->func())) {
 							Function* times = get(STDFUNC::PRODUCT);
@@ -1045,13 +1045,13 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* var
 }
 
 int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
+	if (isa<FOBDDAtomKernel>(*kernel)) {
 		return 1;
-	} else if (sametypeid<FOBDDQuantKernel>(*kernel)) {
+	} else if (isa<FOBDDQuantKernel>(*kernel)) {
 		const FOBDDQuantKernel* qk = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		return longestbranch(qk->bdd()) + 1;
 	} else {
-		Assert(sametypeid<FOBDDAggKernel>(*kernel));
+		Assert(isa<FOBDDAggKernel>(*kernel));
 		const FOBDDAggKernel* ak = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = ak->right()->setexpr();
 		int result = 0;
@@ -1112,7 +1112,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	if (not _rewriteArithmetic) {
 		return NULL;
 	}
-	if (not sametypeid<FOBDDAtomKernel>(*kernel)) {
+	if (not isa<FOBDDAtomKernel>(*kernel)) {
 		return NULL;
 	}
 	auto atom = dynamic_cast<const FOBDDAtomKernel*>(kernel);
@@ -1139,7 +1139,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 #ifndef NDEBUG
-	Assert(sametypeid<FOBDDDomainTerm>(*(atom->args(1))));
+	Assert(isa<FOBDDDomainTerm>(*(atom->args(1))));
 	auto nill = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
 	Assert(
 			(nill->value()->type() == DET_DOUBLE && nill->value()->value()._double == 0) || (nill->value()->type() == DET_INT && nill->value()->value()._int == 0));
@@ -1180,7 +1180,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	if (not (factors.size() == 2 && factors[1] == argument)) {
 		return NULL;
 	}
-	if (not sametypeid<FOBDDDomainTerm>(*(factors[0]))) {
+	if (not isa<FOBDDDomainTerm>(*(factors[0]))) {
 		return NULL;
 	}
 	const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
@@ -1372,7 +1372,7 @@ set<const FOBDDKernel*> FOBDDManager::allkernels(const FOBDD* bdd) {
 		result.insert(falsekernels.cbegin(), falsekernels.cend());
 		result.insert(truekernels.cbegin(), truekernels.cend());
 		result.insert(bdd->kernel());
-		if (sametypeid<FOBDDQuantKernel>(*(bdd->kernel()))) {
+		if (isa<FOBDDQuantKernel>(*(bdd->kernel()))) {
 			auto kernelkernels = allkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd());
 			result.insert(kernelkernels.cbegin(), kernelkernels.cend());
 		}
@@ -1459,7 +1459,7 @@ map<const FOBDDKernel*, tablesize> FOBDDManager::kernelUnivs(const FOBDD* bdd, c
  * Estimates the chance that this kernel evaluates to true
  */
 double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractStructure* structure) {
-	if (sametypeid<FOBDDAggKernel>(*kernel)) {
+	if (isa<FOBDDAggKernel>(*kernel)) {
 		//In principle, Aggkernels have exactly one lefthandside for every other tuple of variables.
 		//Hence the chance that an aggkernel succeeds is 1/leftsize
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
@@ -1472,15 +1472,15 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		return 0;
 	}
 
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
+	if (isa<FOBDDAtomKernel>(*kernel)) {
 		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
 		double chance = 0;
 		PFSymbol* symbol = atomkernel->symbol();
 		PredInter* pinter;
-		if (sametypeid<Predicate>(*symbol)) {
+		if (isa<Predicate>(*symbol)) {
 			pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
 		} else {
-			Assert(sametypeid<Function>(*symbol));
+			Assert(isa<Function>(*symbol));
 			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
 		const PredTable* pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct();
@@ -1513,7 +1513,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 		}
 		return chance;
 	} else { // case of a quantification kernel
-		Assert(sametypeid<FOBDDQuantKernel> (*kernel));
+		Assert(isa<FOBDDQuantKernel> (*kernel));
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 		// get the table of the sort of the quantified variable
@@ -1673,14 +1673,14 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 
-	if (sametypeid<FOBDDAggKernel>(*kernel)) {
+	if (isa<FOBDDAggKernel>(*kernel)) {
 		//TODO: very ad-hoc hack to get some result.  Think this through!!!
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = aggk->right()->setexpr();
 		double d = 0;
 		auto newvars = vars;
 
-		if (sametypeid<FOBDDVariable>(*(aggk->left()))) {
+		if (isa<FOBDDVariable>(*(aggk->left()))) {
 			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
 			newvars.erase(leftvar);
 		}
@@ -1843,7 +1843,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 		double result = tce.run(pt, pattern);
 		return result;
 	} else {
-		Assert(sametypeid<FOBDDQuantKernel>(*kernel));
+		Assert(isa<FOBDDQuantKernel>(*kernel));
 		// NOTE: implement a better estimator if backjumping on bdds is implemented
 		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		set<const FOBDDDeBruijnIndex*> newindices;

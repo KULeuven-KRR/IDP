@@ -152,7 +152,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 		if (translator->isInputAtom(atomnr)) {
 			PFSymbol* symbol = translator->getSymbol(atomnr);
 			const ElementTuple& args = translator->getArgs(atomnr);
-			if (sametypeid<Predicate>(*symbol)) {
+			if (isa<Predicate>(*symbol)) {
 				Predicate* pred = dynamic_cast<Predicate*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(pred)->makeFalse(args);
@@ -160,7 +160,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 					init->inter(pred)->makeTrue(args);
 				}
 			} else {
-				Assert(sametypeid<Function>(*symbol));
+				Assert(isa<Function>(*symbol));
 				Function* func = dynamic_cast<Function*>(symbol);
 				if (literal->hasSign()) {
 					init->inter(func)->graphInter()->makeFalse(args);

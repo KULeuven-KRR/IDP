@@ -1059,12 +1059,12 @@ int domainatomIndex(lua_State* L) {
 	auto str = *index._value._string;
 	if (str == "symbol") {
 		auto s = atom->symbol();
-		if (sametypeid<Predicate>(*s)) {
+		if (isa<Predicate>(*s)) {
 			auto sp = new set<Predicate*>();
 			sp->insert(dynamic_cast<Predicate*>(s));
 			return convertToLua(L, InternalArgument(sp));
 		} else {
-			Assert(sametypeid<Function>(*s));
+			Assert(isa<Function>(*s));
 			auto sf = new set<Function*>();
 			sf->insert(dynamic_cast<Function*>(s));
 			return convertToLua(L, InternalArgument(sf));

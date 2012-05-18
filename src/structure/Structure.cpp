@@ -300,13 +300,13 @@ void Structure::autocomplete() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
 			auto pt1 = it->second->ct();
-			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
+			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
 				auto pt2 = it->second->cf();
-				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
+				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->pt();
 				}
 				completeSortTable(pt2, it->first, _name);
@@ -315,17 +315,17 @@ void Structure::autocomplete() {
 	}
 	// Adding elements from function interpretations to sorts
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		if (it->second->funcTable() && sametypeid<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
+		if (it->second->funcTable() && isa<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
 			addUNAPattern(it->first);
 		} else {
 			auto pt1 = it->second->graphInter()->ct();
-			if (sametypeid<InverseInternalPredTable>(*(pt1->internTable()))) {
+			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->graphInter()->pf();
 			}
 			completeSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
 				auto pt2 = it->second->graphInter()->cf();
-				if (sametypeid<InverseInternalPredTable>(*(pt2->internTable()))) {
+				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->graphInter()->pt();
 				}
 				completeSortTable(pt2, it->first, _name);
@@ -540,10 +540,10 @@ FuncInter* Structure::inter(Function* f) const {
 }
 
 PredInter* Structure::inter(PFSymbol* s) const {
-	if (sametypeid<Predicate>(*s)) {
+	if (isa<Predicate>(*s)) {
 		return inter(dynamic_cast<Predicate*>(s));
 	} else {
-		Assert(sametypeid<Function>(*s));
+		Assert(isa<Function>(*s));
 		return inter(dynamic_cast<Function*>(s))->graphInter();
 	}
 }

@@ -28,7 +28,7 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto t = get<0>(args);
 		Theory* theory = NULL;
-		if (sametypeid<Theory>(*t)) {
+		if (isa<Theory>(*t)) {
 			theory = (dynamic_cast<Theory*>(t))->clone(); //Because the doCalculateDefinitions Inferences changes the theory.
 		} else {
 			Error::error("Can only calculate definitions with a non-ground theory.");

@@ -54,7 +54,7 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 	} else if (_type == AtomKernelType::AKT_CT) {
 		output << "<ct>";
 	}
-	if (sametypeid<Predicate>(*_symbol)) {
+	if (isa<Predicate>(*_symbol)) {
 		Assert(_args.size()==_symbol->nrSorts());
 		if (_symbol->nrSorts() > 0) {
 			output << "(";
@@ -83,7 +83,7 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 
 		}
 	} else {
-		Assert(sametypeid<Function>(*_symbol));
+		Assert(isa<Function>(*_symbol));
 		if (_symbol->nrSorts() > 1) {
 			output << "(";
 			output << toString(args(0));

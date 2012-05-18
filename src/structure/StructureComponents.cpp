@@ -3322,7 +3322,7 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 			throw IdpException(ss.str());
 		}
 	}
-	if (sametypeid<InverseInternalPredTable>(*(from->internTable()))) {
+	if (isa<InverseInternalPredTable>(*(from->internTable()))) {
 		to->internTable()->decrementRef();
 		auto old = to->internTable();
 		to->add(tuple);

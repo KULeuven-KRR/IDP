@@ -52,7 +52,7 @@ public:
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
 				auto args = translator->getArgs(atomnr);
-				if (sametypeid<Predicate>(*symbol)) {
+				if (isa<Predicate>(*symbol)) {
 					auto pred = dynamic_cast<Predicate*>(symbol);
 					if (sign(*literal)) {
 						result->inter(pred)->makeFalse(args);
@@ -60,7 +60,7 @@ public:
 						result->inter(pred)->makeTrue(args);
 					}
 				} else {
-					Assert(sametypeid<Function>(*symbol));
+					Assert(isa<Function>(*symbol));
 					auto func = dynamic_cast<Function*>(symbol);
 					if (sign(*literal)) {
 						result->inter(func)->graphInter()->makeFalse(args);

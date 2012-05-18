@@ -89,11 +89,11 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundDefinition& def) {
 	for (auto i = def.begin(); i != def.end(); ++i) {
-		if (sametypeid<PCGroundRule>(*(*i).second)) {
+		if (isa<PCGroundRule>(*(*i).second)) {
 			auto rule = dynamic_cast<PCGroundRule*>((*i).second);
 			add(def.id(), rule);
 		} else {
-			Assert(sametypeid<AggGroundRule>(*(*i).second));
+			Assert(isa<AggGroundRule>(*(*i).second));
 			auto rule = dynamic_cast<AggGroundRule*>((*i).second);
 			add(rule->setnr(), def.id(), (rule->aggtype() != AggFunction::CARD));
 			Policy::polAdd(def.id(), rule);
@@ -235,10 +235,10 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		//clog <<"Adding tseitin" <<atom <<" to grounding" <<nt();
 		_printedtseitins.insert(tseitin);
 		auto tsbody = translator()->getTsBody(tseitin);
-		if (sametypeid<PCTsBody>(*tsbody)) {
+		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
 			add(tseitin, body->type(), body->body(), body->conj(), defnr);
-		} else if (sametypeid<AggTsBody>(*tsbody)) {
+		} else if (isa<AggTsBody>(*tsbody)) {
 			AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
 				Assert(defnr != getIDForUndefined());
@@ -247,12 +247,12 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			} else {
 				add(tseitin, body);
 			}
-		} else if (sametypeid<CPTsBody>(*tsbody)) {
+		} else if (isa<CPTsBody>(*tsbody)) {
 			CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
 			Assert(body->type() != TsType::RULE);
 			add(tseitin, body);
 		} else {
-			Assert(sametypeid<LazyTsBody>(*tsbody));
+			Assert(isa<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
 			body->notifyTheoryOccurence(tseitin);
 		}
@@ -266,24 +266,24 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 	}
 	_foldedterms.insert(cpterm);
 
-	if (sametypeid<CPVarTerm>(*cpterm)) {
+	if (isa<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
 		if (termtranslator()->function(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
-			if ((sametypeid<CPSumTerm>(*left) || sametypeid<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
+			if ((isa<CPSumTerm>(*left) || isa<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
 				Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
 				return left;
 			}
 		}
-	} else if (sametypeid<CPSumTerm>(*cpterm)) {
+	} else if (isa<CPSumTerm>(*cpterm)) {
 		auto sumterm = dynamic_cast<CPSumTerm*>(cpterm);
 		std::vector<VarId> newvarids;
 		for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
 			if (termtranslator()->function(*it) == NULL) {
 				CPTsBody* cprelation = termtranslator()->cprelation(*it);
 				CPTerm* left = foldCPTerm(cprelation->left());
-				if (sametypeid<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+				if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
 					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
 					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
 					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
@@ -295,7 +295,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 			}
 		}
 		sumterm->varids(newvarids);
-	} else if (sametypeid<CPWSumTerm>(*cpterm)) {
+	} else if (isa<CPWSumTerm>(*cpterm)) {
 		//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
 		//TODO Folding for weighted sumterms
 	}

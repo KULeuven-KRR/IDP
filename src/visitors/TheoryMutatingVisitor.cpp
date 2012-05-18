@@ -69,7 +69,7 @@ Formula* TheoryMutatingVisitor::visit(AggForm* af) {
 
 Rule* TheoryMutatingVisitor::visit(Rule* r) {
 	auto newhead = r->head()->accept(this);
-	Assert(sametypeid<PredForm>(*newhead));
+	Assert(isa<PredForm>(*newhead));
 	r->head(dynamic_cast<PredForm*>(newhead));
 	r->body(r->body()->accept(this));
 	return r;

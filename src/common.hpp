@@ -291,7 +291,7 @@ std::string* StringPointer(const char* str); //!< Returns a shared pointer to th
 std::string* StringPointer(const std::string& str); //!< Returns a shared pointer to the given string
 
 template<class T2, class T>
-bool sametypeid(const T& object) {
+bool isa(const T& object) {
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T2>::isPointer, CannotCompareTypeIDofPointers);
 	return (dynamic_cast<const T2*>(&object) != NULL);
