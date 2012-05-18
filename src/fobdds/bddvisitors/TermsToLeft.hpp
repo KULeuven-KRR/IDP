@@ -31,7 +31,7 @@ public:
 	const FOBDDKernel* change(const FOBDDAtomKernel* atom) {
 		const FOBDDTerm* lhs = NULL;
 		const FOBDDTerm* rhs = NULL;
-		if (sametypeid<Function>(*(atom->symbol()))) { // f(\xx)=y
+		if (isa<Function>(*(atom->symbol()))) { // f(\xx)=y
 			auto lhsterms = atom->args();
 			lhsterms.pop_back();
 			lhs = _manager->getFuncTerm(dynamic_cast<Function*>(atom->symbol()), lhsterms);

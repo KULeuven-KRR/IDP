@@ -51,7 +51,7 @@ public:
 		_result = at;
 	}
 	void visit(const FOBDDFuncTerm* ft) {
-		if (isMultiplication(ft) && sametypeid<FOBDDDomainTerm>(*(ft->args(0)))) {
+		if (isMultiplication(ft) && isa<FOBDDDomainTerm>(*(ft->args(0)))) {
 			ft->args(1)->accept(this);
 		} else {
 			_result = ft;

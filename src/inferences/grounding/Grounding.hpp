@@ -61,7 +61,6 @@ public:
 	//NOTE: modifies the theory and the structure. Clone before passing them!
 	static std::shared_ptr<GroundingInference> createGroundingInference(AbstractTheory* theory, AbstractStructure* structure, Term* term,
 			TraceMonitor* tracemonitor, GroundingReciever* solver) {
-
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
 		}
@@ -82,8 +81,11 @@ public:
 				_tracemonitor(tracemonitor),
 				_minimizeterm(minimize),
 				_reciever(solver),
-				_prepared(false),
-				_grounder(NULL){
+				_grounder(NULL),
+				_prepared(false) {
+		if(getGlobal()->getOptions()->symmetryBreaking()!=SymmetryBreaking::NONE && minimize!=NULL){
+			throw notyetimplemented("Breaking symmetry in optimization problems.");
+		}
 	}
 
 	~GroundingInference() {
@@ -143,8 +145,11 @@ public:
 			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), GroundStructureInfo { _structure, symstructure }, grounding);
 			optimgrounder->toplevelRun();
 		}
+
 		// Execute symmetry breaking
 		addSymmetryBreaking(_theory, _structure, grounding);
+
+		// Print grounding statistics
 		if (verbosity() > 0) {
 			auto maxsize = _grounder->getFullGroundSize();
 			//cout <<"full|grounded|%|time\n";

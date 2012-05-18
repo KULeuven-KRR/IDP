@@ -330,10 +330,10 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
-			if (sametypeid<Function>(*symbol)) {
+			if (isa<Function>(*symbol)) {
 				structure->changeInter(dynamic_cast<Function*>(symbol), new FuncInter(bddinter));
 			} else {
-				Assert(sametypeid<Predicate>(*symbol));
+				Assert(isa<Predicate>(*symbol));
 				structure->changeInter(dynamic_cast<Predicate*>(symbol), bddinter);
 			}
 			continue;
@@ -457,7 +457,7 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 				//Propagate the newly found domain further down.
 				schedule(f, DOWN, ct, *it);
 			}
-			if (sametypeid<PredForm>(*f)) {
+			if (isa<PredForm>(*f)) {
 				const PredForm* pf = dynamic_cast<const PredForm*>(f);
 				auto it = _leafupward.find(pf);
 				if (it != _leafupward.cend()) {

@@ -1419,10 +1419,10 @@ void Vocabulary::add(Sort* s) {
 
 // TODO cleaner?
 void Vocabulary::add(PFSymbol* symbol) {
-	if (sametypeid<Predicate>(*symbol)) {
+	if (isa<Predicate>(*symbol)) {
 		add(dynamic_cast<Predicate*>(symbol));
 	} else {
-		Assert(sametypeid<Function>(*symbol));
+		Assert(isa<Function>(*symbol));
 		add(dynamic_cast<Function*>(symbol));
 	}
 }
@@ -1737,10 +1737,10 @@ bool Vocabulary::contains(const Function* f) const {
 }
 
 bool Vocabulary::contains(const PFSymbol* s) const {
-	if (sametypeid<Predicate>(*s)) {
+	if (isa<Predicate>(*s)) {
 		return contains(dynamic_cast<const Predicate*>(s));
 	} else {
-		Assert(sametypeid<Function>(*s));
+		Assert(isa<Function>(*s));
 		return contains(dynamic_cast<const Function*>(s));
 	}
 }
@@ -1847,7 +1847,7 @@ Sort* intRangeSort(int min, int max) {
 }
 
 bool isComparisonPredicate(const PFSymbol* symbol) {
-	return (sametypeid<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
+	return (isa<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
 }
 
 bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {

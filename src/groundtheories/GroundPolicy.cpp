@@ -135,7 +135,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 		CPReification* cpr = *it;
 		s << translator->printLit(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
-		if (sametypeid<CPSumTerm>(*left)) {
+		if (isa<CPSumTerm>(*left)) {
 			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
 			s << "sum[ ";
 			bool begin = true;
@@ -147,7 +147,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 				s << termtranslator->printTerm(*vit);
 			}
 			s << " ]";
-		} else if (sametypeid<CPWSumTerm>(*left)) {
+		} else if (isa<CPWSumTerm>(*left)) {
 			CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
 			s << "wsum[ ";
 			bool begin = true;
@@ -162,7 +162,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 			}
 			s << " ]";
 		} else {
-			Assert(sametypeid<CPVarTerm>(*left));
+			Assert(isa<CPVarTerm>(*left));
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << termtranslator->printTerm(cpt->varid());
 		}

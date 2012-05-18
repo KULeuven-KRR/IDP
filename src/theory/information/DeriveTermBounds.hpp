@@ -15,13 +15,18 @@
 
 #include "visitors/TheoryVisitor.hpp"
 #include <vector>
+#include <exception>
 
 class AbstractStructure;
 class DomainElement;
 
+class BoundsUnderivableException: public std::exception{
+
+};
+
 /**
  * Derives lower and upper bounds for a term given a structure.
- * Returns NULL when it cannot derive a bound.
+ * Returns <NULL, NULL> when it cannot derive a bound.
  */
 class DeriveTermBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
@@ -37,8 +42,12 @@ public:
 	std::vector<const DomainElement*> execute(T t, const AbstractStructure* str) {
 		Assert(str != NULL);
 		_structure = str;
-		t->accept(this);
-		return std::vector<const DomainElement*> { _minimum, _maximum };
+		try{
+			t->accept(this);
+			return std::vector<const DomainElement*> { _minimum, _maximum };
+		}catch(const BoundsUnderivableException& e){
+			return std::vector<const DomainElement*> { NULL, NULL};
+		}
 	}
 
 protected:

@@ -259,7 +259,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PredForm* newatom;
-				if (sametypeid<VarTerm>(*(atom->subterms()[0])) && dynamic_cast<VarTerm*>(atom->subterms()[0])->var() == atomvars[n]
+				if (isa<VarTerm>(*(atom->subterms()[0])) && dynamic_cast<VarTerm*>(atom->subterms()[0])->var() == atomvars[n]
 						&& (is(atom->symbol(), STDPRED::GT) || is(atom->symbol(), STDPRED::LT))) {
 					if (is(atom->symbol(), STDPRED::GT)) {
 						newatom = new PredForm(atom->sign(), get(STDPRED::LT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
@@ -326,12 +326,12 @@ PredForm* graphOneFunction(PredForm* atom) {
 	Assert(is(atom->symbol(), STDPRED::EQ));
 	FuncTerm* ft;
 	Term* rangeTerm;
-	if (sametypeid<FuncTerm>(*(atom->subterms()[1]))) {
+	if (isa<FuncTerm>(*(atom->subterms()[1]))) {
 		ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 		rangeTerm = atom->subterms()[0];
 		return graphOneFunction(atom, ft, rangeTerm);
 	} else {
-		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
+		Assert(isa<FuncTerm>(*(atom->subterms()[0])));
 		ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		rangeTerm = atom->subterms()[1];
 	}
@@ -375,27 +375,27 @@ PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Patt
 PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars) {
 	Assert(is(atom->symbol(), STDPRED::EQ));
 	Assert(FormulaUtils::containsFuncTermsOutsideOfSets(atom));
-	if (sametypeid<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
-		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
+	if (isa<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
+		Assert(isa<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (D)
 			return rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
 		} else { // Case B
 			return graphOneFunction(atom, ft, atom->subterms()[0]);
 		}
-	} else if (sametypeid<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
-		Assert(sametypeid<FuncTerm>(*(atom->subterms()[0])));
+	} else if (isa<DomainTerm>(*(atom->subterms()[1]))) { // Case (A) or (C)
+		Assert(isa<FuncTerm>(*(atom->subterms()[0])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (C)
 			return rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
 		} else { // Case (B)
 			return graphOneFunction(atom, ft, atom->subterms()[1]);
 		}
-	} else if (sametypeid<FuncTerm>(*(atom->subterms()[0]))) { // Case (A)
+	} else if (isa<FuncTerm>(*(atom->subterms()[0]))) { // Case (A)
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		return graphOneFunction(atom, ft, atom->subterms()[1]);
 	} else { // Case (B)
-		Assert(sametypeid<FuncTerm>(*(atom->subterms()[1])));
+		Assert(isa<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 		return graphOneFunction(atom, ft, atom->subterms()[0]);
 	}
@@ -432,8 +432,8 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 	//These vectors should be in the order that the elements occur in atom.
 	//If multiple occurrences, they should also occur multiple times in atompattern
 	for (auto it = atom->subterms().cbegin(); it != atom->subterms().cend(); ++it) {
-		Assert(sametypeid<VarTerm>(**it) || sametypeid<DomainTerm>(**it));
-		if (sametypeid<VarTerm>(**it)) {
+		Assert(isa<VarTerm>(**it) || isa<DomainTerm>(**it));
+		if (isa<VarTerm>(**it)) {
 			auto var = (dynamic_cast<VarTerm*>(*it))->var();
 			// For each var, find its position, pattern and table
 			unsigned int pos = 0;
@@ -455,7 +455,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 #ifdef DEBUG // Check that the var has really been added in place of the domainterm
 			bool found = false;
 			for (auto it = newatom->subterms().cbegin(); it != newatom->subterms().cend(); ++it) {
-				if (sametypeid<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var() == var) {
+				if (isa<VarTerm>(**it) && dynamic_cast<VarTerm*>(*it)->var() == var) {
 					found = true;
 				}
 				Assert((*it)!=domterm);
@@ -598,7 +598,7 @@ Assert(checkInput(pattern, vars, atomvars, universe));
 	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsAggTerms(newatom)) {
 			auto newform = FormulaUtils::graphFuncsAndAggs(newatom);
-			Assert(sametypeid<AggForm>(*newform));
+			Assert(isa<AggForm>(*newform));
 			auto transform = dynamic_cast<AggForm*>(newform);
 			result = createFromAggForm(transform, pattern, vars, atomvars, structure, branchToGenerate, universe);
 			transform->recursiveDelete();
@@ -624,15 +624,15 @@ Assert(checkInput(pattern, vars, atomvars, universe));
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform);
 	FormulaUtils::flatten(newform);
-	if (not sametypeid<QuantForm>(*newform)) {
+	if (not isa<QuantForm>(*newform)) {
 		throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");
 	}
 	QuantForm *quantform = dynamic_cast<QuantForm*>(newform);
-	Assert(sametypeid<BoolForm>(*(quantform->subformula())));
+	Assert(isa<BoolForm>(*(quantform->subformula())));
 	BoolForm *boolform = dynamic_cast<BoolForm*>(quantform->subformula());
 	Assert(boolform->isConjWithSign());
 	for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
-		Assert(sametypeid<PredForm>(**it)||sametypeid<AggForm>(**it));
+		Assert(isa<PredForm>(**it)||isa<AggForm>(**it));
 	}
 	Formula *origatom = boolform->subformulas().back();
 	//All variables that are still free: the original free variables + the quantvars
@@ -672,12 +672,12 @@ Assert(checkInput(pattern, vars, atomvars, universe));
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fobddvars, universe));
-	if (sametypeid<FOBDDAggKernel>(*kernel)) {
+	if (isa<FOBDDAggKernel>(*kernel)) {
 		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), pattern, vars, fobddvars, structure, branchToGenerate, universe);
 	}
-	if (sametypeid<FOBDDAtomKernel>(*kernel)) {
+	if (isa<FOBDDAtomKernel>(*kernel)) {
 		auto formula = _manager->toFormula(kernel);
-		Assert(sametypeid<PredForm>(*formula) || sametypeid<AggForm>(*formula));
+		Assert(isa<PredForm>(*formula) || isa<AggForm>(*formula));
 		vector<Variable*> atomvars;
 		for (auto it = fobddvars.cbegin(); it != fobddvars.cend(); ++it) {
 			atomvars.push_back((*it)->variable());
@@ -691,7 +691,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 	}
 
 	// Quantification kernel
-	Assert(sametypeid<FOBDDQuantKernel>(*kernel));
+	Assert(isa<FOBDDQuantKernel>(*kernel));
 	auto quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
 	BddGeneratorData quantdata;
@@ -778,11 +778,11 @@ InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fovars, universe));
-	if (sametypeid<PredForm>(*f)) {
+	if (isa<PredForm>(*f)) {
 		auto newf = dynamic_cast<PredForm*>(f);
 		return createFromPredForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
 	}
-	Assert(sametypeid<AggForm>(*f));
+	Assert(isa<AggForm>(*f));
 	auto newf = dynamic_cast<AggForm*>(f);
 	return createFromAggForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);
 }
@@ -800,7 +800,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	const DomElemContainer* left;
 	Pattern leftpattern;
 	for (unsigned int n = 0; n < vars.size(); n++) {
-		if (not sametypeid<FOBDDVariable>(*(ak->left())) || ak->left() != fobddvars[n]) {
+		if (not isa<FOBDDVariable>(*(ak->left())) || ak->left() != fobddvars[n]) {
 			if (pattern[n] == Pattern::OUTPUT) {
 				freevars.push_back(vars[n]);
 				freetables.push_back(universe.tables()[n]);

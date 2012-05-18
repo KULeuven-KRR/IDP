@@ -114,6 +114,7 @@ public:
 	template<typename Visitor, typename List>
 	void visitList(Visitor v, const List& list) {
 		for (auto i = list.cbegin(); i < list.cend(); ++i) {
+			CHECKTERMINATION
 			(*i)->accept(v);
 		}
 	}
@@ -124,6 +125,7 @@ public:
 		setTermTranslator(g->termtranslator());
 		startTheory();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
+			CHECKTERMINATION
 			visit(*i);
 		}
 		visitList(this, g->getCPReifications());
@@ -131,13 +133,13 @@ public:
 		visitList(this, g->getAggregates());
 		visitList(this, g->getFixpDefinitions());
 		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
+			CHECKTERMINATION
 			_currentdefnr = (*i).second->id();
 			openDefinition(_currentdefnr);
 			(*i).second->accept(this);
 			closeDefinition();
 		}
 
-		// FIXME
 		if (writeTranlation()) {
 			output() << "=== Atomtranslation ===" << "\n";
 			GroundTranslator* translator = g->translator();
@@ -170,6 +172,7 @@ public:
 	void visit(const GroundDefinition* d) {
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
+			CHECKTERMINATION
 			(*it).second->accept(this);
 		}
 	}
@@ -207,7 +210,7 @@ public:
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
 		CPBound right = cpr->_body->right();
-		if (sametypeid<CPVarTerm>(*left)) {
+		if (isa<CPVarTerm>(*left)) {
 			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
@@ -216,7 +219,7 @@ public:
 			} else { // CPBinaryRel
 				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid(), convert(comp), createWeight(right._bound)));
 			}
-		} else if (sametypeid<CPSumTerm>(*left)) {
+		} else if (isa<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
 			std::vector<int> weights;
 			weights.resize(term->varids().size(), 1);
@@ -232,7 +235,7 @@ public:
 				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
 			}
 		} else {
-			Assert(sametypeid<CPWSumTerm>(*left));
+			Assert(isa<CPWSumTerm>(*left));
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if (right._isvarid) {
 				std::vector<VarId> varids = term->varids();
@@ -309,6 +312,7 @@ private:
 			} else {
 				std::vector<MinisatID::Weight> valuelist;
 				for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
+					CHECKTERMINATION
 					Assert((*it)->type()==DomainElementType::DET_INT);
 					valuelist.push_back(createWeight((*it)->value()._int));
 				}

@@ -23,7 +23,7 @@ TEST(IteratorInferenceTest, IntDomain) {
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
 	ASSERT_TRUE(itRes._type == AT_DOMAINITERATOR);
-	ASSERT_TRUE(sametypeid<SortIterator>(*(itRes._value._sortiterator)));
+	ASSERT_TRUE(isa<SortIterator>(*(itRes._value._sortiterator)));
 
 	auto daiInf = DomainDerefAndIncrementInference<int>();
 	auto daiRes1 = daiInf.execute({ itRes, InternalArgument(0) });
@@ -47,7 +47,7 @@ TEST(IteratorInferenceTest, DoubleDomain) {
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
 	ASSERT_TRUE(itRes._type == AT_DOMAINITERATOR);
-	ASSERT_TRUE(sametypeid<SortIterator>(*(itRes._value._sortiterator)));
+	ASSERT_TRUE(isa<SortIterator>(*(itRes._value._sortiterator)));
 
 	auto daiInf = DomainDerefAndIncrementInference<double>();
 	auto daiRes1 = daiInf.execute({ itRes, InternalArgument(0) });
@@ -71,7 +71,7 @@ TEST(IteratorInferenceTest, StringDomain) {
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
 	ASSERT_TRUE(itRes._type == AT_DOMAINITERATOR);
-	ASSERT_TRUE(sametypeid<SortIterator>(*(itRes._value._sortiterator)));
+	ASSERT_TRUE(isa<SortIterator>(*(itRes._value._sortiterator)));
 
 	auto daiInf = DomainDerefAndIncrementInference<std::string*>();
 	auto daiRes1 = daiInf.execute({ itRes, InternalArgument(0) });

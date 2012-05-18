@@ -50,23 +50,23 @@ struct KernelOrder {
 
 template<typename Type>
 bool isBddDomainTerm(Type value) {
-	return sametypeid<FOBDDDomainTerm>(*value);
+	return isa<FOBDDDomainTerm>(*value);
 }
 
 template<typename Type>
 bool isBddFuncTerm(Type value) {
-	return sametypeid<FOBDDFuncTerm>(*value);
+	return isa<FOBDDFuncTerm>(*value);
 }
 
 template<typename Type>
 const FOBDDDomainTerm* castBddDomainTerm(Type term) {
-	Assert(sametypeid<const FOBDDDomainTerm>(*term));
+	Assert(isa<const FOBDDDomainTerm>(*term));
 	return dynamic_cast<const FOBDDDomainTerm*>(term);
 }
 
 template<typename Type>
 const FOBDDFuncTerm* castBddFuncTerm(Type term) {
-	Assert(sametypeid<const FOBDDFuncTerm>(*term));
+	Assert(isa<const FOBDDFuncTerm>(*term));
 	return dynamic_cast<const FOBDDFuncTerm*>(term);
 }
 

@@ -183,7 +183,7 @@ protected:
 		fak->left()->accept(this);
 		auto left = _currterm;
 		fak->right()->accept(this);
-		Assert(sametypeid<AggTerm>(*_currterm));
+		Assert(isa<AggTerm>(*_currterm));
 		auto right = dynamic_cast<AggTerm*>(_currterm);
 		_currformula = new AggForm(SIGN::POS, left, fak->comp(), right, FormulaParseInfo());
 	}

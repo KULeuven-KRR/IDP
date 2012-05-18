@@ -32,7 +32,7 @@ int convertToLua(lua_State*, InternalArgument);
 
 template<typename Object>
 void addGlobal(const std::string& name, Object v) {
-	//std::cerr <<"Adding " <<name <<" as global\n";
+//	std::cerr <<"Adding " <<name <<" as global\n";
 	convertToLua(getState(), InternalArgument(v));
 	lua_setglobal(getState(), name.c_str());
 }
@@ -43,6 +43,8 @@ void addGlobal(Object v) {
 }
 
 template<> void addGlobal(UserProcedure* p);
+
+void checkedAddToGlobal(Namespace* ns);
 
 Vocabulary* vocabulary(InternalArgument*);
 AbstractTheory* theory(InternalArgument*);

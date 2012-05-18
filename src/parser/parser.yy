@@ -119,6 +119,7 @@ typedef std::list<isp>				lisp;
 %token LFD
 %token GFD
 %token NEWLINE
+%token LUAVARARG
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -840,7 +841,9 @@ proc_sig			: '(' ')'
 					;
 
 args				: args ',' identifier	{ getInserter().procarg(*$3);		}
+					| args ',' LUAVARARG	{ getInserter().procarg("...");		}
 					| identifier			{ getInserter().procarg(*$1);		}
+					| LUAVARARG				{ getInserter().procarg("...");		}
 					;
 
 %%

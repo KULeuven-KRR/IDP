@@ -18,25 +18,23 @@
 using namespace std;
 
 void DeriveTermBounds::traverse(const Term* t) {
-	ElementTuple minsubterms, maxsubterms;
+	_subtermminimums.clear();
+	_subtermmaximums.clear();
 	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		minsubterms.push_back(_minimum);
-		maxsubterms.push_back(_maximum);
+		_subtermminimums.push_back(_minimum);
+		_subtermmaximums.push_back(_maximum);
 	}
-	_subtermminimums = minsubterms;
-	_subtermmaximums = maxsubterms;
 }
 
 void DeriveTermBounds::traverse(const SetExpr* e) {
-	ElementTuple minsubterms, maxsubterms;
+	_subtermminimums.clear();
+	_subtermmaximums.clear();
 	for (auto it = e->subterms().cbegin(); it != e->subterms().cend(); ++it) {
 		(*it)->accept(this);
-		minsubterms.push_back(_minimum);
-		maxsubterms.push_back(_maximum);
+		_subtermminimums.push_back(_minimum);
+		_subtermmaximums.push_back(_maximum);
 	}
-	_subtermminimums = minsubterms;
-	_subtermmaximums = maxsubterms;
 }
 
 void DeriveTermBounds::visit(const DomainTerm* t) {
@@ -49,12 +47,28 @@ void DeriveTermBounds::visit(const VarTerm* t) {
 	auto domain = _structure->inter(t->sort());
 	Assert(domain != NULL);
 	if (not domain->approxFinite()) {
-		_minimum = NULL;
-		_maximum = NULL;
+		throw BoundsUnderivableException();
 	} else {
 		_minimum = domain->first();
 		_maximum = domain->last();
 	}
+}
+
+inline STDFUNC operator++(STDFUNC& x) {
+	return x = (STDFUNC) (((int) (x) + 1));
+}
+inline STDFUNC operator*(STDFUNC& x) {
+	return x;
+}
+
+STDFUNC getStdFunction(Function* function) {
+	Assert(function->builtin());
+	for (auto i = STDFUNC::FIRST; i != STDFUNC::LAST; ++i) {
+		if (is(function, *i)) {
+			return *i;
+		}
+	}
+	throw IdpException("Invalid code path"); // NOTE: should not get here as all builtin functions should be covered
 }
 
 void DeriveTermBounds::visit(const FuncTerm* t) {
@@ -79,54 +93,65 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		Assert(function->interpretation(_structure) != NULL);
 		auto functable = function->interpretation(_structure)->funcTable();
 
-		if (is(function, STDFUNC::ADDITION)) {
+		switch (getStdFunction(function)) {
+		case STDFUNC::ADDITION:
 			_minimum = (*functable)[_subtermminimums];
 			_maximum = (*functable)[_subtermmaximums];
-		} else if (is(function, STDFUNC::SUBSTRACTION)) {
+			break;
+		case STDFUNC::SUBSTRACTION:
 			_minimum = (*functable)[ElementTuple { _subtermminimums[0], _subtermmaximums[1] }];
 			_maximum = (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }];
-		} else if (is(function, STDFUNC::ABS)) {
+			break;
+		case STDFUNC::ABS:
 			_minimum = createDomElem(0);
 			_maximum = std::max((*functable)[_subtermminimums], (*functable)[_subtermmaximums]);
-		} else if (is(function, STDFUNC::UNARYMINUS)) {
+			break;
+		case STDFUNC::UNARYMINUS:
 			_minimum = (*functable)[_subtermmaximums];
 			_maximum = (*functable)[_subtermminimums];
-		} else if (is(function, STDFUNC::PRODUCT)) {
+			break;
+		case STDFUNC::PRODUCT: {
 			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
 			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[0], _subtermminimums[1] }], (*functable)[ElementTuple {
 					_subtermminimums[0], _subtermmaximums[1] }], (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }],
 					(*functable)[ElementTuple { _subtermmaximums[0], _subtermmaximums[1] }] };
 			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
-		} else if (is(function, STDFUNC::MAXELEM)) {
+			break;
+		}
+		case STDFUNC::MAXELEM: {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			_maximum = domain->last();
 			_minimum = domain->last();
-
-		} else if (is(function, STDFUNC::MINELEM)) {
+			break;
+		}
+		case STDFUNC::MINELEM: {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			_maximum = domain->first();
 			_minimum = domain->first();
-		} else if (is(function, STDFUNC::MODULO)) {
+			break;
+		}
+		case STDFUNC::MODULO:
 			_maximum = createDomElem(0);
 			_minimum = _subtermmaximums[1];
-		} else {
-			std::stringstream ss;
-			ss << "Deriving term bounds for function" << function->name() << ".";
-			throw notyetimplemented(ss.str());
-			//FIXME: All operations should be covered...
-			_minimum = NULL;
-			_maximum = NULL;
+			break;
+		case STDFUNC::DIVISION:
+			throw BoundsUnderivableException(); // TODO
+		case STDFUNC::EXPONENTIAL:
+			throw BoundsUnderivableException(); // TODO
+		case STDFUNC::SUCCESSOR:
+			throw BoundsUnderivableException(); // TODO
+		case STDFUNC::PREDECESSOR:
+			throw BoundsUnderivableException(); // TODO
 		}
 	} else {
 		Assert(t->sort() != NULL);
 		auto domain = _structure->inter(t->sort());
 		Assert(domain != NULL);
 		if (not domain->approxFinite()) { //FIXME: Never return NULL... return infinity thingies.
-			_minimum = NULL;
-			_maximum = NULL;
+			throw BoundsUnderivableException();
 		} else {
 			_minimum = domain->first();
 			_maximum = domain->last();
@@ -160,6 +185,8 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	auto maxsizeElem = createDomElem(maxsize._size, NumType::CERTAINLYINT);
 	auto zero = createDomElem(0);
 
+	// TODO in all below, what if subterm contains NULL???
+
 	switch (t->function()) {
 	case AggFunction::CARD:
 		_minimum = zero;
@@ -172,20 +199,19 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	case AggFunction::SUM:
 		_minimum = accumulate(_subtermminimums.cbegin(), _subtermminimums.cend(), zero, sumNegative);
 		_maximum = accumulate(_subtermmaximums.cbegin(), _subtermmaximums.cend(), zero, sumPositive);
-		if (sametypeid<QuantSetExpr>(*(t->set()))) {
+		if (isa<QuantSetExpr>(*(t->set()))) {
 			if (maxsize._type != TST_EXACT) {
 				_maximum = NULL; // This means that the upperbound is unknown.
 			} else {
 				_maximum = domElemProd(maxsizeElem, _maximum);
 			}
 		} else {
-			Assert(sametypeid<EnumSetExpr>(*(t->set())));
+			Assert(isa<EnumSetExpr>(*(t->set())));
 		}
 		break;
 	case AggFunction::PROD:
 		if (maxsize._type != TST_EXACT) {
-			_minimum = NULL;
-			_maximum = NULL;
+			throw BoundsUnderivableException();
 		} else {
 			auto maxsubtermvalue = std::max(domElemAbs(*max_element(_subtermminimums.cbegin(), _subtermminimums.cend(), absCompare)),
 					domElemAbs(*max_element(_subtermmaximums.cbegin(), _subtermmaximums.cend(), absCompare)), Compare<DomainElement>());

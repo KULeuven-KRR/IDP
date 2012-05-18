@@ -12,14 +12,11 @@
 #include "inferences/SolverConnection.hpp"
 
 #include "inferences/grounding/Grounding.hpp"
-
 #include "inferences/SolverInclude.hpp"
-
 #include "groundtheories/GroundTheory.hpp"
-
 #include "inferences/grounding/GroundTranslator.hpp"
-
 #include "inferences/modelexpansion/TraceMonitor.hpp"
+#include "errorhandling/error.hpp"
 
 using namespace std;
 
@@ -52,6 +49,9 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor));
 	if (outputvoc != NULL) {
 		m->setOutputVocabulary(outputvoc);
+	}
+	if(getGlobal()->getOptions()->symmetryBreaking()!=SymmetryBreaking::NONE && getOption(NBMODELS)!=1){
+		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.\n");
 	}
 	return m;
 }

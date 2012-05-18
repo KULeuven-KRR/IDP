@@ -656,18 +656,7 @@ void Insert::openNamespace(const string& sname, YYLTYPE l) {
 }
 
 void Insert::closeNamespace() {
-	if(checkedAddToGlobal.find(_currspace)==checkedAddToGlobal.cend()){
-		if(_currspace->hasParent(getGlobal()->getStdNamespace())){
-			addGlobal(_currspace);
-		}else{
-			for(auto i=getGlobal()->getGlobalNamespace()->subspaces().cbegin(); i!=getGlobal()->getGlobalNamespace()->subspaces().cend(); ++i) {
-				if(_currspace==(*i).second){
-					addGlobal(_currspace);
-				}
-			}
-		}
-		checkedAddToGlobal.insert(_currspace);
-	}
+	LuaConnection::checkedAddToGlobal(_currspace);
 	_currspace = _currspace->super();
 	Assert(_currspace);
 	closeblock();
@@ -1327,7 +1316,7 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 	if (left == NULL) {
 		return NULL;
 	}
-	if (not sametypeid<FuncTerm>(*left)) {
+	if (not isa<FuncTerm>(*left)) {
 		funcnameexpected(left->pi());
 		return NULL;
 	}
@@ -1528,7 +1517,7 @@ void Insert::negate(Formula* f) const {
 
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {
 	if (f && t) {
-		Assert(sametypeid<EqChainForm>(*f));
+		Assert(isa<EqChainForm>(*f));
 		auto ecf = dynamic_cast<EqChainForm*>(f);
 		ecf->add(c, t);
 	}

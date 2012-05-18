@@ -40,7 +40,7 @@ TEST(FlattenTest,BoolForm) {
 	// Flattening (P | (Q | R)) to (P | Q | R).
 	auto result = FormulaUtils::flatten(&pvqvr);
 
-	EXPECT_TRUE(sametypeid<BoolForm>(*result));
+	EXPECT_TRUE(isa<BoolForm>(*result));
 	EXPECT_EQ(3, result->subformulas().size());
 
 	result->recursiveDelete();
@@ -57,7 +57,7 @@ TEST(FlattenTest,QuantForm) {
 	// Flattening (! x : ! y : P(x,y)) to (! x y : P(x,y)).
 	auto result = FormulaUtils::flatten(&axaypxy);
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	EXPECT_EQ(2, result->quantVars().size());
 
 	result->recursiveDelete();
@@ -87,11 +87,11 @@ TEST(FlattenTest,Theory) {
 
 	ASSERT_EQ(1, theory->sentences().size());
 	auto resformula = theory->sentences()[0];
-	EXPECT_TRUE(sametypeid<QuantForm>(*resformula));
+	EXPECT_TRUE(isa<QuantForm>(*resformula));
 	EXPECT_EQ(2, resformula->quantVars().size());
 	ASSERT_EQ(1, resformula->subformulas().size());
 	auto ressubformula = resformula->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	EXPECT_EQ(3, ressubformula->subformulas().size());
 
 	theory->recursiveDelete();
@@ -109,9 +109,9 @@ TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
 	// Rewriting (F(1) = 2) to (F(1,2))
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqf00);
 
-	ASSERT_TRUE(sametypeid<PredForm>(*result));
+	ASSERT_TRUE(isa<PredForm>(*result));
 	auto respredform = dynamic_cast<PredForm*>(result);
-	EXPECT_TRUE(sametypeid<Function>(*(respredform->symbol())));
+	EXPECT_TRUE(isa<Function>(*(respredform->symbol())));
 	EXPECT_EQ(f.f()->name(), respredform->symbol()->name());
 
 	result->recursiveDelete();
@@ -131,17 +131,17 @@ TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqf0g0);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(2, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[0]));
 	auto subf1 = dynamic_cast<PredForm*>(ressubformula->subformulas()[0]);
-	ASSERT_TRUE(sametypeid<Function>(*subf1->symbol()));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<Function>(*subf1->symbol()));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[1]));
 	auto subf2 = dynamic_cast<PredForm*>(ressubformula->subformulas()[1]);
-	ASSERT_TRUE(sametypeid<Function>(*subf2->symbol()));
+	ASSERT_TRUE(isa<Function>(*subf2->symbol()));
 
 	result->recursiveDelete();
 }
@@ -160,7 +160,7 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 	// Rewriting (0 = sum{ x : P(x) : x })
 	auto result = FormulaUtils::graphFuncsAndAggs(&eq0sumterm);
 
-	ASSERT_TRUE(sametypeid<AggForm>(*result));
+	ASSERT_TRUE(isa<AggForm>(*result));
 	auto resaggform = dynamic_cast<AggForm*>(result);
 	EXPECT_EQ(one, resaggform->getBound());
 	EXPECT_EQ(CompType::EQ, resaggform->comp());
@@ -188,13 +188,13 @@ TEST(GraphFuncsAndAggsTest,TwoAggTerm) {
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxsumqy);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(2, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<AggForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<AggForm>(*ressubformula->subformulas()[1]));
 
 	result->recursiveDelete();
 }
@@ -216,15 +216,15 @@ TEST(GraphFuncsAndAggsTest,FuncTermAndAggTerm) {
 	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxfy);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(2, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[0]));
 	auto subf = dynamic_cast<PredForm*>(ressubformula->subformulas()[0]);
-	ASSERT_TRUE(sametypeid<Function>(*subf->symbol()));
-	ASSERT_TRUE(sametypeid<AggForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<Function>(*subf->symbol()));
+	ASSERT_TRUE(isa<AggForm>(*ressubformula->subformulas()[1]));
 
 	result->recursiveDelete();
 }
@@ -241,7 +241,7 @@ TEST(PushNegationsTest,BoolForm) {
 	auto result = FormulaUtils::pushNegations(&bf);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<BoolForm>(*result));
+	EXPECT_TRUE(isa<BoolForm>(*result));
 	EXPECT_TRUE(isPos(result->sign()));
 	ASSERT_EQ(2, result->subformulas().size());
 	EXPECT_TRUE(isNeg(result->subformulas()[0]->sign()));
@@ -262,7 +262,7 @@ TEST(PushNegationsTest,NestedBoolForm) {
 	auto result = FormulaUtils::pushNegations(&bf);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<BoolForm>(*result));
+	EXPECT_TRUE(isa<BoolForm>(*result));
 	EXPECT_TRUE(isPos(result->sign()));
 	ASSERT_EQ(2, result->subformulas().size());
 	EXPECT_TRUE(isNeg(result->subformulas()[0]->sign()));
@@ -281,7 +281,7 @@ TEST(PushNegationsTest,QuantForm) {
 	// Rewriting ~(! x : P(x)) to (? x : ~P(x))
 	auto result = FormulaUtils::pushNegations(&qf);
 
-	ASSERT_TRUE(sametypeid<QuantForm>(*result));
+	ASSERT_TRUE(isa<QuantForm>(*result));
 	EXPECT_TRUE(isPos(result->sign()));
 	EXPECT_FALSE(dynamic_cast<QuantForm*>(result)->isUniv());
 	ASSERT_EQ(1, result->subformulas().size());
@@ -315,7 +315,7 @@ TEST(PushNegationsTest,Theory) {
 	auto restheory = dynamic_cast<Theory*>(theory);
 	ASSERT_EQ(1, restheory->sentences().size());
 	auto resformula = restheory->sentences()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*resformula));
+	EXPECT_TRUE(isa<BoolForm>(*resformula));
 	ASSERT_EQ(2, resformula->subformulas().size());
 	EXPECT_TRUE(isNeg(resformula->subformulas()[0]->sign()));
 	EXPECT_TRUE(isNeg(resformula->subformulas()[1]->sign()));
@@ -333,7 +333,7 @@ TEST(RemoveEquivalencesTest,EquivForm) {
 	// Rewriting (P <=> Q) to ((P => Q) & (Q => P)).
 	auto result = FormulaUtils::removeEquivalences(piffq);
 
-	ASSERT_TRUE(sametypeid<BoolForm>(*result));
+	ASSERT_TRUE(isa<BoolForm>(*result));
 	ASSERT_EQ(2, result->subformulas().size());
 
 	result->recursiveDelete();
@@ -351,7 +351,7 @@ TEST(SplitComparisonChainsTest,NormalEqChainForm) {
 	// Rewriting (x = y = z) to ((x = y) & (y = z)).
 	auto result = FormulaUtils::splitComparisonChains(aisbisc);
 
-	ASSERT_TRUE(sametypeid<BoolForm>(*result));
+	ASSERT_TRUE(isa<BoolForm>(*result));
 	ASSERT_EQ(2, result->subformulas().size());
 
 	result->recursiveDelete();
@@ -368,7 +368,7 @@ TEST(SplitComparisonChainsTest,WeirdEqChainForm) {
 	// Rewriting ~((x =< y) | (y > z)).
 	auto result = FormulaUtils::splitComparisonChains(weird);
 
-	ASSERT_TRUE(sametypeid<BoolForm>(*result));
+	ASSERT_TRUE(isa<BoolForm>(*result));
 	ASSERT_EQ(2, result->subformulas().size());
 
 	result->recursiveDelete();
@@ -393,7 +393,7 @@ TEST(SubstituteTermTest,Formula) {
 
 	ASSERT_EQ(1, result->subterms().size());
 	auto subterm = result->subterms()[0];
-	ASSERT_TRUE(sametypeid<VarTerm>(*subterm));
+	ASSERT_TRUE(isa<VarTerm>(*subterm));
 	ASSERT_EQ(y, dynamic_cast<VarTerm*>(subterm)->var());
 
 	result->recursiveDelete();
@@ -416,13 +416,13 @@ TEST(UnnestTermsTest,TwoFuncTermsEQ) {
 	auto result = FormulaUtils::unnestTerms(&eqfxgx);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(2, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[1]));
 
 	result->recursiveDelete();
 }
@@ -438,14 +438,14 @@ TEST(UnnestTermsTest,TwoFuncTermsLT) {
 	// Rewriting (F(x) < G(x)) to (! y z : ~=(y,F(x)) | ~=(z,G(x)) | <(y,z)).
 	auto result = FormulaUtils::unnestTerms(&ltfxgx);
 
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(3, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[2]));
 
 	result->recursiveDelete();
 }
@@ -478,14 +478,14 @@ TEST(UnnestTermsTest,NestedFuncTerms) {
 	auto result = FormulaUtils::unnestTerms(&eqfgxhx);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 std::cerr << toString(result);
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 	ASSERT_EQ(1, result->subformulas().size());
 	auto ressubformula = result->subformulas()[0];
-	EXPECT_TRUE(sametypeid<BoolForm>(*ressubformula));
+	EXPECT_TRUE(isa<BoolForm>(*ressubformula));
 	ASSERT_EQ(3, ressubformula->subformulas().size());
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[0]));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[1]));
-	ASSERT_TRUE(sametypeid<PredForm>(*ressubformula->subformulas()[2]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[0]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[1]));
+	ASSERT_TRUE(isa<PredForm>(*ressubformula->subformulas()[2]));
 
 	result->recursiveDelete();
 }
@@ -507,7 +507,7 @@ TEST(UnnestThreeValuedTermsTest,NestedFuncThreeValuedInTwoValued) {
 	std::vector<Term*> terms = { sum, zero };
 	auto form = new PredForm(SIGN::POS, lt, terms, FormulaParseInfo());
 	auto result = FormulaUtils::unnestThreeValuedTerms(form, struc, Context::POSITIVE);
-	EXPECT_TRUE(sametypeid<QuantForm>(*result));
+	EXPECT_TRUE(isa<QuantForm>(*result));
 
 	result->recursiveDelete();
 	delete struc;

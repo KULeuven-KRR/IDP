@@ -89,7 +89,7 @@ void FOBDDFactory::visit(const QuantSetExpr* se) {
  * if so, set the relevant kerneltype and inversion.
  */
 void checkIfBoundedPredicate(PFSymbol*& symbol, AtomKernelType& akt, bool& invert) {
-	if (sametypeid<Predicate>(*symbol)) {
+	if (isa<Predicate>(*symbol)) {
 		auto predicate = dynamic_cast<Predicate*>(symbol);
 		switch (predicate->type()) {
 		case ST_CF:

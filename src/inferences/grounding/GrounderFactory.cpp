@@ -471,7 +471,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (not getOption(TSEITINDELAY) || recursive) { // FIXME tseitin introduction in definition is currently not supported
 		mightdolazy = false;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
+	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
 	} else {
@@ -586,7 +586,7 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
-	if (getOption(BoolType::GROUNDLAZILY) && sametypeid<SolverTheory>(*grounding) && mightdolazy) {
+	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		grounder = new LazyQuantGrounder(qf->freeVars(), solvertheory, subgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, context);
 	} else {
@@ -778,7 +778,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
 
-	if (not sametypeid<AggForm>(*transaf)) { // The rewriting changed the atom
+	if (not isa<AggForm>(*transaf)) { // The rewriting changed the atom
 		descend(transaf);
 		deleteDeep(transaf);
 		return;
@@ -891,7 +891,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Move three-valued terms in the set expression: from term to condition
 	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext);
-	if (not sametypeid<QuantSetExpr>(*transqs)) {
+	if (not isa<QuantSetExpr>(*transqs)) {
 		descend(transqs);
 		return;
 	}

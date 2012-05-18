@@ -295,7 +295,7 @@ int nrSubformulas(AbstractTheory* t) {
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
-	if (not sametypeid<Theory>(*at1) || not sametypeid<Theory>(*at2)) {
+	if (not isa<Theory>(*at1) || not isa<Theory>(*at2)) {
 		throw notyetimplemented("Only merging of normal theories has been implemented...");
 	}
 	if (at1->vocabulary() != at2->vocabulary()) {

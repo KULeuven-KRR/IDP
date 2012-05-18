@@ -30,7 +30,7 @@ class UnnestFuncsAndAggsNonRecursive: public UnnestFuncsAndAggs {
 
 protected:
 	virtual Term* traverse(Term* term){
-		if(sametypeid<AggTerm>(*term)){
+		if(isa<AggTerm>(*term)){
 			return term;
 		}
 		return UnnestTerms::traverse(term);
