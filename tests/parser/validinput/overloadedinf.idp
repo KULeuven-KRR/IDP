@@ -1,0 +1,15 @@
+vocabulary V{
+	
+}
+theory T:V{
+	
+}
+structure S:V{
+	
+}
+
+procedure main(){
+	clone(S)
+	clone(T)
+	return 1
+}

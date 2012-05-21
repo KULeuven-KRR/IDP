@@ -1990,57 +1990,67 @@ void checkedAddToGlobal(Namespace* ns){
  */
 typedef map<vector<ArgType>, InternalProcedure*> internalprocargmap;
 
-void addInternalProcedure(Inference* inf, map<string, map<string, internalprocargmap>>& ns2name2procedures) {
-	auto proc = new InternalProcedure(inf);
-	ns2name2procedures[inf->getNamespace()][inf->getName()][inf->getArgumentTypes()] = proc;
+map<string, internalprocargmap*> procname2globalprocmap;
+map<string, map<string, internalprocargmap*> > ns2proc2procmap;
+set<string> addednamespaces;
+
+void addInternalProcedure(Inference* inf, lua_State* state) {
+	if (addednamespaces.find(inf->getNamespace()) == addednamespaces.cend()) {
+		//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
+		lua_newtable(state);
+		lua_setglobal(state, inf->getNamespace().c_str());
+		addednamespaces.insert(inf->getNamespace());
+	}
+
+	if (inf->getNamespace() != getInternalNamespaceName()) {
+		auto mappingglobal = procname2globalprocmap.find(inf->getName());
+		if(mappingglobal!=procname2globalprocmap.cend()){
+			mappingglobal->second->insert({inf->getArgumentTypes(), new InternalProcedure(inf)});
+		}else{
+			auto possiblearguments = new internalprocargmap();
+			possiblearguments->insert({inf->getArgumentTypes(), new InternalProcedure(inf)});
+			addUserData(state, possiblearguments, getInternalProcedureMetaTableName());
+			//cerr <<"Setting global " <<inf->getName().c_str() <<"\n";
+			lua_setglobal(state, inf->getName().c_str());
+			procname2globalprocmap[inf->getName()] = possiblearguments;
+		}
+	}
+
+	if (inf->getNamespace() != getGlobalNamespaceName()) {
+		bool exists = true;
+		auto mappingns = ns2proc2procmap.find(inf->getNamespace());
+		if(mappingns!=ns2proc2procmap.cend()){
+			auto mappingname = mappingns->second.find(inf->getName());
+			if(mappingname!=mappingns->second.cend()){
+				mappingname->second->insert({inf->getArgumentTypes(), new InternalProcedure(inf)});
+			}else{
+				exists = false;
+			}
+		}else{
+			exists = false;
+		}
+
+		if(not exists){
+			lua_getglobal(state, inf->getNamespace().c_str());
+			auto possiblearguments = new internalprocargmap();
+			possiblearguments->insert({inf->getArgumentTypes(), new InternalProcedure(inf)});
+			addUserData(state, possiblearguments, getInternalProcedureMetaTableName());
+			//cerr <<"Setting field " <<inf->getName().c_str() <<"in namespace " <<inf->getNamespace() <<"\n";
+			lua_setfield(state, -2, inf->getName().c_str());
+			lua_pop(state, 1);
+			ns2proc2procmap[inf->getNamespace()][inf->getName()] = possiblearguments;
+		}
+	}
 }
 
 void addInternalProcedures(lua_State*) {
-	// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
-	map<string, map<string, internalprocargmap>> ns2name2fieldprocedures, ns2name2globalprocedures;
-	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
-		addInternalProcedure((*i).get(), ns2name2fieldprocedures);
-		addInternalProcedure((*i).get(), ns2name2globalprocedures);
-	}
+	addednamespaces.clear();
+	procname2globalprocmap.clear();
+	ns2proc2procmap.clear();
 
-	set<string> namespaces;
-	for (auto i = ns2name2fieldprocedures.cbegin(); i != ns2name2fieldprocedures.cend(); ++i) {
-		auto nsspace = i->first;
-		if (namespaces.find(nsspace) == namespaces.cend()) {
-			//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
-			lua_newtable(_state);
-			lua_setglobal(_state, nsspace.c_str());
-			namespaces.insert(nsspace);
-		}
-		lua_getglobal(_state, nsspace.c_str());
-		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
-			if (nsspace != getGlobalNamespaceName()) {
-				auto possiblearguments = new internalprocargmap(j->second);
-				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
-				//	cerr <<"Setting field " <<j->first.c_str() <<"\n";
-				lua_setfield(_state, -2, j->first.c_str());
-			}
-		}
-		lua_pop(_state, 1);
-	}
-	for (auto i = ns2name2globalprocedures.cbegin(); i != ns2name2globalprocedures.cend(); ++i) {
-		auto nsspace = i->first;
-		if (namespaces.find(nsspace) == namespaces.cend()) {
-			//	cerr <<"Adding global ns table " <<nsspace.c_str() <<"\n";
-			lua_newtable(_state);
-			lua_setglobal(_state, nsspace.c_str());
-			namespaces.insert(nsspace);
-		}
-		lua_getglobal(_state, nsspace.c_str());
-		for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
-			if (nsspace != getInternalNamespaceName()) {
-				auto possiblearguments = new internalprocargmap(j->second);
-				addUserData(_state, possiblearguments, getInternalProcedureMetaTableName());
-				//	cerr <<"Setting global " <<j->first.c_str() <<"\n";
-				lua_setglobal(_state, j->first.c_str());
-			}
-		}
-		lua_pop(_state, 1);
+	// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
+	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
+		addInternalProcedure((*i).get(), _state);
 	}
 }
 

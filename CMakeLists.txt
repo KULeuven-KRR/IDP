@@ -35,18 +35,16 @@ else()
 	addToCXX("-D NO_GMP")
 endif()
 
-### Cp handling 
-option(CP  "Enable cp support" OFF)
-if(CP)
-	set(WITHCP ON CACHE BOOL "")
-	addToCXX("-D WITHCP")
-endif()
-
-
 ### Set default compile flags
 addToCXX("-std=c++0x -Wall ")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
+endif()
+
+### Gecode option for minisatid
+option(USEGECODE  "Use gecode for cp support" OFF)
+if(USEGECODE)
+	set(WITHGECODE ON CACHE BOOL "") # the minisatid option
 endif()
 
 if(CMAKE_COMPILER_IS_MINGW)

@@ -219,19 +219,6 @@ public:
 	void copyValues(Options* opts);
 };
 
-// Note: Makes sure users cannot set the CPSUPPORT option when there is no cp solver available.
-#ifndef WITHCP
-template<>
-inline void OptionPolicy<BoolType, bool>::setValue(BoolType type, const bool& value) {
-	Assert(_options.size()>(uint)type);
-	if (type == BoolType::CPSUPPORT and value != false) {
-		std::clog <<"WARNING: CP support is not available. Option cpsupport is ignored.\n";
-	} else {
-		_options.at(type)->setValue(value);
-	}
-}
-#endif
-
 typedef OptionPolicy<IntType, int> IntPol;
 typedef OptionPolicy<BoolType, bool> BoolPol;
 typedef OptionPolicy<DoubleType, double> DoublePol;
