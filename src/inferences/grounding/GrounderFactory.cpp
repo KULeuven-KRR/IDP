@@ -381,7 +381,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (getOption(BoolType::CPSUPPORT) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		auto comp = getCompType(newpf->symbol());
 		if (isNeg(newpf->sign())) {
-			comp = invertComp(comp);
+			comp = negateComp(comp);
 		}
 
 		SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
