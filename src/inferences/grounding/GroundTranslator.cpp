@@ -183,7 +183,7 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 }
 
 Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
-	CPTsBody* tsbody = new CPTsBody(tstype, left, comp, right);
+	auto tsbody = new CPTsBody(tstype, left, comp, right);
 	// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
 	// => this should be generalized to sharing detection!
 	/*	auto it = lower_bound(atom2TsBody.cbegin(), atom2TsBody.cend(), tspair(0,tsbody), compareTsPair);

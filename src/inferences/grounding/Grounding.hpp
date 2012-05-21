@@ -19,7 +19,7 @@
 #include "common.hpp"
 #include "options.hpp"
 #include "GlobalData.hpp"
-#include "inferences/symmetrybreaking/symmetry.hpp"
+#include "inferences/symmetrybreaking/Symmetry.hpp"
 #include "groundtheories/GroundTheory.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"

@@ -30,10 +30,10 @@ CompType GraphFuncsAndAggs::getCompType(const PredForm* pf) const {
 PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) const {
 	Assert(functerm->type() == TT_FUNC);
 	Assert(valueterm->type() != TT_FUNC && valueterm->type() != TT_AGG);
-	FuncTerm* ft = dynamic_cast<FuncTerm*>(functerm);
+	auto ft = dynamic_cast<FuncTerm*>(functerm);
 	auto vt = ft->subterms();
 	vt.push_back(valueterm);
-	PredForm* funcgraph = new PredForm(sign, ft->function(), vt, pi);
+	auto funcgraph = new PredForm(sign, ft->function(), vt, pi);
 	delete (ft);
 	return funcgraph;
 }
@@ -41,19 +41,18 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, Term* aggterm, const FormulaParseInfo& pi) const {
 	Assert(aggterm->type() == TT_AGG);
 	Assert(valueterm->type() != TT_FUNC && valueterm->type() != TT_AGG);
-	AggTerm* at = dynamic_cast<AggTerm*>(aggterm);
-	AggForm* aggform = new AggForm(SIGN::POS, valueterm, comp, at, pi);
-	return aggform;
+	auto at = dynamic_cast<AggTerm*>(aggterm);
+	return new AggForm(SIGN::POS, valueterm, comp, at, pi);
 }
 
 Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
-
-		Term* subterm1 = pf->subterms()[0];
-		Term* subterm2 = pf->subterms()[1];
-
-		bool eligibleForCP = _cpsupport && VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_vocabulary)
-				&& CPSupport::eligibleForCP(subterm1,_structure) && CPSupport::eligibleForCP(subterm2,_structure);
+		auto subterm1 = pf->subterms()[0];
+		auto subterm2 = pf->subterms()[1];
+		bool eligibleForCP = _cpsupport
+				&& VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_vocabulary)
+				&& CPSupport::eligibleForCP(subterm1,_structure)
+				&& CPSupport::eligibleForCP(subterm2,_structure);
 
 		if ((subterm1->type() == TT_FUNC || subterm1->type() == TT_AGG)
 				&& (subterm2->type() == TT_FUNC || subterm2->type() == TT_AGG)
@@ -63,7 +62,6 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		}
 
 		Formula* newformula = NULL;
-
 		if (is(pf->symbol(), STDPRED::EQ) && not eligibleForCP) {
 			if (subterm1->type() == TT_FUNC) {
 				newformula = makeFuncGraph(pf->sign(), subterm1, subterm2, pf->pi());
@@ -76,11 +74,10 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 				return traverse(newformula);
 			}
 		}
-
 		if (subterm1->type() == TT_AGG  && not eligibleForCP) {
 			newformula = makeAggForm(subterm2, invertComp(getCompType(pf)), subterm1, pf->pi());
 			delete (pf);
-		} else if (subterm2->type() == TT_AGG) {
+		} else if (subterm2->type() == TT_AGG && not eligibleForCP) {
 			newformula = makeAggForm(subterm1, getCompType(pf), subterm2, pf->pi());
 			delete (pf);
 		}

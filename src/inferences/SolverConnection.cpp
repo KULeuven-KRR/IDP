@@ -180,7 +180,7 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 	}
 	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
-		Function* function = termtranslator->function(cpvar->variable);
+		auto function = termtranslator->function(cpvar->variable);
 		if (function == NULL) {
 			continue;
 		}
@@ -195,6 +195,7 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 			}
 		}
 		tuple.push_back(createDomElem(cpvar->value));
+	//	cerr <<"Adding tuple " <<toString(tuple) <<" to " <<toString(function) <<"\n";
 		init->inter(function)->graphInter()->makeTrue(tuple);
 	}
 }

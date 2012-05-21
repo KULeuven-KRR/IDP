@@ -107,7 +107,7 @@ TEST(GraphFuncsAndAggsTest,OneFuncTerm) {
 	Formula& eqf00 = (f( { one }) == *two);
 
 	// Rewriting (F(1) = 2) to (F(1,2))
-	auto result = FormulaUtils::graphFuncsAndAggs(&eqf00);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqf00, NULL, false);
 
 	ASSERT_TRUE(isa<PredForm>(*result));
 	auto respredform = dynamic_cast<PredForm*>(result);
@@ -128,7 +128,7 @@ TEST(GraphFuncsAndAggsTest,TwoFuncTerms) {
 
 	// Rewriting (F(x) = G(y)) to (! z : ~G(y,z) | F(x,z)) 
 	//std::clog << "Transforming " << toString(&eqf0g0) << "\n";
-	auto result = FormulaUtils::graphFuncsAndAggs(&eqf0g0);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqf0g0, NULL, false);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
 	EXPECT_TRUE(isa<QuantForm>(*result));
@@ -158,7 +158,7 @@ TEST(GraphFuncsAndAggsTest,OneAggTerm) {
 	Formula& eq0sumterm = (*one == *sumterm);
 
 	// Rewriting (0 = sum{ x : P(x) : x })
-	auto result = FormulaUtils::graphFuncsAndAggs(&eq0sumterm);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eq0sumterm, NULL, false);
 
 	ASSERT_TRUE(isa<AggForm>(*result));
 	auto resaggform = dynamic_cast<AggForm*>(result);
@@ -185,7 +185,7 @@ TEST(GraphFuncsAndAggsTest,TwoAggTerm) {
 
 	// Rewrite (sum{ x : P(x) : x } = sum{ y : Q(y) : y })
 	//std::clog << "Transforming " << toString(&eqsumpxsumqy) << "\n";
-	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxsumqy);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxsumqy, NULL, false);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
 	EXPECT_TRUE(isa<QuantForm>(*result));
@@ -213,7 +213,7 @@ TEST(GraphFuncsAndAggsTest,FuncTermAndAggTerm) {
 
 	// Rewrite (sum{ x : P(x) : x } = f(y))
 	//std::clog << "Transforming " << toString(&eqsumpxfy) << "\n";
-	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxfy);
+	auto result = FormulaUtils::graphFuncsAndAggs(&eqsumpxfy, NULL, false);
 	//std::clog << "Resulted in " << toString(result) << "\n";
 
 	EXPECT_TRUE(isa<QuantForm>(*result));
@@ -506,7 +506,7 @@ TEST(UnnestThreeValuedTermsTest,NestedFuncThreeValuedInTwoValued) {
 	auto lt = get(STDPRED::LT)->disambiguate( { s, s });
 	std::vector<Term*> terms = { sum, zero };
 	auto form = new PredForm(SIGN::POS, lt, terms, FormulaParseInfo());
-	auto result = FormulaUtils::unnestThreeValuedTerms(form, struc, Context::POSITIVE);
+	auto result = FormulaUtils::unnestThreeValuedTerms(form, struc, Context::POSITIVE, false);
 	EXPECT_TRUE(isa<QuantForm>(*result));
 
 	result->recursiveDelete();
