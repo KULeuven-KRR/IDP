@@ -28,11 +28,11 @@ private:
 	bool _cpsupport;
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str = NULL, Context c = Context::POSITIVE) {
+	T execute(T t, AbstractStructure* str = NULL, bool cpsupport = false, Context c = Context::POSITIVE) {
 		_structure = str;
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
-		_cpsupport = getOption(BoolType::CPSUPPORT);
+		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
 protected:

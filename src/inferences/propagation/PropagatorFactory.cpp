@@ -163,7 +163,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	FormulaUtils::addCompletion(newtheo);
 	FormulaUtils::unnestTerms(newtheo);
 	FormulaUtils::splitComparisonChains(newtheo);
-	FormulaUtils::graphFuncsAndAggs(newtheo);
+	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false /*TODO check*/);
 	FormulaUtils::unnestDomainTerms(newtheo);
 
 	// Add function constraints

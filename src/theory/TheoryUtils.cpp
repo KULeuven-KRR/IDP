@@ -79,8 +79,8 @@ bool approxTwoValued(const SetExpr* exp, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport);
 }
 }
 
@@ -99,8 +99,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context);
+Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport);
 }
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
 	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
@@ -158,8 +158,8 @@ Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
-	return transform<GraphFuncsAndAggs, Formula*>(f, str, con);
+Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Formula*>(f, str, cpsupport, con);
 }
 
 Formula* pushNegations(Formula* f) {
@@ -222,8 +222,8 @@ Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context);
+Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport);
 }
 
 void addCompletion(AbstractTheory* t) {
@@ -236,11 +236,11 @@ void flatten(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-Theory* graphFuncsAndAggs(Theory* t, AbstractStructure* str, Context con) {
-	return transform<GraphFuncsAndAggs, Theory*>(t, str, con);
+Theory* graphFuncsAndAggs(Theory* t, AbstractStructure* str, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Theory*>(t, str, cpsupport, con);
 }
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, con);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, cpsupport, con);
 }
 
 void pushNegations(AbstractTheory* t) {
@@ -285,8 +285,8 @@ void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabul
 	Assert(newt==t);
 }
 
-void unnestThreeValuedTerms(AbstractTheory* t, Context con, AbstractStructure* str) {
-	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con);
+void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, AbstractStructure* str, Context con) {
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
 	Assert(newt==t);
 }
 

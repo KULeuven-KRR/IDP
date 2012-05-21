@@ -110,7 +110,7 @@ double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool
 Formula* flatten(Formula*);
 
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas */
-Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
@@ -156,7 +156,7 @@ AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSIT
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context);
+Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -172,8 +172,8 @@ void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
-Theory* graphFuncsAndAggs(Theory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
-AbstractTheory* graphFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggs(Theory*, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory*, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
@@ -208,7 +208,7 @@ AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-void unnestThreeValuedTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
+void unnestThreeValuedTerms(AbstractTheory*, bool cpsupport, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
 }
 
 namespace TermUtils {
@@ -233,7 +233,7 @@ namespace SetUtils {
 bool approxTwoValued(const SetExpr*, AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context);
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport);
 }
 
 namespace DefinitionUtils {
@@ -247,7 +247,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context);
+Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport);
 
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
 }

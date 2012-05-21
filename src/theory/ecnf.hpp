@@ -535,6 +535,7 @@ private:
 public:
 	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right)
 			: TsBody(type), _left(left), _comp(comp), _right(right) {
+		Assert(type!=TsType::RULE); // Constraints within recursive definitions cannot be handled atm.
 	}
 	~CPTsBody();
 	CPTerm* left() const {

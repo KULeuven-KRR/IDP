@@ -8,7 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#include "symmetry.hpp"
+#include "Symmetry.hpp"
 #include "IncludeComponents.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -830,7 +830,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	//cout << "token" << toString(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
 	auto newt =t->clone();
-	FormulaUtils::graphFuncsAndAggs(newt);
+	FormulaUtils::graphFuncsAndAggs(newt, NULL, false /*TODO check*/);
 	tsa.analyze(newt);
 
 // Find out what sorts can not be used in symmetry:

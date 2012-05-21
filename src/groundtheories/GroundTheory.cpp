@@ -248,7 +248,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 				add(tseitin, body);
 			}
 		} else if (isa<CPTsBody>(*tsbody)) {
-			CPTsBody* body = dynamic_cast<CPTsBody*>(tsbody);
+			auto body = dynamic_cast<CPTsBody*>(tsbody);
 			Assert(body->type() != TsType::RULE);
 			add(tseitin, body);
 		} else {

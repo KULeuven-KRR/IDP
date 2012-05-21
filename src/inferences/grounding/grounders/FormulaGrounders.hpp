@@ -93,6 +93,7 @@ private:
 public:
 	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
 			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
+		Assert(context()._tseitin!=TsType::RULE);
 		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 	}
 	~ComparisonGrounder();

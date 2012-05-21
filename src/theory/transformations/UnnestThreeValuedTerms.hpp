@@ -49,13 +49,13 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context) {
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
 		setAllowedToLeave(true);
-		_cpsupport = getOption(BoolType::CPSUPPORT);
+		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
 
