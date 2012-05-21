@@ -1,10 +1,9 @@
 namespace stdspace{
 namespace inferences {
+//	 * FIXME should NEVER override the options of the user
 	/**
-	 * FIXME should NEVER override the options of the user
 	 *     rather, should give an error if one of the options is not the expected value?
-	 * Returns a structure that is a solution to the model expansion problem with input theory T and structure S
-	 */
+	 * Returns a structure that is a solution to the model expansion problem with input theory T and structure S	 */
 	procedure onemodel(T,S) {
 		Opts = getoptions()
 		local oldnbmodels = Opts.nbmodels
@@ -15,8 +14,7 @@ namespace inferences {
 	}
 
 	/**
-	 * Returns all solutions to the model expansion problem with input theory T and structure S
-	 */
+	 * Returns all solutions to the model expansion problem with input theory T and structure S	 */
 	procedure allmodels(T,S) {
 		Opts = getoptions()
 		local oldnbmodels = Opts.nbmodels
@@ -27,8 +25,7 @@ namespace inferences {
 	}
 	
 	/**
-	 * Prints a given list of models or unsatisfiable if the list is empty
-	 */
+	 * Prints a given list of models or unsatisfiable if the list is empty	 */
 	procedure printmodels(sols) {
 		if #sols == 0 then
 			print("Unsatisfiable")
