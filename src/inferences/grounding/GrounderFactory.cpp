@@ -354,7 +354,7 @@ CompType getCompType(T symbol) {
 
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
@@ -378,7 +378,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	RestoreContext();
 
 	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) /* TODO here also*/ && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		auto comp = getCompType(newpf->symbol());
 		if (isNeg(newpf->sign())) {
 			comp = negateComp(comp);
@@ -772,7 +772,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 }
 
 void GrounderFactory::visit(const AggForm* af) {
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(CPSUPPORT) && not recursive(af));
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(CPSUPPORT) && not recursive(af)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(af), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
