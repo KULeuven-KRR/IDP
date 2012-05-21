@@ -237,8 +237,8 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 	optimgrounder->setOrig(minimizeterm);
 	Grounder* grounder = optimgrounder;
-	if(g.getTopGrounder()!=NULL){
-		grounder = new BoolGrounder(g.getGrounding(), {optimgrounder, g.getTopGrounder()}, SIGN::POS, true, g.getContext());
+	if (g.getTopGrounder() != NULL) {
+		grounder = new BoolGrounder(g.getGrounding(), { optimgrounder, g.getTopGrounder() }, SIGN::POS, true, g.getContext());
 	}
 	return grounder;
 }
@@ -723,15 +723,15 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
 	}
-	optimizemanager.optimizeQuery(copybdd, copyvars, {}, _structure);
+	optimizemanager.optimizeQuery(copybdd, copyvars, { }, _structure);
 
 	// 2. Remove certain leaves
 	const FOBDD* pruned = NULL;
 	auto mcpa = 1; // TODO experiment with variations?
 	if (approxastrue) {
-		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, {}, _structure,  mcpa);
+		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, { }, _structure, mcpa);
 	} else {
-		pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, {}, _structure, mcpa);
+		pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, { }, _structure, mcpa);
 	}
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
@@ -1078,9 +1078,10 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	PredTable* gentable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext,_structure);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		//FIXME: when options cpsupport is true, graphfuncsandaggs doesn't have the desired behavior see issue 168
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
@@ -1105,9 +1106,10 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		auto tempsubformula = subformula->clone();
-		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext,_structure);
+		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, getContext()._funccontext);
 		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
 
 		checkerbdd = improve(approxastrue, checkerbdd, { });
@@ -1121,7 +1123,8 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		}
 	}
 
-	auto checker = GeneratorFactory::create(checktable, std::vector<Pattern>(data.pattern.size(),Pattern::INPUT), data.containers, Universe(data.tables), subformula);
+	auto checker = GeneratorFactory::create(checktable, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT), data.containers, Universe(data.tables),
+			subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (checktable);
 
