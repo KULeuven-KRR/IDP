@@ -441,9 +441,8 @@ public:
 
 	virtual bool operator==(const TsBody& rhs) const;
 	virtual bool operator<(const TsBody& rhs) const;
-	bool operator>(const TsBody& rhs) const {
-		return not (*this == rhs && *this < rhs);
-	}
+	bool operator>(const TsBody& rhs) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 class PCTsBody: public TsBody {
@@ -522,6 +521,7 @@ public:
 	}
 	bool operator==(const CPBound& rhs) const;
 	bool operator<(const CPBound& rhs) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 /**
@@ -552,6 +552,7 @@ public:
 	}
 	bool operator==(const TsBody& rhs) const;
 	bool operator<(const TsBody& rhs) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
@@ -597,9 +598,8 @@ public:
 	virtual void accept(TheoryVisitor*) const = 0;
 	virtual bool operator==(const CPTerm& body) const;
 	virtual bool operator<(const CPTerm& body) const;
-	bool operator>(const CPTerm& rhs) const {
-		return not (*this == rhs && *this < rhs);
-	}
+	bool operator>(const CPTerm& rhs) const;
+	virtual void put(std::ostream& stream) const = 0;
 };
 
 /**
@@ -618,6 +618,7 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
+	virtual void put(std::ostream& stream) const;
 };
 
 /**
@@ -642,6 +643,9 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
+	virtual void put(std::ostream&) const{
+		// TODO
+	}
 };
 
 /**
@@ -664,6 +668,9 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
+	virtual void put(std::ostream&) const{
+		// TODO
+	}
 };
 
 #endif

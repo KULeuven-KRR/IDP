@@ -86,6 +86,13 @@ std::string toString(const std::vector<Type>& v) {
 	return ss.str();
 }
 
+template<typename Type, class Type2>
+std::string toString(const std::pair<Type, Type2>& v) {
+	std::stringstream ss;
+	ss << "(" <<toString(v.first) <<", " <<toString(v.second) <<")";
+	return ss.str();
+}
+
 template<typename Type>
 std::string toString(const std::set<Type>& v) {
 	std::stringstream ss;

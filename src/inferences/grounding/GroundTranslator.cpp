@@ -16,7 +16,8 @@
 using namespace std;
 
 GroundTranslator::GroundTranslator()
-		: atomtype(1, AtomType::LONETSEITIN), _sets(1) {
+		: 	atomtype(1, AtomType::LONETSEITIN),
+			_sets(1) {
 	atom2Tuple.push_back(NULL);
 	atom2TsBody.push_back(tspair { 0, (TsBody*) NULL });
 }
@@ -42,7 +43,7 @@ Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args)
 	if (jt != symbolinfo.tuple2atom.cend()) {
 		lit = jt->second;
 	} else {
-		lit = nextNumber( AtomType::INPUT);
+		lit = nextNumber(AtomType::INPUT);
 		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
 		if (symbolinfo.tuple2atom.size() == 1) {
 			newsymbols.push(symbolID);
@@ -161,17 +162,17 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 	if (comp == CompType::EQ) {
 		auto l = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
 		auto l2 = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
-		return translate({l, l2}, true, tstype);
+		return translate( { l, l2 }, true, tstype);
 	} else if (comp == CompType::NEQ) {
 		auto l = translate(bound, CompType::GT, aggtype, setnr, tstype);
 		auto l2 = translate(bound, CompType::LT, aggtype, setnr, tstype);
-		return translate({l, l2}, false, tstype);
+		return translate( { l, l2 }, false, tstype);
 	} else {
 		auto head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		if(comp == CompType::LT){
+		if (comp == CompType::LT) {
 			bound += 1;
 			comp = CompType::LEQ;
-		}else if(comp == CompType::GT){
+		} else if (comp == CompType::GT) {
 			bound -= 1;
 			comp = CompType::GEQ;
 		}
@@ -182,20 +183,36 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 	}
 }
 
+bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
+//	cerr << "Comparing " << toString(left) << " with " << toString(right) << "\n";
+	if (left == NULL) {
+		if (right == NULL) {
+			return false;
+		}
+		return true;
+	} else if (right == NULL) {
+		return false;
+	}
+	return *left < *right;
+}
+
 Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto tsbody = new CPTsBody(tstype, left, comp, right);
-	// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
-	// => this should be generalized to sharing detection!
-	/*	auto it = lower_bound(atom2TsBody.cbegin(), atom2TsBody.cend(), tspair(0,tsbody), compareTsPair);
-	 if(it != atom2TsBody.cend() && (*it).second == *tsbody) {
-	 delete tsbody;
-	 return (*it).first;
-	 }
-	 else {*/
-	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	atom2TsBody[nr] = tspair(nr, tsbody);
-	return nr;
-	//}
+	// TODO => this should be generalized to sharing detection!
+	auto it = cpset.find(tsbody);
+	if (it != cpset.cend()) {
+		delete tsbody;
+		if (it->first->comp() != comp) { // NOTE: OPTIMIZATION! = and ~= map to the same tsbody etc. => look at ecnf.cpp:compEqThroughNeg
+			return -it->second;
+		} else {
+			return it->second;
+		}
+	} else {
+		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+		atom2TsBody[nr] = tspair(nr, tsbody);
+		cpset[tsbody] = nr;
+		return nr;
+	}
 }
 
 SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const varidlist& varids) {

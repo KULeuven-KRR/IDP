@@ -63,6 +63,10 @@ struct SymbolAndTuple {
  * 		for an atom which is neither, should not store anything, except that it is not stored.
  */
 
+struct CompareTs {
+	bool operator()(CPTsBody* left, CPTsBody* right);
+};
+
 class GroundTranslator {
 private:
 	std::queue<int> newsymbols;
@@ -77,6 +81,8 @@ private:
 
 	// TODO pointer
 	std::vector<TsSet> _sets; // keeps mapping between Set numbers and sets
+
+	std::map<CPTsBody*, Lit, CompareTs> cpset;
 
 	Lit addTseitinBody(TsBody* body);
 	Lit nextNumber(AtomType type);
