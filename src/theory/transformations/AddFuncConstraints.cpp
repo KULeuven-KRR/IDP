@@ -60,7 +60,7 @@ Theory* AddFuncConstraints::createTheory(const ParseInfo& pi) const {
 
 void AddFuncConstraints::visit(const FuncTerm* t) {
 	auto f = t->function();
-	if (not getOption(BoolType::CPSUPPORT) || (_vocabulary != NULL && not CPSupport::eligibleForCP(t, _vocabulary))) {
+	if (not _cpsupport || (_vocabulary != NULL && not CPSupport::eligibleForCP(t, _vocabulary))) {
 		_symbols.insert(f);
 	}
 	traverse(t);

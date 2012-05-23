@@ -245,7 +245,7 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 template<class T>
 void GrounderFactory::ground(T root, const Vocabulary* v) {
 	InitContext();
-	auto functheory = FormulaUtils::getFuncConstraints(root, v); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
+	auto functheory = FormulaUtils::getFuncConstraints(root, v, getOption(BoolType::CPSUPPORT)); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
 	descend(functheory);
 	auto savedgrounder = getTopGrounder();
 	delete (functheory);
@@ -1079,8 +1079,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		auto tempsubformula = subformula->clone();
 		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false /*TODO check*/, getContext()._funccontext);
-		//FIXME: when options cpsupport is true, graphfuncsandaggs doesn't have the desired behavior see issue 168
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
