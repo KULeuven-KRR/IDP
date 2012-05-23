@@ -1106,8 +1106,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		auto tempsubformula = subformula->clone();
 		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false/*TODO check*/, getContext()._funccontext);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false/*TODO check*/, getContext()._funccontext);
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
 
 		checkerbdd = improve(approxastrue, checkerbdd, { });

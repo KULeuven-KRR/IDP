@@ -597,7 +597,7 @@ Assert(checkInput(pattern, vars, atomvars, universe));
 	InstGenerator* result = NULL;
 	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsAggTerms(newatom)) {
-			auto newform = FormulaUtils::graphFuncsAndAggs(newatom, NULL, false /*TODO check*/);
+			auto newform = FormulaUtils::graphFuncsAndAggs(newatom, NULL, false);
 			Assert(isa<AggForm>(*newform));
 			auto transform = dynamic_cast<AggForm*>(newform);
 			result = createFromAggForm(transform, pattern, vars, atomvars, structure, branchToGenerate, universe);
@@ -622,7 +622,7 @@ Assert(checkInput(pattern, vars, atomvars, universe));
 	}
 	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(newatom, NULL, Context::NEGATIVE);
 	newform = FormulaUtils::splitComparisonChains(newform);
-	newform = FormulaUtils::graphFuncsAndAggs(newform, NULL, false /*TODO check*/);
+	newform = FormulaUtils::graphFuncsAndAggs(newform, NULL, false);
 	FormulaUtils::flatten(newform);
 	if (not isa<QuantForm>(*newform)) {
 		throw notyetimplemented("Creating a bdd in which unnesting does not introduce quantifiers.");

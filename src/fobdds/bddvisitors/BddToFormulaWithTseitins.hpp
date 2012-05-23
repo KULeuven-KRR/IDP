@@ -37,10 +37,10 @@ public:
 
 	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter, Vocabulary* voc = NULL)
 			: 	BDDToFO(m),
+				_vocabulary(voc),
 				_counter(counter),
-				_boundary(1),
 				_inDefinition(false),
-				_vocabulary(voc) {
+				_boundary(1) {
 	}
 	template<typename BddNode>
 	Formula* createFormulaWithFreeVars(const BddNode* object, set<const FOBDDVariable*, CompareBDDVars> freebddvars) {
@@ -167,11 +167,10 @@ private:
 		for (auto it = freeindices.cbegin(); it != freeindices.cend(); it++) {
 			inttoindex[(*it)->index()] = (*it);
 		}
-		size_t i =0;
+		size_t i = 0;
 		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); it++, i++) {
 			_dbrmapping[it->second] = vars[i];
-		}
-		Assert(vars.size() == _dbrmapping.size());
+		}Assert(vars.size() == _dbrmapping.size());
 
 	}
 
