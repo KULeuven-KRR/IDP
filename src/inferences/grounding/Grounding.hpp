@@ -56,11 +56,12 @@ private:
 	GroundingReciever* _reciever;
 	Grounder* _grounder; //The grounder that is created by this inference. Is deleted together with the inference (for lazy grounding, can be needed when the ground method is finished)
 	bool _prepared;
+	bool _nbmodelsequivalent; //If true, the produced grounding will have as many models as the original theory, if false, the grounding might have more models.
 
 public:
 	//NOTE: modifies the theory and the structure. Clone before passing them!
 	static std::shared_ptr<GroundingInference> createGroundingInference(AbstractTheory* theory, AbstractStructure* structure, Term* term,
-			TraceMonitor* tracemonitor, GroundingReciever* solver) {
+			TraceMonitor* tracemonitor,bool nbModelsEquivalent, GroundingReciever* solver) {
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
 		}
@@ -71,19 +72,15 @@ public:
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
-		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor, solver));
+		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor,nbModelsEquivalent, solver));
 
 		return m;
 	}
-	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor, GroundingReciever* solver)
-			: 	_theory(theory),
-				_structure(structure),
-				_tracemonitor(tracemonitor),
-				_minimizeterm(minimize),
-				_reciever(solver),
-				_grounder(NULL),
-				_prepared(false) {
-		if(getGlobal()->getOptions()->symmetryBreaking()!=SymmetryBreaking::NONE && minimize!=NULL){
+	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor, bool nbModelsEquivalent,
+			GroundingReciever* solver)
+			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _reciever(solver), _grounder(NULL),
+				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
+		if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && minimize != NULL) {
 			throw notyetimplemented("Breaking symmetry in optimization problems.");
 		}
 	}
@@ -108,8 +105,7 @@ public:
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
 				return NULL;
-			}
-			Assert(defCalculated[0]->isConsistent());
+			}Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
 		// Create grounder
@@ -131,10 +127,11 @@ public:
 		if (_grounder != NULL) {
 			delete (_grounder);
 		}
+		GroundInfo gi = { _theory, _structure, symstructure, _nbmodelsequivalent };
 		if (_reciever == NULL) {
-			_grounder = GrounderFactory::create(GroundInfo { _theory, _structure, symstructure });
+			_grounder = GrounderFactory::create(gi);
 		} else {
-			_grounder = GrounderFactory::create( { _theory, _structure, symstructure }, _reciever);
+			_grounder = GrounderFactory::create(gi, _reciever);
 		}
 		if (getOption(BoolType::TRACE)) {
 			fixTraceMonitor(_tracemonitor, _grounder, _reciever);
