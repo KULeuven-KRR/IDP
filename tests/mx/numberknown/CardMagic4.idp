@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-	return true
+procedure getExpectedNbOfModels(){
+	return 1
 }
 
 vocabulary V{
@@ -13,5 +13,5 @@ theory T : V {
 }
 
 structure S : V{ 
-	Num = {0..10}
+	Num = {0..4}
 }

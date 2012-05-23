@@ -69,6 +69,9 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	switch (t->type()) {
 	case TT_FUNC: {
 		auto ft = dynamic_cast<const FuncTerm*>(t);
+		if(not ft->function()->builtin() && ft->function()->partial()){ // TODO at the moment, partial terms are never eligible for CP
+			return false;
+		}
 		return eligibleForCP(ft,voc);
 	}
 	case TT_AGG: {
