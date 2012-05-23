@@ -9,7 +9,7 @@
  ****************************************************************/
 
 #include "IntroduceSharedTseitins.hpp"
-
+#include "errorhandling/error.hpp"
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
