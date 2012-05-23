@@ -29,10 +29,9 @@ Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 
 
 *** Adding constraint solving support by Gecode
-Assume Gecode is installed in <gecodedir>. This directory should have include and lib subdirectories containing Gecode's header 
-files and libraries. Execute the following command in your <builddir> to enable support by Gecode:
+Execute the following command in your <builddir> to enable support by Gecode:
 
-    cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release" -DCP=on -DGECODE_DIR=<gecodedir>
+    cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release" -DWITHGECODE=on
 
 
 *** Further information

@@ -46,13 +46,14 @@ bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 	} else if (not function->builtin()) {
 		passtocp = nonOverloadedNonBuiltinEligibleForCP(function, voc);
 	} else{
+		Assert(function->builtin() and not function->overloaded());
 		passtocp = FuncUtils::isIntFunc(function, voc);
 	}
 	return passtocp;
 }
 
 bool eligibleForCP(const AggFunction& f) {
-	return (f == SUM);
+	return (f == AggFunction::SUM);
 }
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
@@ -75,14 +76,14 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
-	case TT_FUNC: {
+	case TermType::TT_FUNC: {
 		return eligibleForCP(dynamic_cast<const FuncTerm*>(t),voc);
 	}
-	case TT_AGG: {
+	case TermType::TT_AGG: {
 		return eligibleForCP(dynamic_cast<const AggTerm*>(t),str);
 	}
-	case TT_VAR:
-	case TT_DOM:
+	case TermType::TT_VAR:
+	case TermType::TT_DOM:
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT),voc);
 		return true;
 	}

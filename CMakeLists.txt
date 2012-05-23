@@ -42,8 +42,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 ### Gecode option for minisatid
-option(USEGECODE  "Use gecode for cp support" OFF)
-if(USEGECODE)
+option(WITHGECODE "Use gecode for cp support" OFF)
+if(WITHGECODE)
 	set(WITHGECODE ON CACHE BOOL "") # the minisatid option
 endif()
 
