@@ -23,28 +23,28 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 
 bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 	auto function = ft->function();
-	if(FuncUtils::isIntFunc(function,voc)){
-		return true;
-	}
 	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
 		auto nonbuiltins = function->nonbuiltins();
 		auto allint = true;
 		for (auto nbfit = nonbuiltins.cbegin(); allint && nbfit != nonbuiltins.cend(); ++nbfit) {
-			if(not FuncUtils::isIntFunc(*nbfit, voc)){
+			if(function->partial() or not FuncUtils::isIntFunc(*nbfit, voc)) {
 				allint = false;
 			}
 		}
 		passtocp = allint;
 	} else if (not function->builtin()) {
-		passtocp = FuncUtils::isIntFunc(function, voc);
+		passtocp = not function->partial() and FuncUtils::isIntFunc(function, voc);
+	} else {
+		Assert(function->builtin() and not function->overloaded());
+		passtocp = FuncUtils::isIntFunc(function,voc);
 	}
 	return passtocp;
 }
 
 bool eligibleForCP(const AggFunction& f) {
-	return (f == SUM);
+	return (f == AggFunction::SUM);
 }
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
@@ -67,16 +67,16 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	Vocabulary* voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
-	case TT_FUNC: {
+	case TermType::TT_FUNC: {
 		auto ft = dynamic_cast<const FuncTerm*>(t);
 		return eligibleForCP(ft,voc);
 	}
-	case TT_AGG: {
+	case TermType::TT_AGG: {
 		auto at = dynamic_cast<const AggTerm*>(t);
 		return eligibleForCP(at,str);
 	}
-	case TT_VAR:
-	case TT_DOM:
+	case TermType::TT_VAR:
+	case TermType::TT_DOM:
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT),voc);
 		return true;
 	}
