@@ -28,7 +28,7 @@ procedure mxwithbounds(){
 
 procedure mxwithcp(){
 	stdoptions.cpsupport = true
-	stdoptions.groundwithbounds = false
+	stdoptions.groundwithbounds = true
 	stdoptions.timeout = 5
 	return run()
 }
