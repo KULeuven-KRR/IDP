@@ -11,7 +11,6 @@
 #include "IntroduceSharedTseitins.hpp"
 #include "errorhandling/error.hpp"
 #include "IncludeComponents.hpp"
-#include "errorhandling/error.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
 		: 	_manager(false),
