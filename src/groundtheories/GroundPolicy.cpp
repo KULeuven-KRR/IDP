@@ -80,7 +80,7 @@ void GroundPolicy::polAddOptimization(VarId /*varid*/) {
 	throw notyetimplemented("Adding optimization to the grounding\n");
 }
 
-void GroundPolicy::polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+void GroundPolicy::polAdd(const std::vector<std::map<Lit, Lit> >&){
 	throw notyetimplemented("Adding symmetries to the grounding\n");
 }
 

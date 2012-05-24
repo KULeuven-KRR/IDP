@@ -9,7 +9,7 @@
  ****************************************************************/
 
 #include "IntroduceSharedTseitins.hpp"
-
+#include "errorhandling/error.hpp"
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
@@ -21,10 +21,9 @@ IntroduceSharedTseitins::IntroduceSharedTseitins()
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
 	if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
-//		Warning::warning("The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds could solve this problem\n");
-		//TODO: is this warning still needed?
+		Warning::warning(
+				"The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds or disabling the shared Tseitin transformation could solve this problem\n");
 	}
-//	std::cerr << "INPUT:"<<toString(theo)<<endl;
 	_bddtofo.setVocabulary(theo->vocabulary());
 
 	for (auto it = theo->sentences().cbegin(); it != theo->sentences().cend(); ++it) {
@@ -58,7 +57,7 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
 	}
 	std::vector<Formula*>& sentences = theo->sentences();
 	for (size_t i = 0; i < sentences.size(); i++) {
-		auto bdd = _factory.turnIntoBdd(sentences[i], s);//TODO: avoid double work by storing the bdds
+		auto bdd = _factory.turnIntoBdd(sentences[i], s); //TODO: avoid double work by storing the bdds
 		sentences[i]->recursiveDelete();
 		auto newsentence = _bddtofo.createFormula(bdd);
 		theo->sentence(i, newsentence);
@@ -66,8 +65,6 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
 	theo = _bddtofo.addTseitinConstraints(theo);
 	FormulaUtils::flatten(theo);
 	FormulaUtils::pushNegations(theo);
-//	std::cerr << "OUTPUT:"<<toString(theo)<<endl;
-
 	return theo;
 }
 

@@ -2557,7 +2557,7 @@ InternalTableIterator* EnumeratedInternalFuncTable::begin(const Universe&) const
 
 void EnumeratedInternalFuncTable::put(std::ostream& stream) const {
 	stream << "EnumeratedInternalFuncTable containing: (";
-	auto i = 0;
+	size_t i = 0;
 	for (auto it = _table.cbegin(); i < 5 && it != _table.cend(); i++, it++) {
 		if (i != 0) {
 			stream << ", ";

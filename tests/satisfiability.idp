@@ -26,7 +26,7 @@ procedure satwithboundslong(){
 
 procedure satwithcp(){
 	stdoptions.cpsupport = true
-	stdoptions.groundwithbounds = false
+	stdoptions.groundwithbounds = true
 	stdoptions.timeout = 30
 	return run()
 }

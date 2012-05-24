@@ -780,8 +780,9 @@ void Insert::closequery(Query* q) {
 		FormulaUtils::checkSorts(_currvocabulary, qf);
 		delete (qf); //No recursive delete, the rest of the query should still exist!
 		_currspace->add(_currquery, q);
-		if (_currspace->isGlobal())
+		if (_currspace->isGlobal()){
 			LuaConnection::addGlobal(_currquery, q);
+		}
 	}
 	closeblock();
 }

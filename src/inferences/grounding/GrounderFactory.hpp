@@ -60,6 +60,7 @@ struct GroundInfo{
 	const AbstractTheory* theory;
 	AbstractStructure* partialstructure;
 	GenerateBDDAccordingToBounds* symbolicstructure;
+	bool nbModelsEquivalent;
 };
 
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
@@ -74,6 +75,7 @@ private:
 
 	GroundingContext _context;
 	std::stack<GroundingContext> _contextstack;
+	bool _nbmodelsequivalent; //If true, the produced grounding will have as many models as the original theory, if false, the grounding might have more models.
 
 	// Variable mapping
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
@@ -124,7 +126,7 @@ private:
 	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
 
 	template<typename Grounding>
-	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding);
+	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent);
 
 	Grounder* getTopGrounder() const {
 		Assert(_topgrounder!=NULL);

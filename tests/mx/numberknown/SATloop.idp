@@ -1,0 +1,34 @@
+procedure getExpectedNbOfModels(){
+	return 3
+}
+
+vocabulary V{
+	type Node isa int
+	Edge(Node,Node)
+ 
+	Loop(Node)
+	Path(Node,Node)
+ 
+	Start : Node
+	Reached(Node)
+}
+
+theory T : V { 
+	{ Loop(x) <- Path(x,y).	}
+
+	! x : Loop(x) => ?1 y : Path(x,y).
+	
+	Loop(Start).
+	! x : Loop(x) => x >= Start.
+
+	{ Reached(y) <- Path(Start,y).
+	  Reached(y) <- Path(x,y) & Reached(x).
+	}
+
+	! x : Loop(x) => Reached(x).
+}
+
+structure S : V{ 
+	Node = { 2..3 }
+	Edge = { 3,2; 2,3; }
+}

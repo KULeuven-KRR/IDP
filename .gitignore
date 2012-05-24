@@ -15,6 +15,7 @@
 *.tex~
 *.pdf
 *.toc
+*.kilepr
 *depend.mk
 builds/*
 *.settings/*

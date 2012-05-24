@@ -21,30 +21,39 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc);
 }
 
+bool nonOverloadedNonBuiltinEligibleForCP(Function* f, const Vocabulary* v){
+	if(f->partial()){ // TODO at the moment, partial terms are never eligible for CP
+		return false;
+	}
+	if(not FuncUtils::isIntFunc(f, v)){
+		return false;
+	}
+	return true;
+}
+
 bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 	auto function = ft->function();
-	if(FuncUtils::isIntFunc(function,voc)){
-		return true;
-	}
 	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
 		auto nonbuiltins = function->nonbuiltins();
-		auto allint = true;
-		for (auto nbfit = nonbuiltins.cbegin(); allint && nbfit != nonbuiltins.cend(); ++nbfit) {
-			if(not FuncUtils::isIntFunc(*nbfit, voc)){
-				allint = false;
+		for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
+			if(not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)){
+				return false;
 			}
 		}
-		passtocp = allint;
+		passtocp = true;
 	} else if (not function->builtin()) {
+		passtocp = nonOverloadedNonBuiltinEligibleForCP(function, voc);
+	} else{
+		Assert(function->builtin() and not function->overloaded());
 		passtocp = FuncUtils::isIntFunc(function, voc);
 	}
 	return passtocp;
 }
 
 bool eligibleForCP(const AggFunction& f) {
-	return (f == SUM);
+	return (f == AggFunction::SUM);
 }
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
@@ -65,23 +74,22 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 }
 
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
-	Vocabulary* voc = (str != NULL) ? str->vocabulary() : NULL;
+	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
-	case TT_FUNC: {
-		auto ft = dynamic_cast<const FuncTerm*>(t);
-		return eligibleForCP(ft,voc);
+	case TermType::TT_FUNC: {
+		return eligibleForCP(dynamic_cast<const FuncTerm*>(t),voc);
 	}
-	case TT_AGG: {
-		auto at = dynamic_cast<const AggTerm*>(t);
-		return eligibleForCP(at,str);
+	case TermType::TT_AGG: {
+		return eligibleForCP(dynamic_cast<const AggTerm*>(t),str);
 	}
-	case TT_VAR:
-	case TT_DOM:
+	case TermType::TT_VAR:
+	case TermType::TT_DOM:
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT),voc);
 		return true;
 	}
+	//To avoid compiler warnings
+	Assert(false);
+	return true;
 }
 
-} /* namespace CPUtils */
-
-
+}

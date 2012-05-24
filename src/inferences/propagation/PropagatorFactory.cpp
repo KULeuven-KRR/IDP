@@ -174,6 +174,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		Function* function = dynamic_cast<Function*>(it->first);
 
 		// Add  (! x : ? y : F(x) = y)
+		//Here, we do it manually, we do not use the transformation since the propagation on the aggregates is not doing anything yet
 		if (not function->partial()) {
 			vector<Variable*> vars = VarUtils::makeNewVariables(function->sorts());
 			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
