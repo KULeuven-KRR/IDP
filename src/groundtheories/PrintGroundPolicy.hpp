@@ -110,7 +110,7 @@ public:
 		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 
-	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry){
+	void polAdd(const std::vector<std::map<Lit, Lit> >& ){
 		throw notyetimplemented("Printing symmetries.\n");
 	}
 

@@ -65,10 +65,8 @@ int getIDForUndefined() {
 }
 
 template<typename Grounding>
-GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding)
-		: 	_structure(data.partialstructure),
-			_symstructure(data.symbolicstructure),
-			_grounding(grounding) {
+GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent)
+		: _structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding), _nbmodelsequivalent(nbModelsEquivalent) {
 
 	Assert(_symstructure != NULL);
 
@@ -103,7 +101,7 @@ void GrounderFactory::InitContext() {
 	_context._funccontext = Context::POSITIVE;
 	_context._monotone = Context::POSITIVE;
 	_context._component = CompContext::SENTENCE;
-	_context._tseitin = (getOption(NBMODELS) != 1) ? TsType::EQ : TsType::IMPL;
+	_context._tseitin = _nbmodelsequivalent ? TsType::EQ : TsType::IMPL;
 	_context.currentDefID = getIDForUndefined();
 	_context._defined.clear();
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
@@ -180,7 +178,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	return g.getTopGrounder();
 }
@@ -188,7 +186,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	return g.getTopGrounder();
 }
@@ -212,7 +210,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	auto grounder = g.getTopGrounder();
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
@@ -232,7 +230,8 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 	if (term == NULL) {
 		throw notyetimplemented("Optimization over non-aggregate terms.");
 	}
-	GrounderFactory g(data, grounding);
+	//TODO: when minimizing, what do we want nbmodelsequivalent to be?
+	GrounderFactory g(data, grounding, true);
 	g.ground(term->set(), vocabulary);
 	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 	optimgrounder->setOrig(minimizeterm);
@@ -246,7 +245,7 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 template<class T>
 void GrounderFactory::ground(T root, const Vocabulary* v) {
 	InitContext();
-	auto functheory = FormulaUtils::getFuncConstraints(root, v); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
+	auto functheory = FormulaUtils::getFuncConstraints(root, v, getOption(BoolType::CPSUPPORT)); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
 	descend(functheory);
 	auto savedgrounder = getTopGrounder();
 	delete (functheory);
@@ -378,7 +377,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	RestoreContext();
 
 	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) /* TODO here also*/ && VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) /* TODO here also*/
+			&& VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		auto comp = getCompType(newpf->symbol());
 		if (isNeg(newpf->sign())) {
 			comp = negateComp(comp);
@@ -670,8 +670,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	if (grounder == NULL) {
 		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
-	}
-	Assert(grounder!=NULL);
+	}Assert(grounder!=NULL);
 
 	grounder->setMaxGroundSize(gc._universe.size() * subgrounder->getMaxGroundSize());
 	grounder->setOrig(qf, varmapping());
@@ -1080,8 +1079,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		auto tempsubformula = subformula->clone();
 		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false /*TODO check*/, getContext()._funccontext);
-		//FIXME: when options cpsupport is true, graphfuncsandaggs doesn't have the desired behavior see issue 168
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
@@ -1108,8 +1106,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		auto tempsubformula = subformula->clone();
 		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false/*TODO check*/, getContext()._funccontext);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false/*TODO check*/, getContext()._funccontext);
+		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
 
 		checkerbdd = improve(approxastrue, checkerbdd, { });

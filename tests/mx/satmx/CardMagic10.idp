@@ -1,5 +1,5 @@
-procedure getExpectedNbOfModels(){
-	return 1
+procedure getExpectedAModel(){
+	return true
 }
 
 vocabulary V{

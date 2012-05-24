@@ -30,7 +30,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
 	auto symstructure = generateBounds(&theory, structure);
-	auto grounder = GrounderFactory::create({&theory, structure, symstructure}, data);
+	auto grounder = GrounderFactory::create({&theory, structure, symstructure, true /*TODO CHECK*/}, data);
 
 	grounder->toplevelRun();
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());

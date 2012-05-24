@@ -56,6 +56,9 @@ MinisatID::EqType convert(CompType rel) {
 	case CompType::LT:
 		return MinisatID::EqType::L;
 	}
+	//To avoid compiler warnings
+	Assert(false);
+	return MinisatID::EqType::EQ;
 }
 
 MinisatID::Atom createAtom(const int lit) {
