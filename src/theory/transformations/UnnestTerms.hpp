@@ -79,6 +79,13 @@ protected:
 		}
 	}
 
+	Term* doMove(Term* term) {
+		if (shouldMove(term)) {
+			return move(term);
+		}
+		return term;
+	}
+
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);
 	virtual Formula* traverse(Formula*);

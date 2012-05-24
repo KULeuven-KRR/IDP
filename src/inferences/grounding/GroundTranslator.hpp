@@ -84,7 +84,7 @@ private:
 
 	std::map<CPTsBody*, Lit, CompareTs> cpset;
 
-	Lit addTseitinBody(TsBody* body);
+//	Lit addTseitinBody(TsBody* body);
 	Lit nextNumber(AtomType type);
 
 	int getSymbol(PFSymbol* pfs) const;

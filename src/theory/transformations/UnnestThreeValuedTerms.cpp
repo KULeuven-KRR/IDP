@@ -49,19 +49,25 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	auto saveAllowedToLeave = getAllowedToLeave();
 	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform, _vocabulary));
-
 	auto newf = specialTraverse(predform);
-
 	setAllowedToLeave(saveAllowedToLeave);
 	return doRewrite(newf);
+}
+
+Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
+	bool savemovecontext = getAllowedToUnnest();
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(t, _structure));
+	auto result = traverse(t);
+	setAllowedToUnnest(savemovecontext);
+	setAllowedToLeave(saveAllowedToLeave);
+	return doMove(result);
 }
 
 Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
 	auto saveAllowedToLeave = getAllowedToLeave();
 	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(), _vocabulary));
-
 	auto newrule = UnnestTerms::visit(rule);
-
 	setAllowedToLeave(saveAllowedToLeave);
 	return newrule;
 }

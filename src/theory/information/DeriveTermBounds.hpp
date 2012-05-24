@@ -32,27 +32,42 @@ class DeriveTermBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	const AbstractStructure* _structure;
+	size_t _level;
 	const DomainElement* _minimum;
 	const DomainElement* _maximum;
-	std::vector<const DomainElement*> _subtermminimums;
-	std::vector<const DomainElement*> _subtermmaximums;
+	std::vector<std::vector<const DomainElement*>> _subtermminimums;
+	std::vector<std::vector<const DomainElement*>> _subtermmaximums;
 
 public:
 	template<typename T>
 	std::vector<const DomainElement*> execute(T t, const AbstractStructure* str) {
 		Assert(str != NULL);
 		_structure = str;
-		try{
+		_level = 0;
+		try {
 			t->accept(this);
 			return std::vector<const DomainElement*> { _minimum, _maximum };
-		}catch(const BoundsUnderivableException& e){
-			return std::vector<const DomainElement*> { NULL, NULL};
+		} catch(const BoundsUnderivableException& e) {
+			return std::vector<const DomainElement*> { NULL, NULL };
 		}
 	}
 
 protected:
-	void traverse(const Term*);
-	void traverse(const SetExpr*);
+	template<typename T>
+	void traverse(const T* t) {
+		if (_level >= _subtermminimums.size()) {
+			_subtermminimums.push_back(std::vector<const DomainElement*>{});
+			_subtermmaximums.push_back(std::vector<const DomainElement*>{});
+		}
+		_subtermminimums[_level].clear();
+		_subtermmaximums[_level].clear();
+		for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
+			_level++; (*it)->accept(this); _level--;
+			_subtermminimums[_level].push_back(_minimum);
+			_subtermmaximums[_level].push_back(_maximum);
+		}
+	}
+
 	void visit(const DomainTerm*);
 	void visit(const VarTerm*);
 	void visit(const FuncTerm*);
