@@ -37,12 +37,16 @@ private:
 	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
 
-protected:
-	TermParseInfo _pi; //!< the place where the term was parsed
-
 private:
 	virtual void setFreeVars(); //!< Compute the free variables of the term
+
 	void deleteChildren(bool deleteVars); //Deletes all children of this formula (and depending on the boolean also the vars)
+
+protected:
+	TermParseInfo _pi; //!< the place where the term was parsed
+	void setFreeVars(std::set<Variable*> freevars) {
+		_freevars = freevars;
+	}
 
 public:
 	// Constructors

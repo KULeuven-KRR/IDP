@@ -40,7 +40,7 @@ TestingSet1 getTestingSet1() {
 	testingSet.q0 = new PredForm(SIGN::POS, testingSet.q, { testingSet.nulterm }, FormulaParseInfo()); //Q(0)
 	testingSet.r0 = new PredForm(SIGN::POS, testingSet.r, { testingSet.nulterm }, FormulaParseInfo()); //Q(0)
 	testingSet.xpx = new QuantSetExpr( { testingSet.x }, testingSet.px, testingSet.sortterm, SetParseInfo()); //{x|p(x)}
-	testingSet.maxxpx = new AggTerm(testingSet.xpx, AggFunction::MAX, TermParseInfo()); //MAX{x|p(x)}
+	testingSet.maxxpx = new AggTerm(new EnumSetExpr({testingSet.xpx}, testingSet.xpx->pi()), AggFunction::MAX, TermParseInfo()); //MAX{x|p(x)}
 
 	testingSet.np0iffq0 = new EquivForm(SIGN::NEG, testingSet.p0, testingSet.q0, FormulaParseInfo()); // ~(P(0) <=> Q(0))
 	testingSet.p0vq0 = new BoolForm(SIGN::POS, false, testingSet.p0, testingSet.q0, FormulaParseInfo()); //P(0) | Q(0)

@@ -56,7 +56,6 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 }
 EnumSetGrounder::~EnumSetGrounder() {
 	deleteList(_subgrounders);
-	deleteList(_subtermgrounders);
 }
 SetId EnumSetGrounder::run() const {
 	litlist literals;
@@ -64,10 +63,10 @@ SetId EnumSetGrounder::run() const {
 	weightlist trueweights;
 	varidlist varids;
 	InstChecker* checker = new FalseInstChecker();
-	for (size_t n = 0; n < _subgrounders.size(); ++n) {
-		groundSetLiteral(*_subgrounders[n], *_subtermgrounders[n], literals, weights, trueweights, varids, *checker);
+	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
+		(*i)->run(literals, weights, trueweights, varids);
 	}
-	SetId s = _translator->translateSet(literals, weights, trueweights, varids);
+	auto s = _translator->translateSet(literals, weights, trueweights, varids);
 	return s;
 }
 QuantSetGrounder::~QuantSetGrounder() {
@@ -76,14 +75,17 @@ QuantSetGrounder::~QuantSetGrounder() {
 	delete _checker;
 	delete _weightgrounder;
 }
+void QuantSetGrounder::run(litlist& literals, weightlist& weights, weightlist& trueweights, varidlist& varids) const {
+	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator++()) {
+		groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, varids, *_checker);
+	}
+}
 SetId QuantSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;
 	weightlist trueweights;
 	varidlist varids;
-	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator++()) {
-		groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, varids, *_checker);
-	}
-	SetId s = _translator->translateSet(literals, weights, trueweights, varids);
+	run(literals, weights, trueweights, varids);
+	auto s = _translator->translateSet(literals, weights, trueweights, varids);
 	return s;
 }

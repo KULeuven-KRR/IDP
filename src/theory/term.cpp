@@ -96,8 +96,7 @@ ostream& operator<<(ostream& output, const Term& t) {
  ************/
 
 void VarTerm::setFreeVars() {
-	_freevars.clear();
-	_freevars.insert(_var);
+	Term::setFreeVars({_var});
 }
 
 void VarTerm::sort(Sort* s) {

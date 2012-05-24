@@ -39,11 +39,11 @@ VarTerm* varterm(Sort* s) {
 	return new VarTerm(variable, TermParseInfo());
 }
 
-SetExpr* qset(const std::set<Variable*>& vars, Formula& subform, Term* subterm) {
-	return new QuantSetExpr(vars, &subform, subterm, SetParseInfo());
+EnumSetExpr* qset(const std::set<Variable*>& vars, Formula& subform, Term* subterm) {
+	return new EnumSetExpr({new QuantSetExpr(vars, &subform, subterm, SetParseInfo())});
 }
 
-AggTerm* sum(SetExpr* set) {
+AggTerm* sum(EnumSetExpr* set) {
 	return new AggTerm(set, AggFunction::SUM, TermParseInfo());
 }
 

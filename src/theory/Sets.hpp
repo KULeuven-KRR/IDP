@@ -15,6 +15,10 @@
 #include "visitors/VisitorFriends.hpp"
 
 class QuantSetExpr;
+class Variable;
+class tablesize;
+class Sort;
+class AbstractStructure;
 
 /**
  * Base class for first-order set expressions
@@ -57,6 +61,10 @@ protected:
 		_subsets[index] = set;
 		setFreeVars();
 	}
+	void setSubSets(std::vector<QuantSetExpr*> sets){
+		_subsets = sets;
+		setFreeVars();
+	}
 	void setSubTerm(Term* term){
 		_subterm = term;
 		setFreeVars();
@@ -69,6 +77,10 @@ protected:
 	}
 	void addSubQuantVar(Variable* var){
 		_quantvars.insert(var);
+		setFreeVars();
+	}
+	void setQuantVars(const std::set<Variable*>& vars){
+		_quantvars = vars;
 		setFreeVars();
 	}
 
@@ -124,7 +136,7 @@ public:
 	EnumSetExpr(const SetParseInfo& pi)
 			: SetExpr(pi) {
 	}
-	EnumSetExpr(const std::vector<QuantSetExpr*>& s);
+	EnumSetExpr(const std::vector<QuantSetExpr*>& s, const SetParseInfo& pi);
 
 	void addSet(QuantSetExpr* set){
 		addSubSet(set);

@@ -358,9 +358,9 @@ public:
 	Term* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
-	QuantSetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
+	EnumSetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi }
-	QuantSetExpr* set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
+	EnumSetExpr* set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi : t }
 
 	EnumSetExpr* createEnum(YYLTYPE) const;

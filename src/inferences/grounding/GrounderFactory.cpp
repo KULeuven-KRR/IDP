@@ -66,7 +66,10 @@ int getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: _structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding), _nbmodelsequivalent(nbModelsEquivalent) {
+		: 	_structure(data.partialstructure),
+			_symstructure(data.symbolicstructure),
+			_grounding(grounding),
+			_nbmodelsequivalent(nbModelsEquivalent) {
 
 	Assert(_symstructure != NULL);
 
@@ -378,7 +381,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) /* TODO here also*/
-			&& VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+	&& VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		auto comp = getCompType(newpf->symbol());
 		if (isNeg(newpf->sign())) {
 			comp = negateComp(comp);
@@ -670,7 +673,8 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	if (grounder == NULL) {
 		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
-	}Assert(grounder!=NULL);
+	}
+	Assert(grounder!=NULL);
 
 	grounder->setMaxGroundSize(gc._universe.size() * subgrounder->getMaxGroundSize());
 	grounder->setOrig(qf, varmapping());
@@ -871,20 +875,17 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
-	vector<FormulaGrounder*> subfgr;
-	vector<TermGrounder*> subtgr;
+	vector<QuantSetGrounder*> subgrounders;
 	SaveContext();
 	AggContext();
-	for (size_t n = 0; n < s->subformulas().size(); ++n) {
-		descend(s->subformulas()[n]);
-		subfgr.push_back(getFormGrounder());
-		descend(s->subterms()[n]);
-		subtgr.push_back(getTermGrounder());
+	for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
+		descend(*i);
+		Assert(_quantsetgrounder!=NULL);
+		subgrounders.push_back(_quantsetgrounder);
 	}
 	RestoreContext();
 
-	// Create set grounder
-	_setgrounder = new EnumSetGrounder(getGrounding()->translator(), subfgr, subtgr);
+	_setgrounder = new EnumSetGrounder(getGrounding()->translator(), subgrounders);
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
@@ -904,16 +905,16 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(newqs->subformulas()[0]);
+	descend(newqs->getCondition());
 	auto subgr = getFormGrounder();
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(newqs->subterms()[0]);
+	descend(newqs->getTerm());
 	auto wgr = getTermGrounder();
 
-	// Create grounder
-	_setgrounder = new QuantSetGrounder(getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+	_quantsetgrounder = new QuantSetGrounder(getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+	_setgrounder = _quantsetgrounder;
 	delete newqs;
 }
 

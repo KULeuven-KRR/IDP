@@ -1501,8 +1501,7 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 	if (f == NULL) {
 		return f;
 	}
-	auto aggset = new EnumSetExpr( { set(vv, f, l) });
-	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, aggset, l));
+	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(vv, f, l), l));
 	auto boundterm = domterm(bound, l);
 
 	// Create parseinfo (TODO UGLY!)
@@ -1783,7 +1782,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 	}
 }
 
-QuantSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
+EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
 	remove_vars(vv);
 	if (f && counter) {
 		std::set<Variable*> pivv;
@@ -1798,7 +1797,7 @@ QuantSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* count
 		auto temp = new QuantSetExpr(pivv, pif, picounter, SetParseInfo());
 		auto pi = setparseinfo(temp, l);
 		temp->recursiveDelete();
-		return new QuantSetExpr(vv, f, counter, pi);
+		return new EnumSetExpr({new QuantSetExpr(vv, f, counter, pi)}, pi);
 	} else {
 		if (f) {
 			f->recursiveDelete();
@@ -1813,7 +1812,7 @@ QuantSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* count
 	}
 }
 
-QuantSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
 	auto d = createDomElem(1);
 	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	return set(vv, f, counter, l);

@@ -222,6 +222,7 @@ namespace SortUtils {
  *						of the sort hiearchy on this vocabulary
  *
  *	\return	The unique nearest common ancestor if it exists, a null-pointer otherwise.
+ *	Returns NULL if any of the given sorts is NULL.
  */
 Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* voc) {
 	if ((s1 == NULL) || s2 == NULL) {
