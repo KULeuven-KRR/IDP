@@ -17,26 +17,6 @@
 #include <algorithm> // for min_element and max_element
 using namespace std;
 
-void DeriveTermBounds::traverse(const Term* t) {
-	_subtermminimums.clear();
-	_subtermmaximums.clear();
-	for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
-		(*it)->accept(this);
-		_subtermminimums.push_back(_minimum);
-		_subtermmaximums.push_back(_maximum);
-	}
-}
-
-void DeriveTermBounds::traverse(const SetExpr* e) {
-	_subtermminimums.clear();
-	_subtermmaximums.clear();
-	for (auto it = e->subterms().cbegin(); it != e->subterms().cend(); ++it) {
-		(*it)->accept(this);
-		_subtermminimums.push_back(_minimum);
-		_subtermmaximums.push_back(_maximum);
-	}
-}
-
 void DeriveTermBounds::visit(const DomainTerm* t) {
 	_minimum = t->value();
 	_maximum = t->value();
@@ -78,12 +58,12 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 	traverse(t);
 	bool cancalculate = true;
 	//TODO: is this approach correct? Sometimes min might be calculated when Max = infty;..
-	for (auto it = _subtermmaximums.cbegin(); it != _subtermmaximums.cend(); it++) {
+	for (auto it = _subtermmaximums[_level].cbegin(); it != _subtermmaximums[_level].cend(); it++) {
 		if (*it == NULL) {
 			cancalculate = false;
 		}
 	}
-	for (auto it = _subtermminimums.cbegin(); it != _subtermminimums.cend(); it++) {
+	for (auto it = _subtermminimums[_level].cbegin(); it != _subtermminimums[_level].cend(); it++) {
 		if (*it == NULL) {
 			cancalculate = false;
 		}
@@ -95,26 +75,27 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 
 		switch (getStdFunction(function)) {
 		case STDFUNC::ADDITION:
-			_minimum = (*functable)[_subtermminimums];
-			_maximum = (*functable)[_subtermmaximums];
+			_minimum = (*functable)[_subtermminimums[_level]];
+			_maximum = (*functable)[_subtermmaximums[_level]];
 			break;
 		case STDFUNC::SUBSTRACTION:
-			_minimum = (*functable)[ElementTuple { _subtermminimums[0], _subtermmaximums[1] }];
-			_maximum = (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }];
+			_minimum = (*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }];
+			_maximum = (*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermminimums[_level][1] }];
 			break;
 		case STDFUNC::ABS:
 			_minimum = createDomElem(0);
-			_maximum = std::max((*functable)[_subtermminimums], (*functable)[_subtermmaximums]);
+			_maximum = std::max((*functable)[_subtermminimums[_level]], (*functable)[_subtermmaximums[_level]]);
 			break;
 		case STDFUNC::UNARYMINUS:
-			_minimum = (*functable)[_subtermmaximums];
-			_maximum = (*functable)[_subtermminimums];
+			_minimum = (*functable)[_subtermmaximums[_level]];
+			_maximum = (*functable)[_subtermminimums[_level]];
 			break;
 		case STDFUNC::PRODUCT: {
 			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
-			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[0], _subtermminimums[1] }], (*functable)[ElementTuple {
-					_subtermminimums[0], _subtermmaximums[1] }], (*functable)[ElementTuple { _subtermmaximums[0], _subtermminimums[1] }],
-					(*functable)[ElementTuple { _subtermmaximums[0], _subtermmaximums[1] }] };
+			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[_level][0], _subtermminimums[_level][1] }],
+					(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }],
+					(*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermminimums[_level][1] }],
+					(*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermmaximums[_level][1] }] };
 			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			break;
@@ -135,7 +116,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		}
 		case STDFUNC::MODULO:
 			_maximum = createDomElem(0);
-			_minimum = _subtermmaximums[1];
+			_minimum = _subtermmaximums[_level][1];
 			break;
 		case STDFUNC::DIVISION:
 			throw BoundsUnderivableException(); // TODO
@@ -197,8 +178,8 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 		}
 		break;
 	case AggFunction::SUM:
-		_minimum = accumulate(_subtermminimums.cbegin(), _subtermminimums.cend(), zero, sumNegative);
-		_maximum = accumulate(_subtermmaximums.cbegin(), _subtermmaximums.cend(), zero, sumPositive);
+		_minimum = accumulate(_subtermminimums[_level].cbegin(), _subtermminimums[_level].cend(), zero, sumNegative);
+		_maximum = accumulate(_subtermmaximums[_level].cbegin(), _subtermmaximums[_level].cend(), zero, sumPositive);
 		if (isa<QuantSetExpr>(*(t->set()))) {
 			if (maxsize._type != TST_EXACT) {
 				_maximum = NULL; // This means that the upperbound is unknown.
@@ -213,19 +194,19 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 		if (maxsize._type != TST_EXACT) {
 			throw BoundsUnderivableException();
 		} else {
-			auto maxsubtermvalue = std::max(domElemAbs(*max_element(_subtermminimums.cbegin(), _subtermminimums.cend(), absCompare)),
-					domElemAbs(*max_element(_subtermmaximums.cbegin(), _subtermmaximums.cend(), absCompare)), Compare<DomainElement>());
+			auto maxsubtermvalue = std::max(domElemAbs(*max_element(_subtermminimums[_level].cbegin(), _subtermminimums[_level].cend(), absCompare)),
+					domElemAbs(*max_element(_subtermmaximums[_level].cbegin(), _subtermmaximums[_level].cend(), absCompare)), Compare<DomainElement>());
 			_minimum = domElemUmin(domElemPow(maxsubtermvalue, maxsizeElem));
 			_maximum = domElemPow(maxsubtermvalue, maxsizeElem);
 		}
 		break;
 	case AggFunction::MIN:
-		_minimum = *min_element(_subtermminimums.cbegin(), _subtermminimums.cend());
-		_maximum = *min_element(_subtermmaximums.cbegin(), _subtermmaximums.cend());
+		_minimum = *min_element(_subtermminimums[_level].cbegin(), _subtermminimums[_level].cend());
+		_maximum = *min_element(_subtermmaximums[_level].cbegin(), _subtermmaximums[_level].cend());
 		break;
 	case AggFunction::MAX:
-		_minimum = *max_element(_subtermminimums.cbegin(), _subtermminimums.cend());
-		_maximum = *max_element(_subtermmaximums.cbegin(), _subtermmaximums.cend());
+		_minimum = *max_element(_subtermminimums[_level].cbegin(), _subtermminimums[_level].cend());
+		_maximum = *max_element(_subtermmaximums[_level].cbegin(), _subtermmaximums[_level].cend());
 		break;
 	}
 }
