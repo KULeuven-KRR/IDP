@@ -1,0 +1,12 @@
+
+A query with name \code{MyQuery} over a vocabulary \code{MyVoc} is declared by
+\begin{lstlisting}
+	query MyQuery: MyVoc {
+		//contents of the query
+	}
+\end{lstlisting}
+Here ``contents of the query'' is of the following form 
+\begin{lstlisting}
+		{ MyVar1 MyVar2 ... MyVarn : MyFormula}
+\end{lstlisting}
+where all free  variables of the \fodot formula \code{MyFormula} appear among the \code{MyVar1}, \code{MyVar2},\ldots,\code{MyVarn}.

@@ -1,0 +1,21 @@
+Users of the old \idptwo-system will still have a bunch of files with different syntaxis. Here are the basic rules for transforming them to \idpthree.
+\begin{itemize}
+	\item Blocks in the \idptwo system now are structures, vocabularies and theories.
+		\begin{itemize}
+			\item Everything that used to be in a Given: Declare: or Find: block, now belongs to a vocabulary.
+			\item The sentences and definitions from the Satisfying: block should be moved to a theory.
+			\item The Data: block is essentialy what is now a structure.
+		\end{itemize}
+	\item UNA-DCA declarations in the vocabulary are no longer allowed:
+		\begin{itemize}
+			\item In the \idptwo system you could write \code{type Direction={Up;Down}}. This had the effect of creating new domain elements Up and Down and constants Up and Down that could be used in the theory (Satisfying block).
+			\item For the moment, this is not yet possible in the \idpthree system. If you want the same effect: you add \code{type Direction}, \code{Up: Direction} and \code{Down: Direction} to the vocabulary (this creates the type and makes the constants. In the structure, you interprete Direction by \code{Direction = {u;d}} and you interprete the constants by \code{Up = u; Down = d}.
+		\end{itemize}
+	\item Three-valued interpretations have a slightly different syntax.
+		\begin{itemize}
+			\item In a Data: block of the \idptwo system, one could write \code{P = {A;B}{C}}, meaning that \code{P} should be certainly true for \code{A} and \code{B} and that \code{P} should be certainly false for \code{C}. In \idpthree, we write (as explained above \code{ P<ct> = {A;B}} and \code{ P<cf> = {C}}.
+		\end{itemize}
+	\item Aggregates have a slightly different syntaxis (see above).
+
+
+\end{itemize}

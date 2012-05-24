@@ -1,0 +1,15 @@
+
+Everywhere in an \idp file, a statement 
+\begin{lstlisting}
+	#include "path/to/file"
+\end{lstlisting}
+is replaced by the contents of the file \code{path/to/file}.
+A statement
+\begin{lstlisting}
+	#include <filename>
+\end{lstlisting}
+
+is replaced by the contents of the standard library file \code{filename}.  Currently the following standard library files are available:
+\begin{description}
+\item[mx] Contains some useful model expansion procedures.
+\end{description}

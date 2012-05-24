@@ -1,0 +1,100 @@
+A (three-valued) structure with name \code{MyStruct} over a vocabulary \code{MyVoc} is declared by
+\begin{lstlisting}
+	structure MyStruct: MyVoc {
+		//contents of the structures
+	}
+\end{lstlisting}
+or by 
+\begin{lstlisting}
+	aspstructure MyStruct: MyVoc {
+		//contents of the structures
+	}
+\end{lstlisting}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Contents of a structure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+A particular input to a problem can be given by giving a (three valued) interpretation to all types and some predicate and function symbols of a given vocabulary. Here, we describe the different ways to specify a structure.
+
+\subsubsection{Type Enumeration}
+The syntax for a type enumeration is 
+\begin{lstlisting}
+	MyType = { El_1; El_2; ... ; El_n }
+\end{lstlisting}
+where {\tt MyType} is the name of the enumerated type and {\tt El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. 
+Identifiers are shorthands for strings (without the quotes) and can be interchanged.
+\todo{Important: in the lua code, the identifiers cannot be used safely, only their string equivalent}
+If one type is a subtype of another, all elements of the subtype are added to the supertype also.  In the case all subtypes of a given type are specified, the supertype is derived to be the union of all elements of the subtypes.  If a type is not specified, all domain elements of that type that occur in a predicate or function interpretation (see below) are automatically added to that type.  
+
+
+\subsubsection{Predicate Enumeration}
+The syntax for enumerating all tuples for which a predicate {\tt MyPred} with $n$ arguments is true is as follows.
+\begin{lstlisting}
+	MyPred = { El_1_1,..., El_1_n; 
+				  ... ; 
+				  El_m_1,..., El_m_n 
+				}
+\end{lstlisting}
+
+It is also possible to write parentheses around tuples.
+\begin{lstlisting}
+	MyPred = { (El_1_1,..., El_1_n); 
+				  ... ; 
+				  (El_m_1,..., El_m_n) 
+				}
+\end{lstlisting}
+This notation makes it possible to state that a proposition (a predicate with no arguments) is true, by using an empty tuple.
+\begin{lstlisting}
+	true = { () }
+	false = { }
+\end{lstlisting}
+However, it might be easier to use \code{true} and \code{false} instead of \code{\{ () \}} and \code{\{\}}.
+
+\subsubsection{Function Enumeration}
+The syntax for enumerating a function {\tt MyFunc} with $n$ arguments is 
+\begin{lstlisting}
+	MyFunc = { El_1_1,...,El_1_n -> El_1;
+		...;
+		El_m_1,...,El_m_n -> El_m
+	}
+\end{lstlisting}
+To give the interpretation of a constant, one can simply write `{\tt MyConst = El}' instead of `{\tt MyConst = \{ -> El \}}'.
+
+% \subsubsection{Compound Domain Elements}
+% A function applied to a tuple of domain elements can be used as a domain element.  We call such a domain element a \textit{compound domain element}.  An example is the domain element \code{F(1,a)}. If \code{F/n} is a function then 
+% \begin{lstlisting}
+% 	F = generate
+% \end{lstlisting}
+% specifies that the interpretation of \code{F} is the two-valued interpretation that maps each tuple \code{(d\_1,\ldots,d\_n)} to the compound domain element \code{F(d\_1,\ldots,d\_n)}.
+
+\subsubsection{Three-Valued Predicate/Function interpretations}
+Three-valued interpretations are given by either
+\begin{itemize}
+	\item enumerating the certainly true and certainly false tuples;
+	\item enumerating the certainly true and the unknown tuples;
+	\item enumerating the unknown and the certainly false tuples.
+\end{itemize}
+To sepcify which tuples are enumerated, use \code{<ct>}, \code{<cf>} and \code{<u>}.  For example
+\begin{lstlisting}
+	P<ct> = { /* enumeration of the certainly true tuples of P */ }
+	P<u> = { /* enumeration of the unknown tuples of P */ }
+\end{lstlisting}
+
+\subsubsection{Interpretation by Procedures}
+The syntax 
+\begin{lstlisting}
+	P = procedure MyProc
+\end{lstlisting}
+is used to interpret a predicate or function symbol \code{P} by a procedure \code{MyProc} (see below).  If \code{P} is an $n$-ary predicate, then \code{MyProc} should be an $n$-ary procedure that returns a boolean.  If \code{P} is an $n$-ary function, then \code{MyProc} should be and $n$-ary function that returns a number, string, or compound domain element.
+
+
+\subsubsection{Shorthands}
+Shorthands like `{\tt MyType = \{1..10; 15..20\}}' or `{\tt MyType = \{ a..e; A..E \}}' may be used for enumerating types or predicates with only one argument.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ASP structures}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+An ASP structure consists of a list of facts in the usual ASP syntax.  In particular, everything from a \code{\%} till the end of the line is considered a comment, and \code{-} before an atom denotes classical negation (negation as failure is not available).  A fact about functions is written like \code{F(a)=b} or \code{-F(c)=d}.
+

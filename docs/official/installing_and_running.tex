@@ -1,0 +1,39 @@
+
+The system has been verified to run under Windows (7), OSX (Lion) and various unix versions.
+
+\subsection{Building from source}
+Required software packages:
+\begin{itemize}
+  \item C and C++ compiler, supporting most of the C++11 standard. Examples are GCC 4.4 or higher, clang 3.2 or visual studio 11.
+  \item Cmake build environment. 
+  \item Bison and flex packages or yacc and lex packages.
+  \item Pdflatex and doxygen for building the documentation.
+  \item (optional) Gecode for constraint programming support.
+\end{itemize}
+
+Assume idp is unpacked in \code{idpdir}, you want to build in \code{builddir} (cannot be the same as \code{idpdir}) and install in \code{installdir}. Building and installing is then achieved by executing the following commands:
+\begin{lstlisting}
+cd <builddir>
+cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
+make -j 4
+make check
+make install
+\end{lstlisting}
+
+Alternatively, cmake-gui can be used as a graphical way to set cmake options.
+
+\subsection{Running the software}
+One-shot execution of a procedure \code{proc} with a set of files \code{files} is achieved by running
+\begin{lstlisting}
+idp -e "proc()" files
+\end{lstlisting}
+Omitting the \code{-e} option results in execution of the main method.
+
+An interactive interface using the files \code{files} is started with 
+\begin{lstlisting}
+idp -i files
+\end{lstlisting}
+
+Afterwards, command help can be requested with the \code{help()} command. Auto-completion is available via the tab key, ctrl-r will search the command history.
+
+Currently including additional files during an interactive session is not supported.
