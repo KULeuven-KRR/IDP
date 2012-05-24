@@ -1,0 +1,213 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Declaring a procedure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+A procedure with name {\tt MyProc} and arguments {\tt A1}, \ldots, {\tt An} is declared by 
+\begin{lstlisting}
+	procedure MyProc(A1,...,An) {
+		// contents of the procedure
+	}
+\end{lstlisting}
+Inside a procedure, any chunk of Lua code can be written. For Lua's reference manual, see \url{http://www.lua.org/manual/5.1/}. In the following, we assume that the reader is familiar with the basic concepts of Lua. Like in most programming languages, a procedure should be declared before it can be used in other procedures (either in the same file or in earlier included files). There is one exception to this: procedures in the global namespace can always be used, no matter what.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{\idp types}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Besides the standard types of variables available in Lua, the following extra types are available in \idp procedures.
+\begin{description}
+	\item[sort] A set of sorts with the same name. Can be used as a single sort if the set is a singleton.
+	\item[predicate\_symbol] A set of predicates with the same name, but possibly with different arities. Can be used as a single predicate if the set is a singleton. If {\tt P} is a predicate\_symbol and {\tt n} an integer, then {\tt P/n} returns a predicate\_symbol containing all predicates in {\tt P} with arity {\tt n}. If {\tt s1}, \ldots, {\tt sn} are sorts, then {\tt P[s1,...,sn]} returns a predicate\_symbol containing all predicates $Q/n$ in {\tt P}, such that the $i$'th sort of $Q$ belongs to the set {\tt si}, for $1 \leq i \leq n$.
+	\item[function\_symbol] A set of first-order functions with the same name, but possibly with different arities. Can be used as a single first-order function if the set is a singleton. If {\tt F} is a function\_symbol and {\tt n} an integer, then {\tt F/n:1} returns a function\_symbol containing all function in {\tt F} with arity {\tt n}. If {\tt s1}, \ldots, {\tt sn}, {\tt t} are sorts, then {\tt F[s1,...,sn:t]} returns a function\_symbol containing all functions $G/n$ in {\tt F}, such that the $i$'th sort of $F$ belongs to the set {\tt si}, for $1 \leq i \leq n$, and the output sort of $G$ belongs to {\tt t}.
+	\item[symbol] A set of symbols of a vocabulary with the same name. Can be used as if it were a sort, predicate\_symbol, or function\_symbol.
+	\item[vocabulary] A vocabulary. If {\tt V} is a vocabulary and {\tt s} a string, {\tt V[s]} returns the symbols in {\tt V} with name {\tt s}. 
+	\item[compound] A domainelement of the form $F(d_1,\ldots,d_n)$, where $F$ is a first-order function and $d_1$, \ldots, $d_n$ are domain elements.
+	\item[tuple] A tuple of domain elements. {\tt T[n]} returns the {\tt n}'th element in tuple {\tt T}.
+	\item[predicate\_table] A table of tuples of domain elements.
+	\item[predicate\_interpretation] An interpretation for a predicate. If {\tt T} is a predicate\_interpreation, then {\tt T.ct}, {\tt T.pt}, {\tt T.cf}, {\tt T.pf} return a predicate\_table containing, respectively, the certainly true, possibly true, certainly false, and possibly false tuples in {\tt T}. % HIER ONTBREEKT __newindex
+	\item[function\_interpretation] An interpretation for a function. {\tt F.graph} returns the predicate\_interpretation of the graph associated to the function\_interpreation {\tt F}. % HIER ONTBREEKT __newindex en __call
+	\item[structure] A first-order structure. To obtain the interpretation of a sort, singleton predicate\_symbol, or singleton function\_symbol {\tt symb} in structure {\tt S}, write {\tt S[symb]}.
+	\item[theory] A logic theory.
+	\item[options] A set of options.
+	\item[namespace] A namespace.
+	\item[overloaded] An overloaded object.
+\end{description}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Built-in procedures}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\todo{check for completeness, maybe say something about the namespace they are in, or better: reorder so that subsections are exactly the namespaces}
+
+A lot of procedures (modelexpansion, querying, propagation, calculating known definitions,\ldots) are allready built-in.  
+%TODO: betere verdeling van alle inferences over de verschillende subsubsections...
+\subsubsection{Manipulation of elements}
+\begin{description}
+	\item[createdummytuple()]
+		Create an empty tuple.
+\end{description}
+
+
+\subsubsection{Manipulation of interpretations}
+\begin{description}
+	\item[clean(structure)]
+		Modifies the given structure (the structure is the same, but its representation changes): transforms fully specified three-valued relations into two-valued ones.  For example if \code{P} has domain \code[1..2] and in the given structure, \code{P<ct> = \{1\}, P<cf> = \{2\}}, in the end, \code{P} is \code{\{1\}}.
+	\item[clone(structure)]
+		Returns a structure identical to the given one.
+	\item[isconsistent(structure)]
+ 		Check whether the structure is consistent.
+	\item[makefalse(predicate\_interpretation,table)]
+ 		Sets all tuples of the given table to false
+ 		Modifies the table-interpretation.
+	\item[ makefalse(predicate\_interpretation,tuple)]
+ 		Sets the interpretaion of the given tuple to false
+ 		Modifies the table-interpretation.
+	\item[ maketrue(predicate\_interpretation,table)]
+ 		Sets all tuples of the given table to true
+ 		Modifies the table-interpretation.
+	\item[ maketrue(predicate\_interpretation,tuple)]
+ 		Sets the interpretation of the given tuple to true
+ 		Modifies the table-interpretation.
+	\item[ makeunknown(predicate\_interpretation,table)]
+ 		Sets all tuples of the given table to unknown
+ 		Modifies the table-interpretation.
+	\item[ makeunknown(predicate\_interpretation,tuple)]
+ 		Sets the interpretation of the given tuple to unknown
+ 		Modifies the table-interpretation.
+	\item[newstructure(vocabulary,string)]
+ 		Create an empty structure with the given name over the given vocabulary.
+\end{description}
+
+\subsubsection{Manipulation of theories}
+\begin{description}
+	\item[clone(theory)]
+		Retrurns a theory identical to the given one.
+	\item[completion(theory)]
+		Add definitional completion of all the definitions in the theory to the given theory. Modifies its argument.
+	\item[flatten(theory)]
+		Rewrites formulas with the same operations in their child formulas by reducing the nesting. For example $a \wedge (b\wedge c)$ will be rewritten to $a\wedge b \wedge c$.
+		Modifies the given theory. 
+	\item[merge(theory,theory)]
+ 		Create a new theory which is the result of combining (the conjunction of) both input theories.
+	\item[pushnegations(theory)]
+ 		Push negations inwards until they are right in front of literals.
+ 		Modifies the given theory.
+	\item[removenesting(theory)]
+ 		Move nested terms out of predicates (except for the equality-predicate) and functions.
+ 		Modifies the given theory.
+\end{description}
+
+\subsubsection{Options}
+\begin{description}
+	\item[getoptions()]
+ 		Get the current options.
+	\item[newoptions()]
+ 		Create new options, equal to the standard options.
+	\item[setascurrentoptions(options)]
+ 		Sets the given options as the current options, used by all other commands.
+\end{description}
+
+\subsubsection{Miscellaneous}
+\begin{description}
+	\item[help(namespace)]
+ 		List the procedures in the given namespace.
+	\item[idptype(something)]
+ 		Returns custom typeids for first-class idp citizens.
+	\item[parse(string)]
+ 		Parses the given file and adds its information into the datastructures.
+	\item[range(number,number)]
+ 		Create a domain containing all integers between First and Last.
+\end{description}
+
+
+\subsubsection{Tables and iterators}
+\begin{description}
+	\item[elements(d)]
+		Returns a procedure, iterator, and 0 such that
+			``for e in elements(d) do ... end'' 
+		iterates over all elements in the given domain d.
+	\item[iterator(domain)]
+ 		Create an iterator for the given sorttable.
+	\item[iterator(predicate\_table)]
+ 		Create an iterator for the given predtable.
+	\item[size(predicate\_table)]
+ 		Get the size of the given table.
+	\item[tuples(table)]
+ 		Returns a procedure, iterator, and a tuple such that
+ 		``for t in tuples(table) do ... end''
+ 		iterates over all tuples in the given predicate table.
+\end{description}
+
+
+\subsubsection{Extending structures}
+\begin{description}
+	\item[alltwovaluedextensions(structure)] This procedures takes one (three-valued) structure and returns all structures over the same vocabulary that extend the given structure and are two-valued.
+	\item[alltwovaluedextensions(table)]
+		This procedures takes a table of structures and returns all two-valued extensions of any of the given structures.
+	\item[calculatedefinitions(theory,structure)]
+		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions).
+	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
+	\item[modelexpandpartial(theory,structure)]
+		Apply model expansion to theory T, structure S.
+ 		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
+		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
+	\item[modelexpand(theory,structure)]
+ 		Apply model expansion to theory T, structure S.
+ 		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
+		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
+	%%%%%%%%%PROPAGATION%%%%%%%%%%
+	\item[groundpropagate(theory,structure)]
+ 		Return a structure, made more precise than the input by grounding and unit propagation on the theory.
+		Returns nil when propagation makes the givens structure inconsistent.
+	\item[optimalpropagate(theory,structure)]
+ 		Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value
+ 		This propagation is complete: everything that can be derived from the theory will be derived. 
+ 		Returns nil when propagation results in an inconsistent structure.
+	\item[propagate(theory,structure)]
+ 		Returns a structure, made more precise than the input by doing symbolic propagation on the theory.
+ 		Returns nil when propagation results in an inconsistent structure.
+\end{description}
+
+
+\subsubsection{Grounding}
+\begin{description}
+	\item[ground(theory,structure)]
+ 		Create the reduced grounding of the given theory and structure. 
+	\item[printgrounding(theory,structure)]
+ 		Print the reduced grounding of the given theory and structure.
+ 		MEMORY EFFICIENT: does not store the grounding internally.
+\end{description}
+
+\subsubsection{Other high-level inferences}
+\begin{description}
+	\item[query(query,structure)]
+ 		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
+	\item[sat(theory,structure)]
+		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
+\end{description}
+
+\subsubsection{The mx library}
+The mx standard library file contains some useful commands for model expansion. It can be used by 
+\begin{lstlisting}
+	#include <mx>
+\end{lstlisting}
+All commands in the mx standard library file are defined in a namespace with the same name (and hence should be called by \code{mx::command(...)}.
+The following commands are supported by mx:
+\begin{description}
+	\item[one(theory,structure)]
+		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrary to the standard modelexpansion which returns a list of structures).
+	\item[all(theory,structure)] 
+		Returns all models of the theory that extend the given structure.
+	\item[printmodels(list)]
+		Prints a given list of models or prints unsatisfiable if the list is empty.
+\end{description}
+
+\subsubsection{The table\_utils library}
+The table\_utils standard library file can be include by 
+\begin{lstlisting}
+	#include <table_utils>
+\end{lstlisting}
+It contains several useful commands for manipulating tables, converting predicate tables to lua-tables,\ldots.
+
