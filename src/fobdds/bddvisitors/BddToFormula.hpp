@@ -106,13 +106,17 @@ protected:
 	}
 
 	virtual void visit(const FOBDDAggTerm* aggterm) {
-		aggterm->setexpr()->accept(this);
+#warning Missing implementation for sets
+		throw notyetimplemented("Implement!");
+/*		aggterm->setexpr()->accept(this);
 		auto set = _currset;
-		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());
+		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());*/
 	}
 
 	virtual void visit(const FOBDDEnumSetExpr* set) {
-		std::vector<Formula*> formulas(set->size());
+#warning Missing implementation for sets
+		throw notyetimplemented("Implement!");
+/*		std::vector<Formula*> formulas(set->size());
 		std::vector<Term*> terms(set->size());
 		for (int i = 0; i < set->size(); i++) {
 			set->subformula(i)->accept(this);
@@ -120,7 +124,7 @@ protected:
 			set->subterm(i)->accept(this);
 			terms[i] = _currterm;
 		}
-		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
+		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());*/
 	}
 
 	virtual void visit(const FOBDDQuantSetExpr* set) {

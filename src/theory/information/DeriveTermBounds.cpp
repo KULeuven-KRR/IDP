@@ -157,9 +157,17 @@ bool absCompare(const DomainElement* a, const DomainElement* b) {
 void DeriveTermBounds::visit(const AggTerm* t) {
 	Assert(_structure != NULL && t->sort() != NULL);
 
+	storeAndClearLists();
+
 	// Derive bounds of subterms of the set (NOTE: do not do this when dealing with CARD)
 	if (t->function() != AggFunction::CARD) {
-		traverse(t->set());
+		for(auto i=t->set()->getSets().cbegin(); i<t->set()->getSets().cend(); ++i) {
+			_level++;
+			(*i)->getSubTerm()->accept(this);
+			_level--;
+			_subtermminimums[_level].push_back(_minimum);
+			_subtermmaximums[_level].push_back(_maximum);
+		}
 	}
 
 	auto maxsize = t->set()->maxSize(_structure);

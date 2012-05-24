@@ -45,7 +45,7 @@ bool UnnestTerms::shouldMove(Term* t) {
 Sort* UnnestTerms::deriveSort(Term* term) {
 	auto sort = (_chosenVarSort != NULL) ? _chosenVarSort : term->sort();
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), _vocabulary)) {
-		sort = TermUtils::deriveIntSort(term, _structure);
+		sort = TermUtils::deriveSmallerSort(term, _structure);
 	}
 	return sort;
 }
@@ -339,17 +339,17 @@ Term* UnnestTerms::visit(FuncTerm* t) {
 	return result;
 }
 
-SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
-	vector<Formula*> saveequalities = _equalities;
+EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
+	auto saveequalities = _equalities;
 	_equalities.clear();
-	set<Variable*> savevars = _variables;
+	auto savevars = _variables;
 	_variables.clear();
 	bool savemovecontext = getAllowedToUnnest();
 	setAllowedToUnnest(true);
 	Context savecontext = getContext();
 
-	for (size_t n = 0; n < s->subterms().size(); ++n) {
-		s->subterm(n, s->subterms()[n]->accept(this));
+	for(uint i=0; i<s->getSets().size(); ++i) {
+		s->setSet(i, s->getSets()[i]->accept(this));
 		if (not _equalities.empty()) {
 			//_equalities.push_back(s->subformulas()[n]);
 			//s->subformula(n, new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
@@ -360,19 +360,13 @@ SetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 		}
 	}
 
-	setContext(Context::POSITIVE);
-	setAllowedToUnnest(false);
-	for (size_t n = 0; n < s->subformulas().size(); ++n) {
-		s->subformula(n, s->subformulas()[n]->accept(this));
-	}
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;
 	return s;
 }
 
-SetExpr* UnnestTerms::visit(QuantSetExpr* s) {
+QuantSetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	vector<Formula*> saveequalities = _equalities;
 	_equalities.clear();
 	set<Variable*> savevars = _variables;
@@ -382,11 +376,11 @@ SetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	Context savecontext = getContext();
 	setContext(Context::POSITIVE);
 
-	s->subterm(0, s->subterms()[0]->accept(this));
+	s->setTerm(s->getTerm()->accept(this));
 	if (not _equalities.empty()) {
-		_equalities.push_back(s->subformulas()[0]);
+		_equalities.push_back(s->getCondition());
 		BoolForm* bf = new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo());
-		s->subformula(0, bf);
+		s->setCondition(bf);
 		for (auto it = _variables.cbegin(); it != _variables.cend(); ++it) {
 			s->addQuantVar(*it);
 		}
@@ -396,7 +390,7 @@ SetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 
 	setAllowedToUnnest(false);
 	setContext(Context::POSITIVE);
-	s->subformula(0, s->subformulas()[0]->accept(this));
+	s->setCondition(s->getCondition()->accept(this));
 	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;

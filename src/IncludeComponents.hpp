@@ -18,6 +18,7 @@
 #include "vocabulary/vocabulary.hpp"
 #include "theory/theory.hpp"
 #include "theory/term.hpp"
+#include "theory/Sets.hpp"
 #include "theory/ecnf.hpp"
 #include "namespace/namespace.hpp"
 

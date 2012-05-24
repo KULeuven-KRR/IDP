@@ -42,7 +42,7 @@ Rule* DeriveSorts::visit(Rule* r) {
 	return r;
 }
 
-SetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
+QuantSetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 	Assert(_assertsort == NULL);
 	checkVars(qs->quantVars());
 	return traverse(qs);
