@@ -91,7 +91,7 @@ public:
 	std::ostream& put(std::ostream& output) const;
 };
 
-std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*);
+std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*, const Term*);
 
 void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>);
 
@@ -127,6 +127,7 @@ public:
 	}
 
 	void analyze(const AbstractTheory* t);
+	void analyze(const Term* t);
 
 	const std::set<Sort*>& getForbiddenSorts() const {
 		return forbiddenSorts_;

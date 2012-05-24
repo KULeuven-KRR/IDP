@@ -43,7 +43,7 @@ void fixTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
 //Do nothing unless GroundingReciever is  PCSolver (see Grounding.cpp)
 template<> void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding);
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm);
 
 //GroundingReciever can be a solver, a printmonitor, ...
 template<typename GroundingReciever>
@@ -147,7 +147,7 @@ public:
 		}
 
 		// Execute symmetry breaking
-		addSymmetryBreaking(_theory, _structure, grounding);
+		addSymmetryBreaking(_theory, _structure, grounding, _minimizeterm);
 
 		// Print grounding statistics
 		if (verbosity() > 0) {
