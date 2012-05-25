@@ -127,7 +127,7 @@ public:
 	}
 
 	void analyze(const AbstractTheory* t);
-	void analyze(const Term* t);
+	void analyzeForOptimization(const Term* t);
 
 	const std::set<Sort*>& getForbiddenSorts() const {
 		return forbiddenSorts_;

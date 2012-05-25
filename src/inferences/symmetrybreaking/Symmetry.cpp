@@ -685,7 +685,8 @@ void TheorySymmetryAnalyzer::analyze(const AbstractTheory* t) {
 	t->accept(this);
 }
 
-void TheorySymmetryAnalyzer::analyze(const Term* t) {
+void TheorySymmetryAnalyzer::analyzeForOptimization(const Term* t) {
+	markAsUnfitForSymmetry(t->sort());
 	toString(t); // Strangely enough, this makes the partialfunction.idp test succeed...
 	t->accept(this);
 }
@@ -837,7 +838,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	auto newt =t->clone();
 	FormulaUtils::graphFuncsAndAggs(newt, NULL, false /*TODO check*/);
 	tsa.analyze(newt);
-	if(minimizeTerm!=NULL){tsa.analyze(minimizeTerm);}
+	if(minimizeTerm!=NULL){tsa.analyzeForOptimization(minimizeTerm);}
 
 // Find out what sorts can not be used in symmetry:
 	set<Sort*> forbiddenSorts;
