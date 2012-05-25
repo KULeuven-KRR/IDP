@@ -786,7 +786,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	auto clonedaf = af->clone();
 
 	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
-/*	if (clonedaf->getBound()->type() == TermType::FUNC || clonedaf->getBound()->type() == TermType::VAR) {
+	if (clonedaf->getBound()->type() == TermType::FUNC || clonedaf->getBound()->type() == TermType::VAR) {
 		if (clonedaf->getAggTerm()->function() == AggFunction::CARD) {
 			deleteDeep(clonedaf);
 			clonedaf = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
@@ -806,7 +806,7 @@ void GrounderFactory::visit(const AggForm* af) {
 			deleteDeep(clonedaf);
 			clonedaf = temp;
 		}
-	}*/
+	}
 
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
 			getOption(CPSUPPORT) && not recursive(clonedaf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)

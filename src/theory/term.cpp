@@ -295,7 +295,7 @@ Sort* deriveSmallerSort(Term* term, AbstractStructure* structure) {
 		auto intmin = bounds[0]->value()._int;
 		auto intmax = bounds[1]->value()._int;
 		stringstream ss;
-		ss << "_sort«" << intmin << '-' << intmax << "»";
+		ss << "s" << intmin <<".." << intmax;
 		sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
 		sort->addParent(get(STDSORT::INTSORT));
 	}

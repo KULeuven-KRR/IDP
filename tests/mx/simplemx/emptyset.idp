@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+}
+
+theory T:V{
+	min{}>5.
+	max{}< -5.
+	sum{} = 0;
+	prod{} = 1;
+}
+
+structure S:V{
+	x = {0..5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

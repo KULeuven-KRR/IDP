@@ -467,7 +467,7 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi)
 
 Variable::Variable(Sort* s)
 		: _sort(s) {
-	_name = "_var_" + s->name() + "_" + convertToString(getGlobal()->getNewID());
+	_name = "var" + convertToString(getGlobal()->getNewID());
 }
 
 void Variable::sort(Sort* s) {
@@ -2127,7 +2127,7 @@ ostream& operator<<(ostream& output, const Vocabulary& voc) {
 namespace VocabularyUtils {
 Sort* intRangeSort(int min, int max) {
 	stringstream ss;
-	ss << "_sort_" << min << '_' << max;
+	ss << "s" << min <<".." << max;
 	auto sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(min, max)));
 	sort->addParent(get(STDSORT::INTSORT));
 	return sort;

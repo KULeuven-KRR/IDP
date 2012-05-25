@@ -1,0 +1,15 @@
+procedure getExpectedNbOfModels(){
+	return 4
+}
+
+vocabulary V{
+	type A isa int
+}
+
+theory T: V{
+	sum{x[A] y[A]: true: x}< -20.
+}
+
+structure S : V{ 
+	A = {-3 .. 6}
+}

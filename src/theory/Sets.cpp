@@ -123,10 +123,15 @@ bool SetExpr::contains(const Variable* v) const {
 			return true;
 		}
 	}
-	if(getSubFormula()->contains(v)){
+	for (auto it = _freevars.cbegin(); it != _freevars.cend(); ++it) {
+		if (*it == v) {
+			return true;
+		}
+	}
+	if(getSubFormula()!=NULL && getSubFormula()->contains(v)){
 		return true;
 	}
-	if(getSubTerm()->contains(v)){
+	if(getSubTerm()!=NULL && getSubTerm()->contains(v)){
 		return true;
 	}
 	for (auto it = getSubSets().cbegin(); it != getSubSets().cend(); ++it) {
