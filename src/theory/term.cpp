@@ -96,7 +96,7 @@ ostream& operator<<(ostream& output, const Term& t) {
  ************/
 
 void VarTerm::setFreeVars() {
-	Term::setFreeVars({_var});
+	Term::setFreeVars( { _var });
 }
 
 void VarTerm::sort(Sort* s) {
@@ -104,7 +104,7 @@ void VarTerm::sort(Sort* s) {
 }
 
 VarTerm::VarTerm(Variable* v, const TermParseInfo& pi)
-		: 	Term(pi),
+		: 	Term(TermType::VAR, pi),
 			_var(v) {
 	Assert(v!=NULL);
 	setFreeVars();
@@ -140,9 +140,10 @@ ostream& VarTerm::put(std::ostream& output) const {
  *  FuncTerm
  *************/
 
-FuncTerm::FuncTerm(Function* func, const vector<Term*>& args, const TermParseInfo& pi)
-		: 	Term(pi),
-			_function(func) {
+FuncTerm::FuncTerm(Function* function, const vector<Term*>& args, const TermParseInfo& pi)
+		: 	Term(TermType::FUNC, pi),
+			_function(function) {
+	Assert(function!=NULL);
 	subterms(args);
 }
 
@@ -190,7 +191,7 @@ ostream& FuncTerm::put(ostream& output) const {
  ***************/
 
 DomainTerm::DomainTerm(Sort* sort, const DomainElement* value, const TermParseInfo& pi)
-		: 	Term(pi),
+		: 	Term(TermType::DOM, pi),
 			_sort(sort),
 			_value(value) {
 	Assert(_sort!=NULL);
@@ -223,7 +224,7 @@ ostream& DomainTerm::put(ostream& output) const {
  ************/
 
 AggTerm::AggTerm(EnumSetExpr* set, AggFunction function, const TermParseInfo& pi)
-		: 	Term(pi),
+		: 	Term(TermType::AGG, pi),
 			_function(function) {
 	addSet(set);
 }

@@ -284,7 +284,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 					Assert(is(atom->symbol(), STDPRED::LT));
 					newsymbol = get(STDPRED::GT, atom->symbol()->sort(0));
 				}
-				if (invertedSolvedTerm->type() == TermType::TT_DOM) {
+				if (invertedSolvedTerm->type() == TermType::DOM) {
 					auto solvedEl = domElemUmin(dynamic_cast<DomainTerm*>(invertedSolvedTerm)->value());
 					solvedterm = new DomainTerm(SortUtils::resolve(get(STDSORT::INTSORT), invertedSolvedTerm->sort()), solvedEl, TermParseInfo());
 				} else {

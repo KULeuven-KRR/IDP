@@ -37,7 +37,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	return getAllowedToUnnest() && t->type() != TT_VAR && t->type() != TT_DOM;
+	return getAllowedToUnnest() && t->type() != TermType::VAR && t->type() != TermType::DOM;
 }
 /**
  * Tries to derive a sort for the term given a structure.
@@ -243,12 +243,12 @@ Formula* UnnestTerms::specialTraverse(PredForm* predform) {
 	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
 		auto leftterm = predform->subterms()[0];
 		auto rightterm = predform->subterms()[1];
-		if (leftterm->type() == TT_AGG) {
+		if (leftterm->type() == TermType::AGG) {
 			moveonlyright = true;
-		} else if (rightterm->type() == TT_AGG) {
+		} else if (rightterm->type() == TermType::AGG) {
 			moveonlyleft = true;
 		} else if (is(predform->symbol(), STDPRED::EQ)) {
-			moveonlyright = (leftterm->type() != TT_VAR) && (rightterm->type() != TT_VAR);
+			moveonlyright = (leftterm->type() != TermType::VAR) && (rightterm->type() != TermType::VAR);
 		} else {
 			setAllowedToUnnest(true);
 		}

@@ -22,16 +22,17 @@ class DomainElement;
 class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 
-enum TermType {
-	TT_VAR,
-	TT_FUNC,
-	TT_AGG,
-	TT_DOM
+enum class TermType {
+	VAR,
+	FUNC,
+	AGG,
+	DOM
 };
 
 class Term {
 ACCEPTDECLAREBOTH(Term)
 private:
+	TermType _type;
 	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
@@ -48,13 +49,13 @@ protected:
 		_freevars = freevars;
 	}
 
-public:
-	// Constructors
-	Term(const TermParseInfo& pi)
-			: 	_allwaysDeleteRecursively(false),
+	Term(TermType type, const TermParseInfo& pi)
+			: 	_type(type),
+				_allwaysDeleteRecursively(false),
 				_pi(pi) {
 	}
 
+public:
 	virtual Term* clone() const = 0;
 	//!< create a copy of the term while keeping the free variables
 	virtual Term* cloneKeepVars() const = 0;
@@ -94,7 +95,9 @@ public:
 		return _pi;
 	}
 	virtual Sort* sort() const = 0; //!< Returns the sort of the term
-	virtual TermType type() const = 0;
+	virtual TermType type() const {
+		return _type;
+	}
 	bool contains(const Variable*) const; //!< true iff the term contains the variable
 
 	const std::set<Variable*>& freeVars() const {
@@ -124,15 +127,9 @@ public:
 	VarTerm* cloneKeepVars() const;
 	VarTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~VarTerm() {
-	}
-
 	void sort(Sort* s);
 
 	Sort* sort() const;
-	TermType type() const {
-		return TT_VAR;
-	}
 	Variable* var() const {
 		return _var;
 	}
@@ -155,16 +152,11 @@ public:
 	FuncTerm* cloneKeepVars() const;
 	FuncTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~FuncTerm() {
-	}
-
 	void function(Function* f) {
+		Assert(f!=NULL);
 		_function = f;
 	}
 	Sort* sort() const;
-	TermType type() const {
-		return TT_FUNC;
-	}
 	Function* function() const {
 		return _function;
 	}
@@ -188,16 +180,10 @@ public:
 	DomainTerm* cloneKeepVars() const;
 	DomainTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~DomainTerm() {
-	}
-
 	void sort(Sort* s);
 
 	Sort* sort() const {
 		return _sort;
-	}
-	TermType type() const {
-		return TT_DOM;
 	}
 	const DomainElement* value() const {
 		return _value;
@@ -218,13 +204,7 @@ public:
 	AggTerm* cloneKeepVars() const;
 	AggTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~AggTerm() {
-	}
-
 	Sort* sort() const;
-	TermType type() const {
-		return TT_AGG;
-	}
 	EnumSetExpr* set() const {
 		return subsets()[0];
 	}

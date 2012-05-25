@@ -75,14 +75,14 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
-	case TermType::TT_FUNC: {
+	case TermType::FUNC: {
 		return eligibleForCP(dynamic_cast<const FuncTerm*>(t), voc);
 	}
-	case TermType::TT_AGG: {
+	case TermType::AGG: {
 		return eligibleForCP(dynamic_cast<const AggTerm*>(t), str);
 	}
-	case TermType::TT_VAR:
-	case TermType::TT_DOM:
+	case TermType::VAR:
+	case TermType::DOM:
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT), voc);
 		return true;
 	}

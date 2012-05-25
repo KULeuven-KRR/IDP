@@ -774,32 +774,39 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 }
 
+Formula* trueFormula() {
+	return new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
+}
+
+Formula* falseFormula() {
+	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
+}
+
 void GrounderFactory::visit(const AggForm* af) {
 	auto clonedaf = af->clone();
 
 	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
-	if (clonedaf->getBound()->type() == TermType::TT_FUNC || clonedaf->getBound()->type() == TermType::TT_VAR) {
+/*	if (clonedaf->getBound()->type() == TermType::FUNC || clonedaf->getBound()->type() == TermType::VAR) {
 		if (clonedaf->getAggTerm()->function() == AggFunction::CARD) {
 			deleteDeep(clonedaf);
 			clonedaf = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
-					new AggTerm(af->getAggTerm()->set(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
+					new AggTerm(af->getAggTerm()->set()->clone(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
 			for (auto i = clonedaf->getAggTerm()->set()->getSets().cbegin(); i < clonedaf->getAggTerm()->set()->getSets().cend(); ++i) {
-				Assert((*i)->getTerm()->type()==TermType::TT_DOM);
+				Assert((*i)->getTerm()->type()==TermType::DOM);
 				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
 				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
 			}
 		}
 		if (clonedaf->getAggTerm()->function() == AggFunction::SUM) {
+			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
 			auto newset = clonedaf->getAggTerm()->set()->clone();
-			newset->addSubSet(
-					new QuantSetExpr( { }, new BoolForm(SIGN::POS, true, { }, FormulaParseInfo()),
-							new FuncTerm(get(STDFUNC::UNARYMINUS), { clonedaf->getBound()->clone() }, TermParseInfo()), SetParseInfo()));
+			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), new FuncTerm(minus, { clonedaf->getBound()->clone() }, TermParseInfo()), SetParseInfo()));
 			auto temp = new AggForm(clonedaf->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), clonedaf->comp(),
 					new AggTerm(newset, clonedaf->getAggTerm()->function(), clonedaf->getAggTerm()->pi()), clonedaf->pi());
 			deleteDeep(clonedaf);
 			clonedaf = temp;
 		}
-	}
+	}*/
 
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
 			getOption(CPSUPPORT) && not recursive(clonedaf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
