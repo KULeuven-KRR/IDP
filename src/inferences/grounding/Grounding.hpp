@@ -80,9 +80,9 @@ public:
 			GroundingReciever* solver)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _reciever(solver), _grounder(NULL),
 				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
-		if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && minimize != NULL) {
-			throw notyetimplemented("Breaking symmetry in optimization problems.");
-		}
+//		if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && minimize != NULL) {
+//			throw notyetimplemented("Breaking symmetry in optimization problems.");
+//		}
 	}
 
 	~GroundingInference() {
