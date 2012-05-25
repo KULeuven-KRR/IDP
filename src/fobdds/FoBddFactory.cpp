@@ -60,7 +60,9 @@ void FOBDDFactory::visit(const AggTerm* at) {
 	_term = _manager->getAggTerm(function, _set);
 }
 void FOBDDFactory::visit(const EnumSetExpr* se) {
-	unsigned int size = se->subformulas().size();
+#warning Missing implementation for sets
+		throw notyetimplemented("Implement!");
+	/*unsigned int size = se->subformulas().size();
 	Assert(size == se->subterms().size());
 	std::vector<const FOBDD*> subforms(size);
 	std::vector<const FOBDDTerm*> subterms(size);
@@ -70,10 +72,12 @@ void FOBDDFactory::visit(const EnumSetExpr* se) {
 		se->subterms()[i]->accept(this);
 		subterms[i] = _term;
 	}
-	_set = _manager->getEnumSetExpr(subforms, subterms, se->sort());
+	_set = _manager->getEnumSetExpr(subforms, subterms, se->sort());*/
 }
 void FOBDDFactory::visit(const QuantSetExpr* se) {
-	se->subformulas()[0]->accept(this);
+#warning Missing implementation for sets
+		throw notyetimplemented("Implement!");
+	/*se->subformulas()[0]->accept(this);
 	auto formula = _bdd;
 	se->subterms()[0]->accept(this);
 	auto term = _term;
@@ -82,7 +86,7 @@ void FOBDDFactory::visit(const QuantSetExpr* se) {
 	for (auto it = se->quantVars().cbegin(); it != se->quantVars().cend(); it.operator ++(), i++) {
 		variables[i] = _manager->getVariable((*it));
 	}
-	_set = _manager->setquantify(variables, formula, term, se->sort());
+	_set = _manager->setquantify(variables, formula, term, se->sort());*/
 }
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,
@@ -195,7 +199,7 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 
 void FOBDDFactory::visit(const AggForm* af) {
 #ifndef NDEBUG
-	if (af->getBound()->type() != TermType::TT_DOM && af->getBound()->type() != TermType::TT_VAR) {
+	if (af->getBound()->type() != TermType::DOM && af->getBound()->type() != TermType::VAR) {
 		throw notyetimplemented("Creating a bdd for nested aggregate formulas has not yet been implemented.");
 	}
 #endif

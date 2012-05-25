@@ -11,6 +11,7 @@
 #include "Query.hpp"
 
 #include "IncludeComponents.hpp"
+#include "theory/Query.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"

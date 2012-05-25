@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "CheckSorts.hpp"
 
@@ -70,10 +70,11 @@ bool isNumeric(Sort* sort, Vocabulary* voc) {
 }
 
 void CheckSorts::visit(const AggTerm* at) {
-	auto subterms = at->set()->subterms();
-	for (auto it = subterms.cbegin(); it != subterms.cend(); ++it) {
-		if ((*it)->sort() != NULL && !isNumeric((*it)->sort(), _vocab)) {
-			Error::wrongsort(toString(*it), (*it)->sort()->name(), "int or float", (*it)->pi());
+	for (auto i = at->set()->getSets().cbegin(); i < at->set()->getSets().cend(); ++i) {
+		auto term = (*i)->getTerm();
+		auto sort = term->sort();
+		if (sort != NULL && !isNumeric(sort, _vocab)) {
+			Error::wrongsort(toString(term), sort->name(), "int or float", term->pi());
 		}
 	}
 	traverse(at);

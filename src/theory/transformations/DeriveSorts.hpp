@@ -64,7 +64,7 @@ protected:
 	Term* visit(DomainTerm*);
 	Term* visit(AggTerm* t);
 	Term* visit(FuncTerm*);
-	SetExpr* visit(QuantSetExpr*);
+	QuantSetExpr* visit(QuantSetExpr*);
 
 private:
 	template<typename T>

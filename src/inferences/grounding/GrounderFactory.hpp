@@ -32,6 +32,7 @@ class DomElemContainer;
 class InteractivePrintMonitor;
 class TermGrounder;
 class SetGrounder;
+class QuantSetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 class FormulaGrounder;
@@ -85,6 +86,7 @@ private:
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
+	QuantSetGrounder* _quantsetgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
 	Grounder* _topgrounder;

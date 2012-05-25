@@ -41,7 +41,7 @@ class DomainElement;
 class DomainTerm;
 class Variable;
 class VarTerm;
-class SetExpr;
+class EnumSetExpr;
 class Term;
 class AggTerm;
 class Function;
@@ -61,8 +61,8 @@ DomainTerm* domainterm(Sort*, int value);
 Variable* var(Sort*);
 VarTerm* varterm(Sort*);
 
-SetExpr* qset(const std::set<Variable*>&, Formula&, Term*);
-AggTerm* sum(SetExpr*);
+EnumSetExpr* qset(const std::set<Variable*>&, Formula&, Term*);
+AggTerm* sum(EnumSetExpr*);
 
 Term& functerm(Function*, const std::vector<Variable*>&);
 Term& functerm(Function*, const std::vector<Term*>&);

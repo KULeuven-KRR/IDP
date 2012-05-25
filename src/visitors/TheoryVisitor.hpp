@@ -25,7 +25,8 @@ protected:
 	virtual void traverse(const Theory*);
 	virtual void traverse(const Formula*);
 	virtual void traverse(const Term*);
-	virtual void traverse(const SetExpr*);
+	virtual void traverse(const QuantSetExpr*);
+	virtual void traverse(const EnumSetExpr*);
 
 	virtual void visit(const Theory*) = 0;
 	virtual void visit(const AbstractGroundTheory*) = 0;

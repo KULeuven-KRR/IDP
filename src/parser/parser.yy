@@ -184,8 +184,8 @@ typedef std::list<isp>				lisp;
 %type <fpd> fixpdef
 %type <fpd> fd_rules
 %type <def> definition
-%type <set> formulaset
-%type <set> termset
+%type <est> formulaset
+%type <est> termset
 %type <est> form_list
 %type <est> form_term_list
 %type <cpo> compound
@@ -551,11 +551,11 @@ aggterm		: P_CARD formulaset	{ $$ = getInserter().aggregate(AggFunction::CARD,$2
 			;
 
 formulaset		: '{' variables ':' formula '}'				{ $$ = getInserter().set(*$2,$4,@1); delete($2);	}
-				| '[' form_list ']'							{ $$ = getInserter().set($2);						}
+				| '[' form_list ']'							{ $$ = $2;											}
 				;
 
 termset			: '{' variables ':' formula ':' term '}'	{ $$ = getInserter().set(*$2,$4,$6,@1); delete($2);	}	
-				| '[' form_term_list ']'					{ $$ = getInserter().set($2);							}
+				| '[' form_term_list ']'					{ $$ = $2;											}
 				;
 
 form_list		: form_list ';' formula						{ $$ = $1; getInserter().addFormula($$,$3);						}

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef DERIVETERMBOUNDS_HPP_
 #define DERIVETERMBOUNDS_HPP_
@@ -20,7 +20,7 @@
 class AbstractStructure;
 class DomainElement;
 
-class BoundsUnderivableException: public std::exception{
+class BoundsUnderivableException: public std::exception {
 
 };
 
@@ -47,22 +47,27 @@ public:
 		try {
 			t->accept(this);
 			return std::vector<const DomainElement*> { _minimum, _maximum };
-		} catch(const BoundsUnderivableException& e) {
+		} catch (const BoundsUnderivableException& e) {
 			return std::vector<const DomainElement*> { NULL, NULL };
 		}
 	}
 
 protected:
-	template<typename T>
-	void traverse(const T* t) {
+	void storeAndClearLists() {
 		if (_level >= _subtermminimums.size()) {
-			_subtermminimums.push_back(std::vector<const DomainElement*>{});
-			_subtermmaximums.push_back(std::vector<const DomainElement*>{});
+			_subtermminimums.push_back(ElementTuple { });
+			_subtermmaximums.push_back(ElementTuple { });
 		}
 		_subtermminimums[_level].clear();
 		_subtermmaximums[_level].clear();
+	}
+	template<typename T>
+	void traverse(const T* t) {
+		storeAndClearLists();
 		for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
-			_level++; (*it)->accept(this); _level--;
+			_level++;
+			(*it)->accept(this);
+			_level--;
 			_subtermminimums[_level].push_back(_minimum);
 			_subtermmaximums[_level].push_back(_maximum);
 		}
