@@ -360,6 +360,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 		}
 	}
 
+	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;

@@ -775,8 +775,35 @@ void GrounderFactory::visit(const EquivForm* ef) {
 }
 
 void GrounderFactory::visit(const AggForm* af) {
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(CPSUPPORT) && not recursive(af)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(af), _context._funccontext);
+	auto clonedaf = af->clone();
+
+	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
+	if (clonedaf->getBound()->type() == TermType::TT_FUNC || clonedaf->getBound()->type() == TermType::TT_VAR) {
+		if (clonedaf->getAggTerm()->function() == AggFunction::CARD) {
+			deleteDeep(clonedaf);
+			clonedaf = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
+					new AggTerm(af->getAggTerm()->set(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
+			for (auto i = clonedaf->getAggTerm()->set()->getSets().cbegin(); i < clonedaf->getAggTerm()->set()->getSets().cend(); ++i) {
+				Assert((*i)->getTerm()->type()==TermType::TT_DOM);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
+			}
+		}
+		if (clonedaf->getAggTerm()->function() == AggFunction::SUM) {
+			auto newset = clonedaf->getAggTerm()->set()->clone();
+			newset->addSubSet(
+					new QuantSetExpr( { }, new BoolForm(SIGN::POS, true, { }, FormulaParseInfo()),
+							new FuncTerm(get(STDFUNC::UNARYMINUS), { clonedaf->getBound()->clone() }, TermParseInfo()), SetParseInfo()));
+			auto temp = new AggForm(clonedaf->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), clonedaf->comp(),
+					new AggTerm(newset, clonedaf->getAggTerm()->function(), clonedaf->getAggTerm()->pi()), clonedaf->pi());
+			deleteDeep(clonedaf);
+			clonedaf = temp;
+		}
+	}
+
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
+			getOption(CPSUPPORT) && not recursive(clonedaf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(clonedaf), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
@@ -817,6 +844,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		_topgrounder = getFormGrounder();
 	}
 	deleteDeep(transaf);
+	deleteDeep(clonedaf);
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {

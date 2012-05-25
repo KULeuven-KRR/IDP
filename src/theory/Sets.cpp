@@ -54,6 +54,18 @@ void SetExpr::setFreeVars(){
 	for(auto i=getSubSets().cbegin(); i<getSubSets().cend(); ++i) {
 		_freevars.insert((*i)->freeVars().cbegin(), (*i)->freeVars().cend());
 	}
+	for(auto i=_quantvars.cbegin(); i!=_quantvars.cend(); ++i){
+		_freevars.erase(*i);
+	}
+}
+
+void SetExpr::addSubSet(QuantSetExpr* set) {
+	_subsets.push_back(set);
+	setFreeVars();
+}
+void SetExpr::setSubSets(std::vector<QuantSetExpr*> sets) {
+	_subsets = sets;
+	setFreeVars();
 }
 
 void SetExpr::deleteChildren(bool andvars) {
@@ -85,6 +97,9 @@ void SetExpr::deleteChildren(bool andvars) {
 
 Sort* SetExpr::sort() const {
 	Sort* currsort = NULL;
+	if(getSubTerm()!=NULL){
+		currsort = getSubTerm()->sort();
+	}
 	for(auto i=getSubSets().cbegin(); i<getSubSets().cend(); ++i) {
 		auto sort = (*i)->sort();
 		if(sort == NULL){
@@ -133,7 +148,6 @@ ostream& operator<<(ostream& output, const SetExpr& set) {
 EnumSetExpr::EnumSetExpr(const vector<QuantSetExpr*>& subsets, const SetParseInfo& pi)
 		: SetExpr(pi) {
 	setSubSets(subsets);
-	setFreeVars();
 }
 
 EnumSetExpr* EnumSetExpr::clone() const {
@@ -200,7 +214,7 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 	set<Variable*> newvars;
 	map<Variable*, Variable*> nmvv = mvv;
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
-		Variable* nv = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
+		auto nv = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
 		newvars.insert(nv);
 		nmvv[*it] = nv;
 	}
@@ -226,11 +240,10 @@ ostream& QuantSetExpr::put(ostream& output) const {
 	output << "{";
 //	if (not quantVars().empty()) { // TODO when syntax changes
 		for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
-			output << ' ';
-			(*it)->put(output);
+			output << ' ' <<toString(*it);
 		}
 		output << " :";
 //	}
-	output << " " << toString(getCondition()) << " : " << getTerm() << " }";
+	output << " " << toString(getCondition()) << " : " <<toString(getTerm()) << " }";
 	return output;
 }

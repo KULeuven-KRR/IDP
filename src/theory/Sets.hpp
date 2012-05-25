@@ -39,10 +39,7 @@ private:
 protected:
 	void setFreeVars(); //!< Compute the free variables of the set
 
-	void addSubSet(QuantSetExpr* set) {
-		_subsets.push_back(set);
-		setFreeVars();
-	}
+	void addSubSet(QuantSetExpr* set);
 	void setTerm(Term* term) {
 		_subterm = term;
 		setFreeVars();
@@ -51,35 +48,32 @@ protected:
 		_subformula = formula;
 		setFreeVars();
 	}
-	Formula* getSubFormula() const{
+	Formula* getSubFormula() const {
 		return _subformula;
 	}
 	Term* getSubTerm() const {
 		return _subterm;
 	}
-	void setSubSet(uint index, QuantSetExpr* set){
+	void setSubSet(uint index, QuantSetExpr* set) {
 		_subsets[index] = set;
 		setFreeVars();
 	}
-	void setSubSets(std::vector<QuantSetExpr*> sets){
-		_subsets = sets;
-		setFreeVars();
-	}
-	void setSubTerm(Term* term){
+	void setSubSets(std::vector<QuantSetExpr*> sets);
+	void setSubTerm(Term* term) {
 		_subterm = term;
 		setFreeVars();
 	}
-	const std::vector<QuantSetExpr*>& getSubSets() const{
+	const std::vector<QuantSetExpr*>& getSubSets() const {
 		return _subsets;
 	}
-	const std::set<Variable*>& getSubQuantVars() const{
+	const std::set<Variable*>& getSubQuantVars() const {
 		return _quantvars;
 	}
-	void addSubQuantVar(Variable* var){
+	void addSubQuantVar(Variable* var) {
 		_quantvars.insert(var);
 		setFreeVars();
 	}
-	void setQuantVars(const std::set<Variable*>& vars){
+	void setQuantVars(const std::set<Variable*>& vars) {
 		_quantvars = vars;
 		setFreeVars();
 	}
@@ -87,7 +81,9 @@ protected:
 public:
 	SetExpr(const SetParseInfo& pi)
 			: 	_pi(pi),
-				_allwaysDeleteRecursively(false) {
+				_allwaysDeleteRecursively(false),
+				_subformula(NULL),
+				_subterm(NULL) {
 	}
 
 	virtual SetExpr* clone() const = 0;
@@ -138,7 +134,7 @@ public:
 	}
 	EnumSetExpr(const std::vector<QuantSetExpr*>& s, const SetParseInfo& pi);
 
-	void addSet(QuantSetExpr* set){
+	void addSet(QuantSetExpr* set) {
 		addSubSet(set);
 	}
 
@@ -149,7 +145,7 @@ public:
 	const std::vector<QuantSetExpr*>& getSets() const {
 		return getSubSets();
 	}
-	void setSet(uint index, QuantSetExpr* set){
+	void setSet(uint index, QuantSetExpr* set) {
 		setSubSet(index, set);
 	}
 
@@ -169,13 +165,13 @@ public:
 	Formula* getCondition() const {
 		return getSubFormula();
 	}
-	void setCondition(Formula* condition){
+	void setCondition(Formula* condition) {
 		setSubFormula(condition);
 	}
-	Term* getTerm() const{
+	Term* getTerm() const {
 		return getSubTerm();
 	}
-	void setTerm(Term* term){
+	void setTerm(Term* term) {
 		setSubTerm(term);
 	}
 
