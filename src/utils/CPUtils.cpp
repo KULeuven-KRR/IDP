@@ -22,10 +22,10 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 }
 
 bool nonOverloadedNonBuiltinEligibleForCP(Function* f, const Vocabulary* v){
-	if(f->partial()){ // TODO at the moment, partial terms are never eligible for CP
+	if (f->partial()) { // TODO at the moment, partial terms are never eligible for CP
 		return false;
 	}
-	if(not FuncUtils::isIntFunc(f, v)){
+	if (not FuncUtils::isIntFunc(f, v)) {
 		return false;
 	}
 	return true;
@@ -38,7 +38,7 @@ bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 	if (function->overloaded()) {
 		auto nonbuiltins = function->nonbuiltins();
 		for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-			if(not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)){
+			if (not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)) {
 				return false;
 			}
 		}
