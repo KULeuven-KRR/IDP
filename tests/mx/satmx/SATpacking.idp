@@ -50,12 +50,12 @@ theory T : V {
 
   /* Put largest square with smallest identifier in a corner */
   largest = min{ Sqr : size(Sqr) = max{ Sqr : square(Sqr) : size(Sqr) } : Sqr }.
-  xPos(largest) = yPos(largest) = 0.
+  //xPos(largest) = yPos(largest) = 0.
   //TODO manually rewritten above constraints, should be done automatically... or some other solution??
-  //! Sqr : (Sqr = largest) => (xPos(Sqr) = 0) & (yPos(Sqr) = 0).
+  ! Sqr : (Sqr = largest) => (xPos(Sqr) = 0) & (yPos(Sqr) = 0).
 
 	/* When two squares have the same size, put the one with smallest identifier closest to the origin */
-  ! Sqr1 Sqr2 : (Sqr1 < Sqr2) & (size(Sqr1) = size(Sqr2)) => (xPos(Sqr1) < xPos(Sqr2)) | (yPos(Sqr1) < yPos(Sqr2)).
+  //! Sqr1 Sqr2 : (Sqr1 < Sqr2) & (size(Sqr1) = size(Sqr2)) => (xPos(Sqr1) < xPos(Sqr2)) | (yPos(Sqr1) < yPos(Sqr2)).
 	
 	/* Sum of areas of squares should be less or equal to total area */
   //sum{ Sqr : square(Sqr) : size(Sqr)^2 } =< (width * height).
