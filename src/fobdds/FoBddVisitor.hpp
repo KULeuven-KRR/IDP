@@ -58,8 +58,8 @@ public:
 	virtual const FOBDDTerm* change(const FOBDDDomainTerm*);
 	virtual const FOBDDTerm* change(const FOBDDFuncTerm*);
 	virtual const FOBDDTerm* change(const FOBDDAggTerm*);
-	virtual const FOBDDSetExpr* change(const FOBDDQuantSetExpr*);
-	virtual const FOBDDSetExpr* change(const FOBDDEnumSetExpr*);
+	virtual const FOBDDQuantSetExpr* change(const FOBDDQuantSetExpr*);
+	virtual const FOBDDEnumSetExpr* change(const FOBDDEnumSetExpr*);
 };
 
 #endif /* FOBDDVISITOR_HPP_ */

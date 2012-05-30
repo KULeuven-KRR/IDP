@@ -14,6 +14,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
 
 #include "GeneratorFactory.hpp"
 

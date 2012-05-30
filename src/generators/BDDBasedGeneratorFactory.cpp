@@ -573,7 +573,7 @@ vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vecto
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
-Assert(checkInput(pattern, vars, atomvars, universe));
+	Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";
@@ -839,33 +839,34 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	std::vector<Pattern> subformpattern(subformvars.size(), Pattern::INPUT);
 	auto subformtables = universe.tables();
 	std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*> deBruynMapping;
-	int i = 0;
-	for (auto it = set->quantvarsorts().crbegin(); it != set->quantvarsorts().crend(); it++, i++) {
-		auto newquantvar = new DomElemContainer();
-		auto newfobddvar = _manager->getVariable((new Variable(*it)));
-		subformvars.push_back(newquantvar);
-		subformpattern.push_back(Pattern::OUTPUT);
-		subformbddvars.push_back(newfobddvar);
-		deBruynMapping[_manager->getDeBruijnIndex(*it, i)] = newfobddvar;
-		subformtables.push_back(structure->inter(*it));
-	}
+	size_t subsetnumber = 0;
+	for (auto subs = set->subsets().cbegin(); subs != set->subsets().cend(); subs++, subsetnumber++) {
+		size_t quantvarnumber = 0;
+		for (auto it = (*subs)->quantvarsorts().crbegin(); it != (*subs)->quantvarsorts().crend(); it++, quantvarnumber++) {
+			auto newquantvar = new DomElemContainer();
+			auto newfobddvar = _manager->getVariable((new Variable(*it)));
+			subformvars.push_back(newquantvar);
+			subformpattern.push_back(Pattern::OUTPUT);
+			subformbddvars.push_back(newfobddvar);
+			deBruynMapping[_manager->getDeBruijnIndex(*it, quantvarnumber)] = newfobddvar;
+			subformtables.push_back(structure->inter(*it));
+		}
 
-	data.vars = subformvars;
-	data.bddvars = subformbddvars;
-	data.pattern = subformpattern;
-	data.structure = structure;
-	data.universe = Universe(subformtables);
+		data.vars = subformvars;
+		data.bddvars = subformbddvars;
+		data.pattern = subformpattern;
+		data.structure = structure;
+		data.universe = Universe(subformtables);
 
-	for (int j = 0; j < set->size(); j++) {
-		data.bdd = _manager->substitute(set->subformula(j), deBruynMapping);
-		formulagenerators[j] = create(data);
+		data.bdd = _manager->substitute((*subs)->subformula(), deBruynMapping);
+		formulagenerators[subsetnumber] = create(data);
 		const DomElemContainer* newvar = new DomElemContainer();
-		terms[j] = newvar;
-		auto sort = set->subterm(j)->sort();
+		terms[subsetnumber] = newvar;
+		auto sort = (*subs)->subterm()->sort();
 		auto newfobddvar = _manager->getVariable(new Variable(sort));
 		auto equalpred = get(STDPRED::EQ, sort); //TODO: depends on comparison!!!
 		auto equalkernel = _manager->getAtomKernel(equalpred, AtomKernelType::AKT_TWOVALUED,
-				{ newfobddvar, _manager->substitute(set->subterm(j), deBruynMapping) });
+				{ newfobddvar, _manager->substitute((*subs)->subterm(), deBruynMapping) });
 		auto termvars = subformvars;
 		termvars.push_back(newvar);
 		auto termfobddvars = subformbddvars;
@@ -876,7 +877,8 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		auto termtables = subformtables;
 		termtables.push_back(structure->inter(sort));
 		auto newuniverse = new Universe(termtables);
-		termgenerators[j] = createFromKernel(equalkernel, termpattern, termvars, termfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
+		termgenerators[subsetnumber] = createFromKernel(equalkernel, termpattern, termvars, termfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
+
 	}
 	auto rightvalue = new DomElemContainer();
 	//AggGenerator calculates the value of the set and stores it in "rightvalue".

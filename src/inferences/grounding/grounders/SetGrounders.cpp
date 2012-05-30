@@ -62,7 +62,6 @@ SetId EnumSetGrounder::run() const {
 	weightlist weights;
 	weightlist trueweights;
 	varidlist varids;
-	InstChecker* checker = new FalseInstChecker();
 	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
 		(*i)->run(literals, weights, trueweights, varids);
 	}

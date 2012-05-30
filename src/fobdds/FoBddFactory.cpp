@@ -19,6 +19,8 @@
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAtomKernel.hpp"
 #include "IncludeComponents.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
+
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
@@ -57,36 +59,28 @@ void FOBDDFactory::visit(const FuncTerm* ft) {
 void FOBDDFactory::visit(const AggTerm* at) {
 	auto function = at->function();
 	at->set()->accept(this);
-	_term = _manager->getAggTerm(function, _set);
+	_term = _manager->getAggTerm(function, _enumset);
 }
-void FOBDDFactory::visit(const EnumSetExpr* se) {
-#warning Missing implementation for sets
-		throw notyetimplemented("Implement!");
-	/*unsigned int size = se->subformulas().size();
-	Assert(size == se->subterms().size());
-	std::vector<const FOBDD*> subforms(size);
-	std::vector<const FOBDDTerm*> subterms(size);
-	for (unsigned int i = 0; i < size; i++) {
-		se->subformulas()[i]->accept(this);
-		subforms[i] = _bdd;
-		se->subterms()[i]->accept(this);
-		subterms[i] = _term;
+void FOBDDFactory::visit(const EnumSetExpr* ese) {
+	auto sets = ese->getSets();
+	std::vector<const FOBDDQuantSetExpr*> bddsets;
+	for (auto it = sets.cbegin(); it != sets.cend(); it++) {
+		(*it)->accept(this);
+		bddsets.push_back(_quantset);
 	}
-	_set = _manager->getEnumSetExpr(subforms, subterms, se->sort());*/
+	_enumset = _manager->getEnumSetExpr(bddsets, ese->sort());
 }
 void FOBDDFactory::visit(const QuantSetExpr* se) {
-#warning Missing implementation for sets
-		throw notyetimplemented("Implement!");
-	/*se->subformulas()[0]->accept(this);
+	se->getCondition()->accept(this);
 	auto formula = _bdd;
-	se->subterms()[0]->accept(this);
+	se->getTerm()->accept(this);
 	auto term = _term;
 	std::vector<const FOBDDVariable*> variables(se->quantVars().size());
 	int i = 0;
 	for (auto it = se->quantVars().cbegin(); it != se->quantVars().cend(); it.operator ++(), i++) {
 		variables[i] = _manager->getVariable((*it));
 	}
-	_set = _manager->setquantify(variables, formula, term, se->sort());*/
+	_quantset = _manager->setquantify(variables, formula, term, se->sort());
 }
 /**
  * If it is a predicate, we have to check if we are working with a bounded version of a parent predicate,

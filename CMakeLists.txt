@@ -24,7 +24,7 @@ endmacro()
 ### Rpath handling
 include(cmake/rpathhandling.cmake)
 
-### Target properties helper
+### Target properties helper 
 include(cmake/settargetproperties.cmake)
 
 ### Gmp handling
