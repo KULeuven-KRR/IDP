@@ -89,7 +89,7 @@ public:
 	int size() const {
 		return _subsets.size();
 	}
-	std::vector<const FOBDDQuantSetExpr* > subsets() const{
+	const std::vector<const FOBDDQuantSetExpr* >& subsets() const{
 		return _subsets;
 	}
 

@@ -71,7 +71,8 @@ void FOBDDVisitor::visit(const FOBDDAggTerm* term) {
 }
 
 void FOBDDVisitor::visit(const FOBDDEnumSetExpr* set) {
-	for (auto subs = set->subsets().cbegin(); subs != set->subsets().cend(); subs++) {
+	auto subsets = set->subsets();
+	for (auto subs = subsets.cbegin(); subs != subsets.cend(); ++subs) {
 		(*subs)->accept(this);
 	}
 }
