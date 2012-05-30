@@ -346,7 +346,7 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right) {
 #ifndef NDEBUG
 	if (not isa<FOBDDAggTerm>(*right)) {
-		throw notyetimplemented("Creating aggkernel where right is nog aggterm ");
+		throw notyetimplemented("Creating aggkernel where right is no aggterm ");
 		//this can happen when bdds are simplified...
 	}
 #endif
@@ -918,11 +918,6 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 
 }
 const FOBDDQuantSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
-	if (vars.size() == 0) {
-		throw notyetimplemented("FOBDDQUANTSET without variables");
-		Assert(false);
-		//TODO what does this mean?  Enumsetexpr with one?
-	}
 	std::vector<Sort*> sorts(vars.size());
 	int i = 0;
 	const FOBDD* bumpedformula = formula;
