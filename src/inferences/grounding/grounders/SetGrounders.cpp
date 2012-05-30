@@ -17,13 +17,15 @@
 #include "generators/InstGenerator.hpp"
 #include "generators/BasicCheckersAndGenerators.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/GroundTermTranslator.hpp"
+#include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"
 
 using namespace std;
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights,
-		varidlist& varids, InstChecker& checker) {
+void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder,
+		litlist& literals, weightlist& weights, weightlist& trueweights, varidlist& varids, InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
 		l = _true;
@@ -38,13 +40,36 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 
 	if (groundweight.isVariable) {
 		Assert(l == _true);
-		//FIXME: this is not always the case...
 		varids.push_back(groundweight._varid);
+//TODO: When l != _true: introduce new term (constant?) t'. Add two formulas: l => t' = t and -l => t' = 0
+//		if (l == _true) {
+//			varids.push_back(groundweight._varid);
+//		} else {
+//			auto grounding = sublitgrounder.getGrounding();
+//			auto translator = grounding->translator();
+//			auto termtranslator = grounding->termtranslator();
+
+//			auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()),subtermgrounder.getDomain());
+//			auto func = new Function(vector<Sort*>{},sort,ParseInfo());
+//			//TODO: Add to vocabulary somehow?
+//
+//			auto varid = termtranslator->translate(func,vector<GroundTerm>{});
+//			auto vt1 = new CPVarTerm(varid);
+//			auto vt2 = new CPVarTerm(varid);
+//			Lit bl1 = translator->translate(vt1,CompType::EQ,CPBound(groundweight._varid),TsType::EQ);
+//			Lit bl2 = translator->translate(vt2,CompType::EQ,CPBound(0),TsType::EQ);
+//			Lit l1 = translator->translate({-l,bl1},false,TsType::EQ);
+//			Lit l2 = translator->translate({l,bl2},false,TsType::EQ);
+//			Lit truelit = translator->translate({l1,l2},true,TsType::EQ);
+//			grounding->addUnitClause(truelit);
+//
+//			varids.push_back(varid);
+//		}
 		return;
 	}
 
 	const auto& d = groundweight._domelement;
-	Assert(d!=NULL);
+	Assert(d != NULL);
 	auto w = (d->type() == DET_INT) ? (double) d->value()._int : d->value()._double;
 
 	if (l == _true) {
@@ -54,10 +79,12 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		literals.push_back(l);
 	}
 }
+
 EnumSetGrounder::~EnumSetGrounder() {
 	deleteList(_subgrounders);
 	deleteList(_subtermgrounders);
 }
+
 SetId EnumSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;
@@ -70,12 +97,14 @@ SetId EnumSetGrounder::run() const {
 	SetId s = _translator->translateSet(literals, weights, trueweights, varids);
 	return s;
 }
+
 QuantSetGrounder::~QuantSetGrounder() {
 	delete _subgrounder;
 	delete _generator;
 	delete _checker;
 	delete _weightgrounder;
 }
+
 SetId QuantSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;
