@@ -1,12 +1,20 @@
 vocabulary V{
 	type x isa int
+	A:x // Should be 0
+	B:x // Should be 1
+	C:x // Should be 0
+	D:x // Should be 1
 }
 
 theory T:V{
-	min{}>5.
-	max{}< -5.
-	sum{} = 0;
-	prod{} = 1;
+	min {x[x]:false:1} >100000.
+	max {x[x]:false:1} < 100000.
+	sum {x[x]:false:1} = A.
+	prod{x[x]:false:1} = B.
+	min [(false,1)] > 100000.
+	max [(false,1)] < -100000.
+	sum [(false,1)] = C.
+	prod[(false,1)] = D.
 }
 
 structure S:V{
