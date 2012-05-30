@@ -1,0 +1,21 @@
+#include <mx>
+
+vocabulary V {
+  type N isa nat
+  A : N
+  B : N
+}
+theory T : V {
+  A < B.
+}
+term O : V {
+  A + B
+}
+structure S : V {
+  N = { 1..3 }
+}
+
+procedure main() {
+  stdoptions.cpsupport = true
+  printmodels(minimize(T,S,O))
+}

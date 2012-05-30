@@ -1,19 +1,18 @@
 #include <mx>
 
-vocabulary V{
+vocabulary V {
 	type x isa nat
 	P(x)
 }
-theory T:V{
+theory T:V {
 	?>2 x: P(x).
 }
-term O : V{
+term O : V {
 	#{x: P(x)}
 }
-structure S:V{
+structure S:V {
 	x = {1..10}
 }
-procedure main(){
-	stdoptions.satverbosity=1
-	mx::printmodels(minimize(T, S, O))
+procedure main() {
+	printmodels(minimize(T, S, O))
 }

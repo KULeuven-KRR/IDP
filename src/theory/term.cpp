@@ -622,7 +622,7 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 	return terms;
 }
 
-Sort* deriveIntSort(Term* term, AbstractStructure* structure) {
+Sort* deriveIntSort(const Term* term, const AbstractStructure* structure) {
 	Sort* sort = term->sort();
 	if (structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary())) {
 		auto bounds = TermUtils::deriveTermBounds(term, structure);

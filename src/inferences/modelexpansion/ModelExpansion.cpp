@@ -79,7 +79,6 @@ private:
 public:
 	SolverTermination(PCModelExpand* solver)
 			: solver(solver) {
-
 	}
 	void notifyTerminateRequested() {
 		solver->notifyTerminateRequested();

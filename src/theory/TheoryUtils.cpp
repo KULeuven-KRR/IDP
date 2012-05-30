@@ -64,7 +64,7 @@ void deriveSorts(Vocabulary* voc, Term* term) {
 	transform<DeriveSorts>(term, voc, true);
 }
 
-ElementTuple deriveTermBounds(Term* term, const AbstractStructure* str) {
+ElementTuple deriveTermBounds(const Term* term, const AbstractStructure* str) {
 	return transform<DeriveTermBounds, ElementTuple>(term, str);
 }
 

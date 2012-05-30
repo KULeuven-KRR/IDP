@@ -44,6 +44,9 @@
 #include "groundtheories/SolverTheory.hpp"
 
 #include "inferences/grounding/grounders/Grounder.hpp"
+
+#include "utils/CPUtils.hpp"
+
 using namespace std;
 using namespace rel_ops;
 
@@ -226,15 +229,31 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 
 Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
 	Assert(minimizeterm!=NULL);
-	auto term = dynamic_cast<const AggTerm*>(minimizeterm);
-	if (term == NULL) {
-		throw notyetimplemented("Optimization over non-aggregate terms.");
-	}
+
 	//TODO: when minimizing, what do we want nbmodelsequivalent to be?
 	GrounderFactory g(data, grounding, true);
-	g.ground(term->set(), vocabulary);
-	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
-	optimgrounder->setOrig(minimizeterm);
+
+	OptimizationGrounder* optimgrounder;
+	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(minimizeterm, data.partialstructure)) {
+		g.ground(minimizeterm, vocabulary);
+		optimgrounder = new VariableOptimizationGrounder(grounding, g.getTermGrounder(), g.getContext());
+		optimgrounder->setOrig(minimizeterm);
+	} else {
+		switch (minimizeterm->type()) {
+		case TermType::TT_AGG: {
+			auto term = dynamic_cast<const AggTerm*>(minimizeterm);
+			g.ground(term->set(), vocabulary);
+			optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
+			optimgrounder->setOrig(minimizeterm);
+			break;
+		}
+		case TermType::TT_FUNC:
+		case TermType::TT_VAR:
+		case TermType::TT_DOM:
+			throw notyetimplemented("Optimization over non-aggregate terms without CP support.");
+		}
+	}
+
 	Grounder* grounder = optimgrounder;
 	if (g.getTopGrounder() != NULL) {
 		grounder = new BoolGrounder(g.getGrounding(), { optimgrounder, g.getTopGrounder() }, SIGN::POS, true, g.getContext());
@@ -864,8 +883,14 @@ void GrounderFactory::visit(const AggTerm* t) {
 	// Create set grounder
 	descend(t->set());
 
+	// Compute domain
+	SortTable* domain = NULL;
+	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t,_structure)) {
+		domain = TermUtils::deriveIntSort(t, _structure)->interpretation();
+	}
+
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(getGrounding()->translator(), getGrounding()->termtranslator(), t->function(), getSetGrounder());
+	_termgrounder = new AggTermGrounder(getGrounding()->translator(), getGrounding()->termtranslator(), t->function(), domain, getSetGrounder());
 	_termgrounder->setOrig(t, varmapping());
 }
 

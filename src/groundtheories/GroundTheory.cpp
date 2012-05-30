@@ -67,13 +67,13 @@ void GroundTheory<Policy>::recursiveDelete() {
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
-	if(getOption(IntType::GROUNDVERBOSITY)>0){
-		clog <<"Closing theory, adding functional constraints and symbols defined false.\n";
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
 	// TODO arbitrary values?
 	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
-	if(not getOption(BoolType::GROUNDLAZILY)){
+	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
 	}
 }
@@ -206,6 +206,15 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
+	//Add reified constraint necessary. TODO refactor
+	if (termtranslator()->function(varid) == NULL) {
+		if (_printedvarids.find(varid) == _printedvarids.end()) {
+			_printedvarids.insert(varid);
+			auto cprelation = termtranslator()->cprelation(varid);
+			auto tseitin = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
+			addUnitClause(tseitin);
+		}
+	}
 	Policy::polAddOptimization(varid);
 }
 

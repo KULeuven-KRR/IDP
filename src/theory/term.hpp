@@ -263,7 +263,7 @@ namespace TermUtils {
 std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
 
 /** Derive a sort for a given term */
-Sort* deriveIntSort(Term*, AbstractStructure*);
+Sort* deriveIntSort(const Term*, const AbstractStructure*);
 }
 
 /*************

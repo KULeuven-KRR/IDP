@@ -128,8 +128,8 @@ private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SetGrounder* gr) :
-			_translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SortTable* dom, SetGrounder* gr)
+			: TermGrounder(dom), _translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };

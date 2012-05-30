@@ -72,7 +72,7 @@ public:
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
-		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor,nbModelsEquivalent, solver));
+		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver));
 
 		return m;
 	}
@@ -105,7 +105,8 @@ public:
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
 				return NULL;
-			}Assert(defCalculated[0]->isConsistent());
+			}
+			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
 		// Create grounder
@@ -136,8 +137,11 @@ public:
 		if (getOption(BoolType::TRACE)) {
 			fixTraceMonitor(_tracemonitor, _grounder, _reciever);
 		}
+		// Run grounder
 		_grounder->toplevelRun();
 		auto grounding = _grounder->getGrounding();
+
+		// Create and run grounder for minimization if necessary
 		if (_minimizeterm != NULL) {
 			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), GroundStructureInfo { _structure, symstructure }, grounding);
 			optimgrounder->toplevelRun();

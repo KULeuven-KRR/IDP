@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "OptimizationTermGrounders.hpp"
 
@@ -44,13 +44,13 @@ void OptimizationGrounder::printOrig() const {
 	clog << tabs() << "Grounding optimization over term " << toString(_origterm) << "\n";
 }
 
-AggregateOptimizationGrounder::~AggregateOptimizationGrounder(){
-	delete(_setgrounder);
+
+AggregateOptimizationGrounder::~AggregateOptimizationGrounder() {
+	delete (_setgrounder);
 }
 
-void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const{
+void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const {
 	formula.setType(Conn::CONJ);
-	// TODO cp support?
 	if (verbosity() > 2) {
 		printOrig();
 		pushtab();
@@ -58,20 +58,44 @@ void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const{
 	auto setid = _setgrounder->run();
 	auto tsset = getTranslator()->groundset(setid);
 
-	if (not tsset.varids().empty()) {
-		Assert(getOption(BoolType::CPSUPPORT) && tsset.trueweights().empty());
-		auto sumterm = createCPAggTerm(_type, tsset.varids());
-		auto varid = getTermTranslator()->translate(sumterm, NULL); //FIXME domain of the term!!!
-		getGrounding()->addOptimization(varid);
-	} else {
-		getGrounding()->addOptimization(_type, setid);
-	}
+	Assert(tsset.varids().empty());
+	getGrounding()->addOptimization(_type, setid);
 
 	if (verbosity() > 2) {
 		poptab();
 	}
 }
 
-void AggregateOptimizationGrounder::put(std::ostream&) const{
+void AggregateOptimizationGrounder::put(std::ostream&) const {
 	throw notyetimplemented("Printing aggregate optimization grounder");
+}
+
+
+VariableOptimizationGrounder::~VariableOptimizationGrounder() {
+	delete (_termgrounder);
+}
+
+void VariableOptimizationGrounder::run(ConjOrDisj& formula) const {
+	formula.setType(Conn::CONJ);
+	if (verbosity() > 2) {
+		printOrig();
+		pushtab();
+	}
+
+	auto groundterm = _termgrounder->run();
+	VarId varid;
+	if (groundterm.isVariable) {
+		varid = groundterm._varid;
+	} else {
+		varid = getTermTranslator()->translate(groundterm._domelement);
+	}
+	getGrounding()->addOptimization(varid);
+
+	if (verbosity() > 2) {
+		poptab();
+	}
+}
+
+void VariableOptimizationGrounder::put(std::ostream&) const {
+	throw notyetimplemented("Printing variable optimization grounder");
 }

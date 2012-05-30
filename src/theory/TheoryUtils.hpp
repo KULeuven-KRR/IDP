@@ -221,7 +221,7 @@ void deriveSorts(Vocabulary*, Term*);
 /** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
  * 	If no bounds can be derived, NULL is returned for both bounds
  */
-std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
+std::vector<const DomainElement*> deriveTermBounds(const Term*, const AbstractStructure*);
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
