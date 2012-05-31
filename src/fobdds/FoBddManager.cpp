@@ -61,7 +61,7 @@ KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
 }
 
 KernelOrder FOBDDManager::newOrder(const FOBDDAggTerm* aggterm) {
-	auto category = (aggterm->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
+	auto category = (aggterm->containsDeBruijnIndex(0)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
