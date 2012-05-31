@@ -1666,17 +1666,17 @@ bool EnumeratedInternalSortTable::isRange() const {
 	}
 }
 
-void EnumeratedInternalSortTable::addNonRange(int elem, int start, int end){
+void EnumeratedInternalSortTable::addNonRange(int elem, int start, int end) {
 	_table.insert(createDomElem(elem));
-	for(auto i=start; i<=end; ++i) {
+	for (auto i = start; i <= end; ++i) {
 		_table.insert(createDomElem(i));
 	}
 }
-void EnumeratedInternalSortTable::addNonRange(int start1, int end1, int start2, int end2){
-	for(auto i=start1; i<=end1; ++i) {
+void EnumeratedInternalSortTable::addNonRange(int start1, int end1, int start2, int end2) {
+	for (auto i = start1; i <= end1; ++i) {
 		_table.insert(createDomElem(i));
 	}
-	for(auto i=start2; i<=end2; ++i) {
+	for (auto i = start2; i <= end2; ++i) {
 		_table.insert(createDomElem(i));
 	}
 }
@@ -1690,13 +1690,11 @@ InternalSortIterator* EnumeratedInternalSortTable::sortIterator(const DomainElem
 }
 
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
-	if(_table.empty()){
+	if (_table.empty()) {
 		return new IntRangeInternalSortTable(i1, i2);
 	}
-	if(isRange() &&
-			((i1>=first()->value()._int-1 && i1<=last()->value()._int+1)
-			||
-			(i2>=first()->value()._int-1 && i2<=last()->value()._int+1))){ // TODO overflow checks
+	if (isRange()
+			&& ((i1 >= first()->value()._int - 1 && i1 <= last()->value()._int + 1) || (i2 >= first()->value()._int - 1 && i2 <= last()->value()._int + 1))) { // TODO overflow checks
 
 		auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
 		return intst->add(i1, i2);
@@ -1712,13 +1710,16 @@ InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
 	}
-	if(_table.empty()){
-		return new IntRangeInternalSortTable(d->value()._int, d->value()._int);
+	if (d->type() == DomainElementType::DET_INT) {
+		if (_table.empty()) {
+			return new IntRangeInternalSortTable(d->value()._int, d->value()._int);
+		}
+		if (isRange() && d->value()._int >= first()->value()._int - 1 && d->value()._int <= last()->value()._int + 1) { // TODO overflow checks
+			auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
+			return intst->add(d);
+		}
 	}
-	if(isRange() && d->value()._int>=first()->value()._int-1 && d->value()._int<=last()->value()._int+1){ // TODO overflow checks
-		auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
-		return intst->add(d);
-	}
+
 	if (_nrRefs > 1) {
 		auto ist = new EnumeratedInternalSortTable(_table);
 		ist->add(d);
@@ -3071,7 +3072,7 @@ void SortTable::add(const ElementTuple& tuple) {
 }
 
 void SortTable::add(const DomainElement* el) {
-	add(ElementTuple{ el });
+	add(ElementTuple { el });
 }
 
 void SortTable::add(int i1, int i2) {
@@ -3096,7 +3097,7 @@ void SortTable::remove(const ElementTuple& tuple) {
 }
 
 void SortTable::remove(const DomainElement* el) {
-	remove( ElementTuple{ el });
+	remove(ElementTuple { el });
 }
 
 /****************
@@ -3309,8 +3310,8 @@ void PredInter::checkConsistency() {
  * NOTE: Simple check if _ct == _pt
  */
 bool PredInter::approxTwoValued() const {
-	// TODO turn it into something that is smarter, without comparing the tables!
-	// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
+// TODO turn it into something that is smarter, without comparing the tables!
+// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
 	return _ct->internTable() == _pt->internTable();
 }
 
@@ -3406,7 +3407,7 @@ void PredInter::pf(PredTable* t) {
 
 // Direct implementation to prevent checking consistency unnecessarily
 void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: it is possible that an already assigned table is assigned otherwise, so it gets
-	// deleted in the process!!!
+// deleted in the process!!!
 	auto clone = new PredTable(newct->internTable(), newct->universe());
 	delete (_ct);
 	delete (_pf);
