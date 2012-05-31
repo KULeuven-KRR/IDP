@@ -1227,18 +1227,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 }
 
 Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, YYLTYPE l) {
-	Formula* body = FormulaUtils::trueFormula();
-	return rule(qv, head, body, l);
-}
-
-Rule* Insert::rule(Formula* head, Formula* body, YYLTYPE l) {
-	std::set<Variable*> vv;
-	return rule(vv, head, body, l);
-}
-
-Rule* Insert::rule(Formula* head, YYLTYPE l) {
-	Formula* body = FormulaUtils::trueFormula();
-	return rule(head, body, l);
+	return rule(qv, head, FormulaUtils::trueFormula(), l);
 }
 
 Formula* Insert::trueform(YYLTYPE l) const {

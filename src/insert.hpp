@@ -292,10 +292,6 @@ public:
 	//!< create a new rule
 	Rule* rule(const std::set<Variable*>&, Formula* h, YYLTYPE);
 	//!< create a new rule with an empty body
-	Rule* rule(Formula* h, Formula* b, YYLTYPE);
-	//!< create a rule without quantified variables
-	Rule* rule(Formula* h, YYLTYPE);
-	//!< create a rule without quantified variables and with an empty body
 
 	void addRule(FixpDef*, Rule*) const; //!< add a rule to a fixpoint definition
 	void addDef(FixpDef*, FixpDef*) const; //!< add a fixpoint definition to a fixpoint definition
