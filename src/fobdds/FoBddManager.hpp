@@ -239,7 +239,7 @@ public:
 private:
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
-	KernelOrder newOrder(const FOBDD* bdd);
+	KernelOrder newOrderForQuantifiedBDD(const FOBDD* bdd);
 	KernelOrder newOrder(const FOBDDAggTerm* aggterm);
 
 	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
