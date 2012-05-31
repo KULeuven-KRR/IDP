@@ -55,13 +55,14 @@ KernelOrder FOBDDManager::newOrder(const vector<const FOBDDTerm*>& args) {
 	return newOrder(category);
 }
 
-KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
+KernelOrder FOBDDManager::newOrderForQuantifiedBDD(const FOBDD* bdd) {
+	//Check for containment of dbrindex 1 since dbrindex 0 is quantified here!
 	auto category = (bdd->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
 KernelOrder FOBDDManager::newOrder(const FOBDDAggTerm* aggterm) {
-	auto category = (aggterm->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
+	auto category = (aggterm->containsDeBruijnIndex(0)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
@@ -337,7 +338,7 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 	Assert(lookup < FOBDDQuantKernel > (_quantkerneltable, sort, bdd) == NULL);
-	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrder(bdd));
+	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrderForQuantifiedBDD(bdd));
 	_quantkerneltable[sort][bdd] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
 	return newkernel;
