@@ -39,7 +39,7 @@ public:
 		return _manager->getQuantKernel(kernel->sort(), bdd);
 	}
 
-	const FOBDDSetExpr* change(const FOBDDQuantSetExpr* qse) {
+	const FOBDDQuantSetExpr* change(const FOBDDQuantSetExpr* qse) {
 		_depth += qse->quantvarsorts().size();
 		auto newsetexpr =  FOBDDVisitor::change(qse);
 		_depth -= qse->quantvarsorts().size();

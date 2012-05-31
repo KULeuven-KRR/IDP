@@ -32,7 +32,7 @@ public:
 protected:
 	void visit(const PredForm*);
 	void visit(const FuncTerm*);
-	void visit(const SetExpr*);
+	void visit(const QuantSetExpr*);
 };
 
 #endif /* APPROXCHECKTWOVALUED_HPP_ */

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "FoBddVisitor.hpp"
 
@@ -71,15 +71,15 @@ void FOBDDVisitor::visit(const FOBDDAggTerm* term) {
 }
 
 void FOBDDVisitor::visit(const FOBDDEnumSetExpr* set) {
-	for (int i = 0; i < set->size(); i++) {
-		set->subformula(i)->accept(this);
-		set->subterm(i)->accept(this);
+	auto subsets = set->subsets();
+	for (auto subs = subsets.cbegin(); subs != subsets.cend(); ++subs) {
+		(*subs)->accept(this);
 	}
 }
 
 void FOBDDVisitor::visit(const FOBDDQuantSetExpr* set) {
-	set->subformula(0)->accept(this);
-	set->subterm(0)->accept(this);
+	set->subformula()->accept(this);
+	set->subterm()->accept(this);
 }
 
 const FOBDD* FOBDDVisitor::change(const FOBDD* bdd) {
@@ -139,18 +139,17 @@ const FOBDDTerm* FOBDDVisitor::change(const FOBDDAggTerm* term) {
 	return _manager->getAggTerm(term->aggfunction(), set);
 }
 
-const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
-	auto formula = change(set->subformula(0));
-	auto term = set->subterm(0)->acceptchange(this);
+const FOBDDQuantSetExpr* FOBDDVisitor::change(const FOBDDQuantSetExpr* set) {
+	auto formula = change(set->subformula());
+	auto term = set->subterm()->acceptchange(this);
 	return _manager->getQuantSetExpr(set->quantvarsorts(), formula, term, set->sort());
 }
 
-const FOBDDSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
-	std::vector<const FOBDD*> subformulas(set->size()); //!< The direct subformulas of the set expression
-	std::vector<const FOBDDTerm*> subterms(set->size());
-	for (int i = 0; i < set->size(); i++) {
-		subformulas[i] = change(set->subformula(i));
-		subterms[i] = set->subterm(i)->acceptchange(this);
+const FOBDDEnumSetExpr* FOBDDVisitor::change(const FOBDDEnumSetExpr* set) {
+	std::vector<const FOBDDQuantSetExpr*> subsets(set->size()); //!< The direct subformulas of the set expression
+	size_t i = 0;
+	for (auto subs = set->subsets().cbegin(); subs != set->subsets().cend(); subs++, i++) {
+		subsets[i] = change(set->subsets()[i]);
 	}
-	return _manager->getEnumSetExpr(subformulas,subterms,set->sort());
+	return _manager->getEnumSetExpr(subsets, set->sort());
 }

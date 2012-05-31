@@ -37,19 +37,25 @@ class BDDToFO: public FOBDDVisitor {
 protected:
 	Formula* _currformula;
 	Term* _currterm;
-	SetExpr* _currset;
+	QuantSetExpr* _currquantset;
+	EnumSetExpr* _currenumset;
 	std::map<const FOBDDDeBruijnIndex*, Variable*> _dbrmapping;
 
 	void reset() {
 		_currformula = NULL;
 		_currterm = NULL;
-		_currset = NULL;
+		_currquantset = NULL;
+		_currenumset = NULL;
 		_dbrmapping.clear();
 	}
 
 public:
 	BDDToFO(FOBDDManager* m)
-			: FOBDDVisitor(m), _currformula(NULL), _currterm(NULL), _currset(NULL) {
+			: 	FOBDDVisitor(m),
+				_currformula(NULL),
+				_currterm(NULL),
+				_currquantset(NULL),
+				_currenumset(NULL) {
 		_dbrmapping.clear();
 	}
 
@@ -68,10 +74,10 @@ public:
 	}
 
 	template<typename BddSet>
-	SetExpr* createSet(const BddSet* arg) {
+	EnumSetExpr* createSet(const BddSet* arg) {
 		reset();
 		arg->accept(this);
-		return _currset;
+		return _currenumset;
 	}
 
 protected:
@@ -107,20 +113,17 @@ protected:
 
 	virtual void visit(const FOBDDAggTerm* aggterm) {
 		aggterm->setexpr()->accept(this);
-		auto set = _currset;
-		_currterm = new AggTerm(set, aggterm->aggfunction(), TermParseInfo());
+		_currterm = new AggTerm(_currenumset, aggterm->aggfunction(), TermParseInfo());
 	}
 
 	virtual void visit(const FOBDDEnumSetExpr* set) {
-		std::vector<Formula*> formulas(set->size());
-		std::vector<Term*> terms(set->size());
-		for (int i = 0; i < set->size(); i++) {
-			set->subformula(i)->accept(this);
-			formulas[i] = _currformula;
-			set->subterm(i)->accept(this);
-			terms[i] = _currterm;
+		std::vector<QuantSetExpr*> subsets(set->size());
+		int i = 0;
+		for (auto subset = set->subsets().cbegin(); subset != set->subsets().cend(); subset++, i++) {
+			(*subset)->accept(this);
+			subsets[i] = _currquantset;
 		}
-		_currset = new EnumSetExpr(formulas, terms, SetParseInfo());
+		_currenumset = new EnumSetExpr(subsets, SetParseInfo());
 	}
 
 	virtual void visit(const FOBDDQuantSetExpr* set) {
@@ -136,12 +139,12 @@ protected:
 		for (auto it = savedmapping.cbegin(); it != savedmapping.cend(); ++it) {
 			_dbrmapping[_manager->getDeBruijnIndex(it->first->sort(), it->first->index() + set->quantvarsorts().size())] = it->second;
 		}
-		set->subformula(0)->accept(this);
+		set->subformula()->accept(this);
 		auto subform = _currformula;
-		set->subterm(0)->accept(this);
+		set->subterm()->accept(this);
 		auto subterm = _currterm;
 		_dbrmapping = savedmapping;
-		_currset = new QuantSetExpr(vars, subform, subterm, SetParseInfo());
+		_currquantset = new QuantSetExpr(vars, subform, subterm, SetParseInfo());
 	}
 
 	virtual void visit(const FOBDDAtomKernel* atom) {

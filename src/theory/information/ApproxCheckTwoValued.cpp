@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "ApproxCheckTwoValued.hpp"
 
@@ -40,18 +40,14 @@ void ApproxCheckTwoValued::visit(const FuncTerm* ft) {
 	}
 }
 
-void ApproxCheckTwoValued::visit(const SetExpr* se) {
-	for (auto it = se->subformulas().cbegin(); it != se->subformulas().cend(); ++it) {
-		(*it)->accept(this);
-		if (not _returnvalue) {
-			return;
-		}
+void ApproxCheckTwoValued::visit(const QuantSetExpr* set) {
+	set->getCondition()->accept(this);
+	if (not _returnvalue) {
+		return;
 	}
-	for (auto it = se->subterms().cbegin(); it != se->subterms().cend(); ++it) {
-		(*it)->accept(this);
-		if (not _returnvalue) {
-			return;
-		}
+	set->getTerm()->accept(this);
+	if (not _returnvalue) {
+		return;
 	}
 	_returnvalue = true;
 }

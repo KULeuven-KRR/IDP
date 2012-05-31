@@ -26,7 +26,8 @@ private:
 	FOBDDManager* _copymanager;
 	const FOBDDKernel* _kernel;
 	const FOBDDTerm* _argument;
-	const FOBDDSetExpr* _set;
+	const FOBDDEnumSetExpr* _enumset;
+	const FOBDDQuantSetExpr* _quantset;
 public:
 	Copy(FOBDDManager* orig, FOBDDManager* copy)
 			: FOBDDVisitor(orig), _originalmanager(orig), _copymanager(copy) {
@@ -58,19 +59,17 @@ public:
 	}
 
 	void visit(const FOBDDEnumSetExpr* set) {
-		std::vector<const FOBDD*> subformulas;
-		std::vector<const FOBDDTerm*> terms;
+		std::vector<const FOBDDQuantSetExpr*> subsets;
 		for (int i = 0; i < set->size(); i++) {
-			subformulas.push_back(copy(set->subformula(i)));
-			terms.push_back(copy(set->subterm(i)));
+			subsets.push_back(copy(set->subsets()[i]));
 		}
-		_set = _copymanager->getEnumSetExpr(subformulas, terms, set->sort());
+		_enumset = _copymanager->getEnumSetExpr(subsets, set->sort());
 	}
 
 	void visit(const FOBDDQuantSetExpr* set) {
-		auto subformula = copy(set->subformula(0));
-		auto term = copy(set->subterm(0));
-		_set = _copymanager->getQuantSetExpr(set->quantvarsorts(),subformula,term,set->sort());
+		auto subformula = copy(set->subformula());
+		auto term = copy(set->subterm());
+		_quantset = _copymanager->getQuantSetExpr(set->quantvarsorts(),subformula,term,set->sort());
 	}
 
 	void visit(const FOBDDQuantKernel* kernel) {
@@ -115,10 +114,15 @@ public:
 		}
 	}
 
-	const FOBDDSetExpr* copy(const FOBDDSetExpr* set) {
+	const FOBDDEnumSetExpr* copy(const FOBDDEnumSetExpr* set) {
 		set->accept(this);
-		return _set;
+		return _enumset;
 	}
+
+	const FOBDDQuantSetExpr* copy(const FOBDDQuantSetExpr* set) {
+			set->accept(this);
+			return _quantset;
+		}
 };
 
 #endif /* COPY_HPP_ */

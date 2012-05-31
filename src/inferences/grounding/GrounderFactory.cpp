@@ -66,7 +66,10 @@ int getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: _structure(data.partialstructure), _symstructure(data.symbolicstructure), _grounding(grounding), _nbmodelsequivalent(nbModelsEquivalent) {
+		: 	_structure(data.partialstructure),
+			_symstructure(data.symbolicstructure),
+			_grounding(grounding),
+			_nbmodelsequivalent(nbModelsEquivalent) {
 
 	Assert(_symstructure != NULL);
 
@@ -378,7 +381,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) && not recursive(newpf) /* TODO here also*/
-			&& VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+	&& VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 		auto comp = getCompType(newpf->symbol());
 		if (isNeg(newpf->sign())) {
 			comp = negateComp(comp);
@@ -670,7 +673,8 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	if (grounder == NULL) {
 		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
-	}Assert(grounder!=NULL);
+	}
+	Assert(grounder!=NULL);
 
 	grounder->setMaxGroundSize(gc._universe.size() * subgrounder->getMaxGroundSize());
 	grounder->setOrig(qf, varmapping());
@@ -770,9 +774,43 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 }
 
+Formula* trueFormula() {
+	return new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
+}
+
+Formula* falseFormula() {
+	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
+}
+
 void GrounderFactory::visit(const AggForm* af) {
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(af->clone(), _structure, _context._funccontext, getOption(CPSUPPORT) && not recursive(af)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(af), _context._funccontext);
+	auto clonedaf = af->clone();
+
+	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
+	if (clonedaf->getBound()->type() == TermType::FUNC || clonedaf->getBound()->type() == TermType::VAR) {
+		if (clonedaf->getAggTerm()->function() == AggFunction::CARD) {
+			deleteDeep(clonedaf);
+			clonedaf = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
+					new AggTerm(af->getAggTerm()->set()->clone(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
+			for (auto i = clonedaf->getAggTerm()->set()->getSets().cbegin(); i < clonedaf->getAggTerm()->set()->getSets().cend(); ++i) {
+				Assert((*i)->getTerm()->type()==TermType::DOM);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
+			}
+		}
+		if (clonedaf->getAggTerm()->function() == AggFunction::SUM) {
+			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
+			auto newset = clonedaf->getAggTerm()->set()->clone();
+			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), new FuncTerm(minus, { clonedaf->getBound()->clone() }, TermParseInfo()), SetParseInfo()));
+			auto temp = new AggForm(clonedaf->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), clonedaf->comp(),
+					new AggTerm(newset, clonedaf->getAggTerm()->function(), clonedaf->getAggTerm()->pi()), clonedaf->pi());
+			deleteDeep(clonedaf);
+			clonedaf = temp;
+		}
+	}
+
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
+			getOption(CPSUPPORT) && not recursive(clonedaf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(clonedaf), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
@@ -813,6 +851,7 @@ void GrounderFactory::visit(const AggForm* af) {
 		_topgrounder = getFormGrounder();
 	}
 	deleteDeep(transaf);
+	deleteDeep(clonedaf);
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
@@ -871,20 +910,17 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 void GrounderFactory::visit(const EnumSetExpr* s) {
 	// Create grounders for formulas and weights
-	vector<FormulaGrounder*> subfgr;
-	vector<TermGrounder*> subtgr;
+	vector<QuantSetGrounder*> subgrounders;
 	SaveContext();
 	AggContext();
-	for (size_t n = 0; n < s->subformulas().size(); ++n) {
-		descend(s->subformulas()[n]);
-		subfgr.push_back(getFormGrounder());
-		descend(s->subterms()[n]);
-		subtgr.push_back(getTermGrounder());
+	for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
+		descend(*i);
+		Assert(_quantsetgrounder!=NULL);
+		subgrounders.push_back(_quantsetgrounder);
 	}
 	RestoreContext();
 
-	// Create set grounder
-	_setgrounder = new EnumSetGrounder(getGrounding()->translator(), subfgr, subtgr);
+	_setgrounder = new EnumSetGrounder(getGrounding()->translator(), subgrounders);
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
@@ -904,16 +940,16 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Create grounder for subformula
 	SaveContext();
 	AggContext();
-	descend(newqs->subformulas()[0]);
+	descend(newqs->getCondition());
 	auto subgr = getFormGrounder();
 	RestoreContext();
 
 	// Create grounder for weight
-	descend(newqs->subterms()[0]);
+	descend(newqs->getTerm());
 	auto wgr = getTermGrounder();
 
-	// Create grounder
-	_setgrounder = new QuantSetGrounder(getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+	_quantsetgrounder = new QuantSetGrounder(getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+	_setgrounder = _quantsetgrounder;
 	delete newqs;
 }
 
