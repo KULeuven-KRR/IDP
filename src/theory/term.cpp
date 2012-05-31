@@ -119,7 +119,7 @@ VarTerm* VarTerm::cloneKeepVars() const {
 }
 
 VarTerm* VarTerm::clone(const map<Variable*, Variable*>& mvv) const {
-	map<Variable*, Variable*>::const_iterator it = mvv.find(_var);
+	auto it = mvv.find(_var);
 	if (it != mvv.cend()) {
 		return new VarTerm(it->second, _pi);
 	} else {
@@ -296,7 +296,7 @@ Sort* deriveSmallerSort(Term* term, AbstractStructure* structure) {
 		auto intmax = bounds[1]->value()._int;
 		stringstream ss;
 		ss << "s" << intmin <<".." << intmax;
-		sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(intmin, intmax)));
+		sort = new Sort(ss.str(), TableUtils::createSortTable(intmin, intmax));
 		sort->addParent(get(STDSORT::INTSORT));
 	}
 	return sort;

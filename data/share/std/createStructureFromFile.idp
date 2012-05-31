@@ -3,7 +3,7 @@ namespace structures{
 	procedure createStructureFromFile(inputfilename){
 		inputfile = io.open(inputfilename, "r")
 		if(inputfile==nil) then
-			print("File "..inputfilename.." does not exist.")
+			io.stderr:write("File "..inputfilename.." does not exist.")
 			return nil
 		end
 		file = io.open("test", "w")

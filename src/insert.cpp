@@ -23,6 +23,7 @@
 #include "internalargument.hpp"
 #include "lua/luaconnection.hpp"
 #include "theory/Query.hpp"
+#include "structure/StructureComponents.hpp"
 
 #include "GlobalData.hpp"
 

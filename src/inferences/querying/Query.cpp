@@ -66,13 +66,12 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	InstGenerator* generator = btg.create(data);
 
 	// Create an empty table
-	EnumeratedInternalPredTable* interntable = new EnumeratedInternalPredTable();
 	std::vector<SortTable*> vst;
 	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 		vst.push_back(structure->inter((*it)->sort()));
 	}
 	Universe univ(vst);
-	PredTable* result = new PredTable(interntable, univ);
+	auto result = TableUtils::createPredTable(univ);
 	// execute the query
 	ElementTuple currtuple(q->variables().size());
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {

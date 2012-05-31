@@ -35,6 +35,8 @@
 #include "InverseUnaFunctionGenerator.hpp"
 #include "UnaryArithmeticOperators.hpp"
 #include "fobdds/FoBddVariable.hpp"
+
+#include "structure/StructureComponents.hpp"
 using namespace std;
 
 // NOTE original can be NULL

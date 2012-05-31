@@ -13,6 +13,7 @@
 
 #include "commandinterface.hpp"
 #include "errorhandling/error.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 typedef TypedInference<LIST(int, int)> CreateRangeInferenceBase;
 class CreateRangeInference: public CreateRangeInferenceBase {
@@ -31,7 +32,7 @@ public:
 			Error::error("Begin should be lower or equal than end.");
 			return nilarg();
 		}
-		ia._value._domain = new SortTable(new IntRangeInternalSortTable(n1, n2));
+		ia._value._domain = TableUtils::createSortTable(n1, n2);
 		return ia;
 	}
 };

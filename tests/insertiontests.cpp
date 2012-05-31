@@ -13,7 +13,7 @@
 #include "gtest/gtest.h"
 #include "GlobalData.hpp"
 #include "insert.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 #include "commontypes.hpp"
 #include "inferences/grounding/Utils.hpp"
 

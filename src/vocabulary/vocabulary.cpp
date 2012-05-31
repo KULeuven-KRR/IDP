@@ -10,6 +10,7 @@
 
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 

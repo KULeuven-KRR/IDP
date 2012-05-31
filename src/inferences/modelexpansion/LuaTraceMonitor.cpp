@@ -12,6 +12,7 @@
 #include "LuaTraceMonitor.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "lua/luaconnection.hpp"
+#include "structure/StructureComponents.hpp"
 
 LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 		: _translator(NULL), _state(L) {

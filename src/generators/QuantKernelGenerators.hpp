@@ -12,7 +12,7 @@
 #define TRUEQUANTKERNELGENERATOR_HPP_
 
 #include "InstGenerator.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 class DomElemContainer;
 

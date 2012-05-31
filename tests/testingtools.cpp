@@ -16,7 +16,7 @@ namespace Tests {
 
 TestingSet1 getTestingSet1() {
 	TestingSet1 testingSet;
-	testingSet.sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2)); //[-2,2]
+	testingSet.sorttable = TableUtils::createSortTable(-2, 2); //[-2,2]
 	testingSet.sort = new Sort("sort", testingSet.sorttable); // sort  [-2,2]
 	testingSet.x = new Variable(testingSet.sort); // variable of [-2,2]
 	testingSet.sortterm = new VarTerm(testingSet.x, TermParseInfo()); //varterm of [-2,2]

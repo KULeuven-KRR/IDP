@@ -16,6 +16,7 @@
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
+#include "structure/StructureComponents.hpp"
 #include <ctime> //TODO REMOVE
 using namespace std;
 

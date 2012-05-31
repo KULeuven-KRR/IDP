@@ -12,7 +12,6 @@
 #define SKOLEMIZE_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
-#include "structure/StructureComponents.hpp"
 
 /**
  * Replaced an atom with function occurrences with a new propositional symbol and an equivalence.

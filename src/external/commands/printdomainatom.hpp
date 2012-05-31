@@ -13,6 +13,7 @@
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
 
 typedef TypedInference<LIST(const DomainAtom*)> PrintDomainAtomInferenceBase;
 class PrintDomainAtomInference: public PrintDomainAtomInferenceBase {

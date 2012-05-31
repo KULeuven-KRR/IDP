@@ -15,7 +15,7 @@
 namespace Gen {
 
 Sort* sort(const std::string& name, int min, int max) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
+	auto sorttable = TableUtils::createSortTable(min, max);
 	auto sort = new Sort(name, sorttable);
 	sort->addParent(get(STDSORT::INTSORT));
 	return sort;

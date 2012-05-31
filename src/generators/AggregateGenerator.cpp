@@ -11,6 +11,7 @@
 #include "AggregateGenerator.hpp"
 #include "common.hpp"
 #include "structure/NumericOperations.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 AggGenerator::AggGenerator(const DomElemContainer* left, AggFunction func, std::vector<InstGenerator*> formulagenerators,
 		std::vector<InstGenerator*> termgenerators, std::vector<const DomElemContainer*> terms)

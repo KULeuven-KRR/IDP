@@ -43,6 +43,8 @@
 #include "groundtheories/PrintGroundPolicy.hpp"
 #include "groundtheories/SolverTheory.hpp"
 
+#include "structure/StructureComponents.hpp"
+
 #include "inferences/grounding/grounders/Grounder.hpp"
 using namespace std;
 using namespace rel_ops;
@@ -1120,7 +1122,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
 		deleteDeep(tempsubformula);
 	} else {
-		gentable = new PredTable(new FullInternalPredTable(), Universe(data.tables));
+		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
 
 	auto generator = GeneratorFactory::create(gentable, data.pattern, data.containers, Universe(data.tables), subformula);
@@ -1149,9 +1151,9 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		deleteDeep(tempsubformula);
 	} else {
 		if (approxastrue) {
-			checktable = new PredTable(new FullInternalPredTable(), Universe(data.tables));
+			checktable = TableUtils::createFullPredTable(Universe(data.tables));
 		} else {
-			checktable = new PredTable(new EnumeratedInternalPredTable(), Universe(data.tables));
+			checktable = TableUtils::createPredTable(Universe(data.tables));
 		}
 	}
 

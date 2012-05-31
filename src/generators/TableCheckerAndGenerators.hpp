@@ -13,7 +13,7 @@
 
 #include "InstGenerator.hpp"
 #include "structure/Universe.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 #include "commontypes.hpp"
 
 class PredTable;

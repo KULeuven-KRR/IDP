@@ -13,6 +13,7 @@
 #include "errorhandling/error.hpp"
 #include "utils/ListUtils.hpp"
 #include "insert.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 
@@ -81,7 +82,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		auto sort = it->second;
 		if (not sort->builtin()) {
 			if (_sortinter.find(sort) == _sortinter.cend()) {
-				auto st = new SortTable(new EnumeratedInternalSortTable());
+				auto st = TableUtils::createSortTable();
 				_sortinter[sort] = st;
 				vector<SortTable*> univ(1, st);
 				auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));

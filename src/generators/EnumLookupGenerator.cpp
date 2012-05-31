@@ -10,7 +10,7 @@
 
 #include "EnumLookupGenerator.hpp"
 #include <unordered_map>
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> LookupTable;
 
