@@ -127,8 +127,8 @@ procedure minimize(theory, structure, term){
 }
 
 /**
- * Create the reduced grounding of the given theory and structure */
-procedure ground(theory, structure) {
+ * Create the reduced grounding of the given theory and structure and parameter on whether the grounding should preserve the number of models */
+procedure groundeq(theory, structure, modeleq) {	
 	if type(theory) ~= "theory" then
 		print("Error: theory expected")
 		return
@@ -140,7 +140,13 @@ procedure ground(theory, structure) {
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.ground(clonetheo,structure) 
+	return idpintern.ground(clonetheo,structure, modeleq) 
+}
+
+/**
+ * Create the reduced grounding of the given theory and structure, preserving the number of models */
+procedure ground(theory, structure) {
+	return groundeq(theory,structure, true) 
 }
 
 
@@ -159,7 +165,7 @@ procedure printgrounding(theory, structure) {
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.printgrounding(clonetheo,structure) 
+	return idpintern.printgrounding(clonetheo,structure, true) 
 }
 
 /**
