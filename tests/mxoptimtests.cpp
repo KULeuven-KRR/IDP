@@ -28,8 +28,12 @@ vector<string> generateListOfMXOptimFiles() {
 class MXOptimTest: public ::testing::TestWithParam<string> {
 };
 
-TEST_P(MXOptimTest, DoesMX) {
-	runTests("optimization.idp", GetParam());
+TEST_P(MXOptimTest, DoesMXWithoutSymBreaking) {
+	runTests("optimization.idp", GetParam(), "OptimizeWithoutSymBreaking()");
+}
+
+TEST_P(MXOptimTest, DoesMXWithSymBreaking) {
+	runTests("optimization.idp", GetParam(), "OptimizeWithSymBreaking()");
 }
 
 INSTANTIATE_TEST_CASE_P(ModelOptimization, MXOptimTest, ::testing::ValuesIn(generateListOfMXOptimFiles()));
