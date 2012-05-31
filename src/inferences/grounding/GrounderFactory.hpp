@@ -52,11 +52,6 @@ struct GenAndChecker {
 	}
 };
 
-struct GroundStructureInfo{
-	AbstractStructure* partialstructure;
-	GenerateBDDAccordingToBounds* symbolicstructure;
-};
-
 struct GroundInfo{
 	const AbstractTheory* theory;
 	AbstractStructure* partialstructure;
@@ -128,7 +123,7 @@ private:
 	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
 
 	template<typename Grounding>
-	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent);
+	GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent);
 
 	Grounder* getTopGrounder() const {
 		Assert(_topgrounder!=NULL);
@@ -158,7 +153,7 @@ public:
 	static Grounder* create(const GroundInfo& data);
 	static Grounder* create(const GroundInfo& data, PCSolver* satsolver);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
-	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
+	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundInfo& data, AbstractGroundTheory* grounding);
 
 	bool recursive(const Formula*);
 

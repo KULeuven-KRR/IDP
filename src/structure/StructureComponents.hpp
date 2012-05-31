@@ -1392,6 +1392,8 @@ protected:
 	}
 };
 
+class IntRangeInternalSortTable;
+
 /**
  *	A finite, enumerated SortTable
  */
@@ -1423,6 +1425,11 @@ protected:
 	// SortTable is responsible for ref management and deletion!
 	~EnumeratedInternalSortTable() {
 	}
+
+	friend class IntRangeInternalSortTable;
+	void addNonRange(int elem, int start, int end);
+	void addNonRange(int start1, int end1, int start2, int end2);
+
 public:
 	EnumeratedInternalSortTable() {
 	}

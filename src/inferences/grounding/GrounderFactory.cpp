@@ -65,7 +65,7 @@ int getIDForUndefined() {
 }
 
 template<typename Grounding>
-GrounderFactory::GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent)
+GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent)
 		: 	_structure(data.partialstructure),
 			_symstructure(data.symbolicstructure),
 			_grounding(grounding),
@@ -181,7 +181,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
+	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	return g.getTopGrounder();
 }
@@ -189,7 +189,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
+	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	return g.getTopGrounder();
 }
@@ -213,7 +213,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory, data.nbModelsEquivalent);
+	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
 	g.ground(data.theory, data.theory->vocabulary());
 	auto grounder = g.getTopGrounder();
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
@@ -227,14 +227,13 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
  return g.getTopGrounder();
  }*/
 
-Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding) {
+Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundInfo& data, AbstractGroundTheory* grounding) {
 	Assert(minimizeterm!=NULL);
 	auto term = dynamic_cast<const AggTerm*>(minimizeterm);
 	if (term == NULL) {
 		throw notyetimplemented("Optimization over non-aggregate terms.");
 	}
-	//TODO: when minimizing, what do we want nbmodelsequivalent to be?
-	GrounderFactory g(data, grounding, true);
+	GrounderFactory g(data, grounding, data.nbModelsEquivalent);
 	g.ground(term->set(), vocabulary);
 	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 	optimgrounder->setOrig(minimizeterm);

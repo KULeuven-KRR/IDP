@@ -1659,10 +1659,25 @@ bool EnumeratedInternalSortTable::isRange() const {
 	}
 	auto f = first();
 	auto l = last();
-	if (f->type() == DET_INT && l->type() == DET_INT) {
+	if (f->type() == DET_INT) {
 		return l->value()._int - f->value()._int == (int) _table.size() - 1;
 	} else {
 		return false;
+	}
+}
+
+void EnumeratedInternalSortTable::addNonRange(int elem, int start, int end){
+	_table.insert(createDomElem(elem));
+	for(auto i=start; i<=end; ++i) {
+		_table.insert(createDomElem(i));
+	}
+}
+void EnumeratedInternalSortTable::addNonRange(int start1, int end1, int start2, int end2){
+	for(auto i=start1; i<=end1; ++i) {
+		_table.insert(createDomElem(i));
+	}
+	for(auto i=start2; i<=end2; ++i) {
+		_table.insert(createDomElem(i));
 	}
 }
 
@@ -1675,20 +1690,16 @@ InternalSortIterator* EnumeratedInternalSortTable::sortIterator(const DomainElem
 }
 
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
-	if (empty()) {
+	if(_table.empty()){
 		return new IntRangeInternalSortTable(i1, i2);
 	}
+	if(isRange() &&
+			((i1>=first()->value()._int-1 && i1<=last()->value()._int+1)
+			||
+			(i2>=first()->value()._int-1 && i2<=last()->value()._int+1))){ // TODO overflow checks
 
-	if (first()->type() == DET_INT && last()->type() == DET_INT) {
-		if (i1 <= first()->value()._int && last()->value()._int <= i2) {
-			return new IntRangeInternalSortTable(i1, i2);
-		} else if (isRange()) {
-			if ((i1 <= last()->value()._int + 1) && (i2 >= first()->value()._int - 1)) {
-				int f = i1 < first()->value()._int ? i1 : first()->value()._int;
-				int l = i2 < last()->value()._int ? last()->value()._int : i2;
-				return new IntRangeInternalSortTable(f, l);
-			}
-		}
+		auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
+		return intst->add(i1, i2);
 	}
 	InternalSortTable* temp = this;
 	for (int n = i1; n <= i2; ++n) {
@@ -1700,30 +1711,35 @@ InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
+	}
+	if(_table.empty()){
+		return new IntRangeInternalSortTable(d->value()._int, d->value()._int);
+	}
+	if(isRange() && d->value()._int>=first()->value()._int-1 && d->value()._int<=last()->value()._int+1){ // TODO overflow checks
+		auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
+		return intst->add(d);
+	}
+	if (_nrRefs > 1) {
+		auto ist = new EnumeratedInternalSortTable(_table);
+		ist->add(d);
+		return ist;
 	} else {
-		if (_nrRefs > 1) {
-			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
-			ist->add(d);
-			return ist;
-		} else {
-			_table.insert(d);
-			return this;
-		}
+		_table.insert(d);
+		return this;
 	}
 }
 
 InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 	if (not contains(d)) {
 		return this;
+	}
+	if (_nrRefs > 1) {
+		auto ist = new EnumeratedInternalSortTable(_table);
+		ist->remove(d);
+		return ist;
 	} else {
-		if (_nrRefs > 1) {
-			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
-			ist->remove(d);
-			return ist;
-		} else {
-			_table.erase(d);
-			return this;
-		}
+		_table.erase(d);
+		return this;
 	}
 }
 
@@ -1742,58 +1758,52 @@ const DomainElement* EnumeratedInternalSortTable::last() const {
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
-	if (not contains(d)) {
-		if (d->type() == DET_INT) {
-			if (d->value()._int == _first - 1) {
-				if (_nrRefs < 2) {
-					_first = d->value()._int;
-					return this;
-				}
-			} else if (d->value()._int == _last + 1) {
-				if (_nrRefs < 2) {
-					_last = d->value()._int;
-					return this;
-				}
-			}
-		}
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		InternalSortTable* ist = eist->add(d);
-		InternalSortTable* ist2 = ist->add(_first, _last);
-		if (ist2 != eist) {
-			delete (new SortTable(eist));
-		}
-		return ist2;
-	} else {
+	if (contains(d)) {
 		return this;
 	}
+	if (d->type() == DET_INT) {
+		if (d->value()._int == _first - 1) {
+			if (_nrRefs < 2) {
+				_first = d->value()._int;
+				return this;
+			}
+		} else if (d->value()._int == _last + 1) {
+			if (_nrRefs < 2) {
+				_last = d->value()._int;
+				return this;
+			}
+		}
+	}
+	auto eist = new EnumeratedInternalSortTable();
+	eist->addNonRange(d->value()._int, _first, _last);
+	return eist;
 }
 
 InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
-	if (contains(d)) {
-		if (d->type() == DET_INT) {
-			if (d->value()._int == _first) {
-				if (_nrRefs < 2) {
-					_first = _first + 1;
-					return this;
-				}
-			} else if (d->value()._int == _last) {
-				if (_nrRefs < 2) {
-					_last = _last - 1;
-					return this;
-				}
-			}
-		}
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		for (int n = _first; n < d->value()._int; ++n) {
-			eist->add(createDomElem(n));
-		}
-		for (int n = d->value()._int + 1; n <= _last; ++n) {
-			eist->add(createDomElem(n));
-		}
-		return eist;
-	} else {
+	if (not contains(d)) {
 		return this;
 	}
+	if (d->type() == DET_INT) {
+		if (d->value()._int == _first) {
+			if (_nrRefs < 2) {
+				_first = _first + 1;
+				return this;
+			}
+		} else if (d->value()._int == _last) {
+			if (_nrRefs < 2) {
+				_last = _last - 1;
+				return this;
+			}
+		}
+	}
+	auto eist = new EnumeratedInternalSortTable();
+	for (int n = _first; n < d->value()._int; ++n) {
+		eist->add(createDomElem(n));
+	}
+	for (int n = d->value()._int + 1; n <= _last; ++n) {
+		eist->add(createDomElem(n));
+	}
+	return eist;
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
@@ -1808,15 +1818,9 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 			return this;
 		}
 	} else {
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		for (int n = _first; n <= _last; ++n) {
-			eist->add(createDomElem(n));
-		}
-		InternalSortTable* ist = eist->add(i1, i2);
-		if (ist != eist) {
-			delete (new SortTable(eist));
-		}
-		return ist;
+		auto eist = new EnumeratedInternalSortTable();
+		eist->addNonRange(i1, i2, _first, _last);
+		return eist;
 	}
 }
 
@@ -3058,7 +3062,7 @@ void SortTable::add(const ElementTuple& tuple) {
 	if (_table->contains(tuple)) {
 		return;
 	}
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->add(tuple);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3067,19 +3071,11 @@ void SortTable::add(const ElementTuple& tuple) {
 }
 
 void SortTable::add(const DomainElement* el) {
-	if (_table->contains(el)) {
-		return;
-	}
-	InternalSortTable* temp = _table;
-	_table = _table->add(el);
-	if (temp != _table) {
-		temp->decrementRef();
-		_table->incrementRef();
-	}
+	add(ElementTuple{ el });
 }
 
 void SortTable::add(int i1, int i2) {
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->add(i1, i2);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3091,7 +3087,7 @@ void SortTable::remove(const ElementTuple& tuple) {
 	if (not _table->contains(tuple)) {
 		return;
 	}
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->remove(tuple);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3100,15 +3096,7 @@ void SortTable::remove(const ElementTuple& tuple) {
 }
 
 void SortTable::remove(const DomainElement* el) {
-	if (not _table->contains(el)) {
-		return;
-	}
-	InternalSortTable* temp = _table;
-	_table = _table->remove(el);
-	if (temp != _table) {
-		temp->decrementRef();
-		_table->incrementRef();
-	}
+	remove( ElementTuple{ el });
 }
 
 /****************
