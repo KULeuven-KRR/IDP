@@ -37,7 +37,6 @@ if(${BUILDTESTS})
 		querytests.cpp		
 		definitiontests.cpp
 		propagationtests.cpp
-		cptests.cpp
 		testingtools.hpp testingtools.cpp		
 		TestUtils.hpp TestUtils.cpp
 		testsuite.cpp
