@@ -21,24 +21,24 @@
 #include "theory/TheoryUtils.hpp" //TODO REMOVE
 //#include "external/FlatZincRewriter.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> GroundBase;
+typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, bool)> GroundBase;
 class GroundInference: public GroundBase {
 public:
 	GroundInference()
-			: GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument.") {
+			: GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument. The boolean parameter should be true if the grounding should preserve the number of models.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto grounding = ground(get<0>(args), get<1>(args));
+		auto grounding = ground(get<0>(args), get<1>(args), get<2>(args));
 		return InternalArgument(grounding);
 	}
 private:
-	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure) const {
+	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
-		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, NULL);
+		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, modelcountequivalence, NULL);
 		auto grounding = grounder->ground();
 		if (grounding == NULL) {
 			grounding = new GroundTheory<GroundPolicy>(NULL);
@@ -55,19 +55,19 @@ private:
 class PrintGroundingInference: public GroundBase {
 public:
 	PrintGroundingInference()
-			: GroundBase("printgrounding", "Prints the grounding to cout.", true) {
+			: GroundBase("printgrounding", "Prints the grounding to cout. The boolean parameter should be true if the grounding should preserve the number of models.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		ground(get<0>(args), get<1>(args), printmonitor());
+		ground(get<0>(args), get<1>(args), printmonitor(), get<2>(args));
 		return nilarg();
 	}
 private:
-	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor) const {
+	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
-		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, monitor);
+		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, modelcountequivalence, monitor);
 		auto grounding = grounder->ground();
 		t->recursiveDelete();
 		delete (s);

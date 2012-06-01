@@ -20,6 +20,7 @@
 #include "fobdds/FoBddVariable.hpp"
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include "generators/TableCheckerAndGenerators.hpp"
+#include "structure/StructureComponents.hpp"
 
 
 using namespace std;

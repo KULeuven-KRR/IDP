@@ -10,7 +10,7 @@ theory T:V{
 structure S:V{
 	t = {1..3}
 	f<ct> = {1->1}
-	f<cf> = {2->1;2->2;}
+	f<cf> = {2->1;2->2}
 }
 
 procedure getExpectedNbOfModels(){

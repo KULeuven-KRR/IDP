@@ -163,8 +163,8 @@ void addCompletion(AbstractTheory*);
 
 /** Returns a new theory containing the func constraints for all functions. */
 template<class T>
-Theory* getFuncConstraints(T t, const Vocabulary* v) {
-	return transform<AddFuncConstraints, Theory*>(t, v);
+Theory* getFuncConstraints(T t, const Vocabulary* v, bool cpsupport) {
+	return transform<AddFuncConstraints, Theory*>(t, v, cpsupport);
 }
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */

@@ -36,7 +36,7 @@ public:
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure}, data);
+		auto grounder = GrounderFactory::create({theory, structure, symstructure, false /*TODO CHeck*/}, data);
 		grounder->toplevelRun();
 		auto grounding = grounder->getGrounding();
 

@@ -9,6 +9,7 @@
  ****************************************************************/
 
 #include "SortGenAndChecker.hpp"
+#include "structure/StructureComponents.hpp"
 
 SortGenerator::SortGenerator(const InternalSortTable* table, const DomElemContainer* var)
 		: _table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {

@@ -4,7 +4,17 @@
 // getExpectedAModel() if at least one model exists
 // additional theory T2 (should get better support in future): T2 = { t=optimumvalue. }
 
-procedure main() {
+procedure OptimizeWithoutSymBreaking() {
+	stdoptions.symmetrybreaking = "none"
+	return run()	
+}
+
+procedure OptimizeWithSymBreaking() {
+	stdoptions.symmetrybreaking = "static"
+	return run()
+}
+
+procedure run() {
 	stdoptions.nbmodels = 0
 	stdoptions.timeout = 20
 	stdoptions.groundverbosity = 0
@@ -16,6 +26,8 @@ procedure main() {
 		io.stderr:write("Found "..#sols..", expected "..getExpectedNbOfModels().." models.\n")
 		return 0
 	end
+	
+	stdoptions.symmetrybreaking = "none"
 	
 	for i,model in pairs(sols) do
 		if(#modelexpand(T2, model)==0) then

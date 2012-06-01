@@ -12,12 +12,13 @@
 #define INCLUDECOMPONENTS_HPP_
 
 #include "common.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 #include "structure/Universe.hpp"
 #include "structure/Structure.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "theory/theory.hpp"
 #include "theory/term.hpp"
+#include "theory/Sets.hpp"
 #include "theory/ecnf.hpp"
 #include "namespace/namespace.hpp"
 

@@ -18,7 +18,7 @@ using namespace std;
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	if (getAllowedToUnnest()) {
 		switch (t->type()) {
-		case TT_FUNC: {
+		case TermType::FUNC: {
 			auto ft = dynamic_cast<FuncTerm*>(t);
 			if(_structure->inter(ft->function())->approxTwoValued()){
 				return false;
@@ -28,7 +28,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			}
 			return true;
 		}
-		case TT_AGG: {
+		case TermType::AGG: {
 			auto at = dynamic_cast<AggTerm*>(t);
 			if(SetUtils::approxTwoValued(at->set(), _structure)){
 				return false;
@@ -38,8 +38,8 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			}
 			return true;
 		}
-		case TT_VAR:
-		case TT_DOM:
+		case TermType::VAR:
+		case TermType::DOM:
 			break;
 		}
 	}
@@ -49,19 +49,25 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	auto saveAllowedToLeave = getAllowedToLeave();
 	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform, _vocabulary));
-
 	auto newf = specialTraverse(predform);
-
 	setAllowedToLeave(saveAllowedToLeave);
 	return doRewrite(newf);
+}
+
+Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
+	bool savemovecontext = getAllowedToUnnest();
+	bool saveAllowedToLeave = getAllowedToLeave();
+	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(t, _structure));
+	auto result = traverse(t);
+	setAllowedToUnnest(savemovecontext);
+	setAllowedToLeave(saveAllowedToLeave);
+	return doMove(result);
 }
 
 Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
 	auto saveAllowedToLeave = getAllowedToLeave();
 	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(), _vocabulary));
-
 	auto newrule = UnnestTerms::visit(rule);
-
 	setAllowedToLeave(saveAllowedToLeave);
 	return newrule;
 }

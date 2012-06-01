@@ -45,7 +45,7 @@ Theory* AddFuncConstraints::createTheory(const ParseInfo& pi) const {
 		}
 
 		//#{y|F(x) = y} (= or =<) 1
-		auto aggform = new AggForm(SIGN::POS, oneterm->clone(), comp, new AggTerm(set, AggFunction::CARD, TermParseInfo()), FormulaParseInfo()); //double usage of oneterm ===> clone!
+		auto aggform = new AggForm(SIGN::POS, oneterm->clone(), comp, new AggTerm(new EnumSetExpr({set}, set->pi()), AggFunction::CARD, TermParseInfo()), FormulaParseInfo()); //double usage of oneterm ===> clone!
 		Formula* final;
 		if (function->sorts().size() == 1) {
 			final = aggform;
@@ -60,7 +60,7 @@ Theory* AddFuncConstraints::createTheory(const ParseInfo& pi) const {
 
 void AddFuncConstraints::visit(const FuncTerm* t) {
 	auto f = t->function();
-	if (not getOption(BoolType::CPSUPPORT) || (_vocabulary != NULL && not CPSupport::eligibleForCP(t, _vocabulary))) {
+	if (not _cpsupport || (_vocabulary != NULL && not CPSupport::eligibleForCP(t, _vocabulary))) {
 		_symbols.insert(f);
 	}
 	traverse(t);

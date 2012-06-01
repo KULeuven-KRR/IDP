@@ -22,6 +22,8 @@
 #include "options.hpp"
 #include "internalargument.hpp"
 #include "lua/luaconnection.hpp"
+#include "theory/Query.hpp"
+#include "structure/StructureComponents.hpp"
 
 #include "GlobalData.hpp"
 
@@ -780,8 +782,9 @@ void Insert::closequery(Query* q) {
 		FormulaUtils::checkSorts(_currvocabulary, qf);
 		delete (qf); //No recursive delete, the rest of the query should still exist!
 		_currspace->add(_currquery, q);
-		if (_currspace->isGlobal())
+		if (_currspace->isGlobal()) {
 			LuaConnection::addGlobal(_currquery, q);
+		}
 	}
 	closeblock();
 }
@@ -1225,18 +1228,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 }
 
 Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, YYLTYPE l) {
-	Formula* body = FormulaUtils::trueFormula();
-	return rule(qv, head, body, l);
-}
-
-Rule* Insert::rule(Formula* head, Formula* body, YYLTYPE l) {
-	std::set<Variable*> vv;
-	return rule(vv, head, body, l);
-}
-
-Rule* Insert::rule(Formula* head, YYLTYPE l) {
-	Formula* body = FormulaUtils::trueFormula();
-	return rule(head, body, l);
+	return rule(qv, head, FormulaUtils::trueFormula(), l);
 }
 
 Formula* Insert::trueform(YYLTYPE l) const {
@@ -1499,8 +1491,7 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 	if (f == NULL) {
 		return f;
 	}
-	auto aggset = set(vv, f, l);
-	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, aggset, l));
+	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(vv, f, l), l));
 	auto boundterm = domterm(bound, l);
 
 	// Create parseinfo (TODO UGLY!)
@@ -1758,15 +1749,15 @@ Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::aggregate(AggFunction f, SetExpr* s, YYLTYPE l) const {
-	if (s) {
-		SetExpr* pis = s->clone();
-		auto temp = new AggTerm(pis, f, TermParseInfo());
-		TermParseInfo pi = termparseinfo(temp, l);
-		temp->recursiveDelete();
-		return new AggTerm(s, f, pi);
-	} else
-		return 0;
+Term* Insert::aggregate(AggFunction f, EnumSetExpr* s, YYLTYPE l) const {
+	if (s == NULL) {
+		return NULL;
+	}
+	auto pis = s->clone();
+	auto temp = new AggTerm(pis, f, TermParseInfo());
+	TermParseInfo pi = termparseinfo(temp, l);
+	temp->recursiveDelete();
+	return new AggTerm(s, f, pi);
 }
 
 Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
@@ -1781,22 +1772,22 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 	}
 }
 
-SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
+EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
 	remove_vars(vv);
 	if (f && counter) {
 		std::set<Variable*> pivv;
 		map<Variable*, Variable*> mvv;
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
-			Variable* v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
+			auto v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
 			pivv.insert(v);
 			mvv[*it] = v;
 		}
-		Term* picounter = counter->clone();
-		Formula* pif = f->clone(mvv);
+		auto picounter = counter->clone();
+		auto pif = f->clone(mvv);
 		auto temp = new QuantSetExpr(pivv, pif, picounter, SetParseInfo());
-		SetParseInfo pi = setparseinfo(temp, l);
+		auto pi = setparseinfo(temp, l);
 		temp->recursiveDelete();
-		return new QuantSetExpr(vv, f, counter, pi);
+		return new EnumSetExpr({new QuantSetExpr(vv, f, counter, pi)}, pi);
 	} else {
 		if (f) {
 			f->recursiveDelete();
@@ -1811,14 +1802,10 @@ SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, Y
 	}
 }
 
-SetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
-	const DomainElement* d = createDomElem(1);
-	Term* counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
+EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+	auto d = createDomElem(1);
+	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	return set(vv, f, counter, l);
-}
-
-SetExpr* Insert::set(EnumSetExpr* s) const {
-	return s;
 }
 
 EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
@@ -1838,49 +1825,52 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 		 origset->addTerm(tif);
 		 origset->addFormula(pif);
 		 }*/
-		s->addTerm(t);
-		s->addFormula(f);
-	} else {
-		if (f)
+		auto set = new QuantSetExpr( { }, f, t, s->pi()); // TODO incorrect pi
+		s->addSet(set);
+	} else { // FIXME how can this code be reached?
+		if (f){
 			f->recursiveDelete();
-		if (s)
+		}
+		if (s){
 			s->recursiveDelete();
-		if (t)
+		}
+		if (t){
 			t->recursiveDelete();
+		}
 	}
 }
 
 void Insert::addFormula(EnumSetExpr* s, Formula* f) const {
-	const DomainElement* d = createDomElem(1);
-	Term* t = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
+	auto d = createDomElem(1);
+	auto t = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	addFT(s, f, t);
 }
 
 void Insert::emptyinter(NSPair* nst) const {
 	if (nst->_sortsincluded) {
 		if (nst->_func) {
-			EnumeratedInternalFuncTable* ift = new EnumeratedInternalFuncTable();
-			FuncTable* ft = new FuncTable(ift, TableUtils::fullUniverse(nst->_sorts.size()));
+			auto ift = new EnumeratedInternalFuncTable();
+			auto ft = new FuncTable(ift, TableUtils::fullUniverse(nst->_sorts.size()));
 			funcinter(nst, ft);
 		} else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-			PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
+			auto ipt = new EnumeratedInternalPredTable();
+			auto pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
 			predinter(nst, pt);
 		}
 	} else {
 		ParseInfo pi = nst->_pi;
-		std::set<Predicate*> vp = noArPredInScope(nst->_name, pi);
+		auto vp = noArPredInScope(nst->_name, pi);
 		if (vp.empty())
 			notDeclared(ComponentType::Predicate, toString(nst), pi);
 		else if (vp.size() > 1) {
-			std::set<Predicate*>::const_iterator it = vp.cbegin();
-			Predicate* p1 = *it;
+			auto it = vp.cbegin();
+			auto p1 = *it;
 			++it;
-			Predicate* p2 = *it;
+			auto p2 = *it;
 			overloaded(ComponentType::Predicate, toString(nst), p1->pi(), p2->pi(), pi);
 		} else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-			PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
+			auto ipt = new EnumeratedInternalPredTable();
+			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
 			predinter(nst, pt);
 		}
 	}
@@ -2047,28 +2037,23 @@ void Insert::addElement(SortTable* s, char c1, char c2) const {
 }
 
 SortTable* Insert::createSortTable() const {
-	EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-	return new SortTable(eist);
+	return TableUtils::createSortTable();
 }
 
 void Insert::truepredinter(NSPair* nst) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
-	PredTable* pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
 	ElementTuple et;
 	pt->add(et);
 	predinter(nst, pt);
 }
 
 void Insert::falsepredinter(NSPair* nst) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
-	PredTable* pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
 	predinter(nst, pt);
 }
 
 PredTable* Insert::createPredTable(unsigned int arity) const {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
-	PredTable* pt = new PredTable(eipt, TableUtils::fullUniverse(arity));
-	return pt;
+	return TableUtils::createPredTable(TableUtils::fullUniverse(arity));
 }
 
 void Insert::addTuple(PredTable* pt, ElementTuple& tuple, YYLTYPE l) const {

@@ -79,6 +79,13 @@ protected:
 		}
 	}
 
+	Term* doMove(Term* term) {
+		if (shouldMove(term)) {
+			return move(term);
+		}
+		return term;
+	}
+
 	Theory* visit(Theory*);
 	virtual Rule* visit(Rule*);
 	virtual Formula* traverse(Formula*);
@@ -91,8 +98,8 @@ protected:
 	virtual Term* visit(DomainTerm*);
 	virtual Term* visit(AggTerm*);
 	virtual Term* visit(FuncTerm*);
-	virtual SetExpr* visit(EnumSetExpr*);
-	virtual SetExpr* visit(QuantSetExpr*);
+	virtual EnumSetExpr* visit(EnumSetExpr*);
+	virtual QuantSetExpr* visit(QuantSetExpr*);
 
 	void visitRuleHead(Rule* rule); // Split to allow reuse
 	Formula* specialTraverse(PredForm* predform);

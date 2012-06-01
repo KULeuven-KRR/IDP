@@ -98,7 +98,7 @@ Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool con
 }
 
 // Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
-Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
+//Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 // FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
 	/*	auto it = _tsbodies2nr.lower_bound(tsbody);
 
@@ -107,10 +107,10 @@ Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
 	 return it->second;
 	 }*/
 
-	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	atom2TsBody[nr] = tspair(nr, tsbody);
-	return nr;
-}
+//	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+//	atom2TsBody[nr] = tspair(nr, tsbody);
+//	return nr;
+//}
 
 bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const {
 	auto symbolID = getSymbol(pfs);

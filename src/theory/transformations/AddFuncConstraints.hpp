@@ -24,12 +24,14 @@ private:
 	std::set<Function*> _symbols;
 	std::set<const Function*> _cpfuncsymbols;
 	const Vocabulary* _vocabulary;
+	bool _cpsupport;
 
 public:
 	// Returns a new theory containing the func constraints
 	template<class T>
-	Theory* execute(const T* t, const Vocabulary* v){
+	Theory* execute(const T* t, const Vocabulary* v, bool cpsupport){
 		_vocabulary = v;
+		_cpsupport = cpsupport;
 		t->accept(this);
 		return createTheory(t->pi());
 	}

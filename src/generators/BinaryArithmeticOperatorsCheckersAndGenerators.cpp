@@ -8,7 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 #include "BinaryArithmeticOperatorsChecker.hpp"
 #include "BinaryArithmeticOperatorsGenerator.hpp"
 

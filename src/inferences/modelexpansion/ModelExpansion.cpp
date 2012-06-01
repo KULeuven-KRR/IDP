@@ -50,7 +50,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 	if (outputvoc != NULL) {
 		m->setOutputVocabulary(outputvoc);
 	}
-	if(getGlobal()->getOptions()->symmetryBreaking()!=SymmetryBreaking::NONE && getOption(NBMODELS)!=1){
+	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
 		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.\n");
 	}
 	return m;
@@ -90,7 +90,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
-	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor, data);
+	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor,
+			getOption(IntType::NBMODELS) != 1, data);
 	AbstractGroundTheory* grounding = groundingInference->ground();
 
 	if (grounding == NULL) {

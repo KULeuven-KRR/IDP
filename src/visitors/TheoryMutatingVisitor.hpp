@@ -31,7 +31,8 @@ public:
 protected:
 	virtual Formula* traverse(Formula*);
 	virtual Term* traverse(Term*);
-	virtual SetExpr* traverse(SetExpr*);
+	virtual QuantSetExpr* traverse(QuantSetExpr*);
+	virtual EnumSetExpr* traverse(EnumSetExpr*);
 
 	virtual Theory* visit(Theory*);
 	virtual AbstractGroundTheory* visit(AbstractGroundTheory*);
@@ -56,8 +57,8 @@ protected:
 	virtual Term* visit(DomainTerm*);
 	virtual Term* visit(AggTerm*);
 
-	virtual SetExpr* visit(EnumSetExpr*);
-	virtual SetExpr* visit(QuantSetExpr*);
+	virtual EnumSetExpr* visit(EnumSetExpr*);
+	virtual QuantSetExpr* visit(QuantSetExpr*);
 };
 
 #endif

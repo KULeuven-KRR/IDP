@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "FoBddSetExpr.hpp"
 #include "FoBdd.hpp"
@@ -14,8 +14,12 @@
 #include "fobdds/FoBddTerm.hpp"
 #include "common.hpp"
 
-bool FOBDDSetExpr::containsDeBruijnIndex(unsigned int i) const {
-	for (auto it = _subformulas.cbegin(); it != _subformulas.cend(); it.operator ++()) {
+bool FOBDDQuantSetExpr::containsDeBruijnIndex(unsigned int i) const {
+	auto j = i + _quantvarsorts.size();
+	return (_subformula->containsDeBruijnIndex(j) || _subterm->containsDeBruijnIndex(j));
+}
+bool FOBDDEnumSetExpr::containsDeBruijnIndex(unsigned int i) const {
+	for (auto it = _subsets.cbegin(); it != _subsets.cend(); it.operator ++()) {
 		if ((*it)->containsDeBruijnIndex(i)) {
 			return true;
 		}
@@ -29,11 +33,11 @@ void FOBDDQuantSetExpr::accept(FOBDDVisitor* v) const {
 void FOBDDEnumSetExpr::accept(FOBDDVisitor* v) const {
 	v->visit(this);
 }
-const FOBDDSetExpr* FOBDDQuantSetExpr::acceptchange(FOBDDVisitor* v) const {
+const FOBDDQuantSetExpr* FOBDDQuantSetExpr::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 
 }
-const FOBDDSetExpr* FOBDDEnumSetExpr::acceptchange(FOBDDVisitor* v) const {
+const FOBDDEnumSetExpr* FOBDDEnumSetExpr::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 
@@ -46,11 +50,11 @@ std::ostream& FOBDDQuantSetExpr::put(std::ostream& output) const {
 	poptab();
 	output << nt() << "* Formula:";
 	pushtab();
-	output << nt() << toString(_subformulas[0]);
+	output << nt() << toString(_subformula);
 	poptab();
 	output << nt() << "* Term:";
 	pushtab();
-	output << nt() << toString(_subterms[0]);
+	output << nt() << toString(_subterm);
 	poptab();
 	poptab();
 	return output;
@@ -58,15 +62,8 @@ std::ostream& FOBDDQuantSetExpr::put(std::ostream& output) const {
 std::ostream& FOBDDEnumSetExpr::put(std::ostream& output) const {
 	output << "ENUMSET WITH:";
 	pushtab();
-	for (unsigned int i = 0; i < _subformulas.size(); i++) {
-		output << nt() << "* Formula:";
-		pushtab();
-		output << nt() << toString(_subformulas[i]);
-		poptab();
-		output << nt() << "* With term:";
-		pushtab();
-		output << nt() << toString(_subterms[i]);
-		poptab();
+	for (auto it = _subsets.cbegin(); it != _subsets.cend(); it++) {
+		output << nt() << "- " << toString(*it);
 	}
 	poptab();
 	return output;
