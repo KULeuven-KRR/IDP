@@ -42,8 +42,6 @@ const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) 
 	_type = type;
 	_result = NULL;
 	f->accept(this);
-	std::cerr << toString(_result)<<endl;
-
 	return _result;
 }
 
