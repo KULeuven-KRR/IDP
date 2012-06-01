@@ -1,16 +1,12 @@
 vocabulary V{
-	type x isa int
-	p(x)
+	type X isa int
 }
-
 theory T:V{
-	max{x: p(x): x}=48.
+	?x[X]: MAX[:int]-1000000000-1000000000-1000000000>x.
 }
-
 structure S:V{
-	x = {45..50}
+	X = {100000000}
 }
-
 procedure getExpectedNbOfModels(){
-	return 8
+	return 0
 }
