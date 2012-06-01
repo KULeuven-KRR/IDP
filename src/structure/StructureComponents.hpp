@@ -1202,6 +1202,7 @@ class IntRangeInternalSortTable;
 class EnumeratedInternalSortTable: public InternalSortTable {
 private:
 	SortedElementTuple _table;
+	int nbNotIntElements; // Used for efficient range operations
 
 	bool contains(const DomainElement*) const;
 
@@ -1233,16 +1234,19 @@ protected:
 	void addNonRange(int start1, int end1, int start2, int end2);
 
 public:
-	EnumeratedInternalSortTable() {
+	EnumeratedInternalSortTable(): nbNotIntElements(0) {
 	}
 	EnumeratedInternalSortTable(const SortedElementTuple& d) :
-			_table(d) {
+			_table(d), nbNotIntElements(0) {
 	}
 	InternalSortTable* add(const DomainElement*);
 	InternalSortTable* remove(const DomainElement*);
 	InternalSortTable* add(int i1, int i2);
 	const DomainElement* first() const;
 	const DomainElement* last() const;
+	/**
+	 * Returns true if the table is not empty, only contains integers and the integers cover a full interval and nothing outside
+	 */
 	bool isRange() const;
 
 	// Visitor

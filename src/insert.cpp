@@ -2037,28 +2037,23 @@ void Insert::addElement(SortTable* s, char c1, char c2) const {
 }
 
 SortTable* Insert::createSortTable() const {
-	auto eist = new EnumeratedInternalSortTable();
-	return new SortTable(eist);
+	return TableUtils::createSortTable();
 }
 
 void Insert::truepredinter(NSPair* nst) const {
-	auto eipt = new EnumeratedInternalPredTable();
-	auto pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
 	ElementTuple et;
 	pt->add(et);
 	predinter(nst, pt);
 }
 
 void Insert::falsepredinter(NSPair* nst) const {
-	auto eipt = new EnumeratedInternalPredTable();
-	auto pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
 	predinter(nst, pt);
 }
 
 PredTable* Insert::createPredTable(unsigned int arity) const {
-	auto eipt = new EnumeratedInternalPredTable();
-	auto pt = new PredTable(eipt, TableUtils::fullUniverse(arity));
-	return pt;
+	return TableUtils::createPredTable(TableUtils::fullUniverse(arity));
 }
 
 void Insert::addTuple(PredTable* pt, ElementTuple& tuple, YYLTYPE l) const {

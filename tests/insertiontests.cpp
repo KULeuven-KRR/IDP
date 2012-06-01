@@ -12,7 +12,6 @@
 
 #include "gtest/gtest.h"
 #include "GlobalData.hpp"
-#include "insert.hpp"
 #include "structure/MainStructureComponents.hpp"
 #include "commontypes.hpp"
 #include "inferences/grounding/Utils.hpp"
@@ -25,8 +24,7 @@ using namespace std;
 namespace Tests {
 
 TEST(Insertion, EmptyTable) {
-	auto& insert = getGlobal()->getInserter();
-	auto table = insert.createSortTable();
+	auto table = TableUtils::createSortTable();
 	ASSERT_FALSE(table->isRange()); // Empty tables cannot be ranges
 	table->add(createDomElem(1));
 	ASSERT_TRUE(table->isRange());
@@ -44,8 +42,7 @@ TEST(Insertion, EmptyTable) {
 }
 
 TEST(Insertion, InRangeTable) {
-	auto& insert = getGlobal()->getInserter();
-	auto table = insert.createSortTable();
+	auto table = TableUtils::createSortTable();
 	ASSERT_FALSE(table->isRange()); // Empty tables cannot be ranges
 	table->add(1,10);
 	table->add(5,2);
@@ -53,11 +50,19 @@ TEST(Insertion, InRangeTable) {
 }
 
 TEST(Insertion, OutTable) {
-	auto& insert = getGlobal()->getInserter();
-	auto table = insert.createSortTable();
+	auto table = TableUtils::createSortTable();
 	ASSERT_FALSE(table->isRange()); // Empty tables cannot be ranges
 	table->add(-5,5);
 	table->add(-100,-7);
+	ASSERT_FALSE(table->isRange());
+}
+
+TEST(Insertion, WithFloatTable) {
+	auto table = TableUtils::createSortTable();
+	ASSERT_FALSE(table->isRange()); // Empty tables cannot be ranges
+	table->add(-5,5);
+	ASSERT_TRUE(table->isRange());
+	table->add(createDomElem(0.3));
 	ASSERT_FALSE(table->isRange());
 }
 
