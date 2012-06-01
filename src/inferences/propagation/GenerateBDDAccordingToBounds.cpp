@@ -57,17 +57,14 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 	FOBDDFactory factory(_manager);
 
 	if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
-		//OLD CODE: didn't really work since with some options (e.g. when not all functions are grounded). This way, it is less efficient, but safer.
-		//auto bdd = factory.turnIntoBdd(atom);
-		/*if (needFalse(_type)) {
-			bdd = _manager->negation(bdd);
-		}*/
-		auto bdd = _manager->falsebdd();
-		if(needPossible(_type)){
-			bdd = _manager->truebdd();
+		Assert(atom->symbol()->builtin());
+		//Normally we should have created bounds for every symbol.
+		//If this assert fails. Check that every function is graphed, etc.
+		_result = factory.turnIntoBdd(atom);
+		if (needFalse(_type)) {
+			_result = _manager->negation(_result);
 		}
 
-		_result = bdd;
 	} else {
 		bool getct = (_type == TruthType::CERTAIN_TRUE || _type == TruthType::POSS_FALSE);
 		if (isNeg(atom->sign())) {
