@@ -86,6 +86,9 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT), voc);
 		return true;
 	}
+	Assert(false);
+	return false;
 }
+
 
 }
