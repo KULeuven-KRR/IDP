@@ -36,6 +36,7 @@ if(${BUILDTESTS})
 		parsertests.cpp
 		transformationtests.cpp
 		overflowtests.cpp
+		insertiontests.cpp
 		commandtests.cpp
 		testingtools.hpp testingtools.cpp		
 		TestUtils.hpp TestUtils.cpp

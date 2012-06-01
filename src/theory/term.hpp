@@ -22,40 +22,40 @@ class DomainElement;
 class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 
-/***********
- *  Terms
- **********/
-
-enum TermType {
-	TT_VAR, TT_FUNC, TT_AGG, TT_DOM
+enum class TermType {
+	VAR,
+	FUNC,
+	AGG,
+	DOM
 };
 
-class VarTerm;
-
-/**
- * Abstract class to represent terms
- */
 class Term {
 ACCEPTDECLAREBOTH(Term)
 private:
+	TermType _type;
 	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
-	std::vector<SetExpr*> _subsets; //!< the subsets of the term
+	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
-
-protected:
-	TermParseInfo _pi; //!< the place where the term was parsed
 
 private:
 	virtual void setFreeVars(); //!< Compute the free variables of the term
+
 	void deleteChildren(bool deleteVars); //Deletes all children of this formula (and depending on the boolean also the vars)
 
-public:
-	// Constructors
-	Term(const TermParseInfo& pi)
-			: _allwaysDeleteRecursively(false) ,_pi(pi){
+protected:
+	TermParseInfo _pi; //!< the place where the term was parsed
+	void setFreeVars(std::set<Variable*> freevars) {
+		_freevars = freevars;
 	}
 
+	Term(TermType type, const TermParseInfo& pi)
+			: 	_type(type),
+				_allwaysDeleteRecursively(false),
+				_pi(pi) {
+	}
+
+public:
 	virtual Term* clone() const = 0;
 	//!< create a copy of the term while keeping the free variables
 	virtual Term* cloneKeepVars() const = 0;
@@ -63,7 +63,6 @@ public:
 	virtual Term* clone(const std::map<Variable*, Variable*>&) const = 0;
 	//!< create a copy of the term and substitute the free variables according to the given map
 
-	// Destructors
 	virtual ~Term(); //!< Shallow destructor. Does not delete subterms and subsets of the term UNLESS _allwaysDeleteRecursively
 	void recursiveDelete(); //!< Delete the term, its subterms, and subsets.
 	void recursiveDeleteKeepVars(); //!< Delete the term, its subterms, and subsets. But don't delete variables
@@ -72,7 +71,7 @@ public:
 	virtual void sort(Sort*) {
 	} //!< Set the sort of the term (only does something for VarTerm and DomainTerm)
 
-	void addSet(SetExpr* s) {
+	void addSet(EnumSetExpr* s) {
 		_subsets.push_back(s);
 		setFreeVars();
 	}
@@ -80,7 +79,7 @@ public:
 		_subterms[n] = t;
 		setFreeVars();
 	}
-	void subset(size_t n, SetExpr* s) {
+	void subset(size_t n, EnumSetExpr* s) {
 		_subsets[n] = s;
 		setFreeVars();
 	}
@@ -92,34 +91,28 @@ public:
 		_allwaysDeleteRecursively = aRD;
 	}
 
-	// Inspectors
 	const TermParseInfo& pi() const {
 		return _pi;
 	}
 	virtual Sort* sort() const = 0; //!< Returns the sort of the term
-	virtual TermType type() const = 0;
+	virtual TermType type() const {
+		return _type;
+	}
 	bool contains(const Variable*) const; //!< true iff the term contains the variable
+
 	const std::set<Variable*>& freeVars() const {
 		return _freevars;
 	}
 	const std::vector<Term*>& subterms() const {
 		return _subterms;
 	}
-	const std::vector<SetExpr*>& subsets() const {
+	const std::vector<EnumSetExpr*>& subsets() const {
 		return _subsets;
 	}
 
-	// Output
 	virtual std::ostream& put(std::ostream&) const = 0;
-
-	friend class VarTerm;
 };
 
-std::ostream& operator<<(std::ostream&, const Term&);
-
-/**
- *	\brief Class to represent terms that are variables
- */
 class VarTerm: public Term {
 ACCEPTBOTH(Term)
 private:
@@ -134,15 +127,9 @@ public:
 	VarTerm* cloneKeepVars() const;
 	VarTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~VarTerm() {
-	}
-
 	void sort(Sort* s);
 
 	Sort* sort() const;
-	TermType type() const {
-		return TT_VAR;
-	}
 	Variable* var() const {
 		return _var;
 	}
@@ -151,10 +138,7 @@ public:
 };
 
 /**
- *	\brief Terms formed by applying a function to a tuple of terms.
- *
  *	Constants are represented by 0-ary functions applied to empty tuples.
- *
  */
 class FuncTerm: public Term {
 ACCEPTBOTH(Term)
@@ -168,16 +152,11 @@ public:
 	FuncTerm* cloneKeepVars() const;
 	FuncTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~FuncTerm() {
-	}
-
 	void function(Function* f) {
+		Assert(f!=NULL);
 		_function = f;
 	}
 	Sort* sort() const;
-	TermType type() const {
-		return TT_FUNC;
-	}
 	Function* function() const {
 		return _function;
 	}
@@ -188,11 +167,6 @@ public:
 	std::ostream& put(std::ostream&) const;
 };
 
-/**
- *
- * \brief Class to represent terms that are domain elements
- *
- */
 class DomainTerm: public Term {
 ACCEPTBOTH(Term)
 private:
@@ -206,16 +180,10 @@ public:
 	DomainTerm* cloneKeepVars() const;
 	DomainTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~DomainTerm() {
-	}
-
 	void sort(Sort* s);
 
 	Sort* sort() const {
 		return _sort;
-	}
-	TermType type() const {
-		return TT_DOM;
 	}
 	const DomainElement* value() const {
 		return _value;
@@ -224,31 +192,20 @@ public:
 	std::ostream& put(std::ostream&) const;
 };
 
-/**
- *
- *	\brief Class to represent aggregate terms
- *
- */
 class AggTerm: public Term {
 ACCEPTBOTH(Term)
 private:
 	AggFunction _function; //!< The aggregate function
 
 public:
-	AggTerm(SetExpr* set, AggFunction function, const TermParseInfo& pi);
+	AggTerm(EnumSetExpr* set, AggFunction function, const TermParseInfo& pi);
 
 	AggTerm* clone() const;
 	AggTerm* cloneKeepVars() const;
 	AggTerm* clone(const std::map<Variable*, Variable*>&) const;
 
-	~AggTerm() {
-	}
-
 	Sort* sort() const;
-	TermType type() const {
-		return TT_AGG;
-	}
-	SetExpr* set() const {
+	EnumSetExpr* set() const {
 		return subsets()[0];
 	}
 	AggFunction function() const {
@@ -262,196 +219,8 @@ namespace TermUtils {
 /** Make a vector of fresh variable terms */
 std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
 
-/** Derive a sort for a given term */
-Sort* deriveIntSort(const Term*, const AbstractStructure*);
+/** Attempts to derive a sort which is only a subset of the current sort. If not possible, the original sort is returned. */
+Sort* deriveSmallerSort(const Term*, const AbstractStructure*);
 }
-
-/*************
- *	Queries
- ************/
-
-/**
- * Class to represent a first-order query
- */
-class Query {
-private:
-	std::vector<Variable*> _variables; //!< The free variables of the query. The order of the variables is the
-									   //!< order in which they were parsed.
-	Formula* _query; //!< The actual query.
-	ParseInfo _pi; //!< The place where the query was parsed.
-public:
-	// Constructors
-	Query(const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi)
-			: _variables(vars), _query(q), _pi(pi) {
-	}
-
-	//Destructors
-	~Query(){
-	}
-
-	void recursiveDelete(){
-		_query->recursiveDelete(); //also deletes the variables.
-	}
-
-	// Inspectors
-	Formula* query() const {
-		return _query;
-	}
-	const std::vector<Variable*>& variables() const {
-		return _variables;
-	}
-	const ParseInfo& pi() const {
-		return _pi;
-	}
-};
-
-/*********************
- *  Set expressions
- ********************/
-
-class AbstractStructure;
-struct tablesize;
-
-/** 
- *	\brief Abstract base class for first-order set expressions
- */
-class SetExpr {
-ACCEPTDECLAREBOTH(SetExpr)
-protected:
-	std::set<Variable*> _freevars; //!< The EXACT set of free variables ocurring unquantified IN this set expression
-	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
-	std::vector<Formula*> _subformulas; //!< The direct subformulas of the set expression
-	std::vector<Term*> _subterms; //!< The direct subterms of the set expression
-	SetParseInfo _pi; //!< the place where the set was parsed
-	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
-
-	void setFreeVars(); //!< Compute the free variables of the set
-
-public:
-	// Constructors
-	SetExpr(const SetParseInfo& pi)
-			: _pi(pi), _allwaysDeleteRecursively(false) {
-	}
-
-	virtual SetExpr* clone() const = 0;
-	//!< create a copy of the set while keeping the free variables
-	virtual SetExpr* cloneKeepVars() const = 0;
-	//!< copy the set while keeping all variables
-	virtual SetExpr* clone(const std::map<Variable*, Variable*>&) const = 0;
-	//!< create a copy of the set and substitute the free variables according to the given map
-	virtual SetExpr* positiveSubset() const = 0;
-	//!< generate the subset of positive terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)>0:t(x)})
-	virtual SetExpr* negativeSubset() const = 0;
-	//!< generate the subset of negated negative terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)<0:-t(x)})
-	virtual SetExpr* zeroSubset() const = 0;
-	//!< generate the subset of zero terms ({x:p(x):t(x)} becomes {x:p(x)&t(x)=0:0})
-
-	// Destructors
-	virtual ~SetExpr(); //!< Delete the set, but not its subformulas and subterms UNLESSS _allwaysDeleteRecursively is true
-	void recursiveDelete(); //!< Delete the set and its subformulas and subterms
-	void recursiveDeleteKeepVars(); //!< Delete the set and its subformulas and subterms but don't delete variables
-
-	// Mutators
-	void subterm(size_t n, Term* t) {
-		_subterms[n] = t;
-		setFreeVars();
-	}
-	void subformula(size_t n, Formula* f) {
-		_subformulas[n] = f;
-		setFreeVars();
-	}
-	void addTerm(Term* t) {
-		_subterms.push_back(t);
-		setFreeVars();
-	}
-	void addFormula(Formula* f) {
-		_subformulas.push_back(f);
-		setFreeVars();
-	}
-	void addQuantVar(Variable* v) {
-		_quantvars.insert(v);
-		setFreeVars();
-	}
-	void allwaysDeleteRecursively(bool aRD) {
-		_allwaysDeleteRecursively = aRD;
-	}
-
-	// Inspectors
-	Sort* sort() const; //!< Returns the sort of the set
-	virtual tablesize maxSize(const AbstractStructure* str = NULL) const = 0;
-
-	bool contains(const Variable*) const;
-	const std::set<Variable*>& freeVars() const {
-		return _freevars;
-	}
-	const std::set<Variable*>& quantVars() const {
-		return _quantvars;
-	}
-	const std::vector<Formula*>& subformulas() const {
-		return _subformulas;
-	}
-	const std::vector<Term*>& subterms() const {
-		return _subterms;
-	}
-	const SetParseInfo& pi() const {
-		return _pi;
-	}
-
-	// Output
-	virtual std::ostream& put(std::ostream&) const = 0;
-private:
-	void deleteChildren(bool deleteVars); //Deletes all children of this term (and depending on the boolean also the vars)
-
-};
-
-std::ostream& operator<<(std::ostream&, const SetExpr&);
-
-/** 
- *	\brief Set expression of the form [ (phi_1,w_1); ... ; (phi_n,w_n) ] 
- */
-class EnumSetExpr: public SetExpr {
-ACCEPTBOTH(SetExpr)
-public:
-	// Constructors
-	EnumSetExpr(const SetParseInfo& pi)
-			: SetExpr(pi) {
-	}
-	EnumSetExpr(const std::vector<Formula*>& s, const std::vector<Term*>& w, const SetParseInfo& pi);
-
-	EnumSetExpr* clone() const;
-	EnumSetExpr* cloneKeepVars() const;
-	EnumSetExpr* clone(const std::map<Variable*, Variable*>&) const;
-	EnumSetExpr* positiveSubset() const;
-	EnumSetExpr* negativeSubset() const;
-	EnumSetExpr* zeroSubset() const;
-
-	tablesize maxSize(const AbstractStructure* str = NULL) const;
-
-	std::ostream& put(std::ostream&) const;
-};
-
-/** 
- * \brief Set expression of the form { x1 ... xn : phi : t }
- **/
-class QuantSetExpr: public SetExpr {
-ACCEPTBOTH(SetExpr)
-public:
-	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
-
-	Formula* getCondition() const{
-		return subformulas()[0];
-	}
-
-	QuantSetExpr* clone() const;
-	QuantSetExpr* cloneKeepVars() const;
-	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;
-	QuantSetExpr* positiveSubset() const;
-	QuantSetExpr* negativeSubset() const;
-	QuantSetExpr* zeroSubset() const;
-
-	tablesize maxSize(const AbstractStructure* str = NULL) const;
-
-	std::ostream& put(std::ostream&) const;
-};
 
 #endif /* TERM_HPP_ */

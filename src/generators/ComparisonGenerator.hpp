@@ -13,7 +13,7 @@
 
 #include "commontypes.hpp"
 #include "InstGenerator.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 class SortTable;
 class DomElemContainer;

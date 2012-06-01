@@ -492,19 +492,13 @@ public:
 
 	void visit(const EnumSetExpr* s) {
 		output() << "[ ";
-		if (not s->subformulas().empty()) {
-			output() << "( ";
-			s->subformulas()[0]->accept(this);
-			output() << ", ";
-			s->subterms()[0]->accept(this);
-			for (unsigned int n = 1; n < s->subformulas().size(); ++n) {
-				CHECKTERMINATION
-				output() << ") ; (";
-				s->subformulas()[n]->accept(this);
-				output() << ", ";
-				s->subterms()[n]->accept(this);
+		bool begin = true;
+		for(auto i=s->getSets().cbegin(); i<s->getSets().cend(); ++i) {
+			if(not begin){
+				output() <<", ";
 			}
-			output() << ")";
+			begin = false;
+			(*i)->accept(this);
 		}
 		output() << " ]";
 	}
@@ -519,11 +513,9 @@ public:
 			}
 		}
 		output() << " : ";
-		s->subformulas()[0]->accept(this);
-		if (not s->subterms().empty()) {
-			output() << " : ";
-			s->subterms()[0]->accept(this);
-		}
+		s->getCondition()->accept(this);
+		output() << " : ";
+		s->getTerm()->accept(this);
 		output() << " }";
 	}
 

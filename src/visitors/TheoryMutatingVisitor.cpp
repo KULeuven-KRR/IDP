@@ -118,21 +118,24 @@ Term* TheoryMutatingVisitor::visit(AggTerm* at) {
 	return traverse(at);
 }
 
-SetExpr* TheoryMutatingVisitor::traverse(SetExpr* s) {
-	for (size_t n = 0; n < s->subterms().size(); ++n) {
-		s->subterm(n, s->subterms()[n]->accept(this));
-	}
-	for (size_t n = 0; n < s->subformulas().size(); ++n) {
-		s->subformula(n, s->subformulas()[n]->accept(this));
+QuantSetExpr* TheoryMutatingVisitor::traverse(QuantSetExpr* s) {
+	s->setTerm(s->getTerm()->accept(this));
+	s->setCondition(s->getCondition()->accept(this));
+	return s;
+}
+
+EnumSetExpr* TheoryMutatingVisitor::traverse(EnumSetExpr* s) {
+	for (size_t n = 0; n < s->getSets().size(); ++n) {
+		s->setSet(n, s->getSets()[n]->accept(this));
 	}
 	return s;
 }
 
-SetExpr* TheoryMutatingVisitor::visit(EnumSetExpr* es) {
+EnumSetExpr* TheoryMutatingVisitor::visit(EnumSetExpr* es) {
 	return traverse(es);
 }
 
-SetExpr* TheoryMutatingVisitor::visit(QuantSetExpr* qs) {
+QuantSetExpr* TheoryMutatingVisitor::visit(QuantSetExpr* qs) {
 	return traverse(qs);
 }
 

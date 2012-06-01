@@ -15,7 +15,7 @@
 namespace Gen {
 
 Sort* sort(const std::string& name, int min, int max) {
-	auto sorttable = new SortTable(new IntRangeInternalSortTable(min, max));
+	auto sorttable = TableUtils::createSortTable(min, max);
 	auto sort = new Sort(name, sorttable);
 	sort->addParent(get(STDSORT::INTSORT));
 	return sort;
@@ -39,11 +39,11 @@ VarTerm* varterm(Sort* s) {
 	return new VarTerm(variable, TermParseInfo());
 }
 
-SetExpr* qset(const std::set<Variable*>& vars, Formula& subform, Term* subterm) {
-	return new QuantSetExpr(vars, &subform, subterm, SetParseInfo());
+EnumSetExpr* qset(const std::set<Variable*>& vars, Formula& subform, Term* subterm) {
+	return new EnumSetExpr({new QuantSetExpr(vars, &subform, subterm, SetParseInfo())}, SetParseInfo());
 }
 
-AggTerm* sum(SetExpr* set) {
+AggTerm* sum(EnumSetExpr* set) {
 	return new AggTerm(set, AggFunction::SUM, TermParseInfo());
 }
 

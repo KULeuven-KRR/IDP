@@ -130,11 +130,11 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 	auto rightdomain = _righttermgrounder->getDomain();
 	if (getDomain() == NULL || not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
-			leftdomain = new SortTable(new EnumeratedInternalSortTable());
+			leftdomain = TableUtils::createSortTable();
 			leftdomain->add(left._domelement);
 		}
 		if (not right.isVariable) {
-			rightdomain = new SortTable(new EnumeratedInternalSortTable());
+			rightdomain = TableUtils::createSortTable();
 			rightdomain->add(right._domelement);
 		}
 		if (leftdomain && rightdomain && leftdomain->isRange() && rightdomain->isRange() && leftdomain->approxFinite() && rightdomain->approxFinite()) {
@@ -155,11 +155,11 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 			if (max < min) {
 				swap(min, max);
 			}
-			setDomain(new SortTable(new IntRangeInternalSortTable(min, max)));
+			setDomain(TableUtils::createSortTable(min, max));
 		} else if (leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			auto newdomain = new SortTable(new EnumeratedInternalSortTable());
+			auto newdomain = TableUtils::createSortTable();
 			for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
 				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
 					int leftvalue = (*leftit)->value()._int;

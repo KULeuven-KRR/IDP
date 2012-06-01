@@ -16,6 +16,7 @@
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
+#include "structure/StructureComponents.hpp"
 #include <ctime> //TODO REMOVE
 using namespace std;
 
@@ -496,7 +497,7 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 template<class Factory, class Domain>
 bool TypedFOPropagator<Factory, Domain>::admissible(Domain* newd, Domain* oldd) const {
 	for (auto it = _admissiblecheckers.cbegin(); it != _admissiblecheckers.cend(); ++it) {
-		if (!((*it)->check(newd, oldd)))
+		if (not ((*it)->check(newd, oldd)))
 			return false;
 	}
 	return true;
@@ -714,6 +715,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const AggForm*) {
 // TODO
 }
 
-bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) const { // FIXME second domain?
+//The second domain is the old domain. Since the only check is on the length of the longest branch. No need to check this.
+bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) const {
 	return (_treshhold > _manager->longestbranch(newdomain->bdd()));
 }

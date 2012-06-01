@@ -36,12 +36,14 @@ void TheoryVisitor::traverse(const Term* t) {
 	}
 }
 
-void TheoryVisitor::traverse(const SetExpr* s) {
-	for (size_t n = 0; n < s->subterms().size(); ++n) {
-		s->subterms()[n]->accept(this);
-	}
-	for (size_t n = 0; n < s->subformulas().size(); ++n) {
-		s->subformulas()[n]->accept(this);
+void TheoryVisitor::traverse(const QuantSetExpr* s) {
+	s->getTerm()->accept(this);
+	s->getCondition()->accept(this);
+}
+
+void TheoryVisitor::traverse(const EnumSetExpr* s) {
+	for (size_t n = 0; n < s->getSets().size(); ++n) {
+		s->getSets()[n]->accept(this);
 	}
 }
 

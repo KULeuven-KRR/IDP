@@ -13,6 +13,8 @@
 
 class TheoryVisitor;
 class DefaultTraversingTheoryVisitor;
+class TheoryMutatingVisitor;
+
 class ApproxCheckTwoValued;
 class CheckContainment;
 class CheckContainsAggTerms;

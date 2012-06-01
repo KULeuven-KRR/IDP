@@ -55,13 +55,14 @@ KernelOrder FOBDDManager::newOrder(const vector<const FOBDDTerm*>& args) {
 	return newOrder(category);
 }
 
-KernelOrder FOBDDManager::newOrder(const FOBDD* bdd) {
+KernelOrder FOBDDManager::newOrderForQuantifiedBDD(const FOBDD* bdd) {
+	//Check for containment of dbrindex 1 since dbrindex 0 is quantified here!
 	auto category = (bdd->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
 KernelOrder FOBDDManager::newOrder(const FOBDDAggTerm* aggterm) {
-	auto category = (aggterm->containsDeBruijnIndex(1)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
+	auto category = (aggterm->containsDeBruijnIndex(0)) ? KernelOrderCategory::DEBRUIJNCATEGORY : KernelOrderCategory::STANDARDCATEGORY;
 	return newOrder(category);
 }
 
@@ -337,7 +338,7 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 	Assert(lookup < FOBDDQuantKernel > (_quantkerneltable, sort, bdd) == NULL);
-	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrder(bdd));
+	FOBDDQuantKernel* newkernel = new FOBDDQuantKernel(sort, bdd, newOrderForQuantifiedBDD(bdd));
 	_quantkerneltable[sort][bdd] = newkernel;
 	_kernels[newkernel->category()][newkernel->number()] = newkernel;
 	return newkernel;
@@ -346,7 +347,7 @@ FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
 const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right) {
 #ifndef NDEBUG
 	if (not isa<FOBDDAggTerm>(*right)) {
-		throw notyetimplemented("Creating aggkernel where right is nog aggterm ");
+		throw notyetimplemented("Creating aggkernel where right is no aggterm ");
 		//this can happen when bdds are simplified...
 	}
 #endif
@@ -358,11 +359,11 @@ const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType co
 	return addAggKernel(left, comp, newright);
 }
 
-const FOBDDSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDD*>& formulas, const std::vector<const FOBDDTerm*>& terms, Sort* sort) {
+const FOBDDEnumSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort) {
 	//TODO: improve this with dynamic programming!
-	return addEnumSetExpr(formulas, terms, sort);
+	return addEnumSetExpr(subsets, sort);
 }
-const FOBDDSetExpr* FOBDDManager::getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+const FOBDDQuantSetExpr* FOBDDManager::getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	//TODO: improve this with dynamic programming!
 	return addQuantSetExpr(varsorts, formula, term, sort);
 }
@@ -694,7 +695,7 @@ FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBD
 	return newarg;
 }
 
-const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDSetExpr* set) {
+const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDEnumSetExpr* set) {
 	auto result = lookup<FOBDDAggTerm>(_aggtermtable, func, set);
 	if (result != NULL) {
 		return result;
@@ -703,7 +704,7 @@ const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDSetExpr* 
 	return addAggTerm(func, set);
 }
 
-FOBDDAggTerm* FOBDDManager::addAggTerm(AggFunction func, const FOBDDSetExpr* set) {
+FOBDDAggTerm* FOBDDManager::addAggTerm(AggFunction func, const FOBDDEnumSetExpr* set) {
 	Assert(lookup<FOBDDAggTerm>(_aggtermtable, func, set) == NULL);
 	FOBDDAggTerm* result = new FOBDDAggTerm(func, set);
 	_aggtermtable[func][set] = result;
@@ -731,11 +732,11 @@ FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* va
 	return newdt;
 }
 
-FOBDDSetExpr* FOBDDManager::addEnumSetExpr(const std::vector<const FOBDD*>& formulas, const std::vector<const FOBDDTerm*>& terms, Sort* sort) {
+FOBDDEnumSetExpr* FOBDDManager::addEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort) {
 	//TODO: improve with dynamic programming
-	return new FOBDDEnumSetExpr(formulas, terms, sort);
+	return new FOBDDEnumSetExpr(subsets, sort);
 }
-FOBDDSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
+FOBDDQuantSetExpr* FOBDDManager::addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	//TODO: improve with dynamic programming
 	return new FOBDDQuantSetExpr(varsorts, formula, term, sort);
 }
@@ -917,12 +918,7 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	return result;
 
 }
-const FOBDDSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
-	if (vars.size() == 0) {
-		throw notyetimplemented("FOBDDQUANTSET without variables");
-		Assert(false);
-		//TODO what does this mean?  Enumsetexpr with one?
-	}
+const FOBDDQuantSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	std::vector<Sort*> sorts(vars.size());
 	int i = 0;
 	const FOBDD* bumpedformula = formula;
@@ -1055,9 +1051,12 @@ int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
 		const FOBDDAggKernel* ak = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = ak->right()->setexpr();
 		int result = 0;
-		for (int i = 0; i < set->size(); i++) {
-			int oneres = longestbranch(set->subformula(i)) + 1;
-			result = oneres > result ? oneres : result;
+		for (auto subset = set->subsets().cbegin(); subset != set->subsets().cend(); ++subset) {
+			for (int i = 0; i < set->size(); i++) {
+				int oneres = longestbranch((*subset)->subformula()) + 1;
+				result = oneres > result ? oneres : result;
+			}
+
 		}
 		return result;
 	}
@@ -1684,23 +1683,26 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
 			newvars.erase(leftvar);
 		}
-		std::set<const FOBDDDeBruijnIndex*> newindices;
-		if (set->size() != 0) {
-			for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
-				newindices.insert(getDeBruijnIndex((*it)->sort(), (*it)->index() + set->size()));
-			}
-			int i = 0;
-			for (auto it = set->quantvarsorts().crbegin(); it != set->quantvarsorts().crend(); ++it, i++) {
-				newindices.insert(getDeBruijnIndex(*it, i));
-			}
-		} else {
-			newindices = indices;
-		};
-		for (int i = 0; i < set->size(); i++) {
-			double extra = estimatedCostAll(set->subformula(i), newvars, newindices, structure);
-			d = (d + extra < maxdouble) ? d + extra : maxdouble;
-			if (d == maxdouble) {
-				break;
+		for (auto quantset = set->subsets().cbegin(); quantset != set->subsets().cend(); quantset++) {
+			std::set<const FOBDDDeBruijnIndex*> newindices;
+			auto nbquantvars = (*quantset)->quantvarsorts().size();
+			if (nbquantvars != 0) {
+				for (auto it = indices.cbegin(); it != indices.cend(); ++it) {
+					newindices.insert(getDeBruijnIndex((*it)->sort(), (*it)->index() + nbquantvars));
+				}
+				int i = 0;
+				for (auto it = (*quantset)->quantvarsorts().crbegin(); it != (*quantset)->quantvarsorts().crend(); ++it, i++) {
+					newindices.insert(getDeBruijnIndex(*it, i));
+				}
+			} else {
+				newindices = indices;
+			};
+			for (int i = 0; i < set->size(); i++) {
+				double extra = estimatedCostAll((*quantset)->subformula(), newvars, newindices, structure);
+				d = (d + extra < maxdouble) ? d + extra : maxdouble;
+				if (d == maxdouble) {
+					break;
+				}
 			}
 		}
 		return d;

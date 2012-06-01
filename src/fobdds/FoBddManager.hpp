@@ -30,6 +30,8 @@ class FOBDDQuantKernel;
 class FOBDDAggKernel;
 class FOBDDAggTerm;
 class FOBDDSetExpr;
+class FOBDDQuantSetExpr;
+class FOBDDEnumSetExpr;
 class FOBDD;
 class PFSymbol;
 class Variable;
@@ -69,7 +71,7 @@ typedef std::map<const DomainElement*, FOBDDDomainTerm*> MTEDT;
 typedef std::map<Sort*, MTEDT> DomainTermTable;
 typedef std::map<std::vector<const FOBDDTerm*>, FOBDDFuncTerm*> MVAFT;
 typedef std::map<Function*, MVAFT> FuncTermTable;
-typedef std::map<AggFunction,std::map<const FOBDDSetExpr*, FOBDDAggTerm*> > AggTermTable;
+typedef std::map<AggFunction,std::map<const FOBDDEnumSetExpr*, FOBDDAggTerm*> > AggTermTable;
 
 typedef pair<bool, const FOBDDKernel*> Choice;
 typedef vector<Choice> Path;
@@ -144,16 +146,16 @@ public:
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDKernel* getAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDTerm* right);
 
-	const FOBDDSetExpr* getEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
+	const FOBDDEnumSetExpr* getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
 	//If this is not the case, use setquantify!
-	const FOBDDSetExpr* getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	const FOBDDQuantSetExpr* getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
 
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
 	const FOBDDTerm* getFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
-	const FOBDDTerm* getAggTerm(AggFunction func, const FOBDDSetExpr* set);
+	const FOBDDTerm* getAggTerm(AggFunction func, const FOBDDEnumSetExpr* set);
 	const FOBDDDomainTerm* getDomainTerm(const DomainTerm* dt);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
@@ -171,7 +173,7 @@ public:
 	const FOBDD* replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
 
 
-	const FOBDDSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	const FOBDDQuantSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
 
 	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
@@ -237,7 +239,7 @@ public:
 private:
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
-	KernelOrder newOrder(const FOBDD* bdd);
+	KernelOrder newOrderForQuantifiedBDD(const FOBDD* bdd);
 	KernelOrder newOrder(const FOBDDAggTerm* aggterm);
 
 	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
@@ -247,10 +249,10 @@ private:
 	FOBDDVariable* addVariable(Variable* var);
 	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
-	FOBDDAggTerm* addAggTerm(AggFunction func, const FOBDDSetExpr* set);
+	FOBDDAggTerm* addAggTerm(AggFunction func, const FOBDDEnumSetExpr* set);
 	FOBDDDomainTerm* addDomainTerm(Sort* sort, const DomainElement* value);
-	FOBDDSetExpr* addEnumSetExpr(const std::vector<const FOBDD*>& formulas,const std::vector<const FOBDDTerm*>& terms, Sort* sort);
-	FOBDDSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	FOBDDEnumSetExpr* addEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
+	FOBDDQuantSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
 
 	void clearDynamicTables();

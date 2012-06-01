@@ -29,6 +29,135 @@
 #include "printers/idpprinter.hpp" //TODO only for debugging
 using namespace std;
 
+bool PredTable::finite() const {
+	return _table->finite(_universe);
+}
+bool PredTable::empty() const {
+	return _table->empty(_universe);
+}
+unsigned int PredTable::arity() const {
+	return _universe.arity();
+}
+bool PredTable::approxFinite() const {
+	return _table->approxFinite(_universe);
+}
+bool PredTable::approxEmpty() const {
+	return _table->approxEmpty(_universe);
+}
+bool PredTable::contains(const ElementTuple& tuple) const {
+	return _table->contains(tuple, _universe);
+}
+tablesize PredTable::size() const {
+	return _table->size(_universe);
+}
+
+const Universe& PredTable::universe() const {
+	return _universe;
+}
+
+InternalPredTable* PredTable::internTable() const {
+	return _table;
+}
+
+bool SortTable::finite() const {
+	return _table->finite();
+}
+bool SortTable::empty() const {
+	return _table->empty();
+}
+bool SortTable::approxFinite() const {
+	return _table->approxFinite();
+}
+bool SortTable::approxEmpty() const {
+	return _table->approxEmpty();
+}
+unsigned int SortTable::arity() const {
+	return 1;
+}
+tablesize SortTable::size() const {
+	return _table->size();
+}
+bool SortTable::contains(const ElementTuple& tuple) const {
+	return _table->contains(tuple);
+}
+bool SortTable::contains(const DomainElement* el) const {
+	return _table->contains(el);
+}
+
+// Returns true if non-empty and a range
+bool SortTable::isRange() const {
+	return _table->isRange();
+}
+// NOTE: first and last are guaranteed NOT NULL if the table is not empty
+const DomainElement* SortTable::first() const {
+	Assert(not empty());
+	return _table->first();
+}
+const DomainElement* SortTable::last() const {
+	Assert(not empty());
+	return _table->last();
+}
+
+InternalSortTable* SortTable::internTable() const {
+	return _table;
+}
+
+bool FuncTable::finite() const {
+	return _table->finite(_universe);
+}
+bool FuncTable::empty() const {
+	return _table->empty(_universe);
+}
+unsigned int FuncTable::arity() const {
+	return _universe.arity() - 1;
+}
+bool FuncTable::approxFinite() const {
+	return _table->approxFinite(_universe);
+}
+bool FuncTable::approxEmpty() const {
+	return _table->approxEmpty(_universe);
+}
+tablesize FuncTable::size() const {
+	return _table->size(_universe);
+}
+
+// !!! RETURNS NULL iff the given tuple does not map to a domainelement within the range sort
+const DomainElement* FuncTable::operator[](const ElementTuple& tuple) const {
+	Assert(tuple.size()==arity());
+#ifdef DEBUG
+	for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
+		Assert(*i!=NULL); // TODO this should be allowed (e.g. from a deeper function call, but crashes unexpectedly later in the program).
+	}
+#endif
+	auto result = _table->operator[](tuple);
+	if (universe().tables().back()->contains(result)) {
+		return result;
+	} else {
+		return NULL;
+	}
+}
+
+InternalFuncTable* FuncTable::internTable() const {
+	return _table;
+}
+
+const Universe& FuncTable::universe() const {
+	return _universe;
+}
+
+SortTable* TableUtils::createSortTable() {
+	return new SortTable(new EnumeratedInternalSortTable());
+}
+SortTable* TableUtils::createSortTable(int start, int end) {
+	return new SortTable(new IntRangeInternalSortTable(min(start, end), max(start, end)));
+}
+PredTable* TableUtils::createPredTable(const Universe& universe) {
+	return new PredTable(new EnumeratedInternalPredTable(), universe);
+}
+PredTable* TableUtils::createFullPredTable(const Universe& universe) {
+	return new PredTable(new FullInternalPredTable(), universe);
+}
+
 /**********************
  Domain elements
  **********************/
@@ -1654,15 +1783,31 @@ bool EnumeratedInternalSortTable::contains(const DomainElement* d) const {
 }
 
 bool EnumeratedInternalSortTable::isRange() const {
-	if (_table.empty()) {
+	if (_table.empty() || nbNotIntElements > 0) {
 		return false;
 	}
 	auto f = first();
 	auto l = last();
-	if (f->type() == DET_INT && l->type() == DET_INT) {
-		return l->value()._int - f->value()._int == (int) _table.size() - 1;
-	} else {
-		return false;
+	Assert(f->type() == DET_INT && l->type() == DET_INT);
+	// (and in fact all in between)
+	return l->value()._int - f->value()._int == (int) _table.size() - 1;
+}
+
+void EnumeratedInternalSortTable::addNonRange(const DomainElement* elem, int start, int end) {
+	if (elem->type() != DomainElementType::DET_INT) {
+		nbNotIntElements++;
+	}
+	_table.insert(elem);
+	for (auto i = start; i <= end; ++i) {
+		_table.insert(createDomElem(i));
+	}
+}
+void EnumeratedInternalSortTable::addNonRange(int start1, int end1, int start2, int end2) {
+	for (auto i = start1; i <= end1; ++i) {
+		_table.insert(createDomElem(i));
+	}
+	for (auto i = start2; i <= end2; ++i) {
+		_table.insert(createDomElem(i));
 	}
 }
 
@@ -1675,55 +1820,61 @@ InternalSortIterator* EnumeratedInternalSortTable::sortIterator(const DomainElem
 }
 
 InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
-	if (empty()) {
+	if (_table.empty()) {
 		return new IntRangeInternalSortTable(i1, i2);
 	}
-
-	if (first()->type() == DET_INT && last()->type() == DET_INT) {
-		if (i1 <= first()->value()._int && last()->value()._int <= i2) {
-			return new IntRangeInternalSortTable(i1, i2);
-		} else if (isRange()) {
-			if ((i1 <= last()->value()._int + 1) && (i2 >= first()->value()._int - 1)) {
-				int f = i1 < first()->value()._int ? i1 : first()->value()._int;
-				int l = i2 < last()->value()._int ? last()->value()._int : i2;
-				return new IntRangeInternalSortTable(f, l);
-			}
-		}
+	if (isRange()
+			&& ((i1 >= first()->value()._int - 1 && i1 <= last()->value()._int + 1) || (i2 >= first()->value()._int - 1 && i2 <= last()->value()._int + 1))) { // TODO overflow checks
+		auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
+		return intst->add(i1, i2);
 	}
-	InternalSortTable* temp = this;
-	for (int n = i1; n <= i2; ++n) {
-		temp = temp->add(createDomElem(n));
+	for (auto i = min(i1, i2); i <= max(i1, i2); ++i) {
+		_table.insert(createDomElem(i));
 	}
-	return temp;
+	return this;
 }
 
 InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
-	} else {
-		if (_nrRefs > 1) {
-			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
-			ist->add(d);
-			return ist;
-		} else {
-			_table.insert(d);
-			return this;
+	}
+	if (d->type() == DomainElementType::DET_INT) {
+		if (_table.empty()) {
+			return new IntRangeInternalSortTable(d->value()._int, d->value()._int);
 		}
+		if (isRange() && d->value()._int >= first()->value()._int - 1 && d->value()._int <= last()->value()._int + 1) { // TODO overflow checks
+			auto intst = new IntRangeInternalSortTable(first()->value()._int, last()->value()._int);
+			return intst->add(d);
+		}
+	}
+
+	if (_nrRefs > 1) {
+		auto ist = new EnumeratedInternalSortTable(_table);
+		ist->add(d);
+		return ist;
+	} else {
+		if (d->type() != DomainElementType::DET_INT) {
+			nbNotIntElements++;
+		}
+		_table.insert(d);
+		return this;
 	}
 }
 
 InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 	if (not contains(d)) {
 		return this;
+	}
+	if (_nrRefs > 1) {
+		auto ist = new EnumeratedInternalSortTable(_table);
+		ist->remove(d);
+		return ist;
 	} else {
-		if (_nrRefs > 1) {
-			EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable(_table);
-			ist->remove(d);
-			return ist;
-		} else {
-			_table.erase(d);
-			return this;
+		if(d->type()!=DomainElementType::DET_INT){
+			nbNotIntElements--;
 		}
+		_table.erase(d);
+		return this;
 	}
 }
 
@@ -1742,58 +1893,54 @@ const DomainElement* EnumeratedInternalSortTable::last() const {
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
-	if (not contains(d)) {
-		if (d->type() == DET_INT) {
-			if (d->value()._int == _first - 1) {
-				if (_nrRefs < 2) {
-					_first = d->value()._int;
-					return this;
-				}
-			} else if (d->value()._int == _last + 1) {
-				if (_nrRefs < 2) {
-					_last = d->value()._int;
-					return this;
-				}
-			}
-		}
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		InternalSortTable* ist = eist->add(d);
-		InternalSortTable* ist2 = ist->add(_first, _last);
-		if (ist2 != eist) {
-			delete (new SortTable(eist));
-		}
-		return ist2;
-	} else {
+	if (contains(d)) {
 		return this;
 	}
+	if (d->type() == DET_INT) {
+		if (d->value()._int == _first - 1) {
+			if (_nrRefs < 2) {
+				_first = d->value()._int;
+				return this;
+			}
+		} else if (d->value()._int == _last + 1) {
+			if (_nrRefs < 2) {
+				_last = d->value()._int;
+				return this;
+			}
+		}
+	}
+	auto eist = new EnumeratedInternalSortTable();
+	eist->addNonRange(d, _first, _last);
+	return eist;
 }
 
 InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
-	if (contains(d)) {
-		if (d->type() == DET_INT) {
-			if (d->value()._int == _first) {
-				if (_nrRefs < 2) {
-					_first = _first + 1;
-					return this;
-				}
-			} else if (d->value()._int == _last) {
-				if (_nrRefs < 2) {
-					_last = _last - 1;
-					return this;
-				}
-			}
-		}
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		for (int n = _first; n < d->value()._int; ++n) {
-			eist->add(createDomElem(n));
-		}
-		for (int n = d->value()._int + 1; n <= _last; ++n) {
-			eist->add(createDomElem(n));
-		}
-		return eist;
-	} else {
+	if (not contains(d)) {
 		return this;
 	}
+	if (d->type() == DET_INT) {
+		if (d->value()._int == _first) {
+			if (_nrRefs < 2) {
+				_first = _first + 1;
+				return this;
+			}
+		} else if (d->value()._int == _last) {
+			if (_nrRefs < 2) {
+				_last = _last - 1;
+				return this;
+			}
+		}
+	}
+	auto eist = new EnumeratedInternalSortTable();
+	InternalSortTable* ist = eist;
+	for (int n = _first; n <= _last; ++n) {
+		ist = ist->add(createDomElem(n));
+	}
+	ist = ist->remove(d);
+	if (ist != eist) {
+		delete (eist);
+	}
+	return ist;
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
@@ -1808,15 +1955,9 @@ InternalSortTable* IntRangeInternalSortTable::add(int i1, int i2) {
 			return this;
 		}
 	} else {
-		EnumeratedInternalSortTable* eist = new EnumeratedInternalSortTable();
-		for (int n = _first; n <= _last; ++n) {
-			eist->add(createDomElem(n));
-		}
-		InternalSortTable* ist = eist->add(i1, i2);
-		if (ist != eist) {
-			delete (new SortTable(eist));
-		}
-		return ist;
+		auto eist = new EnumeratedInternalSortTable();
+		eist->addNonRange(i1, i2, _first, _last);
+		return eist;
 	}
 }
 
@@ -1829,7 +1970,7 @@ const DomainElement* IntRangeInternalSortTable::last() const {
 }
 
 inline bool IntRangeInternalSortTable::contains(const DomainElement* d) const {
-	if (d == NULL) {
+	if (d == NULL || d->type() != DomainElementType::DET_INT) {
 		return false;
 	}
 	const auto& val = d->value()._int;
@@ -1841,6 +1982,7 @@ InternalSortIterator* IntRangeInternalSortTable::sortBegin() const {
 }
 
 InternalSortIterator* IntRangeInternalSortTable::sortIterator(const DomainElement* d) const {
+	Assert(d->type()==DomainElementType::DET_INT);
 	return new RangeInternalSortIterator(d->value()._int, _last);
 }
 
@@ -3058,7 +3200,7 @@ void SortTable::add(const ElementTuple& tuple) {
 	if (_table->contains(tuple)) {
 		return;
 	}
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->add(tuple);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3067,19 +3209,11 @@ void SortTable::add(const ElementTuple& tuple) {
 }
 
 void SortTable::add(const DomainElement* el) {
-	if (_table->contains(el)) {
-		return;
-	}
-	InternalSortTable* temp = _table;
-	_table = _table->add(el);
-	if (temp != _table) {
-		temp->decrementRef();
-		_table->incrementRef();
-	}
+	add(ElementTuple { el });
 }
 
 void SortTable::add(int i1, int i2) {
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->add(i1, i2);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3091,7 +3225,7 @@ void SortTable::remove(const ElementTuple& tuple) {
 	if (not _table->contains(tuple)) {
 		return;
 	}
-	InternalSortTable* temp = _table;
+	auto temp = _table;
 	_table = _table->remove(tuple);
 	if (temp != _table) {
 		temp->decrementRef();
@@ -3100,15 +3234,7 @@ void SortTable::remove(const ElementTuple& tuple) {
 }
 
 void SortTable::remove(const DomainElement* el) {
-	if (not _table->contains(el)) {
-		return;
-	}
-	InternalSortTable* temp = _table;
-	_table = _table->remove(el);
-	if (temp != _table) {
-		temp->decrementRef();
-		_table->incrementRef();
-	}
+	remove(ElementTuple { el });
 }
 
 /****************
@@ -3321,8 +3447,8 @@ void PredInter::checkConsistency() {
  * NOTE: Simple check if _ct == _pt
  */
 bool PredInter::approxTwoValued() const {
-	// TODO turn it into something that is smarter, without comparing the tables!
-	// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
+// TODO turn it into something that is smarter, without comparing the tables!
+// => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
 	return _ct->internTable() == _pt->internTable();
 }
 
@@ -3418,7 +3544,7 @@ void PredInter::pf(PredTable* t) {
 
 // Direct implementation to prevent checking consistency unnecessarily
 void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: it is possible that an already assigned table is assigned otherwise, so it gets
-	// deleted in the process!!!
+// deleted in the process!!!
 	auto clone = new PredTable(newct->internTable(), newct->universe());
 	delete (_ct);
 	delete (_pf);

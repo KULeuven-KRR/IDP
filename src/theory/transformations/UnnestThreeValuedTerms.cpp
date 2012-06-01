@@ -18,7 +18,7 @@ using namespace std;
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	if (getAllowedToUnnest()) {
 		switch (t->type()) {
-		case TT_FUNC: {
+		case TermType::FUNC: {
 			auto ft = dynamic_cast<FuncTerm*>(t);
 			if(_structure->inter(ft->function())->approxTwoValued()){
 				return false;
@@ -28,7 +28,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			}
 			return true;
 		}
-		case TT_AGG: {
+		case TermType::AGG: {
 			auto at = dynamic_cast<AggTerm*>(t);
 			if(SetUtils::approxTwoValued(at->set(), _structure)){
 				return false;
@@ -38,8 +38,8 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 			}
 			return true;
 		}
-		case TT_VAR:
-		case TT_DOM:
+		case TermType::VAR:
+		case TermType::DOM:
 			break;
 		}
 	}

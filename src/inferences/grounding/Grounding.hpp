@@ -80,9 +80,6 @@ public:
 			GroundingReciever* solver)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _reciever(solver), _grounder(NULL),
 				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
-//		if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && minimize != NULL) {
-//			throw notyetimplemented("Breaking symmetry in optimization problems.");
-//		}
 	}
 
 	~GroundingInference() {
@@ -143,7 +140,7 @@ public:
 
 		// Create and run grounder for minimization if necessary
 		if (_minimizeterm != NULL) {
-			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), GroundStructureInfo { _structure, symstructure }, grounding);
+			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), gi, grounding);
 			optimgrounder->toplevelRun();
 		}
 

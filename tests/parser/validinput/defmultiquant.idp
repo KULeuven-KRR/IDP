@@ -1,0 +1,13 @@
+vocabulary V{
+	type t isa int
+	pred(t,t)
+}
+
+theory T:V{
+	{
+		!x: !y:  pred(x,y) <- x=0.
+	}
+}
+procedure main(){
+	return 1
+}

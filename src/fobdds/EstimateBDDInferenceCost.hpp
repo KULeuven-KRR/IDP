@@ -16,6 +16,7 @@
 #include "utils/NumericLimits.hpp"
 
 #include "visitors/StructureVisitor.hpp"
+#include "structure/StructureComponents.hpp"
 
 // TODO review
 

@@ -15,7 +15,6 @@
 #include <sys/types.h>
 #endif
 #include "visitors/TheoryMutatingVisitor.hpp"
-#include "structure/StructureComponents.hpp"
 
 /**
  * Use:

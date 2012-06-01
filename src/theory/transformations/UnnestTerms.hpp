@@ -98,8 +98,8 @@ protected:
 	virtual Term* visit(DomainTerm*);
 	virtual Term* visit(AggTerm*);
 	virtual Term* visit(FuncTerm*);
-	virtual SetExpr* visit(EnumSetExpr*);
-	virtual SetExpr* visit(QuantSetExpr*);
+	virtual EnumSetExpr* visit(EnumSetExpr*);
+	virtual QuantSetExpr* visit(QuantSetExpr*);
 
 	void visitRuleHead(Rule* rule); // Split to allow reuse
 	Formula* specialTraverse(PredForm* predform);

@@ -22,9 +22,9 @@ private:
 	friend class FOBDDManager;
 
 	AggFunction _aggfunction;
-	const FOBDDSetExpr* _setexpr;
+	const FOBDDEnumSetExpr* _setexpr;
 
-	FOBDDAggTerm(AggFunction agg, const FOBDDSetExpr* setexpr)
+	FOBDDAggTerm(AggFunction agg, const FOBDDEnumSetExpr* setexpr)
 			: _aggfunction(agg), _setexpr(setexpr) {
 	}
 
@@ -36,7 +36,7 @@ public:
 		AggFunction aggfunction() const {
 		return _aggfunction;
 	}
-	const FOBDDSetExpr* setexpr() const {
+	const FOBDDEnumSetExpr* setexpr() const {
 		return _setexpr;
 	}
 

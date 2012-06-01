@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef FOBDSETEXPR_HPP_
 #define FOBDSETEXPR_HPP_
@@ -25,9 +25,6 @@ class FOBDDSetExpr {
 private:
 	friend class FOBDDManager;
 protected:
-	std::vector<Sort*> _quantvarsorts; //!< The sorts of the quantified variables of the set expression (in order of quantification (for the DeBruyn indices)
-	std::vector<const FOBDD*> _subformulas; //!< The direct subformulas of the set expression
-	std::vector<const FOBDDTerm*> _subterms; //!< The direct subterms of the set expression
 	Sort* _sort; //The sort of the expression (needs to be given when creating)
 
 public:
@@ -38,23 +35,11 @@ public:
 		return _sort;
 	}
 
-	int size() const {
-		Assert(_subformulas.size()==_subterms.size());
-		return _subformulas.size();
-	}
 
-	const std::vector<Sort*>& quantvarsorts() const{
-		return _quantvarsorts;
-	}
-	const FOBDD* subformula(unsigned int i) const {
-		Assert(i<_subformulas.size());
-		return _subformulas[i];
-	}
-	const FOBDDTerm* subterm(unsigned int i) const {
-		Assert(i<_subterms.size());
-		return _subterms[i];
-	}
-	bool containsDeBruijnIndex(unsigned int i) const;
+
+
+
+	virtual bool containsDeBruijnIndex(unsigned int i) const = 0;
 
 	virtual void accept(FOBDDVisitor*) const = 0;
 	virtual const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const = 0;
@@ -64,37 +49,55 @@ public:
 class FOBDDQuantSetExpr: public FOBDDSetExpr {
 private:
 	friend class FOBDDManager;
+	std::vector<Sort*> _quantvarsorts; //!< The sorts of the quantified variables of the set expression (in order of quantification (for the DeBruyn indices)
+	const FOBDD* _subformula; //!< The direct subformulas of the set expression
+	const FOBDDTerm* _subterm; //!< The direct subterms of the set expression
 	FOBDDQuantSetExpr(Sort* sort)
 			: FOBDDSetExpr(sort) {
 	}
 	FOBDDQuantSetExpr(const std::vector<Sort*>& sorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort)
-			: FOBDDSetExpr(sort) {
-		_quantvarsorts = sorts;
-		_subformulas = {formula};
-		_subterms = {term};
+			: FOBDDSetExpr(sort), _quantvarsorts (sorts), _subformula (formula),_subterm (term){
 	}
 public:
 	void accept(FOBDDVisitor*) const;
-	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
+	const FOBDDQuantSetExpr* acceptchange(FOBDDVisitor*) const;
 	virtual std::ostream& put(std::ostream& output) const;
+	const std::vector<Sort*>& quantvarsorts() const {
+		return _quantvarsorts;
+	}
+	const FOBDD* subformula() const {
+		return _subformula;
+	}
+	const FOBDDTerm* subterm() const {
+		return _subterm;
+	}
+	virtual bool containsDeBruijnIndex(unsigned int i) const ;
 };
 
 class FOBDDEnumSetExpr: public FOBDDSetExpr {
 private:
 	friend class FOBDDManager;
+	std::vector<const FOBDDQuantSetExpr* > _subsets;
+
 	FOBDDEnumSetExpr(Sort* sort)
 			: FOBDDSetExpr(sort) {
 	}
-	FOBDDEnumSetExpr(const std::vector<const FOBDD*>& s, const std::vector<const FOBDDTerm*>& t, Sort* sort)
-			: FOBDDSetExpr(sort) {
-		_subformulas = s;
-		_subterms = t;
+	FOBDDEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort)
+			: FOBDDSetExpr(sort), _subsets(subsets) {
 	}
 public:
+	int size() const {
+		return _subsets.size();
+	}
+	const std::vector<const FOBDDQuantSetExpr* >& subsets() const{
+		return _subsets;
+	}
 
 	void accept(FOBDDVisitor*) const;
-	const FOBDDSetExpr* acceptchange(FOBDDVisitor*) const;
+	const FOBDDEnumSetExpr* acceptchange(FOBDDVisitor*) const;
 	virtual std::ostream& put(std::ostream& output) const;
+	virtual bool containsDeBruijnIndex(unsigned int i) const ;
+
 
 };
 

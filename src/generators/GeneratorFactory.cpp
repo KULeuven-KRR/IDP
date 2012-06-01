@@ -14,6 +14,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
 
 #include "GeneratorFactory.hpp"
 
@@ -34,6 +35,8 @@
 #include "InverseUnaFunctionGenerator.hpp"
 #include "UnaryArithmeticOperators.hpp"
 #include "fobdds/FoBddVariable.hpp"
+
+#include "structure/StructureComponents.hpp"
 using namespace std;
 
 // NOTE original can be NULL

@@ -39,8 +39,8 @@ public:
 
 	void visit(const FOBDDQuantSetExpr* qse){
 		_minimaldepth = _minimaldepth + qse->quantvarsorts().size();
-		FOBDDVisitor::visit(qse->subformula(0));
-		qse->subterm(0)->accept(this);
+		FOBDDVisitor::visit(qse->subformula());
+		qse->subterm()->accept(this);
 		_minimaldepth = _minimaldepth - qse->quantvarsorts().size();
 	}
 

@@ -9,7 +9,7 @@
 ****************************************************************/
 
 #include "Universe.hpp"
-#include "StructureComponents.hpp"
+#include "MainStructureComponents.hpp"
 
 bool Universe::empty() const {
 	for (auto it = _tables.cbegin(); it != _tables.cend(); ++it) {

@@ -11,5 +11,5 @@
 #include "UnnestDomainTerms.hpp"
 
 bool UnnestDomainTerms::shouldMove(Term* t) {
-	return getAllowedToUnnest() && t->type() == TT_DOM;
+	return getAllowedToUnnest() && t->type() == TermType::DOM;
 }

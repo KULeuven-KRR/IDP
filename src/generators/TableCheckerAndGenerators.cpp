@@ -75,7 +75,7 @@ TableGenerator::TableGenerator(const PredTable* table, const std::vector<Pattern
 			}
 		}
 	}
-	_outputtable = new PredTable(new FullInternalPredTable(), Universe(outuniv));
+	_outputtable = TableUtils::createFullPredTable(Universe(outuniv));
 }
 
 TableGenerator::~TableGenerator() {
@@ -131,9 +131,10 @@ InverseTableGenerator::InverseTableGenerator(PredTable* table, const std::vector
 		}
 	}
 	Universe universe(temptables);
-	PredTable temp(new FullInternalPredTable(), universe);
-	_universegen = GeneratorFactory::create(&temp, std::vector<Pattern>(outvars.size(), Pattern::OUTPUT), outvars, universe);
+	auto temp = TableUtils::createFullPredTable(universe);
+	_universegen = GeneratorFactory::create(temp, std::vector<Pattern>(outvars.size(), Pattern::OUTPUT), outvars, universe);
 	_predchecker = new TableChecker(table, vars, table->universe());
+	// TODO deletion of temp
 }
 
 InverseTableGenerator* InverseTableGenerator::clone() const {

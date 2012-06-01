@@ -32,6 +32,7 @@ class DomElemContainer;
 class InteractivePrintMonitor;
 class TermGrounder;
 class SetGrounder;
+class QuantSetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 class FormulaGrounder;
@@ -49,11 +50,6 @@ struct GenAndChecker {
 	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker, const Universe& universe)
 			: _vars(vars), _generator(generator), _checker(checker), _universe(universe) {
 	}
-};
-
-struct GroundStructureInfo{
-	AbstractStructure* partialstructure;
-	GenerateBDDAccordingToBounds* symbolicstructure;
 };
 
 struct GroundInfo{
@@ -85,6 +81,7 @@ private:
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
+	QuantSetGrounder* _quantsetgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
 	Grounder* _topgrounder;
@@ -126,7 +123,7 @@ private:
 	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
 
 	template<typename Grounding>
-	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent);
+	GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent);
 
 	Grounder* getTopGrounder() const {
 		Assert(_topgrounder!=NULL);
@@ -156,7 +153,7 @@ public:
 	static Grounder* create(const GroundInfo& data);
 	static Grounder* create(const GroundInfo& data, PCSolver* satsolver);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
-	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
+	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundInfo& data, AbstractGroundTheory* grounding);
 
 	bool recursive(const Formula*);
 

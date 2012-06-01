@@ -9,6 +9,9 @@
 *.texlipse
 *.project
 *.cproject
+*.project~
+*.cproject~
+*.gitignore~
 *.aux
 *.log
 *.tex.backup

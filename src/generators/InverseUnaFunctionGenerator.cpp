@@ -10,7 +10,7 @@
 
 #include "InverseUnaFunctionGenerator.hpp"
 #include "common.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 InverseUNAFuncGenerator::InverseUNAFuncGenerator(const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
 		: _reset(true) {
