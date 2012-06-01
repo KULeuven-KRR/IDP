@@ -2,7 +2,7 @@
 
 procedure satnobounds(){
 	stdoptions.groundwithbounds = false
-	stdoptions.timeout = 30
+	stdoptions.timeout = 5
 	return run()
 }
 
@@ -14,7 +14,7 @@ procedure satnoboundslong(){
 
 procedure satwithbounds(){
 	stdoptions.groundwithbounds = true
-	stdoptions.timeout = 30
+	stdoptions.timeout = 5
 	return run()
 }
 
@@ -27,12 +27,12 @@ procedure satwithboundslong(){
 procedure satwithcp(){
 	stdoptions.cpsupport = true
 	stdoptions.groundwithbounds = true
-	stdoptions.timeout = 30
+	stdoptions.timeout = 5
 	return run()
 }
 
 procedure satwithsymm(){
-	stdoptions.timeout = 30
+	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	stdoptions.symmetrybreaking = "static"
 	return run()
