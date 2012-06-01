@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "TermGrounders.hpp"
 
@@ -81,7 +81,7 @@ GroundTerm FuncTermGrounder::run() const {
 		if (groundterm.isVariable) {
 			calculable = false;
 		} else {
-			if(groundterm._domelement == NULL){
+			if (groundterm._domelement == NULL) {
 				if (verbosity() > 2) {
 					poptab();
 					clog << tabs() << "Result = **invalid term**" << "\n";
@@ -119,7 +119,7 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
 	if (type == SumType::ST_MINUS) {
-		return new CPWSumTerm({ left, right }, { 1, -1 });
+		return new CPWSumTerm( { left, right }, { 1, -1 });
 	} else {
 		return new CPSumTerm(left, right);
 	}
@@ -221,7 +221,7 @@ GroundTerm SumTermGrounder::run() const {
 			varid = _termtranslator->translate(sumterm, getDomain());
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable && _functable!=NULL);
-			auto domelem = _functable->operator[]({left._domelement, right._domelement});
+			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
 			Assert(domelem);
 			if (verbosity() > 2) {
 				poptab();
@@ -242,7 +242,7 @@ GroundTerm SumTermGrounder::run() const {
 CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	Assert(CPSupport::eligibleForCP(f));
 	switch (f) {
-	case SUM :
+	case SUM:
 		return new CPSumTerm(varids);
 	default:
 		notyetimplemented("No CP support for aggregate functions other that sum.");
