@@ -244,16 +244,16 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 		optimgrounder->setOrig(minimizeterm);
 	} else {
 		switch (minimizeterm->type()) {
-		case TermType::TT_AGG: {
+		case TermType::AGG: {
 			auto term = dynamic_cast<const AggTerm*>(minimizeterm);
 			g.ground(term->set(), vocabulary);
 			optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 			optimgrounder->setOrig(minimizeterm);
 			break;
 		}
-		case TermType::TT_FUNC:
-		case TermType::TT_VAR:
-		case TermType::TT_DOM:
+		case TermType::FUNC:
+		case TermType::VAR:
+		case TermType::DOM:
 			throw notyetimplemented("Optimization over non-aggregate terms without CP support.");
 		}
 	}
@@ -926,7 +926,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	// Compute domain
 	SortTable* domain = NULL;
 	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t,_structure)) {
-		domain = TermUtils::deriveIntSort(t, _structure)->interpretation();
+		domain = TermUtils::deriveSmallerSort(t, _structure)->interpretation();
 	}
 
 	// Create term grounder
