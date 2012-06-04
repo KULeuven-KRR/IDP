@@ -246,7 +246,10 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
 
 template<class Factory, class DomainType>
 TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s), _theory(NULL) {
+		: 	_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)),
+			_factory(f),
+			_scheduler(s),
+			_theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 }
@@ -264,7 +267,10 @@ TypedFOPropagator<Factory, DomainType>::~TypedFOPropagator() {
 
 template<>
 TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
-		: _verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)), _factory(f), _scheduler(s), _theory(NULL) {
+		: 	_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)),
+			_factory(f),
+			_scheduler(s),
+			_theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
 	_options = opts;
 	if (_options->getValue(IntType::LONGESTBRANCH) != 0) {
@@ -419,24 +425,25 @@ Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, const se
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirection dir, bool ct, const Formula* c) {
-	if (_maxsteps > 0) {
-		--_maxsteps;
-		_scheduler->add(new FOPropagation(p, dir, ct, c));
-		if (_verbosity > 1) {
-			clog << "  Schedule ";
-			if (dir == DOWN) {
-				clog << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
-				if (c) {
-					clog << " towards " << *c;
-				}
-			} else {
-				clog << "upward propagation to " << ((ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ") << *p;
-				if (c) {
-					clog << ". Propagation comes from " << *c;
-				}
+	if (getMaxSteps() <= 0) {
+		return;
+	}
+	_maxsteps--;
+	_scheduler->add(new FOPropagation(p, dir, ct, c));
+	if (_verbosity > 1) {
+		clog << "  Schedule ";
+		if (dir == DOWN) {
+			clog << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
+			if (c) {
+				clog << " towards " << *c;
 			}
-			clog << "\n";
+		} else {
+			clog << "upward propagation to " << ((ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ") << *p;
+			if (c) {
+				clog << ". Propagation comes from " << *c;
+			}
 		}
+		clog << "\n";
 	}
 }
 

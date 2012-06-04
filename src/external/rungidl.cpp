@@ -179,15 +179,11 @@ void monitorShutdown(void *);
 #include <tinythread.h>
 using namespace tthread;
 
-//TODO willen we een run van een lua procedure timen of eigenlijk een command op zich?
-// is misschien nogal vreemd om lua uitvoering te timen?
-
 thread::native_handle_type executionhandle;
 
 void timeout(void*) {
 	int time = 0;
 	int sleep = 10;
-	//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 	while (not shouldStop()) {
 		time += sleep;
 #ifdef __MINGW32__
@@ -203,12 +199,13 @@ void timeout(void*) {
 				sleep += 100;
 			}
 		}
-		//clog <<"Timeout: " <<getOption(IntType::TIMEOUT) <<", currently at " <<time/1000 <<"\n";
 		if (getOption(IntType::TIMEOUT) < time / 1000) {
 			clog << "Timed-out\n";
 			getGlobal()->notifyTerminateRequested();
+		//	cerr <<"Shutting down\n";
 			thread shutdown(&monitorShutdown, NULL);
 			shutdown.join();
+			//cerr <<"Shut down\n";
 			break;
 		}
 		if (getOption(IntType::TIMEOUT) == 0) {
@@ -242,9 +239,13 @@ void registerHandler(Handler f, SIGNAL s) {
 
 void monitorShutdown(void*) {
 	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 3000000) {
-		sleep(10);
-		monitoringtime += 10000;
+	while (not hasStopped && monitoringtime < 1000) {
+#ifdef __MINGW32__
+		Sleep(100);
+#else
+		usleep(100000); // 100 millisec
+#endif
+		monitoringtime += 100;
 	}
 	if (not hasStopped) {
 		// TODO does not work in windows
