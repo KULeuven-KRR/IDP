@@ -1121,7 +1121,13 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
 		deleteDeep(tempsubformula);
-	} else {
+		if (not gentable->approxFinite()) {
+			Warning::possiblyInfiniteGrounding(toString(subformula));
+			throw IdpException("Infinite grounding");
+		}
+	}
+
+	else {
 		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
 
