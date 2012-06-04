@@ -122,7 +122,7 @@ double toDouble(const string& s) {
 }
 
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
-	double d;
+	double d = 0;
 	switch (agg) {
 	case AggFunction::CARD:
 		d = double(args.size());
@@ -199,7 +199,7 @@ QUANT operator not(QUANT t) {
 }
 
 Context operator not(Context t) {
-	Context result;
+	Context result = Context::BOTH;
 	switch (t) {
 	case Context::BOTH:
 		result = Context::BOTH;
@@ -352,7 +352,7 @@ string* StringPointer(const string& str) {
 }
 
 CompType invertComp(CompType comp) {
-	CompType result;
+	CompType result = CompType::EQ;
 	switch (comp) {
 	case CompType::EQ:
 		result = comp;
@@ -377,7 +377,7 @@ CompType invertComp(CompType comp) {
 }
 
 CompType negateComp(CompType comp) {
-	CompType result;
+	CompType result = CompType::EQ;
 	switch (comp) {
 	case CompType::EQ:
 		result = CompType::NEQ;

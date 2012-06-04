@@ -797,8 +797,8 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 	std::vector<const DomElemContainer*> freevars;
 	std::vector<SortTable*> freetables;
 	std::vector<Pattern> newpattern(vars.size(), Pattern::INPUT);
-	const DomElemContainer* left;
-	Pattern leftpattern;
+	const DomElemContainer* left = NULL;
+	Pattern leftpattern = Pattern::INPUT; //Set to input to avoid warnings from the compiler
 	for (unsigned int n = 0; n < vars.size(); n++) {
 		if (not isa<FOBDDVariable>(*(ak->left())) || ak->left() != fobddvars[n]) {
 			if (pattern[n] == Pattern::OUTPUT) {
