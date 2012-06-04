@@ -2201,8 +2201,7 @@ bool predcall(string* procedure, const ElementTuple& input) {
 		stringstream ss;
 		ss << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
-		Error::error(ss.str());
-		return NULL;
+		throw IdpException(ss.str());
 	} else {
 		bool b = lua_toboolean(_state, -1);
 		lua_pop(_state, 1);
