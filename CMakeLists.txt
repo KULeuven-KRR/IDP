@@ -39,8 +39,6 @@ endif()
 addToCXX("-std=c++0x -Wall -pedantic -Wno-overloaded-virtual -Wno-mismatched-tags")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
-elseif(CMAKE_COMPILER_IS_CLANX)
-	addToCXX("-Wno-overloaded-virtual")
 endif()
 
 ### Gecode option for minisatid
