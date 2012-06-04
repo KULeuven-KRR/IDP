@@ -291,6 +291,8 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 }
 
 Term* UnnestTerms::traverse(Term* term) {
+	auto saveChosenVarSort = _chosenVarSort;
+	_chosenVarSort = NULL;
 	Context savecontext = getContext();
 	bool savemovecontext = getAllowedToUnnest();
 	for (size_t n = 0; n < term->subterms().size(); ++n) {
@@ -299,6 +301,7 @@ Term* UnnestTerms::traverse(Term* term) {
 	for (size_t n = 0; n < term->subsets().size(); ++n) {
 		term->subset(n, term->subsets()[n]->accept(this));
 	}
+	_chosenVarSort = saveChosenVarSort;
 	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return term;
