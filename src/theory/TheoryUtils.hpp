@@ -131,6 +131,8 @@ Formula* splitIntoMonotoneAgg(Formula* f);
  */
 AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory*, AbstractStructure*);
 
+Formula* skolemize(Formula* t, Vocabulary* v);
+Theory* skolemize(Theory* t);
 AbstractTheory* skolemize(AbstractTheory* t);
 
 Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s = NULL);

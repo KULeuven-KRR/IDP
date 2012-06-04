@@ -186,8 +186,14 @@ AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructu
 	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t, s);
 }
 
+Formula* skolemize(Formula* t, Vocabulary* v) {
+	return transform<Skolemize, Formula*>(t, v);
+}
 AbstractTheory* skolemize(AbstractTheory* t) {
-	return transform<Skolemize, AbstractTheory*>(t);
+	return transform<Skolemize, AbstractTheory*>(t, t->vocabulary());
+}
+Theory* skolemize(Theory* t) {
+	return transform<Skolemize, Theory*>(t, t->vocabulary());
 }
 
 Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s) {

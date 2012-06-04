@@ -29,25 +29,14 @@ public:
 	// FIXME changes vocabulary! => should also adapt structures over the vocabulary
 	// NOTE: changes vocabulary and theory
 	template<typename T>
-	T execute(T t) {
-		vocabulary = t->vocabulary();
+	T execute(T t, Vocabulary* v) {
+		vocabulary = v;
 		auto result = t->accept(this);
 		return result;
 	}
 protected:
 	Theory* visit(Theory* t){
-		// TODO dangerous code: adding more constructs to the theory will skip them here!
-		for(auto i=t->definitions().begin(); i<t->definitions().end(); ++i){
-			quantified.clear();
-			replace.clear();
-			*i = (*i)->accept(this);
-		}
-		for(auto i=t->sentences().begin(); i<t->sentences().end(); ++i){
-			quantified.clear();
-			replace.clear();
-			*i = (*i)->accept(this);
-		}
-		for(auto i=t->fixpdefs().begin(); i<t->fixpdefs().end(); ++i){
+		for(auto i=t->components().begin(); i!=t->components().end(); ++i){
 			quantified.clear();
 			replace.clear();
 			*i = (*i)->accept(this);
