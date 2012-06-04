@@ -29,6 +29,8 @@
 
 #include "Assert.h"
 
+typedef unsigned int uint;
+
 std::string getGlobalNamespaceName();
 std::string getInternalNamespaceName();
 
