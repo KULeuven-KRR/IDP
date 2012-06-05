@@ -25,6 +25,7 @@ class AbstractStructure;
 
 namespace CPSupport {
 
+bool eligibleForCP(const Function*, const Vocabulary*);
 bool eligibleForCP(const PredForm*, const Vocabulary*);
 bool eligibleForCP(const FuncTerm*, const Vocabulary*);
 bool eligibleForCP(const AggTerm*, AbstractStructure*);

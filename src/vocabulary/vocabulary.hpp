@@ -362,7 +362,7 @@ public:
 	bool contains(const Function* f) const;
 	Function* resolve(const std::vector<Sort*>&);
 	Function* disambiguate(const std::vector<Sort*>&, const Vocabulary*);
-	std::set<Function*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
+	std::set<const Function*> nonbuiltins() const; //!< Returns the set of predicates that are not builtin
 									   //!< and that are overloaded by 'this'.
 
 									   // Output

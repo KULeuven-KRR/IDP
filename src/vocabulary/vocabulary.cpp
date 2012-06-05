@@ -124,7 +124,7 @@ public:
 	virtual void addVocabulary(const Vocabulary*) = 0;
 	virtual void removeVocabulary(const Vocabulary*) = 0;
 
-	virtual std::set<Function*> nonbuiltins() const = 0;
+	virtual std::set<const Function*> nonbuiltins() const = 0;
 };
 
 /**
@@ -146,7 +146,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<Function*> nonbuiltins() const;
+	std::set<const Function*> nonbuiltins() const;
 };
 
 /**
@@ -170,7 +170,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<Function*> nonbuiltins() const;
+	std::set<const Function*> nonbuiltins() const;
 };
 
 class FuncInterGeneratorGenerator;
@@ -193,7 +193,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<Function*> nonbuiltins() const;
+	std::set<const Function*> nonbuiltins() const;
 };
 
 /***********
@@ -1305,11 +1305,11 @@ Function* Function::resolve(const vector<Sort*>& ambigsorts) {
 	}
 }
 
-set<Function*> Function::nonbuiltins() {
+set<const Function*> Function::nonbuiltins() const {
 	if (_overfuncgenerator) {
 		return _overfuncgenerator->nonbuiltins();
 	} else {
-		set<Function*> sf;
+		set<const Function*> sf;
 		if (not _interpretation) {
 			sf.insert(this);
 		}
@@ -1430,10 +1430,10 @@ void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-set<Function*> EnumeratedFuncGenerator::nonbuiltins() const {
-	set<Function*> sf;
+set<const Function*> EnumeratedFuncGenerator::nonbuiltins() const {
+	set<const Function*> sf;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		set<Function*> temp = (*it)->nonbuiltins();
+		auto temp = (*it)->nonbuiltins();
 		sf.insert(temp.cbegin(), temp.cend());
 	}
 	return sf;
@@ -1517,9 +1517,8 @@ void IntFloatFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	_floatfunction->removeVocabulary(vocabulary);
 }
 
-set<Function*> IntFloatFuncGenerator::nonbuiltins() const {
-	set<Function*> sf;
-	return sf;
+set<const Function*> IntFloatFuncGenerator::nonbuiltins() const {
+	return {};
 }
 
 OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, FuncInterGeneratorGenerator* inter)
@@ -1620,9 +1619,8 @@ void OrderFuncGenerator::removeVocabulary(const Vocabulary*) {
 	//}
 }
 
-set<Function*> OrderFuncGenerator::nonbuiltins() const {
-	set<Function*> sf;
-	return sf;
+set<const Function*> OrderFuncGenerator::nonbuiltins() const {
+	return {};
 }
 
 namespace FuncUtils {

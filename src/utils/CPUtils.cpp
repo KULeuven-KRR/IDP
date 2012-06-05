@@ -21,7 +21,7 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(), voc);
 }
 
-bool nonOverloadedNonBuiltinEligibleForCP(Function* f, const Vocabulary* v) {
+bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {
 	if (f->partial()) { // TODO at the moment, partial terms are never eligible for CP
 		return false;
 	}
@@ -31,8 +31,7 @@ bool nonOverloadedNonBuiltinEligibleForCP(Function* f, const Vocabulary* v) {
 	return true;
 }
 
-bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
-	auto function = ft->function();
+bool eligibleForCP(const Function* function, const Vocabulary* voc) {
 	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
@@ -50,6 +49,10 @@ bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 		passtocp = FuncUtils::isIntFunc(function, voc);
 	}
 	return passtocp;
+}
+
+bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
+	return eligibleForCP(ft->function(), voc);
 }
 
 bool eligibleForCP(const AggFunction& f) {
@@ -89,6 +92,5 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	Assert(false);
 	return false;
 }
-
 
 }

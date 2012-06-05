@@ -50,6 +50,7 @@
 
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
+#include "transformations/AddFuncConstraints.hpp"
 
 using namespace std;
 
@@ -109,6 +110,11 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 
 /* FormulaUtils */
 namespace FormulaUtils {
+
+void addFuncConstraints(Vocabulary* v, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
+	AddFuncConstraints::generateFuncConstraints(funcconstraints, v, cpsupport);
+}
+
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(f, str);
 }

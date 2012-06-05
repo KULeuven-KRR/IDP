@@ -17,8 +17,6 @@
 #include <typeinfo>
 #include <iostream>
 
-#include "transformations/AddFuncConstraints.hpp"
-
 class Definition;
 class SetExpr;
 class PFSymbol;
@@ -32,6 +30,9 @@ class Vocabulary;
 class Term;
 class AggForm;
 class GroundTranslator;
+class Rule;
+class Function;
+class Theory;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -163,11 +164,11 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, b
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
 
-/** Returns a new theory containing the func constraints for all functions. */
-template<class T>
-Theory* getFuncConstraints(T t, const Vocabulary* v, bool cpsupport) {
-	return transform<AddFuncConstraints, Theory*>(t, v, cpsupport);
-}
+/**
+ * Given a vocabulary and a map of function symbols to their function constraint, add
+ * a new function constraints for all functions not already occurring in the list.
+ */
+void addFuncConstraints(Vocabulary* v, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);

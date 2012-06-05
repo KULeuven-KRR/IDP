@@ -124,7 +124,7 @@ public:
 		if (_grounder != NULL) {
 			delete (_grounder);
 		}
-		GroundInfo gi = { _theory, _structure, symstructure, _nbmodelsequivalent };
+		GroundInfo gi = { _theory, _minimizeterm, _structure, symstructure, _nbmodelsequivalent };
 		if (_reciever == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {
@@ -135,10 +135,6 @@ public:
 		}
 		_grounder->toplevelRun();
 		auto grounding = _grounder->getGrounding();
-		if (_minimizeterm != NULL) {
-			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), gi, grounding);
-			optimgrounder->toplevelRun();
-		}
 
 		// Execute symmetry breaking
 		addSymmetryBreaking(_theory, _structure, grounding, _minimizeterm);
