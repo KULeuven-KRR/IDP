@@ -1579,13 +1579,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 					cumulative_pathsposs.push_back(cumulative_chance);
 				}
 
-				// TODO there is a bug in the probability code, leading to P > 1, such that the following check is necessary
-				if (cumulative_chance > 1) {
-					//Warning::cumulchance(cumulative_chance);
-					Assert(false);
-					//TODO I think i might have fixed it.
-					cumulative_chance = 1;
-				}
+				Assert (cumulative_chance <= 1);
 				if (cumulative_chance > 0) { // there is a possible path to false
 					chance = chance * cumulative_chance;
 
@@ -1655,7 +1649,7 @@ double FOBDDManager::estimatedNrAnswers(const FOBDDKernel* kernel, const set<con
  * \brief Returns an estimate of the number of answers to the query { vars | bdd } in the given structure
  */
 double FOBDDManager::estimatedNrAnswers(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
-		const AbstractStructure* structure) {
+const AbstractStructure* structure) {
 	double maxdouble = getMaxElem<double>();
 	double bddchance = estimatedChance(bdd, structure);
 	tablesize univanswers = univNrAnswers(vars, indices, structure);
@@ -1857,6 +1851,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 
 double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
+
 	double maxdouble = getMaxElem<double>();
 	if (bdd == _truebdd) {
 		tablesize univsize = univNrAnswers(vars, indices, structure);

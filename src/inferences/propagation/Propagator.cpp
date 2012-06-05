@@ -502,3 +502,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const AggForm*) {
 bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) const {
 	return (_treshhold > _manager->longestbranch(newdomain->bdd()));
 }
+
+
+
+template class TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>;

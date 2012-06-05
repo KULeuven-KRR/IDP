@@ -10,9 +10,9 @@
 
 #include "PropagatorFactory.hpp"
 
+#include "Propagator.hpp"
 #include "PropagationDomainFactory.hpp"
 #include "PropagationScheduler.hpp"
-#include "Propagator.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVariable.hpp"
