@@ -39,7 +39,7 @@ GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, Abstr
 	SymbolicPropagation propinference;
 	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	if(not getOption(BoolType::GROUNDLAZILY)){ // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
+	if (not getOption(BoolType::GROUNDLAZILY)) { // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
 		propagator->doPropagation();
 		propagator->applyPropagationToStructure(structure);
 	}
@@ -162,9 +162,9 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo);
 	FormulaUtils::unnestTerms(newtheo);
-	FormulaUtils::splitComparisonChains(newtheo);
-	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false /*TODO check*/);
 	FormulaUtils::unnestDomainTerms(newtheo);
+	FormulaUtils::splitComparisonChains(newtheo);
+	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
@@ -184,8 +184,13 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 			QuantForm* exists = new QuantForm(SIGN::POS, QUANT::EXIST, yset, atom, FormulaParseInfo());
 			vars.pop_back();
 			set<Variable*> xset(vars.cbegin(), vars.cend());
-			QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
-			newtheo->add(univ1);
+			if (xset.size() == 0) {
+				newtheo->add(exists);
+			} else {
+				QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
+				newtheo->add(univ1);
+
+			}
 		}
 
 		// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
@@ -328,7 +333,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 	auto set = af->getAggTerm()->set();
-	for(auto i=set->getSets().cbegin(); i<set->getSets().cend(); ++i) {
+	for (auto i = set->getSets().cbegin(); i < set->getSets().cend(); ++i) {
 		_propagator->setUpward((*i)->getCondition(), af);
 	}
 	initFalse(af);

@@ -340,7 +340,7 @@ set<Sort*> Sort::ancestors(const Vocabulary* vocabulary) const {
 }
 
 /**
- * Compute all ancestors of the sort in the sort hierarchy
+ * Compute all descendents of the sort in the sort hierarchy
  *
  * PARAMETERS
  *		- vocabulary:	if this is not a null-pointer, the set of descendents is restricted to the descendents in vocabulary
