@@ -6,19 +6,19 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef INFERENCES_GROUNDINGPROPAGATE_HPP_
 #define INFERENCES_GROUNDINGPROPAGATE_HPP_
 
 #include "IncludeComponents.hpp"
 #include "inferences/modelexpansion/PropagateMonitor.hpp"
+#include "inferences/grounding/Grounding.hpp"
 
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "PropagatorFactory.hpp"
 
 #include "inferences/SolverConnection.hpp"
 
@@ -29,23 +29,21 @@
  */
 class GroundingPropagation {
 public:
-	 std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 
 		//Set MinisatID solver options
 		auto data = SolverConnection::createsolver(0);
 
-		//Create and execute grounder
-		auto symstructure = generateBounds(theory, structure);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure, false /*TODO Check*/}, data);
-		grounder->toplevelRun();
-		auto grounding = grounder->getGrounding();
+		auto clonetheory = theory->clone();
+		auto result = structure->clone();
+		auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, result, NULL, NULL, true, data);
+		AbstractGroundTheory* grounding = groundingInference->ground();
 
 		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();
 
 		auto translator = grounding->translator();
-		auto result = structure->clone();
 		auto entailed = mx->getEntailedLiterals();
 		for (auto literal = entailed.cbegin(); literal < entailed.cend(); ++literal) {
 			int atomnr = var(*literal);

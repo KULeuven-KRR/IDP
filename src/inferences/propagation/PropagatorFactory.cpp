@@ -10,14 +10,11 @@
 
 #include "PropagatorFactory.hpp"
 
-#include "IncludeComponents.hpp"
-#include "Propagate.hpp"
-#include "GlobalData.hpp"
+#include "PropagationDomainFactory.hpp"
+#include "PropagationScheduler.hpp"
+#include "Propagator.hpp"
 #include "theory/TheoryUtils.hpp"
-#include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
-#include "fobdds/FoBddTerm.hpp"
-#include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 
@@ -36,8 +33,7 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 }
 
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
-	SymbolicPropagation propinference;
-	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
+	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (not getOption(BoolType::GROUNDLAZILY)) { // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
 		propagator->doPropagation();
@@ -103,6 +99,59 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 	 return propfactory.create(theory);*/
 //		return NULL;
 //	}
+}
+
+/** Collect symbolic propagation vocabulary **/
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure)  {
+	std::map<PFSymbol*, InitBoundType> mpi;
+	Vocabulary* v = theory->vocabulary();
+	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
+		auto spi = it->second->nonbuiltins();
+		for (auto jt = spi.cbegin(); jt != spi.cend(); ++jt) {
+			if (structure->vocabulary()->contains(*jt)) {
+				PredInter* pinter = structure->inter(*jt);
+				if (pinter->approxTwoValued()) {
+					mpi[*jt] = IBT_TWOVAL;
+				} else if (pinter->ct()->approxEmpty()) {
+					if (pinter->cf()->approxEmpty()) {
+						mpi[*jt] = IBT_NONE;
+					} else {
+						mpi[*jt] = IBT_CF;
+					}
+				} else if (pinter->cf()->approxEmpty()) {
+					mpi[*jt] = IBT_CT;
+				} else {
+					mpi[*jt] = IBT_BOTH;
+				}
+			} else {
+				mpi[*jt] = IBT_NONE;
+			}
+		}
+	}
+	for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
+		auto sfi = it->second->nonbuiltins();
+		for (auto jt = sfi.cbegin(); jt != sfi.cend(); ++jt) {
+			if (structure->vocabulary()->contains(*jt)) {
+				FuncInter* finter = structure->inter(*jt);
+				if (finter->approxTwoValued()) {
+					mpi[*jt] = IBT_TWOVAL;
+				} else if (finter->graphInter()->ct()->approxEmpty()) {
+					if (finter->graphInter()->cf()->approxEmpty()) {
+						mpi[*jt] = IBT_NONE;
+					} else {
+						mpi[*jt] = IBT_CF;
+					}
+				} else if (finter->graphInter()->cf()->approxEmpty()) {
+					mpi[*jt] = IBT_CT;
+				} else {
+					mpi[*jt] = IBT_BOTH;
+				}
+			} else {
+				mpi[*jt] = IBT_NONE;
+			}
+		}
+	}
+	return mpi;
 }
 
 template<class InterpretationFactory, class PropDomain>
@@ -189,7 +238,6 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 			} else {
 				QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
 				newtheo->add(univ1);
-
 			}
 		}
 

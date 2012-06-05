@@ -18,7 +18,6 @@
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/SolverConnection.hpp"
-#include "PropagatorFactory.hpp"
 
 /**
  * Given a theory and a structure, return a new structure which is at least as precise as the structure
