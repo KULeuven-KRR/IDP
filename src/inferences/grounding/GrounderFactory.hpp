@@ -55,13 +55,13 @@ struct GenAndChecker {
 };
 
 struct GroundInfo {
-	const AbstractTheory* theory;
+	AbstractTheory* theory;
 	Term* minimizeterm;
 	AbstractStructure* partialstructure;
 	GenerateBDDAccordingToBounds* symbolicstructure;
 	bool nbModelsEquivalent;
 
-	GroundInfo(const AbstractTheory* theory, Term* minimizeterm, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
+	GroundInfo(AbstractTheory* theory, Term* minimizeterm, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
 			bool nbModelsEquivalent)
 			: 	theory(theory),
 				minimizeterm(minimizeterm),
@@ -71,7 +71,7 @@ struct GroundInfo {
 
 	}
 
-	GroundInfo(const AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure, bool nbModelsEquivalent)
+	GroundInfo(AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure, bool nbModelsEquivalent)
 			: 	theory(theory),
 				minimizeterm(NULL),
 				partialstructure(partialstructure),

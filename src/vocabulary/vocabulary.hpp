@@ -362,7 +362,7 @@ public:
 	bool contains(const Function* f) const;
 	Function* resolve(const std::vector<Sort*>&);
 	Function* disambiguate(const std::vector<Sort*>&, const Vocabulary*);
-	std::set<const Function*> nonbuiltins() const; //!< Returns the set of predicates that are not builtin
+	std::set<Function*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
 									   //!< and that are overloaded by 'this'.
 
 									   // Output
@@ -441,6 +441,8 @@ Function* get(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc);
 Predicate* get(STDPRED type); // NOTE might not have an interpretation yet, as it might be overloaded
 Predicate* get(STDPRED type, Sort* sort);
 
+class AbstractStructure;
+
 class Vocabulary {
 private:
 	std::string _name; //!< Name of the vocabulary. Default name is the empty string.
@@ -455,20 +457,30 @@ private:
 
 	static Vocabulary* _std; //!< The standard vocabulary
 
+	std::set<AbstractStructure*> structures;
+
 public:
 	Vocabulary(const std::string& name);
 	Vocabulary(const std::string& name, const ParseInfo& pi);
 
+	void addStructure(AbstractStructure* s){
+		structures.insert(s);
+	}
+	void removeStructure(AbstractStructure* s){
+		structures.erase(s);
+	}
+
 	~Vocabulary();
 
-	void add(Vocabulary*); //!< Add all symbols of a given vocabulary to the vocabulary
 	void setNamespace(Namespace* n) {
 		_namespace = n;
 	}
+
 	void add(Sort*); //!< Add the given sort (and its ancestors) to the vocabulary
 	void add(PFSymbol*); //!< Add the given predicate (and its sorts) to the vocabulary
 	void add(Predicate*); //!< Add the given predicate (and its sorts) to the vocabulary
 	void add(Function*); //!< Add the given function (and its sorts) to the vocabulary
+	void add(Vocabulary*); //!< Add all symbols of a given vocabulary to the vocabulary
 
 	static Vocabulary* std(); //!< Returns the standard vocabulary
 	const std::string& name() const; //!< Returns the name of the vocabulary

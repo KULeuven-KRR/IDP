@@ -51,7 +51,8 @@ Structure* Structure::clone() const {
  * Empty tables are created for symbols that occur in the new vocabulary, but did not occur in the old one.
  */
 void Structure::changeVocabulary(Vocabulary* v) {
-	_vocabulary = v;
+	AbstractStructure::changeVocabulary(v);
+
 	// Delete tables for symbols that do not occur anymore
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
 		if (not v->contains(it->first)) {

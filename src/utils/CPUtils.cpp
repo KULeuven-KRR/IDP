@@ -35,7 +35,7 @@ bool eligibleForCP(const Function* function, const Vocabulary* voc) {
 	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
-		auto nonbuiltins = function->nonbuiltins();
+		auto nonbuiltins = const_cast<Function*>(function)->nonbuiltins();
 		for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
 			if (not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)) {
 				return false;

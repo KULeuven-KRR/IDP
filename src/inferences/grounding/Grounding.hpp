@@ -80,6 +80,9 @@ public:
 			GroundingReciever* solver)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _reciever(solver), _grounder(NULL),
 				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
+		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness!
+		voc->add(_theory->vocabulary());
+		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
 	}
 
 	~GroundingInference() {

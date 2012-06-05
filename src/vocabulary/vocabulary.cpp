@@ -124,7 +124,7 @@ public:
 	virtual void addVocabulary(const Vocabulary*) = 0;
 	virtual void removeVocabulary(const Vocabulary*) = 0;
 
-	virtual std::set<const Function*> nonbuiltins() const = 0;
+	virtual std::set<Function*> nonbuiltins() const = 0;
 };
 
 /**
@@ -146,7 +146,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<const Function*> nonbuiltins() const;
+	std::set<Function*> nonbuiltins() const;
 };
 
 /**
@@ -170,7 +170,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<const Function*> nonbuiltins() const;
+	std::set<Function*> nonbuiltins() const;
 };
 
 class FuncInterGeneratorGenerator;
@@ -193,7 +193,7 @@ public:
 	void addVocabulary(const Vocabulary*);
 	void removeVocabulary(const Vocabulary*);
 
-	std::set<const Function*> nonbuiltins() const;
+	std::set<Function*> nonbuiltins() const;
 };
 
 /***********
@@ -1305,11 +1305,16 @@ Function* Function::resolve(const vector<Sort*>& ambigsorts) {
 	}
 }
 
-set<const Function*> Function::nonbuiltins() const {
+/**
+ * FIXME: preferably, this is a const method which return a set of const functions
+ * BUT functions are often used non const as map keys. As it is impossible to find using const Functions without a const_cast,
+ * we prefer having a bit of ugly code here and the const cast once in a while when the user possesses a const function himself.
+ */
+set<Function*> Function::nonbuiltins() {
 	if (_overfuncgenerator) {
 		return _overfuncgenerator->nonbuiltins();
 	} else {
-		set<const Function*> sf;
+		set<Function*> sf;
 		if (not _interpretation) {
 			sf.insert(this);
 		}
@@ -1430,10 +1435,10 @@ void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-set<const Function*> EnumeratedFuncGenerator::nonbuiltins() const {
-	set<const Function*> sf;
+set<Function*> EnumeratedFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		auto temp = (*it)->nonbuiltins();
+		set<Function*> temp = (*it)->nonbuiltins();
 		sf.insert(temp.cbegin(), temp.cend());
 	}
 	return sf;
@@ -1517,8 +1522,9 @@ void IntFloatFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	_floatfunction->removeVocabulary(vocabulary);
 }
 
-set<const Function*> IntFloatFuncGenerator::nonbuiltins() const {
-	return {};
+set<Function*> IntFloatFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
 }
 
 OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, FuncInterGeneratorGenerator* inter)
@@ -1619,8 +1625,9 @@ void OrderFuncGenerator::removeVocabulary(const Vocabulary*) {
 	//}
 }
 
-set<const Function*> OrderFuncGenerator::nonbuiltins() const {
-	return {};
+set<Function*> OrderFuncGenerator::nonbuiltins() const {
+	set<Function*> sf;
+	return sf;
 }
 
 namespace FuncUtils {
@@ -1698,6 +1705,13 @@ Vocabulary::~Vocabulary() {
 	}
 }
 
+template<class List>
+void updateStructures(Vocabulary* v, const List& structures){
+	for(auto i=structures.cbegin(); i!=structures.cend(); ++i){
+		(*i)->changeVocabulary(v);
+	}
+}
+
 void Vocabulary::add(Sort* s) {
 	if (contains(s)) {
 		return;
@@ -1706,6 +1720,7 @@ void Vocabulary::add(Sort* s) {
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
 	add(s->pred());
+	updateStructures(this, structures);
 }
 
 // TODO cleaner?
@@ -1738,6 +1753,7 @@ void Vocabulary::add(Predicate* p) {
 		add(*it);
 	}
 	p->addVocabulary(this);
+	updateStructures(this, structures);
 }
 
 void Vocabulary::add(Function* f) {
@@ -1756,6 +1772,7 @@ void Vocabulary::add(Function* f) {
 		add(*it);
 	}
 	f->addVocabulary(this);
+	updateStructures(this, structures);
 }
 
 void Vocabulary::add(Vocabulary* v) {

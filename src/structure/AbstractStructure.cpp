@@ -17,3 +17,15 @@ void AbstractStructure::put(std::ostream& s) const {
 	p.visit(this);
 	p.endTheory();
 }
+
+void AbstractStructure::changeVocabulary(Vocabulary* v) {
+	if(v!=_vocabulary){
+		if(_vocabulary!=NULL){
+			_vocabulary->removeStructure(this);
+		}
+		_vocabulary = v;
+		if(_vocabulary!=NULL){
+			_vocabulary->addStructure(this);
+		}
+	}
+}

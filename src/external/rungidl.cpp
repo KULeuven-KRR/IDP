@@ -239,7 +239,7 @@ void registerHandler(Handler f, SIGNAL s) {
 
 void monitorShutdown(void*) {
 	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 1000) {
+	while (not hasStopped && monitoringtime < 3000) {
 #ifdef __MINGW32__
 		Sleep(100);
 #else

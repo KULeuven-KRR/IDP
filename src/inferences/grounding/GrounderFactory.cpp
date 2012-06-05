@@ -74,28 +74,23 @@ int getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: 	_theory(data.theory->clone()),
+		: 	_theory(data.theory), // FIXME clone should also be done in other creates except for Grounding.hpp
 			_minimizeterm(data.minimizeterm),
+			_vocabulary(data.partialstructure->vocabulary()),
 			_structure(data.partialstructure),
 			_symstructure(data.symbolicstructure),
 			_grounding(grounding),
 			_nbmodelsequivalent(nbModelsEquivalent) {
-
-	_vocabulary = new Vocabulary("intern_voc"); // FIXME name uniqueness!
-	_vocabulary->add(_theory->vocabulary());
-
 	Assert(_symstructure != NULL);
 
 	// Create a symbolic structure if no such structure is given
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		clog << tabs() << "Using the following symbolic structure to ground:" << "\n";
 		clog << tabs() << toString(_symstructure) << "\n";
-
 	}
 }
 
 GrounderFactory::~GrounderFactory() {
-	deleteDeep(_theory);
 }
 
 /**
@@ -185,8 +180,7 @@ Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory g
 	// FIXME check vocabulary of minimizeterm
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
-	g.ground();
-	return g.getTopGrounder();
+	return g.ground();
 }
 
 /**
@@ -555,9 +549,10 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	Formula* newsubformula = qf->subformula()->clone();
 
 	if (not qf->isUniv() && allowskolemize) {
-		newsubformula = FormulaUtils::skolemize(newsubformula, _vocabulary);
+		newsubformula = FormulaUtils::skolemize(qf->clone(), _vocabulary);
 		FormulaUtils::addFuncConstraints(_vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-		newsubformula->accept(this);
+		descend(newsubformula);
+		deleteDeep(newsubformula);
 		return;
 	}
 
