@@ -37,8 +37,7 @@ public:
 	AbstractStructure(std::string name, const ParseInfo& pi)
 			: _name(name), _pi(pi), _vocabulary(NULL) {
 	}
-	virtual ~AbstractStructure() {
-	}
+	virtual ~AbstractStructure();
 
 	// Mutators
 	virtual void changeVocabulary(Vocabulary* v);

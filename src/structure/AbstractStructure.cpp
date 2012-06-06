@@ -11,6 +11,10 @@
 #include "AbstractStructure.hpp"
 #include "printers/idpprinter.hpp"
 
+AbstractStructure::~AbstractStructure(){
+	changeVocabulary(NULL);
+}
+
 void AbstractStructure::put(std::ostream& s) const {
 	auto p = IDPPrinter<std::ostream>(s);
 	p.startTheory();
