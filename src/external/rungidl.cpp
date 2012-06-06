@@ -239,13 +239,13 @@ void registerHandler(Handler f, SIGNAL s) {
 
 void monitorShutdown(void*) {
 	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 3000) {
+	while (not hasStopped && monitoringtime < 5) { // Wait max 3 seconds
 #ifdef __MINGW32__
-		Sleep(100);
+		Sleep(1000);
 #else
-		usleep(100000); // 100 millisec
+		usleep(1000000);
 #endif
-		monitoringtime += 100;
+		monitoringtime += 1;
 	}
 	if (not hasStopped) {
 		// TODO does not work in windows
