@@ -13,7 +13,7 @@ procedure help(namespace ) {
 	if type(namespace) == "namespace" then
 		idpintern.help(namespace)
 	else
-		io.stderr:write("Error: namespace expected")
+		io.stderr:write("Error: namespace expected\n")
 	end
 }
 
@@ -29,7 +29,7 @@ procedure tuples(table) {
 	if type(table) == "predicate_table" then
 		return idpintern.deref_and_increment, iterator(table), createdummytuple()
 	else
-		io.stderr:write("Error: predicate table expected")
+		io.stderr:write("Error: predicate table expected\n")
 	end
 }
 
@@ -41,7 +41,7 @@ procedure elements(d) {
 	if type(d) == "domain" then
 		return idpintern.deref_and_increment, iterator(d), 0
 	else 
-		io.stderr:write("Error: domain expected")
+		io.stderr:write("Error: domain expected\n")
 	end
 }
 
@@ -58,11 +58,11 @@ namespace inferences{
  * The result is a table of two-valued structures and, if getoptions().trace == true, a trace of the solver */
 procedure modelexpand(theory, structure) {
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local solutions, trace = modelexpandpartial(theory,structure)
@@ -75,11 +75,11 @@ procedure modelexpand(theory, structure) {
  * The result is a table of (possibly three-valued) structures and, if getoptions().trace == true, a trace of the solver */
 procedure modelexpandpartial(theory, structure) {
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	
@@ -107,15 +107,15 @@ procedure sat(theory, structure) {
  */
 procedure minimize(theory, structure, term){
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	if type(term) ~= "term" then
-		io.stderr:write("Error: term expected")
+		io.stderr:write("Error: term expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
@@ -130,11 +130,11 @@ procedure minimize(theory, structure, term){
  * Create the reduced grounding of the given theory and structure and parameter on whether the grounding should preserve the number of models */
 procedure groundeq(theory, structure, modeleq) {	
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
@@ -155,11 +155,11 @@ procedure ground(theory, structure) {
  * MEMORY EFFICIENT: does not store the grounding internally */
 procedure printgrounding(theory, structure) {
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
@@ -174,11 +174,11 @@ procedure printgrounding(theory, structure) {
 * Returns nil when propagation results in an inconsistent structure.*/ 
 procedure optimalpropagate(theory,structure){
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
@@ -192,11 +192,11 @@ procedure optimalpropagate(theory,structure){
 * Returns nil when propagation results in an inconsistent structure.*/
 procedure groundpropagate(theory,structure){
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
@@ -210,11 +210,11 @@ procedure groundpropagate(theory,structure){
 * Returns nil when propagation results in an inconsistent structure.*/
 procedure propagate(theory,structure){
 	if type(theory) ~= "theory" then
-		io.stderr:write("Error: theory expected")
+		io.stderr:write("Error: theory expected\n")
 		return
 	end
 	if type(structure) ~= "structure" then
-		io.stderr:write("Error: structure expected")
+		io.stderr:write("Error: structure expected\n")
 		return
 	end
 	local clonetheo = clone(theory)
