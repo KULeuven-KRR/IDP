@@ -16,6 +16,7 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "PropagationCommon.hpp"
 
+
 class Options;
 class GenerateBDDAccordingToBounds;
 class FOPropScheduler;
