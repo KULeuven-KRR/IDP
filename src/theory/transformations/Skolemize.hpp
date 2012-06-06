@@ -47,7 +47,7 @@ protected:
 	Term* visit(VarTerm* vt){
 		auto it = replace.find(vt->var());
 		if(it!=replace.cend()){
-			return it->second;
+			return it->second->clone();
 		}
 		return vt;
 	}
