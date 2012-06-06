@@ -20,20 +20,20 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 		switch (t->type()) {
 		case TermType::FUNC: {
 			auto ft = dynamic_cast<FuncTerm*>(t);
-			if(_structure->inter(ft->function())->approxTwoValued()){
+			if (_structure->inter(ft->function())->approxTwoValued()) {
 				return false;
 			}
-			if(_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary)){
+			if (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary)) {
 				return false;
 			}
 			return true;
 		}
 		case TermType::AGG: {
 			auto at = dynamic_cast<AggTerm*>(t);
-			if(SetUtils::approxTwoValued(at->set(), _structure)){
+			if (SetUtils::approxTwoValued(at->set(), _structure)) {
 				return false;
 			}
-			if(_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at, _structure)){
+			if (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at, _structure)) {
 				return false;
 			}
 			return true;

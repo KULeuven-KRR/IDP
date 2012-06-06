@@ -39,32 +39,30 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	const auto& groundweight = subtermgrounder.run();
 
 	if (groundweight.isVariable) {
-		Assert(l == _true);
-		varids.push_back(groundweight._varid);
-//TODO: When l != _true: introduce new term (constant?) t'. Add two formulas: l => t' = t and -l => t' = 0
-//		if (l == _true) {
-//			varids.push_back(groundweight._varid);
-//		} else {
-//			auto grounding = sublitgrounder.getGrounding();
-//			auto translator = grounding->translator();
-//			auto termtranslator = grounding->termtranslator();
+		if (l == _true) {
+			varids.push_back(groundweight._varid);
+		} else { // When l != _true: introduce new constant t'. Add two formulas: l => t' = t and -l => t' = 0
+			auto grounding = sublitgrounder.getGrounding();
+			auto translator = grounding->translator();
+			auto termtranslator = grounding->termtranslator();
 
-//			auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()),subtermgrounder.getDomain());
-//			auto func = new Function(vector<Sort*>{},sort,ParseInfo());
-//			//TODO: Add to vocabulary somehow?
-//
-//			auto varid = termtranslator->translate(func,vector<GroundTerm>{});
-//			auto vt1 = new CPVarTerm(varid);
-//			auto vt2 = new CPVarTerm(varid);
-//			Lit bl1 = translator->translate(vt1,CompType::EQ,CPBound(groundweight._varid),TsType::EQ);
-//			Lit bl2 = translator->translate(vt2,CompType::EQ,CPBound(0),TsType::EQ);
-//			Lit l1 = translator->translate({-l,bl1},false,TsType::EQ);
-//			Lit l2 = translator->translate({l,bl2},false,TsType::EQ);
-//			Lit truelit = translator->translate({l1,l2},true,TsType::EQ);
-//			grounding->addUnitClause(truelit);
-//
-//			varids.push_back(varid);
-//		}
+			auto domain = subtermgrounder.getDomain();
+			domain->add(createDomElem(0));
+			auto sort = new Sort("_internal_sort_"+convertToString(getGlobal()->getNewID()),domain);
+			auto constant = new Function(vector<Sort*>{},sort,ParseInfo());
+
+			auto varid = termtranslator->translate(constant,vector<GroundTerm>{});
+			auto vt1 = new CPVarTerm(varid);
+			auto vt2 = new CPVarTerm(varid);
+			Lit bl1 = translator->translate(vt1,CompType::EQ,CPBound(groundweight._varid),TsType::EQ);
+			Lit bl2 = translator->translate(vt2,CompType::EQ,CPBound(0),TsType::EQ);
+			Lit l1 = translator->translate({-l,bl1},false,TsType::IMPL);
+			Lit l2 = translator->translate({l,bl2},false,TsType::IMPL);
+			Lit truelit = translator->translate({l1,l2},true,TsType::EQ);
+			grounding->addUnitClause(truelit);
+
+			varids.push_back(varid);
+		}
 		return;
 	}
 

@@ -60,9 +60,9 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 	if (eligibleForCP(at->function()) && str != NULL) {
 		auto enumset = at->set();
 		for (auto i = enumset->getSets().cbegin(); i < enumset->getSets().cend(); ++i) {
-			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
-				return false;
-			}
+//			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
+//				return false;
+//			}
 			if (not eligibleForCP((*i)->getTerm(), str)) {
 				return false;
 			}

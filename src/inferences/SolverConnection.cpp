@@ -184,7 +184,8 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		auto function = termtranslator->function(cpvar->variable);
-		if (function == NULL) {
+		if (function == NULL || not init->vocabulary()->contains(function)) {
+			//Note: Only consider functions that are in the user's vocabulary, ignore internal ones.
 			continue;
 		}
 		const auto& gtuple = termtranslator->args(cpvar->variable);
