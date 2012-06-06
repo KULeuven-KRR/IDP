@@ -1116,15 +1116,11 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 
-	if (atom->args(0) == argument) {
-		if (not contains(atom->args(1), argument)) {
-			return is(atom->symbol(), STDPRED::EQ) ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
-		}
+	if (atom->args(0) == argument && not contains(atom->args(1), argument)) {
+		return is(atom->symbol(), STDPRED::EQ) ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
 	}
-	if (atom->args(1) == argument) {
-		if (not contains(atom->args(0), argument)) {
-			return atom->args(0);
-		}
+	if (atom->args(1) == argument && not contains(atom->args(0), argument)) {
+		return atom->args(0);
 	}
 	if (not SortUtils::isSubsort(atom->symbol()->sorts()[0], get(STDSORT::FLOATSORT))) {
 		//We only do arithmetic on float and subsorts
@@ -1135,10 +1131,11 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 #ifndef NDEBUG
-	Assert(isa<FOBDDDomainTerm>(*(atom->args(1))));
-	auto nill = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
-	Assert(
-			(nill->value()->type() == DET_DOUBLE && nill->value()->value()._double == 0) || (nill->value()->type() == DET_INT && nill->value()->value()._int == 0));
+	auto domterm = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
+	Assert(domterm!=NULL);
+	auto val = domterm->value();
+	Assert((val->type() == DET_DOUBLE && val->value()._double == 0)
+			|| (val->type() == DET_INT && val->value()._int == 0));
 	//The rewritings in getatomkernel should guarantee this.
 #endif
 
