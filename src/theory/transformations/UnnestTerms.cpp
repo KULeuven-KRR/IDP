@@ -198,7 +198,7 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 	if (ecf->comps().size() == 1) { // Rewrite to a normal atom
 		SIGN atomsign = ecf->sign();
 		Sort* atomsort = SortUtils::resolve(ecf->subterms()[0]->sort(), ecf->subterms()[1]->sort(), _vocabulary);
-		Predicate* comppred;
+		Predicate* comppred = NULL;
 		switch (ecf->comps()[0]) {
 		case CompType::EQ:
 			comppred = get(STDPRED::EQ, atomsort);
@@ -222,6 +222,7 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 			atomsign = not atomsign;
 			break;
 		}
+		Assert(comppred != NULL);
 		vector<Term*> atomargs = { ecf->subterms()[0], ecf->subterms()[1] };
 		PredForm* atom = new PredForm(atomsign, comppred, atomargs, ecf->pi());
 		delete ecf;

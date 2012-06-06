@@ -114,7 +114,7 @@ struct TermOrder {
 };
 
 template<typename ReturnType, typename T1, typename T2, typename Something, typename ... MoreTypes>
-ReturnType* lookup(std::map<T1, map<T2, Something> > m, T1 x, T2 y, MoreTypes ... parameters) {
+ReturnType* lookup(const std::map<T1, map<T2, Something> >& m, T1 x, T2 y, MoreTypes ... parameters) {
 	auto res = m.find(x);
 	if (res == m.cend()) {
 		return NULL;
@@ -123,7 +123,7 @@ ReturnType* lookup(std::map<T1, map<T2, Something> > m, T1 x, T2 y, MoreTypes ..
 }
 
 template<typename ReturnType, typename T1>
-ReturnType* lookup(std::map<T1, ReturnType*> m, T1 x) {
+ReturnType* lookup(const std::map<T1, ReturnType*>& m, T1 x) {
 	auto res = m.find(x);
 	if (res == m.cend()) {
 		return NULL;
@@ -132,23 +132,23 @@ ReturnType* lookup(std::map<T1, ReturnType*> m, T1 x) {
 }
 
 template<typename FinalType, typename T1, typename T2, typename Something>
-void deleteAll(std::map<T1, map<T2, Something> > m) {
-	for (auto i = m.cbegin(); i != m.cend(); ++i) {
+void deleteAll(std::map<T1, map<T2, Something> >& m) {
+	for (auto i = m.begin(); i != m.end(); ++i) {
 		deleteAll<FinalType>((*i).second);
 	}
 	m.clear();
 }
 
 template<typename FinalType, typename T1>
-void deleteAll(std::map<T1, FinalType*> m) {
-	for (auto i = m.cbegin(); i != m.cend(); ++i) {
+void deleteAll(std::map<T1, FinalType*>& m) {
+	for (auto i = m.begin(); i != m.end(); ++i) {
 		delete ((*i).second);
 	}
 	m.clear();
 }
 
 template<typename FinalType, typename T1, typename T2, typename Something>
-void deleteAllMatching(std::map<T1, map<T2, Something> > m, T1 k) {
+void deleteAllMatching(std::map<T1, map<T2, Something> >& m, T1 k) {
 	auto res = m.find(k);
 	if (res != m.cend()) {
 		deleteAll<FinalType>(res->second);
@@ -156,7 +156,7 @@ void deleteAllMatching(std::map<T1, map<T2, Something> > m, T1 k) {
 }
 
 template<typename FinalType, typename T1>
-void deleteAllMatching(std::map<T1, FinalType*> m, T1 k) {
+void deleteAllMatching(std::map<T1, FinalType*>& m, T1 k) {
 	auto res = m.find(k);
 	if (res != m.cend()) {
 		delete (res->second);

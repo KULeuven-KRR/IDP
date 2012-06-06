@@ -71,8 +71,7 @@ public:
 				changed = true;
 				auto bdd = *(_bddtseitinsWithoutConstraints.cbegin());
 				_bddtseitinsWithoutConstraints.erase(bdd);
-				auto res = _bddtseitins.find(bdd);
-				Assert(res != _bddtseitins.cend());
+				Assert(_bddtseitins.find(bdd) != _bddtseitins.cend());
 				auto pred = _bddtseitins[bdd];
 				auto newForm = tseitinFormula(pred, bdd);
 				t->add(newForm);
@@ -105,8 +104,7 @@ public:
 				auto bdd = *(_definedbddtseitins.cbegin());
 				_definedbddtseitins.erase(bdd);
 				_bddtseitinsWithoutConstraints.erase(bdd);
-				auto res = _bddtseitins.find(bdd);
-				Assert(res != _bddtseitins.cend());
+				Assert(_bddtseitins.find(bdd) != _bddtseitins.cend());
 				auto pred = _bddtseitins[bdd];
 				auto newRule = tseitinRule(pred, bdd);
 				def->add(newRule);
@@ -170,7 +168,8 @@ private:
 		size_t i = 0;
 		for (auto it = inttoindex.cbegin(); it != inttoindex.cend(); it++, i++) {
 			_dbrmapping[it->second] = vars[i];
-		}Assert(vars.size() == _dbrmapping.size());
+		}
+		Assert(vars.size() == _dbrmapping.size());
 
 	}
 

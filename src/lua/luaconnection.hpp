@@ -14,6 +14,7 @@
 #include <string>
 #include <sstream>
 #include "internalargument.hpp"
+#include "lua.hpp" // TODO should move to cpp, but then have to remove templated addGlobal
 
 class Vocabulary;
 class AbstractStructure;

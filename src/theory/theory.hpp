@@ -735,6 +735,24 @@ public:
 	void add(FixpDef* fd) {
 		_fixpdefs.push_back(fd);
 	}
+	void add(TheoryComponent* comp){ // FIXME handle all cases with an enum or a visitor
+		auto form = dynamic_cast<Formula*>(comp);
+		if(form!=NULL){
+			add(form);
+			return;
+		}
+		auto def = dynamic_cast<Definition*>(comp);
+		if(def!=NULL){
+			add(def);
+			return;
+		}
+		auto fixpdef = dynamic_cast<FixpDef*>(comp);
+		if(fixpdef!=NULL){
+			add(fixpdef);
+			return;
+		}
+		Assert(false);
+	}
 	void addTheory(AbstractTheory*);
 	void sentence(unsigned int n, Formula* f) {
 		_sentences[n] = f;

@@ -14,7 +14,6 @@
 #include <set>
 #include <iostream>
 #include <cstdlib>
-#include "lua.hpp"
 #include "common.hpp"
 #include "parseinfo.hpp"
 

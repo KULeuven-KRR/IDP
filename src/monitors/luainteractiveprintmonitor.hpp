@@ -13,6 +13,7 @@
 
 #include "monitors/interactiveprintmonitor.hpp"
 #include "lua/luaconnection.hpp"
+#include "lua.hpp"
 
 class LuaInteractivePrintMonitor: public InteractivePrintMonitor {
 private:

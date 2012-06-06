@@ -340,7 +340,7 @@ set<Sort*> Sort::ancestors(const Vocabulary* vocabulary) const {
 }
 
 /**
- * Compute all ancestors of the sort in the sort hierarchy
+ * Compute all descendents of the sort in the sort hierarchy
  *
  * PARAMETERS
  *		- vocabulary:	if this is not a null-pointer, the set of descendents is restricted to the descendents in vocabulary
@@ -448,7 +448,25 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* voc) {
 }
 
 bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc) {
-	return resolve(a, b, voc) == b;
+	if(a==NULL || b==NULL || (voc!=NULL && (not voc->contains(a) || not voc->contains(b)))){
+		return false;
+	}
+	std::queue<Sort*> parents;
+	parents.push(a);
+	if(a==b){
+		return true;
+	}
+	while(not parents.empty()) {
+		auto p = parents.front();
+		parents.pop();
+		for(auto i=p->parents().cbegin(); i!=p->parents().cend(); ++i){
+			if(*i==b){
+				return true;
+			}
+			parents.push(*i);
+		}
+	}
+	return false;
 }
 
 }
@@ -763,6 +781,29 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& ambigsorts, const Vocabu
 	} else {
 		for (size_t n = 0; n < sorts().size(); ++n) {
 			if (sorts()[n] && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
+				return NULL;
+			}
+		}
+		return this;
+	}
+}
+
+/**
+ *		\brief Returns a function that is overloaded by the function and which sorts resolve with the given sorts.
+ *		Which function is returned may depend on the overfuncgenerator. Returns a null-pointer if no
+ *		suitable function is found.
+ *
+ * PARAMETERS
+ *		- sorts:		the given sorts (includes the output sort)
+ *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
+ */
+Function* Function::disambiguate(const vector<Sort*>& ambigsorts, const Vocabulary* vocabulary) {
+	Assert(ambigsorts.size()==sorts().size());
+	if (overloaded()) {
+		return _overfuncgenerator->disambiguate(ambigsorts, vocabulary);
+	} else {
+		for (size_t n = 0; n < sorts().size(); ++n) {
+			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
 				return NULL;
 			}
 		}
@@ -1264,29 +1305,6 @@ Function* Function::resolve(const vector<Sort*>& ambigsorts) {
 	}
 }
 
-/**
- *		\brief Returns a function that is overloaded by the function and which sorts resolve with the given sorts.
- *		Which function is returned may depend on the overfuncgenerator. Returns a null-pointer if no
- *		suitable function is found.
- *
- * PARAMETERS
- *		- sorts:		the given sorts (includes the output sort)
- *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
- */
-Function* Function::disambiguate(const vector<Sort*>& ambigsorts, const Vocabulary* vocabulary) {
-	Assert(ambigsorts.size()==sorts().size());
-	if (overloaded()) {
-		return _overfuncgenerator->disambiguate(ambigsorts, vocabulary);
-	} else {
-		for (size_t n = 0; n < sorts().size(); ++n) {
-			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
-				return NULL;
-			}
-		}
-		return this;
-	}
-}
-
 set<Function*> Function::nonbuiltins() {
 	if (_overfuncgenerator) {
 		return _overfuncgenerator->nonbuiltins();
@@ -1456,25 +1474,30 @@ Function* IntFloatFuncGenerator::resolve(const vector<Sort*>& sorts) {
  * and the float function if at least one sort is not a subsort of _int.
  */
 Function* IntFloatFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Vocabulary* vocabulary) {
-	size_t zerocounter = 0;
-	bool isfloatbutnotint = false;
+	bool seennull = false;
+	bool allints = true;
 	auto intsort = get(STDSORT::INTSORT);
 	auto floatsort = get(STDSORT::FLOATSORT);
+	set<Sort*> seen;
 	for (auto it = sorts.cbegin(); it != sorts.cend(); ++it) {
 		if (*it == NULL) {
-			if (++zerocounter > 1) {
+			if(seennull){
 				return NULL;
 			}
-		} else if (not SortUtils::isSubsort(*it, floatsort, vocabulary)) {
+			seennull = true;
+			continue;
+		}
+		if(not seen.insert(*it).second){ // If not inserted, had already seen the sort, so prevent calling issubsort again!
+			continue;
+		}
+		if (allints && not SortUtils::isSubsort(*it, intsort, vocabulary)) {
+			allints = false;
+		}
+		if(not allints && not SortUtils::isSubsort(*it, floatsort, vocabulary)){
 			return NULL;
-		} else {
-			Assert(SortUtils::isSubsort(*it, floatsort, vocabulary));
-			if (not SortUtils::isSubsort(*it, intsort, vocabulary)) {
-				isfloatbutnotint = true;
-			}
 		}
 	}
-	return (isfloatbutnotint ? _floatfunction : _intfunction);
+	return (allints ? _intfunction: _floatfunction);
 }
 
 /**
