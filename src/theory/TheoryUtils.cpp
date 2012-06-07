@@ -111,8 +111,14 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 /* FormulaUtils */
 namespace FormulaUtils {
 
-void addFuncConstraints(AbstractTheory* theory, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
-	transform<AddFuncConstraints, AbstractTheory, std::map<Function*, Formula*>&, bool>(theory, funcconstraints, cpsupport);
+void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
+	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
+}
+void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
+	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
+}
+void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
+	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
 }
 
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {
@@ -180,16 +186,16 @@ Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
 
+Theory* replaceWithNestedTseitins(Theory* theory){
+	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);
+}
+
 Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
 	return transform<SplitComparisonChains, Formula*>(f, v);
 }
 
 Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
-}
-
-AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory* t, AbstractStructure* s) {
-	return transform<ReplaceNestedWithTseitinTerm, AbstractTheory*>(t, s);
 }
 
 Formula* skolemize(Formula* t, Vocabulary* v) {

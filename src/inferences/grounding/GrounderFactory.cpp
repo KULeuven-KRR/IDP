@@ -240,8 +240,11 @@ Grounder* GrounderFactory::ground() {
 
 	allowskolemize = true;
 
-	FormulaUtils::addFuncConstraints(_theory, funcconstraints, getOption(BoolType::CPSUPPORT));
-		// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
+	// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
+	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	if(_minimizeterm!=NULL){
+		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	}
 
 	InitContext();
 	descend(_theory);
@@ -267,6 +270,9 @@ Grounder* GrounderFactory::ground() {
 	}
 	allowskolemize = true;
 
+	if(grounders.size()==1){
+		return grounders.front();
+	}
 	InitContext();
 	return new BoolGrounder(getGrounding(), grounders, SIGN::POS, true, getContext());
 }
@@ -322,25 +328,39 @@ void GrounderFactory::visit(const Theory* theory) {
 	// NOTE: currently, definitions first is important for good lazy grounding
 	// TODO Order the components to optimize the grounding process
 
+	auto newtheory = theory;
 	// Create grounders for all components
-	std::vector<Grounder*> children;
+/*	// Skolemization:
+	auto newtheory = new Theory("", _vocabulary, theory->pi());
 	for (auto i = components.cbegin(); i < components.cend(); ++i) {
 		auto component = *i;
-		InitContext();
-/*		auto formula = dynamic_cast<Formula*>(*i);
+
+
+		auto formula = dynamic_cast<Formula*>(*i);
 		// TODO add definitions etc!
 		// Can we handle subformula  directly if we store the parent quantifiers?
 		if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
 			formula = formula->clone();
 			component = FormulaUtils::skolemize(formula, _vocabulary);
-			FormulaUtils::addFuncConstraints(_vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-		}*/
-		descend(component);
-		if(*i!=component){
-			deleteDeep(component);
+			FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
 		}
+
+		newtheory->add(component);
+	}
+
+// TODO incorrect:
+	newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);*/
+
+	std::vector<Grounder*> children;
+	const auto components2 = newtheory->components(); // NOTE: primitive reorder present: definitions first
+	for (auto i = components2.cbegin(); i < components2.cend(); ++i) {
+		InitContext();
+		descend(*i);
 		children.push_back(getTopGrounder());
 	}
+
+	// TODO deletion of newtheory
+
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
 

@@ -1182,10 +1182,16 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	}
 	const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
 	double constval;
-	if (constant->value()->type() == DET_INT) {
-		constval = constant->value()->value()._int;
-	} else if (constant->value()->type() == DET_DOUBLE) {
-		constval = constant->value()->value()._double;
+	auto val = constant->value();
+	switch(val->type()){
+	case DomainElementType::DET_INT:
+		constval = val->value()._int;
+		break;
+	case DomainElementType::DET_DOUBLE:
+		constval = val->value()._double;
+		break;
+	default:
+		throw IdpException("Invalid code path");
 	}
 	if (invertedOcccounter != 0 && occcounter == 0) {
 		constval = -constval;

@@ -49,7 +49,8 @@ public:
 		execute(pf, list, vocabulary);
 	}
 
-	bool isReducable() const {
+	bool isReducible() const {
+		cerr <<"Can be reduced?" <<(_reduced != NULL?"yes":"no") <<"\n";
 		return _reduced != NULL;
 	}
 
@@ -59,10 +60,12 @@ public:
 	}
 
 private:
-	void execute(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary){
+	void execute(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary) {
+		cerr <<"Reducing " <<toString(pf) <<" to ";
 		_reduced = NULL;
 
 		if (pf->symbol()->builtin()) { // TODO handle builtins?
+			cerr <<"itself.\n";
 			return;
 		}
 
@@ -71,9 +74,10 @@ private:
 
 		pf->accept(this);
 
-		if (not _cantransform) {
+		if (not _cantransform || _reduced->_remainingargs.size()==pf->args().size()) {
 			delete (_reduced);
 			_reduced = NULL;
+			cerr <<"itself.\n";
 			return;
 		}
 
@@ -99,12 +103,14 @@ private:
 			}
 		}
 		if (identicalfound) {
+			cerr <<toString(_reduced->_newpf) <<".\n";
 			return;
 		}
 
 		auto newsymbol = new Predicate(sorts);
 		vocabulary->add(newsymbol);
 		_reduced->_newpf = new PredForm(SIGN::POS, newsymbol, _reduced->_remainingargs, pf->pi());
+		cerr <<toString(_reduced->_newpf) <<".\n";
 	}
 
 	virtual void visit(const PredForm* pf) {
@@ -148,22 +154,24 @@ private:
 class ReplaceNestedWithTseitinTerm: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	bool _visiting;
 	Vocabulary* _vocabulary;
 	std::map<PFSymbol*, std::set<ReducedPF*> > _symbol2reduction;
+	bool _indefbody;
+	bool firstpass;
 
 public:
 	// NOTE: changes vocabulary and structure
-	// FIXME handle partial functions correctly!
-	AbstractTheory* execute(AbstractTheory* t, AbstractStructure* s) {
-		_visiting = false;
-		Assert(s->vocabulary()==t->vocabulary());
-		_vocabulary = s->vocabulary();
+	Theory* execute(Theory* theory) {
+		_vocabulary = theory->vocabulary();
+		firstpass = true;
+		auto t = theory->accept(this);
+		firstpass = false;
 		auto result = t->accept(this);
-		for(auto i=_symbol2reduction.cbegin(); i!=_symbol2reduction.cend(); ++i){
-			for(auto j=i->second.cbegin(); j!=i->second.cend(); ++j){
+		for (auto i = _symbol2reduction.cbegin(); i != _symbol2reduction.cend(); ++i) {
+			for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
 				// FIXME are they all UNIV quants?
-				auto newform = new QuantForm(SIGN::POS, QUANT::UNIV, (*j)->_quantvars, new EquivForm(SIGN::POS, (*j)->_newpf, (*j)->_origpf, FormulaParseInfo()), FormulaParseInfo());
+				auto newform = new QuantForm(SIGN::POS, QUANT::UNIV, (*j)->_quantvars,
+						new EquivForm(SIGN::POS, (*j)->_newpf, (*j)->_origpf, FormulaParseInfo()), FormulaParseInfo());
 				result->add(newform);
 			}
 		}
@@ -171,38 +179,69 @@ public:
 	}
 protected:
 	Formula* visit(PredForm* pf) {
-		if (not _visiting) {
-			return TheoryMutatingVisitor::visit(pf);
-		}
-		auto listit = _symbol2reduction.find(pf->symbol());
-		if (listit == _symbol2reduction.cend()) {
+		if(firstpass){
 			auto& reducedlist = _symbol2reduction[pf->symbol()];
 			ConstructNewReducedForm t(pf, reducedlist, _vocabulary);
-			if (t.isReducable()) {
+			if (t.isReducible()) {
 				reducedlist.insert(t.getResult());
 				return t.getResult()->_newpf;
 			} else {
 				return pf;
 			}
-		}
-		Assert(listit->second.size() > 0);
-		std::vector<Formula*> subforms;
-		for (auto i = listit->second.cbegin(); i != listit->second.cend(); ++i) {
-			Assert((*i)->_arglist.size() == pf->args().size());
-			std::vector<Term*> arglist;
-			std::vector<Formula*> equalities;
-			for (uint j = 0; j < pf->args().size(); ++j) {
-				if ((*i)->_arglist[j] == NULL) {
-					arglist.push_back(pf->args()[j]);
-				} else {
-					equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->_arglist[j], pf->args()[j] }, pf->pi()));
-				}
+		}else{
+			auto listit = _symbol2reduction[pf->symbol()];
+			if (listit.size()==0) {
+				return pf;
 			}
-			equalities.push_back(new PredForm(pf->sign(), (*i)->_newpf->symbol(), arglist, pf->pi()));
-			subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
+			Assert(listit->second.size() > 0);
+			std::vector<Formula*> subforms;
+			for (auto i = listit.cbegin(); i != listit.cend(); ++i) {
+				Assert((*i)->_arglist.size() == pf->args().size());
+				std::vector<Term*> arglist;
+				std::vector<Formula*> equalities;
+				for (uint j = 0; j < pf->args().size(); ++j) {
+					if ((*i)->_arglist[j] == NULL) {
+						arglist.push_back(pf->args()[j]);
+					} else {
+						equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->_arglist[j], pf->args()[j] }, pf->pi()));
+					}
+				}
+				equalities.push_back(new PredForm(pf->sign(), (*i)->_newpf->symbol(), arglist, pf->pi()));
+				subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
+			}
+			if(not _indefbody){
+				subforms.push_back(pf);
+			}
+			return new BoolForm(SIGN::POS, false, subforms, pf->pi());
 		}
-		return new BoolForm(SIGN::POS, false, subforms, pf->pi());
 	}
+
+	Definition* visit(Definition* d) {
+		auto saved = _symbol2reduction;
+		_symbol2reduction.clear();
+
+		/**
+		 * Go over all heads, store in a map from symbol to heads
+		 * Go over all literals P(x,y,z) in all bodies
+		 *    If P is defined and there is a head P(x2,y2,z2) in the map
+		 *    replace P(x,y,z) with P(x,y,z) | (x=x2 & y=y2 & z=z2 & P(x2, y2, z2))
+		 *    where any equality is dropped if it is still a var or a domain element
+		 */
+		for (auto i = d->rules().cbegin(); i < d->rules().cend(); ++i) {
+			(*i)->head()->accept(this);
+		}
+
+		_indefbody = true;
+		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
+			auto newbody = (*j)->body()->accept(this);
+		}
+		_indefbody = false;
+
+		_symbol2reduction.insert(saved.cbegin(), saved.cend());
+
+		return d;
+	}
+
 };
 
 #endif /* REPLACENESTEDWITHTSEITIN_HPP_ */
