@@ -44,6 +44,13 @@ protected:
 		return t;
 	}
 
+	Rule* visit(Rule* r){
+		return r;
+	}
+	FixpDef* visit(FixpDef* d){
+		return d;
+	}
+
 	EquivForm* visit(EquivForm* eq){
 		return eq;
 	}
