@@ -22,7 +22,8 @@ IntroduceSharedTseitins::IntroduceSharedTseitins()
 Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
 	if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
 		Warning::warning(
-				"The introduce shared Tseitin transformation might result in an infinite grounding. Grounding with bounds or disabling the shared Tseitin transformation could solve this problem\n");
+				"The introduce shared Tseitin transformation might result in an infinite grounding. "
+				"Grounding with bounds might solve this.\n");
 	}
 	_bddtofo.setVocabulary(theo->vocabulary());
 

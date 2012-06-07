@@ -168,7 +168,7 @@ void addCompletion(AbstractTheory*);
  * Given a vocabulary and a map of function symbols to their function constraint, add
  * a new function constraints for all functions not already occurring in the list.
  */
-void addFuncConstraints(Vocabulary* v, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
+void addFuncConstraints(AbstractTheory* theory, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);

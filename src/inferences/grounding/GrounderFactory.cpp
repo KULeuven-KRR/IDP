@@ -240,7 +240,8 @@ Grounder* GrounderFactory::ground() {
 
 	allowskolemize = true;
 
-	FormulaUtils::addFuncConstraints(_vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	FormulaUtils::addFuncConstraints(_theory, funcconstraints, getOption(BoolType::CPSUPPORT));
+		// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
 
 	InitContext();
 	descend(_theory);
@@ -312,27 +313,35 @@ void GrounderFactory::descend(T child) {
 
 void GrounderFactory::visit(const Theory* theory) {
 	_context._conjPathUntilNode = true;
-	auto tmptheory = theory->clone();
 
 	// TODO experiment with:
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	const auto components = tmptheory->components(); // NOTE: primitive reorder present: definitions first
+	const auto components = theory->components(); // NOTE: primitive reorder present: definitions first
 	// NOTE: currently, definitions first is important for good lazy grounding
-	// TODO Order components the components to optimize the grounding process
+	// TODO Order the components to optimize the grounding process
 
 	// Create grounders for all components
 	std::vector<Grounder*> children;
 	for (auto i = components.cbegin(); i < components.cend(); ++i) {
+		auto component = *i;
 		InitContext();
-		descend(*i);
+/*		auto formula = dynamic_cast<Formula*>(*i);
+		// TODO add definitions etc!
+		// Can we handle subformula  directly if we store the parent quantifiers?
+		if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+			formula = formula->clone();
+			component = FormulaUtils::skolemize(formula, _vocabulary);
+			FormulaUtils::addFuncConstraints(_vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+		}*/
+		descend(component);
+		if(*i!=component){
+			deleteDeep(component);
+		}
 		children.push_back(getTopGrounder());
 	}
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
-
-	// Clean up: delete the theory clone.
-	deleteDeep(tmptheory);
 }
 
 template<class T>
@@ -547,14 +556,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
-
-	if (not qf->isUniv() && allowskolemize) {
-		newsubformula = FormulaUtils::skolemize(qf->clone(), _vocabulary);
-		FormulaUtils::addFuncConstraints(_vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-		descend(newsubformula);
-		deleteDeep(newsubformula);
-		return;
-	}
 
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false

@@ -83,6 +83,7 @@ public:
 		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness!
 		voc->add(_theory->vocabulary());
 		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
+		_theory->vocabulary(voc);
 	}
 
 	~GroundingInference() {
@@ -96,7 +97,6 @@ public:
 		// Calculate known definitions
 		if (getOption(BoolType::SHAREDTSEITIN)) {
 			_theory = FormulaUtils::sharedTseitinTransform(_theory, _structure);
-			_structure->changeVocabulary(_theory->vocabulary());
 		}
 		if (not getOption(BoolType::GROUNDLAZILY)) {
 			if (verbosity() >= 1) {
@@ -105,7 +105,8 @@ public:
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
 				return NULL;
-			}Assert(defCalculated[0]->isConsistent());
+			}
+			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
 		// Create grounder

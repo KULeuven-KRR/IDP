@@ -111,8 +111,8 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 /* FormulaUtils */
 namespace FormulaUtils {
 
-void addFuncConstraints(Vocabulary* v, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
-	AddFuncConstraints::generateFuncConstraints(funcconstraints, v, cpsupport);
+void addFuncConstraints(AbstractTheory* theory, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
+	transform<AddFuncConstraints, AbstractTheory, std::map<Function*, Formula*>&, bool>(theory, funcconstraints, cpsupport);
 }
 
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {

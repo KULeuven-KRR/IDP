@@ -71,7 +71,7 @@ void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
 	_outputvoc = v;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding);
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc);
 
 class SolverTermination: public TerminateMonitor {
 private:
@@ -88,6 +88,7 @@ public:
 
 std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
+	auto inputvoc = _theory->vocabulary();
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
 	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor,
@@ -133,7 +134,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
-				solutions.push_back(handleSolution(newstructure, **i, grounding));
+				solutions.push_back(handleSolution(newstructure, **i, grounding, inputvoc));
 			}
 		}
 	} else {
@@ -141,7 +142,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			clog << "Solver generated " << abstractsolutions.size() << " models.\n";
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
-			solutions.push_back(handleSolution(newstructure, **model, grounding));
+			solutions.push_back(handleSolution(newstructure, **model, grounding, inputvoc));
 		}
 	}
 
@@ -156,10 +157,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	return solutions;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding) {
+AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);
+	newsolution->changeVocabulary(inputvoc); // Project onto input vocabulary
 	newsolution->clean();
 	Assert(newsolution->isConsistent());
 	return newsolution;
