@@ -239,7 +239,7 @@ void registerHandler(Handler f, SIGNAL s) {
 
 void monitorShutdown(void*) {
 	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 5) { // Wait max 3 seconds
+	while (not hasStopped && monitoringtime < 10) { // Wait max 10 seconds
 #ifdef __MINGW32__
 		Sleep(1000);
 #else
