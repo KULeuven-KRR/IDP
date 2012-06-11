@@ -905,11 +905,17 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto function = t->function();
 	auto ftable = _structure->inter(function)->funcTable();
 	auto domain = _structure->inter(function->outsort());
-	if (getOption(BoolType::CPSUPPORT) && FuncUtils::isIntSum(function, _structure->vocabulary())) {
+	if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (is(function, STDFUNC::SUBSTRACTION)) {
 			_termgrounder = new SumTermGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
 			_termgrounder = new SumTermGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+		}
+	} else if (getOption(BoolType::CPSUPPORT) and TermUtils::isTermWithIntFactor(t, _structure)) {
+		if (TermUtils::isFactor(t->subterms()[0], _structure)) {
+			_termgrounder = new TermWithFactorGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+		} else {
+			_termgrounder = new TermWithFactorGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
 		}
 	} else {
 		_termgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
@@ -1146,9 +1152,6 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 		generatorbdd = improve(true, generatorbdd, data.quantfovars);
 		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
 		deleteDeep(tempsubformula);
-<<<<<<< HEAD
-	} else {
-=======
 		if (not gentable->approxFinite()) {
 			Warning::possiblyInfiniteGrounding(toString(subformula));
 			throw IdpException("Infinite grounding");
@@ -1156,7 +1159,6 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	}
 
 	else {
->>>>>>> 7ad2c8d629e407784947e5b056b5879313d234ef
 		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
 

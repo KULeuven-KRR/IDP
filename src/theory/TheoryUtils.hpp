@@ -227,12 +227,16 @@ std::vector<const DomainElement*> deriveTermBounds(const Term*, const AbstractSt
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
+
+/** Check whether a function term is a term multiplied by a factor */
+bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure);
+bool isFactor(const Term* term, const AbstractStructure* structure);
 }
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
  May return true if the set expression is two-valued in the structure. */
-bool approxTwoValued(const SetExpr*, AbstractStructure*);
+bool approxTwoValued(const SetExpr*, const AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
 SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport);

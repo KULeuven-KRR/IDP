@@ -666,6 +666,12 @@ public:
 	const intweightlist& weights() const {
 		return _weights;
 	}
+	void varids(const varidlist& newids) {
+		_varids = newids;
+	}
+	void weights(const intweightlist& newweights) {
+		_weights = newweights;
+	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 	virtual void put(std::ostream&) const{

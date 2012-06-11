@@ -71,11 +71,43 @@ ElementTuple deriveTermBounds(const Term* term, const AbstractStructure* str) {
 bool isPartial(Term* term) {
 	return transform<CheckPartialTerm, bool>(term);
 }
+
+bool isFactor(const Term* term, const AbstractStructure* structure) {
+	switch (term->type()) {
+	case TermType::VAR:
+	case TermType::DOM:
+		return true;
+		break;
+	case TermType::FUNC:
+		if (structure->inter(dynamic_cast<const FuncTerm*>(term)->function())->approxTwoValued()) {
+			return true;
+		}
+		break;
+	case TermType::AGG:
+		if (SetUtils::approxTwoValued(dynamic_cast<const AggTerm*>(term)->set(), structure)) {
+			return true;
+		}
+		break;
+	}
+	return false;
+}
+
+bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure) {
+	if (term->subterms().size() == 2 and FuncUtils::isIntProduct(term->function(), structure->vocabulary())) {
+		for (auto it = term->subterms().cbegin(); it != term->subterms().cend(); ++it) {
+			if (isFactor(*it, structure)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 }
 
 /* SetUtils */
 namespace SetUtils {
-bool approxTwoValued(const SetExpr* exp, AbstractStructure* str) {
+bool approxTwoValued(const SetExpr* exp, const AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 

@@ -384,7 +384,10 @@ Function* overload(const std::set<Function*>&);
 bool isIntFunc(const Function*, const Vocabulary*);
 
 /** Check whether the function is a sum over integers **/
-bool isIntSum(const Function* function, const Vocabulary* voc);
+bool isIntSum(const Function*, const Vocabulary*);
+
+/** Check whether the function is a product over integers **/
+bool isIntProduct(const Function*, const Vocabulary*);
 }
 
 /**************

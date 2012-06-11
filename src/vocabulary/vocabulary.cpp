@@ -1662,6 +1662,18 @@ bool isIntSum(const Function* function, const Vocabulary* voc) {
 	}
 	return false;
 }
+
+bool isIntProduct(const Function* function, const Vocabulary* voc) {
+	if (is(function, STDFUNC::PRODUCT)) {
+		bool allintsorts = isIntFunc(function, voc);
+		for (auto it = function->insorts().cbegin(); it != function->insorts().cend(); ++it) {
+			allintsorts *= SortUtils::isSubsort(*it, get(STDSORT::INTSORT), voc);
+		}
+		return allintsorts;
+	}
+	return false;
+}
+
 } /* FuncUtils */
 
 /****************

@@ -285,28 +285,43 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 				return left;
 			}
 		}
-	} else if (isa<CPSumTerm>(*cpterm)) {
-		auto sumterm = dynamic_cast<CPSumTerm*>(cpterm);
-		std::vector<VarId> newvarids;
-		for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
-			if (termtranslator()->function(*it) == NULL) {
-				CPTsBody* cprelation = termtranslator()->cprelation(*it);
+	} else if (isa<CPWSumTerm>(*cpterm)) {
+		auto sumterm = dynamic_cast<CPWSumTerm*>(cpterm);
+		varidlist newvarids;
+		intweightlist newweights;
+		//for (auto vit = sumterm->varids().begin(), auto wit = sumterm->weights().begin(); vit != sumterm->varids().end(); ++vit, ++wit) {
+		auto vit = sumterm->varids().begin();
+		auto wit = sumterm->weights().begin();
+		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
+std::cerr << "Folding varid " << termtranslator()->printTerm(*vit) << "\n";
+			if (termtranslator()->function(*vit) == NULL) {
+				CPTsBody* cprelation = termtranslator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
-				if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
-					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
+					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *vit);
 					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+					for (auto it = subterm->weights().begin(); it != subterm->weights().end(); ++it) {
+						newweights.push_back((*it) * (*wit));
+					}
+				} else if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+//					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+//					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+					Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 				} else { //TODO Need to do something special in other cases?
-					newvarids.push_back(*it);
+					newvarids.push_back(*vit);
+					newweights.push_back(*wit);
 				}
 			} else {
-				newvarids.push_back(*it);
+				newvarids.push_back(*vit);
+				newweights.push_back(*wit);
 			}
 		}
 		sumterm->varids(newvarids);
-	} else if (isa<CPWSumTerm>(*cpterm)) {
-		//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
-		//TODO Folding for weighted sumterms
+		sumterm->weights(newweights);
+		return sumterm;
+	} else if (isa<CPSumTerm>(*cpterm)) {
+		Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 	}
 	return cpterm;
 }
