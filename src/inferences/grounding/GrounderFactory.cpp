@@ -236,6 +236,15 @@ Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vo
 		throw notyetimplemented("Optimization over non-aggregate terms.");
 	}
 	GrounderFactory g(data, grounding, data.nbModelsEquivalent);
+	if(term->function()==AggFunction::PROD){
+		for(auto i=term->set()->getSubSets().cbegin(); i!=term->set()->getSubSets().cend(); ++i){
+			auto sort = (*i)->getTerm()->sort();
+			if(not SortUtils::isSubsort(sort, get(STDSORT::NATSORT))
+				|| data.partialstructure->inter(sort)->contains(createDomElem(0))){
+				throw notyetimplemented("Minimization over a product aggregate with negative or zero weights is not yet supported.\n");
+			}
+		}
+	}
 	g.ground(term->set(), vocabulary);
 	auto optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
 	optimgrounder->setOrig(minimizeterm);
