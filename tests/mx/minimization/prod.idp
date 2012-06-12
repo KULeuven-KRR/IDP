@@ -1,0 +1,28 @@
+procedure getExpectedNbOfModels(){
+	return 8
+}
+
+vocabulary V{
+	type A isa int
+	P(A)
+	Q(A)
+}
+
+theory T : V {
+	!x: P(x) => Q(x).
+	?>1 x: P(x).
+	?>1 x: ~P(x).
+}
+
+structure S : V{ 
+	A = {-3;-2;2;3}
+}
+
+term t: V{
+	prod{x: P(x): -x}
+}
+// optimum = -10-9-8-7-6-5-4 = -49
+
+theory T2: V{
+	sum{x: P(x): -x}=-49.
+}
