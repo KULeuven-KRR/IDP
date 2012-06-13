@@ -14,36 +14,17 @@
 #include <map>
 #include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "PropagationCommon.hpp"
+
 
 class Options;
 class GenerateBDDAccordingToBounds;
 class FOPropScheduler;
 template<class InterpretationFactory, class PropDomain> class TypedFOPropagator;
+class FOPropagator;
 
-enum InitBoundType {
-	IBT_TWOVAL, IBT_BOTH, IBT_CT, IBT_CF, IBT_NONE
-};
 
-/**
- * Constraint propagator for first-order theories
- */
-class FOPropagator: public DefaultTraversingTheoryVisitor {
-	VISITORFRIENDS()
-public:
-	virtual ~FOPropagator() {
-	}
 
-	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
-
-	// Inspectors
-	virtual void applyPropagationToStructure(AbstractStructure* str) const = 0;
-	//!< Obtain the resulting structure
-	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-
-	virtual GenerateBDDAccordingToBounds* symbolicstructure() const = 0;
-	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
-};
 
 /**
  * 	Factory class for creating a FOPropagator and initializing the scheduler
@@ -85,6 +66,9 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, con
 GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure);
 
 GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+
+/** Collect symbolic propagation vocabulary **/
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure);
 
 
 #endif /* PROPAGATORFACTORY_HPP_ */

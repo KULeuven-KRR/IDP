@@ -67,7 +67,7 @@ public:
 		}
 		auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 		if (t == NULL) {
-			throw notyetimplemented("Grounding of already ground theories.\n");
+			throw notyetimplemented("Grounding of already ground theories");
 		}
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
@@ -80,6 +80,10 @@ public:
 			GroundingReciever* solver)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _reciever(solver), _grounder(NULL),
 				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
+		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness!
+		voc->add(_theory->vocabulary());
+		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
+		_theory->vocabulary(voc);
 	}
 
 	~GroundingInference() {
@@ -93,7 +97,6 @@ public:
 		// Calculate known definitions
 		if (getOption(BoolType::SHAREDTSEITIN)) {
 			_theory = FormulaUtils::sharedTseitinTransform(_theory, _structure);
-			_structure->changeVocabulary(_theory->vocabulary());
 		}
 		if (not getOption(BoolType::GROUNDLAZILY)) {
 			if (verbosity() >= 1) {
@@ -102,7 +105,8 @@ public:
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
 				return NULL;
-			}Assert(defCalculated[0]->isConsistent());
+			}
+			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
 		// Create grounder
@@ -124,7 +128,7 @@ public:
 		if (_grounder != NULL) {
 			delete (_grounder);
 		}
-		GroundInfo gi = { _theory, _structure, symstructure, _nbmodelsequivalent };
+		GroundInfo gi = { _theory, _minimizeterm, _structure, symstructure, _nbmodelsequivalent };
 		if (_reciever == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {
@@ -135,10 +139,6 @@ public:
 		}
 		_grounder->toplevelRun();
 		auto grounding = _grounder->getGrounding();
-		if (_minimizeterm != NULL) {
-			auto optimgrounder = GrounderFactory::create(_minimizeterm, _theory->vocabulary(), gi, grounding);
-			optimgrounder->toplevelRun();
-		}
 
 		// Execute symmetry breaking
 		addSymmetryBreaking(_theory, _structure, grounding, _minimizeterm);

@@ -11,9 +11,25 @@
 #include "AbstractStructure.hpp"
 #include "printers/idpprinter.hpp"
 
+AbstractStructure::~AbstractStructure(){
+	changeVocabulary(NULL);
+}
+
 void AbstractStructure::put(std::ostream& s) const {
 	auto p = IDPPrinter<std::ostream>(s);
 	p.startTheory();
 	p.visit(this);
 	p.endTheory();
+}
+
+void AbstractStructure::changeVocabulary(Vocabulary* v) {
+	if(v!=_vocabulary){
+		if(_vocabulary!=NULL){
+			_vocabulary->removeStructure(this);
+		}
+		_vocabulary = v;
+		if(_vocabulary!=NULL){
+			_vocabulary->addStructure(this);
+		}
+	}
 }

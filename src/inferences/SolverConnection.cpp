@@ -81,7 +81,7 @@ MinisatID::literallist createList(const litlist& origlist) {
 MinisatID::Weight createWeight(double weight) {
 	double test;
 	if (modf(weight, &test) != 0) {
-		throw notyetimplemented("MinisatID does not support doubles yet.");
+		throw notyetimplemented("Real number support in in the search algorithm");
 	}
 	return int(weight);
 }

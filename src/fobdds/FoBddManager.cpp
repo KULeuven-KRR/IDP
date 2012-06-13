@@ -213,7 +213,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 		}
 	} else if (args.size() == 1) {
 		if (symbol->sorts()[0]->pred() == symbol) {
-			if (SortUtils::isSubsort(args[0]->sort(), symbol->sorts()[0]) && symbol->sorts()[0]->builtin()) {
+			if (symbol->sorts()[0]->builtin() && SortUtils::isSubsort(args[0]->sort(), symbol->sorts()[0])) {
 				//Builtin check: only return truekernel if sort is not empty.
 				return _truekernel;
 			}
@@ -1108,8 +1108,9 @@ bool FOBDDManager::contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
 }
 
 const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm* argument) {
-	if (not _rewriteArithmetic) {
+	if(not _rewriteArithmetic){
 		return NULL;
+		//TODO: code is written with the knowledge that we rewrite arith.
 	}
 	if (not isa<FOBDDAtomKernel>(*kernel)) {
 		return NULL;
@@ -1119,15 +1120,11 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 
-	if (atom->args(0) == argument) {
-		if (not contains(atom->args(1), argument)) {
-			return is(atom->symbol(), STDPRED::EQ) ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
-		}
+	if (atom->args(0) == argument && not contains(atom->args(1), argument)) {
+		return is(atom->symbol(), STDPRED::EQ) ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
 	}
-	if (atom->args(1) == argument) {
-		if (not contains(atom->args(0), argument)) {
-			return atom->args(0);
-		}
+	if (atom->args(1) == argument && not contains(atom->args(0), argument)) {
+		return atom->args(0);
 	}
 	if (not SortUtils::isSubsort(atom->symbol()->sorts()[0], get(STDSORT::FLOATSORT))) {
 		//We only do arithmetic on float and subsorts
@@ -1138,10 +1135,11 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		return NULL;
 	}
 #ifndef NDEBUG
-	Assert(isa<FOBDDDomainTerm>(*(atom->args(1))));
-	auto nill = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
-	Assert(
-			(nill->value()->type() == DET_DOUBLE && nill->value()->value()._double == 0) || (nill->value()->type() == DET_INT && nill->value()->value()._int == 0));
+	auto domterm = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
+	Assert(domterm!=NULL);
+	auto val = domterm->value();
+	Assert((val->type() == DET_DOUBLE && val->value()._double == 0)
+			|| (val->type() == DET_INT && val->value()._int == 0));
 	//The rewritings in getatomkernel should guarantee this.
 #endif
 
@@ -1184,10 +1182,16 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	}
 	const FOBDDDomainTerm* constant = dynamic_cast<const FOBDDDomainTerm*>(factors[0]);
 	double constval;
-	if (constant->value()->type() == DET_INT) {
-		constval = constant->value()->value()._int;
-	} else if (constant->value()->type() == DET_DOUBLE) {
-		constval = constant->value()->value()._double;
+	auto val = constant->value();
+	switch(val->type()){
+	case DomainElementType::DET_INT:
+		constval = val->value()._int;
+		break;
+	case DomainElementType::DET_DOUBLE:
+		constval = val->value()._double;
+		break;
+	default:
+		throw IdpException("Invalid code path");
 	}
 	if (invertedOcccounter != 0 && occcounter == 0) {
 		constval = -constval;
@@ -1582,13 +1586,7 @@ double FOBDDManager::estimatedChance(const FOBDDKernel* kernel, const AbstractSt
 					cumulative_pathsposs.push_back(cumulative_chance);
 				}
 
-				// TODO there is a bug in the probability code, leading to P > 1, such that the following check is necessary
-				if (cumulative_chance > 1) {
-					//Warning::cumulchance(cumulative_chance);
-					Assert(false);
-					//TODO I think i might have fixed it.
-					cumulative_chance = 1;
-				}
+				Assert(cumulative_chance <= 1);
 				if (cumulative_chance > 0) { // there is a possible path to false
 					chance = chance * cumulative_chance;
 
@@ -1860,6 +1858,7 @@ double FOBDDManager::estimatedCostAll(bool sign, const FOBDDKernel* kernel, cons
 
 double FOBDDManager::estimatedCostAll(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure) {
+
 	double maxdouble = getMaxElem<double>();
 	if (bdd == _truebdd) {
 		tablesize univsize = univNrAnswers(vars, indices, structure);

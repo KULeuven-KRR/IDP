@@ -78,11 +78,10 @@ void poptab() {
  }*/
 
 IdpException notyetimplemented(const string& message) {
-	clog << "\n";
-	clog << tabs() << "WARNING or ERROR: The following feature is not yet implemented:\n";
-	clog << tabs() << '\t' << message << '\n';
-	clog << tabs() << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
-	return IdpException("Aborting because of not yet implemented feature.");
+	stringstream ss;
+	ss << "The following feature is not yet implemented: " << message << '\n';
+	ss << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.";
+	return IdpException(ss.str());
 }
 
 bool isInt(double d) {

@@ -152,7 +152,7 @@ Lit AtomGrounder::run() const {
 					result = _true;
 				}
 				else{
-					IdpException("ERROR: could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+					IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
 				}
 				if (verbosity() > 2) {
 					clog << tabs() << "Partial function went out of bounds\n";

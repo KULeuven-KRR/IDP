@@ -10,14 +10,11 @@
 
 #include "PropagatorFactory.hpp"
 
-#include "IncludeComponents.hpp"
-#include "Propagate.hpp"
-#include "GlobalData.hpp"
+#include "Propagator.hpp"
+#include "PropagationDomainFactory.hpp"
+#include "PropagationScheduler.hpp"
 #include "theory/TheoryUtils.hpp"
-#include "SymbolicPropagation.hpp"
 #include "fobdds/FoBddManager.hpp"
-#include "fobdds/FoBddTerm.hpp"
-#include "utils/ListUtils.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 
@@ -36,10 +33,9 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 }
 
 GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
-	SymbolicPropagation propinference;
-	std::map<PFSymbol*, InitBoundType> mpi = propinference.propagateVocabulary(theory, structure);
+	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	if(not getOption(BoolType::GROUNDLAZILY)){ // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
+	if (not getOption(BoolType::GROUNDLAZILY)) { // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
 		propagator->doPropagation();
 		propagator->applyPropagationToStructure(structure);
 	}
@@ -105,6 +101,59 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 //	}
 }
 
+/** Collect symbolic propagation vocabulary **/
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure)  {
+	std::map<PFSymbol*, InitBoundType> mpi;
+	Vocabulary* v = theory->vocabulary();
+	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
+		auto spi = it->second->nonbuiltins();
+		for (auto jt = spi.cbegin(); jt != spi.cend(); ++jt) {
+			if (structure->vocabulary()->contains(*jt)) {
+				PredInter* pinter = structure->inter(*jt);
+				if (pinter->approxTwoValued()) {
+					mpi[*jt] = IBT_TWOVAL;
+				} else if (pinter->ct()->approxEmpty()) {
+					if (pinter->cf()->approxEmpty()) {
+						mpi[*jt] = IBT_NONE;
+					} else {
+						mpi[*jt] = IBT_CF;
+					}
+				} else if (pinter->cf()->approxEmpty()) {
+					mpi[*jt] = IBT_CT;
+				} else {
+					mpi[*jt] = IBT_BOTH;
+				}
+			} else {
+				mpi[*jt] = IBT_NONE;
+			}
+		}
+	}
+	for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
+		auto sfi = it->second->nonbuiltins();
+		for (auto jt = sfi.cbegin(); jt != sfi.cend(); ++jt) {
+			if (structure->vocabulary()->contains(*jt)) {
+				FuncInter* finter = structure->inter(*jt);
+				if (finter->approxTwoValued()) {
+					mpi[*jt] = IBT_TWOVAL;
+				} else if (finter->graphInter()->ct()->approxEmpty()) {
+					if (finter->graphInter()->cf()->approxEmpty()) {
+						mpi[*jt] = IBT_NONE;
+					} else {
+						mpi[*jt] = IBT_CF;
+					}
+				} else if (finter->graphInter()->cf()->approxEmpty()) {
+					mpi[*jt] = IBT_CT;
+				} else {
+					mpi[*jt] = IBT_BOTH;
+				}
+			} else {
+				mpi[*jt] = IBT_NONE;
+			}
+		}
+	}
+	return mpi;
+}
+
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
@@ -162,9 +211,9 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo);
 	FormulaUtils::unnestTerms(newtheo);
-	FormulaUtils::splitComparisonChains(newtheo);
-	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false /*TODO check*/);
 	FormulaUtils::unnestDomainTerms(newtheo);
+	FormulaUtils::splitComparisonChains(newtheo);
+	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {
@@ -184,8 +233,12 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 			QuantForm* exists = new QuantForm(SIGN::POS, QUANT::EXIST, yset, atom, FormulaParseInfo());
 			vars.pop_back();
 			set<Variable*> xset(vars.cbegin(), vars.cend());
-			QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
-			newtheo->add(univ1);
+			if (xset.size() == 0) {
+				newtheo->add(exists);
+			} else {
+				QuantForm* univ1 = new QuantForm(SIGN::POS, QUANT::UNIV, xset, exists, FormulaParseInfo());
+				newtheo->add(univ1);
+			}
 		}
 
 		// Add	(! z y1 y2 : F(z) ~= y1 | F(z) ~= y2 | y1 = y2)
@@ -328,7 +381,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 	auto set = af->getAggTerm()->set();
-	for(auto i=set->getSets().cbegin(); i<set->getSets().cend(); ++i) {
+	for (auto i = set->getSets().cbegin(); i < set->getSets().cend(); ++i) {
 		_propagator->setUpward((*i)->getCondition(), af);
 	}
 	initFalse(af);
@@ -337,7 +390,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EqChainForm*) {
-	throw notyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
+	throw notyetimplemented("Creating a propagator for comparison chains");
 }
 
 template<class Factory, class Domain>

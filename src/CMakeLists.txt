@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_i
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/.idprc\\\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
-endif()  
+endif()
 
  
 find_package(BISON)

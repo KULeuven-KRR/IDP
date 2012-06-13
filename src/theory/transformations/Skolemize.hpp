@@ -25,8 +25,8 @@ private:
 	Vocabulary* vocabulary;
 
 public:
+	// FIXME only correct when calling with a monotone FO formula which is not quantified externally!
 	// FIXME changes vocabulary! => is this safe?
-	// FIXME changes vocabulary! => should also adapt structures over the vocabulary
 	// NOTE: changes vocabulary and theory
 	template<typename T>
 	T execute(T t, Vocabulary* v) {
@@ -44,10 +44,21 @@ protected:
 		return t;
 	}
 
+	Rule* visit(Rule* r){
+		return r;
+	}
+	FixpDef* visit(FixpDef* d){
+		return d;
+	}
+
+	EquivForm* visit(EquivForm* eq){
+		return eq;
+	}
+
 	Term* visit(VarTerm* vt){
 		auto it = replace.find(vt->var());
 		if(it!=replace.cend()){
-			return it->second;
+			return it->second->clone();
 		}
 		return vt;
 	}
@@ -56,7 +67,7 @@ protected:
 		Assert(qf->sign()==SIGN::POS); // FIXME require pushed negations!
 		if(qf->isUniv()){
 			quantified.insert(quantified.end(), qf->quantVars().cbegin(), qf->quantVars().cend());
-			return qf;
+			return traverse(qf);
 		}else{
 			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i) {
 				std::vector<Term*> varterms;
