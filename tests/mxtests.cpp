@@ -56,9 +56,11 @@ TEST_P(MXnbTest, DoesMXWithLazyTseitinDelaying) {
 	runTests("modelexpansion.idp", GetParam(), "mxlazy()");
 }
 
+/*
 TEST_P(MXnbTest, DoesMXWithCP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
 }
+*/
 
 TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
 	runTests("modelexpansionwithoutpushingnegations.idp", GetParam());
@@ -72,10 +74,11 @@ TEST_P(MXsatTest, DoesMXWithBounds) {
 	runTests("satisfiability.idp", GetParam(), "satwithbounds()");
 }
 
-
+/*
 TEST_P(MXsatTest, DoesMXWithCP) {
 	runTests("satisfiability.idp", GetParam(), "satwithcp()");
 }
+*/
 
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXnbTest, ::testing::ValuesIn(generateListOfMXnbFiles()));
 INSTANTIATE_TEST_CASE_P(ModelExpansion, MXsatTest, ::testing::ValuesIn(generateListOfMXsatFiles()));

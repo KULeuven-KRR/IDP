@@ -88,7 +88,7 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
 		CHECKTERMINATION
 		ConjOrDisj body;
-		bodygrounder()->run(body);
+		bodygrounder()->wrapRun(body);
 		auto conj = body.getType() == Conn::CONJ;
 		auto falsebody = (body.literals.empty() && not conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		auto truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);

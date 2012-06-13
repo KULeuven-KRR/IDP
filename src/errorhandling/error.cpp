@@ -339,39 +339,39 @@ void Error::expected(ComponentType type, const ParseInfo& pi) {
 
 void Warning::cumulchance(double c) {
 	stringstream ss;
-	ss << "Chance of " << c << " is impossible. Using chance 1 instead\n";
+	ss << "Chance of " << c << " is impossible. Using chance 1 instead.";
 	warning(ss.str());
 }
 
 void Warning::possiblyInfiniteGrounding(const std::string& formula) {
 	stringstream ss;
-	ss << "Infinite grounding of formula " << formula << "\n";
+	ss << "Infinite grounding of formula " << formula <<".";
 	warning(ss.str());
 }
 
 void Warning::triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
 	stringstream ss;
-	ss << "Tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
+	ss << "Tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.";
 	warning(ss.str());
 }
 
 void Warning::emptySort(const std::string& sortname) {
 	stringstream ss;
-	ss << "Sort " << sortname << " has an empty interpretation.\n";
+	ss << "Sort " << sortname << " has an empty interpretation.";
 	warning(ss.str());
 }
 
 /** Ambiguous partial term **/
 void Warning::ambigpartialterm(const string& term, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.\n";
+	ss << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.";
 	warning(ss.str(), pi);
 }
 
 /** Ambiguous statements **/
 void Warning::varcouldbeconst(const string& name, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
+	ss << "'" << name << "' could be a variable or a constant. It is assumed to be a variable.";
 	warning(ss.str(), pi);
 }
 
@@ -379,9 +379,9 @@ void Warning::varcouldbeconst(const string& name, const ParseInfo& pi) {
 void Warning::freevars(const string& fv, const ParseInfo& pi) {
 	stringstream ss;
 	if (fv.size() > 1) {
-		ss << "Variables" << fv << " are not quantified.\n";
+		ss << "Variables" << fv << " are not quantified.";
 	} else {
-		ss << "Variable" << fv[0] << " is not quantified.\n";
+		ss << "Variable" << fv[0] << " is not quantified.";
 	}
 	warning(ss.str(), pi);
 }
@@ -389,21 +389,21 @@ void Warning::freevars(const string& fv, const ParseInfo& pi) {
 /** Unexpeded type derivation **/
 void Warning::derivevarsort(const string& varname, const string& sortname, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "Derived sort " << sortname << " for variable " << varname << ".\n";
+	ss << "Derived sort " << sortname << " for variable " << varname << ".";
 	warning(ss.str(), pi);
 }
 
 /** Introduced variable **/
 void Warning::introducedvar(const string&, const string& sortname, const string& term) {
 	stringstream ss;
-	ss << "Introduced a variable with sort " << sortname << " for term " << term << ".\n";
+	ss << "Introduced a variable with sort " << sortname << " for term " << term << ".";
 	warning(ss.str());
 }
 
 /** Autocompletion **/
 void Warning::addingeltosort(const string& elname, const string& sortname, const string& structname) {
 	stringstream ss;
-	ss << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".\n";
+	ss << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".";
 	warning(ss.str());
 }
 
