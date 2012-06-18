@@ -14,6 +14,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddSetExpr.hpp"
 
 #include "GeneratorFactory.hpp"
 
@@ -34,6 +35,8 @@
 #include "InverseUnaFunctionGenerator.hpp"
 #include "UnaryArithmeticOperators.hpp"
 #include "fobdds/FoBddVariable.hpp"
+
+#include "structure/StructureComponents.hpp"
 using namespace std;
 
 // NOTE original can be NULL
@@ -761,10 +764,15 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 
 			_generator = new TwoChildGenerator(xMinusZis0Checker, calcXMinusZ, _generator, fullYGenerator);
 		}
+	} else if (_universe.tables()[0]->approxFinite()) {
+		//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator (might not be optimal)
+		auto xgen = new SortGenerator(_universe.tables()[0]->internTable(), _vars[0]);
+		_pattern[0] = Pattern::INPUT;
+		visit(mift);
+		_generator = new OneChildGenerator(xgen, _generator);
 	} else if (_pattern[1] == Pattern::INPUT) {
-		//x%y=z with x and z input.
+		//x%y=z with y and z input.
 		//Thus, qy+z=x for some q integer
-		//Generate all q between -y and y and then generate the x
 		throw notyetimplemented("Infinite generator for modulo pattern (out,in,in)");
 		//TODO: code below not yet good:
 		//* use Unary minus instead of binary minus
@@ -803,21 +811,14 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		auto fullXGenerator = new SortGenerator(_universe.tables()[0]->internTable(), _vars[0]);
 		_generator = new TwoChildGenerator(zIsZeroChecker, new FullGenerator(), new EmptyGenerator(), fullXGenerator);
 	} else {
-		if (_universe.tables()[0]->approxFinite()) {
-			//Same solution as before (see the long explanation), but now: first generate all x instead of using a fullgenerator
-			auto xgen = new SortGenerator(_universe.tables()[0]->internTable(), _vars[0]);
-			_pattern[0] = Pattern::INPUT;
-			visit(mift);
-			_generator = new OneChildGenerator(xgen, _generator);
-		} else {
-			//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
-			//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
-			auto ygen = new SortGenerator(_universe.tables()[1]->internTable(), _vars[1]);
-			_pattern[1] = Pattern::INPUT;
-			visit(mift);
-			_generator = new OneChildGenerator(ygen, _generator);
-		}
+		//NOTE: this will also happen if both sorts are infinitely large.  Hence infinite generators might be made
+		//TODO: make this smarter: don't run over the whole universe but only over elements that have a chance to be make it right
+		auto ygen = new SortGenerator(_universe.tables()[1]->internTable(), _vars[1]);
+		_pattern[1] = Pattern::INPUT;
+		visit(mift);
+		_generator = new OneChildGenerator(ygen, _generator);
 	}
+
 }
 
 void GeneratorFactory::visit(const AbsInternalFuncTable* aift) {

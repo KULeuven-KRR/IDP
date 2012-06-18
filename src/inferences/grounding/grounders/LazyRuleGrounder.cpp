@@ -68,7 +68,7 @@ void LazyRuleGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 		CHECKTERMINATION
 
 		ConjOrDisj body;
-		bodygrounder()->run(body);
+		bodygrounder()->wrapRun(body);
 		bool conj = body.getType() == Conn::CONJ;
 		bool falsebody = (body.literals.empty() && !conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		bool truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);

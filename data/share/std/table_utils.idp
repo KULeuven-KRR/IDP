@@ -40,7 +40,7 @@ procedure totable(input){
       table.insert(output,element)
     end
   else
-    print("Error: Unable to convert input to a table")
+    io.stderr:write("Error: Unable to convert input to a table")
   end
   return output
 

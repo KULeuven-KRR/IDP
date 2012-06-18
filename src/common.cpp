@@ -78,11 +78,10 @@ void poptab() {
  }*/
 
 IdpException notyetimplemented(const string& message) {
-	clog << "\n";
-	clog << tabs() << "WARNING or ERROR: The following feature is not yet implemented:\n";
-	clog << tabs() << '\t' << message << '\n';
-	clog << tabs() << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.\n";
-	return IdpException("Aborting because of not yet implemented feature.");
+	stringstream ss;
+	ss << "The following feature is not yet implemented: " << message << '\n';
+	ss << "Please send an e-mail to krr@cs.kuleuven.be if you really need this feature.";
+	return IdpException(ss.str());
 }
 
 bool isInt(double d) {
@@ -122,7 +121,7 @@ double toDouble(const string& s) {
 }
 
 double applyAgg(const AggFunction& agg, const vector<double>& args) {
-	double d;
+	double d = 0;
 	switch (agg) {
 	case AggFunction::CARD:
 		d = double(args.size());
@@ -199,7 +198,7 @@ QUANT operator not(QUANT t) {
 }
 
 Context operator not(Context t) {
-	Context result;
+	Context result = Context::BOTH;
 	switch (t) {
 	case Context::BOTH:
 		result = Context::BOTH;
@@ -352,7 +351,7 @@ string* StringPointer(const string& str) {
 }
 
 CompType invertComp(CompType comp) {
-	CompType result;
+	CompType result = CompType::EQ;
 	switch (comp) {
 	case CompType::EQ:
 		result = comp;
@@ -377,7 +376,7 @@ CompType invertComp(CompType comp) {
 }
 
 CompType negateComp(CompType comp) {
-	CompType result;
+	CompType result = CompType::EQ;
 	switch (comp) {
 	case CompType::EQ:
 		result = CompType::NEQ;

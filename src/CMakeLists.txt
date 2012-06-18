@@ -26,7 +26,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_i
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/.idprc\\\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
-endif()  
+endif()
 
  
 find_package(BISON)
@@ -47,7 +47,10 @@ add_library(idp
 	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
 )
 
-target_link_libraries(idp minisatid lua linenoise tinythread dl)
+if(NOT CMAKE_COMPILER_IS_MINGW)
+	target_link_libraries(idp dl)
+endif()
+target_link_libraries(idp minisatid lua linenoise tinythread)
 
 add_executable(idp-bin external/main.cpp)
 if(BUILD_IDP_STATIC)

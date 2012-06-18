@@ -9,7 +9,7 @@
  ****************************************************************/
 #include "SimpleFuncGenerator.hpp"
 #include "GeneratorFactory.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 // NOTE: DOES NOT take ownership of table
 SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,

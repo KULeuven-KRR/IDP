@@ -9,12 +9,16 @@
 *.texlipse
 *.project
 *.cproject
+*.project~
+*.cproject~
+*.gitignore~
 *.aux
 *.log
 *.tex.backup
 *.tex~
 *.pdf
 *.toc
+*.kilepr
 *depend.mk
 builds/*
 *.settings/*

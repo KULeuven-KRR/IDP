@@ -174,7 +174,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	auto newrhs = rhs;
 	switch (type) {
 	case TsType::RULE:
-		Assert(false);
+		throw IdpException("Invalid code path");
 		break;
 	case TsType::IMPL:
 		impltype = MinisatID::ImplicationType::IMPLIES;
@@ -327,7 +327,7 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(Lit tseitin, LazyStoredInstanti
 	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
-	extAdd(getSolver(), MinisatID::LazyGroundImpl(MinisatID::Implication(lit, watchboth?MinisatID::ImplicationType::EQUIVALENT:MinisatID::ImplicationType::IMPLIES, {}, conjunction), mon));
+	extAdd(getSolver(), MinisatID::LazyGroundImpl(MinisatID::Implication(lit, watchboth?MinisatID::ImplicationType::EQUIVALENT:MinisatID::ImplicationType::IMPLIES,MinisatID::litlist{}, conjunction), mon));
 }
 
 template<class Solver>

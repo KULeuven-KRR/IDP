@@ -13,6 +13,7 @@
 
 #include "visitors/TheoryVisitor.hpp"
 
+
 class Formula;
 class Term;
 class FOBDD;
@@ -31,6 +32,8 @@ class Vocabulary;
 class FOBDDManager;
 class FOBDDSetExpr;
 class AbstractStructure;
+class FOBDDEnumSetExpr;
+class FOBDDQuantSetExpr;
 
 /**
  * Class to transform first-order formulas to BDDs
@@ -45,7 +48,8 @@ private:
 	const FOBDD* _bdd;
 	const FOBDDKernel* _kernel;
 	const FOBDDTerm* _term;
-	const FOBDDSetExpr* _set;
+	const FOBDDEnumSetExpr* _enumset;
+	const FOBDDQuantSetExpr* _quantset;
 
 	void visit(const VarTerm* vt);
 	void visit(const DomainTerm* dt);

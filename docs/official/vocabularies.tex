@@ -1,0 +1,161 @@
+A vocabulary with name {\tt MyVoc} is declared by
+\begin{lstlisting}
+	vocabulary MyVoc {
+		// contents of the vocabulary
+	}
+\end{lstlisting}
+A vocabulary can contain symbol declarations, symbol pointers, and other vocabularies. Symbols are types (sorts), predicate and functions symbols.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Symbol declarations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{ssec:symbols}
+A type with name \code{MyType} is declared by
+\begin{lstlisting}
+	type MyType
+\end{lstlisting}
+When declaring a type, it can be stated that this type is a subtype or supertype of a set of other types.  The following declares \code{MyType} to be a supbtype of the previously declared types \code{A1} and \code{A2}, and a supertype of the previously declared types \code{B1} and {B2}:
+\begin{lstlisting}
+	type MyType isa A1, A2 contains B1, B2
+\end{lstlisting}
+A predicate with name \code{MyPred}, arity 3 and types \code{T1},\code{T2},\code{T3} is declared by
+\begin{lstlisting}
+	MyPred(T1,T2,T3)
+\end{lstlisting}
+
+A predicate with arity zero can be declared by \code{MyPred()} or \code{MyPred}.
+
+A function with name \code{MyFunc}, input types \code{T1},\code{T2},\code{T3} and output type \code{T}  is declared by
+\begin{lstlisting}
+	MyFunc(T1,T2,T3):T
+\end{lstlisting}
+
+A partial function is declared by 
+\begin{lstlisting}
+	partial MyFunc(T1,T2,T3):T
+\end{lstlisting}
+
+Constants of type \code{T} can be declared by \code{MyConst:T} or \code{MyConst():T}.  Besides functinos with an identifier as name, functions of arity two with names \code{+,-,*,/,\%}  and \code{\textasciicircum} can be declared, as well as unary functions iwth names \code{-} and \code{abs}.
+
+Any symbol has to be declared on its own line.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Symbol pointers}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To include a type, predicate, or function from a previously declared vocabulary \code{V} in another vocabulary \code{W}, write
+\begin{lstlisting}
+	/* Declaration of vocabulary V*/
+	vocabulary V {
+		//...
+		type A
+		P(A)
+		F(A,A):A
+		//...
+	}
+
+	vocabulary W {
+		extern type V::A
+		extern V::P[A]		//also possible: extern V::P/1
+		extern V::F[A,A:A]	//also possible: extern V::F/2:1
+	}
+\end{lstlisting}
+\todo{verwijder using en extern, zie meeting}
+
+In the example, explicitly including type \code{A} of vocabulary \code{V} in \code{W} is not needed, since types of included predicates or functions are automatically included themselves.  To include the whole vocabulary \code{V} in \code{W} at once, used
+\begin{lstlisting}
+	vocabulary W {
+		extern vocabulary V
+	}
+\end{lstlisting}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{The standard vocabulary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The global namespace contains a fixed vocabulary \code{std}, which is defined as follows:
+
+\begin{lstlisting}
+	vocabulary std {
+		type nat	
+		type int contains nat
+		type float contains int
+		type char
+		type string contains char
+
+		+(int,int) : int
+		-(int,int) : int
+		*(int,int) : int
+		/(int,int) : int
+		%(int,int) : int
+		abs(int) : int
+		-(int) : int
+		
+		+(float,float) : float
+		-(float,float) : float
+		*(float,float) : float
+		/(float,float) : float
+		^(float,float) : float
+		abs(float) : float
+		-(float) : float
+	}
+\end{lstlisting}
+Every vocabulary implicitly contains all symbols of \code{std}.  Also, every vocabulary contains for each of its types \code{A} the predicates \code{=(A,A)}, \code{<(A,A)}, and \code{>(A,A)} and the functions \code{MIN:A}, \code{MAX:A}, \code{SUCC(A):A} and \code{PRED(A):A}. In every structure, the symbols of \code{std} have the following interpretation:
+
+\begin{center}
+	
+\begin{tabular}{l|l}
+\code{nat} & all natural numbers \\
+\code{int} & all integer numbers \\ 
+\code{float} & all floating point numbers \\
+\code{char} & all characters \\
+\code{string} & all strings \\
+\code{+(int,int) : int} & integer addition \\
+\code{-(int,int) : int } &integer subtraction \\
+\code{*(int,int) : int} & integer multiplication \\
+\code{/(int,int) : int} & integer division \\
+\code{\%(int,int) : int} & remainder \\
+\code{abs(int) : int} & absolute value \\
+\code{-(int) : int} & unary minus \\
+\code{+(float,float) : float} & floating point addition \\
+\code{-(float,float) : float} & floating point subtraction \\
+\code{*(float,float) : float} & floating point multiplication \\
+\code{/(float,float) : float} & floating point division \\ 
+\code{\textasciicircum(float,float) : float} & floating point exponentiation \\
+\code{abs(float) : float} & absolute value \\
+\code{-(float) : float} & unary minus
+\end{tabular} 
+
+\end{center}
+
+The predicate \code{=/2} is always interpreted by equality.  The order $<_{dom}$ on domain elements is defined by
+\begin{itemize}
+	\item numers are smaller than non-numers;
+\item strings are smaller than compound domain elements (see bolow for a definitions of a compound domain element);
+\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are numbers and $d_1<d_2$;
+\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are strings that are nut numbers and $d_1$ is before $d_2$ in the lexicographic ordering;
+\item $d_1<_{dom} d_2$ is some total order on compound domain elements (which we do not specify).
+\end{itemize}
+
+Every structure contains the following fixed interpretations:
+
+\begin{center}
+	
+\begin{tabular}{l|l}
+\code{<(A,A)} & the projection of $<_{dom}$ to the domain of A \\
+\code{>(A,A)} & the projection of $>_{dom}$ to the domain of A \\
+\code{MIN:A} & the $<_{dom}$-least element in the domain of A \\
+\code{MAX:A} & the $<_{dom}$-greatest element in the domain of A \\
+\code{SUCC(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-least element of the domain of A that is strictly larger than a \\
+\code{PRED(A):A} & the partial function that maps an element a  of the domain of \code{A} \\ & to the $<_{dom}$-greatest element of the domain of A that is strictly smaller than a \\
+\end{tabular} 
+
+\end{center}
+
+In an IDP-file, you should disambiguate which \code{MAX} you want to use.  This is done by \code{MAX[:MyType]}.

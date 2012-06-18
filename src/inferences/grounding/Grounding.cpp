@@ -20,17 +20,17 @@ void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
 	t->setSolver(solver);
 }
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding) {
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm) {
 	switch (getGlobal()->getOptions()->symmetryBreaking()) {
 	case SymmetryBreaking::NONE:
 		break;
 	case SymmetryBreaking::STATIC: {
-		auto ivsets = findIVSets(theory, structure);
+		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		addSymBreakingPredicates(grounding, ivsets);
 		break;
 	}
 	case SymmetryBreaking::DYNAMIC: {
-		auto ivsets = findIVSets(theory, structure);
+		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
 		}

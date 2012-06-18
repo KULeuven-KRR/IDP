@@ -58,11 +58,13 @@ unsigned int Error::nr_of_errors() {
 	return GlobalData::instance()->getErrorCount();
 }
 
-/** Global error messages **/
+unsigned int Warning::nr_of_warnings() {
+	return GlobalData::instance()->getWarningCount();
+}
 
 void Error::error(const std::string& message) {
 	stringstream ss;
-	ss << "ERROR: " << message << "\n";
+	ss << ">>> Error: " << message << "\n";
 	GlobalData::instance()->notifyOfError(ss.str());
 	clog << ss.str();
 }
@@ -72,6 +74,20 @@ void Error::error(const std::string& message, const ParseInfo& p) {
 	ss << message << "\n";
 	ss << "\tEncountered at " << toString(p);
 	error(ss.str());
+}
+
+void Warning::warning(const std::string& message) {
+	stringstream ss;
+	ss << ">>> Warning: " << message << "\n";
+	GlobalData::instance()->notifyOfWarning(ss.str());
+	clog << ss.str();
+}
+
+void Warning::warning(const std::string& message, const ParseInfo& p) {
+	stringstream ss;
+	ss << message << "\n";
+	ss << "\tEncountered at " << toString(p);
+	warning(ss.str());
 }
 
 /** Command line errors **/
@@ -173,15 +189,15 @@ void Error::expectedutf(const string& s, const ParseInfo& pi) {
 
 void Error::sortelnotinsort(const string& el, const string& p, const string& s, const string& str) {
 	stringstream ss;
-	ss << "In structure " << str << ", element " << el << " occurs in the domain of sort "
-			<< p << " but does not belong to the interpretation of sort " << s << ".";
+	ss << "In structure " << str << ", element " << el << " occurs in the domain of sort " << p << " but does not belong to the interpretation of sort " << s
+			<< ".";
 	error(ss.str());
 }
 
 void Error::predelnotinsort(const string& el, const string& p, const string& s, const string& str) {
 	stringstream ss;
 	ss << "In structure " << str << ", element " << el << " occurs in the interpretation of predicate " << p
-		<< " but does not belong to the interpretation of sort " << s << ".";
+			<< " but does not belong to the interpretation of sort " << s << ".";
 	error(ss.str());
 }
 
@@ -221,7 +237,7 @@ void Error::threevalsort(const string&, const ParseInfo& pi) {
 
 void Error::declaredEarlier(ComponentType type, const string& whatname, const ParseInfo& pi, const ParseInfo& prevdeclplace) {
 	stringstream ss;
-	ss <<type << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << ".";
+	ss << type << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << ".";
 	error(ss.str(), pi);
 }
 
@@ -229,7 +245,7 @@ void Error::declaredEarlier(ComponentType type, const string& whatname, const Pa
 
 void Error::notDeclared(ComponentType type, const string& name, const ParseInfo& pi) {
 	stringstream ss;
-	ss << type <<" " << name << " is not declared in this scope.";
+	ss << type << " " << name << " is not declared in this scope.";
 	error(ss.str(), pi);
 }
 
@@ -237,7 +253,7 @@ void Error::notDeclared(ComponentType type, const string& name, const ParseInfo&
 
 void Error::notInVocabularyOf(ComponentType type, ComponentType parentType, const string& name, const string& tname, const ParseInfo& pi) {
 	stringstream ss;
-	ss << type <<" " << name << " is not in the vocabulary of " <<parentType <<" " << tname << ".";
+	ss << type << " " << name << " is not in the vocabulary of " << parentType << " " << tname << ".";
 	error(ss.str(), pi);
 }
 
@@ -245,7 +261,7 @@ void Error::notInVocabularyOf(ComponentType type, ComponentType parentType, cons
 void Error::overloaded(ComponentType type, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& pi) {
 	stringstream ss;
 	ss << "The " << type << " " << name << " used here could be the " << type << " declared at " << toString(p1);
-	ss << " or the " << type << " declared at " << toString(p2) <<".";
+	ss << " or the " << type << " declared at " << toString(p2) << ".";
 	error(ss.str(), pi);
 }
 
@@ -309,107 +325,89 @@ void Error::ambigcommand(const string& name) {
 	error(ss.str());
 }
 
-void Error::wrongvalue(const std::string& option, const std::string& value, const ParseInfo&){
+void Error::wrongvalue(const std::string& option, const std::string& value, const ParseInfo&) {
 	stringstream ss;
-	ss << "Value " <<value <<" cannot be assigned to option " <<option << ".";
+	ss << "Value " << value << " cannot be assigned to option " << option << ".";
 	error(ss.str());
 }
 
 void Error::expected(ComponentType type, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "Expected a " <<type <<".";
+	ss << "Expected a " << type << ".";
 	error(ss.str(), pi);
 }
 
-namespace Warning {
-
-/** Data **/
-unsigned int warningcounter = 0;
-
-/** Global error messages **/
-
-void warning() {
-	warningcounter++;
-	clog << "WARNING: ";
+void Warning::cumulchance(double c) {
+	stringstream ss;
+	ss << "Chance of " << c << " is impossible. Using chance 1 instead.";
+	warning(ss.str());
 }
 
-void warning(const std::string& message) {
-	warningcounter++;
-	clog << "WARNING: " << message;
+void Warning::possiblyInfiniteGrounding(const std::string& formula) {
+	stringstream ss;
+	ss << "Infinite grounding of formula " << formula <<".";
+	warning(ss.str());
 }
 
-void warning(const ParseInfo& p) {
-	warningcounter++;
-	clog << "WARNING at " << toString(p) << ": ";
+void Warning::triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
+	stringstream ss;
+	ss << "Tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.";
+	warning(ss.str());
 }
 
-void cumulchance(double c) {
-	warning();
-	clog << "Chance of " << c << " is impossible. Using chance 1 instead\n";
-}
-
-void possiblyInfiniteGrounding(const std::string& formula) {
-	clog << "Warning: infinite grounding of formula " << formula << "\n";
-}
-
-void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname) {
-	clog << "Warning: tried to add " << boundedpredname << " to " << vocname << ", instead " << predname << " was added to that vocabulary.\n";
-}
-
-void emptySort(const std::string& sortname) {
-	clog << "Warning: sort " << sortname << " has an empty interpretation.\n";
+void Warning::emptySort(const std::string& sortname) {
+	stringstream ss;
+	ss << "Sort " << sortname << " has an empty interpretation.";
+	warning(ss.str());
 }
 
 /** Ambiguous partial term **/
-void ambigpartialterm(const string& term, const ParseInfo& pi) {
-	warning(pi);
-	clog << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.\n";
+void Warning::ambigpartialterm(const string& term, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Term " << term << " may lead to an ambiguous meaning of the formula where it occurs.";
+	warning(ss.str(), pi);
 }
 
 /** Ambiguous statements **/
-void varcouldbeconst(const string& name, const ParseInfo& pi) {
-	warning(pi);
-	clog << "'" << name << "' could be a variable or a constant. GidL assumes it is a variable.\n";
+void Warning::varcouldbeconst(const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "'" << name << "' could be a variable or a constant. It is assumed to be a variable.";
+	warning(ss.str(), pi);
 }
 
 /** Free variables **/
-void freevars(const string& fv, const ParseInfo& pi) {
-	warning(pi);
+void Warning::freevars(const string& fv, const ParseInfo& pi) {
+	stringstream ss;
 	if (fv.size() > 1) {
-		clog << "Variables" << fv << " are not quantified.\n";
+		ss << "Variables" << fv << " are not quantified.";
 	} else {
-		clog << "Variable" << fv[0] << " is not quantified.\n";
+		ss << "Variable" << fv[0] << " is not quantified.";
 	}
+	warning(ss.str(), pi);
 }
 
 /** Unexpeded type derivation **/
-void derivevarsort(const string& varname, const string& sortname, const ParseInfo& pi) {
-	warning(pi);
-	clog << "Derived sort " << sortname << " for variable " << varname << ".\n";
+void Warning::derivevarsort(const string& varname, const string& sortname, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Derived sort " << sortname << " for variable " << varname << ".";
+	warning(ss.str(), pi);
 }
 
 /** Introduced variable **/
-void introducedvar(const string&, const string& sortname, const string& term) {
-	warning();
-	clog << "Introduced a variable with sort " << sortname << " for term " << term << ".\n";
+void Warning::introducedvar(const string&, const string& sortname, const string& term) {
+	stringstream ss;
+	ss << "Introduced a variable with sort " << sortname << " for term " << term << ".";
+	warning(ss.str());
 }
 
 /** Autocompletion **/
-void addingeltosort(const string& elname, const string& sortname, const string& structname) {
-	warning();
-	clog << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".\n";
+void Warning::addingeltosort(const string& elname, const string& sortname, const string& structname) {
+	stringstream ss;
+	ss << "Adding element " << elname << " to the interpretation of sort " << sortname << " in structure " << structname << ".";
+	warning(ss.str());
 }
 
 /** Reading from stdin **/
-void readingfromstdin() {
+void Warning::readingfromstdin() {
 	clog << "(Reading from stdin)\n";
-}
-}
-
-namespace Info {
-
-/** Information **/
-void print(const string& s) {
-	clog << s << "\n";
-}
 }

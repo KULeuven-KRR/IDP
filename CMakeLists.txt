@@ -24,7 +24,7 @@ endmacro()
 ### Rpath handling
 include(cmake/rpathhandling.cmake)
 
-### Target properties helper
+### Target properties helper 
 include(cmake/settargetproperties.cmake)
 
 ### Gmp handling
@@ -36,7 +36,7 @@ else()
 endif()
 
 ### Set default compile flags
-addToCXX("-std=c++0x -Wall ")
+addToCXX("-std=c++0x -Wall -pedantic -Wno-overloaded-virtual -Wno-mismatched-tags")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
 endif()

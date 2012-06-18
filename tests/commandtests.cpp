@@ -18,7 +18,7 @@ using namespace std;
 namespace Tests {
 
 TEST(IteratorInferenceTest, IntDomain) {
-	auto dom = new SortTable(new IntRangeInternalSortTable(-2,2));
+	auto dom = TableUtils::createSortTable(-2,2);
 	auto itInf = DomainIteratorInference();
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
@@ -38,11 +38,10 @@ TEST(IteratorInferenceTest, IntDomain) {
 }
 
 TEST(IteratorInferenceTest, DoubleDomain) {
-	auto eist = new EnumeratedInternalSortTable();
-	eist->add(createDomElem(1.1));
-	eist->add(createDomElem(1.2));
-	eist->add(createDomElem(1.3));
-	auto dom = new SortTable(eist);
+	auto dom = TableUtils::createSortTable();
+	dom->add(createDomElem(1.1));
+	dom->add(createDomElem(1.2));
+	dom->add(createDomElem(1.3));
 	auto itInf = DomainIteratorInference();
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
@@ -62,11 +61,10 @@ TEST(IteratorInferenceTest, DoubleDomain) {
 }
 
 TEST(IteratorInferenceTest, StringDomain) {
-	auto eist = new EnumeratedInternalSortTable();
-	eist->add(createDomElem(StringPointer("A")));
-	eist->add(createDomElem(StringPointer("B")));
-	eist->add(createDomElem(StringPointer("C")));
-	auto dom = new SortTable(eist);
+	auto dom = TableUtils::createSortTable();
+	dom->add(createDomElem(StringPointer("A")));
+	dom->add(createDomElem(StringPointer("B")));
+	dom->add(createDomElem(StringPointer("C")));
 	auto itInf = DomainIteratorInference();
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 

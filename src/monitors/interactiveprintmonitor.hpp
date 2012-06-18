@@ -20,7 +20,7 @@
 
 class InteractivePrintMonitor {
 public:
-	virtual ~InteractivePrintMonitor(){};
+	virtual ~InteractivePrintMonitor(){}
 	virtual void print(const std::string& str)=0;
 	virtual void flush() = 0;
 	virtual void printerror(const std::string& str) = 0;

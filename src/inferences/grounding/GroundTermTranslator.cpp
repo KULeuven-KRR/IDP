@@ -14,7 +14,7 @@
 using namespace std;
 
 VarId GroundTermTranslator::translate(SymbolOffset offset, const vector<GroundTerm>& args) {
-	map<vector<GroundTerm>, VarId>::iterator it = _functerm2varid_table[offset].lower_bound(args);
+	auto it = _functerm2varid_table[offset].lower_bound(args);
 	if (it != _functerm2varid_table[offset].cend() && it->first == args) {
 		return it->second;
 	} else {
@@ -52,7 +52,7 @@ VarId GroundTermTranslator::translate(const DomainElement* element) {
 	CPTsBody* cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	_varid2cprelation.insert(pair<VarId, CPTsBody*> { varid, cprelation });
 	// Add a new domain containing only the given domain element
-	SortTable* domain = new SortTable(new EnumeratedInternalSortTable());
+	auto domain = TableUtils::createSortTable();
 	domain->add(element);
 	_varid2domain[varid] = domain;
 	// Return the new variable identifier

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "CPUtils.hpp"
 
@@ -18,38 +18,41 @@ using namespace std;
 namespace CPSupport {
 
 bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
-	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(),voc);
+	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(), voc);
 }
 
-bool nonOverloadedNonBuiltinEligibleForCP(Function* f, const Vocabulary* v){
-	if(f->partial()){ // TODO at the moment, partial terms are never eligible for CP
+bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {
+	if (f->partial()) { // TODO at the moment, partial terms are never eligible for CP
 		return false;
 	}
-	if(not FuncUtils::isIntFunc(f, v)){
+	if (not FuncUtils::isIntFunc(f, v)) {
 		return false;
 	}
 	return true;
 }
 
-bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
-	auto function = ft->function();
+bool eligibleForCP(const Function* function, const Vocabulary* voc) {
 	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
-		auto nonbuiltins = function->nonbuiltins();
+		auto nonbuiltins = const_cast<Function*>(function)->nonbuiltins();
 		for (auto nbfit = nonbuiltins.cbegin(); nbfit != nonbuiltins.cend(); ++nbfit) {
-			if(not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)){
+			if (not nonOverloadedNonBuiltinEligibleForCP(*nbfit, voc)) {
 				return false;
 			}
 		}
 		passtocp = true;
 	} else if (not function->builtin()) {
 		passtocp = nonOverloadedNonBuiltinEligibleForCP(function, voc);
-	} else{
+	} else {
 		Assert(function->builtin() and not function->overloaded());
 		passtocp = FuncUtils::isIntFunc(function, voc);
 	}
 	return passtocp;
+}
+
+bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
+	return eligibleForCP(ft->function(), voc);
 }
 
 bool eligibleForCP(const AggFunction& f) {
@@ -58,13 +61,12 @@ bool eligibleForCP(const AggFunction& f) {
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 	if (eligibleForCP(at->function()) && str != NULL) {
-		for (auto it = at->set()->subformulas().cbegin(); it != at->set()->subformulas().cend(); ++it) {
-			if (not FormulaUtils::approxTwoValued(*it,str)) {
+		auto enumset = at->set();
+		for (auto i = enumset->getSets().cbegin(); i < enumset->getSets().cend(); ++i) {
+			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
 				return false;
 			}
-		}
-		for (auto it = at->set()->subterms().cbegin(); it != at->set()->subterms().cend(); ++it) {
-			if (not eligibleForCP(*it,str)) {
+			if (not eligibleForCP((*i)->getTerm(), str)) {
 				return false;
 			}
 		}
@@ -76,20 +78,19 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 bool eligibleForCP(const Term* t, AbstractStructure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
-	case TermType::TT_FUNC: {
-		return eligibleForCP(dynamic_cast<const FuncTerm*>(t),voc);
+	case TermType::FUNC: {
+		return eligibleForCP(dynamic_cast<const FuncTerm*>(t), voc);
 	}
-	case TermType::TT_AGG: {
-		return eligibleForCP(dynamic_cast<const AggTerm*>(t),str);
+	case TermType::AGG: {
+		return eligibleForCP(dynamic_cast<const AggTerm*>(t), str);
 	}
-	case TermType::TT_VAR:
-	case TermType::TT_DOM:
-		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT),voc);
+	case TermType::VAR:
+	case TermType::DOM:
+		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT), voc);
 		return true;
 	}
-	//To avoid compiler warnings
 	Assert(false);
-	return true;
+	return false;
 }
 
 }

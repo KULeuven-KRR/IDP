@@ -23,6 +23,8 @@
 
 #include "inferences/SolverConnection.hpp"
 
+#include "ECNFPrinter.hpp" // NOTE: MINISATID include!!! Can be removed with gcc4.6
+
 using namespace SolverConnection;
 
 template<typename Stream>
@@ -36,7 +38,7 @@ private:
 	std::set<unsigned int> _printedvarids;
 	bool writeTranslation_;
 
-	ECNFPrinter* printer;
+	MinisatID::RealECNFPrinter<Stream>* printer;
 
 	bool writeTranlation() const {
 		return writeTranslation_;
@@ -62,7 +64,7 @@ public:
 				_structure(NULL),
 				_termtranslator(NULL),
 				writeTranslation_(writetranslation),
-				printer(new ECNFPrinter(new MinisatID::LiteralPrinter(), std::clog, false)) {
+				printer(new MinisatID::RealECNFPrinter<Stream>(new MinisatID::LiteralPrinter(), stream, false)) {
 
 	}
 
@@ -156,7 +158,7 @@ public:
 	}
 
 	void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Warning, fixpoint definitions are not printed yet.");
+		throw notyetimplemented("Printing ground fixpoint definitions");
 	}
 
 	void openDefinition(int defid) {

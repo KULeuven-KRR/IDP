@@ -13,6 +13,7 @@
 #include "errorhandling/error.hpp"
 #include "utils/ListUtils.hpp"
 #include "insert.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 
@@ -50,7 +51,8 @@ Structure* Structure::clone() const {
  * Empty tables are created for symbols that occur in the new vocabulary, but did not occur in the old one.
  */
 void Structure::changeVocabulary(Vocabulary* v) {
-	_vocabulary = v;
+	AbstractStructure::changeVocabulary(v);
+
 	// Delete tables for symbols that do not occur anymore
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
 		if (not v->contains(it->first)) {
@@ -81,7 +83,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		auto sort = it->second;
 		if (not sort->builtin()) {
 			if (_sortinter.find(sort) == _sortinter.cend()) {
-				auto st = new SortTable(new EnumeratedInternalSortTable());
+				auto st = TableUtils::createSortTable();
 				_sortinter[sort] = st;
 				vector<SortTable*> univ(1, st);
 				auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));

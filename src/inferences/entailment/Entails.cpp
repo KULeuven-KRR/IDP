@@ -134,8 +134,7 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	TheorySupportedChecker sc;
 	sc.runCheck(axioms);
 	if (sc.definitionFound()) {
-		Info::print("Replacing a definition by its (potentially weaker) completion. "
-				"The prover may wrongly decide that the first theory does not entail the second theory.");
+		Warning::warning("The input contains a definition. Entailment will be decided based on its (potentially weaker) completion.");
 		FormulaUtils::addCompletion(axioms);
 		sc.definitionFound(false);
 	}
@@ -243,7 +242,7 @@ State Entails::checkEntailment(EntailmentData* data) const {
 	auto callresult = system((applicationStream.str() + " " + arguments).c_str());
 	// TODO call the prover with the prover timeout
 	if(callresult!=0){
-		Info::print("The theorem prover did not finish within the specified timeout.");
+		Error::error("The theorem prover did not finish within the specified timeout.");
 		return State::UNKNOWN;
 	}
 
@@ -290,7 +289,7 @@ State Entails::checkEntailment(EntailmentData* data) const {
 #endif
 
 	if (pos == std::string::npos) {
-		Info::print("The automated theorem prover gave up or stopped in an irregular state.");
+		Error::error("The automated theorem prover gave up or stopped in an irregular state.");
 		return State::UNKNOWN;
 	}
 

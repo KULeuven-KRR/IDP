@@ -327,7 +327,7 @@ void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headarg
 	overwriteVars(originst, boundvarinstlist);
 
 	ConjOrDisj formula;
-	_subgrounder->run(formula);
+	_subgrounder->wrapRun(formula);
 	addToGrounding(Grounder::getGrounding(), formula);
 
 	restoreOrigVars(originst, boundvarinstlist);
@@ -389,7 +389,7 @@ void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& he
 		overwriteVars(originst, boundvarinstlist);
 
 		ConjOrDisj formula;
-		_subgrounder->run(formula);
+		_subgrounder->wrapRun(formula);
 		addToGrounding(Grounder::getGrounding(), formula);
 
 		restoreOrigVars(originst, boundvarinstlist);

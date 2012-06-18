@@ -50,7 +50,7 @@ public:
 	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd);
 
 	void printorig() const;
-	std::string printFormula() const;
+	virtual std::string printFormula() const;
 
 	virtual void put(std::ostream& stream) const{
 		stream << printFormula();
@@ -198,6 +198,8 @@ public:
 	const std::vector<Grounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
+
+	virtual std::string printFormula() const;
 };
 
 class QuantGrounder: public ClauseGrounder {

@@ -37,15 +37,10 @@ public:
 	AbstractStructure(std::string name, const ParseInfo& pi)
 			: _name(name), _pi(pi), _vocabulary(NULL) {
 	}
-	virtual ~AbstractStructure() {
-	}
+	virtual ~AbstractStructure();
 
 	// Mutators
-	// FIXME should be an invariant that a structure always interprets its vocabulary
-	// solution: implement monitors in vocabulary
-	virtual void changeVocabulary(Vocabulary* v) {
-		_vocabulary = v;
-	} // set the vocabulary
+	virtual void changeVocabulary(Vocabulary* v);
 
 	virtual void changeInter(Predicate* p, PredInter* i) = 0; //!< CHANGE the interpretation of p to i
 	virtual void changeInter(Function* f, FuncInter* i) = 0; //!< CHANGE the interpretation of f to i

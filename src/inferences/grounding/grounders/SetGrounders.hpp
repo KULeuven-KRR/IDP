@@ -31,13 +31,14 @@ public:
 	virtual SetId run() const = 0;
 };
 
+class QuantSetGrounder;
+
 class EnumSetGrounder: public SetGrounder {
 private:
-	std::vector<FormulaGrounder*> _subgrounders;
-	std::vector<TermGrounder*> _subtermgrounders;
+	std::vector<QuantSetGrounder*> _subgrounders;
 public:
-	EnumSetGrounder(GroundTranslator* gt, const std::vector<FormulaGrounder*>& subgr, const std::vector<TermGrounder*>& subtgr)
-			: SetGrounder(gt), _subgrounders(subgr), _subtermgrounders(subtgr) {
+	EnumSetGrounder(GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
+			: SetGrounder(gt), _subgrounders(subgrounders) {
 	}
 	~EnumSetGrounder();
 	SetId run() const;
@@ -55,6 +56,9 @@ public:
 	}
 	~QuantSetGrounder();
 	SetId run() const;
+protected:
+	void run(litlist& literals, weightlist& weights, weightlist& trueweights, varidlist& varids) const;
+	friend class EnumSetGrounder;
 };
 
 #endif /* SETGROUNDERS_HPP_ */

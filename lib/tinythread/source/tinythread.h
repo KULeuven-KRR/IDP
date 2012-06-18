@@ -556,11 +556,11 @@ class thread::id {
     /// Default constructor.
     /// The default constructed ID is that of thread without a thread of
     /// execution.
-    id() : mId(0) {};
+    id() : mId(0) {}
 
-    id(unsigned long int aId) : mId(aId) {};
+    id(unsigned long int aId) : mId(aId) {}
 
-    id(const id& aId) : mId(aId.mId) {};
+    id(const id& aId) : mId(aId.mId) {}
 
     inline id & operator=(const id &aId)
     {

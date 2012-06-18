@@ -13,6 +13,7 @@
 
 #include "IncludeComponents.hpp"
 #include "visitors/StructureVisitor.hpp"
+#include "structure/StructureComponents.hpp"
 
 /** Replace symbolic table by an enumerated one.
  *	Returns 0 when impossible or when it was enumerated already.

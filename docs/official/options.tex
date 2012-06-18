@@ -1,0 +1,59 @@
+\todo{check for completeness}
+The \idp system has various options.  To set an option, you can use the following lua-code
+\begin{lstlisting}
+	stdoptions.MyOption = MyValue
+\end{lstlisting}
+where \code{MyOption} is the name of the option and \code{MyValue} is the value you want to give it. If you want to have multiple option sets, you can make them with them with
+\begin{lstlisting}
+	FirstOptionSet = newOptions()
+	SecondOptionSet = newOptions()
+	FirstOptionSet.MyOption = MyValue
+	SecondOptionSet.MyOption = MyValue
+\end{lstlisting}
+To activate an option set, use the procedure \code{setascurrentoptions(MyOptionSet)}.  From that moment, \code{MyOptionSet} will be used in all comands.
+
+\subsection{Verbosity options}
+\begin{description}
+	\item[{groundverbosity = [0..max(int)]}] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
+	\item[{satverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
+	\item[{propagateverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of the propagation.
+\end{description}
+
+\subsection{Modelexpansion options}
+\begin{description}
+	\item[{nbmodels = [0..max(int)]}] Set the number of models wanted from the modelexpansion inference.  If set to 0, all models are returned.
+	\item[{trace = [false, true]}] If true, the procedure modelexpand produces also an execution trace of \minisatid 
+	\item[{sharedtseitin = [false, true]}] Enable/disable a Tseitin transformation where subformulas are shared (hence some equivalent subformulas and certainly all syntactical equal subformulas have the same tseitin).
+\end{description}
+
+\subsection{Propagation options}
+\begin{description}
+	\item[{groundwithbounds = [false, true]}] Enable/disable bounded grounding (if enabled, first do symbolic propagation to provide ct and cf bounds for formulas to reduce the size of the grounding).
+	\item[{longestbranch = [0..2147483647]}] The longest branch allowed in BDDs during propagation. The higher, the more precise the propagation will be (but also, the more time it will take).
+	\item[{nrpropsteps = [0..2147483647]}] The number of propagation steps used in the propagate-inference. The higher, the more precise the propagation will be (but also, the more time it will take).
+	\item[{relativepropsteps =  [false, true]}] If true, the total number of propagation steps is nrpropsteps multiplied by the number of formulas.
+
+\end{description}
+
+\subsection{Printing options}
+\begin{description}
+	\item[{language = [ecnf, idp, %latex, asp, txt
+				tptp]}] The language used when printing objects. 
+	\item[{longnames = [false, true]}] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
+\end{description}
+
+\subsection{General options}
+
+\begin{description}
+	%\item[{autocomplete = [false, true]}] Turn autocompletion of structures on or off
+	%\item[{cpsupport = [false, true]}] Enable/disable cp-support (running a cp-solver together with the SAT-solver)
+	%\item[{createtranslation = [false, true]}] \todo{watdoetdit?}
+	%\item[{groundlazily = [false, true]}] Enable/disable lazy grounding
+	%\item[{printtypes = [false, true]}] \todo{doet niets voor de moment?}
+	%\item[{provertimeout = [0..2147483647]}] \todo{?}
+	%\item[{showwarnings = [false, true]}] Enable/disable the warnings.
+	%\item[{symmetry = [0..2147483647]}] \todo{?} 1 is static, 0 is none, higher = ?
+	\item[{timeout = [0..max(int)]}] Set the timeout for inferences (in seconds)
+	\item[{seed = [0..max(int)]}] Set the seed for the random generator (used in the estimators for BDDs and in the SAT-solver)
+	\item[{randomvaluechoice = [false, true]}] Controls the solver: if set to true, the assignment to choice literals is random, if set to false, the solver default assigns false to choice literals.
+\end{description}

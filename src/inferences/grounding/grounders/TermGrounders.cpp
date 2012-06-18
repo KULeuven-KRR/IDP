@@ -112,7 +112,7 @@ GroundTerm FuncTermGrounder::run() const {
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
-		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
+		clog << tabs() << "Result = var" << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -130,11 +130,11 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 	auto rightdomain = _righttermgrounder->getDomain();
 	if (getDomain() == NULL || not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
-			leftdomain = new SortTable(new EnumeratedInternalSortTable());
+			leftdomain = TableUtils::createSortTable();
 			leftdomain->add(left._domelement);
 		}
 		if (not right.isVariable) {
-			rightdomain = new SortTable(new EnumeratedInternalSortTable());
+			rightdomain = TableUtils::createSortTable();
 			rightdomain->add(right._domelement);
 		}
 		if (leftdomain && rightdomain && leftdomain->isRange() && rightdomain->isRange() && leftdomain->approxFinite() && rightdomain->approxFinite()) {
@@ -145,30 +145,36 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
 			int min, max;
-			if (_type == SumType::ST_PLUS) {
+			switch(_type){
+			case SumType::ST_PLUS:
 				min = leftmin + rightmin;
 				max = leftmax + rightmax;
-			} else if (_type == SumType::ST_MINUS) {
+				break;
+			case SumType::ST_MINUS:
 				min = leftmin - rightmax;
 				max = leftmax - rightmin;
+				break;
 			}
 			if (max < min) {
 				swap(min, max);
 			}
-			setDomain(new SortTable(new IntRangeInternalSortTable(min, max)));
+			setDomain(TableUtils::createSortTable(min, max));
 		} else if (leftdomain->approxFinite() && rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			auto newdomain = new SortTable(new EnumeratedInternalSortTable());
+			auto newdomain = TableUtils::createSortTable();
 			for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
 				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
 					int leftvalue = (*leftit)->value()._int;
 					int rightvalue = (*rightit)->value()._int;
 					int newvalue;
-					if (_type == SumType::ST_PLUS) {
+					switch(_type){
+					case SumType::ST_PLUS:
 						newvalue = leftvalue + rightvalue;
-					} else if (_type == SumType::ST_MINUS) {
+						break;
+					case SumType::ST_MINUS:
 						newvalue = leftvalue - rightvalue;
+						break;
 					}
 					newdomain->add(createDomElem(newvalue));
 				}
@@ -245,8 +251,7 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	case SUM :
 		return new CPSumTerm(varids);
 	default:
-		notyetimplemented("No CP support for aggregate functions other that sum.");
-		return NULL;
+		throw IdpException("Invalid code path.");
 	}
 }
 

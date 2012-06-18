@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef GROUNDERFACTORY_HPP
 #define GROUNDERFACTORY_HPP
@@ -18,7 +18,6 @@
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 #include "generators/InstGenerator.hpp" // For PATTERN
-
 #include "inferences/SolverInclude.hpp"
 
 class PFSymbol;
@@ -32,6 +31,7 @@ class DomElemContainer;
 class InteractivePrintMonitor;
 class TermGrounder;
 class SetGrounder;
+class QuantSetGrounder;
 class HeadGrounder;
 class RuleGrounder;
 class FormulaGrounder;
@@ -47,25 +47,48 @@ struct GenAndChecker {
 	Universe _universe;
 
 	GenAndChecker(const std::vector<const DomElemContainer*>& vars, InstGenerator* generator, InstChecker* checker, const Universe& universe)
-			: _vars(vars), _generator(generator), _checker(checker), _universe(universe) {
+			: 	_vars(vars),
+				_generator(generator),
+				_checker(checker),
+				_universe(universe) {
 	}
 };
 
-struct GroundStructureInfo{
-	AbstractStructure* partialstructure;
-	GenerateBDDAccordingToBounds* symbolicstructure;
-};
-
-struct GroundInfo{
-	const AbstractTheory* theory;
+struct GroundInfo {
+	AbstractTheory* theory;
+	Term* minimizeterm;
 	AbstractStructure* partialstructure;
 	GenerateBDDAccordingToBounds* symbolicstructure;
 	bool nbModelsEquivalent;
+
+	GroundInfo(AbstractTheory* theory, Term* minimizeterm, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
+			bool nbModelsEquivalent)
+			: 	theory(theory),
+				minimizeterm(minimizeterm),
+				partialstructure(partialstructure),
+				symbolicstructure(symbolicstructure),
+				nbModelsEquivalent(nbModelsEquivalent) {
+
+	}
+
+	GroundInfo(AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure, bool nbModelsEquivalent)
+			: 	theory(theory),
+				minimizeterm(NULL),
+				partialstructure(partialstructure),
+				symbolicstructure(symbolicstructure),
+				nbModelsEquivalent(nbModelsEquivalent) {
+
+	}
 };
 
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
+	bool allowskolemize;
+	std::map<Function*, Formula*> funcconstraints;
+	AbstractTheory* _theory;
+	Term* _minimizeterm;
+	Vocabulary* _vocabulary;
 	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
 	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
@@ -81,10 +104,11 @@ private:
 	var2dommap _varmapping; // Maps variables to their counterpart during grounding.
 							// That is, the corresponding const DomElemContainer* acts as a variable+value.
 
-	// Return values
+							// Return values
 	FormulaGrounder* _formgrounder;
 	TermGrounder* _termgrounder;
 	SetGrounder* _setgrounder;
+	QuantSetGrounder* _quantsetgrounder;
 	HeadGrounder* _headgrounder;
 	RuleGrounder* _rulegrounder;
 	Grounder* _topgrounder;
@@ -95,7 +119,7 @@ private:
 	void DeeperContext(SIGN sign);
 
 	// Descend in the parse tree while taking care of the context
-	template <typename T> void descend(T child);
+	template<typename T> void descend(T child);
 
 	AbstractStructure* structure() const {
 		return _structure;
@@ -111,7 +135,7 @@ private:
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
 	// NOTE: creates generators, which do a check on infinite grounding
-	struct GeneratorData{ // NOTE: all have the same order!
+	struct GeneratorData { // NOTE: all have the same order!
 		std::vector<SortTable*> tables;
 		std::vector<Variable*> fovars, quantfovars;
 		std::vector<Pattern> pattern;
@@ -126,7 +150,7 @@ private:
 	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
 
 	template<typename Grounding>
-	GrounderFactory(const GroundStructureInfo& data, Grounding* grounding, bool nbModelsEquivalent);
+	GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent);
 
 	Grounder* getTopGrounder() const {
 		Assert(_topgrounder!=NULL);
@@ -156,7 +180,6 @@ public:
 	static Grounder* create(const GroundInfo& data);
 	static Grounder* create(const GroundInfo& data, PCSolver* satsolver);
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
-	static Grounder* create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundStructureInfo& data, AbstractGroundTheory* grounding);
 
 	bool recursive(const Formula*);
 
@@ -167,9 +190,10 @@ public:
 	}
 
 protected:
+	template<class GroundTheory>
+	static Grounder* createGrounder(const GroundInfo& data, GroundTheory groundtheory);
 	// IMPORTANT: only method (next to the visit methods) allowed to call "accept"!
-	template<class T>
-	void ground(T root, const Vocabulary* v);
+	Grounder* ground();
 
 	void visit(const Theory*);
 

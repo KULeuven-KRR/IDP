@@ -34,6 +34,7 @@ class Term;
 class SetExpr;
 class Query;
 class EnumSetExpr;
+class QuantSetExpr;
 class Formula;
 class Rule;
 class Definition;
@@ -291,10 +292,6 @@ public:
 	//!< create a new rule
 	Rule* rule(const std::set<Variable*>&, Formula* h, YYLTYPE);
 	//!< create a new rule with an empty body
-	Rule* rule(Formula* h, Formula* b, YYLTYPE);
-	//!< create a rule without quantified variables
-	Rule* rule(Formula* h, YYLTYPE);
-	//!< create a rule without quantified variables and with an empty body
 
 	void addRule(FixpDef*, Rule*) const; //!< add a rule to a fixpoint definition
 	void addDef(FixpDef*, FixpDef*) const; //!< add a fixpoint definition to a fixpoint definition
@@ -354,15 +351,13 @@ public:
 	Term* domterm(std::string*, YYLTYPE) const; //!< create a new domain element term
 	Term* domterm(char, YYLTYPE) const; //!< create a new domain element term
 	Term* domterm(std::string*, Sort*, YYLTYPE) const; //!< create a new domain element term of a given sort
-	Term* aggregate(AggFunction, SetExpr*, YYLTYPE) const; //!< create a new aggregate term
+	Term* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
-	SetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
+	EnumSetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi }
-	SetExpr* set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
+	EnumSetExpr* set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi : t }
-	SetExpr* set(EnumSetExpr*) const;
-	//!< Cast EnumSetExpr to SetExpr
 
 	EnumSetExpr* createEnum(YYLTYPE) const;
 	//!< Create a new EnumSetExpr

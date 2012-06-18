@@ -60,13 +60,13 @@ public:
 	}
 
 	void visit(const Vocabulary*) {
-		throw notyetimplemented("Printing vocabularies in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing vocabularies in ASP format");
 	}
 	void visit(const Namespace*) {
-		throw notyetimplemented("Printing namespaces in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing namespaces in ASP format");
 	}
 	void visit(const Theory*) {
-		throw notyetimplemented("Printing theories in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing theories in ASP format");
 	}
 
 	void visit(const AbstractStructure* structure) {
@@ -96,7 +96,7 @@ public:
 						_currentSymbol = toString(pred);
 						visit(predinter->ct());
 					} else {
-						throw notyetimplemented("Printing three-valued symbols in ASP format has not yet been implemented.");
+						throw notyetimplemented("Printing three-valued symbols in ASP format");
 					}
 				}
 			}
@@ -112,7 +112,7 @@ public:
 					_currentSymbol = toString(func);
 					visit(funcgraph->ct());
 				} else {
-					throw notyetimplemented("Printing three-valued symbols in ASP format has not yet been implemented.");
+					throw notyetimplemented("Printing three-valued symbols in ASP format");
 				}
 			}
 		}
@@ -159,25 +159,25 @@ public:
 
 
 	virtual void visit(const GroundClause&) {
-		throw notyetimplemented("Printing ground clauses in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground clauses in ASP format");
 	}
 	virtual void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Printing groud fixpoint definitions in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing groud fixpoint definitions in ASP format");
 	}
 	virtual void visit(const GroundSet*) {
-		throw notyetimplemented("Printing ground sets in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground sets in ASP format");
 	}
 	virtual void visit(const PCGroundRule*) {
-		throw notyetimplemented("Printing ground rules in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground rules in ASP format");
 	}
 	virtual void visit(const AggGroundRule*) {
-		throw notyetimplemented("Printing ground rules in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground rules in ASP format");
 	}
 	virtual void visit(const GroundAggregate*) {
-		throw notyetimplemented("Printing ground aggregates in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground aggregates in ASP format");
 	}
 	virtual void visit(const CPReification*) {
-		throw notyetimplemented("Printing ground constraints in ASP format has not yet been implemented.");
+		throw notyetimplemented("Printing ground constraints in ASP format");
 	}
 
 };

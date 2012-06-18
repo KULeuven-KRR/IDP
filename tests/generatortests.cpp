@@ -17,6 +17,7 @@
 #include "generators/SortGenAndChecker.hpp"
 #include "generators/TableCheckerAndGenerators.hpp"
 #include "generators/EnumLookupGenerator.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 
@@ -34,8 +35,8 @@ const DomainElement* domelem(T t){
 namespace Tests{
 	TEST(ComparisonGenerator, FiniteEquality){
 		SortTable *left, *right;
-		left = new SortTable(new IntRangeInternalSortTable(-10, 10));
-		right = new SortTable(new IntRangeInternalSortTable(0, 20));
+		left = TableUtils::createSortTable(-10, 10);
+		right = TableUtils::createSortTable(0, 20);
 		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::NONE, CompType::EQ);
 		set<pair<int, int> > genvalues;
@@ -51,7 +52,7 @@ namespace Tests{
 
 	TEST(ComparisonGenerator, FiniteInfiniteEquality){
 		SortTable *left, *right;
-		right = new SortTable(new IntRangeInternalSortTable(-10, 10));
+		right = TableUtils::createSortTable(-10, 10);
 		left = new SortTable(new AllIntegers());
 		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::NONE, CompType::EQ);
@@ -68,8 +69,8 @@ namespace Tests{
 
 	TEST(ComparisonGenerator, FiniteLT){
 		SortTable *left, *right;
-		left = new SortTable(new IntRangeInternalSortTable(-2, 2));
-		right = new SortTable(new IntRangeInternalSortTable(0, 4));
+		left = TableUtils::createSortTable(-2, 2);
+		right = TableUtils::createSortTable(0, 4);
 		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::NONE, CompType::LT);
 		set<pair<int, int> > genvalues;
@@ -83,8 +84,8 @@ namespace Tests{
 
 	TEST(ComparisonGenerator, FiniteGTLeftInput){
 		SortTable *left, *right;
-		left = new SortTable(new IntRangeInternalSortTable(-2, 2));
-		right = new SortTable(new IntRangeInternalSortTable(-1, 4));
+		left = TableUtils::createSortTable(-2, 2);
+		right = TableUtils::createSortTable(-1, 4);
 		DomElemContainer *leftvar = new DomElemContainer(), *rightvar = new DomElemContainer();
 		ComparisonGenerator* gen = new ComparisonGenerator(left, right, leftvar, rightvar, Input::LEFT, CompType::GT);
 		set<pair<int, int> > genvalues;
@@ -98,7 +99,7 @@ namespace Tests{
 	}
 
 	TEST(SortGenerator, FiniteSort){
-		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = TableUtils::createSortTable(-2, 2);
 		auto var = new DomElemContainer();
 		auto gen = new SortGenerator(sort->internTable(), var);
 		set<int> genvalues;
@@ -112,7 +113,7 @@ namespace Tests{
 	}
 
 	TEST(SortGenerator, CloneFiniteSort){
-		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = TableUtils::createSortTable(-2, 2);
 		auto var = new DomElemContainer();
 		auto gen = new SortGenerator(sort->internTable(), var);
 
@@ -132,7 +133,7 @@ namespace Tests{
 	}
 
 	TEST(TableChecker, FiniteSort){
-		auto sort = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort = TableUtils::createSortTable(-2, 2);
 		auto var = new DomElemContainer();
 		Universe universe({sort});
 		auto gen = new TableChecker(new PredTable(new FullInternalPredTable(), universe), {var}, universe);
@@ -163,8 +164,8 @@ namespace Tests{
 	}
 
 	TEST(TableChecker, Enum){
-		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
-		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort1 = TableUtils::createSortTable(-2, 1);
+		auto sort2 = TableUtils::createSortTable(-2, 2);
 
 		auto var1 = new DomElemContainer();
 		auto var2 = new DomElemContainer();
@@ -207,8 +208,8 @@ namespace Tests{
 	}
 
 	TEST(InverseTableGenerator, FiniteSort){
-		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
-		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort1 = TableUtils::createSortTable(-2, 1);
+		auto sort2 = TableUtils::createSortTable(-2, 2);
 
 		auto var1 = new DomElemContainer();
 		auto var2 = new DomElemContainer();
@@ -241,8 +242,8 @@ namespace Tests{
 	}
 
 	TEST(EnumLookupGenerator, Enum){
-		auto sort1 = new SortTable(new IntRangeInternalSortTable(-2, 1));
-		auto sort2 = new SortTable(new IntRangeInternalSortTable(-2, 2));
+		auto sort1 = TableUtils::createSortTable(-2, 1);
+		auto sort2 = TableUtils::createSortTable(-2, 2);
 
 		auto var1 = new DomElemContainer();
 		auto var2 = new DomElemContainer();

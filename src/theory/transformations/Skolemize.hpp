@@ -12,7 +12,6 @@
 #define SKOLEMIZE_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
-#include "structure/StructureComponents.hpp"
 
 /**
  * Replaced an atom with function occurrences with a new propositional symbol and an equivalence.
@@ -26,29 +25,18 @@ private:
 	Vocabulary* vocabulary;
 
 public:
+	// FIXME only correct when calling with a monotone FO formula which is not quantified externally!
 	// FIXME changes vocabulary! => is this safe?
-	// FIXME changes vocabulary! => should also adapt structures over the vocabulary
 	// NOTE: changes vocabulary and theory
 	template<typename T>
-	T execute(T t) {
-		vocabulary = t->vocabulary();
+	T execute(T t, Vocabulary* v) {
+		vocabulary = v;
 		auto result = t->accept(this);
 		return result;
 	}
 protected:
 	Theory* visit(Theory* t){
-		// TODO dangerous code: adding more constructs to the theory will skip them here!
-		for(auto i=t->definitions().begin(); i<t->definitions().end(); ++i){
-			quantified.clear();
-			replace.clear();
-			*i = (*i)->accept(this);
-		}
-		for(auto i=t->sentences().begin(); i<t->sentences().end(); ++i){
-			quantified.clear();
-			replace.clear();
-			*i = (*i)->accept(this);
-		}
-		for(auto i=t->fixpdefs().begin(); i<t->fixpdefs().end(); ++i){
+		for(auto i=t->components().begin(); i!=t->components().end(); ++i){
 			quantified.clear();
 			replace.clear();
 			*i = (*i)->accept(this);
@@ -56,10 +44,21 @@ protected:
 		return t;
 	}
 
+	Rule* visit(Rule* r){
+		return r;
+	}
+	FixpDef* visit(FixpDef* d){
+		return d;
+	}
+
+	EquivForm* visit(EquivForm* eq){
+		return eq;
+	}
+
 	Term* visit(VarTerm* vt){
 		auto it = replace.find(vt->var());
 		if(it!=replace.cend()){
-			return it->second;
+			return it->second->clone();
 		}
 		return vt;
 	}
@@ -68,7 +67,7 @@ protected:
 		Assert(qf->sign()==SIGN::POS); // FIXME require pushed negations!
 		if(qf->isUniv()){
 			quantified.insert(quantified.end(), qf->quantVars().cbegin(), qf->quantVars().cend());
-			return qf;
+			return traverse(qf);
 		}else{
 			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i) {
 				std::vector<Term*> varterms;

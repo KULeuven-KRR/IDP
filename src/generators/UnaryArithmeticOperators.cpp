@@ -9,7 +9,7 @@
  ****************************************************************/
 
 #include "UnaryArithmeticOperators.hpp"
-#include "structure/StructureComponents.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 UnaryArithmeticOperatorsChecker::UnaryArithmeticOperatorsChecker(const DomElemContainer* in, const DomElemContainer* out, Universe universe)
 		: _in(in), _out(out), _universe(universe) {

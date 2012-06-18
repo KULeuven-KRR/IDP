@@ -57,15 +57,17 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 	FOBDDFactory factory(_manager);
 
 	if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
-		//auto bdd = factory.turnIntoBdd(atom);
-		auto bdd = _manager->falsebdd();
-		if(needPossible(_type)){
-			bdd = _manager->truebdd();
+		if(atom->symbol()->builtin()){
+			_result = factory.turnIntoBdd(atom);
+			if (needFalse(_type)) {
+				_result = _manager->negation(_result);
+			}
+		}else{
+			_result = _manager->falsebdd();
+			if (needPossible(_type)) { // NEGATE because we have used CERTAIN bounds
+				_result = _manager->negation(_result);
+			}
 		}
-		/*if (needFalse(_type)) {
-			bdd = _manager->negation(bdd);
-		}*/
-		_result = bdd;
 	} else {
 		bool getct = (_type == TruthType::CERTAIN_TRUE || _type == TruthType::POSS_FALSE);
 		if (isNeg(atom->sign())) {
@@ -77,11 +79,10 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
 		}
-		bdd = _manager->substitute(bdd, mva);
-		if (needPossible(_type)) { // Negate because we have CERTAIN bounds
-			bdd = _manager->negation(bdd);
+		_result = _manager->substitute(bdd, mva);
+		if (needPossible(_type)) {
+			_result = _manager->negation(_result);
 		}
-		_result = bdd;
 	}
 }
 

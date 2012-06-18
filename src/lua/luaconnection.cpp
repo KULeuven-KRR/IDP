@@ -22,6 +22,7 @@
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "utils/ListUtils.hpp"
 #include "insert.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 using namespace LuaConnection;
@@ -519,7 +520,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
 		default:
-			throw notyetimplemented("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
+			throw IdpException("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
 		break;
 	}
@@ -1319,12 +1320,11 @@ int namespaceIndex(lua_State* L) {
 	if (term) {
 		return convertToLua(L, InternalArgument(term));
 	}
-	throw notyetimplemented("Some element could not be transformed into a lua object.");
+	throw IdpException("Some element could not be transformed into a lua object.");
 }
 
 SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {
-	EnumeratedInternalSortTable* ist = new EnumeratedInternalSortTable();
-	SortTable* st = new SortTable(ist);
+	auto st = TableUtils::createSortTable();
 	for (auto it = table->begin(); it != table->end(); ++it) {
 		switch (it->_type) {
 		case AT_INT:
@@ -1350,7 +1350,7 @@ SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {
 }
 
 PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Universe& univ) {
-	EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
+	auto pt = TableUtils::createPredTable(univ);
 	for (auto it = table->begin(); it != table->end(); ++it) {
 		if (it->_type == AT_TABLE) {
 			ElementTuple tuple;
@@ -1374,16 +1374,15 @@ PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Univ
 					return 0;
 				}
 			}
-			ipt->add(tuple);
+			pt->add(tuple);
 		} else if (it->_type == AT_TUPLE) {
-			ipt->add(*(it->_value._tuple));
+			pt->add(*(it->_value._tuple));
 		} else {
 			lua_pushstring(L, "Expected a two-dimensional table");
 			lua_error(L);
 			return 0;
 		}
 	}
-	PredTable* pt = new PredTable(ipt, univ);
 	return pt;
 }
 
@@ -2128,7 +2127,8 @@ const DomainElement* execute(const std::string& chunk) {
 		int err = luaL_dostring(_state,chunk.c_str());
 		if (err) {
 			stringstream ss;
-			ss << string(lua_tostring(_state,-1));
+			auto result = lua_tostring(_state,-1);
+			ss <<result;
 			lua_pop(_state, 1);
 			Error::error(ss.str());
 			return NULL;
@@ -2202,8 +2202,7 @@ bool predcall(string* procedure, const ElementTuple& input) {
 		stringstream ss;
 		ss << string(lua_tostring(_state,-1)) << "\n";
 		lua_pop(_state, 1);
-		Error::error(ss.str());
-		return NULL;
+		throw IdpException(ss.str());
 	} else {
 		bool b = lua_toboolean(_state, -1);
 		lua_pop(_state, 1);

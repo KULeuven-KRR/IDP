@@ -685,6 +685,12 @@ void TheorySymmetryAnalyzer::analyze(const AbstractTheory* t) {
 	t->accept(this);
 }
 
+void TheorySymmetryAnalyzer::analyzeForOptimization(const Term* t) {
+	markAsUnfitForSymmetry(t->sort());
+	toString(t); // Strangely enough, this makes the partialfunction.idp test succeed...
+	t->accept(this);
+}
+
 /**
  * 	mark a certain sort as unfit for symmetry
  */
@@ -825,13 +831,14 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  *
  *	@pre: t->vocabulary()==s->vocabulary()
  */
-set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t) {
+set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
 	//cout << "token" << toString(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
 	auto newt =t->clone();
 	FormulaUtils::graphFuncsAndAggs(newt, NULL, false /*TODO check*/);
 	tsa.analyze(newt);
+	if(minimizeTerm!=NULL){tsa.analyzeForOptimization(minimizeTerm);}
 
 // Find out what sorts can not be used in symmetry:
 	set<Sort*> forbiddenSorts;
@@ -887,7 +894,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		clog << "\n";
 	}
 
-// Extract elements that occur as interpretations of allowed sorts, and are not used in the forbidden sorts:
+// Extract elements that occur in interpretations of allowed sorts, and are not used in the forbidden sorts:
 	map<const DomainElement*, set<Sort*> > allowedElements;
 	for (auto sort_it = allowedSorts.cbegin(); sort_it != allowedSorts.cend(); ++sort_it) {
 		for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it){
@@ -1008,13 +1015,13 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials) {
  * 	@pre: t->vocabulary()==s->vocabulary()
  */
 
-vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s) {
+vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "initialize ivsets...\n";
 	}
-	set<const IVSet*> potentials = initializeIVSets(s, t);
+	set<const IVSet*> potentials = initializeIVSets(s, t, minimizeTerm);
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "extract dont cares...\n";
