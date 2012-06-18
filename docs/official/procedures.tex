@@ -39,19 +39,100 @@ Besides the standard types of variables available in Lua, the following extra ty
 \subsection{Built-in procedures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\todo{check for completeness, maybe say something about the namespace they are in, or better: reorder so that subsections are exactly the namespaces}
-
-A lot of procedures (modelexpansion, querying, propagation, calculating known definitions,\ldots) are allready built-in.  
-%TODO: betere verdeling van alle inferences over de verschillende subsubsections...
-\subsubsection{Manipulation of elements}
+A lot of procedures are already built-in. The command \code{help()} gives you an overview of all available sub-namespaces, procedures,\ldots. The \code{stdspace} namespace contains all built-in procedures.
+\subsubsection{stdspace}
+The \code{stdspace} contains the following procedures:
 \begin{description}
-	\item[createdummytuple()]
-		Create an empty tuple.
+\item[elements(d)]
+		Returns a procedure, iterator, and 0 such that
+			``for e in elements(d) do ... end'' 
+		iterates over all elements in the given domain d.
+	\item[help(namespace)]
+ 		List the procedures in the given namespace.
+ \item[idptype(something)]
+ 		Returns custom typeids for first-class idp citizens.
+ 		\item[tuples(table)]
+ 		Returns a procedure, iterator, and a tuple such that
+ 		``for t in tuples(table) do ... end''
+ 		iterates over all tuples in the given predicate table.
+\end{description}
+All procedures in \code{stdspace} are included in the global namespace and hence can be called by \code{procedure()} instead of by \code{stdspace.procedure()}.
+
+Furthermore: \code{stdspace} contains the following subnamespaces:
+\begin{description}
+ \item[idpintern]
+ \item[inferences]
+ \item[options]
+ \item[structure]
+ \item[theory]
+\end{description}
+
+\subsubsection{idpintern}
+This namespace contains internal procedures of the \idp system. Using them is unsafe, since most procedures there are not tested well, or not documented. We recommend this only for advanced users. \code{idpinter} is not included in the global namespace; help for idpintern can be obtained by \code{help(stdspace.idpintern)}.
+
+\subsubsection{inferences}
+The \code{inferences} namespace and all its procedures are included in the global namespace. Hence \code{inferences.xxx} should never be used. This namespace contains several inference methods:
+\begin{description}
+	\item[calculatedefinitions(theory,structure)]
+		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions).
+		
+	\item[ground(theory,structure)]
+ 		Create the reduced grounding of the given theory and structure. 
+ 	\item[groundeq(theory,structure,modeleq)]
+ 		Create the reduced grounding of the given theory and structure. modeleq is a boolean parameter:  whether or not the grounding should preserve the number of models (it always preserves satisfiability but might not preserve the number of models if modeleq is false).
+ 	\item[printgrounding(theory,structure)]
+ 		Print the reduced grounding of the given theory and structure.
+ 		MEMORY EFFICIENT: does not store the grounding internally.
+ 		
+ 	\item[groundpropagate(theory,structure)]
+ 		Return a structure, made more precise than the input by grounding and unit propagation on the theory.
+		Returns nil when propagation makes the givens structure inconsistent.
+	\item[optimalpropagate(theory,structure)]
+ 		Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value
+ 		This propagation is complete: everything that can be derived from the theory will be derived. 
+ 		Returns nil when propagation results in an inconsistent structure.
+	\item[propagate(theory,structure)]
+ 		Returns a structure, made more precise than the input by doing symbolic propagation on the theory.
+ 		Returns nil when propagation results in an inconsistent structure.
+ 	
+	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
+	
+	\item[modelexpandpartial(theory,structure)]
+		Apply model expansion to theory T, structure S.
+ 		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
+		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
+	\item[modelexpand(theory,structure)]
+ 		Apply model expansion to theory T, structure S.
+ 		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
+		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
+		
+	\item[query(query,structure)]
+ 		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
+	\item[sat(theory,structure)]
+		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
+		
 \end{description}
 
 
-\subsubsection{Manipulation of interpretations}
+\subsubsection{options}
+Like the \code{inferences} namespace, the \code{options} namespace and all its procedures are included in the global namespace. This namespace consists of the following procedures:
+
 \begin{description}
+	\item[getoptions()]
+ 		Get the current options.
+	\item[newoptions()]
+ 		Create new options, equal to the standard options.
+	\item[setascurrentoptions(options)]
+ 		Sets the given options as the current options, used by all other commands.
+\end{description}
+
+\subsubsection{structure}
+Also this  namespace and all its procedures are included in the global namespace. Here, you can find several procedures for manipulating logical structures.
+
+\begin{description}
+	\item[alltwovaluedextensions(structure)] This procedures takes one (three-valued) structure and returns all structures over the same vocabulary that extend the given structure and are two-valued.
+	\item[alltwovaluedextensions(table)]
+		This procedures takes a table of structures and returns all two-valued extensions of any of the given structures.
 	\item[clean(structure)]
 		Modifies the given structure (the structure is the same, but its representation changes): transforms fully specified three-valued relations into two-valued ones.  For example if \code{P} has domain \code[1..2] and in the given structure, \code{P<ct> = \{1\}, P<cf> = \{2\}}, in the end, \code{P} is \code{\{1\}}.
 	\item[clone(structure)]
@@ -78,9 +159,24 @@ A lot of procedures (modelexpansion, querying, propagation, calculating known de
  		Modifies the table-interpretation.
 	\item[newstructure(vocabulary,string)]
  		Create an empty structure with the given name over the given vocabulary.
+ 		
+ 	\item[createdummytuple()]
+		Create an empty tuple.
+	
+	\item[iterator(domain)]
+ 		Create an iterator for the given sorttable.
+	\item[iterator(predicate\_table)]
+ 		Create an iterator for the given predtable.
+	\item[size(predicate\_table)]
+ 		Get the size of the given table.
+ 		
+ 	\item[range(number,number)]
+ 		Create a domain containing all integers between First and Last.
 \end{description}
 
-\subsubsection{Manipulation of theories}
+
+\subsubsection{theory}
+The \code{theory} namespace and all its procedures are included in the global namespace. It contains methods for manipulating theories, most of which modify the given theory.
 \begin{description}
 	\item[clone(theory)]
 		Retrurns a theory identical to the given one.
@@ -99,94 +195,28 @@ A lot of procedures (modelexpansion, querying, propagation, calculating known de
  		Modifies the given theory.
 \end{description}
 
-\subsubsection{Options}
-\begin{description}
-	\item[getoptions()]
- 		Get the current options.
-	\item[newoptions()]
- 		Create new options, equal to the standard options.
-	\item[setascurrentoptions(options)]
- 		Sets the given options as the current options, used by all other commands.
-\end{description}
+
+
+
+
+
+
+
+
 
 \subsubsection{Miscellaneous}
+\todo{WHY is the parse method directly in global\_namespace?}
 \begin{description}
-	\item[help(namespace)]
- 		List the procedures in the given namespace.
-	\item[idptype(something)]
- 		Returns custom typeids for first-class idp citizens.
+	
+	
 	\item[parse(string)]
  		Parses the given file and adds its information into the datastructures.
-	\item[range(number,number)]
- 		Create a domain containing all integers between First and Last.
+
 \end{description}
 
 
-\subsubsection{Tables and iterators}
-\begin{description}
-	\item[elements(d)]
-		Returns a procedure, iterator, and 0 such that
-			``for e in elements(d) do ... end'' 
-		iterates over all elements in the given domain d.
-	\item[iterator(domain)]
- 		Create an iterator for the given sorttable.
-	\item[iterator(predicate\_table)]
- 		Create an iterator for the given predtable.
-	\item[size(predicate\_table)]
- 		Get the size of the given table.
-	\item[tuples(table)]
- 		Returns a procedure, iterator, and a tuple such that
- 		``for t in tuples(table) do ... end''
- 		iterates over all tuples in the given predicate table.
-\end{description}
 
 
-\subsubsection{Extending structures}
-\begin{description}
-	\item[alltwovaluedextensions(structure)] This procedures takes one (three-valued) structure and returns all structures over the same vocabulary that extend the given structure and are two-valued.
-	\item[alltwovaluedextensions(table)]
-		This procedures takes a table of structures and returns all two-valued extensions of any of the given structures.
-	\item[calculatedefinitions(theory,structure)]
-		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions).
-	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
-	\item[modelexpandpartial(theory,structure)]
-		Apply model expansion to theory T, structure S.
- 		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
-		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
-	\item[modelexpand(theory,structure)]
- 		Apply model expansion to theory T, structure S.
- 		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
-		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
-	%%%%%%%%%PROPAGATION%%%%%%%%%%
-	\item[groundpropagate(theory,structure)]
- 		Return a structure, made more precise than the input by grounding and unit propagation on the theory.
-		Returns nil when propagation makes the givens structure inconsistent.
-	\item[optimalpropagate(theory,structure)]
- 		Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value
- 		This propagation is complete: everything that can be derived from the theory will be derived. 
- 		Returns nil when propagation results in an inconsistent structure.
-	\item[propagate(theory,structure)]
- 		Returns a structure, made more precise than the input by doing symbolic propagation on the theory.
- 		Returns nil when propagation results in an inconsistent structure.
-\end{description}
-
-
-\subsubsection{Grounding}
-\begin{description}
-	\item[ground(theory,structure)]
- 		Create the reduced grounding of the given theory and structure. 
-	\item[printgrounding(theory,structure)]
- 		Print the reduced grounding of the given theory and structure.
- 		MEMORY EFFICIENT: does not store the grounding internally.
-\end{description}
-
-\subsubsection{Other high-level inferences}
-\begin{description}
-	\item[query(query,structure)]
- 		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
-	\item[sat(theory,structure)]
-		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
-\end{description}
 
 \subsubsection{The mx library}
 The mx standard library file contains some useful commands for model expansion. It can be used by 
@@ -210,4 +240,5 @@ The table\_utils standard library file can be include by
 	#include <table_utils>
 \end{lstlisting}
 It contains several useful commands for manipulating tables, converting predicate tables to lua-tables,\ldots.
+\todo{document}
 
