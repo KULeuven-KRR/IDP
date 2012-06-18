@@ -194,7 +194,7 @@ void FOBDDFactory::visit(const EqChainForm* ef) {
 void FOBDDFactory::visit(const AggForm* af) {
 #ifndef NDEBUG
 	if (af->getBound()->type() != TermType::DOM && af->getBound()->type() != TermType::VAR) {
-		throw notyetimplemented("Creating a bdd for nested aggregate formulas has not yet been implemented.");
+		throw notyetimplemented("Creating a bdd for nested aggregate formulas");
 	}
 #endif
 	auto invert = isNeg(af->sign());

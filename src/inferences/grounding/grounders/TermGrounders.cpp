@@ -251,8 +251,7 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	case SUM :
 		return new CPSumTerm(varids);
 	default:
-		notyetimplemented("No CP support for aggregate functions other that sum.");
-		return NULL;
+		throw IdpException("Invalid code path.");
 	}
 }
 

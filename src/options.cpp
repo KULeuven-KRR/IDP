@@ -130,7 +130,7 @@ std::string str(Format choice) {
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
 	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
@@ -157,8 +157,24 @@ Options::Options() {
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
-	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name,
-			PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
+			_option2name, PrintBehaviour::PRINT);
+	StringPol::createSetOption(StringType::VERBOSITIES, "verbose", { "t" }, "", _option2name, PrintBehaviour::PRINT);
+}
+
+template<class EnumType, class ValueType>
+void OptionPolicy<EnumType, ValueType>::createSetOption(EnumType type, const std::string& name, const set<ValueType>& subsets, const ValueType& defaultValue,
+		std::vector<std::string>& option2name, PrintBehaviour visible) {
+	_name2type[name] = type;
+	auto newoption = new SubSetEnumOption<EnumType, ValueType>(type, name, subsets, visible);
+	newoption->setValue(defaultValue);
+	auto& options = _options;
+	if (options.size() <= (unsigned int) type) {
+		options.resize(type + 1, NULL);
+		option2name.resize(type + 1, "");
+		option2name[type] = name;
+	}
+	options[type] = newoption;
 }
 
 template<class EnumType, class ValueType>
@@ -189,6 +205,7 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 		option2name[type] = name;
 	}
 	options[type] = newoption;
+
 }
 
 template<class EnumType, class ValueType>
@@ -204,6 +221,27 @@ std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 		std::stringstream ss;
 		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue();
 		ss << "\n\t\t => between " << lower() << " and " << upper() << ".\n";
+		return ss.str();
+	} else {
+		return "";
+	}
+}
+
+template<class EnumType, class ConcreteType>
+std::string SubSetEnumOption<EnumType, ConcreteType>::printOption() const {
+	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {
+		std::stringstream ss;
+		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = {" << TypedOption<EnumType, ConcreteType>::getValue() <<"}";
+		ss << "\n\t\t => any subset of {";
+		bool begin = true;
+		for (auto i = getAllowedValues().cbegin(); i != getAllowedValues().cend(); ++i) {
+			if (not begin) {
+				ss << ", ";
+			}
+			begin = false;
+			ss << *i;
+		}
+		ss << "}.\n";
 		return ss.str();
 	} else {
 		return "";
@@ -274,6 +312,10 @@ SymmetryBreaking Options::symmetryBreaking() const {
 	}
 	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
 	return SymmetryBreaking::NONE;
+}
+
+std::string Options::verbosities() const {
+	return StringPol::getValue(StringType::VERBOSITIES);
 }
 
 std::string Options::printAllowedValues(const std::string& name) const {

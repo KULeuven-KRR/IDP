@@ -344,7 +344,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const EqChainForm*) {
-	throw notyetimplemented("Creating a propagator for comparison chains has not yet been implemented.");
+	throw notyetimplemented("Creating a propagator for comparison chains");
 }
 
 template<class Factory, class Domain>

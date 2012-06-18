@@ -67,7 +67,7 @@ public:
 		}
 		auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 		if (t == NULL) {
-			throw notyetimplemented("Grounding of already ground theories.\n");
+			throw notyetimplemented("Grounding of already ground theories");
 		}
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");

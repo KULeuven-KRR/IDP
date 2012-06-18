@@ -41,7 +41,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 	}
 	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
 	if (t == NULL) {
-		throw notyetimplemented("Modelexpansion of already ground theories.\n");
+		throw notyetimplemented("Modelexpansion of already ground theories");
 	}
 	if (t->vocabulary() != structure->vocabulary()) {
 		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");

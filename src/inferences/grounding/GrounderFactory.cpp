@@ -253,7 +253,16 @@ Grounder* GrounderFactory::ground() {
 	if (_minimizeterm != NULL) {
 		auto term = dynamic_cast<const AggTerm*>(_minimizeterm);
 		if (term == NULL) {
-			throw notyetimplemented("Optimization over non-aggregate terms.");
+			throw notyetimplemented("Optimization over non-aggregate terms");
+		}
+		if(term->function()==AggFunction::PROD){
+			for(auto i=term->set()->getSubSets().cbegin(); i!=term->set()->getSubSets().cend(); ++i){
+				auto sort = (*i)->getTerm()->sort();
+				if(not SortUtils::isSubsort(sort, get(STDSORT::NATSORT))
+					|| _structure->inter(sort)->contains(createDomElem(0))){
+					throw notyetimplemented("Minimization over a product aggregate with negative or zero weights");
+				}
+			}
 		}
 		InitContext();
 		descend(term->set());

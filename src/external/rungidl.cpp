@@ -293,7 +293,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	setStop(true);
 	signalhandling.join();
 
-	if (Error::nr_of_errors() > 0) {
+	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15) {
 		cerr << "First critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
 		cerr << "\t" << *getGlobal()->getErrors().cbegin();
 	}
@@ -331,7 +331,7 @@ void interactive() {
 			command = "help()";
 		}
 		executeProcedure(command);
-		getGlobal()->clearErrors();
+		getGlobal()->clearStats();
 	}
 }
 #endif
@@ -415,6 +415,7 @@ int run(int argc, char* argv[]) {
 	}
 
 	if (readfromstdin) {
+		Warning::readingfromstdin();
 		parsestdin();
 	}
 	if (cloptions._exec == "") {

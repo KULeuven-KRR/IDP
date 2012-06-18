@@ -95,8 +95,11 @@ void expected(ComponentType type, const ParseInfo&);
 
 namespace Warning {
 
+/** Number of warnings **/
+unsigned int nr_of_warnings();
+
 /** Global warning message **/
-void warning(const ParseInfo& p);
+void warning(const std::string& message, const ParseInfo& p);
 void warning(const std::string& message);
 
 /** Ambiguous statements **/
@@ -129,12 +132,6 @@ void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const st
 
 void emptySort(const std::string& sortname);
 
-}
-
-namespace Info {
-
-/** Information **/
-void print(const std::string& s);
 }
 
 #endif
