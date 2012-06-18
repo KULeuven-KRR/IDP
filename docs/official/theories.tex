@@ -37,7 +37,7 @@ The following order of binding is used: $\lnot$ binds tightest, next $\land$ and
 As for terms, if term $t$ occurs in predicate $P$, then the type of $t$ and the type of the input position of $P$ where it occurs must have a common ancestor type. For formulas of the form $t_1 = t_2$, $t_1$ and $t_2$ must have a common ancestor type.
 
 
-The \emph{scope} of a quantification $\forall x$ or $\exists x$, is the quantified formula. E.g., in $\forall x\ \psi$, the scope of $\forall x$ is the formula $\psi$. An occurrence of a variable $x$ that is not inside the scope of a quantification $\forall x$ or $\exists x$ is called \emph{free}. A \emph{sentence} is a formula containing no free occurrences of variables. If an \idp problem specification contains formulas that are not sentences, the system will implicitly quantify this variable universally and return a warning message, specifying which variables occur free. Each sentence in \idp should end with a dot `.'.
+The \emph{scope} of a quantification $\forall x$ or $\exists x$, is the quantified formula. E.g., in $\forall x\ \psi$, the scope of $\forall x$ is the formula $\psi$. An occurrence of a variable $x$ that is not inside the scope of a quantification $\forall x$ or $\exists x$ is called \emph{free}. A \emph{sentence} is a formula containing no free occurrences of variables. If an \idp problem specification contains formulas that are not sentences, the system will implicitly quantify this variable universally and return a warning message, specifying which variables occur free. Each sentence in \idp ends with a dot `.'.
 
 The \idp syntax of the different symbols in formulas are given in the table below. Also the informal meaning of the symbols is given.
 \begin{center}
@@ -79,11 +79,19 @@ In \idp, every variable has a type. The informal meaning of a sentence of the fo
 
 
 \subsubsection{Definitions}
-A definition defines a concept, i.e. a predicate, in terms of other predicates. Formally, a definition is a set of rules of the form 
+A definition defines a concept, i.e. a predicate (or multiple predicates), in terms of other predicates. Formally, a definition is a set of rules of the form 
 \[ \forall x_1,\ldots,x_n\ P(t_1,\ldots,t_m) \lrule \varphi \]
 where $P$ is a predicate symbol, $t_1,\ldots,t_m$ are terms that may contain the variables $x_1,\ldots,x_n$ and $\varphi$ a formula that may contain these variables. $P(t_1,\ldots,t_m)$ is called the \emph{head} of the rule and $\psi$ the \emph{body}. 
 
-A definition in \idp syntax consists of a set of rules, enclosed by `{\tt \{}' and `{\tt \}}'. Each rule ends with a `{\tt .}'. The definitional implication $\lrule$ is written `{\tt <-}'. The quantifications before the head may be omitted in \idp, i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty, the rule symbol `{\tt <-}' can be omitted. Recursive definitions are allowed in \idp. The semantics for a definitions are the wellfounded semantics \todo{reference}.
+A definition in \idp syntax consists of a set of rules, enclosed by `\code{\{}' and `\code{\}}'. Each rule ends with a `\code{.}'. The definitional implication $\lrule$ is written `\code{<-}'. The quantifications before the head may be omitted in \idp (\idp will give a warning in this case), i.e., all free variables of a rule are implicitly universally quantified. If the body of a rule is empty (\code{true}), the rule symbol `\code{<-}' can be omitted. Recursive definitions are allowed in \idp. The semantics for a definitions are the well-founded semantics \todo{reference}.
+As an example, the following definition defines the transitive closure of a relation \code{R}.
+\begin{lstlisting}
+	{
+		!x y: T(x,y) <- R(x,y).
+		!x y: T(x,y) <- ?z: T(x,z) & T(z,y).
+	}
+\end{lstlisting}
+
 
 
 
