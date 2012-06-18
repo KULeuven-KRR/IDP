@@ -1,5 +1,5 @@
-\todo{check for completeness}
-The \idp system has various options.  To set an option, you can use the following lua-code
+\todo{How does the verbosity work?}
+The \idp system has various options. To print the current values of all options, use \code{print(getoptions())}.  To set an option, you can use the following lua-code
 \begin{lstlisting}
 	stdoptions.MyOption = MyValue
 \end{lstlisting}
@@ -28,7 +28,7 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 
 \subsection{Propagation options}
 \begin{description}
-	\item[{groundwithbounds = [false, true]}] Enable/disable bounded grounding (if enabled, first do symbolic propagation to provide ct and cf bounds for formulas to reduce the size of the grounding).
+	\item[{groundwithbounds = [false, true]}] Enable/disable bounded grounding (if enabled, first do symbolic propagation to provide ct and cf bounds for formulas to reduce the size of the grounding in every inferences that grounds (groundpropagate/ground/modelexpand/...)).
 	\item[{longestbranch = [0..2147483647]}] The longest branch allowed in BDDs during propagation. The higher, the more precise the propagation will be (but also, the more time it will take).
 	\item[{nrpropsteps = [0..2147483647]}] The number of propagation steps used in the propagate-inference. The higher, the more precise the propagation will be (but also, the more time it will take).
 	\item[{relativepropsteps =  [false, true]}] If true, the total number of propagation steps is nrpropsteps multiplied by the number of formulas.
