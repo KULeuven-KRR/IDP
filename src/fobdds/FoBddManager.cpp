@@ -1137,9 +1137,9 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 #ifndef NDEBUG
 	auto domterm = dynamic_cast<const FOBDDDomainTerm*>(atom->args(1));
 	Assert(domterm!=NULL);
-	auto val = domterm->value();
-	Assert((val->type() == DET_DOUBLE && val->value()._double == 0)
-			|| (val->type() == DET_INT && val->value()._int == 0));
+	auto domtermvalue = domterm->value();
+	Assert((domtermvalue->type() == DET_DOUBLE && domtermvalue->value()._double == 0)
+			|| (domtermvalue->type() == DET_INT && domtermvalue->value()._int == 0));
 	//The rewritings in getatomkernel should guarantee this.
 #endif
 
