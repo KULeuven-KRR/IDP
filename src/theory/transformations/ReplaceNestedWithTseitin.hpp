@@ -55,7 +55,7 @@ public:
 	}
 
 	ReducedPF* getResult() {
-		Assert(isReducable());
+		Assert(isReducible());
 		return _reduced;
 	}
 
@@ -193,7 +193,7 @@ protected:
 			if (listit.size()==0) {
 				return pf;
 			}
-			Assert(listit->second.size() > 0);
+			//Assert(listit->second.size() > 0);
 			std::vector<Formula*> subforms;
 			for (auto i = listit.cbegin(); i != listit.cend(); ++i) {
 				Assert((*i)->_arglist.size() == pf->args().size());
