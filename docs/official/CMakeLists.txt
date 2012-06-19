@@ -10,13 +10,14 @@ foreach(file ${TEXFILES})
 	GET_FILENAME_COMPONENT(filename ${file} NAME)
 	SET(TEXFILENAMES ${TEXFILENAMES} ${filename})
 endforeach(file)
+set(IMAGEFILENAMES "")
 foreach(file ${IMAGEFILES})
 	GET_FILENAME_COMPONENT(filename ${file} NAME)
-	SET(TEXFILENAMES ${TEXFILENAMES} ${filename})
+	SET(IMAGEFILENAMES ${IMAGEFILENAMES} ${filename})
 endforeach(file)
 
-add_latex_document(idp-manual.tex INPUTS ${TEXFILENAMES}  DEFAULT_PDF MANGLE_TARGET_NAMES)
-add_latex_document(fo-idp.tex INPUTS ${TEXFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
+add_latex_document(idp-manual.tex INPUTS ${TEXFILENAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
+add_latex_document(fo-idp.tex INPUTS ${TEXFILENAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
 
 install(FILES
 	${PROJECT_BINARY_DIR}/docs/official/idp-manual.pdf
