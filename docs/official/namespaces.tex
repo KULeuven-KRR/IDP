@@ -1,24 +1,26 @@
-
+\section{Namespaces}
 A namespace with name \code{MySpace} is declared by
 \begin{lstlisting}
-	namespace MySpace {
-		// content of the namespace
-	}
+namespace MySpace {
+	// content of the namespace
+}
 \end{lstlisting}
 
-An object with name \code{MyName} declared in namespace \code{MySpace} can be referred to by \code{MySpace::MyName}.  Inside \code{MySpace}, \code{MyName} can simply be referred to by \code{MyName}.
+A Namespace can contain namespaces, vocabularies, theories, structures, terms, queries, procedures, options and using statements.  
 
-A Namespace can contain namespaces, vocabularies, theories, structures, terms, queries, procedures, options and using statements.  A using statement is of one of the following forms
+An object with name \code{MyName} declared in namespace \code{MySpace} can be referred to by absolute qualification: \code{MySpace::MyName}.  
+Inside \code{MySpace}, \code{MyName} can simply be referred to by \code{MyName}.
+Additionally, \emph{using} statements can be used to allow relative qualification.
+A using statement is of one of the following forms
 \begin{lstlisting}
-	using namespace MySpace
-	using vocabulary MyVoc
+using namespace MySpace
+using vocabulary MyVoc
 \end{lstlisting}
 where \code{MySpace} is the name of a namespace, and \code{MyVoc} the name of a vocabulary.  Below such a using statement, objects \code{MyObj} declared in \code{MySpace}, respectively \code{MyVoc}, can be referred to by \code{MyObj}, instead of \code{MySpace::Myobj}, respectively \code{MyVoc::MyObj}.
 
-Every object that is declared outside a namespace, is considered to be part of the global namespace.  The name of the global namespace is \code{global\_namespace}.  In other words, eery \idp file implicitely starts with \code{namespace global\_namespace \{} and ends wit han extra \code{\}}.
+Every object that is declared outside a namespace, is considered to be part of the global namespace, called \code{\globalspace}.  
+In other words, every \idp file implicitely starts with \code{namespace \globalspace \{} and ends with an additional \code{\}}.
+Everything declared inside a library is contained within the namespace \code{\stdspace}. 
+It is discouraged to add or overwrite objects within \stdspace. 
 
-\todo{uitleg bij de nieuwe namespaces structuur. Wat hadden we ook alweer afgesproken?}
-
-\todo{naam van de global namespace}
-
-\todo{using <mx>}
+\todo{define object}

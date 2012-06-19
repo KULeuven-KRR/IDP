@@ -1,1 +1,37 @@
-\todo{Add}
+\section{Common errors and warnings}
+In this section the most common error and warning messages you might encounter are listed and a short explanation is given.
+Some general recommendations:
+\begin{itemize}
+  \item \emph{Earliest exception first}: As one error might propagate to more errors in code which is in fact correct, always start resolving errors from the first one encountered.
+  \item \emph{Warnings are important}: Usually, warnings notify that some part of the specification can be \emph{interpreted in multiple ways} (and the system tells you which choice it made) or that the system \emph{suspects you made an error}, although the specification does not violate any rule. So always at least verify whether the correct resolution was made and preferably change to specification to remove the warning.
+\end{itemize}
+
+\subsection{Syntax error}
+``''
+Some part of the specification is invalid \fodotidp syntax. Some possible fixes might be presented by the system.
+General recommendations to prevent this kind of errors:
+\begin{itemize}
+  \item Declare all symbols in the vocabulary and check the number of arguments.
+  \item Check the number of brackets.
+  \item Variables are separated by whitespace, arguments by kommas and tuples buy ``;''.
+\end{itemize}
+
+\subsection{Unquantified variables}
+``''
+The system encountered an 0-ary symbol which was not quantified and not declared in the vocabulary.
+It assumes it is then a variable which is taken to have the default quantification in the context in which it occurs, but warns you as you might have intended another quantification or had intended it to be some other or undeclared predicate or constant symbol.
+
+\subsection{Derived type}
+``''
+This warning is produced if the type of a variable or term is ambiguous.
+It makes a usually safe guess to the intended type, but it should at least be checked and preferably stated explicitly.
+
+\subsection{Underivable type}
+``''
+In some cases, there are multiple types possible and no safe guess is available, such as two possible types which have no related parents.
+In that case, the intended type has to be stated explicitly. 
+
+\subsection{Infinite grounding}
+``''
+When constructing the grounding, the system might detect that it has to make an infinite grounding (it can also go undetected in some cases).
+It is guaranteed that this will not happen using default options if all variable types are explicitly stated and no infinite types are used for any variable or argument type (parent types can be infinite).
