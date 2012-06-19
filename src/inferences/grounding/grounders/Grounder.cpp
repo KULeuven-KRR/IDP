@@ -104,9 +104,10 @@ void Grounder::toplevelRun() const {
 
 #include <inferences/grounding/grounders/FormulaGrounders.hpp>
 
+// TODO unfinished code
 void Grounder::wrapRun(ConjOrDisj& formula) const{
 	auto start = clock();
-	auto set = getGlobal()->getOptions()->verbosities();
+//	auto set = getGlobal()->getOptions()->verbosities();
 	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
 	auto printtimes = false;
 	if(printtimes){
