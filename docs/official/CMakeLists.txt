@@ -2,6 +2,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/UseLATEX.cmake)
 
 set(TEXFILES "")
 file(GLOB_RECURSE TEXFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.tex")
+file(GLOB_RECURSE TEXFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.png")
 
 set(TEXFILENAMES "")
 foreach(file ${TEXFILES})
