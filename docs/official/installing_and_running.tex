@@ -1,20 +1,27 @@
+\section{Installing And Running}
+The system has been verified to run under Windows and various Unix versions.
+The system also works under OSX, but for any version at or below Lion it requires developer components on the user machine to run.
 
-The system has been verified to run under Windows (7), OSX (Lion) and various unix versions.
+\subsection{Getting the system}
+\subsubsection{Downloading the most recent version}
+Pre-built binaries can be retrieved from \url{http://dtai.cs.kuleuven.be/krr/idp} and installed in their default (OS-specific) way.
+For the reasons stated above, we do not provide pre-built OSX packages. 
 
-\subsection{Building from source}
+\subsubsection{Building from source}
 Required software packages:
 \begin{itemize}
-  \item C and C++ compiler, supporting most of the C++11 standard. Examples are GCC 4.4 or higher, clang 3.2 or visual studio 11.
+  \item C and C++ compiler, supporting most of the C++11 standard. Examples are GCC 4.4, Clang 3.1 and Visual Studio 11 or higher.
   \item Cmake build environment. 
-  \item Bison and flex packages or yacc and lex packages.
-  \item Pdflatex and doxygen for building the documentation.
+  \item Bison and Flex parser generator software.
+  \item Pdflatex for building the documentation.
   \item (optional) Gecode for constraint programming support.
 \end{itemize}
 
 Assume idp is unpacked in \code{idpdir}, you want to build in \code{builddir} (cannot be the same as \code{idpdir}) and install in \code{installdir}. Building and installing is then achieved by executing the following commands:
 \begin{lstlisting}
 cd <builddir>
-cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release"
+cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> 
+               -DCMAKE_BUILD_TYPE="Release"
 make -j 4
 make check
 make install
@@ -23,17 +30,19 @@ make install
 Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 
 \subsection{Running the software}
+\subsubsection{Batch mode}
 One-shot execution of a procedure \code{proc} with a set of files \code{files} is achieved by running
 \begin{lstlisting}
-idp -e "proc()" files
+runidp -e "proc()" files
 \end{lstlisting}
-Omitting the \code{-e} option results in execution of the main method.
+Omitting the \code{-e} option results in execution of the \code{main} method if any is available.
 
-An interactive interface using the set of files \code{files} is started with 
+\subsubsection{Interactive mode}
+An interactive session, with (optionally) a set of files \code{files}, is started with 
 \begin{lstlisting}
-idp -i files
+runidp files -i
 \end{lstlisting}
 
-Afterwards, help can be requested with the \code{help()} command. Auto-completion is available via the tab key, ctrl-r will search the command history.
-
-During an interactive session, it is possible to include additional files with the \code{parse} command.
+Afterwards, help can be requested with the \code{help()} command. 
+Auto-completion of available commands is available via the tab key.
+Additional files can be included with the \code{parse} command.

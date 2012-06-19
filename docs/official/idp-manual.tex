@@ -5,6 +5,10 @@
 
 \input{idp-latex}
 
+\newcommand{\globalspace}{idpglobal} %see common.cpp
+\newcommand{\stdspace}{stdspace} %see common.cpp
+\newcommand{\includecode}{\ensuremath{\#}include}
+
 \title{The \idp framework reference manual}
 \author{KU Leuven Knowledge Representation and Reasoning research group}
 \begin{document}
@@ -22,16 +26,12 @@
 
 \todo{everywhere in the text, replace dollar signs and \code{\{ tt ... \}} by \code{code \{ ... \}}}
 
-\section{Installing And Running}
 \input{installing_and_running}
 
-\section{Comments}
 \input{comments}
 
-\section{Include statements}
 \input{includes}
 
-\section{Namespaces}
 \input{namespaces}
 
 \section{Vocabularies}
