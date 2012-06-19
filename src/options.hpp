@@ -33,8 +33,7 @@ enum Format {
 
 enum StringType {
 	LANGUAGE,
-	SYMMETRYBREAKING,
-	VERBOSITIES
+	SYMMETRYBREAKING
 };
 
 enum IntType {
@@ -169,32 +168,6 @@ public:
 	virtual std::string printOption() const;
 };
 
-template<class EnumType, class ConcreteType>
-class SubSetEnumOption: public TypedOption<EnumType, ConcreteType> {
-private:
-	std::set<ConcreteType> allowedvalues_;
-	const std::set<ConcreteType>& getAllowedValues() const {
-		return allowedvalues_;
-	}
-
-public:
-	SubSetEnumOption(EnumType type, const std::string& name, const std::set<ConcreteType>& allowedvalues, PrintBehaviour visible)
-			: 	TypedOption<EnumType, ConcreteType>(type, name, visible),
-				allowedvalues_(allowedvalues) {
-	}
-
-	bool isAllowedValue(const ConcreteType& value) {
-		for(auto i=value.cbegin(); i!=value.cend(); ++i){
-			if(getAllowedValues().find(std::string(1, *i))==getAllowedValues().cend()){
-				return false;
-			}
-		}
-		return true;
-	}
-
-	virtual std::string printOption() const;
-};
-
 class Options;
 
 template<class EnumType, class ValueType>
@@ -207,8 +180,6 @@ protected:
 			std::vector<std::string>& option2name, PrintBehaviour visible);
 	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
 			std::vector<std::string>& option2name, PrintBehaviour visible);
-	void createSetOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
-				std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
 		for (auto i = _options.cbegin(); i != _options.cend(); ++i) {
@@ -339,7 +310,6 @@ public:
 
 	Language language() const;
 	SymmetryBreaking symmetryBreaking() const;
-	std::string verbosities() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>

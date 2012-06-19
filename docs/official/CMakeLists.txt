@@ -1,8 +1,19 @@
 include(${PROJECT_SOURCE_DIR}/cmake/UseLATEX.cmake)
 
-add_latex_document(idp-manual.tex INPUTS "idp-latex.tex" "installing_and_running.tex" "comments.tex" "includes.tex" "namespaces.tex" "vocabularies.tex" "theories.tex" "terms.tex" "queries.tex" "structures.tex" "procedures.tex" "options.tex" "idp2.tex" "errors.tex"  DEFAULT_PDF MANGLE_TARGET_NAMES)
-add_latex_document(fo-idp.tex INPUTS "idp-latex.tex" DEFAULT_PDF MANGLE_TARGET_NAMES)
+set(TEXFILES "")
+file(GLOB_RECURSE TEXFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.tex")
+file(GLOB_RECURSE TEXFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.png")
 
+set(TEXFILENAMES "")
+foreach(file ${TEXFILES})
+	GET_FILENAME_COMPONENT(filename ${file} NAME)
+	SET(TEXFILENAMES ${TEXFILENAMES} ${filename})
+endforeach(file)
+
+message(STATUS "Texfiles: ${TEXFILENAMES}")
+
+add_latex_document(idp-manual.tex INPUTS ${TEXFILENAMES}  DEFAULT_PDF MANGLE_TARGET_NAMES)
+add_latex_document(fo-idp.tex INPUTS ${TEXFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
 
 install(FILES
 	${PROJECT_BINARY_DIR}/docs/official/idp-manual.pdf
