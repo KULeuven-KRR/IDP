@@ -293,7 +293,6 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-std::cerr << "Folding varid " << termtranslator()->printTerm(*vit) << "\n";
 			if (termtranslator()->function(*vit) == NULL) {
 				CPTsBody* cprelation = termtranslator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
