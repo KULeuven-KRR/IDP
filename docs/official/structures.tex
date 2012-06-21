@@ -1,3 +1,4 @@
+\section{Structures}
 A (three-valued) structure with name \code{MyStruct} over a vocabulary \code{MyVoc} is declared by
 \begin{lstlisting}
 	structure MyStruct: MyVoc {
@@ -23,9 +24,9 @@ The syntax for a type enumeration is
 \begin{lstlisting}
 	MyType = { El_1; El_2; ... ; El_n }
 \end{lstlisting}
-where {\tt MyType} is the name of the enumerated type and {\tt El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. 
-Identifiers are shorthands for strings (without the quotes) and can be interchanged.
-\todo{Important: in the lua code, the identifiers cannot be used safely, only their string equivalent}
+where {\tt MyType} is the name of the enumerated type and \code{El\_1; El\_2; ... ; El\_n } are the names of the objects of that type. Names of objects can be (positive and negative) integers, strings, chars, compound domain elements, or identifiers that start with an upper- or lowercase letter. 
+Identifiers are shorthands for strings (without the quotes) and can be interchanged within \idp specifications. In lua-blocks, however, only the string variant should be used.
+
 If one type is a subtype of another, all elements of the subtype are added to the supertype also.  In the case all subtypes of a given type are specified, the supertype is derived to be the union of all elements of the subtypes.  If a type is not specified, all domain elements of that type that occur in a predicate or function interpretation (see below) are automatically added to that type.  
 
 
@@ -50,7 +51,7 @@ This notation makes it possible to state that a proposition (a predicate with no
 	true = { () }
 	false = { }
 \end{lstlisting}
-However, it might be easier to use \code{true} and \code{false} instead of \code{\{ () \}} and \code{\{\}}.
+However, we recommend using \code{true} and \code{false} instead of \code{\{ () \}} and \code{\{\}}.
 
 \subsubsection{Function Enumeration}
 The syntax for enumerating a function {\tt MyFunc} with $n$ arguments is 
@@ -76,7 +77,8 @@ Three-valued interpretations are given by either
 	\item enumerating the certainly true and the unknown tuples;
 	\item enumerating the unknown and the certainly false tuples.
 \end{itemize}
-To sepcify which tuples are enumerated, use \code{<ct>}, \code{<cf>} and \code{<u>}.  For example
+The third set of tuples can than be derived from the two that were given.
+To specify which tuples are enumerated, use \code{<ct>}, \code{<cf>} and \code{<u>}.  For example
 \begin{lstlisting}
 	P<ct> = { /* enumeration of the certainly true tuples of P */ }
 	P<u> = { /* enumeration of the unknown tuples of P */ }
@@ -87,7 +89,7 @@ The syntax
 \begin{lstlisting}
 	P = procedure MyProc
 \end{lstlisting}
-is used to interpret a predicate or function symbol \code{P} by a procedure \code{MyProc} (see below).  If \code{P} is an $n$-ary predicate, then \code{MyProc} should be an $n$-ary procedure that returns a boolean.  If \code{P} is an $n$-ary function, then \code{MyProc} should be and $n$-ary function that returns a number, string, or compound domain element.
+is used to interpret a predicate or function symbol \code{P} by a procedure \code{MyProc} (see below).  If \code{P} is an $n$-ary predicate, then \code{MyProc} should be an $n$-ary procedure that returns a boolean.  If \code{P} is an $n$-ary function, then \code{MyProc} should be and $n$-ary function that returns a number, string, or compound domain element (depending on the return type of \code{P}).
 
 
 \subsubsection{Shorthands}

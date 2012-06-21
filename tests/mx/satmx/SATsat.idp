@@ -6,34 +6,28 @@ procedure getExpectedAModel(){
 	Modelling SAT with IDP
 ***************************************/
 
-
 vocabulary V{
-type Atom
-type Clause
-type Truth
-T:Truth
-F:Truth
-PosIn(Atom,Clause) // atom occurs positively in clause
-NegIn(Atom,Clause) // atom occurs negatively in clause
-
- 
-F(Atom) : Truth
-
+	type Atom
+	type Clause
+	type Truth
+	T:Truth
+	F:Truth
+	PosIn(Atom,Clause) // atom occurs positively in clause
+	NegIn(Atom,Clause) // atom occurs negatively in clause
+	
+	F(Atom) : Truth
 }
 
 theory T : V { 
-! c: ? a: (PosIn(a,c) & F(a) = T) | (NegIn(a,c) & F(a) = F).
-
-
-
+	! c: ? a: (PosIn(a,c) & F(a) = T) | (NegIn(a,c) & F(a) = F).
 }
 
 structure S : V{ 
-Truth = {t;f}
-T = t
-F = f
-Atom = {1..3}
-Clause = {1..3}
-PosIn = { 1,1; 2,2 }
-NegIn = { 2,1; 3,2; 1,3; 3,3 }
+	Truth = {t;f}
+	T = t
+	F = f
+	Atom = {1..3}
+	Clause = {1..3}
+	PosIn = { 1,1; 2,2 }
+	NegIn = { 2,1; 3,2; 1,3; 3,3 }
 }

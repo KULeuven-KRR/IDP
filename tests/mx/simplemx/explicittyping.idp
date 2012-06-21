@@ -1,0 +1,17 @@
+procedure getExpectedNbOfModels(){
+	return 0
+}
+
+vocabulary V{
+	type G isa int
+	C:G
+	D:G
+}
+
+theory T : V { 
+	C~=D & G(C+D).
+}
+
+structure S : V{ 
+	G = {1..2}
+}

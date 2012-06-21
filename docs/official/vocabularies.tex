@@ -1,3 +1,4 @@
+\section{Vocabularies}
 A vocabulary with name {\tt MyVoc} is declared by
 \begin{lstlisting}
 	vocabulary MyVoc {
@@ -63,7 +64,8 @@ To include a type, predicate, or function from a previously declared vocabulary 
 		extern V::F[A,A:A]	//also possible: extern V::F/2:1
 	}
 \end{lstlisting}
-\todo{verwijder using en extern, zie meeting}
+
+\todo{verwijder using en extern, zie meeting. Het wordt extends, right?}
 
 In the example, explicitly including type \code{A} of vocabulary \code{V} in \code{W} is not needed, since types of included predicates or functions are automatically included themselves.  To include the whole vocabulary \code{V} in \code{W} at once, used
 \begin{lstlisting}

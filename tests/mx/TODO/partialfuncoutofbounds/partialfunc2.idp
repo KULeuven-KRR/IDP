@@ -20,4 +20,5 @@ procedure getExpectedNbOfModels(){
 		// 	!y: y=f(x) => P(y)
 		//, dus dit is ook voldaan als x geen beeld heeft onder f. 
 		//Naar analogie van de Woman(Spouse(John)) die betekent dat de spouse van John een vrouw is (zo die bestaat)
+		//MAAR: voorlopig wordt dit nog niet toegepast!, dus test even uit systeem gehaald. 
 }

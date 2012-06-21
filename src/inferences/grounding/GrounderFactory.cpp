@@ -52,6 +52,12 @@
 using namespace std;
 using namespace rel_ops;
 
+template<class T>
+void deleteDeep(T& object) {
+	object->recursiveDelete();
+	object = NULL;
+}
+
 GenType operator not(GenType orig) {
 	GenType result = GenType::CANMAKEFALSE;
 	switch (orig) {
@@ -71,18 +77,19 @@ int getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: 	_structure(data.partialstructure),
+		: 	_theory(data.theory), // FIXME clone should also be done in other creates except for Grounding.hpp
+			_minimizeterm(data.minimizeterm),
+			_vocabulary(data.partialstructure->vocabulary()),
+			_structure(data.partialstructure),
 			_symstructure(data.symbolicstructure),
 			_grounding(grounding),
 			_nbmodelsequivalent(nbModelsEquivalent) {
-
 	Assert(_symstructure != NULL);
 
 	// Create a symbolic structure if no such structure is given
 	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		clog << tabs() << "Using the following symbolic structure to ground:" << "\n";
 		clog << tabs() << toString(_symstructure) << "\n";
-
 	}
 }
 
@@ -171,6 +178,14 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 	}
 }
 
+template<class GroundTheory>
+Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory groundtheory) {
+	// FIXME check vocabulary of minimizeterm
+	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
+	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
+	return g.ground();
+}
+
 /**
  * Creates a grounder for the given theory. The grounding produced by that grounder
  * will be (partially) reduced with respect to the structure _structure of the GrounderFactory.
@@ -185,18 +200,12 @@ void GrounderFactory::DeeperContext(SIGN sign) {
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
-	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
-	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
-	g.ground(data.theory, data.theory->vocabulary());
-	return g.getTopGrounder();
+	return createGrounder(data, groundtheory);
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
-	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
-	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
-	g.ground(data.theory, data.theory->vocabulary());
-	return g.getTopGrounder();
+	return createGrounder(data, groundtheory);
 }
 
 /**
@@ -216,11 +225,8 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
-	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
-	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
-	g.ground(data.theory, data.theory->vocabulary());
-	auto grounder = g.getTopGrounder();
+	auto grounder = createGrounder(data, groundtheory);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
 }
@@ -232,68 +238,69 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
  return g.getTopGrounder();
  }*/
 
-Grounder* GrounderFactory::create(const Term* minimizeterm, const Vocabulary* vocabulary, const GroundInfo& data, AbstractGroundTheory* grounding) {
-	Assert(minimizeterm!=NULL);
+Grounder* GrounderFactory::ground() {
+	std::vector<Grounder*> grounders;
 
-	GrounderFactory g(data, grounding, data.nbModelsEquivalent);
+	allowskolemize = true;
 
-	OptimizationGrounder* optimgrounder;
-	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(minimizeterm, data.partialstructure)) {
-		g.ground(minimizeterm, vocabulary);
-		optimgrounder = new VariableOptimizationGrounder(grounding, g.getTermGrounder(), g.getContext());
-		optimgrounder->setOrig(minimizeterm);
-	} else {
-		switch (minimizeterm->type()) {
-		case TermType::AGG: {
-			auto term = dynamic_cast<const AggTerm*>(minimizeterm);
-			g.ground(term->set(), vocabulary);
-			optimgrounder = new AggregateOptimizationGrounder(grounding, term->function(), g.getSetGrounder(), g.getContext());
-			optimgrounder->setOrig(minimizeterm);
-			break;
-		}
-		case TermType::FUNC:
-		case TermType::VAR:
-		case TermType::DOM:
-			throw notyetimplemented("Optimization over non-aggregate terms without CP support.");
-		}
+	// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
+	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	if (_minimizeterm != NULL) {
+		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
 	}
-
-	Grounder* grounder = optimgrounder;
-	if (g.getTopGrounder() != NULL) {
-		grounder = new BoolGrounder(g.getGrounding(), { optimgrounder, g.getTopGrounder() }, SIGN::POS, true, g.getContext());
-	}
-	return grounder;
-}
-
-template<class T>
-void GrounderFactory::ground(T root, const Vocabulary* v) {
-	InitContext();
-	auto functheory = FormulaUtils::getFuncConstraints(root, v, getOption(BoolType::CPSUPPORT)); // FIXME prevent multiple addition of same func constraints (in other words, rework optimization)
-	descend(functheory);
-	auto savedgrounder = getTopGrounder();
-	delete (functheory);
-	Assert(dynamic_cast<BoolGrounder*>(savedgrounder)!=NULL);
 
 	InitContext();
-	descend(root);
-	if (_topgrounder != NULL) {
-		Assert(dynamic_cast<BoolGrounder*>(_topgrounder)!=NULL);
-		auto rootgr = dynamic_cast<BoolGrounder*>(_topgrounder);
-		Assert(rootgr->conjunctiveWithSign());
-		auto funcgr = dynamic_cast<BoolGrounder*>(savedgrounder);
-		Assert(funcgr->conjunctiveWithSign());
-		auto list = rootgr->getSubGrounders();
-		list.insert(list.end(), funcgr->getSubGrounders().cbegin(), funcgr->getSubGrounders().cend());
-		_topgrounder = new BoolGrounder(getGrounding(), list, SIGN::POS, true, getContext());
-	} else {
-		_topgrounder = savedgrounder;
-	}
-}
+	descend(_theory);
+	grounders.push_back(getTopGrounder());
 
-template<class T>
-void deleteDeep(T& object) {
-	object->recursiveDelete();
-	object = NULL;
+	if (_minimizeterm != NULL) {
+		OptimizationGrounder* optimgrounder;
+		if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(_minimizeterm, _structure)) {
+			InitContext();
+			descend(_minimizeterm);
+			optimgrounder = new VariableOptimizationGrounder(getGrounding(), getTermGrounder(), getContext());
+			optimgrounder->setOrig(_minimizeterm);
+			grounders.push_back(optimgrounder);
+		} else {
+			switch (_minimizeterm->type()) {
+			case TermType::AGG: {
+				auto term = dynamic_cast<const AggTerm*>(_minimizeterm);
+				if (term->function() == AggFunction::PROD) {
+					for (auto i = term->set()->getSubSets().cbegin(); i != term->set()->getSubSets().cend(); ++i) {
+						auto sort = (*i)->getTerm()->sort();
+						if (not SortUtils::isSubsort(sort, get(STDSORT::NATSORT)) || _structure->inter(sort)->contains(createDomElem(0))) {
+							throw notyetimplemented("Minimization over a product aggregate with negative or zero weights");
+						}
+					}
+				}
+				InitContext();
+				descend(term->set());
+				optimgrounder = new AggregateOptimizationGrounder(getGrounding(), term->function(), getSetGrounder(), getContext());
+				optimgrounder->setOrig(_minimizeterm);
+				grounders.push_back(optimgrounder);
+				break;
+			}
+			case TermType::FUNC:
+			case TermType::VAR:
+			case TermType::DOM:
+				throw notyetimplemented("Optimization over non-aggregate terms without CP support.");
+			}
+		}
+	}
+
+	allowskolemize = false;
+	for (auto i = funcconstraints.cbegin(); i != funcconstraints.cend(); ++i) {
+		InitContext();
+		descend(i->second);
+		grounders.push_back(getTopGrounder());
+	}
+	allowskolemize = true;
+
+	if (grounders.size() == 1) {
+		return grounders.front();
+	}
+	InitContext();
+	return new BoolGrounder(getGrounding(), grounders, SIGN::POS, true, getContext());
 }
 
 /**
@@ -338,28 +345,49 @@ void GrounderFactory::descend(T child) {
 
 void GrounderFactory::visit(const Theory* theory) {
 	_context._conjPathUntilNode = true;
-	auto tmptheory = theory->clone();
 
 	// TODO experiment with:
-	//tmptheory = FormulaUtils::skolemize(tmptheory);
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
 	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	const auto components = tmptheory->components(); // NOTE: primitive reorder present: definitions first
+	const auto components = theory->components(); // NOTE: primitive reorder present: definitions first
 	// NOTE: currently, definitions first is important for good lazy grounding
-	// TODO Order components the components to optimize the grounding process
+	// TODO Order the components to optimize the grounding process
 
+	auto newtheory = theory;
 	// Create grounders for all components
-	std::vector<Grounder*> children;
+/*	// Skolemization:
+	auto newtheory = new Theory("", _vocabulary, theory->pi());
 	for (auto i = components.cbegin(); i < components.cend(); ++i) {
+		auto component = *i;
+
+
+		auto formula = dynamic_cast<Formula*>(*i);
+		// TODO add definitions etc!
+		// Can we handle subformula  directly if we store the parent quantifiers?
+		if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+			formula = formula->clone();
+			component = FormulaUtils::skolemize(formula, _vocabulary);
+			FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+		}
+
+		newtheory->add(component);
+	}
+
+// TODO incorrect:
+	newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);*/
+
+	std::vector<Grounder*> children;
+	const auto components2 = newtheory->components(); // NOTE: primitive reorder present: definitions first
+	for (auto i = components2.cbegin(); i < components2.cend(); ++i) {
 		InitContext();
 		descend(*i);
 		children.push_back(getTopGrounder());
 	}
-	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 
-	// Clean up: delete the theory clone.
-	deleteDeep(tmptheory);
+	// TODO deletion of newtheory
+
+	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
 
 template<class T>

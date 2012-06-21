@@ -126,20 +126,19 @@ std::string str(Format choice) {
 }
 
 // TODO add descriptions to options
-
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
 	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
 	BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); //show? bugged: when grounding: write out the information about which string belongs to which cnf number
+	BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", {false}, false, _option2name, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 	BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::GROUNDLAZILY, "groundlazily", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+	BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", {false}, false, _option2name, PrintBehaviour::DONOTPRINT); // TODO enable
 	BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, _option2name, PrintBehaviour::PRINT);
 	IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 4, _option2name, PrintBehaviour::PRINT);
@@ -157,8 +156,8 @@ Options::Options() {
 	IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
 	StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
-	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE), _option2name,
-			PrintBehaviour::PRINT);
+	StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
+			_option2name, PrintBehaviour::PRINT);
 }
 
 template<class EnumType, class ValueType>
@@ -189,6 +188,7 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 		option2name[type] = name;
 	}
 	options[type] = newoption;
+
 }
 
 template<class EnumType, class ValueType>

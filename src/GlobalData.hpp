@@ -45,7 +45,7 @@ private:
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
 
-	std::vector<std::string> _errors;
+	std::vector<std::string> _errors, _warnings;
 	std::set<FILE*> _openfiles;
 
 	std::vector<TerminateMonitor*> _monitors;
@@ -122,11 +122,21 @@ public:
 	const std::vector<std::string>& getErrors() const {
 		return _errors;
 	}
-	void clearErrors(){
-		_errors.clear();
-	}
 	unsigned int getErrorCount() const {
 		return _errors.size();
+	}
+	void notifyOfWarning(const std::string& errormessage) {
+		_warnings.push_back(errormessage);
+	}
+	const std::vector<std::string>& getWarnings() const {
+		return _warnings;
+	}
+	unsigned int getWarningCount() const {
+		return _warnings.size();
+	}
+	void clearStats(){
+		_errors.clear();
+		_warnings.clear();
 	}
 
 	FILE* openFile(const char* filename, const char* mode);

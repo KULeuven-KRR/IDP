@@ -112,7 +112,7 @@ GroundTerm FuncTermGrounder::run() const {
 	auto varid = _termtranslator->translate(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
-		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
+		clog << tabs() << "Result = var" << _termtranslator->printTerm(varid) << "\n";
 	}
 	return GroundTerm(varid);
 }
@@ -145,12 +145,15 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
 			int min, max;
-			if (_type == SumType::ST_PLUS) {
+			switch(_type){
+			case SumType::ST_PLUS:
 				min = leftmin + rightmin;
 				max = leftmax + rightmax;
-			} else if (_type == SumType::ST_MINUS) {
+				break;
+			case SumType::ST_MINUS:
 				min = leftmin - rightmax;
 				max = leftmax - rightmin;
+				break;
 			}
 			if (max < min) {
 				swap(min, max);
@@ -165,10 +168,13 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 					int leftvalue = (*leftit)->value()._int;
 					int rightvalue = (*rightit)->value()._int;
 					int newvalue;
-					if (_type == SumType::ST_PLUS) {
+					switch(_type){
+					case SumType::ST_PLUS:
 						newvalue = leftvalue + rightvalue;
-					} else if (_type == SumType::ST_MINUS) {
+						break;
+					case SumType::ST_MINUS:
 						newvalue = leftvalue - rightvalue;
+						break;
 					}
 					newdomain->add(createDomElem(newvalue));
 				}
@@ -320,8 +326,7 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	case SUM:
 		return new CPWSumTerm(varids, intweightlist(varids.size(),1));
 	default:
-		notyetimplemented("No CP support for aggregate functions other that sum.");
-		return NULL;
+		throw IdpException("Invalid code path.");
 	}
 }
 

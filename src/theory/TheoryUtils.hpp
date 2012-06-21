@@ -17,13 +17,12 @@
 #include <typeinfo>
 #include <iostream>
 
-#include "transformations/AddFuncConstraints.hpp"
-
 class Definition;
 class SetExpr;
 class PFSymbol;
 class PredForm;
 class BoolForm;
+class FuncTerm;
 class Variable;
 class AbstractStructure;
 class AbstractTheory;
@@ -32,6 +31,10 @@ class Vocabulary;
 class Term;
 class AggForm;
 class GroundTranslator;
+class Rule;
+class Function;
+class Theory;
+class TheoryComponent;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -121,15 +124,13 @@ Formula* calculateArithmetic(Formula* f) ;
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
+/** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
+Theory* replaceWithNestedTseitins(Theory* theory);
+
 /** Recursively rewrite all EqChainForms in the given formula to BoolForms */
 Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
-
-/**
- * Removes all functions occurring in literals of defined symbols and replace them by new literals which are equivalent.
- */
-AbstractTheory* removeFunctionSymbolsFromDefs(AbstractTheory*, AbstractStructure*);
 
 Formula* skolemize(Formula* t, Vocabulary* v);
 Theory* skolemize(Theory* t);
@@ -163,11 +164,13 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, b
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
 
-/** Returns a new theory containing the func constraints for all functions. */
-template<class T>
-Theory* getFuncConstraints(T t, const Vocabulary* v, bool cpsupport) {
-	return transform<AddFuncConstraints, Theory*>(t, v, cpsupport);
-}
+/**
+ * Given a vocabulary and a map of function symbols to their function constraint, add
+ * a new function constraints for all functions not already occurring in the list.
+ */
+void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
+void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
+void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);

@@ -133,7 +133,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	}
 	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe, atom);
 
-	if (not inverse) {
+	if (not inverse || vars.size() == 0) {
 		return tablegenerator;
 	}
 
@@ -153,15 +153,16 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 			}
 		}
 	}
-	if (univgenerator == NULL) { //No output
-		return tablegenerator;
-	}
+
 	InstGenerator* outofboundsgenerator = univgenerator;
+	if (outofboundsgenerator == NULL) { //no output
+		Assert(vars.size()>0);
+		outofboundsgenerator = new FullGenerator(); //We know vars.size > 0, thus we will at least do one "sortchecker" and this fullgenerator is safe.
+	}
+
 	for (size_t i = 0; i < vars.size(); i++) {
-		if (pattern[i] == Pattern::OUTPUT) {
-			auto sortchecker = new SortChecker(structure->inter(predsorts[i])->internTable(), vars[i]);
-			outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
-		}
+		auto sortchecker = new SortChecker(structure->inter(predsorts[i])->internTable(), vars[i]);
+		outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
 	}
 
 	std::vector<InstGenerator*> generators = { tablegenerator, outofboundsgenerator };

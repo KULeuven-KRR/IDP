@@ -239,13 +239,13 @@ void registerHandler(Handler f, SIGNAL s) {
 
 void monitorShutdown(void*) {
 	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 1000) {
+	while (not hasStopped && monitoringtime < 10) { // Wait max 10 seconds
 #ifdef __MINGW32__
-		Sleep(100);
+		Sleep(1000);
 #else
-		usleep(100000); // 100 millisec
+		usleep(1000000);
 #endif
-		monitoringtime += 100;
+		monitoringtime += 1;
 	}
 	if (not hasStopped) {
 		// TODO does not work in windows
@@ -293,7 +293,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	setStop(true);
 	signalhandling.join();
 
-	if (Error::nr_of_errors() > 0) {
+	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15) {
 		cerr << "First critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
 		cerr << "\t" << *getGlobal()->getErrors().cbegin();
 	}
@@ -331,7 +331,7 @@ void interactive() {
 			command = "help()";
 		}
 		executeProcedure(command);
-		getGlobal()->clearErrors();
+		getGlobal()->clearStats();
 	}
 }
 #endif
@@ -415,6 +415,7 @@ int run(int argc, char* argv[]) {
 	}
 
 	if (readfromstdin) {
+		Warning::readingfromstdin();
 		parsestdin();
 	}
 	if (cloptions._exec == "") {

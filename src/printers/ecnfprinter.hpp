@@ -158,7 +158,7 @@ public:
 	}
 
 	void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Warning, fixpoint definitions are not printed yet.");
+		throw notyetimplemented("Printing ground fixpoint definitions");
 	}
 
 	void openDefinition(int defid) {

@@ -92,13 +92,30 @@ Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
 
 void Grounder::toplevelRun() const {
 	ConjOrDisj formula;
-	run(formula);
+	wrapRun(formula);
 	addToGrounding(getGrounding(), formula);
 	getGrounding()->closeTheory(); // FIXME should move or be reentrant, as multiple grounders write to the same theory!
 
 	addToFullGroundSize(getMaxGroundSize());
 	if (verbosity() > 0) {
 		clog << "Already grounded " << toString(groundedAtoms()) <<" for a full grounding of " << toString(getMaxGroundSize()) << "\n";
+	}
+}
+
+#include <inferences/grounding/grounders/FormulaGrounders.hpp>
+
+// TODO unfinished code
+void Grounder::wrapRun(ConjOrDisj& formula) const{
+	auto start = clock();
+//	auto set = getGlobal()->getOptions()->verbosities();
+	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
+	auto printtimes = false;
+	if(printtimes){
+		cerr <<"Grounding formula " <<toString(this) <<"\n";
+	}
+	run(formula);
+	if(printtimes){
+		cerr <<"Grounding it took " <<(clock()-start)/1000 <<"ms\n";
 	}
 }
 

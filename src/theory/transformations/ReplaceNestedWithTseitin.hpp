@@ -18,15 +18,16 @@
 
 /**
  * Use:
- * 		first step towards real treatment of functions without grounding them:
- * 			reduce the grounding of definitions etc by replacing preds with functions by new smaller symbols
- * 			and using them everywhere.
- * 			Then adding an equivalence with the original pred, which is only necessary if it occurs anywhere else.
+ * First step towards real treatment of functions without grounding them:
+ * 	reduce the grounding of definitions etc by replacing preds with functions by new smaller symbols
+ * 	and using them everywhere.
+ * 	Then adding an equivalence with the original pred, which can be watched on whether it really occurs.
  */
 struct ReducedPF {
 	PredForm *_origpf, *_newpf;
 	std::vector<Term*> _arglist; // NULL if remaining, otherwise a varfree term
 	std::vector<Term*> _remainingargs;
+	std::set<Variable*> _quantvars;
 
 	ReducedPF(PredForm* origpf)
 			: 	_origpf(origpf),
@@ -42,25 +43,44 @@ private:
 	ReducedPF* _reduced;
 
 public:
-	ConstructNewReducedForm()
+	ConstructNewReducedForm(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary)
 			: 	_cantransform(false),
 				_reduced(NULL) {
-
+		execute(pf, list, vocabulary);
 	}
+
+	bool isReducible() const {
+		cerr <<"Can be reduced?" <<(_reduced != NULL?"yes":"no") <<"\n";
+		return _reduced != NULL;
+	}
+
+	ReducedPF* getResult() {
+		Assert(isReducible());
+		return _reduced;
+	}
+
+private:
 	void execute(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary) {
-		_reduced = new ReducedPF(pf);
+		cerr <<"Reducing " <<toString(pf) <<" to ";
+		_reduced = NULL;
+
 		if (pf->symbol()->builtin()) { // TODO handle builtins?
-			delete (_reduced);
-			_reduced = NULL;
+			cerr <<"itself.\n";
 			return;
 		}
+
+		_reduced = new ReducedPF(pf);
 		_cantransform = true;
+
 		pf->accept(this);
-		if (not _cantransform) {
+
+		if (not _cantransform || _reduced->_remainingargs.size()==pf->args().size()) {
 			delete (_reduced);
 			_reduced = NULL;
+			cerr <<"itself.\n";
 			return;
 		}
+
 		std::vector<Sort*> sorts;
 		for (auto i = _reduced->_remainingargs.cbegin(); i < _reduced->_remainingargs.cend(); ++i) {
 			sorts.push_back((*i)->sort());
@@ -83,20 +103,14 @@ public:
 			}
 		}
 		if (identicalfound) {
+			cerr <<toString(_reduced->_newpf) <<".\n";
 			return;
 		}
+
 		auto newsymbol = new Predicate(sorts);
 		vocabulary->add(newsymbol);
 		_reduced->_newpf = new PredForm(SIGN::POS, newsymbol, _reduced->_remainingargs, pf->pi());
-	}
-
-	bool isReducable() const {
-		return _reduced != NULL;
-	}
-
-	ReducedPF* getResult() {
-		Assert(isReducable());
-		return _reduced;
+		cerr <<toString(_reduced->_newpf) <<".\n";
 	}
 
 	virtual void visit(const PredForm* pf) {
@@ -116,7 +130,8 @@ public:
 		}
 		Assert(_reduced->_arglist.size() == pf->args().size());
 	}
-	virtual void visit(const VarTerm*) {
+	virtual void visit(const VarTerm* vt) {
+		_reduced->_quantvars.insert(vt->var());
 		_varfreeterm = false;
 	}
 	virtual void visit(const FuncTerm* f) {
@@ -139,89 +154,94 @@ public:
 class ReplaceNestedWithTseitinTerm: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	bool _visiting;
 	Vocabulary* _vocabulary;
-	std::map<PFSymbol*, std::vector<ReducedPF*> > _symbol2reduction;
+	std::map<PFSymbol*, std::set<ReducedPF*> > _symbol2reduction;
+	bool _indefbody;
+	bool firstpass;
 
 public:
-	// FIXME clone voc and structure before call?
 	// NOTE: changes vocabulary and structure
-	template<typename T>
-	T execute(T t, AbstractStructure* s) {
-		_visiting = false;
-		Assert(s->vocabulary()==t->vocabulary());
-		_vocabulary = s->vocabulary();
+	Theory* execute(Theory* theory) {
+		_vocabulary = theory->vocabulary();
+		firstpass = true;
+		auto t = theory->accept(this);
+		firstpass = false;
 		auto result = t->accept(this);
-		s->changeVocabulary(_vocabulary);
+		for (auto i = _symbol2reduction.cbegin(); i != _symbol2reduction.cend(); ++i) {
+			for (auto j = i->second.cbegin(); j != i->second.cend(); ++j) {
+				// FIXME are they all UNIV quants?
+				auto newform = new QuantForm(SIGN::POS, QUANT::UNIV, (*j)->_quantvars,
+						new EquivForm(SIGN::POS, (*j)->_newpf, (*j)->_origpf, FormulaParseInfo()), FormulaParseInfo());
+				result->add(newform);
+			}
+		}
 		return result;
 	}
 protected:
 	Formula* visit(PredForm* pf) {
-		if (not _visiting) {
-			return TheoryMutatingVisitor::visit(pf);
-		}
-		auto listit = _symbol2reduction.find(pf->symbol());
-		if (listit == _symbol2reduction.cend()) {
-			return pf;
-		}
-		Assert(listit->second.size() > 0);
-		std::vector<Formula*> subforms;
-		for (auto i = listit->second.cbegin(); i < listit->second.cend(); ++i) {
-			Assert((*i)->_arglist.size() == pf->args().size());
-			std::vector<Term*> arglist;
-			std::vector<Formula*> equalities;
-			for (uint j = 0; j < pf->args().size(); ++j) {
-				if ((*i)->_arglist[j] == NULL) {
-					arglist.push_back(pf->args()[j]);
-				} else {
-					equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->_arglist[j], pf->args()[j] }, pf->pi()));
-				}
+		if(firstpass){
+			auto& reducedlist = _symbol2reduction[pf->symbol()];
+			ConstructNewReducedForm t(pf, reducedlist, _vocabulary);
+			if (t.isReducible()) {
+				reducedlist.insert(t.getResult());
+				return t.getResult()->_newpf;
+			} else {
+				return pf;
 			}
-			equalities.push_back(new PredForm(pf->sign(), (*i)->_newpf->symbol(), arglist, pf->pi()));
-			subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
+		}else{
+			auto listit = _symbol2reduction[pf->symbol()];
+			if (listit.size()==0) {
+				return pf;
+			}
+			//Assert(listit->second.size() > 0);
+			std::vector<Formula*> subforms;
+			for (auto i = listit.cbegin(); i != listit.cend(); ++i) {
+				Assert((*i)->_arglist.size() == pf->args().size());
+				std::vector<Term*> arglist;
+				std::vector<Formula*> equalities;
+				for (uint j = 0; j < pf->args().size(); ++j) {
+					if ((*i)->_arglist[j] == NULL) {
+						arglist.push_back(pf->args()[j]);
+					} else {
+						equalities.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, pf->args()[j]->sort()), { (*i)->_arglist[j], pf->args()[j] }, pf->pi()));
+					}
+				}
+				equalities.push_back(new PredForm(pf->sign(), (*i)->_newpf->symbol(), arglist, pf->pi()));
+				subforms.push_back(new BoolForm(SIGN::POS, true, equalities, pf->pi()));
+			}
+			if(not _indefbody){
+				subforms.push_back(pf);
+			}
+			return new BoolForm(SIGN::POS, false, subforms, pf->pi());
 		}
-		return new BoolForm(SIGN::POS, false, subforms, pf->pi());
 	}
 
 	Definition* visit(Definition* d) {
+		auto saved = _symbol2reduction;
+		_symbol2reduction.clear();
+
 		/**
 		 * Go over all heads, store in a map from symbol to heads
 		 * Go over all literals P(x,y,z) in all bodies
-		 * 		If P is defined and there is a head P(x2,y2,z2) in the map
-		 * 			replace P(x,y,z) with P(x,y,z) | (x=x2 & y=y2 & z=z2 & P(x2, y2, z2))
-		 * 				where any equality is dropped if it is still a var or a domain element
+		 *    If P is defined and there is a head P(x2,y2,z2) in the map
+		 *    replace P(x,y,z) with P(x,y,z) | (x=x2 & y=y2 & z=z2 & P(x2, y2, z2))
+		 *    where any equality is dropped if it is still a var or a domain element
 		 */
-		std::set<ReducedPF*> reducedlist;
-		std::vector<PredForm*> newheads; // NOTE: in order of rule iteration!
 		for (auto i = d->rules().cbegin(); i < d->rules().cend(); ++i) {
-			ConstructNewReducedForm t;
-			t.execute((*i)->head(), reducedlist, _vocabulary);
-			if (t.isReducable()) {
-				reducedlist.insert(t.getResult());
-				newheads.push_back(t.getResult()->_newpf);
-			} else {
-				newheads.push_back((*i)->head());
-			}
+			(*i)->head()->accept(this);
 		}
 
-		for (auto i = reducedlist.cbegin(); i != reducedlist.cend(); ++i) {
-			_symbol2reduction[(*i)->_origpf->symbol()].push_back(*i);
-		}
-
-		auto newdef = new Definition();
-		int i = 0;
+		_indefbody = true;
 		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
-			_visiting = true;
 			auto newbody = (*j)->body()->accept(this);
-			_visiting = false;
-			newdef->add(new Rule((*j)->quantVars(), newheads[i], newbody, (*j)->pi()));
-			i++;
 		}
-		auto result = newdef->clone();
-		delete (d);
-		// FIXME also add equivalences!!!
-		return result;
+		_indefbody = false;
+
+		_symbol2reduction.insert(saved.cbegin(), saved.cend());
+
+		return d;
 	}
+
 };
 
 #endif /* REPLACENESTEDWITHTSEITIN_HPP_ */

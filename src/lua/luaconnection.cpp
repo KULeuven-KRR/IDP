@@ -520,7 +520,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
 		default:
-			throw notyetimplemented("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
+			throw IdpException("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
 		break;
 	}
@@ -1320,7 +1320,7 @@ int namespaceIndex(lua_State* L) {
 	if (term) {
 		return convertToLua(L, InternalArgument(term));
 	}
-	throw notyetimplemented("Some element could not be transformed into a lua object.");
+	throw IdpException("Some element could not be transformed into a lua object.");
 }
 
 SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {

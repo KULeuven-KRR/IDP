@@ -1503,7 +1503,9 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 }
 
 void Insert::negate(Formula* f) const {
-	f->negate();
+	if(f!=NULL){
+		f->negate();
+	}
 }
 
 Formula* Insert::eqchain(CompType c, Formula* f, Term* t, YYLTYPE) const {

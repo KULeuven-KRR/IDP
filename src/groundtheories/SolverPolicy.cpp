@@ -170,7 +170,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	auto newrhs = rhs;
 	switch (type) {
 	case TsType::RULE:
-		Assert(false);
+		throw IdpException("Invalid code path");
 		break;
 	case TsType::IMPL:
 		impltype = MinisatID::ImplicationType::IMPLIES;

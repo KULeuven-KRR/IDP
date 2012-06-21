@@ -1305,6 +1305,11 @@ Function* Function::resolve(const vector<Sort*>& ambigsorts) {
 	}
 }
 
+/**
+ * FIXME: preferably, this is a const method which return a set of const functions
+ * BUT functions are often used non const as map keys. As it is impossible to find using const Functions without a const_cast,
+ * we prefer having a bit of ugly code here and the const cast once in a while when the user possesses a const function himself.
+ */
 set<Function*> Function::nonbuiltins() {
 	if (_overfuncgenerator) {
 		return _overfuncgenerator->nonbuiltins();
@@ -1712,6 +1717,13 @@ Vocabulary::~Vocabulary() {
 	}
 }
 
+template<class List>
+void updateStructures(Vocabulary* v, const List& structures){
+	for(auto i=structures.cbegin(); i!=structures.cend(); ++i){
+		(*i)->changeVocabulary(v);
+	}
+}
+
 void Vocabulary::add(Sort* s) {
 	if (contains(s)) {
 		return;
@@ -1720,6 +1732,7 @@ void Vocabulary::add(Sort* s) {
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
 	add(s->pred());
+	updateStructures(this, structures);
 }
 
 // TODO cleaner?
@@ -1752,6 +1765,7 @@ void Vocabulary::add(Predicate* p) {
 		add(*it);
 	}
 	p->addVocabulary(this);
+	updateStructures(this, structures);
 }
 
 void Vocabulary::add(Function* f) {
@@ -1770,6 +1784,7 @@ void Vocabulary::add(Function* f) {
 		add(*it);
 	}
 	f->addVocabulary(this);
+	updateStructures(this, structures);
 }
 
 void Vocabulary::add(Vocabulary* v) {
