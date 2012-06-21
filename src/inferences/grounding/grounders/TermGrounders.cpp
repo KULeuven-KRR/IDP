@@ -331,35 +331,32 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 }
 
 GroundTerm AggTermGrounder::run() const {
+	// Note: This grounder should only be used when the aggregate can be computed now, or when the aggregate is eligible for CPsupport!
 	if (verbosity() > 2) {
 		printOrig();
 		pushtab();
 	}
-	auto setnr = _setgrounder->run();
+	auto setnr = _setgrounder->runAndRewriteUnknowns();
 	auto tsset = _translator->groundset(setnr);
-	Assert(tsset.literals().empty());
+
+	auto value = applyAgg(_type, tsset.trueweights());
+	auto domelem = createDomElem(value);
 
 	if (not tsset.varids().empty()) {
-		//Note: When the aggregate is not computable (its set is three-valued), it should've been rewritten into an AggForm!
-		// Only when grounding with cpsupport it is possible that we end up here.
-		Assert(getOption(BoolType::CPSUPPORT) && tsset.trueweights().empty());
-
-		auto sumterm = createCPAggTerm(_type, tsset.varids());
-		auto varid = _termtranslator->translate(sumterm, getDomain());
-
+		auto varids = tsset.varids();
+		varids.push_back(_termtranslator->translate(domelem));
+		auto cpaggterm = createCPAggTerm(_type, varids);
+		auto varid = _termtranslator->translate(cpaggterm, getDomain());
 		if (verbosity() > 2) {
 			poptab();
 			clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 		}
 		return GroundTerm(varid);
+	} else {
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Result = " << toString(domelem) << "\n";
+		}
+		return GroundTerm(domelem);
 	}
-
-	//Note: This only happens when the set is two-valued, and the aggregate is computable (otherwise this term would've been unnested and graphed to an AggForm).
-	auto value = applyAgg(_type, tsset.trueweights());
-	auto domelem = createDomElem(value);
-	if (verbosity() > 2) {
-		poptab();
-		clog << tabs() << "Result = " << toString(domelem) << "\n";
-	}
-	return GroundTerm(domelem);
 }
