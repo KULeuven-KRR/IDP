@@ -35,7 +35,7 @@ private:
 public:
 	// @parameter dom: the sort of the position the term occurs in
 	TermGrounder(SortTable* dom = NULL)
-			: _domain(dom) {
+			: _domain(dom), _origterm(NULL) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
