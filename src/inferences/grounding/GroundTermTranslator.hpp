@@ -60,7 +60,7 @@ public:
 		return _varid2function[varid];
 	}
 	const std::vector<GroundTerm>& args(const VarId& varid) const {
-		return _varid2args[varid];
+		return _varid2args.at(varid);
 	}
 	CPTsBody* cprelation(const VarId& varid) const {
 		return _varid2cprelation.find(varid)->second;
