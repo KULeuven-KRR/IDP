@@ -81,6 +81,14 @@ struct GroundInfo {
 	}
 };
 
+// NOTE: creates generators, which do a check on infinite grounding
+struct GeneratorData { // NOTE: all have the same order!
+	std::vector<SortTable*> tables;
+	std::vector<Variable*> fovars, quantfovars;
+	std::vector<Pattern> pattern;
+	std::vector<const DomElemContainer*> containers;
+};
+
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
@@ -134,16 +142,10 @@ private:
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
-	// NOTE: creates generators, which do a check on infinite grounding
-	struct GeneratorData { // NOTE: all have the same order!
-		std::vector<SortTable*> tables;
-		std::vector<Variable*> fovars, quantfovars;
-		std::vector<Pattern> pattern;
-		std::vector<const DomElemContainer*> containers;
-	};
 	GeneratorData getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars);
 	InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data);
 	InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data);
+	PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 

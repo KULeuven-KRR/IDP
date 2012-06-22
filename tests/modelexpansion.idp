@@ -10,6 +10,7 @@ procedure mxlazy(){
 	stdoptions.groundwithbounds = false
 	stdoptions.groundlazily = true
 	stdoptions.tseitindelay = true
+	// NOTE: never enable delaying here which depends on well-founded definitions!
 	stdoptions.timeout = 5
 	return run()
 }

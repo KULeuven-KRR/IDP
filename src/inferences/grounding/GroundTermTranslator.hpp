@@ -78,6 +78,9 @@ public:
 	const Function* getFunction(SymbolOffset offset) const {
 		return _offset2function[offset];
 	}
+	bool hasFunction(Function* function) const{
+		return _function2offset.find(function)!=_function2offset.cend();
+	}
 
 	std::string printTerm(const VarId&) const;
 };

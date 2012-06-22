@@ -28,7 +28,7 @@ VarId GroundTermTranslator::translate(SymbolOffset offset, const vector<GroundTe
 }
 
 VarId GroundTermTranslator::translate(Function* function, const vector<GroundTerm>& args) {
-	SymbolOffset offset = addFunction(function);
+	auto offset = addFunction(function);
 	return translate(offset, args);
 }
 
@@ -68,7 +68,7 @@ VarId GroundTermTranslator::nextNumber() {
 }
 
 SymbolOffset GroundTermTranslator::addFunction(Function* func) {
-	map<Function*, SymbolOffset>::const_iterator found = _function2offset.find(func);
+	auto found = _function2offset.find(func);
 	if (found != _function2offset.cend()) {
 		// Simply return number when function is already known
 		return found->second;

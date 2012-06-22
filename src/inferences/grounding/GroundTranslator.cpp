@@ -12,12 +12,14 @@
 #include "IncludeComponents.hpp"
 #include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
+#include "utils/CPUtils.hpp"
 
 using namespace std;
 
-GroundTranslator::GroundTranslator()
+GroundTranslator::GroundTranslator(Vocabulary* vocabulary)
 		: 	atomtype(1, AtomType::LONETSEITIN),
-			_sets(1) {
+			_sets(1),
+			_vocabulary(vocabulary){
 	atom2Tuple.push_back(NULL);
 	atom2TsBody.push_back(tspair { 0, (TsBody*) NULL });
 }
@@ -72,6 +74,12 @@ int GroundTranslator::getSymbol(PFSymbol* pfs) const {
 }
 
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
+	if(getOption(CPSUPPORT)){
+		auto function = dynamic_cast<Function*>(pfs);
+		if(function!=NULL && CPSupport::eligibleForCP(function, _vocabulary)){
+			throw IdpException("Invalid code path");
+		}
+	}
 	auto n = getSymbol(pfs);
 	if (n == -1) {
 		symbols.push_back(SymbolInfo(pfs));
@@ -146,7 +154,6 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 #endif
 	grounders.push_back(grounder);
 
-	// TODO in this way, we will add func constraints for all functions, might not be necessary!
 	newsymbols.push(symbolID); // NOTE: For defined functions, should add the func constraint anyway, because it is not guaranteed to have a model!
 }
 
