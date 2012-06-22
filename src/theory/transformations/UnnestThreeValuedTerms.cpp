@@ -14,61 +14,73 @@
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
+using namespace CPSupport;
 
 bool UnnestThreeValuedTerms::shouldMove(Term* t) {
-	if (getAllowedToUnnest()) {
-		switch (t->type()) {
-		case TermType::FUNC: {
-			auto ft = dynamic_cast<FuncTerm*>(t);
-			if (_structure->inter(ft->function())->approxTwoValued()) {
-				return false;
-			}
-			if (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(ft, _vocabulary)) {
-				return false;
-			}
-			return true;
-		}
-		case TermType::AGG: {
-			auto at = dynamic_cast<AggTerm*>(t);
-			if (SetUtils::approxTwoValued(at->set(), _structure)) {
-				return false;
-			}
-			if (_cpsupport and getAllowedToLeave() and CPSupport::eligibleForCP(at, _structure)) {
-				return false;
-			}
-			return true;
-		}
-		case TermType::VAR:
-		case TermType::DOM:
-			break;
-		}
+	if (not isAllowedToUnnest()) {
+		return false;
 	}
-	return false;
+
+	switch (t->type()) {
+	case TermType::FUNC: {
+		auto ft = dynamic_cast<FuncTerm*>(t);
+		if (_structure->inter(ft->function())->approxTwoValued()) {
+			return false;
+		}
+		if (_cpsupport and nestingIsAllowed() and eligibleForCP(ft, _vocabulary)) {
+			return false;
+		}
+		return true;
+	}
+	case TermType::AGG: {
+		auto at = dynamic_cast<AggTerm*>(t);
+		if (SetUtils::approxTwoValued(at->set(), _structure)) {
+			return false;
+		}
+		if (_cpsupport and nestingIsAllowed() and eligibleForCP(at, _structure)) {
+			return false;
+		}
+		return true;
+	}
+	case TermType::VAR:
+	case TermType::DOM:
+		return false;
+	}
 }
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
-	auto saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(predform, _vocabulary));
-	auto newf = specialTraverse(predform);
-	setAllowedToLeave(saveAllowedToLeave);
+	auto saveAllowedToLeave = nestingIsAllowed();
+	setNestingIsAllowed(_cpsupport and eligibleForCP(predform, _vocabulary));
+
+	auto newf = unnest(predform);
+
+	setNestingIsAllowed(saveAllowedToLeave);
+
 	return doRewrite(newf);
 }
 
 Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
-	bool savemovecontext = getAllowedToUnnest();
-	bool saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(t, _structure));
+	auto savemovecontext = isAllowedToUnnest();
+
+	auto saveAllowedToLeave = nestingIsAllowed();
+	setNestingIsAllowed(_cpsupport and eligibleForCP(t, _structure));
+
 	auto result = traverse(t);
+
+	setNestingIsAllowed(saveAllowedToLeave);
+
 	setAllowedToUnnest(savemovecontext);
-	setAllowedToLeave(saveAllowedToLeave);
+
 	return doMove(result);
 }
 
 Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
-	auto saveAllowedToLeave = getAllowedToLeave();
-	setAllowedToLeave(_cpsupport and CPSupport::eligibleForCP(rule->head(), _vocabulary));
+	auto saveAllowedToLeave = nestingIsAllowed();
+	setNestingIsAllowed(_cpsupport and eligibleForCP(rule->head(), _vocabulary));
+
 	auto newrule = UnnestTerms::visit(rule);
-	setAllowedToLeave(saveAllowedToLeave);
+
+	setNestingIsAllowed(saveAllowedToLeave);
+
 	return newrule;
 }
-

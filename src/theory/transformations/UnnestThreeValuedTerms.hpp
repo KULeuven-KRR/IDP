@@ -45,7 +45,7 @@ class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool _cpsupport;
-	bool _allowedToLeave;
+	bool _allowedToKeepNested;
 
 public:
 	template<typename T>
@@ -54,7 +54,7 @@ public:
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
-		setAllowedToLeave(true);
+		setNestingIsAllowed(false);
 		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
@@ -66,11 +66,11 @@ protected:
 	Term* visit(AggTerm*);
 
 private:
-	bool getAllowedToLeave() const {
-		return _allowedToLeave;
+	bool nestingIsAllowed() const {
+		return _allowedToKeepNested;
 	}
-	void setAllowedToLeave(bool allowed) {
-		_allowedToLeave = allowed;
+	void setNestingIsAllowed(bool allowed) {
+		_allowedToKeepNested = allowed;
 	}
 };
 

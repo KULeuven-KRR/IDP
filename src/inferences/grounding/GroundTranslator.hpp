@@ -84,13 +84,15 @@ private:
 
 	std::map<CPTsBody*, Lit, CompareTs> cpset;
 
+	Vocabulary* _vocabulary;
+
 //	Lit addTseitinBody(TsBody* body);
 	Lit nextNumber(AtomType type);
 
 	int getSymbol(PFSymbol* pfs) const;
 
 public:
-	GroundTranslator();
+	GroundTranslator(Vocabulary* structure);
 	~GroundTranslator();
 
 	// NOTE: used to add func constraints as soon as possible

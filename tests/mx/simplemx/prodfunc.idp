@@ -1,0 +1,17 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	f(x):x
+}
+
+theory T:V{
+	prod{x[x]: p(x): f(x)}=2.
+}
+
+structure S:V{
+	x = {1..2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 6
+}

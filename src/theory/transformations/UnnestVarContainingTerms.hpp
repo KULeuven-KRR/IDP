@@ -46,7 +46,7 @@ public:
 
 protected:
 	virtual Rule* visit(Rule* rule){
-		auto saveallowed = getAllowedToUnnest();
+		auto saveallowed = isAllowedToUnnest();
 		setAllowedToUnnest(true);
 		inhead = true;
 		visitRuleHead(rule);
@@ -56,7 +56,7 @@ protected:
 	}
 
 	bool shouldMove(Term* t){
-		return getAllowedToUnnest() && inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR && t->freeVars().size()>0;
+		return isAllowedToUnnest() && inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR && t->freeVars().size()>0;
 	}
 };
 

@@ -43,7 +43,7 @@ protected:
 
 	virtual bool shouldMove(Term* t);
 
-	bool getAllowedToUnnest() const {
+	bool isAllowedToUnnest() const {
 		return _allowedToUnnest;
 	}
 	void setAllowedToUnnest(bool allowed) {
@@ -102,7 +102,7 @@ protected:
 	virtual QuantSetExpr* visit(QuantSetExpr*);
 
 	void visitRuleHead(Rule* rule); // Split to allow reuse
-	Formula* specialTraverse(PredForm* predform);
+	Formula* unnest(PredForm* predform);
 
 private:
 	Formula* rewrite(Formula*);

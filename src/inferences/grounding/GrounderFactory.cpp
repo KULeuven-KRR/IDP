@@ -77,7 +77,7 @@ int getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: 	_theory(data.theory), // FIXME clone should also be done in other creates except for Grounding.hpp
+		: 	_theory(data.theory),
 			_minimizeterm(data.minimizeterm),
 			_vocabulary(data.partialstructure->vocabulary()),
 			_structure(data.partialstructure),
@@ -146,7 +146,7 @@ void GrounderFactory::RestoreContext() {
 	for (auto it = _context._mappedvars.begin(); it != _context._mappedvars.end(); ++it) {
 		auto found = _varmapping.find(*it);
 		if (found != _varmapping.end()) {
-			_varmapping.erase(found); // FIXME: this should be disabled currently for lazy grounding
+			_varmapping.erase(found);
 		}
 	}
 	_context._mappedvars.clear();
@@ -180,7 +180,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 
 template<class GroundTheory>
 Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory groundtheory) {
-	// FIXME check vocabulary of minimizeterm
+	Assert(VocabularyUtils::isContainedIn(data.minimizeterm, data.partialstructure->vocabulary()));
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.partialstructure->vocabulary()));
 	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
 	return g.ground();
@@ -230,23 +230,24 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
 }
-/*Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
- auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
- groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
- GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
- data.theory->accept(&g);
- return g.getTopGrounder();
- }*/
+/*
+Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
+	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
+}*/
 
 Grounder* GrounderFactory::ground() {
 	std::vector<Grounder*> grounders;
 
 	allowskolemize = true;
 
-	// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
-	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	// NOTE: important that we only add funcconstraints for the theory at hand! e.g. for calculate definitions, we should not find values for the functions not occurring in it!
+	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
 	if (_minimizeterm != NULL) {
-		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
 	}
 
 	InitContext();
@@ -265,6 +266,9 @@ Grounder* GrounderFactory::ground() {
 			switch (_minimizeterm->type()) {
 			case TermType::AGG: {
 				auto term = dynamic_cast<const AggTerm*>(_minimizeterm);
+				if (term == NULL) {
+					throw notyetimplemented("Optimization over non-aggregate terms");
+				}
 				if (term->function() == AggFunction::PROD) {
 					for (auto i = term->set()->getSubSets().cbegin(); i != term->set()->getSubSets().cend(); ++i) {
 						auto sort = (*i)->getTerm()->sort();
@@ -275,7 +279,7 @@ Grounder* GrounderFactory::ground() {
 				}
 				InitContext();
 				descend(term->set());
-				optimgrounder = new AggregateOptimizationGrounder(getGrounding(), term->function(), getSetGrounder(), getContext());
+				auto optimgrounder = new AggregateOptimizationGrounder(getGrounding(), term->function(), getSetGrounder(), getContext());
 				optimgrounder->setOrig(_minimizeterm);
 				grounders.push_back(optimgrounder);
 				break;
@@ -346,36 +350,38 @@ void GrounderFactory::descend(T child) {
 void GrounderFactory::visit(const Theory* theory) {
 	_context._conjPathUntilNode = true;
 
-	// TODO experiment with:
+	// experiment with:
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
-	// Collect all components (sentences, definitions, and fixpoint definitions) of the theory
-	const auto components = theory->components(); // NOTE: primitive reorder present: definitions first
-	// NOTE: currently, definitions first is important for good lazy grounding
+	const auto components = theory->components();
+		// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
 	// TODO Order the components to optimize the grounding process
 
-	auto newtheory = theory;
 	// Create grounders for all components
-/*	// Skolemization:
-	auto newtheory = new Theory("", _vocabulary, theory->pi());
-	for (auto i = components.cbegin(); i < components.cend(); ++i) {
-		auto component = *i;
+	auto newtheory = theory;
+
+	/*	SKOLEM
+	 auto newtheory = new Theory("", _vocabulary, theory->pi());
+	 for (auto i = components.cbegin(); i < components.cend(); ++i) {
+	 auto component = *i;
 
 
-		auto formula = dynamic_cast<Formula*>(*i);
-		// TODO add definitions etc!
-		// Can we handle subformula  directly if we store the parent quantifiers?
-		if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
-			formula = formula->clone();
-			component = FormulaUtils::skolemize(formula, _vocabulary);
-			FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-		}
+	 auto formula = dynamic_cast<Formula*>(*i);
+	 // Add definitions etc!
+	 // Can we handle subformula  directly if we store the parent quantifiers?
+	 if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+	 formula = formula->clone();
+	 component = FormulaUtils::skolemize(formula, _vocabulary);
+	 FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	 }
 
-		newtheory->add(component);
-	}
+	 newtheory->add(component);
+	 }
 
-// TODO incorrect:
-	newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);*/
+	 // bugged:
+	 newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);
+	 SKOLEM END
+	 */
 
 	std::vector<Grounder*> children;
 	const auto components2 = newtheory->components(); // NOTE: primitive reorder present: definitions first
@@ -385,7 +391,7 @@ void GrounderFactory::visit(const Theory* theory) {
 		children.push_back(getTopGrounder());
 	}
 
-	// TODO deletion of newtheory
+	// deleteDeep(newtheory); SKOLEM
 
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
@@ -404,7 +410,8 @@ CompType getCompType(T symbol) {
 
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
+			// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
@@ -419,7 +426,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
-	SaveContext();
+	SaveContext();// FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
+	   	   	   	   // FIXME and why only in some cases check the sign of the formula for inverting the type?
 	for (size_t n = 0; n < newpf->subterms().size(); ++n) {
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(getTermGrounder());
@@ -428,7 +436,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	RestoreContext();
 
 	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf) /* TODO here also*/ ) {
+	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
+		Assert(not recursive(newpf) && _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
 		if (VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 			Assert(subtermgrounders.size() == 2);
 			auto comp = getCompType(newpf->symbol());
@@ -484,43 +493,35 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (_context._component == CompContext::HEAD) {
 		auto inter = _structure->inter(newpf->symbol());
 		_headgrounder = new HeadGrounder(getGrounding(), inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables);
-		deleteDeep(newpf);
-		return;
+	}else{
+		GeneratorData data;
+		for (auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
+			data.containers.push_back(new const DomElemContainer());
+			data.tables.push_back(_structure->inter((*it)->sort()));
+			data.fovars.push_back(new Variable((*it)->sort()));
+		}
+		data.pattern = vector<Pattern>(data.containers.size(), Pattern::INPUT);
+		auto genpf = newpf;
+		if (getOption(BoolType::GROUNDWITHBOUNDS)) {
+			auto foterms = TermUtils::makeNewVarTerms(data.fovars);
+			genpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
+		}
+		auto possTrueChecker = getChecker(genpf, TruthType::POSS_TRUE, data);
+		auto certTrueChecker = getChecker(genpf, TruthType::CERTAIN_TRUE, data);
+		if (genpf != newpf) {
+			deleteDeep(genpf);
+		}
+
+		deleteList(data.fovars);
+
+		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, possTrueChecker, certTrueChecker,
+				_structure->inter(newpf->symbol()), argsorttables, _context);
+		_formgrounder->setOrig(newpf, varmapping());
 	}
-
-	// Grounding basic predform
-
-	// Create instance checkers
-	GrounderFactory::GeneratorData data;
-	for (auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
-		data.containers.push_back(new const DomElemContainer());
-		data.tables.push_back(_structure->inter((*it)->sort()));
-		data.fovars.push_back(new Variable((*it)->sort()));
-	}
-	data.pattern = vector<Pattern>(data.containers.size(), Pattern::INPUT);
-	auto genpf = newpf;
-	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		auto foterms = TermUtils::makeNewVarTerms(data.fovars);
-		genpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-	}
-
-	auto possTrueChecker = getChecker(genpf, TruthType::POSS_TRUE, data);
-	auto certTrueChecker = getChecker(genpf, TruthType::CERTAIN_TRUE, data);
-
-	deleteList(data.fovars);
-
-	// Grounder creation
-	_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, possTrueChecker, certTrueChecker,
-			_structure->inter(newpf->symbol()), argsorttables, _context);
-	_formgrounder->setOrig(newpf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = getFormGrounder();
 	}
-
-	if (genpf != newpf) {
-		deleteDeep(genpf);
-	}
-	deleteDeep(newpf); //TODO: this is suspicious since the bdds use variables from newpf...
+	deleteDeep(newpf);
 }
 
 void GrounderFactory::visit(const BoolForm* bf) {
@@ -547,7 +548,8 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 	if (not trydelay) {
 		mightdolazy = false;
 	}
-	if (not getOption(TSEITINDELAY) || recursive) { // FIXME tseitin introduction in definition is currently not supported
+	if (not getOption(TSEITINDELAY) || recursive) {
+			// TODO tseitin introduction in inductive definitions is currently not supported (cannot use the incremental clause for that)
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
@@ -630,7 +632,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 	// Create instance generator
 	Formula* newsubformula = qf->subformula()->clone();
-
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
 	auto gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
@@ -646,14 +647,6 @@ void GrounderFactory::visit(const QuantForm* qf) {
 	deleteDeep(newsubformula);
 }
 
-template<typename Object>
-void checkGeneratorInfinite(InstChecker* gen, Object* original) {
-	if (gen->isInfiniteGenerator()) {
-		Warning::possiblyInfiniteGrounding(toString(original));
-		throw IdpException("Infinite grounding");
-	}
-}
-
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, QuantForm const * const qf, const GenAndChecker& gc,
 		const GroundingContext& context, bool recursive) {
 	bool conj = qf->quant() == QUANT::UNIV;
@@ -661,7 +654,8 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if (not getOption(TSEITINDELAY) || recursive) { // FIXME tseitin introduction in definition is currently not supported
+	if (not getOption(TSEITINDELAY) || recursive) {
+			// FIXME tseitin introduction in inductive definition is currently not supported (cannot use incremental clause for that)
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
@@ -693,9 +687,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 		_context._allowDelaySearch = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
-		Context lazycontext = Context::BOTH;
-		// FIXME BUG BUG: for functions, should ALSO consider the implicit function constraint!!!!!
-		// TODO: also, mx should handle ONE theory and ONE structure, otherwise it is also correct. So merge funcconstr with rest of theory
+		auto lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, getGrounding()->translator(), lazycontext);
 		if (tuple.size() != 2) {
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, getGrounding()->translator(), lazycontext);
@@ -795,7 +787,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	}
 	auto manager = _symstructure->manager();
 
-	// 1. Optimize the query
+	// Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
 	set<const FOBDDVariable*, CompareBDDVars> copyvars;
@@ -804,9 +796,9 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	}
 	optimizemanager.optimizeQuery(copybdd, copyvars, { }, _structure);
 
-	// 2. Remove certain leaves
+	// Remove certain leaves
 	const FOBDD* pruned = NULL;
-	auto mcpa = 1; // TODO experiment with variations?
+	auto mcpa = 1;
 	if (approxastrue) {
 		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, { }, _structure, mcpa);
 	} else {
@@ -820,7 +812,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 		clog << tabs() << toString(pruned) << "\n";
 		poptab();
 	}
-	// 3. Replace result
+
 	return manager->getBDD(pruned, &optimizemanager);
 }
 
@@ -1067,7 +1059,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (getOption(SATISFIABILITYDELAY)) {
 		groundlazily = getGrounding()->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
 	}
-	if (groundlazily) { // NOTE: lazy grounding cannot handle head terms containing variables
+	if (groundlazily) { // NOTE: lazy grounding cannot handle head terms containing nested variables
 		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
 	}
 
@@ -1129,6 +1121,14 @@ void GrounderFactory::visit(const Rule* rule) {
 	deleteDeep(newrule);
 }
 
+template<typename Object>
+void checkGeneratorInfinite(InstChecker* gen, Object* original) {
+	if (gen->isInfiniteGenerator()) {
+		Warning::possiblyInfiniteGrounding(toString(original));
+		throw IdpException("Infinite grounding");
+	}
+}
+
 template<class VarList>
 InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original, const VarList& vars) {
 	vector<SortTable*> varsorts;
@@ -1173,7 +1173,7 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 	return GenAndChecker(data.containers, generator, checker, Universe(directquanttables));
 }
 
-GrounderFactory::GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars) {
+GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars) {
 	GeneratorData data;
 	data.quantfovars = quantfovars;
 	data.fovars = data.quantfovars;
@@ -1197,51 +1197,45 @@ GrounderFactory::GeneratorData GrounderFactory::getPatternAndContainers(std::vec
 	return data;
 }
 
-InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GrounderFactory::GeneratorData& data) {
-	PredTable* gentable = NULL;
-	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		auto tempsubformula = subformula->clone();
-		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
-		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
-		auto generatorbdd = _symstructure->evaluate(tempsubformula, generatortype); // !x phi(x) => generate all x possibly false
-		generatorbdd = improve(true, generatorbdd, data.quantfovars);
-		gentable = new PredTable(new BDDInternalPredTable(generatorbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
-		deleteDeep(tempsubformula);
-		if (not gentable->approxFinite()) {
-			Warning::possiblyInfiniteGrounding(toString(subformula));
-			throw IdpException("Infinite grounding");
-		}
-	}
-
-	else {
-		gentable = TableUtils::createFullPredTable(Universe(data.tables));
-	}
-
-	auto generator = GeneratorFactory::create(gentable, data.pattern, data.containers, Universe(data.tables), subformula);
+InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula, const std::vector<Pattern>& pattern){
+	auto checker = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
-	delete (gentable);
+	delete (table);
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << "Generator for " << toString(generatortype) << ": \n" << tabs() << toString(generator) << "\n";
+		clog << tabs() << name <<" for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
 	}
 
-	return generator;
+	return checker;
 }
 
-InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GrounderFactory::GeneratorData& data) {
+PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data){
+	auto tempsubformula = subformula->clone();
+	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
+	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
+	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
+	auto bdd = _symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
+	bdd = improve(approxvalue, bdd, quantfovars);
+	auto table = new PredTable(new BDDInternalPredTable(bdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
+	deleteDeep(tempsubformula);
+	return table;
+}
+
+InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data) {
+	PredTable* gentable = NULL;
+	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
+		gentable = createTable(subformula, generatortype, data.quantfovars, true, data);
+	} else {
+		gentable = TableUtils::createFullPredTable(Universe(data.tables));
+	}
+	return createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
+}
+
+InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data) {
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		auto tempsubformula = subformula->clone();
-		tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
-		tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-		tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
-		auto checkerbdd = _symstructure->evaluate(tempsubformula, checkertype); // !x phi(x) => check for x certainly false
-
-		checkerbdd = improve(approxastrue, checkerbdd, { });
-		checktable = new PredTable(new BDDInternalPredTable(checkerbdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
-		deleteDeep(tempsubformula);
+		checktable = createTable(subformula, checkertype, {}, approxastrue, data);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1249,17 +1243,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 			checktable = TableUtils::createPredTable(Universe(data.tables));
 		}
 	}
-
-	auto checker = GeneratorFactory::create(checktable, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT), data.containers, Universe(data.tables),
-			subformula);
-	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
-	delete (checktable);
-
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << "Checker for " << toString(checkertype) << ": \n" << tabs() << toString(checker) << "\n";
-	}
-
-	return checker;
+	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
 }
 
 DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {

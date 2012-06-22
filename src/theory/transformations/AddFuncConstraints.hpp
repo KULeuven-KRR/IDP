@@ -23,16 +23,17 @@ class Vocabulary;
 class AddFuncConstraints: public DefaultTraversingTheoryVisitor {
 private:
 	std::set<Function*> _functions;
-	bool _cpsupport;
 	Vocabulary* _voc;
+	bool _alsoCPableFunctions;
+
 public:
 	template<class T>
-	void execute(T obj, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport) {
+	void execute(T obj, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
 		Assert(obj!=NULL);
 
 		_voc = voc;
-		_cpsupport = cpsupport;
 		_functions.clear();
+		_alsoCPableFunctions = alsoCPableFunctions;
 
 		obj->accept(this);
 
@@ -44,20 +45,20 @@ public:
 	}
 
 private:
+	void add(Function* function){
+		if(_alsoCPableFunctions || not CPSupport::eligibleForCP(function, _voc)){
+			_functions.insert(function);
+		}
+	}
 	void visit(const PredForm* pf) {
 		traverse(pf);
 		if (isa<Function>(*pf->symbol())) {
-			auto function = dynamic_cast<Function*>(pf->symbol());
-			if (not _cpsupport || not CPSupport::eligibleForCP(function, _voc)) {
-				_functions.insert(function);
-			}
+			add(dynamic_cast<Function*>(pf->symbol()));
 		}
 	}
 	void visit(const FuncTerm* f) {
 		traverse(f);
-		if (not _cpsupport || not CPSupport::eligibleForCP(f->function(), _voc)) {
-			_functions.insert(f->function());
-		}
+		add(f->function());
 	}
 
 	Formula* createFuncConstraints(Function* function) {
