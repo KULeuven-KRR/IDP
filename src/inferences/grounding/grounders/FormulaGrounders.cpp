@@ -321,7 +321,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 	int maxposscard = tsset.size();
 	TsType tp = context()._tseitin;
 	bool simplify = false;
-	bool conj;
+	bool conj = false; // Note: Only used if simplify is true
 	bool negateset;
 	switch (_comp) {
 	case CompType::EQ: // x = #{..}

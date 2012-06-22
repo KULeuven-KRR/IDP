@@ -7,15 +7,16 @@ vocabulary V{
 
 theory T:V{
 	{
-		a=y <- ~p(y) | r(y).
-		p(y) <- a~=y.
+		a=y <- p(y) | r(y).
+		p(1) <- a~=2.
 	}
 }
 
 structure S:V{
 	x = {1..2}
+	r = {1}
 }
 
 procedure getExpectedNbOfModels(){
-	return 0
+	return 1
 }
