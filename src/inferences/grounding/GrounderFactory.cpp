@@ -242,7 +242,7 @@ Grounder* GrounderFactory::ground() {
 
 	// NOTE: important that we only add funcconstraints for the theory here: e.g. for calculate definitions, we should not find values for the functions not occurring in it!
 	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-	if(_minimizeterm!=NULL){
+	if (_minimizeterm != NULL) {
 		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
 	}
 
@@ -255,11 +255,10 @@ Grounder* GrounderFactory::ground() {
 		if (term == NULL) {
 			throw notyetimplemented("Optimization over non-aggregate terms");
 		}
-		if(term->function()==AggFunction::PROD){
-			for(auto i=term->set()->getSubSets().cbegin(); i!=term->set()->getSubSets().cend(); ++i){
+		if (term->function() == AggFunction::PROD) {
+			for (auto i = term->set()->getSubSets().cbegin(); i != term->set()->getSubSets().cend(); ++i) {
 				auto sort = (*i)->getTerm()->sort();
-				if(not SortUtils::isSubsort(sort, get(STDSORT::NATSORT))
-					|| _structure->inter(sort)->contains(createDomElem(0))){
+				if (not SortUtils::isSubsort(sort, get(STDSORT::NATSORT)) || _structure->inter(sort)->contains(createDomElem(0))) {
 					throw notyetimplemented("Minimization over a product aggregate with negative or zero weights");
 				}
 			}
@@ -279,7 +278,7 @@ Grounder* GrounderFactory::ground() {
 	}
 	allowskolemize = true;
 
-	if(grounders.size()==1){
+	if (grounders.size() == 1) {
 		return grounders.front();
 	}
 	InitContext();
@@ -339,26 +338,26 @@ void GrounderFactory::visit(const Theory* theory) {
 
 	auto newtheory = theory;
 	// Create grounders for all components
-/*	// Skolemization:
-	auto newtheory = new Theory("", _vocabulary, theory->pi());
-	for (auto i = components.cbegin(); i < components.cend(); ++i) {
-		auto component = *i;
+	/*	// Skolemization:
+	 auto newtheory = new Theory("", _vocabulary, theory->pi());
+	 for (auto i = components.cbegin(); i < components.cend(); ++i) {
+	 auto component = *i;
 
 
-		auto formula = dynamic_cast<Formula*>(*i);
-		// TODO add definitions etc!
-		// Can we handle subformula  directly if we store the parent quantifiers?
-		if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
-			formula = formula->clone();
-			component = FormulaUtils::skolemize(formula, _vocabulary);
-			FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-		}
+	 auto formula = dynamic_cast<Formula*>(*i);
+	 // TODO add definitions etc!
+	 // Can we handle subformula  directly if we store the parent quantifiers?
+	 if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+	 formula = formula->clone();
+	 component = FormulaUtils::skolemize(formula, _vocabulary);
+	 FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
+	 }
 
-		newtheory->add(component);
-	}
+	 newtheory->add(component);
+	 }
 
-// TODO incorrect:
-	newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);*/
+	 // TODO incorrect:
+	 newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);*/
 
 	std::vector<Grounder*> children;
 	const auto components2 = newtheory->components(); // NOTE: primitive reorder present: definitions first
@@ -1004,6 +1003,9 @@ void GrounderFactory::visit(const Definition* def) {
 
 void GrounderFactory::visit(const Rule* rule) {
 	auto newrule = rule->clone();
+	//FIXME: if negations are already pushed, this is too much work. But on the other hand, checking if they are pushed is as expensive as pushing them
+	//However, pushing negations here is important to avoid errors such as {p <- ~~p} turning into {p <- ~q; q<- ~p}
+	newrule->body(FormulaUtils::pushNegations(newrule->body()));
 	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext, getOption(CPSUPPORT));
 
 	auto groundlazily = false;
