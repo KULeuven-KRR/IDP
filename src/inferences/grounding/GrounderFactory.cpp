@@ -438,62 +438,56 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
 		Assert(not recursive(newpf) && _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
+		TermGrounder* lefttermgrounder;
+		TermGrounder* righttermgrounder;
+		CompType comp;
+		bool useComparisonGrounder = false;
 		if (VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+			useComparisonGrounder = true;
 			Assert(subtermgrounders.size() == 2);
-			auto comp = getCompType(newpf->symbol());
+			comp = getCompType(newpf->symbol());
 			if (isNeg(newpf->sign())) {
 				comp = negateComp(comp);
 			}
-
+			lefttermgrounder = subtermgrounders[0];
+			righttermgrounder = subtermgrounders[1];
+		} else if (isa<Function>(*(newpf->symbol()))) {
+			auto function = dynamic_cast<Function*>(newpf->symbol());
+			if (CPSupport::eligibleForCP(function,_structure->vocabulary())) {
+				useComparisonGrounder = true;
+				comp = CompType::EQ;
+				if (isNeg(newpf->sign())) {
+					comp = negateComp(comp);
+				}
+				righttermgrounder = subtermgrounders.back();
+				subtermgrounders.pop_back();
+				auto ftable = _structure->inter(function)->funcTable();
+				auto domain = _structure->inter(function->outsort());
+				lefttermgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
+				//ftgrounder->setOrig(...) TODO
+			}
+		}
+		if (useComparisonGrounder) {
 			SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
 						   // FIXME and why only in some cases check the sign of the formula for inverting the type?
 			if (recursive(newpf)) {
 				_context._tseitin = TsType::RULE;
 			}
-			_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), subtermgrounders[0], comp, subtermgrounders[1], _context);
+			_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), lefttermgrounder, comp, righttermgrounder, _context);
 			_formgrounder->setOrig(newpf, varmapping());
 			RestoreContext();
-
-			// FIXME what if CompContext is HEAD?
-
 			if (_context._component == CompContext::SENTENCE) {
 				_topgrounder = getFormGrounder();
 			}
 			deleteDeep(newpf);
 			return;
 		}
-		if (isa<Function>(*(newpf->symbol()))) {
-			auto function = dynamic_cast<Function*>(newpf->symbol());
-			if (CPSupport::eligibleForCP(function,_structure->vocabulary())) {
-				auto valuegrounder = subtermgrounders.back();
-				subtermgrounders.pop_back();
-				auto comp = CompType::EQ;
-				if (isNeg(newpf->sign())) {
-					comp = negateComp(comp);
-				}
-				SaveContext();
-				auto ftable = _structure->inter(function)->funcTable();
-				auto domain = _structure->inter(function->outsort());
-				auto functermgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
-				//ftgrounder->setOrig(...) TODO
-
-				_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), functermgrounder, comp, valuegrounder, _context);
-				_formgrounder->setOrig(newpf, varmapping());
-				RestoreContext();
-
-				if (_context._component == CompContext::SENTENCE) {
-					_topgrounder = getFormGrounder();
-				}
-				deleteDeep(newpf);
-				return;
-			}
-		}
 	}
 
 	if (_context._component == CompContext::HEAD) {
 		auto inter = _structure->inter(newpf->symbol());
 		_headgrounder = new HeadGrounder(getGrounding(), inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables);
-	}else{
+	} else {
 		GeneratorData data;
 		for (auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
 			data.containers.push_back(new const DomElemContainer());

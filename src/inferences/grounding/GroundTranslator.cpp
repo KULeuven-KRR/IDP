@@ -74,9 +74,9 @@ int GroundTranslator::getSymbol(PFSymbol* pfs) const {
 }
 
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
-	if(getOption(CPSUPPORT)){
+	if (getOption(CPSUPPORT)) {
 		auto function = dynamic_cast<Function*>(pfs);
-		if(function!=NULL && CPSupport::eligibleForCP(function, _vocabulary)){
+		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
 			throw IdpException("Invalid code path");
 		}
 	}
