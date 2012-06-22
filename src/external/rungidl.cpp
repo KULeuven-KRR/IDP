@@ -293,7 +293,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	setStop(true);
 	signalhandling.join();
 
-	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15) {
+	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
 		cerr << "First critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
 		cerr << "\t" << *getGlobal()->getErrors().cbegin();
 	}

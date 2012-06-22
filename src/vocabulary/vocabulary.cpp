@@ -1335,7 +1335,7 @@ ostream& Function::put(ostream& output) const {
 	output << name().substr(0, name().rfind('/'));
 	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
 		output << '[';
-		if (_insorts.empty()) {
+		if (not _insorts.empty()) {
 			_insorts[0]->put(output);
 			for (size_t n = 1; n < _insorts.size(); ++n) {
 				output << ',';

@@ -1745,6 +1745,7 @@ Term* Insert::domterm(char c, YYLTYPE l) const {
 
 Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(e);
+	Assert(s != NULL);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
 	temp->recursiveDelete();

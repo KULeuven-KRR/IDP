@@ -1053,6 +1053,9 @@ void GrounderFactory::visit(const Definition* def) {
 
 void GrounderFactory::visit(const Rule* rule) {
 	auto newrule = rule->clone();
+	//FIXME: if negations are already pushed, this is too much work. But on the other hand, checking if they are pushed is as expensive as pushing them
+	//However, pushing negations here is important to avoid errors such as {p <- ~~p} turning into {p <- ~q; q<- ~p}
+	newrule->body(FormulaUtils::pushNegations(newrule->body()));
 	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext, getOption(CPSUPPORT));
 
 	auto groundlazily = false;

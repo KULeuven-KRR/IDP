@@ -540,8 +540,9 @@ domterm		: INTEGER									{ $$ = getInserter().domterm($1,@1);		}
 			| FLNUMBER									{ $$ = getInserter().domterm($1,@1);		}
 			| STRINGCONS								{ $$ = getInserter().domterm($1,@1);		}
 			| CHARCONS									{ $$ = getInserter().domterm($1,@1);		}
-			| '@' identifier '[' theosort_pointer ']'	{ $$ = getInserter().domterm($2,$4,@1);	}
+		/*	| '@' identifier '[' theosort_pointer ']'	{ $$ = getInserter().domterm($2,$4,@1);	}
 			| '@' identifier							{ $$ = getInserter().domterm($2,0,@1);	}
+		The above lines are commented since writing @ is unsafe"*/
 			;
 
 aggterm		: P_CARD formulaset	{ $$ = getInserter().aggregate(AggFunction::CARD,$2,@1);	}
