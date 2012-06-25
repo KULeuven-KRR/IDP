@@ -752,6 +752,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
+
 	set<const FOBDDVariable*, CompareBDDVars> copyvars;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
@@ -760,7 +761,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 
 	// 2. Remove certain leaves
 	const FOBDD* pruned = NULL;
-	auto mcpa = 1; // TODO experiment with variations?
+	auto mcpa = 0.5; // TODO experiment with variations?
 	if (approxastrue) {
 		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, { }, _structure, mcpa);
 	} else {
