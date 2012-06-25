@@ -799,11 +799,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 
 	// Remove certain leaves
 	const FOBDD* pruned = NULL;
-<<<<<<< HEAD
-	auto mcpa = 0.5; // TODO experiment with variations?
-=======
-	auto mcpa = 1;
->>>>>>> f7a81ad1c6ca4a3f3add7edc76c5098141a88580
+	auto mcpa = 1; // TODO experiment with variations?
 	if (approxastrue) {
 		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, { }, _structure, mcpa);
 	} else {
