@@ -2809,6 +2809,9 @@ InternalTableIterator* TimesInternalFuncTable::begin(const Universe& univ) const
 
 const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
+		if(tuple[1]->value()._int == 0 ){
+			return NULL;
+		}
 		return division<int>(tuple[0]->value()._int, tuple[1]->value()._int);
 	} else {
 		double a1 = tuple[0]->type() == DET_DOUBLE ? tuple[0]->value()._double : double(tuple[0]->value()._int);

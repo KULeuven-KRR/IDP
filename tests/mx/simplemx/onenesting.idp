@@ -1,0 +1,17 @@
+vocabulary V {
+	type A isa int
+	f(A):A
+	B:A
+}
+
+theory T : V {
+	?x: f(B)=x.
+}
+
+structure S : V {
+	A = { 1 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 1
+}

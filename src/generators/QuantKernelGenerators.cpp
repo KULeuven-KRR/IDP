@@ -91,7 +91,7 @@ void FalseQuantKernelGenerator::next() {
 }
  void FalseQuantKernelGenerator::put(std::ostream& stream)  const{
 	pushtab();
-	stream << "all false instances of: " << nt() << toString(_quantKernelTrueChecker);
+	stream << "FalseQuantKernelGenerator with kernelchecker: " << nt() << toString(_quantKernelTrueChecker);
 	poptab();
 }
 

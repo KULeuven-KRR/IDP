@@ -24,7 +24,8 @@ class ContainsPartialFunctions: public FOBDDVisitor {
 private:
 	bool _result;
 	void visit(const FOBDDFuncTerm* ft) {
-		if (ft->func()->partial()) {
+		if (ft->func()->partial() || is(ft->func(), STDFUNC::DIVISION) || is(ft->func(), STDFUNC::MODULO)) {
+			//TODO: division and modulo should be partial...
 			_result = true;
 		} else {
 			for (auto it = ft->args().cbegin(); it != ft->args().cend(); ++it) {

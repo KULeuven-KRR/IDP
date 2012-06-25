@@ -6,8 +6,8 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
-
+ ****************************************************************/
+#include "vocabulary/vocabulary.hpp"
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
@@ -38,13 +38,6 @@ TruthType swapTF(TruthType type) {
 	return result;
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) {
-	_type = type;
-	_result = NULL;
-	f->accept(this);
-	return _result;
-}
-
 bool needFalse(TruthType value) {
 	return value == TruthType::CERTAIN_FALSE || value == TruthType::POSS_FALSE;
 }
@@ -53,37 +46,107 @@ bool needPossible(TruthType value) {
 	return value == TruthType::POSS_TRUE || value == TruthType::POSS_FALSE;
 }
 
+const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) {
+
+	_type = type;
+	_result = NULL;
+	f->accept(this);
+	/*if (not needPossible(type)) {
+	 std::cerr << "INPUT" << toString(f) << endl;
+	 std::cerr << (needPossible(type) ? "P" : "C") << (needFalse(type) ? "F" : "T") << endl;
+	 std::cerr << "OUTPUT" << toString(_result) << endl;
+	 }*/
+	return _result;
+}
+
 void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
+
+	//NOTE: all the commented code in this method is old code.
+	//This code can be used if the symbolic structure is not "applied to structure" after propagation.
+	//For example, in the case of lazy grounding, this might be useful.
 	FOBDDFactory factory(_manager);
 
-	if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
-		if(atom->symbol()->builtin()){
-			_result = factory.turnIntoBdd(atom);
-			if (needFalse(_type)) {
-				_result = _manager->negation(_result);
-			}
-		}else{
-			_result = _manager->falsebdd();
-			if (needPossible(_type)) { // NEGATE because we have used CERTAIN bounds
-				_result = _manager->negation(_result);
-			}
+	if (atom->symbol()->builtin()) {
+		_result = factory.turnIntoBdd(atom);
+		if (needFalse(_type)) {
+			_result = _manager->negation(_result);
 		}
 	} else {
+
 		bool getct = (_type == TruthType::CERTAIN_TRUE || _type == TruthType::POSS_FALSE);
-		if (isNeg(atom->sign())) {
+		bool switchsign = isNeg(atom->sign());
+		auto clone = atom->clone();
+		if (switchsign) {
 			getct = not getct;
+			clone->negate();
 		}
-		auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
-		map<const FOBDDVariable*, const FOBDDTerm*> mva;
-		const auto& vars = _vars[atom->symbol()];
-		for (unsigned int n = 0; n < vars.size(); ++n) {
-			mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
-		}
-		_result = _manager->substitute(bdd, mva);
+		auto symbol = getct ? clone->symbol()->derivedSymbol(SymbolType::ST_CT) : clone->symbol()->derivedSymbol(SymbolType::ST_CF);
+		clone->symbol(symbol);
+		_result = factory.turnIntoBdd(clone);
+
 		if (needPossible(_type)) {
 			_result = _manager->negation(_result);
 		}
 	}
+
+	//SAVENESS FOR PARTIAL FUNCTIONS
+	if (isa<Function>(*(atom->symbol()))) {
+		auto f = dynamic_cast<Function*>(atom->symbol());
+		if (f->partial() || is(atom->symbol(), STDFUNC::DIVISION) || is(atom->symbol(), STDFUNC::MODULO)) {
+			auto newatom = atom->clone();
+			if(newatom->sign()==SIGN::NEG){
+				newatom->negate();
+			}
+			auto arity = newatom->subterms().size();
+			auto lastsubterm = newatom->subterms()[arity-1];
+			auto newvar = new Variable(lastsubterm->sort());
+			auto varterm = new VarTerm(newvar, TermParseInfo());
+			newatom->subterm(arity-1, varterm);
+			auto newformula = new QuantForm(SIGN::POS, QUANT::EXIST, { newvar }, newatom, newatom->pi());
+			auto hasimage = factory.turnIntoBdd(newformula);
+			//Partial functions are always dangerous. Therefore, we play safe here. If we need certain, we make a stronger condition, if we need possible bounds,
+			//we weaken the condition
+			if(needPossible(_type)){
+				_result = _manager->disjunction(_result, hasimage);
+			}
+			else{
+				_result = _manager->conjunction(_result, hasimage);
+			}
+			newformula->recursiveDelete();
+		}
+	}
+
+	/*//THE OLD CODE MAYBE USEFUL WHEN LAZY GROUNDING
+	 if (_ctbounds.find(atom->symbol()) == _ctbounds.cend()) {
+	 if (atom->symbol()->builtin()) {
+	 _result = factory.turnIntoBdd(atom);
+	 if (needFalse(_type)) {
+	 _result = _manager->negation(_result);
+	 }
+	 } else {
+
+	 _result = _manager->falsebdd();
+	 if (needPossible(_type)) { // NEGATE because we have used CERTAIN bounds
+	 _result = _manager->negation(_result);
+	 }
+	 }
+	 } else {
+
+	 bool getct = (_type == TruthType::CERTAIN_TRUE || _type == TruthType::POSS_FALSE);
+	 if (isNeg(atom->sign())) {
+	 getct = not getct;
+	 }
+	 auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
+	 map<const FOBDDVariable*, const FOBDDTerm*> mva;
+	 const auto& vars = _vars[atom->symbol()];
+	 for (unsigned int n = 0; n < vars.size(); ++n) {
+	 mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
+	 }
+	 _result = _manager->substitute(bdd, mva);
+	 if (needPossible(_type)) {
+	 _result = _manager->negation(_result);
+	 }
+	 }*/
 }
 
 void GenerateBDDAccordingToBounds::visit(const BoolForm* boolform) {
@@ -133,7 +196,7 @@ void GenerateBDDAccordingToBounds::visit(const EquivForm* equivform) {
 }
 
 void GenerateBDDAccordingToBounds::visit(const AggForm*) {
-	// TODO: better evaluation function?
+// TODO: better evaluation function?
 	if (_type == TruthType::POSS_TRUE || _type == TruthType::POSS_FALSE) {
 		_result = _manager->truebdd();
 	} else {
@@ -142,7 +205,7 @@ void GenerateBDDAccordingToBounds::visit(const AggForm*) {
 }
 
 const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, double mcpa) {
-	// 1. Optimize the query
+// 1. Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, _manager);
 	set<const FOBDDVariable*, CompareBDDVars> copyvars;
@@ -152,10 +215,10 @@ const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vect
 	}
 	optimizemanager.optimizeQuery(copybdd, copyvars, indices, structure);
 
-	// 2. Remove certain leaves
+// 2. Remove certain leaves
 	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, structure, mcpa);
 
-	// 3. Replace result
+// 3. Replace result
 	return _manager->getBDD(pruned, &optimizemanager);
 }
 
@@ -173,24 +236,24 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 
 		(it->first)->put(output);
 		pushtab();
-		output <<nt();
+		output << nt();
 		output << "vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
 			output << toString(*jt);
 		}
-		output <<nt();
+		output << nt();
 		pushtab();
-		output << "ct:" <<nt();
+		output << "ct:" << nt();
 		output << toString(_ctbounds.find(it->first)->second);
 		poptab();
-		output <<nt() << "cf:";
+		output << nt() << "cf:";
 		pushtab();
-		output <<nt();
+		output << nt();
 		output << toString(_cfbounds.find(it->first)->second);
 		poptab();
 		poptab();
-		output <<nt();
+		output << nt();
 	}
 	return output;
 }

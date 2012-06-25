@@ -46,6 +46,7 @@ procedure mxwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	stdoptions.symmetrybreaking = "static"
+	stdoptions.showwarnings = false //Avoid printing all warnings taht more models MIGHT exist
 	stdoptions.nbmodels = 0
 	solutions = allmodels(T,S)
 	io.stderr:write("Found "..#solutions.." models, expected at most "..getExpectedNbOfModels().." models.\n")
