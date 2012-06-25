@@ -60,4 +60,20 @@ public:
 	virtual void put(std::ostream&) const;
 };
 
+class TermGrounder;
+
+class VariableOptimizationGrounder: public OptimizationGrounder {
+private:
+	TermGrounder* _termgrounder;
+public:
+	// NOTE: passes grounder ownership!
+	VariableOptimizationGrounder(AbstractGroundTheory* grounding, TermGrounder* gr, const GroundingContext& context)
+			: OptimizationGrounder(grounding, context), _termgrounder(gr) {
+	}
+	~VariableOptimizationGrounder();
+	virtual void run(ConjOrDisj& formula) const;
+
+	virtual void put(std::ostream&) const;
+};
+
 #endif /* OPTIMTERMGROUNDERS_HPP_ */

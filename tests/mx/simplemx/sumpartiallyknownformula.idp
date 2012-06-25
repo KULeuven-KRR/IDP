@@ -5,16 +5,18 @@ vocabulary V {
 }
 
 theory T : V {
-  ! x : f(x) = 1.
+//  ! x : f(x) = 1.
 	sum{ x: p(x): f(x) } = 2.
 }
 
 structure S : V {
 	x = {1;2}
-  //p<ct> = {1}
-  //p<u> = {2}
+//  f<ct> = {1->1}
+//  f<cf> = {1->2}
+  p<ct> = {1}
+  p<u> = {2}
 }
 
 procedure getExpectedNbOfModels() {
-	return 1
+	return 3
 }

@@ -37,7 +37,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	return getAllowedToUnnest() && t->type() != TermType::VAR && t->type() != TermType::DOM;
+	return isAllowedToUnnest() && t->type() != TermType::VAR && t->type() != TermType::DOM;
 }
 /**
  * Tries to derive a sort for the term given a structure.
@@ -152,7 +152,7 @@ void UnnestTerms::visitRuleHead(Rule* rule) {
  */
 Rule* UnnestTerms::visit(Rule* rule) {
 // Visit head
-	auto saveallowed = getAllowedToUnnest();
+	auto saveallowed = isAllowedToUnnest();
 	setAllowedToUnnest(true);
 	visitRuleHead(rule);
 
@@ -166,7 +166,7 @@ Rule* UnnestTerms::visit(Rule* rule) {
 
 Formula* UnnestTerms::traverse(Formula* f) {
 	Context savecontext = _context;
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	if (isNeg(f->sign())) {
 		setContext(not _context);
 	}
@@ -228,7 +228,7 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 		delete ecf;
 		return atom->accept(this);
 	} else { // Simple recursive call
-		bool savemovecontext = getAllowedToUnnest();
+		bool savemovecontext = isAllowedToUnnest();
 		setAllowedToUnnest(true);
 		auto newecf = traverse(ecf);
 		setAllowedToUnnest(savemovecontext);
@@ -236,9 +236,9 @@ Formula* UnnestTerms::visit(EqChainForm* ecf) {
 	}
 }
 
-Formula* UnnestTerms::specialTraverse(PredForm* predform) {
+Formula* UnnestTerms::unnest(PredForm* predform) {
 	// Special treatment for (in)equalities: possibly only one side needs to be moved
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	bool moveonlyleft = false;
 	bool moveonlyright = false;
 	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
@@ -287,19 +287,22 @@ Formula* UnnestTerms::specialTraverse(PredForm* predform) {
 
 Formula* UnnestTerms::visit(PredForm* predform) {
 // Special treatment for (in)equalities: possibly only one side needs to be moved
-	auto newf = specialTraverse(predform);
+	auto newf = unnest(predform);
 	return doRewrite(newf);
 }
 
 Term* UnnestTerms::traverse(Term* term) {
+	auto saveChosenVarSort = _chosenVarSort;
+	_chosenVarSort = NULL;
 	Context savecontext = getContext();
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	for (size_t n = 0; n < term->subterms().size(); ++n) {
 		term->subterm(n, term->subterms()[n]->accept(this));
 	}
 	for (size_t n = 0; n < term->subsets().size(); ++n) {
 		term->subset(n, term->subsets()[n]->accept(this));
 	}
+	_chosenVarSort = saveChosenVarSort;
 	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return term;
@@ -317,7 +320,7 @@ Term* UnnestTerms::visit(DomainTerm* t) {
 }
 
 Term* UnnestTerms::visit(AggTerm* t) {
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	//TODO Check what should be done with AllowedToUnnest...
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
@@ -328,7 +331,7 @@ Term* UnnestTerms::visit(AggTerm* t) {
 }
 
 Term* UnnestTerms::visit(FuncTerm* t) {
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 
 	setAllowedToUnnest(true);
 
@@ -345,7 +348,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	_equalities.clear();
 	auto savevars = _variables;
 	_variables.clear();
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	setAllowedToUnnest(true);
 	Context savecontext = getContext();
 
@@ -373,7 +376,7 @@ QuantSetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	_equalities.clear();
 	set<Variable*> savevars = _variables;
 	_variables.clear();
-	bool savemovecontext = getAllowedToUnnest();
+	bool savemovecontext = isAllowedToUnnest();
 	setAllowedToUnnest(true);
 	Context savecontext = getContext();
 	setContext(Context::POSITIVE);

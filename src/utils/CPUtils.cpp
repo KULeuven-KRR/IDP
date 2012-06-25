@@ -22,7 +22,7 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 }
 
 bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {
-	if (f->partial()) { // TODO at the moment, partial terms are never eligible for CP
+	if (f->partial()) { // TODO For now, partial terms are never eligible for CP
 		return false;
 	}
 	if (not FuncUtils::isIntFunc(f, v)) {
@@ -32,7 +32,6 @@ bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v
 }
 
 bool eligibleForCP(const Function* function, const Vocabulary* voc) {
-	bool passtocp = false;
 	// Check whether the (user-defined) function's outsort is over integers
 	if (function->overloaded()) {
 		auto nonbuiltins = const_cast<Function*>(function)->nonbuiltins();
@@ -41,14 +40,14 @@ bool eligibleForCP(const Function* function, const Vocabulary* voc) {
 				return false;
 			}
 		}
-		passtocp = true;
+		return true;
 	} else if (not function->builtin()) {
-		passtocp = nonOverloadedNonBuiltinEligibleForCP(function, voc);
+		return nonOverloadedNonBuiltinEligibleForCP(function, voc);
 	} else {
 		Assert(function->builtin() and not function->overloaded());
-		passtocp = FuncUtils::isIntFunc(function, voc);
+		return FuncUtils::isIntFunc(function, voc);
 	}
-	return passtocp;
+	return false;
 }
 
 bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
@@ -63,9 +62,9 @@ bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
 	if (eligibleForCP(at->function()) && str != NULL) {
 		auto enumset = at->set();
 		for (auto i = enumset->getSets().cbegin(); i < enumset->getSets().cend(); ++i) {
-			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
-				return false;
-			}
+//			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
+//				return false;
+//			}
 			if (not eligibleForCP((*i)->getTerm(), str)) {
 				return false;
 			}

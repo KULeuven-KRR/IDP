@@ -220,7 +220,7 @@ namespace TermUtils {
 std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
 
 /** Attempts to derive a sort which is only a subset of the current sort. If not possible, the original sort is returned. */
-Sort* deriveSmallerSort(Term*, AbstractStructure*);
+Sort* deriveSmallerSort(const Term*, const AbstractStructure*);
 }
 
 #endif /* TERM_HPP_ */

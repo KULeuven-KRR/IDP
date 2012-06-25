@@ -22,6 +22,7 @@ class SetExpr;
 class PFSymbol;
 class PredForm;
 class BoolForm;
+class FuncTerm;
 class Variable;
 class AbstractStructure;
 class AbstractTheory;
@@ -167,9 +168,9 @@ void addCompletion(AbstractTheory*);
  * Given a vocabulary and a map of function symbols to their function constraint, add
  * a new function constraints for all functions not already occurring in the list.
  */
-void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
-void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
-void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport);
+void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
+void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
+void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);
@@ -225,16 +226,20 @@ void deriveSorts(Vocabulary*, Term*);
 /** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
  * 	If no bounds can be derived, NULL is returned for both bounds
  */
-std::vector<const DomainElement*> deriveTermBounds(Term*, const AbstractStructure*);
+std::vector<const DomainElement*> deriveTermBounds(const Term*, const AbstractStructure*);
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
+
+/** Check whether a function term is a term multiplied by a factor */
+bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure);
+bool isFactor(const Term* term, const AbstractStructure* structure);
 }
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
  May return true if the set expression is two-valued in the structure. */
-bool approxTwoValued(const SetExpr*, AbstractStructure*);
+bool approxTwoValued(const SetExpr*, const AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
 SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport);

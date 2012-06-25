@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "GraphFuncsAndAggs.hpp"
 
@@ -14,86 +14,113 @@
 #include "IncludeComponents.hpp"
 
 using namespace std;
+using namespace CPSupport;
 
-CompType GraphFuncsAndAggs::getCompType(const PredForm* pf) const {
-	Assert(VocabularyUtils::isComparisonPredicate(pf->symbol()));
-	if (is(pf->symbol(), STDPRED::EQ)) {
-		return isPos(pf->sign()) ? CompType::EQ : CompType::NEQ;
-	} else if (is(pf->symbol(), STDPRED::LT)) {
-		return isPos(pf->sign()) ? CompType::LT : CompType::GEQ;
+CompType getComparison(const PredForm* pf) {
+	auto sign = pf->sign();
+	auto symbol = pf->symbol();
+	Assert(VocabularyUtils::isComparisonPredicate(symbol));
+	if (is(symbol, STDPRED::EQ)) {
+		return isPos(sign) ? CompType::EQ : CompType::NEQ;
+	} else if (is(symbol, STDPRED::LT)) {
+		return isPos(sign) ? CompType::LT : CompType::GEQ;
 	} else {
-		Assert(is(pf->symbol(), STDPRED::GT));
-		return isPos(pf->sign()) ? CompType::GT : CompType::LEQ;
+		Assert(is(symbol, STDPRED::GT));
+		return isPos(sign) ? CompType::GT : CompType::LEQ;
 	}
 }
 
-PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) const {
-	Assert(functerm->type() == TermType::FUNC);
-	Assert(valueterm->type() != TermType::FUNC && valueterm->type() != TermType::AGG);
-	auto ft = dynamic_cast<FuncTerm*>(functerm);
-	auto vt = ft->subterms();
-	vt.push_back(valueterm);
-	auto funcgraph = new PredForm(sign, ft->function(), vt, pi);
-	delete (ft);
-	return funcgraph;
+bool isAgg(Term* t){
+	return t->type()==TermType::AGG;
+}
+bool isFunc(Term* t){
+	return t->type()==TermType::FUNC;
 }
 
+bool isAggOrFunc(Term* t){
+	return isAgg(t) || isFunc(t);
+}
+
+/**
+ * Given functerm = dom/varterm, construct graph
+ */
+PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) const {
+	Assert(not isAgg(valueterm));
+	Assert(not isFunc(valueterm));
+
+	Assert(isFunc(functerm));
+	auto ft = dynamic_cast<FuncTerm*>(functerm);
+
+	auto args = ft->subterms();
+	args.push_back(valueterm);
+
+	return new PredForm(sign, ft->function(), args, pi);
+}
+
+/**
+ * Given aggterm ~ dom/varterm, construct aggform
+ */
 AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, Term* aggterm, const FormulaParseInfo& pi) const {
-	Assert(aggterm->type() == TermType::AGG);
-	Assert(valueterm->type() != TermType::FUNC && valueterm->type() != TermType::AGG);
+	Assert(not isFunc(valueterm));
+	Assert(not isAgg(valueterm));
+
+	Assert(isAgg(aggterm));
 	auto at = dynamic_cast<AggTerm*>(aggterm);
+
 	return new AggForm(SIGN::POS, valueterm, comp, at, pi);
 }
 
+/**
+ * Turn any func/agg comparison into its graphed version
+ */
 Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
-	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
-		auto subterm1 = pf->subterms()[0];
-		auto subterm2 = pf->subterms()[1];
-		bool eligibleForCP = _cpsupport
-				&& VocabularyUtils::isIntComparisonPredicate(pf->symbol(),_vocabulary)
-				&& CPSupport::eligibleForCP(subterm1,_structure)
-				&& CPSupport::eligibleForCP(subterm2,_structure);
-
-		if ((subterm1->type() == TermType::FUNC || subterm1->type() == TermType::AGG)
-				&& (subterm2->type() == TermType::FUNC || subterm2->type() == TermType::AGG)
-				&& not eligibleForCP) {
-			auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf, _structure, _context);
-			return splitformula->accept(this);
-		}
-
-		Formula* newformula = NULL;
-		if (is(pf->symbol(), STDPRED::EQ) && not eligibleForCP) {
-			if (subterm1->type() == TermType::FUNC) {
-				newformula = makeFuncGraph(pf->sign(), subterm1, subterm2, pf->pi());
-				delete (pf);
-			} else if (subterm2->type() == TermType::FUNC) {
-				newformula = makeFuncGraph(pf->sign(), subterm2, subterm1, pf->pi());
-				delete (pf);
-			}
-			if (newformula != NULL) {
-				return traverse(newformula);
-			}
-		}
-		if (subterm1->type() == TermType::AGG  && not eligibleForCP) {
-			newformula = makeAggForm(subterm2, invertComp(getCompType(pf)), subterm1, pf->pi());
-			delete (pf);
-		} else if (subterm2->type() == TermType::AGG && not eligibleForCP) {
-			newformula = makeAggForm(subterm1, getCompType(pf), subterm2, pf->pi());
-			delete (pf);
-		}
-		if (newformula != NULL) {
-			return traverse(newformula);
-		}
+	if (not VocabularyUtils::isComparisonPredicate(pf->symbol())) {
+		return traverse(pf);
 	}
 
-	return traverse(pf);
+	auto left = pf->subterms()[0];
+	auto right = pf->subterms()[1];
+	bool usecp = _cpsupport
+					&& VocabularyUtils::isIntComparisonPredicate(pf->symbol(), _vocabulary)
+					&& eligibleForCP(left, _structure)
+					&& eligibleForCP(right, _structure);
+
+	if(usecp){
+		return traverse(pf);
+	}
+
+	if ((isAggOrFunc(left) && isAggOrFunc(right))) {
+		auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf, _structure, _context);
+		return splitformula->accept(this);
+	}
+
+	Formula* newformula = NULL;
+	if (is(pf->symbol(), STDPRED::EQ)) {
+		if (isFunc(left)) {
+			newformula = makeFuncGraph(pf->sign(), left, right, pf->pi());
+			delete(left);
+		} else if (isFunc(right)) {
+			newformula = makeFuncGraph(pf->sign(), right, left, pf->pi());
+			delete(right);
+		}
+	}
+	if (newformula==NULL && isAgg(left)) {
+		newformula = makeAggForm(right, invertComp(getComparison(pf)), left, pf->pi());
+	} else if (newformula==NULL && isAgg(right)) {
+		newformula = makeAggForm(left, getComparison(pf), right, pf->pi());
+	}
+	if (newformula != NULL) {
+		delete(pf);
+		return traverse(newformula);
+	}else{
+		return traverse(pf);
+	}
 }
 
 Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 	bool needsSplit = false;
-	for (size_t n = 0; n < ef->subterms().size(); ++n) {
-		TermType subtermtype = ef->subterms()[n]->type();
-		if (subtermtype == TermType::FUNC || subtermtype == TermType::AGG) {
+	for(auto i=ef->subterms().cbegin(); i<ef->subterms().cend(); ++i) {
+		if (isAggOrFunc(*i)) {
 			needsSplit = true;
 			break;
 		}
@@ -105,76 +132,3 @@ Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 		return traverse(ef);
 	}
 }
-
-//XXX Old code which does something smart for EqChainForms XXX
-//Formula* GraphFunctions::visit(EqChainForm* ef) {
-//	auto finalpi = ef->pi();
-//	bool finalconj = ef->conj();
-//	if (_recursive) {
-//		ef = dynamic_cast<EqChainForm*>(traverse(ef));
-//	}
-//	set<unsigned int> removecomps;
-//	set<unsigned int> removeterms;
-//	vector<Formula*> graphs;
-//	for (size_t comppos = 0; comppos < ef->comps().size(); ++comppos) {
-//		CompType comparison = ef->comps()[comppos];
-//		if ((comparison == CompType::EQ && ef->conj()) || (comparison == CompType::NEQ && not ef->conj())) {
-//			if (typeid(*(ef->subterms()[comppos])) == typeid(FuncTerm)) {
-//				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos]);
-//				vector<Term*> vt = functerm->subterms();
-//				vt.push_back(ef->subterms()[comppos + 1]);
-//				graphs.push_back(new PredForm(ef->isConjWithSign() ? SIGN::POS : SIGN::NEG, functerm->function(), vt, FormulaParseInfo()));
-//				removecomps.insert(comppos);
-//				removeterms.insert(comppos);
-//			} else if (typeid(*(ef->subterms()[comppos + 1])) == typeid(FuncTerm)) {
-//				FuncTerm* functerm = dynamic_cast<FuncTerm*>(ef->subterms()[comppos + 1]);
-//				vector<Term*> vt = functerm->subterms();
-//				vt.push_back(ef->subterms()[comppos]);
-//				graphs.push_back(new PredForm(ef->isConjWithSign() ? SIGN::POS : SIGN::NEG, functerm->function(), vt, FormulaParseInfo()));
-//				removecomps.insert(comppos);
-//				removeterms.insert(comppos + 1);
-//			}
-//		}
-//	}
-//	if (not graphs.empty()) {
-//		vector<Term*> newterms;
-//		vector<CompType> newcomps;
-//		for (size_t n = 0; n < ef->comps().size(); ++n) {
-//			if (removecomps.find(n) == removecomps.cend()) {
-//				newcomps.push_back(ef->comps()[n]);
-//			}
-//		}
-//		for (size_t n = 0; n < ef->subterms().size(); ++n) {
-//			if (removeterms.find(n) == removeterms.cend()) {
-//				newterms.push_back(ef->subterms()[n]);
-//			} else {
-//				delete (ef->subterms()[n]);
-//			}
-//		}
-//		EqChainForm* newef = new EqChainForm(ef->sign(), ef->conj(), newterms, newcomps, FormulaParseInfo());
-//		delete (ef);
-//		ef = newef;
-//	}
-//
-//	bool remainingfuncterms = false;
-//	for (auto it = ef->subterms().cbegin(); it != ef->subterms().cend(); ++it) {
-//		if (typeid(*(*it)) == typeid(FuncTerm)) {
-//			remainingfuncterms = true;
-//			break;
-//		}
-//	}
-//	Formula* nf = 0;
-//	if (remainingfuncterms) {
-//		auto f = FormulaUtils::splitComparisonChains(ef);
-//		nf = f->accept(this);
-//	} else {
-//		nf = ef;
-//	}
-//
-//	if (graphs.empty()) {
-//		return nf;
-//	} else {
-//		graphs.push_back(nf);
-//		return new BoolForm(SIGN::POS, isConj(nf->sign(), finalconj), graphs, finalpi.clone());
-//	}
-//}

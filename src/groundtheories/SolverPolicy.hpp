@@ -59,7 +59,8 @@ protected:
 
 	void polStartTheory(GroundTranslator*) {
 	}
-	void polEndTheory();
+	void polEndTheory() {
+	}
 
 	void polAdd(const GroundClause& cl);
 	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);

@@ -19,6 +19,10 @@
 
 class AbstractStructure;
 
+/**
+ * Graph all direct occurrences of functions in equality and aggregates in any comparison in a predform,
+ * unless they can be turned into cp (and it is enabled)
+ */
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
@@ -39,7 +43,6 @@ protected:
 	Formula* visit(PredForm* pf);
 	Formula* visit(EqChainForm* ef);
 private:
-	CompType getCompType(const PredForm* pf) const;
 	PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&) const;
 	AggForm* makeAggForm(Term* valueterm, CompType, Term* aggterm, const FormulaParseInfo&) const;
 };

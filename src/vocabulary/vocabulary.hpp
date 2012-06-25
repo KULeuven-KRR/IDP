@@ -384,7 +384,10 @@ Function* overload(const std::set<Function*>&);
 bool isIntFunc(const Function*, const Vocabulary*);
 
 /** Check whether the function is a sum over integers **/
-bool isIntSum(const Function* function, const Vocabulary* voc);
+bool isIntSum(const Function*, const Vocabulary*);
+
+/** Check whether the function is a product over integers **/
+bool isIntProduct(const Function*, const Vocabulary*);
 }
 
 /**************
@@ -558,6 +561,7 @@ bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given sym
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 
+bool isContainedIn(Term* term, Vocabulary* voc);
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 }
 

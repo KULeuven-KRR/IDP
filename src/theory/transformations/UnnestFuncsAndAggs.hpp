@@ -28,7 +28,11 @@ public:
 
 protected:
 	bool shouldMove(Term* t) {
-		return getAllowedToUnnest() && (t->type() == TermType::FUNC || t->type() == TermType::AGG);
+		return isAllowedToUnnest() && (t->type() == TermType::FUNC || t->type() == TermType::AGG);
+	}
+
+	Term* traverse(Term* t) {
+		return t;
 	}
 };
 

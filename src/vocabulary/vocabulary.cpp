@@ -1667,6 +1667,18 @@ bool isIntSum(const Function* function, const Vocabulary* voc) {
 	}
 	return false;
 }
+
+bool isIntProduct(const Function* function, const Vocabulary* voc) {
+	if (is(function, STDFUNC::PRODUCT)) {
+		bool allintsorts = isIntFunc(function, voc);
+		for (auto it = function->insorts().cbegin(); it != function->insorts().cend(); ++it) {
+			allintsorts *= SortUtils::isSubsort(*it, get(STDSORT::INTSORT), voc);
+		}
+		return allintsorts;
+	}
+	return false;
+}
+
 } /* FuncUtils */
 
 /****************
@@ -2191,6 +2203,11 @@ bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 
 bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
+}
+
+bool isContainedIn(Term* term, Vocabulary* voc){
+	// TODO not yet implemented, issue 190
+	return true;
 }
 
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {

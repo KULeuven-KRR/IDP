@@ -72,7 +72,7 @@ public:
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
-		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor,nbModelsEquivalent, solver));
+		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver));
 
 		return m;
 	}
@@ -137,6 +137,7 @@ public:
 		if (getOption(BoolType::TRACE)) {
 			fixTraceMonitor(_tracemonitor, _grounder, _reciever);
 		}
+		// Run grounder
 		_grounder->toplevelRun();
 		auto grounding = _grounder->getGrounding();
 

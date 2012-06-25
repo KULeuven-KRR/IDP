@@ -51,7 +51,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 		m->setOutputVocabulary(outputvoc);
 	}
 	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
-		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.\n");
+		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.");
 	}
 	return m;
 }
@@ -79,7 +79,6 @@ private:
 public:
 	SolverTermination(PCModelExpand* solver)
 			: solver(solver) {
-
 	}
 	void notifyTerminateRequested() {
 		solver->notifyTerminateRequested();

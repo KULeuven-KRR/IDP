@@ -129,7 +129,7 @@ std::string str(Format choice) {
 Options::Options() {
 	std::set<bool> boolvalues { true, false };
 	BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
-	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
+	BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
 	BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 	BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!

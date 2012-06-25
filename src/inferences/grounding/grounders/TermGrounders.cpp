@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "TermGrounders.hpp"
 
@@ -81,7 +81,7 @@ GroundTerm FuncTermGrounder::run() const {
 		if (groundterm.isVariable) {
 			calculable = false;
 		} else {
-			if(groundterm._domelement == NULL){
+			if (groundterm._domelement == NULL) {
 				if (verbosity() > 2) {
 					poptab();
 					clog << tabs() << "Result = **invalid term**" << "\n";
@@ -119,13 +119,13 @@ GroundTerm FuncTermGrounder::run() const {
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
 	if (type == SumType::ST_MINUS) {
-		return new CPWSumTerm({ left, right }, { 1, -1 });
+		return new CPWSumTerm( { left, right }, { 1, -1 });
 	} else {
-		return new CPSumTerm(left, right);
+		return new CPWSumTerm( { left, right }, { 1, 1 });
 	}
 }
 
-void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
+void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
 	auto leftdomain = _lefttermgrounder->getDomain();
 	auto rightdomain = _righttermgrounder->getDomain();
 	if (getDomain() == NULL || not getDomain()->approxFinite()) {
@@ -137,7 +137,7 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 			rightdomain = TableUtils::createSortTable();
 			rightdomain->add(right._domelement);
 		}
-		if (leftdomain && rightdomain && leftdomain->isRange() && rightdomain->isRange() && leftdomain->approxFinite() && rightdomain->approxFinite()) {
+		if (leftdomain && rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 			int leftmin = leftdomain->first()->value()._int;
@@ -159,7 +159,7 @@ void SumTermGrounder::computeDomain(GroundTerm& left, GroundTerm& right) const {
 				swap(min, max);
 			}
 			setDomain(TableUtils::createSortTable(min, max));
-		} else if (leftdomain->approxFinite() && rightdomain->approxFinite()) {
+		} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 			auto newdomain = TableUtils::createSortTable();
@@ -227,7 +227,7 @@ GroundTerm SumTermGrounder::run() const {
 			varid = _termtranslator->translate(sumterm, getDomain());
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable && _functable!=NULL);
-			auto domelem = _functable->operator[]({left._domelement, right._domelement});
+			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
 			Assert(domelem);
 			if (verbosity() > 2) {
 				poptab();
@@ -245,46 +245,118 @@ GroundTerm SumTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
+CPTerm* createCPSumTerm(const DomainElement* factor, const VarId& varid) {
+	Assert(factor->type() == DomainElementType::DET_INT);
+	return new CPWSumTerm( { varid }, { factor->value()._int });
+}
+
+void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const GroundTerm& groundsubterm) const {
+	Assert(factor->type() == DomainElementType::DET_INT);
+	auto subtermdomain = _subtermgrounder->getDomain();
+
+	if (getDomain() == NULL || not getDomain()->approxFinite()) {
+		if (not groundsubterm.isVariable) {
+			subtermdomain = TableUtils::createSortTable();
+			subtermdomain->add(groundsubterm._domelement);
+		}
+		if (subtermdomain != NULL and subtermdomain->isRange() and subtermdomain->approxFinite()) {
+			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
+			int min = factor->value()._int * subtermdomain->first()->value()._int;
+			int max = factor->value()._int * subtermdomain->last()->value()._int;
+			if (max < min) {
+				swap(min, max);
+			}
+			setDomain(TableUtils::createSortTable(min, max));
+		} else if (subtermdomain != NULL and subtermdomain->approxFinite()) {
+			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
+			auto newdomain = TableUtils::createSortTable();
+			for (auto it = subtermdomain->sortBegin(); not it.isAtEnd(); ++it) {
+				int value = factor->value()._int * (*it)->value()._int;
+				newdomain->add(createDomElem(value));
+			}
+			setDomain(newdomain);
+		} else {
+			//TODO
+			throw notyetimplemented("Domain of the termgrounder is infinite.");
+		}
+	}
+}
+
+GroundTerm TermWithFactorGrounder::run() const {
+	if (verbosity() > 2) {
+		printOrig();
+		pushtab();
+	}
+	// Run subtermgrounders
+	auto factor = _factortermgrounder->run();
+	auto groundterm = _subtermgrounder->run();
+
+	Assert(not factor.isVariable);
+	Assert(factor._domelement->type() == DomainElementType::DET_INT);
+
+	// Compute domain for the sum term
+	computeDomain(factor._domelement, groundterm);
+
+	VarId varid;
+	if (groundterm.isVariable) {
+		auto sumterm = createCPSumTerm(factor._domelement, groundterm._varid);
+		varid = _termtranslator->translate(sumterm, getDomain());
+	} else {
+		Assert(not groundterm.isVariable && _functable!=NULL);
+		auto domelem = _functable->operator[]( { factor._domelement, groundterm._domelement });
+		Assert(domelem);
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Result = " << toString(domelem) << "\n";
+		}
+		return GroundTerm(domelem);
+	}
+
+	// Return result
+	if (verbosity() > 2) {
+		poptab();
+		clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
+	}
+	return GroundTerm(varid);
+}
+
 CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	Assert(CPSupport::eligibleForCP(f));
 	switch (f) {
-	case SUM :
-		return new CPSumTerm(varids);
+	case SUM:
+		return new CPWSumTerm(varids, intweightlist(varids.size(),1));
 	default:
 		throw IdpException("Invalid code path.");
 	}
 }
 
 GroundTerm AggTermGrounder::run() const {
+	// Note: This grounder should only be used when the aggregate can be computed now, or when the aggregate is eligible for CPsupport!
 	if (verbosity() > 2) {
 		printOrig();
 		pushtab();
 	}
-	auto setnr = _setgrounder->run();
+	auto setnr = _setgrounder->runAndRewriteUnknowns();
 	auto tsset = _translator->groundset(setnr);
-	Assert(tsset.literals().empty());
+
+	auto value = applyAgg(_type, tsset.trueweights());
+	auto domelem = createDomElem(value);
 
 	if (not tsset.varids().empty()) {
-		//Note: When the aggregate is not computable (its set is three-valued), it should've been rewritten into an AggForm!
-		// Only when grounding with cpsupport it is possible that we end up here.
-		Assert(getOption(BoolType::CPSUPPORT) && tsset.trueweights().empty());
-
-		auto sumterm = createCPAggTerm(_type, tsset.varids());
-		auto varid = _termtranslator->translate(sumterm, getDomain());
-
+		auto varids = tsset.varids();
+		varids.push_back(_termtranslator->translate(domelem));
+		auto cpaggterm = createCPAggTerm(_type, varids);
+		auto varid = _termtranslator->translate(cpaggterm, getDomain());
 		if (verbosity() > 2) {
 			poptab();
 			clog << tabs() << "Result = " << _termtranslator->printTerm(varid) << "\n";
 		}
 		return GroundTerm(varid);
+	} else {
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Result = " << toString(domelem) << "\n";
+		}
+		return GroundTerm(domelem);
 	}
-
-	//Note: This only happens when the set is two-valued, and the aggregate is computable (otherwise this term would've been unnested and graphed to an AggForm).
-	auto value = applyAgg(_type, tsset.trueweights());
-	auto domelem = createDomElem(value);
-	if (verbosity() > 2) {
-		poptab();
-		clog << tabs() << "Result = " << toString(domelem) << "\n";
-	}
-	return GroundTerm(domelem);
 }

@@ -31,10 +31,6 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermT
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polEndTheory() {
-}
-
-template<typename Solver>
 void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 	MinisatID::Disjunction clause;
 	for (size_t n = 0; n < cl.size(); ++n) {
@@ -196,8 +192,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem,
-		double bound) {
+void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
 	auto sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
 	auto msem = MinisatID::AggSem::COMP;
 	switch (sem) {
@@ -229,8 +224,8 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTransl
 		Assert(domain->approxFinite());
 		if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
-			MinisatID::IntVarRange cpvar(varid, domain->first()->value()._int, domain->last()->value()._int);
-			extAdd(getSolver(), cpvar);
+			MinisatID::IntVarRange range(varid, domain->first()->value()._int, domain->last()->value()._int);
+			extAdd(getSolver(), range);
 		} else {
 			// the domain is not a complete range.
 			std::vector<MinisatID::Weight> w;
@@ -258,6 +253,7 @@ void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid)
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
+	polAddCPVariable(varid, _termtranslator);
 	extAdd(getSolver(), MinisatID::MinimizeVar(1, varid));
 }
 

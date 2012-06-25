@@ -60,7 +60,7 @@ public:
 		return _varid2function[varid];
 	}
 	const std::vector<GroundTerm>& args(const VarId& varid) const {
-		return _varid2args[varid];
+		return _varid2args.at(varid);
 	}
 	CPTsBody* cprelation(const VarId& varid) const {
 		return _varid2cprelation.find(varid)->second;
@@ -77,6 +77,9 @@ public:
 	}
 	const Function* getFunction(SymbolOffset offset) const {
 		return _offset2function[offset];
+	}
+	bool hasFunction(Function* function) const{
+		return _function2offset.find(function)!=_function2offset.cend();
 	}
 
 	std::string printTerm(const VarId&) const;

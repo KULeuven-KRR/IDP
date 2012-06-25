@@ -19,11 +19,11 @@ class AbstractStructure;
 class ApproxCheckTwoValued: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	AbstractStructure* _structure;
+	const AbstractStructure* _structure;
 	bool _returnvalue;
 public:
 	template<typename T>
-	bool execute(const T f, AbstractStructure* str) {
+	bool execute(const T f, const AbstractStructure* str) {
 		_structure = str;
 		_returnvalue = true;
 		f->accept(this);

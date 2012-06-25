@@ -35,7 +35,7 @@ private:
 public:
 	// @parameter dom: the sort of the position the term occurs in
 	TermGrounder(SortTable* dom = NULL)
-			: _domain(dom) {
+			: _domain(dom), _origterm(NULL) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
@@ -114,8 +114,24 @@ public:
 	}
 	GroundTerm run() const;
 private:
-	void computeDomain(GroundTerm& left, GroundTerm& right) const;
+	void computeDomain(const GroundTerm& left, const GroundTerm& right) const;
 };
+
+class TermWithFactorGrounder: public TermGrounder {
+protected:
+	GroundTermTranslator* _termtranslator;
+	FuncTable* _functable;
+	TermGrounder* _factortermgrounder;
+	TermGrounder* _subtermgrounder;
+public:
+	TermWithFactorGrounder(GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
+			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _factortermgrounder(ltg), _subtermgrounder(rtg) {
+	}
+	GroundTerm run() const;
+private:
+	void computeDomain(const DomainElement* factor, const GroundTerm& term) const;
+};
+
 
 class SetGrounder;
 
@@ -128,8 +144,8 @@ private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SetGrounder* gr) :
-			_translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SortTable* dom, SetGrounder* gr)
+			: TermGrounder(dom), _translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };

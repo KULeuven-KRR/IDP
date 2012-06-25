@@ -65,18 +65,50 @@ void deriveSorts(Vocabulary* voc, Term* term) {
 	transform<DeriveSorts>(term, voc, true);
 }
 
-ElementTuple deriveTermBounds(Term* term, const AbstractStructure* str) {
+ElementTuple deriveTermBounds(const Term* term, const AbstractStructure* str) {
 	return transform<DeriveTermBounds, ElementTuple>(term, str);
 }
 
 bool isPartial(Term* term) {
 	return transform<CheckPartialTerm, bool>(term);
 }
+
+bool isFactor(const Term* term, const AbstractStructure* structure) {
+	switch (term->type()) {
+	case TermType::VAR:
+	case TermType::DOM:
+		return true;
+		break;
+	case TermType::FUNC:
+		if (structure->inter(dynamic_cast<const FuncTerm*>(term)->function())->approxTwoValued()) {
+			return true;
+		}
+		break;
+	case TermType::AGG:
+		if (SetUtils::approxTwoValued(dynamic_cast<const AggTerm*>(term)->set(), structure)) {
+			return true;
+		}
+		break;
+	}
+	return false;
+}
+
+bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure) {
+	if (term->subterms().size() == 2 and FuncUtils::isIntProduct(term->function(), structure->vocabulary())) {
+		for (auto it = term->subterms().cbegin(); it != term->subterms().cend(); ++it) {
+			if (isFactor(*it, structure)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 }
 
 /* SetUtils */
 namespace SetUtils {
-bool approxTwoValued(const SetExpr* exp, AbstractStructure* str) {
+bool approxTwoValued(const SetExpr* exp, const AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
@@ -111,14 +143,14 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 /* FormulaUtils */
 namespace FormulaUtils {
 
-void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
-	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
+void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
-	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
+void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool cpsupport){
-	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, cpsupport);
+void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
 }
 
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {

@@ -67,13 +67,13 @@ void GroundTheory<Policy>::recursiveDelete() {
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
-	if(getOption(IntType::GROUNDVERBOSITY)>0){
-		clog <<"Closing theory, adding functional constraints and symbols defined false.\n";
+	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
 	// TODO arbitrary values?
 	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
-	if(not getOption(BoolType::GROUNDLAZILY)){
+	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
 	}
 }
@@ -206,6 +206,15 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
+	//Add reified constraint necessary. TODO refactor
+	if (termtranslator()->function(varid) == NULL) {
+		if (_printedvarids.find(varid) == _printedvarids.end()) {
+			_printedvarids.insert(varid);
+			auto cprelation = termtranslator()->cprelation(varid);
+			auto tseitin = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
+			addUnitClause(tseitin);
+		}
+	}
 	Policy::polAddOptimization(varid);
 }
 
@@ -276,28 +285,42 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 				return left;
 			}
 		}
-	} else if (isa<CPSumTerm>(*cpterm)) {
-		auto sumterm = dynamic_cast<CPSumTerm*>(cpterm);
-		std::vector<VarId> newvarids;
-		for (auto it = sumterm->varids().begin(); it != sumterm->varids().end(); ++it) {
-			if (termtranslator()->function(*it) == NULL) {
-				CPTsBody* cprelation = termtranslator()->cprelation(*it);
+	} else if (isa<CPWSumTerm>(*cpterm)) {
+		auto sumterm = dynamic_cast<CPWSumTerm*>(cpterm);
+		varidlist newvarids;
+		intweightlist newweights;
+		//for (auto vit = sumterm->varids().begin(), auto wit = sumterm->weights().begin(); vit != sumterm->varids().end(); ++vit, ++wit) {
+		auto vit = sumterm->varids().begin();
+		auto wit = sumterm->weights().begin();
+		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
+			if (termtranslator()->function(*vit) == NULL) {
+				CPTsBody* cprelation = termtranslator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
-				if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
-					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
+					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *vit);
 					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+					for (auto it = subterm->weights().begin(); it != subterm->weights().end(); ++it) {
+						newweights.push_back((*it) * (*wit));
+					}
+				} else if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+//					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
+//					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
+					Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 				} else { //TODO Need to do something special in other cases?
-					newvarids.push_back(*it);
+					newvarids.push_back(*vit);
+					newweights.push_back(*wit);
 				}
 			} else {
-				newvarids.push_back(*it);
+				newvarids.push_back(*vit);
+				newweights.push_back(*wit);
 			}
 		}
 		sumterm->varids(newvarids);
-	} else if (isa<CPWSumTerm>(*cpterm)) {
-		//CPWSumTerm* wsumterm = static_cast<CPWSumTerm*>(cpterm);
-		//TODO Folding for weighted sumterms
+		sumterm->weights(newweights);
+		return sumterm;
+	} else if (isa<CPSumTerm>(*cpterm)) {
+		Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 	}
 	return cpterm;
 }

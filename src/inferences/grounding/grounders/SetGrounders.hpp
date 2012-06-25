@@ -29,6 +29,7 @@ public:
 	virtual ~SetGrounder() {
 	}
 	virtual SetId run() const = 0;
+	virtual SetId runAndRewriteUnknowns() const = 0; //XXX Needs an other name!!!
 };
 
 class QuantSetGrounder;
@@ -42,6 +43,7 @@ public:
 	}
 	~EnumSetGrounder();
 	SetId run() const;
+	SetId runAndRewriteUnknowns() const;
 };
 
 class QuantSetGrounder: public SetGrounder {
@@ -56,8 +58,10 @@ public:
 	}
 	~QuantSetGrounder();
 	SetId run() const;
+	SetId runAndRewriteUnknowns() const;
 protected:
-	void run(litlist& literals, weightlist& weights, weightlist& trueweights, varidlist& varids) const;
+	void run(litlist& literals, weightlist& weights, weightlist& trueweights) const;
+	void run(weightlist& trueweights, varidlist& varids) const;
 	friend class EnumSetGrounder;
 };
 
