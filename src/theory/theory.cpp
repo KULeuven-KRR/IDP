@@ -461,17 +461,16 @@ void Definition::rule(unsigned int n, Rule* r) {
 }
 
 ostream& Definition::put(ostream& output) const {
-	output << "{ ";
+	output << "{";
 	if (not _rules.empty()) {
-		_rules[0]->put(output);
 		pushtab();
-		for (size_t n = 1; n < _rules.size(); ++n) {
+		for (size_t n = 0; n < _rules.size(); ++n) {
 			output << nt();
 			_rules[n]->put(output);
 		}
 		poptab();
 	}
-	output << '}';
+	output << nt() << '}';
 	return output;
 }
 
