@@ -22,17 +22,23 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure);
+//GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure);
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure) {
-	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		return generateApproxBounds(theory, structure);
-	} else {
-		return generateNaiveApproxBounds(theory, structure);
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation) {
+	Assert(theory != NULL);
+	Assert(structure != NULL);
+	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
+	auto propagator = createPropagator(theory, structure, mpi);
+	if (doSymbolicPropagation) {
+		propagator->doPropagation();
+		propagator->applyPropagationToStructure(structure);
 	}
+	auto result = propagator->symbolicstructure();
+	delete (propagator);
+	return result;
 }
 
-GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
+/*GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
 	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (not getOption(BoolType::GROUNDLAZILY)) { // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
@@ -65,11 +71,11 @@ void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PF
 	cfbounds[symbol] = manager.ifthenelse(cfkernel, manager.truebdd(), manager.falsebdd());
 }
 
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, AbstractStructure* structure) {
+GenerateBDDAccordingToBounds* generateNaiveBounds( AbstractStructure* structure) {
 	auto manager = new FOBDDManager();
 	Bound ctbounds, cfbounds;
-	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
 	auto vocabulary = structure->vocabulary();
+	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
 	for (auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
 		auto preds = it->second->nonbuiltins();
 		for (auto jt = preds.cbegin(); jt != preds.cend(); ++jt) {
@@ -83,7 +89,7 @@ GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory*, Abstrac
 		}
 	}
 	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
-}
+}*/
 
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*, InitBoundType> mpi) {
 //	if(getOption(BoolType::GROUNDWITHBOUNDS)){
@@ -102,7 +108,7 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const
 }
 
 /** Collect symbolic propagation vocabulary **/
-std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure)  {
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure) {
 	std::map<PFSymbol*, InitBoundType> mpi;
 	Vocabulary* v = theory->vocabulary();
 	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {

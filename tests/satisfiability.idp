@@ -2,24 +2,28 @@
 
 procedure satnobounds(){
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 5
 	return run()
 }
 
 procedure satnoboundslong(){
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 200
 	return run()
 }
 
 procedure satwithbounds(){
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
 
 procedure satwithboundslong(){
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 200
 	return run()
 }
@@ -27,6 +31,7 @@ procedure satwithboundslong(){
 procedure satwithcp(){
 	stdoptions.cpsupport = true
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -34,6 +39,7 @@ procedure satwithcp(){
 procedure satwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.symmetrybreaking = "static"
 	return run()
 }

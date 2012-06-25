@@ -29,7 +29,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
-		auto generateBDDaccToBounds = generateNaiveApproxBounds(NULL, structure);
+		auto generateBDDaccToBounds = generateBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure,false);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
 		manager = generateBDDaccToBounds->manager();
 		delete generateBDDaccToBounds;

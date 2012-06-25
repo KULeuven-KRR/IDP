@@ -63,9 +63,9 @@ public:
 
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure);
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation);
 
-GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+//GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 
 /** Collect symbolic propagation vocabulary **/
 std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure);

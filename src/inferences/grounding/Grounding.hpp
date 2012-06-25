@@ -113,7 +113,7 @@ public:
 		if (verbosity() >= 1) {
 			std::clog << "Approximation\n";
 		}
-		auto symstructure = generateBounds(_theory, _structure);
+		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 		if (not _structure->isConsistent()) {
 			if (verbosity() > 0) {
 				std::clog << "approximation detected UNSAT\n";
