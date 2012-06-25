@@ -279,7 +279,7 @@ public:
 	unsigned int arity() const; //!< Returns the arity of the predicate
 	bool builtin() const;
 	bool overloaded() const;
-	bool isSortPredicate() const; //!< Returns true iff this is a predicate representing a sort
+	//TODO? bool isSortPredicate() const; //!< Returns true iff this is a predicate representing a sort
 	std::set<Sort*> allsorts() const;
 
 	// Built-in symbols
@@ -292,7 +292,7 @@ public:
 	std::set<Predicate*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
 										//!< and that are overloaded by 'this'.
 
-										// Output
+	// Output
 	std::ostream& put(std::ostream&) const;
 
 	friend class Sort;

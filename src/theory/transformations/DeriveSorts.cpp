@@ -259,14 +259,15 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 	_useBuiltIns = useBuiltins;
 	_assertsort = NULL;
 	_vocab = v;
-	auto& head = *r->head();
+	auto& head = *(r->head());
 	// Set the sort of the terms in the head
 	auto jt = head.symbol()->sorts().cbegin();
-	for (unsigned int n = 0; n < head.subterms().size(); ++n, ++jt) {
-		auto hs = head.subterms()[n]->sort();
+	for (size_t n = 0; n < head.subterms().size(); ++n, ++jt) {
+		auto subterm = head.subterms()[n];
+		auto hs = subterm->sort();
 		if (hs == NULL) {
-			head.subterms()[n]->sort(*jt);
-			auto varterm = dynamic_cast<VarTerm*>(head.subterms()[n]);
+			subterm->sort(*jt);
+			auto varterm = dynamic_cast<VarTerm*>(subterm);
 			if (varterm != NULL) {
 				_untypedvariables.insert(varterm->var());
 			}
@@ -276,15 +277,30 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 			continue;
 		}
 
-		auto nv = new Variable(*jt);
-		auto nvt1 = new VarTerm(nv, TermParseInfo());
-		auto nvt2 = new VarTerm(nv, TermParseInfo());
-		auto ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
-		ecf->add(CompType::EQ, head.subterms()[n]);
-		auto bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
-		r->body(bf);
-		head.arg(n, nvt2);
-		r->addvar(nv);
+		// Make sure the terms in the head are type safe.
+		Assert(hs != NULL);
+		if (subterm->type() == TermType::DOM) {
+			// If the subterm is a domainterm, then add a sort check to the body of the rule.
+			if (not useBuiltins) {
+				// Note: Everytime this method is called, a sort check will be added to the body!
+				// Typically it is called twice (with and without using builtins), so we do it in only one of these cases.
+				auto sortpred = (*jt)->pred();
+				auto pf = new PredForm(SIGN::POS, sortpred, { subterm->clone() }, FormulaParseInfo());
+				auto bf = new BoolForm(SIGN::POS, true, r->body(), pf, FormulaParseInfo());
+				r->body(bf);
+			}
+		} else {
+			// For any other type of term, introduce a variable and move the subterm to the body.
+			auto nv = new Variable(*jt);
+			auto nvt1 = new VarTerm(nv, TermParseInfo());
+			auto nvt2 = new VarTerm(nv, TermParseInfo());
+			auto ecf = new EqChainForm(SIGN::POS, true, nvt1, FormulaParseInfo());
+			ecf->add(CompType::EQ, subterm);
+			auto bf = new BoolForm(SIGN::POS, true, r->body(), ecf, FormulaParseInfo());
+			r->body(bf);
+			head.arg(n, nvt2);
+			r->addvar(nv);
+		}
 	}
 	deriveSorts(r);
 }
