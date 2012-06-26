@@ -46,7 +46,7 @@ public:
 
 private:
 	void add(Function* function){
-		if(_alsoCPableFunctions || not CPSupport::eligibleForCP(function, _voc)){
+		if (_alsoCPableFunctions || not CPSupport::eligibleForCP(function, _voc)) {
 			_functions.insert(function);
 		}
 	}
@@ -63,7 +63,7 @@ private:
 
 	Formula* createFuncConstraints(Function* function) {
 		if (verbosity() > 1) {
-			cerr << "Adding function constraint for " << toString(function) << "\n";
+			clog << "Adding function constraint for " << toString(function) << "\n";
 		}
 		//Atom: F(x)=y
 		auto vars = VarUtils::makeNewVariables(function->sorts());

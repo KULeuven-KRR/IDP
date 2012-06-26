@@ -410,9 +410,9 @@ CompType getCompType(T symbol) {
 
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, (getOption(BoolType::CPSUPPORT) and not recursive(pf)));
 			// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
+	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, (getOption(BoolType::CPSUPPORT) and not recursive(pf)), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -437,7 +437,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
-		Assert(not recursive(newpf) && _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
+		Assert(not recursive(newpf) and _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
 		TermGrounder* lefttermgrounder;
 		TermGrounder* righttermgrounder;
 		CompType comp;
@@ -508,8 +508,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 		deleteList(data.fovars);
 
-		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, possTrueChecker, certTrueChecker,
-				_structure->inter(newpf->symbol()), argsorttables, _context);
+		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers,
+				possTrueChecker, certTrueChecker, _structure->inter(newpf->symbol()), argsorttables, _context);
 		_formgrounder->setOrig(newpf, varmapping());
 	}
 	if (_context._component == CompContext::SENTENCE) {
