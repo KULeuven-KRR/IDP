@@ -77,10 +77,12 @@ void Error::error(const std::string& message, const ParseInfo& p) {
 }
 
 void Warning::warning(const std::string& message) {
-	stringstream ss;
-	ss << ">>> Warning: " << message << "\n";
-	GlobalData::instance()->notifyOfWarning(ss.str());
-	clog << ss.str();
+	if (getOption(BoolType::SHOWWARNINGS)) {
+		stringstream ss;
+		ss << ">>> Warning: " << message << "\n";
+		GlobalData::instance()->notifyOfWarning(ss.str());
+		clog << ss.str();
+	}
 }
 
 void Warning::warning(const std::string& message, const ParseInfo& p) {
@@ -345,7 +347,7 @@ void Warning::cumulchance(double c) {
 
 void Warning::possiblyInfiniteGrounding(const std::string& formula) {
 	stringstream ss;
-	ss << "Infinite grounding of formula " << formula <<".";
+	ss << "Infinite grounding of formula " << formula << ".";
 	warning(ss.str());
 }
 

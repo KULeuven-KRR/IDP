@@ -1,13 +1,15 @@
 #include <mx>
 
 procedure mxnobounds(){
-	stdoptions.groundwithbounds = false
+	stdoptions.groundwithbounds = false	
+	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 5
 	return run()
 }
 
 procedure mxlazy(){
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.groundlazily = true
 	stdoptions.tseitindelay = true
 	// NOTE: never enable delaying here which depends on well-founded definitions!
@@ -17,12 +19,14 @@ procedure mxlazy(){
 
 procedure mxnoboundslong(){
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 200
 	return run()
 }
 
 procedure mxwithbounds(){
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -30,6 +34,7 @@ procedure mxwithbounds(){
 procedure mxwithcp(){
 	stdoptions.cpsupport = true
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -38,6 +43,7 @@ procedure mxwithcp(){
 procedure mxwithSharedTseitins(){
 	stdoptions.sharedtseitins = true
 	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -45,6 +51,7 @@ procedure mxwithSharedTseitins(){
 procedure mxwithsymm(){
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
 	stdoptions.symmetrybreaking = "static"
 	stdoptions.showwarnings = false //Avoid printing all warnings taht more models MIGHT exist
 	stdoptions.nbmodels = 0

@@ -29,7 +29,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto data = SolverConnection::createsolver(1);
 	Theory theory("", structure->vocabulary(), ParseInfo());
 	theory.add(definition);
-	auto symstructure = generateBounds(&theory, structure);
+	auto symstructure = generateBounds(&theory, structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 	auto grounder = GrounderFactory::create({&theory, structure, symstructure, true /*TODO CHECK*/}, data);
 
 	grounder->toplevelRun();

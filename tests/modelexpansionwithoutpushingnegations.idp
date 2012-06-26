@@ -4,7 +4,7 @@ procedure main() {
 	stdoptions.nbmodels = 0
 	stdoptions.timeout = 10
 	stdoptions.groundwithbounds = false
-	
+	stdoptions.liftedunitpropagation = false
 	local partialsols = idpintern.modelexpand(clone(T),S)
 	local solutions = alltwovaluedextensions(partialsols)
 
