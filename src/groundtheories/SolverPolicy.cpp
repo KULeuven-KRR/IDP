@@ -14,7 +14,7 @@
 #include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 
-#include "inferences/grounding/GroundTermTranslator.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
 #include "inferences/SolverConnection.hpp"
 
@@ -24,10 +24,10 @@ using namespace std;
 using namespace SolverConnection;
 
 template<typename Solver>
-void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator) {
+void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTranslator* translator) {
 	_solver = solver;
 	_verbosity = verbosity;
-	_termtranslator = termtranslator;
+	_translator = translator;
 }
 
 template<typename Solver>
@@ -116,9 +116,9 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	CPBound right = body->right();
 	if (isa<CPVarTerm>(*left)) {
 		CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
-		polAddCPVariable(term->varid(), _termtranslator);
+		polAddCPVariable(term->varid(), _translator);
 		if (right._isvarid) {
-			polAddCPVariable(right._varid, _termtranslator);
+			polAddCPVariable(right._varid, _translator);
 			MinisatID::CPBinaryRelVar sentence(createAtom(tseitin), term->varid(), comp, right._varid);
 			extAdd(getSolver(), sentence);
 		} else {
@@ -127,9 +127,9 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 		}
 	} else if (isa<CPSumTerm>(*left)) {
 		CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-		polAddCPVariables(term->varids(), _termtranslator);
+		polAddCPVariables(term->varids(), _translator);
 		if (right._isvarid) {
-			polAddCPVariable(right._varid, _termtranslator);
+			polAddCPVariable(right._varid, _translator);
 			varidlist varids = term->varids();
 			intweightlist weights(term->varids().size(), 1);
 
@@ -145,9 +145,9 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	} else {
 		Assert(isa<CPWSumTerm>(*left));
 		CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-		polAddCPVariables(term->varids(), _termtranslator);
+		polAddCPVariables(term->varids(), _translator);
 		if (right._isvarid) {
-			polAddCPVariable(right._varid, _termtranslator);
+			polAddCPVariable(right._varid, _translator);
 			varidlist varids = term->varids();
 			intweightlist weights = term->weights();
 
@@ -209,14 +209,14 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator) {
+void SolverPolicy<Solver>::polAddCPVariables(const varidlist& varids, GroundTranslator* termtranslator) {
 	for (auto it = varids.begin(); it != varids.end(); ++it) {
 		polAddCPVariable(*it, termtranslator);
 	}
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator) {
+void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTranslator* termtranslator) {
 	if (_addedvarids.find(varid) == _addedvarids.end()) {
 		_addedvarids.insert(varid);
 		SortTable* domain = termtranslator->domain(varid);
@@ -253,7 +253,7 @@ void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid)
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
-	polAddCPVariable(varid, _termtranslator);
+	polAddCPVariable(varid, _translator);
 	extAdd(getSolver(), MinisatID::MinimizeVar(1, varid));
 }
 

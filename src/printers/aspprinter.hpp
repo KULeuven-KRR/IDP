@@ -18,14 +18,12 @@
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 template<typename Stream>
 class ASPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
-	const GroundTermTranslator* _termtranslator;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -43,14 +41,11 @@ private:
 
 public:
 	ASPPrinter(Stream& stream)
-		: StreamPrinter<Stream>(stream), _translator(NULL), _termtranslator(NULL) {
+		: StreamPrinter<Stream>(stream), _translator(NULL) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
 		_translator = t;
-	}
-	virtual void setTermTranslator(GroundTermTranslator* t) {
-		_termtranslator = t;
 	}
 	virtual void startTheory() {
 		openTheory();

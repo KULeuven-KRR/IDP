@@ -61,8 +61,8 @@ Definition* AddCompletion::visit(Definition* def) {
 
 Rule* AddCompletion::visit(Rule* rule) {
 	vector<Formula*> vf;
-	vector<Variable*> vv = _headvars[rule->head()->symbol()];
-	set<Variable*> freevars = rule->quantVars();
+	auto vv = _headvars[rule->head()->symbol()];
+	auto freevars = rule->quantVars();
 	map<Variable*, Variable*> mvv;
 
 	for (size_t n = 0; n < rule->head()->subterms().size(); ++n) {

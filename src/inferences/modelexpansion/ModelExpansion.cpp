@@ -159,7 +159,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
-	SolverConnection::addTerms(model, grounding->termtranslator(), newsolution);
+	SolverConnection::addTerms(model, grounding->translator(), newsolution);
 	newsolution->changeVocabulary(inputvoc); // Project onto input vocabulary
 	newsolution->clean();
 	Assert(newsolution->isConsistent());

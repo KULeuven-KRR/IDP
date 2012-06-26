@@ -17,7 +17,6 @@
 #include "generators/InstGenerator.hpp"
 #include "generators/BasicCheckersAndGenerators.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"
 
@@ -56,7 +55,6 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		weightlist& trueweights, varidlist& varids, InstChecker& checker) {
 	auto grounding = sublitgrounder.getGrounding();
 	auto translator = grounding->translator();
-	auto termtranslator = grounding->termtranslator();
 
 	Lit l;
 
@@ -91,11 +89,11 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	if (groundweight.isVariable) {
 		v = groundweight._varid;
 	} else {
-		v = termtranslator->translate(groundweight._domelement);
+		v = translator->translate(groundweight._domelement);
 	}
 
 	SortTable* domain = NULL;
-	auto vardom = termtranslator->domain(v);
+	auto vardom = translator->domain(v);
 	Assert(vardom->approxFinite());
 	Assert(vardom->first()->type() == DomainElementType::DET_INT);
 	if (vardom->isRange()) {
@@ -113,7 +111,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()), domain);
 	auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
 
-	auto varid = termtranslator->translate(constant, vector<GroundTerm>{});
+	auto varid = translator->translate(constant, vector<GroundTerm>{});
 	auto vt1 = new CPVarTerm(varid);
 	auto vt2 = new CPVarTerm(varid);
 	Lit bl1 = translator->translate(vt1, CompType::EQ, CPBound(v), TsType::EQ);

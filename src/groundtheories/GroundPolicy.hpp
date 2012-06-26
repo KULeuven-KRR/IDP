@@ -24,7 +24,6 @@ class GroundSet;
 class GroundAggregate;
 class CPReification;
 class GroundTranslator;
-class GroundTermTranslator;
 class AggTsBody;
 class PCTsBody;
 class TsSet;
@@ -96,9 +95,9 @@ public:
 	void polAddOptimization(VarId);
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator) const;
 
-	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
+	std::string polToString(GroundTranslator* translator) const;
 };
 
 #endif /* GROUNDTHEORY_HPP_ */

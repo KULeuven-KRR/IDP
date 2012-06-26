@@ -20,7 +20,6 @@
 class TheoryVisitor;
 
 class GroundTranslator;
-class GroundTermTranslator;
 class PCTsBody;
 class AggTsBody;
 class CPTsBody;

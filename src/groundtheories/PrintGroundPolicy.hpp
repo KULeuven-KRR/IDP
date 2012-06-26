@@ -52,12 +52,11 @@ public:
 		return *printer_;
 	}
 
-	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator) {
+	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator) {
 		monitor_ = monitor;
 		printer_ = Printer::create(*monitor);
 		//TODO translation option as argument to constructor
 		printer().setTranslator(translator);
-		printer().setTermTranslator(termtranslator);
 		printer().setStructure(str);
 		printer().startTheory();
 	}
@@ -114,11 +113,11 @@ public:
 		throw notyetimplemented("Printing symmetries.\n");
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
+	std::ostream& polPut(std::ostream& s, GroundTranslator*) const {
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*, GroundTermTranslator*) const {
+	std::string polToString(GroundTranslator*) const {
 		Assert(false);
 		return "";
 	}

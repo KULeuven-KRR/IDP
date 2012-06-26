@@ -24,6 +24,14 @@ class CPTerm;
 class CPBound;
 class LazyStoredInstantiation;
 class TsSet;
+class Function;
+class AbstractStructure;
+class GroundTerm;
+class CPTsBody;
+class SortTable;
+class CPTerm;
+
+typedef size_t SymbolOffset;
 
 //typedef std::map<ElementTuple, Lit, Compare<ElementTuple> > Tuple2AtomMap;
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
@@ -85,14 +93,26 @@ private:
 	std::map<CPTsBody*, Lit, CompareTs> cpset;
 
 	Vocabulary* _vocabulary;
+	AbstractStructure* _structure;
 
-//	Lit addTseitinBody(TsBody* body);
+	std::vector<std::map<std::vector<GroundTerm>, VarId> > _functerm2varid_table; //!< map function term to CP variable identifier
+	std::vector<Function*> _varid2function; //!< map CP varid to the symbol of its corresponding term
+	std::vector<std::vector<GroundTerm> > _varid2args; //!< map CP varid to the terms of its corresponding term
+
+	std::vector<Function*> _offset2function;
+	std::map<Function*, SymbolOffset> _function2offset;
+
+	std::map<VarId, CPTsBody*> _varid2cprelation;
+
+	std::vector<SortTable*> _varid2domain;
+
 	Lit nextNumber(AtomType type);
+	VarId nextNumber();
 
 	int getSymbol(PFSymbol* pfs) const;
 
 public:
-	GroundTranslator(Vocabulary* structure);
+	GroundTranslator(AbstractStructure* structure);
 	~GroundTranslator();
 
 	// NOTE: used to add func constraints as soon as possible
@@ -105,6 +125,7 @@ public:
 		return newsymbols.size();
 	}
 
+	// Translate into propositional variables
 	Lit translate(SymbolOffset, const ElementTuple&);
 	Lit translate(const litlist& cl, bool conj, TsType tp);
 	Lit translate(const Lit& head, const litlist& clause, bool conj, TsType tstype);
@@ -113,6 +134,12 @@ public:
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
 	Lit translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
 	Lit translate(LazyStoredInstantiation* instance, TsType type);
+
+	// Translate into finite domain variables
+	VarId translate(SymbolOffset offset, const std::vector<GroundTerm>&);
+	VarId translate(Function*, const std::vector<GroundTerm>&);
+	VarId translate(CPTerm*, SortTable*);
+	VarId translate(const DomainElement*);
 
 	/*
 	 * @precon: defid==-1 if a FORMULA will be delayed
@@ -184,8 +211,38 @@ public:
 		return symbols[n].tuple2atom;
 	}
 
+	SymbolOffset addFunction(Function*);
+
+	// Methods for translating variable identifiers to terms
+	Function* function(const VarId& varid) const {
+		return _varid2function[varid];
+	}
+	const std::vector<GroundTerm>& args(const VarId& varid) const {
+		return _varid2args.at(varid);
+	}
+	CPTsBody* cprelation(const VarId& varid) const {
+		return _varid2cprelation.find(varid)->second;
+	}
+	SortTable* domain(const VarId& varid) const {
+		return _varid2domain[varid];
+	}
+
+	size_t nrOffsets() const {
+		return _offset2function.size();
+	}
+	SymbolOffset getOffset(Function* func) const {
+		return _function2offset.at(func);
+	}
+	const Function* getFunction(SymbolOffset offset) const {
+		return _offset2function[offset];
+	}
+	bool hasFunction(Function* function) const{
+		return _function2offset.find(function)!=_function2offset.cend();
+	}
+
 	std::string print(Lit atom);
 	std::string printLit(const Lit& atom) const;
+	std::string printTerm(const VarId&) const;
 };
 
 #endif /* GROUNDTRANSLATOR_HPP_ */

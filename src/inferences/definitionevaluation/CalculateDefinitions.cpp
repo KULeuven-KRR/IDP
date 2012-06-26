@@ -50,7 +50,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 		Assert(abstractsolutions.size() == 1);
 		auto model = *(abstractsolutions.cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
-		SolverConnection::addTerms(*model, grounding->termtranslator(), structure);
+		SolverConnection::addTerms(*model, grounding->translator(), structure);
 		structure->clean();
 	}
 	// Cleanup

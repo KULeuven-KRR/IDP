@@ -33,7 +33,6 @@ class GroundDefinition;
 class CPReification;
 class GroundSet;
 class GroundAggregate;
-class GroundTermTranslator;
 class GroundTranslator;
 typedef std::vector<int> GroundClause;
 
@@ -105,8 +104,6 @@ public:
 	virtual void endTheory() = 0;
 
 	virtual void setTranslator(GroundTranslator*) {
-	}
-	virtual void setTermTranslator(GroundTermTranslator*) {
 	}
 	virtual void setStructure(AbstractStructure*) {
 	}

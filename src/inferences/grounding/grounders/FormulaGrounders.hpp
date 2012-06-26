@@ -23,7 +23,6 @@ class PredInter;
 class Formula;
 class SortTable;
 class GroundTranslator;
-class GroundTermTranslator;
 class PFSymbol;
 
 /*** Formula grounders ***/
@@ -83,7 +82,6 @@ public:
 
 class ComparisonGrounder: public FormulaGrounder {
 private:
-	GroundTermTranslator* _termtranslator;
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	CompType _comparator;
@@ -91,8 +89,8 @@ private:
 	Lit run() const;
 
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
-			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
+	ComparisonGrounder(AbstractGroundTheory* grounding, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
+			: FormulaGrounder(grounding, gc), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 		Assert(context()._tseitin!=TsType::RULE);
 		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 	}

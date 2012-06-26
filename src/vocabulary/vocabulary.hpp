@@ -219,6 +219,9 @@ public:
 	std::vector<unsigned int> argumentNrs(const Sort*) const; //!< Returns the numbers of the arguments where this
 															  //!< PFSymbol ranges over the given sort
 
+	virtual bool isFunction() const = 0;
+	virtual bool isPredicate() const = 0;
+
 	virtual bool builtin() const = 0; //!< Returns true iff the symbol is built-in
 	virtual bool overloaded() const = 0; //!< Returns true iff the symbol is in fact a set of overloaded
 										 //!< symbols
@@ -264,6 +267,13 @@ public:
 	Predicate(PredGenerator* generator);
 
 	~Predicate();
+
+	virtual bool isPredicate() const {
+		return true;
+	}
+	virtual bool isFunction() const {
+		return false;
+	}
 
 	bool removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
@@ -340,6 +350,13 @@ public:
 	Function(FuncGenerator*);
 
 	~Function();
+
+	virtual bool isPredicate() const {
+		return false;
+	}
+	virtual bool isFunction() const {
+		return true;
+	}
 
 	void partial(bool b); //!< Make the function total/partial if b is false/true
 	bool removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
@@ -466,10 +483,10 @@ public:
 	Vocabulary(const std::string& name);
 	Vocabulary(const std::string& name, const ParseInfo& pi);
 
-	void addStructure(AbstractStructure* s){
+	void addStructure(AbstractStructure* s) {
 		structures.insert(s);
 	}
-	void removeStructure(AbstractStructure* s){
+	void removeStructure(AbstractStructure* s) {
 		structures.erase(s);
 	}
 

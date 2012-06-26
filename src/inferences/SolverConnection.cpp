@@ -12,7 +12,6 @@
 
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include <cmath>
 
@@ -175,7 +174,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 	}
 }
 
-void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
+void addTerms(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
 	// Convert vector of variableassignments to a map
 	map<VarId,int> variable2valuemap;
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
@@ -183,12 +182,12 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 	}
 	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
-		auto function = termtranslator->function(cpvar->variable);
+		auto function = translator->function(cpvar->variable);
 		if (function == NULL || not init->vocabulary()->contains(function)) {
 			//Note: Only consider functions that are in the user's vocabulary, ignore internal ones.
 			continue;
 		}
-		const auto& gtuple = termtranslator->args(cpvar->variable);
+		const auto& gtuple = translator->args(cpvar->variable);
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {

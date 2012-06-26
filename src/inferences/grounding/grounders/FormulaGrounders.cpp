@@ -14,7 +14,6 @@
 #include "TermGrounders.hpp"
 #include "SetGrounders.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"
@@ -36,7 +35,6 @@ FormulaGrounder::~FormulaGrounder() {
 	if (not _origvarmap.empty()) {
 		for (auto i = _origvarmap.begin(); i != _origvarmap.end(); ++i) {
 			delete (i->first);
-			//delete (i->second);
 		}
 		_origvarmap.clear();
 	}

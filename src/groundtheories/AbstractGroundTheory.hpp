@@ -17,7 +17,6 @@
 #include "theory/ecnf.hpp"
 #include "visitors/VisitorFriends.hpp"
 
-class GroundTermTranslator;
 class GroundTranslator;
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
@@ -39,7 +38,6 @@ private:
 	AbstractStructure* _structure; // OWNER! The ground theory might be partially reduced with respect to this structure.
 
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.
-	GroundTermTranslator* _termtranslator; //!< Link between ground terms and CP-solver variables.
 
 public:
 	// Non-owning structure pointer, can be NULL!
@@ -74,12 +72,8 @@ public:
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases
 	virtual void closeTheory() = 0;
 
-	// Inspectors
 	GroundTranslator* translator() const {
 		return _translator;
-	}
-	GroundTermTranslator* termtranslator() const {
-		return _termtranslator;
 	}
 	AbstractStructure* structure() const {
 		return _structure;

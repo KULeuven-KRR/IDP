@@ -52,7 +52,7 @@ private:
 	}
 	void visit(const PredForm* pf) {
 		traverse(pf);
-		if (isa<Function>(*pf->symbol())) {
+		if (pf->symbol()->isFunction()) {
 			add(dynamic_cast<Function*>(pf->symbol()));
 		}
 	}

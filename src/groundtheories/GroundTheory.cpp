@@ -13,7 +13,6 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
-#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "visitors/TheoryVisitor.hpp"
@@ -135,10 +134,10 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	body->left(foldCPTerm(body->left()));
 
 	//Add constraint for right hand side if necessary. TODO refactor
-	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
+	if (body->right()._isvarid && translator()->function(body->right()._varid) == NULL) {
 		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
 			_printedvarids.insert(body->right()._varid);
-			auto cprelation = termtranslator()->cprelation(body->right()._varid);
+			auto cprelation = translator()->cprelation(body->right()._varid);
 			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),cprelation->type());
 			addUnitClause(tseitin2);
 		}
@@ -207,10 +206,10 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
 	//Add reified constraint necessary. TODO refactor
-	if (termtranslator()->function(varid) == NULL) {
+	if (translator()->function(varid) == NULL) {
 		if (_printedvarids.find(varid) == _printedvarids.end()) {
 			_printedvarids.insert(varid);
-			auto cprelation = termtranslator()->cprelation(varid);
+			auto cprelation = translator()->cprelation(varid);
 			auto tseitin = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
 			addUnitClause(tseitin);
 		}
@@ -225,7 +224,7 @@ void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >&
 
 template<class Policy>
 std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
-	return Policy::polPut(s, translator(), termtranslator());
+	return Policy::polPut(s, translator());
 }
 
 template<class Policy>
@@ -277,8 +276,8 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 
 	if (isa<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (termtranslator()->function(varterm->varid()) == NULL) {
-			CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
+		if (translator()->function(varterm->varid()) == NULL) {
+			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
 			if ((isa<CPSumTerm>(*left) || isa<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
 				Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
@@ -293,8 +292,8 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-			if (termtranslator()->function(*vit) == NULL) {
-				CPTsBody* cprelation = termtranslator()->cprelation(*vit);
+			if (translator()->function(*vit) == NULL) {
+				CPTsBody* cprelation = translator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
 				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
 					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);

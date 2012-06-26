@@ -18,7 +18,6 @@
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 //TODO is not guaranteed to generate correct idp files!
 // FIXME do we want this? Because printing cp constraints etc. should be done correctly then!
@@ -29,7 +28,7 @@ class IDPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
-	const GroundTermTranslator* _termtranslator;
+	const GroundTranslator* _termtranslator;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -53,7 +52,7 @@ public:
 	virtual void setTranslator(GroundTranslator* t) {
 		_translator = t;
 	}
-	virtual void setTermTranslator(GroundTermTranslator* t) {
+	virtual void setTermTranslator(GroundTranslator* t) {
 		_termtranslator = t;
 	}
 
@@ -254,7 +253,7 @@ public:
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		_translator = g->translator();
-		_termtranslator = g->termtranslator();
+		_termtranslator = g->translator();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION
 			visit(*i);

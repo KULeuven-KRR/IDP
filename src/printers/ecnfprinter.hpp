@@ -19,7 +19,6 @@
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "inferences/SolverConnection.hpp"
 
@@ -34,7 +33,7 @@ private:
 	int _currenthead;
 	unsigned int _currentdefnr;
 	AbstractStructure* _structure;
-	const GroundTermTranslator* _termtranslator;
+	const GroundTranslator* _termtranslator;
 	std::set<unsigned int> _printedvarids;
 	bool writeTranslation_;
 
@@ -92,7 +91,7 @@ public:
 	virtual void setStructure(AbstractStructure* t) {
 		_structure = t;
 	}
-	virtual void setTermTranslator(GroundTermTranslator* t) {
+	virtual void setTermTranslator(GroundTranslator* t) {
 		_termtranslator = t;
 	}
 
@@ -124,7 +123,7 @@ public:
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		setStructure(g->structure());
-		setTermTranslator(g->termtranslator());
+		setTermTranslator(g->translator());
 		startTheory();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION

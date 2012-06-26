@@ -15,7 +15,6 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "IncludeComponents.hpp"
 
@@ -34,10 +33,6 @@ void OptimizationGrounder::setOrig(const Term* t) {
 
 GroundTranslator* OptimizationGrounder::getTranslator() const {
 	return getGrounding()->translator();
-}
-
-GroundTermTranslator* OptimizationGrounder::getTermTranslator() const {
-	return getGrounding()->termtranslator();
 }
 
 void OptimizationGrounder::printOrig() const {
@@ -87,7 +82,7 @@ void VariableOptimizationGrounder::run(ConjOrDisj& formula) const {
 	if (groundterm.isVariable) {
 		varid = groundterm._varid;
 	} else {
-		varid = getTermTranslator()->translate(groundterm._domelement);
+		varid = getTranslator()->translate(groundterm._domelement);
 	}
 	getGrounding()->addOptimization(varid);
 

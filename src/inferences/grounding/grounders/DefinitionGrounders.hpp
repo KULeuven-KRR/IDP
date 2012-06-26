@@ -28,7 +28,6 @@ class PredInter;
 class Formula;
 class SortTable;
 class GroundTranslator;
-class GroundTermTranslator;
 class PFSymbol;
 
 class RuleGrounder;

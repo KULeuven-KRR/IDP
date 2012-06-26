@@ -306,7 +306,7 @@ void DeriveSorts::check() {
 		}
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
-		if (typeid(*((*it)->symbol())) == typeid(Predicate)) {
+		if ((*it)->symbol()->isPredicate()) {
 			Error::nopredsort((*it)->symbol()->name(), (*it)->pi());
 		} else {
 			Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());
