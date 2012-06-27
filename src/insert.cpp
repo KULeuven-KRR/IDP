@@ -1168,15 +1168,17 @@ void Insert::sentence(Formula* f) {
 }
 
 void Insert::fixpdef(FixpDef* d) const {
-	if (d)
+	if (d) {
 		_currtheory->add(d);
+	}
 }
 
 Definition* Insert::definition(const vector<Rule*>& rules) const {
 	Definition* d = new Definition();
-	for (unsigned int n = 0; n < rules.size(); ++n) {
-		if (rules[n])
+	for (size_t n = 0; n < rules.size(); ++n) {
+		if (rules[n]) {
 			d->add(rules[n]);
+		}
 	}
 	return d;
 }
@@ -1205,10 +1207,10 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 			}
 		}
 		// Create a new rule
-		if (not (bv.empty())) {
+		if (not bv.empty()) {
 			body = new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi())));
 		}
-		Assert(typeid(*head) == typeid(PredForm));
+		Assert(isa<PredForm>(*head));
 		auto pfhead = dynamic_cast<PredForm*>(head);
 		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
@@ -1217,13 +1219,16 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		return r;
 	} else {
 		_curr_vars.clear();
-		if (head)
+		if (head) {
 			head->recursiveDelete();
-		if (body)
+		}
+		if (body) {
 			body->recursiveDelete();
-		for (auto it = qv.cbegin(); it != qv.cend(); ++it)
+		}
+		for (auto it = qv.cbegin(); it != qv.cend(); ++it) {
 			delete (*it);
-		return 0;
+		}
+		return NULL;
 	}
 }
 
@@ -1250,23 +1255,27 @@ Formula* Insert::falseform(YYLTYPE l) const {
 
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != vt.size())
+		if ((nst->_sorts).size() != vt.size()) {
 			incompatiblearity(toString(nst), nst->_pi);
-		if (nst->_func)
+		}
+		if (nst->_func) {
 			prednameexpected(nst->_pi);
+		}
 	}
 	nst->includeArity(vt.size());
 	Predicate* p = predInScope(nst->_name, nst->_pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == vt.size())
+	if (p && nst->_sortsincluded && (nst->_sorts).size() == vt.size()) {
 		p = p->resolve(nst->_sorts);
+	}
 
-	PredForm* pf = 0;
+	PredForm* pf = NULL;
 	if (p) {
 		if (belongsToVoc(p)) {
-			unsigned int n = 0;
+			size_t n = 0;
 			for (; n < vt.size(); ++n) {
-				if (!vt[n])
+				if (vt[n] == NULL) {
 					break;
+				}
 			}
 			if (n == vt.size()) {
 				vector<Term*> vtpi;
@@ -1281,16 +1290,19 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 				pipf->recursiveDelete(); //the needed things for the pi are cloned
 				pf = new PredForm(SIGN::POS, p, vt, pi);
 			}
-		} else
+		} else {
 			notInVocabularyOf(ComponentType::Predicate, ComponentType::Theory, p->name(), _currtheory->name(), nst->_pi);
-	} else
+		}
+	} else {
 		notDeclared(ComponentType::Predicate, toString(nst), nst->_pi);
+	}
 
 	// Cleanup
-	if (!pf) {
-		for (unsigned int n = 0; n < vt.size(); ++n) {
-			if (vt[n])
+	if (pf == NULL) {
+		for (size_t n = 0; n < vt.size(); ++n) {
+			if (vt[n]) {
 				vt[n]->recursiveDelete();
+			}
 		}
 	}
 	delete (nst);
@@ -1334,22 +1346,24 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 		if ((nst->_sorts).size() != vt.size() + 1) {
 			incompatiblearity(toString(nst), nst->_pi);
 		}
-		if (!nst->_func) {
+		if (not nst->_func) {
 			funcnameexpected(nst->_pi);
 		}
 	}
 	nst->includeArity(vt.size());
 	Function* f = funcInScope(nst->_name, nst->_pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1)
+	if (f && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
 		f = f->resolve(nst->_sorts);
+	}
 
-	PredForm* pf = 0;
+	PredForm* pf = NULL;
 	if (f) {
 		if (belongsToVoc(f)) {
-			unsigned int n = 0;
+			size_t n = 0;
 			for (; n < vt.size(); ++n) {
-				if (!vt[n])
+				if (vt[n] == NULL) {
 					break;
+				}
 			}
 			if (n == vt.size() && t) {
 				vector<Term*> vt2(vt);
@@ -1374,13 +1388,15 @@ Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YY
 	}
 
 	// Cleanup
-	if (!pf) {
-		for (unsigned int n = 0; n < vt.size(); ++n) {
-			if (vt[n])
+	if (pf == NULL) {
+		for (size_t n = 0; n < vt.size(); ++n) {
+			if (vt[n]) {
 				delete (vt[n]);
+			}
 		}
-		if (t)
+		if (t) {
 			delete (t);
+		}
 	}
 	delete (nst);
 
@@ -2317,23 +2333,28 @@ pair<char, char>* Insert::range(char c1, char c2, YYLTYPE l) const {
 const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>& vte) const {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != vte.size() + 1)
+		if ((nst->_sorts).size() != vte.size() + 1) {
 			incompatiblearity(toString(nst), pi);
-		if (!(nst->_func))
+		}
+		if (not nst->_func) {
 			funcnameexpected(pi);
+		}
 	}
 	nst->includeArity(vte.size());
 	Function* f = funcInScope(nst->_name, pi);
-	const Compound* c = 0;
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == vte.size() + 1)
+	const Compound* c = NULL;
+	if (f && nst->_sortsincluded && (nst->_sorts).size() == vte.size() + 1) {
 		f = f->resolve(nst->_sorts);
+	}
 	if (f) {
-		if (belongsToVoc(f))
+		if (belongsToVoc(f)) {
 			return createCompound(f, vte);
-		else
+		} else {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-	} else
+		}
+	} else {
 		notDeclared(ComponentType::Function, toString(nst), pi);
+	}
 	return c;
 }
 
@@ -2345,15 +2366,18 @@ const Compound* Insert::compound(NSPair* nst) const {
 void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != args.size())
+		if ((nst->_sorts).size() != args.size()) {
 			incompatiblearity(toString(nst), pi);
-		if (nst->_func)
+		}
+		if (nst->_func) {
 			prednameexpected(pi);
+		}
 	}
 	nst->includeArity(args.size());
 	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == args.size())
+	if (p && nst->_sortsincluded && (nst->_sorts).size() == args.size()) {
 		p = p->resolve(nst->_sorts);
+	}
 	if (p) {
 		if (belongsToVoc(p)) {
 			if (p->arity() == 1 && p == (*(p->sorts().cbegin()))->pred()) {
@@ -2374,7 +2398,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 				}
 			} else {
 				ElementTuple tuple(p->arity());
-				for (unsigned int n = 0; n < args.size(); ++n) {
+				for (size_t n = 0; n < args.size(); ++n) {
 					switch (args[n]._type) {
 					case ERE_EL:
 						tuple[n] = args[n]._value._element;
@@ -2388,12 +2412,13 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 					}
 				}
 				PredInter* inter = _currstructure->inter(p);
-				if (t)
+				if (t) {
 					inter->makeTrue(tuple);
-				else
+				} else {
 					inter->makeFalse(tuple);
+				}
 				while (true) {
-					unsigned int n = 0;
+					size_t n = 0;
 					bool end = false;
 					for (; not end && n < args.size(); ++n) {
 						switch (args[n]._type) {
@@ -2424,18 +2449,22 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 						}
 					}
 					if (n < args.size()) {
-						if (t)
+						if (t) {
 							inter->makeTrue(tuple);
-						else
+						} else {
 							inter->makeFalse(tuple);
-					} else
+						}
+					} else {
 						break;
+					}
 				}
 			}
-		} else
+		} else {
 			notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-	} else
+		}
+	} else {
 		notDeclared(ComponentType::Predicate, toString(nst), pi);
+	}
 	delete (nst);
 }
 

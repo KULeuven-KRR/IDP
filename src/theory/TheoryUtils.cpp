@@ -146,11 +146,11 @@ namespace FormulaUtils {
 void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
 	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
-	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
+void addFuncConstraints(TheoryComponent* tc, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(tc, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
-	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
+void addFuncConstraints(Term* term, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(term, voc, funcconstraints, alsoCPableFunctions);
 }
 
 bool approxTwoValued(const Formula* f, AbstractStructure* str) {

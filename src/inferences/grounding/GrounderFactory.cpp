@@ -231,13 +231,13 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	return grounder;
 }
 /*
- Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
- auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
- groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
- GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
- data.theory->accept(&g);
- return g.getTopGrounder();
- }*/
+Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
+	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+	data.theory->accept(&g);
+	return g.getTopGrounder();
+}*/
 
 Grounder* GrounderFactory::ground() {
 	std::vector<Grounder*> grounders;
@@ -354,7 +354,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
 	const auto components = theory->components();
-	// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
+		// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
 	// TODO Order the components to optimize the grounding process
 
 	// Create grounders for all components
@@ -411,7 +411,7 @@ CompType getCompType(T symbol) {
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
-	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+			// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
@@ -426,8 +426,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
-	SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
-				   // FIXME and why only in some cases check the sign of the formula for inverting the type?
+	SaveContext();// FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
+	   	   	   	   // FIXME and why only in some cases check the sign of the formula for inverting the type?
 	for (size_t n = 0; n < newpf->subterms().size(); ++n) {
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(getTermGrounder());
@@ -437,21 +437,43 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
-		Assert(not recursive(newpf) && _context._component != CompContext::HEAD);
-		// Note: CP does not work in the defined case
+		Assert(not recursive(newpf) and _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
+		TermGrounder* lefttermgrounder;
+		TermGrounder* righttermgrounder;
+		CompType comp;
+		bool useComparisonGrounder = false;
 		if (VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
+			useComparisonGrounder = true;
 			Assert(subtermgrounders.size() == 2);
-			auto comp = getCompType(newpf->symbol());
+			comp = getCompType(newpf->symbol());
 			if (isNeg(newpf->sign())) {
 				comp = negateComp(comp);
 			}
-
+			lefttermgrounder = subtermgrounders[0];
+			righttermgrounder = subtermgrounders[1];
+		} else if (isa<Function>(*(newpf->symbol()))) {
+			auto function = dynamic_cast<Function*>(newpf->symbol());
+			if (CPSupport::eligibleForCP(function,_structure->vocabulary())) {
+				useComparisonGrounder = true;
+				comp = CompType::EQ;
+				if (isNeg(newpf->sign())) {
+					comp = negateComp(comp);
+				}
+				righttermgrounder = subtermgrounders.back();
+				subtermgrounders.pop_back();
+				auto ftable = _structure->inter(function)->funcTable();
+				auto domain = _structure->inter(function->outsort());
+				lefttermgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
+				//ftgrounder->setOrig(...) TODO
+			}
+		}
+		if (useComparisonGrounder) {
 			SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
 						   // FIXME and why only in some cases check the sign of the formula for inverting the type?
 			if (recursive(newpf)) {
 				_context._tseitin = TsType::RULE;
 			}
-			_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), subtermgrounders[0], comp, subtermgrounders[1], _context);
+			_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), lefttermgrounder, comp, righttermgrounder, _context);
 			_formgrounder->setOrig(newpf, varmapping());
 			RestoreContext();
 
@@ -463,32 +485,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			deleteDeep(newpf);
 			return;
 		}
-		if (isa<Function>(*(newpf->symbol()))) {
-			auto function = dynamic_cast<Function*>(newpf->symbol());
-			if (CPSupport::eligibleForCP(function, _structure->vocabulary())) {
-				auto valuegrounder = subtermgrounders.back();
-				subtermgrounders.pop_back();
-				auto comp = CompType::EQ;
-				if (isNeg(newpf->sign())) {
-					comp = negateComp(comp);
-				}
-				SaveContext();
-				auto ftable = _structure->inter(function)->funcTable();
-				auto domain = _structure->inter(function->outsort());
-				auto functermgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
-				//ftgrounder->setOrig(...) TODO
-
-				_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), functermgrounder, comp, valuegrounder, _context);
-				_formgrounder->setOrig(newpf, varmapping());
-				RestoreContext();
-
-				if (_context._component == CompContext::SENTENCE) {
-					_topgrounder = getFormGrounder();
-				}
-				deleteDeep(newpf);
-				return;
-			}
-		}
+		
 	}
 
 	if (_context._component == CompContext::HEAD) {
@@ -550,7 +547,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 		mightdolazy = false;
 	}
 	if (not getOption(TSEITINDELAY) || recursive) {
-		// TODO tseitin introduction in inductive definitions is currently not supported (cannot use the incremental clause for that)
+			// TODO tseitin introduction in inductive definitions is currently not supported (cannot use the incremental clause for that)
 		mightdolazy = false;
 	}
 	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
@@ -656,7 +653,7 @@ ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgro
 		mightdolazy = true;
 	}
 	if (not getOption(TSEITINDELAY) || recursive) {
-		// FIXME tseitin introduction in inductive definition is currently not supported (cannot use incremental clause for that)
+			// FIXME tseitin introduction in inductive definition is currently not supported (cannot use incremental clause for that)
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
@@ -981,7 +978,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Compute domain
 	SortTable* domain = NULL;
-	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t, _structure)) {
+	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t,_structure)) {
 		domain = TermUtils::deriveSmallerSort(t, _structure)->interpretation();
 	}
 
@@ -1130,9 +1127,7 @@ template<typename Object>
 void checkGeneratorInfinite(InstChecker* gen, Object* original) {
 	if (gen->isInfiniteGenerator()) {
 		Warning::possiblyInfiniteGrounding(toString(original));
-		if (not getOption(BoolType::GROUNDWITHBOUNDS) && not getOption(BoolType::GROUNDLAZILY)) {
-			throw IdpException("Infinite grounding");
-		}
+		throw IdpException("Infinite grounding");
 	}
 }
 
@@ -1146,7 +1141,9 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 	}
 	auto gen = GeneratorFactory::create(varcontainers, varsorts, original);
 
-	checkGeneratorInfinite(gen, original);
+	if (not getOption(BoolType::GROUNDWITHBOUNDS) && not getOption(BoolType::GROUNDLAZILY)) {
+		checkGeneratorInfinite(gen, original);
+	}
 	return gen;
 }
 
@@ -1170,8 +1167,10 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		directquanttables.push_back(_structure->inter((*it)->sort()));
 	}
 
-	checkGeneratorInfinite(generator, orig);
-	checkGeneratorInfinite(checker, orig);
+	if (not getOption(BoolType::GROUNDWITHBOUNDS) && not getOption(BoolType::GROUNDLAZILY)) {
+		checkGeneratorInfinite(generator, orig);
+		checkGeneratorInfinite(checker, orig);
+	}
 
 	return GenAndChecker(data.containers, generator, checker, Universe(directquanttables));
 }
@@ -1200,21 +1199,19 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 	return data;
 }
 
-InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula,
-		const std::vector<Pattern>& pattern) {
+InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula, const std::vector<Pattern>& pattern){
 	auto checker = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
-//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
+	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << name << " for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
+		clog << tabs() << name <<" for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
 	}
 
 	return checker;
 }
 
-PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
-		const GeneratorData& data) {
+PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data){
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
@@ -1240,7 +1237,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		checktable = createTable(subformula, checkertype, { }, approxastrue, data);
+		checktable = createTable(subformula, checkertype, {}, approxastrue, data);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));

@@ -168,9 +168,9 @@ void addCompletion(AbstractTheory*);
  * Given a vocabulary and a map of function symbols to their function constraint, add
  * a new function constraints for all functions not already occurring in the list.
  */
-void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
-void addFuncConstraints(TheoryComponent* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
-void addFuncConstraints(Term* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
+void addFuncConstraints(AbstractTheory*, Vocabulary*, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
+void addFuncConstraints(TheoryComponent*, Vocabulary*, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
+void addFuncConstraints(Term*, Vocabulary*, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
 void flatten(AbstractTheory*);
