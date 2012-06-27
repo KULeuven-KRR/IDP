@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "SolverConnection.hpp"
 
@@ -77,7 +77,6 @@ MinisatID::literallist createList(const litlist& origlist) {
 	return list;
 }
 
-
 MinisatID::Weight createWeight(double weight) {
 	double test;
 	if (modf(weight, &test) != 0) {
@@ -88,11 +87,12 @@ MinisatID::Weight createWeight(double weight) {
 
 typedef cb::Callback1<std::string, int> callbackprinting;
 
-class CallBackTranslator: public PCPrinter{
+class CallBackTranslator: public PCPrinter {
 private:
 	callbackprinting cb;
 public:
-	CallBackTranslator(callbackprinting cb): cb(cb){
+	CallBackTranslator(callbackprinting cb)
+			: cb(cb) {
 
 	}
 
@@ -100,18 +100,16 @@ public:
 		return true;
 	}
 
-	virtual std::string toString(const MinisatID::Lit& lit) const{
+	virtual std::string toString(const MinisatID::Lit& lit) const {
 		std::stringstream ss;
 		auto l = var(lit);
-		if(lit.hasSign()){
+		if (lit.hasSign()) {
 			l = -l;
 		}
-		ss <<cb(l);
+		ss << cb(l);
 		return ss.str();
 	}
 };
-
-
 
 PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
@@ -122,7 +120,7 @@ PCSolver* createsolver(int nbmodels) {
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
 	modes.polarity = MinisatID::Polarity::STORED;
-	if(getOption(BoolType::MXRANDOMPOLARITYCHOICE)){
+	if (getOption(BoolType::MXRANDOMPOLARITYCHOICE)) {
 		modes.polarity = MinisatID::Polarity::RAND;
 	}
 
@@ -133,7 +131,7 @@ PCSolver* createsolver(int nbmodels) {
 	return new PCSolver(modes);
 }
 
-void setTranslator(PCSolver* solver, GroundTranslator* translator){
+void setTranslator(PCSolver* solver, GroundTranslator* translator) {
 	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::print));
 	solver->setTranslator(trans);
 	// FIXME trans is not deleted anywhere
@@ -141,11 +139,11 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator){
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 	MinisatID::ModelExpandOptions opts(nbmodels, MinisatID::Models::NONE, MinisatID::Models::ALL);
-	return new PCModelExpand(solver, opts, {});
+	return new PCModelExpand(solver, opts, { });
 }
 
 PCUnitPropagate* initpropsolution(PCSolver* solver) {
-	return new PCUnitPropagate(solver, {});
+	return new PCUnitPropagate(solver, { });
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
@@ -171,13 +169,19 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 					init->inter(func)->graphInter()->makeTrue(args);
 				}
 			}
+#ifndef NDEBUG
+			if (not init->isConsistent()) {
+				std::cerr << "mx made " << toString(symbol) << " inconsistent when adding the element " << toString(args) << endl;
+				Assert(init->isConsistent());
+			}
+#endif
 		}
 	}
 }
 
 void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init) {
 	// Convert vector of variableassignments to a map
-	map<VarId,int> variable2valuemap;
+	map<VarId, int> variable2valuemap;
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
 		variable2valuemap[cpvar->variable] = cpvar->value;
 	}
@@ -199,7 +203,7 @@ void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslato
 			}
 		}
 		tuple.push_back(createDomElem(cpvar->value));
-	//	cerr <<"Adding tuple " <<toString(tuple) <<" to " <<toString(function) <<"\n";
+		//	cerr <<"Adding tuple " <<toString(tuple) <<" to " <<toString(function) <<"\n";
 		init->inter(function)->graphInter()->makeTrue(tuple);
 	}
 }
