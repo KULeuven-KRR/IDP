@@ -432,8 +432,9 @@ rule		: univquantvars head "<-" formula '.'	{ $$ = getInserter().rule(*$1,$2,$4,
 			| univquantvars head			  '.'	{ $$ = getInserter().rule(*$1,$2,@1); delete($1);		}
 			;
 			
-univquantvars: /* empty*/ 						{ $$ = new std::set<Variable*>(); } 
-			| univquantvars '!' variables ':' 	{ $$ = $1; $1->insert($3->cbegin(), $3->cend()); delete($3);}
+univquantvars 
+			: univquantvars '!' variables ':' 	{ $$ = $1; $1->insert($3->cbegin(), $3->cend()); delete($3);}
+			|  /* empty*/ 						{ $$ = new std::set<Variable*>(); }
 			;
 
 head		: predicate				{ $$ = $1;										}
