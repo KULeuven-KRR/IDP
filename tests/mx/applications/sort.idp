@@ -1,0 +1,28 @@
+vocabulary V{
+	type Value isa int
+	type Index isa int
+	Array(Index):Value
+	Map(Index):Index
+}
+theory T:V{	
+	!x y: x<y => Array(Map(x)) =< Array(Map(y)).
+	!v[Index]: ?i[Index]: Map(i)=v.
+}
+structure S:V{
+	Value = {1..10}
+	Index = {1..10}
+	Array = {1->10;2->2;3->7;4->8;5->4;6->6;7->9;8->5;9->1;10->3}
+}
+structure S2:V{
+	Value = {1..20}
+	Index = {1..20}
+	Array = {1->10;2->2;3->7;4->8;5->4;6->6;7->9;8->5;9->1;10->3;
+			11->11;12->12;13->17;14->18;15->14;16->16;17->19;18->15;19->11;20->13}
+}
+procedure main(){
+	stdoptions.groundwithbounds=false
+	stdoptions.liftedunitpropagation=false
+	stdoptions.cpsupport=true
+	stdoptions.satverbosity=0
+	print(modelexpand(T, S2)[1])
+}

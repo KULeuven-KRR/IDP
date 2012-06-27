@@ -80,9 +80,9 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	if (getOption(BoolType::CPSUPPORT)) {
 		auto function = dynamic_cast<Function*>(pfs);
 		Assert(function == NULL or not CPSupport::eligibleForCP(function, _vocabulary));
-//		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
-//			throw IdpException("Invalid code path");
-//		}
+		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
+			throw IdpException("Invalid code path");
+		}
 	}
 	auto n = getSymbol(pfs);
 	if (n == -1) {
