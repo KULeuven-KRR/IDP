@@ -112,8 +112,8 @@ bool approxTwoValued(const SetExpr* exp, const AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport, bool nestingIsAllowed) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, nestingIsAllowed);
 }
 }
 

@@ -242,7 +242,7 @@ namespace SetUtils {
 bool approxTwoValued(const SetExpr*, const AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport);
+SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport, bool nestingIsAllowed = false);
 }
 
 namespace DefinitionUtils {

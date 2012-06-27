@@ -122,6 +122,7 @@ void GrounderFactory::InitContext() {
 	_context._conjunctivePathFromRoot = true; // NOTE: default true: needs to be set to false in each visit in grounderfactory in which it is no longer the case
 	_context._conjPathUntilNode = true;
 	_context._allowDelaySearch = true;
+	_context._eligibleForCP = false;
 
 	_context._mappedvars.clear();
 	_varmapping.clear();
@@ -871,9 +872,9 @@ void GrounderFactory::visit(const AggForm* af) {
 		}
 	}
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
-			getOption(CPSUPPORT) && not recursive(clonedaf)); // TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, getOption(CPSUPPORT) && not recursive(clonedaf), _context._funccontext);
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext, (getOption(CPSUPPORT) and not recursive(clonedaf)));
+		// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
@@ -969,6 +970,9 @@ void GrounderFactory::visit(const FuncTerm* t) {
 void GrounderFactory::visit(const AggTerm* t) {
 	Assert(SetUtils::approxTwoValued(t->set(),_structure) or getOption(BoolType::CPSUPPORT));
 
+	SaveContext();
+	_context._eligibleForCP = getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t->function());
+
 	// Create set grounder
 	descend(t->set());
 
@@ -977,6 +981,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t,_structure)) {
 		domain = TermUtils::deriveSmallerSort(t, _structure)->interpretation();
 	}
+	RestoreContext();
 
 	// Create term grounder
 	_termgrounder = new AggTermGrounder(getGrounding()->translator(), getGrounding()->termtranslator(), t->function(), domain, getSetGrounder());
@@ -1000,12 +1005,11 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Move three-valued terms in the set expression: from term to condition
-	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(CPSUPPORT));
+	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), _structure, _context._funccontext, getOption(CPSUPPORT), _context._eligibleForCP);
 	if (not isa<QuantSetExpr>(*transqs)) {
 		descend(transqs);
 		return;
 	}
-
 	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
 	auto newsubformula = newqs->getCondition()->clone();
 

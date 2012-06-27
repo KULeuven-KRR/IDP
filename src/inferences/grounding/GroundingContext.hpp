@@ -36,7 +36,7 @@ struct GroundingContext {
 	CompContext _component; // Indicates the context of the visited formula
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
 	int currentDefID; // If tstype = rule, this indicates the definition to which the grounders belong
-	int getCurrentDefID() const{
+	int getCurrentDefID() const {
 		Assert(_tseitin!=TsType::RULE || currentDefID!=getIDForUndefined());
 		return currentDefID;
 	}
@@ -49,6 +49,7 @@ struct GroundingContext {
 	// NOTE advantage: can optimize by creating less tseitins by using the knowledge that the formula can be added directly into cnf
 
 	bool _allowDelaySearch;
+	bool _eligibleForCP; // Indicates whether the current object is in the context of a symbol eligible for CP.
 };
 
 #endif /* GROUNDINGCONTEXT_HPP_ */
