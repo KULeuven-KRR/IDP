@@ -534,7 +534,7 @@ TEST(FindUnknTest,NestedQuantFormula) {
 	add(voc, { s });
 	add(voc, { p.p(), r.p(), q.p() });
 
-	GroundTranslator translator(voc);
+	GroundTranslator translator(NULL);
 
 	auto& pf_p = p( { x, y });
 	auto& formula = forall(x, forall(y, pf_p | (q( { x, y }) | r( { x, y }))));
@@ -556,7 +556,7 @@ TEST(FindUnknTest,QuantFormula) {
 	add(voc, { s });
 	add(voc, { p.p(), r.p(), q.p() });
 
-	GroundTranslator translator(voc);
+	GroundTranslator translator(NULL);
 
 	auto& pf_p = p( { x, y });
 	auto& formula = forall( { x, y }, pf_p | (q( { x, y }) | r( { x, y })));
@@ -593,7 +593,7 @@ TEST(FindUnknTest,QuantFormulaFirstWatched) {
 	auto& pf_q = not q( { x, y });
 	auto& formula = forall( { x, y }, pf_p | pf_q | r( { x, y }));
 
-	GroundTranslator translator(voc);
+	GroundTranslator translator(NULL);
 	TestGrounder grounder(pf_p, Context::BOTH);
 	translator.notifyDelay(p.p(), &grounder);
 	ASSERT_TRUE(not translator.canBeDelayedOn(p.p(), Context::BOTH, -1));
@@ -631,7 +631,7 @@ TEST(FindUnknTest,WithMultipleMono) {
 	add(voc, { s });
 	add(voc, { p.p() });
 
-	GroundTranslator translator(voc);
+	GroundTranslator translator(NULL);
 
 	auto x1 = var(s);
 	auto x2 = var(s);

@@ -52,12 +52,11 @@ public:
 		return *printer_;
 	}
 
-	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator, GroundTermTranslator* termtranslator) {
+	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator) {
 		monitor_ = monitor;
 		printer_ = Printer::create(*monitor);
 		//TODO translation option as argument to constructor
 		printer().setTranslator(translator);
-		printer().setTermTranslator(termtranslator);
 		printer().setStructure(str);
 		printer().startTheory();
 	}
@@ -73,7 +72,7 @@ public:
 		printer().print(cl);
 	}
 
-	void polAdd(const TsSet& tsset, int setnr, bool) {
+	void polAdd(const TsSet& tsset, SetId setnr, bool) {
 		auto set = new GroundSet(setnr, tsset.literals(), tsset.weights());
 		printer().print(set);
 		delete (set);
@@ -85,13 +84,13 @@ public:
 		delete (agg);
 	}
 
-	void polAdd(int defnr, PCGroundRule* rule) {
+	void polAdd(DefId defnr, PCGroundRule* rule) {
 		printer().checkOrOpen(defnr);
 		printer().print(rule);
 		delete (rule);
 	}
 
-	void polAdd(int defnr, AggGroundRule* rule) {
+	void polAdd(DefId defnr, AggGroundRule* rule) {
 		printer().checkOrOpen(defnr);
 		printer().print(rule);
 	}
@@ -102,7 +101,7 @@ public:
 		delete (reif);
 	}
 
-	void polAddOptimization(AggFunction, int) {
+	void polAddOptimization(AggFunction, SetId) {
 		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 
@@ -114,11 +113,11 @@ public:
 		throw notyetimplemented("Printing symmetries.\n");
 	}
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
+	std::ostream& polPut(std::ostream& s, GroundTranslator*) const {
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*, GroundTermTranslator*) const {
+	std::string polToString(GroundTranslator*) const {
 		Assert(false);
 		return "";
 	}

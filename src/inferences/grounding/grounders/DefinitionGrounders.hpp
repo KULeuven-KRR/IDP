@@ -15,6 +15,7 @@
 #include "GroundUtils.hpp"
 
 #include "groundtheories/SolverTheory.hpp"
+#include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset
 
 class TermGrounder;
 class InstChecker;
@@ -28,11 +29,9 @@ class PredInter;
 class Formula;
 class SortTable;
 class GroundTranslator;
-class GroundTermTranslator;
 class PFSymbol;
 
 class RuleGrounder;
-typedef int DefId;
 
 /** Grounder for a definition **/
 // NOTE: definition printing code is based on the INVARIANT that a defintion is ALWAYS grounded as contiguous component: never ground def A a bit, then ground B, then return to A again (code should error on this)
@@ -121,7 +120,7 @@ private:
 	std::vector<TermGrounder*> _subtermgrounders;
 	const PredTable* _ct;
 	const PredTable* _cf;
-	unsigned int _symbol;
+	SymbolOffset _symbol; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	PFSymbol* _pfsymbol;
 

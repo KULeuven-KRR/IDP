@@ -71,8 +71,8 @@ GenType operator not(GenType orig) {
 	return result;
 }
 
-int getIDForUndefined() {
-	return -1;
+DefId getIDForUndefined() {
+	return DefId(-1);
 }
 
 template<typename Grounding>
@@ -204,7 +204,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data) {
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
-	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator(), groundtheory->termtranslator());
+	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator());
 	return createGrounder(data, groundtheory);
 }
 
@@ -225,7 +225,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
-	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
 	auto grounder = createGrounder(data, groundtheory);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
@@ -233,7 +233,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 /*
 Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
 	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
-	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->termtranslator());
+	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
 	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
 	data.theory->accept(&g);
 	return g.getTopGrounder();
@@ -463,7 +463,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				subtermgrounders.pop_back();
 				auto ftable = _structure->inter(function)->funcTable();
 				auto domain = _structure->inter(function->outsort());
-				lefttermgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
+				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, subtermgrounders);
 				//ftgrounder->setOrig(...) TODO
 			}
 		}
@@ -473,7 +473,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			if (recursive(newpf)) {
 				_context._tseitin = TsType::RULE;
 			}
-			_formgrounder = new ComparisonGrounder(getGrounding(), getGrounding()->termtranslator(), lefttermgrounder, comp, righttermgrounder, _context);
+			_formgrounder = new ComparisonGrounder(getGrounding(), lefttermgrounder, comp, righttermgrounder, _context);
 			_formgrounder->setOrig(newpf, varmapping());
 			RestoreContext();
 
@@ -954,18 +954,18 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntSum(function, _structure->vocabulary())) {
 		if (is(function, STDFUNC::SUBSTRACTION)) {
-			_termgrounder = new SumTermGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
+			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
 		} else {
-			_termgrounder = new SumTermGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
 	} else if (getOption(BoolType::CPSUPPORT) and TermUtils::isTermWithIntFactor(t, _structure)) {
 		if (TermUtils::isFactor(t->subterms()[0], _structure)) {
-			_termgrounder = new TermWithFactorGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		} else {
-			_termgrounder = new TermWithFactorGrounder(getGrounding()->termtranslator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
+			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
 		}
 	} else {
-		_termgrounder = new FuncTermGrounder(getGrounding()->termtranslator(), function, ftable, domain, subtermgrounders);
+		_termgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, subtermgrounders);
 	}
 	_termgrounder->setOrig(t, varmapping());
 }
@@ -983,7 +983,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	}
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(getGrounding()->translator(), getGrounding()->termtranslator(), t->function(), domain, getSetGrounder());
+	_termgrounder = new AggTermGrounder(getGrounding()->translator(), t->function(), domain, getSetGrounder());
 	_termgrounder->setOrig(t, varmapping());
 }
 

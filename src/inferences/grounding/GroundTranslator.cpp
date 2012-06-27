@@ -13,33 +13,41 @@
 #include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 #include "utils/CPUtils.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 
-GroundTranslator::GroundTranslator(Vocabulary* vocabulary)
-		: 	atomtype(1, AtomType::LONETSEITIN),
-			_sets(1),
-			_vocabulary(vocabulary){
+GroundTranslator::GroundTranslator(AbstractStructure* structure)
+		: _structure(structure) {
+
+	// Literal 0 is not allowed!
+	atomtype.push_back(AtomType::LONETSEITIN);
 	atom2Tuple.push_back(NULL);
-	atom2TsBody.push_back(tspair { 0, (TsBody*) NULL });
+	atom2TsBody.push_back((TsBody*) NULL);
 }
 
 GroundTranslator::~GroundTranslator() {
-	for (auto i = atom2Tuple.cbegin(); i != atom2Tuple.cend(); ++i) {
-		if (*i != NULL) {
-			delete (*i);
-		}
-	}
-	atom2Tuple.clear();
-	for (auto i = atom2TsBody.cbegin(); i < atom2TsBody.cend(); ++i) {
-		delete ((*i).second);
-	}
+	deleteList<TsBody>(atom2TsBody);
+	deleteList<CPTsBody>(var2CTsBody);
+	deleteList<stpair>(atom2Tuple);
+	deleteList<ftpair>(var2Tuple);
 }
 
-Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args) {
+Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& args) {
+	if (symboloffset.functionlist) {
+		std::vector<GroundTerm> terms;
+		for (auto i = args.cbegin(); i < args.cend(); ++i) {
+			terms.push_back(*i);
+		}
+		auto image = terms.back();
+		Assert(image._domelement->type()==DomainElementType::DET_INT);
+		// Otherwise, cannot be a cp-able function
+		auto bound = image._domelement->value()._int;
+		terms.pop_back();
+		return translate(new CPVarTerm(translateTerm(functions[symboloffset.offset].symbol, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
+	}
+	auto symbolID = symboloffset.offset;
 	Lit lit = 0;
-	//auto jt = symbols[n].tuple2atom.lower_bound(args);
-	//if (jt != symbols[n].tuple2atom.cend() && jt->first == args) {
 	auto& symbolinfo = symbols[symbolID];
 	auto jt = symbolinfo.tuple2atom.find(args);
 	if (jt != symbolinfo.tuple2atom.cend()) {
@@ -47,44 +55,56 @@ Lit GroundTranslator::translate(SymbolOffset symbolID, const ElementTuple& args)
 	} else {
 		lit = nextNumber(AtomType::INPUT);
 		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		if (symbolinfo.tuple2atom.size() == 1) {
-			newsymbols.push(symbolID);
-		}
-		atom2Tuple[lit] = new SymbolAndTuple(symbolinfo.symbol, args);
+		atom2Tuple[lit]->first = symbolinfo.symbol;
+		atom2Tuple[lit]->second = args;
 
 		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
+		// FIXME extend to CP terms!
 		if (not symbolinfo.assocGrounders.empty()) {
 			symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
 		}
 	}
 
-	//clog <<toString(symbols[n].symbol) <<toString(args) <<" maps to " <<lit <<nt();
-
 	return lit;
 }
 
+Vocabulary* vocabulary(AbstractStructure* structure) {
+	return structure == NULL ? NULL : structure->vocabulary();
+}
+
 // TODO expensive!
-int GroundTranslator::getSymbol(PFSymbol* pfs) const {
-	for (size_t n = 0; n < symbols.size(); ++n) {
-		if (symbols[n].symbol == pfs) {
-			return n;
+SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
+	if (pfs->isFunction()) {
+		auto function = dynamic_cast<Function*>(pfs);
+		if (function != NULL && CPSupport::eligibleForCP(function, vocabulary(_structure))) {
+			for (size_t n = 0; n < functions.size(); ++n) {
+				if (functions[n].symbol == pfs) {
+					return SymbolOffset(n, true);
+				}
+			}
 		}
 	}
-	return -1;
+	for (size_t n = 0; n < symbols.size(); ++n) {
+		if (symbols[n].symbol == pfs) {
+			return SymbolOffset(n, false);
+		}
+	}
+	return SymbolOffset(-1, false);
 }
 
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
-	if (getOption(BoolType::CPSUPPORT)) {
-		auto function = dynamic_cast<Function*>(pfs);
-		Assert(function == NULL or not CPSupport::eligibleForCP(function, _vocabulary));
-//		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
-//			throw IdpException("Invalid code path");
-//		}
-	}
 	auto n = getSymbol(pfs);
-	if (n == -1) {
+	if (n.offset == -1) {
+		if (pfs->isFunction()) {
+			auto function = dynamic_cast<Function*>(pfs);
+			if (function != NULL && CPSupport::eligibleForCP(function, vocabulary(_structure))) {
+				functions.push_back(FunctionInfo(function));
+				return SymbolOffset(functions.size() - 1, true);
+			}
+		}
 		symbols.push_back(SymbolInfo(pfs));
-		return symbols.size() - 1;
+		return SymbolOffset(symbols.size() - 1, false);
+
 	} else {
 		return n;
 	}
@@ -102,16 +122,18 @@ Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype)
 
 Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool conj, TsType tstype) {
 	auto tsbody = new PCTsBody(tstype, clause, conj);
-	atom2TsBody[head] = tspair(head, tsbody);
+	atom2TsBody[head] = tsbody;
 	return head;
 }
 
-bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const {
-	auto symbolID = getSymbol(pfs);
-	if (symbolID == -1) { // there is no such symbol yet
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, DefId id) const {
+	auto symboloffset = getSymbol(pfs);
+	Assert(symboloffset.functionlist);
+	auto symbolId = symboloffset.offset;
+	if (symbolId == -1) { // there is no such symbol yet
 		return true;
 	}
-	auto& grounders = symbols[symbolID].assocGrounders;
+	auto& grounders = symbols[symbolId].assocGrounders;
 	if (grounders.empty()) {
 		return true;
 	}
@@ -131,7 +153,8 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
-	auto& grounders = symbols[symbolID].assocGrounders;
+	Assert(symbolID.functionlist);
+	auto& grounders = symbols[symbolID.offset].assocGrounders;
 #ifndef NDEBUG
 	Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
 	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
@@ -139,15 +162,13 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 	}
 #endif
 	grounders.push_back(grounder);
-
-	newsymbols.push(symbolID); // NOTE: For defined functions, should add the func constraint anyway, because it is not guaranteed to have a model!
 }
 
 Lit GroundTranslator::translate(LazyStoredInstantiation* instance, TsType tstype) {
 	auto tseitin = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
 	auto tsbody = new LazyTsBody(instance, tstype);
-	atom2TsBody[tseitin] = tspair(tseitin, tsbody);
+	atom2TsBody[tseitin] = tsbody;
 	return tseitin;
 }
 
@@ -171,7 +192,7 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 		}
 		MAssert(comp==CompType::LEQ || comp==CompType::GEQ);
 		auto tsbody = new AggTsBody(tstype, bound, comp == CompType::LEQ, aggtype, setnr);
-		atom2TsBody[head] = tspair(head, tsbody);
+		atom2TsBody[head] = tsbody;
 		return head;
 	}
 }
@@ -202,57 +223,128 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 		}
 	} else {
 		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		atom2TsBody[nr] = tspair(nr, tsbody);
+		atom2TsBody[nr] = tsbody;
 		cpset[tsbody] = nr;
 		return nr;
 	}
 }
 
-// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
+//// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
 //Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
-// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
-       /*      auto it = _tsbodies2nr.lower_bound(tsbody);
-
-        if(it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
-        delete tsbody;
-        return it->second;
-        }*/
-
-//     int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-//     atom2TsBody[nr] = tspair(nr, tsbody);
-//     return nr;
+//// TODO optimization: check whether the same comparison has already been added and reuse the tseitin.
+//	auto it = _tsbodies2nr.lower_bound(tsbody);
+//	if (it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
+//		delete tsbody;
+//		return it->second;
+//	}
+//	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+//	atom2TsBody[nr] = tspair(nr, tsbody);
+//	return nr;
 //}
 
 SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const varidlist& varids) {
-	SetId setnr;
-	if (_freesetnumbers.empty()) {
-		TsSet newset;
-		setnr = _sets.size();
-		_sets.push_back(newset);
-	} else {
-		setnr = _freesetnumbers.front();
-		_freesetnumbers.pop();
-	}
-	TsSet& tsset = _sets[setnr];
+	TsSet tsset;
 	tsset._setlits = lits;
 	tsset._litweights = weights;
 	tsset._trueweights = trueweights;
 	tsset._varids = varids;
+	auto setnr = _sets.size();
+	_sets.push_back(tsset);
 	return setnr;
 }
 
 Lit GroundTranslator::nextNumber(AtomType type) {
-	if (_freenumbers.empty()) {
-		Lit nr = atomtype.size();
-		atom2TsBody.push_back(tspair { nr, (TsBody*) NULL });
-		atom2Tuple.push_back(NULL);
-		atomtype.push_back(type);
-		return nr;
+	Lit nr = atomtype.size();
+	atom2TsBody.push_back(NULL);
+	atom2Tuple.push_back(new stpair());
+	atomtype.push_back(type);
+	return nr;
+}
+
+VarId GroundTranslator::translate(SymbolOffset offset, const vector<GroundTerm>& args) {
+	Assert(offset.functionlist);
+	auto& info = functions[offset.offset];
+	auto it = info.term2var.lower_bound(args);
+	if (it != info.term2var.cend() && it->first == args) {
+		return it->second;
 	} else {
-		Lit nr = _freenumbers.front();
-		_freenumbers.pop();
-		return nr;
+		VarId varid = nextNumber();
+		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
+		var2Tuple[varid.id]->first = info.symbol;
+		var2Tuple[varid.id]->second = args;
+		var2domain[varid.id] = _structure->inter(info.symbol->outsort());
+		return varid;
 	}
+}
+
+VarId GroundTranslator::translateTerm(Function* function, const vector<GroundTerm>& args) {
+	auto offset = addSymbol(function);
+	return translate(offset, args);
+}
+
+VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
+	auto varid = nextNumber();
+	CPBound bound(varid);
+	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
+	var2CTsBody[varid.id] = cprelation;
+	var2domain[varid.id] = domain;
+	return varid;
+}
+
+VarId GroundTranslator::translateTerm(const DomainElement* element) {
+	auto varid = nextNumber();
+	// Create a new CP variable term
+	auto cpterm = new CPVarTerm(varid);
+	// Create a new CP bound based on the domain element
+	Assert(element->type() == DET_INT);
+	CPBound bound(element->value()._int);
+	// Add a new CP constraint
+	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
+	var2CTsBody[varid.id] = cprelation;
+	// Add a new domain containing only the given domain element
+	auto domain = TableUtils::createSortTable();
+	domain->add(element);
+	var2domain[varid.id] = domain;
+	// Return the new variable identifier
+	return varid;
+}
+
+VarId GroundTranslator::nextNumber() {
+	VarId id;
+	id.id = var2Tuple.size();
+	var2Tuple.push_back(new ftpair());
+	var2CTsBody.push_back(NULL);
+	var2domain.push_back(NULL);
+	return id;
+}
+
+string GroundTranslator::printTerm(const VarId& varid) const {
+	if (varid.id >= var2Tuple.size()) {
+		return "error";
+	}
+	auto func = getFunction(varid);
+	if (func == NULL) {
+		stringstream s;
+		s << "var_" << varid;
+		return s.str();
+	}
+	stringstream s;
+	s << toString(func);
+	if (not args(varid).empty()) {
+		s << "(";
+		for (auto gtit = args(varid).cbegin(); gtit != args(varid).cend(); ++gtit) {
+			if ((*gtit).isVariable) {
+				s << printTerm((*gtit)._varid);
+			} else {
+				s << toString((*gtit)._domelement);
+			}
+			if (gtit != args(varid).cend() - 1) {
+				s << ",";
+			}
+		}
+		s << ")";
+	}
+	return s.str();
 }
 
 string GroundTranslator::print(Lit lit) {

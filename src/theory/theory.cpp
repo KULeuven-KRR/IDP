@@ -153,6 +153,10 @@ PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return pf;
 }
 
+bool PredForm::isGraphedFunction() const {
+	return symbol()->isFunction();
+}
+
 ostream& PredForm::put(ostream& output) const {
 	if (isNeg(sign())) {
 		output << '~';

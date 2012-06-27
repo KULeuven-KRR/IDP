@@ -19,7 +19,6 @@
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 #include "inferences/SolverConnection.hpp"
 
@@ -32,10 +31,10 @@ class EcnfPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	int _currenthead;
-	unsigned int _currentdefnr;
+	DefId _currentdefnr;
 	AbstractStructure* _structure;
-	const GroundTermTranslator* _termtranslator;
-	std::set<unsigned int> _printedvarids;
+	const GroundTranslator* _termtranslator;
+	std::set<VarId> _printedvarids;
 	bool writeTranslation_;
 
 	MinisatID::RealECNFPrinter<Stream>* printer;
@@ -60,7 +59,7 @@ public:
 	EcnfPrinter(bool writetranslation, Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
 				_currenthead(-1),
-				_currentdefnr(0),
+				_currentdefnr(DefId(0)),
 				_structure(NULL),
 				_termtranslator(NULL),
 				writeTranslation_(writetranslation),
@@ -92,7 +91,7 @@ public:
 	virtual void setStructure(AbstractStructure* t) {
 		_structure = t;
 	}
-	virtual void setTermTranslator(GroundTermTranslator* t) {
+	virtual void setTermTranslator(GroundTranslator* t) {
 		_termtranslator = t;
 	}
 
@@ -124,7 +123,7 @@ public:
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		setStructure(g->structure());
-		setTermTranslator(g->termtranslator());
+		setTermTranslator(g->translator());
 		startTheory();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION
@@ -161,7 +160,7 @@ public:
 		throw notyetimplemented("Printing ground fixpoint definitions");
 	}
 
-	void openDefinition(int defid) {
+	void openDefinition(DefId defid) {
 		Assert(isDefClosed());
 		openDef(defid);
 	}
@@ -182,32 +181,32 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		printer->add(MinisatID::Rule(createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr));
+		printer->add(MinisatID::Rule(createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr.id));
 	}
 
 	void visit(const AggGroundRule* a) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		printAggregate(a->aggtype(), TsType::RULE, _currentdefnr, a->lower(), a->head(), a->setnr(), a->bound());
+		printAggregate(a->aggtype(), TsType::RULE, _currentdefnr.id, a->lower(), a->head(), a->setnr().id, a->bound());
 	}
 
 	void visit(const GroundAggregate* b) {
 		Assert(isTheoryOpen());
 		Assert(b->arrow()!=TsType::RULE);
 		//TODO -1 should be the minisatid constant for an undefined aggregate (or create some shared ecnf format)
-		printAggregate(b->type(), b->arrow(), -1, b->lower(), b->head(), b->setnr(), b->bound());
+		printAggregate(b->type(), b->arrow(), -1, b->lower(), b->head(), b->setnr().id, b->bound());
 	}
 
 	void visit(const GroundSet* s) {
 		Assert(isTheoryOpen());
-		MinisatID::WLSet set(s->setnr());
+		MinisatID::WLSet set(s->setnr().id);
 		for (unsigned int n = 0; n < s->size(); ++n) {
 			set.wl.push_back(MinisatID::WLtuple(createLiteral(s->literal(n)), s->weighted() ? createWeight(s->weight(n)) : 1));
 		}
 		printer->add(set);
 	}
 
-	void visit(const CPReification* cpr) {
+	void visit(const CPReification* cpr) { // TODO duplication with solverpolicy (probably larger parts of this file too)
 		Assert(isTheoryOpen());
 		CompType comp = cpr->_body->comp();
 		CPTerm* left = cpr->_body->left();
@@ -217,9 +216,9 @@ public:
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);
-				printer->add(MinisatID::CPBinaryRelVar(createAtom(cpr->_head), term->varid(), convert(comp), right._varid));
+				printer->add(MinisatID::CPBinaryRelVar(createAtom(cpr->_head), term->varid().id, convert(comp), right._varid.id));
 			} else { // CPBinaryRel
-				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid(), convert(comp), createWeight(right._bound)));
+				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid().id, convert(comp), createWeight(right._bound)));
 			}
 		} else if (isa<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
@@ -264,10 +263,14 @@ private:
 		for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
 			w.push_back(createWeight(*i));
 		}
-		printer->add(MinisatID::CPSumWeighted(createAtom(head), varids, w, convert(rel), createWeight(bound)));
+		std::vector<uint> vars;
+		for(auto i=varids.cbegin(); i<varids.cend(); ++i) {
+			vars.push_back(i->id);
+		}
+		printer->add(MinisatID::CPSumWeighted(createAtom(head), vars, w, convert(rel), createWeight(bound)));
 	}
 
-	void printAggregate(AggFunction aggtype, TsType arrow, unsigned int defnr, bool geqthanbound, int head, unsigned int setnr, double bound) {
+	void printAggregate(AggFunction aggtype, TsType arrow, DefId defnr, bool geqthanbound, int head, SetId setnr, double bound) {
 		auto newsem = MinisatID::AggSem::COMP;
 		auto newhead = head;
 		auto newbound = bound;
@@ -293,16 +296,16 @@ private:
 			newsem = MinisatID::AggSem::DEF;
 			break;
 		}
-		printer->add(MinisatID::Aggregate(createLiteral(newhead), (int)setnr, createWeight(newbound), convert(aggtype), newsign, newsem, (int)defnr));
+		printer->add(MinisatID::Aggregate(createLiteral(newhead), setnr.id, createWeight(newbound), convert(aggtype), newsign, newsem, defnr.id));
 	}
 
-	void printCPVariables(std::vector<unsigned int> varids) {
+	void printCPVariables(std::vector<VarId> varids) {
 		for (auto it = varids.cbegin(); it != varids.cend(); ++it) {
 			printCPVariable(*it);
 		}
 	}
 
-	void printCPVariable(unsigned int varid) {
+	void printCPVariable(VarId varid) {
 		if (_printedvarids.find(varid) == _printedvarids.cend()) {
 			_printedvarids.insert(varid);
 
@@ -310,7 +313,7 @@ private:
 			if (domain->isRange()) {
 				int minvalue = domain->first()->value()._int;
 				int maxvalue = domain->last()->value()._int;
-				printer->add(MinisatID::IntVarRange(varid, minvalue, maxvalue));
+				printer->add(MinisatID::IntVarRange(varid.id, minvalue, maxvalue));
 			} else {
 				std::vector<MinisatID::Weight> valuelist;
 				for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
@@ -318,7 +321,7 @@ private:
 					Assert((*it)->type()==DomainElementType::DET_INT);
 					valuelist.push_back(createWeight((*it)->value()._int));
 				}
-				printer->add(MinisatID::IntVarEnum(varid, valuelist));
+				printer->add(MinisatID::IntVarEnum(varid.id, valuelist));
 			}
 		}
 	}

@@ -20,7 +20,6 @@
 class TheoryVisitor;
 
 class GroundTranslator;
-class GroundTermTranslator;
 class PCTsBody;
 class AggTsBody;
 class CPTsBody;
@@ -31,8 +30,6 @@ class DomElemContainer;
 class DomainElement;
 class InstGenerator;
 
-typedef unsigned int VarId;
-typedef std::vector<VarId> varidlist;
 typedef std::vector<int> intweightlist;
 
 /******************

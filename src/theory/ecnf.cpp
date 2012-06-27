@@ -503,7 +503,12 @@ void CPVarTerm::put(std::ostream& stream) const {
 	stream << "var" << varid();
 }
 void CPBound::put(std::ostream& stream) const {
-	stream << (_isvarid ? "var" : "") << (_isvarid ? _varid : _bound);
+	stream << (_isvarid ? "var" : "");
+	if(_isvarid){
+		stream <<_varid;
+	}else{
+		 stream <<_bound;
+	}
 }
 
 // TODO eclipse indentation problems below this line...

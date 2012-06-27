@@ -14,6 +14,7 @@
 #include "Grounder.hpp"
 
 #include "IncludeComponents.hpp"
+#include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset
 
 class TermGrounder;
 class InstChecker;
@@ -23,7 +24,6 @@ class PredInter;
 class Formula;
 class SortTable;
 class GroundTranslator;
-class GroundTermTranslator;
 class PFSymbol;
 
 /*** Formula grounders ***/
@@ -62,7 +62,7 @@ protected:
 	std::vector<TermGrounder*> _subtermgrounders;
 	InstChecker* const _ptchecker;
 	InstChecker* const _ctchecker;
-	size_t _symbol; // symbol's offset in translator's table.
+	SymbolOffset _symbol; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
 	GenType gentype;
@@ -83,7 +83,6 @@ public:
 
 class ComparisonGrounder: public FormulaGrounder {
 private:
-	GroundTermTranslator* _termtranslator;
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	CompType _comparator;
@@ -91,8 +90,8 @@ private:
 	Lit run() const;
 
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, GroundTermTranslator* tt, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
-			: FormulaGrounder(grounding, gc), _termtranslator(tt), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
+	ComparisonGrounder(AbstractGroundTheory* grounding, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
+			: FormulaGrounder(grounding, gc), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
 		Assert(context()._tseitin!=TsType::RULE);
 		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 	}

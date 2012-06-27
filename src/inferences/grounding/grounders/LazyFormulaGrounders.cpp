@@ -280,7 +280,7 @@ std::vector<pair<int, int> > findSameArgs(const vector<Term*>& terms) {
 	return sameargs;
 }
 
-DelayGrounder::DelayGrounder(PFSymbol* symbol, const vector<Term*>& terms, Context context, int id, AbstractGroundTheory* gt)
+DelayGrounder::DelayGrounder(PFSymbol* symbol, const vector<Term*>& terms, Context context, DefId id, AbstractGroundTheory* gt)
 		: 	_id(id),
 			_context(context),
 			_isGrounding(false),

@@ -14,7 +14,6 @@
 #include "TermGrounders.hpp"
 #include "SetGrounders.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "generators/InstGenerator.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "utils/ListUtils.hpp"
@@ -36,7 +35,6 @@ FormulaGrounder::~FormulaGrounder() {
 	if (not _origvarmap.empty()) {
 		for (auto i = _origvarmap.begin(); i != _origvarmap.end(); ++i) {
 			delete (i->first);
-			//delete (i->second);
 		}
 		_origvarmap.clear();
 	}
@@ -415,7 +413,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
  *
  * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often anyway.
  */
-Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, int setnr) const {
+Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, SetId setnr) const {
 	Assert(_type==AggFunction::PROD);
 	auto tsset = translator()->groundset(setnr);
 	litlist zerolits;
@@ -445,8 +443,8 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
 		}
 	}
 
-	int possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights(), { });
-	int negsetnumber = translator()->translateSet(neglits, negweights, { }, { });
+	auto possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights(), { });
+	auto negsetnumber = translator()->translateSet(neglits, negweights, { }, { });
 
 	auto tp = context()._tseitin;
 	if (isNeg(_sign)) {
@@ -484,7 +482,7 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
  * Checks whether the aggregate will be certainly true or false, based on minimum and maximum possible values and the given bound;
  * and creates a tseitin, handling double negation when necessary;
  */
-Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, int setnr) const {
+Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, SetId setnr) const {
 	// Check minimum and maximum possible values against the given bound
 	switch (_comp) {
 	case CompType::EQ:
@@ -529,7 +527,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 // TODO aggrounder estimate of fullgrounding is incorrect!
 Lit AggGrounder::run() const {
 	// Run subgrounders
-	SetId setnr = _setgrounder->run();
+	auto setnr = _setgrounder->run();
 	const GroundTerm& groundbound = _boundgrounder->run();
 	Assert(not groundbound.isVariable);
 

@@ -22,14 +22,36 @@
  *	\file This file contains some frequently used typedefs and enumerations
  */
 
-typedef int Lit;
 typedef unsigned int Atom;
+typedef int Lit;
 typedef double Weight;
 typedef std::vector<Lit> litlist;
 typedef std::vector<Weight> weightlist;
 
-typedef int SetId;
-typedef int DefId;
+struct VarId{
+	unsigned int id;
+};
+struct DefId{
+	unsigned int id;
+
+	DefId():id(0){
+
+	}
+	DefId(unsigned int id):id(id){
+
+	}
+};
+struct SetId{
+	unsigned int id;
+
+	SetId():id(0){
+
+	}
+	SetId(unsigned int id):id(id){
+
+	}
+};
+typedef std::vector<VarId> varidlist;
 
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
