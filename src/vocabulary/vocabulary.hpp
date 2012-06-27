@@ -279,7 +279,6 @@ public:
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 	void type(SymbolType, PFSymbol* parent); //!< Set the type and parent of the predicate
 
-	// Inspectors
 	SymbolType type() const {
 		return _type;
 	}
@@ -289,7 +288,6 @@ public:
 	unsigned int arity() const; //!< Returns the arity of the predicate
 	bool builtin() const;
 	bool overloaded() const;
-	//TODO? bool isSortPredicate() const; //!< Returns true iff this is a predicate representing a sort
 	std::set<Sort*> allsorts() const;
 
 	// Built-in symbols
@@ -302,7 +300,6 @@ public:
 	std::set<Predicate*> nonbuiltins(); //!< Returns the set of predicates that are not builtin
 										//!< and that are overloaded by 'this'.
 
-	// Output
 	std::ostream& put(std::ostream&) const;
 
 	friend class Sort;
