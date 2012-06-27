@@ -77,11 +77,12 @@ int GroundTranslator::getSymbol(PFSymbol* pfs) const {
 }
 
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
-	if (getOption(CPSUPPORT)) {
+	if (getOption(BoolType::CPSUPPORT)) {
 		auto function = dynamic_cast<Function*>(pfs);
-		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
-			throw IdpException("Invalid code path");
-		}
+		Assert(function == NULL or not CPSupport::eligibleForCP(function, _vocabulary));
+//		if (function != NULL && CPSupport::eligibleForCP(function, _vocabulary)) {
+//			throw IdpException("Invalid code path");
+//		}
 	}
 	auto n = getSymbol(pfs);
 	if (n == -1) {
@@ -107,21 +108,6 @@ Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool con
 	atom2TsBody[head] = tspair(head, tsbody);
 	return head;
 }
-
-// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
-//Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
-// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
-	/*	auto it = _tsbodies2nr.lower_bound(tsbody);
-
-	 if(it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
-	 delete tsbody;
-	 return it->second;
-	 }*/
-
-//	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-//	atom2TsBody[nr] = tspair(nr, tsbody);
-//	return nr;
-//}
 
 bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, int id) const {
 	auto symbolID = getSymbol(pfs);
@@ -224,6 +210,21 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 		return nr;
 	}
 }
+
+// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
+//Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
+// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
+       /*      auto it = _tsbodies2nr.lower_bound(tsbody);
+
+        if(it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
+        delete tsbody;
+        return it->second;
+        }*/
+
+//     int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+//     atom2TsBody[nr] = tspair(nr, tsbody);
+//     return nr;
+//}
 
 SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const varidlist& varids) {
 	SetId setnr;

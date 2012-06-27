@@ -165,7 +165,6 @@ Lit AtomGrounder::run() const {
 	}
 
 	Assert(alldomelts);
-	// If P(t) and (not isCPSymbol(P)) and isCPSymbol(t) then it should have been rewritten, right?
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
