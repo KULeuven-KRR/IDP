@@ -20,9 +20,6 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
-typedef int SetId;
-typedef int DefId;
-
 class LazyStoredInstantiation;
 class DelayGrounder;
 

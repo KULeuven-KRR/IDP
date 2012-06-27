@@ -30,8 +30,6 @@ class DomElemContainer;
 class DomainElement;
 class InstGenerator;
 
-typedef unsigned int VarId;
-typedef std::vector<VarId> varidlist;
 typedef std::vector<int> intweightlist;
 
 /******************

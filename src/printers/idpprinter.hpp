@@ -535,7 +535,7 @@ public:
 		output() << "." << "\n";
 	}
 
-	void openDefinition(int defid) {
+	void openDefinition(DefId defid) {
 		Assert(isDefClosed());
 		openDef(defid);
 		printTab();
@@ -913,12 +913,12 @@ private:
 		}
 	}
 
-	void printTerm(unsigned int termnr) {
+	void printTerm(VarId termnr) {
 		CHECKTERMINATION
 		// Make sure there is a translator.
 		Assert(_termtranslator);
 		// Get information from the term translator.
-		const Function* func = _termtranslator->function(termnr);
+		const Function* func = _termtranslator->getFunction(termnr);
 		if (func) {
 			// Print the symbol's name.
 			output() << func->name().substr(0, func->name().find('/'));
@@ -961,7 +961,7 @@ private:
 		}
 	}
 
-	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
+	void printAggregate(double bound, bool lower, AggFunction aggtype, SetId setnr) {
 		output() << bound << (lower ? " =< " : " >= ");
 		switch (aggtype) {
 		case AggFunction::CARD:

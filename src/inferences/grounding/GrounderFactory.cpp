@@ -71,8 +71,8 @@ GenType operator not(GenType orig) {
 	return result;
 }
 
-int getIDForUndefined() {
-	return -1;
+DefId getIDForUndefined() {
+	return DefId(-1);
 }
 
 template<typename Grounding>

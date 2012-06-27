@@ -70,7 +70,7 @@ void GroundTheory<Policy>::closeTheory() {
 		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
 	// TODO arbitrary values?
-	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
+	// FIXME problem if a getFunction does not occur in the theory/grounding! It might be arbitrary, but should still be a getFunction?
 	addFalseDefineds();
 	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
@@ -134,7 +134,7 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	body->left(foldCPTerm(body->left()));
 
 	//Add constraint for right hand side if necessary. TODO refactor
-	if (body->right()._isvarid && translator()->function(body->right()._varid) == NULL) {
+	if (body->right()._isvarid && translator()->getFunction(body->right()._varid) == NULL) {
 		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
 			_printedvarids.insert(body->right()._varid);
 			auto cprelation = translator()->cprelation(body->right()._varid);
@@ -163,7 +163,7 @@ void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, int defnr) {
+void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, DefId defnr) {
 	if (type == TsType::IMPL || type == TsType::EQ) {
 		if (conj) {
 			for (auto i = body.cbegin(); i < body.cend(); ++i) {
@@ -206,7 +206,7 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
 	//Add reified constraint necessary. TODO refactor
-	if (translator()->function(varid) == NULL) {
+	if (translator()->getFunction(varid) == NULL) {
 		if (_printedvarids.find(varid) == _printedvarids.end()) {
 			_printedvarids.insert(varid);
 			auto cprelation = translator()->cprelation(varid);
@@ -228,7 +228,7 @@ std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, int defnr, bool skipfirst) {
+void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst) {
 	size_t n = 0;
 	if (skipfirst) {
 		++n;
@@ -276,7 +276,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 
 	if (isa<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (translator()->function(varterm->varid()) == NULL) {
+		if (translator()->getFunction(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
 			if ((isa<CPSumTerm>(*left) || isa<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
@@ -292,7 +292,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-			if (translator()->function(*vit) == NULL) {
+			if (translator()->getFunction(*vit) == NULL) {
 				CPTsBody* cprelation = translator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
 				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {

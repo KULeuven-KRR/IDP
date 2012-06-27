@@ -16,7 +16,6 @@
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
-typedef unsigned int VarId;
 
 class GroundDefinition;
 class GroundFixpDef;
@@ -75,7 +74,7 @@ public:
 	const std::vector<CPReification*>& getCPReifications() const {
 		return _cpreifications;
 	}
-	const std::map<int, GroundDefinition*>& getDefinitions() const {
+	const std::map<DefId, GroundDefinition*>& getDefinitions() const {
 		return _definitions;
 	}
 

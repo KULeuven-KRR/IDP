@@ -14,6 +14,7 @@
 #include "Grounder.hpp"
 
 #include "IncludeComponents.hpp"
+#include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset
 
 class TermGrounder;
 class InstChecker;
@@ -61,7 +62,7 @@ protected:
 	std::vector<TermGrounder*> _subtermgrounders;
 	InstChecker* const _ptchecker;
 	InstChecker* const _ctchecker;
-	size_t _symbol; // symbol's offset in translator's table.
+	SymbolOffset _symbol; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
 	GenType gentype;

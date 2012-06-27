@@ -72,7 +72,7 @@ public:
 		printer().print(cl);
 	}
 
-	void polAdd(const TsSet& tsset, int setnr, bool) {
+	void polAdd(const TsSet& tsset, SetId setnr, bool) {
 		auto set = new GroundSet(setnr, tsset.literals(), tsset.weights());
 		printer().print(set);
 		delete (set);
@@ -84,13 +84,13 @@ public:
 		delete (agg);
 	}
 
-	void polAdd(int defnr, PCGroundRule* rule) {
+	void polAdd(DefId defnr, PCGroundRule* rule) {
 		printer().checkOrOpen(defnr);
 		printer().print(rule);
 		delete (rule);
 	}
 
-	void polAdd(int defnr, AggGroundRule* rule) {
+	void polAdd(DefId defnr, AggGroundRule* rule) {
 		printer().checkOrOpen(defnr);
 		printer().print(rule);
 	}
@@ -101,7 +101,7 @@ public:
 		delete (reif);
 	}
 
-	void polAddOptimization(AggFunction, int) {
+	void polAddOptimization(AggFunction, SetId) {
 		throw notyetimplemented("Printing an optimization constraint.\n");
 	}
 

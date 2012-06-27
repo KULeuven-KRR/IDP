@@ -34,15 +34,15 @@ class CPReification;
 class GroundSet;
 class GroundAggregate;
 class GroundTranslator;
-typedef std::vector<int> GroundClause;
+typedef std::vector<Lit> GroundClause;
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
 class Printer: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	int opendef_; //the id of the currently open definition
+	DefId opendef_; //the id of the currently open definition
 	bool theoryopen_;
-	std::set<int> _pastopendefs;
+	std::set<DefId> _pastopendefs;
 protected:
 	Printer()
 			: opendef_(-1), theoryopen_(false) {
@@ -51,13 +51,13 @@ protected:
 	bool isDefClosed() const {
 		return opendef_ == -1;
 	}
-	bool isDefOpen(int defid) const {
+	bool isDefOpen(DefId defid) const {
 		return opendef_ == defid;
 	}
 	void closeDef() {
 		opendef_ = -1;
 	}
-	void openDef(int defid) {
+	void openDef(DefId defid) {
 		opendef_ = defid;
 	}
 
@@ -92,7 +92,7 @@ public:
 	template<class Stream> static Printer* create(Stream& stream);
 	template<class Stream> static Printer* create(Stream& stream, bool arithmetic);
 
-	virtual void checkOrOpen(int defid) {
+	virtual void checkOrOpen(DefId defid) {
 		if (!isDefOpen(defid)) {
 			_pastopendefs.insert(opendef_);
 			Assert(_pastopendefs.find(defid)==_pastopendefs.cend());

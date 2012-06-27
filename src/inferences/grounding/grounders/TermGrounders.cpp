@@ -108,7 +108,7 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 
 	Assert(getOption(BoolType::CPSUPPORT));
-	auto varid = _translator->translate(_function, groundsubterms);
+	auto varid = _translator->translateTerm(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
 		clog << tabs() << "Result = var" << _translator->printTerm(varid) << "\n";
@@ -209,21 +209,21 @@ GroundTerm SumTermGrounder::run() const {
 	if (left.isVariable) {
 		if (right.isVariable) {
 			auto sumterm = createCPSumTerm(_type, left._varid, right._varid);
-			varid = _translator->translate(sumterm, getDomain());
+			varid = _translator->translateTerm(sumterm, getDomain());
 		} else {
 			Assert(not right.isVariable);
-			auto rightvarid = _translator->translate(right._domelement);
+			auto rightvarid = _translator->translateTerm(right._domelement);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, left._varid, rightvarid);
-			varid = _translator->translate(sumterm, getDomain());
+			varid = _translator->translateTerm(sumterm, getDomain());
 		}
 	} else {
 		Assert(not left.isVariable);
 		if (right.isVariable) {
-			auto leftvarid = _translator->translate(left._domelement);
+			auto leftvarid = _translator->translateTerm(left._domelement);
 			// Create cp sum term
 			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
-			varid = _translator->translate(sumterm, getDomain());
+			varid = _translator->translateTerm(sumterm, getDomain());
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable && _functable!=NULL);
 			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
@@ -299,7 +299,7 @@ GroundTerm TermWithFactorGrounder::run() const {
 	VarId varid;
 	if (groundterm.isVariable) {
 		auto sumterm = createCPSumTerm(factor._domelement, groundterm._varid);
-		varid = _translator->translate(sumterm, getDomain());
+		varid = _translator->translateTerm(sumterm, getDomain());
 	} else {
 		Assert(not groundterm.isVariable && _functable!=NULL);
 		auto domelem = _functable->operator[]( { factor._domelement, groundterm._domelement });
@@ -343,9 +343,9 @@ GroundTerm AggTermGrounder::run() const {
 
 	if (not tsset.varids().empty()) {
 		auto varids = tsset.varids();
-		varids.push_back(_translator->translate(domelem));
+		varids.push_back(_translator->translateTerm(domelem));
 		auto cpaggterm = createCPAggTerm(_type, varids);
-		auto varid = _translator->translate(cpaggterm, getDomain());
+		auto varid = _translator->translateTerm(cpaggterm, getDomain());
 		if (verbosity() > 2) {
 			poptab();
 			clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";

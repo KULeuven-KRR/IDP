@@ -89,7 +89,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	if (groundweight.isVariable) {
 		v = groundweight._varid;
 	} else {
-		v = translator->translate(groundweight._domelement);
+		v = translator->translateTerm(groundweight._domelement);
 	}
 
 	SortTable* domain = NULL;
@@ -111,7 +111,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()), domain);
 	auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
 
-	auto varid = translator->translate(constant, vector<GroundTerm>{});
+	auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
 	auto vt1 = new CPVarTerm(varid);
 	auto vt2 = new CPVarTerm(varid);
 	Lit bl1 = translator->translate(vt1, CompType::EQ, CPBound(v), TsType::EQ);
@@ -145,8 +145,7 @@ SetId EnumSetGrounder::runAndRewriteUnknowns() const {
 	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
 		(*i)->run(trueweights, varids);
 	}
-	auto s = _translator->translateSet({}, {}, trueweights, varids);
-	return s;
+	return _translator->translateSet({}, {}, trueweights, varids);
 }
 
 QuantSetGrounder::~QuantSetGrounder() {
@@ -173,14 +172,12 @@ SetId QuantSetGrounder::run() const {
 	weightlist weights;
 	weightlist trueweights;
 	run(literals, weights, trueweights);
-	auto s = _translator->translateSet(literals, weights, trueweights, {});
-	return s;
+	return _translator->translateSet(literals, weights, trueweights, {});
 }
 
 SetId QuantSetGrounder::runAndRewriteUnknowns() const {
 	weightlist trueweights;
 	varidlist varids;
 	run(trueweights, varids);
-	auto s = _translator->translateSet({}, {}, trueweights, varids);
-	return s;
+	return _translator->translateSet({}, {}, trueweights, varids);
 }

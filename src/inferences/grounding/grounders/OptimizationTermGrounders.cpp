@@ -82,7 +82,7 @@ void VariableOptimizationGrounder::run(ConjOrDisj& formula) const {
 	if (groundterm.isVariable) {
 		varid = groundterm._varid;
 	} else {
-		varid = getTranslator()->translate(groundterm._domelement);
+		varid = getTranslator()->translateTerm(groundterm._domelement);
 	}
 	getGrounding()->addOptimization(varid);
 
