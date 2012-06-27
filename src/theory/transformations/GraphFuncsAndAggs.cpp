@@ -30,14 +30,14 @@ CompType getComparison(const PredForm* pf) {
 	}
 }
 
-bool isAgg(Term* t){
-	return t->type()==TermType::AGG;
+bool isAgg(Term* t) {
+	return t->type() == TermType::AGG;
 }
-bool isFunc(Term* t){
-	return t->type()==TermType::FUNC;
+bool isFunc(Term* t) {
+	return t->type() == TermType::FUNC;
 }
 
-bool isAggOrFunc(Term* t){
+bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
 }
 
@@ -81,16 +81,16 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	auto left = pf->subterms()[0];
 	auto right = pf->subterms()[1];
 	bool usecp = _cpsupport
-					&& VocabularyUtils::isIntComparisonPredicate(pf->symbol(), _vocabulary)
-					&& eligibleForCP(left, _structure)
-					&& eligibleForCP(right, _structure);
+			and VocabularyUtils::isIntComparisonPredicate(pf->symbol(), _vocabulary)
+			and eligibleForCP(left, _structure)
+			and eligibleForCP(right, _structure);
 
-	if(usecp){
+	if (usecp) {
 		return traverse(pf);
 	}
 
-	if ((isAggOrFunc(left) && isAggOrFunc(right))) {
-		auto splitformula = FormulaUtils::unnestFuncsAndAggs(pf, _structure, _context);
+	if ((isAggOrFunc(left) and isAggOrFunc(right))) {
+		auto splitformula = FormulaUtils::unnestFuncsAndAggsNonRecursive(pf, _structure, _context);
 		return splitformula->accept(this);
 	}
 
@@ -98,21 +98,21 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	if (is(pf->symbol(), STDPRED::EQ)) {
 		if (isFunc(left)) {
 			newformula = makeFuncGraph(pf->sign(), left, right, pf->pi());
-			delete(left);
+			delete (left);
 		} else if (isFunc(right)) {
 			newformula = makeFuncGraph(pf->sign(), right, left, pf->pi());
-			delete(right);
+			delete (right);
 		}
 	}
-	if (newformula==NULL && isAgg(left)) {
+	if (newformula == NULL and isAgg(left)) {
 		newformula = makeAggForm(right, invertComp(getComparison(pf)), left, pf->pi());
-	} else if (newformula==NULL && isAgg(right)) {
+	} else if (newformula == NULL and isAgg(right)) {
 		newformula = makeAggForm(left, getComparison(pf), right, pf->pi());
 	}
 	if (newformula != NULL) {
-		delete(pf);
+		delete (pf);
 		return traverse(newformula);
-	}else{
+	} else {
 		return traverse(pf);
 	}
 }

@@ -49,12 +49,12 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport) {
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, bool nestingIsAllowed = false) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
-		setNestingIsAllowed(false);
+		setNestingIsAllowed(nestingIsAllowed);
 		_cpsupport = cpsupport;
 		return t->accept(this);
 	}

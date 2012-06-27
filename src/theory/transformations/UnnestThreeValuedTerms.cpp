@@ -68,7 +68,6 @@ Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
 	auto result = traverse(t);
 
 	setNestingIsAllowed(saveAllowedToLeave);
-
 	setAllowedToUnnest(savemovecontext);
 
 	return doMove(result);

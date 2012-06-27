@@ -332,9 +332,7 @@ Term* UnnestTerms::visit(AggTerm* t) {
 
 Term* UnnestTerms::visit(FuncTerm* t) {
 	bool savemovecontext = isAllowedToUnnest();
-
 	setAllowedToUnnest(true);
-
 	auto result = traverse(t);
 	setAllowedToUnnest(savemovecontext);
 	if (shouldMove(result)) {

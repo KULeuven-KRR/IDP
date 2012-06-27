@@ -29,8 +29,8 @@ class UnnestFuncsAndAggsNonRecursive: public UnnestFuncsAndAggs {
 	VISITORFRIENDS()
 
 protected:
-	virtual Term* traverse(Term* term){
-		if(isa<AggTerm>(*term)){
+	virtual Term* traverse(Term* term) {
+		if (isa<AggTerm>(*term)) {
 			return term;
 		}
 		return UnnestTerms::traverse(term);
