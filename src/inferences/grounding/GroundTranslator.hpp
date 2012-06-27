@@ -156,7 +156,7 @@ public:
 		return atom2Tuple[atom]->second;
 	}
 	TsBody* getTsBody(Lit atom) const {
-		Assert(isTseitinWithSubformula(atom) && atom2Tuple[atom]->first!=NULL);
+		Assert(isTseitinWithSubformula(atom));
 		return atom2TsBody[atom];
 	}
 	int createNewUninterpretedNumber() {

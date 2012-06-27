@@ -27,12 +27,6 @@ GroundTranslator::GroundTranslator(AbstractStructure* structure)
 }
 
 GroundTranslator::~GroundTranslator() {
-	for (auto i = atom2Tuple.cbegin(); i != atom2Tuple.cend(); ++i) {
-		if (*i != NULL) {
-			delete (*i);
-		}
-	}
-	atom2Tuple.clear();
 	deleteList<TsBody>(atom2TsBody);
 	deleteList<CPTsBody>(var2CTsBody);
 	deleteList<stpair>(atom2Tuple);
@@ -40,13 +34,14 @@ GroundTranslator::~GroundTranslator() {
 }
 
 Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& args) {
-	if(symboloffset.functionlist){
+	if (symboloffset.functionlist) {
 		std::vector<GroundTerm> terms;
-		for(auto i=args.cbegin(); i<args.cend(); ++i) {
+		for (auto i = args.cbegin(); i < args.cend(); ++i) {
 			terms.push_back(*i);
 		}
 		auto image = terms.back();
-		Assert(image._domelement->type()==DomainElementType::DET_INT); // Otherwise, cannot be a cp-able function
+		Assert(image._domelement->type()==DomainElementType::DET_INT);
+		// Otherwise, cannot be a cp-able function
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
 		return translate(new CPVarTerm(translateTerm(functions[symboloffset.offset].symbol, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
@@ -60,7 +55,8 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 	} else {
 		lit = nextNumber(AtomType::INPUT);
 		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		atom2Tuple[lit] = new stpair(symbolinfo.symbol, args);
+		atom2Tuple[lit]->first = symbolinfo.symbol;
+		atom2Tuple[lit]->second = args;
 
 		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
 		// FIXME extend to CP terms!
@@ -72,8 +68,8 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 	return lit;
 }
 
-Vocabulary* vocabulary(AbstractStructure* structure){
-	return structure==NULL?NULL:structure->vocabulary();
+Vocabulary* vocabulary(AbstractStructure* structure) {
+	return structure == NULL ? NULL : structure->vocabulary();
 }
 
 // TODO expensive!
@@ -99,28 +95,20 @@ SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
 SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	auto n = getSymbol(pfs);
 	if (n.offset == -1) {
+		if (pfs->isFunction()) {
+			auto function = dynamic_cast<Function*>(pfs);
+			if (function != NULL && CPSupport::eligibleForCP(function, vocabulary(_structure))) {
+				functions.push_back(FunctionInfo(function));
+				return SymbolOffset(functions.size() - 1, true);
+			}
+		}
 		symbols.push_back(SymbolInfo(pfs));
 		return SymbolOffset(symbols.size() - 1, false);
+
 	} else {
 		return n;
 	}
 }
-
-// TODO merge with below
-/*SymbolOffset GroundTranslator::addFunction(Function* func) {
- auto found = _function2offset.find(func);
- if (found != _function2offset.cend()) {
- // Simply return number when getFunction is already known
- return found->second;
- } else {
- // Add getFunction and number when getFunction is unknown
- SymbolOffset offset = _offset2function.size();
- _function2offset[func] = offset;
- _offset2function.push_back(func);
- _functerm2varid_table.push_back(map<vector<GroundTerm>, VarId>());
- return offset;
- }
- }*/
 
 Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
 	SymbolOffset offset = addSymbol(s);
@@ -241,20 +229,19 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 	}
 }
 
-// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
+//// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
 //Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
-// FIXME optimization: check whether the same comparison has already been added and reuse the tseitin.
-/*      auto it = _tsbodies2nr.lower_bound(tsbody);
-
- if(it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
- delete tsbody;
- return it->second;
- }*/
-
-//     int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-//     atom2TsBody[nr] = tspair(nr, tsbody);
-//     return nr;
+//// TODO optimization: check whether the same comparison has already been added and reuse the tseitin.
+//	auto it = _tsbodies2nr.lower_bound(tsbody);
+//	if (it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
+//		delete tsbody;
+//		return it->second;
+//	}
+//	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+//	atom2TsBody[nr] = tspair(nr, tsbody);
+//	return nr;
 //}
+
 SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const varidlist& varids) {
 	TsSet tsset;
 	tsset._setlits = lits;
@@ -269,7 +256,7 @@ SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weig
 Lit GroundTranslator::nextNumber(AtomType type) {
 	Lit nr = atomtype.size();
 	atom2TsBody.push_back(NULL);
-	atom2Tuple.push_back(NULL);
+	atom2Tuple.push_back(new stpair());
 	atomtype.push_back(type);
 	return nr;
 }
@@ -283,7 +270,8 @@ VarId GroundTranslator::translate(SymbolOffset offset, const vector<GroundTerm>&
 	} else {
 		VarId varid = nextNumber();
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
-		var2Tuple[varid.id] = new ftpair(info.symbol, args);
+		var2Tuple[varid.id]->first = info.symbol;
+		var2Tuple[varid.id]->second = args;
 		var2domain[varid.id] = _structure->inter(info.symbol->outsort());
 		return varid;
 	}
@@ -324,7 +312,7 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 VarId GroundTranslator::nextNumber() {
 	VarId id;
 	id.id = var2Tuple.size();
-	var2Tuple.push_back( { }); // FIXME
+	var2Tuple.push_back(new ftpair());
 	var2CTsBody.push_back(NULL);
 	var2domain.push_back(NULL);
 	return id;

@@ -73,6 +73,7 @@ public:
 	virtual void closeTheory() = 0;
 
 	GroundTranslator* translator() const {
+		Assert(_translator!=NULL);
 		return _translator;
 	}
 	AbstractStructure* structure() const {
