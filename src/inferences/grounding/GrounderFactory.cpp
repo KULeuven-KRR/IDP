@@ -408,6 +408,14 @@ CompType getCompType(T symbol) {
 	}
 }
 
+std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* structure){
+	vector<SortTable*> tables;
+	for(auto i=function->sorts().cbegin(); i<function->sorts().cend()-1; ++i) {
+		tables.push_back(structure->inter(*i));
+	}
+	return tables;
+}
+
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
@@ -463,7 +471,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 				subtermgrounders.pop_back();
 				auto ftable = _structure->inter(function)->funcTable();
 				auto domain = _structure->inter(function->outsort());
-				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, subtermgrounders);
+				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure), subtermgrounders);
 				//ftgrounder->setOrig(...) TODO
 			}
 		}
@@ -965,7 +973,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
 		}
 	} else {
-		_termgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, subtermgrounders);
+		_termgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure), subtermgrounders);
 	}
 	_termgrounder->setOrig(t, varmapping());
 }

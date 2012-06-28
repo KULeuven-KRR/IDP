@@ -66,6 +66,7 @@ GroundTerm DomTermGrounder::run() const {
 	return GroundTerm(_value);
 }
 
+// TODO code duplication with AtomGrounder
 GroundTerm FuncTermGrounder::run() const {
 	if (verbosity() > 2) {
 		printOrig();
@@ -74,7 +75,7 @@ GroundTerm FuncTermGrounder::run() const {
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms;
 	ElementTuple args(_subtermgrounders.size());
-	for (auto n = 0; n < _subtermgrounders.size(); ++n) {
+	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		CHECKTERMINATION
 		auto groundterm = _subtermgrounders[n]->run();
 		if (groundterm.isVariable) {
@@ -86,7 +87,7 @@ GroundTerm FuncTermGrounder::run() const {
 					clog << tabs() << "Result = **invalid term**" << "\n";
 				}
 				return groundterm;
-			}else if(not _functable->universe().tables()[n]->contains(groundterm._domelement)){ // Checking out-of-bounds
+			}else if(not _tables[n]->contains(groundterm._domelement)){ // Checking out-of-bounds
 				if (verbosity() > 2) {
 					poptab();
 					clog << tabs() << "Term value out of argument type" << "\n";

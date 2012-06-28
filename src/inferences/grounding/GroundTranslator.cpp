@@ -81,14 +81,14 @@ SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
 	if (pfs->isFunction()) {
 		auto function = dynamic_cast<Function*>(pfs);
 		if (function != NULL && CPSupport::eligibleForCP(function, vocabulary())) {
-			for (auto n = 0; n < functions.size(); ++n) {
+			for (size_t n = 0; n < functions.size(); ++n) {
 				if (functions[n].symbol == pfs) {
 					return SymbolOffset(n, true);
 				}
 			}
 		}
 	}
-	for (auto n = 0; n < symbols.size(); ++n) {
+	for (size_t n = 0; n < symbols.size(); ++n) {
 		if (symbols[n].symbol == pfs) {
 			return SymbolOffset(n, false);
 		}

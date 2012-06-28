@@ -50,6 +50,7 @@ public:
 	}
 protected:
 	void setDomain(SortTable* dom) const { // TODO ugly const setter!
+		Assert(dom!=NULL);
 		_domain = dom;
 	}
 };
@@ -85,10 +86,11 @@ class FuncTermGrounder: public TermGrounder {
 protected:
 	Function* _function;
 	FuncTable* _functable;
+	std::vector<SortTable*> _tables; // Function argument sorts
 	std::vector<TermGrounder*> _subtermgrounders;
 public:
-	FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<TermGrounder*>& sub) :
-			TermGrounder(dom, tt), _function(func), _functable(ftable), _subtermgrounders(sub) {
+	FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<SortTable*>& tables, const std::vector<TermGrounder*>& sub) :
+			TermGrounder(dom, tt), _function(func), _functable(ftable), _tables(tables), _subtermgrounders(sub) {
 	}
 	GroundTerm run() const;
 
