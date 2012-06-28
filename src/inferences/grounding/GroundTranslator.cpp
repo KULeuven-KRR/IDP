@@ -44,7 +44,11 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 		// Otherwise, cannot be a cp-able function
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
-		return translate(new CPVarTerm(translateTerm(functions[symboloffset.offset].symbol, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
+		auto lit = translate(new CPVarTerm(translate(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
+		atom2Tuple[lit]->first = functions[symboloffset.offset].symbol;
+		atom2Tuple[lit]->second = args;
+		atomtype[lit] = AtomType::CPGRAPHEQ;
+		return lit;
 	}
 	auto symbolID = symboloffset.offset;
 	Lit lit = 0;
@@ -68,23 +72,23 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 	return lit;
 }
 
-Vocabulary* vocabulary(AbstractStructure* structure) {
-	return structure == NULL ? NULL : structure->vocabulary();
+Vocabulary* GroundTranslator::vocabulary() const {
+	return _structure == NULL ? NULL : _structure->vocabulary();
 }
 
 // TODO expensive!
 SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
 	if (pfs->isFunction()) {
 		auto function = dynamic_cast<Function*>(pfs);
-		if (function != NULL && CPSupport::eligibleForCP(function, vocabulary(_structure))) {
-			for (size_t n = 0; n < functions.size(); ++n) {
+		if (function != NULL && CPSupport::eligibleForCP(function, vocabulary())) {
+			for (auto n = 0; n < functions.size(); ++n) {
 				if (functions[n].symbol == pfs) {
 					return SymbolOffset(n, true);
 				}
 			}
 		}
 	}
-	for (size_t n = 0; n < symbols.size(); ++n) {
+	for (auto n = 0; n < symbols.size(); ++n) {
 		if (symbols[n].symbol == pfs) {
 			return SymbolOffset(n, false);
 		}
@@ -97,7 +101,7 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	if (n.offset == -1) {
 		if (pfs->isFunction()) {
 			auto function = dynamic_cast<Function*>(pfs);
-			if (function != NULL && CPSupport::eligibleForCP(function, vocabulary(_structure))) {
+			if (function != NULL && CPSupport::eligibleForCP(function, vocabulary())) {
 				functions.push_back(FunctionInfo(function));
 				return SymbolOffset(functions.size() - 1, true);
 			}
@@ -213,8 +217,13 @@ bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
 Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto tsbody = new CPTsBody(tstype, left, comp, right);
 	// TODO => this should be generalized to sharing detection!
+//	cerr <<"Searching for " <<toString(left) <<toString(comp) <<toString(right) <<"in \n";
+//	for(auto i=cpset.cbegin(); i!=cpset.cend(); ++i){
+//		cerr <<toString(i->first) <<"\n";
+//	}
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {
+//		cerr <<"Found: literal " <<it->second <<"\n";
 		delete tsbody;
 		if (it->first->comp() != comp) { // NOTE: OPTIMIZATION! = and ~= map to the same tsbody etc. => look at ecnf.cpp:compEqThroughNeg
 			return -it->second;
@@ -222,6 +231,7 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 			return it->second;
 		}
 	} else {
+//		cerr <<"Adding new\n";
 		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		atom2TsBody[nr] = tsbody;
 		cpset[tsbody] = nr;
@@ -278,6 +288,7 @@ VarId GroundTranslator::translate(SymbolOffset offset, const vector<GroundTerm>&
 }
 
 VarId GroundTranslator::translateTerm(Function* function, const vector<GroundTerm>& args) {
+	Assert(CPSupport::eligibleForCP(function, vocabulary()));
 	auto offset = addSymbol(function);
 	return translate(offset, args);
 }
@@ -387,6 +398,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 		}
 		break;
 	}
+	case AtomType::CPGRAPHEQ:
 	case AtomType::TSEITINWITHSUBFORMULA:
 		s << "tseitin_" << nr;
 		break;

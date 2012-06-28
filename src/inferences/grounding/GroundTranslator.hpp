@@ -60,7 +60,7 @@ struct FunctionInfo {
 };
 
 enum class AtomType {
-	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN
+	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN, CPGRAPHEQ
 };
 
 typedef std::pair<PFSymbol*, ElementTuple> stpair;
@@ -117,6 +117,8 @@ public:
 	GroundTranslator(AbstractStructure* structure);
 	~GroundTranslator();
 
+	Vocabulary* vocabulary() const;
+
 	SymbolOffset addSymbol(PFSymbol* pfs);
 
 	// Translate into propositional variables
@@ -142,7 +144,7 @@ public:
 		return atomtype[atom];
 	}
 	bool isInputAtom(int atom) const {
-		return isStored(atom) && getType(atom) == AtomType::INPUT;
+		return isStored(atom) && (getType(atom) == AtomType::INPUT || getType(atom) == AtomType::CPGRAPHEQ);
 	}
 	bool isTseitinWithSubformula(int atom) const {
 		return isStored(atom) && getType(atom) == AtomType::TSEITINWITHSUBFORMULA;

@@ -74,7 +74,7 @@ GroundTerm FuncTermGrounder::run() const {
 	bool calculable = true;
 	vector<GroundTerm> groundsubterms;
 	ElementTuple args(_subtermgrounders.size());
-	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
+	for (auto n = 0; n < _subtermgrounders.size(); ++n) {
 		CHECKTERMINATION
 		auto groundterm = _subtermgrounders[n]->run();
 		if (groundterm.isVariable) {
@@ -108,6 +108,7 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 
 	Assert(getOption(BoolType::CPSUPPORT));
+	Assert(CPSupport::eligibleForCP(_function, _translator->vocabulary()));
 	auto varid = _translator->translateTerm(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
