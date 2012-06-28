@@ -86,6 +86,12 @@ GroundTerm FuncTermGrounder::run() const {
 					clog << tabs() << "Result = **invalid term**" << "\n";
 				}
 				return groundterm;
+			}else if(not _functable->universe().tables()[n]->contains(groundterm._domelement)){ // Checking out-of-bounds
+				if (verbosity() > 2) {
+					poptab();
+					clog << tabs() << "Term value out of argument type" << "\n";
+				}
+				return groundterm;
 			}
 			args[n] = groundterm._domelement;
 		}
