@@ -64,8 +64,9 @@ private:
 public:
 	template<typename T>
 	T execute(T t, AbstractStructure* str, Context context, bool cpsupport) {
+		Assert(str!=NULL);
 		_structure = str;
-		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
+		_vocabulary = str->vocabulary();
 		setContext(context);
 		setAllowedToUnnest(false);
 		_cpablerelation = TruthValue::Unknown;

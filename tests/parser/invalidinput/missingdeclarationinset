@@ -1,0 +1,15 @@
+vocabulary V {
+	  type x isa int
+	  A:x
+}
+
+theory T : V {
+	sum[(P,A)]=1.
+}
+
+structure S : V {
+}
+
+procedure getExpectedNbOfModels() {
+	return 4
+}

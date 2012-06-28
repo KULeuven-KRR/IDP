@@ -61,12 +61,40 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		return pf->accept(this);
 	}
 
+	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
+	if (_cpsupport && not CPSupport::eligibleForCP(predform, _vocabulary)) {
+		std::vector<Formula*> aggforms;
+		for (uint i = 0; i < predform->args().size(); ++i) {
+			auto origterm = predform->args().front();
+			if(origterm->freeVars().size()!=0 || origterm->type()!=TermType::AGG){ // TODO handle free vars
+				continue;
+			}
+			auto sort = origterm->sort();
+			if (_structure != NULL && SortUtils::isSubsort(sort, get(STDSORT::INTSORT), _vocabulary)) {
+				sort = TermUtils::deriveSmallerSort(origterm, _structure);
+			}
+			auto constant = new Function( { }, sort, origterm->pi());
+			_vocabulary->add(constant);
+			auto newterm = new FuncTerm(constant, { }, origterm->pi());
+			predform->arg(i, newterm->clone());
+			aggforms.push_back(new AggForm(SIGN::POS, newterm, CompType::EQ, dynamic_cast<AggTerm*>(origterm), FormulaParseInfo()));
+		}
+		if (aggforms.size() > 0) {
+			aggforms.push_back(predform);
+			auto boolform = new BoolForm(SIGN::POS, true, aggforms, predform->pi());
+			return boolform->accept(this);
+		}
+	}
+
 	auto result = UnnestTerms::visit(predform);
 
 	_cpablerelation = savedrel;
 
 	return result;
 }
+
+// TODO Add aggform (sum becomes cpable relation)
+// TODO allow visiting of terms directly, setting that it is certain cpablerelation is true
 
 Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
 	auto savedcp = _cpablefunction;

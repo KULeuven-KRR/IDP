@@ -21,7 +21,11 @@
 using namespace std;
 
 UnnestTerms::UnnestTerms()
-		: _structure(NULL), _vocabulary(NULL), _context(Context::POSITIVE), _allowedToUnnest(false), _chosenVarSort(NULL) {
+		: 	_structure(NULL),
+			_vocabulary(NULL),
+			_context(Context::POSITIVE),
+			_allowedToUnnest(false),
+			_chosenVarSort(NULL) {
 }
 
 void UnnestTerms::contextProblem(Term* t) {
@@ -56,7 +60,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
  * 		Add an equality t =_sort(t) v
  * 		return v
  */
-VarTerm* UnnestTerms::move(Term* origterm) {
+Term* UnnestTerms::move(Term* origterm) {
 	if (getContext() == Context::BOTH) {
 		contextProblem(origterm);
 	}
@@ -74,7 +78,6 @@ VarTerm* UnnestTerms::move(Term* origterm) {
 	auto varterm = new VarTerm(var, TermParseInfo(origterm->pi()));
 	auto equalatom = new PredForm(SIGN::POS, get(STDPRED::EQ, origterm->sort()), { varterm, origterm }, FormulaParseInfo());
 	_equalities.push_back(equalatom);
-
 	return varterm->clone();
 }
 
@@ -355,7 +358,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	setAllowedToUnnest(true);
 	Context savecontext = getContext();
 
-	for(uint i=0; i<s->getSets().size(); ++i) {
+	for (uint i = 0; i < s->getSets().size(); ++i) {
 		s->setSet(i, s->getSets()[i]->accept(this));
 		if (not _equalities.empty()) {
 			//_equalities.push_back(s->subformulas()[n]);
