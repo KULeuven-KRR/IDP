@@ -132,7 +132,7 @@ Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool con
 
 bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, DefId id) const {
 	auto symboloffset = getSymbol(pfs);
-	Assert(symboloffset.functionlist);
+	Assert(not symboloffset.functionlist);
 	auto symbolId = symboloffset.offset;
 	if (symbolId == -1) { // there is no such symbol yet
 		return true;
@@ -157,7 +157,7 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	auto symbolID = addSymbol(pfs);
-	Assert(symbolID.functionlist);
+	Assert(not symbolID.functionlist);
 	auto& grounders = symbols[symbolID.offset].assocGrounders;
 #ifndef NDEBUG
 	Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
