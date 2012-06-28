@@ -70,7 +70,7 @@ void GroundTheory<Policy>::closeTheory() {
 		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
 	// TODO arbitrary values?
-	// FIXME problem if a getFunction does not occur in the theory/grounding! It might be arbitrary, but should still be a getFunction?
+	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
 	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
@@ -113,7 +113,7 @@ void GroundTheory<Policy>::notifyDefined(Atom inputatom) {
 	if (not translator()->isInputAtom(inputatom)) {
 		return;
 	}
-	PFSymbol* symbol = translator()->getSymbol(inputatom);
+	auto symbol = translator()->getSymbol(inputatom);
 	auto it = _defined.find(symbol);
 	if (it == _defined.end()) {
 		it = _defined.insert(std::pair<PFSymbol*, std::set<Atom>> { symbol, std::set<Atom>() }).first;
@@ -335,16 +335,23 @@ void GroundTheory<Policy>::addFalseDefineds() {
 	 * It also works lazily because when delaying, the symbol is also added to the translator
 	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
 	 */
+	if(verbosity()>1){
+		clog <<"Closing definition by asserting literals false which have no rule making them true.\n";
+	}
 	for (auto sit=getNeedFalseDefinedSymbols().cbegin(); sit!=getNeedFalseDefinedSymbols().cend(); ++sit) {
 		CHECKTERMINATION
 		auto pt = structure()->inter(*sit)->pt();
 		auto it = _defined.find(*sit);
+	//	cerr <<"Already grounded for " <<toString(*sit) <<"\n";
+	//	for(auto i=_defined.cbegin(); i!=_defined.cend(); ++i){
+	//		cerr <<toString(i->second) <<"\n";
+	//	}
 		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION
 			auto translation = translator()->translate(*sit, (*ptIterator));
 			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
 				addUnitClause(-translation);
-				// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
+				// TODO better solution would be to make the structure more precise
 			}
 		}
 	}

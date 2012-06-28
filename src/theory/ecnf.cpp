@@ -320,10 +320,6 @@ bool PCTsBody::operator<(const TsBody& other) const {
 	return false;
 }
 
-CPTsBody::~CPTsBody() {
-	delete (_left);
-}
-
 bool compEqThroughNeg(CompType left, CompType right) {
 	switch (left) {
 	case CompType::EQ:

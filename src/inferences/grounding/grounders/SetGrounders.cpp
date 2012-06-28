@@ -109,7 +109,11 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	domain->add(createDomElem(0));
 
 	auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()), domain);
+	sort->addParent(get(STDSORT::INTSORT));
+	translator->vocabulary()->add(sort);
+
 	auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
+	translator->vocabulary()->add(constant);
 
 	auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
 	auto vt1 = new CPVarTerm(varid);
