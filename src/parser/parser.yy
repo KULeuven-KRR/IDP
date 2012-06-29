@@ -548,7 +548,7 @@ domterm		: INTEGER									{ $$ = getInserter().domterm($1,@1);		}
 
 aggterm		: P_CARD formulaset	{ $$ = getInserter().aggregate(AggFunction::CARD,$2,@1);	}
 			| P_SOM termset		{ $$ = getInserter().aggregate(AggFunction::SUM,$2,@1);		}
-			| P_PROD termset		{ $$ = getInserter().aggregate(AggFunction::PROD,$2,@1);	}
+			| P_PROD termset	{ $$ = getInserter().aggregate(AggFunction::PROD,$2,@1);	}
 			| P_MINAGG termset	{ $$ = getInserter().aggregate(AggFunction::MIN,$2,@1);		}
 			| P_MAXAGG termset	{ $$ = getInserter().aggregate(AggFunction::MAX,$2,@1);		}
 			;
@@ -875,10 +875,10 @@ void parsefile(const std::string& str) {
 	delete(yylloc.descr);
 	yylloc.descr = NULL;
 	yyrestart(GlobalData::instance()->openFile(str.c_str(),"r"));
-	if(not yyin){
+	if (not yyin) {
 		yyrestart(GlobalData::instance()->openFile(getInstalledFilePath(str).c_str(),"r"));
 	}
-	if(yyin) {
+	if (yyin) {
 		getInserter().currfile(str);
 		yyparse();
 		GlobalData::instance()->closeFile(yyin);

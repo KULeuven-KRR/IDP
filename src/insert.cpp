@@ -1785,9 +1785,10 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		ParseInfo pi = parseinfo(l);
 		return new Query(vv, f, pi);
 	} else {
-		for (auto it = vv.cbegin(); it != vv.cend(); ++it)
+		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			delete (*it);
-		return 0;
+		}
+		return NULL;
 	}
 }
 
@@ -1817,7 +1818,7 @@ EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counte
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			delete (*it);
 		}
-		return 0;
+		return NULL;
 	}
 }
 
@@ -1835,7 +1836,7 @@ EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 }
 
 void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
-	if (f && s && t) {
+	if (f != NULL and s != NULL and t != NULL) {
 		//SetExpr* orig = s->pi().originalobject();
 		/*if (orig && typeid(*orig) == typeid(EnumSetExpr)) {
 		 EnumSetExpr* origset = dynamic_cast<EnumSetExpr*>(orig);
@@ -1846,14 +1847,13 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 		 }*/
 		auto set = new QuantSetExpr( { }, f, t, s->pi()); // TODO incorrect pi
 		s->addSet(set);
-	} else { // FIXME how can this code be reached?
-		if (f){
+	} else {
+		//Note: This code is reached when there was a problem parsing f or t, e.g. symbol not declared.
+		//Note: s can not be deleted here, because that would result in an invalid pointer further on.
+		if (f != NULL) {
 			f->recursiveDelete();
 		}
-		if (s){
-			s->recursiveDelete();
-		}
-		if (t){
+		if (t != NULL) {
 			t->recursiveDelete();
 		}
 	}
@@ -1898,10 +1898,12 @@ void Insert::emptyinter(NSPair* nst) const {
 void Insert::predinter(NSPair* nst, PredTable* t) const {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity())
+		if ((nst->_sorts).size() != t->arity()) {
 			incompatiblearity(toString(nst), pi);
-		if (nst->_func)
+		}
+		if (nst->_func) {
 			prednameexpected(pi);
+		}
 	}
 	nst->includeArity(t->arity());
 	Predicate* p = predInScope(nst->_name, pi);
@@ -1926,25 +1928,30 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity() + 1)
+		if ((nst->_sorts).size() != t->arity() + 1) {
 			incompatiblearity(toString(nst), pi);
-		if (!(nst->_func))
+		}
+		if (not nst->_func) {
 			funcnameexpected(pi);
+		}
 	}
 	nst->includeArity(t->arity());
 	Function* f = funcInScope(nst->_name, pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity() + 1)
+	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity() + 1) {
 		f = f->resolve(nst->_sorts);
+	}
 	if (f) {
 		if (belongsToVoc(f)) {
 			FuncTable* nt = new FuncTable(t->internTable(), _currstructure->universe(f));
 			delete (t);
 			FuncInter* inter = _currstructure->inter(f);
 			inter->funcTable(nt);
-		} else
+		} else {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-	} else
+		}
+	} else {
 		notDeclared(ComponentType::Function, toString(nst), pi);
+	}
 	delete (nst);
 }
 
@@ -1952,26 +1959,29 @@ void Insert::constructor(NSPair* nst) const {
 	ParseInfo pi = nst->_pi;
 	Function* f = 0;
 	if (nst->_sortsincluded) {
-		if (!(nst->_func))
+		if (not nst->_func) {
 			funcnameexpected(pi);
+		}
 		nst->includeFuncArity();
 		f = funcInScope(nst->_name, pi);
-		if (f)
+		if (f) {
 			f = f->resolve(nst->_sorts);
-		else
+		} else {
 			notDeclared(ComponentType::Function, toString(nst), pi);
+		}
 	} else {
 		std::set<Function*> vf = noArFuncInScope(nst->_name, pi);
-		if (vf.empty())
+		if (vf.empty()) {
 			notDeclared(ComponentType::Function, toString(nst), pi);
-		else if (vf.size() > 1) {
+		} else if (vf.size() > 1) {
 			std::set<Function*>::const_iterator it = vf.cbegin();
 			Function* f1 = *it;
 			++it;
 			Function* f2 = *it;
 			overloaded(ComponentType::Function, toString(nst), f1->pi(), f2->pi(), pi);
-		} else
+		} else {
 			f = *(vf.cbegin());
+		}
 	}
 	if (f) {
 		if (belongsToVoc(f)) {
@@ -1979,8 +1989,9 @@ void Insert::constructor(NSPair* nst) const {
 			FuncTable* ft = new FuncTable(uift, _currstructure->universe(f));
 			FuncInter* inter = _currstructure->inter(f);
 			inter->funcTable(ft);
-		} else
+		} else {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
+		}
 	}
 }
 
@@ -1989,10 +2000,12 @@ void Insert::sortinter(NSPair* nst, SortTable* t) {
 	longname name = nst->_name;
 	auto s = sortInScope(name, pi);
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != 1)
+		if ((nst->_sorts).size() != 1) {
 			incompatiblearity(toString(nst), pi);
-		if (nst->_func)
+		}
+		if (nst->_func) {
 			prednameexpected(pi);
+		}
 	}
 	nst->includeArity(1);
 	Predicate* p = predInScope(nst->_name, pi);

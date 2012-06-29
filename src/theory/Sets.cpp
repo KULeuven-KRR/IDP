@@ -44,17 +44,17 @@ SetExpr::~SetExpr() {
 	}
 }
 
-void SetExpr::setFreeVars(){
-	if(getSubTerm()!=NULL){
+void SetExpr::setFreeVars() {
+	if (getSubTerm() != NULL) {
 		_freevars.insert(getSubTerm()->freeVars().cbegin(), getSubTerm()->freeVars().cend());
 	}
-	if(getSubFormula()!=NULL){
+	if (getSubFormula() != NULL) {
 		_freevars.insert(getSubFormula()->freeVars().cbegin(), getSubFormula()->freeVars().cend());
 	}
-	for(auto i=getSubSets().cbegin(); i<getSubSets().cend(); ++i) {
+	for (auto i = getSubSets().cbegin(); i < getSubSets().cend(); ++i) {
 		_freevars.insert((*i)->freeVars().cbegin(), (*i)->freeVars().cend());
 	}
-	for(auto i=_quantvars.cbegin(); i!=_quantvars.cend(); ++i){
+	for (auto i = _quantvars.cbegin(); i != _quantvars.cend(); ++i) {
 		_freevars.erase(*i);
 	}
 }
@@ -97,19 +97,19 @@ void SetExpr::deleteChildren(bool andvars) {
 
 Sort* SetExpr::sort() const {
 	Sort* currsort = NULL;
-	if(getSubTerm()!=NULL){
+	if (getSubTerm() != NULL) {
 		currsort = getSubTerm()->sort();
 	}
-	for(auto i=getSubSets().cbegin(); i<getSubSets().cend(); ++i) {
+	for (auto i = getSubSets().cbegin(); i < getSubSets().cend(); ++i) {
 		auto sort = (*i)->sort();
-		if(sort == NULL){
+		if (sort == NULL) {
 			return NULL;
 		}
-		if(currsort==NULL){
+		if (currsort == NULL) {
 			currsort = sort;
-		}else{
+		} else {
 			currsort = SortUtils::resolve(currsort, sort);
-			if(currsort==NULL){
+			if (currsort == NULL) {
 				throw notyetimplemented("Sets with terms with sorts without common ancestor");
 			}
 		}
@@ -128,10 +128,10 @@ bool SetExpr::contains(const Variable* v) const {
 			return true;
 		}
 	}
-	if(getSubFormula()!=NULL && getSubFormula()->contains(v)){
+	if (getSubFormula() != NULL && getSubFormula()->contains(v)) {
 		return true;
 	}
-	if(getSubTerm()!=NULL && getSubTerm()->contains(v)){
+	if (getSubTerm() != NULL && getSubTerm()->contains(v)) {
 		return true;
 	}
 	for (auto it = getSubSets().cbegin(); it != getSubSets().cend(); ++it) {
@@ -178,16 +178,16 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 
 tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
 	tablesize t(TST_EXACT, 0);
-	for(auto i=getSets().cbegin(); i<getSets().cend(); ++i) {
-		t = t+(*i)->maxSize();
+	for (auto i = getSets().cbegin(); i < getSets().cend(); ++i) {
+		t = t + (*i)->maxSize();
 	}
 	return t;
 }
 
 ostream& EnumSetExpr::put(ostream& output) const {
 	output << "[ ";
-	for(auto i=getSets().cbegin(); i<getSets().cend(); ++i) {
-		output <<toString(*i) <<" ";
+	for (auto i = getSets().cbegin(); i < getSets().cend(); ++i) {
+		output << toString(*i) << " ";
 	}
 	output << "]";
 	return output;
@@ -236,7 +236,7 @@ tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		auto qvardom = structure->inter((*it)->sort());
 		Assert(qvardom != NULL);
-		t = t*qvardom->size();
+		t = t * qvardom->size();
 	}
 	return t;
 }
@@ -244,11 +244,11 @@ tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
 ostream& QuantSetExpr::put(ostream& output) const {
 	output << "{";
 //	if (not quantVars().empty()) { // TODO when syntax changes
-		for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
-			output << ' ' <<toString(*it);
-		}
-		output << " :";
+	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
+		output << ' ' << toString(*it);
+	}
+	output << " :";
 //	}
-	output << " " << toString(getCondition()) << " : " <<toString(getTerm()) << " }";
+	output << " " << toString(getCondition()) << " : " << toString(getTerm()) << " }";
 	return output;
 }
