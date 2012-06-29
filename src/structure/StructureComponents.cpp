@@ -15,6 +15,7 @@
 #include "utils/ListUtils.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/Estimations.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "lua/luaconnection.hpp" //TODO break connection with lua!
 #include "visitors/StructureVisitor.hpp"
@@ -1381,7 +1382,7 @@ bool BDDInternalPredTable::approxFinite(const Universe& univ) const {
 		set<Variable*> fovars;
 		fovars.insert(_vars.cbegin(), _vars.cend());
 		auto bddvars = _manager->getVariables(fovars);
-		double estimate = _manager->estimatedNrAnswers(_bdd, bddvars, indices, _structure);
+		double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);
 		return estimate < getMaxElem<double>();
 	}
 }
@@ -1401,7 +1402,7 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 	set<Variable*> fovars;
 	fovars.insert(_vars.cbegin(), _vars.cend());
 	auto bddvars = _manager->getVariables(fovars);
-	double estimate = _manager->estimatedNrAnswers(_bdd, bddvars, indices, _structure);
+	double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);
 	if (estimate < getMaxElem<double>()) {
 		unsigned int es = estimate;
 		return tablesize(TST_APPROXIMATED, es);

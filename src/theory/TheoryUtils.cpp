@@ -15,6 +15,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/Estimations.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
@@ -372,8 +373,7 @@ double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool
 	if (inverse) {
 		bdd = manager.negation(bdd);
 	}
-	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), { }, structure);
-	return res;
+	return BddStatistics::estimateCostAll(bdd, manager.getVariables(freevars), { }, structure, &manager);
 }
 
 BoolForm* trueFormula() {
