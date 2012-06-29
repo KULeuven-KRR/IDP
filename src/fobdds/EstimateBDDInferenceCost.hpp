@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef TABLECOSTESTIMATOR_HPP_
 #define TABLECOSTESTIMATOR_HPP_
@@ -14,6 +14,7 @@
 #include <vector>
 #include <cmath>
 #include "utils/NumericLimits.hpp"
+#include "Estimations.hpp"
 
 #include "visitors/StructureVisitor.hpp"
 #include "structure/StructureComponents.hpp"
@@ -29,12 +30,12 @@ private:
 	double maxCost() {
 		return getMaxElem<double>();
 	}
-public:
 
-	double run(const PredTable* t, const std::vector<bool>& p) {
-		_table = t;
-		_pattern = p;
-		t->internTable()->accept(this);
+public:
+	double run(const PredTable* table, const std::vector<bool>& pattern) {
+		_table = table;
+		_pattern = pattern;
+		table->internTable()->accept(this);
 		return _result;
 	}
 
@@ -77,7 +78,7 @@ public:
 				bddvars.insert(manager->getVariable(*v));
 			}
 		}
-		_result = manager->estimatedCostAll(bdd, bddvars, { }, bipt->structure());
+		_result = BddStatistics::estimateCostAll(bdd, bddvars, { }, bipt->structure(), manager);
 	}
 
 	void visit(const FullInternalPredTable*) {
@@ -111,11 +112,11 @@ public:
 		double maxdouble = maxCost();
 		for (auto it = uipt->inTables().cbegin(); result < maxCost() && it != uipt->inTables().cend(); ++it) {
 			(*it)->accept(this);
-			result = result+_result>maxdouble? maxdouble:result+_result;
+			result = result + _result > maxdouble ? maxdouble : result + _result;
 		}
 		for (auto it = uipt->outTables().cbegin(); result < maxCost() && it != uipt->outTables().cend(); ++it) {
 			(*it)->accept(this);
-			result = result+_result>maxdouble? maxdouble:result+_result;
+			result = result + _result > maxdouble ? maxdouble : result + _result;
 		}
 		_result = result;
 	}
@@ -397,46 +398,60 @@ public:
 			_result = maxCost();
 	}
 
-	void visit(const DivInternalFuncTable*) {
+	int getNbInputs() {
 		unsigned int patterncount = 0;
 		for (unsigned int n = 0; n < _pattern.size(); ++n) {
-			if (_pattern[n])
+			if (_pattern[n]) {
 				++patterncount;
+			}
 		}
-		if (patterncount >= 2)
-			_result = 1;
-		else
+		return patterncount;
+	}
+
+	double getCostForMinNbOfInputs(int min, int costthen){
+		if (getNbInputs() >= min) {
+			_result = costthen;
+		} else {
 			_result = maxCost();
+		}
+	}
+
+	void visit(const DivInternalFuncTable*) {
+		_result = getCostForMinNbOfInputs(2, 1);
 	}
 
 	void visit(const AbsInternalFuncTable*) {
-		if (_pattern[0])
+		if (_pattern[0]) {
 			_result = 1;
-		else if (_pattern[1])
+		} else if (_pattern[1]) {
 			_result = 2;
-		else
+		} else {
 			_result = maxCost();
+		}
 	}
 
 	void visit(const UminInternalFuncTable*) {
-		if (_pattern[0] || _pattern[1])
+		if (_pattern[0] || _pattern[1]) {
 			_result = 1;
-		else
+		} else {
 			_result = maxCost();
+		}
 	}
 
 	void visit(const ExpInternalFuncTable*) {
-		if (_pattern[0] && _pattern[1])
+		if (_pattern[0] && _pattern[1]) {
 			_result = 1;
-		else
+		} else {
 			_result = maxCost();
+		}
 	}
 
 	void visit(const ModInternalFuncTable*) {
-		if (_pattern[0] && _pattern[1])
+		if (_pattern[0] && _pattern[1]) {
 			_result = 1;
-		else
+		} else {
 			_result = maxCost();
+		}
 	}
 };
 

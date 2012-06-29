@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef FOBDD_HPP
 #define FOBDD_HPP
@@ -60,7 +60,6 @@ typedef std::map<const FOBDD*, FOBDDQuantKernel*> MBDDQK;
 typedef std::map<Sort*, MBDDQK> QuantKernelTable;
 typedef std::map<const FOBDDTerm*, std::map<CompType, std::map<const FOBDDAggTerm*, FOBDDAggKernel*> > > AggKernelTable;
 
-
 typedef std::map<unsigned int, FOBDDKernel*> MIK;
 typedef std::map<KernelOrderCategory, MIK> KernelTable;
 
@@ -71,7 +70,7 @@ typedef std::map<const DomainElement*, FOBDDDomainTerm*> MTEDT;
 typedef std::map<Sort*, MTEDT> DomainTermTable;
 typedef std::map<std::vector<const FOBDDTerm*>, FOBDDFuncTerm*> MVAFT;
 typedef std::map<Function*, MVAFT> FuncTermTable;
-typedef std::map<AggFunction,std::map<const FOBDDEnumSetExpr*, FOBDDAggTerm*> > AggTermTable;
+typedef std::map<AggFunction, std::map<const FOBDDEnumSetExpr*, FOBDDAggTerm*> > AggTermTable;
 
 typedef pair<bool, const FOBDDKernel*> Choice;
 typedef vector<Choice> Path;
@@ -144,13 +143,12 @@ public:
 
 	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDTerm*>&);
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
-	const FOBDDKernel* getAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDTerm* right);
+	const FOBDDKernel* getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right);
 
 	const FOBDDEnumSetExpr* getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
 	//If this is not the case, use setquantify!
 	const FOBDDQuantSetExpr* getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
-
 
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);
@@ -172,9 +170,7 @@ public:
 
 	const FOBDD* replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
 
-
 	const FOBDDQuantSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
-
 
 	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
@@ -184,7 +180,6 @@ public:
 	const FOBDD* substitute(const FOBDD*, const FOBDDVariable*, const FOBDDDeBruijnIndex*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDTerm*>&);
-
 
 	bool contains(const FOBDDKernel*, Variable*);
 	bool contains(const FOBDDKernel*, const FOBDDVariable*);
@@ -198,21 +193,13 @@ public:
 	Formula* toFormula(const FOBDDKernel*);
 	Term* toTerm(const FOBDDTerm*);
 
-	//these calculations (nranswers, chances, ...) seem to be non-manager-specific and might be moved to the bdd and kernel itself.
-	//TODO: Do this after some tests have been written
-	//NOTE: estimation-algorithms have not been reviewed yet
-	double estimatedNrAnswers(const FOBDDKernel*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*);
-	double estimatedNrAnswers(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
-	double estimatedCostAll(bool, const FOBDDKernel*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
-			const AbstractStructure*);
-	double estimatedCostAll(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
 
-	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*);
-	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
-			double weight_per_ans);
-	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&, const AbstractStructure*,
-			double weight_per_ans);
+	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+			const AbstractStructure*, double weight_per_ans);
+	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+			const AbstractStructure*, double weight_per_ans);
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
 
@@ -236,6 +223,8 @@ public:
 	int longestbranch(const FOBDDKernel*);
 	int longestbranch(const FOBDD*);
 
+	std::vector<Path> pathsToFalse(const FOBDD* bdd) const;
+
 private:
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
@@ -245,7 +234,7 @@ private:
 	FOBDD* addBDD(const FOBDDKernel* kernel, const FOBDD* falsebranch, const FOBDD* truebranch);
 	FOBDDAtomKernel* addAtomKernel(PFSymbol* symbol, AtomKernelType akt, const std::vector<const FOBDDTerm*>& args);
 	FOBDDQuantKernel* addQuantKernel(Sort* sort, const FOBDD* bdd);
-	FOBDDAggKernel* addAggKernel(const FOBDDTerm* left,CompType comp, const FOBDDAggTerm* right);
+	FOBDDAggKernel* addAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDAggTerm* right);
 	FOBDDVariable* addVariable(Variable* var);
 	FOBDDDeBruijnIndex* addDeBruijnIndex(Sort* sort, unsigned int index);
 	FOBDDFuncTerm* addFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args);
@@ -254,33 +243,32 @@ private:
 	FOBDDEnumSetExpr* addEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	FOBDDQuantSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
-
 	void clearDynamicTables();
 
 	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);
 
-	std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel*);
-	std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD*);
-	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*);
-	std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*);
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const AbstractStructure* structure);
-
-	std::vector<Path> pathsToFalse(const FOBDD* bdd);
-	std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd);
-	std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd);
-	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*, const AbstractStructure*);
-	double estimatedChance(const FOBDDKernel*, const AbstractStructure*);
-	double estimatedChance(const FOBDD*, const AbstractStructure*);
-
-	const FOBDDTerm* invert(const FOBDDTerm*);
 
 	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
+
+	const FOBDDTerm* invert(const FOBDDTerm*);
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
 };
 
+std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel*, FOBDDManager* manager);
+std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD*, FOBDDManager* manager);
+std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*, FOBDDManager* manager);
+std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*, FOBDDManager* manager);
+std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* manager);
+std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager);
 
+/**
+ * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
+ */
+tablesize univNrAnswers(const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+		const AbstractStructure* structure);
 
 #endif
