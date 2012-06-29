@@ -1,0 +1,415 @@
+Given:
+	type int Univ //int is beperking door het huidige typesysteem
+	None: Univ
+	type int Capacity
+
+	type int Time
+	T0: Time
+	TLast: Time
+	
+	// The reification of an operation.
+	type Operation
+	
+	type Link
+	type Component
+	
+	type Connector
+	type Invocation
+	
+	type Node
+
+
+	type Interface
+
+	type Principal
+	type AdminEntity isa Principal
+	type LoggerEntity isa Principal
+	LoggingSystem:LoggerEntity
+
+	type int UID isa Univ
+	type int Message isa Univ
+	type int ProcessedMessage isa Message
+	type int SignedMessage isa Message
+	
+	type Shop isa Component
+	type Logger isa Component
+	
+	Verify: Operation
+	Log: Operation
+	Read: Operation
+	
+	LogIF:Interface
+	LogAdminIF: Interface
+	
+Find:
+	Buffer(Connector,Invocation,Time)
+	TamperProof(Connector)
+	Invoke(Invocation)
+	Execute(Invocation)
+	ExecutedBy(Invocation,Component,Time)
+	HasAuthenticCaller(Invocation)
+	CanIntercept(Component,Invocation, Time)
+	Equiv(Invocation,Invocation)
+	Live(Invocation)
+	AtLeastOnceInvocationSemantics()
+
+	ConnectsL(Link,Component,Time)
+	ConnectsC(Connector,Component,Time)
+	Hosts(Node,Component,Time)
+	Methods(Interface,Operation)
+	RealizedBy(Interface,Component)
+	IsReliableL(Link)
+	IsReliableC(Connector)
+	
+	// Invocation properties
+	partial Of(Invocation):Operation
+	Args(Invocation,Univ)
+	partial Caller(Invocation): Component
+	partial Orig_Caller(Invocation):Component
+	Receivers(Invocation,Component)
+	partial Invoked(Invocation):Time
+	partial Executed(Invocation):Time
+
+	partial Content(ProcessedMessage, Time): Message
+	partial Id(ProcessedMessage, Time): UID
+	
+	Content(SignedMessage, ProcessedMessage, Time)
+	SignedContent(SignedMessage, ProcessedMessage, Time)
+	SignedBy(SignedMessage, Principal, Time)
+	
+	Sign(SignedMessage, Principal, Time)
+	IsValid(SignedMessage, Time)
+		
+	partial LoggingBy(Shop, Time): Logger
+	
+	Logged(SignedMessage, Time, Logger)
+	NextUID(Logger, Time):UID
+	Write(Logger, Message, Time, Time)
+	CheckForEntry(Logger, ProcessedMessage, Time)
+	IsIntact(Logger, Univ, Time)
+
+	CalculateNextUID(Logger, Time): UID	
+
+	Log(Logger, Component, Message, Time) 
+	Read(Logger, Component, ProcessedMessage, Time)
+	Verify(Logger, Component, Univ, Time)
+	
+	AllEntriesAccountedFor(Logger, Time)
+	NoExtraneousEntries(Logger, Time)
+	EntriesAreValid(Logger, Time)
+
+	LogConnector(Shop, Logger, Connector)
+
+	Context
+	LoggerAssumptions
+	AssumeTamperproofNextUID
+	LoggerSignaturesCannotBeForged
+	ShopUsesSameLogger
+	LoggerDoesNotOverwriteEntries
+	ShopHasLogger
+	ArchitecturalAssumptions
+	LogConnectorsAreReliable
+	LogCallsCorrectlyRouted
+	LogConnectorsCorrectlyInitialized
+	LogConnectorsAreTamperProof
+	NothingDeleted()
+
+	Show
+	
+Data:
+	Operation = {Read; Log; Verify}
+	Verify = Verify
+	Read = Read
+	Log = Log
+	
+	Univ = {-1; 0..5}
+	None = -1
+	
+	Link = {101..103}
+	Node = {101..103}
+	
+	Time = {0..2}
+	T0 = 0
+	TLast = 2
+	
+	Connector = {601..603}
+	Invocation = {701..703}
+	
+	Capacity = {1..3}
+	
+	UID = {0..2}
+	
+	Interface = {201..203}
+	LogIF = 201
+	LogAdminIF = 202
+	
+	Component = {Shop1; Logger1; Shop2; Logger2; Shop3; Logger3;}
+	Shop = {Shop1; Shop2; Shop3}
+	Logger = {Logger1; Logger2; Logger3}
+	
+	Principal = {A; L}
+	AdminEntity = {A}
+	LoggerEntity = {L}
+	LoggingSystem = L
+	
+	Message = {0..5}
+	ProcessedMessage = {0..2}
+	SignedMessage = {3..5}
+	
+Satisfying:
+	{ 
+		IsReliableL(l) <- !t[Time] comp: (t<TLast & ConnectsL(l,comp,t)) => ConnectsL(l,comp,t+1).
+		IsReliableC(c) <- !t[Time] comp: (t<TLast & ConnectsC(c,comp,t)) => ConnectsC(c,comp,t+1).
+		
+		CanIntercept(c, i, t) <- ?conn: ConnectsC(conn,c,t) & Buffer(conn,i,t).
+		
+		TamperProof(c) <- !t i: Buffer(c,i,t) => #{j: Equiv(i,j)}=1.
+	}
+	
+	!c t: ?1 n: Hosts(n,c,t).
+	
+	!i: Invoke(i).
+	!i: Execute(i).
+	
+	{
+		Invoke(i) <- 
+			(?t[Time]: Invoked(i)=t) <=>
+			(#{c: ConnectsC(c, Orig_Caller(i), Invoked(i))}=1 &
+			 !c[Connector]: 
+					ConnectsC(c, Orig_Caller(i), Invoked(i)) => 
+					(Buffer(c, i, Invoked(i)) & 
+					 (!t: (Time(t) & t=Invoked(i)-1) => ~Buffer(c, i, t))
+				  	)
+			).
+			
+		Execute(i) <- 
+			(?t[Time]: Executed(i)=t) <=>
+			(Invoked(i)=<Executed(i) &
+			?1 c: (Buffer(c, i, Executed(i)) & 
+				   (!t: (Time(t) & t=Executed(i)+1) => ~Buffer(c, i, t))) 
+			).
+	}
+	
+	{ 	HasAuthenticCaller(i) <- Caller(i)=Orig_Caller(i). }
+	{ 	ExecutedBy(i,c,t) <- Executed(i)=t & Receivers(i,c) & ?t2: CanIntercept(c,i, t2). }
+
+	{ 
+		Equiv(j,i) <- 
+			Of(i)=Of(j) & 
+			Caller(i)=Caller(j) & 
+			(!r: Receivers(i,r) <=> Receivers(j,r)) & 
+			Invoked(i)=Invoked(j). 
+	}
+	
+	{ 	Live(i) <- ?t[Time]: Executed(i)=t. }
+	{ 	AtLeastOnceInvocationSemantics <- !i: ?j: Equiv(i, j) & Live(j). }
+
+	!s t: #{p: Content(s, p, t)}<2.
+	!s t: #{p: SignedContent(s, p, t)}<2.
+	!s t: #{p: SignedBy(s, p, t)}<2.
+	
+	{
+		Sign(sm, signer, t) <-
+			?pm: Content(sm, pm, t) & SignedContent(sm, pm, t) & 
+			SignedBy(sm, signer, t).
+	}
+			
+	{
+		!sm[SignedMessage]: IsValid(sm, t) <- 
+			Content(sm, c1, t) & SignedContent(sm, c2, t) &
+			Content(c1, t) = Content(c2, t) &
+			Id(c1, t) = Id(c2, t) &
+			SignedBy(sm, LoggingSystem, t).
+	}
+	
+
+//INTERFACE
+	Methods(LogIF, Log).
+	Methods(LogAdminIF, Read).
+	Methods(LogAdminIF, Verify).
+	
+	!l: Logger(l) <=> RealizedBy(LogIF, l).
+	!l: Logger(l) <=> RealizedBy(LogAdminIF, l).
+	
+	
+// LOGGER OPERATIONS
+	!arg[Message] logger[Logger] t c[Component] i: 
+		(Of(i)=Log & Args(i,arg) & Receivers(i,logger) & Caller(i)=c & Executed(i)=t & ?conn: Buffer(conn,i,t) & ConnectsC(conn,logger,t))
+		 =>	?t2: Write(logger, arg, t, t2).
+	!arg[ProcessedMessage] logger[Logger] t c[Component] i: 
+		(Of(i)=Read & Args(i,arg) & Receivers(i,logger) & Caller(i)=c & Executed(i)=t & ?conn: Buffer(conn,i,t) & ConnectsC(conn,logger,t)) =>
+			CheckForEntry(logger, arg, t).
+	!arg logger[Logger] t c[Component] i: 
+		(Of(i)=Verify & Args(i,arg) & Receivers(i,logger) & Caller(i)=c & Executed(i)=t & ?conn: Buffer(conn,i,t) & ConnectsC(conn,logger,t)) =>
+			IsIntact(logger, arg, t).
+
+	!l[Logger]: CalculateNextUID(l, T0) = #{i: Of(i)=Log & ExecutedBy(i, l, T0)}.
+	!l[Logger] t[Time]: t~=T0 => ?arg: arg = NextUID(l, t-1)+#{i: Of(i)=Log & ExecutedBy(i, l, t)} & 
+									UID(arg) & CalculateNextUID(l, t) = arg.
+	
+	{
+		Write(logger, mess, t, t) <-
+			?sm pm:
+				0 =< Id(pm, t) < CalculateNextUID(logger, t) &
+				Content(sm, pm, t) &
+				Content(pm, t) = mess &
+				Sign(sm, LoggingSystem, t) &
+				Logged(sm, t, logger).
+	}
+		
+	{ 
+		!logger[Logger] mess[Message]: Log(logger, callr, mess, t) <- 
+			Of(i)=Log & Args(i,mess) & (!a2: mess~=a2 =>  ~Args(i, a2)) & 
+			Receivers(i,logger) & (!r2: logger~=r2 =>  ~Receivers(i, r2)) &
+			Caller(i)=callr & Orig_Caller(i)=callr & Invoked(i)=t.
+	}
+	{
+		!logger[Logger] mess[ProcessedMessage]: Read(logger, callr, mess, t) <-
+			Of(i)=Read & Args(i,mess) & (!a2: mess~=a2 =>  ~Args(i, a2)) & 
+			Receivers(i,logger) & (!r2: logger~=r2 =>  ~Receivers(i, r2)) &
+			Caller(i)=callr & Orig_Caller(i)=callr & Invoked(i)=t.
+	}
+	{
+		!logger[Logger]: Verify(logger, callr, arg, t) <-
+			Of(i)=Verify & Args(i,mess) & (!a2: mess~=a2 =>  ~Args(i, a2)) & 
+			Receivers(i,logger) & (!r2: logger~=r2 =>  ~Receivers(i, r2)) &
+			Caller(i)=callr & Orig_Caller(i)=callr & Invoked(i)=t.
+	}
+
+	{ 
+		CheckForEntry(logger, pm, t) <-  
+			Logged(sm, t, logger) & Content(sm, pm, t).
+	}
+	
+	{
+		IsIntact(logger, 1, t) <- 
+				AllEntriesAccountedFor(logger, t) & 
+				EntriesAreValid(logger, t) & 
+				NoExtraneousEntries(logger, t).
+		IsIntact(logger, 0, t) <- ~IsIntact(logger, 1, t).
+	}
+	
+	{	
+		AllEntriesAccountedFor(logger, t) <-
+			!uid[UID]: 0 =< uid < NextUID(logger, t) 
+				=> (?1 s: Logged(s, t, logger) & 
+					(?pm: Content(s, pm, t) & Id(pm, t)=uid)).
+	}
+	
+	{	
+		NoExtraneousEntries(logger, t) <-
+			!sm pm: (Logged(sm, t, logger) & Content(sm, pm, t))  
+				=> 0 =< Id(pm, t) < NextUID(logger, t).
+	}
+	
+	{		
+		EntriesAreValid(logger, t) <-
+			!s: Logged(s, t, logger) => IsValid(s, t).
+	}
+	{
+		AssumeTamperproofNextUID <- !t l: NextUID(l, t) = CalculateNextUID(l, t).
+	}
+	{	
+		LoggerSignaturesCannotBeForged <- 
+			!s t p t2: 
+				(SignedBy(s, p, t) & t<t2=<TLast)
+					=>
+						(?pm: SignedContent(s, pm, t) & SignedContent(s, pm, t2) &
+						Content(pm, t) = Content(pm, t2) &
+						Id(pm, t) = Id(pm, t2)) |
+						?p2: SignedBy(s, p2, t2) & p~=p2. //TODO laatste regel onduidelijk
+	}
+	{		
+		LogConnector(s, l, c) <- ?t1 t2: ConnectsC(c, s, t1) & ConnectsC(c, l, t2).
+	}
+	{		
+		LogCallsCorrectlyRouted <- 
+			!i time c: 
+				(HasAuthenticCaller(i) & 
+				Of(i)=Log & 
+				Buffer(c, i, time))
+					=> ?s: s = Caller(i) & Shop(s) & 
+						 	LogConnector(s, LoggingBy(s, time), c).
+	}
+	{			
+		ShopUsesSameLogger <- 
+			!s t[Time] logger[Logger]: 
+				(t<TLast & LoggingBy(s, t)=logger)
+					=> logger = LoggingBy(s, t+1).
+	}
+	{	
+		LoggerDoesNotOverwriteEntries <- 
+			!sm t: IsValid(sm, t)
+				=> ~(?sm2 pm pm2 t2: t2 < t & sm ~= sm2 & Content(sm, pm, t) &
+					Content(sm2, pm2, t2) & IsValid(sm2, t2) & Id(pm, t)=Id(pm2, t2)).
+	}
+	{	
+		LogConnectorsCorrectlyInitialized <- 
+			!s l c t:
+				(Shop(s) & Logger(l) &
+				LogConnector(s, l, c) &
+				#{i: Buffer(c, i, t)} > 0 &
+				(!t2: t2 < t => ~(#{i: Buffer(c, i, t2)} > 0)))
+					=> 
+						ConnectsC(c, s, t) & ConnectsC(c, l, t).
+	}
+	{				
+		LogConnectorsAreReliable <- 
+			!l s c: LogConnector(s, l, c) => IsReliableC(c).
+	}	
+	{			
+		LogConnectorsAreTamperProof <- 
+			!l s c: LogConnector(s, l, c) => TamperProof(c).
+	}			
+	{ 	ShopHasLogger <- !s t: ?l[Logger]: LoggingBy(s, t) = l. }
+	{	
+		Context <- 
+			LoggerAssumptions &
+			ArchitecturalAssumptions.
+			
+		LoggerAssumptions <- 
+			AssumeTamperproofNextUID &
+			LoggerSignaturesCannotBeForged &
+			ShopUsesSameLogger & 
+			LoggerDoesNotOverwriteEntries &
+			ShopHasLogger.
+			
+		ArchitecturalAssumptions <-
+			AtLeastOnceInvocationSemantics &
+			LogConnectorsAreReliable &
+			LogConnectorsCorrectlyInitialized &
+			LogCallsCorrectlyRouted &
+			LogConnectorsAreTamperProof.
+	}
+
+
+	{
+		NothingDeleted <-
+			!t[Time] m[Message] s[Shop]:
+			(t<TLast & Context &
+			Log(LoggingBy(s, t), s, m, t))
+				=> ?pm[ProcessedMessage] t1: t =< t1 & Content(pm, t1)=m & 
+					(!t2[Time]: t1 =< t2  => 
+						(
+							CheckForEntry(LoggingBy(s, t2), pm, t2) | 
+							IsIntact(LoggingBy(s, t2), 0, t2)
+						)).
+	}
+	
+	{
+		Show <-
+			(?t[Time] callr[Shop] logger[Logger] mess[Message]: Log(logger, callr, mess, t)) &
+			(?t[Time] logger[Logger]: NextUID(logger, t) = 1) &
+			(?t[Time] logger[Logger]: NextUID(logger, t) = 2) &
+			(!t[Time] logger[Logger]: IsIntact(logger, 1, t)).
+	}
+	
+	Context.
+	
+	~NothingDeleted.
+	
+/*	!i i2: i<i2 & (?t[Time]: Invoked(i)=t) & (?t[Time]: Invoked(i2)=t) => Invoked(i)=<Invoked(i2).
+	!c c2 conn conn2 t: ConnectsC(conn, c, t) & ConnectsC(conn2, c2, t) & c<c2 => conn=<conn2.
+	!t c c2 s s2: Content(s, c, t) & Content(s2, c2, t) & c<c2 => s=<s2.
+	!t p p2: Content(p, t)<Content(p2, t) => p=<p2.
+	!t c c2 s s2: Hosts(s, c, t) & Hosts(s2, c2, t) & c<c2 => s=<s2.*/
