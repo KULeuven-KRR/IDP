@@ -153,7 +153,7 @@ public:
 			if (_pattern[1]) {
 				_result = 1;
 			} else {
-				_result = toDouble(_table->universe().tables()[2]->size() / (double) 2);
+				_result = toDouble(_table->universe().tables()[0]->size() / (double) 2);
 			}
 		} else if (_pattern[1]) {
 			_result = toDouble(_table->universe().tables()[1]->size() / (double) 2);

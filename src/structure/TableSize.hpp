@@ -33,6 +33,7 @@ struct tablesize {
 	tablesize operator+(const tablesize& rhs) const;
 	tablesize operator-(const tablesize& rhs) const;
 	tablesize operator*(const tablesize& rhs) const;
+	void operator*=(const tablesize& rhs);
 	tablesize operator/(const tablesize& rhs) const;
 
 	bool isInfinite() const{
@@ -83,6 +84,7 @@ Num& operator+=(Num& val, const tablesize& rhs){
 	}else{
 		val = n._size;
 	}
+	return val;
 }
 template<class Num>
 Num& operator*=(Num& val, const tablesize& rhs){
@@ -92,6 +94,7 @@ Num& operator*=(Num& val, const tablesize& rhs){
 	}else{
 		val = n._size;
 	}
+	return val;
 }
 
 template<>

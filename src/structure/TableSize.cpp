@@ -33,13 +33,20 @@ tablesize tablesize::operator-(const tablesize& rhs) const{
 	}
 }
 tablesize tablesize::operator*(const tablesize& rhs) const{
+	auto t = tablesize(_type, _size);
+	t *= rhs;
+	return t;
+}
+void tablesize::operator*=(const tablesize& rhs){
 	if(rhs.isInfinite() || isInfinite()){
-		return rhs;
+		return;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
-		return tablesize(TableSizeType::TST_APPROXIMATED, _size*rhs._size);
+		_type = TableSizeType::TST_APPROXIMATED;
+		_size = _size*rhs._size;
 	}else{
-		return tablesize(TableSizeType::TST_EXACT, _size*rhs._size);
+		_type = TableSizeType::TST_EXACT;
+		_size = _size*rhs._size;
 	}
 }
 tablesize tablesize::operator/(const tablesize& rhs) const{

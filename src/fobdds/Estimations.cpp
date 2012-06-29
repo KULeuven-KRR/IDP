@@ -67,34 +67,41 @@ map<const FOBDDKernel*, tablesize> BddStatistics::kernelUnivs(const FOBDD* bdd) 
  * Returns the estimated chance that a BDD evaluates to true
  */
 double BddStatistics::estimatedChance(const FOBDD* bdd) {
+	auto result = 0;
+	cerr <<"Estimating chance for " <<toString(bdd) <<" ";
 	if (bdd == manager->falsebdd()) {
-		return 0;
+		result = 0;
 	} else if (bdd == manager->truebdd()) {
-		return 1;
+		result = 1;
 	} else {
 		auto kernchance = estimatedChance(bdd->kernel());
 		auto falsechance = estimatedChance(bdd->falsebranch());
 		auto truechance = estimatedChance(bdd->truebranch());
-		return (kernchance * truechance) + ((1 - kernchance) * falsechance);
+		result = (kernchance * truechance) + ((1 - kernchance) * falsechance);
 	}
+	cerr <<" = " <<result <<"\n";
+	return result;
 }
 
 /**
- * Returns an estimate of the number of answers to the query { vars, indices | kernel }
+ * Returns an estimate of the number of answers to the query { vars, indices | bdd(kernel) }
  * TODO Improve this if functional dependency is known
  */
-double BddStatistics::estimatedNrAnswers(const FOBDDKernel* kernel, const set<const FOBDDVariable*, CompareBDDVars>& vars,
-		const set<const FOBDDDeBruijnIndex*>& indices) {
+template<class K>
+double BddStatistics::tEstimatedNrAnswers(const K* kernel, const varset& vars, const indexset& indices) {
 	auto kernelchance = estimatedChance(kernel);
 	if (kernelchance <= 0) {
 		return 0;
 	}
 	auto univanswers = univNrAnswers(vars, indices, structure);
-	if (univanswers._type == TST_INFINITE || univanswers._type == TST_UNKNOWN) {
-		return getMaxElem<double>();
-	} else {
-		return kernelchance * univanswers._size;
-	}
+	return toDouble(kernelchance * univanswers);
+}
+
+double BddStatistics::estimatedNrAnswers(const FOBDDKernel* kernel, const varset& vars, const indexset& indices) {
+	return tEstimatedNrAnswers(kernel, vars, indices);
+}
+double BddStatistics::estimatedNrAnswers(const FOBDD* bdd, const varset& vars, const indexset& indices) {
+	return tEstimatedNrAnswers(bdd, vars, indices);
 }
 
 template<typename BddNode>
@@ -107,163 +114,161 @@ bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
  * Estimates the chance that this kernel evaluates to true
  */
 double BddStatistics::estimatedChance(const FOBDDKernel* kernel) {
+	Assert(isa<FOBDDAggKernel>(*kernel) || isa<FOBDDAtomKernel>(*kernel) || isa<FOBDDQuantKernel>(*kernel));
+
 	if (isa<FOBDDAggKernel>(*kernel)) {
 		//In principle, Aggkernels have exactly one lefthandside for every other tuple of variables.
 		//Hence the chance that an aggkernel succeeds is 1/leftsize
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto sortinter = structure->inter(aggk->left()->sort());
-		tablesize sortsize = sortinter->size();
-		if (sortsize._type == TST_APPROXIMATED || sortsize._type == TST_EXACT) {
-			double size = double(sortsize._size);
-			return size > 0 ? 1 / size : 0;
+		auto sortsize = sortinter->size();
+		if (not sortsize.isInfinite()) {
+			if(sortsize._size > 0){
+				return 1 / toDouble(sortsize);
+			}else{
+				return 0;
+			}
+		} else {
+			return 0;
 		}
-		return 0;
 	}
 
 	if (isa<FOBDDAtomKernel>(*kernel)) {
-		const FOBDDAtomKernel* atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-		double chance = 0;
-		PFSymbol* symbol = atomkernel->symbol();
+		auto atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+
+		auto symbol = atomkernel->symbol();
 		PredInter* pinter;
-		if (isa<Predicate>(*symbol)) {
+		if (symbol->isPredicate()) {
 			pinter = structure->inter(dynamic_cast<Predicate*>(symbol));
 		} else {
 			Assert(isa<Function>(*symbol));
 			pinter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		}
-		const PredTable* pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct();
-		tablesize symbolsize = pt->size();
-		double univsize = 1;
+		Assert(pinter!=NULL);
+
+		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
+		auto symbolsize = pt->size();
+
+		auto univsize = tablesize(TST_EXACT, 1);
 		for (auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
-			tablesize argsize = structure->inter((*it)->sort())->size();
-			if (argsize._type == TST_APPROXIMATED || argsize._type == TST_EXACT) {
-				univsize = univsize * argsize._size > getMaxElem<double>() ? getMaxElem<double>() : univsize * argsize._size;
-			} else {
-				univsize = getMaxElem<double>();
-				break;
-			}
+			univsize *= structure->inter((*it)->sort())->size();
 		}
-		if (symbolsize._type == TST_APPROXIMATED || symbolsize._type == TST_EXACT) {
-			if (univsize < getMaxElem<double>()) {
-				chance = double(symbolsize._size) / univsize;
-				if (chance > 1) {
-					chance = 1;
-				}
-			} else {
-				chance = 0;
-			}
+
+		if (symbolsize.isInfinite()) {
+			return 0;
 		} else {
-			// TODO better estimators possible?
-			if (univsize < getMaxElem<double>())
-				chance = 0.5;
-			else
-				chance = 0;
+			return min(1.0, toDouble(symbolsize / univsize)); // Might be larger than 1 in some cases
 		}
-		return chance;
-	} else { // case of a quantification kernel
-		Assert(isa<FOBDDQuantKernel> (*kernel));
-		const FOBDDQuantKernel* quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
+	}
 
-		// get the table of the sort of the quantified variable
-		SortTable* quantsorttable = structure->inter(quantkernel->sort());
-		tablesize quanttablesize = quantsorttable->size();
+	Assert(isa<FOBDDQuantKernel> (*kernel));
+	auto quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 
-		// some simple checks
-		int quantsize = 0;
-		if (quanttablesize._type == TST_APPROXIMATED || quanttablesize._type == TST_EXACT) {
-			if (quanttablesize._size == 0)
-				return 0; // if the sort is empty, the kernel cannot be true
-			else
-				quantsize = quanttablesize._size;
+	// get the table of the sort of the quantified variable
+	auto quantsorttable = structure->inter(quantkernel->sort());
+	auto quanttablesize = quantsorttable->size();
+
+	// some simple checks
+	int quantsize = 0;
+	if (quanttablesize.isInfinite()) {
+		if (not quantsorttable->approxFinite()) {
+			// if the sort is infinite, the kernel is true iff the chance of the bdd is nonzero.
+			double bddchance = estimatedChance(quantkernel->bdd());
+			return bddchance == 0 ? 0 : 1;
 		} else {
-			if (not quantsorttable->approxFinite()) {
-				// if the sort is infinite, the kernel is true iff the chance of the bdd is nonzero.
-				double bddchance = estimatedChance(quantkernel->bdd());
-				return bddchance == 0 ? 0 : 1;
-			} else {
-				// FIXME implement correctly
-				return 0.5;
-			}
+			return 0;
 		}
-
-		// collect the paths that lead to node 'false'
-		auto pathstofalse = manager->pathsToFalse(quantkernel->bdd());
-
-		// collect all kernels and their estimated number of answers
-		auto subkernels = kernelAnswers(quantkernel->bdd());
-		auto subunivs = kernelUnivs(quantkernel->bdd());
-
-		srand(getOption(IntType::RANDOMSEED));
-		double sum = 0; // stores the sum of the chances obtained by each experiment
-		int sumcount = 0; // stores the number of succesfull experiments
-		for (unsigned int experiment = 0; experiment < 10; ++experiment) { // do 10 experiments
-			// An experiment consists of trying to reach N times node 'false',
-			// where N is the size of the domain of the quantified variable.
-
-			auto nbAnswersOfKernels = subkernels;
-			bool fail = false;
-
-			double chance = 1;
-			//TODO What is this element for?
-			for (int element = 0; element < quantsize; ++element) {
-				// Compute possibility of each path
-				vector<double> cumulative_pathsposs;
-				double cumulative_chance = 0;
-				for (unsigned int pathnr = 0; pathnr < pathstofalse.size(); ++pathnr) {
-					double currchance = 1;
-					for (unsigned int nodenr = 0; nodenr < pathstofalse[pathnr].size(); ++nodenr) {
-						tablesize ts = subunivs[pathstofalse[pathnr][nodenr].second];
-						double nodeunivsize = (ts._type == TST_EXACT || ts._type == TST_APPROXIMATED) ? ts._size : getMaxElem<double>();
-						if (pathstofalse[pathnr][nodenr].first) {
-							//If the path takes the true branch, kernel chance is its number of answers divided by its universe. TODO: WHY "-element"?
-							//currchance = currchance * nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] / double(nodeunivsize - element);
-							currchance = currchance * nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] / double(nodeunivsize);
-							Assert(currchance>=0);
-						} else {
-							//currchance = currchance * (nodeunivsize - nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] ) / double(nodeunivsize - element);
-							Assert(nodeunivsize >= nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]);
-							Assert(nodeunivsize >= 0);
-							currchance = currchance * (nodeunivsize - nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]) / double(nodeunivsize);
-							Assert(currchance>=0);
-						}
-					}
-					cumulative_chance += currchance;
-					cumulative_pathsposs.push_back(cumulative_chance);
-				}
-
-				Assert(cumulative_chance <= 1);
-				if (cumulative_chance > 0) { // there is a possible path to false
-					chance = chance * cumulative_chance;
-
-					// randomly choose a path
-					double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
-					unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss) - cumulative_pathsposs.cbegin();
-					for (unsigned int nodenr = 0; nodenr < pathstofalse[chosenpathnr].size(); ++nodenr) {
-						if (pathstofalse[chosenpathnr][nodenr].first) {
-							auto newNbAnswers = nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] - (1.0);
-							nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] = newNbAnswers > 0 ? newNbAnswers : 0;
-						}
-					}
-				} else { // the experiment failed
-					fail = true;
-					break;
-				}
-			}
-
-			if (!fail) {
-				sum += chance;
-				++sumcount;
-			}
+	} else {
+		if (quanttablesize._size == 0) {
+			return 0; // if the sort is empty, the kernel cannot be true
+		} else {
+			quantsize = quanttablesize._size;
 		}
+	}
 
-		if (sum == 0) { // no experiment succeeded
-			return 1;
-		} else { // at least one experiment succeeded: take average of all succesfull experiments
-			return 1 - (sum / double(sumcount));
-		}
+	// FIXME review below
+
+//	// collect the paths that lead to node 'false'
+//	auto pathstofalse = manager->pathsToFalse(quantkernel->bdd());
+//
+//	// collect all kernels and their estimated number of answers
+//	auto subkernels = kernelAnswers(quantkernel->bdd());
+//	auto subunivs = kernelUnivs(quantkernel->bdd());
+//
+//	srand(getOption(IntType::RANDOMSEED));
+//	double sum = 0; // stores the sum of the chances obtained by each experiment
+//	int sumcount = 0; // stores the number of successfull experiments
+//	for (unsigned int experiment = 0; experiment < 10; ++experiment) { // do 10 experiments
+//		// An experiment consists of trying to reach N times node 'false',
+//		// where N is the size of the domain of the quantified variable.
+//
+//		auto nbAnswersOfKernels = subkernels;
+//		bool fail = false;
+//
+//		double chance = 1;
+//		//TODO What is this element for?
+//		for (int element = 0; element < quantsize; ++element) {
+//			// Compute possibility of each path
+//			vector<double> cumulative_pathsposs;
+//			double cumulative_chance = 0;
+//			for (unsigned int pathnr = 0; pathnr < pathstofalse.size(); ++pathnr) {
+//				double currchance = 1;
+//				for (unsigned int nodenr = 0; nodenr < pathstofalse[pathnr].size(); ++nodenr) {
+//					tablesize ts = subunivs[pathstofalse[pathnr][nodenr].second];
+//					double nodeunivsize = (ts._type == TST_EXACT || ts._type == TST_APPROXIMATED) ? ts._size : getMaxElem<double>();
+//					if (pathstofalse[pathnr][nodenr].first) {
+//						//If the path takes the true branch, kernel chance is its number of answers divided by its universe.
+//						currchance = currchance * nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second] / double(nodeunivsize);
+//						Assert(currchance>=0);
+//					} else {
+//						Assert(nodeunivsize >= nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]);
+//						Assert(nodeunivsize >= 0);
+//						currchance = currchance * (nodeunivsize - nbAnswersOfKernels[pathstofalse[pathnr][nodenr].second]) / double(nodeunivsize);
+//						Assert(currchance>=0);
+//					}
+//				}
+//				cumulative_chance += currchance;
+//				cumulative_pathsposs.push_back(cumulative_chance);
+//			}
+//
+//			Assert(cumulative_chance <= 1);
+//			if (cumulative_chance > 0) { // there is a possible path to false
+//				chance = chance * cumulative_chance;
+//
+//				// randomly choose a path
+//				double toss = double(rand()) / double(RAND_MAX) * cumulative_chance;
+//				unsigned int chosenpathnr = lower_bound(cumulative_pathsposs.cbegin(), cumulative_pathsposs.cend(), toss) - cumulative_pathsposs.cbegin();
+//				for (unsigned int nodenr = 0; nodenr < pathstofalse[chosenpathnr].size(); ++nodenr) {
+//					if (pathstofalse[chosenpathnr][nodenr].first) {
+//						auto newNbAnswers = nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] - (1.0);
+//						nbAnswersOfKernels[pathstofalse[chosenpathnr][nodenr].second] = newNbAnswers > 0 ? newNbAnswers : 0;
+//					}
+//				}
+//			} else { // the experiment failed
+//				fail = true;
+//				break;
+//			}
+//		}
+//
+//		if (!fail) {
+//			sum += chance;
+//			++sumcount;
+//		}
+//	}
+
+	auto sum = 1;
+	auto sumcount = 2;
+
+	// FIXME review above
+
+	if (sum == 0) { // no experiment succeeded
+		return 1;
+	} else { // at least one experiment succeeded: take average of all successfull experiments
+		return 1 - (sum / double(sumcount));
 	}
 }
 
+// FIXME review this method
 double BddStatistics::estimatedCostAll(bool sign, const FOBDDKernel* kernel, const varset& vars, const indexset& ind) {
 	double maxdouble = getMaxElem<double>();
 
@@ -272,15 +277,18 @@ double BddStatistics::estimatedCostAll(bool sign, const FOBDDKernel* kernel, con
 		auto aggk = dynamic_cast<const FOBDDAggKernel*>(kernel);
 		auto set = aggk->right()->setexpr();
 		double d = 0;
-		auto newvars = vars;
 
+		auto newvars = vars;
 		if (isa<FOBDDVariable>(*(aggk->left()))) {
 			auto leftvar = dynamic_cast<const FOBDDVariable*>(aggk->left());
 			newvars.erase(leftvar);
 		}
+
 		for (auto quantset = set->subsets().cbegin(); quantset != set->subsets().cend(); quantset++) {
 			std::set<const FOBDDDeBruijnIndex*> newindices;
 			auto nbquantvars = (*quantset)->quantvarsorts().size();
+
+			// Schuif de indices op want we gaan 1 niveau dieper
 			if (nbquantvars != 0) {
 				for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
 					newindices.insert(manager->getDeBruijnIndex((*it)->sort(), (*it)->index() + nbquantvars));
@@ -291,17 +299,17 @@ double BddStatistics::estimatedCostAll(bool sign, const FOBDDKernel* kernel, con
 				}
 			} else {
 				newindices = ind;
-			};
-			for (int i = 0; i < set->size(); i++) {
-				double extra = estimatedCostAll((*quantset)->subformula(), newvars, newindices);
-				d = (d + extra < maxdouble) ? d + extra : maxdouble;
-				if (d == maxdouble) {
-					break;
-				}
+			}
+
+			auto extra = estimatedCostAll((*quantset)->subformula(), newvars, newindices);
+			d = (d + extra < maxdouble) ? d + extra : maxdouble;
+			if (d == maxdouble) {
+				break;
 			}
 		}
 		return d;
 	}
+
 	if (isArithmetic(kernel, manager)) {
 		vector<double> varunivsizes;
 		vector<double> indexunivsizes;
@@ -440,7 +448,6 @@ double BddStatistics::estimatedCostAll(bool sign, const FOBDDKernel* kernel, con
 		return tce.run(pt, pattern);
 	} else {
 		Assert(isa<FOBDDQuantKernel>(*kernel));
-		// NOTE: implement a better estimator if backjumping on bdds is implemented
 		auto quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
 		set<const FOBDDDeBruijnIndex*> newindices;
 		for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
@@ -455,88 +462,73 @@ double BddStatistics::estimatedCostAll(bool sign, const FOBDDKernel* kernel, con
  * Estimated the cost of generating all answers to this bdd.
  */
 double BddStatistics::estimatedCostAll(const FOBDD* bdd, const varset& vars, const indexset& ind) {
-	double maxdouble = getMaxElem<double>();
+	// Base case
 	if (bdd == manager->truebdd()) {
 		return toDouble(univNrAnswers(vars, ind, structure));
 	} else if (bdd == manager->falsebdd()) {
 		return 1;
 	}
 
-	// split vars into kernelvars and bddvars
+	// Recursive case
+
+	// get all variables not in the kernel -> bddvars
+	// get all variables in the kernel and in vars -> kernelvars
 	set<const FOBDDVariable*, CompareBDDVars> kernelvars, bddvars;
-	kernelvars = variables(bdd->kernel(), manager);
+	auto allkernelvars = variables(bdd->kernel(), manager);
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
-		if (kernelvars.find(*it) == kernelvars.cend()) {
+		if (allkernelvars.find(*it) == allkernelvars.cend()) {
 			bddvars.insert(*it);
+		} else {
+			kernelvars.insert(*it);
 		}
-	}
-	set<const FOBDDVariable*> removevars;
-	for (auto it = kernelvars.cbegin(); it != kernelvars.cend(); ++it) {
-		if (vars.find(*it) == vars.cend()) {
-			removevars.insert(*it);
-		}
-	}
-	for (auto it = removevars.cbegin(); it != removevars.cend(); ++it) {
-		kernelvars.erase(*it);
 	}
 
-	set<const FOBDDDeBruijnIndex*> bddindices;
-	auto kernelindices = indices(bdd->kernel(), manager);
+	// get all indices not in the kernel -> bddinds
+	// get all indices in the kernel and in indices -> kernelinds
+	set<const FOBDDDeBruijnIndex*> kernelindices, bddindices;
+	auto allkernelindices = indices(bdd->kernel(), manager);
 	for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
-		if (kernelindices.find(*it) == kernelindices.cend()) {
+		if (allkernelindices.find(*it) == allkernelindices.cend()) {
 			bddindices.insert(*it);
+		} else {
+			kernelindices.insert(*it);
 		}
 	}
 
-	set<const FOBDDDeBruijnIndex*> removeindices;
+	auto kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices);
+	auto truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices);
 
-	for (auto it = kernelindices.cbegin(); it != kernelindices.cend(); ++it) {
-		if (ind.find(*it) == ind.cend()) {
-			removeindices.insert(*it);
-		}
-	}
+	auto maxcost = getMaxElem<double>();
 
-	for (auto it = removeindices.cbegin(); it != removeindices.cend(); ++it) {
-		kernelindices.erase(*it);
-	}
-	// recursive case
+	// ONLY TRUE BRANCH: Only cost of kernel eval to true + kernel answers * true branch cost
 	if (bdd->falsebranch() == manager->falsebdd()) {
-		double kernelcost = estimatedCostAll(true, bdd->kernel(), kernelvars, kernelindices);
-		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices);
-		double truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices);
-		if (kernelcost < maxdouble && kernelans < maxdouble && truecost < maxdouble && kernelcost + (kernelans * truecost) < maxdouble) {
-			return kernelcost + (kernelans * truecost);
-		} else {
-			return maxdouble;
+		auto kernelcost = estimatedCostAll(true, bdd->kernel(), kernelvars, kernelindices);
+		auto result = kernelcost + (kernelans * truecost);
+		if(result-kernelcost != kernelans*truecost){
+			return maxcost;
 		}
-	} else if (bdd->truebranch() == manager->falsebdd()) {
-		double kernelcost = estimatedCostAll(false, bdd->kernel(), kernelvars, kernelindices);
-		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices);
-		tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
-		double invkernans =
-				(kernelunivsize._type == TST_INFINITE || kernelunivsize._type == TST_UNKNOWN) ? maxdouble : double(kernelunivsize._size) - kernelans;
-		double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices);
-		if (kernelcost + (invkernans * falsecost) < maxdouble) {
-			return kernelcost + (invkernans * falsecost);
-		} else {
-			return maxdouble;
-		}
-	} else {
-		tablesize kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
-		set<const FOBDDVariable*, CompareBDDVars> emptyvars;
-		set<const FOBDDDeBruijnIndex*> emptyindices;
-		double kernelcost = estimatedCostAll(true, bdd->kernel(), emptyvars, emptyindices);
-		double truecost = estimatedCostAll(bdd->truebranch(), bddvars, bddindices);
-		double falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices);
-		double kernelans = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices);
-		if (kernelunivsize._type == TST_UNKNOWN || kernelunivsize._type == TST_INFINITE) {
-			return maxdouble;
-		} else {
-			if ((double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost) < maxdouble) {
-				return (double(kernelunivsize._size) * kernelcost) + (double(kernelans) * truecost) + ((kernelunivsize._size - kernelans) * falsecost);
-			} else {
-				return maxdouble;
-			}
-		}
+		return result;
 	}
+
+	auto kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
+	auto invkernelans = kernelunivsize - kernelans;
+	auto falsecost = estimatedCostAll(bdd->falsebranch(), bddvars, bddindices);
+
+	// ONLY FALSE BRANCH: Only cost of kernel eval to false + NOT(kernel) answers * false branch cost
+	if (bdd->truebranch() == manager->falsebdd()) {
+		auto kernelcost = estimatedCostAll(false, bdd->kernel(), kernelvars, kernelindices);
+		auto result = kernelcost + (toDouble(invkernelans) * falsecost);
+		if(result-kernelcost != (toDouble(invkernelans) * falsecost)){
+			return maxcost;
+		}
+		return result;
+	}
+
+	// BOTH BRANCHES: Cost of single kernel eval * kernelunivsize + true cost * kernel answers + false cost * NOT(kernel) answers
+	auto kernelcost = estimatedCostAll(true, bdd->kernel(), { }, { });
+	auto result = toDouble(kernelunivsize) * kernelcost + kernelans * truecost + toDouble(invkernelans) * falsecost;
+	if(result-(toDouble(kernelunivsize) * kernelcost) != kernelans * truecost + toDouble(invkernelans) * falsecost){
+		return maxcost;
+	}
+	return result;
 }

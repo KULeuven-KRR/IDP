@@ -12,6 +12,7 @@
 #define ESTIMATIONS_HPP_
 
 #include <map>
+#include <iostream>
 #include "FoBddVariable.hpp"
 #include "structure/TableSize.hpp"
 
@@ -38,10 +39,14 @@ private:
 public:
 	// Takes a bddkernel or a bdd
 	template<class BDD>
-	static double estimateNrAnswers(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure,
-			FOBDDManager* manager) {
+	static double estimateNrAnswers(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure, FOBDDManager* manager) {
+		std::cerr << "Estimating answers\n";
+		Assert(manager!=NULL);
+		Assert(structure!=NULL);
 		auto stats = BddStatistics(structure, manager);
-		return stats.estimatedNrAnswers(bdd, vars, indices);
+		auto result = stats.estimatedNrAnswers(bdd, vars, indices);
+		std::cerr << "Done\n";
+		return result;
 	}
 
 	/**
@@ -49,10 +54,22 @@ public:
 	 * Returns an estimate of the cost of generating all answers to this bdd in the given structure.
 	 */
 	template<class BDD>
-	static double estimateCostAll(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure,
-			FOBDDManager* manager) {
+	static double estimateCostAll(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure, FOBDDManager* manager) {
+		std::cerr << "Estimating costs for " <<toString(bdd) <<"\n";
+		for(auto i=vars.cbegin(); i!=vars.cend(); ++i) {
+			std::cerr <<toString(*i) <<" ";
+		}
+		for(auto i=indices.cbegin(); i!=indices.cend(); ++i) {
+			std::cerr <<toString(*i) <<" ";
+		}
+		std::cerr <<"\nCost is ===> ";
+		Assert(bdd!=NULL);
+		Assert(manager!=NULL);
+		Assert(structure!=NULL);
 		auto stats = BddStatistics(structure, manager);
-		return stats.estimatedCostAll(bdd, vars, indices);
+		auto result = stats.estimatedCostAll(bdd, vars, indices);
+		std::cerr <<result <<"\n";
+		return result;
 	}
 
 	/**
@@ -61,14 +78,19 @@ public:
 	 */
 	template<class BDD>
 	static double estimateChance(const BDD* bdd, const AbstractStructure* structure, FOBDDManager* manager) {
+		std::cerr << "Estimating chances\n";
+		Assert(manager!=NULL);
+		Assert(structure!=NULL);
 		auto stats = BddStatistics(structure, manager);
 		auto result = stats.estimatedChance(bdd);
 		Assert(result>=0 && result<=1);
+		std::cerr << "Done\n";
 		return result;
 	}
 
 private:
-	//NOTE: estimation-algorithms have not been reviewed yet
+	template<class K>
+	double tEstimatedNrAnswers(const K*, const varset& vars, const indexset& indices);
 	double estimatedNrAnswers(const FOBDDKernel*, const varset& vars, const indexset& indices);
 	double estimatedNrAnswers(const FOBDD*, const varset& vars, const indexset& indices);
 	double estimatedCostAll(bool, const FOBDDKernel*, const varset& vars, const indexset& indices);
