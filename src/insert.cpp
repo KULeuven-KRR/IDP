@@ -1519,7 +1519,7 @@ Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, F
 }
 
 void Insert::negate(Formula* f) const {
-	if(f!=NULL){
+	if (f != NULL) {
 		f->negate();
 	}
 }
@@ -1807,7 +1807,7 @@ EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counte
 		auto temp = new QuantSetExpr(pivv, pif, picounter, SetParseInfo());
 		auto pi = setparseinfo(temp, l);
 		temp->recursiveDelete();
-		return new EnumSetExpr({new QuantSetExpr(vv, f, counter, pi)}, pi);
+		return new EnumSetExpr( { new QuantSetExpr(vv, f, counter, pi) }, pi);
 	} else {
 		if (f) {
 			f->recursiveDelete();
@@ -1835,8 +1835,8 @@ EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 	return new EnumSetExpr(pi);
 }
 
-void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
-	if (f != NULL and s != NULL and t != NULL) {
+EnumSetExpr* Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
+	if (f && s && t) {
 		//SetExpr* orig = s->pi().originalobject();
 		/*if (orig && typeid(*orig) == typeid(EnumSetExpr)) {
 		 EnumSetExpr* origset = dynamic_cast<EnumSetExpr*>(orig);
@@ -1848,21 +1848,24 @@ void Insert::addFT(EnumSetExpr* s, Formula* f, Term* t) const {
 		auto set = new QuantSetExpr( { }, f, t, s->pi()); // TODO incorrect pi
 		s->addSet(set);
 	} else {
-		//Note: This code is reached when there was a problem parsing f or t, e.g. symbol not declared.
-		//Note: s can not be deleted here, because that would result in an invalid pointer further on.
-		if (f != NULL) {
+		if (f) {
 			f->recursiveDelete();
 		}
-		if (t != NULL) {
+		if (s) {
+			s->recursiveDelete();
+			s = NULL;
+		}
+		if (t) {
 			t->recursiveDelete();
 		}
 	}
+	return s;
 }
 
-void Insert::addFormula(EnumSetExpr* s, Formula* f) const {
+EnumSetExpr* Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 	auto d = createDomElem(1);
 	auto t = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
-	addFT(s, f, t);
+	return addFT(s, f, t);
 }
 
 void Insert::emptyinter(NSPair* nst) const {

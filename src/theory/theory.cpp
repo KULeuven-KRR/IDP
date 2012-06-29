@@ -153,6 +153,10 @@ PredForm* PredForm::clone(const map<Variable*, Variable*>& mvv) const {
 	return pf;
 }
 
+bool PredForm::isGraphedFunction() const {
+	return symbol()->isFunction();
+}
+
 ostream& PredForm::put(ostream& output) const {
 	if (isNeg(sign())) {
 		output << '~';
@@ -347,6 +351,8 @@ ostream& QuantForm::put(ostream& output) const {
 
 AggForm::AggForm(SIGN sign, Term* l, CompType c, AggTerm* r, const FormulaParseInfo& pi)
 		: Formula(sign, pi), _comp(c), _aggterm(r) {
+	Assert(l!=NULL);
+	Assert(r!=NULL);
 	addSubterm(l);
 	addSubterm(r);
 }

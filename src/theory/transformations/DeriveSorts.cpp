@@ -279,6 +279,7 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 
 		// Make sure the terms in the head are type safe.
 		Assert(hs != NULL);
+		// If domain element, we certainly do not need to add an additional variable, we only need a type check.
 		if (subterm->type() == TermType::DOM) {
 			// If the subterm is a domainterm, then add a sort check to the body of the rule.
 			if (not useBuiltins) {
@@ -290,6 +291,9 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 				r->body(bf);
 			}
 		} else {
+			// For functions or aggregates, we expect the cost of duplication to be too high in general, so we add the variable instead.
+			// If it can be in fact evaluated, the variable will hopefully only ever get assigned one value.
+
 			// For any other type of term, introduce a variable and move the subterm to the body.
 			auto nv = new Variable(*jt);
 			auto nvt1 = new VarTerm(nv, TermParseInfo());
@@ -322,7 +326,7 @@ void DeriveSorts::check() {
 		}
 	}
 	for (auto it = _overloadedatoms.cbegin(); it != _overloadedatoms.cend(); ++it) {
-		if (typeid(*((*it)->symbol())) == typeid(Predicate)) {
+		if ((*it)->symbol()->isPredicate()) {
 			Error::nopredsort((*it)->symbol()->name(), (*it)->pi());
 		} else {
 			Error::nofuncsort((*it)->symbol()->name(), (*it)->pi());

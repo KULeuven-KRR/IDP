@@ -27,7 +27,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 		if (_structure->inter(ft->function())->approxTwoValued()) {
 			return false;
 		}
-		if (_cpsupport and nestingIsAllowed() and eligibleForCP(ft, _vocabulary)) {
+		if (_cpsupport and _cpablefunction and eligibleForCP(ft, _vocabulary)) {
 			return false;
 		}
 		return true;
@@ -37,7 +37,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 		if (SetUtils::approxTwoValued(at->set(), _structure)) {
 			return false;
 		}
-		if (_cpsupport and nestingIsAllowed() and eligibleForCP(at, _structure)) {
+		if (_cpsupport and _cpablefunction and eligibleForCP(at, _structure)) {
 			return false;
 		}
 		return true;
@@ -49,37 +49,97 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 }
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
-	auto saveAllowedToLeave = nestingIsAllowed();
-	setNestingIsAllowed(_cpsupport and eligibleForCP(predform, _vocabulary));
+	auto savedrel = _cpablerelation;
+	if (_cpablerelation != TruthValue::False) {
+		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
+	}
+	if (predform->isGraphedFunction() && _cpablerelation == TruthValue::True) {
+		auto args = predform->args();
+		args.pop_back();
+		auto ft = new FuncTerm(dynamic_cast<Function*>(predform->symbol()), args, TermParseInfo()); // TODO parseinfo
+		auto pf = new PredForm(predform->sign(), get(STDPRED::EQ), { ft, predform->args().back() }, predform->pi());
+		return pf->accept(this);
+	}
 
-	auto newf = unnest(predform);
+	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
+	if (_cpsupport && not CPSupport::eligibleForCP(predform, _vocabulary)) {
+		std::vector<Formula*> aggforms;
+		for (size_t i = 0; i < predform->args().size(); ++i) {
+			auto origterm = predform->args().front();
+			if (origterm->freeVars().size() != 0 || origterm->type() != TermType::AGG) { // TODO handle free vars
+				continue;
+			}
+			auto sort = origterm->sort();
+			if (_structure != NULL && SortUtils::isSubsort(sort, get(STDSORT::INTSORT), _vocabulary)) {
+				sort = TermUtils::deriveSmallerSort(origterm, _structure);
+			}
+			auto constant = new Function( { }, sort, origterm->pi());
+			_vocabulary->add(constant);
+			auto newterm = new FuncTerm(constant, { }, origterm->pi());
+			predform->arg(i, newterm->clone());
+			aggforms.push_back(new AggForm(SIGN::POS, newterm, CompType::EQ, dynamic_cast<AggTerm*>(origterm), FormulaParseInfo()));
+		}
+		if (aggforms.size() > 0) {
+			aggforms.push_back(predform);
+			auto boolform = new BoolForm(SIGN::POS, true, aggforms, predform->pi());
+			return boolform->accept(this);
+		}
+	}
 
-	setNestingIsAllowed(saveAllowedToLeave);
+	auto result = UnnestTerms::visit(predform);
 
-	return doRewrite(newf);
+	_cpablerelation = savedrel;
+
+	return result;
 }
+
+// TODO Add aggform (sum becomes cpable relation)
+// TODO allow visiting of terms directly, setting that it is certain cpablerelation is true
 
 Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
-	auto savemovecontext = isAllowedToUnnest();
+	auto savedcp = _cpablefunction;
+	auto savedparent = _cpablerelation;
+	if (_cpablerelation == TruthValue::True) {
+		_cpablerelation = (_cpsupport and eligibleForCP(t, _structure)) ? TruthValue::True : TruthValue::False;
+		_cpablefunction = _cpablerelation == TruthValue::True;
+	} else {
+		_cpablerelation = TruthValue::False;
+		_cpablefunction = false;
+	}
 
-	auto saveAllowedToLeave = nestingIsAllowed();
-	setNestingIsAllowed(_cpsupport and eligibleForCP(t, _structure));
+	auto result = UnnestTerms::visit(t);
 
-	auto result = traverse(t);
-
-	setNestingIsAllowed(saveAllowedToLeave);
-	setAllowedToUnnest(savemovecontext);
-
-	return doMove(result);
+	_cpablefunction = savedcp;
+	_cpablerelation = savedparent;
+	return result;
 }
 
-Rule* UnnestThreeValuedTerms::visit(Rule* rule) {
-	auto saveAllowedToLeave = nestingIsAllowed();
-	setNestingIsAllowed(_cpsupport and eligibleForCP(rule->head(), _vocabulary));
+Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
+	auto savedcp = _cpablefunction;
+	auto savedparent = _cpablerelation;
+	if (_cpablerelation == TruthValue::True) {
+		_cpablefunction = _cpsupport and eligibleForCP(t, _structure);
+	} else {
+		_cpablefunction = false;
+	}
+	if (FuncUtils::isIntSum(t->function(), _structure->vocabulary()) or TermUtils::isTermWithIntFactor(t, _structure)) {
+		_cpablerelation = TruthValue::True;
+	} else {
+		_cpablerelation = TruthValue::False;
+	}
 
-	auto newrule = UnnestTerms::visit(rule);
+	auto result = UnnestTerms::visit(t);
 
-	setNestingIsAllowed(saveAllowedToLeave);
+	_cpablefunction = savedcp;
+	_cpablerelation = savedparent;
+	return result;
+}
 
-	return newrule;
+Rule* UnnestThreeValuedTerms::visit(Rule* r) {
+	// FIXME allowed to unnest non-recursively defined functions!
+	auto savedrel = _cpablerelation;
+	_cpablerelation = TruthValue::False;
+	auto result = UnnestTerms::visit(r);
+	_cpablerelation = savedrel;
+	return result;
 }

@@ -25,7 +25,6 @@ class FuncTable;
 class Function;
 
 class GroundTranslator;
-class GroundTermTranslator;
 
 class OptimizationGrounder: public Grounder {
 private:
@@ -40,7 +39,6 @@ public:
 	void setOrig(const Term* t);
 
 	GroundTranslator* getTranslator() const;
-	GroundTermTranslator* getTermTranslator() const;
 };
 
 class SetGrounder;

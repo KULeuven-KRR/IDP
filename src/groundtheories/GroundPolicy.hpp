@@ -16,7 +16,6 @@
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
-typedef unsigned int VarId;
 
 class GroundDefinition;
 class GroundFixpDef;
@@ -24,7 +23,6 @@ class GroundSet;
 class GroundAggregate;
 class CPReification;
 class GroundTranslator;
-class GroundTermTranslator;
 class AggTsBody;
 class PCTsBody;
 class TsSet;
@@ -76,7 +74,7 @@ public:
 	const std::vector<CPReification*>& getCPReifications() const {
 		return _cpreifications;
 	}
-	const std::map<int, GroundDefinition*>& getDefinitions() const {
+	const std::map<DefId, GroundDefinition*>& getDefinitions() const {
 		return _definitions;
 	}
 
@@ -96,9 +94,9 @@ public:
 	void polAddOptimization(VarId);
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
+	std::ostream& polPut(std::ostream& s, GroundTranslator* translator) const;
 
-	std::string polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const;
+	std::string polToString(GroundTranslator* translator) const;
 };
 
 #endif /* GROUNDTHEORY_HPP_ */

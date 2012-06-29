@@ -18,7 +18,6 @@
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 //TODO is not guaranteed to generate correct idp files!
 // FIXME do we want this? Because printing cp constraints etc. should be done correctly then!
@@ -29,7 +28,7 @@ class IDPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
-	const GroundTermTranslator* _termtranslator;
+	const GroundTranslator* _termtranslator;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -53,7 +52,7 @@ public:
 	virtual void setTranslator(GroundTranslator* t) {
 		_translator = t;
 	}
-	virtual void setTermTranslator(GroundTermTranslator* t) {
+	virtual void setTermTranslator(GroundTranslator* t) {
 		_termtranslator = t;
 	}
 
@@ -254,7 +253,7 @@ public:
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		_translator = g->translator();
-		_termtranslator = g->termtranslator();
+		_termtranslator = g->translator();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION
 			visit(*i);
@@ -536,7 +535,7 @@ public:
 		output() << "." << "\n";
 	}
 
-	void openDefinition(int defid) {
+	void openDefinition(DefId defid) {
 		Assert(isDefClosed());
 		openDef(defid);
 		printTab();
@@ -914,12 +913,12 @@ private:
 		}
 	}
 
-	void printTerm(unsigned int termnr) {
+	void printTerm(VarId termnr) {
 		CHECKTERMINATION
 		// Make sure there is a translator.
 		Assert(_termtranslator);
 		// Get information from the term translator.
-		const Function* func = _termtranslator->function(termnr);
+		const Function* func = _termtranslator->getFunction(termnr);
 		if (func) {
 			// Print the symbol's name.
 			output() << func->name().substr(0, func->name().find('/'));
@@ -962,7 +961,7 @@ private:
 		}
 	}
 
-	void printAggregate(double bound, bool lower, AggFunction aggtype, unsigned int setnr) {
+	void printAggregate(double bound, bool lower, AggFunction aggtype, SetId setnr) {
 		output() << bound << (lower ? " =< " : " >= ");
 		switch (aggtype) {
 		case AggFunction::CARD:

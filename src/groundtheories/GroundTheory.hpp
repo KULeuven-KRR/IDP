@@ -53,7 +53,7 @@ public:
 	virtual void add(DefId defid, PCGroundRule* rule);
 	virtual void add(GroundFixpDef*);
 	virtual void add(Lit tseitin, CPTsBody* body);
-	virtual void add(Lit setnr, DefId defnr, bool weighted);
+	virtual void add(SetId setnr, DefId defnr, bool weighted);
 	virtual void add(Lit head, AggTsBody* body);
 	virtual void add(const Lit& head, TsType tstype, const litlist& clause, bool conj, DefId defnr);
 	virtual void addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry);

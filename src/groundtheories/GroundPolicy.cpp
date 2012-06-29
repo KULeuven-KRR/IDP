@@ -15,7 +15,6 @@
 #include <sstream>
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/GroundTermTranslator.hpp"
 
 void GroundPolicy::polStartTheory(GroundTranslator* translator) {
 	_translator = translator;
@@ -84,7 +83,7 @@ void GroundPolicy::polAdd(const std::vector<std::map<Lit, Lit> >&){
 	throw notyetimplemented("Adding symmetries to the grounding\n");
 }
 
-std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
+std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator) const {
 	std::clog << "Printing ground theory\n";
 	std::clog << "Has " << _clauses.size() << " clauses." << "\n";
 	for (auto i = _clauses.cbegin(); i < _clauses.cend(); ++i) {
@@ -144,7 +143,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 					s << "; ";
 				}
 				begin = false;
-				s << termtranslator->printTerm(*vit);
+				s << translator->printTerm(*vit);
 			}
 			s << " ]";
 		} else if (isa<CPWSumTerm>(*left)) {
@@ -158,18 +157,18 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 					s << "; ";
 				}
 				begin = false;
-				s << '(' << termtranslator->printTerm(*vit) << '=' << *wit << ')';
+				s << '(' << translator->printTerm(*vit) << '=' << *wit << ')';
 			}
 			s << " ]";
 		} else {
 			Assert(isa<CPVarTerm>(*left));
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
-			s << termtranslator->printTerm(cpt->varid());
+			s << translator->printTerm(cpt->varid());
 		}
 		s << ' ' << toString(cpr->_body->comp()) << ' ';
 		CPBound right = cpr->_body->right();
 		if (right._isvarid) {
-			s << termtranslator->printTerm(right._varid);
+			s << translator->printTerm(right._varid);
 		} else {
 			s << right._bound;
 		}
@@ -178,8 +177,8 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 	return s;
 }
 
-std::string GroundPolicy::polToString(GroundTranslator* translator, GroundTermTranslator* termtranslator) const {
+std::string GroundPolicy::polToString(GroundTranslator* translator) const {
 	std::stringstream s;
-	polPut(s, translator, termtranslator);
+	polPut(s, translator);
 	return s.str();
 }

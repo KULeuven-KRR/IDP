@@ -13,7 +13,6 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
-#include "inferences/grounding/GroundTermTranslator.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 
 #include "visitors/TheoryVisitor.hpp"
@@ -114,7 +113,7 @@ void GroundTheory<Policy>::notifyDefined(Atom inputatom) {
 	if (not translator()->isInputAtom(inputatom)) {
 		return;
 	}
-	PFSymbol* symbol = translator()->getSymbol(inputatom);
+	auto symbol = translator()->getSymbol(inputatom);
 	auto it = _defined.find(symbol);
 	if (it == _defined.end()) {
 		it = _defined.insert(std::pair<PFSymbol*, std::set<Atom>> { symbol, std::set<Atom>() }).first;
@@ -135,10 +134,10 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	body->left(foldCPTerm(body->left()));
 
 	//Add constraint for right hand side if necessary. TODO refactor
-	if (body->right()._isvarid && termtranslator()->function(body->right()._varid) == NULL) {
+	if (body->right()._isvarid && translator()->getFunction(body->right()._varid) == NULL) {
 		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
 			_printedvarids.insert(body->right()._varid);
-			auto cprelation = termtranslator()->cprelation(body->right()._varid);
+			auto cprelation = translator()->cprelation(body->right()._varid);
 			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),cprelation->type());
 			addUnitClause(tseitin2);
 		}
@@ -164,7 +163,7 @@ void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, int defnr) {
+void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, DefId defnr) {
 	if (type == TsType::IMPL || type == TsType::EQ) {
 		if (conj) {
 			for (auto i = body.cbegin(); i < body.cend(); ++i) {
@@ -207,10 +206,10 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
 	//Add reified constraint necessary. TODO refactor
-	if (termtranslator()->function(varid) == NULL) {
+	if (translator()->getFunction(varid) == NULL) {
 		if (_printedvarids.find(varid) == _printedvarids.end()) {
 			_printedvarids.insert(varid);
-			auto cprelation = termtranslator()->cprelation(varid);
+			auto cprelation = translator()->cprelation(varid);
 			auto tseitin = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
 			addUnitClause(tseitin);
 		}
@@ -225,11 +224,11 @@ void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >&
 
 template<class Policy>
 std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
-	return Policy::polPut(s, translator(), termtranslator());
+	return Policy::polPut(s, translator());
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, int defnr, bool skipfirst) {
+void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst) {
 	size_t n = 0;
 	if (skipfirst) {
 		++n;
@@ -277,8 +276,8 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 
 	if (isa<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (termtranslator()->function(varterm->varid()) == NULL) {
-			CPTsBody* cprelation = termtranslator()->cprelation(varterm->varid());
+		if (translator()->getFunction(varterm->varid()) == NULL) {
+			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
 			if ((isa<CPSumTerm>(*left) || isa<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
 				Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
@@ -293,8 +292,8 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-			if (termtranslator()->function(*vit) == NULL) {
-				CPTsBody* cprelation = termtranslator()->cprelation(*vit);
+			if (translator()->getFunction(*vit) == NULL) {
+				CPTsBody* cprelation = translator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
 				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
 					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
@@ -336,16 +335,23 @@ void GroundTheory<Policy>::addFalseDefineds() {
 	 * It also works lazily because when delaying, the symbol is also added to the translator
 	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
 	 */
+	if(verbosity()>1){
+		clog <<"Closing definition by asserting literals false which have no rule making them true.\n";
+	}
 	for (auto sit=getNeedFalseDefinedSymbols().cbegin(); sit!=getNeedFalseDefinedSymbols().cend(); ++sit) {
 		CHECKTERMINATION
 		auto pt = structure()->inter(*sit)->pt();
 		auto it = _defined.find(*sit);
+	//	cerr <<"Already grounded for " <<toString(*sit) <<"\n";
+	//	for(auto i=_defined.cbegin(); i!=_defined.cend(); ++i){
+	//		cerr <<toString(i->second) <<"\n";
+	//	}
 		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION
 			auto translation = translator()->translate(*sit, (*ptIterator));
 			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
 				addUnitClause(-translation);
-				// TODO if not in translator, should make the structure more precise (do not add it to the grounding, that is useless)
+				// TODO better solution would be to make the structure more precise
 			}
 		}
 	}

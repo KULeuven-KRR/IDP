@@ -221,10 +221,12 @@ public:
 		subterm(n, t);
 	}
 
-	// Inspectors
 	PFSymbol* symbol() const {
 		return _symbol;
 	}
+
+	bool isGraphedFunction() const;
+
 	const std::vector<Term*>& args() const {
 		return subterms();
 	}

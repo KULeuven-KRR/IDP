@@ -40,21 +40,33 @@ class Term;
  *	\return The rewritten formula. If no rewriting was needed, it is the same pointer as t.
  *	If rewriting was needed, t can be deleted, but not recursively (TODO).
  *
+ *	For CP, when should we NOT unnest:
+ *	For any type of relation which can be translated completely into CP!
+ *	 => pred(f(t)...)
+ *	 		if pred and f are cp-able, only unnest deeper than f
+ *	 => agg(S) op t
+ *	 		if agg with given functerms are cpable
+ *
  */
+
 class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool _cpsupport;
-	bool _allowedToKeepNested;
+
+	TruthValue _cpablerelation;
+	bool _cpablefunction;
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, bool nestingIsAllowed = false) {
+	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
+		Assert(str!=NULL);
 		_structure = str;
-		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
+		_vocabulary = str->vocabulary();
 		setContext(context);
 		setAllowedToUnnest(false);
-		setNestingIsAllowed(nestingIsAllowed);
+		_cpablerelation = cpablerelation;
+		_cpablefunction = false;
 		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
@@ -62,16 +74,9 @@ public:
 protected:
 	bool shouldMove(Term*);
 	Formula* visit(PredForm*);
-	Rule* visit(Rule*);
 	Term* visit(AggTerm*);
-
-private:
-	bool nestingIsAllowed() const {
-		return _allowedToKeepNested;
-	}
-	void setNestingIsAllowed(bool allowed) {
-		_allowedToKeepNested = allowed;
-	}
+	Term* visit(FuncTerm*);
+	Rule* visit(Rule* r);
 };
 
 #endif /* REMOVETHREEVALUEDTERMS_HPP_ */

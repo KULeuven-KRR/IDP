@@ -361,9 +361,9 @@ public:
 
 	EnumSetExpr* createEnum(YYLTYPE) const;
 	//!< Create a new EnumSetExpr
-	void addFormula(EnumSetExpr*, Formula*) const;
+	EnumSetExpr* addFormula(EnumSetExpr*, Formula*) const;
 	//!< Add a tuple (phi,1) to an EnumSetExpr
-	void addFT(EnumSetExpr*, Formula*, Term*) const;
+	EnumSetExpr* addFT(EnumSetExpr*, Formula*, Term*) const;
 	//!< Add a tuple (phi,t) to an EnumSetExpr
 
 	void emptyinter(NSPair*) const; //!< Assign the empty interpretation

@@ -23,14 +23,10 @@ class TsBody;
 typedef std::vector<Variable*> varlist;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
 
-typedef unsigned int VarId;
 typedef double Weight;
-typedef std::vector<VarId> varidlist;
 typedef std::vector<Lit> litlist;
 typedef std::vector<Weight> weightlist;
 typedef std::vector<int> intweightlist;
-
-typedef int SetId;
 
 typedef std::pair<ElementTuple, Lit> Tuple2Atom;
 typedef std::pair<Lit, TsBody*> tspair;

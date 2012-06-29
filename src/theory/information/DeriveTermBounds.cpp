@@ -103,6 +103,9 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		case STDFUNC::MAXELEM: {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
+			if (domain->empty()) {
+				throw BoundsUnderivableException();
+			}
 			_maximum = domain->last();
 			_minimum = domain->last();
 			break;
@@ -110,6 +113,9 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		case STDFUNC::MINELEM: {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
+			if (domain->empty()) {
+				throw BoundsUnderivableException();
+			}
 			_maximum = domain->first();
 			_minimum = domain->first();
 			break;
@@ -131,12 +137,11 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		Assert(t->sort() != NULL);
 		auto domain = _structure->inter(t->sort());
 		Assert(domain != NULL);
-		if (not domain->approxFinite()) { //FIXME: Never return NULL... return infinity thingies.
+		if (not domain->approxFinite() || domain->empty()) { //FIXME: Never return NULL... return infinity thingies.
 			throw BoundsUnderivableException();
-		} else {
-			_minimum = domain->first();
-			_maximum = domain->last();
 		}
+		_minimum = domain->first();
+		_maximum = domain->last();
 	}
 }
 

@@ -20,9 +20,6 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
-typedef int SetId;
-typedef int DefId;
-
 class LazyStoredInstantiation;
 class DelayGrounder;
 
@@ -32,7 +29,7 @@ class DelayGrounder;
 template<class Solver>
 class SolverPolicy {
 private:
-	GroundTermTranslator* _termtranslator;
+	GroundTranslator* _translator;
 	Solver* _solver; // The SAT solver
 	std::map<PFSymbol*, std::set<Atom> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
@@ -48,7 +45,7 @@ private:
 	}
 
 public:
-	void initialize(Solver* solver, int verbosity, GroundTermTranslator* termtranslator);
+	void initialize(Solver* solver, int verbosity, GroundTranslator* translator);
 	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	void polAddLazyAddition(const litlist& glist, int ID);
 	void polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction);
@@ -78,19 +75,19 @@ protected:
 	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction);
 
-	std::ostream& polPut(std::ostream& s, GroundTranslator*, GroundTermTranslator*) const {
+	std::ostream& polPut(std::ostream& s, GroundTranslator*) const {
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*, GroundTermTranslator*, bool) const {
+	std::string polToString(GroundTranslator*, bool) const {
 		Assert(false);
 		return "";
 	}
 
 private:
 	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
-	void polAddCPVariables(const varidlist& varids, GroundTermTranslator* termtranslator);
-	void polAddCPVariable(const VarId& varid, GroundTermTranslator* termtranslator);
+	void polAddCPVariables(const varidlist& varids, GroundTranslator* mtranslator);
+	void polAddCPVariable(const VarId& varid, GroundTranslator* translator);
 	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive);
 };
 
