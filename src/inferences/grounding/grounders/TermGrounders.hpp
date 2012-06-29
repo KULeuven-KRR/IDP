@@ -25,17 +25,19 @@ class FuncTable;
 class Function;
 
 class GroundTranslator;
-class GroundTermTranslator;
 
 class TermGrounder {
 private:
 	mutable SortTable* _domain;
 	Term* _origterm;
 	var2dommap _varmap;
+protected:
+	GroundTranslator* _translator;
+
 public:
 	// @parameter dom: the sort of the position the term occurs in
-	TermGrounder(SortTable* dom = NULL)
-			: _domain(dom), _origterm(NULL) {
+	TermGrounder(SortTable* dom = NULL, GroundTranslator* translator = NULL)
+			: _domain(dom), _origterm(NULL), _translator(translator) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
@@ -48,6 +50,7 @@ public:
 	}
 protected:
 	void setDomain(SortTable* dom) const { // TODO ugly const setter!
+		Assert(dom!=NULL);
 		_domain = dom;
 	}
 };
@@ -81,13 +84,13 @@ public:
 
 class FuncTermGrounder: public TermGrounder {
 protected:
-	GroundTermTranslator* _termtranslator;
 	Function* _function;
 	FuncTable* _functable;
+	std::vector<SortTable*> _tables; // Function argument sorts
 	std::vector<TermGrounder*> _subtermgrounders;
 public:
-	FuncTermGrounder(GroundTermTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<TermGrounder*>& sub) :
-			TermGrounder(dom), _termtranslator(tt), _function(func), _functable(ftable), _subtermgrounders(sub) {
+	FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<SortTable*>& tables, const std::vector<TermGrounder*>& sub) :
+			TermGrounder(dom, tt), _function(func), _functable(ftable), _tables(tables), _subtermgrounders(sub) {
 	}
 	GroundTerm run() const;
 
@@ -103,14 +106,13 @@ enum SumType {
 
 class SumTermGrounder: public TermGrounder {
 protected:
-	GroundTermTranslator* _termtranslator;
 	FuncTable* _functable;
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 	SumType _type;
 public:
-	SumTermGrounder(GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
-			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
+	SumTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+			: TermGrounder(dom, tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
 	}
 	GroundTerm run() const;
 private:
@@ -119,13 +121,12 @@ private:
 
 class TermWithFactorGrounder: public TermGrounder {
 protected:
-	GroundTermTranslator* _termtranslator;
 	FuncTable* _functable;
 	TermGrounder* _factortermgrounder;
 	TermGrounder* _subtermgrounder;
 public:
-	TermWithFactorGrounder(GroundTermTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(dom), _termtranslator(tt), _functable(ftable), _factortermgrounder(ltg), _subtermgrounder(rtg) {
+	TermWithFactorGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
+			: TermGrounder(dom, tt), _functable(ftable), _factortermgrounder(ltg), _subtermgrounder(rtg) {
 	}
 	GroundTerm run() const;
 private:
@@ -139,13 +140,11 @@ CPTerm* createCPAggTerm(const AggFunction&, const varidlist&);
 
 class AggTermGrounder: public TermGrounder {
 private:
-	GroundTranslator* _translator;
-	GroundTermTranslator* _termtranslator;
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 public:
-	AggTermGrounder(GroundTranslator* gt, GroundTermTranslator* tt, AggFunction tp, SortTable* dom, SetGrounder* gr)
-			: TermGrounder(dom), _translator(gt), _termtranslator(tt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
+			: TermGrounder(dom, gt), _type(tp), _setgrounder(gr) {
 	}
 	GroundTerm run() const;
 };

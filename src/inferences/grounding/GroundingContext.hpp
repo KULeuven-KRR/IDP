@@ -25,7 +25,7 @@ GenType operator not(GenType orig);
 class PFSymbol;
 class Variable;
 
-int getIDForUndefined();
+DefId getIDForUndefined();
 
 #define iff(x, y) ((x && y) || (not x && not y))
 
@@ -35,8 +35,8 @@ struct GroundingContext {
 	Context _monotone;
 	CompContext _component; // Indicates the context of the visited formula
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
-	int currentDefID; // If tstype = rule, this indicates the definition to which the grounders belong
-	int getCurrentDefID() const{
+	DefId currentDefID; // If tstype = rule, this indicates the definition to which the grounders belong
+	DefId getCurrentDefID() const{
 		Assert(_tseitin!=TsType::RULE || currentDefID!=getIDForUndefined());
 		return currentDefID;
 	}

@@ -21,7 +21,11 @@
 using namespace std;
 
 UnnestTerms::UnnestTerms()
-		: _structure(NULL), _vocabulary(NULL), _context(Context::POSITIVE), _allowedToUnnest(false), _chosenVarSort(NULL) {
+		: 	_structure(NULL),
+			_vocabulary(NULL),
+			_context(Context::POSITIVE),
+			_allowedToUnnest(false),
+			_chosenVarSort(NULL) {
 }
 
 void UnnestTerms::contextProblem(Term* t) {
@@ -51,30 +55,30 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 }
 
 /**
- * Create a variable and an equation for the given term
+ * Given a term t
+ * 		Add a quantified variable v over sort(t)
+ * 		Add an equality t =_sort(t) v
+ * 		return v
  */
-VarTerm* UnnestTerms::move(Term* term) {
+Term* UnnestTerms::move(Term* origterm) {
 	if (getContext() == Context::BOTH) {
-		contextProblem(term);
+		contextProblem(origterm);
 	}
 
-	auto newsort = deriveSort(term);
+	auto newsort = deriveSort(origterm);
 	Assert(newsort != NULL);
 
-	auto introduced_var = new Variable(newsort);
-	_variables.insert(introduced_var);
+	auto var = new Variable(newsort);
+	_variables.insert(var);
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
-		Warning::introducedvar(introduced_var->name(), introduced_var->sort()->name(), toString(term));
+		Warning::introducedvar(var->name(), var->sort()->name(), toString(origterm));
 	}
 
-	auto introduced_eq_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
-	auto equalpred = get(STDPRED::EQ, term->sort());
-	auto equalatom = new PredForm(SIGN::POS, equalpred, { introduced_eq_term, term }, FormulaParseInfo());
+	auto varterm = new VarTerm(var, TermParseInfo(origterm->pi()));
+	auto equalatom = new PredForm(SIGN::POS, get(STDPRED::EQ, origterm->sort()), { varterm, origterm }, FormulaParseInfo());
 	_equalities.push_back(equalatom);
-
-	auto introduced_subst_term = new VarTerm(introduced_var, TermParseInfo(term->pi()));
-	return introduced_subst_term;
+	return varterm->clone();
 }
 
 /**
@@ -320,10 +324,12 @@ Term* UnnestTerms::visit(DomainTerm* t) {
 }
 
 Term* UnnestTerms::visit(AggTerm* t) {
-	bool savemovecontext = isAllowedToUnnest();
-	//TODO Check what should be done with AllowedToUnnest...
+	auto savemovecontext = isAllowedToUnnest();
+
 	auto result = traverse(t);
+
 	setAllowedToUnnest(savemovecontext);
+
 	if (shouldMove(result)) {
 		return move(result);
 	}
@@ -352,7 +358,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	setAllowedToUnnest(true);
 	Context savecontext = getContext();
 
-	for(uint i=0; i<s->getSets().size(); ++i) {
+	for (uint i = 0; i < s->getSets().size(); ++i) {
 		s->setSet(i, s->getSets()[i]->accept(this));
 		if (not _equalities.empty()) {
 			//_equalities.push_back(s->subformulas()[n]);

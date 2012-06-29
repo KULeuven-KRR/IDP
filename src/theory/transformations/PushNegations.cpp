@@ -26,7 +26,7 @@ Formula* PushNegations::visit(PredForm* pf) {
 	if (isPos(pf->sign())) {
 		return traverse(pf);
 	}
-	if (isa<Predicate>(*(pf->symbol()))) {
+	if (pf->symbol()->isPredicate()) {
 		auto p = dynamic_cast<Predicate*>(pf->symbol());
 		switch (p->type()) {
 		case ST_CT:

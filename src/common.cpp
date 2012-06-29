@@ -154,15 +154,56 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 	return d;
 }
 
+bool operator==(VarId left, VarId right){
+	return left.id==right.id;
+}
+bool operator!=(VarId left, VarId right){
+	return not (left.id==right.id);
+}
+bool operator<(VarId left, VarId right){
+	return left.id<right.id;
+}
+bool operator==(DefId left, DefId right){
+	return left.id==right.id;
+}
+bool operator!=(DefId left, DefId right){
+	return not (left.id==right.id);
+}
+bool operator<(DefId left, DefId right){
+	return left.id<right.id;
+}
+bool operator==(SetId left, SetId right){
+	return left.id==right.id;
+}
+bool operator!=(SetId left, SetId right){
+	return not (left.id==right.id);
+}
+bool operator<(SetId left, SetId right){
+	return left.id<right.id;
+}
+
+std::ostream& operator<<(std::ostream& out, const VarId& id) {
+	out <<id.id;
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const DefId& id) {
+	out <<id.id;
+	return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const SetId& id) {
+	out <<id.id;
+	return out;
+}
+
 // TODO remove when all are using gcc 4.5
 bool operator==(CompType left, CompType right) {
 	return (int) left == (int) right;
 }
-
 bool operator>(CompType left, CompType right) {
 	return (int) left > (int) right;
 }
-
 bool operator<(CompType left, CompType right) {
 	return not (left == right || left > right);
 }

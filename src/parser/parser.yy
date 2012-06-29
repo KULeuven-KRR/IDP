@@ -562,11 +562,11 @@ termset			: '{' variables ':' formula ':' term '}'	{ $$ = getInserter().set(*$2,
 				;
 
 form_list		: form_list ';' formula						{ $$ = $1; getInserter().addFormula($$,$3);						}
-				| formula									{ $$ = getInserter().createEnum(@1);	getInserter().addFormula($$,$1);	}		
+				| formula									{ $$ = getInserter().createEnum(@1); $$=getInserter().addFormula($$,$1);	}		
 				;
 
 form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; getInserter().addFT($$,$4,$6);						}
-				| '(' formula ',' term ')'						{ $$ = getInserter().createEnum(@1); getInserter().addFT($$,$2,$4);	}
+				| '(' formula ',' term ')'						{ $$ = getInserter().createEnum(@1); $$ = getInserter().addFT($$,$2,$4);	}
 				;
 
 

@@ -90,7 +90,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 	}
 
 	//SAVENESS FOR PARTIAL FUNCTIONS
-	if (isa<Function>(*(atom->symbol()))) {
+	if (atom->symbol()->isFunction()) {
 		auto f = dynamic_cast<Function*>(atom->symbol());
 		if (f->partial() || is(atom->symbol(), STDFUNC::DIVISION) || is(atom->symbol(), STDFUNC::MODULO)) {
 			auto newatom = atom->clone();

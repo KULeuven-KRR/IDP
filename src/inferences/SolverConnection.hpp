@@ -16,7 +16,6 @@
 
 class AbstractStructure;
 class GroundTranslator;
-class GroundTermTranslator;
 class TraceMonitor;
 
 namespace SolverConnection {
@@ -37,7 +36,7 @@ namespace SolverConnection {
 	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);
 
 	// Parse cp-model into structure
-	void addTerms(const MinisatID::Model& model, GroundTermTranslator* termtranslator, AbstractStructure* init);
+	void addTerms(const MinisatID::Model& model, GroundTranslator* termtranslator, AbstractStructure* init);
 }
 
 #endif //INFERENCE_SOLVERCONN_HPP_

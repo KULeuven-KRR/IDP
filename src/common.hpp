@@ -222,6 +222,16 @@ bool operator==(CompType left, CompType right);
 bool operator>(CompType left, CompType right);
 bool operator<(CompType left, CompType right);
 
+bool operator==(VarId left, VarId right);
+bool operator!=(VarId left, VarId right);
+bool operator<(VarId left, VarId right);
+bool operator==(DefId left, DefId right);
+bool operator!=(DefId left, DefId right);
+bool operator<(DefId left, DefId right);
+bool operator==(SetId left, SetId right);
+bool operator!=(SetId left, SetId right);
+bool operator<(SetId left, SetId right);
+
 template<typename NumberType, typename NumberType2>
 bool compare(NumberType a, CompType comp, NumberType2 b) {
 	switch (comp) {
@@ -295,6 +305,10 @@ Stream& operator<<(Stream& out, const TsType& tstype) {
 	}
 	return out;
 }
+
+std::ostream& operator<<(std::ostream& out, const VarId& id);
+std::ostream& operator<<(std::ostream& out, const DefId& id);
+std::ostream& operator<<(std::ostream& out, const SetId& id);
 
 std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string
 std::string* StringPointer(const std::string& str); //!< Returns a shared pointer to the given string

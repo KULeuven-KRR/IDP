@@ -20,7 +20,6 @@
 class TheoryVisitor;
 
 class GroundTranslator;
-class GroundTermTranslator;
 class PCTsBody;
 class AggTsBody;
 class CPTsBody;
@@ -31,8 +30,6 @@ class DomElemContainer;
 class DomainElement;
 class InstGenerator;
 
-typedef unsigned int VarId;
-typedef std::vector<VarId> varidlist;
 typedef std::vector<int> intweightlist;
 
 /******************
@@ -519,6 +516,7 @@ public:
 	CPBound(const VarId& varid)
 			: _isvarid(true), _varid(varid) {
 	}
+	virtual ~CPBound(){}
 	bool operator==(const CPBound& rhs) const;
 	bool operator<(const CPBound& rhs) const;
 	virtual void put(std::ostream& stream) const;
@@ -537,7 +535,7 @@ public:
 			: TsBody(type), _left(left), _comp(comp), _right(right) {
 		Assert(type!=TsType::RULE); // Constraints within recursive definitions cannot be handled atm.
 	}
-	~CPTsBody();
+	~CPTsBody(){}
 	CPTerm* left() const {
 		return _left;
 	}

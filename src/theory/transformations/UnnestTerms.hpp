@@ -106,7 +106,7 @@ protected:
 
 private:
 	Formula* rewrite(Formula*);
-	VarTerm* move(Term*);
+	Term* move(Term*);
 
 	Sort* deriveSort(Term*);
 };
