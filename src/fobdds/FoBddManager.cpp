@@ -1997,14 +1997,29 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 	}
 }
 
+double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
+		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure, double weightPerAns) {
+	// Recursive call
+	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
+	double bddCost = estimatedCostAll(bdd, vars, indices, structure);
+	double bddAnswers = estimatedNrAnswers(bdd, vars, indices, structure);
+	double totalBddCost = getMaxElem<double>();
+	if (bddCost + (bddAnswers * weightPerAns) < totalBddCost) {
+		totalBddCost = bddCost + (bddAnswers * weightPerAns);
+	}
+	return totalBddCost;
+}
+
 const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure, double weightPerAns) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
-		// Split variables
+		// Split variables:
+		// * kernelvars and kernelindices are all vars and indices that appear in the kernel.
+		// * branchvars and branchidices are the rest.
 		auto kernelvars = variables(bdd->kernel());
-		set<const FOBDDDeBruijnIndex*> kernelindices = FOBDDManager::indices(bdd->kernel());
+		auto kernelindices = FOBDDManager::indices(bdd->kernel());
 		set<const FOBDDVariable*, CompareBDDVars> branchvars;
 		set<const FOBDDDeBruijnIndex*> branchindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
@@ -2017,57 +2032,55 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 		}
 
 		// Recursive call
-		double bddCost = estimatedCostAll(bdd, vars, indices, structure);
-		double bddAnswers = estimatedNrAnswers(bdd, vars, indices, structure);
-		double totalBddCost = getMaxElem<double>();
-		if (bddCost + (bddAnswers * weightPerAns) < totalBddCost) {
-			totalBddCost = bddCost + (bddAnswers * weightPerAns);
-		}
+		//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
+		auto totalBddCost = getTotalWeigthedCost(bdd, vars, indices, structure, weightPerAns);
 
 		if (isGoalbdd(not goal, bdd->falsebranch())) {
-			double branchCost = estimatedCostAll(bdd->truebranch(), vars, indices, structure);
-			double branchAnswers = estimatedNrAnswers(bdd->truebranch(), vars, indices, structure);
-			double totalBranchCost = getMaxElem<double>();
-			if (branchCost + (branchAnswers * weightPerAns) < totalBranchCost) {
-				totalBranchCost = branchCost + (branchAnswers * weightPerAns);
-			}
+			//If the falsebranch is a bdd we are not interested in, we might just return the truebranch,
+			// which will in general have a lower cost, but might provide for more answers.
+			auto totalBranchCost = getTotalWeigthedCost(bdd->truebranch(), vars, indices, structure, weightPerAns);
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
 				return makeMore(goal, bdd->truebranch(), vars, indices, structure, weightPerAns);
 			}
 		} else if (isGoalbdd(not goal, bdd->truebranch())) {
-			double branchcost = estimatedCostAll(bdd->falsebranch(), vars, indices, structure);
-			double branchans = estimatedNrAnswers(bdd->falsebranch(), vars, indices, structure);
-			double totalbranchcost = getMaxElem<double>();
-			if (branchcost + (branchans * weightPerAns) < totalbranchcost) {
-				totalbranchcost = branchcost + (branchans * weightPerAns);
-			}
-			if (totalbranchcost < totalBddCost) {
+			//If the truebranch is a bdd we are not interested in, we might just return the falsebranch,
+			// which will in general have a lower cost, but might provide for more answers.
+			auto totalBranchCost = getTotalWeigthedCost(bdd->falsebranch(), vars, indices, structure, weightPerAns);
+			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
 				return makeMore(goal, bdd->falsebranch(), vars, indices, structure, weightPerAns);
 			}
 		}
 
+		//Number of answers in the kernel.
 		double kernelAnswers = estimatedNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure);
+
+		//For the true and false branch, we calculate the weight as follows:
+		//The cost of one answer in truebranch is weight * kernelanswers (they speak about different variables)
 		double trueBranchWeight = (kernelAnswers * weightPerAns < getMaxElem<double>()) ? kernelAnswers * weightPerAns : getMaxElem<double>();
 		const FOBDD* newtrue = makeMore(goal, bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
 
-		tablesize allKernelAnswers = univNrAnswers(kernelvars, kernelindices, structure);
+		tablesize kernelUnivSize = univNrAnswers(kernelvars, kernelindices, structure);
 		double chance = estimatedChance(bdd->kernel(), structure);
 		double kernelFalseAnswers;
-		if (allKernelAnswers._type == TST_APPROXIMATED || allKernelAnswers._type == TST_EXACT) {
-			kernelFalseAnswers = allKernelAnswers._size * (1 - chance);
+		if (kernelUnivSize._type == TST_APPROXIMATED || kernelUnivSize._type == TST_EXACT) {
+			kernelFalseAnswers = kernelUnivSize._size * (1 - chance);
+			//WHY NOT univ - kernelanswers? Why use the chance?
 		} else {
-			Assert(allKernelAnswers._type == TST_INFINITE || allKernelAnswers._type == TST_UNKNOWN);
-			if (chance <= 0) //TODO: i changed this from > 0 to <= 0, seemed more logical... Check for correctness
+			Assert(kernelUnivSize._type == TST_INFINITE || kernelUnivSize._type == TST_UNKNOWN);
+			if (chance == 0) {
 				kernelFalseAnswers = getMaxElem<double>();
-			else
-				kernelFalseAnswers = 1; //Why 1?
+			} else {
+				Assert(chance>0);
+				kernelFalseAnswers = 1; //Why 1?}
+			}
 		}
 		double falsebranchweight = (kernelFalseAnswers * weightPerAns < getMaxElem<double>()) ? kernelFalseAnswers * weightPerAns : getMaxElem<double>();
 		const FOBDD* newfalse = makeMore(goal, bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
 			return makeMore(goal, getBDD(bdd->kernel(), newtrue, newfalse), vars, indices, structure, weightPerAns);
-		} else
+		} else {
 			return bdd;
+		}
 	}
 }
 
