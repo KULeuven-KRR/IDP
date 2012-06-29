@@ -113,7 +113,8 @@ private:
 	//Or, said differently: (kernel, truebdd, falsebdd) -> result
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
-
+	double getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+			const AbstractStructure* structure, double weightPerAns);
 	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
