@@ -44,7 +44,10 @@ public:
 		return stats.estimatedNrAnswers(bdd, vars, indices);
 	}
 
-	// Takes a bddkernel or a bdd
+	/**
+	 * Takes a bddkernel or a bdd
+	 * Returns an estimate of the cost of generating all answers to this bdd in the given structure.
+	 */
 	template<class BDD>
 	static double estimateCostAll(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure,
 			FOBDDManager* manager) {
@@ -52,16 +55,19 @@ public:
 		return stats.estimatedCostAll(bdd, vars, indices);
 	}
 
-	// Takes a bddkernel or a bdd
+	/**
+	 * Takes a bddkernel or a bdd
+	 * Returns the probability [0,1] that this bdd evaluates to true in the given structure
+	 */
 	template<class BDD>
 	static double estimateChance(const BDD* bdd, const AbstractStructure* structure, FOBDDManager* manager) {
 		auto stats = BddStatistics(structure, manager);
-		return stats.estimatedChance(bdd);
+		auto result = stats.estimatedChance(bdd);
+		Assert(result>=0 && result<=1);
+		return result;
 	}
 
 private:
-	//these calculations (nranswers, chances, ...) seem to be non-manager-specific and might be moved to the bdd and kernel itself.
-	//TODO: Do this after some tests have been written
 	//NOTE: estimation-algorithms have not been reviewed yet
 	double estimatedNrAnswers(const FOBDDKernel*, const varset& vars, const indexset& indices);
 	double estimatedNrAnswers(const FOBDD*, const varset& vars, const indexset& indices);

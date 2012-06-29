@@ -1368,11 +1368,11 @@ set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager
 set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* manager) {
 	set<const FOBDDKernel*> result;
 	if (bdd != manager->truebdd() && bdd != manager->falsebdd()) {
-		set<const FOBDDKernel*> falsekernels = nonnestedkernels(bdd->falsebranch(), manager);
-		set<const FOBDDKernel*> truekernels = nonnestedkernels(bdd->truebranch(), manager);
-		result.insert(falsekernels.cbegin(), falsekernels.cend());
-		result.insert(truekernels.cbegin(), truekernels.cend());
 		result.insert(bdd->kernel());
+		auto falsekernels = nonnestedkernels(bdd->falsebranch(), manager);
+		result.insert(falsekernels.cbegin(), falsekernels.cend());
+		auto truekernels = nonnestedkernels(bdd->truebranch(), manager);
+		result.insert(truekernels.cbegin(), truekernels.cend());
 	}
 	return result;
 }
