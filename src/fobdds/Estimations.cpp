@@ -99,7 +99,7 @@ double BddStatistics::estimateNrAnswers(const FOBDD* bdd, const varset& vars, co
 		return 0;
 	}
 	auto univanswers = univNrAnswers(vars, indices, structure);
-	if(univanswers.isInfinite()){
+	if (univanswers.isInfinite()) {
 		return getMaxElem<double>();
 	}
 	Assert(0<= chance && chance <= 1);
@@ -163,13 +163,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		}
 
 		if (symbolsize.isInfinite()) {
-			if (univsize.isInfinite()) {
-				return 0.5;
-			} else {
-				//Shouldn't be possible.
-				Assert(false);
-				return 1;
-			}
+			return 0.5;
 		}
 		if (univsize.isInfinite()) {
 			return 0;
