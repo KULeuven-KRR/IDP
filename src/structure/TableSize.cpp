@@ -42,7 +42,7 @@ tablesize tablesize::operator*(const tablesize& rhs) const{
 }
 void tablesize::operator*=(const tablesize& rhs){
 	if(rhs.isInfinite() || isInfinite()){
-		return;
+		_type = TableSizeType::TST_INFINITE;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
 		_type = TableSizeType::TST_APPROXIMATED;
