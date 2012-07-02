@@ -12,6 +12,7 @@
 
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "structure/StructureComponents.hpp"
 
@@ -64,8 +65,11 @@ BDDTestingSet1 getBDDTestingSet1(int pxmin, int pxmax, int qxmin, int qxmax) {
 	auto factory = FOBDDFactory(manager);
 	result.truebdd = manager->truebdd();
 	result.falsebdd = manager->falsebdd();
+	result.x = manager->getVariable(ts1.x);
 	result.px = factory.turnIntoBdd(ts1.px);
 	result.qx = factory.turnIntoBdd(ts1.qx);
+	result.pxandqx = manager->conjunction(result.px,result.qx);
+
 	result.p0vq0 = factory.turnIntoBdd(ts1.p0vq0);
 	result.Axpx = factory.turnIntoBdd(ts1.Axpx);
 	result.nAxpx = factory.turnIntoBdd(ts1.nAxpx);

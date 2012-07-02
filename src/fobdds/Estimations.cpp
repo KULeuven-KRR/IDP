@@ -67,16 +67,24 @@ map<const FOBDDKernel*, tablesize> BddStatistics::kernelUnivs(const FOBDD* bdd) 
  * Returns the estimated chance that a BDD evaluates to true
  */
 double BddStatistics::estimateChance(const FOBDD* bdd) {
-	auto result = 0;
+	double result = 0;
 	if (bdd == manager->falsebdd()) {
 		result = 0;
 	} else if (bdd == manager->truebdd()) {
 		result = 1;
 	} else {
 		auto kernchance = tabledEstimateChance(bdd->kernel());
+		Assert(kernchance >= 0);
+		Assert(kernchance <= 1);
 		auto falsechance = tabledEstimateChance(bdd->falsebranch());
+		Assert(falsechance >= 0);
+		Assert(falsechance <= 1);
 		auto truechance = tabledEstimateChance(bdd->truebranch());
+		Assert(truechance >= 0);
+		Assert(truechance <= 1);
 		result = (kernchance * truechance) + ((1 - kernchance) * falsechance);
+		Assert(result >= 0);
+		Assert(result <= 1);
 	}
 	return result;
 }
@@ -91,7 +99,11 @@ double BddStatistics::estimateNrAnswers(const FOBDD* bdd, const varset& vars, co
 		return 0;
 	}
 	auto univanswers = univNrAnswers(vars, indices, structure);
-	return toDouble(chance * univanswers);
+	if(univanswers.isInfinite()){
+		return getMaxElem<double>();
+	}
+	Assert(0<= chance && chance <= 1);
+	return chance * toDouble(univanswers);
 }
 double BddStatistics::estimateNrAnswers(const FOBDDKernel* kernel, const varset& vars, const indexset& indices) {
 	auto chance = tabledEstimateChance(kernel);
@@ -133,7 +145,6 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 
 	if (isa<FOBDDAtomKernel>(*kernel)) {
 		auto atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
-
 		auto symbol = atomkernel->symbol();
 		PredInter* pinter;
 		if (symbol->isPredicate()) {
@@ -146,17 +157,27 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
 		auto symbolsize = pt->size();
-
 		auto univsize = tablesize(TST_EXACT, 1);
 		for (auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
 			univsize *= structure->inter((*it)->sort())->size();
 		}
 
 		if (symbolsize.isInfinite()) {
-			return 0;
-		} else {
-			return min(1.0, toDouble(symbolsize / univsize)); // Might be larger than 1 in some cases
+			if (univsize.isInfinite()) {
+				return 0.5;
+			} else {
+				//Shouldn't be possible.
+				Assert(false);
+				return 1;
+			}
 		}
+		if (univsize.isInfinite()) {
+			return 0;
+		}
+		Assert(toDouble(univsize) != 0);
+		Assert(toDouble(symbolsize) <= toDouble(univsize));
+		return toDouble(symbolsize) / toDouble(univsize);
+
 	}
 
 	Assert(isa<FOBDDQuantKernel> (*kernel));

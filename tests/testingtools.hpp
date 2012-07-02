@@ -34,6 +34,7 @@ class VarTerm;
 
 class FOBDD;
 class FOBDDManager;
+class FOBDDVariable;
 
 namespace Tests {
 
@@ -73,8 +74,10 @@ struct BDDTestingSet1{
 	FOBDDManager* manager;
 	const FOBDD* truebdd;
 	const FOBDD* falsebdd;
+	const FOBDDVariable* x;
 	const FOBDD* px;
 	const FOBDD* qx;
+	const FOBDD* pxandqx;
 	const FOBDD* p0vq0;
 	const FOBDD* Axpx; // !x: P(x)
 	const FOBDD* nAxpx; // ~!x: P(x)

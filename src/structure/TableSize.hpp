@@ -46,7 +46,7 @@ double toDouble(const tablesize& val);
 
 template<class Num>
 tablesize operator*(Num lhs, const tablesize& rhs){
-	return tablesize(TableSizeType::TST_EXACT, lhs)+rhs;
+	return tablesize(TableSizeType::TST_EXACT, lhs)*rhs;
 }
 template<class Num>
 tablesize operator*(const tablesize& lhs, Num rhs){
@@ -78,7 +78,7 @@ tablesize operator+(const tablesize& lhs, Num rhs){
 }
 template<class Num>
 Num& operator+=(Num& val, const tablesize& rhs){
-	auto n= tablesize(TableSizeType::TST_EXACT, val)+rhs;
+	auto n= val+rhs;
 	if(n.isInfinite()){
 		val = getMaxElem<Num>();
 	}else{
@@ -88,8 +88,8 @@ Num& operator+=(Num& val, const tablesize& rhs){
 }
 template<class Num>
 Num& operator*=(Num& val, const tablesize& rhs){
-	auto n= tablesize(TableSizeType::TST_EXACT, val)*rhs;
-	if(n.isInfinite()){
+	auto n= val*rhs;
+	if(n.isInfinite()){ //Voor unknown werkt dit niet goed
 		val = getMaxElem<Num>();
 	}else{
 		val = n._size;
