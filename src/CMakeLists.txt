@@ -11,12 +11,11 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/source"
 	"${PROJECT_SOURCE_DIR}/lib/minisatid/src/external"
-	"${PROJECT_SOURCE_DIR}/lib/linenoise/include"
 	"${PROJECT_SOURCE_DIR}/lib/lua/src"
 	"${PROJECT_SOURCE_DIR}/src"
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	"${PROJECT_SOURCE_DIR}/lib/pluscallback1.7/"
-	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
+	"${PROJECT_SOURCE_DIR}/lib/interactiveShell/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION}\\\" ")
