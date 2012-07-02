@@ -1,0 +1,27 @@
+procedure getExpectedNbOfModels() {
+  return 6
+}
+
+vocabulary V {
+	type Dot
+	type X isa nat
+  XPos(Dot): X
+}
+
+theory T : V {
+  ! d1 d2 : d1 ~= d2 => XPos(d1) ~= XPos(d2).
+}
+
+structure S : V {
+	Dot = {1..3}
+	X = {0..6}
+}
+
+term t : V {
+  sum{ id : Dot(id) : XPos(id) }
+}
+
+theory T2 : V {
+  sum{ id : Dot(id) : XPos(id) } = 0+1+2.
+}
+

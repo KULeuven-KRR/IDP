@@ -14,6 +14,11 @@ procedure OptimizeWithSymBreaking() {
 	return run()
 }
 
+procedure OptimizeWithCP() {
+  stdoptions.cpsupport = true
+  return run()
+}
+
 procedure run() {
 	stdoptions.nbmodels = 0
 	stdoptions.timeout = 20
