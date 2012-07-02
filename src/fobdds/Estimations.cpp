@@ -171,12 +171,6 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		if (toDouble(univsize) == 0) {
 			return 0;
 		}
-#ifndef NDEBUG
-		if (not (toDouble(symbolsize) <= toDouble(univsize))) {
-			std::cerr << toDouble(symbolsize) << " vs " << toDouble(univsize) << endl;
-			std::cerr <<toString(atomkernel)<<endl;
-		}
-#endif
 		Assert(toDouble(symbolsize) <= toDouble(univsize));
 		return toDouble(symbolsize) / toDouble(univsize);
 
