@@ -1,9 +1,9 @@
-vocabulary voc {
-	type Univ isa int //int is beperking door het huidige typesysteem
+Given:
+	type int Univ //int is beperking door het huidige typesysteem
 	None: Univ
-	type Capacity isa int
+	type int Capacity
 
-	type Time isa int
+	type int Time
 	T0: Time
 	TLast: Time
 	
@@ -16,20 +16,48 @@ vocabulary voc {
 	type Connector
 	type Invocation
 	
-	ConnectsL(Link,Component,Time)
-	ConnectsC(Connector,Component,Time)
-	
 	type Node
-	Hosts(Node,Component,Time)
+
 
 	type Interface
+
+	type Principal
+	type AdminEntity isa Principal
+	type LoggerEntity isa Principal
+	LoggingSystem:LoggerEntity
+
+	type int UID isa Univ
+	type int Message isa Univ
+	type int ProcessedMessage isa Message
+	type int SignedMessage isa Message
+	
+	type Shop isa Component
+	type Logger isa Component
+	
+	Verify: Operation
+	Log: Operation
+	Read: Operation
+	
+	LogIF:Interface
+	LogAdminIF: Interface
+	
+Find:
+	Buffer(Connector,Invocation,Time)
+	TamperProof(Connector)
+	Invoke(Invocation)
+	Execute(Invocation)
+	ExecutedBy(Invocation,Component,Time)
+	HasAuthenticCaller(Invocation)
+	CanIntercept(Component,Invocation, Time)
+	Equiv(Invocation,Invocation)
+	Live(Invocation)
+	AtLeastOnceInvocationSemantics()
+
+	ConnectsL(Link,Component,Time)
+	ConnectsC(Connector,Component,Time)
+	Hosts(Node,Component,Time)
 	Methods(Interface,Operation)
 	RealizedBy(Interface,Component)
-	
-	Buffer(Connector,Invocation,Time)
-	
-	TamperProof(Connector)
-	
 	IsReliableL(Link)
 	IsReliableC(Connector)
 	
@@ -41,31 +69,7 @@ vocabulary voc {
 	Receivers(Invocation,Component)
 	partial Invoked(Invocation):Time
 	partial Executed(Invocation):Time
-	
-	Invoke(Invocation)
-	Execute(Invocation)
-	ExecutedBy(Invocation,Component,Time)
-	
-	HasAuthenticCaller(Invocation)
-	
-	CanIntercept(Component,Invocation, Time)
-	
-	Equiv(Invocation,Invocation)
 
-	Live(Invocation)
-	
-	AtLeastOnceInvocationSemantics()
-
-	type Principal
-	type AdminEntity isa Principal
-	type LoggerEntity isa Principal
-	LoggingSystem:LoggerEntity
-
-	type UID isa Univ
-	type Message isa Univ
-	type ProcessedMessage isa Message
-	type SignedMessage isa Message
-	
 	partial Content(ProcessedMessage, Time): Message
 	partial Id(ProcessedMessage, Time): UID
 	
@@ -75,17 +79,7 @@ vocabulary voc {
 	
 	Sign(SignedMessage, Principal, Time)
 	IsValid(SignedMessage, Time)
-	
-	LogIF:Interface
-	LogAdminIF: Interface
-	
-	Verify: Operation
-	Log: Operation
-	Read: Operation
-
-	type Shop isa Component
-	type Logger isa Component
-	
+		
 	partial LoggingBy(Shop, Time): Logger
 	
 	Logged(SignedMessage, Time, Logger)
@@ -121,9 +115,8 @@ vocabulary voc {
 	NothingDeleted()
 
 	Show
-}
-
-structure struct:voc {
+	
+Data:
 	Operation = {Read; Log; Verify}
 	Verify = Verify
 	Read = Read
@@ -162,10 +155,8 @@ structure struct:voc {
 	Message = {0..5}
 	ProcessedMessage = {0..2}
 	SignedMessage = {3..5}
-}
-
-theory theory:voc {
-
+	
+Satisfying:
 	{ 
 		IsReliableL(l) <- !t[Time] comp: (t<TLast & ConnectsL(l,comp,t)) => ConnectsL(l,comp,t+1).
 		IsReliableC(c) <- !t[Time] comp: (t<TLast & ConnectsC(c,comp,t)) => ConnectsC(c,comp,t+1).
@@ -417,24 +408,8 @@ theory theory:voc {
 	
 	~NothingDeleted.
 	
-	!i i2: i<i2 & (?t[Time]: Invoked(i)=t) & (?t[Time]: Invoked(i2)=t) => Invoked(i)=<Invoked(i2).
+/*	!i i2: i<i2 & (?t[Time]: Invoked(i)=t) & (?t[Time]: Invoked(i2)=t) => Invoked(i)=<Invoked(i2).
 	!c c2 conn conn2 t: ConnectsC(conn, c, t) & ConnectsC(conn2, c2, t) & c<c2 => conn=<conn2.
 	!t c c2 s s2: Content(s, c, t) & Content(s2, c2, t) & c<c2 => s=<s2.
 	!t p p2: Content(p, t)<Content(p2, t) => p=<p2.
-	!t c c2 s s2: Hosts(s, c, t) & Hosts(s2, c2, t) & c<c2 => s=<s2.
-}
-
-procedure main(){
-	local x = os.clock()
-	stdoptions.nbmodels=1
-	stdoptions.symmetrybreaking = "static"
-	stdoptions.satverbosity=1
-	stdoptions.liftedunitpropagation = true
-	stdoptions.groundwithbounds = true
-	stdoptions.groundverbosity=0
-	ground(theory, struct)
-//	local solutions = modelexpand(theory, struct)
-	print("*Total_program_time: " .. os.clock()-x)
-}
-
-
+	!t c c2 s s2: Hosts(s, c, t) & Hosts(s2, c2, t) & c<c2 => s=<s2.*/
