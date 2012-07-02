@@ -127,31 +127,34 @@ ostream& NSPair::put(ostream& output) const {
 	return output;
 }
 
-/*************
- Insert
- *************/
+/**********
+ * Insert
+ **********/
 
 bool Insert::belongsToVoc(Sort* s) const {
-	if (_currvocabulary->contains(s))
+	if (_currvocabulary->contains(s)) {
 		return true;
+	}
 	return false;
 }
 
 bool Insert::belongsToVoc(Predicate* p) const {
-	if (_currvocabulary->contains(p))
+	if (_currvocabulary->contains(p)) {
 		return true;
+	}
 	return false;
 }
 
 bool Insert::belongsToVoc(Function* f) const {
-	if (_currvocabulary->contains(f))
+	if (_currvocabulary->contains(f)) {
 		return true;
+	}
 	return false;
 }
 
 std::set<Predicate*> Insert::noArPredInScope(const string& name) const {
 	std::set<Predicate*> vp;
-	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
+	for (size_t n = 0; n < _usingvocab.size(); ++n) {
 		std::set<Predicate*> nvp = _usingvocab[n]->pred_no_arity(name);
 		vp.insert(nvp.cbegin(), nvp.cend());
 	}
@@ -159,24 +162,26 @@ std::set<Predicate*> Insert::noArPredInScope(const string& name) const {
 }
 
 std::set<Predicate*> Insert::noArPredInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return noArPredInScope(vs[0]);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n)
+		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
+		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v)
+		if (v) {
 			return v->pred_no_arity(vs.back());
-		else
+		} else {
 			return std::set<Predicate*>();
+		}
 	}
 }
 
 std::set<Function*> Insert::noArFuncInScope(const string& name) const {
 	std::set<Function*> vf;
-	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
+	for (size_t n = 0; n < _usingvocab.size(); ++n) {
 		std::set<Function*> nvf = _usingvocab[n]->func_no_arity(name);
 		vf.insert(nvf.cbegin(), nvf.cend());
 	}
@@ -184,84 +189,92 @@ std::set<Function*> Insert::noArFuncInScope(const string& name) const {
 }
 
 std::set<Function*> Insert::noArFuncInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return noArFuncInScope(vs[0]);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n)
+		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
+		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v)
+		if (v) {
 			return v->func_no_arity(vs.back());
-		else
+		} else {
 			return std::set<Function*>();
+		}
 	}
 }
 
 Function* Insert::funcInScope(const string& name) const {
 	std::set<Function*> vf;
-	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
+	for (size_t n = 0; n < _usingvocab.size(); ++n) {
 		Function* f = _usingvocab[n]->func(name);
-		if (f)
+		if (f) {
 			vf.insert(f);
+		}
 	}
-	if (vf.empty())
-		return 0;
-	else
+	if (vf.empty()) {
+		return NULL;
+	} else {
 		return FuncUtils::overload(vf);
+	}
 }
 
 Function* Insert::funcInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return funcInScope(vs[0]);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n)
+		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
+		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v)
+		if (v) {
 			return v->func(vs.back());
-		else
-			return 0;
+		} else {
+			return NULL;
+		}
 	}
 }
 
 Predicate* Insert::predInScope(const string& name) const {
 	std::set<Predicate*> vp;
-	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
+	for (size_t n = 0; n < _usingvocab.size(); ++n) {
 		Predicate* p = _usingvocab[n]->pred(name);
-		if (p)
+		if (p) {
 			vp.insert(p);
+		}
 	}
-	if (vp.empty())
-		return 0;
-	else
+	if (vp.empty()) {
+		return NULL;
+	} else {
 		return PredUtils::overload(vp);
+	}
 }
 
 Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return predInScope(vs[0]);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n) {
+		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
 		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
 		if (v) {
 			return v->pred(vs.back());
 		} else {
-			return 0;
+			return NULL;
 		}
 	}
 }
 
 Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 	Sort* s = NULL;
-	for (unsigned int n = 0; n < _usingvocab.size(); ++n) {
+	for (size_t n = 0; n < _usingvocab.size(); ++n) {
 		auto temp = _usingvocab[n]->sort(name);
 		if (temp == NULL) {
 			continue;
@@ -276,13 +289,14 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 }
 
 Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return sortInScope(vs[0], pi);
 	} else {
 		vector<string> vv(vs.size() - 1);
-		for (unsigned int n = 0; n < vv.size(); ++n)
+		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
+		}
 		Vocabulary* v = vocabularyInScope(vv, pi);
 		if (v) {
 			return v->sort(vs.back());
@@ -293,169 +307,184 @@ Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
 }
 
 Namespace* Insert::namespaceInScope(const string& name, const ParseInfo& pi) const {
-	Namespace* ns = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	Namespace* ns = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isSubspace(name)) {
-			if (ns)
+			if (ns) {
 				overloaded(ComponentType::Namespace, name, _usingspace[n]->pi(), ns->pi(), pi);
-			else
+			} else {
 				ns = _usingspace[n]->subspace(name);
+			}
 		}
 	}
 	return ns;
 }
 
 Namespace* Insert::namespaceInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return namespaceInScope(vs[0], pi);
 	} else {
 		Namespace* ns = namespaceInScope(vs[0], pi);
-		for (unsigned int n = 1; n < vs.size(); ++n) {
+		for (size_t n = 1; n < vs.size(); ++n) {
 			if (ns->isSubspace(vs[n])) {
 				ns = ns->subspace(vs[n]);
-			} else
-				return 0;
+			} else {
+				return NULL;
+			}
 		}
 		return ns;
 	}
 }
 
 Vocabulary* Insert::vocabularyInScope(const string& name, const ParseInfo& pi) const {
-	Vocabulary* v = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	Vocabulary* v = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isVocab(name)) {
-			if (v)
+			if (v) {
 				overloaded(ComponentType::Vocabulary, name, _usingspace[n]->vocabulary(name)->pi(), v->pi(), pi);
-			else
+			} else {
 				v = _usingspace[n]->vocabulary(name);
+			}
 		}
 	}
 	return v;
 }
 
 Vocabulary* Insert::vocabularyInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return vocabularyInScope(vs[0], pi);
 	} else {
 		Namespace* ns = namespaceInScope(vs[0], pi);
 		if (ns) {
-			for (unsigned int n = 1; n < (vs.size() - 1); ++n) {
+			for (size_t n = 1; n < (vs.size() - 1); ++n) {
 				if (ns->isSubspace(vs[n])) {
 					ns = ns->subspace(vs[n]);
-				} else
-					return 0;
+				} else {
+					return NULL;
+				}
 			}
 			if (ns->isVocab(vs.back())) {
 				return ns->vocabulary(vs.back());
-			} else
-				return 0;
-		} else
-			return 0;
+			} else {
+				return NULL;
+			}
+		} else {
+			return NULL;
+		}
 	}
 }
 
 AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo& pi) const {
-	AbstractStructure* s = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	AbstractStructure* s = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isStructure(name)) {
-			if (s)
+			if (s) {
 				overloaded(ComponentType::Structure, name, _usingspace[n]->structure(name)->pi(), s->pi(), pi);
-			else
+			} else {
 				s = _usingspace[n]->structure(name);
+			}
 		}
 	}
 	return s;
 }
 
 AbstractStructure* Insert::structureInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return structureInScope(vs[0], pi);
 	} else {
 		Namespace* ns = namespaceInScope(vs[0], pi);
-		for (unsigned int n = 1; n < (vs.size() - 1); ++n) {
+		for (size_t n = 1; n < (vs.size() - 1); ++n) {
 			if (ns->isSubspace(vs[n])) {
 				ns = ns->subspace(vs[n]);
-			} else
-				return 0;
+			} else {
+				return NULL;
+			}
 		}
 		if (ns->isStructure(vs.back())) {
 			return ns->structure(vs.back());
-		} else
-			return 0;
+		} else {
+			return NULL;
+		}
 	}
 }
 
 Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
-	Query* q = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	Query* q = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isQuery(name)) {
-			if (q)
+			if (q) {
 				overloaded(ComponentType::Query, name, _usingspace[n]->query(name)->pi(), q->pi(), pi);
-			else
+			} else {
 				q = _usingspace[n]->query(name);
+			}
 		}
 	}
 	return q;
 }
 
 Term* Insert::termInScope(const string& name, const ParseInfo& pi) const {
-	Term* t = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	Term* t = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isTerm(name)) {
-			if (t)
+			if (t) {
 				overloaded(ComponentType::Term, name, _usingspace[n]->term(name)->pi(), t->pi(), pi);
-			else
+			} else {
 				t = _usingspace[n]->term(name);
+			}
 		}
 	}
 	return t;
 }
 
 AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) const {
-	AbstractTheory* th = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	AbstractTheory* th = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isTheory(name)) {
-			if (th)
+			if (th) {
 				overloaded(ComponentType::Theory, name, _usingspace[n]->theory(name)->pi(), th->pi(), pi);
-			else
+			} else {
 				th = _usingspace[n]->theory(name);
+			}
 		}
 	}
 	return th;
 }
 
 UserProcedure* Insert::procedureInScope(const string& name, const ParseInfo& pi) const {
-	UserProcedure* lp = 0;
-	for (unsigned int n = 0; n < _usingspace.size(); ++n) {
+	UserProcedure* lp = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isProc(name)) {
-			if (lp)
+			if (lp) {
 				overloaded(ComponentType::Procedure, name, _usingspace[n]->procedure(name)->pi(), lp->pi(), pi);
-			else
+			} else {
 				lp = _usingspace[n]->procedure(name);
+			}
 		}
 	}
 	return lp;
 }
 
 UserProcedure* Insert::procedureInScope(const vector<string>& vs, const ParseInfo& pi) const {
-	Assert(!vs.empty());
+	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return procedureInScope(vs[0], pi);
 	} else {
 		Namespace* ns = namespaceInScope(vs[0], pi);
-		for (unsigned int n = 1; n < (vs.size() - 1); ++n) {
+		for (size_t n = 1; n < (vs.size() - 1); ++n) {
 			if (ns->isSubspace(vs[n])) {
 				ns = ns->subspace(vs[n]);
-			} else
-				return 0;
+			} else {
+				return NULL;
+			}
 		}
 		if (ns->isProc(vs.back())) {
 			return ns->procedure(vs.back());
-		} else
-			return 0;
+		} else {
+			return NULL;
+		}
 	}
 }
 
@@ -791,15 +820,15 @@ void Insert::closequery(Query* q) {
 
 void Insert::closeterm(Term* t) {
 	_curr_vars.clear();
-	if (t == NULL) {
-		return;
+	if (t) {
+		TermUtils::deriveSorts(_currvocabulary, t);
+		TermUtils::checkSorts(_currvocabulary, t);
+		_currspace->add(_currterm, t);
+		if (_currspace->isGlobal()) {
+			LuaConnection::addGlobal(_currterm, t);
+		}
 	}
-	TermUtils::deriveSorts(_currvocabulary, t);
-	TermUtils::checkSorts(_currvocabulary, t);
-	_currspace->add(_currterm, t);
-	if (_currspace->isGlobal()) {
-		LuaConnection::addGlobal(_currterm, t);
-	}
+	closeblock();
 }
 
 void Insert::openstructure(const string& sname, YYLTYPE l) {
@@ -848,9 +877,15 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 	_currspace->add(_currprocedure);
 
 	// include the namespaces and vocabularies in scope
+	//FIXME Refactor!! Template?
 	for (auto it = _usingspace.cbegin(); it != _usingspace.cend(); ++it) {
-		if (!(*it)->isGlobal()) {
+		if (not (*it)->isGlobal()) {
 			stringstream sstr;
+//			for (auto jt = (*it)->subspaces().cbegin(); jt != (*it)->subspaces().cend(); ++jt) {
+//				sstr << "local " << jt->second->name() << " = ";
+//				(*it)->putLuaName(sstr);
+//				sstr << '.' << jt->second->name() << '\n';
+//			}
 			for (auto jt = (*it)->procedures().cbegin(); jt != (*it)->procedures().cend(); ++jt) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
@@ -870,6 +905,16 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 				sstr << "local " << jt->second->name() << " = ";
 				(*it)->putLuaName(sstr);
 				sstr << '.' << jt->second->name() << '\n';
+			}
+			for (auto jt = (*it)->queries().cbegin(); jt != (*it)->queries().cend(); ++jt) {
+				sstr << "local " << jt->first << " = ";
+				(*it)->putLuaName(sstr);
+				sstr << '.' << jt->first << '\n';
+			}
+			for (auto jt = (*it)->terms().cbegin(); jt != (*it)->terms().cend(); ++jt) {
+				sstr << "local " << jt->first << " = ";
+				(*it)->putLuaName(sstr);
+				sstr << '.' << jt->first << '\n';
 			}
 			_currprocedure->add(sstr.str());
 		}
@@ -1558,8 +1603,9 @@ Variable* Insert::quantifiedvar(const string& name, YYLTYPE l) {
 
 Variable* Insert::quantifiedvar(const string& name, Sort* sort, YYLTYPE l) {
 	auto v = quantifiedvar(name, l);
-	if (sort)
+	if (sort) {
 		v->sort(sort);
+	}
 	return v;
 }
 
@@ -1571,14 +1617,16 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 		} else {
 			ParseInfo pi = parseinfo(l);
 			string uname = toString(vs);
-			if (_currtheory)
+			if (_currtheory) {
 				notInVocabularyOf(ComponentType::Sort, ComponentType::Theory, uname, _currtheory->name(), pi);
-			else if (_currstructure)
+			} else if (_currstructure) {
 				notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, uname, _currstructure->name(), pi);
-			return 0;
+			}
+			return NULL;
 		}
-	} else
-		return 0;
+	} else {
+		return NULL;
+	}
 }
 
 Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
