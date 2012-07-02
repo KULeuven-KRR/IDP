@@ -86,7 +86,7 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 		w.push_back(MinisatID::Weight(*i));
 	}
 	vector<uint> vars;
-	for(auto i=varids.cbegin(); i<varids.cend(); ++i) {
+	for (auto i=varids.cbegin(); i<varids.cend(); ++i) {
 		vars.push_back(i->id);
 	}
 	MinisatID::CPSumWeighted sentence(head, vars, w, rel, bound);
