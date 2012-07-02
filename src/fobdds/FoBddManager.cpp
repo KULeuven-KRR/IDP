@@ -1345,6 +1345,23 @@ vector<Path> FOBDDManager::pathsToFalse(const FOBDD* bdd) const {
 /**
  * Return all kernels of the given bdd
  */
+int countkernels(const FOBDD* bdd, const FOBDDManager* manager) {
+	Assert(bdd != NULL);
+	int result = 0;
+	if (bdd != manager->truebdd() && bdd != manager->falsebdd()) {
+		result += countkernels(bdd->falsebranch(), manager);
+		result += countkernels(bdd->truebranch(), manager);
+		result+=1;
+		if (isa<FOBDDQuantKernel>(*(bdd->kernel()))) {
+			result += countkernels(dynamic_cast<const FOBDDQuantKernel*>(bdd->kernel())->bdd(), manager);
+		}
+	}
+	return result;
+}
+
+/**
+ * Return all kernels of the given bdd
+ */
 set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager) {
 	Assert(bdd != NULL);
 	set<const FOBDDKernel*> result;
@@ -1416,24 +1433,18 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 		return;
 	}
 	auto kernels = allkernels(query, this);
-	cerr <<"Nb of kernels = " <<kernels.size() <<"\n";
+//	cerr <<"Nb of unique kernels = " <<kernels.size() <<"\n";
+//	cerr <<"Nb of kernels = " <<countkernels(query, this) <<"\n";
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		CHECKTERMINATION;
-		double bestscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
-		int bestposition = 0;
-		// move upward
+		// move kernel to the top
 		while ((*it)->number() != 0) {
 			moveUp(*it);
-			double currscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
-			if (currscore < bestscore) {
-				bestscore = currscore;
-				bestposition = 0;
-			} else
-				bestposition += 1;
 		}
-		//AT THIS POINT: bestposition is the number of "movedowns" needed from the top to get to bestpositions
-		//And the kernel is located at the top
 
+		double bestscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
+		int bestposition = 0;
+		//AT THIS POINT: bestposition is the number of "movedowns" needed from the top to get to bestpositions
 		// move downward
 		while ((*it)->number() < _kernels[(*it)->category()].size() - 1) {
 			moveDown(*it);
@@ -1453,7 +1464,7 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 			moveUp(*it);
 		}
 	}
-	cerr <<"\tDone\n";
+//	cerr <<"\tDone\n";
 }
 
 double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,

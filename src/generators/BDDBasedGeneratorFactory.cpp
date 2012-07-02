@@ -486,7 +486,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 	while (not atoms_to_order.empty()) {
 		Formula *bestatom = NULL;
 		double bestcost = getMaxElem<double>();
-		cerr <<"ITERATION\n";
+//		cerr <<"ITERATION\n";
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 			bool currinverse = false;
 			if (*it == origatom) {
@@ -517,7 +517,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		}
 	}
 	Assert(free_vars.empty());
-	cerr <<"Conjunction" <<toString(orderedconjunction) <<"\n";
+//	cerr <<"Conjunction" <<toString(orderedconjunction) <<"\n";
 	return orderedconjunction;
 }
 

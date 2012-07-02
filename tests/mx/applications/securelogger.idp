@@ -432,7 +432,8 @@ procedure main(){
 	stdoptions.liftedunitpropagation = true
 	stdoptions.groundwithbounds = true
 	stdoptions.groundverbosity=0
-	local solutions = modelexpand(theory, struct)
+	ground(theory, struct)
+//	local solutions = modelexpand(theory, struct)
 	print("*Total_program_time: " .. os.clock()-x)
 }
 
