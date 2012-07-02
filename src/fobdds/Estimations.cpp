@@ -163,7 +163,6 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		}
 
 		if (symbolsize.isInfinite()) {
-			Assert(univsize.isInfinite());
 			return 0.5;
 		}
 		if (univsize.isInfinite()) {
