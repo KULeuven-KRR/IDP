@@ -147,7 +147,7 @@ public:
 		return isStored(atom) && (getType(atom) == AtomType::INPUT || getType(atom) == AtomType::CPGRAPHEQ);
 	}
 	bool isTseitinWithSubformula(int atom) const {
-		return isStored(atom) && (getType(atom) == AtomType::TSEITINWITHSUBFORMULA || getType(atom) == AtomType::CPGRAPHEQ);;
+		return isStored(atom) && (getType(atom) == AtomType::TSEITINWITHSUBFORMULA || getType(atom) == AtomType::CPGRAPHEQ);
 	}
 	PFSymbol* getSymbol(Lit atom) const {
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->first!=NULL);

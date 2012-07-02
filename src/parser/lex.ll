@@ -162,6 +162,7 @@ void reset(){
 %}
 
 %option noyywrap
+%option noinput
 %option nounput
 %option never-interactive
 
