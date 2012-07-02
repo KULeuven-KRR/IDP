@@ -267,9 +267,7 @@ Grounder* GrounderFactory::ground() {
 			switch (_minimizeterm->type()) {
 			case TermType::AGG: {
 				auto term = dynamic_cast<const AggTerm*>(_minimizeterm);
-				if (term == NULL) {
-					throw notyetimplemented("Optimization over non-aggregate terms");
-				}
+				Assert(term != NULL);
 				if (term->function() == AggFunction::PROD) {
 					for (auto i = term->set()->getSubSets().cbegin(); i != term->set()->getSubSets().cend(); ++i) {
 						auto sort = (*i)->getTerm()->sort();

@@ -22,7 +22,7 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 }
 
 bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {
-	if (f->partial()) { // TODO For now, partial terms are never eligible for CP
+	if (f->partial()) { // TODO For now, user-defined partial terms are never eligible for CP
 		return false;
 	}
 	if (not FuncUtils::isIntFunc(f, v)) {
@@ -59,7 +59,7 @@ bool eligibleForCP(const AggFunction& f) {
 }
 
 bool eligibleForCP(const AggTerm* at, AbstractStructure* str) {
-	if (eligibleForCP(at->function()) && str != NULL) {
+	if (eligibleForCP(at->function()) and str != NULL) {
 		auto enumset = at->set();
 		for (auto i = enumset->getSets().cbegin(); i < enumset->getSets().cend(); ++i) {
 //			if (not FormulaUtils::approxTwoValued((*i)->getCondition(), str)) {
