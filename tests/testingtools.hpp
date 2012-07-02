@@ -32,6 +32,10 @@ class DomainTerm;
 class QuantSetExpr;
 class VarTerm;
 
+class FOBDD;
+class FOBDDManager;
+class FOBDDVariable;
+
 namespace Tests {
 
 struct TestingSet1 {
@@ -65,8 +69,24 @@ struct TestingSet1 {
 	AggForm* maxxpxgeq0; // MAX{x|P(x)} >= 0
 };
 
+struct BDDTestingSet1{
+	TestingSet1 ts1;
+	FOBDDManager* manager;
+	const FOBDD* truebdd;
+	const FOBDD* falsebdd;
+	const FOBDDVariable* x;
+	const FOBDD* px;
+	const FOBDD* qx;
+	const FOBDD* pxandqx;
+	const FOBDD* p0vq0;
+	const FOBDD* Axpx; // !x: P(x)
+	const FOBDD* nAxpx; // ~!x: P(x)
+	const FOBDD* nExqx; // ?x: Q(x)
+};
+
 TestingSet1 getTestingSet1();
 
+BDDTestingSet1 getBDDTestingSet1(int pxmin, int pxmax, int qxmin, int qxmax);
 void cleanTestingSet1();
 
 }

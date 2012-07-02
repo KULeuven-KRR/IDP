@@ -477,15 +477,17 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			return createFromSimplePredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
 		}
 	}
-	return GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+	return  GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+
 }
 
 vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, set<Variable*> free_vars,
 		const AbstractStructure *& structure) {
 	vector<Formula*> orderedconjunction;
-	while (!atoms_to_order.empty()) {
-		Formula *bestatom = 0;
+	while (not atoms_to_order.empty()) {
+		Formula *bestatom = NULL;
 		double bestcost = getMaxElem<double>();
+//		cerr <<"ITERATION\n";
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 			bool currinverse = false;
 			if (*it == origatom) {
@@ -506,7 +508,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			}
 		}
 
-		if (!bestatom) {
+		if (bestatom == NULL) {
 			bestatom = *(atoms_to_order.cbegin());
 		}
 		orderedconjunction.push_back(bestatom);
@@ -516,6 +518,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		}
 	}
 	Assert(free_vars.empty());
+
 	return orderedconjunction;
 }
 
