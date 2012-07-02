@@ -54,8 +54,8 @@ void Namespace::add(AbstractTheory* t) {
 void Namespace::add(UserProcedure* l) {
 	_procedures[l->name()] = l;
 }
-void Namespace::add(const string& name, Query* f) {
-	_queries[name] = f;
+void Namespace::add(const string& name, Query* q) {
+	_queries[name] = q;
 }
 void Namespace::add(const string& name, Term* t) {
 	_terms[name] = t;

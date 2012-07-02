@@ -121,7 +121,7 @@ procedure minimize(theory, structure, term){
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	local solutions, trace = idpintern.minimize(clonetheo,structure, term)
+	local solutions, trace = idpintern.minimize(clonetheo,structure,term)
 	local solutions2 = alltwovaluedextensions(solutions)
 	return solutions2, trace
 }
@@ -140,7 +140,7 @@ procedure groundeq(theory, structure, modeleq) {
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.ground(clonetheo,structure, modeleq) 
+	return idpintern.ground(clonetheo,structure,modeleq)
 }
 
 /**
@@ -165,7 +165,7 @@ procedure printgrounding(theory, structure) {
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.printgrounding(clonetheo,structure, true) 
+	return idpintern.printgrounding(clonetheo,structure,true)
 }
 
 /**
@@ -202,7 +202,7 @@ procedure groundpropagate(theory,structure){
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.groundpropagate(clonetheo,structure) 
+	return idpintern.groundpropagate(clonetheo,structure)
 }
 
 /**
@@ -220,7 +220,7 @@ procedure propagate(theory,structure){
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.propagate(clonetheo,structure) 
+	return idpintern.propagate(clonetheo,structure)
 }
 
 /*/**

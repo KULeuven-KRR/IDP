@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef NAMESPACE_HPP
 #define NAMESPACE_HPP
@@ -22,12 +22,11 @@ class Query;
 class Term;
 
 #include "parseinfo.hpp"
-
 #include "GlobalData.hpp"
 
-/*****************
- Namespaces
- *****************/
+/**************
+ * Namespaces
+ **************/
 
 /**
  * Class to represent namespaces
@@ -51,7 +50,9 @@ private:
 
 public:
 	Namespace(std::string name, Namespace* super, const ParseInfo& pi)
-			: _name(name), _superspace(super), _pi(pi) {
+			: 	_name(name),
+				_superspace(super),
+				_pi(pi) {
 		if (super) {
 			super->add(this);
 		}
@@ -67,11 +68,11 @@ public:
 	Namespace* super() const {
 		return _superspace;
 	}
-	bool hasParent(Namespace* ns) const{
-		if(super()==ns){
+	bool hasParent(Namespace* ns) const {
+		if (super() == ns) {
 			return true;
 		}
-		if(super()==NULL){
+		if (super() == NULL) {
 			return false;
 		}
 		return super()->hasParent(ns);
