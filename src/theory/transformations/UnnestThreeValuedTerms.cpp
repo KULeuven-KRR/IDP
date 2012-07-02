@@ -122,9 +122,9 @@ Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
 	} else {
 		_cpablefunction = false;
 	}
-	if (FuncUtils::isIntSum(t->function(), _structure->vocabulary()) or TermUtils::isTermWithIntFactor(t, _structure)) {
-		_cpablerelation = TruthValue::True;
-	} else {
+	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary()) and not TermUtils::isTermWithIntFactor(t, _structure)) {
+		//Note: Leave cpable flag as is when the current functerm is a sum or a term with a factor!
+		// They get a special treatment for CP.
 		_cpablerelation = TruthValue::False;
 	}
 
@@ -137,9 +137,9 @@ Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
 
 Rule* UnnestThreeValuedTerms::visit(Rule* r) {
 	// FIXME allowed to unnest non-recursively defined functions!
-	auto savedrel = _cpablerelation;
-	_cpablerelation = TruthValue::False;
+//	auto savedrel = _cpablerelation;
+//	_cpablerelation = TruthValue::False;
 	auto result = UnnestTerms::visit(r);
-	_cpablerelation = savedrel;
+//	_cpablerelation = savedrel;
 	return result;
 }
