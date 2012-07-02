@@ -109,7 +109,7 @@ message(STATUS "Rpath for installation is \"${CMAKE_INSTALL_RPATH}\"")
 
 ### Adding subprojects
 add_subdirectory(lib/minisatid)
-add_subdirectory(lib/linenoise)
+add_subdirectory(lib/interactiveShell)
 if(NOT TARGET gtest AND BUILDTESTS)
 	add_subdirectory(lib/gtest-1.6.0)
 endif() 

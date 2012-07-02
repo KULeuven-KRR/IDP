@@ -4,3 +4,6 @@
 [submodule "lib/lua"]
 	path = lib/lua
 	url = git://github.com/broesdecat/autotoolized-lua.git
+[submodule "lib/interactiveShell"]
+	path = lib/interactiveShell
+	url = git://github.com/broesdecat/linenoise.git
