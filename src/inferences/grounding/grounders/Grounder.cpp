@@ -8,6 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
+#include <ctime>
 #include "common.hpp"
 #include "Grounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"

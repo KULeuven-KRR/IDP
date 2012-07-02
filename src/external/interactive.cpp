@@ -14,7 +14,9 @@
 /** Interactive mode **/
 
 #ifdef USEINTERACTIVE
-#include "linenoise.h"
+extern "C"{
+	#include "linenoise.h"
+}
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
