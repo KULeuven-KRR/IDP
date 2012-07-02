@@ -158,17 +158,26 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
 		auto symbolsize = pt->size();
 		auto univsize = tablesize(TST_EXACT, 1);
-		for (auto it = atomkernel->args().cbegin(); it != atomkernel->args().cend(); ++it) {
-			univsize *= structure->inter((*it)->sort())->size();
+		for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
+			univsize *= structure->inter((*it))->size();
 		}
 
 		if (symbolsize.isInfinite()) {
+			Assert(univsize.isInfinite());
 			return 0.5;
 		}
 		if (univsize.isInfinite()) {
 			return 0;
 		}
-		Assert(toDouble(univsize) != 0);
+		if (toDouble(univsize) == 0) {
+			return 0;
+		}
+#ifndef NDEBUG
+		if (not (toDouble(symbolsize) <= toDouble(univsize))) {
+			std::cerr << toDouble(symbolsize) << " vs " << toDouble(univsize) << endl;
+			std::cerr <<toString(atomkernel)<<endl;
+		}
+#endif
 		Assert(toDouble(symbolsize) <= toDouble(univsize));
 		return toDouble(symbolsize) / toDouble(univsize);
 
