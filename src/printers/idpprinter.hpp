@@ -28,7 +28,6 @@ class IDPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
-	const GroundTranslator* _termtranslator;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -45,15 +44,11 @@ private:
 public:
 	IDPPrinter(Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
-				_translator(NULL),
-				_termtranslator(NULL) {
+				_translator(NULL) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
 		_translator = t;
-	}
-	virtual void setTermTranslator(GroundTranslator* t) {
-		_termtranslator = t;
 	}
 
 	virtual void startTheory() {
@@ -252,8 +247,7 @@ public:
 
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
-		_translator = g->translator();
-		_termtranslator = g->translator();
+		setTranslator(g->translator());
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION
 			visit(*i);
@@ -648,10 +642,11 @@ public:
 			break;
 		}
 		CPBound right = cpr->_body->right();
-		if (right._isvarid)
+		if (right._isvarid) {
 			printTerm(right._varid);
-		else
+		} else {
 			output() << right._bound;
+		}
 		output() << ".\n";
 	}
 
@@ -660,8 +655,9 @@ public:
 		output() << "sum[ ";
 		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
 			printTerm(*vit);
-			if (*vit != cpt->varids().back())
+			if (*vit != cpt->varids().back()) {
 				output() << "; ";
+			}
 		}
 		output() << " ]";
 	}
@@ -675,8 +671,9 @@ public:
 			output() << '(';
 			printTerm(*vit);
 			output() << ',' << *wit << ')';
-			if (*vit != cpt->varids().back())
+			if (*vit != cpt->varids().back()) {
 				output() << "; ";
+			}
 		}
 		output() << " ]";
 	}
@@ -852,10 +849,7 @@ public:
 private:
 	void printAtom(int atomnr) {
 		CHECKTERMINATION
-		if (_translator == NULL) {
-			Assert(false);
-			return;
-		}
+		Assert(_translator != NULL);
 
 		// The sign of the literal is handled on higher level.
 		atomnr = abs(atomnr);
@@ -886,7 +880,7 @@ private:
 		// Get the atom's arguments for the translator.
 		const auto& args = _translator->getArgs(atomnr);
 		// Print the atom's arguments.
-		if (typeid(*pfs) == typeid(Predicate)) {
+		if (isa<Predicate>(*pfs)) {
 			if (not args.empty()) {
 				output() << "(";
 				for (size_t n = 0; n < args.size(); ++n) {
@@ -898,7 +892,7 @@ private:
 				output() << ")";
 			}
 		} else {
-			Assert(typeid(*pfs) == typeid(Function));
+			Assert(isa<Function>(*pfs));
 			if (args.size() > 1) {
 				output() << "(";
 				for (size_t n = 0; n < args.size() - 1; ++n) {
@@ -916,9 +910,9 @@ private:
 	void printTerm(VarId termnr) {
 		CHECKTERMINATION
 		// Make sure there is a translator.
-		Assert(_termtranslator);
+		Assert(_translator != NULL);
 		// Get information from the term translator.
-		const Function* func = _termtranslator->getFunction(termnr);
+		const Function* func = _translator->getFunction(termnr);
 		if (func) {
 			// Print the symbol's name.
 			output() << func->name().substr(0, func->name().find('/'));
@@ -936,7 +930,7 @@ private:
 				output() << ']';
 			}
 			// Get the arguments from the translator.
-			const std::vector<GroundTerm>& args = _termtranslator->args(termnr);
+			const std::vector<GroundTerm>& args = _translator->args(termnr);
 			// Print the arguments.
 			if (not args.empty()) {
 				output() << "(";
@@ -956,7 +950,7 @@ private:
 			}
 		} else {
 			output() << "var_" << termnr;
-			//		CPTsBody* cprelation = _termtranslator->cprelation(varid);
+			//		CPTsBody* cprelation = _translator->cprelation(varid);
 			//		CPReification(1,cprelation).accept(this);
 		}
 	}

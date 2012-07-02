@@ -33,7 +33,7 @@ private:
 	int _currenthead;
 	DefId _currentdefnr;
 	AbstractStructure* _structure;
-	const GroundTranslator* _termtranslator;
+	const GroundTranslator* _translator;
 	std::set<VarId> _printedvarids;
 	bool writeTranslation_;
 
@@ -61,7 +61,7 @@ public:
 				_currenthead(-1),
 				_currentdefnr(DefId(0)),
 				_structure(NULL),
-				_termtranslator(NULL),
+				_translator(NULL),
 				writeTranslation_(writetranslation),
 				printer(new MinisatID::RealECNFPrinter<Stream>(new MinisatID::LiteralPrinter(), stream, false)) {
 
@@ -91,8 +91,8 @@ public:
 	virtual void setStructure(AbstractStructure* t) {
 		_structure = t;
 	}
-	virtual void setTermTranslator(GroundTranslator* t) {
-		_termtranslator = t;
+	virtual void setTranslator(GroundTranslator* t) {
+		_translator = t;
 	}
 
 	void visit(const Vocabulary*) {
@@ -123,7 +123,7 @@ public:
 	void visit(const GroundTheory<GroundPolicy>* g) {
 		Assert(isTheoryOpen());
 		setStructure(g->structure());
-		setTermTranslator(g->translator());
+		setTranslator(g->translator());
 		startTheory();
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
 			CHECKTERMINATION
@@ -309,7 +309,8 @@ private:
 		if (_printedvarids.find(varid) == _printedvarids.cend()) {
 			_printedvarids.insert(varid);
 
-			auto domain = _termtranslator->domain(varid);
+			Assert(_translator != NULL);
+			auto domain = _translator->domain(varid);
 			if (domain->isRange()) {
 				int minvalue = domain->first()->value()._int;
 				int maxvalue = domain->last()->value()._int;
