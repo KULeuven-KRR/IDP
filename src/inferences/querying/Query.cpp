@@ -64,8 +64,9 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	BDDToGenerator btg(manager);
 
 	InstGenerator* generator = btg.create(data);
-
-	cerr <<"Generating for " <<toString(generator) <<"\n";
+//	std::cerr<<"BDD:" <<toString(bdd)<<endl;
+//	std::cerr << "GEN"<<toString(generator)<<endl;
+//	cerr <<"Generating for " <<toString(generator) <<"\n";
 
 	// Create an empty table
 	std::vector<SortTable*> vst;

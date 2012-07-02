@@ -477,7 +477,8 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			return createFromSimplePredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
 		}
 	}
-	return GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+	return  GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+
 }
 
 vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, set<Variable*> free_vars,
@@ -517,7 +518,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		}
 	}
 	Assert(free_vars.empty());
-//	cerr <<"Conjunction" <<toString(orderedconjunction) <<"\n";
+
 	return orderedconjunction;
 }
 

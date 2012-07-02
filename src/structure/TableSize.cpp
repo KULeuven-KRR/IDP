@@ -23,8 +23,11 @@ tablesize tablesize::operator+(const tablesize& rhs) const{
 	}
 }
 tablesize tablesize::operator-(const tablesize& rhs) const{
-	if(rhs.isInfinite() || isInfinite()){
+	if(rhs.isInfinite() ){
 		return rhs;
+	}
+	if(isInfinite()){
+		return *this;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
 		return tablesize(TableSizeType::TST_APPROXIMATED, _size-rhs._size);
