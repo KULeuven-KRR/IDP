@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <iostream>
+#include <cmath>
 #include "common.hpp"
 
 enum TableSizeType {
@@ -32,16 +33,69 @@ struct tablesize {
 	tablesize operator+(const tablesize& rhs) const;
 	tablesize operator-(const tablesize& rhs) const;
 	tablesize operator*(const tablesize& rhs) const;
+	void operator*=(const tablesize& rhs);
+	tablesize operator/(const tablesize& rhs) const;
+
+	bool isInfinite() const{
+		return _type==TST_INFINITE || _type==TST_UNKNOWN;
+	}
 };
 
-tablesize operator*(int lhs, const tablesize& rhs);
-tablesize operator*(const tablesize& lhs, int rhs);
+tablesize natlog(const tablesize& val);
+double toDouble(const tablesize& val);
 
-tablesize operator-(const tablesize& lhs, int rhs);
-tablesize operator-(int lhs, const tablesize& rhs);
-
-tablesize operator+(int lhs, const tablesize& rhs);
-tablesize operator+(const tablesize& lhs, int rhs);
+template<class Num>
+tablesize operator*(Num lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs)*rhs;
+}
+template<class Num>
+tablesize operator*(const tablesize& lhs, Num rhs){
+	return rhs*lhs;
+}
+template<class Num>
+tablesize operator/(Num lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs)/rhs;
+}
+template<class Num>
+tablesize operator/(const tablesize& lhs, Num rhs){
+	return lhs/tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<class Num>
+tablesize operator-(const tablesize& lhs, Num rhs){
+	return lhs - tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<class Num>
+tablesize operator-(Num lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs)-rhs;
+}
+template<class Num>
+tablesize operator+(Num lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs)+rhs;
+}
+template<class Num>
+tablesize operator+(const tablesize& lhs, Num rhs){
+	return rhs+lhs;
+}
+template<class Num>
+Num& operator+=(Num& val, const tablesize& rhs){
+	auto n= val+rhs;
+	if(n.isInfinite()){
+		val = getMaxElem<Num>();
+	}else{
+		val = n._size;
+	}
+	return val;
+}
+template<class Num>
+Num& operator*=(Num& val, const tablesize& rhs){
+	auto n= val*rhs;
+	if(n.isInfinite()){ //Voor unknown werkt dit niet goed
+		val = getMaxElem<Num>();
+	}else{
+		val = n._size;
+	}
+	return val;
+}
 
 template<>
 std::string toString(const tablesize& obj);

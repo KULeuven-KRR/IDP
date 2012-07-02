@@ -26,6 +26,7 @@ if(${BUILDTESTS})
 		simpletests.cpp
 		generatortests.cpp
 		bddtests.cpp
+		bddestimatortests.cpp
 		grounderfactorytests.cpp
 		parsertests.cpp
 		overflowtests.cpp

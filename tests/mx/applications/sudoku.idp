@@ -1,0 +1,174 @@
+#include <mx>
+#include "grid.idp"
+
+
+/*********************************************
+	Main procedure: create a sudoku puzzle
+*********************************************/
+procedure main() {
+  stdoptions.groundwithbounds=false
+	puzzle = sudoku::create()
+  sudoku::show(puzzle)
+  solution = sudoku::solve(puzzle)
+  sudoku::show(solution)
+}
+
+namespace sudoku {
+
+	/***************************
+		Background knowledge
+	***************************/
+	
+	vocabulary voc {
+		extern vocabulary grid::simplegridvoc
+		type Num isa nat
+		type Block isa nat
+		Sudoku(Row,Col) : Num
+		InBlock(Block,Row,Col)
+	}
+
+	theory theory : voc {
+		! r n[Num] : ?1 c : Sudoku(r,c) = n.
+		! c n[Num] : ?1 r : Sudoku(r,c) = n.
+		! b n[Num] : ?1 r c : InBlock(b,r,c) & Sudoku(r,c) = n.
+		{ ! c r b : InBlock(b,r,c) <- b = ((r-1) - ((r-1)%3)) + ((c-1) - ((c-1)%3))/3 + 1. }
+	}
+
+	/********************
+		Sudoku solver
+	********************/
+
+	/**
+	 * Solve a sudoku, represented by a partial structure 'input' over voc
+	 */
+	procedure solve(input) {
+		return onemodel(theory,input)
+	}
+
+	/*************
+		Output
+	*************/
+
+	/**
+	 * Print an ascii version of a (partial solution to a) sudoku, given as a predicate table or structure
+	 */
+	procedure showtext(solution) {
+		if type(solution) == "structure" then
+			solution = solution[voc::Sudoku].graph.ct
+		end
+		-- create an empty grid
+		local table = { }
+		for row = 1,9 do table[row] = { } end
+		-- fill the grid with the partial solution
+		for tuple in tuples(solution) do 
+			table[tuple[1]][tuple[2]] = tuple[3]
+		end
+		-- print the grid
+		for row = 1,9 do
+			local str = ""
+			for col = 1,9 do
+				local content = table[row][col]
+				if content then str = str.." "..content.." "
+				else str = str.." . "
+				end
+			end
+			print(str)
+		end
+		print()
+	}
+
+  /**
+   * Show a (partial solution to a) sudoku on the screen using IDPDraw
+   */
+  procedure show(solution) {
+    math.randomseed(os.time())
+    local fname = "/tmp/out"..tostring(math.random(1111,9999))
+		local f = assert(io.open(fname,"w"))
+		for t in tuples(solution[voc::Sudoku].graph.ct) do
+			f:write("sol("..t[1]..','..t[2]..','..t[3]..").\n")
+		end
+		f:close()
+    local bin = "~stef/bin/bin.linux/"
+    local gringo = bin.."gringo"
+    local clasp = bin.."clasp"
+    local idpdraw = bin.."IDPDraw"
+    local drawfile = "~stef/krr/Examples/sudoku/sudoku.draw"
+		os.execute("cat "..fname.." "..drawfile.." | "..gringo.." | "..clasp.." | grep idpd | sed 's/)/)./g' | "..idpdraw.." -I 2>/dev/null &")
+  }
+
+
+	/****************************
+		Create sudoku puzzles
+	****************************/
+
+  /**
+   * Create an empty grid
+   */
+  procedure creategrid(n) {
+		local grd = grid::makesquaregrid(n)
+		idpintern.setvocabulary(grd,voc)
+		grd[voc::Num.type] = range(1,n)
+		grd[voc::Block.type] = range(1,n)
+    return grd
+  }
+
+	/**
+	 * Create a new sudoku puzzle
+	 */
+	procedure create() {
+    local size = 9
+		math.randomseed(os.time())
+
+		-- create an empty grid
+		print("Creating an empty grid")
+		local grd = creategrid(size)
+		showtext(grd)
+
+		-- iterate until one solution is left
+		print("Filling the grid until one solution is left...")
+		stdoptions.nbmodels = 2	
+
+		local currsols = modelexpand(theory,grd)
+		while #currsols > 1 do
+			repeat
+				col = math.random(1,size)
+				row = math.random(1,size)
+				num = currsols[1][voc::Sudoku](row,col)
+			until num ~= currsols[2][voc::Sudoku](row,col)
+
+			maketrue(grd[voc::Sudoku].graph,{row,col,num})
+			showtext(grd)
+			currsols = modelexpand(theory,grd)
+		end 
+
+		-- try to remove elements
+		print("Trying to remove elements ")
+		local change = true
+		while change do
+			change = false
+			local cttab = { }
+			for t in tuples(grd[voc::Sudoku].graph.ct) do
+				local pos = math.random(1,math.max(#cttab,1))
+				table.insert(cttab,pos,t)
+			end
+			for i,v in ipairs(cttab) do
+				makeunknown(grd[voc::Sudoku].graph,v)
+				currsols = modelexpand(theory,grd)
+				if #currsols == 1 then 
+					change = true
+					showtext(grd)
+					break
+				else
+					maketrue(grd[voc::Sudoku].graph,v)
+				end
+			end
+		end
+
+		-- print solution
+		showtext(grd)
+
+    return grd
+	}
+
+}
+

@@ -13,7 +13,7 @@
 // FIXME check overflows (which result in going to INFINITY!)
 
 tablesize tablesize::operator+(const tablesize& rhs) const{
-	if(rhs._type==TableSizeType::TST_UNKNOWN || _type==TableSizeType::TST_UNKNOWN || rhs._type==TableSizeType::TST_INFINITE || _type==TableSizeType::TST_INFINITE){
+	if(rhs.isInfinite() || isInfinite()){
 		return rhs;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
@@ -23,8 +23,11 @@ tablesize tablesize::operator+(const tablesize& rhs) const{
 	}
 }
 tablesize tablesize::operator-(const tablesize& rhs) const{
-	if(rhs._type==TableSizeType::TST_UNKNOWN || _type==TableSizeType::TST_UNKNOWN || rhs._type==TableSizeType::TST_INFINITE || _type==TableSizeType::TST_INFINITE){
+	if(rhs.isInfinite() ){
 		return rhs;
+	}
+	if(isInfinite()){
+		return *this;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
 		return tablesize(TableSizeType::TST_APPROXIMATED, _size-rhs._size);
@@ -33,35 +36,48 @@ tablesize tablesize::operator-(const tablesize& rhs) const{
 	}
 }
 tablesize tablesize::operator*(const tablesize& rhs) const{
-	if(rhs._type==TableSizeType::TST_UNKNOWN || _type==TableSizeType::TST_UNKNOWN || rhs._type==TableSizeType::TST_INFINITE || _type==TableSizeType::TST_INFINITE){
+	auto t = tablesize(_type, _size);
+	t *= rhs;
+	return t;
+}
+void tablesize::operator*=(const tablesize& rhs){
+	if(rhs.isInfinite() || isInfinite()){
+		return;
+	}
+	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
+		_type = TableSizeType::TST_APPROXIMATED;
+		_size = _size*rhs._size;
+	}else{
+		_type = TableSizeType::TST_EXACT;
+		_size = _size*rhs._size;
+	}
+}
+tablesize tablesize::operator/(const tablesize& rhs) const{
+	if(rhs._type==TableSizeType::TST_UNKNOWN|| _type==TableSizeType::TST_UNKNOWN || rhs._size==0){
+		return tablesize(TST_UNKNOWN, 0);
+	}
+	if(rhs._type==TableSizeType::TST_INFINITE|| _type==TableSizeType::TST_INFINITE){
 		return rhs;
 	}
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
-		return tablesize(TableSizeType::TST_APPROXIMATED, _size*rhs._size);
+		return tablesize(TableSizeType::TST_APPROXIMATED, _size/rhs._size);
 	}else{
-		return tablesize(TableSizeType::TST_EXACT, _size*rhs._size);
+		return tablesize(TableSizeType::TST_EXACT, _size/rhs._size);
 	}
 }
 
-tablesize operator*(int lhs, const tablesize& rhs){
-	return tablesize(TableSizeType::TST_EXACT, lhs)+rhs;
-}
-tablesize operator*(const tablesize& lhs, int rhs){
-	return rhs*lhs;
-}
-
-tablesize operator-(const tablesize& lhs, int rhs){
-	return lhs - tablesize(TableSizeType::TST_EXACT, rhs);
-}
-tablesize operator-(int lhs, const tablesize& rhs){
-	return tablesize(TableSizeType::TST_EXACT, lhs)-rhs;
+tablesize natlog(const tablesize& val){
+	if(val.isInfinite()){
+		return val;
+	}
+	return tablesize(val._type, log(val._size));
 }
 
-tablesize operator+(int lhs, const tablesize& rhs){
-	return tablesize(TableSizeType::TST_EXACT, lhs)+rhs;
-}
-tablesize operator+(const tablesize& lhs, int rhs){
-	return rhs+lhs;
+double toDouble(const tablesize& val){
+	if(val.isInfinite()){
+		return getMaxElem<double>();
+	}
+	return val._size;
 }
 
 template<>

@@ -15,6 +15,7 @@
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/Estimations.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
@@ -143,13 +144,13 @@ Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Co
 /* FormulaUtils */
 namespace FormulaUtils {
 
-void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
 	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(TheoryComponent* tc, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+void addFuncConstraints(TheoryComponent* tc, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
 	transform<AddFuncConstraints, TheoryComponent, Vocabulary*, std::map<Function*, Formula*>&, bool>(tc, voc, funcconstraints, alsoCPableFunctions);
 }
-void addFuncConstraints(Term* term, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions){
+void addFuncConstraints(Term* term, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
 	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(term, voc, funcconstraints, alsoCPableFunctions);
 }
 
@@ -218,7 +219,7 @@ Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
 
-Theory* replaceWithNestedTseitins(Theory* theory){
+Theory* replaceWithNestedTseitins(Theory* theory) {
 	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);
 }
 
@@ -241,7 +242,7 @@ Theory* skolemize(Theory* t) {
 }
 
 Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s) {
-	return transform<IntroduceSharedTseitins, Theory*>(t,s);
+	return transform<IntroduceSharedTseitins, Theory*>(t, s);
 }
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
@@ -365,15 +366,14 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse, const AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const std::set<Variable*> freevars /*Shouldn't this be outvars?*/, bool inverse, const AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);
 	if (inverse) {
 		bdd = manager.negation(bdd);
 	}
-	double res = manager.estimatedCostAll(bdd, manager.getVariables(freevars), { }, structure);
-	return res;
+	return BddStatistics::estimateCostAll(bdd, manager.getVariables(freevars), { }, structure, &manager);
 }
 
 BoolForm* trueFormula() {

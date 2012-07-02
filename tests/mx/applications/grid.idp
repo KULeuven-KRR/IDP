@@ -1,0 +1,27 @@
+namespace grid {
+	
+	vocabulary simplegridvoc {
+		type Row isa nat
+		type Col isa nat
+	}
+
+	/**
+	 * Make a grid of size (nrrows x nrcolumns)
+	 */
+	procedure makegrid(nrrows, nrcolumns) {
+		local rows = range(1,nrrows)
+		local cols = range(1,nrcolumns)
+		local struct = newstructure(simplegridvoc,"grid")
+		struct[simplegridvoc::Row.type] = rows
+		struct[simplegridvoc::Col.type] = cols
+		return struct
+	}
+
+	/**
+	 * Make a square grid of dimension dim
+	 */
+	procedure makesquaregrid(dim) {
+		return makegrid(dim,dim)
+	}
+
+}
