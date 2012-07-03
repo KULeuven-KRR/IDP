@@ -120,6 +120,49 @@ public:
 		return _terms;
 	}
 
+	// TODO NOTE: update when adding more blocks!
+	std::vector<std::string> getComponentNamesExceptSpaces() const;
+
+//	enum class ComponentType{ VOC, THEORY, STRUCT, NS, QUERY, TERM, PROC};
+//
+//	class SpecificationComponent{
+//		std::string _name;
+//		ComponentType _type;
+//		Namespace* _namespace;
+//		AbstractTheory* _theory;
+//		AbstractStructure* _structure;
+//		Vocabulary* _vocabulary;
+//		Query* _query;
+//		Term* _term;
+//		UserProcedure* _procedure;
+//
+//		std::ostream& putLuaName(std::ostream& stream) const{
+//			switch(_type){
+//			case ComponentType::VOC:
+//				_vocabulary->putLuaName(stream);
+//				break;
+//			case ComponentType::THEORY:
+//				_theory->putLuaName(stream);
+//				break;
+//			case ComponentType::STRUCT:
+//				_structure->putLuaName(stream);
+//				break;
+//			case ComponentType::NS:
+//				_namespace->putLuaName(stream);
+//				break;
+//			case ComponentType::QUERY:
+//				_query->putLuaName(stream);
+//				break;
+//			case ComponentType::TERM:
+//				_term->putLuaName(stream);
+//				break;
+//			case ComponentType::PROC:
+//				_procedure->putLuaName(stream);
+//				break;
+//			}
+//		}
+//	};
+
 	// Mutators
 	void add(Vocabulary* v);
 	void add(Namespace* n);

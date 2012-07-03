@@ -655,7 +655,6 @@ void Insert::closeblock() {
 	_currvocabulary = 0;
 	_currtheory = 0;
 	_currstructure = 0;
-	_curroptions = 0;
 	_currprocedure = 0;
 	_currquery = "";
 	_currterm = "";
@@ -804,7 +803,7 @@ void Insert::closetheory() {
 
 void Insert::closequery(Query* q) {
 	_curr_vars.clear();
-	if (q) {
+	if (q != NULL) { // Allows for better error catching
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
@@ -820,7 +819,7 @@ void Insert::closequery(Query* q) {
 
 void Insert::closeterm(Term* t) {
 	_curr_vars.clear();
-	if (t) {
+	if (t != NULL) { // Allows for better error catching
 		TermUtils::deriveSorts(_currvocabulary, t);
 		TermUtils::checkSorts(_currvocabulary, t);
 		_currspace->add(_currterm, t);
@@ -866,7 +865,6 @@ void Insert::closestructure() {
 }
 
 void Insert::openprocedure(const string& name, YYLTYPE l) {
-	// open block
 	openblock();
 	auto pi = parseinfo(l);
 	auto p = procedureInScope(name, pi);
@@ -876,48 +874,19 @@ void Insert::openprocedure(const string& name, YYLTYPE l) {
 	_currprocedure = new UserProcedure(name, pi, l.descr);
 	_currspace->add(_currprocedure);
 
-	// include the namespaces and vocabularies in scope
-	//FIXME Refactor!! Template?
+	// Include all internal blocks as local objects in the scope of the procedure
 	for (auto it = _usingspace.cbegin(); it != _usingspace.cend(); ++it) {
-		if (not (*it)->isGlobal()) {
-			stringstream sstr;
-//			for (auto jt = (*it)->subspaces().cbegin(); jt != (*it)->subspaces().cend(); ++jt) {
-//				sstr << "local " << jt->second->name() << " = ";
-//				(*it)->putLuaName(sstr);
-//				sstr << '.' << jt->second->name() << '\n';
-//			}
-			for (auto jt = (*it)->procedures().cbegin(); jt != (*it)->procedures().cend(); ++jt) {
-				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->second->name() << '\n';
-			}
-			for (auto jt = (*it)->vocabularies().cbegin(); jt != (*it)->vocabularies().cend(); ++jt) {
-				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->second->name() << '\n';
-			}
-			for (auto jt = (*it)->theories().cbegin(); jt != (*it)->theories().cend(); ++jt) {
-				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->second->name() << '\n';
-			}
-			for (auto jt = (*it)->structures().cbegin(); jt != (*it)->structures().cend(); ++jt) {
-				sstr << "local " << jt->second->name() << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->second->name() << '\n';
-			}
-			for (auto jt = (*it)->queries().cbegin(); jt != (*it)->queries().cend(); ++jt) {
-				sstr << "local " << jt->first << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->first << '\n';
-			}
-			for (auto jt = (*it)->terms().cbegin(); jt != (*it)->terms().cend(); ++jt) {
-				sstr << "local " << jt->first << " = ";
-				(*it)->putLuaName(sstr);
-				sstr << '.' << jt->first << '\n';
-			}
-			_currprocedure->add(sstr.str());
+		if ((*it)->isGlobal()) {
+			continue;
 		}
+		stringstream sstr;
+		auto componentnames = (*it)->getComponentNamesExceptSpaces();
+		for (auto jt = componentnames.cbegin(); jt != componentnames.cend(); ++jt) {
+			sstr << "local " << *jt << " = ";
+			(*it)->putLuaName(sstr);
+			sstr << '.' << *jt << '\n';
+		}
+		_currprocedure->add(sstr.str());
 	}
 }
 
@@ -2596,22 +2565,6 @@ void setOptionValue(Options* options, const string& opt, const OptionValue& val,
 		wrongvalue(opt, convertToString(val), pi);
 	}
 	options->setValue(opt, val);
-}
-
-void Insert::option(const string& opt, const string& val, YYLTYPE l) const {
-	setOptionValue(_curroptions, opt, val, parseinfo(l));
-}
-
-void Insert::option(const string& opt, double val, YYLTYPE l) const {
-	setOptionValue(_curroptions, opt, val, parseinfo(l));
-}
-
-void Insert::option(const string& opt, int val, YYLTYPE l) const {
-	setOptionValue(_curroptions, opt, val, parseinfo(l));
-}
-
-void Insert::option(const string& opt, bool val, YYLTYPE l) const {
-	setOptionValue(_curroptions, opt, val, parseinfo(l));
 }
 
 void Insert::assignunknowntables() {

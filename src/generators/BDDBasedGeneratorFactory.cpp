@@ -34,6 +34,7 @@
 #include "ComparisonGenerator.hpp"
 #include "GeneratorFactory.hpp"
 #include "QuantKernelGenerators.hpp"
+#include "errorhandling/error.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -131,7 +132,9 @@ InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
 		return GeneratorFactory::create(outvars, tables);
 	}
 
-	return createFromBDD(data);
+	auto result = createFromBDD(data);
+	//cerr <<"Resulting generator = " <<toString(result) <<"\n";
+	return result;
 }
 
 InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
@@ -258,7 +261,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
-				PredForm* newatom;
+				PredForm* newatom = NULL;
 				if (isa<VarTerm>(*(atom->subterms()[0])) && dynamic_cast<VarTerm*>(atom->subterms()[0])->var() == atomvars[n]
 						&& (is(atom->symbol(), STDPRED::GT) || is(atom->symbol(), STDPRED::LT))) {
 					if (is(atom->symbol(), STDPRED::GT)) {
@@ -487,7 +490,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 	while (not atoms_to_order.empty()) {
 		Formula *bestatom = NULL;
 		double bestcost = getMaxElem<double>();
-//		cerr <<"ITERATION\n";
+	//	cerr <<"ITERATION\n";
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 			bool currinverse = false;
 			if (*it == origatom) {
@@ -502,6 +505,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			}
 
 			double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
+	//		cerr <<"Cost of " <<toString(*it) <<" is " <<currcost <<"\n";
 			if (currcost < bestcost) {
 				bestcost = currcost;
 				bestatom = *it;
@@ -509,9 +513,12 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		}
 
 		if (bestatom == NULL) {
+			Warning::warning("Possibly generating an infinite grounding, be careful!");
 			bestatom = *(atoms_to_order.cbegin());
 		}
+
 		orderedconjunction.push_back(bestatom);
+	//	cerr <<toString(orderedconjunction) <<"\n";
 		atoms_to_order.erase(bestatom);
 		for (auto it = bestatom->freeVars().cbegin(); it != bestatom->freeVars().cend(); ++it) {
 			free_vars.erase(*it);
@@ -879,8 +886,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		termpattern.push_back(Pattern::OUTPUT);
 		auto termtables = subformtables;
 		termtables.push_back(structure->inter(sort));
-		auto newuniverse = new Universe(termtables);
-		termgenerators[subsetnumber] = createFromKernel(equalkernel, termpattern, termvars, termfobddvars, structure, BRANCH::TRUEBRANCH, *newuniverse);
+		termgenerators[subsetnumber] = createFromKernel(equalkernel, termpattern, termvars, termfobddvars, structure, BRANCH::TRUEBRANCH, Universe(termtables));
 
 	}
 	auto rightvalue = new DomElemContainer();

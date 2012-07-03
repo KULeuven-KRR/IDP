@@ -189,6 +189,7 @@ public:
 		indent();
 
 		Assert(isTheoryOpen());
+		// FIXME allow to loop over all components of a namespace
 		for (auto i = s->vocabularies().cbegin(); i != s->vocabularies().cend(); ++i) {
 			visit((*i).second);
 		}
@@ -201,7 +202,15 @@ public:
 		for (auto i = s->subspaces().cbegin(); i != s->subspaces().cend(); ++i) {
 			visit((*i).second);
 		}
-
+		for (auto i = s->procedures().cbegin(); i != s->procedures().cend(); ++i) {
+			// FIXME visit((*i).second);
+		}
+		for (auto i = s->terms().cbegin(); i != s->terms().cend(); ++i) {
+			// FIXME visit((*i).second);
+		}
+		for (auto i = s->queries().cbegin(); i != s->queries().cend(); ++i) {
+			// FIXME visit((*i).second);
+		}
 		unindent();
 		printTab();
 		output() << "}" << '\n';

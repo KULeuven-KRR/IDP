@@ -16,7 +16,7 @@
 #include "structure/StructureComponents.hpp"
 
 /** Replace symbolic table by an enumerated one.
- *	Returns 0 when impossible or when it was enumerated already.
+ *	Returns NULL when impossible or when it was enumerated already.
  */
 class EnumerateSymbolicTable: public StructureVisitor {
 private:
@@ -42,7 +42,7 @@ private:
 		_internpredtable = pt->internTable();
 		pt->internTable()->accept(this);
 		if (_internpredtable == pt->internTable()) {
-			_predtable = 0;
+			_predtable = NULL;
 		} else {
 			_predtable = new PredTable(_internpredtable, pt->universe());
 		}
@@ -120,16 +120,86 @@ private:
 		}
 	}
 
+	virtual void visit(const FullInternalPredTable*){
+
+	}
+	virtual void visit(const EnumeratedInternalPredTable*){
+
+	}
+	virtual void visit(const EqualInternalPredTable*){
+
+	}
+	virtual void visit(const StrLessInternalPredTable*){
+
+	}
+	virtual void visit(const StrGreaterInternalPredTable*){
+
+	}
+	virtual void visit(const AllNaturalNumbers*){
+
+	}
+	virtual void visit(const AllIntegers*){
+
+	}
+	virtual void visit(const AllFloats*){
+
+	}
+	virtual void visit(const AllChars*){
+
+	}
+	virtual void visit(const AllStrings*){
+
+	}
+	virtual void visit(const EnumeratedInternalSortTable*){
+
+	}
+	virtual void visit(const IntRangeInternalSortTable*){
+
+	}
+	virtual void visit(const UNAInternalFuncTable*){
+
+	}
+	virtual void visit(const EnumeratedInternalFuncTable*){
+
+	}
+	virtual void visit(const PlusInternalFuncTable*){
+
+	}
+	virtual void visit(const MinusInternalFuncTable*){
+
+	}
+	virtual void visit(const TimesInternalFuncTable*){
+
+	}
+	virtual void visit(const DivInternalFuncTable*){
+
+	}
+	virtual void visit(const AbsInternalFuncTable*){
+
+	}
+	virtual void visit(const UminInternalFuncTable*){
+
+	}
+	virtual void visit(const ExpInternalFuncTable*){
+
+	}
+	virtual void visit(const ModInternalFuncTable*){
+
+	}
+
 public:
 	SortTable* run(const SortTable* s) {
+		_sorttable = NULL;
 		visit(s);
 		return _sorttable;
 	}
 	PredTable* run(const PredTable* p) {
+		_predtable = NULL;
 		visit(p);
 		return _predtable;
 	}
 	FuncTable* run(const FuncTable* f) {
+		_functable = NULL;
 		visit(f);
 		return _functable;
 	}

@@ -2907,6 +2907,7 @@ void PredTable::setTable(InternalPredTable* table) {
 	 * 		                   => iterate by walk over univ and check with table |univ| * log(|table|) for |univ|-|table| results
 	 * 		                   		==> if table is very large, e.g. another inverted table, then ...
 	 */
+	Assert(table!=NULL);
 	_table = table;
 }
 

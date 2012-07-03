@@ -66,13 +66,6 @@ tablesize tablesize::operator/(const tablesize& rhs) const{
 	}
 }
 
-tablesize natlog(const tablesize& val){
-	if(val.isInfinite()){
-		return val;
-	}
-	return tablesize(val._type, log(val._size));
-}
-
 double toDouble(const tablesize& val){
 	if(val.isInfinite()){
 		return getMaxElem<double>();

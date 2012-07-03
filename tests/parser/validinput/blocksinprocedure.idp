@@ -1,0 +1,34 @@
+#include <mx>
+
+namespace packing {
+	vocabulary A {
+		type X
+		f:X
+	}
+	theory B:A{
+	}
+	structure C:A{
+	}
+	term D : A {
+		f
+	}
+	query E: A{
+		{x:X(x)}
+	}
+	namespace F{
+	}
+
+	procedure test(){
+		print(A)
+		print(B)
+		print(C)
+		if(D == nil) then return 0 end
+		if(E == nil) then return 0 end
+		print(F)
+		return 1
+	}
+}
+
+procedure main(){
+	return packing::test()
+}

@@ -58,64 +58,35 @@ public:
 	virtual void visit(const PredTable* pt);
 	virtual void visit(const FuncTable* ft);
 	virtual void visit(const SortTable* st);
-	virtual void visit(const ProcInternalPredTable*) {
-	}
-	virtual void visit(const BDDInternalPredTable*) {
-	}
-	virtual void visit(const FullInternalPredTable*) {
-	}
-	virtual void visit(const FuncInternalPredTable*) {
-	}
-	virtual void visit(const UnionInternalPredTable*) {
-	}
-	virtual void visit(const EnumeratedInternalPredTable*) {
-	}
-	virtual void visit(const EqualInternalPredTable*) {
-	}
-	virtual void visit(const StrLessInternalPredTable*) {
-	}
-	virtual void visit(const StrGreaterInternalPredTable*) {
-	}
-	virtual void visit(const InverseInternalPredTable*) {
-	}
-	virtual void visit(const UnionInternalSortTable*) {
-	}
-	virtual void visit(const AllNaturalNumbers*) {
-	}
-	virtual void visit(const AllIntegers*) {
-	}
-	virtual void visit(const AllFloats*) {
-	}
-	virtual void visit(const AllChars*) {
-	}
-	virtual void visit(const AllStrings*) {
-	}
-	virtual void visit(const EnumeratedInternalSortTable*) {
-	}
-	virtual void visit(const IntRangeInternalSortTable*) {
-	}
-	virtual void visit(const ProcInternalFuncTable*) {
-	}
-	virtual void visit(const UNAInternalFuncTable*) {
-	}
-	virtual void visit(const EnumeratedInternalFuncTable*) {
-	}
-	virtual void visit(const PlusInternalFuncTable*) {
-	}
-	virtual void visit(const MinusInternalFuncTable*) {
-	}
-	virtual void visit(const TimesInternalFuncTable*) {
-	}
-	virtual void visit(const DivInternalFuncTable*) {
-	}
-	virtual void visit(const AbsInternalFuncTable*) {
-	}
-	virtual void visit(const UminInternalFuncTable*) {
-	}
-	virtual void visit(const ExpInternalFuncTable*) {
-	}
-	virtual void visit(const ModInternalFuncTable*) {
-	}
+	virtual void visit(const ProcInternalPredTable*) = 0;
+	virtual void visit(const BDDInternalPredTable*) = 0;
+	virtual void visit(const FullInternalPredTable*) = 0;
+	virtual void visit(const FuncInternalPredTable*) = 0;
+	virtual void visit(const UnionInternalPredTable*) = 0;
+	virtual void visit(const EnumeratedInternalPredTable*) = 0;
+	virtual void visit(const EqualInternalPredTable*) = 0;
+	virtual void visit(const StrLessInternalPredTable*) = 0;
+	virtual void visit(const StrGreaterInternalPredTable*) = 0;
+	virtual void visit(const InverseInternalPredTable*) = 0;
+	virtual void visit(const UnionInternalSortTable*) = 0;
+	virtual void visit(const AllNaturalNumbers*) = 0;
+	virtual void visit(const AllIntegers*) = 0;
+	virtual void visit(const AllFloats*) = 0;
+	virtual void visit(const AllChars*) = 0;
+	virtual void visit(const AllStrings*) = 0;
+	virtual void visit(const EnumeratedInternalSortTable*) = 0;
+	virtual void visit(const IntRangeInternalSortTable*) = 0;
+	virtual void visit(const ProcInternalFuncTable*) = 0;
+	virtual void visit(const UNAInternalFuncTable*) = 0;
+	virtual void visit(const EnumeratedInternalFuncTable*) = 0;
+	virtual void visit(const PlusInternalFuncTable*) = 0;
+	virtual void visit(const MinusInternalFuncTable*) = 0;
+	virtual void visit(const TimesInternalFuncTable*) = 0;
+	virtual void visit(const DivInternalFuncTable*) = 0;
+	virtual void visit(const AbsInternalFuncTable*) = 0;
+	virtual void visit(const UminInternalFuncTable*) = 0;
+	virtual void visit(const ExpInternalFuncTable*) = 0;
+	virtual void visit(const ModInternalFuncTable*) = 0;
 };
 
 #endif

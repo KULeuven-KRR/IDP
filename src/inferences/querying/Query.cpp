@@ -77,6 +77,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	auto result = TableUtils::createPredTable(univ);
 	// execute the query
 	ElementTuple currtuple(q->variables().size());
+	//cerr <<"Generator: " <<toString(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < q->variables().size(); ++n) {
 			currtuple[n] = data.vars[n]->get();

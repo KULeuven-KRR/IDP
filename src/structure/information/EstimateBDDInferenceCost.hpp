@@ -36,7 +36,9 @@ public:
 		_table = table;
 		_pattern = pattern;
 		luacost = 5;
+		_result = -1;
 		table->internTable()->accept(this);
+		Assert(_result>=0);
 		return _result;
 	}
 
@@ -103,7 +105,12 @@ public:
 
 	void visit(const EnumeratedInternalSortTable*) {
 		if (_pattern[0]) {
-			_result = toDouble(natlog(_table->size()) / log(2));
+			auto size = toDouble(_table->size());
+			if(size==0){
+				_result=1;
+			}else{
+				_result = size / log(2);
+			}
 		} else {
 			_result = toDouble(_table->size());
 		}
@@ -121,6 +128,10 @@ public:
 		auto sz = getTableCost(function);
 		auto ts = toDouble(_table->size());
 		double lookupsize = sz < ts ? sz : ts;
+		if(lookupsize==0){
+			_result=1;
+			return;
+		}
 		auto lookuptime = log(lookupsize) / log(2);
 		if (lookuptime < InfCost) {
 			auto iteratetime = ts / sz;
@@ -254,6 +265,22 @@ public:
 		} else {
 			_result = InfCost;
 		}
+	}
+
+	void visit(const AllIntegers*) {
+		_result = InfCost;
+	}
+	void visit(const AllChars*) {
+		_result = InfCost;
+	}
+	void visit(const AllFloats*) {
+		_result = InfCost;
+	}
+	void visit(const AllNaturalNumbers*) {
+		_result = InfCost;
+	}
+	void visit(const AllStrings*) {
+		_result = InfCost;
 	}
 };
 

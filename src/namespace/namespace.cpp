@@ -124,6 +124,32 @@ UserProcedure* Namespace::procedure(const string& lp) const {
 	return ((_procedures.find(lp))->second);
 }
 
+std::vector<std::string> Namespace::getComponentNamesExceptSpaces() const {
+	std::vector<std::string> names;
+	for(auto i=procedures().cbegin(); i!=procedures().cend(); ++i){
+		names.push_back(i->first);
+	}
+/*		for(auto i=subspaces().cbegin(); i!=subspaces().cend(); ++i){
+		names.push_back(i->first);
+	}*/
+	for(auto i=vocabularies().cbegin(); i!=vocabularies().cend(); ++i){
+		names.push_back(i->first);
+	}
+	for(auto i=structures().cbegin(); i!=structures().cend(); ++i){
+		names.push_back(i->first);
+	}
+	for(auto i=theories().cbegin(); i!=theories().cend(); ++i){
+		names.push_back(i->first);
+	}
+	for(auto i=queries().cbegin(); i!=queries().cend(); ++i){
+		names.push_back(i->first);
+	}
+	for(auto i=terms().cbegin(); i!=terms().cend(); ++i){
+		names.push_back(i->first);
+	}
+	return names;
+}
+
 ostream& Namespace::putName(ostream& output) const {
 	if (isGlobal()) {
 		return output;

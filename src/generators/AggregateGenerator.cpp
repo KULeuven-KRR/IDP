@@ -16,6 +16,7 @@
 AggGenerator::AggGenerator(const DomElemContainer* left, AggFunction func, std::vector<InstGenerator*> formulagenerators,
 		std::vector<InstGenerator*> termgenerators, std::vector<const DomElemContainer*> terms)
 		: _left(left), _func(func), _formulagenerators(formulagenerators), _termgenerators(termgenerators), _terms(terms), _result(0), _reset(true) {
+	Assert(left!=NULL);
 	Assert(_formulagenerators.size()==_termgenerators.size());
 	Assert(_termgenerators.size() == _terms.size());
 }

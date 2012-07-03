@@ -320,7 +320,8 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 			}
 
 			auto extra = tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
-			d = (d + extra < maxdouble) ? d + extra : maxdouble;
+			//cerr <<"Cost of " <<toString((*quantset)->subformula()) <<" is " <<extra <<"\n";
+			d = (d + extra < maxdouble) ? d + extra : maxdouble; // FIXME verify overflow checks in code
 			if (d == maxdouble) {
 				break;
 			}

@@ -13,6 +13,7 @@
 
 #include "commontypes.hpp"
 #include "GeneratorFactory.hpp"
+#include "fobdds/FoBdd.hpp"
 
 class FOBDDManager;
 class FOBDDVariable;
@@ -36,8 +37,13 @@ struct BddGeneratorData {
 	const AbstractStructure* structure;
 	Universe universe;
 
+	BddGeneratorData(): bdd(NULL), structure(NULL){
+
+	}
+
 	bool check() const {
-		return pattern.size() == vars.size() && pattern.size() == bddvars.size() && pattern.size() == universe.tables().size();
+		//std::cerr <<toString(bdd) <<"\n\n";
+		return bdd!=NULL && structure!=NULL && pattern.size() == vars.size() && pattern.size() == bddvars.size() && pattern.size() == universe.tables().size();
 	}
 };
 

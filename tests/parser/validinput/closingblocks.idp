@@ -1,0 +1,31 @@
+#include <mx>
+
+procedure main(){
+	return 1
+}
+
+namespace packing {
+  vocabulary voc {
+  	type Square isa nat
+  	type SizeT isa nat
+  	Size(Square): SizeT
+  }
+
+  term sumOfPos : voc {
+	Size(x)
+  }
+  query Q: voc{
+  	{x y:Size(x)=y}
+  }
+  theory T:voc{
+  	?x y: Size(x)=y.
+  }
+  structure S:voc{
+  	Square = {2}
+  }
+  
+  vocabulary visvoc {
+    extern voc::Size/1:1
+    square(Square,SizeT)
+  }
+}

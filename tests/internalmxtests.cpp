@@ -95,4 +95,21 @@ TEST(OptimTest, GroundTheory) {
 	ASSERT_THROW(ModelExpansion::doMinimization(&t, &s, &o), IdpException);
 }
 
+TEST(OptimTest, NegProdOptimTheory) {
+	auto v = Vocabulary("one");
+	auto s = Structure("s", &v, ParseInfo());
+	auto t = Theory("t", &v, ParseInfo());
+	auto sort = new Sort("s"); // NOTE: sort ownership is passed to the voc, so has to be a real pointer!
+	v.add(sort);
+	auto var = Variable(sort);
+	auto varterm = VarTerm(&var, TermParseInfo());
+	auto term = FuncTerm(get(STDFUNC::UNARYMINUS), {&varterm}, TermParseInfo());
+	auto trueform = BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
+	auto qset = QuantSetExpr({&var}, &trueform, &term, SetParseInfo());
+	auto set = EnumSetExpr({&qset}, SetParseInfo());
+	auto o = AggTerm(&set, AggFunction::PROD, TermParseInfo());
+	s.inter(sort)->add(-10,10);
+	ASSERT_THROW(ModelExpansion::doMinimization(&t, &s, &o), IdpException);
+}
+
 }

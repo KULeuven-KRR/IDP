@@ -133,7 +133,6 @@ private:
 	Vocabulary* _currvocabulary; //!< the vocabulary that is currently being parsed
 	Theory* _currtheory; //!< the theory that is currently being parsed
 	Structure* _currstructure; //!< the structure that is currently being parsed
-	Options* _curroptions; //!< the options that is currently being parsed
 	UserProcedure* _currprocedure; //!< the procedure that is currently being parsed
 	std::string _currquery; //!< the name of the named query that is currently being parsed
 	std::string _currterm; //!< the name of the named term that is currently being parsed
@@ -428,11 +427,6 @@ public:
 	void procarg(const std::string&) const; //!< Add an argument to the current procedure
 
 	static const DomainElement* exec(const std::string&);
-
-	void option(const std::string& opt, const std::string& val, YYLTYPE) const;
-	void option(const std::string& opt, double val, YYLTYPE) const;
-	void option(const std::string& opt, int val, YYLTYPE) const;
-	void option(const std::string& opt, bool val, YYLTYPE) const;
 
 	/**
 	 * Returns true if this sort occurred in the user provided theory.

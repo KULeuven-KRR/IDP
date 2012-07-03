@@ -41,7 +41,6 @@ struct tablesize {
 	}
 };
 
-tablesize natlog(const tablesize& val);
 double toDouble(const tablesize& val);
 
 template<class Num>
