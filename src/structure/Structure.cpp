@@ -58,7 +58,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_sortinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -66,7 +66,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_predinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -74,7 +74,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_funcinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -474,7 +474,8 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}Assert(s != NULL);
+	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	}
