@@ -239,7 +239,7 @@ public:
 			visit((*i).second);
 		}
 		for (auto i = s->procedures().cbegin(); i != s->procedures().cend(); ++i) {
-			// FIXME visit((*i).second);
+			// FIXME visit((*i).second); //see #200
 		}
 		for (auto i = s->terms().cbegin(); i != s->terms().cend(); ++i) {
 			(*i).second->accept(this);
