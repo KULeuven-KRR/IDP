@@ -7,12 +7,14 @@ using namespace std;
 #include "parser.hh"
 
 stringstream ss;
+stringstream results;
 %}
 
 /* lex definitions: */
 %option noyywrap never-interactive nounput
 
 %s block
+%s summary
 
 %%
 
@@ -21,5 +23,9 @@ stringstream ss;
 <block>"[       OK ]" 	{yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return SUCCESS;}
 <block>[^\[]*			{ss <<yytext; }
 <block>.				{ss <<yytext; }
+<*>"[  PASSED  ]" {BEGIN(summary); ss <<"Failures from";} // is followed by the number of tests as " x tests."
+<summary>"[==========]"	{ results <<ss.str() <<"\n"; BEGIN(INITIAL); ss.str("");}
+<summary>[^\[]*			{ss <<yytext; }
+<summary>.				{ss <<yytext; }
 <*>[^\[*]*				{  }
 <*>.					{  }
