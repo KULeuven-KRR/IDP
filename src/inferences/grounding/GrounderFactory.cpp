@@ -969,6 +969,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 		if (TermUtils::isFactor(t->subterms()[0], _structure)) {
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		} else {
+			Assert(TermUtils::isFactor(t->subterms()[1], _structure));
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
 		}
 	} else {

@@ -87,7 +87,7 @@ GroundTerm FuncTermGrounder::run() const {
 					clog << tabs() << "Result = **invalid term**" << "\n";
 				}
 				return groundterm;
-			}else if(not _tables[n]->contains(groundterm._domelement)){ // Checking out-of-bounds
+			} else if (not _tables[n]->contains(groundterm._domelement)) { // Checking out-of-bounds
 				if (verbosity() > 2) {
 					poptab();
 					clog << tabs() << "Term value out of argument type" << "\n";
@@ -98,7 +98,7 @@ GroundTerm FuncTermGrounder::run() const {
 		}
 		groundsubterms.push_back(groundterm);
 	}
-	if (calculable && _functable) { // All ground subterms are domain elements!
+	if (calculable and (_functable != NULL)) { // All ground subterms are domain elements!
 		auto result = (*_functable)[args];
 		if (verbosity() > 2) {
 			if (result) {
@@ -111,7 +111,7 @@ GroundTerm FuncTermGrounder::run() const {
 				}
 			}
 		}
-		return result;
+		return GroundTerm(result);
 	}
 
 	Assert(getOption(BoolType::CPSUPPORT));
