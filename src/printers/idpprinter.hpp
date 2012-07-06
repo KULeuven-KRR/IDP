@@ -15,6 +15,7 @@
 #include "IncludeComponents.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
+#include "theory/Query.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -151,6 +152,31 @@ public:
 			}
 		}
 		setOption(BoolType::LONGNAMES, origlongnameoption);
+		unindent();
+		printTab();
+		output() << "}" << '\n';
+	}
+
+	void visit(const Query* q) {
+		Assert(isTheoryOpen());
+
+		auto voc = q->vocabulary();
+
+		printTab();
+		output() << "query " << q->name() << " : " << voc->name() << " {\n";
+		indent();
+		printTab();
+		output()<<"{";
+		for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
+			output() << ' ';
+			output() << (*it)->name();
+			if ((*it)->sort()) {
+				output() << '[' << (*it)->sort()->name() << ']';
+			}
+		}
+		output() << " : ";
+		q->query()->accept(this);
+		output() << "}" << '\n';
 		unindent();
 		printTab();
 		output() << "}" << '\n';
@@ -495,9 +521,9 @@ public:
 	void visit(const EnumSetExpr* s) {
 		output() << "[ ";
 		bool begin = true;
-		for(auto i=s->getSets().cbegin(); i<s->getSets().cend(); ++i) {
-			if(not begin){
-				output() <<", ";
+		for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
+			if (not begin) {
+				output() << ", ";
 			}
 			begin = false;
 			(*i)->accept(this);

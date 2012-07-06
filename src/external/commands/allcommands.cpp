@@ -69,6 +69,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 		inferences.push_back(make_shared<PropagateInference>());
 		inferences.push_back(make_shared<PrintVocabularyInference>());
 		inferences.push_back(make_shared<PrintTheoryInference>());
+		inferences.push_back(make_shared<PrintQueryInference>());
 		inferences.push_back(make_shared<PrintDomainAtomInference>());
 		inferences.push_back(make_shared<PrintFormulaInference>());
 		inferences.push_back(make_shared<PrintNamespaceInference>());

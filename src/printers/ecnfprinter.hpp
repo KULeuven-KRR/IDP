@@ -23,7 +23,6 @@
 #include "inferences/SolverConnection.hpp"
 
 #include "ECNFPrinter.hpp" // NOTE: MINISATID include!!! Can be removed with gcc4.6
-
 using namespace SolverConnection;
 
 template<typename Stream>
@@ -105,6 +104,10 @@ public:
 
 	void visit(const AbstractStructure*) {
 		output() << "(structure cannot be printed in ecnf)";
+	}
+
+	void visit(const Query*) {
+		throw notyetimplemented("Printing queries in ecnf format");
 	}
 
 	void visit(const GroundClause& g) {
@@ -264,7 +267,7 @@ private:
 			w.push_back(createWeight(*i));
 		}
 		std::vector<uint> vars;
-		for(auto i=varids.cbegin(); i<varids.cend(); ++i) {
+		for (auto i = varids.cbegin(); i < varids.cend(); ++i) {
 			vars.push_back(i->id);
 		}
 		printer->add(MinisatID::CPSumWeighted(createAtom(head), vars, w, convert(rel), createWeight(bound)));

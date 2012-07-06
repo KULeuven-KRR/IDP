@@ -63,6 +63,9 @@ public:
 	void visit(const Theory*) {
 		throw notyetimplemented("Printing theories in ASP format");
 	}
+	void visit(const Query*) {
+		throw notyetimplemented("Printing queries in ASP format");
+	}
 
 	void visit(const AbstractStructure* structure) {
 		Assert(isTheoryOpen());

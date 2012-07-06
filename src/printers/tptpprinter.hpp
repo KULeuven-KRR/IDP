@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef TPTPPRINTER_HPP_
 #define TPTPPRINTER_HPP_
@@ -42,7 +42,13 @@ private:
 
 public:
 	TPTPPrinter(bool arithmetic, Stream& stream)
-			: StreamPrinter<Stream>(stream), _conjecture(false), _arithmetic(arithmetic), _nats(false), _ints(false), _floats(false), _count(0) {
+			: 	StreamPrinter<Stream>(stream),
+				_conjecture(false),
+				_arithmetic(arithmetic),
+				_nats(false),
+				_ints(false),
+				_floats(false),
+				_count(0) {
 	}
 
 	bool conjecture() {
@@ -81,10 +87,14 @@ protected:
 		}
 	}
 
+	void visit(const Query*) {
+		throw notyetimplemented("Printing queries in tptp format");
+	}
+
 	void visit(const Theory* theory) {
 		auto temp = theory->clone();
 		auto cloned = dynamic_cast<Theory*>(FormulaUtils::graphFuncsAndAggs(temp, NULL, false /*TODO check*/, Context::POSITIVE));
-		if(cloned==NULL){ // TODO ugly hack
+		if (cloned == NULL) { // TODO ugly hack
 			Assert(false);
 		}
 		if (not _conjecture) {
@@ -465,7 +475,7 @@ private:
 
 	void endAxiom() {
 		(*_os) << ")).\n";
-		output() <<_os->str();
+		output() << _os->str();
 	}
 
 	void outputPFSymbolType(const PFSymbol* pfs) {

@@ -1800,7 +1800,9 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 	remove_vars(vv);
 	if (f) {
 		ParseInfo pi = parseinfo(l);
-		return new Query(vv, f, pi);
+		auto res = new Query(_currquery, vv, f, pi);
+		res->vocabulary(_currvocabulary);
+		return res;
 	} else {
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			delete (*it);
