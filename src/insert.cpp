@@ -826,6 +826,8 @@ void Insert::closeterm(Term* t) {
 		if (_currspace->isGlobal()) {
 			LuaConnection::addGlobal(_currterm, t);
 		}
+		t->name(_currterm);
+		t->vocabulary(_currvocabulary);
 	}
 	closeblock();
 }

@@ -87,6 +87,20 @@ public:
 	}
 };
 
+typedef TypedInference<LIST(Term*)> PrintTermInferenceBase;
+class PrintTermInference: public PrintTermInferenceBase {
+public:
+	PrintTermInference()
+			: PrintTermInferenceBase("tostring", "Prints the given term.") {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto term = get<0>(args);
+		return InternalArgument(StringPointer(print(term)));
+	}
+};
+
 typedef TypedInference<LIST(Formula*)> PrintFormulaInferenceBase;
 class PrintFormulaInference: public PrintFormulaInferenceBase {
 public:
