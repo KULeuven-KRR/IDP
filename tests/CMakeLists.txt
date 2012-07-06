@@ -86,6 +86,6 @@ if(${BUILDTESTS})
 	)
 	addTest(slow)
 	
-	add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 4 ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS})
+	add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 4 ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
 	add_custom_target(fullcheck COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 3 ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow)
 endif()
