@@ -134,6 +134,7 @@ private:
 	Theory* _currtheory; //!< the theory that is currently being parsed
 	Structure* _currstructure; //!< the structure that is currently being parsed
 	UserProcedure* _currprocedure; //!< the procedure that is currently being parsed
+
 	std::string _currquery; //!< the name of the named query that is currently being parsed
 	std::string _currterm; //!< the name of the named term that is currently being parsed
 

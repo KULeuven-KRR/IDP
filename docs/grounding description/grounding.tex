@@ -1,0 +1,347 @@
+\documentclass{article}
+
+\input{../official/idp-latex}
+
+% \newcommand{\voc}{\Sigma}
+\newcommand{\I}{\mathcal{I}}
+\newcommand{\C}{\mathcal{C}}
+\newcommand{\A}{\mathcal{A}}
+\newcommand{\seq}[1]{\left\langle#1\right\rangle}
+
+\newcommand{\vocc}{\voc'}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\Tt}{\mathcal{T}_t}
+\newcommand{\Ts}{\mathcal{T}_s}
+\newcommand{\Tg}{\mathcal{T}_g}
+\newcommand{\Td}{\mathcal{T}_d}
+\newcommand{\Tdef}{\mathcal{T}_\Delta}
+\newcommand{\Tr}{\mathcal{T}_r}
+
+\newcommand{\pg}{\seq{\voc,\T}}
+\newcommand{\pgg}{\seq{\voc',\T'}}
+
+\newcommand{\rewrite}{\mapsto}
+
+\newcommand{\indot}{{\sc FO($\cdot$)$_{int}$}\xspace}
+\newcommand{\DDD}{\ensuremath{\overline{D}}}
+
+% not for llncs
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+%\newtheorem{proof}{Proof}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}{Corollary}
+
+
+\title{Partial grounding}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+Let $T$ be a theory over $\voc$ and $\I$ a partial $\voc$-interpretation.
+Let $T_{Dom}$ be the bounded formula obtained by replacing each $\forall x$ by $\forall x[Dom]$ and $\exists x$ by $\exists x[Dom]$ in $T$.
+
+\begin{definition}[Delayed sentence, delayed theory]
+	A delayed theory is a set of delayed sentences: triples $\left\langle \phi, \delta, c \right\rangle$, where $\phi$ is a formula, $\delta$ is a query and $c$ is a model construction process, i.e. a mapping from interpretations to interpretations.
+\end{definition}
+
+\todo{De onderstaande definitie is nog iets te sterk: zou enkel moeten voldaan zijn voor alle uitbreidingen van de structuur waarme we beginnen}
+\begin{definition}[Allowed]
+	A delayed sentence is said to be \textit{allowed} if for every partial interpretation $I$ such that $\delta^I = \emptyset$: $c(\I)$ is consistent and $\varphi^{c(\I)}$ is true, i.e.: $c$ completes $\I$ to a partial interpretation satisfying $\varphi$.
+
+	A delayed theory is \textit{allowed} if there exists a series $i_1, i_2,\cdots$ such that the joint construction process ($c_{i_1} \circ c_{i_2} \circ \cdots$) completes any partial interpretations $\I$ for which all queries are empty to an interpretation in which every $\varphi$ evaluates to true.
+\end{definition}
+
+\begin{definition}[Component]
+A \textit{component} is either
+\begin{itemize}
+\item a definition,
+\item a sentence,
+\item or a delayed sentence.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Partial grounding]
+	A partial grounding  is a tuple $\pg$, where $\voc$ is a vocabulary and $\T$ is a set of components over $\voc$. We often identify the partial grounding with its set of components. If $\T$ is a partial grounding, we denote by $\Ts$ the set of its non-delayed sentences, by $\Tg$ the set of its ground sentences (which is thus a subset of $\Tt$). We also use $\Td$ for the set of delayed sentences and $\Tdef$ for the set of definitions. 
+
+With every partial grounding, we associate an \fodot-theory $\Tt$, obtained by replacing every delayed sentence by its underlying sentence.
+\end{definition}
+
+We only consider allowed partial groundings, i.e. partial groundings $\pg$ where $\Td$ is allowed.
+
+\begin{definition}[Semantics of a partial grounding]
+	A $\voc$-structure $\I$ is said to satisfy partial grounding $\pg$ iff it satisfies $\Tt$.
+\end{definition}
+
+\begin{definition}[Specialization]
+	A partial grounding $\pgg$ is said to be specialization of $\pg$ with respect to $\I$ if the following hold:
+\begin{itemize}
+	\item $\vocc$ is an extension of $\voc$
+	\item The mapping that restricts a $\vocc$-structure to a $\voc$-structure induces a one-to-one correspondence between models of $\T'$ extending $\I$ and models of $\T$ extending $\I$.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Partial grounding of $T$ and $\I$]
+	A partial grounding $\pg$ is said to be a partial grounding of $T$ and $\I$ if it is a specialization of $\seq{\voc,T}$ with respect to $\I$.
+\end{definition}
+
+
+
+\begin{definition}[Condition]
+A condition on a formula $\varphi$ in $\pg$ is an expression of one of the following types:
+\begin{itemize}
+	\item A description of the nature of $\varphi$, for example ``$\varphi = \forall x[D]: \psi$''.
+	\item A description of the context of $\varphi$, for example, ``$\varphi$ occurs monotone in the body of a rule'' or ``$\varphi$ is a subformula of a delayed sentence''.
+	\item ...
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Action]
+	If $\varphi_i$ are formulas occurring somewhere in $\pg$, an action on $\pg$ is one of the following expressions:
+\begin{itemize}
+	\item $\T += \{\psi\}$, (this means: ``add sentence $\psi$ to theory $\Tt$'')
+	\item $\voc +=\{P[T_1,\cdots,T_n]\}$ (means ``add a new symbol $P$ to the vocabulary'')
+	\item $\varphi \mapsto \psi$ (this means: ``replace $\varphi$ by $\psi$'')
+    \item ...
+\end{itemize}
+
+\end{definition}
+
+
+
+
+\begin{definition}[(Rewrite rule]
+A rewrite rule $r$ is a set of conditions $\C_r$ together with a set of actions $\A_r$.
+
+The result of applying rule $r$ to partial grounding $\pg$ is denoted $r(\pg)$ . Rewrite rule $r$ is said to be allowed if for every partial grounding $\pg$, $r(\pg)$ is a specialization of $\pg$.	 
+\end{definition}
+
+\begin{example}[Tseitin transformation]
+Conditions:
+\begin{itemize}
+	\item $\varphi$ is a subformula of a sentence in $\T$
+	\item $\varphi$ is not an atom
+	\item The free variables of $\varphi$ are $x_1,\cdots,x_n$ with types $T_1,\cdots,T_n$.
+\end{itemize}
+Actions:
+\begin{itemize}
+	\item $\voc +=\{Tseitin_i[T_1,\cdots,T_n]\}$, where $i$ is a new identifier.
+	\item $\varphi \mapsto Tseitin_i(x_1,\cdots,x_n)$
+	\item $\T += \{\forall x_1\cdots x_n: Tseitin_i\Leftrightarrow \varphi\}$.
+\end{itemize}
+\end{example}
+
+\begin{example}[Shared Tseitin transformation]
+Conditions:
+\begin{itemize}
+	\item $\varphi_1,\cdots,\varphi_k$ are equivalent subformulas of sentences in $\T$
+    \item none of the $\varphi_i$ is an atom
+    \item The free variables of $\varphi_i$ are $x_{i_1},\cdots,x_{i_n}$ with types $T_1,\cdots,T_n$.
+\end{itemize}
+Actions:
+\begin{itemize}
+	\item $\voc +=\{Tseitin_j[T_1,\cdots,T_n]\}$, where $j$ is a new identifier.
+	\item for every i, $\varphi_i \mapsto Tseitin_j(x_{i_1},\cdots,x_{i_n})$
+	\item $\T += \{\forall x_{i_1}\cdots x_{i_n}: Tseitin_i\Leftrightarrow \varphi_i\}_i$.
+\end{itemize}
+\end{example}
+
+\begin{example}[Push negations inwards]
+Conditions:
+\begin{itemize}
+	\item $\varphi = \lnot\left( \varphi_1 \lor \varphi_2\right)$
+    \item or $\varphi = \lnot\left( \varphi_1 \land \varphi_2\right)$    
+    \item or $\varphi = \lnot\forall x: \varphi_1[x]$    
+    \item or $\varphi = \lnot\exists x: \varphi_1[x]$
+\end{itemize}
+Actions (in the respective cases):
+\begin{itemize}
+	\item $\varphi \mapsto\left(  \lnot \varphi_1 \land  \lnot \varphi_2\right)$
+    \item or $\varphi \mapsto \left( \lnot \varphi_1 \lor \lnot \varphi_2\right)$
+    \item or $\varphi \mapsto \exists x: \lnot\varphi_1[x]$
+    \item or $\varphi \mapsto \forall x: \lnot\varphi_1[x]$ 
+\end{itemize}
+\end{example}
+
+\begin{example}[Instantiation]
+Conditions:
+\begin{itemize}
+    \item  $\varphi = \forall x[D]: \varphi_1[x]$
+    \item or $\varphi = \exists x[D]: \varphi_1[x]$
+\end{itemize}
+Actions (in the respective cases):
+\begin{itemize}
+    \item  $\varphi \mapsto \varphi_1[d/x] \land  \forall x[D\setminus d]: \varphi_1[x]$
+    \item or $\varphi \mapsto \varphi_1[d/x] \lor  \exists x[D\setminus d]: \varphi_1[x]$
+\end{itemize}
+\end{example}
+
+\begin{example}[Positive Unnesting]
+Conditions:
+\begin{itemize}
+    \item  $\varphi = P(\bar x, f(\bar y),\bar z)$, for some (partial) function $f$ and predicate/function $P$.
+	\item $\varphi$ occurs in the scope of an even number of negations
+\end{itemize}
+Actions:
+\begin{itemize}
+    \item  $\varphi \mapsto \forall w: f(\bar y) = w \Rightarrow P(\bar x, f(\bar y),\bar z)$
+\end{itemize}
+\end{example}
+
+\begin{example}[Negative Unnesting]
+Conditions:
+\begin{itemize}
+    \item  $\varphi = P(\bar x, f(\bar y),\bar z)$, for some (partial) function $f$ and predicate/function $P$.
+	\item $\varphi$ occurs in the scope of an odd number of negations
+\end{itemize}
+Actions:
+\begin{itemize}
+    \item  $\varphi \mapsto \exists w: f(\bar y) = w \wedge P(\bar x, f(\bar y),\bar z)$
+\end{itemize}
+\end{example}
+
+\begin{example}[Functional Unnesting]
+	Same as unnesting but with $f(x)=g(y)$.
+\end{example}
+
+\begin{example}[Graphing]
+Conditions:
+\begin{itemize}
+    \item  All occurences of a function symbol $F$ are of the form $\varphi = F(\bar x) = y$, where $y$ is a domain element or a variable. (alternatively, we could omit the condition but force this in the partial grounding process using the partial ordering of actions)
+\end{itemize}
+Actions:
+\begin{itemize}
+    \item  $\varphi \mapsto GRAPH_F(\bar x, y)$ for all occurences $\varphi$ as described above
+\item $\T += \{\forall \bar x: \#\{y: GRAPH_F(\bar x, y)\} = 1\}$.
+\end{itemize}
+\end{example}
+
+\begin{definition}[Grounding description]
+A grounding description is a set of allowed rewrite rules with a partial ordering.
+\end{definition}
+
+\begin{definition}[Partial grounding process]
+A \textit{partial grounding process} of $T$ and $\I$ with description $D$ is a sequence $\seq{T_i}$ of partial groundings where $T_0= \seq{\voc,T}$ and such that for every $i>0$ there is a rule $r$ in $D$ such that:
+\begin{itemize}
+	\item $T_i = r(T_{i-1})$.
+	\item The conditions of $r$ are satisfied.
+	\item For every smaller rule $r'$, its conditions are  not satisfied
+\end{itemize}
+\end{definition}
+
+
+
+\begin{definition}[ECNF grounding process]
+	An ECNF grounding process is a grounding process of length $n$ such that $T_n=\pg$, where $\T = \Tg$ is in ECNF format.
+\end{definition}
+
+
+\begin{definition}[ECNF-CP grounding process]
+	An ECNF-CP grounding process is a grounding process of length $n$ such that $T_n=\pg$, where $\Tg$ is in ECNF format and $\T\setminus \Tg$ consists of CP-constraints (todo definition).
+\end{definition}
+
+\begin{definition}[Delayed grounding process]
+	A delayed grounding process is a grounding process of length $n$ such that $T_n=\pg$, where $\Tg$ is in ECNF format and $\T = \Tg \bigcup \Td$.
+\end{definition}
+\todo{Opmerking: op deze manier kunnen we dus onze verschillende soorten grounding processen specifieren.}
+
+
+\section{Effective grounding process}
+The grounding proceeds in two phases.
+In phase one, the \fodot theory is rewritten into an intermediary format \indot, which can be grounded efficiently with a small number of rewrite rules. 
+In the second phase, this intermediary format is grounded into \pcdot.
+
+\subsection{Phase II}
+Here we present the intermediary format \indot and the final ground format \pcdot and the rewrite rules and control used to convert the first into the second.
+
+\section{\indot}
+Intermediate format \indot reflects quite closely the grounder hierarchy that will be constructed for a given theory.
+
+Formula, term, etc. are defined recursively as follows:
+A basic term is a variable or a domain element.
+A function term is a function applied to variables and domain elements or addition or subtraction applied to function terms.
+An aggregate term is an aggregate function applied to a set $\{t(\xxx) | \xxx \in \DDD, \psi\}$, with $\xxx$ variables, $t$ a term, $\DDD$ a domain vector and $\psi$ a formula. 
+Note: both $t$, $\DDD$ and $\psi$ can depend on additional free variables.
+A term is a basic, function or aggregate term.
+
+A formula is 
+\begin{itemize}
+  \item an atom $P(\ttt)$, with $\ttt$ basic terms.
+  \item an atom $t \sim t'$, with $t$ a term and $t'$ a non-aggregate term, $\sim$ is one of $\{=,~\geq,~\leq,~>,~<,~\neq\}$.
+  \item applying $\land,~\lor,~\lnot$ to formulas.
+  \item $\forall \xxx[\DDD]: \psi$($\exists \xxx[\DDD]: \psi$), with $\xxx$ variables, $\DDD$ a domain vector and $\psi$ a formula.
+  \item Nothing else is a formula. 
+\end{itemize}
+
+\inter represents a partial interpretation.
+
+A rule is an expression of the form $\forall \xxx[\DDD]: P(\xxx) \lrule \psi$, with $\psi$ a formula and $P(\xxx)$ an atom. 
+TODO type of $P$.
+A definition is a set of rules.
+
+TODO domain is in fact a query over a logical formula with only known symbols
+
+
+\section{\pcdot}
+The ground format, which we want to obtain as the limit of the rewriting procedure.
+
+Upper-case characters are propositional variables, lower-case characters are finite domain integer variables.
+If they are preceded with a $\_$, their value is known.
+
+An expression is one of the following:
+\begin{itemize}
+  \item Clauses $P \lor Q \lor \ldots$.
+  \item Disjunctive rule $P \lrule Q_1 \lor \ldots \lor Q_n$.
+  \item Conjunctive rule $P \lrule Q_1 \land \ldots \land Q_n$.
+  \item An fdvariable declaration $v \in [\_i, \_j]$.
+  \item A comparison $P \equiv v_1 \sim v_2$.
+  \item A comparison $P \equiv v \sim \_i$.
+  \item An aggregate expression $P \sim\sim agg(\{\_i_1 \times P_1 \times v_1,\ldots,\_i_n \times P_n \times v_n\}) \sim \_i$. $\sim\sim$ stands for $\limplies$, $\limpliedby$, $\equiv$ or $\lrule$.
+  \item An function application $P \equiv Q(\ttt)$, with $\ttt$ a list of domain elements and fdvariables. If $Q$ is equality, on argument is allowed to be a function term applied to domain elements and fdvariables.
+\end{itemize}
+
+TODO what is in fact the output vocabulary?
+
+TODO rules will be replaced with an unfounded set constraint and explicit completion.
+
+TODO generalize this format to something consistent and consider the internal rewritings into this format as really internal.
+
+\section{Rewriting \indot to \pcdot}
+This algorithm lies the closest to what is really implemented, but might not be how we want to represent it.
+
+The algorithm maintains some state:
+\begin{itemize}
+  \item Tseitin interpretations $Ts$: a mapping of propositional atoms to their formula interpretation.
+	\item Grounding $G$ in \pcdot.
+	\item Remaining theory $R$ in \indot.    
+\end{itemize}
+
+\subsection{Rewriting rules}
+\paragraph{Disjunction reduction}
+Conditions:
+\begin{itemize}
+  \item $\varphi=\psi \lor \true$ or $\varphi=\psi \lor \false$.
+  \item $\varphi \in R$.
+\end{itemize}
+Actions:
+\begin{itemize}
+  \item $\varphi \mapsto \true$ or $\varphi \mapsto \psi$.
+\end{itemize}
+
+\paragraph{Conjunction reduction}
+\begin{itemize}
+  \item $G$ contains $T$, $T$ is defined in $Ts$ $\Longrightarrow$ Remove definition from $Ts$ and add it to $G$.
+  \item $\forall \xxx[\DDD]: \psi$ is a formula in $R$ $\Longrightarrow$ Select a $\ddd \in \DDD$, replace with $\psi[\xxx\subs\ddd] \land (\forall \xxx[\DDD\elim\ddd]: \psi$ $\DDD$. 
+  \item $\psi \land \false(\true)$ in $R$ $\Longrightarrow$ replace with $\false$($\psi$).
+  \item $\psi \lor \true(\false)$ in $R$ $\Longrightarrow$ replace with $\true$($\psi$).
+  \item $\phi$ is propositional sentence in $R$ $\Longrightarrow$ Move to grounding.
+\end{itemize}
+
+\section{Propagation over the new function constraints}
+Equality solver to derive more equalities, resulting in more propagation.
+\end{document}

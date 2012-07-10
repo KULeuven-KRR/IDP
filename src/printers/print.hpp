@@ -28,6 +28,7 @@ class Namespace;
 class Formula;
 class AbstractTheory;
 class InteractivePrintMonitor;
+class Query;
 class GroundFixpDef;
 class GroundDefinition;
 class CPReification;
@@ -76,6 +77,7 @@ protected:
 
 	virtual void visit(const Vocabulary*) = 0;
 	virtual void visit(const AbstractStructure*) = 0;
+	virtual void visit(const Query*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const GroundClause&) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
@@ -121,6 +123,7 @@ public:
 template<> void Printer::print(const AbstractStructure* b);
 template<> void Printer::print(const Namespace* b);
 template<> void Printer::print(const Vocabulary* b);
+template<> void Printer::print(const Query* b);
 
 template<typename Stream>
 class StreamPrinter: public Printer {

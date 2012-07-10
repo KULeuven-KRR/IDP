@@ -15,6 +15,7 @@
 #include "IncludeComponents.hpp"
 
 #include "groundtheories/GroundTheory.hpp"
+#include "theory/Query.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
@@ -28,6 +29,7 @@ class IDPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
+	bool _printTermsAsBlock;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -42,9 +44,10 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(Stream& stream)
+	IDPPrinter(Stream& stream, bool printTermsAsBlock = true)
 			: 	StreamPrinter<Stream>(stream),
-				_translator(NULL) {
+				_translator(NULL),
+				_printTermsAsBlock(printTermsAsBlock) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
@@ -75,6 +78,8 @@ public:
 	}
 
 	void visit(const AbstractStructure* structure) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 
 		if (not structure->isConsistent()) {
@@ -154,6 +159,36 @@ public:
 		unindent();
 		printTab();
 		output() << "}" << '\n';
+		_printTermsAsBlock = backup;
+	}
+
+	void visit(const Query* q) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
+
+		Assert(isTheoryOpen());
+
+		auto voc = q->vocabulary();
+
+		printTab();
+		output() << "query " << q->name() << " : " << voc->name() << " {\n";
+		indent();
+		printTab();
+		output() << "{";
+		for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
+			output() << ' ';
+			output() << (*it)->name();
+			if ((*it)->sort()) {
+				output() << '[' << (*it)->sort()->name() << ']';
+			}
+		}
+		output() << " : ";
+		q->query()->accept(this);
+		output() << "}" << '\n';
+		unindent();
+		printTab();
+		output() << "}" << '\n';
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Vocabulary* v) {
@@ -181,6 +216,7 @@ public:
 		unindent();
 		printTab();
 		output() << "}" << '\n';
+
 	}
 
 	void visit(const Namespace* s) {
@@ -203,13 +239,13 @@ public:
 			visit((*i).second);
 		}
 		for (auto i = s->procedures().cbegin(); i != s->procedures().cend(); ++i) {
-			// FIXME visit((*i).second);
+			// FIXME visit((*i).second); //see #200
 		}
 		for (auto i = s->terms().cbegin(); i != s->terms().cend(); ++i) {
-			// FIXME visit((*i).second);
+			(*i).second->accept(this);
 		}
 		for (auto i = s->queries().cbegin(); i != s->queries().cend(); ++i) {
-			// FIXME visit((*i).second);
+			visit((*i).second);
 		}
 		unindent();
 		printTab();
@@ -217,15 +253,21 @@ public:
 	}
 
 	void visit(const GroundFixpDef*) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		/*TODO not implemented yet*/
-		output() << "(printing fixpoint definitions is not yet implemented)\n";
+		throw notyetimplemented("(printing fixpoint definitions is not yet implemented)");
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Theory* t) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		printTab();
 		output() << "theory " << t->name() << " : " << t->vocabulary()->name() << " {" << '\n';
 		indent();
+		printTab();
 
 		Assert(isTheoryOpen());
 		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
@@ -240,10 +282,10 @@ public:
 			(*it)->accept(this);
 			output() << "" << '\n';
 		}
-
 		unindent();
 		printTab();
 		output() << "}" << '\n';
+		_printTermsAsBlock = backup;
 	}
 
 	template<typename Visitor, typename List>
@@ -252,9 +294,12 @@ public:
 			CHECKTERMINATION
 			(*i)->accept(v);
 		}
+
 	}
 
 	void visit(const GroundTheory<GroundPolicy>* g) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		setTranslator(g->translator());
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
@@ -271,11 +316,14 @@ public:
 			(*i).second->accept(this);
 			closeDefinition();
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	/** Formulas **/
 
 	void visit(const PredForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (isNeg(f->sign()))
 			output() << "~";
@@ -289,9 +337,12 @@ public:
 			}
 			output() << ')';
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const EqChainForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
@@ -308,9 +359,12 @@ public:
 			}
 		}
 		output() << ')';
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const EquivForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
@@ -320,9 +374,12 @@ public:
 		output() << " <=> ";
 		f->right()->accept(this);
 		output() << ')';
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const BoolForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (f->subformulas().empty()) {
 			if (f->isConjWithSign()) {
@@ -343,9 +400,12 @@ public:
 			}
 			output() << ')';
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const QuantForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (isNeg(f->sign())) {
 			output() << "~";
@@ -367,9 +427,12 @@ public:
 		output() << " : ";
 		f->subformulas()[0]->accept(this);
 		output() << ')';
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const AggForm* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		if (isNeg(f->sign())) {
 			output() << '~';
 		}
@@ -378,11 +441,14 @@ public:
 		output() << ' ' << toString(f->comp()) << ' ';
 		f->getAggTerm()->accept(this);
 		output() << ')';
+		_printTermsAsBlock = backup;
 	}
 
 	/** Definitions **/
 
 	void visit(const Rule* r) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		if (not r->quantVars().empty()) {
@@ -396,9 +462,12 @@ public:
 		output() << " <- ";
 		r->body()->accept(this);
 		output() << ".";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Definition* d) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		output() << "{\n";
@@ -411,9 +480,12 @@ public:
 		unindent();
 		printTab();
 		output() << "}";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const FixpDef* d) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
@@ -430,16 +502,46 @@ public:
 		unindent();
 		printTab();
 		output() << "]";
+		_printTermsAsBlock = backup;
 	}
 
 	/** Terms **/
 
+	void printTermName(const Term* t) {
+		if (_printTermsAsBlock) {
+			printTab();
+			Assert(t->name() != "");
+			Assert(t->vocabulary()!=NULL);
+			output() << "term " << t->name() << " : " << t->vocabulary()->name() << " {" << '\n';
+			indent();
+			printTab();
+		}
+	}
+
+	void finishTermPrinting() {
+		if (_printTermsAsBlock) {
+			printTab();
+			output() << "\n";
+			unindent();
+			printTab();
+			output() << "}\n";
+		}
+	}
+
 	void visit(const VarTerm* t) {
+		printTermName(t);
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << t->var()->name();
+		_printTermsAsBlock = backup;
+		finishTermPrinting();
 	}
 
 	void visit(const FuncTerm* t) {
+		printTermName(t);
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << toString(t->function());
 		if (not t->subterms().empty()) {
@@ -451,9 +553,14 @@ public:
 			}
 			output() << ")";
 		}
+		_printTermsAsBlock = backup;
+		finishTermPrinting();
 	}
 
 	void visit(const DomainTerm* t) {
+		printTermName(t);
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		std::string str = toString(t->value());
 		if (t->sort()) {
@@ -464,11 +571,18 @@ public:
 			} else {
 				output() << str;
 			}
-		} else
+		} else {
 			output() << '@' << str;
+		}
+		_printTermsAsBlock = backup;
+		finishTermPrinting();
+
 	}
 
 	void visit(const AggTerm* t) {
+		printTermName(t);
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		switch (t->function()) {
 		case AggFunction::CARD:
@@ -488,24 +602,31 @@ public:
 			break;
 		}
 		t->set()->accept(this);
+		_printTermsAsBlock = backup;
+		finishTermPrinting();
 	}
 
 	/** Set expressions **/
 
 	void visit(const EnumSetExpr* s) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		output() << "[ ";
 		bool begin = true;
-		for(auto i=s->getSets().cbegin(); i<s->getSets().cend(); ++i) {
-			if(not begin){
-				output() <<", ";
+		for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
+			if (not begin) {
+				output() << ", ";
 			}
 			begin = false;
 			(*i)->accept(this);
 		}
 		output() << " ]";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const QuantSetExpr* s) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		output() << '{';
 		for (auto it = s->quantVars().cbegin(); it != s->quantVars().cend(); ++it) {
 			output() << ' ';
@@ -519,9 +640,12 @@ public:
 		output() << " : ";
 		s->getTerm()->accept(this);
 		output() << " }";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const GroundClause& g) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		if (g.empty()) {
 			output() << "false";
 		} else {
@@ -536,6 +660,7 @@ public:
 			}
 		}
 		output() << "." << "\n";
+		_printTermsAsBlock = backup;
 	}
 
 	void openDefinition(DefId defid) {
@@ -554,13 +679,18 @@ public:
 	}
 
 	void visit(const GroundDefinition* d) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		for (auto it = d->begin(); it != d->end(); ++it) {
 			(*it).second->accept(this);
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const PCGroundRule* b) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
@@ -584,16 +714,22 @@ public:
 			}
 		}
 		output() << ".\n";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const AggGroundRule* b) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printAtom(b->head());
 		output() << " <- ";
 		printAggregate(b->bound(), b->lower(), b->aggtype(), b->setnr());
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const GroundAggregate* a) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printAtom(a->head());
 		switch (a->arrow()) {
@@ -610,9 +746,12 @@ public:
 			break;
 		}
 		printAggregate(a->bound(), a->lower(), a->type(), a->setnr());
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const CPReification* cpr) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printAtom(cpr->_head);
 		switch (cpr->_body->type()) {
@@ -657,9 +796,12 @@ public:
 			output() << right._bound;
 		}
 		output() << ".\n";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const CPSumTerm* cpt) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << "sum[ ";
 		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
@@ -669,9 +811,12 @@ public:
 			}
 		}
 		output() << " ]";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const CPWSumTerm* cpt) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << "wsum[ ";
 		auto vit = cpt->varids().cbegin();
@@ -685,14 +830,20 @@ public:
 			}
 		}
 		output() << " ]";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const CPVarTerm* cpt) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTerm(cpt->varid());
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const PredTable* table) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		if (not table->finite()) {
 			std::clog << "Requested to print infinite table, did not do this.\n";
@@ -725,9 +876,12 @@ public:
 		} else {
 			output() << "false";
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(FuncTable* table) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		std::vector<SortTable*> vst = table->universe().tables();
 		vst.pop_back();
@@ -760,11 +914,15 @@ public:
 				output() << toString((*kt)[0]);
 			else
 				output() << "{ }";
-		} else
+		} else {
 			output() << "possibly infinite table";
+		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Sort* s) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		output() << "type " << s->name();
@@ -777,9 +935,12 @@ public:
 			}
 		}
 		output() << "\n";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Predicate* p) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		if (p->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
@@ -795,9 +956,12 @@ public:
 			}
 			output() << "\n";
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const Function* f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		printTab();
 		if (f->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
@@ -815,9 +979,12 @@ public:
 			}
 			output() << " : " << f->outsort()->name() << "\n";
 		}
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const SortTable* table) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << "{ ";
 		if (table->isRange()) {
@@ -834,9 +1001,12 @@ public:
 			}
 		}
 		output() << " }";
+		_printTermsAsBlock = backup;
 	}
 
 	void visit(const GroundSet* s) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
 		for (size_t n = 0; n < s->size(); ++n) {
@@ -853,6 +1023,7 @@ public:
 			}
 		}
 		output() << " ]\n";
+		_printTermsAsBlock = backup;
 	}
 
 private:

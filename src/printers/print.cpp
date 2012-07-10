@@ -71,3 +71,8 @@ template<>
 void Printer::print(const Vocabulary* b) {
 	visit(b);
 }
+
+template<>
+void Printer::print(const Query* b) {
+	visit(b);
+}

@@ -37,6 +37,8 @@ private:
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
+	std::string _name; //!<Terms sometimes have a name
+	Vocabulary* _voc; //!<Terms sometimes have a vocabulary
 
 private:
 	virtual void setFreeVars(); //!< Compute the free variables of the term
@@ -52,7 +54,9 @@ protected:
 	Term(TermType type, const TermParseInfo& pi)
 			: 	_type(type),
 				_allwaysDeleteRecursively(false),
-				_pi(pi) {
+				_pi(pi),
+				_name(""),
+				_voc(NULL) {
 	}
 
 public:
@@ -90,6 +94,12 @@ public:
 	void allwaysDeleteRecursively(bool aRD) {
 		_allwaysDeleteRecursively = aRD;
 	}
+	void name(std::string name) {
+		_name = name;
+	}
+	void vocabulary(Vocabulary* v) {
+		_voc = v;
+	}
 
 	const TermParseInfo& pi() const {
 		return _pi;
@@ -99,7 +109,12 @@ public:
 		return _type;
 	}
 	bool contains(const Variable*) const; //!< true iff the term contains the variable
-
+	std::string name() const {
+		return _name;
+	}
+	Vocabulary* vocabulary() const{
+		return _voc;
+	}
 	const std::set<Variable*>& freeVars() const {
 		return _freevars;
 	}

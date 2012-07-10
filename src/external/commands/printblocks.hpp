@@ -14,6 +14,8 @@
 #include "commandinterface.hpp"
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
+#include "theory/Query.hpp"
+
 #include "options.hpp"
 
 template<class Object>
@@ -68,6 +70,34 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto theory = get<0>(args);
 		return InternalArgument(StringPointer(print(theory)));
+	}
+};
+
+typedef TypedInference<LIST(Query*)> PrintQueryInferenceBase;
+class PrintQueryInference: public PrintQueryInferenceBase {
+public:
+	PrintQueryInference()
+			: PrintQueryInferenceBase("tostring", "Prints the given query.") {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto query = get<0>(args);
+		return InternalArgument(StringPointer(print(query)));
+	}
+};
+
+typedef TypedInference<LIST(Term*)> PrintTermInferenceBase;
+class PrintTermInference: public PrintTermInferenceBase {
+public:
+	PrintTermInference()
+			: PrintTermInferenceBase("tostring", "Prints the given term.") {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto term = get<0>(args);
+		return InternalArgument(StringPointer(print(term)));
 	}
 };
 
