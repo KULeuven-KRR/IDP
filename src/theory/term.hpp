@@ -54,9 +54,9 @@ protected:
 	Term(TermType type, const TermParseInfo& pi)
 			: 	_type(type),
 				_allwaysDeleteRecursively(false),
-				_pi(pi),
 				_name(""),
-				_voc(NULL) {
+				_voc(NULL),
+				_pi(pi){
 	}
 
 public:
