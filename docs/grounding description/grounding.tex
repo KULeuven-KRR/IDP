@@ -1,6 +1,6 @@
 \documentclass{article}
 
-\include{idp-latex}
+\input{../official/idp-latex}
 
 % \newcommand{\voc}{\Sigma}
 \newcommand{\I}{\mathcal{I}}
@@ -20,12 +20,10 @@
 \newcommand{\pg}{\seq{\voc,\T}}
 \newcommand{\pgg}{\seq{\voc',\T'}}
 
-
 \newcommand{\rewrite}{\mapsto}
 
-
-% \newcommand{\true}{\mathbf{t}}
-% \newcommand{\false}{\mathbf{f}}
+\newcommand{\indot}{{\sc FO($\cdot$)$_{int}$}\xspace}
+\newcommand{\DDD}{\ensuremath{\overline{D}}}
 
 % not for llncs
 \newtheorem{definition}{Definition}
@@ -36,8 +34,8 @@
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}{Corollary}
 
-\title{Partial grounding}
 
+\title{Partial grounding}
 
 \date{}
 
@@ -253,61 +251,97 @@ A \textit{partial grounding process} of $T$ and $\I$ with description $D$ is a s
 \todo{Opmerking: op deze manier kunnen we dus onze verschillende soorten grounding processen specifieren.}
 
 
+\section{Effective grounding process}
+The grounding proceeds in two phases.
+In phase one, the \fodot theory is rewritten into an intermediary format \indot, which can be grounded efficiently with a small number of rewrite rules. 
+In the second phase, this intermediary format is grounded into \pcdot.
+
+\subsection{Phase II}
+Here we present the intermediary format \indot and the final ground format \pcdot and the rewrite rules and control used to convert the first into the second.
+
+\section{\indot}
+Intermediate format \indot reflects quite closely the grounder hierarchy that will be constructed for a given theory.
+
+Formula, term, etc. are defined recursively as follows:
+A basic term is a variable or a domain element.
+A function term is a function applied to variables and domain elements or addition or subtraction applied to function terms.
+An aggregate term is an aggregate function applied to a set $\{t(\xxx) | \xxx \in \DDD, \psi\}$, with $\xxx$ variables, $t$ a term, $\DDD$ a domain vector and $\psi$ a formula. 
+Note: both $t$, $\DDD$ and $\psi$ can depend on additional free variables.
+A term is a basic, function or aggregate term.
+
+A formula is 
+\begin{itemize}
+  \item an atom $P(\ttt)$, with $\ttt$ basic terms.
+  \item an atom $t \sim t'$, with $t$ a term and $t'$ a non-aggregate term, $\sim$ is one of $\{=,~\geq,~\leq,~>,~<,~\neq\}$.
+  \item applying $\land,~\lor,~\lnot$ to formulas.
+  \item $\forall \xxx[\DDD]: \psi$($\exists \xxx[\DDD]: \psi$), with $\xxx$ variables, $\DDD$ a domain vector and $\psi$ a formula.
+  \item Nothing else is a formula. 
+\end{itemize}
+
+\inter represents a partial interpretation.
+
+A rule is an expression of the form $\forall \xxx[\DDD]: P(\xxx) \lrule \psi$, with $\psi$ a formula and $P(\xxx)$ an atom. 
+TODO type of $P$.
+A definition is a set of rules.
+
+TODO domain is in fact a query over a logical formula with only known symbols
 
 
+\section{\pcdot}
+The ground format, which we want to obtain as the limit of the rewriting procedure.
 
-%
-%
-% \begin{definition}
-% A partial grounding process  for theory $T$ in domain $Dom$ is a sequence  $\seq{T_i}_{i=0}^n$ of theories with $T_0=T_{Dom}$ and $T_{i+1}$ is obtained from $T_i$ by one of the following rewriting steps on one of the subformulas of $T_i$. Each rewrite rule applied on $\varphi$ is written with outcome a pair $\psi,\phi$. This means that subformula $\varphi$ of a sentence $\alpha\in T$ is replaced by $\psi$ in $\alpha$ and $\phi$ is added to $T$. That is $T'=T-\alpha+\alpha[\varphi/\psi]+\phi$.
-% \begin{itemize}
-% \item  Negation: the transformation to NNF rules.
-% \item  Term normalisation
-% \[\begin{array}{llll}
-% P(\dots,t\dots) & \rewrite & \exists x[Dom] (t=x \land P(\dots x \dots)), \emptyset\\
-% P(\dots,t\dots) & \rewrite & \forall  x[Dom] (t=x \Rightarrow P(\dots x \dots)), \emptyset
-% \end{array}
-% \]
-% where $t$ is a constant or composed term, but not a variable.
-% \item Quantification:
-% \[\begin{array}{llll}
-% \forall x[D] \varphi[x] & \rewrite & \varphi[d] \land \forall x[D-d] \varphi[x], \emptyset & \mbox{for some $d\in D$}\\
-% \exists x[D] \varphi[x] & \rewrite & \varphi[d] \lor \exists x[D-d] \varphi[x], \emptyset & \mbox{for some $d\in D$}\\
-% \forall x[\emptyset] \varphi[x] & \rewrite & \true , \emptyset\\
-% \exists x[\emptyset] \varphi[x] & \rewrite & \false, \emptyset
-% \end{array}
-% \]
-% \item  Left linear format:
-% \[\begin{array}{llll}
-% (\psi \land \phi)\land \varphi & \rewrite & \psi \land (\phi\land \varphi), \emptyset & \mbox{Left linear $\land$}\\
-% (\psi \lor \phi)\lor \varphi & \rewrite & \psi \lor (\phi\lor \varphi), \emptyset & \mbox{Left linear  $\lor$}\\
-% \end{array}
-% \]
-% \item  Tseitin introduction
-% \[\begin{array}{llll}
-% \psi & \rewrite & P_\psi, P_\psi \equiv \psi  & \mbox{$\psi$ a misfitting formula occurrence}
-% \end{array}
-% \]
-% with $P_\psi$ a new propositional symbol. A misfitting formula occurrence is a conjunction or universal quantification in a disjunction or existential quantification, or vice versa.
-% \item Definition clausification
-% \[\begin{array}{llll}
-% P \equiv \psi & \rewrite & P \equiv \psi, \neg P \lor \psi\\
-% P \equiv \psi & \rewrite & P \equiv \psi,  P \lor \neg\psi
-% \end{array}
-% \]
-% \end{itemize}
-% \end{definition}
-%
-% \begin{definition}
-% A partial grounding of $T$ in domain $Dom$ is the result $T_n$ of some partial ggrounding process of $T$ in $Dom$.
-% \end{definition}
-%
-% \begin{definition}
-% A free ground atom is of the form $F(\bar{d})=d$ or $P(\bar{d})$
-% with $d,\bar{d}$ domain elements of $Dom$.
-% \end{definition}
-%
-% Hoe controle te specifi\"eren?
+Upper-case characters are propositional variables, lower-case characters are finite domain integer variables.
+If they are preceded with a $\_$, their value is known.
 
+An expression is one of the following:
+\begin{itemize}
+  \item Clauses $P \lor Q \lor \ldots$.
+  \item Disjunctive rule $P \lrule Q_1 \lor \ldots \lor Q_n$.
+  \item Conjunctive rule $P \lrule Q_1 \land \ldots \land Q_n$.
+  \item An fdvariable declaration $v \in [\_i, \_j]$.
+  \item A comparison $P \equiv v_1 \sim v_2$.
+  \item A comparison $P \equiv v \sim \_i$.
+  \item An aggregate expression $P \sim\sim agg(\{\_i_1 \times P_1 \times v_1,\ldots,\_i_n \times P_n \times v_n\}) \sim \_i$. $\sim\sim$ stands for $\limplies$, $\limpliedby$, $\equiv$ or $\lrule$.
+  \item An function application $P \equiv Q(\ttt)$, with $\ttt$ a list of domain elements and fdvariables. If $Q$ is equality, on argument is allowed to be a function term applied to domain elements and fdvariables.
+\end{itemize}
 
+TODO what is in fact the output vocabulary?
+
+TODO rules will be replaced with an unfounded set constraint and explicit completion.
+
+TODO generalize this format to something consistent and consider the internal rewritings into this format as really internal.
+
+\section{Rewriting \indot to \pcdot}
+This algorithm lies the closest to what is really implemented, but might not be how we want to represent it.
+
+The algorithm maintains some state:
+\begin{itemize}
+  \item Tseitin interpretations $Ts$: a mapping of propositional atoms to their formula interpretation.
+	\item Grounding $G$ in \pcdot.
+	\item Remaining theory $R$ in \indot.    
+\end{itemize}
+
+\subsection{Rewriting rules}
+\paragraph{Disjunction reduction}
+Conditions:
+\begin{itemize}
+  \item $\varphi=\psi \lor \true$ or $\varphi=\psi \lor \false$.
+  \item $\varphi \in R$.
+\end{itemize}
+Actions:
+\begin{itemize}
+  \item $\varphi \mapsto \true$ or $\varphi \mapsto \psi$.
+\end{itemize}
+
+\paragraph{Conjunction reduction}
+\begin{itemize}
+  \item $G$ contains $T$, $T$ is defined in $Ts$ $\Longrightarrow$ Remove definition from $Ts$ and add it to $G$.
+  \item $\forall \xxx[\DDD]: \psi$ is a formula in $R$ $\Longrightarrow$ Select a $\ddd \in \DDD$, replace with $\psi[\xxx\subs\ddd] \land (\forall \xxx[\DDD\elim\ddd]: \psi$ $\DDD$. 
+  \item $\psi \land \false(\true)$ in $R$ $\Longrightarrow$ replace with $\false$($\psi$).
+  \item $\psi \lor \true(\false)$ in $R$ $\Longrightarrow$ replace with $\true$($\psi$).
+  \item $\phi$ is propositional sentence in $R$ $\Longrightarrow$ Move to grounding.
+\end{itemize}
+
+\section{Propagation over the new function constraints}
+Equality solver to derive more equalities, resulting in more propagation.
 \end{document}
