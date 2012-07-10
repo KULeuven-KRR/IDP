@@ -264,7 +264,7 @@ Intermediate format \indot reflects quite closely the grounder hierarchy that wi
 
 Formula, term, etc. are defined recursively as follows:
 A basic term is a variable or a domain element.
-A function term is a function applied to variables and domain elements or addition or subtraction applied to function terms.
+A function term is a function over integers applied to variables and domain elements or addition or subtraction applied to function terms.
 An aggregate term is an aggregate function applied to a set $\{t(\xxx) | \xxx \in \DDD, \psi\}$, with $\xxx$ variables, $t$ a term, $\DDD$ a domain vector and $\psi$ a formula. 
 Note: both $t$, $\DDD$ and $\psi$ can depend on additional free variables.
 A term is a basic, function or aggregate term.
@@ -277,6 +277,8 @@ A formula is
   \item $\forall \xxx[\DDD]: \psi$($\exists \xxx[\DDD]: \psi$), with $\xxx$ variables, $\DDD$ a domain vector and $\psi$ a formula.
   \item Nothing else is a formula. 
 \end{itemize}
+
+For each symbol, we have an interpreted sort or all its arguments.
 
 \inter represents a partial interpretation.
 
@@ -296,13 +298,15 @@ If they are preceded with a $\_$, their value is known.
 An expression is one of the following:
 \begin{itemize}
   \item Clauses $P \lor Q \lor \ldots$.
+  \item $P \sim\sim Q_1 \lor \ldots \lor Q_n$. $\sim\sim$ stands for $\limplies$, $\limpliedby$, $\equiv$ or $\lrule$.
+  \item $P \sim\sim Q_1 \land \ldots \land Q_n$.
   \item Disjunctive rule $P \lrule Q_1 \lor \ldots \lor Q_n$.
   \item Conjunctive rule $P \lrule Q_1 \land \ldots \land Q_n$.
   \item An fdvariable declaration $v \in [\_i, \_j]$.
   \item A comparison $P \equiv v_1 \sim v_2$.
   \item A comparison $P \equiv v \sim \_i$.
-  \item An aggregate expression $P \sim\sim agg(\{\_i_1 \times P_1 \times v_1,\ldots,\_i_n \times P_n \times v_n\}) \sim \_i$. $\sim\sim$ stands for $\limplies$, $\limpliedby$, $\equiv$ or $\lrule$.
-  \item An function application $P \equiv Q(\ttt)$, with $\ttt$ a list of domain elements and fdvariables. If $Q$ is equality, on argument is allowed to be a function term applied to domain elements and fdvariables.
+  \item An aggregate expression $P \sim\sim agg(\{\_i_1 \times P_1 \times v_1,\ldots,\_i_n \times P_n \times v_n\}) \sim \_i$. 
+  \item FUTURE: An function application $P \equiv Q(\ttt)$, with $\ttt$ a list of domain elements and fdvariables. If $Q$ is equality, on argument is allowed to be a function term applied to domain elements and fdvariables.
 \end{itemize}
 
 TODO what is in fact the output vocabulary?
@@ -316,13 +320,71 @@ This algorithm lies the closest to what is really implemented, but might not be 
 
 The algorithm maintains some state:
 \begin{itemize}
-  \item Tseitin interpretations $Ts$: a mapping of propositional atoms to their formula interpretation.
+  \item Tseitin interpretations $Ts$: a mapping of propositional atoms to their formula interpretation. These interpretations are always formulas that can be directly added to the grounding.
 	\item Grounding $G$ in \pcdot.
-	\item Remaining theory $R$ in \indot.    
+	\item Remaining theory $R$ in \indot.
 \end{itemize}
 
 \subsection{Rewriting rules}
-An uppercase character always represents a propositional atom.
+An uppercase character always represents an atom with only domain elements as arguments.
+
+Assume we have a domain element $d_{NULL}$, for which the type check always fails. Also, one literal exists which represents \true (its negation then represents \false).
+
+Instantiating a variable with a domain element in a formula replaces all occurrences of the variable, also in domains. 
+
+TODO partial functions
+
+\begin{itemize}
+  \item Type checks
+  \item Formula to tseitin
+  \item Simplifying conjunction, disjunction
+  \item Instantiation
+  \item Add to grounding
+  \item Set to ground set
+  \item Rule to propositional rule + false defineds
+  \item Optimization
+  \item Lazy stuff
+\end{itemize}
+
+\noindent Type checks
+
+\begin{tabular}{|lcl|} \hline
+$P(t_1, \ldots, t_n)$ in $R$ & $\Longrightarrow$& $P(t_1, \ldots, t_n)\mapsto \false$\\
+$t_i$ is a domain element && \\
+$t_i \not\in Sort(P,i)$ &&\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$f(t_1, \ldots, t_n)$ in $R$ & $\Longrightarrow$& $f(t_1, \ldots, t_n)\mapsto d_{NULL}$\\
+$t_i$ is a domain element && \\
+$t_i \not\in Sort(f,i)$ &&\\
+\hline
+\end{tabular}
+
+\noindent Tseitin introduction
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = Q_1 \land \ldots \land Q_n$ & $\Longrightarrow$& $\varphi\mapsto T$\\
+$\psi = P_1 \lor \varphi \lor \ldots \lor P_n $ && $Ts += (T \sim\sim(\text{context}) \varphi)$\\
+$\psi \in R$, context &&\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = t \sim t'$ in $R$ & $\Longrightarrow$& $\varphi\mapsto T$\\
+$t$ is a constant over int && $Ts += (T \equiv t \sim t'$\\
+$t'$ is a domain element or constant over int&&\\
+\hline
+\end{tabular}
+
+TODO allow swapping order
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = agg(\{\_i_j,P_j,t_j\}) \sim t'$ in $R$ & $\Longrightarrow$& $\varphi\mapsto T$\\
+$t'$ is an integer && $Ts += (T \sim\sim(\text{context}) agg(\{\_i_j,P_j,t_j\}) \sim t'$\\
+\hline
+\end{tabular}
 
 \noindent Disjunction reduction
 
@@ -352,43 +414,68 @@ $\varphi \in R$ &&\\
 \hline
 \end{tabular}
 
-\noindent IsGround
-
-\begin{tabular}{|lcl|} \hline
-$\varphi = P_1 \lor \ldots \lor P_n$ & $\Longrightarrow$ & $R-=\{\varphi\}$ \\
-$\varphi \in R$ && $G+=\{\varphi\}$\\
-\hline
-\end{tabular}
-
-\noindent Tseitin addition to grounding
-
-\begin{tabular}{|lcl|} \hline
-$P$ atom in $G$ & $\Longrightarrow$ & $G+=\{\varphi\}$ \\
-$P \lrule \varphi$ in $Ts$ && $Ts -= (T \lrule \varphi)$\\
-\hline
-\end{tabular}
-
-\noindent Aggregates
-
-\noindent CP
-
-\noindent Tseitin introduction
-
-\begin{tabular}{|lcl|} \hline
-$\varphi = Q_1 \land \ldots \land Q_n$ & $\Longrightarrow$& $\varphi\mapsto T$\\
-$\psi = P_1 \lor \varphi \lor \ldots \lor P_n $ && $Ts += (T \limplies \varphi)$\\
-$\psi \in R$, context is sentence &&\\
-\hline
-\end{tabular}
-
 \noindent Instantiation
 
 \begin{tabular}{|lcl|} \hline
-$\varphi = \forall \xxx[\DDD]: \psi$ & $\Longrightarrow$ & $\varphi \mapsto \psi[\xxx\subs\ddd] \land \forall \xxx[\DDD\elim\ddd]: \psi$\\
-$\varphi \in R$ && \\
+$\varphi = \forall \xxx[\DDD]: \psi$ in $R$ & $\Longrightarrow$ & $\varphi \mapsto \psi[\xxx\subs\ddd] \land \forall \xxx[\DDD\elim\ddd]: \psi$\\
 $\ddd \in \DDD$ && \\
 \hline
 \end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = \exists \xxx[\DDD]: \psi$ in $R$ & $\Longrightarrow$ & $\varphi \mapsto \psi[\xxx\subs\ddd] \lor \exists \xxx[\DDD\elim\ddd]: \psi$\\
+$\ddd \in \DDD$ && \\
+\hline
+\end{tabular}
+
+\noindent Add to grounding
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = P_1 \lor \ldots \lor P_n$ & $\Longrightarrow$ & $R-=\{\varphi\}$ \\
+$\varphi$ is a sentence $R$ && $G+=\{\varphi\}$\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$P$ atom in $G$ & $\Longrightarrow$ & $G+=\{P \sim\sim \varphi\}$ \\
+$P \sim\sim \varphi$ in $Ts$ && $Ts -= (T \sim\sim \varphi)$\\
+\hline
+\end{tabular}
+
+\noindent Set to ground set
+
+\begin{tabular}{|lcl|} \hline
+$S=\{t | \xxx \in \DDD, \psi\}$ in $R$ & $\Longrightarrow$ & $S \mapsto \{1\times \psi[\xxx\subs\ddd] \times t[\xxx\subs\ddd]\}\cup\{t | \xxx \in \DDD\elim\ddd, \psi\}$ \\
+$\ddd \in \DDD$ &&\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$S=\{1\times \psi \times t\}$ in $R$ & $\Longrightarrow$ & $S \mapsto \{1\times T \times t\}$ \\
+$\psi$ is not an atom & & $T += \{ T \sim\sim \psi\}$ \\
+\hline
+\end{tabular}
+
+Unions of ground sets can be directly combined.
+The weight might be optimized to be non-zero when $t$ is in fact $constant \times variable$ (is this useful anyway?).
+
+\noindent Rules
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = P \lrule Q_1 \lor \ldots \lor Q_n$ & $\Longrightarrow$ & $\Delta_i-=\{\varphi\}$ \\
+$\varphi$ is a rule in definition $\Delta_i$ in $R$ && $G+=\{P \lrule_i Q_1 \lor \ldots \lor Q_n\}$\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$P$ is a symbol in $R$ & $\Longrightarrow$ & $G+=\{P \lrule \false\}$ \\
+$P$ is defined in some definition in $R$ or $G$ &&\\
+There is no rule which can derive $P(\ddd)$, $\ddd \in$ domain $P$ &&\\
+\hline
+\end{tabular}
+
+
+\noindent CP
 
 \section{Propagation over the new function constraints}
 Equality solver to derive more equalities, resulting in more propagation.
