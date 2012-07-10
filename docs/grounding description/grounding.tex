@@ -322,25 +322,73 @@ The algorithm maintains some state:
 \end{itemize}
 
 \subsection{Rewriting rules}
-\paragraph{Disjunction reduction}
-Conditions:
-\begin{itemize}
-  \item $\varphi=\psi \lor \true$ or $\varphi=\psi \lor \false$.
-  \item $\varphi \in R$.
-\end{itemize}
-Actions:
-\begin{itemize}
-  \item $\varphi \mapsto \true$ or $\varphi \mapsto \psi$.
-\end{itemize}
+An uppercase character always represents a propositional atom.
 
-\paragraph{Conjunction reduction}
-\begin{itemize}
-  \item $G$ contains $T$, $T$ is defined in $Ts$ $\Longrightarrow$ Remove definition from $Ts$ and add it to $G$.
-  \item $\forall \xxx[\DDD]: \psi$ is a formula in $R$ $\Longrightarrow$ Select a $\ddd \in \DDD$, replace with $\psi[\xxx\subs\ddd] \land (\forall \xxx[\DDD\elim\ddd]: \psi$ $\DDD$. 
-  \item $\psi \land \false(\true)$ in $R$ $\Longrightarrow$ replace with $\false$($\psi$).
-  \item $\psi \lor \true(\false)$ in $R$ $\Longrightarrow$ replace with $\true$($\psi$).
-  \item $\phi$ is propositional sentence in $R$ $\Longrightarrow$ Move to grounding.
-\end{itemize}
+\noindent Disjunction reduction
+
+\begin{tabular}{|lcl|} \hline
+$\varphi=\psi \lor \true$ & $\Longrightarrow$ & $\varphi \mapsto \true$ \\
+$\varphi \in R$ &&\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$\varphi=\psi \lor \false$ & $\Longrightarrow$ & $\varphi \mapsto \psi$ \\
+$\varphi \in R$ &&\\
+\hline
+\end{tabular}
+
+\noindent Conjunction reduction
+
+\begin{tabular}{|lcl|} \hline
+$\varphi=\psi \land \true$ & $\Longrightarrow$ & $\varphi \mapsto \psi$ \\
+$\varphi \in R$ &&\\
+\hline
+\end{tabular}
+
+\begin{tabular}{|lcl|} \hline
+$\varphi=\psi \land \false$ & $\Longrightarrow$ & $\varphi \mapsto \false$ \\
+$\varphi \in R$ &&\\
+\hline
+\end{tabular}
+
+\noindent IsGround
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = P_1 \lor \ldots \lor P_n$ & $\Longrightarrow$ & $R-=\{\varphi\}$ \\
+$\varphi \in R$ && $G+=\{\varphi\}$\\
+\hline
+\end{tabular}
+
+\noindent Tseitin addition to grounding
+
+\begin{tabular}{|lcl|} \hline
+$P$ atom in $G$ & $\Longrightarrow$ & $G+=\{\varphi\}$ \\
+$P \lrule \varphi$ in $Ts$ && $Ts -= (T \lrule \varphi)$\\
+\hline
+\end{tabular}
+
+\noindent Aggregates
+
+\noindent CP
+
+\noindent Tseitin introduction
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = Q_1 \land \ldots \land Q_n$ & $\Longrightarrow$& $\varphi\mapsto T$\\
+$\psi = P_1 \lor \varphi \lor \ldots \lor P_n $ && $Ts += (T \limplies \varphi)$\\
+$\psi \in R$, context is sentence &&\\
+\hline
+\end{tabular}
+
+\noindent Instantiation
+
+\begin{tabular}{|lcl|} \hline
+$\varphi = \forall \xxx[\DDD]: \psi$ & $\Longrightarrow$ & $\varphi \mapsto \psi[\xxx\subs\ddd] \land \forall \xxx[\DDD\elim\ddd]: \psi$\\
+$\varphi \in R$ && \\
+$\ddd \in \DDD$ && \\
+\hline
+\end{tabular}
 
 \section{Propagation over the new function constraints}
 Equality solver to derive more equalities, resulting in more propagation.
