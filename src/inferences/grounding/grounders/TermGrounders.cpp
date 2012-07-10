@@ -233,7 +233,7 @@ GroundTerm SumTermGrounder::run() const {
 			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
 			varid = _translator->translateTerm(sumterm, getDomain());
 		} else { // Both subterms are domain elements, so lookup the result in the function table.
-			Assert(not right.isVariable && _functable!=NULL);
+			Assert(not right.isVariable and (_functable != NULL));
 			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
 			Assert(domelem);
 			if (verbosity() > 2) {
@@ -309,7 +309,7 @@ GroundTerm TermWithFactorGrounder::run() const {
 		auto sumterm = createCPSumTerm(factor._domelement, groundterm._varid);
 		varid = _translator->translateTerm(sumterm, getDomain());
 	} else {
-		Assert(not groundterm.isVariable && _functable!=NULL);
+		Assert(not groundterm.isVariable and (_functable != NULL));
 		auto domelem = _functable->operator[]( { factor._domelement, groundterm._domelement });
 		Assert(domelem);
 		if (verbosity() > 2) {
@@ -351,7 +351,9 @@ GroundTerm AggTermGrounder::run() const {
 
 	if (not tsset.varids().empty()) {
 		auto varids = tsset.varids();
-		varids.push_back(_translator->translateTerm(domelem));
+		if (not tsset.trueweights().empty()) { // Otherwise value is the neutral element of the aggregate function and can be ignored here.
+			varids.push_back(_translator->translateTerm(domelem));
+		}
 		auto cpaggterm = createCPAggTerm(_type, varids);
 		auto varid = _translator->translateTerm(cpaggterm, getDomain());
 		if (verbosity() > 2) {
