@@ -57,6 +57,10 @@ using namespace std;
 
 /* TermUtils */
 namespace TermUtils {
+bool approxTwoValued(const Term* t, const AbstractStructure* str) {
+	return transform<ApproxCheckTwoValued, bool>(t, str);
+}
+
 void checkSorts(Vocabulary* voc, Term* term) {
 	transform<CheckSorts>(term, voc);
 }
@@ -75,23 +79,7 @@ bool isPartial(Term* term) {
 }
 
 bool isFactor(const Term* term, const AbstractStructure* structure) {
-	switch (term->type()) {
-	case TermType::VAR:
-	case TermType::DOM:
-		return true;
-		break;
-	case TermType::FUNC:
-		if (structure->inter(dynamic_cast<const FuncTerm*>(term)->function())->approxTwoValued()) {
-			return true;
-		}
-		break;
-	case TermType::AGG:
-		if (SetUtils::approxTwoValued(dynamic_cast<const AggTerm*>(term)->set(), structure)) {
-			return true;
-		}
-		break;
-	}
-	return false;
+	return approxTwoValued(term, structure);
 }
 
 bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure) {

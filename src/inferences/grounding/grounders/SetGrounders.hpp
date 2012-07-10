@@ -29,7 +29,7 @@ public:
 	virtual ~SetGrounder() {
 	}
 	virtual SetId run() const = 0;
-	virtual SetId runAndRewriteUnknowns() const = 0; //XXX Needs an other name!!!
+	virtual SetId runAndRewriteUnknowns() const = 0; //XXX Needs a better name?
 };
 
 class QuantSetGrounder;

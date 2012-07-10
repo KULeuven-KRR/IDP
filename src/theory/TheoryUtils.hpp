@@ -214,9 +214,14 @@ AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 void unnestThreeValuedTerms(AbstractTheory*, bool cpsupport, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
-}
+} /* namespace FormulaUtils */
+
 
 namespace TermUtils {
+/** Returns false if the term is not two-valued in the given structure.
+ *  May return true if the term is two-valued in the structure. */
+bool approxTwoValued(const Term*, const AbstractStructure*);
+
 /** Check sorts in the given term */
 void checkSorts(Vocabulary*, Term*);
 
@@ -234,7 +239,8 @@ bool isPartial(Term*);
 /** Check whether a function term is a term multiplied by a factor */
 bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure);
 bool isFactor(const Term* term, const AbstractStructure* structure);
-}
+} /* namespace TermUtils */
+
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
@@ -243,7 +249,8 @@ bool approxTwoValued(const SetExpr*, const AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
 SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport, TruthValue cpablerelation);
-}
+} /* namespace SetUtils */
+
 
 namespace DefinitionUtils {
 /** Check sorts in the given rule */
@@ -259,6 +266,6 @@ std::set<PFSymbol*> opens(Definition*);
 Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport);
 
 Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
-}
+} /* namespace DefinitionUtils */
 
 #endif /* IDP_THEORYUTILS_HPP_ */
