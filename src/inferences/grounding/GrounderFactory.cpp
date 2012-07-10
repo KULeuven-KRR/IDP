@@ -458,7 +458,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			}
 			lefttermgrounder = subtermgrounders[0];
 			righttermgrounder = subtermgrounders[1];
-		} else if (isa<Function>(*(newpf->symbol()))) {
+		} else if (newpf->isGraphedFunction()) {
 			auto function = dynamic_cast<Function*>(newpf->symbol());
 			if (CPSupport::eligibleForCP(function,_structure->vocabulary())) {
 				useComparisonGrounder = true;

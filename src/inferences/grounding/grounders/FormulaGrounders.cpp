@@ -144,7 +144,7 @@ Lit AtomGrounder::run() const {
 				}
 				if (verbosity() > 2) {
 					clog << tabs() << "Partial function went out of bounds\n";
-					clog << tabs() << "Result is " << (result == true ? "true" : "false") << "\n";
+					clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
 				}
 				return result;
 			}
