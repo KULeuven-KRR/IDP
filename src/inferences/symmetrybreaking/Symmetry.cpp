@@ -681,13 +681,11 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
  **********/
 
 void TheorySymmetryAnalyzer::analyze(const AbstractTheory* t) {
-	toString(t); // Strangely enough, this makes the partialfunction.idp test succeed...
 	t->accept(this);
 }
 
 void TheorySymmetryAnalyzer::analyzeForOptimization(const Term* t) {
 	markAsUnfitForSymmetry(t->sort());
-	toString(t); // Strangely enough, this makes the partialfunction.idp test succeed...
 	t->accept(this);
 }
 
@@ -844,7 +842,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	set<Sort*> forbiddenSorts;
 	for (auto sort_it = tsa.getForbiddenSorts().cbegin(); sort_it != tsa.getForbiddenSorts().cend(); ++sort_it) {
 		forbiddenSorts.insert(*sort_it);
-		set<Sort*> descendents = (*sort_it)->descendents();
+		set<Sort*> descendents = (*sort_it)->descendents(s->vocabulary());
 		for (auto sort_it2 = descendents.cbegin(); sort_it2 != descendents.cend(); ++sort_it2) {
 			forbiddenSorts.insert(*sort_it2);
 		}
@@ -861,8 +859,8 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 // Extract domain elements from forbidden sorts:
 	set<const DomainElement*> forbiddenElements;
 	for (auto sort_it = forbiddenSorts.cbegin(); sort_it != forbiddenSorts.cend(); ++sort_it) {
-		if(isSortForSymmetry(*sort_it,s)){
-			for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it){
+		if (isSortForSymmetry(*sort_it, s)) {
+			for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it) {
 				forbiddenElements.insert(*element_it);
 			}
 		}

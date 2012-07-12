@@ -90,6 +90,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	}
 
 	if ((isAggOrFunc(left) and isAggOrFunc(right))) {
+		//TODO more fine-grained: don't split when at least one side is calculable.
 		auto splitformula = FormulaUtils::unnestFuncsAndAggsNonRecursive(pf, _structure, _context);
 		return splitformula->accept(this);
 	}

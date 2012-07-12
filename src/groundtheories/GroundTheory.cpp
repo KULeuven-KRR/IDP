@@ -133,7 +133,7 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 
 	body->left(foldCPTerm(body->left()));
 
-	//Add constraint for right hand side if necessary. TODO refactor
+	//Add constraint for right hand side if necessary.
 	if (body->right()._isvarid && translator()->getFunction(body->right()._varid) == NULL) {
 		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
 			_printedvarids.insert(body->right()._varid);
@@ -279,8 +279,8 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		if (translator()->getFunction(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
-			if ((isa<CPSumTerm>(*left) || isa<CPWSumTerm>(*left)) && cprelation->comp() == CompType::EQ) {
-				Assert(cprelation->right()._isvarid && cprelation->right()._varid == varterm->varid());
+			if ((isa<CPSumTerm>(*left) or isa<CPWSumTerm>(*left)) and cprelation->comp() == CompType::EQ) {
+				Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
 				return left;
 			}
 		}

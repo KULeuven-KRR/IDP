@@ -40,7 +40,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 
 	const auto& d = groundweight._domelement;
 	Assert(d != NULL);
-	auto w = (d->type() == DET_INT) ? (double) d->value()._int : d->value()._double;
+	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 
 	if (l == _true) {
 		trueweights.push_back(w);
@@ -83,8 +83,12 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	}
 
 	Assert(l != _false and l != _true);
-	// Introduce new constant t'. Add two formulas: l => t' = t and -l => t' = 0
+	// Rewrite (l,t) :
+	//  - Introduce new constant t'.
+	//  - Add two formulas: l => t' = t and -l => t' = 0
+	//  - return (true,t')
 
+	// Get CP variable for the groundterm t
 	VarId v;
 	if (groundweight.isVariable) {
 		v = groundweight._varid;
@@ -92,6 +96,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		v = translator->translateTerm(groundweight._domelement);
 	}
 
+	// Compute domain for term t' = dom(t) U {0}
 	SortTable* domain = NULL;
 	auto vardom = translator->domain(v);
 	Assert(vardom->approxFinite());
@@ -112,12 +117,15 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	sort->addParent(get(STDSORT::INTSORT));
 	translator->vocabulary()->add(sort);
 
+	// Term t' is a new constant with the computed domain
 	auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
 	translator->vocabulary()->add(constant);
 
 	auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
 	auto vt1 = new CPVarTerm(varid);
 	auto vt2 = new CPVarTerm(varid);
+
+	// Add formulas to the grounding
 	Lit bl1 = translator->translate(vt1, CompType::EQ, CPBound(v), TsType::EQ);
 	Lit bl2 = translator->translate(vt2, CompType::EQ, CPBound(0), TsType::EQ);
 	Lit l1 = translator->translate( { -l, bl1 }, false, TsType::IMPL);
