@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef PROPAGATE_HPP_
 #define PROPAGATE_HPP_
@@ -17,14 +17,24 @@
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/propagation/OptimalPropagation.hpp"
 
+InternalArgument postProcess(std::vector<AbstractStructure*> sols) {
+	if (sols.size() == 0) {
+		return InternalArgument();
+	}
+	Assert(sols.size()==1 && sols[0]->isConsistent());
+	auto structure = sols[0];
+	structure->materialize();
+	structure->clean();
+	return InternalArgument(structure);
+}
+
 /**
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
  */
 class PropagateInference: public TheoryStructureBase {
 public:
 	PropagateInference()
-			: TheoryStructureBase(
-					"propagate",
+			: TheoryStructureBase("propagate",
 					"Return a structure, made more precise than the input by doing symbolic propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
 	}
@@ -32,10 +42,7 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		SymbolicPropagation propagator;
 		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		if (sols.size() == 0) {
-			return InternalArgument();
-		}Assert(sols.size()==1 && sols[0]->isConsistent());
-		return InternalArgument(sols[0]);
+		return postProcess(sols);
 	}
 };
 
@@ -45,8 +52,7 @@ public:
 class GroundPropagateInference: public TheoryStructureBase {
 public:
 	GroundPropagateInference()
-			: TheoryStructureBase(
-					"groundpropagate",
+			: TheoryStructureBase("groundpropagate",
 					"Return a structure, made more precise than the input by grounding and unit propagation on the theory. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
 
@@ -55,10 +61,8 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		GroundingPropagation propagator;
 		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		if (sols.size() == 0) {
-			return InternalArgument();
-		}Assert(sols.size()==1 && sols[0]->isConsistent());
-		return InternalArgument(sols[0]);
+		return postProcess(sols);
+
 	}
 };
 
@@ -69,8 +73,7 @@ public:
 class OptimalPropagateInference: public TheoryStructureBase {
 public:
 	OptimalPropagateInference()
-			: TheoryStructureBase(
-					"optimalpropagate",
+			: TheoryStructureBase("optimalpropagate",
 					"Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
 
@@ -79,10 +82,7 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		OptimalPropagation propagator;
 		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		if (sols.size() == 0) {
-			return InternalArgument();
-		}Assert(sols.size()==1 && sols[0]->isConsistent());
-		return InternalArgument(sols[0]);
+		return postProcess(sols);
 	}
 };
 
