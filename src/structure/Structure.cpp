@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "Structure.hpp"
 #include "IncludeComponents.hpp"
@@ -58,7 +58,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_sortinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -66,7 +66,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_predinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -74,7 +74,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		if (not v->contains(it->first)) {
 			delete (it->second);
 			_funcinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -168,7 +168,7 @@ void Structure::makeTwoValued() {
 	}
 	//clog <<"Before: \n" <<toString(this) <<"\n";
 	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto inter = (*i).second;
 		if (inter->approxTwoValued()) {
 			continue;
@@ -237,7 +237,7 @@ void Structure::makeTwoValued() {
 		}
 	}
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
 		if (inter->approxTwoValued()) {
@@ -386,8 +386,7 @@ void Structure::autocomplete() {
 					if (dynamic_cast<AllIntegers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL) {
 						continue;
 					}
-					if (dynamic_cast<AllNaturalNumbers*>(kst->internTable()) != NULL
-							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL
+					if (dynamic_cast<AllNaturalNumbers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL
 							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int > -1) {
 						continue;
 					}
@@ -410,8 +409,8 @@ void Structure::addStructure(AbstractStructure*) {
 }
 
 void Structure::sortCheck() const {
-	for(auto i=_sortinter.cbegin(); i!=_sortinter.cend(); ++i) {
-		if((*i).second->empty()){
+	for (auto i = _sortinter.cbegin(); i != _sortinter.cend(); ++i) {
+		if ((*i).second->empty()) {
 			Warning::emptySort(i->first->name());
 		}
 	}
@@ -474,7 +473,8 @@ void Structure::functionCheck() {
 SortTable* Structure::inter(Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
-	}Assert(s != NULL);
+	}
+	Assert(s != NULL);
 	if (s->builtin()) {
 		return s->interpretation();
 	}
@@ -502,7 +502,7 @@ PredInter* Structure::inter(Predicate* p) const {
 		auto it = _predinter.find(p);
 		if (it == _predinter.cend()) {
 			stringstream ss;
-			ss <<"The structure does not contain the predicate " <<p->name();
+			ss << "The structure does not contain the predicate " << p->name();
 			throw IdpException(ss.str());
 		}
 		return it->second;

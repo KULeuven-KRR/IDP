@@ -440,6 +440,8 @@ public:
 		return _ct->universe();
 	}
 	PredInter* clone(const Universe&) const;
+	void put(std::ostream& stream) const;
+
 
 private:
 	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to);
@@ -488,6 +490,7 @@ public:
 		return _graphinter->universe();
 	}
 	FuncInter* clone(const Universe&) const;
+	void put(std::ostream& stream) const;
 };
 
 // Contents ownership to receiver

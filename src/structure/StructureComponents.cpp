@@ -505,7 +505,7 @@ SortIterator::~SortIterator() {
 }
 
 SortIterator& SortIterator::operator++() {
-	CHECKTERMINATION
+	CHECKTERMINATION;
 	_iterator->operator++();
 	return *this;
 }
@@ -1871,7 +1871,7 @@ InternalSortTable* EnumeratedInternalSortTable::remove(const DomainElement* d) {
 		ist->remove(d);
 		return ist;
 	} else {
-		if(d->type()!=DomainElementType::DET_INT){
+		if (d->type() != DomainElementType::DET_INT) {
 			nbNotIntElements--;
 		}
 		_table.erase(d);
@@ -2810,7 +2810,7 @@ InternalTableIterator* TimesInternalFuncTable::begin(const Universe& univ) const
 
 const DomainElement* DivInternalFuncTable::operator[](const ElementTuple& tuple) const {
 	if (getType() == NumType::CERTAINLYINT) {
-		if(tuple[1]->value()._int == 0 ){
+		if (tuple[1]->value()._int == 0) {
 			return NULL;
 		}
 		return division<int>(tuple[0]->value()._int, tuple[1]->value()._int);
@@ -3430,7 +3430,7 @@ void PredInter::checkConsistency() {
 	for (; not smallIt.isAtEnd(); ++smallIt) {
 		CHECKTERMINATION
 		// get unassigned domain element
-		while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION;
 			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
@@ -3618,6 +3618,16 @@ PredInter* PredInter::clone(const Universe& univ) const {
 	return result;
 
 }
+void PredInter::put(std::ostream& stream) const {
+	if (approxTwoValued()) {
+		_ct->put(stream);
+	} else {
+		stream << "<ct>: ";
+		_ct->put(stream);
+		stream << nt() << "<cf>: ";
+		_cf->put(stream);
+	}
+}
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
 	stream << "Certainly true: " << toString(interpretation.ct()) << "\n";
@@ -3742,6 +3752,14 @@ FuncInter* FuncInter::clone(const Universe& univ) const {
 	} else {
 		PredInter* npi = _graphinter->clone(univ);
 		return new FuncInter(npi);
+	}
+}
+
+void FuncInter::put(std::ostream& stream) const {
+	if (approxTwoValued()) {
+		_functable->put(stream);
+	} else {
+		_graphinter->put(stream);
 	}
 }
 
@@ -3878,14 +3896,14 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	vector<AbstractStructure*> partialfalsestructs;
 	if (function->partial()) {
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			partialfalsestructs.push_back((*j)->clone());
 		}
 	}
 
 	vector<AbstractStructure*> newstructs;
 	for (; not imageIterator.isAtEnd(); ++imageIterator) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		ElementTuple tuple(domainElementWithoutValue);
 		tuple.push_back(*imageIterator);
 		if (cf->contains(tuple)) {
@@ -3893,7 +3911,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		}
 
 		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
 			news->clean();
@@ -3901,8 +3919,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			currentnb++;
 		}
 		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
-			CHECKTERMINATION
-			(*j)->inter(function)->graphInter()->makeFalse(tuple);
+			CHECKTERMINATION(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
 	}
 	extensions = newstructs;
@@ -3952,7 +3969,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 // TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
 	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto function = (*i).first;
 		auto inter = (*i).second;
 		if (inter->approxTwoValued()) {
@@ -3965,7 +3982,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		vector<SortIterator> domainIterators;
 		bool allempty = true;
 		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
 			domainIterators.push_back(temp);
 			if (not temp.isAtEnd()) {
@@ -3990,7 +4007,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
 				CHECKTERMINATION
 				// get unassigned domain element
-				domainElementWithoutValue = *domainIterator;
+domainElementWithoutValue				= *domainIterator;
 				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
 					++ctIterator;
 				}
@@ -4006,7 +4023,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 //If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
 	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto pred = (*i).first;
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
@@ -4016,15 +4033,16 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 		const PredTable* pf = inter->pf();
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			CHECKTERMINATION
-			if (not pf->contains(*ptIterator)) {
+			CHECKTERMINATION;
+			if(not pf->contains(*ptIterator))
+			{
 				continue;
 			}
 
 			vector<AbstractStructure*> newstructs;
 			int count = 0;
 			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
-				CHECKTERMINATION
+				CHECKTERMINATION;
 				auto news = (*j)->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
