@@ -48,6 +48,7 @@ public:
 	bool approxFinite() const;
 	bool contains(const ElementTuple&) const;
 	tablesize size() const;
+	void put(std::ostream& stream) const;
 };
 
 #endif /* UNIVERSE_HPP_ */
