@@ -39,8 +39,6 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto structure = get<0>(args);
-		structure->materialize();
-		structure->clean();
 		return InternalArgument(StringPointer(print(structure)));
 	}
 };
