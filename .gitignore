@@ -25,3 +25,4 @@ builds/*
 *config.*
 documentation/generateddocs
 documentation/generateddocs/*
+.autotools
