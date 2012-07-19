@@ -530,10 +530,10 @@ void GrounderFactory::visit(const PredForm* pf) {
 }
 
 void GrounderFactory::visit(const BoolForm* bf) {
-	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && (bf->isConjWithSign() || bf->subformulas().size() == 1);
+	_context._conjPathUntilNode = (_context._conjunctivePathFromRoot and (bf->isConjWithSign() or bf->subformulas().size() == 1));
 
 	// If a disjunction or conj with one subformula, it's subformula can be treated as if it was the root of this formula
-	if (isPos(bf->sign()) && bf->subformulas().size() == 1) {
+	if (isPos(bf->sign()) and bf->subformulas().size() == 1) {
 		descend(bf->subformulas()[0]);
 	} else {
 		if (_context._conjPathUntilNode) {
@@ -654,17 +654,17 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, QuantForm const * const qf, const GenAndChecker& gc,
 		const GroundingContext& context, bool recursive) {
-	bool conj = qf->quant() == QUANT::UNIV;
-	bool mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
+	bool conj = (qf->quant() == QUANT::UNIV);
+	bool mightdolazy = (not conj and context._monotone == Context::POSITIVE) or (conj and context._monotone == Context::NEGATIVE);
 	if (context._monotone == Context::BOTH) {
 		mightdolazy = true;
 	}
-	if (not getOption(TSEITINDELAY) || recursive) {
+	if (not getOption(TSEITINDELAY) or recursive) {
 			// FIXME tseitin introduction in inductive definition is currently not supported (cannot use incremental clause for that)
 		mightdolazy = false;
 	}
 	ClauseGrounder* grounder = NULL;
-	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
+	if (getOption(BoolType::GROUNDLAZILY) and isa<SolverTheory>(*grounding) and mightdolazy) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		grounder = new LazyQuantGrounder(qf->freeVars(), solvertheory, subgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, context);
 	} else {
@@ -677,13 +677,13 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	// NOTE: to reduce the number of tseitins created, negations are pushed deeper whenever relevant:
 	// If qf is a negated exist, push the negation one level deeper. Take a clone to avoid changing qf;
 	QuantForm* tempqf = NULL;
-	if (not qf->isUniv() && qf->sign() == SIGN::NEG) {
+	if (not qf->isUniv() and qf->sign() == SIGN::NEG) {
 		tempqf = qf->clone();
 		tempqf->quant(QUANT::UNIV);
 		tempqf->negate();
 		subformula->negate();
 	}
-	auto newqf = tempqf == NULL ? qf : tempqf;
+	auto newqf = (tempqf == NULL ? qf : tempqf);
 
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
@@ -691,7 +691,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (not getOption(SATISFIABILITYDELAY)) {
 		_context._allowDelaySearch = false;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
+	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
 		auto lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, _structure, getGrounding()->translator(), lazycontext);
 		if (tuple.size() != 2) {
@@ -717,7 +717,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (delayablepf != NULL) {
 		_context._allowDelaySearch = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) && getOption(SATISFIABILITYDELAY) && getContext()._allowDelaySearch) {
+	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
 		// TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
 		//  one example is when functions are unnested
 

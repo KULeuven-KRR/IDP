@@ -154,7 +154,6 @@ public:
 				//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
 				std::clog << ">>> " << (double) (_grounder->groundedAtoms()) / maxsize._size * 100 << "% of the full grounding.\n";
 			}
-			std::cout << "|";
 		}
 
 		delete symstructure->manager();
