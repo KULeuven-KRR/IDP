@@ -184,12 +184,12 @@ Actions (in the respective cases):
 \begin{example}[Positive Unnesting]
 Conditions:
 \begin{itemize}
-    \item  $\varphi = P(\bar x, f(\bar y),\bar z)$, for some (partial) function $f$ and predicate/function $P$.
-	\item $\varphi$ occurs in the scope of an even number of negations
+    \item $\varphi = P(\bar x, f(\bar y),\bar z)$, for some (partial) function $f$ and predicate/function $P$.
+    \item $\varphi$ occurs in the scope of an even number of negations.
 \end{itemize}
 Actions:
 \begin{itemize}
-    \item  $\varphi \mapsto \forall w: f(\bar y) = w \Rightarrow P(\bar x, f(\bar y),\bar z)$
+    \item $\varphi \mapsto \forall w: f(\bar y) = w \Rightarrow P(\bar x, w, \bar z)$
 \end{itemize}
 \end{example}
 
@@ -201,12 +201,17 @@ Conditions:
 \end{itemize}
 Actions:
 \begin{itemize}
-    \item  $\varphi \mapsto \exists w: f(\bar y) = w \wedge P(\bar x, f(\bar y),\bar z)$
+    \item  $\varphi \mapsto \exists w: f(\bar y) = w \wedge P(\bar x, w,\bar z)$
 \end{itemize}
 \end{example}
 
+\begin{example}[Unnesting with CP support]
+    Same as Positive and Negative Unnesting, but with an extra condition:
+    $P$ is not eligible for CP OR $f$ is not eligible for CP
+\end{example}
+
 \begin{example}[Functional Unnesting]
-	Same as unnesting but with $f(x)=g(y)$.
+    Same as unnesting but with $f(x)=g(y)$.
 \end{example}
 
 \begin{example}[Graphing]
@@ -217,7 +222,7 @@ Conditions:
 Actions:
 \begin{itemize}
     \item  $\varphi \mapsto GRAPH_F(\bar x, y)$ for all occurences $\varphi$ as described above
-\item $\T += \{\forall \bar x: \#\{y: GRAPH_F(\bar x, y)\} = 1\}$.
+    \item $\T += \{\forall \bar x: \#\{y: GRAPH_F(\bar x, y)\} = 1\}$.
 \end{itemize}
 \end{example}
 
@@ -228,9 +233,9 @@ A grounding description is a set of allowed rewrite rules with a partial orderin
 \begin{definition}[Partial grounding process]
 A \textit{partial grounding process} of $T$ and $\I$ with description $D$ is a sequence $\seq{T_i}$ of partial groundings where $T_0= \seq{\voc,T}$ and such that for every $i>0$ there is a rule $r$ in $D$ such that:
 \begin{itemize}
-	\item $T_i = r(T_{i-1})$.
-	\item The conditions of $r$ are satisfied.
-	\item For every smaller rule $r'$, its conditions are  not satisfied
+    \item $T_i = r(T_{i-1})$.
+    \item The conditions of $r$ are satisfied.
+    \item For every smaller rule $r'$, its conditions are not satisfied.
 \end{itemize}
 \end{definition}
 
