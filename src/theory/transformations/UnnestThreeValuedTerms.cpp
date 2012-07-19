@@ -53,7 +53,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	if (_cpablerelation != TruthValue::False) {
 		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
 	}
-	if (predform->isGraphedFunction() && _cpablerelation == TruthValue::True) {
+	if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
 		auto args = predform->args();
 		args.pop_back();
 		auto ft = new FuncTerm(dynamic_cast<Function*>(predform->symbol()), args, TermParseInfo()); // TODO parseinfo
@@ -62,15 +62,15 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	}
 
 	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
-	if (_cpsupport && not CPSupport::eligibleForCP(predform, _vocabulary)) {
+	if (_cpsupport and not CPSupport::eligibleForCP(predform, _vocabulary)) {
 		std::vector<Formula*> aggforms;
 		for (size_t i = 0; i < predform->args().size(); ++i) {
 			auto origterm = predform->args().front();
-			if (origterm->freeVars().size() != 0 || origterm->type() != TermType::AGG) { // TODO handle free vars
+			if (origterm->freeVars().size() != 0 or origterm->type() != TermType::AGG) { // TODO handle free vars
 				continue;
 			}
 			auto sort = origterm->sort();
-			if (_structure != NULL && SortUtils::isSubsort(sort, get(STDSORT::INTSORT), _vocabulary)) {
+			if (_structure != NULL and SortUtils::isSubsort(sort, get(STDSORT::INTSORT), _vocabulary)) {
 				sort = TermUtils::deriveSmallerSort(origterm, _structure);
 			}
 			auto constant = new Function( { }, sort, origterm->pi());
@@ -94,18 +94,16 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 }
 
 // TODO Add aggform (sum becomes cpable relation)
-// TODO allow visiting of terms directly, setting that it is certain cpablerelation is true
 
 Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
 	auto savedcp = _cpablefunction;
 	auto savedparent = _cpablerelation;
 	if (_cpablerelation == TruthValue::True) {
-		_cpablerelation = (_cpsupport and eligibleForCP(t, _structure)) ? TruthValue::True : TruthValue::False;
-		_cpablefunction = _cpablerelation == TruthValue::True;
+		_cpablefunction = _cpsupport and eligibleForCP(t, _structure);
 	} else {
-		_cpablerelation = TruthValue::False;
 		_cpablefunction = false;
 	}
+	_cpablerelation = (_cpsupport and eligibleForCP(t, _structure)) ? TruthValue::True : TruthValue::False;
 
 	auto result = UnnestTerms::visit(t);
 
@@ -122,7 +120,9 @@ Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
 	} else {
 		_cpablefunction = false;
 	}
-	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary()) and not TermUtils::isTermWithIntFactor(t, _structure)) {
+	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary())
+		and not TermUtils::isTermWithIntFactor(t, _structure)
+		and not is(t->function(),STDFUNC::UNARYMINUS)) {
 		//Note: Leave cpable flag as is when the current functerm is a sum or a term with a factor!
 		// They get a special treatment for CP.
 		_cpablerelation = TruthValue::False;
