@@ -1,6 +1,7 @@
 
 #include "PropagationDomain.hpp"
 #include "structure/MainStructureComponents.hpp"
+#include "fobdds/FoBdd.hpp"
 
 
 FOPropDomain::FOPropDomain(const std::vector<Variable*>& vars)
@@ -22,6 +23,10 @@ FOPropBDDDomain* FOPropBDDDomain::clone() const {
 const FOBDD* FOPropBDDDomain::bdd() const {
 	return _bdd;
 }
+void FOPropBDDDomain::put(std::ostream& stream) const{
+	stream << toString(_bdd);
+}
+
 
 FOPropTableDomain::FOPropTableDomain(PredTable* t, const std::vector<Variable*>& v)
 		: 	FOPropDomain(v),

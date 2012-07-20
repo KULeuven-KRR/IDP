@@ -974,7 +974,10 @@ const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const std::set<const FO
 
 const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	// base case
-	if (bdd == _truebdd || bdd == _falsebdd) {
+	if(bdd == _falsebdd){
+		return bdd;
+	}
+	if (bdd == _truebdd ) {
 		if (sort->builtin()) {
 			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}

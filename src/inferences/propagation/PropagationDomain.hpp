@@ -49,6 +49,8 @@ public:
 	FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars);
 	FOPropBDDDomain* clone() const;
 	const FOBDD* bdd() const;
+
+	void put(std::ostream& stream) const;
 };
 
 /**
