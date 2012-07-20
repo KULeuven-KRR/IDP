@@ -105,10 +105,8 @@ GroundTerm FuncTermGrounder::run() const {
 				poptab();
 				clog << tabs() << "Result = " << toString(result) << "\n";
 			} else {
-				if (verbosity() > 2) {
-					poptab();
-					clog << tabs() << "Result = **invalid term**" << "\n";
-				}
+				poptab();
+				clog << tabs() << "Result = **invalid term**" << "\n";
 			}
 		}
 		return GroundTerm(result);
@@ -135,7 +133,7 @@ CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& rig
 void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
 	auto leftdomain = _lefttermgrounder->getDomain();
 	auto rightdomain = _righttermgrounder->getDomain();
-	if (getDomain() == NULL || not getDomain()->approxFinite()) {
+	if (getDomain() == NULL or not getDomain()->approxFinite()) {
 		if (not left.isVariable) {
 			leftdomain = TableUtils::createSortTable();
 			leftdomain->add(left._domelement);
@@ -144,7 +142,7 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 			rightdomain = TableUtils::createSortTable();
 			rightdomain->add(right._domelement);
 		}
-		if (leftdomain && rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
+		if (leftdomain and rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 			int leftmin = leftdomain->first()->value()._int;
@@ -162,9 +160,7 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 				max = leftmax - rightmin;
 				break;
 			}
-			if (max < min) {
-				swap(min, max);
-			}
+			if (max < min) { swap(min, max); }
 			setDomain(TableUtils::createSortTable(min, max));
 		} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
 			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
@@ -261,7 +257,7 @@ void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const Gr
 	Assert(factor->type() == DomainElementType::DET_INT);
 	auto subtermdomain = _subtermgrounder->getDomain();
 
-	if (getDomain() == NULL || not getDomain()->approxFinite()) {
+	if (getDomain() == NULL or not getDomain()->approxFinite()) {
 		if (not groundsubterm.isVariable) {
 			subtermdomain = TableUtils::createSortTable();
 			subtermdomain->add(groundsubterm._domelement);
@@ -270,9 +266,7 @@ void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const Gr
 			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
 			int min = factor->value()._int * subtermdomain->first()->value()._int;
 			int max = factor->value()._int * subtermdomain->last()->value()._int;
-			if (max < min) {
-				swap(min, max);
-			}
+			if (max < min) { swap(min, max); }
 			setDomain(TableUtils::createSortTable(min, max));
 		} else if (subtermdomain != NULL and subtermdomain->approxFinite()) {
 			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
@@ -351,7 +345,8 @@ GroundTerm AggTermGrounder::run() const {
 
 	if (not tsset.varids().empty()) {
 		auto varids = tsset.varids();
-		if (not tsset.trueweights().empty()) { // Otherwise value is the neutral element of the aggregate function and can be ignored here.
+		if (not tsset.trueweights().empty()) {
+			// Otherwise value is the neutral element of the aggregate function and can be ignored here.
 			varids.push_back(_translator->translateTerm(domelem));
 		}
 		auto cpaggterm = createCPAggTerm(_type, varids);

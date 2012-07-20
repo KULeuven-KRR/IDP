@@ -125,8 +125,8 @@ protected:
 	TermGrounder* _factortermgrounder;
 	TermGrounder* _subtermgrounder;
 public:
-	TermWithFactorGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(dom, tt), _functable(ftable), _factortermgrounder(ltg), _subtermgrounder(rtg) {
+	TermWithFactorGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* fg, TermGrounder* tg)
+			: TermGrounder(dom, tt), _functable(ftable), _factortermgrounder(fg), _subtermgrounder(tg) {
 	}
 	GroundTerm run() const;
 private:

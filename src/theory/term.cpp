@@ -286,16 +286,16 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 
 Sort* deriveSmallerSort(const Term* term, const AbstractStructure* structure) {
 	auto sort = term->sort();
-	if (structure == NULL || not SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary())) {
+	if (structure == NULL or not SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary())) {
 		return sort;
 	}
 	auto bounds = TermUtils::deriveTermBounds(term, structure);
 	Assert(bounds.size()==2);
-	if (bounds[0] != NULL && bounds[1] != NULL && bounds[0]->type() == DET_INT && bounds[1]->type() == DET_INT) {
+	if (bounds[0] != NULL and bounds[1] != NULL and bounds[0]->type() == DET_INT and bounds[1]->type() == DET_INT) {
 		auto intmin = bounds[0]->value()._int;
 		auto intmax = bounds[1]->value()._int;
 		stringstream ss;
-		ss << "s" << intmin <<".." << intmax;
+		ss << "s" << intmin << ".." << intmax;
 		sort = new Sort(ss.str(), TableUtils::createSortTable(intmin, intmax));
 		sort->addParent(get(STDSORT::INTSORT));
 	}

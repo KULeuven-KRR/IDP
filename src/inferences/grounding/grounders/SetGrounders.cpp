@@ -37,7 +37,6 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 
 	const auto& groundweight = subtermgrounder.run();
 	Assert(not groundweight.isVariable);
-
 	const auto& d = groundweight._domelement;
 	Assert(d != NULL);
 	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
@@ -57,13 +56,11 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	auto translator = grounding->translator();
 
 	Lit l;
-
 	if (checker.check()) {
 		l = _true;
 	} else {
 		l = sublitgrounder.groundAndReturnLit();
 	}
-
 	if (l == _false) {
 		return;
 	}
@@ -76,7 +73,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		} else {
 			const auto& d = groundweight._domelement;
 			Assert(d != NULL);
-			auto w = (d->type() == DET_INT) ? (double) d->value()._int : d->value()._double;
+			auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 			trueweights.push_back(w);
 		}
 		return;

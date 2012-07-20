@@ -413,7 +413,7 @@ namespace SortUtils {
  *	Returns NULL if any of the given sorts is NULL.
  */
 Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* voc) {
-	if ((s1 == NULL) || s2 == NULL) {
+	if (s1 == NULL or s2 == NULL) {
 		return NULL;
 	}
 	auto ss1 = s1->ancestors(voc);
@@ -448,19 +448,19 @@ Sort* resolve(Sort* s1, Sort* s2, const Vocabulary* voc) {
 }
 
 bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc) {
-	if(a==NULL || b==NULL || (voc!=NULL && (not voc->contains(a) || not voc->contains(b)))){
+	if (a == NULL or b == NULL or (voc != NULL and (not voc->contains(a) or not voc->contains(b)))) {
 		return false;
 	}
 	std::queue<Sort*> parents;
 	parents.push(a);
-	if(a==b){
+	if (a == b) {
 		return true;
 	}
-	while(not parents.empty()) {
+	while (not parents.empty()) {
 		auto p = parents.front();
 		parents.pop();
-		for(auto i=p->parents().cbegin(); i!=p->parents().cend(); ++i){
-			if(*i==b){
+		for (auto i = p->parents().cbegin(); i != p->parents().cend(); ++i) {
+			if (*i == b) {
 				return true;
 			}
 			parents.push(*i);
