@@ -18,8 +18,6 @@
 
 using namespace std;
 
-
-
 template<class Factory, class DomainType>
 TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
 		: 	_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)),
@@ -102,6 +100,11 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			Assert(getDomain(connector)._twovalued);
 			continue;
 		}
+		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+			clog << "**   Applying propagation for " << toString(symbol);
+			pushtab();
+			clog << nt() << "Old interpretation was" << toString(newinter) << endl;
+		}
 		vector<Variable*> vv;
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
 			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
@@ -111,6 +114,9 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		Assert(_domains.find(connector) != _domains.cend());
 
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
+		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+			clog << nt() << "Derived symbols: " << toString(bddinter) << endl;
+		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
 			if (isa<Function>(*symbol)) {
@@ -119,13 +125,18 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 				Assert(isa<Predicate>(*symbol));
 				structure->changeInter(dynamic_cast<Predicate*>(symbol), bddinter);
 			}
-			continue;
+		} else {
+			for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
+				newinter->makeTrue(*trueEl);
+			}
+			for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
+				newinter->makeFalse(*falseEl);
+			}
 		}
-		for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
-			newinter->makeTrue(*trueEl);
-		}
-		for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
-			newinter->makeFalse(*falseEl);
+		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+			clog << nt() << "Result: " << toString(structure->inter(symbol));
+			poptab();
+			clog << nt() << "**" << endl;
 		}
 	}
 }
@@ -503,6 +514,4 @@ bool LongestBranchChecker::check(FOPropBDDDomain* newdomain, FOPropBDDDomain*) c
 	return (_treshhold > _manager->longestbranch(newdomain->bdd()));
 }
 
-
-
-template class TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>;
+template class TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain> ;
