@@ -97,14 +97,16 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	SortTable* domain = NULL;
 	auto vardom = translator->domain(v);
 	Assert(vardom->approxFinite());
-	Assert(vardom->first()->type() == DomainElementType::DET_INT);
 	if (vardom->isRange()) {
+		Assert(vardom->first()->type() == DomainElementType::DET_INT);
+		Assert(vardom->last()->type() == DomainElementType::DET_INT);
 		int min = vardom->first()->value()._int;
 		int max = vardom->last()->value()._int;
 		domain = TableUtils::createSortTable(min, max);
 	} else {
 		domain = TableUtils::createSortTable();
 		for (auto it = vardom->sortBegin(); not it.isAtEnd(); ++it) {
+			Assert((*it)->type() == DomainElementType::DET_INT);
 			domain->add(*it);
 		}
 	}

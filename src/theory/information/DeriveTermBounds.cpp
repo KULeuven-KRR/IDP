@@ -137,7 +137,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		Assert(t->sort() != NULL);
 		auto domain = _structure->inter(t->sort());
 		Assert(domain != NULL);
-		if (not domain->approxFinite() || domain->empty()) { //FIXME: Never return NULL... return infinity thingies.
+		if (not domain->approxFinite() or domain->empty()) { //FIXME: Never return NULL... return infinity thingies.
 			throw BoundsUnderivableException();
 		}
 		_minimum = domain->first();
