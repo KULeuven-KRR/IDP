@@ -411,7 +411,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 	for (auto it = ef->right()->freeVars().cbegin(); it != ef->right()->freeVars().cend(); ++it) {
 		rightqv.erase(*it);
 	}
-	_propagator->setQuantVar(ef->left(), leftqv); //SetQuantVar?  Looks more like setNonFreeVars to me!
+	_propagator->setQuantVar(ef->left(), leftqv); //SetQuantVar?  Looks more like setNonFreeVars to me! Or better: freevars of the superformula that do not appear in the subf
 	_propagator->setQuantVar(ef->right(), rightqv); //SetQuantVar?  Looks more like setNonFreeVars to me!
 	initFalse(ef);
 	traverse(ef);
