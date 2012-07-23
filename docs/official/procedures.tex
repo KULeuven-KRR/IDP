@@ -22,11 +22,11 @@ Besides the standard types of variables available in Lua, the following extra ty
 	\item[function\_symbol] A set of first-order functions with the same name, but possibly with different arities. Can be used as a single first-order function if the set is a singleton. If {\tt F} is a function\_symbol and {\tt n} an integer, then {\tt F/n:1} returns a function\_symbol containing all function in {\tt F} with arity {\tt n}. If {\tt s1}, \ldots, {\tt sn}, {\tt t} are sorts, then {\tt F[s1,...,sn:t]} returns a function\_symbol containing all functions $G/n$ in {\tt F}, such that the $i$'th sort of $F$ belongs to the set {\tt si}, for $1 \leq i \leq n$, and the output sort of $G$ belongs to {\tt t}.
 	\item[symbol] A set of symbols of a vocabulary with the same name. Can be used as if it were a sort, predicate\_symbol, or function\_symbol.
 	\item[vocabulary] A vocabulary. If {\tt V} is a vocabulary and {\tt s} a string, {\tt V[s]} returns the symbols in {\tt V} with name {\tt s}. 
-	\item[compound] A domainelement of the form $F(d_1,\ldots,d_n)$, where $F$ is a first-order function and $d_1$, \ldots, $d_n$ are domain elements.
+	\item[compound] A domain element of the form $F(d_1,\ldots,d_n)$, where $F$ is a first-order function and $d_1$, \ldots, $d_n$ are domain elements.
 	\item[tuple] A tuple of domain elements. {\tt T[n]} returns the {\tt n}'th element in tuple {\tt T}.
 	\item[predicate\_table] A table of tuples of domain elements.
-	\item[predicate\_interpretation] An interpretation for a predicate. If {\tt T} is a predicate\_interpreation, then {\tt T.ct}, {\tt T.pt}, {\tt T.cf}, {\tt T.pf} return a predicate\_table containing, respectively, the certainly true, possibly true, certainly false, and possibly false tuples in {\tt T}. % HIER ONTBREEKT __newindex
-	\item[function\_interpretation] An interpretation for a function. {\tt F.graph} returns the predicate\_interpretation of the graph associated to the function\_interpreation {\tt F}. % HIER ONTBREEKT __newindex en __call
+	\item[predicate\_interpretation] An interpretation for a predicate. If {\tt T} is a predicate\_interpretation, then {\tt T.ct}, {\tt T.pt}, {\tt T.cf}, {\tt T.pf} return a predicate\_table containing, respectively, the certainly true, possibly true, certainly false, and possibly false tuples in {\tt T}. % HIER ONTBREEKT __newindex
+	\item[function\_interpretation] An interpretation for a function. {\tt F.graph} returns the predicate\_interpretation of the graph associated to the function\_interpretation {\tt F}. % HIER ONTBREEKT __newindex en __call
 	\item[structure] A first-order structure. To obtain the interpretation of a sort, singleton predicate\_symbol, or singleton function\_symbol {\tt symb} in structure {\tt S}, write {\tt S[symb]}.
 	\item[theory] A logic theory.
 	\item[options] A set of options.
@@ -100,7 +100,6 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[modelexpandpartial(theory,structure)]
 		Apply model expansion to theory T, structure S.
  		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
-		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
 	\item[modelexpand(theory,structure)]
  		Apply model expansion to theory T, structure S.
  		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
@@ -140,22 +139,22 @@ Also this  namespace and all its procedures are included in the global namespace
 	\item[isconsistent(structure)]
  		Check whether the structure is consistent.
 	\item[makefalse(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to false
+ 		Sets all tuples of the given table to false.
  		Modifies the table-interpretation.
-	\item[ makefalse(predicate\_interpretation,tuple)]
- 		Sets the interpretaion of the given tuple to false
+	\item[makefalse(predicate\_interpretation,tuple)]
+ 		Sets the interpretation of the given tuple to false.
  		Modifies the table-interpretation.
-	\item[ maketrue(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to true
+	\item[maketrue(predicate\_interpretation,table)]
+ 		Sets all tuples of the given table to true.
  		Modifies the table-interpretation.
-	\item[ maketrue(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to true
+	\item[maketrue(predicate\_interpretation,tuple)]
+ 		Sets the interpretation of the given tuple to true.
  		Modifies the table-interpretation.
-	\item[ makeunknown(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to unknown
+	\item[makeunknown(predicate\_interpretation,table)]
+ 		Sets all tuples of the given table to unknown.
  		Modifies the table-interpretation.
-	\item[ makeunknown(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to unknown
+	\item[makeunknown(predicate\_interpretation,tuple)]
+ 		Sets the interpretation of the given tuple to unknown.
  		Modifies the table-interpretation.
 	\item[newstructure(vocabulary,string)]
  		Create an empty structure with the given name over the given vocabulary.
@@ -179,7 +178,7 @@ Also this  namespace and all its procedures are included in the global namespace
 The \code{theory} namespace and all its procedures are included in the global namespace. It contains methods for manipulating theories, most of which modify the given theory.
 \begin{description}
 	\item[clone(theory)]
-		Retrurns a theory identical to the given one.
+		Returns a theory identical to the given one.
 	\item[completion(theory)]
 		Add definitional completion of all the definitions in the theory to the given theory. Modifies its argument.
 	\item[flatten(theory)]
@@ -227,7 +226,7 @@ All commands in the mx standard library file are defined in a namespace with the
 The following commands are supported by mx:
 \begin{description}
 	\item[one(theory,structure)]
-		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrary to the standard modelexpansion which returns a list of structures).
+		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
 	\item[all(theory,structure)] 
 		Returns all models of the theory that extend the given structure.
 	\item[printmodels(list)]
