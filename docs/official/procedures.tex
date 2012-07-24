@@ -44,17 +44,17 @@ A lot of procedures are already built-in. The command \code{help()} gives you an
 The \code{stdspace} contains the following procedures:
 \begin{description}
 \item[elements(d)]
-		Returns a procedure, stopargument, and a beginindex (hence, a Lua-iterator) such that
-			``for e in elements(d) do ... end'' 
-		iterates over all elements in the given domain d.
-	\item[help(namespace)]
- 		List the procedures in the given namespace.
- \item[idptype(something)]
- 		Returns custom typeids for first-class idp citizens.
- 		\item[tuples(table)]
- 		Returns a Lua-iterator such that
- 		``for t in tuples(table) do ... end''
- 		iterates over all tuples in the given predicate table.
+	Returns a procedure, stopargument, and a beginindex (hence, a Lua-iterator) such that
+	``for e in elements(d) do ... end'' 
+	iterates over all elements in the given domain d.
+\item[help(namespace)]
+	List the procedures in the given namespace.
+\item[idptype(something)]
+	Returns custom typeids for first-class idp citizens.
+\item[tuples(table)]
+	Returns a Lua-iterator such that
+	``for t in tuples(table) do ... end''
+	iterates over all tuples in the given predicate table.
 \end{description}
 All procedures in \code{stdspace} are included in the global namespace and hence can be called by \code{procedure()} instead of by \code{stdspace.procedure()}.
 
@@ -140,7 +140,7 @@ Also this  namespace and all its procedures are included in the global namespace
 	\item[isconsistent(structure)]
  		Check whether the structure is consistent.
 	\item[makefalse(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to false
+ 		Sets all tuples of the given table to false.
  		Modifies the table-interpretation.
 	\item[makefalse(predicate\_interpretation,tuple)]
  		Sets the interpretaion of the given tuple to false
@@ -179,7 +179,7 @@ Also this  namespace and all its procedures are included in the global namespace
 The \code{theory} namespace and all its procedures are included in the global namespace. It contains methods for manipulating theories, most of which modify the given theory.
 \begin{description}
 	\item[clone(theory)]
-		Retrurns a theory identical to the given one.
+		Returns a theory identical to the given one.
 	\item[completion(theory)]
 		Add definitional completion of all the definitions in the theory to the given theory. Modifies its argument.
 	\item[flatten(theory)]
@@ -227,7 +227,7 @@ All commands in the mx standard library file are defined in a namespace with the
 The following commands are supported by mx:
 \begin{description}
 	\item[one(theory,structure)]
-		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrary to the standard modelexpansion which returns a list of structures).
+		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
 	\item[all(theory,structure)] 
 		Returns all models of the theory that extend the given structure.
 	\item[printmodels(list)]
