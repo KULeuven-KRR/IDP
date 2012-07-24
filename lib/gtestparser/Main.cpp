@@ -7,13 +7,18 @@
 extern FILE* yyin;
 extern int yyparse();
 extern std::stringstream results;
+extern std::stringstream ss;
 
 using namespace std;
 
-int main(int, char**){
+int main(int, char**) {
 	yyin = stdin;
 	auto result = yyparse();
-	cout <<"[   SUMMARY   ]\n";
-	cout <<results.str();
+	if (ss.str() != "") {
+		cerr << "ERROR ENCOUNTERED, ABORTED EARLY: \n" << ss.str() << "\n";
+	} else {
+		cout << "[   SUMMARY   ]\n";
+		cout << results.str();
+	}
 	return result;
 }
