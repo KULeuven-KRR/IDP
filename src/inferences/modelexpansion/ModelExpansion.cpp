@@ -132,6 +132,9 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
+			if (verbosity() > 0) {
+				clog << "Solver generated " << list.size() << " models.\n";
+			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
 				solutions.push_back(handleSolution(newstructure, **i, grounding, inputvoc));
 			}
