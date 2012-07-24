@@ -20,6 +20,8 @@ When declaring a type, it can be stated that this type is a subtype or supertype
 \begin{lstlisting}
 	type MyType isa A1, A2 contains B1, B2
 \end{lstlisting}
+In the rest of this text, we will sometimes use ``parent type'' as direct supertype and ``ancestor type'' for (in)direct supertype.
+
 A predicate with name \code{MyPred}, arity 3 and types \code{T1},\code{T2},\code{T3} is declared by
 \begin{lstlisting}
 	MyPred(T1,T2,T3)
@@ -94,7 +96,7 @@ The global namespace contains a fixed vocabulary \code{std}, which is defined as
 		+(int,int) : int
 		-(int,int) : int
 		*(int,int) : int
-		/(int,int) : int
+		/(int,int) : float
 		%(int,int) : int
 		abs(int) : int
 		-(int) : int
@@ -121,7 +123,7 @@ Every vocabulary implicitly contains all symbols of \code{std}.  Also, every voc
 \code{+(int,int) : int} & integer addition \\
 \code{-(int,int) : int } &integer subtraction \\
 \code{*(int,int) : int} & integer multiplication \\
-\code{/(int,int) : int} & integer division \\
+\code{/(int,int) : float} & division \\
 \code{\%(int,int) : int} & remainder \\
 \code{abs(int) : int} & absolute value \\
 \code{-(int) : int} & unary minus \\
@@ -138,10 +140,10 @@ Every vocabulary implicitly contains all symbols of \code{std}.  Also, every voc
 
 The predicate \code{=/2} is always interpreted by equality.  The order $<_{dom}$ on domain elements is defined by
 \begin{itemize}
-	\item numers are smaller than non-numers;
-\item strings are smaller than compound domain elements (see bolow for a definitions of a compound domain element);
+	\item numbers are smaller than non-numbers;
+%\item strings are smaller than compound domain elements (see bolow for a definitions of a compound domain element);
 \item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are numbers and $d_1<d_2$;
-\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are strings that are nut numbers and $d_1$ is before $d_2$ in the lexicographic ordering;
+\item $d_1<_{dom} d_2$ if $d_1$ and $d_2$ are strings that are no numbers and $d_1$ is before $d_2$ in the lexicographic ordering;
 \item $d_1<_{dom} d_2$ is some total order on compound domain elements (which we do not specify).
 \end{itemize}
 
