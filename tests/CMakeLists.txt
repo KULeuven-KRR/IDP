@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 		
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 		
+addToCXX("-std=c++0x")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D USEINTERACTIVE")

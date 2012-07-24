@@ -36,7 +36,7 @@ else()
 endif()
 
 ### Set default compile flags
-addToCXX("-std=c++0x -Wall -pedantic -Wno-overloaded-virtual -Wno-mismatched-tags")
+addToCXX("-Wall -pedantic -Wno-overloaded-virtual")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
 endif()
