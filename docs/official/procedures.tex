@@ -25,8 +25,8 @@ Besides the standard types of variables available in Lua, the following extra ty
 	\item[compound] A domainelement of the form $F(d_1,\ldots,d_n)$, where $F$ is a first-order function and $d_1$, \ldots, $d_n$ are domain elements.
 	\item[tuple] A tuple of domain elements. {\tt T[n]} returns the {\tt n}'th element in tuple {\tt T} (This is 1-based, thus the first element is referred to as {\tt T[1]}).
 	\item[predicate\_table] A table of tuples of domain elements.
-	\item[predicate\_interpretation] An interpretation for a predicate. If {\tt T} is a predicate\_interpreation, then {\tt T.ct}, {\tt T.pt}, {\tt T.cf}, {\tt T.pf} return a predicate\_table containing, respectively, the certainly true, possibly true, certainly false, and possibly false tuples in {\tt T}. % HIER ONTBREEKT __newindex
-	\item[function\_interpretation] An interpretation for a function. {\tt F.graph} returns the predicate\_interpretation of the graph associated to the function\_interpreation {\tt F}. % HIER ONTBREEKT __newindex en __call
+	\item[predicate\_interpretation] An interpretation for a predicate. If {\tt T} is a predicate\_interpretation, then {\tt T.ct}, {\tt T.pt}, {\tt T.cf}, {\tt T.pf} return a predicate\_table containing, respectively, the certainly true, possibly true, certainly false, and possibly false tuples in {\tt T}. % HIER ONTBREEKT __newindex
+	\item[function\_interpretation] An interpretation for a function. {\tt F.graph} returns the predicate\_interpretation of the graph associated to the function\_interpretation {\tt F}. % HIER ONTBREEKT __newindex en __call
 	\item[structure] A first-order structure. To obtain the interpretation of a sort, singleton predicate\_symbol, or singleton function\_symbol {\tt symb} in structure {\tt S}, write {\tt S[symb]}.
 	\item[theory] A logic theory.
 	\item[options] A set of options.
@@ -143,19 +143,19 @@ Also this  namespace and all its procedures are included in the global namespace
  		Sets all tuples of the given table to false.
  		Modifies the table-interpretation.
 	\item[makefalse(predicate\_interpretation,tuple)]
- 		Sets the interpretaion of the given tuple to false
+ 		Sets the interpretation of the given tuple to false.
  		Modifies the table-interpretation.
 	\item[maketrue(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to true
+ 		Sets all tuples of the given table to true.
  		Modifies the table-interpretation.
 	\item[maketrue(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to true
+ 		Sets the interpretation of the given tuple to true.
  		Modifies the table-interpretation.
 	\item[makeunknown(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to unknown
+ 		Sets all tuples of the given table to unknown.
  		Modifies the table-interpretation.
 	\item[makeunknown(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to unknown
+ 		Sets the interpretation of the given tuple to unknown.
  		Modifies the table-interpretation.
 	\item[newstructure(vocabulary,string)]
  		Create an empty structure with the given name over the given vocabulary.
