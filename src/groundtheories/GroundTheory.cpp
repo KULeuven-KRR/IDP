@@ -53,8 +53,12 @@ void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID){
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction){
-	Policy::polNotifyLazyResidual(tseitin, inst, type, conjunction);
+void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction){
+	Policy::polStartLazyFormula(inst, type, conjunction);
+}
+template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type){
+	Policy::polNotifyLazyResidual(inst, type);
 }
 
 template<class Policy>
@@ -262,7 +266,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		} else {
 			Assert(isa<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
-			body->notifyTheoryOccurence(tseitin);
+			body->notifyTheoryOccurence();
 		}
 	}
 }

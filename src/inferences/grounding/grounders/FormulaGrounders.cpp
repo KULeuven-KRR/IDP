@@ -694,11 +694,11 @@ void AggGrounder::run(ConjOrDisj& formula) const {
 }
 
 bool ClauseGrounder::isRedundantInFormula(Lit l) const {
-	return conjunctive() == Conn::CONJ ? l == _true : l == _false;
+	return connective() == Conn::CONJ ? l == _true : l == _false;
 }
 
 Lit ClauseGrounder::redundantLiteral() const {
-	return conjunctive() == Conn::CONJ ? _true : _false;
+	return connective() == Conn::CONJ ? _true : _false;
 }
 
 /**
@@ -708,7 +708,7 @@ Lit ClauseGrounder::redundantLiteral() const {
  * negated disjunction: never true by a literal
  */
 bool ClauseGrounder::makesFormulaTrue(Lit l) const {
-	return (conjunctive() == Conn::DISJ && l == _true);
+	return (connective() == Conn::DISJ && l == _true);
 }
 
 /**
@@ -718,15 +718,15 @@ bool ClauseGrounder::makesFormulaTrue(Lit l) const {
  * negated disjunction: false if a literal is true
  */
 bool ClauseGrounder::makesFormulaFalse(Lit l) const {
-	return (conjunctive() == Conn::CONJ && l == _false);
+	return (connective() == Conn::CONJ && l == _false);
 }
 
 Lit ClauseGrounder::getEmtyFormulaValue() const {
-	return conjunctive() == Conn::CONJ ? _true : _false;
+	return connective() == Conn::CONJ ? _true : _false;
 }
 
 bool ClauseGrounder::decidesFormula(Lit lit) const {
-	return conjunctive() == Conn::CONJ ? lit == _false : lit == _true;
+	return connective() == Conn::CONJ ? lit == _false : lit == _true;
 }
 
 TsType ClauseGrounder::getTseitinType() const {
@@ -771,7 +771,7 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 }
 
 FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const {
-	Assert(formula.getType()==conjunctive());
+	Assert(formula.getType()==connective());
 	ConjOrDisj subformula;
 	subgrounder->wrapRun(subformula);
 	if (subformula.literals.size() == 0) {
@@ -830,7 +830,7 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 	}
-	formula.setType(conjunctive());
+	formula.setType(connective());
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
 		CHECKTERMINATION
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
@@ -853,7 +853,7 @@ std::string BoolGrounder::printFormula() const {
 		bool begin = true;
 		for (auto i = getSubGrounders().cbegin(); i != getSubGrounders().cend(); ++i) {
 			if(not begin){
-				ss << (conjunctive()==Conn::CONJ ? " & " : " | ");
+				ss << (connective()==Conn::CONJ ? " & " : " | ");
 			}
 			begin = false;
 			ss << toString(*i);
@@ -880,7 +880,7 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 			pushtab();
 		}
 	}
-	formula.setType(conjunctive());
+	formula.setType(connective());
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 		CHECKTERMINATION
 		if (_checker->check()) {
@@ -933,8 +933,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 
 	// Run subgrounders
 	ConjOrDisj leftformula, rightformula;
-	leftformula.setType(conjunctive());
-	rightformula.setType(conjunctive());
+	leftformula.setType(connective());
+	rightformula.setType(connective());
 	Assert(_leftgrounder->context()._monotone==Context::BOTH);
 	Assert(_rightgrounder->context()._monotone==Context::BOTH);
 	Assert(_leftgrounder->context()._tseitin==TsType::EQ|| _leftgrounder->context()._tseitin==TsType::RULE);

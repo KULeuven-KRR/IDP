@@ -128,7 +128,7 @@ public:
 		if (_grounder != NULL) {
 			delete (_grounder);
 		}
-		GroundInfo gi = { _theory, _minimizeterm, _structure, symstructure, _nbmodelsequivalent };
+		GroundInfo gi = { _theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm };
 		if (_receiver == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {

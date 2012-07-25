@@ -21,7 +21,7 @@
 #include "options.hpp"
 #include "errorhandling/error.hpp"
 
-class LazyStoredInstantiation;
+class LazyInstantiation;
 class DelayGrounder;
 
 class TsSet;
@@ -41,8 +41,11 @@ public:
 	void polAddLazyAddition(const litlist&, int){
 		throw notyetimplemented("Printing ground theories with lazy ground elements");
 	}
-	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, bool){
-		throw notyetimplemented("Printing ground theories with lazy ground elements");
+	void polStartLazyFormula(LazyInstantiation*, TsType, bool){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(LazyInstantiation*, TsType){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
 
 	void polRecursiveDelete() {

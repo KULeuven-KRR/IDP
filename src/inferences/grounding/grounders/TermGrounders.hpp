@@ -12,7 +12,7 @@
 #define TERMGROUNDERS_HPP_
 
 #include "IncludeComponents.hpp" // TODO too general
-#include "GroundUtils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 
 class AbstractGroundTheory;
 class SortTable;

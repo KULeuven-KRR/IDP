@@ -170,7 +170,7 @@ protected:
 	// NOTE: used by internalrun, which does not take SIGN into account!
 	Lit getEmtyFormulaValue() const;
 
-	Conn conjunctive() const {
+	Conn connective() const {
 		return _conn;
 	}
 
@@ -206,7 +206,6 @@ protected:
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
-	const tablesize _quantunivsize;
 protected:
 	virtual void internalRun(ConjOrDisj& literals) const;
 public:

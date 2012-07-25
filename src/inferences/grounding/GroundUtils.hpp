@@ -35,4 +35,19 @@ typedef std::pair<Lit, TsBody*> tspair;
 const Lit _true(getMaxElem<int>());
 const Lit _false(-getMaxElem<int>()); //NOT getMinElem<int> because -_true should be _false
 
+template<typename DomElemList, typename DomInstList>
+void overwriteVars(DomElemList& originst, const DomInstList& freevarinst) {
+	for (auto var2domelem = freevarinst.cbegin(); var2domelem < freevarinst.cend(); ++var2domelem) {
+		originst.push_back(var2domelem->first->get());
+		(*var2domelem->first) = var2domelem->second;
+	}
+}
+
+template<typename DomElemList, typename DomInstList>
+void restoreOrigVars(DomElemList& originst, const DomInstList& freevarinst) {
+	for (size_t i = 0; i < freevarinst.size(); ++i) {
+		(*freevarinst[i].first) = originst[i];
+	}
+}
+
 #endif /* GROUNDING_UTILS_HPP_ */

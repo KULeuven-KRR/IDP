@@ -23,8 +23,9 @@
 #include "grounders/TermGrounders.hpp"
 #include "grounders/SetGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
-#include "grounders/LazyFormulaGrounders.hpp"
-#include "grounders/LazyRuleGrounder.hpp"
+#include "lazygrounders/LazyDisjunctiveGrounders.hpp"
+//#include "grounders/LazyFormulaGrounders.hpp"
+//#include "grounders/LazyRuleGrounder.hpp"
 #include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "inferences/SolverConnection.hpp"
@@ -544,22 +545,13 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, const set<Variable*>& freevars, SIGN sign, bool conj,
-		const GroundingContext& context, bool trydelay, bool recursive) {
-	auto mightdolazy = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
-	if (context._monotone == Context::BOTH) {
-		mightdolazy = true;
-	}
-	if (not trydelay) {
-		mightdolazy = false;
-	}
-	if (not getOption(TSEITINDELAY) || recursive) {
-			// TODO tseitin introduction in inductive definitions is currently not supported (cannot use the incremental clause for that)
-		mightdolazy = false;
-	}
-	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && mightdolazy) {
+ClauseGrounder* createB(AbstractGroundTheory* grounding, const vector<Grounder*>& sub, const set<Variable*>& freevars, SIGN sign, bool conj,
+		const GroundingContext& context, bool recursive) {
+	auto disjunction = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
+	auto lazyAllowed = getOption(TSEITINDELAY) && (disjunction || context._monotone == Context::BOTH) && sub.size()>1;
+	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && lazyAllowed) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		return new LazyBoolGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context);
+		return new LazyDisjGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context, recursive);
 	} else {
 		return new BoolGrounder(grounding, sub, sign, conj, context);
 	}
@@ -569,7 +561,7 @@ ClauseGrounder* createB(AbstractGroundTheory* grounding, vector<Grounder*> sub, 
 void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 	Assert(_context._component == CompContext::SENTENCE);
 	// NOTE: to reduce the number of created tseitins, if bf is a negated disjunction, push the negation one level deeper.
-	// Take a clone to avoid changing bf;
+	// Take a clone to avoid changing bf
 	auto newbf = bf->clone();
 	if (not newbf->conj()) {
 		newbf->conj(true);
@@ -586,14 +578,7 @@ void GrounderFactory::createBoolGrounderConjPath(const BoolForm* bf) {
 		sub.push_back(getTopGrounder());
 	}
 
-	bool somequant = false;
-	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-		if (dynamic_cast<QuantForm*>(*i) != NULL) {
-			somequant = true;
-		}
-	}
-
-	auto boolgrounder = createB(getGrounding(), sub, newbf->freeVars(), newbf->sign(), true, _context, somequant, recursive(bf));
+	auto boolgrounder = createB(getGrounding(), sub, newbf->freeVars(), newbf->sign(), true, _context, recursive(bf));
 	boolgrounder->setOrig(bf, varmapping());
 	_topgrounder = boolgrounder;
 	deleteDeep(newbf);
@@ -617,14 +602,7 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 		_context._tseitin = TsType::RULE;
 	}
 
-	bool somequant = false;
-	for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-		if (dynamic_cast<QuantForm*>(*i) != NULL) {
-			somequant = true;
-		}
-	}
-
-	_formgrounder = createB(getGrounding(), sub, bf->freeVars(), bf->sign(), bf->conj(), _context, somequant, recursive(bf));
+	_formgrounder = createB(getGrounding(), sub, bf->freeVars(), bf->sign(), bf->conj(), _context, recursive(bf));
 	RestoreContext();
 	_formgrounder->setOrig(bf, varmapping());
 	if (_context._component == CompContext::SENTENCE) {
@@ -654,19 +632,13 @@ void GrounderFactory::visit(const QuantForm* qf) {
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, QuantForm const * const qf, const GenAndChecker& gc,
 		const GroundingContext& context, bool recursive) {
-	bool conj = (qf->quant() == QUANT::UNIV);
-	bool mightdolazy = (not conj and context._monotone == Context::POSITIVE) or (conj and context._monotone == Context::NEGATIVE);
-	if (context._monotone == Context::BOTH) {
-		mightdolazy = true;
-	}
-	if (not getOption(TSEITINDELAY) or recursive) {
-			// FIXME tseitin introduction in inductive definition is currently not supported (cannot use incremental clause for that)
-		mightdolazy = false;
-	}
+	auto conj = (qf->quant() == QUANT::UNIV);
+	auto existential = (not conj and context._monotone == Context::POSITIVE) or (conj and context._monotone == Context::NEGATIVE);
+	auto lazyAllowed = getOption(TSEITINDELAY) && (existential || context._monotone == Context::BOTH);
 	ClauseGrounder* grounder = NULL;
-	if (getOption(BoolType::GROUNDLAZILY) and isa<SolverTheory>(*grounding) and mightdolazy) {
+	if (getOption(BoolType::GROUNDLAZILY) and isa<SolverTheory>(*grounding) and lazyAllowed) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
-		grounder = new LazyQuantGrounder(qf->freeVars(), solvertheory, subgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, context);
+		grounder = new LazyExistsGrounder(qf->freeVars(), solvertheory, subgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, context, recursive);
 	} else {
 		grounder = new QuantGrounder(grounding, subgrounder, qf->sign(), qf->quant(), gc._generator, gc._checker, context);
 	}
@@ -717,7 +689,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (delayablepf != NULL) {
 		_context._allowDelaySearch = true;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
+/*	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
 		// TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
 		//  one example is when functions are unnested
 
@@ -743,7 +715,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 				grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), getGrounding(), subgrounder, getContext());
 			}
 		}
-	}
+	}*/
 	if (grounder == NULL) {
 		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
 	}
@@ -1106,20 +1078,20 @@ void GrounderFactory::visit(const Rule* rule) {
 	newrule->body(FormulaUtils::pushNegations(newrule->body()));
 	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext, getOption(CPSUPPORT));
 
-	auto groundlazily = false;
+/*	auto groundlazily = false;
 	if (getOption(SATISFIABILITYDELAY)) {
 		groundlazily = getGrounding()->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
 	}
 	if (groundlazily) { // NOTE: lazy grounding cannot handle head terms containing nested variables
 		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
-	}
+	}*/
 
 	// Split the quantified variables in two categories:
 	//		1. the variables that only occur in the head
 	//		2. the variables that occur in the body (and possibly in the head)
 	varlist bodyvars, headvars;
 	for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
-		if (groundlazily) {
+/*		if (groundlazily) {
 			if (not newrule->head()->contains(*it)) {
 				// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
 				bodyvars.push_back(*it);
@@ -1127,18 +1099,18 @@ void GrounderFactory::visit(const Rule* rule) {
 				headvars.push_back(*it);
 				createVarMapping(*it);
 			}
-		} else {
+		} else {*/
 			if (newrule->body()->contains(*it)) {
 				bodyvars.push_back(*it);
 			} else {
 				headvars.push_back(*it);
 			}
-		}
+//		}
 	}
 	InstGenerator *headgen = NULL, *bodygen = NULL;
-	if (not groundlazily) {
+//	if (not groundlazily) {
 		headgen = createVarMapAndGenerator(newrule->head(), headvars);
-	}
+//	}
 	bodygen = createVarMapAndGenerator(newrule->body(), bodyvars);
 
 	// Create head grounder
@@ -1163,11 +1135,11 @@ void GrounderFactory::visit(const Rule* rule) {
 	if (recursive(newrule->body())) {
 		_context._tseitin = TsType::RULE;
 	}
-	if (groundlazily) {
-		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
-	} else {
+//	if (groundlazily) {
+//		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
+//	} else {
 		_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
-	}
+//	}
 
 	deleteDeep(newrule);
 }
