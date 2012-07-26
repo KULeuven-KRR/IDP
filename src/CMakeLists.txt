@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 2.8)
  		
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+addToCXX("-std=c++0x")
 if(USEINTERACTIVE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D USEINTERACTIVE")
+	addToCXX("-D USEINTERACTIVE")
 endif()
 
 include_directories (
@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_i
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/.idprc\\\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
+	addToCXX("-pthread") 
 endif()
 
  
