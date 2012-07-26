@@ -112,7 +112,7 @@ namespace Tests{
 		ASSERT_EQ(genvalues.size(), 5);
 	}
 
-	TEST(SortGenerator, CloneFiniteSort){
+	TEST(SortGenerator, DISABLED_CloneFiniteSort){
 		auto sort = TableUtils::createSortTable(-2, 2);
 		auto var = new DomElemContainer();
 		auto gen = new SortGenerator(sort->internTable(), var);
