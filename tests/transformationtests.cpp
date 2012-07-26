@@ -17,7 +17,7 @@
 #include "theory/TheoryUtils.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
+//#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
@@ -566,7 +566,7 @@ TEST(FindUnknTest,QuantFormula) {
 	ASSERT_EQ(predform, &pf_p);
 }
 
-class TestGrounder: public DelayGrounder {
+/*class TestGrounder: public DelayGrounder {
 public:
 	TestGrounder(PredForm& pred, Context context)
 			: DelayGrounder(pred.symbol(), pred.args(), context, -1, new GroundTheory<GroundPolicy>(NULL)) {
@@ -661,4 +661,4 @@ TEST(FindUnknTest,WithMultipleMono) {
 	auto& formula3 = exists( { x2 }, not p2);
 	auto predform3 = FormulaUtils::findUnknownBoundLiteral(&formula3, NULL, &translator, context);
 	ASSERT_TRUE(predform3==NULL);
-}
+}*/

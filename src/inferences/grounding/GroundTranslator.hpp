@@ -11,7 +11,7 @@
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
 
-#include "Utils.hpp"
+#include "GroundUtils.hpp"
 #include "IncludeComponents.hpp"
 
 #include <unordered_map>
@@ -21,7 +21,7 @@
 class DelayGrounder;
 class TsSet;
 class CPBound;
-class LazyStoredInstantiation;
+class LazyInstantiation;
 class TsSet;
 class Function;
 class AbstractStructure;
@@ -128,7 +128,7 @@ public:
 	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translate(LazyStoredInstantiation* instance, TsType type);
+	Lit translate(LazyInstantiation* instance, TsType type);
 
 	VarId translateTerm(Function*, const std::vector<GroundTerm>&);
 	VarId translateTerm(CPTerm*, SortTable*);

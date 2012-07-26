@@ -25,7 +25,7 @@ class AggTsBody;
 class CPTsBody;
 class SortTable;
 
-class LazyQuantGrounder;
+class LazyExistsGrounder;
 class DomElemContainer;
 class DomainElement;
 class InstGenerator;
@@ -553,34 +553,20 @@ public:
 	virtual void put(std::ostream& stream) const;
 };
 
-typedef std::pair<const DomElemContainer*, const DomainElement*> dominst;
-typedef std::vector<dominst> dominstlist;
-
-class LazyTseitinGrounder;
-
-struct LazyStoredInstantiation {
-	const LazyTseitinGrounder* grounder;
-	InstGenerator* generator;
-	size_t index;
-	dominstlist freevarinst;
-
-	/*	bool operator==(const LazyStoredInstantiation& rhs) const {
-	 return rhs.residual == residual && freevarinst == rhs.freevarinst;
-	 }*/
-};
+class LazyInstantiation;
 
 class LazyTsBody: public TsBody {
 public:
-	LazyStoredInstantiation* inst;
+	LazyInstantiation* inst;
 
 public:
-	LazyTsBody(LazyStoredInstantiation* inst, TsType type)
+	LazyTsBody(LazyInstantiation* inst, TsType type)
 			: TsBody(type), inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
 
-	void notifyTheoryOccurence(Lit tseitin);
+	void notifyTheoryOccurence();
 };
 
 /* Sets and terms that will be handled by a constraint solver */

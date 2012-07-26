@@ -13,7 +13,7 @@
 #include "gtest/gtest.h"
 #include "external/rungidl.hpp"
 #include "commontypes.hpp"
-#include "inferences/grounding/Utils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 
 #include <dirent.h>
 #include <exception>
