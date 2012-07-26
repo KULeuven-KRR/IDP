@@ -69,8 +69,6 @@ void GroundTheory<Policy>::closeTheory() {
 	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
-	// TODO arbitrary values?
-	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
 	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
