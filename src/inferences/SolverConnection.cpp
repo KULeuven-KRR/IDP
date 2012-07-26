@@ -171,8 +171,8 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 #ifndef NDEBUG
 			if (not init->isConsistent()) {
 				std::cerr << "mx made " << toString(symbol) << " inconsistent when adding the element " << toString(args) << endl;
-				Assert(init->isConsistent());
 			}
+			Assert(init->isConsistent());
 #endif
 		}
 	}

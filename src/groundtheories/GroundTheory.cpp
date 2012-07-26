@@ -349,6 +349,10 @@ void GroundTheory<Policy>::addFalseDefineds() {
 			auto translation = translator()->translate(*sit, (*ptIterator));
 			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
 				addUnitClause(-translation);
+				if(structure()->inter(*sit)->ct()->contains(*ptIterator)){
+					addUnitClause(translation);
+					return; // NOTE: abort early because inconsistent anyway
+				}
 				// TODO better solution would be to make the structure more precise
 			}
 		}
