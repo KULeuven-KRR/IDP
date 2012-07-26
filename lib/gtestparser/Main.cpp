@@ -15,17 +15,17 @@ using namespace std;
 int main(int, char**) {
 	yyin = stdin;
 	auto result = yyparse();
+	cout << "[ SUMMARY  ]\n";
 	if (ss.str() != "" || error.str()!="") {
-		cerr << "ERROR ENCOUNTERED, ABORTED EARLY (possibly segfault): \n";
+		cout << "[  ERROR   ] Encountered error which interrupted at least one batch of tests (possibly segfault): \n";
 		if(error.str()!=""){
-			cerr << error.str() << "\n";
+			cout << error.str() << "\n";
 		}
 		if(ss.str()!=""){
-			cerr << ss.str() << "\n";
+			cout  << ss.str() << "\n";
 		}
-	} else {
-		cout << "[   SUMMARY   ]\n";
-		cout << results.str();
+		cout << "[REMAINDER]\n";
 	}
+	cout << results.str();
 	return result;
 }
