@@ -396,18 +396,6 @@ void GrounderFactory::visit(const Theory* theory) {
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
 
-template<class T>
-CompType getCompType(T symbol) {
-	if (is(symbol, STDPRED::EQ)) {
-		return CompType::EQ;
-	} else if (is(symbol, STDPRED::LT)) {
-		return CompType::LT;
-	} else {
-		Assert(is(symbol,STDPRED::GT));
-		return CompType::GT;
-	}
-}
-
 std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* structure){
 	vector<SortTable*> tables;
 	for(auto i=function->sorts().cbegin(); i<function->sorts().cend()-1; ++i) {
@@ -416,7 +404,24 @@ std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* stru
 	return tables;
 }
 
+bool isAggTerm(const Term* term ){
+	return term->type()==TermType::AGG;
+}
+
 void GrounderFactory::visit(const PredForm* pf) {
+	if(VocabularyUtils::isComparisonPredicate(pf->symbol())){
+		auto comp = VocabularyUtils::getComparisonType(pf->symbol());
+		if(isAggTerm(pf->subterms()[0])){
+			auto aggform = new AggForm(pf->sign(), pf->subterms()[1], comp, dynamic_cast<AggTerm*>(pf->subterms()[0]), pf->pi());
+			aggform->accept(this);
+			return;
+		}
+		if(isAggTerm(pf->subterms()[1])){
+			auto aggform = new AggForm(pf->sign(), pf->subterms()[0], comp, dynamic_cast<AggTerm*>(pf->subterms()[1]), pf->pi());
+			aggform->accept(this);
+			return;
+		}
+	}
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
 			// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
@@ -453,7 +458,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		if (VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), _structure->vocabulary())) {
 			useComparisonGrounder = true;
 			Assert(subtermgrounders.size() == 2);
-			comp = getCompType(newpf->symbol());
+			comp = VocabularyUtils::getComparisonType(newpf->symbol());
 			if (isNeg(newpf->sign())) {
 				comp = negateComp(comp);
 			}
@@ -828,36 +833,40 @@ Formula* falseFormula() {
 	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
 }
 
-void GrounderFactory::visit(const AggForm* af) {
-	auto clonedaf = af->clone();
-
+AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure){
 	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
-	if (clonedaf->getBound()->type() == TermType::FUNC or clonedaf->getBound()->type() == TermType::VAR) {
-		if (clonedaf->getAggTerm()->function() == AggFunction::CARD) {
-			deleteDeep(clonedaf);
-			clonedaf = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
+	if (af->getBound()->type() == TermType::FUNC or af->getBound()->type() == TermType::VAR) {
+		if (af->getAggTerm()->function() == AggFunction::CARD) {
+			auto prevaf = af;
+			af = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
 					new AggTerm(af->getAggTerm()->set()->clone(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
-			for (auto i = clonedaf->getAggTerm()->set()->getSets().cbegin(); i < clonedaf->getAggTerm()->set()->getSets().cend(); ++i) {
+			deleteDeep(prevaf);
+			for (auto i = af->getAggTerm()->set()->getSets().cbegin(); i < af->getAggTerm()->set()->getSets().cend(); ++i) {
 				Assert((*i)->getTerm()->type()==TermType::DOM);
 				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
 				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
 			}
 		}
-		if (clonedaf->getAggTerm()->function() == AggFunction::SUM) {
-			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
-			auto newft = new FuncTerm(minus, { clonedaf->getBound()->clone() }, TermParseInfo());
+		if (af->getAggTerm()->function() == AggFunction::SUM) {
+			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
+			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
 //			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
 //			auto newft = new FuncTerm(product, // newft = -1 * bound
 //					{ clonedaf->getBound()->clone(), new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()) },
 //					TermParseInfo());
-			auto newset = clonedaf->getAggTerm()->set()->clone();
+			auto newset = af->getAggTerm()->set()->clone();
 			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
-			auto temp = new AggForm(clonedaf->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), clonedaf->comp(),
-					new AggTerm(newset, clonedaf->getAggTerm()->function(), clonedaf->getAggTerm()->pi()), clonedaf->pi());
-			deleteDeep(clonedaf);
-			clonedaf = temp;
+			auto temp = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),
+					new AggTerm(newset, af->getAggTerm()->function(), af->getAggTerm()->pi()), af->pi());
+			deleteDeep(af);
+			af = temp;
 		}
 	}
+	return af;
+}
+
+void GrounderFactory::visit(const AggForm* af) {
+	auto clonedaf = rewriteSumOrCardIntoSum(af->clone(), _structure);
 
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext, (getOption(CPSUPPORT) and not recursive(clonedaf)));
 		// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
@@ -960,11 +969,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto ftable = _structure->inter(function)->funcTable();
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntSum(function, _structure->vocabulary())) {
-		if (is(function, STDFUNC::SUBSTRACTION)) {
-			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], ST_MINUS);
-		} else {
-			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
-		}
+		_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], is(function, STDFUNC::ADDITION)?ST_PLUS:ST_MINUS);
 	} else if (getOption(BoolType::CPSUPPORT) and TermUtils::isTermWithIntFactor(t, _structure)) {
 		if (TermUtils::isFactor(t->subterms()[0], _structure)) { //TODO move switch to constructor?
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);

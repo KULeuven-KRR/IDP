@@ -212,6 +212,8 @@ private:
 	void createBoolGrounderDisjPath(const BoolForm* bf);
 	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
+
+	AggForm* rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure);
 };
 
 #endif /* GROUNDERFACTORY_HPP */

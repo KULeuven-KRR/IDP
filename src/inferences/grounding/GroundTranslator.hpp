@@ -103,6 +103,7 @@ private:
 	std::vector<ftpair*> var2Tuple; 		// Owns pointers!
 	std::vector<CPTsBody*> var2CTsBody;
 	std::vector<SortTable*> var2domain;
+	std::map<int, VarId> storedTerms; 		// Tabling of terms which are equal to a domain element
 
 	std::map<CPTsBody*, Lit, CompareTs> cpset; // Used to detect identical Cpterms, is not used in any other way!
 

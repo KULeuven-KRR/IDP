@@ -52,9 +52,6 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 template<class LitGrounder, class TermGrounder>
 void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder,
 		weightlist& trueweights, varidlist& varids, InstChecker& checker) {
-	auto grounding = sublitgrounder.getGrounding();
-	auto translator = grounding->translator();
-
 	Lit l;
 	if (checker.check()) {
 		l = _true;
@@ -84,6 +81,9 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	//  - Introduce new constant t'.
 	//  - Add two formulas: l => t' = t and -l => t' = 0
 	//  - return (true,t')
+
+	auto grounding = sublitgrounder.getGrounding();
+	auto translator = grounding->translator();
 
 	// Get CP variable for the groundterm t
 	VarId v;
@@ -121,16 +121,12 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	translator->vocabulary()->add(constant);
 
 	auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
-	auto vt1 = new CPVarTerm(varid);
-	auto vt2 = new CPVarTerm(varid);
 
 	// Add formulas to the grounding
-	Lit bl1 = translator->translate(vt1, CompType::EQ, CPBound(v), TsType::EQ);
-	Lit bl2 = translator->translate(vt2, CompType::EQ, CPBound(0), TsType::EQ);
-	Lit l1 = translator->translate( { -l, bl1 }, false, TsType::IMPL);
-	Lit l2 = translator->translate( { l, bl2 }, false, TsType::IMPL);
-	Lit truelit = translator->translate( { l1, l2 }, true, TsType::EQ);
-	grounding->addUnitClause(truelit);
+	auto bl1 = translator->translate(new CPVarTerm(varid), CompType::EQ, CPBound(v), TsType::EQ);
+	auto bl2 = translator->translate(new CPVarTerm(varid), CompType::EQ, CPBound(0), TsType::EQ);
+	grounding->add({-l, bl1});
+	grounding->add({l, bl2});
 
 	varids.push_back(varid);
 }

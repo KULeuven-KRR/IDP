@@ -111,7 +111,7 @@ protected:
 	TermGrounder* _righttermgrounder;
 	SumType _type;
 public:
-	SumTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type = ST_PLUS)
+	SumTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type)
 			: TermGrounder(dom, tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
 	}
 	GroundTerm run() const;

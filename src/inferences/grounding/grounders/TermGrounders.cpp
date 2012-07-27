@@ -123,11 +123,7 @@ GroundTerm FuncTermGrounder::run() const {
 }
 
 CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
-	if (type == SumType::ST_MINUS) {
-		return new CPWSumTerm( { left, right }, { 1, -1 });
-	} else {
-		return new CPWSumTerm( { left, right }, { 1, 1 });
-	}
+	return new CPWSumTerm( { left, right }, { 1, (type == SumType::ST_MINUS?-1:1) });
 }
 
 void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -209,26 +205,9 @@ GroundTerm SumTermGrounder::run() const {
 	// Compute domain for the sum term
 	computeDomain(left, right);
 
-	VarId varid;
-	if (left.isVariable) {
-		if (right.isVariable) {
-			auto sumterm = createCPSumTerm(_type, left._varid, right._varid);
-			varid = _translator->translateTerm(sumterm, getDomain());
-		} else {
-			Assert(not right.isVariable);
-			auto rightvarid = _translator->translateTerm(right._domelement);
-			// Create cp sum term
-			auto sumterm = createCPSumTerm(_type, left._varid, rightvarid);
-			varid = _translator->translateTerm(sumterm, getDomain());
-		}
-	} else {
-		Assert(not left.isVariable);
-		if (right.isVariable) {
-			auto leftvarid = _translator->translateTerm(left._domelement);
-			// Create cp sum term
-			auto sumterm = createCPSumTerm(_type, leftvarid, right._varid);
-			varid = _translator->translateTerm(sumterm, getDomain());
-		} else { // Both subterms are domain elements, so lookup the result in the function table.
+	auto leftid = left._varid, rightid = right._varid; // NOTE: only correct if it is indeed a variable, otherwise we overwrite it now:
+	if(not left.isVariable){
+		if(not right.isVariable){ // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable and (_functable != NULL));
 			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
 			Assert(domelem);
@@ -238,7 +217,15 @@ GroundTerm SumTermGrounder::run() const {
 			}
 			return GroundTerm(domelem);
 		}
+		leftid = _translator->translateTerm(left._domelement);
+
 	}
+	if(not right.isVariable){
+		rightid = _translator->translateTerm(right._domelement);
+	}
+	// Create addition of both terms
+	auto sumterm = createCPSumTerm(_type, leftid, rightid);
+	auto varid = _translator->translateTerm(sumterm, getDomain());
 
 	// Return result
 	if (verbosity() > 2) {

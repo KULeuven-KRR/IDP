@@ -306,20 +306,24 @@ VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
 }
 
 VarId GroundTranslator::translateTerm(const DomainElement* element) {
-	auto varid = nextNumber();
-	// Create a new CP variable term
-	auto cpterm = new CPVarTerm(varid);
-	// Create a new CP bound based on the domain element
 	Assert(element->type() == DET_INT);
-	CPBound bound(element->value()._int);
+	auto value = element->value()._int;
+
+	auto it = storedTerms.find(value);
+	if(it!=storedTerms.cend()){
+		return it->second;
+	}
+
+	auto varid = nextNumber();
+	auto cpterm = new CPVarTerm(varid);
+	CPBound bound(value);
 	// Add a new CP constraint
 	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	var2CTsBody[varid.id] = cprelation;
 	// Add a new domain containing only the given domain element
-	auto domain = TableUtils::createSortTable();
-	domain->add(element);
+	auto domain = TableUtils::createSortTable(value, value);
 	var2domain[varid.id] = domain;
-	// Return the new variable identifier
+	storedTerms.insert({value, varid});
 	return varid;
 }
 

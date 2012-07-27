@@ -2188,6 +2188,19 @@ bool isComparisonPredicate(const PFSymbol* symbol) {
 	return (isa<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
 }
 
+CompType getComparisonType(const PFSymbol* symbol){
+	Assert(isComparisonPredicate(symbol));
+	if(is(symbol, STDPRED::EQ)){
+		return CompType::EQ;
+	}
+	if(is(symbol, STDPRED::LT)){
+		return CompType::LT;
+	}else{
+		Assert(is(symbol, STDPRED::GT));
+		return CompType::GT;
+	}
+}
+
 bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 	string name = symbol->name();
 	if (isComparisonPredicate(symbol)) {
