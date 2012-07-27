@@ -22,12 +22,10 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-//GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure);
-
 GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
-	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
+	auto mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (doSymbolicPropagation) {
 		propagator->doPropagation();
@@ -37,59 +35,6 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 	delete (propagator);
 	return result;
 }
-
-/*GenerateBDDAccordingToBounds* generateApproxBounds(AbstractTheory* theory, AbstractStructure*& structure) {
-	std::map<PFSymbol*, InitBoundType> mpi = propagateVocabulary(theory, structure);
-	auto propagator = createPropagator(theory, structure, mpi);
-	if (not getOption(BoolType::GROUNDLAZILY)) { // TODO should become GROUNDWITHBOUNDS (which in fact will mean "use symbolic propagation" in future)
-		propagator->doPropagation();
-		propagator->applyPropagationToStructure(structure);
-	}
-	auto result = propagator->symbolicstructure();
-	delete (propagator);
-	return result;
-}
-
-void generateNaiveBounds(FOBDDManager& manager, AbstractStructure* structure, PFSymbol* symbol, std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& vars,
-		Bound& ctbounds, Bound& cfbounds) {
-	auto pinter = structure->inter(symbol);
-	if (pinter->approxTwoValued()) {
-		return;
-	}
-	auto pvars = VarUtils::makeNewVariables(symbol->sorts());
-	vector<const FOBDDVariable*> bddvarlist;
-	vector<const FOBDDTerm*> bddarglist;
-	for (size_t n = 0; n < pvars.size(); ++n) {
-		const FOBDDVariable* bddvar = manager.getVariable(pvars[n]);
-		bddvarlist.push_back(bddvar);
-		bddarglist.push_back(bddvar);
-	}
-	vars[symbol] = bddvarlist;
-	auto ctkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CT, bddarglist);
-	auto cfkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_CF, bddarglist);
-	ctbounds[symbol] = manager.ifthenelse(ctkernel, manager.truebdd(), manager.falsebdd());
-	cfbounds[symbol] = manager.ifthenelse(cfkernel, manager.truebdd(), manager.falsebdd());
-}
-
-GenerateBDDAccordingToBounds* generateNaiveBounds( AbstractStructure* structure) {
-	auto manager = new FOBDDManager();
-	Bound ctbounds, cfbounds;
-	auto vocabulary = structure->vocabulary();
-	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > vars;
-	for (auto it = vocabulary->firstPred(); it != vocabulary->lastPred(); ++it) {
-		auto preds = it->second->nonbuiltins();
-		for (auto jt = preds.cbegin(); jt != preds.cend(); ++jt) {
-			generateNaiveBounds(*manager, structure, *jt, vars, ctbounds, cfbounds);
-		}
-	}
-	for (auto it = vocabulary->firstFunc(); it != vocabulary->lastFunc(); ++it) {
-		auto functions = it->second->nonbuiltins();
-		for (auto jt = functions.cbegin(); jt != functions.cend(); ++jt) {
-			generateNaiveBounds(*manager, structure, *jt, vars, ctbounds, cfbounds);
-		}
-	}
-	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
-}*/
 
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*, InitBoundType> mpi) {
 //	if(getOption(BoolType::GROUNDWITHBOUNDS)){

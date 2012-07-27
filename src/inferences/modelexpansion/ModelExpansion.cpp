@@ -90,9 +90,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto inputvoc = _theory->vocabulary();
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
-	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor,
+	auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, newstructure, _minimizeterm, _tracemonitor,
 			getOption(IntType::NBMODELS) != 1, data);
-	auto grounding = groundingInference->ground();
 
 	if (grounding == NULL) {
 		if (verbosity() > 0) {

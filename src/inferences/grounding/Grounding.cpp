@@ -15,7 +15,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 
 template<>
-void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
+void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
 	t->setTranslator(grounder->getTranslator());
 	t->setSolver(solver);
 }

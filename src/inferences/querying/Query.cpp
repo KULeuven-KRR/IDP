@@ -31,7 +31,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	if (not structure->approxTwoValued()) {
 		auto generateBDDaccToBounds = generateBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure,false);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
-		manager = generateBDDaccToBounds->manager();
+		manager = generateBDDaccToBounds->obtainManager();
 		delete generateBDDaccToBounds;
 	} else {
 		//When working two-valued, we can simply turn formula to BDD

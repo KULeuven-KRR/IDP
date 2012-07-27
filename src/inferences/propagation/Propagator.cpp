@@ -147,7 +147,7 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
 	Assert(typeid(*_factory) == typeid(FOPropBDDDomainFactory));
-	FOBDDManager* manager = (dynamic_cast<FOPropBDDDomainFactory*>(_factory))->manager();
+	auto manager = (dynamic_cast<FOPropBDDDomainFactory*>(_factory))->manager();
 	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
 		ThreeValuedDomain<Domain> tvd = (_domains.find(it->second))->second;
 		ctbounds[it->first] = dynamic_cast<FOPropBDDDomain*>(tvd._ctdomain)->bdd();

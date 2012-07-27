@@ -46,6 +46,12 @@ bool needPossible(TruthType value) {
 	return value == TruthType::POSS_TRUE || value == TruthType::POSS_FALSE;
 }
 
+GenerateBDDAccordingToBounds::~GenerateBDDAccordingToBounds(){
+	if(_ownsmanager){
+		delete(_manager);
+	}
+}
+
 const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) {
 
 	_type = type;

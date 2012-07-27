@@ -762,7 +762,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 		pushtab();
 		clog << tabs() << toString(bdd) << "\n";
 	}
-	auto manager = _symstructure->manager();
+	auto manager = _symstructure->obtainManager();
 
 	// Optimize the query
 	FOBDDManager optimizemanager;
@@ -1239,7 +1239,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 	auto bdd = _symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
 	bdd = improve(approxvalue, bdd, quantfovars);
-	auto table = new PredTable(new BDDInternalPredTable(bdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
+	auto table = new PredTable(new BDDInternalPredTable(bdd, _symstructure->obtainManager(), data.fovars, _structure), Universe(data.tables));
 	deleteDeep(tempsubformula);
 	return table;
 }
