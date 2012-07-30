@@ -13,9 +13,15 @@
 
 #include <sstream>
 #include <string>
+#include "utils/PrintStacktrace.hpp"
 
 class Exception {
 public:
+	Exception(){
+#ifdef DEBUG
+		printStacktrace();
+#endif
+	}
 	~Exception() {
 	}
 	virtual std::string getMessage() const = 0;
@@ -35,7 +41,6 @@ private:
 public:
 	AssertionException(std::string message)
 			: message(message) {
-
 	}
 	std::string getMessage() const {
 		std::stringstream ss;
