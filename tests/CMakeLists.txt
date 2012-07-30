@@ -49,6 +49,8 @@ macro(addMXTest execname cppfile)
 	set(TESTCOMMANDBINARIES ${TESTCOMMANDBINARIES} COMMAND ${PROJECT_BINARY_DIR}/tests/${execname})
 endmacro()
 
+set(TESTINGTHREADS "1" CACHE STRING "The number of threads to run in parallel for testing")
+
 if(${BUILDTESTS})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
 	set(FASTTESTS 
@@ -91,8 +93,8 @@ if(${BUILDTESTS})
 			${MXINCLUDES}
 		)
 		addTest(slow)
-		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 4 ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
-		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 3 ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
+		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
+		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
 	else()
 		set(LONGERTESTS
 			mxtests/basic.cpp
