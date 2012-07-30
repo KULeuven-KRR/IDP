@@ -12,6 +12,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <ctime>
 #include "inferences/SolverInclude.hpp"
 
 #include "GrounderFactory.hpp"
@@ -42,6 +43,8 @@ template<> void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolve
 
 void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm);
 
+void logActionAndTime(const std::string& action);
+
 //GroundingReciever can be a solver, a printmonitor, ...
 template<typename GroundingReceiver>
 class GroundingInference {
@@ -71,7 +74,7 @@ public:
 		}
 		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver);
 		auto grounding = m->ground();
-		delete(m);
+		// FIXME deleting lazy grounders here is a problem!!! delete(m);
 		return grounding;
 	}
 private:
@@ -102,7 +105,7 @@ private:
 		// Calculate known definitions
 		if (not getOption(BoolType::GROUNDLAZILY)) {
 			if (verbosity() >= 1) {
-				std::clog << "Evaluating definitions\n";
+				logActionAndTime("Evaluating definitions");
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
@@ -114,7 +117,7 @@ private:
 
 		// Approximation
 		if (verbosity() >= 1) {
-			std::clog << "Approximation\n";
+			logActionAndTime("Approximation");
 		}
 		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 		if (not _structure->isConsistent()) {
@@ -127,7 +130,7 @@ private:
 
 		// Create grounder
 		if (verbosity() >= 1) {
-			std::clog << "Creating grounders\n";
+			logActionAndTime("Creating grounders");
 		}
 		auto gi = GroundInfo { _theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm };
 		if (_receiver == NULL) {
@@ -142,14 +145,14 @@ private:
 
 		// Run grounder
 		if (verbosity() >= 1) {
-			std::clog << "Grounding\n";
+			logActionAndTime("Grounding");
 		}
 		_grounder->toplevelRun();
 
 
 		// Add symmetry breakers
 		if (verbosity() >= 1) {
-			std::clog << "Adding symmetry breakers\n";
+			logActionAndTime("Adding symmetry breakers");
 		}
 		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm);
 
