@@ -41,12 +41,12 @@ class TheoryComponent;
 template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
 		pushtab();
 	}
 	auto result = t.execute(object, parameters...);
-	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		poptab();
 		std::clog << tabs() << "Resulted in: " << nt() << toString(result) << "\n\n";
 	}
@@ -56,12 +56,12 @@ ReturnType transform(Construct* object, Values ... parameters) {
 template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
 		pushtab();
 	}
 	t.execute(object, parameters...);
-	if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
 		poptab();
 		std::clog << tabs() << "Resulted in: " << nt() << toString(object) << "\n\n";
 	}
