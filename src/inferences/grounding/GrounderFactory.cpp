@@ -72,19 +72,22 @@ GenType operator not(GenType orig) {
 	return result;
 }
 
+Formula* trueFormula() {
+	return new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
+}
+
+Formula* falseFormula() {
+	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
+}
+
 DefId getIDForUndefined() {
 	return DefId(-1);
 }
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent)
-		: 	_theory(data.theory),
-			_minimizeterm(data.minimizeterm),
-			_vocabulary(data.partialstructure->vocabulary()),
-			_structure(data.partialstructure),
-			_symstructure(data.symbolicstructure),
-			_grounding(grounding),
-			_nbmodelsequivalent(nbModelsEquivalent) {
+		: _theory(data.theory), _minimizeterm(data.minimizeterm), _vocabulary(data.partialstructure->vocabulary()), _structure(data.partialstructure),
+			_symstructure(data.symbolicstructure), _grounding(grounding), _nbmodelsequivalent(nbModelsEquivalent) {
 	Assert(_symstructure != NULL);
 
 	// Create a symbolic structure if no such structure is given
@@ -233,13 +236,13 @@ Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	return grounder;
 }
 /*
-Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
-	auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
-	groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
-	GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
-	data.theory->accept(&g);
-	return g.getTopGrounder();
-}*/
+ Grounder* GrounderFactory::create(const GroundInfo& data, FZRewriter* printer) {
+ auto groundtheory = new GroundTheory<SolverPolicy<FZRewriter> >(data.theory->vocabulary(), data.partialstructure->clone());
+ groundtheory->initialize(printer, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
+ GrounderFactory g( { data.partialstructure, data.symbolicstructure }, groundtheory);
+ data.theory->accept(&g);
+ return g.getTopGrounder();
+ }*/
 
 Grounder* GrounderFactory::ground() {
 	std::vector<Grounder*> grounders;
@@ -316,7 +319,7 @@ void GrounderFactory::descend(T child) {
 	SaveContext();
 
 	if (getContext()._component == CompContext::SENTENCE) {
-		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
 			clog << tabs() << "Creating a grounder for " << toString(child) << "\n";
 			if (getOption(IntType::GROUNDVERBOSITY) > 3) {
 				pushtab();
@@ -354,7 +357,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
 	const auto components = theory->components();
-		// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
+	// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
 	// TODO Order the components to optimize the grounding process
 
 	// Create grounders for all components
@@ -396,35 +399,22 @@ void GrounderFactory::visit(const Theory* theory) {
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
 
-std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* structure){
+std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* structure) {
 	vector<SortTable*> tables;
-	for(auto i=function->sorts().cbegin(); i<function->sorts().cend()-1; ++i) {
+	for (auto i = function->sorts().cbegin(); i < function->sorts().cend() - 1; ++i) {
 		tables.push_back(structure->inter(*i));
 	}
 	return tables;
 }
 
-bool isAggTerm(const Term* term ){
-	return term->type()==TermType::AGG;
+bool isAggTerm(const Term* term) {
+	return term->type() == TermType::AGG;
 }
 
-void GrounderFactory::visit(const PredForm* pf) {
-	if(VocabularyUtils::isComparisonPredicate(pf->symbol())){
-		auto comp = VocabularyUtils::getComparisonType(pf->symbol());
-		if(isAggTerm(pf->subterms()[0])){
-			auto aggform = new AggForm(pf->sign(), pf->subterms()[1], comp, dynamic_cast<AggTerm*>(pf->subterms()[0]), pf->pi());
-			aggform->accept(this);
-			return;
-		}
-		if(isAggTerm(pf->subterms()[1])){
-			auto aggform = new AggForm(pf->sign(), pf->subterms()[0], comp, dynamic_cast<AggTerm*>(pf->subterms()[1]), pf->pi());
-			aggform->accept(this);
-			return;
-		}
-	}
+void GrounderFactory::internalVisit(const PredForm* pf){
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
-			// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
@@ -439,8 +429,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
-	SaveContext();// FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
-	   	   	   	   // FIXME and why only in some cases check the sign of the formula for inverting the type?
+	SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
+				   // FIXME and why only in some cases check the sign of the formula for inverting the type?
 	for (size_t n = 0; n < newpf->subterms().size(); ++n) {
 		descend(newpf->subterms()[n]);
 		subtermgrounders.push_back(getTermGrounder());
@@ -450,7 +440,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
-		Assert(not recursive(newpf) and _context._component != CompContext::HEAD); // Note: CP does not work in the defined case
+		Assert(not recursive(newpf) and _context._component != CompContext::HEAD);
+		// Note: CP does not work in the defined case
 		TermGrounder* lefttermgrounder;
 		TermGrounder* righttermgrounder;
 		CompType comp;
@@ -466,7 +457,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			righttermgrounder = subtermgrounders[1];
 		} else if (newpf->isGraphedFunction()) {
 			auto function = dynamic_cast<Function*>(newpf->symbol());
-			if (CPSupport::eligibleForCP(function,_structure->vocabulary())) {
+			if (CPSupport::eligibleForCP(function, _structure->vocabulary())) {
 				useComparisonGrounder = true;
 				comp = CompType::EQ;
 				if (isNeg(newpf->sign())) {
@@ -476,7 +467,8 @@ void GrounderFactory::visit(const PredForm* pf) {
 				subtermgrounders.pop_back();
 				auto ftable = _structure->inter(function)->funcTable();
 				auto domain = _structure->inter(function->outsort());
-				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure), subtermgrounders);
+				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure),
+						subtermgrounders);
 				//ftgrounder->setOrig(...) TODO
 			}
 		}
@@ -498,7 +490,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 			deleteDeep(newpf);
 			return;
 		}
-		
+
 	}
 
 	if (_context._component == CompContext::HEAD) {
@@ -535,6 +527,71 @@ void GrounderFactory::visit(const PredForm* pf) {
 	deleteDeep(newpf);
 }
 
+void GrounderFactory::visit(const PredForm* pf) {
+	// FIXME apparently, transforming any predform which is in fact an aggform really into an aggform goes very wrong
+/*	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
+		auto comp = VocabularyUtils::getComparisonType(pf->symbol());
+		AggForm* aggform = NULL;
+		if (isAggTerm(pf->subterms()[0])) {
+			aggform = new AggForm(pf->sign(), pf->subterms()[1], negateComp(comp), dynamic_cast<AggTerm*>(pf->subterms()[0]), pf->pi());
+		}
+		if (isAggTerm(pf->subterms()[1])) {
+			aggform = new AggForm(pf->sign(), pf->subterms()[0], comp, dynamic_cast<AggTerm*>(pf->subterms()[1]), pf->pi());
+		}
+		if (aggform != NULL) {
+			descend(aggform);
+			delete(aggform);
+			return;
+		}
+	}*/
+	auto temppf = pf->clone();
+	if(VocabularyUtils::isComparisonPredicate(pf->symbol())){
+		AggTerm* aggterm = NULL;
+		Term* bound = NULL;
+		if (isAggTerm(pf->subterms()[0])) {
+			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[0]);
+			bound = pf->subterms()[1];
+		}else if(isAggTerm(pf->subterms()[1])) {
+			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[1]);
+			bound = pf->subterms()[0];
+		}
+		if(aggterm!=NULL){
+			// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
+			if (bound->type() == TermType::FUNC or bound->type() == TermType::VAR) {
+				bool newagg = false, newbound = false;
+				if (aggterm->function() == AggFunction::CARD) {
+					aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
+					newagg = true;
+				}
+				if (aggterm->function() == AggFunction::SUM) {
+					auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
+					auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
+					auto newset = aggterm->set()->clone();
+					newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+					bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
+					aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
+					newagg = true;
+					newbound = true;
+				}
+				if(not newagg){
+					aggterm = aggterm->clone();
+				}
+				if(not newbound){
+					bound = bound->clone();
+				}
+				if(isAggTerm(pf->subterms()[0])){
+					temppf = new PredForm(pf->sign(), pf->symbol(), {aggterm, bound}, pf->pi());
+				}else{
+					temppf = new PredForm(pf->sign(), pf->symbol(), {bound, aggterm}, pf->pi());
+				}
+			}
+		}
+	}
+
+	internalVisit(temppf);
+	deleteDeep(temppf);
+}
+
 void GrounderFactory::visit(const BoolForm* bf) {
 	_context._conjPathUntilNode = (_context._conjunctivePathFromRoot and (bf->isConjWithSign() or bf->subformulas().size() == 1));
 
@@ -553,7 +610,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 ClauseGrounder* createB(AbstractGroundTheory* grounding, const vector<Grounder*>& sub, const set<Variable*>& freevars, SIGN sign, bool conj,
 		const GroundingContext& context, bool recursive) {
 	auto disjunction = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
-	auto lazyAllowed = getOption(TSEITINDELAY) && (disjunction || context._monotone == Context::BOTH) && sub.size()>1;
+	auto lazyAllowed = getOption(TSEITINDELAY) && (disjunction || context._monotone == Context::BOTH) && sub.size() > 1;
 	if (getOption(BoolType::GROUNDLAZILY) && isa<SolverTheory>(*grounding) && lazyAllowed) {
 		auto solvertheory = dynamic_cast<SolverTheory*>(grounding);
 		return new LazyDisjGrounder(freevars, solvertheory, sub, SIGN::POS, conj, context, recursive);
@@ -694,33 +751,33 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (delayablepf != NULL) {
 		_context._allowDelaySearch = true;
 	}
-/*	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
-		// TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
-		//  one example is when functions are unnested
+	/*	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
+	 // TODO issue: subformula might get new variables, but there are not reflected in newq, so the varmapping will not contain them (even if the varmapping is not clean when going back up (which is still done))!
+	 //  one example is when functions are unnested
 
-		auto latestqf = QuantForm(newqf->sign(), newqf->quant(), newqf->quantVars(), subformula, newqf->pi());
+	 auto latestqf = QuantForm(newqf->sign(), newqf->quant(), newqf->quantVars(), subformula, newqf->pi());
 
-		// Research to get up-to-date predforms!
-		Context lazycontext = Context::BOTH;
+	 // Research to get up-to-date predforms!
+	 Context lazycontext = Context::BOTH;
 
-		auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, getGrounding()->translator(), lazycontext);
-		if (tuple.size() != 2) {
-			delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, getGrounding()->translator(), lazycontext);
-		} else {
-			delayablepf = tuple[0];
-			twindelayablepf = tuple[1];
-		}
+	 auto tuple = FormulaUtils::findDoubleDelayLiteral(&latestqf, _structure, getGrounding()->translator(), lazycontext);
+	 if (tuple.size() != 2) {
+	 delayablepf = FormulaUtils::findUnknownBoundLiteral(&latestqf, _structure, getGrounding()->translator(), lazycontext);
+	 } else {
+	 delayablepf = tuple[0];
+	 twindelayablepf = tuple[1];
+	 }
 
-		if (delayablepf != NULL) {
-			if (twindelayablepf != NULL) {
-				auto terms = delayablepf->args();
-				terms.insert(terms.end(), twindelayablepf->args().cbegin(), twindelayablepf->args().cend());
-				grounder = new LazyTwinDelayUnivGrounder(delayablepf->symbol(), terms, lazycontext, varmapping(), getGrounding(), subgrounder, getContext());
-			} else {
-				grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), getGrounding(), subgrounder, getContext());
-			}
-		}
-	}*/
+	 if (delayablepf != NULL) {
+	 if (twindelayablepf != NULL) {
+	 auto terms = delayablepf->args();
+	 terms.insert(terms.end(), twindelayablepf->args().cbegin(), twindelayablepf->args().cend());
+	 grounder = new LazyTwinDelayUnivGrounder(delayablepf->symbol(), terms, lazycontext, varmapping(), getGrounding(), subgrounder, getContext());
+	 } else {
+	 grounder = new LazyUnknUnivGrounder(delayablepf, lazycontext, varmapping(), getGrounding(), subgrounder, getContext());
+	 }
+	 }
+	 }*/
 	if (grounder == NULL) {
 		grounder = createQ(getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
 	}
@@ -825,15 +882,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 }
 
-Formula* trueFormula() {
-	return new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
-}
-
-Formula* falseFormula() {
-	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
-}
-
-AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure){
+AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure) {
 	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
 	if (af->getBound()->type() == TermType::FUNC or af->getBound()->type() == TermType::VAR) {
 		if (af->getAggTerm()->function() == AggFunction::CARD) {
@@ -865,18 +914,26 @@ AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure
 	return af;
 }
 
+
 void GrounderFactory::visit(const AggForm* af) {
 	auto clonedaf = rewriteSumOrCardIntoSum(af->clone(), _structure);
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext, (getOption(CPSUPPORT) and not recursive(clonedaf)));
-		// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), _structure, _context._funccontext,
+			(getOption(CPSUPPORT) and not recursive(clonedaf)));
+	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, _structure, (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
 
-	if (not isa<AggForm>(*transaf)) { // The rewriting changed the atom
-		descend(transaf);
+	deleteDeep(clonedaf);
+
+	if(not isa<AggForm>(*transaf)){
+		if (isa<PredForm>(*transaf)) { // Rewriting created a predform again, so do NOT recurse!
+			internalVisit(dynamic_cast<PredForm*>(transaf));
+		}else{
+			descend(transaf);
+		}
 		deleteDeep(transaf);
 		return;
 	}
@@ -884,9 +941,8 @@ void GrounderFactory::visit(const AggForm* af) {
 	auto newaf = dynamic_cast<AggForm*>(transaf);
 
 	// Use CP support if possible
-	if (getOption(CPSUPPORT) and not recursive(newaf)
-			and CPSupport::eligibleForCP(newaf->getAggTerm(),_structure)
-			and CPSupport::eligibleForCP(newaf->getBound(),_structure)) {
+	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(newaf->getAggTerm(), _structure)
+			and CPSupport::eligibleForCP(newaf->getBound(), _structure)) {
 		auto comp = newaf->comp();
 		if (isNeg(newaf->sign())) {
 			comp = negateComp(comp);
@@ -899,11 +955,9 @@ void GrounderFactory::visit(const AggForm* af) {
 		if (_context._component == CompContext::SENTENCE) {
 			_topgrounder = getFormGrounder();
 		}
-		deleteDeep(transaf);
-		deleteDeep(clonedaf);
+		deleteDeep(newaf);
 		return;
 	}
-
 
 	// Create grounder for the bound
 	descend(newaf->getBound());
@@ -933,8 +987,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = getFormGrounder();
 	}
-	deleteDeep(transaf);
-	deleteDeep(clonedaf);
+	deleteDeep(newaf);
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {
@@ -969,7 +1022,8 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto ftable = _structure->inter(function)->funcTable();
 	auto domain = _structure->inter(function->outsort());
 	if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntSum(function, _structure->vocabulary())) {
-		_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1], is(function, STDFUNC::ADDITION)?ST_PLUS:ST_MINUS);
+		_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
+				is(function, STDFUNC::ADDITION) ? ST_PLUS : ST_MINUS);
 	} else if (getOption(BoolType::CPSUPPORT) and TermUtils::isTermWithIntFactor(t, _structure)) {
 		if (TermUtils::isFactor(t->subterms()[0], _structure)) { //TODO move switch to constructor?
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
@@ -977,7 +1031,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 			Assert(TermUtils::isFactor(t->subterms()[1], _structure));
 			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
 		}
-	} else if (getOption(BoolType::CPSUPPORT) and is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function,_vocabulary)) {
+	} else if (getOption(BoolType::CPSUPPORT) and is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
 		auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
 		auto producttable = _structure->inter(product)->funcTable();
 		auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
@@ -1004,7 +1058,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Compute domain
 	SortTable* domain = NULL;
-	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t,_structure)) {
+	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t, _structure)) {
 		domain = TermUtils::deriveSmallerSort(t, _structure)->interpretation();
 	}
 	RestoreContext();
@@ -1083,38 +1137,38 @@ void GrounderFactory::visit(const Rule* rule) {
 	newrule->body(FormulaUtils::pushNegations(newrule->body()));
 	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, _structure, _context._funccontext, getOption(CPSUPPORT));
 
-/*	auto groundlazily = false;
-	if (getOption(SATISFIABILITYDELAY)) {
-		groundlazily = getGrounding()->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
-	}
-	if (groundlazily) { // NOTE: lazy grounding cannot handle head terms containing nested variables
-		newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
-	}*/
+	/*	auto groundlazily = false;
+	 if (getOption(SATISFIABILITYDELAY)) {
+	 groundlazily = getGrounding()->translator()->canBeDelayedOn(newrule->head()->symbol(), Context::BOTH, _context.getCurrentDefID());
+	 }
+	 if (groundlazily) { // NOTE: lazy grounding cannot handle head terms containing nested variables
+	 newrule = DefinitionUtils::unnestHeadTermsContainingVars(newrule, _structure, _context._funccontext);
+	 }*/
 
 	// Split the quantified variables in two categories:
 	//		1. the variables that only occur in the head
 	//		2. the variables that occur in the body (and possibly in the head)
 	varlist bodyvars, headvars;
 	for (auto it = newrule->quantVars().cbegin(); it != newrule->quantVars().cend(); ++it) {
-/*		if (groundlazily) {
-			if (not newrule->head()->contains(*it)) {
-				// NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
-				bodyvars.push_back(*it);
-			} else {
-				headvars.push_back(*it);
-				createVarMapping(*it);
-			}
-		} else {*/
-			if (newrule->body()->contains(*it)) {
-				bodyvars.push_back(*it);
-			} else {
-				headvars.push_back(*it);
-			}
+		/*		if (groundlazily) {
+		 if (not newrule->head()->contains(*it)) {
+		 // NOTE: for lazygroundrules, we need a generator for all variables NOT occurring in the head!
+		 bodyvars.push_back(*it);
+		 } else {
+		 headvars.push_back(*it);
+		 createVarMapping(*it);
+		 }
+		 } else {*/
+		if (newrule->body()->contains(*it)) {
+			bodyvars.push_back(*it);
+		} else {
+			headvars.push_back(*it);
+		}
 //		}
 	}
 	InstGenerator *headgen = NULL, *bodygen = NULL;
 //	if (not groundlazily) {
-		headgen = createVarMapAndGenerator(newrule->head(), headvars);
+	headgen = createVarMapAndGenerator(newrule->head(), headvars);
 //	}
 	bodygen = createVarMapAndGenerator(newrule->body(), bodyvars);
 
@@ -1143,7 +1197,7 @@ void GrounderFactory::visit(const Rule* rule) {
 //	if (groundlazily) {
 //		_rulegrounder = new LazyRuleGrounder(rule, newrule->head()->args(), headgrounder, bodygrounder, bodygen, _context);
 //	} else {
-		_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
+	_rulegrounder = new FullRuleGrounder(rule, headgrounder, bodygrounder, headgen, bodygen, _context);
 //	}
 
 	deleteDeep(newrule);
@@ -1225,19 +1279,21 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 	return data;
 }
 
-InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula, const std::vector<Pattern>& pattern){
+InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula,
+		const std::vector<Pattern>& pattern) {
 	auto checker = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
 
 	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << name <<" for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
+		clog << tabs() << name << " for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
 	}
 
 	return checker;
 }
 
-PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data){
+PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
+		const GeneratorData& data) {
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, getContext()._funccontext, _structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
@@ -1263,7 +1319,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		checktable = createTable(subformula, checkertype, {}, approxastrue, data);
+		checktable = createTable(subformula, checkertype, { }, approxastrue, data);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));

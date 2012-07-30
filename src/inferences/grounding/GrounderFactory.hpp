@@ -214,6 +214,7 @@ private:
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 
 	AggForm* rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure);
+	void internalVisit(const PredForm* newaf);
 };
 
 #endif /* GROUNDERFACTORY_HPP */
