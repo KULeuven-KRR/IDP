@@ -10,10 +10,14 @@ namespace inferences {
 		Opts.nbmodels = 1
 		local solutions, trace = modelexpand(T,S)
 		Opts.nbmodels = oldnbmodels
+		local solution = nil
+		if solutions then
+			solution = solutions[1]
+		end
 		if trace then
-			return solutions[1], trace
+			return solution, trace
 		else
-			return solutions[1]
+			return solution
 		end
 	}
 
