@@ -178,7 +178,7 @@ void reset(){
 %x descontent
 %x spacename
 
-ID				_*[A-Za-z][a-zA-Z0-9_]*	
+ID				_*[A-Za-z][a-zA-Z0-9_\']*	
 CH				[A-Za-z]
 	// TODO More logical name for CH and CHR? (letter en character)
 INT				[0-9]+
