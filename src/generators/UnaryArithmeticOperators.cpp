@@ -112,6 +112,7 @@ void InverseAbsValueGenerator::reset() {
 }
 
 void InverseAbsValueGenerator::next() {
+	bool nowatend = false;
 	switch (_state) {
 	case State::RESET:
 		setValue(true);
@@ -123,9 +124,10 @@ void InverseAbsValueGenerator::next() {
 		break;
 	case State::SECONDDONE:
 		notifyAtEnd();
+		nowatend = true;
 		break;
 	}
-	if (not isAtEnd() && not _outdom->contains(_out->get())) {
+	if (not nowatend && not _outdom->contains(_out->get())) {
 		next();
 	}
 }
