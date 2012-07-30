@@ -11,7 +11,7 @@
 #ifndef LAZYRULEGROUNDER_HPP_
 #define LAZYRULEGROUNDER_HPP_
 
-#include "DefinitionGrounders.hpp"
+#include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 #include "LazyFormulaGrounders.hpp"
 
 class LazyRuleGrounder: public RuleGrounder, public DelayGrounder {

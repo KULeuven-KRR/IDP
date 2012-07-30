@@ -11,7 +11,7 @@
 #ifndef GROUNDINGCONTEXT_HPP_
 #define GROUNDINGCONTEXT_HPP_
 
-#include "Utils.hpp"
+#include "GroundUtils.hpp"
 
 enum class CompContext {
 	SENTENCE, HEAD, FORMULA

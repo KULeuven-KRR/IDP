@@ -11,7 +11,7 @@
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
 
-#include "Utils.hpp"
+#include "GroundUtils.hpp"
 #include "IncludeComponents.hpp"
 
 #include <unordered_map>
@@ -21,7 +21,7 @@
 class DelayGrounder;
 class TsSet;
 class CPBound;
-class LazyStoredInstantiation;
+class LazyInstantiation;
 class TsSet;
 class Function;
 class AbstractStructure;
@@ -103,6 +103,7 @@ private:
 	std::vector<ftpair*> var2Tuple; 		// Owns pointers!
 	std::vector<CPTsBody*> var2CTsBody;
 	std::vector<SortTable*> var2domain;
+	std::map<int, VarId> storedTerms; 		// Tabling of terms which are equal to a domain element
 
 	std::map<CPTsBody*, Lit, CompareTs> cpset; // Used to detect identical Cpterms, is not used in any other way!
 
@@ -128,7 +129,7 @@ public:
 	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
 	Lit translate(PFSymbol*, const ElementTuple&);
 	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translate(LazyStoredInstantiation* instance, TsType type);
+	Lit translate(LazyInstantiation* instance, TsType type);
 
 	VarId translateTerm(Function*, const std::vector<GroundTerm>&);
 	VarId translateTerm(CPTerm*, SortTable*);

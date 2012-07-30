@@ -11,7 +11,7 @@
 #ifndef SETGROUNDERS_HPP_
 #define SETGROUNDERS_HPP_
 
-#include "GroundUtils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 
 class GroundTranslator;
 class InstGenerator;

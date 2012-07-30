@@ -15,9 +15,13 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 
 template<>
-void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
+void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
 	t->setTranslator(grounder->getTranslator());
 	t->setSolver(solver);
+}
+
+void logActionAndTime(const std::string& action){
+	std::clog <<action <<" (" <<(clock()/(CLOCKS_PER_SEC*100))/(100*1.0) <<")\n";
 }
 
 void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm) {

@@ -64,7 +64,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 			gt->addUnitClause(-1);
 		}
 	} else if (formula.literals.size() == 1) {
-		Lit l = formula.literals.back();
+		auto l = formula.literals.back();
 		if (l == _true or l == _false) {
 			if (formula.getType() == Conn::CONJ and l == _false) { // UNSAT
 				gt->addUnitClause(1);

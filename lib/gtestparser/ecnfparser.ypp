@@ -24,13 +24,14 @@ void yyerror(const char* msg);
 	std::string* str;
 }
 
-%token <str> SUCCESS FAIL
+%token <str> SUCCESS FAIL TEXT
 
 %start init
 
 %%
 
 init	: /**/
+		| init TEXT { clog <<*$2 <<"\n"; delete($2); }
 		| init FAIL { clog <<"Failed: " <<*$2 <<"\n"; delete($2); }
 		| init SUCCESS { /*cerr <<"Success: " <<*$2 <<"\n";*/ delete($2); }
 		;

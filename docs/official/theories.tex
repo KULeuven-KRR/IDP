@@ -64,10 +64,10 @@ Besides this, for every natural number $n$, \idp also supports the following qua
 \begin{tabular}{c|c|l}
 \idp & Declarative reading \\
 \hline
-\code{?n}	& there exist $n$ different elements such that \\
+\code{?n}	& there exist exactly $n$ different elements such that \\
 \code{?<n} & there exist less than $n$ \\
 \code{?=<n} & there exist at most $n$\\
-\code{?=n} & there exist exactly $n$\\
+\code{?=n} & there exist exactly $n$ (this is the same as \code{?n})\\
 \code{?>n} & there exist more than $n$
 \end{tabular}
 \end{center}
@@ -124,8 +124,8 @@ The current system has support for five aggregate functions:
 	\[ \sum_{{\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi}} {\tt t }, \]
 	i.e., it is the sum of all the terms for which there exist {\tt a\_1,\ldots, a\_n} that make the formula {\tt phi} true. For sets of the first sort, this is interpreted as 
 \[ \sum_{i | I\vDash {\tt phi\_i}} {\tt t_i }. \]
-	\item[Product:] Products are defined similar to sum.  The syntax for the product of \code{S} is \code{prod S}.
-	\item[Maximum:] One can write `{\tt max} $S$' to denote the maximum value of the term in $S$, i.e.,
+	\item[Product:] Products are defined similarly to sum.  The syntax for the product of \code{S} is \code{prod S}.
+	\item[Maximum:] One can write `{\tt max} $S$' to denote the maximum value of the terms in $S$, i.e.,
 	\[ \max_{{\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi}} {\tt t} \] for sets of the second sort.  Sets of the first sort are handled analogously. %{\tt(a\_1,a\_2,..., a\_n)} \in S} {\tt a\_1 }, \]
 	\item[Minimum:] To get the minimum value, write `{\tt min} $S$'.
 \end{description}
@@ -137,8 +137,8 @@ Normally, functions are total: they assign an output value to each of the input 
 
 The semantics of a partial function $F$ is given by transforming constraints and rules where $F$ occurs as follows:
 \begin{itemize}
-	\item in a \emph{positive} context, $P(\ldots,F(x),\ldots)$ is transformed to $\forall y\ (F(x) = y \limplies P(\ldots,y,\ldots)$;
-	\item in a negative context, $P(\ldots,F(x),\ldots)$ is transformed to $\exists y\ (F(y) = y \land P(\ldots,y,\ldots)$.
+	\item in a \emph{positive} context, $P(\ldots,F(x),\ldots)$ is transformed to $\forall y\ (F(x) = y \limplies P(\ldots,y,\ldots))$;
+	\item in a negative context, $P(\ldots,F(x),\ldots)$ is transformed to $\exists y\ (F(y) = y \land P(\ldots,y,\ldots))$.
 \end{itemize}
 Here, $P(\ldots,F(x),\ldots)$ occurs in a positive context if it occurs in sentence and in the scope of an even number of negations, or it occurs in a body of a rule and in the scope of an odd number of negations. All other occurrences are in a negative context. 
 

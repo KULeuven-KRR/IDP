@@ -8,24 +8,38 @@ using namespace std;
 
 stringstream ss;
 stringstream results;
+stringstream error;
 %}
 
 /* lex definitions: */
 %option noyywrap never-interactive nounput
 
+/*
+UNUSED:
+%s printline
+<INITIAL>"[==========]" {BEGIN(printline); }
+<printline>[^\n]* 	{ ss <<">>>" <<yytext; }
+<printline>"\n"		{ yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return TEXT; }
+<block>"Segmentation fault"[^\n]*		{ yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); cerr <<"FAILEDFAILED\n";}
+*/
+
 %s block
-%s summary
+%s resultblock
 
 %%
 
-<*>"[ RUN      ]"		{BEGIN(block);}
-<block>"[  FAILED  ]"	{yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return FAIL;}
-<block>"[       OK ]" 	{yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return SUCCESS;}
-<block>[^\[]*			{ss <<yytext; }
-<block>.				{ss <<yytext; }
-<*>"[  PASSED  ]" {BEGIN(summary); ss <<"Failures from";} // is followed by the number of tests as " x tests."
-<summary>"[==========]"	{ results <<ss.str() <<"\n"; BEGIN(INITIAL); ss.str("");}
-<summary>[^\[]*			{ss <<yytext; }
-<summary>.				{ss <<yytext; }
-<*>[^\[*]*				{  }
-<*>.					{  }
+<*>"[ RUN      ] "		{ BEGIN(block); error <<ss.str(); ss.str("");}
+<*>"[  PASSED  ] "		{ BEGIN(resultblock); error <<ss.str(); ss.str(""); results <<"Passed "; }
+<*>"[==========] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
+<*>"[----------] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
+<block>"[  FAILED  ] "	{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return FAIL; }
+<block>"[       OK ] " 	{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return SUCCESS; }
+<block>[^\[\n]*			{ ss <<yytext; }
+<block>\n				{ ss <<"\n"; }
+<resultblock>"[  FAILED  ] "	{ results <<yytext; }
+<resultblock>"\n\n"		{ BEGIN(INITIAL); results <<ss.str() <<"\n\n"; ss.str(""); }
+<resultblock>"\n"		{ results <<ss.str() << "\n"; ss.str("");}
+<resultblock>[^\[\n]*	{ ss <<yytext; }
+<*>[^\[\n]*				{  }
+<*>.					{}
+<INITIAL>\n				{  }

@@ -11,8 +11,7 @@
 #include "IncludeComponents.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
-
+#include "inferences/grounding/lazygrounders/LazyInst.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
@@ -485,8 +484,8 @@ bool CPBound::operator<(const CPBound& rhs) const {
 	}
 }
 
-void LazyTsBody::notifyTheoryOccurence(Lit tseitin) {
-	inst->grounder->notifyTheoryOccurrence(tseitin, inst, _type);
+void LazyTsBody::notifyTheoryOccurence() {
+	inst->notifyTheoryOccurrence(_type);
 }
 
 void TsBody::put(std::ostream& stream) const {

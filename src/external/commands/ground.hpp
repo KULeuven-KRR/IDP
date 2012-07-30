@@ -38,8 +38,7 @@ private:
 		auto t = theory->clone();
 		auto s = structure->clone();
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
-		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, modelcountequivalence, NULL);
-		auto grounding = grounder->ground();
+		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, modelcountequivalence, NULL);
 		if (grounding == NULL) {
 			grounding = new GroundTheory<GroundPolicy>(NULL);
 			grounding->addEmptyClause();
@@ -67,8 +66,7 @@ private:
 	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
-		auto grounder = GroundingInference<InteractivePrintMonitor>::createGroundingInference(t, s, NULL, NULL, modelcountequivalence, monitor);
-		auto grounding = grounder->ground();
+		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, modelcountequivalence, monitor);
 		t->recursiveDelete();
 		delete (s);
 		if (grounding != NULL) {

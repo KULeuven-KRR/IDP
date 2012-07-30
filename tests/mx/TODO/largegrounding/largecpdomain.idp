@@ -1,0 +1,21 @@
+#include <mx>
+vocabulary V{
+	type x isa int
+	C:x
+	C2:x
+}
+
+theory T:V{
+	C~=C2.
+}
+
+structure S:V{
+	x = {1..100000000}
+}
+procedure main(){
+	stdoptions.cpsupport = true
+	stdoptions.liftedunitpropagation = false
+	stdoptions.groundverbosity=0
+	stdoptions.satverbosity=4
+	print(onemodel(T,S))
+}

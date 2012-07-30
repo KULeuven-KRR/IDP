@@ -111,10 +111,9 @@ public:
 };
 
 PCSolver* createsolver(int nbmodels) {
-	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
-	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
+	modes.verbosity = getOption(IntType::SATVERBOSITY);
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
@@ -123,7 +122,7 @@ PCSolver* createsolver(int nbmodels) {
 		modes.polarity = MinisatID::Polarity::RAND;
 	}
 
-	if (options->getValue(BoolType::GROUNDLAZILY)) {
+	if (getOption(BoolType::GROUNDLAZILY)) {
 		modes.lazy = true;
 	}
 
@@ -137,7 +136,8 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator) {
 }
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
-	MinisatID::ModelExpandOptions opts(nbmodels, MinisatID::Models::NONE, MinisatID::Models::ALL);
+	auto print = getOption(IntType::SATVERBOSITY)>1;
+	MinisatID::ModelExpandOptions opts(nbmodels, print?MinisatID::Models::ALL:MinisatID::Models::NONE, MinisatID::Models::ALL);
 	return new PCModelExpand(solver, opts, { });
 }
 
@@ -171,8 +171,8 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 #ifndef NDEBUG
 			if (not init->isConsistent()) {
 				std::cerr << "mx made " << toString(symbol) << " inconsistent when adding the element " << toString(args) << endl;
-				Assert(init->isConsistent());
 			}
+			Assert(init->isConsistent());
 #endif
 		}
 	}

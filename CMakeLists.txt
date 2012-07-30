@@ -13,10 +13,12 @@ assureOutOfSourceBuilds()
 option(BUILDTESTS  "Run the gtest tests" ON)
 enable_testing()
 
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Buildtype (one of Release, Debug, StaticRelease, StaticDebug or Profile")
+
 message(STATUS "Install path (CMAKE_INSTALL_PREFIX): ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type (CMAKE_BUILD_TYPE): ${CMAKE_BUILD_TYPE}")
 
-### Adding to cxx flags
+### Adding to cxx flags NOTE: do not use when escape characters matter
 macro(addToCXX ARGUMENT)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARGUMENT}")
 endmacro()
@@ -36,7 +38,7 @@ else()
 endif()
 
 ### Set default compile flags
-addToCXX("-std=c++0x -Wall -pedantic -Wno-overloaded-virtual -Wno-mismatched-tags")
+addToCXX("-Wall -pedantic -Wno-overloaded-virtual")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra -pedantic ")
 endif()
@@ -115,7 +117,9 @@ if(NOT TARGET gtest AND BUILDTESTS)
 endif() 
 add_subdirectory(lib/gtestparser)
 add_subdirectory(lib/lua)
-add_subdirectory(lib/multiprocessrun)
+if(UNIX)
+	add_subdirectory(lib/multiprocessrun)
+endif()
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)
 add_subdirectory(tests)

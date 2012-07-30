@@ -12,7 +12,6 @@
 
 #include "TermGrounders.hpp"
 #include "FormulaGrounders.hpp"
-#include "GroundUtils.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "groundtheories/SolverPolicy.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"

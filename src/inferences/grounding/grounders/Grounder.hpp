@@ -11,7 +11,7 @@
 #ifndef GROUNDER_HPP_
 #define GROUNDER_HPP_
 
-#include "GroundUtils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 #include <iostream>
 #include <typeinfo>
 #include "structure/TableSize.hpp"

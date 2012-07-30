@@ -16,6 +16,7 @@
 #include <map>
 #include <ostream>
 #include "parseinfo.hpp"
+#include "commontypes.hpp"
 
 /*********
  * Sorts
@@ -572,6 +573,7 @@ namespace VocabularyUtils {
 Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
 
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
+CompType getComparisonType(const PFSymbol* symbol);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 

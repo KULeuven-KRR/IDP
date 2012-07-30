@@ -58,7 +58,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (data);
 	delete (mx);
 	delete (grounder);
-	delete (symstructure->manager());
 	delete (symstructure);
 
 	return structure->isConsistent();

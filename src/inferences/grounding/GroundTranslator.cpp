@@ -10,7 +10,7 @@
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
-#include "grounders/LazyFormulaGrounders.hpp"
+//#include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 #include "utils/CPUtils.hpp"
 #include "utils/ListUtils.hpp"
@@ -62,11 +62,12 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 		atom2Tuple[lit]->first = symbolinfo.symbol;
 		atom2Tuple[lit]->second = args;
 
+		// TODO think that this is not necessary
 		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
-		// FIXME extend to CP terms!
-		if (not symbolinfo.assocGrounders.empty()) {
-			symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
-		}
+		//if (not symbolinfo.assocGrounders.empty()) {
+			//symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
+		//}
+		// ENDTODO
 	}
 
 	return lit;
@@ -80,7 +81,7 @@ Vocabulary* GroundTranslator::vocabulary() const {
 SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
 	if (pfs->isFunction()) {
 		auto function = dynamic_cast<Function*>(pfs);
-		if (function != NULL && CPSupport::eligibleForCP(function, vocabulary())) {
+		if (function != NULL && getOption(CPSUPPORT) && CPSupport::eligibleForCP(function, vocabulary())) {
 			for (size_t n = 0; n < functions.size(); ++n) {
 				if (functions[n].symbol == pfs) {
 					return SymbolOffset(n, true);
@@ -101,7 +102,7 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	if (n.offset == -1) {
 		if (pfs->isFunction()) {
 			auto function = dynamic_cast<Function*>(pfs);
-			if (function != NULL && CPSupport::eligibleForCP(function, vocabulary())) {
+			if (function != NULL && getOption(CPSUPPORT) && CPSupport::eligibleForCP(function, vocabulary())) {
 				functions.push_back(FunctionInfo(function));
 				return SymbolOffset(functions.size() - 1, true);
 			}
@@ -141,7 +142,8 @@ bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, DefId id) 
 	if (grounders.empty()) {
 		return true;
 	}
-	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
+	throw notyetimplemented("Checking allowed delays");
+/*	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
 		if (context == Context::BOTH) { // If unknown-delay, can only delay if in same DEFINITION
 			if (id == -1 || (*i)->getID() != id) {
 				return false;
@@ -150,13 +152,14 @@ bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context context, DefId id) 
 			return false;
 		}
 	}
-	return true;
+	return true;*/
 }
 
 void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder) {
 	Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
-	auto symbolID = addSymbol(pfs);
+	throw notyetimplemented("Notifying of delays");
+/*	auto symbolID = addSymbol(pfs);
 	Assert(not symbolID.functionlist);
 	auto& grounders = symbols[symbolID.offset].assocGrounders;
 #ifndef NDEBUG
@@ -165,10 +168,10 @@ void GroundTranslator::notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder)
 		Assert(grounder != *i);
 	}
 #endif
-	grounders.push_back(grounder);
+	grounders.push_back(grounder);*/
 }
 
-Lit GroundTranslator::translate(LazyStoredInstantiation* instance, TsType tstype) {
+Lit GroundTranslator::translate(LazyInstantiation* instance, TsType tstype) {
 	auto tseitin = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
 	auto tsbody = new LazyTsBody(instance, tstype);
@@ -303,20 +306,24 @@ VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
 }
 
 VarId GroundTranslator::translateTerm(const DomainElement* element) {
-	auto varid = nextNumber();
-	// Create a new CP variable term
-	auto cpterm = new CPVarTerm(varid);
-	// Create a new CP bound based on the domain element
 	Assert(element->type() == DET_INT);
-	CPBound bound(element->value()._int);
+	auto value = element->value()._int;
+
+	auto it = storedTerms.find(value);
+	if(it!=storedTerms.cend()){
+		return it->second;
+	}
+
+	auto varid = nextNumber();
+	auto cpterm = new CPVarTerm(varid);
+	CPBound bound(value);
 	// Add a new CP constraint
 	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	var2CTsBody[varid.id] = cprelation;
 	// Add a new domain containing only the given domain element
-	auto domain = TableUtils::createSortTable();
-	domain->add(element);
+	auto domain = TableUtils::createSortTable(value, value);
 	var2domain[varid.id] = domain;
-	// Return the new variable identifier
+	storedTerms.insert({value, varid});
 	return varid;
 }
 

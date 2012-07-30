@@ -12,9 +12,9 @@
 
 #include <cstdlib>
 #include <memory>
+#include <ctime>
 #include "inferences/SolverInclude.hpp"
 
-#include "Grounding.hpp"
 #include "GrounderFactory.hpp"
 #include "common.hpp"
 #include "options.hpp"
@@ -26,8 +26,7 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
-#include "inferences/grounding/GrounderFactory.hpp"
-#include "inferences/grounding/grounders/Grounder.hpp"
+#include "grounders/Grounder.hpp"
 
 class Theory;
 class AbstractTheory;
@@ -37,13 +36,14 @@ class Term;
 class AbstractGroundTheory;
 
 template<typename GroundingReceiver>
-void fixTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
-	return;
+void connectTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
 }
-//Do nothing unless GroundingReciever is  PCSolver (see Grounding.cpp)
-template<> void fixTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
+//Do nothing unless GroundingReciever is PCSolver (see Grounding.cpp)
+template<> void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
 
 void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm);
+
+void logActionAndTime(const std::string& action);
 
 //GroundingReciever can be a solver, a printmonitor, ...
 template<typename GroundingReceiver>
@@ -60,7 +60,7 @@ private:
 
 public:
 	//NOTE: modifies the theory and the structure. Clone before passing them!
-	static std::shared_ptr<GroundingInference> createGroundingInference(AbstractTheory* theory, AbstractStructure* structure, Term* term,
+	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term,
 			TraceMonitor* tracemonitor, bool nbModelsEquivalent, GroundingReceiver* solver) {
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
@@ -72,10 +72,12 @@ public:
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
-		auto m = std::shared_ptr<GroundingInference>(new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver));
-
-		return m;
+		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver);
+		auto grounding = m->ground();
+		// FIXME deleting lazy grounders here is a problem!!! delete(m);
+		return grounding;
 	}
+private:
 	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor, bool nbModelsEquivalent,
 			GroundingReceiver* solver)
 			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _receiver(solver), _grounder(NULL),
@@ -94,13 +96,16 @@ public:
 
 	//Grounds the theory with the given structure
 	AbstractGroundTheory* ground() {
-		// Calculate known definitions
+		Assert(_grounder==NULL);
+
 		if (getOption(BoolType::SHAREDTSEITIN)) {
 			_theory = FormulaUtils::sharedTseitinTransform(_theory, _structure);
 		}
+
+		// Calculate known definitions
 		if (not getOption(BoolType::GROUNDLAZILY)) {
 			if (verbosity() >= 1) {
-				std::clog << "Evaluating definitions\n";
+				logActionAndTime("Evaluating definitions");
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
@@ -109,40 +114,47 @@ public:
 			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
-		// Create grounder
+
+		// Approximation
 		if (verbosity() >= 1) {
-			std::clog << "Approximation\n";
+			logActionAndTime("Approximation");
 		}
 		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 		if (not _structure->isConsistent()) {
 			if (verbosity() > 0) {
 				std::clog << "approximation detected UNSAT\n";
 			}
-			delete symstructure->manager();
 			delete (symstructure);
 			return NULL;
 		}
+
+		// Create grounder
 		if (verbosity() >= 1) {
-			std::clog << "Grounding\n";
+			logActionAndTime("Creating grounders");
 		}
-		if (_grounder != NULL) {
-			delete (_grounder);
-		}
-		GroundInfo gi = { _theory, _minimizeterm, _structure, symstructure, _nbmodelsequivalent };
+		auto gi = GroundInfo { _theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm };
 		if (_receiver == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {
 			_grounder = GrounderFactory::create(gi, _receiver);
 		}
-		if (getOption(BoolType::TRACE)) {
-			fixTraceMonitor(_tracemonitor, _grounder, _receiver);
-		}
-		// Run grounder
-		_grounder->toplevelRun();
-		auto grounding = _grounder->getGrounding();
 
-		// Execute symmetry breaking
-		addSymmetryBreaking(_theory, _structure, grounding, _minimizeterm);
+		if (getOption(BoolType::TRACE)) {
+			connectTraceMonitor(_tracemonitor, _grounder, _receiver);
+		}
+
+		// Run grounder
+		if (verbosity() >= 1) {
+			logActionAndTime("Grounding");
+		}
+		_grounder->toplevelRun();
+
+
+		// Add symmetry breakers
+		if (verbosity() >= 1) {
+			logActionAndTime("Adding symmetry breakers");
+		}
+		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm);
 
 		// Print grounding statistics
 		if (verbosity() > 0) {
@@ -156,10 +168,8 @@ public:
 			}
 		}
 
-		delete symstructure->manager();
 		delete (symstructure);
-
-		return grounding;
+		return _grounder->getGrounding();
 	}
 };
 

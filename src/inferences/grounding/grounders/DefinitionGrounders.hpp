@@ -12,7 +12,7 @@
 #define DEFINITIONGROUNDERS_HPP_
 
 #include "Grounder.hpp"
-#include "GroundUtils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 
 #include "groundtheories/SolverTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset

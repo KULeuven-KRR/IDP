@@ -14,7 +14,7 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
-class LazyStoredInstantiation;
+class LazyInstantiation;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
@@ -63,7 +63,8 @@ public:
 
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	virtual void notifyLazyAddition(const litlist& glist, int ID);
-	virtual void notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction);
+	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
+	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type);
 
 	std::ostream& put(std::ostream& s) const;
 

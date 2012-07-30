@@ -25,7 +25,9 @@ typedef std::map<PFSymbol*, const FOBDD*> Bound;
 class GenerateBDDAccordingToBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
+	mutable bool _ownsmanager;
 	FOBDDManager* _manager;
+
 	Bound _ctbounds, _cfbounds;
 	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > _vars;
 
@@ -48,9 +50,13 @@ protected:
 public:
 	GenerateBDDAccordingToBounds(FOBDDManager* m, const Bound& ctbounds, const Bound& cfbounds,
 			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v)
-			: _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v) {
+			: _ownsmanager(true), _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL) {
+		Assert(m!=NULL);
 	}
-	FOBDDManager* manager() const {
+	~GenerateBDDAccordingToBounds();
+	// Transfers ownership!
+	FOBDDManager* obtainManager() const {
+		_ownsmanager = false;
 		return _manager;
 	}
 

@@ -21,12 +21,4 @@ TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {
 	runTests("satisfiability.idp", GetParam(), "satwithboundslong()");
 }
 
-TEST_P(MXsatTest, DoesMXWithBounds) {
-	runTests("satisfiability.idp", GetParam(), "satwithbounds()");
-}
-
-TEST_P(MXsatTest, DoesMXWithSymmetryBreaking) {
-	runTests("satisfiability.idp", GetParam(), "satwithsymm()");
-}
-
 }

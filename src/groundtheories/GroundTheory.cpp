@@ -53,8 +53,12 @@ void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID){
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction){
-	Policy::polNotifyLazyResidual(tseitin, inst, type, conjunction);
+void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction){
+	Policy::polStartLazyFormula(inst, type, conjunction);
+}
+template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type){
+	Policy::polNotifyLazyResidual(inst, type);
 }
 
 template<class Policy>
@@ -69,8 +73,6 @@ void GroundTheory<Policy>::closeTheory() {
 	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
 		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
-	// TODO arbitrary values?
-	// FIXME problem if a function does not occur in the theory/grounding! It might be arbitrary, but should still be a function?
 	addFalseDefineds();
 	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
@@ -262,7 +264,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		} else {
 			Assert(isa<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
-			body->notifyTheoryOccurence(tseitin);
+			body->notifyTheoryOccurence();
 		}
 	}
 }
@@ -351,6 +353,10 @@ void GroundTheory<Policy>::addFalseDefineds() {
 			auto translation = translator()->translate(*sit, (*ptIterator));
 			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
 				addUnitClause(-translation);
+				if(structure()->inter(*sit)->ct()->contains(*ptIterator)){
+					addUnitClause(translation);
+					return; // NOTE: abort early because inconsistent anyway
+				}
 				// TODO better solution would be to make the structure more precise
 			}
 		}

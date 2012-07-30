@@ -37,8 +37,7 @@ public:
 
 		auto clonetheory = theory->clone();
 		auto result = structure->clone();
-		auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, result, NULL, NULL, true, data);
-		AbstractGroundTheory* grounding = groundingInference->ground();
+		auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, result, NULL, NULL, true, data);
 
 		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();

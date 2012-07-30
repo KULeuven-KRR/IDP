@@ -11,75 +11,8 @@
 #ifndef LAZYQUANTGROUNDER_HPP_
 #define LAZYQUANTGROUNDER_HPP_
 
-#include "FormulaGrounders.hpp"
-
-class LazyTseitinGrounder: public ClauseGrounder {
-private:
-	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
-	mutable tablesize alreadyground; // Statistics
-
-public:
-	LazyTseitinGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct);
-	virtual ~LazyTseitinGrounder() {
-	}
-
-	void notifyGroundingRequested(int ID, bool groundall, LazyStoredInstantiation* instance, bool& stilldelayed) const;
-	void notifyTheoryOccurrence(Lit tseitin, LazyStoredInstantiation* instance, TsType type) const;
-
-protected:
-	virtual litlist groundMore(bool groundall, LazyStoredInstantiation * instance, bool& stilldelayed) const;
-
-	virtual void internalRun(ConjOrDisj& formula) const;
-
-	virtual bool grounderIsEmpty() const = 0;
-	virtual void initializeInst(LazyStoredInstantiation* inst) const = 0;
-	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const = 0;
-	virtual void increment(LazyStoredInstantiation* instance) const = 0;
-	virtual bool isAtEnd(LazyStoredInstantiation* instance) const = 0;
-	virtual void initializeGroundMore(LazyStoredInstantiation*) const = 0;
-};
-
-class LazyQuantGrounder: public LazyTseitinGrounder {
-private:
-	FormulaGrounder* _subgrounder;
-	InstGenerator* _generator;
-	InstChecker* _checker;
-public:
-	LazyQuantGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
-			InstChecker* checker, const GroundingContext& ct);
-
-protected:
-	virtual bool grounderIsEmpty() const;
-	virtual void initializeInst(LazyStoredInstantiation* inst) const;
-	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const;
-	virtual void increment(LazyStoredInstantiation* instance) const;
-	virtual bool isAtEnd(LazyStoredInstantiation* instance) const;
-	virtual void initializeGroundMore(LazyStoredInstantiation* instance) const;
-
-	FormulaGrounder* getSubGrounder() const {
-		return _subgrounder;
-	}
-};
-
-class LazyBoolGrounder: public LazyTseitinGrounder {
-private:
-	std::vector<Grounder*> _subgrounders;
-public:
-	LazyBoolGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
-			const GroundingContext& ct);
-
-protected:
-	virtual bool grounderIsEmpty() const;
-	virtual void initializeInst(LazyStoredInstantiation* inst) const;
-	virtual Grounder* getLazySubGrounder(LazyStoredInstantiation* instance) const;
-	virtual void increment(LazyStoredInstantiation* instance) const;
-	virtual bool isAtEnd(LazyStoredInstantiation* instance) const;
-	virtual void initializeGroundMore(LazyStoredInstantiation*) const{}
-
-	const std::vector<Grounder*>& getSubGrounders() const {
-		return _subgrounders;
-	}
-};
+#include "inferences/grounding/grounders/FormulaGrounders.hpp"
+#include "LazyInst.hpp"
 
 class DelayGrounder {
 private:

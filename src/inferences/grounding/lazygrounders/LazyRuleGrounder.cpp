@@ -9,7 +9,7 @@
 ****************************************************************/
 
 #include "LazyRuleGrounder.hpp"
-#include "TermGrounders.hpp"
+#include "inferences/grounding/grounders/TermGrounders.hpp"
 #include "generators/InstGenerator.hpp"
 #include "IncludeComponents.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"

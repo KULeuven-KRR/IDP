@@ -90,9 +90,8 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto inputvoc = _theory->vocabulary();
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
-	auto groundingInference = GroundingInference<PCSolver>::createGroundingInference(clonetheory, newstructure, _minimizeterm, _tracemonitor,
+	auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, newstructure, _minimizeterm, _tracemonitor,
 			getOption(IntType::NBMODELS) != 1, data);
-	auto grounding = groundingInference->ground();
 
 	if (grounding == NULL) {
 		if (verbosity() > 0) {
@@ -107,7 +106,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (verbosity() > 0) {
-		clog << "Solving\n";
+		logActionAndTime("Solving");
 	}
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
@@ -132,13 +131,20 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
+			if (verbosity() > 0) {
+				stringstream ss;
+				ss <<"Solver generated " << list.size() << " models";
+				logActionAndTime(ss.str());
+			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
 				solutions.push_back(handleSolution(newstructure, **i, grounding, inputvoc));
 			}
 		}
 	} else {
 		if (verbosity() > 0) {
-			clog << "Solver generated " << abstractsolutions.size() << " models.\n";
+			stringstream ss;
+			ss <<"Solver generated " << abstractsolutions.size() << " models";
+			logActionAndTime(ss.str());
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
 			solutions.push_back(handleSolution(newstructure, **model, grounding, inputvoc));

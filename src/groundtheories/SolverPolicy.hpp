@@ -20,7 +20,7 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
-class LazyStoredInstantiation;
+class LazyInstantiation;
 class DelayGrounder;
 
 /**
@@ -48,7 +48,8 @@ public:
 	void initialize(Solver* solver, int verbosity, GroundTranslator* translator);
 	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	void polAddLazyAddition(const litlist& glist, int ID);
-	void polNotifyLazyResidual(Lit tseitin, LazyStoredInstantiation* inst, TsType type, bool conjunction);
+	void polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
+	void polNotifyLazyResidual(LazyInstantiation* inst, TsType type);
 
 protected:
 	void polRecursiveDelete() {

@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 		
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 		
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x") # necessary for gtest!
+addToCXX("-std=c++0x")
+addToCXX("-D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS")
+addToCXX("-std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D USEINTERACTIVE")
+	addToCXX("-D USEINTERACTIVE")
 endif()
 
 include_directories ("
@@ -22,14 +24,15 @@ include_directories ("
 ")
 
 set(MXTESTS "mxtests")
-set(MXINCLUDES TestUtils.hpp TestUtils.cpp testsuite.cpp mxtests/FileEnumerator.hpp mxtests/FileEnumerator.cpp)
+set(MXINCLUDES TestUtils.hpp TestUtils.cpp testingtools.hpp testingtools.cpp testsuite.cpp mxtests/FileEnumerator.hpp mxtests/FileEnumerator.cpp)
 
 set(TESTBINARIES "")
+set(TESTCOMMANDBINARIES "")
 set(EXECS "")
 
 macro(addTest execname)
 	target_link_libraries(${execname} idp gtest)
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	if(UNIX)
 		set_target_properties(${execname} PROPERTIES LINK_FLAGS "-pthread ")
 	endif()
 	add_test(${execname} ${execname} "--gtest_color=yes")
@@ -43,11 +46,14 @@ macro(addMXTest execname cppfile)
 	addTest(${execname})
 	set(EXECS ${EXECS} ${execname})
 	set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/${execname})
+	set(TESTCOMMANDBINARIES ${TESTCOMMANDBINARIES} COMMAND ${PROJECT_BINARY_DIR}/tests/${execname})
 endmacro()
+
+set(TESTINGTHREADS "1" CACHE STRING "The number of threads to run in parallel for testing")
 
 if(${BUILDTESTS})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D TESTDIR=\\\"${PROJECT_SOURCE_DIR}/tests\\\" ")
-	add_executable(idptests
+	set(FASTTESTS 
 		simpletests.cpp
 		generatortests.cpp
 		bddtests.cpp
@@ -61,31 +67,63 @@ if(${BUILDTESTS})
 		querytests.cpp
 		definitiontests.cpp
 		propagationtests.cpp
-		testingtools.hpp testingtools.cpp
-		TestUtils.hpp TestUtils.cpp
-		testsuite.cpp
 	)
-	addTest(idptests)
-	set(EXECS ${EXECS} idptests)
-	set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/idptests)
-	
-	addMXTest(basic basic.cpp)
-	addMXTest(bounds bounds.cpp)
-	addMXTest(nobounds nobounds.cpp)
-	addMXTest(cp cp.cpp)
-	addMXTest(lazy lazy.cpp)
-	addMXTest(symm symm.cpp)
-	addMXTest(optim optim.cpp)
-	addMXTest(satnobounds satnobounds.cpp)
-	addMXTest(satbounds satbounds.cpp)
-	addMXTest(satcp satcp.cpp)
-	
-	add_executable(slow
-		${MXTESTS}/slow.cpp
-		${MXINCLUDES}
-	)
-	addTest(slow)
-	
-	add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 4 ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
-	add_custom_target(fullcheck COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun 3 ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow)
+	if(UNIX)
+		add_executable(idptests
+			${FASTTESTS}
+			${MXINCLUDES}
+		)
+		addTest(idptests)
+		set(EXECS ${EXECS} idptests)
+		set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/idptests)
+		
+		addMXTest(basic basic.cpp)
+		addMXTest(bounds bounds.cpp)
+		addMXTest(nobounds nobounds.cpp)
+		addMXTest(cp cp.cpp)
+		addMXTest(lazy lazy.cpp)
+		addMXTest(symm symm.cpp)
+		addMXTest(optim optim.cpp)
+		addMXTest(satnobounds satnobounds.cpp)
+		addMXTest(satbounds satbounds.cpp)
+		addMXTest(satcp satcp.cpp)
+		
+		add_executable(slow
+			${MXTESTS}/slow.cpp
+			${MXINCLUDES}
+		)
+		addTest(slow)
+		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
+		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
+	else()
+		set(LONGERTESTS
+			mxtests/basic.cpp
+			mxtests/bounds.cpp
+			mxtests/nobounds.cpp
+			mxtests/cp.cpp
+			mxtests/lazy.cpp
+			mxtests/symm.cpp
+			mxtests/optim.cpp
+			mxtests/satnobounds.cpp
+			mxtests/satbounds.cpp
+			mxtests/satcp.cpp
+		)
+		add_executable(idptests
+			#${FASTTESTS}
+			#${LONGERTESTS}
+			mxtests/bounds.cpp
+			${MXINCLUDES}
+		)
+		addTest(idptests)
+		add_executable(slow
+			${FASTTESTS}
+			${LONGERTESTS}
+			${MXTESTS}/slow.cpp
+			${MXINCLUDES}
+		)
+		addTest(slow)
+		
+		add_custom_target(check ${PROJECT_BINARY_DIR}/tests/idptests DEPENDS idptests)
+		add_custom_target(fullcheck ${PROJECT_BINARY_DIR}/tests/slow DEPENDS slow)
+	endif()
 endif()

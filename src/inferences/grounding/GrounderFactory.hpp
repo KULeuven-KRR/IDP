@@ -14,7 +14,7 @@
 #include <stack>
 #include "IncludeComponents.hpp"
 #include "visitors/TheoryVisitor.hpp"
-#include "Utils.hpp"
+#include "GroundUtils.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 #include "generators/InstGenerator.hpp" // For PATTERN
@@ -61,23 +61,13 @@ struct GroundInfo {
 	GenerateBDDAccordingToBounds* symbolicstructure;
 	bool nbModelsEquivalent;
 
-	GroundInfo(AbstractTheory* theory, Term* minimizeterm, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
-			bool nbModelsEquivalent)
+	GroundInfo(AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
+			bool nbModelsEquivalent, Term* minimizeterm = NULL)
 			: 	theory(theory),
 				minimizeterm(minimizeterm),
 				partialstructure(partialstructure),
 				symbolicstructure(symbolicstructure),
 				nbModelsEquivalent(nbModelsEquivalent) {
-
-	}
-
-	GroundInfo(AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure, bool nbModelsEquivalent)
-			: 	theory(theory),
-				minimizeterm(NULL),
-				partialstructure(partialstructure),
-				symbolicstructure(symbolicstructure),
-				nbModelsEquivalent(nbModelsEquivalent) {
-
 	}
 };
 
@@ -222,6 +212,9 @@ private:
 	void createBoolGrounderDisjPath(const BoolForm* bf);
 	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
+
+	AggForm* rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure);
+	void internalVisit(const PredForm* newaf);
 };
 
 #endif /* GROUNDERFACTORY_HPP */

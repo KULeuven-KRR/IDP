@@ -30,7 +30,7 @@ class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
 
-class LazyStoredInstantiation;
+class LazyInstantiation;
 class DelayGrounder;
 
 class GroundPolicy {
@@ -54,7 +54,10 @@ protected:
 	void polAddLazyAddition(const litlist&, int){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
-	void polNotifyLazyResidual(Lit, LazyStoredInstantiation*, TsType, bool){
+	void polStartLazyFormula(LazyInstantiation*, TsType, bool){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polNotifyLazyResidual(LazyInstantiation*, TsType){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
 
