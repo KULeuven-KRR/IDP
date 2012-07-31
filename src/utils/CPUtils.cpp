@@ -84,6 +84,8 @@ bool eligibleForCP(const Term* t, AbstractStructure* str) {
 		return eligibleForCP(dynamic_cast<const AggTerm*>(t), str);
 	}
 	case TermType::VAR:
+		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT), voc);
+		return true;
 	case TermType::DOM:
 		SortUtils::isSubsort(t->sort(), get(STDSORT::INTSORT), voc);
 		return true;
