@@ -20,8 +20,7 @@ using namespace std;
 
 template<class Factory, class DomainType>
 TypedFOPropagator<Factory, DomainType>::TypedFOPropagator(Factory* f, FOPropScheduler* s, Options* opts)
-		: 	_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)),
-			_factory(f),
+		: 	_factory(f),
 			_scheduler(s),
 			_theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
@@ -41,8 +40,7 @@ TypedFOPropagator<Factory, DomainType>::~TypedFOPropagator() {
 
 template<>
 TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FOPropBDDDomainFactory* f, FOPropScheduler* s, Options* opts)
-		: 	_verbosity(opts->getValue(IntType::PROPAGATEVERBOSITY)),
-			_factory(f),
+		: 	_factory(f),
 			_scheduler(s),
 			_theory(NULL) {
 	_maxsteps = opts->getValue(IntType::NRPROPSTEPS);
@@ -54,7 +52,7 @@ TypedFOPropagator<FOPropBDDDomainFactory, FOPropBDDDomain>::TypedFOPropagator(FO
 
 template<class Factory, class DomainType>
 void TypedFOPropagator<Factory, DomainType>::doPropagation() {
-	if (_verbosity > 1) {
+	if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 		clog << "=== Start propagation ===\n";
 	}
 	while (_scheduler->hasNext()) {
@@ -62,7 +60,7 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		_direction = propagation->getDirection();
 		_ct = propagation->isCT();
 		_child = propagation->getChild();
-		if (_verbosity > 1) {
+		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			const Formula* p = propagation->getParent();
 			clog << "  Propagate ";
 			if (_direction == DOWN) {
@@ -85,7 +83,7 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		propagation->getParent()->accept(this);
 		delete (propagation);
 	}
-	if (_verbosity > 1) {
+	if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 		clog << "=== End propagation ===\n";
 	}
 }
@@ -100,7 +98,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			Assert(getDomain(connector)._twovalued);
 			continue;
 		}
-		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << "**   Applying propagation for " << toString(symbol);
 			pushtab();
 			clog << nt() << "Old interpretation was" << toString(newinter) << endl;
@@ -114,7 +112,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		Assert(_domains.find(connector) != _domains.cend());
 
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
-		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << nt() << "Derived symbols: " << toString(bddinter) << endl;
 		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
@@ -133,7 +131,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 				newinter->makeFalse(*falseEl);
 			}
 		}
-		if (getOption(IntType::PROPAGATEVERBOSITY) > 1) {
+		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << nt() << "Result: " << toString(structure->inter(symbol));
 			poptab();
 			clog << nt() << "**" << endl;
@@ -217,7 +215,7 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 	}
 	_maxsteps--;
 	_scheduler->add(new FOPropagation(p, dir, ct, c));
-	if (_verbosity > 1) {
+	if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 		clog << "  Schedule ";
 		if (dir == DOWN) {
 			clog << "downward propagation from " << (ct ? "the ct-bound of " : "the cf-bound of ") << *p;
@@ -237,7 +235,7 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
 	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
-	if (_verbosity > 2) {
+	if (getOption(IntType::VERBOSE_PROPAGATING) > 2) {
 		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
 		_factory->put(clog, newdomain);
 	}
