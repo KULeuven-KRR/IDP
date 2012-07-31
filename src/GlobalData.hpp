@@ -149,9 +149,12 @@ public:
 
 GlobalData* getGlobal();
 
-template<typename OptionType>
-typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type) {
-	return getGlobal()->getOptions()->getValue(type);
+template<typename OptionsType>
+typename OptionTypeTraits<OptionsType>::ValueType getOption(OptionsType type) {
+	if (not isVerbosityOption(type)) {
+		return getGlobal()->getOptions()->getValue(type);
+	}
+	return getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->getValue(type);
 }
 
 template<typename OptionType>

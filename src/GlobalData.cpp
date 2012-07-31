@@ -23,7 +23,7 @@ GlobalData::GlobalData()
 			_domainelemFactory(DomainElementFactory::createGlobal()),
 			_idcounter(1),
 			_terminateRequested(false),
-			_options(new Options()),
+			_options(new Options(false)),
 			_tabsizestack() {
 	_tabsizestack.push(0);
 	_stdNamespace = new Namespace("stdspace", _globalNamespace, ParseInfo());
