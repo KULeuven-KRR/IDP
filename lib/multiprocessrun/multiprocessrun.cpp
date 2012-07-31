@@ -36,6 +36,7 @@ void run(const char* exec) {
 	auto file = popen(ss.str().c_str(), "r");
 
 	auto output = new stringstream();
+	*output <<"[EXECUTABLE]  " << exec <<"\n";
 	std::string cur_string = "";
 	const int SIZEBUF = 1234;
 	char buf[SIZEBUF];
