@@ -14,22 +14,17 @@ stringstream error;
 /* lex definitions: */
 %option noyywrap never-interactive nounput
 
-/*
-UNUSED:
-%s printline
-<INITIAL>"[==========]" {BEGIN(printline); }
-<printline>[^\n]* 	{ ss <<">>>" <<yytext; }
-<printline>"\n"		{ yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); return TEXT; }
-<block>"Segmentation fault"[^\n]*		{ yylval.str = new string(ss.str()); BEGIN(INITIAL); ss.str(""); cerr <<"FAILEDFAILED\n";}
-*/
-
 %s block
 %s resultblock
+
+INT				[0-9]+
 
 %%
 
 <*>"[ RUN      ] "		{ BEGIN(block); error <<ss.str(); ss.str("");}
+<*>"[EXECUTABLE] "[^\n]*	{ results <<yytext <<"\n";}
 <*>"[  PASSED  ] "		{ BEGIN(resultblock); error <<ss.str(); ss.str(""); results <<"Passed "; }
+<*>"  YOU HAVE "{INT}" DISABLED TESTS" { results <<yytext <<"\n"; }
 <*>"[==========] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
 <*>"[----------] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
 <block>"[  FAILED  ] "	{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return FAIL; }
