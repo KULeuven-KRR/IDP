@@ -60,14 +60,6 @@ void GroundDefinition::recursiveDelete() {
 	delete (this);
 }
 
-void GroundDefinition::addTrueRule(Lit head) {
-	addPCRule(head, litlist(0), true, false);
-}
-
-void GroundDefinition::addFalseRule(Lit head) {
-	addPCRule(head, litlist(0), false, false);
-}
-
 void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool recursive) {
 	// Search for a rule with the same head
 	auto it = _rules.find(head);

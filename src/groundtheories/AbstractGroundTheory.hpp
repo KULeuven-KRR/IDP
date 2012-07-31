@@ -62,8 +62,6 @@ public:
 	virtual void addOptimization(AggFunction, SetId) = 0;
 	virtual void addOptimization(VarId) = 0;
 
-	virtual void notifyNeedFalseDefineds(PFSymbol* pfs) = 0;
-
 	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) = 0;
 	virtual void notifyLazyAddition(const litlist& glist, int ID) = 0;
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) = 0;
