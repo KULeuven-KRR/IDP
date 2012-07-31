@@ -29,7 +29,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
-		auto generateBDDaccToBounds = generateBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure,false);
+		auto generateBDDaccToBounds = generateBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure, false);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE);
 		manager = generateBDDaccToBounds->manager();
 		delete generateBDDaccToBounds;
@@ -42,6 +42,9 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	newquery->recursiveDelete();
 
 	Assert(bdd != NULL);
+	if (getOption(IntType::VERBOSE_QUERY) > 0) {
+		clog << "Query-BDD:" << endl << toString(bdd) << endl;
+	}
 	Assert(manager != NULL);
 	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
 	auto bddvars = manager->getVariables(vars);
@@ -64,11 +67,11 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	BDDToGenerator btg(manager);
 
 	InstGenerator* generator = btg.create(data);
-//	std::cerr<<"BDD:" <<toString(bdd)<<endl;
-//	std::cerr << "GEN"<<toString(generator)<<endl;
-//	cerr <<"Generating for " <<toString(generator) <<"\n";
+	if (getOption(IntType::VERBOSE_QUERY) > 0) {
+		clog << "Query-Generator:" << endl << toString(generator) << endl;
+	}
 
-	// Create an empty table
+// Create an empty table
 	std::vector<SortTable*> vst;
 	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 		vst.push_back(structure->inter((*it)->sort()));
