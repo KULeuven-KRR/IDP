@@ -36,7 +36,6 @@ class FOPropagatorFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 	typedef TypedFOPropagator<InterpretationFactory, PropDomain> Propagator;
 private:
-	int _verbosity;
 	Propagator* _propagator;
 	std::map<PFSymbol*, PredForm*> _leafconnectors; //_propagator is responsible for deleting this
 	std::map<PFSymbol*, InitBoundType> _initbounds;
