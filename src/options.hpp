@@ -37,7 +37,6 @@ enum StringType {
 };
 
 enum IntType {
-	SATVERBOSITY,
 	GROUNDVERBOSITY,
 	PROPAGATEVERBOSITY,
 	NBMODELS,

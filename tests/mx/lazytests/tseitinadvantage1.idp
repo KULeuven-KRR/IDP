@@ -17,7 +17,7 @@ procedure getasol(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
 	stdoptions.groundverbosity=10
-	stdoptions.satverbosity=10
+	stdoptions.verbosity.solving=10
 	return modelexpandpartial(T, S, stdoptions)
 }
 

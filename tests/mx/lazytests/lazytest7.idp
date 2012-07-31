@@ -24,7 +24,7 @@ structure S: V {
 
 procedure getsomesols(){
 	stdoptions.groundlazy=true
-	stdoptions.satverbosity=4
+	stdoptions.verbosity.solving=4
 	stdoptions.randomvaluechoice=true
 	stdoptions.nrmodels = 1
 	return modelexpand(T, S, stdoptions)

@@ -23,6 +23,6 @@ procedure main(tsdelay, satdelay){
 	stdoptions.satdelay = satdelay
 	stdoptions.groundwithbounds=true
 	stdoptions.groundverbosity=0
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.solving=0
 	return modelexpandpartial(T, S, stdoptions)
 }

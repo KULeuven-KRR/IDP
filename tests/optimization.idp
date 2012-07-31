@@ -23,7 +23,7 @@ procedure run() {
 	stdoptions.nbmodels = 0
 	stdoptions.timeout = 20
 	stdoptions.groundverbosity = 0
-	stdoptions.satverbosity = 0
+	stdoptions.verbosity.solving = 0
 	
 	sols = minimize(T, S, t)
 	

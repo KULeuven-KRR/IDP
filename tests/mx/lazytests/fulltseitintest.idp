@@ -23,7 +23,7 @@ procedure main(){
 	stdoptions.groundwithbounds=false
 	stdoptions.groundlazily=true
 	stdoptions.tseitindelay=true
-	stdoptions.satverbosity=4
+	stdoptions.verbosity.solving=4
 	stdoptions.groundverbosity=0
 	modelexpandpartial(T, S)
 }

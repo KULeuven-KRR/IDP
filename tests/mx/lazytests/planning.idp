@@ -23,7 +23,7 @@ structure S:V{
 }
 procedure main(){
 	stdoptions.groundverbosity=0
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.solving=0
 	stdoptions.groundlazily=true
 	print(modelexpandpartial(T, S))
 }

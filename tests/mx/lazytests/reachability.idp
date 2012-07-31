@@ -23,7 +23,7 @@ procedure main(inputfilename, tsdelay, satdelay){
 	stdoptions.satdelay = satdelay
 	stdoptions.groundwithbounds=true
 	stdoptions.groundverbosity=0
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.solving=0
 	sol = modelexpandpartial(T, structure)
 //	mx::printtuples("Connected", sol[V::Connected].ct)
 //	mx::printtuples("Connected", sol[V::Connected].cf)

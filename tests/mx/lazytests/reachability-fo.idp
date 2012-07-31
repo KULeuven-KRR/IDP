@@ -26,7 +26,7 @@ procedure main(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
 	stdoptions.groundverbosity=2
-	stdoptions.satverbosity=1
+	stdoptions.verbosity.solving=1
 	sol = modelexpandpartial(T, S)
 	mx::printtuples("Connected<ct>", sol[V::Connected].ct)
 	mx::printtuples("Connected<cf>", sol[V::Connected].cf)

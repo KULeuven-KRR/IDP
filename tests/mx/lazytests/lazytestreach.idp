@@ -25,7 +25,7 @@ structure S: V {
 
 procedure getonesol(){
 	stdoptions.groundlazily=false
-	stdoptions.satverbosity=4
+	stdoptions.verbosity.solving=4
 	stdoptions.groundverbosity=4
 	stdoptions.randomvaluechoice = true
 	stdoptions.longnames = false

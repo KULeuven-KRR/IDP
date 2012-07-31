@@ -114,7 +114,7 @@ PCSolver* createsolver(int nbmodels) {
 	auto options = GlobalData::instance()->getOptions();
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
-	modes.verbosity = options->getValue(IntType::SATVERBOSITY);
+	modes.verbosity = getOption(IntType::VERBOSE_SOLVING);
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 

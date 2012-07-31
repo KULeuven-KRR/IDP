@@ -24,7 +24,7 @@ structure S: V {
 
 procedure getonesol(){
 	stdoptions.groundlazily=true
-	stdoptions.satverbosity=4
+	stdoptions.verbosity.solving=4
 	stdoptions.randomvaluechoice = true
 	return onemodel(T, S)
 }
