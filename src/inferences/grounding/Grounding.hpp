@@ -132,7 +132,7 @@ private:
 		if (verbosity() >= 1) {
 			logActionAndTime("Creating grounders");
 		}
-		auto gi = GroundInfo { _theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm };
+		auto gi = GroundInfo(_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm);
 		if (_receiver == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {
