@@ -135,9 +135,9 @@ Options::Options(bool verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, 2, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, 10, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
@@ -361,6 +361,7 @@ template<>
 bool isVerbosityOption<IntType>(IntType t){
 	switch (t) {
 	case VERBOSE_CREATE_GROUNDERS:
+	case VERBOSE_CREATE_PROPAGATORS:
 	case VERBOSE_GEN_AND_CHECK:
 	case VERBOSE_GROUNDING:
 	case VERBOSE_TRANSFORMATIONS:
