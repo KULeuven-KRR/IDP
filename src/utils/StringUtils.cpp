@@ -16,6 +16,7 @@
 #include <functional>
 #include <algorithm>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -60,13 +61,13 @@ string replaceAllAndTrimEachLine(const string& text, const string& find, const s
 	stringstream trimmedlines;
 	bool begin = true;
 	while (true) {
-		if(not begin){
-			trimmedlines<<"\n";
+		if (not begin) {
+			trimmedlines << "\n";
 		}
 		begin = false;
 		std::string line;
 		std::getline(input, line);
-		if(input.eof()){
+		if (input.eof()) {
 			trimmedlines << trim(line);
 			break;
 		}
@@ -76,4 +77,57 @@ string replaceAllAndTrimEachLine(const string& text, const string& find, const s
 		trimmedlines << trim(line);
 	}
 	return replaceAllIn(trimmedlines.str(), find, replacement);
+}
+
+template<class ContainerT>
+void tokenize(const std::string& str, ContainerT& tokens, const std::string& delimiters = " ", const bool trimEmpty = false) {
+	typedef typename ContainerT::value_type  vt;
+	typedef typename ContainerT::value_type::size_type  st;
+	std::string::size_type pos, lastPos = 0;
+	if(delimiters.size()==0){
+		tokens.push_back(str);
+		return;
+	}
+	while (true) {
+		auto found = false;
+		auto searchpos = lastPos;
+		while(not found && pos!=std::string::npos){
+			pos = str.find_first_of(delimiters.front(), searchpos);
+			if(pos==std::string::npos || pos+delimiters.size()>str.size()){
+				pos=std::string::npos;
+				break;
+			}
+			auto temppos = pos;
+			for(int i=0; i<delimiters.size(); ++i){
+				if(str[temppos]!=delimiters[i]){
+					searchpos = pos + 1;
+					continue;
+				}
+				temppos++;
+			}
+			found = true;
+		}
+
+		if (pos == std::string::npos) {
+			pos = str.length();
+
+			if (pos != lastPos || not trimEmpty) {
+				tokens.push_back(vt(str.data() + lastPos, (st) (pos - lastPos)));
+			}
+
+			break;
+		} else {
+			if (pos != lastPos || not trimEmpty) {
+				tokens.push_back(vt(str.data() + lastPos, (st) (pos - lastPos)));
+			}
+		}
+
+		lastPos = pos + delimiters.size();
+	}
+}
+
+std::vector<std::string> split(const std::string &s, const std::string& delim) {
+	std::vector<std::string> elems;
+	tokenize(s, elems, delim);
+	return elems;
 }
