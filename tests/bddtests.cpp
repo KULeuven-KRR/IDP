@@ -65,7 +65,7 @@ TEST(BddGenerator, PredForm){
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
 		auto bddset = manager.getVariables({variable});
-		ASSERT_EQ(1,bddset.size());
+		ASSERT_EQ(bddset.size(), (uint)1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);
@@ -82,7 +82,7 @@ TEST(BddGenerator, PredForm){
 			auto value = var->get()->value()._int;
 			genvalues.insert(value);
 		}
-		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_EQ(genvalues.size(), (uint)2);
 		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
 		ASSERT_TRUE(genvalues.find(1)!=genvalues.end());
 	}
@@ -108,7 +108,7 @@ TEST(BddGenerator, PredForm){
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
 		auto bddset = manager.getVariables({variable});
-		ASSERT_EQ(1,bddset.size());
+		ASSERT_EQ(bddset.size(), (uint)1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
 		BDDToGenerator genfactory(&manager);
@@ -126,7 +126,7 @@ TEST(BddGenerator, PredForm){
 			genvalues.insert(value);
 		}
 		std::cerr << toString(gen);
-		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_EQ(genvalues.size(), (uint)2);
 		ASSERT_TRUE(genvalues.find(-2)!=genvalues.end());
 		ASSERT_TRUE(genvalues.find(-1)!=genvalues.end());
 	}
@@ -187,7 +187,7 @@ TEST(BddGenerator, PredForm){
 			auto value = var->get()->value()._int;
 			genvalues.insert(value);
 		}
-		ASSERT_EQ(genvalues.size(), 4);
+		ASSERT_EQ(genvalues.size(), (uint)4);
 		ASSERT_TRUE(genvalues.find(2)==genvalues.end());
 	}
 
