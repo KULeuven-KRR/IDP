@@ -64,6 +64,10 @@ tablesize RuleGrounder::getMaxGroundSize() const {
 	return headgrounder()->getUniverse().size() * bodygrounder()->getMaxGroundSize();
 }
 
+int RuleGrounder::verbosity() const{
+	return getOption(IntType::VERBOSE_GROUNDING);
+}
+
 RuleGrounder::~RuleGrounder() {
 	delete (_headgrounder);
 	delete (_bodygrounder);

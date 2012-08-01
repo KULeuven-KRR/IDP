@@ -103,7 +103,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
-	if (verbosity() > 0) {
+	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 		clog << "Solving\n";
 	}
 	auto terminator = new SolverTermination(mx);
@@ -134,7 +134,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			}
 		}
 	} else {
-		if (verbosity() > 0) {
+		if (getOption(IntType::VERBOSE_SOLVING)  > 0) {
 			clog << "Solver generated " << abstractsolutions.size() << " models.\n";
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {

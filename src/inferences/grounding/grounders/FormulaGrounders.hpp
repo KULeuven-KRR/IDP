@@ -28,8 +28,6 @@ class PFSymbol;
 
 /*** Formula grounders ***/
 
-int verbosity();
-
 class FormulaGrounder: public Grounder {
 private:
 	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;

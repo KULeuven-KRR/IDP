@@ -37,7 +37,6 @@ enum StringType {
 };
 
 enum IntType {
-	GROUNDVERBOSITY,
 	NBMODELS,
 	NRPROPSTEPS,
 	LONGESTBRANCH,

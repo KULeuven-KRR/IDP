@@ -106,7 +106,7 @@ public:
 			_theory = FormulaUtils::sharedTseitinTransform(_theory, _structure);
 		}
 		if (not getOption(BoolType::GROUNDLAZILY)) {
-			if (verbosity() >= 1) {
+			if ( getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 				std::clog << "Evaluating definitions\n";
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
@@ -117,19 +117,19 @@ public:
 			_structure = defCalculated[0];
 		}
 		// Create grounder
-		if (verbosity() >= 1) {
+		if ( getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			std::clog << "Approximation\n";
 		}
 		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 		if (not _structure->isConsistent()) {
-			if (verbosity() > 0) {
+			if ( getOption(IntType::VERBOSE_GROUNDING)  > 0 ||  getOption(IntType::VERBOSE_PROPAGATING)>0) {
 				std::clog << "approximation detected UNSAT\n";
 			}
 			delete symstructure->manager();
 			delete (symstructure);
 			return returnUnsat();
 		}
-		if (verbosity() >= 1) {
+		if ( getOption(IntType::VERBOSE_GROUNDING)  >= 1) {
 			std::clog << "Grounding\n";
 		}
 		if (_grounder != NULL) {
@@ -152,7 +152,7 @@ public:
 		addSymmetryBreaking(_theory, _structure, grounding, _minimizeterm);
 
 		// Print grounding statistics
-		if (verbosity() > 0) {
+		if ( getOption(IntType::VERBOSE_GROUNDING)  > 0) {
 			auto maxsize = _grounder->getFullGroundSize();
 			//cout <<"full|grounded|%|time\n";
 			//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";

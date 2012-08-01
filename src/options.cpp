@@ -132,7 +132,7 @@ Options::Options(){
 Options::Options(bool verboseOptions) {
 	std::set<bool> boolvalues { true, false };
 	if (verboseOptions) {
-		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, 6, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, 2, 0, _option2name, PrintBehaviour::PRINT);
@@ -163,7 +163,6 @@ Options::Options(bool verboseOptions) {
 		IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 8, _option2name, PrintBehaviour::PRINT);
 
 		IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
-		IntPol::createOption(IntType::GROUNDVERBOSITY, "groundverbosity", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
 
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.

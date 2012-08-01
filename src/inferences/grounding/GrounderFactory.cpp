@@ -87,7 +87,7 @@ GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, b
 	Assert(_symstructure != NULL);
 
 	// Create a symbolic structure if no such structure is given
-	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 2) {
 		clog << tabs() << "Using the following symbolic structure to ground:" << "\n";
 		clog << tabs() << toString(_symstructure) << "\n";
 	}
@@ -226,7 +226,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
-	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
+	groundtheory->initialize(solver, getOption(IntType::VERBOSE_GROUNDING), groundtheory->translator());
 	auto grounder = createGrounder(data, groundtheory);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
@@ -315,14 +315,14 @@ void GrounderFactory::descend(T child) {
 	SaveContext();
 
 	if (getContext()._component == CompContext::SENTENCE) {
-		if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0) {
 			clog << tabs() << "Creating a grounder for " << toString(child) << "\n";
-			if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+			if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 				pushtab();
 			}
 		}
 	} else {
-		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 			clog << tabs() << "Creating a subgrounder for " << toString(child) << "\n";
 			pushtab();
 		}
@@ -339,7 +339,7 @@ void GrounderFactory::descend(T child) {
 	_context._conjPathUntilNode = false; // NOTE: overwrite at start of visit if necessary!
 	child->accept(this);
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 		poptab();
 	}
 
@@ -785,7 +785,7 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 }
 
 const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars) {
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		clog << tabs() << "improving the following " << (approxastrue ? "maketrue" : "makefalse") << " BDD:" << "\n";
 		pushtab();
 		clog << tabs() << toString(bdd) << "\n";
@@ -811,7 +811,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 		pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, { }, _structure, mcpa);
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		poptab();
 		clog << tabs() << "Resulted in:" << "\n";
 		pushtab();

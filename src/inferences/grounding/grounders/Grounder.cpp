@@ -139,3 +139,7 @@ Lit Grounder::groundAndReturnLit() const {
 void Grounder::setMaxGroundSize(const tablesize& maxsize) {
 	_maxsize = maxsize;
 }
+
+int Grounder::verbosity() const{
+	return getOption(IntType::VERBOSE_GROUNDING);
+}

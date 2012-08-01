@@ -66,7 +66,7 @@ void GroundTheory<Policy>::recursiveDelete() {
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
 		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
 	}
 	// TODO arbitrary values?
@@ -335,7 +335,7 @@ void GroundTheory<Policy>::addFalseDefineds() {
 	 * It also works lazily because when delaying, the symbol is also added to the translator
 	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
 	 */
-	if(verbosity()>1){
+	if(getOption(IntType::VERBOSE_GROUNDING)>1){
 		clog <<"Closing definition by asserting literals false which have no rule making them true.\n";
 	}
 	for (auto sit=getNeedFalseDefinedSymbols().cbegin(); sit!=getNeedFalseDefinedSymbols().cend(); ++sit) {

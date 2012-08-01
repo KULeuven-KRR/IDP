@@ -67,7 +67,7 @@ litlist LazyTseitinGrounder::groundMore(bool groundall, LazyStoredInstantiation 
 		formula.setType(conjunctive());
 
 		auto subgrounder = getLazySubGrounder(instance);
-		if (getOption(GROUNDVERBOSITY) > 1) {
+		if (verbosity() > 1) {
 			clog << "Grounding additional subformula " << toString(subgrounder) << "\n";
 		}
 		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
@@ -160,7 +160,7 @@ LazyQuantGrounder::LazyQuantGrounder(const std::set<Variable*>& freevars, Abstra
 			_subgrounder(sub),
 			_generator(gen),
 			_checker(checker) {
-	if (getOption(GROUNDVERBOSITY) > 0) {
+	if (verbosity() > 0) {
 		clog << "Lazy quant grounder for " << toString(this) << "\n";
 	}
 }
@@ -169,7 +169,7 @@ LazyBoolGrounder::LazyBoolGrounder(const std::set<Variable*>& freevars, Abstract
 		const GroundingContext& ct)
 		: 	LazyTseitinGrounder(freevars, groundtheory, sign, conj, ct),
 			_subgrounders(sub) {
-	if (getOption(GROUNDVERBOSITY) > 0) {
+	if (verbosity() > 0) {
 		clog << "Lazy bool grounder for " << toString(this) << "\n";
 	}
 	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);

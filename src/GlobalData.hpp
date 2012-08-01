@@ -162,8 +162,6 @@ void setOption(OptionType type, typename OptionTypeTraits<OptionType>::ValueType
 	return getGlobal()->getOptions()->setValue(type, value);
 }
 
-int verbosity();
-
 // TODO improve check by bool flag!
 #define CHECKTERMINATION \
 		if(GlobalData::instance()->terminateRequested()){\

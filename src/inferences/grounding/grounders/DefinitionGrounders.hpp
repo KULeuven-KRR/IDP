@@ -90,6 +90,7 @@ public:
 	void put(std::stringstream& stream);
 
 	tablesize getMaxGroundSize() const;
+	int verbosity() const;
 };
 
 class FullRuleGrounder: public RuleGrounder {

@@ -60,6 +60,10 @@ void TermGrounder::printOrig() const {
 		poptab();
 	}
 }
+int TermGrounder::verbosity() const{
+	return getOption(IntType::VERBOSE_GROUNDING);
+}
+
 
 GroundTerm DomTermGrounder::run() const {
 	Assert(_value != NULL);
