@@ -2,7 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 		
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 		
-addToCXX("-std=c++0x")
+addToCXX("-Wall -pedantic -Wno-overloaded-virtual -std=c++0x")
+if(CMAKE_COMPILER_IS_GNUCXX)
+	addToCXX("-Wextra")
+endif()
 addToCXX("-D __STDC_FORMAT_MACROS -D __STDC_LIMIT_MACROS")
 addToCXX("-std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)

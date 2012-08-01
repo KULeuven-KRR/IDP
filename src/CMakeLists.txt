@@ -18,7 +18,10 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/interactiveShell/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
-addToCXX("-std=c++0x")
+addToCXX("-Wall -pedantic -Wno-overloaded-virtual -std=c++0x")
+if(CMAKE_COMPILER_IS_GNUCXX)
+	addToCXX("-Wextra")
+endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION}\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_PREFIX}/\\\"\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")

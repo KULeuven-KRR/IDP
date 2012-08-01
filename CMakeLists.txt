@@ -37,12 +37,6 @@ else()
 	addToCXX("-D NO_GMP")
 endif()
 
-### Set default compile flags
-addToCXX("-Wall -pedantic -Wno-overloaded-virtual")
-if(CMAKE_COMPILER_IS_GNUCXX)
-	addToCXX("-Wextra -pedantic ")
-endif()
-
 ### Gecode option for minisatid
 option(WITHGECODE "Use gecode for cp support" OFF)
 if(WITHGECODE)
