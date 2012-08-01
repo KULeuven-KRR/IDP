@@ -16,13 +16,13 @@ int main(int, char**) {
 	yyin = stdin;
 	auto result = yyparse();
 	cout << "[ SUMMARY  ]\n";
-	if (ss.str() != "" || error.str()!="") {
+	if (ss.str() != "" or error.str() != "") {
 		cout << "[  ERROR   ] Encountered error which interrupted at least one batch of tests (possibly segfault): \n";
-		if(error.str()!=""){
+		if (error.str() != "") {
 			cout << error.str() << "\n";
 		}
-		if(ss.str()!=""){
-			cout  << ss.str() << "\n";
+		if (ss.str() != "") {
+			cout << ss.str() << "\n";
 		}
 		cout << "[REMAINDER]\n";
 	}
