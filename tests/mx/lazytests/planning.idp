@@ -22,7 +22,7 @@ structure S:V{
 	Time = {0..10000000}
 }
 procedure main(){
-	stdoptions.groundverbosity=0
+	stdoptions.verbosity.creategrounders=0; stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=0
 	stdoptions.groundlazily=true
 	print(modelexpandpartial(T, S))

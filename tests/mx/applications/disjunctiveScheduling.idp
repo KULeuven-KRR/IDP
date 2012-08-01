@@ -1,7 +1,7 @@
 procedure main(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
-	stdoptions.groundverbosity=0
+	stdoptions.verbosity.creategrounders=0; stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=10
 	print(modelexpandpartial(T, S))
 }

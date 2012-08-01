@@ -21,7 +21,7 @@ structure S: V {
 
 procedure getonesol(){
 	stdoptions.groundlazily=true
-	stdoptions.groundverbosity=3
+	stdoptions.verbosity.grounding=3
 	stdoptions.verbosity.solving=4
 	return onemodel(T, S)
 }

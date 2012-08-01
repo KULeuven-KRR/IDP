@@ -25,7 +25,7 @@ theory T:V{
 procedure main(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
-	stdoptions.groundverbosity=2
+	stdoptions.verbosity.grounding=2
 	stdoptions.verbosity.solving=1
 	sol = modelexpandpartial(T, S)
 	mx::printtuples("Connected<ct>", sol[V::Connected].ct)

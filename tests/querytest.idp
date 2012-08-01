@@ -4,7 +4,7 @@ procedure main() {
 	//require("table-utils") //TODO: change to???
 	stdoptions.timeout = 1
 	stdoptions.verbosity.solving=0
-	stdoptions.groundverbosity=0
+	stdoptions.verbosity.creategrounders=0; stdoptions.verbosity.grounding=0
 	//stdoptions.groundwithbounds = TODO?
 	local solutions = totable(query(Q,S))
 	if(	check(solutions) ) then

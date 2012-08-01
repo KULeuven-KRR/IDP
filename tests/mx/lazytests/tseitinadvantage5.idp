@@ -37,7 +37,7 @@ structure S: V {
 procedure getasol(lazy){
 	stdoptions.groundlazily=lazy
 	stdoptions.groundwithbounds=true
-	stdoptions.groundverbosity=1
+	stdoptions.verbosity.grounding=1
 	stdoptions.verbosity.solving=1
 	//stdoptions.symmetry=1 only for non-builtin types!
 	return modelexpandpartial(T, S, stdoptions)

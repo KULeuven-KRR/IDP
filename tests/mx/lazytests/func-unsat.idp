@@ -13,7 +13,7 @@ theory T:V{
 procedure main(){
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=false
-	stdoptions.groundverbosity=0
+	stdoptions.verbosity.creategrounders=0; stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=0
 	sol = modelexpandpartial(T, S)
 	if(sol==nil) then
