@@ -95,9 +95,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto grounding = groundingInference->ground();
 
 	if (grounding == NULL) {
-		if (verbosity() > 0) {
-			clog << "Unsat detected during grounding\n";
-		}
 		clonetheory->recursiveDelete();
 		delete (newstructure);
 		delete (data);

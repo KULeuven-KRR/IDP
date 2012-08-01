@@ -92,6 +92,13 @@ public:
 		}
 	}
 
+	AbstractGroundTheory* returnUnsat(){
+		if(getOption(IntType::VERBOSE_CREATE_GROUNDERS)>0 || getOption(IntType::VERBOSE_GROUNDING)>0){
+			clog << "Unsat detected during grounding\n";
+		}
+		return NULL;
+	}
+
 	//Grounds the theory with the given structure
 	AbstractGroundTheory* ground() {
 		// Calculate known definitions
@@ -104,7 +111,7 @@ public:
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
-				return NULL;
+				return returnUnsat();
 			}
 			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
@@ -120,7 +127,7 @@ public:
 			}
 			delete symstructure->manager();
 			delete (symstructure);
-			return NULL;
+			return returnUnsat();
 		}
 		if (verbosity() >= 1) {
 			std::clog << "Grounding\n";
