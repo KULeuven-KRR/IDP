@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef DEFINITIONGROUNDERS_HPP_
 #define DEFINITIONGROUNDERS_HPP_
@@ -16,7 +16,6 @@
 
 #include "groundtheories/SolverTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset
-
 class TermGrounder;
 class InstChecker;
 class InstanceChecker;
@@ -51,7 +50,7 @@ public:
 		return context().getCurrentDefID();
 	}
 
-	virtual void put(std::ostream& ) const{
+	virtual void put(std::ostream&) const {
 		// TODO not yet implemented.
 	}
 };
@@ -90,6 +89,10 @@ public:
 	void put(std::stringstream& stream);
 
 	tablesize getMaxGroundSize() const;
+
+	PredForm* getHead() const {
+		return _origrule->head();
+	}
 };
 
 class FullRuleGrounder: public RuleGrounder {
@@ -100,7 +103,9 @@ private:
 	void notifyRun() const {
 		done = true;
 	}
-	bool hasRun() const { return done; }
+	bool hasRun() const {
+		return done;
+	}
 
 protected:
 	InstGenerator* headgenerator() const {
@@ -125,7 +130,8 @@ private:
 	PFSymbol* _pfsymbol;
 
 public:
-	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&, const std::vector<SortTable*>&);
+	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
+			const std::vector<SortTable*>&);
 	~HeadGrounder();
 	Lit run() const;
 
@@ -139,7 +145,9 @@ public:
 		return _grounding;
 	}
 
-	Universe getUniverse() const { return Universe(_tables); }
+	Universe getUniverse() const {
+		return Universe(_tables);
+	}
 };
 
 #endif /* DEFINITIONGROUNDERS_HPP_ */

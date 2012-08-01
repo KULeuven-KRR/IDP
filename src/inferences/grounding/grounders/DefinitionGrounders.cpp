@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "DefinitionGrounders.hpp"
 
@@ -28,7 +28,7 @@ DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<Rul
 		: Grounder(gt, context), _subgrounders(subgr) {
 	Assert(context.getCurrentDefID()!=getIDForUndefined());
 	auto t = tablesize(TableSizeType::TST_EXACT, 0);
-	for(auto i=subgr.cbegin(); i<subgr.cend(); ++i){
+	for (auto i = subgr.cbegin(); i < subgr.cend(); ++i) {
 		t = t + (*i)->getMaxGroundSize();
 	}
 	setMaxGroundSize(t);
@@ -40,11 +40,34 @@ DefinitionGrounder::~DefinitionGrounder() {
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	auto grounddefinition = new GroundDefinition(id(), getTranslator());
+
+	std::vector<PFSymbol*> headsymbols;
 	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
-		(*grounder)->run(id(), grounddefinition);
+		CHECKTERMINATION(*grounder)->run(id(), grounddefinition);
+		headsymbols.push_back((*grounder)->getHead()->symbol());
 	}
 	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
+
+	for (auto symbol : headsymbols) {
+		CHECKTERMINATION
+		auto pt = getGrounding()->structure()->inter(symbol)->pt();
+		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+			CHECKTERMINATION
+			auto translatedvar = getGrounding()->translator()->translate(symbol, (*ptIterator));
+			Assert(translatedvar>0);
+			if (not grounddefinition->hasRule(translatedvar)) {
+				getGrounding()->addUnitClause(-translatedvar);
+				if(getGrounding()->structure()->inter(symbol)->ct()->contains(*ptIterator)) {
+					formula.setType(Conn::DISJ); // Empty disjunction, always false
+					return;// NOTE: abort early because inconsistent anyway
+				}
+				// TODO better solution would be to make the structure more precise
+			}
+		}
+	}
+
 	delete (grounddefinition);
+
 	formula.setType(Conn::CONJ); // Empty conjunction, so always true
 }
 
@@ -73,7 +96,6 @@ RuleGrounder::~RuleGrounder() {
 FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
 		: RuleGrounder(rule, hgr, bgr, big, ct), _headgenerator(hig), done(false) {
 	Assert(hig!=NULL);
-	hgr->grounding()->notifyNeedFalseDefineds(hgr->pfsymbol()); // FIXME very ugly hack to get addFalseDefineds correct, see more info there (groundtheory.cpp)
 }
 
 FullRuleGrounder::~FullRuleGrounder() {

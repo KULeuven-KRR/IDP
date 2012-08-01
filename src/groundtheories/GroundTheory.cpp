@@ -70,10 +70,6 @@ void GroundTheory<Policy>::recursiveDelete() {
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
-		clog << "Closing theory, adding functional constraints and symbols defined false.\n";
-	}
-	addFalseDefineds();
 	if (not getOption(BoolType::GROUNDLAZILY)) {
 		Policy::polEndTheory();
 	}
@@ -98,7 +94,6 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 			auto rule = dynamic_cast<AggGroundRule*>((*i).second);
 			add(rule->setnr(), def.id(), (rule->aggtype() != AggFunction::CARD));
 			Policy::polAdd(def.id(), rule);
-			notifyDefined(rule->head());
 		}
 	}
 }
@@ -107,20 +102,6 @@ template<class Policy>
 void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 	addTseitinInterpretations(rule->body(), defid);
 	Policy::polAdd(defid, rule);
-	notifyDefined(rule->head());
-}
-
-template<class Policy>
-void GroundTheory<Policy>::notifyDefined(Atom inputatom) {
-	if (not translator()->isInputAtom(inputatom)) {
-		return;
-	}
-	auto symbol = translator()->getSymbol(inputatom);
-	auto it = _defined.find(symbol);
-	if (it == _defined.end()) {
-		it = _defined.insert(std::pair<PFSymbol*, std::set<Atom>> { symbol, std::set<Atom>() }).first;
-	}
-	(*it).second.insert(inputatom);
 }
 
 template<class Policy>
@@ -324,43 +305,6 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 	}
 	return cpterm;
-}
-
-
-template<class Policy>
-void GroundTheory<Policy>::addFalseDefineds() {
-	/*
-	 * FIXME FIXME HACKED!
-	 * There is an issue that, if all instantiations of a symbol are false, none is ever added to the translator
-	 * In that case, it is not managing that symbol, so will not write falsedefineds for it.
-	 * This was solved by a workaround in DefinitionGrounder which adds all its head symbols to the translator. This is not maintainable or clear!
-	 * It also works lazily because when delaying, the symbol is also added to the translator
-	 * So should probably redefine the notion of managedsymbol as any symbol occurring in one of the grounders?
-	 */
-	if(verbosity()>1){
-		clog <<"Closing definition by asserting literals false which have no rule making them true.\n";
-	}
-	for (auto sit=getNeedFalseDefinedSymbols().cbegin(); sit!=getNeedFalseDefinedSymbols().cend(); ++sit) {
-		CHECKTERMINATION
-		auto pt = structure()->inter(*sit)->pt();
-		auto it = _defined.find(*sit);
-	//	cerr <<"Already grounded for " <<toString(*sit) <<"\n";
-	//	for(auto i=_defined.cbegin(); i!=_defined.cend(); ++i){
-	//		cerr <<toString(i->second) <<"\n";
-	//	}
-		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			CHECKTERMINATION
-			auto translation = translator()->translate(*sit, (*ptIterator));
-			if (it==_defined.cend() || it->second.find(translation) == it->second.cend()) {
-				addUnitClause(-translation);
-				if(structure()->inter(*sit)->ct()->contains(*ptIterator)){
-					addUnitClause(translation);
-					return; // NOTE: abort early because inconsistent anyway
-				}
-				// TODO better solution would be to make the structure more precise
-			}
-		}
-	}
 }
 
 template<class Policy>

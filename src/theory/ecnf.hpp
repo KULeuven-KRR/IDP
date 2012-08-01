@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef ECNF_HPP
 #define ECNF_HPP
@@ -49,7 +49,8 @@ public:
 	GroundSet(SetId setnr, const litlist& s, const weightlist& lw)
 			: _setnr(setnr), _setlits(s), _litweights(lw) {
 	}
-	virtual ~GroundSet(){}
+	virtual ~GroundSet() {
+	}
 
 	// Inspectors
 	SetId setnr() const {
@@ -107,7 +108,8 @@ public:
 			: _head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
 		Assert(a._arrow != TsType::RULE);
 	}
-	virtual ~GroundAggregate(){}
+	virtual ~GroundAggregate() {
+	}
 
 	// Inspectors
 	Lit head() const {
@@ -284,9 +286,11 @@ public:
 	GroundDefinition* clone() const;
 	void recursiveDelete();
 
+	bool hasRule(Atom head) const {
+		return _rules.find(head) != _rules.cend();
+	}
+
 	// Mutators
-	void addTrueRule(Lit head);
-	void addFalseRule(Lit head);
 	void addPCRule(Lit head, const litlist& body, bool conj, bool recursive);
 	void addAggRule(Lit head, SetId setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
 
@@ -516,7 +520,8 @@ public:
 	CPBound(const VarId& varid)
 			: _isvarid(true), _varid(varid) {
 	}
-	virtual ~CPBound(){}
+	virtual ~CPBound() {
+	}
 	bool operator==(const CPBound& rhs) const;
 	bool operator<(const CPBound& rhs) const;
 	virtual void put(std::ostream& stream) const;
@@ -533,9 +538,11 @@ private:
 public:
 	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right)
 			: TsBody(type), _left(left), _comp(comp), _right(right) {
-		Assert(type!=TsType::RULE); // Constraints within recursive definitions cannot be handled atm.
+		Assert(type!=TsType::RULE);
+		// Constraints within recursive definitions cannot be handled atm.
 	}
-	~CPTsBody(){}
+	~CPTsBody() {
+	}
 	CPTerm* left() const {
 		return _left;
 	}
@@ -614,7 +621,7 @@ private:
 	varidlist _varids;
 public:
 	CPSumTerm(const VarId& left, const VarId& right)
-			: _varids({ left, right }) {
+			: _varids( { left, right }) {
 	}
 	CPSumTerm(const varidlist& varids)
 			: _varids(varids) {
@@ -627,7 +634,7 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-	virtual void put(std::ostream&) const{
+	virtual void put(std::ostream&) const {
 		// TODO
 	}
 };
@@ -658,7 +665,7 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-	virtual void put(std::ostream&) const{
+	virtual void put(std::ostream&) const {
 		// TODO
 	}
 };

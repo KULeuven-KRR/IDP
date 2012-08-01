@@ -21,4 +21,4 @@ add_latex_document(fo-idp.tex INPUTS ${TEXFILENAMES} IMAGES ${IMAGEFILENAMES} DE
 
 install(FILES
 	${PROJECT_BINARY_DIR}/docs/official/idp-manual.pdf
-	DESTINATION share/minisatid)
+	DESTINATION share/idp)

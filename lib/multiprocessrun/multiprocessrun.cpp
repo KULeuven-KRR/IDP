@@ -36,6 +36,7 @@ void run(const char* exec) {
 	auto file = popen(ss.str().c_str(), "r");
 
 	auto output = new stringstream();
+	*output << "[EXECUTABLE]  " << exec << "\n";
 	std::string cur_string = "";
 	const int SIZEBUF = 1234;
 	char buf[SIZEBUF];
@@ -98,7 +99,7 @@ int main(int argc, char** argv) {
 		i->join();
 	}
 	for (auto i = files.cbegin(); i < files.cend(); ++i) {
-		cout << (*i)->str(); // << "\n";
+		cout << (*i)->str() << "\n";
 		delete (*i);
 	}
 }

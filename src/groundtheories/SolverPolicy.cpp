@@ -272,7 +272,7 @@ public:
 			lit(lit), args(args), grounders(grounders) {
 	}
 
-	virtual void requestGrounding() {
+	virtual void requestGrounding(MinisatID::Value) {
 		if (not isAlreadyGround()) {
 			notifyGrounded();
 			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
@@ -337,7 +337,7 @@ public:
 			inst(inst){
 	}
 
-	virtual void requestGrounding(){
+	virtual void requestGrounding(MinisatID::Value){
 		Assert(not isAlreadyGround());
 		bool temp;
 		inst->notifyGroundingRequested(-1, false, temp);

@@ -23,9 +23,6 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
 	std::set<VarId> _printedvarids;
-	std::map<PFSymbol*, std::set<Atom> > _defined; //!< List of defined symbols and the heads which have a rule.
-
-	std::set<PFSymbol*> needfalsedefinedsymbols;
 
 public:
 	GroundTheory(AbstractStructure const * const str);
@@ -71,11 +68,6 @@ public:
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);
 
-	virtual void notifyNeedFalseDefineds(PFSymbol* pfs){
-		needfalsedefinedsymbols.insert(pfs);
-	}
-	const std::set<PFSymbol*>& getNeedFalseDefinedSymbols() const { return needfalsedefinedsymbols; }
-
 protected:
 	/**
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.
@@ -84,10 +76,7 @@ protected:
 
 	CPTerm* foldCPTerm(CPTerm* cpterm);
 
-	void addFalseDefineds();
-
 private:
-	void notifyDefined(Atom inputatom);
 	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable);
 };
 

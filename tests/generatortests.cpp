@@ -47,7 +47,7 @@ namespace Tests{
 			ASSERT_LT(tuple.first, 11);
 			ASSERT_GT(tuple.first, -1);
 		}
-		ASSERT_EQ(genvalues.size(), 11);
+		ASSERT_EQ(genvalues.size(), (uint)11);
 	}
 
 	TEST(ComparisonGenerator, FiniteInfiniteEquality){
@@ -64,7 +64,7 @@ namespace Tests{
 			ASSERT_LT(tuple.first, 11);
 			ASSERT_GT(tuple.first, -11);
 		}
-		ASSERT_EQ(genvalues.size(), 21);
+		ASSERT_EQ(genvalues.size(), (uint)21);
 	}
 
 	TEST(ComparisonGenerator, FiniteLT){
@@ -79,7 +79,7 @@ namespace Tests{
 			genvalues.insert(tuple);
 			ASSERT_LT(tuple.first, tuple.second);
 		}
-		ASSERT_EQ(genvalues.size(), 19);
+		ASSERT_EQ(genvalues.size(), (uint)19);
 	}
 
 	TEST(ComparisonGenerator, FiniteGTLeftInput){
@@ -95,7 +95,7 @@ namespace Tests{
 			genvalues.insert(tuple);
 			ASSERT_GT(tuple.first, tuple.second);
 		}
-		ASSERT_EQ(genvalues.size(), 2);
+		ASSERT_EQ(genvalues.size(), (uint)2);
 	}
 
 	TEST(SortGenerator, FiniteSort){
@@ -109,7 +109,7 @@ namespace Tests{
 			ASSERT_LT(value, 3);
 			ASSERT_GT(value, -3);
 		}
-		ASSERT_EQ(genvalues.size(), 5);
+		ASSERT_EQ(genvalues.size(), (uint)5);
 	}
 
 	TEST(SortGenerator, DISABLED_CloneFiniteSort){
@@ -129,7 +129,7 @@ namespace Tests{
 			ASSERT_LT(value, 3);
 			ASSERT_GT(value, -1);
 		}
-		ASSERT_EQ(genvalues.size(), 3);
+		ASSERT_EQ(genvalues.size(), (uint)3);
 	}
 
 	TEST(TableChecker, FiniteSort){
@@ -229,7 +229,7 @@ namespace Tests{
 			genvalues.insert(value);
 			ASSERT_FALSE(value==-1 || value==2);
 		}
-		ASSERT_EQ(genvalues.size(), 3);
+		ASSERT_EQ(genvalues.size(), (uint)3);
 
 		genvalues.clear();
 		var1->operator =(createDomElem(-2));
@@ -238,7 +238,7 @@ namespace Tests{
 			genvalues.insert(value);
 			ASSERT_NE(value, 0);
 		}
-		ASSERT_EQ(genvalues.size(), 4);
+		ASSERT_EQ(genvalues.size(), (uint)4);
 	}
 
 	TEST(EnumLookupGenerator, Enum){
