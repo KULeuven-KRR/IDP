@@ -39,10 +39,10 @@ void run(const char* exec) {
 	std::string cur_string = "";
 	const int SIZEBUF = 1234;
 	char buf[SIZEBUF];
-	while (fgets(buf, sizeof(buf), file)) {
+	while (fgets(buf, sizeof(buf), file) != NULL) {
 		cur_string += buf;
 	}
-	*output << cur_string.substr(0, cur_string.size() - 1);
+	*output << cur_string; //.substr(0, cur_string.size() - 1); //FIXME: Why substring ?
 
 	pclose(file);
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 		i->join();
 	}
 	for (auto i = files.cbegin(); i < files.cend(); ++i) {
-		cout << (*i)->str() << "\n";
+		cout << (*i)->str(); // << "\n";
 		delete (*i);
 	}
 }
