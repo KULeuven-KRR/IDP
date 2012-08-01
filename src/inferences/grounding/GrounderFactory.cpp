@@ -1253,10 +1253,6 @@ InstGenerator* createGen(const std::string& name, TruthType type, const Generato
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << name <<" for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
-	}
-
 	return checker;
 }
 
@@ -1267,22 +1263,41 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 	auto bdd = _symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
 	bdd = improve(approxvalue, bdd, quantfovars);
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Using the following BDD" << nt() << toString(bdd) << nt();
+	}
 	auto table = new PredTable(new BDDInternalPredTable(bdd, _symstructure->manager(), data.fovars, _structure), Universe(data.tables));
 	deleteDeep(tempsubformula);
 	return table;
 }
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "Creating generator for truthtype" << toString(generatortype) << "for subformula" << subformula << toString(subformula);
+		pushtab();
+		clog << nt();
+	}
 	PredTable* gentable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		gentable = createTable(subformula, generatortype, data.quantfovars, true, data);
 	} else {
 		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
-	return createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
+	auto result = createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "The result is:" << toString(result);
+		poptab();
+		clog << nt();
+	}
+	return result;
 }
 
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "Creating Checker for truthtype" << toString(checkertype) << "for subformula" << subformula << toString(subformula);
+		pushtab();
+		clog << nt();
+	}
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
@@ -1294,7 +1309,13 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 			checktable = TableUtils::createPredTable(Universe(data.tables));
 		}
 	}
-	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
+	auto result = createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "The result is:" << toString(result);
+		poptab();
+		clog << nt();
+	}
+	return result;
 }
 
 DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
