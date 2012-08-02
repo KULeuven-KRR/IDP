@@ -7,12 +7,11 @@ procedure mxnobounds(){
 	return run()
 }
 
+// NOTE: only based on lazy tseitin delaying!!!!
+// NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxlazy(){
-	stdoptions.groundwithbounds = false
-	stdoptions.liftedunitpropagation = false
 	stdoptions.groundlazily = true
 	stdoptions.tseitindelay = true
-	// NOTE: never enable delaying here which depends on well-founded definitions!
 	stdoptions.timeout = 5
 	return run()
 }
