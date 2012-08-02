@@ -20,6 +20,6 @@ structure S:V{
 	Getal = { 1..11 }
 	Aantal = {1..3}
 }
-procedure expectedNbOfModels(){
+procedure getExpectedNbOfModels(){
 	return 1
 }
