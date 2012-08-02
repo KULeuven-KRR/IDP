@@ -103,7 +103,7 @@ private:
 		}
 
 		// Calculate known definitions
-		if (not getOption(BoolType::GROUNDLAZILY)) {
+		if (not getOption(BoolType::SATISFIABILITYDELAY)) {
 			if (verbosity() >= 1) {
 				logActionAndTime("Evaluating definitions");
 			}
