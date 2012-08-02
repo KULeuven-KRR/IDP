@@ -1,5 +1,5 @@
-procedure getExpectedAModel(){
-        return true
+procedure getExpectedNbOfModels(){
+        return 0
 }
 // NOTE: written because product simplification (dividing bound by already known weights) should handle non-integer results correctly.
 vocabulary V{
