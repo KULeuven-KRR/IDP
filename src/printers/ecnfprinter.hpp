@@ -223,23 +223,7 @@ public:
 			} else { // CPBinaryRel
 				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid().id, convert(comp), createWeight(right._bound)));
 			}
-		} else if (isa<CPSumTerm>(*left)) {
-			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
-			std::vector<int> weights;
-			weights.resize(term->varids().size(), 1);
-
-			if (right._isvarid) {
-				std::vector<VarId> varids = term->varids();
-				int bound = 0;
-				varids.push_back(right._varid);
-				weights.push_back(-1);
-
-				addWeightedSum(cpr->_head, varids, weights, bound, comp);
-			} else {
-				addWeightedSum(cpr->_head, term->varids(), weights, right._bound, comp);
-			}
-		} else {
-			Assert(isa<CPWSumTerm>(*left));
+		} else if (isa<CPWSumTerm>(*left)) {
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
 			if (right._isvarid) {
 				std::vector<VarId> varids = term->varids();
@@ -253,6 +237,9 @@ public:
 			} else {
 				addWeightedSum(cpr->_head, term->varids(), term->weights(), right._bound, comp);
 			}
+		} else {
+			Assert(isa<CPWProdTerm>(*left));
+			//TODO
 		}
 	}
 

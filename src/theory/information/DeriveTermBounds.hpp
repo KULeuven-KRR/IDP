@@ -154,7 +154,7 @@ protected:
 	void visit(const CPWSumTerm*) {
 		Assert(false);
 	}
-	void visit(const CPSumTerm*) {
+	void visit(const CPWProdTerm*) {
 		Assert(false);
 	}
 };

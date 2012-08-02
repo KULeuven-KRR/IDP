@@ -613,33 +613,6 @@ public:
 };
 
 /**
- * CP term consisting of a sum of CP variables.
- */
-class CPSumTerm: public CPTerm {
-ACCEPTNONMUTATING()
-private:
-	varidlist _varids;
-public:
-	CPSumTerm(const VarId& left, const VarId& right)
-			: _varids( { left, right }) {
-	}
-	CPSumTerm(const varidlist& varids)
-			: _varids(varids) {
-	}
-	const varidlist& varids() const {
-		return _varids;
-	}
-	void varids(const varidlist& newids) {
-		_varids = newids;
-	}
-	bool operator==(const CPTerm&) const;
-	bool operator<(const CPTerm&) const;
-	virtual void put(std::ostream&) const {
-		// TODO
-	}
-};
-
-/**
  * CP term consisting of a weighted sum of CP variables.
  */
 class CPWSumTerm: public CPTerm {
@@ -662,6 +635,38 @@ public:
 	}
 	void weights(const intweightlist& newweights) {
 		_weights = newweights;
+	}
+	bool operator==(const CPTerm&) const;
+	bool operator<(const CPTerm&) const;
+	virtual void put(std::ostream&) const {
+		// TODO
+	}
+};
+
+/**
+ * CP term consisting of a weighted product of CP variables.
+ * TODO: typedef int intweight
+ */
+class CPWProdTerm: public CPTerm {
+ACCEPTNONMUTATING()
+private:
+	varidlist _varids;
+	int _weight;
+public:
+	CPWProdTerm(const varidlist& varids, const int& weight)
+			: _varids(varids), _weight(weight) {
+	}
+	const varidlist& varids() const {
+		return _varids;
+	}
+	const int& weight() const {
+		return _weight;
+	}
+	void varids(const varidlist& newids) {
+		_varids = newids;
+	}
+	void weight(const int& newweight) {
+		_weight = newweight;
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;

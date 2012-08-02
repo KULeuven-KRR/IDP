@@ -262,7 +262,10 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		if (translator()->getFunction(varterm->varid()) == NULL) {
 			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
 			CPTerm* left = foldCPTerm(cprelation->left());
-			if ((isa<CPSumTerm>(*left) or isa<CPWSumTerm>(*left)) and cprelation->comp() == CompType::EQ) {
+			if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
+				Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
+				return left;
+			} else if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
 				Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
 				return left;
 			}
@@ -271,24 +274,19 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto sumterm = dynamic_cast<CPWSumTerm*>(cpterm);
 		varidlist newvarids;
 		intweightlist newweights;
-		//for (auto vit = sumterm->varids().begin(), auto wit = sumterm->weights().begin(); vit != sumterm->varids().end(); ++vit, ++wit) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
 			if (translator()->getFunction(*vit) == NULL) {
 				CPTsBody* cprelation = translator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
-				if (isa<CPWSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
+				if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
 					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
-					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *vit);
+					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
 					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
 					for (auto it = subterm->weights().begin(); it != subterm->weights().end(); ++it) {
 						newweights.push_back((*it) * (*wit));
 					}
-				} else if (isa<CPSumTerm>(*left) && cprelation->comp() == CompType::EQ) {
-//					CPSumTerm* subterm = static_cast<CPSumTerm*>(left);
-//					Assert(cprelation->right()._isvarid && cprelation->right()._varid == *it);
-					Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
 				} else { //TODO Need to do something special in other cases?
 					newvarids.push_back(*vit);
 					newweights.push_back(*wit);
@@ -301,8 +299,33 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		sumterm->varids(newvarids);
 		sumterm->weights(newweights);
 		return sumterm;
-	} else if (isa<CPSumTerm>(*cpterm)) {
-		Assert(false); //FIXME Remove CPSumTerm from code entirely => always use CPWSumTerm!
+	} else {
+		//TODO
+		Assert(isa<CPWProdTerm>(*cpterm));
+		auto prodterm = dynamic_cast<CPWProdTerm*>(cpterm);
+		varidlist newvarids;
+		int newweight = prodterm->weight();
+		for (auto vit = prodterm->varids().begin(); vit != prodterm->varids().end(); ++vit) {
+			if (translator()->getFunction(*vit) == NULL) {
+				auto cprelation = translator()->cprelation(*vit);
+				auto left = foldCPTerm(cprelation->left());
+				if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
+					auto subterm = static_cast<CPWProdTerm*>(left);
+					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
+					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+					newweight *= subterm->weight();
+				} else { //TODO Need to do something special in other cases?
+					newvarids.push_back(*vit);
+					//Note: weight doesn't change
+				}
+			} else {
+				newvarids.push_back(*vit);
+				//Note: weight doesn't change
+			}
+		}
+		prodterm->varids(newvarids);
+		prodterm->weight(newweight);
+		return prodterm;
 	}
 	return cpterm;
 }

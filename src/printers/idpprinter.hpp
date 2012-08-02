@@ -799,21 +799,6 @@ public:
 		_printTermsAsBlock = backup;
 	}
 
-	void visit(const CPSumTerm* cpt) {
-		auto backup = _printTermsAsBlock;
-		_printTermsAsBlock = false;
-		Assert(isTheoryOpen());
-		output() << "sum[ ";
-		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
-			printTerm(*vit);
-			if (*vit != cpt->varids().back()) {
-				output() << "; ";
-			}
-		}
-		output() << " ]";
-		_printTermsAsBlock = backup;
-	}
-
 	void visit(const CPWSumTerm* cpt) {
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
@@ -830,6 +815,19 @@ public:
 			}
 		}
 		output() << " ]";
+		_printTermsAsBlock = backup;
+	}
+
+	void visit(const CPWProdTerm* cpt) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
+		Assert(isTheoryOpen());
+		output() << "wprod[ ";
+		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
+			printTerm(*vit);
+			output() << "; ";
+		}
+		output() << cpt->weight() << " ]";
 		_printTermsAsBlock = backup;
 	}
 

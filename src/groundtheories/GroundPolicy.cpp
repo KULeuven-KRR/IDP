@@ -134,19 +134,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 		CPReification* cpr = *it;
 		s << translator->printLit(cpr->_head) << ' ' << cpr->_body->type() << ' ';
 		CPTerm* left = cpr->_body->left();
-		if (isa<CPSumTerm>(*left)) {
-			CPSumTerm* cpt = dynamic_cast<CPSumTerm*>(left);
-			s << "sum[ ";
-			bool begin = true;
-			for (auto vit = cpt->varids().begin(); vit != cpt->varids().end(); ++vit) {
-				if (not begin) {
-					s << "; ";
-				}
-				begin = false;
-				s << translator->printTerm(*vit);
-			}
-			s << " ]";
-		} else if (isa<CPWSumTerm>(*left)) {
+		if (isa<CPWSumTerm>(*left)) {
 			CPWSumTerm* cpt = dynamic_cast<CPWSumTerm*>(left);
 			s << "wsum[ ";
 			bool begin = true;

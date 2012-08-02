@@ -92,10 +92,12 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			break;
 		case STDFUNC::PRODUCT: {
 			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
-			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[_level][0], _subtermminimums[_level][1] }],
-					(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }], (*functable)[ElementTuple {
-							_subtermmaximums[_level][0], _subtermminimums[_level][1] }], (*functable)[ElementTuple { _subtermmaximums[_level][0],
-							_subtermmaximums[_level][1] }] };
+			auto allpossibilities = ElementTuple {
+					(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermminimums[_level][1] }],
+					(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }],
+					(*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermminimums[_level][1] }],
+					(*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermmaximums[_level][1] }]
+			};
 			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			break;
