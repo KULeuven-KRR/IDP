@@ -161,6 +161,7 @@ template<typename OptionsType>
 void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueType value) {
 	if (not isVerbosityOption(type)) {
 		getGlobal()->getOptions()->setValue(type, value);
+		return;
 	}
 	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
