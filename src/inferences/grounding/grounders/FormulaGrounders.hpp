@@ -107,7 +107,7 @@ private:
 	CompType _comp;
 	SIGN _sign;
 	bool _doublenegtseitin;
-	Lit handleDoubleNegation(double boundvalue, SetId setnr) const;
+	Lit handleDoubleNegation(double boundvalue, SetId setnr, CompType comp) const;
 	Lit finishCard(double truevalue, double boundvalue, SetId setnr) const;
 	Lit finishSum(double truevalue, double boundvalue, SetId setnr) const;
 	Lit finishProduct(double truevalue, double boundvalue, SetId setnr) const;

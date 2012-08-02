@@ -306,9 +306,9 @@ AggGrounder::~AggGrounder() {
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
 //TODO:why?
-Lit AggGrounder::handleDoubleNegation(double boundvalue, SetId setnr) const {
+Lit AggGrounder::handleDoubleNegation(double boundvalue, SetId setnr, CompType comp) const {
 	TsType tp = context()._tseitin;
-	Lit tseitin = translator()->translate(boundvalue, negateComp(_comp), _type, setnr, tp);
+	Lit tseitin = translator()->translate(boundvalue, negateComp(comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -399,7 +399,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 		}
 	} else {
 		if (_doublenegtseitin)
-			return handleDoubleNegation(double(leftvalue), setnr);
+			return handleDoubleNegation(double(leftvalue), setnr, _comp);
 		else {
 			Lit tseitin = translator()->translate(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
@@ -484,42 +484,57 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
  */
 Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossvalue, double maxpossvalue, SetId setnr) const {
 	// Check minimum and maximum possible values against the given bound
-	switch (_comp) {
+	auto newcomp = _comp;
+	switch (newcomp) {
 	case CompType::EQ:
+		if(not isInt(newboundvalue)){ // If bound is not an integer, can never be equal
+			return _false;
+		} // Otherwise fall through
 	case CompType::NEQ:
+		if(not isInt(newboundvalue)){ // If bound is not an integer, can never be equal
+			return _true;
+		}
 		if (minpossvalue > boundvalue || maxpossvalue < boundvalue) {
-			return (isPos(_sign) == (_comp == CompType::EQ)) ? _false : _true;
+			return (isPos(_sign) == (newcomp == CompType::EQ)) ? _false : _true;
 		}
 		break;
 	case CompType::GEQ:
 	case CompType::GT:
-		if (compare(boundvalue, _comp, maxpossvalue)) {
+		if(not isInt(newboundvalue)){ // If not integer, take floor and always make it >
+			newboundvalue = floor(newboundvalue);
+			newcomp = CompType::GT;
+		}
+		if (compare(boundvalue, newcomp, maxpossvalue)) {
 			return isPos(_sign) ? _true : _false;
 		}
-		if (compare(boundvalue, negateComp(_comp), minpossvalue)) {
+		if (compare(boundvalue, negateComp(newcomp), minpossvalue)) {
 			return isPos(_sign) ? _false : _true;
 		}
 		break;
 	case CompType::LEQ:
 	case CompType::LT:
-		if (compare(boundvalue, _comp, minpossvalue)) {
+		if(not isInt(newboundvalue)){ // If not integer, take ceil and always make it <
+			newboundvalue = ceil(newboundvalue);
+			newcomp = CompType::LT;
+		}
+		if (compare(boundvalue, newcomp, minpossvalue)) {
 			return isPos(_sign) ? _true : _false;
 		}
-		if (compare(boundvalue, negateComp(_comp), maxpossvalue)) {
+		if (compare(boundvalue, negateComp(newcomp), maxpossvalue)) {
 			return isPos(_sign) ? _false : _true;
 		}
 		break;
 
 	}
 	if (_doublenegtseitin) {
-		return handleDoubleNegation(newboundvalue, setnr);
+		return handleDoubleNegation(newboundvalue, setnr, newcomp);
 	} else {
 		Lit tseitin;
 		TsType tp = context()._tseitin;
 		if (isNeg(_sign)) {
 			tp = invertImplication(tp);
 		}
-		tseitin = translator()->translate(newboundvalue, _comp, _type, setnr, tp);
+		tseitin = translator()->translate(newboundvalue, newcomp, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }
