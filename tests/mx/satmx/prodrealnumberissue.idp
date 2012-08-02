@@ -1,0 +1,15 @@
+procedure getExpectedAModel(){
+        return true
+}
+// NOTE: written because product simplification (dividing bound by already known weights) should handle non-integer results correctly.
+vocabulary V{
+	type X isa int
+	P(X)
+}
+theory T:V{
+	prod{x: P(x): x} = 8.
+}	
+structure S:V{
+	X = {3;4}
+	P<cf> = {3}
+}

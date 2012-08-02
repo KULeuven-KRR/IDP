@@ -1,0 +1,25 @@
+vocabulary V{
+	type Getal isa int
+	type Aantal isa int
+   
+	PriemGetal(Getal)
+	PriemFactor(Getal, Getal,Aantal)
+}
+theory T:V{
+	{
+		!x [Getal]: PriemGetal(x) <- ~ (?y[Getal]: y < x & y > 1 & x % y = 0).
+	}
+	!a x y: PriemFactor(x,y,a) => x>=y & ~PriemGetal(x) & PriemGetal(y).
+	!x [Getal]: ~PriemGetal(x) => prod{y a: PriemFactor(x,y,a) :y} = x.
+	
+	// Symmbreker (zou nu een uniek model moeten geven):
+	!a b: ~PriemFactor(a,1,b).
+	!a b c: PriemFactor(a,b,c) => c=1 | PriemFactor(a,b,c-1).
+}	
+structure S:V{
+	Getal = { 1..11 }
+	Aantal = {1..3}
+}
+procedure expectedNbOfModels(){
+	return 1
+}
