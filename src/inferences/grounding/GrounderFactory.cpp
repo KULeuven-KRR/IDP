@@ -1273,7 +1273,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating generator for truthtype" << toString(generatortype) << "for subformula" << subformula << toString(subformula);
+		clog << "Creating generator for truthtype" << toString(generatortype) << "for subformula " <<  toString(subformula);
 		pushtab();
 		clog << nt();
 	}
@@ -1286,6 +1286,11 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	auto result = createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "The result is:" << toString(result);
+		if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
+			result->begin();
+			clog << nt();
+			clog << (result->isAtEnd() ? "!! generator has no first" : "generator has a first element");
+		}
 		poptab();
 		clog << nt();
 	}
@@ -1294,7 +1299,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating Checker for truthtype" << toString(checkertype) << "for subformula" << subformula << toString(subformula);
+		clog << "Creating Checker for truthtype" << toString(checkertype) << "for subformula " <<  toString(subformula);
 		pushtab();
 		clog << nt();
 	}
