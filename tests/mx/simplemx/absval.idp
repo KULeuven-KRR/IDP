@@ -1,0 +1,14 @@
+vocabulary V{
+    type Pos isa int
+    OnePos:Pos
+}
+
+theory T:V{
+    abs(1-OnePos)~=abs(1-OnePos).
+}
+structure S:V{
+    Pos = {1..5}
+}
+procedure getExpectedNbOfModels() {
+  return 0
+}
