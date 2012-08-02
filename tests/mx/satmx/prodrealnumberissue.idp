@@ -11,5 +11,5 @@ theory T:V{
 }	
 structure S:V{
 	X = {3;4}
-	P<cf> = {3}
+	P<ct> = {3}
 }
