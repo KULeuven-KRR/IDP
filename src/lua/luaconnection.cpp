@@ -320,10 +320,19 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		(*ptr) = arg._value._options;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
-		if (_luaoptions.find(arg._value._options) != _luaoptions.cend()) {
-			++_luaoptions[arg._value._options];
+		auto options = arg._value._options;
+		if (_luaoptions.find(options) != _luaoptions.cend()) {
+			++_luaoptions[options];
 		} else {
-			_luaoptions[arg._value._options] = 1;
+			_luaoptions[options] = 1;
+		}
+		if (not options->isVerbosityBlock()) {
+			auto options2 = arg._value._options->getValue(OptionType::VERBOSITY);
+			if (_luaoptions.find(options2) != _luaoptions.cend()) {
+				++_luaoptions[options2];
+			} else {
+				_luaoptions[options2] = 1;
+			}
 		}
 		result = 1;
 		break;
@@ -715,6 +724,32 @@ int garbageCollect(lua_State* L) {
 		if ((it->second) == 0) {
 			list.erase(t);
 			delete (t);
+		}
+	}
+	return 0;
+}
+
+template<>
+int garbageCollect<Options*>(lua_State* L) {
+	auto o = *(Options**) lua_touserdata(L, 1);
+	auto& list = get<Options*>();
+	auto it = list.find(o);
+	if (it != list.cend()) {
+		--(it->second);
+		if ((it->second) == 0) {
+			list.erase(o);
+			delete (o);
+		}
+	}
+	if (not o->isVerbosityBlock()) {
+		auto o2 = o->getValue(OptionType::VERBOSITY);
+		auto it2 = list.find(o2);
+		if (it2 != list.cend()) {
+			--(it2->second);
+			if ((it2->second) == 0) {
+				list.erase(o2);
+				delete (o2);
+			}
 		}
 	}
 	return 0;

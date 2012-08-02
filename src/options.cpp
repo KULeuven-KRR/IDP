@@ -125,21 +125,22 @@ std::string str(Format choice) {
 	}
 }
 
-Options::Options(){
+Options::Options():_isVerbosity(false) {
 	Options(false);
 }
 // TODO add descriptions to options
-Options::Options(bool verboseOptions) {
+Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
+
 	std::set<bool> boolvalues { true, false };
 	if (verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, 6, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, 2, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, 10, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, 4, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, 3, 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, 1, 0, _option2name, PrintBehaviour::PRINT);
 	} else {
@@ -186,9 +187,9 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	if (options.size() <= (unsigned int) type) {
 		options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
-		option2name[type] = name;
 	}
 	options[type] = newoption;
+	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>
@@ -201,10 +202,9 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	if (options.size() <= (unsigned int) type) {
 		options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
-		option2name[type] = name;
 	}
 	options[type] = newoption;
-
+	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>
@@ -356,7 +356,7 @@ ostream& Options::put(ostream& output) const {
 }
 
 template<>
-bool isVerbosityOption<IntType>(IntType t){
+bool isVerbosityOption<IntType>(IntType t) {
 	switch (t) {
 	case VERBOSE_CREATE_GROUNDERS:
 	case VERBOSE_CREATE_PROPAGATORS:

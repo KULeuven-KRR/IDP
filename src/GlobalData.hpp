@@ -157,9 +157,12 @@ typename OptionTypeTraits<OptionsType>::ValueType getOption(OptionsType type) {
 	return getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->getValue(type);
 }
 
-template<typename OptionType>
-void setOption(OptionType type, typename OptionTypeTraits<OptionType>::ValueType value) {
-	return getGlobal()->getOptions()->setValue(type, value);
+template<typename OptionsType>
+void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueType value) {
+	if (not isVerbosityOption(type)) {
+		getGlobal()->getOptions()->setValue(type, value);
+	}
+	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
 
 // TODO improve check by bool flag!

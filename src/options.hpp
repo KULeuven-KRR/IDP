@@ -203,6 +203,9 @@ protected:
 			std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
+		if (_options.size() == 16) {
+			throw notyetimplemented("deleting verbosity");
+		}
 		for (auto i = _options.cbegin(); i != _options.cend(); ++i) {
 			delete (*i);
 		}
@@ -215,7 +218,7 @@ public:
 		return _options.at(_name2type.at(name))->getValue();
 	}
 	ValueType getValue(EnumType option) const {
-		Assert((int)option<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)option<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		return _options.at(option)->getValue();
 	}
 	void setStrValue(const std::string& name, const ValueType& value) {
@@ -224,7 +227,7 @@ public:
 		setValue(_name2type.at(name), value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
-		Assert((int)type<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)type<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		_options.at(type)->setValue(value);
 	}
 	bool isAllowedValue(const std::string& name, const ValueType& value) const {
@@ -312,8 +315,9 @@ struct OptionTypeTraits<StringType> {
  * Class to represent a block of options
  */
 class Options: public IntPol, public BoolPol, public DoublePol, public StringPol, public OptionPol {
-protected:
+private:
 	std::vector<std::string> _option2name;
+	bool _isVerbosity;
 
 public:
 	Options();
@@ -341,7 +345,9 @@ public:
 	void setValue(EnumType type, const ValueType& value) {
 		OptionPolicy<EnumType, ValueType>::setValue(type, value);
 	}
-
+	bool isVerbosityBlock(){
+		return _isVerbosity;
+	}
 	void copyValues(Options*);
 
 	std::string printAllowedValues(const std::string& option) const;
