@@ -24,7 +24,7 @@ LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 
 void LuaTraceMonitor::setSolver(PCSolver* solver) {
 	cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
-	cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &LuaTraceMonitor::propagate);
+	cb::Callback2<void, MinisatID::Lit, int> callbackprop(this, &LuaTraceMonitor::propagate);
 	auto solvermonitor_ = new SearchMonitor();
 	solvermonitor_->setBacktrackCB(callbackback);
 	solvermonitor_->setPropagateCB(callbackprop);
@@ -44,7 +44,7 @@ void LuaTraceMonitor::backtrack(int dl) {
 	lua_pop(_state, 1);
 }
 
-void LuaTraceMonitor::propagate(MinisatID::Literal lit, int dl) {
+void LuaTraceMonitor::propagate(MinisatID::Lit lit, int dl) {
 	lua_getglobal(_state, "table");
 	lua_getfield(_state, -1, "insert");
 	lua_getfield(_state, LUA_REGISTRYINDEX, _registryindex->c_str());

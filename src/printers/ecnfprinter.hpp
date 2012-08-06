@@ -112,7 +112,7 @@ public:
 
 	void visit(const GroundClause& g) {
 		Assert(isTheoryOpen());
-		printer->add(MinisatID::Disjunction(createList(g)));
+		printer->add(MinisatID::Disjunction(getDefConstrID(), createList(g)));
 	}
 
 	template<typename Visitor, typename List>
@@ -184,7 +184,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		printer->add(MinisatID::Rule(createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr.id));
+		printer->add(MinisatID::Rule(getDefConstrID(), createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr.id));
 	}
 
 	void visit(const AggGroundRule* a) {
@@ -219,9 +219,9 @@ public:
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);
-				printer->add(MinisatID::CPBinaryRelVar(createAtom(cpr->_head), term->varid().id, convert(comp), right._varid.id));
+				printer->add(MinisatID::CPBinaryRelVar(getDefConstrID(), createAtom(cpr->_head), convert(term->varid()), convert(comp), convert(right._varid)));
 			} else { // CPBinaryRel
-				printer->add(MinisatID::CPBinaryRel(createAtom(cpr->_head), term->varid().id, convert(comp), createWeight(right._bound)));
+				printer->add(MinisatID::CPBinaryRel(getDefConstrID(), createAtom(cpr->_head), convert(term->varid()), convert(comp), createWeight(right._bound)));
 			}
 		} else if (isa<CPSumTerm>(*left)) {
 			CPSumTerm* term = dynamic_cast<CPSumTerm*>(left);
@@ -266,11 +266,11 @@ private:
 		for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
 			w.push_back(createWeight(*i));
 		}
-		std::vector<uint> vars;
+		std::vector<MinisatID::VarID> vars;
 		for (auto i = varids.cbegin(); i < varids.cend(); ++i) {
-			vars.push_back(i->id);
+			vars.push_back(convert(*i));
 		}
-		printer->add(MinisatID::CPSumWeighted(createAtom(head), vars, w, convert(rel), createWeight(bound)));
+		printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createAtom(head), vars, w, convert(rel), createWeight(bound)));
 	}
 
 	void printAggregate(AggFunction aggtype, TsType arrow, DefId defnr, bool geqthanbound, int head, SetId setnr, double bound) {
@@ -299,7 +299,7 @@ private:
 			newsem = MinisatID::AggSem::DEF;
 			break;
 		}
-		printer->add(MinisatID::Aggregate(createLiteral(newhead), setnr.id, createWeight(newbound), convert(aggtype), newsign, newsem, defnr.id));
+		printer->add(MinisatID::Aggregate(getDefConstrID(), createLiteral(newhead), setnr.id, createWeight(newbound), convert(aggtype), newsign, newsem, defnr.id));
 	}
 
 	void printCPVariables(std::vector<VarId> varids) {
@@ -317,7 +317,7 @@ private:
 			if (domain->isRange()) {
 				int minvalue = domain->first()->value()._int;
 				int maxvalue = domain->last()->value()._int;
-				printer->add(MinisatID::IntVarRange(varid.id, minvalue, maxvalue));
+				printer->add(MinisatID::IntVarRange(getDefConstrID(), convert(varid), minvalue, maxvalue));
 			} else {
 				std::vector<MinisatID::Weight> valuelist;
 				for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
@@ -325,7 +325,7 @@ private:
 					Assert((*it)->type()==DomainElementType::DET_INT);
 					valuelist.push_back(createWeight((*it)->value()._int));
 				}
-				printer->add(MinisatID::IntVarEnum(varid.id, valuelist));
+				printer->add(MinisatID::IntVarEnum(getDefConstrID(), convert(varid), valuelist));
 			}
 		}
 	}

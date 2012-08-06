@@ -31,7 +31,7 @@ public:
 	void setSolver(PCSolver* solver);
 
 	void backtrack(int dl);
-	void propagate(MinisatID::Literal lit, int dl);
+	void propagate(MinisatID::Lit lit, int dl);
 
 	std::string* index() const {
 		return _registryindex;

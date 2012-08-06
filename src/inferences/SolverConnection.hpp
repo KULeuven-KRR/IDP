@@ -19,10 +19,12 @@ class GroundTranslator;
 class TraceMonitor;
 
 namespace SolverConnection {
+	uint	getDefConstrID();
+	MinisatID::VarID convert(VarId varid);
 	MinisatID::AggType convert(AggFunction agg);
 	MinisatID::EqType convert(CompType rel);
 	MinisatID::Atom createAtom(const int lit);
-	MinisatID::Literal createLiteral(const int lit);
+	MinisatID::Lit createLiteral(const int lit);
 	MinisatID::literallist createList(const litlist& origlist);
 	MinisatID::Weight createWeight(double weight);
 

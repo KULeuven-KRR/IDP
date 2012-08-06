@@ -16,11 +16,11 @@
 
 class PropagateMonitor: public TraceMonitor {
 private:
-	std::vector<MinisatID::Literal> _partialmodel;
+	std::vector<MinisatID::Lit> _partialmodel;
 	SearchMonitor* _solvermonitor;
 public:
 	PropagateMonitor() {
-		cb::Callback2<void, MinisatID::Literal, int> callbackprop(this, &PropagateMonitor::propagate);
+		cb::Callback2<void, MinisatID::Lit, int> callbackprop(this, &PropagateMonitor::propagate);
 		_solvermonitor = new SearchMonitor();
 		_solvermonitor->setPropagateCB(callbackprop);
 	}
@@ -31,14 +31,14 @@ public:
 	void backtrack(int) {
 		// TODO implement (currently only used to do unit propagation!)
 	}
-	void propagate(MinisatID::Literal lit, int) {
+	void propagate(MinisatID::Lit lit, int) {
 		_partialmodel.push_back(lit);
 	}
 
 	virtual void setSolver(PCSolver* solver) {
 		solver->addMonitor(_solvermonitor);
 	}
-	const std::vector<MinisatID::Literal>& model() {
+	const std::vector<MinisatID::Lit>& model() {
 		return _partialmodel;
 	}
 	void setTranslator(GroundTranslator*) {

@@ -21,7 +21,7 @@ public:
 	virtual ~TraceMonitor() {
 	}
 	virtual void backtrack(int dl) = 0;
-	virtual void propagate(MinisatID::Literal lit, int dl) = 0;
+	virtual void propagate(MinisatID::Lit lit, int dl) = 0;
 	virtual void setTranslator(GroundTranslator* translator) = 0;
 
 	//NOTE: should be called BEFORE the grounding

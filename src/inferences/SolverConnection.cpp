@@ -19,6 +19,14 @@ using namespace std;
 
 namespace SolverConnection {
 
+uint getDefConstrID(){
+	return 1;
+}
+
+MinisatID::VarID convert(VarId varid){
+	return {varid.id};
+}
+
 MinisatID::AggType convert(AggFunction agg) {
 	MinisatID::AggType type = MinisatID::AggType::CARD;
 	switch (agg) {
@@ -64,7 +72,7 @@ MinisatID::Atom createAtom(const int lit) {
 	return MinisatID::Atom(abs(lit));
 }
 
-MinisatID::Literal createLiteral(const int lit) {
+MinisatID::Lit createLiteral(const int lit) {
 	return MinisatID::mkLit(abs(lit), lit < 0);
 }
 
@@ -178,9 +186,9 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 	}
 }
 
-VarId getVar(int id){
+VarId getVar(MinisatID::VarID id){
 	VarId var;
-	var.id = id;
+	var.id = id.id;
 	return var;
 }
 
