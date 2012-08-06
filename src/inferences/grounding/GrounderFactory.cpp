@@ -413,9 +413,9 @@ bool isAggTerm(const Term* term) {
 
 void GrounderFactory::internalVisit(const PredForm* pf){
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) && not recursive(pf));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) && not recursive(pf), _context._funccontext);
+	transpf = FormulaUtils::graphFuncsAndAggs(transpf, _structure, getOption(BoolType::CPSUPPORT) and not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -900,9 +900,7 @@ AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure
 			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
 			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
 //			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
-//			auto newft = new FuncTerm(product, // newft = -1 * bound
-//					{ clonedaf->getBound()->clone(), new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()) },
-//					TermParseInfo());
+//			auto newft = new FuncTerm(product, { clonedaf->getBound()->clone(), new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()) }, TermParseInfo());
 			auto newset = af->getAggTerm()->set()->clone();
 			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
 			auto temp = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),

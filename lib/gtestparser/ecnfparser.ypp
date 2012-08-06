@@ -31,9 +31,9 @@ void yyerror(const char* msg);
 %%
 
 init	: /**/
-		| init TEXT { clog <<*$2 <<"\n"; delete($2); }
-		| init FAIL { clog <<"Failed: " <<*$2 <<"\n"; delete($2); }
-		| init SUCCESS { /*cerr <<"Success: " <<*$2 <<"\n";*/ delete($2); }
+		| init TEXT { clog << *$2 << "\n"; delete($2); }
+		| init FAIL { clog << "Failed: " << *$2 << "\n"; delete($2); }
+		| init SUCCESS { /*cerr << "Success: " << *$2 << "\n";*/ delete($2); }
 		;
 
 %%
@@ -43,9 +43,10 @@ int yywrap() {
 	return 1;
 }
 
-void yyinit(){ }
+void yyinit() {
+}
 
-void yydestroy(){
+void yydestroy() {
 }
 
 void yyerror(const char*) {

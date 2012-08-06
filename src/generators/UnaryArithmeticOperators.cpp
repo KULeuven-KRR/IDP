@@ -96,7 +96,7 @@ bool AbsValueChecker::checkOperation() {
 		Assert(_out->get()->type() == DET_DOUBLE);
 		outval = _out->get()->value()._double;
 	}
-	return (outval > 0 && (inval == outval || inval == -outval)) && _universe.contains( { _in->get(), _out->get() });
+	return (outval >= 0 && (inval == outval || inval == -outval)) && _universe.contains( { _in->get(), _out->get() });
 }
 
 InverseAbsValueGenerator::InverseAbsValueGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* dom, NumType outputShouldBeInt)

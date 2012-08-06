@@ -18,23 +18,24 @@ stringstream error;
 %s resultblock
 
 INT				[0-9]+
+COLOR			\x1b\[[0-9;]*m
 
 %%
 
-<*>"[ RUN      ] "		{ BEGIN(block); error <<ss.str(); ss.str("");}
-<*>"[EXECUTABLE] "[^\n]*	{ results <<yytext <<"\n";}
-<*>"[  PASSED  ] "		{ BEGIN(resultblock); error <<ss.str(); ss.str(""); results <<"Passed "; }
-<*>"  YOU HAVE "{INT}" DISABLED TESTS" { results <<yytext <<"\n"; }
-<*>"[==========] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
-<*>"[----------] "		{ BEGIN(INITIAL); error <<ss.str(); ss.str(""); }
-<block>"[  FAILED  ] "	{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return FAIL; }
-<block>"[       OK ] " 	{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return SUCCESS; }
-<block>[^\[\n]*			{ ss <<yytext; }
-<block>\n				{ ss <<"\n"; }
-<resultblock>"[  FAILED  ] "	{ results <<yytext; }
-<resultblock>"\n\n"		{ BEGIN(INITIAL); results <<ss.str() <<"\n\n"; ss.str(""); }
-<resultblock>"\n"		{ results <<ss.str() << "\n"; ss.str("");}
-<resultblock>[^\[\n]*	{ ss <<yytext; }
-<*>[^\[\n]*				{  }
-<*>.					{}
-<INITIAL>\n				{  }
+<*>{COLOR}?"[EXECUTABLE] "{COLOR}?[^\n]*					{ results << yytext << "\n"; }
+<*>{COLOR}?"[ RUN      ] "{COLOR}?							{ BEGIN(block); error << ss.str(); ss.str(""); }
+<*>{COLOR}?"[  PASSED  ] "{COLOR}?							{ BEGIN(resultblock); error << ss.str(); ss.str(""); results << "Passed "; }
+<*>{COLOR}?"  YOU HAVE "{INT}" DISABLED TESTS"(\n)*{COLOR}?	{ results << yytext; }
+<*>{COLOR}?"[==========] "{COLOR}?							{ BEGIN(INITIAL); error << ss.str(); ss.str(""); }
+<*>{COLOR}?"[----------] "{COLOR}?							{ BEGIN(INITIAL); error << ss.str(); ss.str(""); }
+<block>.													{ ss << yytext; }
+<block>\n													{ ss << "\n"; }
+<block>{COLOR}?"[  FAILED  ] "{COLOR}?						{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return FAIL; }
+<block>{COLOR}?"[       OK ] "{COLOR}?						{ BEGIN(INITIAL); yylval.str = new string(ss.str()); ss.str(""); return SUCCESS; }
+<resultblock>{COLOR}?"[  FAILED  ] "{COLOR}?				{ results << yytext; }
+<resultblock>.												{ ss << yytext; }
+<resultblock>\n												{ results << ss.str() << "\n"; ss.str(""); }
+<resultblock>\n\n											{ BEGIN(INITIAL); results << ss.str() << "\n"; ss.str(""); }
+<*>{COLOR}													/* ignore */
+<*>.														/* ignore */
+<INITIAL>\n													/* ignore */

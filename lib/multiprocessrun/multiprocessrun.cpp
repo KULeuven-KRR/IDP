@@ -36,14 +36,14 @@ void run(const char* exec) {
 	auto file = popen(ss.str().c_str(), "r");
 
 	auto output = new stringstream();
-	*output <<"[EXECUTABLE]  " << exec <<"\n";
+	*output << "[EXECUTABLE]  " << exec << "\n";
 	std::string cur_string = "";
 	const int SIZEBUF = 1234;
 	char buf[SIZEBUF];
-	while (fgets(buf, sizeof(buf), file)) {
+	while (fgets(buf, sizeof(buf), file) != NULL) {
 		cur_string += buf;
 	}
-	*output << cur_string.substr(0, cur_string.size() - 1);
+	*output << cur_string; //.substr(0, cur_string.size() - 1); //FIXME: Why substring ?
 
 	pclose(file);
 

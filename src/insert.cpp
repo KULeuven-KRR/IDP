@@ -1000,7 +1000,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 
 	// Add the sort to the current vocabulary
 	if (_currvocabulary->contains(s)) {
-		error("An identical sort already exists" + name);
+		error("An identical sort already exists " + name);
 	} else {
 		_currvocabulary->add(s);
 	}
@@ -1090,7 +1090,7 @@ Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYL
 		auto oldp = _currvocabulary->pred(p->name());
 		auto existsp = oldp->resolve(sorts);
 		if (existsp != NULL) {
-			error("An identical predicate already exists" + name);
+			error("An identical predicate already exists " + name);
 		}
 	}
 	_currvocabulary->add(p);
@@ -1120,7 +1120,7 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 		v.push_back(outsort);
 		auto existsf = oldf->resolve(v);
 		if (existsf != NULL) {
-			error("An identical function already exists" + name);
+			error("An identical function already exists " + name);
 		}
 	}
 	_currvocabulary->add(f);
