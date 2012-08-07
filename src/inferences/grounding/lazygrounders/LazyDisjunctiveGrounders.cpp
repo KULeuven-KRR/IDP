@@ -90,6 +90,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 
 		increment(instance);
 
+
 		auto groundedlit = getReification(formula, getTseitinType());
 		if (decidesFormula(groundedlit)) {
 			decidedformula = true;
@@ -227,9 +228,10 @@ Grounder* LazyDisjGrounder::getLazySubGrounder(LazyInstantiation* instance) cons
 }
 
 void LazyExistsGrounder::increment(LazyInstantiation* instance) const {
-	do {
-		instance->generator->operator ++();
-	} while (_checker->check() && not instance->generator->isAtEnd());
+	instance->generator->operator ++();
+	if(_checker->check()){
+		/*TODO: do something special, stop grounding: formula is decided!*/
+	}
 }
 void LazyDisjGrounder::increment(LazyInstantiation* instance) const {
 	instance->index++;
