@@ -82,22 +82,41 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			_minimum = (*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }];
 			_maximum = (*functable)[ElementTuple { _subtermmaximums[_level][0], _subtermminimums[_level][1] }];
 			break;
-		case STDFUNC::ABS:
+		case STDFUNC::ABS: {
 			_minimum = createDomElem(0);
-			_maximum = std::max((*functable)[_subtermminimums[_level]], (*functable)[_subtermmaximums[_level]]);
+			auto absmin = (*functable)[_subtermminimums[_level]];
+			auto absmax = (*functable)[_subtermminimums[_level]];
+			_maximum = *absmin > *absmax? absmin:absmax;
+			//IMPORTANT! do not use std::max on the pointers, else pointer arithmetic will be used instead of the domainelement compare
 			break;
+		}
 		case STDFUNC::UNARYMINUS:
 			_minimum = (*functable)[_subtermmaximums[_level]];
 			_maximum = (*functable)[_subtermminimums[_level]];
 			break;
 		case STDFUNC::PRODUCT: {
 			//It is possible that one of the elements is negative. Hence, we should consider all possible combinations.
-			auto allpossibilities = ElementTuple { (*functable)[ElementTuple { _subtermminimums[_level][0], _subtermminimums[_level][1] }],
-					(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }], (*functable)[ElementTuple {
-							_subtermmaximums[_level][0], _subtermminimums[_level][1] }], (*functable)[ElementTuple { _subtermmaximums[_level][0],
+			auto allpossibilities = std::vector<DomainElement> { *(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermminimums[_level][1] }],
+					*(*functable)[ElementTuple { _subtermminimums[_level][0], _subtermmaximums[_level][1] }], *(*functable)[ElementTuple {
+							_subtermmaximums[_level][0], _subtermminimums[_level][1] }], *(*functable)[ElementTuple { _subtermmaximums[_level][0],
 							_subtermmaximums[_level][1] }] };
-			_minimum = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
-			_maximum = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
+			//IMPORTANT! do not use std::min_element and std::max_element on the pointers, else pointer arithmetic will be used instead of the domainelement compare
+			auto minimumDE = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
+			auto maximumDE = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
+			if(minimumDE.type() == DomainElementType::DET_INT){
+				_minimum = createDomElem(minimumDE.value()._int);
+			} else {
+				Assert(minimumDE.type() == DomainElementType::DET_DOUBLE)
+				_minimum = createDomElem(minimumDE.value()._double);
+			}
+			if (maximumDE.type() == DomainElementType::DET_INT) {
+				_maximum = createDomElem(maximumDE.value()._int);
+			} else {
+				Assert(maximumDE.type() == DomainElementType::DET_DOUBLE)
+				_maximum = createDomElem(maximumDE.value()._double);
+
+			}
+			//THIS IS A HACK: we cannot use pointer arithmetic, but we need the original pointers, thus we request the domainelement with the right vaule again!
 			break;
 		}
 		case STDFUNC::MAXELEM: {
