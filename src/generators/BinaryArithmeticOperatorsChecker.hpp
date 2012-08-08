@@ -32,7 +32,7 @@ private:
 	const DomElemContainer* _in1;
 	const DomElemContainer* _in2;
 	const DomElemContainer* _in3;
-	const Universe _universe;
+	Universe _universe;
 	bool alreadyrun;
 protected:
 	virtual ARITHRESULT doCalculation(double left, double right, double& result) const = 0;
