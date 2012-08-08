@@ -105,7 +105,6 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			                *(*functable)[ElementTuple { min0, max1 }],
 			                *(*functable)[ElementTuple { max0, min1 }],
 			                *(*functable)[ElementTuple { max0, max1 }] };
-			//IMPORTANT! do not use std::min_element and std::max_element on the pointers, else pointer arithmetic will be used instead of the domainelement compare
 			auto minimumDE = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			auto maximumDE = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
 			if(minimumDE.type() == DomainElementType::DET_INT){
