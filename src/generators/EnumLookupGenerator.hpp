@@ -23,10 +23,10 @@ class EnumLookupGenerator: public InstGenerator {
 private:
 	LookupTable _table;
 	LookupTable::const_iterator _currpos;
-	std::vector<std::vector<const DomainElement*> >::const_iterator _iter;
+	std::vector<ElementTuple>::const_iterator _iter;
 	std::vector<const DomElemContainer*> _invars, _outvars;
 	bool _reset;
-	mutable std::vector<const DomainElement*> _currargs;
+	mutable ElementTuple _currargs;
 public:
 	EnumLookupGenerator(const LookupTable& t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out);
 

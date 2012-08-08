@@ -40,6 +40,8 @@ public:
 	bool alreadySeen();
 	void next();
 	virtual void put(std::ostream& stream) const;
+
+	virtual void setVarsAgain();
 };
 
 #endif /* UNIONQUANTKERNELGENERATOR_HPP_ */

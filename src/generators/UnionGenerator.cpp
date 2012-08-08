@@ -14,9 +14,26 @@ UnionGenerator::UnionGenerator(std::vector<InstGenerator*>& generators, std::vec
 		: _generators(generators), _checkers(checkers), _reset(false), _current(0) {
 }
 
-// FIXME reimplemnt clone
 UnionGenerator* UnionGenerator::clone() const {
-	throw notyetimplemented("Cloning UnionGenerator.");
+	auto t = new UnionGenerator(*this);
+	for(auto gen:_generators){
+		t->_generators.push_back(gen->clone());
+	}
+	for(auto check:_checkers){
+		t->_checkers.push_back(check->clone());
+	}
+	t->_reset = _reset;
+	t->_current = _current;
+	return t;
+}
+
+void UnionGenerator::setVarsAgain(){
+	for(auto gen: _generators){
+		gen->setVarsAgain();
+	}
+	for(auto check: _checkers){
+		check->setVarsAgain();
+	}
 }
 
 void UnionGenerator::reset() {
