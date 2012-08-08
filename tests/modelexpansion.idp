@@ -79,6 +79,7 @@ local k  = 0
 		k = k +1
 		if( k <5 and #modelexpand(T, v)==0) then
 			io.stderr:write("Found an invalid solution.\n")
+			io.stderr:write(tostring(v))
 			return 0
 		end
 	end
