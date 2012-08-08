@@ -263,6 +263,7 @@ void ProdTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& r
 			int rightmax = rightdomain->last()->value()._int;
 
 			auto allposs = { (leftmin * rightmin), (leftmin * rightmax), (leftmax * rightmin), (leftmax * rightmax) };
+			// FIXME incorrect (pointer comparison)
 			int min = *(std::min_element(allposs.begin(),allposs.end()));
 			int max = *(std::max_element(allposs.begin(),allposs.end()));
 
@@ -422,6 +423,93 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	}
 }
 
+Weight getNeutralElement(AggFunction type){
+	switch(type){
+	case AggFunction::CARD:
+		return 0;
+	case AggFunction::SUM:
+		return 0;
+	case AggFunction::PROD:
+		return 1;
+	case AggFunction::MIN:
+		throw notyetimplemented("Neutral element for minimum aggregate function");
+	case AggFunction::MAX:
+		throw notyetimplemented("Neutral element for maximum aggregate function");
+	}
+}
+
+varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms){
+	// Rewrite (l,t) :
+	//  - Introduce new constant t'.
+	//  - Add two formulas: l => t' = t and -l => t' = 0
+	//  - return (true,t')
+	varidlist varids;
+
+	auto translator = grounding->translator();
+
+	Assert(conditions.size()==cpterms.size());
+	for(uint i=0; i<conditions.size(); ++i){
+		if(conditions[i]==_true){
+			auto term = cpterms[i];
+			Assert(term.isVariable);
+			varids.push_back(term._varid);
+			continue;
+		}else if(conditions[i]==_false){
+			continue;
+		}
+		const auto& cpterm = cpterms[i];
+		// Compute domain for term t' = dom(t) U {0}
+		SortTable* domain = NULL;
+		if(cpterm.isVariable){
+			auto vardom = translator->domain(cpterm._varid);
+			Assert(vardom->approxFinite());
+			if (vardom->isRange()) {
+				Assert(vardom->first()->type() == DomainElementType::DET_INT);
+				Assert(vardom->last()->type() == DomainElementType::DET_INT);
+				int min = vardom->first()->value()._int;
+				int max = vardom->last()->value()._int;
+				domain = TableUtils::createSortTable(min, max);
+			} else {
+				domain = TableUtils::createSortTable();
+				for (auto it = vardom->sortBegin(); not it.isAtEnd(); ++it) {
+					Assert((*it)->type() == DomainElementType::DET_INT);
+					domain->add(*it);
+				}
+			}
+		}else{
+			domain = TableUtils::createSortTable();
+			domain->add(cpterm._domelement);
+		}
+		domain->add(createDomElem(getNeutralElement(type)));
+
+		auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()), domain);
+		sort->addParent(get(STDSORT::INTSORT));
+		translator->vocabulary()->add(sort);
+
+		// Term t' is a new constant with the computed domain
+		auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
+		translator->vocabulary()->add(constant);
+
+		auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
+
+		// Add formulas to the grounding
+		CPBound b(0);
+		if(cpterm.isVariable){
+			b = CPBound(cpterm._varid);
+		}else{
+			b = CPBound(cpterm._domelement->value()._int);
+		}
+		auto bl1 = translator->translate(new CPVarTerm(varid), CompType::EQ, b, TsType::EQ);
+		auto bl2 = translator->translate(new CPVarTerm(varid), CompType::EQ, getNeutralElement(type), TsType::EQ);
+		grounding->add({-conditions[i], bl1});
+		grounding->add({conditions[i], bl2});
+
+		varids.push_back(varid);
+	}
+
+	return varids;
+}
+
 GroundTerm AggTermGrounder::run() const {
 	// Note: This grounder should only be used when the aggregate can be computed now, or when the aggregate is eligible for CPsupport!
 	if (verbosity() > 2) {
@@ -431,14 +519,12 @@ GroundTerm AggTermGrounder::run() const {
 	auto setnr = _setgrounder->runAndRewriteUnknowns();
 	auto tsset = _translator->groundset(setnr);
 
-	auto value = applyAgg(_type, tsset.trueweights());
-	auto domelem = createDomElem(value);
+	auto trueweight = applyAgg(_type, tsset.trueweights());
 
-	if (not tsset.varids().empty()) {
-		auto varids = tsset.varids();
-		if (not tsset.trueweights().empty()) {
-			// Otherwise value is the neutral element of the aggregate function and can be ignored here.
-			varids.push_back(_translator->translateTerm(domelem));
+	if (not tsset.cpvars().empty()) {
+		auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
+		if (trueweight!=getNeutralElement(_type)) {
+			varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
 		}
 		auto cpaggterm = createCPAggTerm(_type, varids);
 		auto varid = _translator->translateTerm(cpaggterm, getDomain());
@@ -450,8 +536,8 @@ GroundTerm AggTermGrounder::run() const {
 	} else {
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << toString(domelem) << "\n";
+			clog << tabs() << "Result = " << toString(trueweight) << "\n";
 		}
-		return GroundTerm(domelem);
+		return GroundTerm(createDomElem(trueweight));
 	}
 }

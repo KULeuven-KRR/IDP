@@ -53,7 +53,7 @@ void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const {
 	auto setid = _setgrounder->run();
 	auto tsset = getTranslator()->groundset(setid);
 
-	Assert(tsset.varids().empty());
+	Assert(tsset.cpvars().empty());
 	getGrounding()->addOptimization(_type, setid);
 
 	if (verbosity() > 2) {

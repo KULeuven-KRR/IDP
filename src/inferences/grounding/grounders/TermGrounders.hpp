@@ -152,13 +152,18 @@ class SetGrounder;
 
 CPTerm* createCPAggTerm(const AggFunction&, const varidlist&);
 
+Weight getNeutralElement(AggFunction type);
+varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms);
+
 class AggTermGrounder: public TermGrounder {
 private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
+	AbstractGroundTheory* grounding;
+
 public:
-	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
-			: TermGrounder(dom, gt), _type(tp), _setgrounder(gr) {
+	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
+			: TermGrounder(dom, gt), _type(tp), _setgrounder(gr), grounding(grounding) {
 	}
 	GroundTerm run() const;
 };

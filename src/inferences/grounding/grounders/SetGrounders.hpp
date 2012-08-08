@@ -12,6 +12,7 @@
 #define SETGROUNDERS_HPP_
 
 #include "inferences/grounding/GroundUtils.hpp"
+#include "theory/ecnf.hpp"
 
 class GroundTranslator;
 class InstGenerator;
@@ -61,7 +62,7 @@ public:
 	SetId runAndRewriteUnknowns() const;
 protected:
 	void run(litlist& literals, weightlist& weights, weightlist& trueweights) const;
-	void run(weightlist& trueweights, varidlist& varids) const;
+	void run(weightlist& trueweights, litlist& conditions, termlist& cpterms) const;
 	friend class EnumSetGrounder;
 };
 

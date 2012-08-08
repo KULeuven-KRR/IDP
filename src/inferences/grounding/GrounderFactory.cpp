@@ -1064,7 +1064,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	RestoreContext();
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(getGrounding()->translator(), t->function(), domain, getSetGrounder());
+	_termgrounder = new AggTermGrounder(getGrounding(), getGrounding()->translator(), t->function(), domain, getSetGrounder());
 	_termgrounder->setOrig(t, varmapping());
 }
 

@@ -135,7 +135,7 @@ public:
 	VarId translateTerm(CPTerm*, SortTable*);
 	VarId translateTerm(const DomainElement*);
 
-	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const varidlist&);
+	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const termlist&);
 
 	// PROPOSITIONAL ATOMS
 	bool isStored(Lit atom) const {

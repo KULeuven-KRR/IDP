@@ -376,6 +376,8 @@ struct GroundTerm {
 	std::ostream& put(std::ostream&) const;
 };
 
+typedef std::vector<GroundTerm> termlist;
+
 /**
  * Set corresponding to a tseitin.
  */
@@ -384,7 +386,7 @@ private:
 	litlist _setlits; // All literals in the ground set
 	weightlist _litweights; // For each literal a corresponding weight
 	weightlist _trueweights; // The weights corresponding to true literals in the set
-	varidlist _varids; // CP variable ids corresponding to true literals in the set
+	termlist _cpvars; // CP variable ids corresponding to true literals in the set
 public:
 	// Modifiers
 	void setWeight(size_t n, Weight w) {
@@ -406,8 +408,8 @@ public:
 	const weightlist& trueweights() const {
 		return _trueweights;
 	}
-	const varidlist& varids() const {
-		return _varids;
+	const termlist& cpvars() const {
+		return _cpvars;
 	}
 	size_t size() const {
 		return _setlits.size();
