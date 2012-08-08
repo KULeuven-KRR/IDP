@@ -200,7 +200,7 @@ protected:
 		_start = false;
 		return;
 	}
-	virtual void visit(const CPSumTerm*){
+	virtual void visit(const CPWProdTerm*){
 		_start = false;
 		return;
 	}

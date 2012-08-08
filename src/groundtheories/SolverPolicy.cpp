@@ -79,17 +79,27 @@ void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound,
-		MinisatID::EqType rel) {
+void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel) {
 	vector<MinisatID::Weight> w;
 	for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
 		w.push_back(MinisatID::Weight(*i));
 	}
 	vector<MinisatID::VarID> vars;
-	for (auto i=varids.cbegin(); i<varids.cend(); ++i) {
-		vars.push_back(convert(*i));
+	for (auto var:varids) {
+			vars.push_back(convert(var));
 	}
 	MinisatID::CPSumWeighted sentence(getDefConstrID(), head, vars, w, rel, bound);
+	extAdd(getSolver(), sentence);
+}
+
+template<typename Solver>
+void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel) {
+	MinisatID::Weight w = weight;
+	vector<MinisatID::VarID> vars;
+	for (auto var:varids) {
+		vars.push_back(convert(var));
+	}
+	MinisatID::CPProdWeighted sentence(getDefConstrID(), head, vars, w, rel, convert(bound));
 	extAdd(getSolver(), sentence);
 }
 
@@ -129,31 +139,14 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			MinisatID::CPBinaryRel sentence(getDefConstrID(), createAtom(tseitin), convert(term->varid()), comp, right._bound);
 			extAdd(getSolver(), sentence);
 		}
-	} else if (isa<CPSumTerm>(*left)) {
-		auto term = dynamic_cast<CPSumTerm*>(left);
-		polAddCPVariables(term->varids(), _translator);
-		if (right._isvarid) {
-			polAddCPVariable(right._varid, _translator);
-			varidlist varids = term->varids();
-			intweightlist weights(term->varids().size(), 1);
-
-			int bound = 0;
-			varids.push_back(right._varid);
-			weights.push_back(-1);
-
-			polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp);
-		} else {
-			intweightlist weights(term->varids().size(), 1);
-			polAddWeightedSum(createAtom(tseitin), term->varids(), weights, right._bound, comp);
-		}
-	} else {
-		Assert(isa<CPWSumTerm>(*left));
+	} else if (isa<CPWSumTerm>(*left)) {
 		auto term = dynamic_cast<CPWSumTerm*>(left);
 		polAddCPVariables(term->varids(), _translator);
+		//TODO: same as for CPWProdTerms, don't move bound when it is a variable!
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _translator);
-			varidlist varids = term->varids();
-			intweightlist weights = term->weights();
+			auto varids = term->varids();
+			auto weights = term->weights();
 
 			int bound = 0;
 			varids.push_back(right._varid);
@@ -163,6 +156,16 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 		} else {
 			polAddWeightedSum(createAtom(tseitin), term->varids(), term->weights(), right._bound, comp);
 		}
+	} else {
+		Assert(isa<CPWProdTerm>(*left));
+		auto var = right._varid;
+		if(not right._isvarid){
+			var = _translator->translateTerm(createDomElem(right._bound));
+		}
+		auto term = dynamic_cast<CPWProdTerm*>(left);
+		polAddCPVariables(term->varids(), _translator);
+		polAddCPVariables({var}, _translator);
+		polAddWeightedProd(createAtom(tseitin), term->varids(), term->weight(), var, comp);
 	}
 }
 

@@ -26,8 +26,8 @@ IMPLACCEPTBOTH(AggGroundRule, GroundRule)
 IMPLACCEPTBOTH(GroundDefinition, AbstractDefinition)
 
 IMPLACCEPTNONMUTATING(CPVarTerm)
-IMPLACCEPTNONMUTATING(CPSumTerm)
 IMPLACCEPTNONMUTATING(CPWSumTerm)
+IMPLACCEPTNONMUTATING(CPWProdTerm)
 
 IMPLACCEPTNONMUTATING(GroundSet)
 IMPLACCEPTNONMUTATING(GroundAggregate)
@@ -405,27 +405,6 @@ bool CPVarTerm::operator<(const CPTerm& body) const {
 	return false;
 }
 
-bool CPSumTerm::operator==(const CPTerm& body) const {
-	if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	const auto& rhs = dynamic_cast<const CPSumTerm&>(body);
-	return _varids == rhs._varids;
-}
-
-bool CPSumTerm::operator<(const CPTerm& body) const {
-	if (CPTerm::operator<(body)) {
-		return true;
-	} else if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	const auto& rhs = dynamic_cast<const CPSumTerm&>(body);
-	if (_varids < rhs._varids) {
-		return true;
-	}
-	return false;
-}
-
 bool CPWSumTerm::operator==(const CPTerm& body) const {
 	if (not CPTerm::operator==(body)) {
 		return false;
@@ -447,6 +426,32 @@ bool CPWSumTerm::operator<(const CPTerm& body) const {
 		return false;
 	}
 	if (_weights < rhs._weights) {
+		return true;
+	}
+	return false;
+}
+
+bool CPWProdTerm::operator==(const CPTerm& body) const {
+	if (not CPTerm::operator==(body)) {
+		return false;
+	}
+	const auto& rhs = dynamic_cast<const CPWProdTerm&>(body);
+	return _varids == rhs._varids;
+}
+
+bool CPWProdTerm::operator<(const CPTerm& body) const {
+	if (CPTerm::operator<(body)) {
+		return true;
+	} else if (not CPTerm::operator==(body)) {
+		return false;
+	}
+	const auto& rhs = dynamic_cast<const CPWProdTerm&>(body);
+	if (_varids < rhs._varids) {
+		return true;
+	} else if (_varids > rhs._varids) {
+		return false;
+	}
+	if (_weight < rhs._weight) {
 		return true;
 	}
 	return false;

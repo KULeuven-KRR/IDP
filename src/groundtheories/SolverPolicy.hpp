@@ -67,6 +67,7 @@ protected:
 	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
 	void polAdd(Lit head, AggTsBody* body);
 	void polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel);
+	void polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 

@@ -119,6 +119,20 @@ private:
 	void computeDomain(const GroundTerm& left, const GroundTerm& right) const;
 };
 
+class ProdTermGrounder: public TermGrounder {
+protected:
+	FuncTable* _functable;
+	TermGrounder* _lefttermgrounder;
+	TermGrounder* _righttermgrounder;
+public:
+	ProdTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
+			: TermGrounder(dom, tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) {
+	}
+	GroundTerm run() const;
+private:
+	void computeDomain(const GroundTerm& left, const GroundTerm& right) const;
+};
+
 class TermWithFactorGrounder: public TermGrounder {
 protected:
 	FuncTable* _functable;

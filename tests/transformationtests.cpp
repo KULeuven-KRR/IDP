@@ -580,7 +580,6 @@ TEST(DeriveTermBoundsTest,Product) {
 	auto xy = new FuncTerm(func, { xt, yt }, TermParseInfo());
 	auto struc = new Structure("struc", voc, ParseInfo());
 	auto bounds = TermUtils::deriveTermBounds(xy, struc);
-	auto minus2 = domainelement(-2);
 	ASSERT_EQ(DomainElementType::DET_INT, bounds[0]->type());
 	ASSERT_EQ(DomainElementType::DET_INT, bounds[1]->type());
 	ASSERT_EQ(-2, bounds[0]->value()._int);

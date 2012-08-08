@@ -411,7 +411,7 @@ bool isAggTerm(const Term* term) {
 	return term->type() == TermType::AGG;
 }
 
-void GrounderFactory::internalVisit(const PredForm* pf){
+void GrounderFactory::internalVisit(const PredForm* pf) {
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, _structure, _context._funccontext, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
@@ -545,17 +545,17 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 	}*/
 	auto temppf = pf->clone();
-	if(VocabularyUtils::isComparisonPredicate(pf->symbol())){
+	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
 		AggTerm* aggterm = NULL;
 		Term* bound = NULL;
 		if (isAggTerm(pf->subterms()[0])) {
 			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[0]);
 			bound = pf->subterms()[1];
-		}else if(isAggTerm(pf->subterms()[1])) {
+		} else if (isAggTerm(pf->subterms()[1])) {
 			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[1]);
 			bound = pf->subterms()[0];
 		}
-		if(aggterm!=NULL){
+		if (aggterm != NULL) {
 			// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
 			if (bound->type() == TermType::FUNC or bound->type() == TermType::VAR) {
 				bool newagg = false, newbound = false;
@@ -573,16 +573,16 @@ void GrounderFactory::visit(const PredForm* pf) {
 					newagg = true;
 					newbound = true;
 				}
-				if(not newagg){
+				if (not newagg) {
 					aggterm = aggterm->clone();
 				}
-				if(not newbound){
+				if (not newbound) {
 					bound = bound->clone();
 				}
-				if(isAggTerm(pf->subterms()[0])){
-					temppf = new PredForm(pf->sign(), pf->symbol(), {aggterm, bound}, pf->pi());
-				}else{
-					temppf = new PredForm(pf->sign(), pf->symbol(), {bound, aggterm}, pf->pi());
+				if (isAggTerm(pf->subterms()[0])) {
+					temppf = new PredForm(pf->sign(), pf->symbol(), { aggterm, bound }, pf->pi());
+				} else {
+					temppf = new PredForm(pf->sign(), pf->symbol(), { bound, aggterm }, pf->pi());
 				}
 			}
 		}
@@ -926,10 +926,10 @@ void GrounderFactory::visit(const AggForm* af) {
 
 	deleteDeep(clonedaf);
 
-	if(not isa<AggForm>(*transaf)){
+	if (not isa<AggForm>(*transaf)) {
 		if (isa<PredForm>(*transaf)) { // Rewriting created a predform again, so do NOT recurse!
 			internalVisit(dynamic_cast<PredForm*>(transaf));
-		}else{
+		} else {
 			descend(transaf);
 		}
 		deleteDeep(transaf);
@@ -1036,6 +1036,8 @@ void GrounderFactory::visit(const FuncTerm* t) {
 		descend(factorterm);
 		auto factorgrounder = getTermGrounder();
 		_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), producttable, domain, factorgrounder, subtermgrounders[0]);
+	} else if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntProduct(function, _structure->vocabulary())) {
+		_termgrounder = new ProdTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 	} else {
 		_termgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure), subtermgrounders);
 	}
