@@ -18,6 +18,7 @@ struct HashTuple {
 		size_t seed = 1;
 		int prod = 1;
 		for (auto i = tuple.cbegin(); i < tuple.cend(); ++i) {
+			Assert((*i)!=NULL);
 			switch ((*i)->type()) {
 			case DomainElementType::DET_INT:
 				seed += (*i)->value()._int * prod;
