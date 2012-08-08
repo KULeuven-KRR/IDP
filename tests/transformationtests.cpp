@@ -565,6 +565,27 @@ TEST(FindUnknTest,DISABLED_QuantFormula) {
 	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
 	ASSERT_EQ(predform, &pf_p);
 }
+TEST(DeriveTermBoundsTest,Product) {
+	auto s1 = sort("S", -1, 1);
+	auto s2 = sort("S2", -1, 2);
+	auto x = var(s1);
+	auto y = var(s2);
+	auto xt = new VarTerm(x, TermParseInfo());
+	auto yt = new VarTerm(y, TermParseInfo());
+
+	auto voc = new Vocabulary("voc");
+	voc->add(s1);
+	voc->add(s2);
+	auto func = get(STDFUNC::PRODUCT)->disambiguate( { s1, s2, get(STDSORT::INTSORT) }, voc);
+	auto xy = new FuncTerm(func, { xt, yt }, TermParseInfo());
+	auto struc = new Structure("struc", voc, ParseInfo());
+	auto bounds = TermUtils::deriveTermBounds(xy, struc);
+	auto minus2 = domainelement(-2);
+	ASSERT_EQ(DomainElementType::DET_INT, bounds[0]->type());
+	ASSERT_EQ(DomainElementType::DET_INT, bounds[1]->type());
+	ASSERT_EQ(-2, bounds[0]->value()._int);
+	ASSERT_EQ(2, bounds[1]->value()._int);
+}
 
 /*class TestGrounder: public DelayGrounder {
 public:
