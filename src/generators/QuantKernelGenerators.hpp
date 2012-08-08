@@ -36,6 +36,7 @@ private:
 public:
 	TrueQuantKernelGenerator(InstGenerator* subBddTrueGenerator, std::vector<const DomElemContainer*> outvars);
 	TrueQuantKernelGenerator* clone() const;
+	void setVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;
@@ -56,6 +57,7 @@ private:
 public:
 	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker);
 	FalseQuantKernelGenerator* clone() const;
+	void setVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;

@@ -10,6 +10,7 @@
 
 #include "SortGenAndChecker.hpp"
 #include "structure/StructureComponents.hpp"
+#include <iostream>
 
 SortGenerator::SortGenerator(const InternalSortTable* table, const DomElemContainer* var)
 		: _table(table), _var(var), _curr(_table->sortBegin()), _reset(true) {
@@ -53,6 +54,9 @@ SortChecker::SortChecker(const InternalSortTable* t, const DomElemContainer* in)
 
 SortChecker* SortChecker::clone() const {
 	return new SortChecker(*this);
+}
+
+void SortChecker::setVarsAgain(){
 }
 
 void SortChecker::reset() {

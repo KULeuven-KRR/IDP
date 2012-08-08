@@ -28,6 +28,7 @@ private:
 public:
 	SortChecker(const InternalSortTable* t, const DomElemContainer* in);
 	SortChecker* clone() const;
+	virtual void setVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;

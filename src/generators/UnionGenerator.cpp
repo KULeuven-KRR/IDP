@@ -28,12 +28,7 @@ UnionGenerator* UnionGenerator::clone() const {
 }
 
 void UnionGenerator::setVarsAgain(){
-	for(auto gen: _generators){
-		gen->setVarsAgain();
-	}
-	for(auto check: _checkers){
-		check->setVarsAgain();
-	}
+	_generators[_current]->setVarsAgain();
 }
 
 void UnionGenerator::reset() {

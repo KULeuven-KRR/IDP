@@ -19,11 +19,19 @@ ElementTuple TrueQuantKernelGenerator::getDomainElements() {
 	return tuple;
 }
 TrueQuantKernelGenerator::TrueQuantKernelGenerator(InstGenerator* subBddTrueGenerator, std::vector<const DomElemContainer*> outvars)
-		: _subBddTrueGenerator(subBddTrueGenerator), _alreadySeen(), _outvars(outvars), _reset(true) {
+		: _subBddTrueGenerator(subBddTrueGenerator), _outvars(outvars), _reset(true) {
 }
 
 TrueQuantKernelGenerator* TrueQuantKernelGenerator::clone() const {
-	throw notyetimplemented("Cloning TrueQuantKernelGenerators.");
+	auto t = new TrueQuantKernelGenerator(*this);
+	t->_alreadySeen = _alreadySeen;
+	t->_outvars = _outvars;
+	t->_subBddTrueGenerator = _subBddTrueGenerator->clone();
+	t->_reset = _reset;
+	return t;
+}
+void TrueQuantKernelGenerator::setVarsAgain(){
+	_subBddTrueGenerator->setVarsAgain();
 }
 
 void TrueQuantKernelGenerator::reset() {
@@ -60,12 +68,18 @@ void TrueQuantKernelGenerator::next() {
 
 
 FalseQuantKernelGenerator::FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker)
-		: _universeGenerator(universegenerator), _quantKernelTrueChecker(bddtruechecker) {
+		: _universeGenerator(universegenerator), _quantKernelTrueChecker(bddtruechecker), _reset(true) {
 }
 
-// FIXME reimplemnt clone
 FalseQuantKernelGenerator* FalseQuantKernelGenerator::clone() const {
-	throw notyetimplemented("Cloning FalseQuantKernelGenerators.");
+	auto t = new FalseQuantKernelGenerator(*this);
+	t->_quantKernelTrueChecker = _quantKernelTrueChecker->clone();
+	t->_universeGenerator = _universeGenerator->clone();
+	t->_reset = _reset;
+	return t;
+}
+void FalseQuantKernelGenerator::setVarsAgain(){
+	_universeGenerator->setVarsAgain();
 }
 
 void FalseQuantKernelGenerator::reset() {
