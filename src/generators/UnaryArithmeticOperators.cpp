@@ -15,10 +15,6 @@ UnaryArithmeticOperatorsChecker::UnaryArithmeticOperatorsChecker(const DomElemCo
 		: _in(in), _out(out), _universe(universe) {
 }
 
-UnaryArithmeticOperatorsChecker* UnaryArithmeticOperatorsChecker::clone() const {
-	throw notyetimplemented("Cloning UnaryArithmeticOperatorsChecker.");
-}
-
 void UnaryArithmeticOperatorsChecker::reset() {
 	_reset = true;
 }
@@ -77,6 +73,10 @@ void UnaryMinusGenerator::doOperation() {
 	}
 }
 
+UnaryMinusGenerator* UnaryMinusGenerator::clone() const{
+	return new UnaryMinusGenerator(*this);
+}
+
 AbsValueChecker::AbsValueChecker(const DomElemContainer* in, const DomElemContainer* out, Universe universe)
 		: UnaryArithmeticOperatorsChecker(in, out, universe) {
 }
@@ -99,12 +99,16 @@ bool AbsValueChecker::checkOperation() {
 	return (outval >= 0 && (inval == outval || inval == -outval)) && _universe.contains( { _in->get(), _out->get() });
 }
 
+AbsValueChecker* AbsValueChecker::clone() const{
+	return new AbsValueChecker(*this);
+}
+
 InverseAbsValueGenerator::InverseAbsValueGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* dom, NumType outputShouldBeInt)
 		: _in(in), _out(out), _outdom(dom), _state(State::RESET), _outputShouldBeInt(outputShouldBeInt) {
 }
 
 InverseAbsValueGenerator* InverseAbsValueGenerator::clone() const {
-	throw notyetimplemented("Cloning generators.");
+	return new InverseAbsValueGenerator(*this);
 }
 
 void InverseAbsValueGenerator::reset() {

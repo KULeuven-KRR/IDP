@@ -33,7 +33,6 @@ protected:
 	virtual bool checkOperation()=0;
 public:
 	UnaryArithmeticOperatorsChecker(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
-	UnaryArithmeticOperatorsChecker* clone() const;
 	void reset();
 	void next();
 };
@@ -51,6 +50,7 @@ public:
 class UnaryMinusGenerator: public UnaryArithmeticOperatorsGenerator {
 public:
 	UnaryMinusGenerator(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
+	UnaryMinusGenerator* clone() const;
 protected:
 	void doOperation();
 };
@@ -58,6 +58,7 @@ protected:
 class AbsValueChecker: public UnaryArithmeticOperatorsChecker {
 public:
 	AbsValueChecker(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
+	AbsValueChecker* clone() const;
 protected:
 	virtual bool checkOperation();
 };
