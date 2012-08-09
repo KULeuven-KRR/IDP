@@ -88,8 +88,10 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 		}
 		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
 
-		increment(instance);
-
+		decidedformula = increment(instance);
+		if(decidedformula){
+			continue;
+		}
 
 		auto groundedlit = getReification(formula, getTseitinType());
 		if (decidesFormula(groundedlit)) {
@@ -141,6 +143,10 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
  * Only when it occurs in the ground theory, will we start lazy grounding anything.
  */
 void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
+	if (verbosity() > 0) {
+		clog << "Lazy disjunctive grounder for " << toString(this) << "\n";
+	}
+
 	formula.setType(connective());
 
 	pushtab();
@@ -155,6 +161,9 @@ void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 	initializeInst(inst);
 
 	if (isAtEnd(inst)) {
+		if (verbosity() > 3) {
+			clog << "Empty grounder" << toString(this) << "\n";
+		}
 		delete (inst);
 		poptab();
 		return;
@@ -182,10 +191,6 @@ LazyExistsGrounder::LazyExistsGrounder(const std::set<Variable*>& freevars, Abst
 			_subgrounder(sub),
 			_generator(gen),
 			_checker(checker) {
-	if (getOption(GROUNDVERBOSITY) > 0) {
-		clog << "Lazy quant grounder for " << toString(this) << "\n";
-	}
-	_generator->begin();
 	// FIXME calculate grounding size (checker!)
 }
 LazyExistsGrounder::~LazyExistsGrounder() {
@@ -198,9 +203,6 @@ LazyDisjGrounder::LazyDisjGrounder(const std::set<Variable*>& freevars, Abstract
 		const GroundingContext& ct, bool explicitTseitins)
 		: 	LazyDisjunctiveGrounder(freevars, groundtheory, sign, conj, ct, explicitTseitins),
 			_subgrounders(sub) {
-	if (getOption(GROUNDVERBOSITY) > 0) {
-		clog << "Lazy bool grounder for " << toString(this) << "\n";
-	}
 
 	auto size = tablesize(TableSizeType::TST_EXACT, 0);
 	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
@@ -218,6 +220,7 @@ void LazyDisjGrounder::initializeInst(LazyInstantiation* inst) const {
 }
 void LazyExistsGrounder::initializeInst(LazyInstantiation* inst) const {
 	inst->generator = _generator->clone();
+	inst->generator->begin();
 }
 
 Grounder* LazyExistsGrounder::getLazySubGrounder(LazyInstantiation*) const {
@@ -227,14 +230,13 @@ Grounder* LazyDisjGrounder::getLazySubGrounder(LazyInstantiation* instance) cons
 	return getSubGrounders()[instance->index];
 }
 
-void LazyExistsGrounder::increment(LazyInstantiation* instance) const {
+bool LazyExistsGrounder::increment(LazyInstantiation* instance) const {
 	instance->generator->operator ++();
-	if(_checker->check()){
-		/*TODO: do something special, stop grounding: formula is decided!*/
-	}
+	return _checker->check();
 }
-void LazyDisjGrounder::increment(LazyInstantiation* instance) const {
+bool LazyDisjGrounder::increment(LazyInstantiation* instance) const {
 	instance->index++;
+	return false;
 }
 
 bool LazyExistsGrounder::isAtEnd(LazyInstantiation* instance) const {

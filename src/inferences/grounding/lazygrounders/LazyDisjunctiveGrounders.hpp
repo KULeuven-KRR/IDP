@@ -34,7 +34,7 @@ protected:
 
 	virtual void initializeInst(LazyInstantiation* inst) const = 0;
 	virtual Grounder* getLazySubGrounder(LazyInstantiation* instance) const = 0;
-	virtual void increment(LazyInstantiation* instance) const = 0;
+	virtual bool increment(LazyInstantiation* instance) const = 0;
 	virtual bool isAtEnd(LazyInstantiation* instance) const = 0;
 	virtual void prepareToGroundForVarInstance(LazyInstantiation*) const = 0;
 };
@@ -52,7 +52,7 @@ public:
 protected:
 	virtual void initializeInst(LazyInstantiation* inst) const;
 	virtual Grounder* getLazySubGrounder(LazyInstantiation* instance) const;
-	virtual void increment(LazyInstantiation* instance) const;
+	virtual bool increment(LazyInstantiation* instance) const;
 	virtual bool isAtEnd(LazyInstantiation* instance) const;
 	virtual void prepareToGroundForVarInstance(LazyInstantiation* instance) const;
 
@@ -72,7 +72,7 @@ public:
 protected:
 	virtual void initializeInst(LazyInstantiation* inst) const;
 	virtual Grounder* getLazySubGrounder(LazyInstantiation* instance) const;
-	virtual void increment(LazyInstantiation* instance) const;
+	virtual bool increment(LazyInstantiation* instance) const;
 	virtual bool isAtEnd(LazyInstantiation* instance) const;
 	virtual void prepareToGroundForVarInstance(LazyInstantiation*) const{}
 
