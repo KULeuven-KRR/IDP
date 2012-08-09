@@ -34,11 +34,6 @@ EnumLookupGenerator::EnumLookupGenerator(const LookupTable& t, const std::vector
 // TODO quite expensive
 EnumLookupGenerator* EnumLookupGenerator::clone() const {
 	auto g = new EnumLookupGenerator(*this);
-	g->_outvars = _outvars;
-	g->_invars = _invars;
-	g->_table = _table;
-	g->_reset = _reset;
-	g->_currargs = _currargs;
 	if(_currpos==_table.cend()){
 		g->_currpos = g->_table.cend();
 	}else{
@@ -67,6 +62,7 @@ void EnumLookupGenerator::next() {
 		}
 		_iter = _currpos->second.cbegin();
 	} else {
+		++_iter;
 		if (_iter == _currpos->second.cend()) {
 			notifyAtEnd();
 			return;
@@ -76,7 +72,6 @@ void EnumLookupGenerator::next() {
 	for (unsigned int n = 0; n < _outvars.size(); ++n) {
 		*(_outvars[n]) = (*_iter)[n];
 	}
-	++_iter;
 }
 
 void EnumLookupGenerator::setVarsAgain() {
