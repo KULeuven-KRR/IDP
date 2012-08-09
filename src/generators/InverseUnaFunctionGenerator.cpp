@@ -31,7 +31,7 @@ InverseUNAFuncGenerator::InverseUNAFuncGenerator(const std::vector<Pattern>& pat
 }
 
 InverseUNAFuncGenerator* InverseUNAFuncGenerator::clone() const {
-	throw notyetimplemented("Cloning generators.");
+	return new InverseUNAFuncGenerator(*this);
 }
 
 void InverseUNAFuncGenerator::reset() {
