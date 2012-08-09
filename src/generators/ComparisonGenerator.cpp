@@ -10,7 +10,8 @@
 
 #include "ComparisonGenerator.hpp"
 
-ComparisonGenerator::ComparisonGenerator(SortTable* leftsort, SortTable* rightsort, const DomElemContainer* leftvalue, const DomElemContainer* rightvalue,
+ComparisonGenerator::ComparisonGenerator(SortTable* leftsort, SortTable* rightsort,
+		const DomElemContainer* leftvalue, const DomElemContainer* rightvalue,
 		Input input, CompType type)
 		: _leftsort(leftsort), _rightsort(rightsort), _leftvar(leftvalue), _rightvar(rightvalue), _comparison(type), _input(input),
 			_left(leftsort->sortBegin()), _right(rightsort->sortBegin()), _reset(true), increaseouter(false) {
@@ -37,10 +38,10 @@ ComparisonGenerator* ComparisonGenerator::clone() const {
 
 void ComparisonGenerator::setVarsAgain() {
 	if (not leftIsInput()) {
-		_leftvar->operator =(*_left);
+		_leftvar->operator =(_latestleft);
 	}
 	if (not rightIsInput()) {
-		_rightvar->operator =(*_right);
+		_rightvar->operator =(_latestright);
 	}
 }
 
@@ -158,6 +159,8 @@ void ComparisonGenerator::next() {
 		// Guaranteed not to happen
 		break;
 	}
+	_latestleft = _leftvar->get();
+	_latestright = _rightvar->get();
 }
 
 bool ComparisonGenerator::leftIsInput() const {

@@ -31,6 +31,7 @@ enum class CompResult {
 class ComparisonGenerator: public InstGenerator {
 private:
 	SortTable *_leftsort, *_rightsort;
+	const DomainElement *_latestleft, *_latestright;
 	const DomElemContainer *_leftvar, *_rightvar;
 	CompType _comparison;
 	Input _input; // NOTE: is never RIGHT after initialization
