@@ -16,19 +16,21 @@ UnionGenerator::UnionGenerator(std::vector<InstGenerator*>& generators, std::vec
 
 UnionGenerator* UnionGenerator::clone() const {
 	auto t = new UnionGenerator(*this);
+	t->_generators.clear();
 	for(auto gen:_generators){
 		t->_generators.push_back(gen->clone());
 	}
+	t->_checkers.clear();
 	for(auto check:_checkers){
 		t->_checkers.push_back(check->clone());
 	}
-	t->_reset = _reset;
-	t->_current = _current;
 	return t;
 }
 
 void UnionGenerator::setVarsAgain(){
-	_generators[_current]->setVarsAgain();
+	if(_current<_generators.size()){
+		_generators[_current]->setVarsAgain();
+	}
 }
 
 void UnionGenerator::reset() {
@@ -52,7 +54,7 @@ void UnionGenerator::next() {
 				notifyAtEnd();
 				return;
 			} else {
-				_generators[0]->begin();
+				_generators[_current]->begin();
 			}
 		} else {
 			_generators[_current]->operator ++();
