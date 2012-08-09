@@ -11,6 +11,7 @@
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
 #include "structure/StructureComponents.hpp"
+#include "utils/StringUtils.hpp"
 
 using namespace std;
 
@@ -561,6 +562,11 @@ PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseIn
 
 const string& PFSymbol::name() const {
 	return _name;
+}
+string PFSymbol::nameNoArity() const {
+	auto list = split(name(), "/");
+	Assert(list.size()==2);
+	return list.front();
 }
 
 const ParseInfo& PFSymbol::pi() const {

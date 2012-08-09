@@ -197,6 +197,7 @@ public:
 	virtual void addVocabulary(const Vocabulary*) = 0; //!< Add a vocabulary to the list of vocabularies
 
 	const std::string& name() const; //!< Returns the name of the symbol (ends on /arity)
+	std::string nameNoArity() const; //!< Returns the name of the symbol (without /arity)
 	const ParseInfo& pi() const; //!< Returns the parse info of the symbol
 	std::size_t nrSorts() const; //!< Returns the number of sorts of the symbol
 	//!< (arity for predicates, arity+1 for functions)
