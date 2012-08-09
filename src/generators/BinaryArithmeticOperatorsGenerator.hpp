@@ -63,8 +63,6 @@ public:
 	void setVarsAgain();
 private:
 	double getValue(const DomElemContainer* cont) const;
-protected:
-	void copy(const ArithOpGenerator* orig);
 };
 
 class DivGenerator: public ArithOpGenerator {

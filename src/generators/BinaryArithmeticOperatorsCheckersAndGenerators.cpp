@@ -16,14 +16,6 @@ ArithOpChecker::ArithOpChecker(const DomElemContainer* in1, const DomElemContain
 		: _in1(in1), _in2(in2), _in3(in3), _universe(univ), alreadyrun(false) {
 }
 
-void ArithOpChecker::copy(const ArithOpChecker* orig){
-	_in1 = orig->_in1;
-	_in2 = orig->_in2;
-	_in3 = orig->_in3;
-	_universe = orig->_universe;
-	alreadyrun = orig->alreadyrun;
-}
-
 void ArithOpChecker::reset() {
 	alreadyrun = false;
 }
@@ -73,9 +65,7 @@ DivChecker::DivChecker(const DomElemContainer* in1, const DomElemContainer* in2,
 }
 
 DivChecker* DivChecker::clone() const {
-	auto t = new DivChecker(*this);
-	t->copy(this);
-	return t;
+	return new DivChecker(*this);
 }
 
 void DivChecker::put(std::ostream& stream) const{
@@ -91,9 +81,7 @@ TimesChecker::TimesChecker(const DomElemContainer* in1, const DomElemContainer* 
 }
 
 TimesChecker* TimesChecker::clone() const {
-	auto t = new TimesChecker(*this);
-	t->copy(this);
-	return t;
+	return new TimesChecker(*this);
 }
 
 void TimesChecker::put(std::ostream& stream)const {
@@ -109,9 +97,7 @@ MinusChecker::MinusChecker(const DomElemContainer* in1, const DomElemContainer* 
 }
 
 MinusChecker* MinusChecker::clone() const {
-	auto t = new MinusChecker(*this);
-	t->copy(this);
-	return t;
+	return new MinusChecker(*this);
 }
 
 void MinusChecker::put(std::ostream& stream)const {
@@ -127,9 +113,7 @@ PlusChecker::PlusChecker(const DomElemContainer* in1, const DomElemContainer* in
 }
 
 PlusChecker* PlusChecker::clone() const {
-	auto t = new PlusChecker(*this);
-	t->copy(this);
-	return t;
+	return new PlusChecker(*this);
 }
 
 void PlusChecker::put(std::ostream& stream) const{
@@ -151,9 +135,7 @@ ModChecker::ModChecker(const DomElemContainer* in1, const DomElemContainer* in2,
 }
 
 ModChecker* ModChecker::clone() const {
-	auto t = new ModChecker(*this);
-	t->copy(this);
-	return t;
+	return new ModChecker(*this);
 }
 
 void ModChecker::put(std::ostream& stream)const {
@@ -173,15 +155,6 @@ DomainElementType ArithOpGenerator::getOutType() {
 
 ArithOpGenerator::ArithOpGenerator(const DomElemContainer* in1, const DomElemContainer* in2, const DomElemContainer* out, NumType requestedType, SortTable* dom)
 		: _in1(in1), _in2(in2), _out(out), _outdom(dom), _requestedType(requestedType), alreadyrun(false) {
-}
-
-void ArithOpGenerator::copy(const ArithOpGenerator* orig){
-	_in1 = orig->_in1;
-	_in2 = orig->_in2;
-	_out = orig->_out;
-	_outdom = orig->_outdom;
-	_requestedType = orig->_requestedType;
-	alreadyrun = orig->alreadyrun;
 }
 
 void ArithOpGenerator::reset() {
@@ -257,9 +230,7 @@ DivGenerator::DivGenerator(const DomElemContainer* in1, const DomElemContainer* 
 }
 
 DivGenerator* DivGenerator::clone() const {
-	auto t = new DivGenerator(*this);
-	t->copy(this);
-	return t;
+	return new DivGenerator(*this);
 }
 
 void DivGenerator::put(std::ostream& stream) const {
@@ -286,9 +257,7 @@ TimesGenerator::TimesGenerator(const DomElemContainer* in1, const DomElemContain
 }
 
 TimesGenerator* TimesGenerator::clone() const {
-	auto t = new TimesGenerator(*this);
-	t->copy(this);
-	return t;
+	return new TimesGenerator(*this);
 }
 
 void TimesGenerator::put(std::ostream& stream) const {
@@ -306,9 +275,7 @@ MinusGenerator::MinusGenerator(const DomElemContainer* in1, const DomElemContain
 }
 
 MinusGenerator* MinusGenerator::clone() const {
-	auto t = new MinusGenerator(*this);
-	t->copy(this);
-	return t;
+	return new MinusGenerator(*this);
 }
 
 void MinusGenerator::put(std::ostream& stream) const {
@@ -326,9 +293,7 @@ PlusGenerator::PlusGenerator(const DomElemContainer* in1, const DomElemContainer
 }
 
 PlusGenerator* PlusGenerator::clone() const {
-	auto t = new PlusGenerator(*this);
-	t->copy(this);
-	return t;
+	return new PlusGenerator(*this);
 }
 
 void PlusGenerator::put(std::ostream& stream) const {

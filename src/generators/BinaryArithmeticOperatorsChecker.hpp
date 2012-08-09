@@ -51,7 +51,6 @@ public:
 	void reset();
 	void next();
 	bool check() const;
-	void copy(const ArithOpChecker*);
 private:
 	double getValue(const DomElemContainer* cont) const;
 
