@@ -20,8 +20,7 @@ TableChecker::TableChecker(const PredTable* t, const std::vector<const DomElemCo
 }
 
 TableChecker* TableChecker::clone() const {
-	auto gen = new TableChecker(*this);
-	return gen;
+	return new TableChecker(*this);
 }
 
 void TableChecker::setVarsAgain() {
@@ -145,7 +144,7 @@ InverseTableGenerator* InverseTableGenerator::clone() const {
 }
 
 void InverseTableGenerator::setVarsAgain() {
-	return _universegen->setVarsAgain();
+	_universegen->setVarsAgain();
 }
 
 void InverseTableGenerator::reset() {
