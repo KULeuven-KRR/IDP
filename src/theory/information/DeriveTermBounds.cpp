@@ -110,13 +110,13 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			if(minimumDE.type() == DomainElementType::DET_INT){
 				_minimum = createDomElem(minimumDE.value()._int);
 			} else {
-				Assert(minimumDE.type() == DomainElementType::DET_DOUBLE)
+				Assert(minimumDE.type() == DomainElementType::DET_DOUBLE);
 				_minimum = createDomElem(minimumDE.value()._double);
 			}
 			if (maximumDE.type() == DomainElementType::DET_INT) {
 				_maximum = createDomElem(maximumDE.value()._int);
 			} else {
-				Assert(maximumDE.type() == DomainElementType::DET_DOUBLE)
+				Assert(maximumDE.type() == DomainElementType::DET_DOUBLE);
 				_maximum = createDomElem(maximumDE.value()._double);
 
 			}
