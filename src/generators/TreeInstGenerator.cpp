@@ -14,7 +14,6 @@ OneChildGenerator* OneChildGenerator::clone() const {
 	auto t = new OneChildGenerator(*this);
 	t->_generator = _generator->clone();
 	t->_child = _child->clone();
-	Assert(not _generator->isInitialized() || t->_generator->isInitialized());
 	return t;
 }
 
