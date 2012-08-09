@@ -47,7 +47,6 @@ SimpleFuncGenerator::~SimpleFuncGenerator() {
 	delete (_univgen);
 }
 
-// FIXME reimplement
 SimpleFuncGenerator* SimpleFuncGenerator::clone() const {
 	auto gen = new SimpleFuncGenerator(*this);
 	gen->_univgen = _univgen->clone();
