@@ -1,0 +1,26 @@
+vocabulary V{
+	type Getal isa int
+	type Aantal isa int
+
+	PriemFactor(Getal, Getal,Aantal)
+	PriemGetal(Getal)
+}
+theory T:V{
+	!g: ~PriemGetal(g) => !z: ~PriemFactor(8, g, z).
+	!a b c: PriemFactor(a,b,c) => c=MIN[:Getal] | PriemFactor(a,b,PRED(c)).
+	prod{y a : PriemFactor(8,y,a) : y} >= 8.
+}
+structure S:V{
+	Getal = { 2;3;4;7;8 }
+	Aantal = {1..3}
+	PriemGetal = {2;3;4;7}
+}
+#include <mx>
+procedure main(){
+	stdoptions.groundwithbounds=false
+	stdoptions.liftedunitpropagation=false
+	stdoptions.cpsupport=true
+	stdoptions.groundverbosity=0
+	stdoptions.satverbosity=7
+	print(allmodels(T,S))
+}

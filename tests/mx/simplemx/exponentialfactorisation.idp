@@ -1,0 +1,16 @@
+vocabulary V{
+	type Getal isa int
+	type Aantal isa int
+   
+	Factor(Getal):Aantal
+}
+theory T:V{
+	prod{y : true : y^Factor(y)} = 8.
+}
+structure S:V{
+	Getal = { 1;2;3;4}
+	Aantal = {0..3}
+}
+procedure getExpectedNbOfModels(){
+	return 8
+}
