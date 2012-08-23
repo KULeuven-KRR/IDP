@@ -1,0 +1,12 @@
+vocabulary V {
+	type A
+	P(A)
+}
+
+theory T : V {
+	{ P(1). }
+}
+
+structure S : V {
+	A = { 1..9 }
+}
