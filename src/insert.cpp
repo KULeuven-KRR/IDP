@@ -1231,6 +1231,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 		auto r = new Rule(hv, pfhead, body, pi);
 		// Sort derivation
 		DefinitionUtils::deriveSorts(_currvocabulary, r);
+		DefinitionUtils::checkSorts(_currvocabulary, r);
 		// Return the rule
 		return r;
 	} else {
