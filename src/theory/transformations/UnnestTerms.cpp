@@ -64,7 +64,6 @@ Term* UnnestTerms::move(Term* origterm) {
 	if (getContext() == Context::BOTH) {
 		contextProblem(origterm);
 	}
-
 	auto newsort = deriveSort(origterm);
 	Assert(newsort != NULL);
 

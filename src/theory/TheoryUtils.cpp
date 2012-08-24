@@ -241,7 +241,7 @@ Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
 
-Formula* unnestFuncsAndAggsNonRecursive(Formula* f, AbstractStructure* str, Context con) {
+Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
 }
 
@@ -307,7 +307,7 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Co
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, AbstractStructure* str, Context con) {
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
 }
 

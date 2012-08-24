@@ -30,7 +30,7 @@ bool eligibleForCP(const PredForm*, const Vocabulary*);
 bool eligibleForCP(const FuncTerm*, const Vocabulary*);
 bool eligibleForCP(const AggFunction&);
 
-bool eligibleForCP(const Term*, AbstractStructure*);
+bool eligibleForCP(const Term*, const AbstractStructure*);
 
 }
 

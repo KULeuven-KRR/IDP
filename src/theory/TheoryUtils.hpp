@@ -145,7 +145,7 @@ Formula* substituteTerm(Formula*, Term*, Variable*);
 Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggsNonRecursive(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggsNonRecursive(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
@@ -205,7 +205,7 @@ AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);

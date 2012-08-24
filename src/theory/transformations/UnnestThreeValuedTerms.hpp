@@ -59,7 +59,7 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
+	T execute(T t,const AbstractStructure* str, Context context, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
 		Assert(str!=NULL);
 		_structure = str;
 		_vocabulary = str->vocabulary();
