@@ -80,8 +80,6 @@ public:
 		return _structure;
 	}
 	AbstractGroundTheory* clone() const;
-
-	int verbosity() const;
 };
 
 #endif /* ABSTRACTGROUNDTHEORY_HPP_ */

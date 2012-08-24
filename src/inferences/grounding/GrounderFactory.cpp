@@ -1249,11 +1249,15 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 }
 
 InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula, const std::vector<Pattern>& pattern){
-	auto checker = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
+	auto instgen = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
-
-	return checker;
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "The result is: " << toString(instgen);
+		poptab();
+		clog << nt();
+	}
+	return instgen;
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data){
@@ -1273,7 +1277,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating generator for truthtype" << toString(generatortype) << "for subformula " <<  toString(subformula);
+		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
 		pushtab();
 		clog << nt();
 	}
@@ -1283,23 +1287,12 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	} else {
 		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
-	auto result = createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
-	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "The result is:" << toString(result);
-		if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
-			result->begin();
-			clog << nt();
-			clog << (result->isAtEnd() ? "!! generator has no first" : "generator has a first element");
-		}
-		poptab();
-		clog << nt();
-	}
-	return result;
+	return createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
 }
 
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating Checker for truthtype" << toString(checkertype) << "for subformula " <<  toString(subformula);
+		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
 		pushtab();
 		clog << nt();
 	}
@@ -1314,13 +1307,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 			checktable = TableUtils::createPredTable(Universe(data.tables));
 		}
 	}
-	auto result = createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
-	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "The result is:" << toString(result);
-		poptab();
-		clog << nt();
-	}
-	return result;
+	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
 }
 
 DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {

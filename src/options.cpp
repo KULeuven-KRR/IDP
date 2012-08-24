@@ -183,12 +183,11 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	_name2type[name] = type;
 	auto newoption = new RangeOption<EnumType, ValueType>(type, name, lowerbound, upperbound, visible);
 	newoption->setValue(defaultValue);
-	auto& options = _options;
-	if (options.size() <= (unsigned int) type) {
-		options.resize(type + 1, NULL);
+	if (_options.size() <= (unsigned int) type) {
+		_options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
 	}
-	options[type] = newoption;
+	_options[type] = newoption;
 	option2name[type] = name;
 }
 
@@ -198,19 +197,20 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
-	auto& options = _options;
-	if (options.size() <= (unsigned int) type) {
-		options.resize(type + 1, NULL);
+	if (_options.size() <= (unsigned int) type) {
+		_options.resize(type + 1, NULL);
 		option2name.resize(type + 1, "");
 	}
-	options[type] = newoption;
+	_options[type] = newoption;
 	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
-	for (auto i = _options.cbegin(); i < _options.cend(); ++i) {
-		(*i)->setValue(opts->getValue((*i)->getType()));
+	for (auto option: _options) {
+		if(option!=NULL){
+			option->setValue(opts->getValue(option->getType()));
+		}
 	}
 }
 
@@ -357,19 +357,5 @@ ostream& Options::put(ostream& output) const {
 
 template<>
 bool isVerbosityOption<IntType>(IntType t) {
-	switch (t) {
-	case VERBOSE_CREATE_GROUNDERS:
-	case VERBOSE_CREATE_PROPAGATORS:
-	case VERBOSE_GEN_AND_CHECK:
-	case VERBOSE_GROUNDING:
-	case VERBOSE_TRANSFORMATIONS:
-	case VERBOSE_SOLVING:
-	case VERBOSE_PROPAGATING:
-	case VERBOSE_QUERY:
-	case VERBOSE_DEFINITIONS:
-	case VERBOSE_SYMMETRY:
-		return true;
-	default:
-		return false;
-	}
+	return t>=IntType::FIRST_VERBOSE && t<=IntType::LAST_VERBOSE;
 }

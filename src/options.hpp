@@ -43,8 +43,7 @@ enum IntType {
 	PROVERTIMEOUT,
 	TIMEOUT,
 	RANDOMSEED,
-	//Featured verbosity.
-	//IMPORTANT: if you add another, also add it to the "isverbosityOption" method in the cpp file
+	// DO NOT MIX verbosity and non-verbosity options!
 	VERBOSE_CREATE_GROUNDERS,
 	VERBOSE_GEN_AND_CHECK,
 	VERBOSE_GROUNDING,
@@ -54,7 +53,9 @@ enum IntType {
 	VERBOSE_CREATE_PROPAGATORS,
 	VERBOSE_QUERY,
 	VERBOSE_DEFINITIONS,
-	VERBOSE_SYMMETRY
+	VERBOSE_SYMMETRY,
+	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
+	LAST_VERBOSE = VERBOSE_SYMMETRY			  //IMPORTANT: this has to be the last of the verbosity options
 };
 
 enum BoolType {
@@ -96,7 +97,7 @@ enum class PrintBehaviour {
 };
 
 template<typename OptionType>
-bool isVerbosityOption(OptionType t){
+bool isVerbosityOption(OptionType){
 	return false;
 }
 template<>
@@ -203,11 +204,10 @@ protected:
 			std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
-		if (_options.size() == 16) {
-			throw notyetimplemented("deleting verbosity");
-		}
-		for (auto i = _options.cbegin(); i != _options.cend(); ++i) {
-			delete (*i);
+		for (auto option : _options) {
+			if(option!=NULL){
+				delete (option);
+			}
 		}
 	}
 	bool isOption(const std::string& name) const {
@@ -218,32 +218,42 @@ public:
 		return _options.at(_name2type.at(name))->getValue();
 	}
 	ValueType getValue(EnumType option) const {
-		Assert((unsigned int)option<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)option<_options.size() && _options.at(option)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		return _options.at(option)->getValue();
 	}
 	void setStrValue(const std::string& name, const ValueType& value) {
 		Assert(isOption(name));
-		//_options.at(_name2type.at(name))->setValue(value);
 		setValue(_name2type.at(name), value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
-		Assert((unsigned int)type<_options.size()); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)type<_options.size() && _options.at(type)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		_options.at(type)->setValue(value);
 	}
 	bool isAllowedValue(const std::string& name, const ValueType& value) const {
 		return isOption(name) && _options.at(_name2type.at(name))->isAllowedValue(value);
 	}
 	std::string printOption(const std::string& name) const {
+		Assert(isOption(name));
 		return _options.at(_name2type.at(name))->printOption();
 	}
 	void addOptionStrings(std::vector<std::string>& optionlines) const {
-		for (auto i = _options.cbegin(); i < _options.cend(); ++i) {
-			if (*i != NULL) {
-				//Check is necessary. If you use the 14th option, but not the rest, (f.e. verbostiy works like this),
-				//then the first 13 are NULL
-				optionlines.push_back((*i)->printOption());
+		for (auto option : _options) {
+			if (option != NULL) {
+				// Check is necessary as not each optionblock has all options
+				optionlines.push_back(option->printOption());
 			}
 		}
+	}
+
+	// NOTE mainly used to get all suboption blocks
+	std::vector<ValueType> getOptionValues() const {
+		std::vector<ValueType> values;
+		for(auto option: _options){
+			if(option!=NULL){
+				values.push_back(option->getValue());
+			}
+		}
+		return values;
 	}
 
 	void copyValues(Options* opts);
@@ -365,6 +375,10 @@ public:
 	template<class ValueType>
 	bool isAllowedValue(const std::string& name, const ValueType& value) {
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isAllowedValue(name, value);
+	}
+
+	std::vector<Options*> getSubOptionBlocks() const{
+		return OptionPol::getOptionValues();
 	}
 };
 

@@ -42,8 +42,3 @@ void AbstractGroundTheory::addUnitClause(Lit l) {
 AbstractGroundTheory* AbstractGroundTheory::clone() const {
 	throw notyetimplemented("Cloning ground theories.\n");
 }
-
-int AbstractGroundTheory::verbosity() const{
-	return getOption(IntType::VERBOSE_GROUNDING);
-}
-
