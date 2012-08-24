@@ -48,6 +48,8 @@ public:
 	SortTable* getDomain() const {
 		return _domain;
 	}
+
+	int verbosity() const;
 protected:
 	void setDomain(SortTable* dom) const { // TODO ugly const setter!
 		Assert(dom!=NULL);

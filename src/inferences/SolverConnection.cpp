@@ -121,7 +121,7 @@ public:
 PCSolver* createsolver(int nbmodels) {
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
-	modes.verbosity = getOption(IntType::SATVERBOSITY);
+	modes.verbosity = getOption(IntType::VERBOSE_SOLVING);
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
@@ -144,7 +144,7 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator) {
 }
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
-	auto print = getOption(IntType::SATVERBOSITY)>1;
+	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print?MinisatID::Models::ALL:MinisatID::Models::NONE, MinisatID::Models::ALL);
 	return new PCModelExpand(solver, opts, { });
 }

@@ -149,17 +149,22 @@ public:
 
 GlobalData* getGlobal();
 
-template<typename OptionType>
-typename OptionTypeTraits<OptionType>::ValueType getOption(OptionType type) {
-	return getGlobal()->getOptions()->getValue(type);
+template<typename OptionsType>
+typename OptionTypeTraits<OptionsType>::ValueType getOption(OptionsType type) {
+	if (not isVerbosityOption(type)) {
+		return getGlobal()->getOptions()->getValue(type);
+	}
+	return getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->getValue(type);
 }
 
-template<typename OptionType>
-void setOption(OptionType type, typename OptionTypeTraits<OptionType>::ValueType value) {
-	return getGlobal()->getOptions()->setValue(type, value);
+template<typename OptionsType>
+void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueType value) {
+	if (not isVerbosityOption(type)) {
+		getGlobal()->getOptions()->setValue(type, value);
+		return;
+	}
+	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
-
-int verbosity();
 
 // TODO improve check by bool flag!
 #define CHECKTERMINATION \

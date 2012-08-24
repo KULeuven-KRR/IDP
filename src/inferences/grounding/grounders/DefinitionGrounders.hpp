@@ -93,6 +93,8 @@ public:
 	PredForm* getHead() const {
 		return _origrule->head();
 	}
+
+	int verbosity() const;
 };
 
 class FullRuleGrounder: public RuleGrounder {

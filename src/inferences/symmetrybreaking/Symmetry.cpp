@@ -848,7 +848,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "forbiddenSorts: ";
 		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
@@ -866,7 +866,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "forbiddenElements: ";
 		for (auto it = forbiddenElements.cbegin(); it != forbiddenElements.cend(); ++it) {
 			clog << toString(*it) << " ";
@@ -884,7 +884,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		}
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "allowedSorts: ";
 		for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
@@ -915,7 +915,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		initialIVSets.at(sortset).insert(elements_it->first);
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "initialIVSets: \n";
 		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
 			clog << "Elements: " ;
@@ -1016,16 +1016,16 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials) {
 vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "initialize ivsets...\n";
 	}
 	set<const IVSet*> potentials = initializeIVSets(s, t, minimizeTerm);
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "extract dont cares...\n";
 	}
 	vector<const IVSet*> result = extractDontCares(potentials);
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
 			clog << "##########\n" << toString(*result_it) << "\n";
 		}
@@ -1033,7 +1033,7 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
-	if (getOption(IntType::GROUNDVERBOSITY) > 0) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
 			clog << "@@@@@@@@@@\n" << toString(*result_it) << "\n";
 		}

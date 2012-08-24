@@ -585,7 +585,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";
 	}
 	if (is(newatom->symbol(), STDPRED::EQ)) {
@@ -694,7 +694,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		}
 		auto gen = createFromFormula(formula, pattern, vars, atomvars, structure, branchToGenerate, universe);
 		formula->recursiveDelete();
-		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 2) {
 			clog << "Created kernel generator: " << toString(gen) << "\n";
 		}
 		return gen;

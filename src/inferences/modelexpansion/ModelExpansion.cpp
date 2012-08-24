@@ -94,9 +94,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			getOption(IntType::NBMODELS) != 1, data);
 
 	if (grounding == NULL) {
-		if (verbosity() > 0) {
-			clog << "Unsat detected during grounding\n";
-		}
 		clonetheory->recursiveDelete();
 		delete (newstructure);
 		delete (data);
@@ -105,7 +102,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
-	if (verbosity() > 0) {
+	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 		logActionAndTime("Solving");
 	}
 	auto terminator = new SolverTermination(mx);
@@ -131,7 +128,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (abstractsolutions.size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
-			if (verbosity() > 0) {
+			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 				stringstream ss;
 				ss <<"Solver generated " << list.size() << " models";
 				logActionAndTime(ss.str());
@@ -141,7 +138,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			}
 		}
 	} else {
-		if (verbosity() > 0) {
+		if (getOption(IntType::VERBOSE_SOLVING)  > 0) {
 			stringstream ss;
 			ss <<"Solver generated " << abstractsolutions.size() << " models";
 			logActionAndTime(ss.str());

@@ -91,7 +91,7 @@ GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, b
 	Assert(_symstructure != NULL);
 
 	// Create a symbolic structure if no such structure is given
-	if (getOption(IntType::GROUNDVERBOSITY) > 2) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 2) {
 		clog << tabs() << "Using the following symbolic structure to ground:" << "\n";
 		clog << tabs() << toString(_symstructure) << "\n";
 	}
@@ -230,7 +230,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
-	groundtheory->initialize(solver, getOption(IntType::GROUNDVERBOSITY), groundtheory->translator());
+	groundtheory->initialize(solver, getOption(IntType::VERBOSE_GROUNDING), groundtheory->translator());
 	auto grounder = createGrounder(data, groundtheory);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
 	return grounder;
@@ -319,14 +319,14 @@ void GrounderFactory::descend(T child) {
 	SaveContext();
 
 	if (getContext()._component == CompContext::SENTENCE) {
-		if (getOption(IntType::GROUNDVERBOSITY) > 1) {
+		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0) {
 			clog << tabs() << "Creating a grounder for " << toString(child) << "\n";
-			if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+			if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 				pushtab();
 			}
 		}
 	} else {
-		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 			clog << tabs() << "Creating a subgrounder for " << toString(child) << "\n";
 			pushtab();
 		}
@@ -343,7 +343,7 @@ void GrounderFactory::descend(T child) {
 	_context._conjPathUntilNode = false; // NOTE: overwrite at start of visit if necessary!
 	child->accept(this);
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 		poptab();
 	}
 
@@ -819,7 +819,7 @@ void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* su
 }
 
 const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars) {
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		clog << tabs() << "improving the following " << (approxastrue ? "maketrue" : "makefalse") << " BDD:" << "\n";
 		pushtab();
 		clog << tabs() << toString(bdd) << "\n";
@@ -845,7 +845,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 		pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, { }, _structure, mcpa);
 	}
 
-	if (getOption(IntType::GROUNDVERBOSITY) > 5) {
+	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		poptab();
 		clog << tabs() << "Resulted in:" << "\n";
 		pushtab();
@@ -1281,15 +1281,13 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 
 InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula,
 		const std::vector<Pattern>& pattern) {
-	auto checker = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
+	auto instgen = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
-
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
-		clog << tabs() << name << " for " << toString(type) << ": \n" << tabs() << toString(checker) << "\n";
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << tabs() << name << " for " << toString(type) << ": \n" << tabs() << toString(instgen) << "\n";
 	}
-
-	return checker;
+	return instgen;
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
@@ -1300,12 +1298,20 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, _structure, false, getContext()._funccontext);
 	auto bdd = _symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
 	bdd = improve(approxvalue, bdd, quantfovars);
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Using the following BDD" << nt() << toString(bdd) << nt();
+	}
 	auto table = new PredTable(new BDDInternalPredTable(bdd, _symstructure->obtainManager(), data.fovars, _structure), Universe(data.tables));
 	deleteDeep(tempsubformula);
 	return table;
 }
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
+		pushtab();
+		clog << nt();
+	}
 	PredTable* gentable = NULL;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 		gentable = createTable(subformula, generatortype, data.quantfovars, true, data);
@@ -1316,6 +1322,11 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 }
 
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
+		pushtab();
+		clog << nt();
+	}
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {

@@ -89,8 +89,8 @@ procedure main(inputfilename, lazy){
 	file:write("}")
 	file:close()
 	parse("test")
-	stdoptions.groundverbosity=1
-	stdoptions.satverbosity=1
+	stdoptions.verbosity.grounding=1
+	stdoptions.verbosity.solving=1
 	stdoptions.groundlazily=lazy
 	stdoptions.groundwithbounds=false
 	sol = modelexpandpartial(T,S)

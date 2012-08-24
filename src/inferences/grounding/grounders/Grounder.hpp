@@ -99,6 +99,8 @@ public:
 	tablesize getMaxGroundSize() const {
 		return _maxsize;
 	}
+
+	int verbosity() const;
 };
 
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula);

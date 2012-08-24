@@ -64,7 +64,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 }
 
 std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const{
-	if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
 	// Collect the open symbols of all definitions
@@ -91,7 +91,7 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 			if (currentdefinition->second.empty()) {
 				bool satisfiable = calculateDefinition(currentdefinition->first, structure);
 				if (not satisfiable) {
-					if (getOption(IntType::GROUNDVERBOSITY) >= 1) {
+					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
 					return std::vector<AbstractStructure*> { };

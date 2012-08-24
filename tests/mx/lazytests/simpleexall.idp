@@ -15,7 +15,7 @@ structure S: V {
 
 procedure main(){
 	stdoptions.groundlazily=true
-	stdoptions.groundverbosity=2
-	stdoptions.satverbosity=10
+	stdoptions.verbosity.grounding=2
+	stdoptions.verbosity.solving=10
 	print(modelexpandpartial(T, S))
 }

@@ -21,8 +21,8 @@ structure S:V{
 	Size = {1->3; 2->3; 3->3}
 }
 procedure main(){
-	stdoptions.groundverbosity=2
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.grounding=2
+	stdoptions.verbosity.solving=0
 	stdoptions.groundlazily=true
 	stdoptions.groundwithbounds=true
 	print(modelexpandpartial(T, S))
