@@ -1334,7 +1334,7 @@ Formula* Insert::predform(NSPair* t, YYLTYPE l) const {
 
 // NOTE: The lefthand functon is considered defined!
 Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
-	if (left == NULL) {
+	if (left == NULL or right == NULL) {
 		return NULL;
 	}
 	if (not isa<FuncTerm>(*left)) {
@@ -2171,11 +2171,12 @@ void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const
 void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	UserProcedure* up = procedureInScope(procedure, pi);
-	string* proc = 0;
-	if (up)
+	string* proc = NULL;
+	if (up) {
 		proc = StringPointer(up->registryindex());
-	else
+	} else {
 		proc = LuaConnection::getProcedure(procedure, pi);
+	}
 	if (proc) {
 		vector<SortTable*> univ;
 		if (nsp->_sortsincluded) {
@@ -2196,9 +2197,9 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 		} else {
 			ParseInfo pi = nsp->_pi;
 			std::set<Predicate*> vp = noArPredInScope(nsp->_name, pi);
-			if (vp.empty())
+			if (vp.empty()) {
 				notDeclared(ComponentType::Predicate, toString(nsp), pi);
-			else if (vp.size() > 1) {
+			} else if (vp.size() > 1) {
 				std::set<Predicate*>::const_iterator it = vp.cbegin();
 				Predicate* p1 = *it;
 				++it;
