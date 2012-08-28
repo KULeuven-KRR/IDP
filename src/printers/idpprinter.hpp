@@ -64,22 +64,25 @@ public:
 	template<typename T>
 	std::string printFullyQualified(T o) const {
 		std::stringstream ss;
-		ss << o->nameNoArity() << "[";
-		bool begin = true;
-		for (auto i = o->sorts().cbegin(); i < o->sorts().cend()-1; ++i) {
-			if (not begin) {
+		ss << o->nameNoArity();
+		if (o->sorts().size() > 0) {
+			ss << "[";
+			bool begin = true;
+			for (auto i = o->sorts().cbegin(); i < o->sorts().cend() - 1; ++i) {
+				if (not begin) {
+					ss << ",";
+				}
+				begin = false;
+				ss << toString(*i);
+			}
+			if (o->isFunction()) {
+				ss << ":";
+			} else if (not begin) {
 				ss << ",";
 			}
-			begin = false;
-			ss << toString(*i);
+			ss << toString(*o->sorts().back());
+			ss << "]";
 		}
-		if(o->isFunction()){
-			ss <<":";
-		}else if(not begin){
-			ss <<",";
-		}
-		ss <<toString(*o->sorts().back());
-		ss << "]";
 		return ss.str();
 	}
 
