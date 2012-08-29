@@ -1,0 +1,24 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	q(x)
+	pn
+	qn
+}
+
+vocabulary Vout{
+}
+
+theory T:V{
+	!x: p(x) => q(x).
+	~q(1526).
+	p(1526).
+}
+
+structure S:V{
+	x is int
+}
+
+procedure getExpectedNbOfModels(){
+	return 0
+}

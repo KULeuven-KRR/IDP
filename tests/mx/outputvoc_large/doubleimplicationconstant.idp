@@ -1,0 +1,27 @@
+vocabulary V{
+	type x isa nat
+	p(x)
+	q
+	//c:nat
+	A
+}
+
+vocabulary Vout{
+	extern V::q/0
+}
+
+theory T:V{
+//	p(c) => q.
+//	p(c).
+	A => q.
+	A.
+	A <=> ?c: p(c).
+}
+
+structure S:V{
+	x is nat
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

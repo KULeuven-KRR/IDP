@@ -1,0 +1,75 @@
+vocabulary V{
+	type Loc
+	type Step isa int
+	type Dir
+	Right:Dir
+	Left:Dir
+	Up:Dir
+	Down:Dir
+
+	Right(Loc,Loc)
+	Top(Loc,Loc)
+	Sokoban(Loc)
+	Solution(Loc)
+	Box(Loc)
+
+	// Additional
+	Sok(Loc,Step)
+	BoxT(Loc,Step)
+	Reachable (Loc, Step)
+	Start(Step) 
+	End(Step)
+	NextDir(Loc,Dir,Loc)
+	Linear(Loc,Dir,Loc)
+	Corner(Loc)
+
+	// Find
+	Push(Loc,Dir,Loc,Step)
+}
+vocabulary Vout{
+	extern V::Push/4
+}
+theory T:V{
+	{ Start(MIN[:Step]). }
+	{ End(MAX[:Step]). }
+	
+	// Directed neighbour positions
+	!l d l1: NextDir(l, d, l1) <=> (d=Right & Right(l,l1)) | (d=Left & Right(l1,l)) | (d=Up & Top(l,l1)) | (d=Down & Top(l1,l)).
+
+	// Linear(x,d,y) is the transitive closure of NextDir
+	!x d y: Linear(x,d,y) <=> (NextDir(x,d,y) | (?x1: NextDir(x,d,x1) & Linear(x1,d,y))).
+
+	// position of the sokoban and the blocks
+	!x t: Sok(x,t) <=> ((Start(t) & Sokoban(x)) | (Step(t-1) & ?u d v: Push(u,d,v,t-1) & NextDir(x,d,v))).
+	!x t: BoxT(x,t) <=> ((Start(t) & Box(x)) | (Step(t-1) & ?y d: Push(y,d,x,t-1)) | (Step(t-1) & BoxT(x,t-1) & ~(?d y: Push(x,d,y,t-1)))).
+
+	// one Push per timestep
+	! t x1 d1 y1: Push(x1,d1,y1,t) => !x2 d2 y2: Push(x2,d2,y2,t) => x1=x2 & d1=d2 & y1=y2.
+	! t : End(t)  => ~ (? x d y : Push(x,d,y,t)).
+
+	! t x d y : Push(x,d,y,t) => ?x1: NextDir(x1,d,x) & Reachable(x1,t).
+
+	{  Reachable(l,t) <- Sok(l,t).
+		Reachable(l,t) <- ~BoxT(l,t) & ? l1 : Reachable(l1,t) & ? d: NextDir(l1,d,l). 
+	}
+
+	//  A push-trajectory is linear.  
+	! x d y t : Push(x,d,y,t) => x=y | Linear(x,d,y).
+
+	//  A push-trajectory   over free locations:
+	! x d y t : Push(x,d,y,t) =>  (! z: Linear(x,d,z)  & (z=y | Linear(z,d,y)) => ~BoxT(z,t)). 
+
+	// goal
+	! t: End(t) => (!x: BoxT(x,t)  => Solution(x)).
+}
+
+structure S:V{
+	Dir = {A..D} Up=A Left=B Right=C Down=D
+	Step = {1; 10; 11; 12; 13; 14; 15; 2; 3; 4; 5; 6; 7; 8; 9}
+	Loc = {Col2row3; Col2row4; Col2row5; Col3row1; Col3row2; Col3row3; Col3row5; Col4row1; Col4row2; Col4row3; Col4row4; Col4row5; Col5row2; Col5row3; Col5row4; Col6row2; Col6row4; Col7row2; Col7row3; Col7row4}
+	Top = {Col2row4,Col2row3; Col2row5,Col2row4; Col3row2,Col3row1; Col3row3,Col3row2; Col4row2,Col4row1; Col4row3,Col4row2; Col4row4,Col4row3; Col4row5,Col4row4; Col5row3,Col5row2; Col5row4,Col5row3; Col7row3,Col7row2; Col7row4,Col7row3}
+	Right = {Col2row3,Col3row3; Col2row5,Col3row5; Col3row1,Col4row1; Col3row2,Col4row2; Col3row3,Col4row3; Col3row5,Col4row5; Col4row2,Col5row2; Col4row3,Col5row3; Col4row4,Col5row4; Col5row2,Col6row2; Col5row4,Col6row4; Col6row2,Col7row2; Col6row4,Col7row4}
+	Solution = {Col2row3; Col3row1; Col3row2; Col7row2}
+	Box = {Col3row3; Col4row2; Col4row4; Col5row4}
+	Sokoban = {Col2row5}
+}

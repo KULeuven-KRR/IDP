@@ -1,0 +1,37 @@
+// Part of the verification of an anonymous conference system
+vocabulary V{
+	type Value isa int
+	type PersonId isa Value
+
+	type Manager isa int
+	type Attribute isa int
+	StandsFor:Attribute
+	type Time isa int
+
+	Knows(Manager,Attribute,Value,Value,Time)
+	Equiv(Manager,PersonId,PersonId,Time)
+	DB(Manager,Attribute,Value,Value,Time)
+	Added(Manager,Attribute,Value,Value,Time)
+}
+theory T:V{
+	{
+		DB(man, a, v1, v2, t+1) <- DB(man, a, v1, v2, t).
+		DB(man, a, v1, v2, t+1) <- Added(man, a, v1, v2, t).
+	}
+	{
+		Knows(m,att,v1,v2,t) <- DB(m,att,v1,v2,t).
+		Knows(m,att,v1,v2,t) <- Knows(m,att,v1,v2,t) | DB(m,StandsFor,v1,v2,t).
+	}
+	Knows(1,1,2,3,5).
+}
+vocabulary Vout{
+	
+}
+structure S:V{
+	Time 		= {0..50}
+	Value 		= {1..50}
+	PersonId 	= {1..50}
+	Manager = {1..2} 
+	Attribute = {1..3}
+	StandsFor = 1
+}

@@ -3,24 +3,14 @@ vocabulary V{
 	p(x)
 }
 
+vocabulary Vout{
+	
+}
+
 theory T: V{
 	?x: p(x).
 }
 
 structure S: V {
 	x = {1..1000000}
-}
-
-#include <mx>
-
-procedure getasol(){
-	stdoptions.groundlazily=true
-	stdoptions.groundwithbounds=true
-	stdoptions.verbosity.grounding=10
-	stdoptions.verbosity.solving=10
-	return modelexpandpartial(T, S, stdoptions)
-}
-
-procedure main(){
-	print(getasol())
 }

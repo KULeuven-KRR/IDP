@@ -4,6 +4,10 @@ vocabulary V{
 	q(x, x, x)
 }
 
+vocabulary Vout{
+	
+}
+
 theory T: V{
 	?x: p(x).
 	!x: p(x) => !y z: q(x, y, z).
@@ -11,19 +15,4 @@ theory T: V{
 
 structure S: V {
 	x = {1..200}
-}
-
-#include <mx>
-
-procedure getasol(){
-	stdoptions.groundlazily=true
-	stdoptions.groundwithbounds=true
-	stdoptions.verbosity.grounding=1
-	stdoptions.verbosity.solving=1
-	return modelexpandpartial(T, S, stdoptions)
-}
-
-procedure main(){
-	sol = getasol()
-	//print(sol)
 }

@@ -1,0 +1,89 @@
+vocabulary V{
+	type Loc
+	type Step isa int
+	type Dir
+	Right:Dir
+	Left:Dir
+	Up:Dir
+	Down:Dir
+
+	Right(Loc,Loc)
+	Top(Loc,Loc)
+	Sokoban(Loc)
+	Solution(Loc)
+	Box(Loc)
+
+	// Additional
+	Sok(Loc,Step)
+	BoxT(Loc,Step)
+	Reachable (Loc, Step)
+	Start(Step) 
+	End(Step)
+	NextDir(Loc,Dir,Loc)
+	Linear(Loc,Dir,Loc)
+	Corner(Loc)
+
+	// Find
+	Push(Loc,Dir,Loc,Step)
+}
+vocabulary Vout{
+	extern V::Push/4
+}
+theory T:V{
+	{ Start(MIN[:Step]). }
+	{ End(MAX[:Step]). }
+	
+	// Directed neighbour positions
+	{  NextDir(l,Right,l1) <- Right(l,l1).
+		NextDir(l,Left,l1) <- Right(l1,l).
+		NextDir(l,Up,l1) <- Top(l,l1).
+		NextDir(l,Down,l1) <- Top(l1,l).  
+	}
+
+	// Linear(x,d,y) is the transitive closure of NextDir
+	{  Linear(x,d,y) <- NextDir(x,d,y).
+		Linear(x,d,y) <- NextDir(x,d,x1) & Linear(x1,d,y). 
+	}
+
+	// position of the sokoban and the blocks
+	{  
+		Sok(x,t) <- Start(t) & Sokoban(x).
+		Sok(x,t) <- Push(u,d,v,t-1) & NextDir(x,d,v).
+	}
+	{
+		BoxT(x,t) <- Start(t) & Box(x). 
+		BoxT(y,t) <- Push(x,d,y,t-1).
+		BoxT(x,t) <- BoxT(x,t-1) & ~ (? d y : Push(x,d,y,t-1)).
+	}
+
+	// one Push per timestep
+	! t x1 d1 y1: Push(x1,d1,y1,t) => !x2 d2 y2: Push(x2,d2,y2,t) => x1=x2 & d1=d2 & y1=y2.
+	! t : End(t)  => ~ (? x d y : Push(x,d,y,t)).
+
+	! t x d y : Push(x,d,y,t) => ?x1: NextDir(x1,d,x) & Reachable(x1,t).
+
+	{  Reachable(l,t) <- Sok(l,t).
+		Reachable(l,t) <- ~BoxT(l,t) & ? l1 : Reachable(l1,t) & ? d: NextDir(l1,d,l). 
+	}
+
+	//  A push-trajectory is linear.  
+	! x d y t : Push(x,d,y,t) => x=y | Linear(x,d,y).
+
+	//  A push-trajectory   over free locations:
+	! x d y t : Push(x,d,y,t) =>  (! z: Linear(x,d,z)  & (z=y | Linear(z,d,y)) => ~BoxT(z,t)). 
+
+	// goal
+	! t: End(t) => (!x: BoxT(x,t)  => Solution(x)).
+}
+structure S:V{
+	Dir = {A..D} Up=A Left=B Right=C Down=D
+	Step = {1..2}
+	Loc = {1..41;}
+	Top = {}
+	Right = {1,2;2,3;3,4;4,5;5,6;6,7;7,8;8,9;9,10;10,11;11,12;12,13;13,14;14,15;15,16;16,17;17,18;18,19;19,20;20,21;21,22;
+		22,23;23,24;24,25;25,26;26,27;27,28;28,29;29,30;30,31;31,32;32,33;33,34;34,35;35,36;36,37;37,38;38,39;39,40;40,41;
+	}
+	Solution = {41}
+	Box = {20}
+	Sokoban = {1}
+}

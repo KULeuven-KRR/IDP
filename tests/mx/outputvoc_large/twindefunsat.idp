@@ -1,0 +1,24 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+vocabulary Vout{
+}
+
+theory T:V{
+	{
+		p(x).
+	}
+	{
+		p(x) <- false.
+	}
+}
+
+structure S:V{
+	x = {1..5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 0
+}

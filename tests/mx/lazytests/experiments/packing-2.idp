@@ -1,0 +1,32 @@
+vocabulary V{
+	type Id
+	type S isa int
+	type X isa int
+	type Y isa int
+	
+	Size(Id):S
+	
+	Pos(Id, X, Y)
+	
+	Largest(Id)
+}
+vocabulary Vout{
+	
+}
+theory T:V{	
+	!id: ?x y: Pos(id, x, y) & x+Size(id)<MAX[:X] & y+Size(id)<MAX[:Y].
+	!id x y x2 y2: Pos(id, x, y) & Pos(id, x2, y2) => x=x2 & y=y2.
+	!id id2 x x2 y y2: Pos(id, x, y) & Pos(id2, x2, y2) => id=id2 | x+Size(id)<x2 | x2+Size(id)<x  | y+Size(id)<y2 | y2+Size(id)<y.
+	
+	{
+		Largest(id) <- !id2: id~=id2 => Size(id)>=Size(id2).
+	}
+	!x: Largest(x) => Pos(x, 1, 1).
+}
+structure S:V{
+	Id = {1..2}
+	S = {1..50}
+	X = {1..500}
+	Y = {1..500}
+	Size = {1->25; 2->26}
+}

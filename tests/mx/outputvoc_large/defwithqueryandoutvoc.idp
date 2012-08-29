@@ -1,0 +1,24 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	pn
+}
+
+vocabulary Vout{
+	extern V::pn/0
+}
+
+theory T:V{
+	{
+		pn <- p(2012).
+		p(x) <- p(x).
+	}
+}
+
+structure S:V{
+	x is int
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
