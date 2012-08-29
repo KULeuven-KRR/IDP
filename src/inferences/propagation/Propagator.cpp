@@ -101,7 +101,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << "**   Applying propagation for " << toString(symbol);
 			pushtab();
-			clog << nt() << "Old interpretation was" << toString(newinter) << endl;
+			clog << nt() << "Old interpretation was" << toString(newinter) << "\n";
 		}
 		vector<Variable*> vv;
 		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
@@ -113,7 +113,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
-			clog << nt() << "Derived symbols: " << toString(bddinter) << endl;
+			clog << nt() << "Derived symbols: " << toString(bddinter) << "\n";
 		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
@@ -134,7 +134,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << nt() << "Result: " << toString(structure->inter(symbol));
 			poptab();
-			clog << nt() << "**" << endl;
+			clog << nt() << "**" << "\n";
 		}
 	}
 }
