@@ -95,6 +95,18 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 
 // TODO Add aggform (sum becomes cpable relation)
 
+Formula* UnnestThreeValuedTerms::visit(AggForm* af) {
+	auto savedparent = _cpablerelation;
+	if (_cpablerelation != TruthValue::False) {
+		_cpablerelation = (_cpsupport and eligibleForCP(af->getAggTerm(), _structure)) ? TruthValue::True : TruthValue::False;
+	}
+
+	auto result = UnnestTerms::visit(af);
+
+	_cpablerelation = savedparent;
+	return result;
+}
+
 Term* UnnestThreeValuedTerms::visit(AggTerm* t) {
 	auto savedcp = _cpablefunction;
 	auto savedparent = _cpablerelation;
