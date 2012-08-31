@@ -1393,9 +1393,9 @@ Function* EnumeratedFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	Function* candidate = NULL;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
 		Function* newcandidate = (*it)->resolve(sorts);
-		if (candidate && candidate != newcandidate) {
+		if (candidate && newcandidate && candidate != newcandidate) {
 			return NULL;
-		} else {
+		} else if (newcandidate) {
 			candidate = newcandidate;
 		}
 	}
