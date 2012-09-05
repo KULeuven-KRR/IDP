@@ -60,19 +60,17 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		_direction = propagation->getDirection();
 		_ct = propagation->isCT();
 		_child = propagation->getChild();
+		auto parent = propagation->getParent();
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
-			const Formula* p = propagation->getParent();
 			clog << "  Propagate ";
 			if (_direction == DOWN) {
-				clog << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ");
-				p->put(clog);
+				clog << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ") <<toString(parent);
 				if (_child) {
 					clog << " to ";
 					_child->put(clog);
 				}
 			} else {
-				clog << "upward to " << ((_ct == isPos(p->sign())) ? "the ct-bound of " : "the cf-bound of ");
-				p->put(clog);
+				clog << "upward to " << ((_ct == isPos(parent->sign())) ? "the ct-bound of " : "the cf-bound of ") <<toString(parent);
 				if (_child) {
 					clog << " from ";
 					_child->put(clog);
@@ -80,7 +78,7 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 			}
 			clog << "\n";
 		}
-		propagation->getParent()->accept(this);
+		parent->accept(this);
 		delete (propagation);
 	}
 	if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
@@ -233,6 +231,11 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 }
 
 template<class Factory, class Domain>
+void TypedFOPropagator<Factory, Domain>::setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
+	_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
+}
+
+template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
 	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
 	if (getOption(IntType::VERBOSE_PROPAGATING) > 2) {
@@ -302,13 +305,13 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 	auto lcd = _leafconnectdata[pf];
 	PredForm* connector = lcd._connector;
 	Assert(connector!=NULL);
-	if (getDomain(connector)._twovalued) {
-		return;
-	}
 
 	Domain* deriveddomain;
 	Domain* temp;
 	if (_direction == DOWN) {
+		if (getDomain(connector)._twovalued) {
+			return;
+		}
 		deriveddomain = _ct ? getDomain(pf)._ctdomain->clone() : getDomain(pf)._cfdomain->clone();
 		deriveddomain = _factory->conjunction(deriveddomain, lcd._equalities);
 		temp = deriveddomain;
@@ -330,6 +333,9 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 
 	} else {
 		Assert(_direction == UP);
+		if (getDomain(pf)._twovalued) {
+			return;
+		}
 		Assert(_domains.find(connector) != _domains.cend());
 		deriveddomain = _ct ? getDomain(connector)._ctdomain->clone() : getDomain(connector)._cfdomain->clone();
 		// deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);

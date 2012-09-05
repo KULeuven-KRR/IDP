@@ -119,9 +119,7 @@ public:
 		return _leafconnectors;
 	}
 
-	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
-		_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
-	}
+	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value);
 	void setTheory(AbstractTheory* t) {
 		if(_theory != NULL){
 			_theory->recursiveDelete();
