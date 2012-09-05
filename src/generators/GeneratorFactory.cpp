@@ -134,7 +134,14 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 	}
 	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe);
 
-	if (not inverse || vars.size() == 0) {
+	bool allequal = true;
+	for (auto i = 0; i < universe.tables().size(); ++i) {
+		if (universe.tables()[i]!=structure->inter(symbol->sorts()[i])) {
+			allequal = false;
+		}
+	}
+
+	if (not inverse || allequal) {
 		return tablegenerator;
 	}
 
