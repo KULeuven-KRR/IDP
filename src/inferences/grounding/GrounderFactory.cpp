@@ -1318,6 +1318,9 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	} else {
 		gentable = TableUtils::createFullPredTable(Universe(data.tables));
 	}
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		poptab();
+	}
 	return createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
 }
 
@@ -1337,6 +1340,9 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 		} else {
 			checktable = TableUtils::createPredTable(Universe(data.tables));
 		}
+	}
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
+		poptab();
 	}
 	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
 }

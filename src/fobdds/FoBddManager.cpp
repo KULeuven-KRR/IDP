@@ -1435,8 +1435,6 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 		return;
 	}
 	auto kernels = allkernels(query, this);
-//	cerr <<"Nb of unique kernels = " <<kernels.size() <<"\n";
-//	cerr <<"Nb of kernels = " <<countkernels(query, this) <<"\n";
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		CHECKTERMINATION;
 		// move kernel to the top
@@ -1466,13 +1464,12 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 			moveUp(*it);
 		}
 	}
-//	cerr <<"\tDone\n";
 }
 
 double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
 		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure, double weightPerAns) {
-// Recursive call
-//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
+	// Recursive call
+	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, this);
 	double bddAnswers = BddStatistics::estimateNrAnswers(bdd, vars, indices, structure, this);
 	double totalBddCost = getMaxElem<double>();
@@ -1487,6 +1484,9 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "For bdd \n" << toString(bdd) << "\n";
+		}
 		// Split variables
 		// * kernelvars and kernelindices are all vars and indices that appear in the kernel.
 		// * branchvars and branchidices are the rest.
@@ -1506,33 +1506,66 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 		// Recursive call
 		//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 		auto totalBddCost = getTotalWeigthedCost(bdd, vars, ind, structure, weightPerAns);
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "The total cost is " << totalBddCost << "\n";
+		}
 
 		if (isGoalbdd(not goal, bdd->falsebranch())) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				clog << "Only interested in the truebranch, which has cost ";
+			}
 			//If the falsebranch is a bdd we are not interested in, we might just return the truebranch,
 			// which will in general have a lower cost, but might provide for more answers.
 			auto totalBranchCost = getTotalWeigthedCost(bdd->truebranch(), vars, ind, structure, weightPerAns);
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				clog << totalBranchCost << "\n";
+			}
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
+				if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+					clog << "Which is smaller, to going into the true part\n";
+				}
 				return makeMore(goal, bdd->truebranch(), vars, ind, structure, weightPerAns);
 			}
 		} else if (isGoalbdd(not goal, bdd->truebranch())) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				clog << "Only interested in the falsebranch, which has cost ";
+			}
 			//If the truebranch is a bdd we are not interested in, we might just return the falsebranch,
 			// which will in general have a lower cost, but might provide for more answers.
 			auto totalBranchCost = getTotalWeigthedCost(bdd->falsebranch(), vars, ind, structure, weightPerAns);
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				clog << totalBranchCost << "\n";
+			}
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
+				if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+					clog << "Which is smaller, to going into the false part\n";
+				}
 				return makeMore(goal, bdd->falsebranch(), vars, ind, structure, weightPerAns);
 			}
 		}
 
 		//Number of answers in the kernel.
 		double kernelAnswers = BddStatistics::estimateNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure, this);
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Number of kernel answers is " << kernelAnswers << "\n";
+		}
+
+		tablesize kernelUnivSize = univNrAnswers(kernelvars, kernelindices, structure);
+		double chance = BddStatistics::estimateChance(bdd->kernel(), structure, this);
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Kernel chance is " << chance << "\n";
+		}
 
 		//For the true and false branch, we calculate the weight as follows:
 		//The cost of one answer in truebranch is weight * kernelanswers (they speak about different variables)
 		double trueBranchWeight = (kernelAnswers * weightPerAns < getMaxElem<double>()) ? kernelAnswers * weightPerAns : getMaxElem<double>();
-		const FOBDD* newtrue = makeMore(goal, bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Truebranchweight is " << trueBranchWeight << "\n";
+			clog << "Making more " << (goal ? "true" : "false") << " for the true branch\n";
+		}
 
-		tablesize kernelUnivSize = univNrAnswers(kernelvars, kernelindices, structure);
-		double chance = BddStatistics::estimateChance(bdd->kernel(), structure, this);
+		auto newtrue = makeMore(goal, bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
+
 		double kernelFalseAnswers;
 		if (kernelUnivSize._type == TST_APPROXIMATED || kernelUnivSize._type == TST_EXACT) {
 			kernelFalseAnswers = kernelUnivSize._size * (1 - chance);
@@ -1546,9 +1579,20 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 				kernelFalseAnswers = 1; //Why 1?}
 			}
 		}
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Kernel false answers is " << kernelFalseAnswers << "\n";
+		}
 		double falsebranchweight = (kernelFalseAnswers * weightPerAns < getMaxElem<double>()) ? kernelFalseAnswers * weightPerAns : getMaxElem<double>();
-		const FOBDD* newfalse = makeMore(goal, bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "False branch weight is " << falsebranchweight << "\n";
+			clog << "Making more " << (goal ? "true" : "false") << " for the false branch\n";
+		}
+
+		auto newfalse = makeMore(goal, bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				clog << "Truebranch not true or falsebranch not false, so creating reduced bdd and calling recursively\n";
+			}
 			return makeMore(goal, getBDD(bdd->kernel(), newtrue, newfalse), vars, ind, structure, weightPerAns);
 		} else {
 			return bdd;
@@ -1558,12 +1602,26 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 
 const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
-	return makeMore(false, bdd, vars, indices, structure, weightPerAns);
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Making the following bdd more false: \n" << toString(bdd) << "\nResulted in :\n";
+	}
+	auto result = makeMore(false, bdd, vars, indices, structure, weightPerAns);
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "\nResulted in :\n" << toString(result) << "\n";
+	}
+	return result;
 }
 
 const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
-	return makeMore(true, bdd, vars, indices, structure, weightPerAns);
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Making the following bdd more true: \n" << toString(bdd) << "\nResulted in :\n";
+	}
+	auto result = makeMore(true, bdd, vars, indices, structure, weightPerAns);
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "\nResulted in :\n" << toString(result) << "\n";
+	}
+	return result;
 }
 
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)

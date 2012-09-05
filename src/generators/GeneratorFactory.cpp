@@ -101,6 +101,9 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 
 InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << toString(symbol) << " on pattern " << toString(pattern) << "\n";
+	}
 	const PredTable* table = NULL;
 	if (symbol->isPredicate()) {
 		auto predicate = dynamic_cast<const Predicate*>(symbol);
@@ -227,6 +230,9 @@ void GeneratorFactory::visit(const ProcInternalPredTable*) {
 }
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "Creating a generator for \n" << toString(table->bdd()) << "\n";
+	}
 	BddGeneratorData data;
 	data.pattern = _pattern;
 	data.vars = _vars;
@@ -251,6 +257,9 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "or no, on second thought for\n" << toString(data.bdd) << "\n";
+	}
 	_generator = btg.create(data);
 }
 
