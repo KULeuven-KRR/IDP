@@ -51,6 +51,9 @@ enum class BRANCH {
 	FALSEBRANCH, TRUEBRANCH
 };
 
+template<>
+std::string toString(const BRANCH& type);
+
 /**
  * Class to convert a bdd into a generator
  */

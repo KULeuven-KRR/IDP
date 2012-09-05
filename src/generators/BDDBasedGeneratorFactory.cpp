@@ -44,6 +44,16 @@
 
 using namespace std;
 
+template<>
+std::string toString(const BRANCH& type) {
+	switch (type) {
+	case BRANCH::FALSEBRANCH:
+		return "false branch";
+	case BRANCH::TRUEBRANCH:
+		return "true branch";
+	}
+}
+
 /*
  * Tries to rewrite the given predform with var in the right hand side. Or -var in the righthandside (depending on bool invert)
  * If it is not possible to rewrite it this way, this returns NULL
