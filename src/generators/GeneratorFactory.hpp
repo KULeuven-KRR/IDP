@@ -24,6 +24,7 @@ class GeneratorNode;
 class Universe;
 class PredForm;
 class AbstractStructure;
+class PFSymbol;
 
 class GeneratorFactory: public StructureVisitor {
 private:
@@ -75,7 +76,7 @@ public:
 	static InstGenerator* create(const std::vector<const DomElemContainer*>&, const std::vector<SortTable*>&, const Formula* original = NULL);
 	// NOTE: becomes predtable owner!
 	static InstGenerator* create(const PredTable*, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>&, const Universe&);
-	static InstGenerator* create(const PredForm* atom,const  AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern,
+	static InstGenerator* create(const PFSymbol* symbol,const  AbstractStructure* structure, bool inverse, const std::vector<Pattern>& pattern,
 			const std::vector<const DomElemContainer*>& vars, const Universe& universe);
 };
 

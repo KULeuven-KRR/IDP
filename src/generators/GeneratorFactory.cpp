@@ -97,12 +97,11 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
-	PFSymbol* symbol = atom->symbol();
 	const PredTable* table = NULL;
-	if (atom->symbol()->isPredicate()) {
-		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
+	if (symbol->isPredicate()) {
+		auto predicate = dynamic_cast<const Predicate*>(symbol);
 		PredInter* inter;
 		if (predicate->type() == ST_NONE) {
 			inter = structure->inter(predicate);
@@ -127,8 +126,8 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 			break;
 		}
 	} else {
-		Assert(atom->symbol()->isFunction());
-		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
+		Assert(symbol->isFunction());
+		auto inter = structure->inter(dynamic_cast<const Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
 	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe);

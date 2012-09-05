@@ -480,7 +480,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			return createFromSimplePredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
 		}
 	}
-	return  GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+	return GeneratorFactory::create(atom->symbol(), structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
 
 }
 
