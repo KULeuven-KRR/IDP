@@ -93,13 +93,6 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, newstructure, _minimizeterm, _tracemonitor,
 			getOption(IntType::NBMODELS) != 1, data);
 
-	if (grounding == NULL) {
-		clonetheory->recursiveDelete();
-		delete (newstructure);
-		delete (data);
-		return std::vector<AbstractStructure*> { };
-	}
-
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (getOption(IntType::VERBOSE_SOLVING) > 0) {

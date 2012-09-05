@@ -74,6 +74,7 @@ public:
 		}
 		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver);
 		auto grounding = m->ground();
+		Assert(grounding!=NULL);
 		// FIXME deleting lazy grounders here is a problem!!! delete(m);
 		return grounding;
 	}
@@ -100,11 +101,17 @@ private:
 		}
 	}
 
-	AbstractGroundTheory* returnUnsat() {
+	AbstractGroundTheory* returnUnsat(GroundInfo info, GroundingReceiver* receiver) {
 		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0 || getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			clog << "Unsat detected during grounding\n";
 		}
-		return NULL;
+		if(receiver==NULL){
+			_grounder = GrounderFactory::create(info);
+		}else{
+			_grounder = GrounderFactory::create(info, receiver);
+		}
+		_grounder->getGrounding()->addEmptyClause();
+		return _grounder->getGrounding();
 	}
 
 	//Grounds the theory with the given structure
@@ -122,7 +129,11 @@ private:
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
-				return returnUnsat();
+				// TODO allow this without symbolic structure?
+				auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
+				auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
+				delete(symstructure);
+				return grounding;
 			}
 			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
@@ -137,8 +148,9 @@ private:
 			if (getOption(IntType::VERBOSE_GROUNDING) > 0 || getOption(IntType::VERBOSE_PROPAGATING) > 0) {
 				std::clog << "approximation detected UNSAT\n";
 			}
+			auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
 			delete (symstructure);
-			return returnUnsat();
+			return grounding;
 		}
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Creating grounders");
