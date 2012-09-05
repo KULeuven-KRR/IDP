@@ -59,7 +59,7 @@ private:
 	bool _nbmodelsequivalent; //If true, the produced grounding will have as many models as the original theory, if false, the grounding might have more models.
 
 public:
-	//NOTE: modifies the theory and the structure. Clone before passing them!
+	// NOTE: modifies the theory and the structure. Clone before passing them!
 	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor,
 			bool nbModelsEquivalent, GroundingReceiver* solver) {
 		if (theory == NULL || structure == NULL) {

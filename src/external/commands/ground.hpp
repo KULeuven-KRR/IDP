@@ -25,7 +25,8 @@ typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, bool)> GroundBa
 class GroundInference: public GroundBase {
 public:
 	GroundInference()
-			: GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument. The boolean parameter should be true if the grounding should preserve the number of models.") {
+			: GroundBase("ground",
+					"Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument. The boolean parameter should be true if the grounding should preserve the number of models.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -50,7 +51,8 @@ private:
 class PrintGroundingInference: public GroundBase {
 public:
 	PrintGroundingInference()
-			: GroundBase("printgrounding", "Prints the grounding to cout. The boolean parameter should be true if the grounding should preserve the number of models.", true) {
+			: GroundBase("printgrounding",
+					"Prints the grounding to cout. The boolean parameter should be true if the grounding should preserve the number of models.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
