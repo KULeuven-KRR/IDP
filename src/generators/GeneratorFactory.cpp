@@ -78,7 +78,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 }
 
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe, const Formula*) {
+		const Universe& universe) {
 	GeneratorFactory factory;
 	Assert(universe.tables().size()== pattern.size());
 	// Check for infinite grounding
@@ -131,7 +131,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
-	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe, atom);
+	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe);
 
 	if (not inverse || vars.size() == 0) {
 		return tablegenerator;
@@ -166,7 +166,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	}
 
 	std::vector<InstGenerator*> generators = { tablegenerator, outofboundsgenerator };
-	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe, atom);
+	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe);
 
 	std::vector<InstGenerator*> checkers = { tablechecker, new FullGenerator() };
 

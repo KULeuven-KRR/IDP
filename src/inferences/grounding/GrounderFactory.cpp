@@ -1281,7 +1281,7 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 
 InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula,
 		const std::vector<Pattern>& pattern) {
-	auto instgen = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables), subformula);
+	auto instgen = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables));
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
