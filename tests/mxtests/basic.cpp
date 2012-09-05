@@ -42,6 +42,13 @@ TEST(MXnbmodelsTest, DoesMX) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
+// TODO placed here, but should become a unit test internally
+TEST(GeneratorTest, ExistsKnown) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/exists_known_generator.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 /**
  * TODO
  */
