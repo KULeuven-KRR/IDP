@@ -470,7 +470,7 @@ void Structure::functionCheck() {
 	}
 }
 
-SortTable* Structure::inter(Sort* s) const {
+SortTable* Structure::inter(const Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL"); // TODO should become Assert
 	}
@@ -482,7 +482,7 @@ SortTable* Structure::inter(Sort* s) const {
 	vector<SortTable*> tables;
 	auto list = s->getSortsForTable();
 	for (auto i = list.cbegin(); i < list.cend(); ++i) {
-		auto it = _sortinter.find(*i);
+		auto it = _sortinter.find(const_cast<Sort*>(*i));
 		Assert(it != _sortinter.cend());
 		tables.push_back((*it).second);
 	}
@@ -493,13 +493,13 @@ SortTable* Structure::inter(Sort* s) const {
 	}
 }
 
-PredInter* Structure::inter(Predicate* p) const {
+PredInter* Structure::inter(const Predicate* p) const {
 	if (p->builtin()) {
 		return p->interpretation(this);
 	}
 
 	if (p->type() == ST_NONE) {
-		auto it = _predinter.find(p);
+		auto it = _predinter.find(const_cast<Predicate*>(p));
 		if (it == _predinter.cend()) {
 			stringstream ss;
 			ss << "The structure does not contain the predicate " << p->name();
@@ -531,22 +531,22 @@ PredInter* Structure::inter(Predicate* p) const {
 	return newinter;
 }
 
-FuncInter* Structure::inter(Function* f) const {
+FuncInter* Structure::inter(const Function* f) const {
 	if (f->builtin()) {
 		return f->interpretation(this);
 	} else {
-		auto it = _funcinter.find(f);
+		auto it = _funcinter.find(const_cast<Function*>(f));
 		Assert(it != _funcinter.cend());
 		return it->second;
 	}
 }
 
-PredInter* Structure::inter(PFSymbol* s) const {
-	if (isa<Predicate>(*s)) {
-		return inter(dynamic_cast<Predicate*>(s));
+PredInter* Structure::inter(const PFSymbol* s) const {
+	if (isa<const Predicate>(*s)) {
+		return inter(dynamic_cast<const Predicate*>(s));
 	} else {
-		Assert(isa<Function>(*s));
-		return inter(dynamic_cast<Function*>(s))->graphInter();
+		Assert(isa<const Function>(*s));
+		return inter(dynamic_cast<const Function*>(s))->graphInter();
 	}
 }
 

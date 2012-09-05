@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef ABSTRACTSTRUCTURE_HPP_
 #define ABSTRACTSTRUCTURE_HPP_
@@ -24,7 +24,6 @@ class PFSymbol;
 class Sort;
 class SortTable;
 class Vocabulary;
-
 
 class AbstractStructure {
 protected:
@@ -59,10 +58,10 @@ public:
 	Vocabulary* vocabulary() const {
 		return _vocabulary;
 	}
-	virtual SortTable* inter(Sort* s) const = 0; // Return the domain of s.
-	virtual PredInter* inter(Predicate* p) const = 0; // Return the interpretation of p.
-	virtual FuncInter* inter(Function* f) const = 0; // Return the interpretation of f.
-	virtual PredInter* inter(PFSymbol* s) const = 0; // Return the interpretation of s.
+	virtual SortTable* inter(const Sort* s) const = 0; // Return the domain of s.
+	virtual PredInter* inter(const Predicate* p) const = 0; // Return the interpretation of p.
+	virtual FuncInter* inter(const Function* f) const = 0; // Return the interpretation of f.
+	virtual PredInter* inter(const PFSymbol* s) const = 0; // Return the interpretation of s.
 	virtual const std::map<Predicate*, PredInter*>& getPredInters() const = 0;
 	virtual const std::map<Function*, FuncInter*>& getFuncInters() const = 0;
 
