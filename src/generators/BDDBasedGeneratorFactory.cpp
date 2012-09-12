@@ -44,6 +44,16 @@
 
 using namespace std;
 
+template<>
+std::string toString(const BRANCH& type) {
+	switch (type) {
+	case BRANCH::FALSEBRANCH:
+		return "false branch";
+	case BRANCH::TRUEBRANCH:
+		return "true branch";
+	}
+}
+
 /*
  * Tries to rewrite the given predform with var in the right hand side. Or -var in the righthandside (depending on bool invert)
  * If it is not possible to rewrite it this way, this returns NULL
@@ -132,9 +142,7 @@ InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
 		return GeneratorFactory::create(outvars, tables);
 	}
 
-	auto result = createFromBDD(data);
-	//cerr <<"Resulting generator = " <<toString(result) <<"\n";
-	return result;
+	return createFromBDD(data);
 }
 
 InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
@@ -142,7 +150,14 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	//The base-cases are already covered in BDDToGenerator::create
 	if (data.bdd == _manager->falsebdd() || data.bdd == _manager->truebdd()) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Basic true/false bdd\n";
+		}
 		return create(data);
+	}
+
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Generating for\n" << toString(data.bdd) << "\n";
 	}
 
 	// Otherwise: recursive case
@@ -190,6 +205,9 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	}
 
 	if (data.bdd->falsebranch() == _manager->falsebdd()) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Only generate true branch\n";
+		}
 		// Only generate the true branch possibilities
 		branchdata.bdd = data.bdd->truebranch();
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
@@ -199,6 +217,9 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	}
 
 	if (data.bdd->truebranch() == _manager->falsebdd()) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "Only generate false branch\n";
+		}
 		// Only generate the false branch possibilities
 		branchdata.bdd = data.bdd->falsebranch();
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::FALSEBRANCH,
@@ -208,6 +229,9 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	}
 
 	if (data.bdd->truebranch() == _manager->truebdd()) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			clog << "True branch alwayss true\n";
+		}
 		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
 
 		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
@@ -229,6 +253,10 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator };
 		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker };
 		return new UnionGenerator(generators, checkers);
+	}
+
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Creating two-child generator\n";
 	}
 
 	// Both branches possible: create a checker and a generator for all possibilities
@@ -480,7 +508,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 			return createFromSimplePredForm(newatom, termpattern, termvars, fotermvars, structure, branchToGenerate, Universe(termuniv));
 		}
 	}
-	return  GeneratorFactory::create(atom, structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
+	return GeneratorFactory::create(atom->symbol(), structure, branchToGenerate == BRANCH::FALSEBRANCH, atompattern, datomvars, Universe(atomtables));
 
 }
 
@@ -490,7 +518,6 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 	while (not atoms_to_order.empty()) {
 		Formula *bestatom = NULL;
 		double bestcost = getMaxElem<double>();
-	//	cerr <<"ITERATION\n";
 		for (auto it = atoms_to_order.cbegin(); it != atoms_to_order.cend(); ++it) {
 			bool currinverse = false;
 			if (*it == origatom) {
@@ -505,7 +532,6 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			}
 
 			double currcost = FormulaUtils::estimatedCostAll(*it, projectedfree, currinverse, structure);
-	//		cerr <<"Cost of " <<toString(*it) <<" is " <<currcost <<"\n";
 			if (currcost < bestcost) {
 				bestcost = currcost;
 				bestatom = *it;
@@ -518,7 +544,6 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 		}
 
 		orderedconjunction.push_back(bestatom);
-	//	cerr <<toString(orderedconjunction) <<"\n";
 		atoms_to_order.erase(bestatom);
 		for (auto it = bestatom->freeVars().cbegin(); it != bestatom->freeVars().cend(); ++it) {
 			free_vars.erase(*it);
@@ -585,7 +610,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
-	if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";
 	}
 	if (is(newatom->symbol(), STDPRED::EQ)) {
@@ -630,7 +655,8 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	if (result != NULL) {
 		return result;
 	}
-	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(newatom, NULL, Context::NEGATIVE);
+
+	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(newatom, structure, Context::NEGATIVE);
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform, NULL, false);
 	FormulaUtils::flatten(newform);
@@ -682,6 +708,9 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
 		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fobddvars, universe));
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Creating generator for kernel " << toString(kernel) << "\n";
+	}
 	if (isa<FOBDDAggKernel>(*kernel)) {
 		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), pattern, vars, fobddvars, structure, branchToGenerate, universe);
 	}
@@ -694,7 +723,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		}
 		auto gen = createFromFormula(formula, pattern, vars, atomvars, structure, branchToGenerate, universe);
 		formula->recursiveDelete();
-		if (getOption(IntType::GROUNDVERBOSITY) > 3) {
+		if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 2) {
 			clog << "Created kernel generator: " << toString(gen) << "\n";
 		}
 		return gen;
@@ -788,6 +817,11 @@ InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fovars, universe));
+
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Creating from " << toString(f) << " on pattern " << toString(pattern) << " for branch " << toString(branchToGenerate) << "\n";
+	}
+
 	if (isa<PredForm>(*f)) {
 		auto newf = dynamic_cast<PredForm*>(f);
 		return createFromPredForm(newf, pattern, vars, fovars, structure, branchToGenerate, universe);

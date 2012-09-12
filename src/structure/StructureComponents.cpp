@@ -3941,7 +3941,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 		}
 	}
 
-	if (getOption(IntType::SATVERBOSITY) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
+	if (getOption(IntType::VERBOSE_SOLVING) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
 		stringstream ss;
 		ss << "Only " << result.size() << " models exist, although " << getOption(IntType::NBMODELS) << " were requested.\n";
 		Warning::warning(ss.str());

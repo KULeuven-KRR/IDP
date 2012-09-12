@@ -21,7 +21,7 @@ InternalArgument postProcess(std::vector<AbstractStructure*> sols) {
 	if (sols.size() == 0) {
 		return InternalArgument();
 	}
-	Assert(sols.size()==1 && sols[0]->isConsistent());
+	Assert(sols.size()==1);
 	auto structure = sols[0];
 	structure->materialize();
 	structure->clean();

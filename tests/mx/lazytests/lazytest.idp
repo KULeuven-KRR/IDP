@@ -16,7 +16,7 @@ structure S: V {
 
 procedure getsomesols(){
 	stdoptions.groundlazily=true
-	stdoptions.satverbosity=4
+	stdoptions.verbosity.solving=4
 	stdoptions.nrmodels = 10
 	return modelexpand(T, S, stdoptions)
 }

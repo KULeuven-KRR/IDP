@@ -25,7 +25,8 @@ typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, bool)> GroundBa
 class GroundInference: public GroundBase {
 public:
 	GroundInference()
-			: GroundBase("ground", "Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument. The boolean parameter should be true if the grounding should preserve the number of models.") {
+			: GroundBase("ground",
+					"Returns theory which is the grounding of the given theory in the given structure.\n Does not change its input argument. The boolean parameter should be true if the grounding should preserve the number of models.") {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -39,10 +40,6 @@ private:
 		auto s = structure->clone();
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, modelcountequivalence, NULL);
-		if (grounding == NULL) {
-			grounding = new GroundTheory<GroundPolicy>(NULL);
-			grounding->addEmptyClause();
-		}
 		t->recursiveDelete();
 		delete (s);
 		return grounding;
@@ -54,7 +51,8 @@ private:
 class PrintGroundingInference: public GroundBase {
 public:
 	PrintGroundingInference()
-			: GroundBase("printgrounding", "Prints the grounding to cout. The boolean parameter should be true if the grounding should preserve the number of models.", true) {
+			: GroundBase("printgrounding",
+					"Prints the grounding to cout. The boolean parameter should be true if the grounding should preserve the number of models.", true) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -69,12 +67,7 @@ private:
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, modelcountequivalence, monitor);
 		t->recursiveDelete();
 		delete (s);
-		if (grounding != NULL) {
-			grounding->recursiveDelete();
-		}
-		else{
-			clog << "false\n";
-		}
+		grounding->recursiveDelete();
 		monitor->flush();
 	}
 };

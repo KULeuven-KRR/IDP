@@ -50,10 +50,10 @@ public:
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
-	SortTable* inter(Sort* s) const; //!< Return the domain of s.
-	PredInter* inter(Predicate* p) const; //!< Return the interpretation of p.
-	FuncInter* inter(Function* f) const; //!< Return the interpretation of f.
-	PredInter* inter(PFSymbol* s) const; //!< Return the interpretation of s.
+	SortTable* inter(const Sort* s) const; //!< Return the domain of s.
+	PredInter* inter(const Predicate* p) const; //!< Return the interpretation of p.
+	FuncInter* inter(const Function* f) const; //!< Return the interpretation of f.
+	PredInter* inter(const PFSymbol* s) const; //!< Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
 	bool isConsistent() const;

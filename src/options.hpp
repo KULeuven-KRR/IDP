@@ -37,15 +37,25 @@ enum StringType {
 };
 
 enum IntType {
-	SATVERBOSITY,
-	GROUNDVERBOSITY,
-	PROPAGATEVERBOSITY,
 	NBMODELS,
 	NRPROPSTEPS,
 	LONGESTBRANCH,
 	PROVERTIMEOUT,
 	TIMEOUT,
-	RANDOMSEED
+	RANDOMSEED,
+	// DO NOT MIX verbosity and non-verbosity options!
+	VERBOSE_CREATE_GROUNDERS,
+	VERBOSE_GEN_AND_CHECK,
+	VERBOSE_GROUNDING,
+	VERBOSE_TRANSFORMATIONS,
+	VERBOSE_SOLVING,
+	VERBOSE_PROPAGATING,
+	VERBOSE_CREATE_PROPAGATORS,
+	VERBOSE_QUERY,
+	VERBOSE_DEFINITIONS,
+	VERBOSE_SYMMETRY,
+	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
+	LAST_VERBOSE = VERBOSE_SYMMETRY			  //IMPORTANT: this has to be the last of the verbosity options
 };
 
 enum BoolType {
@@ -65,6 +75,10 @@ enum BoolType {
 	LIFTEDUNITPROPAGATION
 };
 
+enum OptionType {
+	VERBOSITY
+};
+
 enum DoubleType {
 
 };
@@ -81,6 +95,13 @@ enum class PrintBehaviour {
 	PRINT,
 	DONOTPRINT
 };
+
+template<typename OptionType>
+bool isVerbosityOption(OptionType){
+	return false;
+}
+template<>
+bool isVerbosityOption<IntType>(IntType t);
 
 template<class EnumType, class ConcreteType>
 class TypedOption {
@@ -183,8 +204,10 @@ protected:
 			std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
-		for (auto i = _options.cbegin(); i != _options.cend(); ++i) {
-			delete (*i);
+		for (auto option : _options) {
+			if(option!=NULL){
+				delete (option);
+			}
 		}
 	}
 	bool isOption(const std::string& name) const {
@@ -195,26 +218,42 @@ public:
 		return _options.at(_name2type.at(name))->getValue();
 	}
 	ValueType getValue(EnumType option) const {
+		Assert((unsigned int)option<_options.size() && _options.at(option)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		return _options.at(option)->getValue();
 	}
 	void setStrValue(const std::string& name, const ValueType& value) {
 		Assert(isOption(name));
-		//_options.at(_name2type.at(name))->setValue(value);
 		setValue(_name2type.at(name), value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
+		Assert((unsigned int)type<_options.size() && _options.at(type)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		_options.at(type)->setValue(value);
 	}
 	bool isAllowedValue(const std::string& name, const ValueType& value) const {
 		return isOption(name) && _options.at(_name2type.at(name))->isAllowedValue(value);
 	}
 	std::string printOption(const std::string& name) const {
+		Assert(isOption(name));
 		return _options.at(_name2type.at(name))->printOption();
 	}
 	void addOptionStrings(std::vector<std::string>& optionlines) const {
-		for (auto i = _options.cbegin(); i < _options.cend(); ++i) {
-			optionlines.push_back((*i)->printOption());
+		for (auto option : _options) {
+			if (option != NULL) {
+				// Check is necessary as not each optionblock has all options
+				optionlines.push_back(option->printOption());
+			}
 		}
+	}
+
+	// NOTE mainly used to get all suboption blocks
+	std::vector<ValueType> getOptionValues() const {
+		std::vector<ValueType> values;
+		for(auto option: _options){
+			if(option!=NULL){
+				values.push_back(option->getValue());
+			}
+		}
+		return values;
 	}
 
 	void copyValues(Options* opts);
@@ -222,6 +261,7 @@ public:
 
 typedef OptionPolicy<IntType, int> IntPol;
 typedef OptionPolicy<BoolType, bool> BoolPol;
+typedef OptionPolicy<OptionType, Options*> OptionPol;
 typedef OptionPolicy<DoubleType, double> DoublePol;
 typedef OptionPolicy<StringType, std::string> StringPol;
 
@@ -241,6 +281,11 @@ struct OptionValueTraits<double> {
 template<>
 struct OptionValueTraits<bool> {
 	typedef BoolType EnumType;
+};
+
+template<>
+struct OptionValueTraits<Options*> {
+	typedef OptionType EnumType;
 };
 
 template<>
@@ -267,6 +312,11 @@ struct OptionTypeTraits<BoolType> {
 };
 
 template<>
+struct OptionTypeTraits<OptionType> {
+	typedef Options* ValueType;
+};
+
+template<>
 struct OptionTypeTraits<StringType> {
 	typedef std::string ValueType;
 };
@@ -274,12 +324,14 @@ struct OptionTypeTraits<StringType> {
 /**
  * Class to represent a block of options
  */
-class Options: public IntPol, public BoolPol, public DoublePol, public StringPol {
+class Options: public IntPol, public BoolPol, public DoublePol, public StringPol, public OptionPol {
 private:
 	std::vector<std::string> _option2name;
+	bool _isVerbosity;
 
 public:
 	Options();
+	Options(bool verboseOptions);
 	~Options() {
 	}
 
@@ -301,9 +353,11 @@ public:
 
 	template<class EnumType, class ValueType>
 	void setValue(EnumType type, const ValueType& value) {
-		OptionPolicy < EnumType, ValueType > ::setValue(type, value);
+		OptionPolicy<EnumType, ValueType>::setValue(type, value);
 	}
-
+	bool isVerbosityBlock(){
+		return _isVerbosity;
+	}
 	void copyValues(Options*);
 
 	std::string printAllowedValues(const std::string& option) const;
@@ -321,6 +375,10 @@ public:
 	template<class ValueType>
 	bool isAllowedValue(const std::string& name, const ValueType& value) {
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isAllowedValue(name, value);
+	}
+
+	std::vector<Options*> getSubOptionBlocks() const{
+		return OptionPol::getOptionValues();
 	}
 };
 

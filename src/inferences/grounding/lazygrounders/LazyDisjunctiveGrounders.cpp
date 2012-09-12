@@ -83,7 +83,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 		formula.setType(connective());
 
 		auto subgrounder = getLazySubGrounder(instance);
-		if (getOption(GROUNDVERBOSITY) > 1) {
+		if (getOption(VERBOSE_GROUNDING) > 1) {
 			clog << "Grounding additional subformula " << toString(subgrounder) << "\n";
 		}
 		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);

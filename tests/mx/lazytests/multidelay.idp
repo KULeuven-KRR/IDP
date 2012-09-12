@@ -18,8 +18,8 @@ theory T:V{
 structure S:V{
 }
 procedure main(){
-	stdoptions.groundverbosity=2
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.grounding=2
+	stdoptions.verbosity.solving=0
 	stdoptions.groundlazily=true
 	print(modelexpandpartial(T, S))
 }

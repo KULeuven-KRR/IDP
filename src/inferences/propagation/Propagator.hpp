@@ -46,7 +46,6 @@ class TypedFOPropagator: public FOPropagator {
 	VISITORFRIENDS()
 private:
 	Options* _options; //TODO: remove options, verbosity and maxsteps. They belong to the globaldata
-	int _verbosity;
 	int _maxsteps; //!< Maximum number of propagations
 	InterpretationFactory* _factory; //!< Manages and creates domains for formulas
 	FOPropScheduler* _scheduler; //!< Schedules propagations
@@ -103,9 +102,6 @@ public:
 
 	// TODO check that domains can never contain nullpointers!
 
-	int getVerbosity() const {
-		return _verbosity;
-	}
 	int getMaxSteps() const {
 		return _maxsteps;
 	}
@@ -123,9 +119,7 @@ public:
 		return _leafconnectors;
 	}
 
-	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
-		_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
-	}
+	void setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value);
 	void setTheory(AbstractTheory* t) {
 		if(_theory != NULL){
 			_theory->recursiveDelete();

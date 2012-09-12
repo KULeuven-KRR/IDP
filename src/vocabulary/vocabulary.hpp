@@ -73,8 +73,8 @@ public:
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 
-	virtual std::vector<Sort*> getSortsForTable() {
-		return std::vector<Sort*> { this };
+	virtual std::vector<const Sort*> getSortsForTable() const {
+		return std::vector<const Sort*> { this };
 	}
 
 	std::ostream& put(std::ostream&) const;

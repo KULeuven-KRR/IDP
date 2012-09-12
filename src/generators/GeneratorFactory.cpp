@@ -16,6 +16,8 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddSetExpr.hpp"
 
+#include "Assert.h"
+
 #include "GeneratorFactory.hpp"
 
 #include "BDDBasedGeneratorFactory.hpp"
@@ -78,7 +80,7 @@ InstGenerator* GeneratorFactory::create(const vector<const DomElemContainer*>& v
 }
 
 InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const Universe& universe, const Formula*) {
+		const Universe& universe) {
 	GeneratorFactory factory;
 	Assert(universe.tables().size()== pattern.size());
 	// Check for infinite grounding
@@ -97,12 +99,14 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
-	PFSymbol* symbol = atom->symbol();
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << toString(symbol) << " on pattern " << toString(pattern) << "\n";
+	}
 	const PredTable* table = NULL;
-	if (atom->symbol()->isPredicate()) {
-		auto predicate = dynamic_cast<Predicate*>(atom->symbol());
+	if (symbol->isPredicate()) {
+		auto predicate = dynamic_cast<const Predicate*>(symbol);
 		PredInter* inter;
 		if (predicate->type() == ST_NONE) {
 			inter = structure->inter(predicate);
@@ -127,13 +131,20 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 			break;
 		}
 	} else {
-		Assert(atom->symbol()->isFunction());
-		auto inter = structure->inter(dynamic_cast<Function*>(symbol))->graphInter();
+		Assert(symbol->isFunction());
+		auto inter = structure->inter(dynamic_cast<const Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
-	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe, atom);
+	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe);
 
-	if (not inverse || vars.size() == 0) {
+	bool allequal = true;
+	for (auto i = 0; i < universe.tables().size(); ++i) {
+		if (universe.tables()[i]!=structure->inter(symbol->sorts()[i])) {
+			allequal = false;
+		}
+	}
+
+	if (not inverse || allequal) {
 		return tablegenerator;
 	}
 
@@ -166,7 +177,7 @@ InstGenerator* GeneratorFactory::create(const PredForm* atom, const AbstractStru
 	}
 
 	std::vector<InstGenerator*> generators = { tablegenerator, outofboundsgenerator };
-	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe, atom);
+	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe);
 
 	std::vector<InstGenerator*> checkers = { tablechecker, new FullGenerator() };
 
@@ -219,6 +230,9 @@ void GeneratorFactory::visit(const ProcInternalPredTable*) {
 }
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "Creating a generator for \n" << toString(table->bdd()) << "\n";
+	}
 	BddGeneratorData data;
 	data.pattern = _pattern;
 	data.vars = _vars;
@@ -243,6 +257,9 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 
 	// Generate a generator for the optimized bdd
 	BDDToGenerator btg(&optimizemanager);
+	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
+		clog  << "or no, on second thought for\n" << toString(data.bdd) << "\n";
+	}
 	_generator = btg.create(data);
 }
 

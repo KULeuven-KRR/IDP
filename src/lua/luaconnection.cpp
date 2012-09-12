@@ -121,6 +121,7 @@ lua_State* getState() {
 	return _state;
 }
 
+// Reference counters
 map<AbstractStructure*, unsigned int> _luastructures;
 map<AbstractTheory*, unsigned int> _luatheories;
 map<Options*, unsigned int> _luaoptions;
@@ -320,10 +321,18 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		(*ptr) = arg._value._options;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
-		if (_luaoptions.find(arg._value._options) != _luaoptions.cend()) {
-			++_luaoptions[arg._value._options];
+		auto options = arg._value._options;
+		if (_luaoptions.find(options) != _luaoptions.cend()) {
+			_luaoptions[options] += 1;
 		} else {
-			_luaoptions[arg._value._options] = 1;
+			_luaoptions[options] = 1;
+		}
+		for(auto suboption: options->getSubOptionBlocks()){ // Sub option blocks have at least as many refs as their parent, but might be passed around separately
+			if (_luaoptions.find(suboption) != _luaoptions.cend()) {
+				_luaoptions[suboption] += 1;
+			} else {
+				_luaoptions[suboption] = 1;
+			}
 		}
 		result = 1;
 		break;
@@ -705,17 +714,33 @@ int internalCall(lua_State* L) {
  * Garbage collection
  **********************/
 
+template<class T, class List >
+void reduceCounter(T t, List& list){
+	auto it2 = list.find(t);
+	if (it2 != list.cend()) {
+		--(it2->second);
+		if ((it2->second) == 0) {
+			list.erase(t);
+			delete (t);
+		}
+	}
+}
+
 template<typename T>
 int garbageCollect(lua_State* L) {
 	auto t = *(T*) lua_touserdata(L, 1);
 	auto& list = get<T>();
-	auto it = list.find(t);
-	if (it != list.cend()) {
-		--(it->second);
-		if ((it->second) == 0) {
-			list.erase(t);
-			delete (t);
-		}
+	reduceCounter(t, list);
+	return 0;
+}
+
+template<>
+int garbageCollect<Options*>(lua_State* L) {
+	auto options = *(Options**) lua_touserdata(L, 1);
+	auto& list = get<Options*>();
+	reduceCounter(options, list);
+	for(auto suboptions: options->getSubOptionBlocks()){
+		reduceCounter(suboptions, list);
 	}
 	return 0;
 }
@@ -1206,6 +1231,8 @@ InternalArgument getValue(Options* opts, const string& name) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
 	} else if (opts->isOptionOfType<double>(name)) {
 		return InternalArgument(opts->getValueOfType<double>(name));
+	} else if (opts->isOptionOfType<Options*>(name)) {
+		return InternalArgument(opts->getValueOfType<Options*>(name));
 	} else {
 		throw IdpException("Requesting non-existing option " + name);
 	}

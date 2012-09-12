@@ -59,9 +59,9 @@ private:
 	bool _nbmodelsequivalent; //If true, the produced grounding will have as many models as the original theory, if false, the grounding might have more models.
 
 public:
-	//NOTE: modifies the theory and the structure. Clone before passing them!
-	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term,
-			TraceMonitor* tracemonitor, bool nbModelsEquivalent, GroundingReceiver* solver) {
+	// NOTE: modifies the theory and the structure. Clone before passing them!
+	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor,
+			bool nbModelsEquivalent, GroundingReceiver* solver) {
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
 		}
@@ -74,14 +74,21 @@ public:
 		}
 		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver);
 		auto grounding = m->ground();
+		Assert(grounding!=NULL);
 		// FIXME deleting lazy grounders here is a problem!!! delete(m);
 		return grounding;
 	}
 private:
 	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor, bool nbModelsEquivalent,
 			GroundingReceiver* solver)
-			: _theory(theory), _structure(structure), _tracemonitor(tracemonitor), _minimizeterm(minimize), _receiver(solver), _grounder(NULL),
-				_prepared(false), _nbmodelsequivalent(nbModelsEquivalent) {
+			: 	_theory(theory),
+				_structure(structure),
+				_tracemonitor(tracemonitor),
+				_minimizeterm(minimize),
+				_receiver(solver),
+				_grounder(NULL),
+				_prepared(false),
+				_nbmodelsequivalent(nbModelsEquivalent) {
 		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness!
 		voc->add(_theory->vocabulary());
 		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
@@ -94,6 +101,19 @@ private:
 		}
 	}
 
+	AbstractGroundTheory* returnUnsat(GroundInfo info, GroundingReceiver* receiver) {
+		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0 || getOption(IntType::VERBOSE_GROUNDING) > 0) {
+			clog << "Unsat detected during grounding\n";
+		}
+		if(receiver==NULL){
+			_grounder = GrounderFactory::create(info);
+		}else{
+			_grounder = GrounderFactory::create(info, receiver);
+		}
+		_grounder->getGrounding()->addEmptyClause();
+		return _grounder->getGrounding();
+	}
+
 	//Grounds the theory with the given structure
 	AbstractGroundTheory* ground() {
 		Assert(_grounder==NULL);
@@ -104,32 +124,35 @@ private:
 
 		// Calculate known definitions
 		if (not getOption(BoolType::SATISFIABILITYDELAY)) {
-			if (verbosity() >= 1) {
+			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 				logActionAndTime("Evaluating definitions");
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
-				return NULL;
+				// TODO allow this without symbolic structure?
+				auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
+				auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
+				delete(symstructure);
+				return grounding;
 			}
 			Assert(defCalculated[0]->isConsistent());
 			_structure = defCalculated[0];
 		}
 
 		// Approximation
-		if (verbosity() >= 1) {
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Approximation");
 		}
 		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
 		if (not _structure->isConsistent()) {
-			if (verbosity() > 0) {
+			if (getOption(IntType::VERBOSE_GROUNDING) > 0 || getOption(IntType::VERBOSE_PROPAGATING) > 0) {
 				std::clog << "approximation detected UNSAT\n";
 			}
+			auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
 			delete (symstructure);
-			return NULL;
+			return grounding;
 		}
-
-		// Create grounder
-		if (verbosity() >= 1) {
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Creating grounders");
 		}
 		auto gi = GroundInfo(_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm);
@@ -144,20 +167,19 @@ private:
 		}
 
 		// Run grounder
-		if (verbosity() >= 1) {
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Grounding");
 		}
 		_grounder->toplevelRun();
 
-
 		// Add symmetry breakers
-		if (verbosity() >= 1) {
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Adding symmetry breakers");
 		}
 		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm);
 
 		// Print grounding statistics
-		if (verbosity() > 0) {
+		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			auto maxsize = _grounder->getFullGroundSize();
 			//cout <<"full|grounded|%|time\n";
 			//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";

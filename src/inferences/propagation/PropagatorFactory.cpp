@@ -108,8 +108,7 @@ std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, A
 template<class InterpretationFactory, class PropDomain>
 FOPropagatorFactory<InterpretationFactory, PropDomain>::FOPropagatorFactory(InterpretationFactory* factory, FOPropScheduler* scheduler, bool as,
 		const map<PFSymbol*, InitBoundType>& init)
-		: 	_verbosity(getOption(IntType::PROPAGATEVERBOSITY)),
-			_initbounds(init),
+		: 	_initbounds(init),
 			_assertsentences(as) {
 	auto options = GlobalData::instance()->getOptions();
 	_propagator = new TypedFOPropagator<InterpretationFactory, PropDomain>(factory, scheduler, options);
@@ -123,7 +122,7 @@ FOPropagatorFactory<InterpretationFactory, PropDomain>::~FOPropagatorFactory() {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol) {
-	if (_verbosity > 1) {
+	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 		clog << "  Creating a leaf connector for " << *symbol << "\n";
 	}
 	vector<Variable*> vars = VarUtils::makeNewVariables(symbol->sorts());
@@ -134,7 +133,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 	switch (_initbounds[symbol]) {
 	case IBT_TWOVAL:
 		_propagator->setDomain(leafconnector, ThreeValuedDomain<Domain>(_propagator->getFactory(), leafconnector));
-		if (_verbosity > 1) {
+		if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 			clog << "    The leaf connector is twovalued\n";
 		}
 		break;
@@ -145,7 +144,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 		break;
 	case IBT_NONE:
 		initFalse(leafconnector);
-		if (_verbosity > 1) {
+		if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 			clog << "    The leaf connector is completely unknown\n";
 		}
 		break;
@@ -154,7 +153,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 
 template<class Factory, class Domain>
 TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory) {
-	if (_verbosity > 1) {
+	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 		clog << "=== initialize propagation datastructures\n";
 	}
 
@@ -260,7 +259,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const Theory* theory) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::initFalse(const Formula* f) {
-	if (_verbosity > 2) {
+	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 2) {
 		clog << "  Assigning the least precise bounds to " << *f << "\n";
 	}
 	if (not _propagator->hasDomain(f)) {

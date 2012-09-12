@@ -10,8 +10,8 @@ structure S:V{
 	X = {1..20}
 }
 procedure main(){
-	stdoptions.groundverbosity=10
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.grounding=4
+	stdoptions.verbosity.solving=0
 	stdoptions.groundlazily=true
 	print(modelexpandpartial(T, S))
 }

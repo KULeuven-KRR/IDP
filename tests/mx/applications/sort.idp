@@ -23,6 +23,6 @@ procedure main(){
 	stdoptions.groundwithbounds=false
 	stdoptions.liftedunitpropagation=false
 	stdoptions.cpsupport=true
-	stdoptions.satverbosity=0
+	stdoptions.verbosity.solving=0
 	print(modelexpand(T, S2)[1])
 }

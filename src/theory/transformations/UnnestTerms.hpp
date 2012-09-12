@@ -27,7 +27,7 @@ class Term;
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 protected:
-	AbstractStructure* _structure; //!< Used to find bounds on introduced variables for aggregates
+	const AbstractStructure* _structure; //!< Used to find bounds on introduced variables for aggregates
 	Vocabulary* _vocabulary; //!< Used to do type derivation during rewrites
 
 private:
@@ -60,7 +60,7 @@ public:
 	UnnestTerms();
 
 	template<typename T>
-	T execute(T t, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL) {
+	T execute(T t, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL) {
 		_context = con;
 		_structure = str;
 		_vocabulary = voc;

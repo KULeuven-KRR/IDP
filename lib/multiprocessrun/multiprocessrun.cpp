@@ -68,7 +68,12 @@ void run(const char* exec) {
 int main(int argc, char** argv) {
 	argc--;
 	argv++;
-	int maxnb = atoi(*argv);
+	auto maxnb = atoi(*argv);
+	if(maxnb<1){
+		cerr <<"Error: should be allowed to use at least one thread ;-), aborting...\n";
+		return -1;
+	}
+
 	argc--;
 	argv++;
 
@@ -80,16 +85,21 @@ int main(int argc, char** argv) {
 		argv++;
 		argc--;
 	}
-//	cerr <<"\n";
+//	cerr <<" spread over " <<maxnb <<" threads.\n";
 
 	vector<thread> threads;
 	while (true) {
 		if (runningProcesses < maxnb && not execs.empty()) {
+			cs.lock();
 			runningProcesses++;
+			cs.unlock();
 			threads.push_back(thread(&run, execs.front()));
 			execs.pop();
 		} else {
-			if (runningProcesses == 0) {
+			cs.lock();
+			auto nb = runningProcesses;
+			cs.unlock();
+			if (nb == 0 && execs.empty()) {
 				break;
 			}
 			sleep(0.25);
@@ -102,4 +112,5 @@ int main(int argc, char** argv) {
 		cout << (*i)->str() << "\n";
 		delete (*i);
 	}
+	return 0;
 }
