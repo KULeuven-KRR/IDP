@@ -902,28 +902,32 @@ void Insert::closeprocedure(stringstream* chunk) {
 }
 
 Sort* Insert::sort(Sort* s) const {
-	if (s)
+	if (s) {
 		_currvocabulary->add(s);
+	}
 	return s;
 }
 
 Predicate* Insert::predicate(Predicate* p) const {
-	if (p)
+	if (p) {
 		_currvocabulary->add(p);
+	}
 	return p;
 }
 
 Function* Insert::function(Function* f) const {
-	if (f)
+	if (f) {
 		_currvocabulary->add(f);
+	}
 	return f;
 }
 
 Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	Sort* s = sortInScope(vs, pi);
-	if (!s)
+	if (!s) {
 		notDeclared(ComponentType::Sort, toString(vs), pi);
+	}
 	return s;
 }
 
@@ -931,8 +935,9 @@ Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + convertToString(arity);
 	Predicate* p = predInScope(vs, pi);
-	if (!p)
+	if (!p) {
 		notDeclared(ComponentType::Predicate, toString(vs), pi);
+	}
 	return p;
 }
 
@@ -940,10 +945,12 @@ Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l)
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Predicate* p = predpointer(copyvs, va.size(), l);
-	if (p)
+	if (p) {
 		p = p->resolve(va);
-	if (!p)
+	}
+	if (!p) {
 		notDeclared(ComponentType::Predicate, predName(vs, va), pi);
+	}
 	return p;
 }
 
@@ -951,8 +958,9 @@ Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	vs.back() = vs.back() + '/' + convertToString(arity);
 	Function* f = funcInScope(vs, pi);
-	if (!f)
+	if (!f) {
 		notDeclared(ComponentType::Function, toString(vs), pi);
+	}
 	return f;
 }
 
@@ -960,10 +968,12 @@ Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) 
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Function* f = funcpointer(copyvs, va.size() - 1, l);
-	if (f)
+	if (f) {
 		f = f->resolve(va);
-	if (!f)
+	}
+	if (!f) {
 		notDeclared(ComponentType::Function, funcName(vs, va), pi);
+	}
 	return f;
 }
 
