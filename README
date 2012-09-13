@@ -14,7 +14,7 @@ Required software packages:
    - C and C++ compiler, supporting most of the C++11 standard. Examples are GCC 4.4 or higher, clang 3.2 or visual studio 11.
    - Cmake build environment. 
    - Bison and flex packages or yacc and lex packages.
-   - Pdflatex and doxygen for building the documentation.
+   - Pdflatex and doxygen for building the documentation. (On linux, search for the latex2html package)
    - (optional) Gecode for constraint programming support.
 
 Assume idp is unpacked in <idpdir>, you want to build in <builddir> (cannot be the same as <idpdir>) and install in <installdir>. 
@@ -35,4 +35,4 @@ Execute the following command in your <builddir> to enable support by Gecode:
 
 
 *** Further information
-For more information on using the system, see the documentation, which can be found in docs/documentation/idp-manual.pdf
+For more information on using the system, see the documentation, which can be found in docs/official/idp-manual.pdf

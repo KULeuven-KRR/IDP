@@ -105,88 +105,120 @@ bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, co
 	return result;
 }
 
+// TODO: method with variable argument number would be nice: #include <stdarg.h>
+// TODO: also, method belongs in AbstractGroundTheory
+void addClause(AbstractGroundTheory* gt, const int first, const int second){
+	int arr[] = {first, second};
+	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	gt->add(clause);
+}
+
+void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third){
+	int arr[] = {first, second, third};
+	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	gt->add(clause);
+}
+
+void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third, const int fourth){
+	int arr[] = {first, second, third, fourth};
+	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	gt->add(clause);
+}
+
 /**
  * 	given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
  */
-// TODO split up
-// TODO originally, Jo used a separate add(groundclause) method which did not do transformforadd. Still waiting for his justification for the need of that method.
+// TODO split up => Jo: how?
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<int>& literals, const list<int>& symLiterals) {
-	//the first two steps are initializers, initializing the first constraints and auxiliary variables
 	list<int>::const_iterator literals_it = literals.cbegin();
 	list<int>::const_iterator symLiterals_it = symLiterals.cbegin();
-	int currentAuxVar;
-	int previousAuxVar;
+	// this is the current literal and its symmetric:
+	int lit = *literals_it;
+	int symLit = *symLiterals_it;
+	// these are the tseitin vars needed to shorten the formula (initialization happens only when needed):
+	int tseitin = 0;
+	int prevTseitin = 0;
+
 	if (literals.size() > 0) {
-		// (~V1 | V1*)
-		vector<int> firstClause(2);
-		firstClause[0] = -(*literals_it);
-		firstClause[1] = (*symLiterals_it);
-		gt->add(firstClause);
+		// (~l1 | s(l1))
+		addClause(gt, -lit,symLit);
 	}
 	if (literals.size() > 1) {
-		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
-		// (~A2 | V1 | ~V1*)
-		vector<int> clause2(3);
-		clause2[0] = -currentAuxVar;
-		clause2[1] = (*literals_it);
-		clause2[2] = -(*symLiterals_it);
-		gt->add(clause2);
-		// (A2 | ~V1) 
-		vector<int> clause3(2);
-		clause3[0] = currentAuxVar;
-		clause3[1] = -(*literals_it);
-		gt->add(clause3);
-		// (A2 | V1*)
-		vector<int> clause4(2);
-		clause4[0] = currentAuxVar;
-		clause4[1] = (*symLiterals_it);
-		gt->add(clause4);
-		// (~A2 | ~V2 | V2*)
-		++literals_it;
-		++symLiterals_it;
-		vector<int> clause5(3);
-		clause5[0] = -currentAuxVar;
-		clause5[1] = -(*literals_it);
-		clause5[2] = (*symLiterals_it);
-		gt->add(clause5);
+		tseitin = gt->translator()->createNewUninterpretedNumber();
+		// (~t1 | l1 | ~s(l1))
+		addClause(gt, -tseitin,lit,-symLit);
+		// (t1 | ~l1)
+		addClause(gt, tseitin,-lit);
+		// (t1 | s(l1))
+		addClause(gt, tseitin,symLit);
+		// (~t1 | ~l2 | s(l2))
+		++literals_it; lit = *literals_it;
+		++symLiterals_it; symLit = *symLiterals_it;
+		addClause(gt, -tseitin,-lit,symLit);
 	}
 	list<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
 	while (literals_it != oneButLast_it) {
-		previousAuxVar = currentAuxVar;
-		currentAuxVar = gt->translator()->createNewUninterpretedNumber();
-		// ( ~A_n | A_n-1 )
-		vector<int> clause1(2);
-		clause1[0] = -currentAuxVar;
-		clause1[1] = previousAuxVar;
-		gt->add(clause1);
-		// ( ~An | ~A_n-1 | V_n-1 | ~V_n-1* )
-		vector<int> clause4(4);
-		clause4[0] = -currentAuxVar;
-		clause4[1] = -previousAuxVar;
-		clause4[2] = (*literals_it);
-		clause4[3] = -(*symLiterals_it);
-		gt->add(clause4);
-		// ( A_n | ~A_n-1 | ~V_n-1)
-		vector<int> clause2(3);
-		clause2[0] = currentAuxVar;
-		clause2[1] = -previousAuxVar;
-		clause2[2] = -(*literals_it);
-		gt->add(clause2);
-		// ( A_n | ~A_n-1 | V_n-1*)
-		vector<int> clause3(3);
-		clause3[0] = currentAuxVar;
-		clause3[1] = -previousAuxVar;
-		clause3[2] = (*symLiterals_it);
-		gt->add(clause3);
-		// ( ~An | ~Vn | Vn* )
-		++literals_it;
-		++symLiterals_it;
-		vector<int> clause6(3);
-		clause6[0] = -currentAuxVar;
-		clause6[1] = -(*literals_it);
-		clause6[2] = (*symLiterals_it);
-		gt->add(clause6);
+		prevTseitin = tseitin;
+		tseitin = gt->translator()->createNewUninterpretedNumber();
+		// ( ~tn | tn )
+		addClause(gt, -tseitin,prevTseitin);
+		// ( ~tn | ln | ~s(ln) )
+		addClause(gt, -tseitin, lit, -symLit);
+		// ( tn | ~tn-1 | ~ln)
+		addClause(gt, tseitin,-prevTseitin,-lit);
+		// ( tn | ~tn-1 | s(ln))
+		addClause(gt, tseitin,-prevTseitin,symLit);
+		// ( ~tn | ~ln+1 | s(ln+1) )
+		++literals_it; lit = *literals_it;
+		++symLiterals_it; symLit = *symLiterals_it;
+		addClause(gt, -tseitin,-lit,symLit);
+	}
+}
+
+/**
+ * 	given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
+ *
+ * 	This variation induces extra solutions by relaxing the constraints on the tseitin variables. The advantage is less and smaller clauses.
+ */
+void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const list<int>& literals, const list<int>& symLiterals) {
+	list<int>::const_iterator literals_it = literals.cbegin();
+	list<int>::const_iterator symLiterals_it = symLiterals.cbegin();
+	// this is the current literal and its symmetric:
+	int lit = *literals_it;
+	int symLit = *symLiterals_it;
+	// these are the tseitin vars needed to shorten the formula (initialization happens only when needed):
+	int tseitin = 0;
+	int prevTseitin = 0;
+
+	if (literals.size() > 0) {
+		// (~l1 | s(l1))
+		addClause(gt, -lit,symLit);
+	}
+	if (literals.size() > 1) {
+		tseitin = gt->translator()->createNewUninterpretedNumber();
+		// (t1 | ~l1)
+		addClause(gt, tseitin,-lit);
+		// (t1 | s(l1))
+		addClause(gt, tseitin,symLit);
+		// (~t1 | ~l2 | s(l2))
+		++literals_it; lit = *literals_it;
+		++symLiterals_it; symLit = *symLiterals_it;
+		addClause(gt, -tseitin,-lit,symLit);
+	}
+	list<int>::const_iterator oneButLast_it = literals.cend();
+	--oneButLast_it;
+	while (literals_it != oneButLast_it) {
+		prevTseitin = tseitin;
+		tseitin = gt->translator()->createNewUninterpretedNumber();
+		// ( tn | ~tn-1 | ~ln)
+		addClause(gt, tseitin,-prevTseitin,-lit);
+		// ( tn | ~tn-1 | s(ln))
+		addClause(gt, tseitin,-prevTseitin,symLit);
+		// ( ~tn | ~ln+1 | s(ln+1) )
+		++literals_it; lit = *literals_it;
+		++symLiterals_it; symLit = *symLiterals_it;
+		addClause(gt, -tseitin,-lit,symLit);
 	}
 }
 
@@ -360,21 +392,21 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 }
 
 ostream& IVSet::put(ostream& output) const {
-	output << "structure: " << getStructure()->name() << "\n";
-	for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
-		output << toString(*sorts_it) << " | ";
-	}
-	output << "\n";
-	for (auto relations_it = getRelations().cbegin(); relations_it != getRelations().cend(); ++relations_it) {
-		output << toString(*relations_it) << " | ";
-	}
-	output << "\n";
-	output << getElements().size() << ": ";
+	output << "Set of interchangeable domain elements (" << getElements().size() <<" in size): \n";
 	for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
 		output << toString(*elements_it) << " | ";
 	}
 	output << "\n";
-	output << "Enkelvoudig? " << isEnkelvoudig() << "\n";
+	output << "Corresponding sorts:\n";
+	for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
+		output << toString(*sorts_it) << " | ";
+	}
+	output << "\n";
+	if(isEnkelvoudig()){
+		output << "The resulting symmetry group is completely broken.\n";
+	}else{
+		output << "The resulting symmetry group is probably not completely broken.\n";
+	}
 	return output;
 }
 
@@ -592,7 +624,7 @@ void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt) const {
 	++bigger;
 	for (; bigger != getElements().cend(); ++bigger, ++smaller) {
 		pair<list<int>, list<int> > literals = getSymmetricLiterals(gt, *smaller, *bigger);
-		addSymBreakingClausesToGroundTheory(gt, literals.first, literals.second);
+		addSymBreakingClausesToGroundTheoryShortest(gt, literals.first, literals.second);
 	}
 }
 
@@ -849,7 +881,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "forbiddenSorts: ";
+		clog << "Sorts occurring in asymmetric predicates or aggregates (no symmetry will be detected for their interpretations): ";
 		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
@@ -867,7 +899,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "forbiddenElements: ";
+		clog << "Elements occurring in theory (no symmetry will be detected for these elements): ";
 		for (auto it = forbiddenElements.cbegin(); it != forbiddenElements.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
@@ -885,7 +917,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "allowedSorts: ";
+		clog << "Sorts for which symmetry will be detected: ";
 		for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
 			clog << toString(*it) << " ";
 		}
@@ -916,14 +948,14 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	}
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "initialIVSets: \n";
+		clog << "Candidate sets of interchangeable domain elements: \n";
 		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
-			clog << "Elements: " ;
+			clog << "The elements: " ;
 			for(auto elements_it=it->second.cbegin(); elements_it!=it->second.cend(); ++elements_it){
 				clog << toString(*elements_it) << " ";
 			}
 			clog << "\n";
-			clog << "Sorts: " ;
+			clog << "With as sorts: " ;
 			for(auto sorts_it=it->first.cbegin(); sorts_it!=it->first.cend(); ++sorts_it){
 				clog << toString(*sorts_it) << " ";
 			}
@@ -1017,25 +1049,29 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 	Assert(t->vocabulary()==s->vocabulary());
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "initialize ivsets...\n";
+		clog << "Starting symmetry detection.\n";
 	}
 	set<const IVSet*> potentials = initializeIVSets(s, t, minimizeTerm);
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "extract dont cares...\n";
+		clog << "Extracting don't cares (domain element sets not occurring in the interpretation of a relation symbol).\n";
 	}
+
 	vector<const IVSet*> result = extractDontCares(potentials);
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
-			clog << "##########\n" << toString(*result_it) << "\n";
+			clog << toString(*result_it) << "\n";
 		}
 	}
 
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
+		clog << "Extracting other interchangeable domain element sets.\n";
+	}
 	splitByOccurrences(potentials);
 	splitByBinarySymmetries(potentials);
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
-			clog << "@@@@@@@@@@\n" << toString(*result_it) << "\n";
+			clog << toString(*result_it) << "\n";
 		}
 	}
 	result.insert(result.end(), potentials.cbegin(), potentials.cend());
