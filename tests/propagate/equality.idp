@@ -1,0 +1,29 @@
+/***************************************
+	Modelling SAT with IDP
+***************************************/
+
+
+vocabulary V{
+type X
+P(X,X) 
+}
+
+theory T : V { 
+! x y: x = y => P(x,y).
+}
+
+structure S : V{ 
+X = {X1;X2;X3}
+
+}
+
+procedure weakassertions(newS){
+	return
+		(assertNotEmpty(newS[V.P].ct,"P<ct>") and assertEmpty(newS[V.P].cf,"P<cf>"))
+	
+}
+
+procedure strongassertions(newS){
+	return true
+}
+
