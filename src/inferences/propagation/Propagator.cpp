@@ -232,6 +232,11 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
+	if(_domains.find(key) != _domains.cend()){
+		//The erase is needed since the "insert" method does not update. If the key is already present, insert does nothing!
+		//Using the operator[] is not possible since it requires a default constructor.
+		_domains.erase(key);
+	}
 	_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
 }
 
