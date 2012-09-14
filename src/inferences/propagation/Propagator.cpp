@@ -14,6 +14,7 @@
 #include "IncludeComponents.hpp"
 #include "structure/StructureComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBdd.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 
