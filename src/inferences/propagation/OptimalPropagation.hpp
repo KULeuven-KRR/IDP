@@ -34,7 +34,7 @@ public:
 		auto data = SolverConnection::createsolver(0);
 
 		//Grounding
-		auto symstructure = generateBounds(theory, structure, true);
+		auto symstructure = generateBounds(theory, structure, true, true);
 		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false /*TODO CHeck*/}, data);
 		bool unsat = grounder->toplevelRun();
 		if(unsat){

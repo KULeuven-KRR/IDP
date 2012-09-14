@@ -130,7 +130,9 @@ private:
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
 				// TODO allow this without symbolic structure?
-				auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
+				bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
+				bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
+				auto symstructure = generateBounds(_theory, _structure, propagate, LUP);
 				auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
 				delete(symstructure);
 				return grounding;
@@ -143,7 +145,9 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Approximation");
 		}
-		auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
+		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
+		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
+		auto symstructure = generateBounds(_theory, _structure, propagate, LUP);
 		if (not _structure->isConsistent()) {
 			if (getOption(IntType::VERBOSE_GROUNDING) > 0 || getOption(IntType::VERBOSE_PROPAGATING) > 0) {
 				std::clog << "approximation detected UNSAT\n";

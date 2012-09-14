@@ -22,13 +22,15 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation) {
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool applyToStructure) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (doSymbolicPropagation) {
 		propagator->doPropagation();
+	}
+	if(applyToStructure){
 		propagator->applyPropagationToStructure(structure);
 	}
 	auto result = propagator->symbolicstructure();
