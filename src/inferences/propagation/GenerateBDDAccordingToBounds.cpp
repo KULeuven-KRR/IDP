@@ -86,9 +86,20 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			getct = not getct;
 			clone->negate();
 		}
-		auto symbol = getct ? clone->symbol()->derivedSymbol(SymbolType::ST_CT) : clone->symbol()->derivedSymbol(SymbolType::ST_CF);
-		clone->symbol(symbol);
-		_result = factory.turnIntoBdd(clone);
+		if(not getOption(BoolType::LIFTEDUNITPROPAGATION)){
+			auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
+			map<const FOBDDVariable*, const FOBDDTerm*> mva;
+			const auto& vars = _vars[atom->symbol()];
+			for (unsigned int n = 0; n < vars.size(); ++n) {
+				mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
+			}
+			_result = _manager->substitute(bdd, mva);
+		}
+		else {
+			auto symbol = getct ? clone->symbol()->derivedSymbol(SymbolType::ST_CT) : clone->symbol()->derivedSymbol(SymbolType::ST_CF);
+			clone->symbol(symbol);
+			_result = factory.turnIntoBdd(clone);
+		}
 
 		if (needPossible(_type)) {
 			_result = _manager->negation(_result);
