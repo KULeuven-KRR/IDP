@@ -239,8 +239,9 @@ template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
 	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
 	if (getOption(IntType::VERBOSE_PROPAGATING) > 2) {
-		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
+		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":" << nt();
 		_factory->put(clog, newdomain);
+		clog << nt();
 	}
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
