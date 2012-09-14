@@ -12,6 +12,7 @@
 #include "PropagationDomainFactory.hpp"
 #include "PropagationScheduler.hpp"
 #include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
@@ -111,6 +112,17 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
+			if (getOption(IntType::VERBOSE_PROPAGATING) > 3) {
+				clog << nt() << "The used BDDs are:";
+				clog << nt() << "CT: ";
+				BDDInternalPredTable* cttable = dynamic_cast<BDDInternalPredTable*>(bddinter->ct()->internTable());
+				auto ctbdd = cttable->bdd();
+				clog << nt() << toString(ctbdd);
+				clog << nt() << "CF: ";
+				BDDInternalPredTable* cftable = dynamic_cast<BDDInternalPredTable*>(bddinter->cf()->internTable());
+				auto cfbdd = cftable->bdd();
+				clog << nt() << toString(cfbdd);
+			}
 			clog << nt() << "Derived symbols: " << toString(bddinter) << "\n";
 		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
