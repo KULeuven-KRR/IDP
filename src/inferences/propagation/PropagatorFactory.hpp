@@ -63,7 +63,17 @@ public:
 
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* s, const std::map<PFSymbol*, InitBoundType> mpi);
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool applyToStructure);
+
+/** Generates bounds for the given theory-structure combination
+ *
+ * @param doSymbolicPropagation: If false, it means that the bounds will be trivial (no propagation!!)
+ * @param applyPropagationToStructure: decides whether or not we will apply the results of the propagation to the structure
+ * @param outputvoc: We will evaluate all symbols in this vocabulary in the BDDs and modify the structure accordingly
+ *
+ * NOTE: if applyPropagationToStructure == false, then outputvoc is useless and can savely be NULL
+ * NOTE: if outputvoc == NULL, we will propagate for EVERY symbol in structure
+ */
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
 
 //GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
 

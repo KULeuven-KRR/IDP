@@ -31,7 +31,7 @@ public:
 		auto mpi = propagateVocabulary(theory, result);
 		auto propagator = createPropagator(theory, result, mpi);
 		propagator->doPropagation();
-		propagator->applyPropagationToStructure(result);
+		propagator->applyPropagationToStructure(result, NULL);
 		return {result};
 	}
 };

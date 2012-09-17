@@ -22,18 +22,29 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool applyToStructure) {
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool LUP,  Vocabulary* outputvoc) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (doSymbolicPropagation) {
 		propagator->doPropagation();
+		if (LUP) {
+			propagator->applyPropagationToStructure(structure, outputvoc);
+		}
 	}
-	if(applyToStructure){
-		propagator->applyPropagationToStructure(structure);
+
+	//We ONLY want to replace atoms by their BDDs IF
+	// * We did not yet propagate ALL information
+	// * BUT, we are sure that we propagated ENOUGH information to the structure to be sure that the outputvoc is correct.
+	Vocabulary* symbolsThatShouldNotBeReplacedByBDDs;
+	if(not LUP || outputvoc == NULL){
+		symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
 	}
-	auto result = propagator->symbolicstructure();
+	else{
+		symbolsThatShouldNotBeReplacedByBDDs = outputvoc;
+	}
+	auto result = propagator->symbolicstructure(symbolsThatShouldNotBeReplacedByBDDs);
 	delete (propagator);
 	return result;
 }

@@ -86,7 +86,8 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			getct = not getct;
 			clone->negate();
 		}
-		if(not getOption(BoolType::LIFTEDUNITPROPAGATION)){
+		Assert(_symbolsThatCannotBeReplacedByBDDs != NULL);
+		if(not _symbolsThatCannotBeReplacedByBDDs->contains(atom->symbol())){
 			auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
 			map<const FOBDDVariable*, const FOBDDTerm*> mva;
 			const auto& vars = _vars[atom->symbol()];

@@ -32,11 +32,11 @@ public:
 	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual void applyPropagationToStructure(AbstractStructure* str) const = 0;
+	virtual void applyPropagationToStructure(AbstractStructure* str, Vocabulary* outputvoc) const = 0;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 
-	virtual GenerateBDDAccordingToBounds* symbolicstructure() const = 0;
+	virtual GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* allreadyPropagatedSymbols) const = 0;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 };
 
@@ -92,10 +92,10 @@ public:
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
-	void applyPropagationToStructure(AbstractStructure* str) const;
+	void applyPropagationToStructure(AbstractStructure* str, Vocabulary* outputvoc) const;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-	GenerateBDDAccordingToBounds* symbolicstructure() const;
+	GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 
 	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);

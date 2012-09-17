@@ -51,6 +51,7 @@ class GroundingInference {
 private:
 	Theory* _theory;
 	AbstractStructure* _structure;
+	Vocabulary* _outputvoc; //If not NULL, symbols outside this vocabulary are not relevant
 	TraceMonitor* _tracemonitor;
 	Term* _minimizeterm; // if NULL, no optimization is done
 	GroundingReceiver* _receiver;
@@ -61,7 +62,7 @@ private:
 public:
 	// NOTE: modifies the theory and the structure. Clone before passing them!
 	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor,
-			bool nbModelsEquivalent, GroundingReceiver* solver) {
+			bool nbModelsEquivalent, GroundingReceiver* solver, Vocabulary* outputvoc = NULL) {
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
 		}
@@ -72,17 +73,18 @@ public:
 		if (t->vocabulary() != structure->vocabulary()) {
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
-		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver);
+		auto m = new GroundingInference(t, structure, term, tracemonitor, nbModelsEquivalent, solver, outputvoc);
 		auto grounding = m->ground();
 		Assert(grounding!=NULL);
 		// FIXME deleting lazy grounders here is a problem!!! delete(m);
 		return grounding;
 	}
 private:
-	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor, bool nbModelsEquivalent,
-			GroundingReceiver* solver)
+	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize,  TraceMonitor* tracemonitor, bool nbModelsEquivalent,
+			GroundingReceiver* solver, Vocabulary* outputvoc = NULL)
 			: 	_theory(theory),
 				_structure(structure),
+				_outputvoc(outputvoc),
 				_tracemonitor(tracemonitor),
 				_minimizeterm(minimize),
 				_receiver(solver),
@@ -132,7 +134,7 @@ private:
 				// TODO allow this without symbolic structure?
 				bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 				bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
-				auto symstructure = generateBounds(_theory, _structure, propagate, LUP);
+				auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvoc);
 				auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
 				delete(symstructure);
 				return grounding;

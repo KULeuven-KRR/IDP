@@ -89,10 +89,13 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 }
 
 template<class Factory, class Domain>
-void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure) const {
+void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure, Vocabulary* outputvoc) const {
 	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
 		auto connector = it->second;
 		PFSymbol* symbol = connector->symbol();
+		if(outputvoc != NULL && not outputvoc->contains(symbol)){
+			continue;
+		}
 		auto newinter = structure->inter(symbol);
 		if (newinter->approxTwoValued()) {
 			Assert(getDomain(connector)._twovalued);
@@ -151,7 +154,8 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 }
 
 template<class Factory, class Domain>
-GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstructure() const {
+GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const {
+	Assert(symbolsThatCannotBeReplacedByBDDs != NULL);
 	map<PFSymbol*, vector<const FOBDDVariable*> > vars;
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
@@ -168,7 +172,7 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 		}
 		vars[it->first] = bddvars;
 	}
-	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars);
+	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars,symbolsThatCannotBeReplacedByBDDs);
 }
 
 template<class Factory, class Domain>
