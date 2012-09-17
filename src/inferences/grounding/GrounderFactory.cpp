@@ -508,8 +508,12 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 			auto foterms = TermUtils::makeNewVarTerms(data.fovars);
 			genpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
 		}
-		auto possTrueChecker = getChecker(genpf, TruthType::POSS_TRUE, data, getSymbolicStructure());
-		auto certTrueChecker = getChecker(genpf, TruthType::CERTAIN_TRUE, data, getSymbolicStructure());
+		//Checkers for atoms CANNOT be approximated:
+		// * Either they are trivial (true or false) and the approximation is uselesss
+		// * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
+		auto possTrueChecker = getChecker(genpf, TruthType::POSS_TRUE, data, getSymbolicStructure(), true);
+		auto certTrueChecker = getChecker(genpf, TruthType::CERTAIN_TRUE, data, getSymbolicStructure(), true);
+
 		if (genpf != newpf) {
 			deleteDeep(genpf);
 		}
@@ -1251,7 +1255,7 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 	return d;
 }
 
-InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, bool exact) {
+InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
 		pushtab();
@@ -1260,7 +1264,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	PredTable* gentable = NULL;
 	bool approxastrue = generatortype == TruthType::POSS_TRUE || generatortype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		gentable = createTable(subformula, generatortype, data.quantfovars, approxastrue, data, symstructure, exact);
+		gentable = createTable(subformula, generatortype, data.quantfovars, approxastrue, data, symstructure, forceexact);
 	} else {
 		if (approxastrue) {
 			gentable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1274,7 +1278,10 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	return createGen("Generator", generatortype, data, gentable, subformula, pattern);
 }
 
-InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool exact) {
+//Checkers for atoms CANNOT be approximated:
+// * Either they are trivial (true or false) and the approximation is uselesss
+// * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
+InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
 		pushtab();
@@ -1283,7 +1290,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure, exact);
+		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure, forceexact);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1309,7 +1316,7 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
-		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool exact) {
+		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
 #ifdef DEBUG
 	uint output = 0;
 	for(auto p:data.pattern){
@@ -1325,7 +1332,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
-	if(not exact){
+	if(not forceexact){
 		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure);
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
