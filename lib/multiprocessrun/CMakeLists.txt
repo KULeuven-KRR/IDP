@@ -69,7 +69,7 @@ if(WRONGBUILD)
 	message(FATAL_ERROR "Unsupported build-type \"${CMAKE_BUILD_TYPE}\", only Debug, DebugProfile, StaticDebug, Profile, Release and StaticRelease are allowed.")
 endif()
 
-MESSAGE(STATUS "Global CXX flags: ")
+MESSAGE(STATUS "Multiprocess CXX flags: ")
 MESSAGE(STATUS "${CMAKE_CXX_FLAGS}")
 
 add_executable(multiprocessrun multiprocessrun.cpp)
