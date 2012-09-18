@@ -998,7 +998,7 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 
 void GrounderFactory::visit(const VarTerm* t) {
 	Assert(varmapping().find(t->var()) != varmapping().cend());
-	_termgrounder = new VarTermGrounder(varmapping().find(t->var())->second);
+	_termgrounder = new VarTermGrounder(getGrounding()->translator(), _structure->inter(t->sort()), varmapping().find(t->var())->second);
 	_termgrounder->setOrig(t, varmapping());
 }
 

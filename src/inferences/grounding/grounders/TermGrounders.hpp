@@ -71,7 +71,7 @@ class VarTermGrounder: public TermGrounder {
 private:
 	const DomElemContainer* _value;
 public:
-	VarTermGrounder(const DomElemContainer* a) :
+	VarTermGrounder(GroundTranslator* tt, SortTable* domain, const DomElemContainer* a) : TermGrounder(domain, tt),
 			_value(a) {
 	}
 	inline GroundTerm run() const {
