@@ -150,7 +150,7 @@ Lit AtomGrounder::run() const {
 			}
 
 			// Checking out-of-bounds
-			if (not _tables[n]->contains(args[n])) {
+			if (_tables[n]!=_subtermgrounders[n]->getDomain() && not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) {
