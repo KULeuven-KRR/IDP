@@ -1115,7 +1115,6 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	if (not VocabularyUtils::isComparisonPredicate(atom->symbol())) {
 		return NULL;
 	}
-
 	if (atom->args(0) == argument && not contains(atom->args(1), argument)) {
 		return is(atom->symbol(), STDPRED::EQ) ? atom->args(1) : NULL; // y < t cannot be rewritten to t2 < y
 	}
@@ -1137,7 +1136,6 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	Assert((domtermvalue->type() == DET_DOUBLE && domtermvalue->value()._double == 0) || (domtermvalue->type() == DET_INT && domtermvalue->value()._int == 0));
 	//The rewritings in getatomkernel should guarantee this.
 #endif
-
 	CollectSameOperationTerms<Addition> fa(this);
 	//Collect all occurrences of the wanted argument in the lhs
 	vector<const FOBDDTerm*> terms = fa.getTerms(atom->args(0));
@@ -1156,7 +1154,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 		}
 	}
 	//If there is more than one occurence of the given argument, we don't do anything
-	if (occcounter != 1 && invertedOcccounter != 1) {
+	if ((occcounter > 1) || (invertedOcccounter > 1)) {
 		return NULL;
 	}
 	//Now we know that atom is of the form x_1 + x_2 + t[argument] + x_4 + ... op 0,
@@ -1165,9 +1163,14 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	vector<const FOBDDTerm*> factors;
 	if (occcounter == 1) {
 		factors = fm.getTerms(terms[occterm]);
+		if (factors[1] != argument) {
+			return NULL;
+		}
 	} else if (invertedOcccounter == 1) {
 		factors = fm.getTerms(terms[invertedOccterm]);
-		factors[1] = invert(factors[1]);
+		if (factors[1] != invert(argument)) {
+			return NULL;
+		}
 	}
 	if (not (factors.size() == 2 && factors[1] == argument)) {
 		return NULL;

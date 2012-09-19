@@ -1,0 +1,14 @@
+vocabulary V{
+}
+
+
+query Q:V {
+	{ x[nat] : 2>x}
+}
+
+structure S:V {
+}
+
+procedure getExpectedSet(){
+  return {{0},{1}}
+}

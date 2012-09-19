@@ -64,6 +64,14 @@ Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var, bool invert) {
 	Assert(not manager.isTruebdd(bdd));
 	Assert(not manager.isFalsebdd(bdd));
 	auto kernel = bdd->kernel();
+	if(not isa<FOBDDAtomKernel>(*kernel)){
+		return NULL;
+	}
+	auto atomkernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+	//SOMETIMES, BDDs switch arguments for uniformity. If this is the case, we need to look for -x instead of x
+	if(atomkernel->symbol() != atom->symbol()){
+		invert = not invert;
+	}
 	const FOBDDTerm* arg = manager.getVariable(var);
 	if (invert) {
 		if (not SortUtils::isSubsort(arg->sort(), get(STDSORT::FLOATSORT))) {
@@ -280,38 +288,31 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
  * If it is not possible, the original atom is returned
  */
 PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
-	if (not is(atom->symbol(), STDPRED::EQ)) {
-		return atom;
-		//FIXME: code below still contains bugs when not working with equality
-	}
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PredForm* newatom = NULL;
-				if (isa<VarTerm>(*(atom->subterms()[0])) && dynamic_cast<VarTerm*>(atom->subterms()[0])->var() == atomvars[n]
-						&& (is(atom->symbol(), STDPRED::GT) || is(atom->symbol(), STDPRED::LT))) {
-					if (is(atom->symbol(), STDPRED::GT)) {
-						newatom = new PredForm(atom->sign(), get(STDPRED::LT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
-					} else {
-						Assert( is(atom->symbol(), STDPRED::LT));
-						newatom = new PredForm(atom->sign(), get(STDPRED::GT, atom->symbol()->sort(0)), { solvedterm, varterm }, atom->pi());
-					}
-				} else {
-					newatom = new PredForm(atom->sign(), atom->symbol(), { solvedterm, varterm }, atom->pi());
-				}
+				newatom = new PredForm(atom->sign(), atom->symbol()->disambiguate({solvedterm->sort(), varterm->sort()}), { solvedterm, varterm }, atom->pi());
 				atom->recursiveDelete();
 				return newatom;
 			}
+			return atom;
+			//FIXME: code below is made for working with other symbols than EQ
+			// BUT IT CAN STILL BE BUGGY.
+
+			//Try to rewrite as st op -x
 			auto invertedSolvedTerm = solve(*manager, atom, atomvars[n], true);
 			if (invertedSolvedTerm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PFSymbol* newsymbol;
-				if (is(atom->symbol(), STDPRED::GT)) {
+				if (is(atom->symbol(), STDPRED::EQ)) {
+					//If the solve method is implemented perfectly, this should not happen. However, since we approximate, it"s possible we get here.
+					newsymbol = atom->symbol();
+				}else if (is(atom->symbol(), STDPRED::GT)) {
 					newsymbol = get(STDPRED::LT, atom->symbol()->sort(0));
 				} else {
-					// "=/2" should already have been handled by "solvedterm"
 					Assert(is(atom->symbol(), STDPRED::LT));
 					newsymbol = get(STDPRED::GT, atom->symbol()->sort(0));
 				}
