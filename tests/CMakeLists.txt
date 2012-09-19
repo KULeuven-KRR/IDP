@@ -80,17 +80,17 @@ if(${BUILDTESTS})
 		set(EXECS ${EXECS} idptests)
 		set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/idptests)
 		
-		addMXTest(basic basic.cpp)
-		addMXTest(bounds bounds.cpp)
-		addMXTest(nobounds nobounds.cpp)
-		addMXTest(cp cp.cpp)
-		addMXTest(lazy lazy.cpp)
-		addMXTest(symm symm.cpp)
-		addMXTest(optim optim.cpp)
-		addMXTest(satnobounds satnobounds.cpp)
-		addMXTest(satbounds satbounds.cpp)
+		addMXTest(bounds bounds.cpp) 
+		addMXTest(satbounds satbounds.cpp) 
 		addMXTest(satcp satcp.cpp)
-		
+		addMXTest(cp cp.cpp) 
+		addMXTest(lazy lazy.cpp) 
+		addMXTest(satnobounds satnobounds.cpp) 
+		addMXTest(basic basic.cpp) 
+		addMXTest(nobounds nobounds.cpp) 
+		addMXTest(symm symm.cpp) 
+		addMXTest(optim optim.cpp) 
+				
 		add_executable(slow
 			${MXTESTS}/slow.cpp
 			${MXINCLUDES}
