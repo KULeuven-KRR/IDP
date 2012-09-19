@@ -135,7 +135,6 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		auto inter = structure->inter(dynamic_cast<const Function*>(symbol))->graphInter();
 		table = inverse ? inter->cf() : inter->ct();
 	}
-	auto tablegenerator = GeneratorFactory::create(table, pattern, vars, universe);
 
 	bool allequal = true;
 	for (auto i = 0; i < universe.tables().size(); ++i) {
@@ -144,8 +143,47 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		}
 	}
 
+	InstGenerator* finalgenerator;
+	//If symbol is a symbol to check for a sort, this will return a fullgenerator. However, in this case no outofboundschecks are done
+	//Therefor, we do the following:
+	if (not allequal && not inverse && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
+		//if allequal, nothing needs to be done.
+		//if inverse, the outofboundschecks are performed below
+		auto ist = structure->inter(symbol->sorts()[0])->internTable();
+		InstGenerator* first;
+		InstGenerator* second;
+
+		//OPTIMIZATION: choosing the smallest size first ensures that we don't enter unnecessary infinite loops.
+		bool istIsBiggest = false;
+		auto size1 =ist->size();
+		auto size2 = universe.tables()[0]->size();
+		if(size1.isInfinite()){
+			istIsBiggest = true;
+		}else if(not (size2.isInfinite())){
+			if (size1._size > size2._size) {
+				istIsBiggest = true;
+			}
+		}
+		if (istIsBiggest) {
+			first = GeneratorFactory::create(table, pattern, vars, universe);
+			second = new SortChecker(ist, vars[0]);
+		} else {
+			if (pattern[0] == Pattern::OUTPUT) {
+				first = new SortGenerator(ist, vars[0]);
+			} else {
+				first = new SortChecker(ist, vars[0]);
+			}
+			vector<Pattern> newpattern(pattern);
+			newpattern[0] = Pattern::INPUT;
+			second = GeneratorFactory::create(table, newpattern, vars, universe);
+		}
+		finalgenerator = new OneChildGenerator(first, second);
+	} else {
+		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
+	}
+
 	if (not inverse || allequal) {
-		return tablegenerator;
+		return finalgenerator;
 	}
 
 	//If the universe does not match the universe of the predicate symbol,
@@ -176,7 +214,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
 	}
 
-	std::vector<InstGenerator*> generators = { tablegenerator, outofboundsgenerator };
+	std::vector<InstGenerator*> generators = { finalgenerator, outofboundsgenerator };
 	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe);
 
 	std::vector<InstGenerator*> checkers = { tablechecker, new FullGenerator() };
