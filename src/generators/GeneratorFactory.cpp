@@ -104,6 +104,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
 		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << toString(symbol) << " on pattern " << toString(pattern) << "\n";
 	}
+	bool inverted = inverse;
 	const PredTable* table = NULL;
 	if (symbol->isPredicate()) {
 		auto predicate = dynamic_cast<const Predicate*>(symbol);
@@ -122,12 +123,14 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 			break;
 		case ST_CF:
 			table = inverse ? inter->pt() : inter->cf();
+			inverted = not inverted;
 			break;
 		case ST_PT:
 			table = inverse ? inter->cf() : inter->pt();
 			break;
 		case ST_PF:
 			table = inverse ? inter->ct() : inter->pf();
+			inverted = not inverted;
 			break;
 		}
 	} else {
@@ -146,7 +149,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 	InstGenerator* finalgenerator;
 	//If symbol is a symbol to check for a sort, this will return a fullgenerator. However, in this case no outofboundschecks are done
 	//Therefor, we do the following:
-	if (not allequal && not inverse && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
+	if (not allequal && not inverted && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
 		//if allequal, nothing needs to be done.
 		//if inverse, the outofboundschecks are performed below
 		auto ist = structure->inter(symbol->sorts()[0])->internTable();
@@ -182,7 +185,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
 	}
 
-	if (not inverse || allequal) {
+	if (not inverted || allequal) {
 		return finalgenerator;
 	}
 
