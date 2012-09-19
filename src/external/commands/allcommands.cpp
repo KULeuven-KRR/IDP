@@ -12,6 +12,7 @@
 
 #include "internalargument.hpp"
 #include "printblocks.hpp"
+#include "printasbdd.hpp"
 #include "printdomainatom.hpp"
 #include "printoptions.hpp"
 #include "newstructure.hpp"
@@ -76,6 +77,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 		inferences.push_back(make_shared<PrintNamespaceInference>());
 		inferences.push_back(make_shared<PrintOptionInference>());
 		inferences.push_back(make_shared<PrintStructureInference>());
+		inferences.push_back(make_shared<PrintAsBDDInference>());
 		inferences.push_back(make_shared<ModelExpandInference>());
 		inferences.push_back(make_shared<NewOptionsInference>());
 		inferences.push_back(make_shared<NewStructureInference>());
