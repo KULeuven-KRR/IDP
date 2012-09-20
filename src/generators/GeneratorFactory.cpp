@@ -185,7 +185,11 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
 	}
 
-	if (not inverted || allequal) {
+	//If there is no inversion, the out-of bounds checks are already added in the previous code.
+	//If all domains are equal there is no need for out-of-bounds checks
+	//Comparisongenerators allready generate the "outofbounds".
+	//Thus, in this case the checks are also not needed (and in many cases, will lead to infinite running stuff if you do include them)
+	if (not inverted || allequal || VocabularyUtils::isComparisonPredicate(symbol)) {
 		return finalgenerator;
 	}
 
