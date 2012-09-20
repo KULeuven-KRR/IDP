@@ -64,7 +64,7 @@ private:
 	/*
 	 * Help-method for creating from predform
 	 */
-	PredForm* smartGraphFunction(PredForm* atom, const std::vector<Pattern>& pattern, const std::vector<Variable*>& atomvars);
+	PredForm* smartGraphFunction(PredForm* atom, const std::vector<Pattern>& pattern, const std::vector<Variable*>& atomvars, const AbstractStructure* structure);
 
 	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).

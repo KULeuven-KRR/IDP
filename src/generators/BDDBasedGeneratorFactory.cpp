@@ -287,7 +287,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
  * with x a variable with the right pattern
  * If it is not possible, the original atom is returned
  */
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern) {
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const AbstractStructure* structure) {
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
@@ -298,11 +298,8 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				atom->recursiveDelete();
 				return newatom;
 			}
-			return atom;
-			//FIXME: code below is made for working with other symbols than EQ
-			// BUT IT CAN STILL BE BUGGY.
 
-			//Try to rewrite as st op -x
+			//It's not possible to rewrite it as "... op x". Thus, try "... op -x" and reverse the op afterwards to get something of the form "... op' x"
 			auto invertedSolvedTerm = solve(*manager, atom, atomvars[n], true);
 			if (invertedSolvedTerm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
@@ -322,6 +319,8 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				} else {
 					auto minus_one = createDomElem(-1);
 					auto minusOneTerm = new DomainTerm(get(STDSORT::INTSORT), minus_one, TermParseInfo());
+					auto minusOneSort = TermUtils::deriveSmallerSort(minusOneTerm, structure);
+					solvedterm->sort(minusOneSort);
 					Function* times = get(STDFUNC::PRODUCT);
 					times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(get(STDSORT::INTSORT), invertedSolvedTerm->sort())), 0);
 					vector<Term*> timesterms(2);
@@ -330,6 +329,8 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 					solvedterm = new FuncTerm(times, timesterms, TermParseInfo());
 				}
 
+				auto termsort = TermUtils::deriveSmallerSort(solvedterm,structure);
+				solvedterm->sort(termsort);
 				PredForm* newatom = new PredForm(atom->sign(), newsymbol, { solvedterm, varterm }, atom->pi());
 				delete (atom);
 				return newatom;
@@ -376,9 +377,9 @@ PredForm* graphOneFunction(PredForm* atom) {
  * In general, it tries to rewrite F(x,y) = z to ... = v with v some output variable.
  * If not such rewriting is possible, this method simply graphs the function.
  */
-PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager) {
+PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, const AbstractStructure* structure) {
 	Assert((atom->subterms()[0] == lhs&& atom->subterms()[1] == rhs)||(atom->subterms()[1] == lhs&& atom->subterms()[0] == rhs));
-	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT);
+	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT, structure);
 	if (atom == newatom) {
 		return graphOneFunction(newatom, lhs, rhs);
 	}
@@ -404,14 +405,14 @@ PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Patt
 //  (B)		t = F(t1,...,tn),
 //  (C)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
 //  (D)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
-PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars) {
+PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars, const AbstractStructure* structure) {
 	Assert(is(atom->symbol(), STDPRED::EQ));
 	Assert(FormulaUtils::containsFuncTermsOutsideOfSets(atom));
 	if (isa<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
 		Assert(isa<FuncTerm>(*(atom->subterms()[1])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[1]);
 		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (D)
-			return rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager);
+			return rewriteSum(atom, ft, atom->subterms()[0], pattern, atomvars, _manager, structure);
 		} else { // Case B
 			return graphOneFunction(atom, ft, atom->subterms()[0]);
 		}
@@ -419,7 +420,7 @@ PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Patter
 		Assert(isa<FuncTerm>(*(atom->subterms()[0])));
 		auto ft = dynamic_cast<FuncTerm*>(atom->subterms()[0]);
 		if (SortUtils::resolve(ft->sort(), get(STDSORT::FLOATSORT)) && (is(ft->function(), STDFUNC::PRODUCT) || is(ft->function(), STDFUNC::ADDITION))) { // Case (C)
-			return rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager);
+			return rewriteSum(atom, ft, atom->subterms()[1], pattern, atomvars, _manager, structure);
 		} else { // Case (B)
 			return graphOneFunction(atom, ft, atom->subterms()[1]);
 		}
@@ -616,10 +617,10 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	}
 	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsFuncTermsOutsideOfSets(newatom)) {
-			newatom = smartGraphFunction(newatom, pattern, atomvars);
+			newatom = smartGraphFunction(newatom, pattern, atomvars, structure);
 		}
 	} else if (is(newatom->symbol(), STDPRED::LT) || is(newatom->symbol(), STDPRED::GT)) {
-		newatom = solveAndReplace(newatom, pattern, atomvars, _manager, Pattern::OUTPUT);
+		newatom = solveAndReplace(newatom, pattern, atomvars, _manager, Pattern::OUTPUT, structure);
 	}
 
 	// NOW, atom is of one of the forms:
