@@ -31,13 +31,7 @@ public:
 	virtual ~GroundTheory() {
 	}
 
-	void add(Formula*) {
-		Assert(false);
-	}
-	void add(Definition*) {
-		Assert(false);
-	}
-	void add(FixpDef*) {
+	void add(TheoryComponent*) {
 		Assert(false);
 	}
 
@@ -68,6 +62,9 @@ public:
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);
 
+	bool containsComplexDefinitions() const{
+		return false;
+	}
 protected:
 	/**
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.

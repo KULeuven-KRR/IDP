@@ -545,14 +545,8 @@ ostream& FixpDef::put(ostream& output) const {
 
 Theory* Theory::clone() const {
 	Theory* newtheory = new Theory(_name, _vocabulary, ParseInfo());
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		newtheory->add((*it)->clone());
-	}
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		newtheory->add((*it)->clone());
-	}
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		newtheory->add((*it)->clone());
+	for (auto it : components()) {
+		newtheory->add(it->clone());
 	}
 	return newtheory;
 }
@@ -561,7 +555,7 @@ void Theory::addTheory(AbstractTheory*) {
 	// TODO
 }
 
-void Theory::recursiveDelete() {
+void Theory::recursiveDelete() {//FIXME handle all cases with an enum or a visitor
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
 		(*it)->recursiveDelete();
 	}
@@ -573,6 +567,37 @@ void Theory::recursiveDelete() {
 	}
 	delete (this);
 }
+
+void Theory::add(Formula* f) {
+	_sentences.push_back(f);
+}
+void Theory::add(Definition* d) {
+	_definitions.push_back(d);
+}
+void Theory::add(FixpDef* fd) {
+	_fixpdefs.push_back(fd);
+}
+
+void Theory::add(TheoryComponent* comp) { // FIXME handle all cases with an enum or a visitor
+	auto form = dynamic_cast<Formula*>(comp);
+	if (form != NULL) {
+		add(form);
+		return;
+	}
+	auto def = dynamic_cast<Definition*>(comp);
+	if (def != NULL) {
+		add(def);
+		return;
+	}
+	auto fixpdef = dynamic_cast<FixpDef*>(comp);
+	if (fixpdef != NULL) {
+		add(fixpdef);
+		return;
+	}
+
+	throw notyetimplemented("Adding theorycomponents to a theory that are no sentences or (complex) (fixpoint) definitions");
+}
+
 
 vector<TheoryComponent*> Theory::components() const {
 	vector<TheoryComponent*> stc;

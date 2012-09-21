@@ -685,9 +685,7 @@ public:
 	void name(const std::string& n) {
 		_name = n;
 	} //!< Change the name of the theory
-	virtual void add(Formula* f) = 0; //!< Add a formula to the theory
-	virtual void add(Definition* d) = 0; //!< Add a definition to the theory
-	virtual void add(FixpDef* fd) = 0; //!< Add a fixpoint definition to the theory
+	virtual void add(TheoryComponent* f) = 0; //!< Add a formula or a (complex) (fixpoint) definition to the theory
 
 	const std::string& name() const {
 		return _name;
@@ -728,33 +726,12 @@ public:
 	~Theory() {
 	}
 
-	void add(Formula* f) {
-		_sentences.push_back(f);
-	}
-	void add(Definition* d) {
-		_definitions.push_back(d);
-	}
-	void add(FixpDef* fd) {
-		_fixpdefs.push_back(fd);
-	}
-	void add(TheoryComponent* comp){ // FIXME handle all cases with an enum or a visitor
-		auto form = dynamic_cast<Formula*>(comp);
-		if(form!=NULL){
-			add(form);
-			return;
-		}
-		auto def = dynamic_cast<Definition*>(comp);
-		if(def!=NULL){
-			add(def);
-			return;
-		}
-		auto fixpdef = dynamic_cast<FixpDef*>(comp);
-		if(fixpdef!=NULL){
-			add(fixpdef);
-			return;
-		}
-		Assert(false);
-	}
+	void add(Formula*) ;
+	void add(Definition*);
+	void add(FixpDef*);
+
+	void add(TheoryComponent*);
+
 	void addTheory(AbstractTheory*);
 	void sentence(unsigned int n, Formula* f) {
 		_sentences[n] = f;
