@@ -44,7 +44,7 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 		// Otherwise, cannot be a cp-able function
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
-		auto lit = translate(new CPVarTerm(translate(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
+		auto lit = translate(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
 		atom2Tuple[lit]->first = functions[symboloffset.offset].symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
@@ -274,7 +274,7 @@ Lit GroundTranslator::nextNumber(AtomType type) {
 	return nr;
 }
 
-VarId GroundTranslator::translate(SymbolOffset offset, const vector<GroundTerm>& args) {
+VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTerm>& args) {
 	Assert(offset.functionlist);
 	auto& info = functions[offset.offset];
 	auto it = info.term2var.lower_bound(args);
@@ -293,7 +293,7 @@ VarId GroundTranslator::translate(SymbolOffset offset, const vector<GroundTerm>&
 VarId GroundTranslator::translateTerm(Function* function, const vector<GroundTerm>& args) {
 	Assert(CPSupport::eligibleForCP(function, vocabulary()));
 	auto offset = addSymbol(function);
-	return translate(offset, args);
+	return translateTerm(offset, args);
 }
 
 VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
@@ -306,7 +306,7 @@ VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
 }
 
 VarId GroundTranslator::translateTerm(const DomainElement* element) {
-	Assert(element->type() == DET_INT);
+	Assert(element!=NULL && element->type() == DET_INT);
 	auto value = element->value()._int;
 
 	auto it = storedTerms.find(value);

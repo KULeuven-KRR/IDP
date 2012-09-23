@@ -108,7 +108,6 @@ private:
 	std::map<CPTsBody*, Lit, CompareTs> cpset; // Used to detect identical Cpterms, is not used in any other way!
 
 	VarId nextNumber();
-	VarId translate(SymbolOffset offset, const std::vector<GroundTerm>&);
 
 	// SETS
 	// SetID 2 set
@@ -132,6 +131,7 @@ public:
 	Lit translate(LazyInstantiation* instance, TsType type);
 
 	VarId translateTerm(Function*, const std::vector<GroundTerm>&);
+	VarId translateTerm(SymbolOffset offset, const std::vector<GroundTerm>&);
 	VarId translateTerm(CPTerm*, SortTable*);
 	VarId translateTerm(const DomainElement*);
 
