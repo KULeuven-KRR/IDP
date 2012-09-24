@@ -1224,6 +1224,8 @@ private:
 	tablesize size() const {
 		return tablesize(TST_EXACT, _table.size());
 	}
+	void countNBNotIntElements();
+
 protected:
 	// SortTable is responsible for ref management and deletion!
 	~EnumeratedInternalSortTable() {
@@ -1236,8 +1238,10 @@ protected:
 public:
 	EnumeratedInternalSortTable(): nbNotIntElements(0) {
 	}
-	EnumeratedInternalSortTable(const SortedElementTuple& d) :
-			_table(d), nbNotIntElements(0) {
+	EnumeratedInternalSortTable(const SortedElementTuple& d)
+			: 	_table(d),
+				nbNotIntElements(0) {
+		countNBNotIntElements();
 	}
 	InternalSortTable* add(const DomainElement*);
 	InternalSortTable* remove(const DomainElement*);

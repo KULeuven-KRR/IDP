@@ -1835,6 +1835,16 @@ InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	return this;
 }
 
+void EnumeratedInternalSortTable::countNBNotIntElements(){
+	nbNotIntElements = 0;
+	for(auto el: _table){
+		if(el->type() != DET_INT){
+			nbNotIntElements++;
+		}
+	}
+}
+
+
 InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
