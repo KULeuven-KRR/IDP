@@ -41,7 +41,7 @@ void connectTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
 //Do nothing unless GroundingReciever is PCSolver (see Grounding.cpp)
 template<> void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm);
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent);
 
 void logActionAndTime(const std::string& action);
 
@@ -176,7 +176,7 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Adding symmetry breakers");
 		}
-		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm);
+		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm, _nbmodelsequivalent);
 
 		// Print grounding statistics
 		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {

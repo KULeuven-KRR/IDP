@@ -83,7 +83,7 @@ public:
 	std::vector<const IVSet*> splitBasedOnOccurrences(OccurrencesCounter*) const;
 	std::vector<const IVSet*> splitBasedOnBinarySymmetries() const;
 
-	void addSymBreakingPreds(AbstractGroundTheory*) const;
+	void addSymBreakingPreds(AbstractGroundTheory*, bool) const;
 	std::vector<std::map<int, int> > getBreakingSymmetries(AbstractGroundTheory*) const;
 	std::vector<std::list<int> > getInterchangeableLiterals(AbstractGroundTheory*) const;
 
@@ -93,7 +93,7 @@ public:
 
 std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*, const Term*);
 
-void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>);
+void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>, bool nbModelsEquivalent);
 
 /**
  * 	Theory analyzing visitor which extracts information relevant for symmetry detection.
