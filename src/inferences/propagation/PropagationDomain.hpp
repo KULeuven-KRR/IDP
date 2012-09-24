@@ -126,6 +126,18 @@ struct ThreeValuedDomain {
 			break;
 		}
 	}
+
+	std::ostream& put(std::ostream& stream) const{
+		stream << "ct:";
+		pushtab();
+		stream << nt() << toString(_ctdomain);
+		poptab();
+		stream << nt() << "cf:";
+		pushtab();
+		stream << nt() << toString(_cfdomain);
+		poptab();
+		return stream;
+	}
 };
 
 #endif //PROPAGATEDOM_HPP

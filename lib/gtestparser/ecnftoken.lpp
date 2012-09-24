@@ -22,11 +22,11 @@ COLOR			\x1b\[[0-9;]*m
 
 %%
 
-<*>{COLOR}?"[EXECUTABLE] "{COLOR}?[^\n]*					{ results << yytext << "\n"; }
+<*>{COLOR}?"[EXECUTABLE] "{COLOR}?[^\n]*					{ results << "\n" << yytext << "\n"; }
 <*>{COLOR}?"[ RUN      ] "{COLOR}?							{ BEGIN(block); error << ss.str(); ss.str(""); }
-<*>{COLOR}?"[  PASSED  ] "{COLOR}?							{ BEGIN(resultblock); error << ss.str(); ss.str(""); results << "Passed "; }
+<*>{COLOR}?"[  PASSED  ] "{COLOR}?							{ BEGIN(resultblock);  results << yytext << ss.str(); ss.str(""); }
 <*>{COLOR}?"  YOU HAVE "{INT}" DISABLED TESTS"(\n)*{COLOR}?	{ results << yytext; }
-<*>{COLOR}?"[==========] "{COLOR}?							{ BEGIN(INITIAL); error << ss.str(); ss.str(""); }
+<*>{COLOR}?"[==========] "{COLOR}?							{ BEGIN(resultblock); results << yytext << ss.str(); ss.str(""); }
 <*>{COLOR}?"[----------] "{COLOR}?							{ BEGIN(INITIAL); error << ss.str(); ss.str(""); }
 <block>.													{ ss << yytext; }
 <block>\n													{ ss << "\n"; }

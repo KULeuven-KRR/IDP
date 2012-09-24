@@ -275,7 +275,11 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 		auto it = _propagator->getUpward().find(pf);
 		if (it != _propagator->getUpward().cend()) {
 			Assert(it->second!=NULL);
-			_propagator->setDomain(pf, ThreeValuedDomain<Domain>(_propagator->getFactory(), pf));
+			auto formulaDomain = ThreeValuedDomain<Domain>(_propagator->getFactory(), pf);
+			_propagator->setDomain(pf, formulaDomain);
+			if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 2) {
+				clog << "  " << toString(pf) << " is builtin. Updated its domain to" << "\n" << toString(formulaDomain)<<nt();
+			}
 			_propagator->schedule(it->second, UP, true, pf);
 			_propagator->schedule(it->second, UP, false, pf);
 		}

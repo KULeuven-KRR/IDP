@@ -1,0 +1,15 @@
+vocabulary V{
+	type x isa int
+	type y isa int
+	a(x)
+}
+
+query Q:V{ {x[y] : ~x(x)} }
+
+structure S:V{
+	x = {1..5}
+	y = {0..3}
+}
+procedure getExpectedSet(){
+  return {{0}}
+}

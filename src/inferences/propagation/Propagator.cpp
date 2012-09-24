@@ -12,7 +12,9 @@
 #include "PropagationDomainFactory.hpp"
 #include "PropagationScheduler.hpp"
 #include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBdd.hpp"
 #include "GenerateBDDAccordingToBounds.hpp"
 #include "utils/ListUtils.hpp"
 
@@ -111,6 +113,17 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 
 		PredInter* bddinter = _factory->inter(vv, _domains.find(connector)->second, structure);
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
+			if (getOption(IntType::VERBOSE_PROPAGATING) > 3) {
+				clog << nt() << "The used BDDs are:";
+				clog << nt() << "CT: ";
+				BDDInternalPredTable* cttable = dynamic_cast<BDDInternalPredTable*>(bddinter->ct()->internTable());
+				auto ctbdd = cttable->bdd();
+				clog << nt() << toString(ctbdd);
+				clog << nt() << "CF: ";
+				BDDInternalPredTable* cftable = dynamic_cast<BDDInternalPredTable*>(bddinter->cf()->internTable());
+				auto cfbdd = cftable->bdd();
+				clog << nt() << toString(cfbdd);
+			}
 			clog << nt() << "Derived symbols: " << toString(bddinter) << "\n";
 		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
@@ -232,6 +245,11 @@ void TypedFOPropagator<Factory, Domain>::schedule(const Formula* p, FOPropDirect
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::setDomain(const Formula* key, const ThreeValuedDomain<Domain>& value) {
+	if(_domains.find(key) != _domains.cend()){
+		//The erase is needed since the "insert" method does not update. If the key is already present, insert does nothing!
+		//Using the operator[] is not possible since it requires a default constructor.
+		_domains.erase(key);
+	}
 	_domains.insert(std::pair<const Formula*, const ThreeValuedDomain<Domain> >(key, value));
 }
 
@@ -239,8 +257,9 @@ template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDirection dir, bool ct, Domain* newdomain, const Formula* child) {
 	Assert(newdomain!=NULL && f!=NULL && hasDomain(f));
 	if (getOption(IntType::VERBOSE_PROPAGATING) > 2) {
-		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":\n";
+		clog << "    Derived the following " << (ct ? "ct " : "cf ") << "domain for " << *f << ":" << nt();
 		_factory->put(clog, newdomain);
+		clog << nt();
 	}
 	Domain* olddom = ct ? getDomain(f)._ctdomain : getDomain(f)._cfdomain;
 	Domain* newdom = _factory->disjunction(olddom, newdomain);

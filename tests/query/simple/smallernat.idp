@@ -1,0 +1,16 @@
+vocabulary V{
+	type x isa nat
+}
+
+
+query Q:V {
+	{x[nat] y[x]: x<y}
+}
+
+structure S:V {
+	x = {1..2}
+}
+
+procedure getExpectedSet(){
+  return {{0,1},{1,2},{0,2}}
+}
