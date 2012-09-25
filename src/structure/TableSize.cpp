@@ -76,10 +76,19 @@ double toDouble(const tablesize& val){
 template<>
 std::string toString(const tablesize& obj){
 	std::stringstream ss;
-	if(obj._type!=TableSizeType::TST_EXACT){
-		ss <<"not exactly known";
-	}else{
+	switch(obj._type){
+	case TableSizeType::TST_APPROXIMATED:
+		ss <<"approximated to " <<obj._size;
+		break;
+	case TableSizeType::TST_EXACT:
 		ss <<obj._size;
+		break;
+	case TableSizeType::TST_INFINITE:
+		ss <<"infinite";
+		break;
+	case TableSizeType::TST_UNKNOWN:
+		ss <<"not exactly known";
+		break;
 	}
 	return ss.str();
 }
