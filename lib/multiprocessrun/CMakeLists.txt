@@ -26,9 +26,10 @@ function(handleRPATHUnix)
 	ENDIF()
 endfunction()
 
-# Set default compile flags for GCC
+# Set default compile flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall ")
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall -Wextra ")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra ")
 endif()
 
 set(WRONGBUILD ON)
