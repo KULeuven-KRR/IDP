@@ -86,8 +86,9 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 }
 
 Term* DeriveSorts::visit(AggTerm* t) {
-	if (_assertsort != NULL) {
-		Assert(SortUtils::resolve(_assertsort, get(STDSORT::INTSORT))!=NULL);
+	if (_assertsort != NULL && SortUtils::resolve(_assertsort, get(STDSORT::INTSORT))==NULL){
+		_underivable = true;
+		return t;
 	}
 	_assertsort = NULL;
 	return TheoryMutatingVisitor::visit(t);
@@ -99,8 +100,9 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 	if (not _useBuiltIns && f->builtin()) {
 		return term;
 	}
-	if (_assertsort != NULL && term->sort() != NULL) {
-		Assert(SortUtils::resolve(_assertsort, term->sort())!=NULL);
+	if (_assertsort != NULL && term->sort() != NULL && SortUtils::resolve(_assertsort, term->sort())==NULL) {
+		_underivable = true;
+		return term;
 	}
 	_assertsort = NULL;
 
