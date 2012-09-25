@@ -2220,6 +2220,15 @@ bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 	return false;
 }
 
+bool isIntPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
+	for(auto sort: symbol->sorts()){
+		if (not SortUtils::isSubsort(sort, get(STDSORT::INTSORT), voc)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
 }
