@@ -334,22 +334,37 @@ int nrSubformulas(AbstractTheory* t) {
 }
 
 AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
-	if (not isa<Theory>(*at1) || not isa<Theory>(*at2)) {
+	if (not isa<Theory>(*at1) or not isa<Theory>(*at2)) {
 		throw notyetimplemented("Only merging of normal theories has been implemented...");
 	}
+	Vocabulary* voc;
 	if (at1->vocabulary() != at2->vocabulary()) {
-		throw notyetimplemented("Only merging of theories over the same vocabularies has been implemented...");
+		if (VocabularyUtils::isSubVocabulary(at1->vocabulary(),at2->vocabulary())) {
+			// We can safely add components from the first theory into the second theory.
+			std::swap(at1,at2);
+			voc = at1->vocabulary();
+		} else if (VocabularyUtils::isSubVocabulary(at2->vocabulary(),at1->vocabulary())) {
+			// We can safely add components from the second theory into the first theory.
+			voc = at1->vocabulary();
+		} else {
+			// Merge the two vocabularies.
+			voc = new Vocabulary(at1->vocabulary()->name() + at2->vocabulary()->name());
+			voc->add(at1->vocabulary());
+			voc->add(at2->vocabulary());
+		}
 	}
 	AbstractTheory* at = at1->clone();
+	at->name(at1->name() + at2->name());
+	at->vocabulary(voc);
 	Theory* t2 = static_cast<Theory*>(at2);
-	for (auto it = t2->sentences().cbegin(); it != t2->sentences().cend(); ++it) {
-		at->add((*it)->clone());
+	for (auto sentence : t2->sentences()) {
+		at->add(sentence->clone());
 	}
-	for (auto it = t2->definitions().cbegin(); it != t2->definitions().cend(); ++it) {
-		at->add((*it)->clone());
+	for (auto definition : t2->definitions()) {
+		at->add(definition->clone());
 	}
-	for (auto it = t2->fixpdefs().cbegin(); it != t2->fixpdefs().cend(); ++it) {
-		at->add((*it)->clone());
+	for (auto fixpdef : t2->fixpdefs()) {
+		at->add(fixpdef->clone());
 	}
 	return at;
 }
