@@ -66,6 +66,9 @@ procedure modelexpand(theory, structure) {
 		return
 	end
 	local solutions, trace = modelexpandpartial(theory,structure)
+	if stdoptions.verbosity.grounding>0 then
+		io.stderr:write("Extending partial models to full models\n")
+	end
 	local solutions2 = alltwovaluedextensions(solutions)
 	return solutions2, trace
 }
