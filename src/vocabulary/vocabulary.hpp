@@ -511,6 +511,13 @@ public:
 	bool contains(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
 
+	const std::map<std::string, Predicate*>& getPreds() const{
+		return _name2pred;
+	}
+	const std::map<std::string, Function*>& getFuncs() const{
+		return _name2func;
+	}
+
 	std::map<std::string, Sort*>::iterator firstSort() {
 		return _name2sort.begin();
 	}
