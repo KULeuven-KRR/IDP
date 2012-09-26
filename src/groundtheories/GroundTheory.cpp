@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "GroundTheory.hpp"
 
@@ -42,28 +42,27 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * co
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders){
+void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) {
 	Policy::polNotifyUnknBound(context, boundlit, args, grounders);
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID){
+void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID) {
 	addTseitinInterpretations(glist, getIDForUndefined());
 	Policy::polAddLazyAddition(glist, ID);
 }
 
 template<class Policy>
-void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction){
+void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
 	Policy::polStartLazyFormula(inst, type, conjunction);
 }
 template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type){
+void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type) {
 	Policy::polNotifyLazyResidual(inst, type);
 }
 
 template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
-	//deleteList(_foldedterms); TODO
 	Policy::polRecursiveDelete();
 	delete (this);
 }
@@ -115,10 +114,10 @@ void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
 	if (_printedvarids.find(id) != _printedvarids.end()) {
 		return;
 	}
-	_printedvarids.insert(id);
 	if (translator()->cprelation(id) == NULL) {
 		return;
 	}
+	_printedvarids.insert(id);
 	auto cprelation = translator()->cprelation(id);
 	auto tseitin2 = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
 	addUnitClause(tseitin2);
@@ -189,7 +188,7 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
-	add(setid, getIDForUndefined(), function!=AggFunction::CARD);
+	add(setid, getIDForUndefined(), function != AggFunction::CARD);
 	Policy::polAddOptimization(function, setid);
 }
 
@@ -200,7 +199,7 @@ void GroundTheory<Policy>::addOptimization(VarId varid) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry){
+void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) {
 	Policy::polAdd(symmetry);
 }
 
@@ -258,16 +257,17 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 
 	if (isa<CPVarTerm>(*cpterm)) {
 		auto varterm = dynamic_cast<CPVarTerm*>(cpterm);
-		if (translator()->getFunction(varterm->varid()) == NULL) {
-			CPTsBody* cprelation = translator()->cprelation(varterm->varid());
-			CPTerm* left = foldCPTerm(cprelation->left());
-			if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
-				Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
-				return left;
-			} else if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
-				Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
-				return left;
-			}
+		if (translator()->cprelation(varterm->varid()) == NULL) {
+			return cpterm;
+		}
+		auto cprelation = translator()->cprelation(varterm->varid());
+		auto left = foldCPTerm(cprelation->left());
+		if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
+			Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
+			return left;
+		} else if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
+			Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
+			return left;
 		}
 	} else if (isa<CPWSumTerm>(*cpterm)) {
 		auto sumterm = dynamic_cast<CPWSumTerm*>(cpterm);
@@ -276,7 +276,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		auto vit = sumterm->varids().begin();
 		auto wit = sumterm->weights().begin();
 		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-			if (translator()->getFunction(*vit) == NULL) {
+			if (translator()->cprelation(*vit) != NULL) {
 				CPTsBody* cprelation = translator()->cprelation(*vit);
 				CPTerm* left = foldCPTerm(cprelation->left());
 				if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
@@ -305,7 +305,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		varidlist newvarids;
 		int newweight = prodterm->weight();
 		for (auto vit = prodterm->varids().begin(); vit != prodterm->varids().end(); ++vit) {
-			if (translator()->getFunction(*vit) == NULL) {
+			if (translator()->cprelation(*vit) != NULL) {
 				auto cprelation = translator()->cprelation(*vit);
 				auto left = foldCPTerm(cprelation->left());
 				if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
@@ -331,9 +331,9 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 
 template<class Policy>
 void GroundTheory<Policy>::addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable) {
-	CHECKTERMINATION
+	CHECKTERMINATION;
 	weightlist lw(set.size(), 1);
-	SetId setnr = translator()->translateSet(set, lw, { }, { });
+	SetId setnr = translator()->translateSet(set, lw, {}, {});
 	Lit tseitin;
 	if (f->partial() || (not outSortTable->finite())) {
 		tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
