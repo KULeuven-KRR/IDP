@@ -16,7 +16,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddSetExpr.hpp"
 
-#include "Assert.h"
+#include "Assert.hpp"
 
 #include "GeneratorFactory.hpp"
 

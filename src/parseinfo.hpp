@@ -13,7 +13,7 @@
 
 #include <string>
 #include <memory>
-#include "Assert.h"
+#include "Assert.hpp"
 
 /**
  *	A ParseInfo contains a line number, a column number and a file.

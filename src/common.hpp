@@ -27,7 +27,7 @@
 #include "loki/static_check.h"
 #include <typeinfo>
 
-#include "Assert.h"
+#include "Assert.hpp"
 
 typedef unsigned int uint;
 
