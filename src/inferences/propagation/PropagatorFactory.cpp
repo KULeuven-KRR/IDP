@@ -143,7 +143,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 		_propagator->setDomain(leafconnector, ThreeValuedDomain<Domain>(_propagator->getFactory(), leafconnector, _initbounds[symbol]));
 		break;
 	case IBT_NONE:
-		initFalse(leafconnector);
+		initUnknown(leafconnector);
 		if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 			clog << "    The leaf connector is completely unknown\n";
 		}
@@ -258,7 +258,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const Theory* theory) {
 }
 
 template<class Factory, class Domain>
-void FOPropagatorFactory<Factory, Domain>::initFalse(const Formula* f) {
+void FOPropagatorFactory<Factory, Domain>::initUnknown(const Formula* f) {
 	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 2) {
 		clog << "  Assigning the least precise bounds to " << *f << "\n";
 	}
@@ -268,8 +268,18 @@ void FOPropagatorFactory<Factory, Domain>::initFalse(const Formula* f) {
 }
 
 template<class Factory, class Domain>
+void FOPropagatorFactory<Factory, Domain>::initTwoVal(const Formula* f) {
+	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 2) {
+		clog << "  Assigning a two-valued domain to " << *f << "\n";
+	}
+	if (not _propagator->hasDomain(f)) {
+		_propagator->setDomain(f, ThreeValuedDomain<Domain>(_propagator->getFactory(), f));
+	}
+}
+
+template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
-	initFalse(pf);
+	initUnknown(pf);
 	PFSymbol* symbol = pf->symbol();
 	if (symbol->builtin()) {
 		auto it = _propagator->getUpward().find(pf);
@@ -338,7 +348,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const AggForm* af) {
 	for (auto i = set->getSets().cbegin(); i < set->getSets().cend(); ++i) {
 		_propagator->setUpward((*i)->getCondition(), af);
 	}
-	initFalse(af);
+	initUnknown(af);
 	traverse(af);
 }
 
@@ -361,12 +371,16 @@ void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 	}
 	_propagator->setQuantVar(ef->left(), leftqv); //SetQuantVar?  Looks more like setNonFreeVars to me! Or better: freevars of the superformula that do not appear in the subf
 	_propagator->setQuantVar(ef->right(), rightqv); //SetQuantVar?  Looks more like setNonFreeVars to me!
-	initFalse(ef);
+	initUnknown(ef);
 	traverse(ef);
 }
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const BoolForm* bf) {
+	if(bf->subformulas().size() == 0){
+		initTwoVal(bf);
+		return;
+	}
 	for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 		_propagator->setUpward(*it, bf);
 		set<Variable*> sv = bf->freeVars();
@@ -375,13 +389,13 @@ void FOPropagatorFactory<Factory, Domain>::visit(const BoolForm* bf) {
 		}
 		_propagator->setQuantVar(*it, sv); //SetQuantVar?  Looks more like setNonFreeVars to me!
 	}
-	initFalse(bf);
+	initUnknown(bf);
 	traverse(bf);
 }
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const QuantForm* qf) {
 	_propagator->setUpward(qf->subformula(), qf);
-	initFalse(qf);
+	initUnknown(qf);
 	traverse(qf);
 }
