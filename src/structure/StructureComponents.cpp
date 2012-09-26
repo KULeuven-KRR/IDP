@@ -4074,7 +4074,6 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
 	}
 
-// TODO if going through the vocabulary, it is not guaranteed that the struct has an interpretation for it (otherwise, could make this a global method). But is this logical, or should a monitor be added such that a struct is extended if its vocabulary changes?
 	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
 		CHECKTERMINATION;
 		auto function = (*i).first;

@@ -472,9 +472,9 @@ void Structure::functionCheck() {
 
 SortTable* Structure::inter(const Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
-		throw IdpException("Sort was NULL"); // TODO should become Assert
+		throw IdpException("Sort was NULL");
 	}
-	Assert(s != NULL);
+
 	if (s->builtin()) {
 		return s->interpretation();
 	}
