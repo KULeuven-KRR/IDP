@@ -28,6 +28,12 @@ TEST(MakeTrueTest, Correct) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
+TEST(MXnbmodelsTest, CorrectNbOfModels) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/generateRequestedNbOfModels.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 TEST(TrailTest, NonEmptyTrail) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "trailtest.idp" }););

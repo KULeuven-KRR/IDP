@@ -1,0 +1,17 @@
+vocabulary V{
+	type x isa int
+	c:x
+	P(x)
+}
+theory T:V{
+}
+structure S:V{
+	x = {1..4}
+}
+procedure main(){
+	stdoptions.nbmodels=33
+	sols = modelexpand(T,S)
+	if #sols==33 then return 1
+	else return 0
+	end
+}

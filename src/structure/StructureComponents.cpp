@@ -3974,16 +3974,16 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			continue;
 		}
 
-		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(currentnb); ++j) {
+		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(partialfalsestructs.size()+newstructs.size()); ++j) {
 			CHECKTERMINATION;
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
 			news->clean();
 			newstructs.push_back(news);
-			currentnb++;
 		}
 		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
-			CHECKTERMINATION(*j)->inter(function)->graphInter()->makeFalse(tuple);
+			CHECKTERMINATION;
+			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
 	}
 	extensions = newstructs;
@@ -4097,26 +4097,22 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		const PredTable* pf = inter->pf();
 		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION;
-			if(not pf->contains(*ptIterator))
-			{
+			if(not pf->contains(*ptIterator)) {
 				continue;
 			}
 
 			vector<AbstractStructure*> newstructs;
-			int count = 0;
-			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(count); ++j) {
+			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(newstructs.size()); ++j) {
 				CHECKTERMINATION;
 				auto news = (*j)->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
-				count++;
-				if (not needMoreModels(count)) {
+				if (not needMoreModels(newstructs.size())) {
 					break;
 				}
 				news = (*j)->clone();
 				news->inter(pred)->makeFalse(*ptIterator);
 				newstructs.push_back(news);
-				count++;
 			}
 			extensions = newstructs;
 		}
