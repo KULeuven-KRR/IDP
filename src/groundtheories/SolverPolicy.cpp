@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include "groundtheories/SolverPolicy.hpp"
 
@@ -32,7 +32,7 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTrans
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
-	MinisatID::Disjunction clause(getDefConstrID(), {});
+	MinisatID::Disjunction clause(getDefConstrID(), { });
 	for (size_t n = 0; n < cl.size(); ++n) {
 		clause.literals.push_back(createLiteral(cl[n]));
 	}
@@ -79,14 +79,15 @@ void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel) {
+void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound,
+		MinisatID::EqType rel) {
 	vector<MinisatID::Weight> w;
 	for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
 		w.push_back(MinisatID::Weight(*i));
 	}
 	vector<MinisatID::VarID> vars;
-	for (auto var:varids) {
-			vars.push_back(convert(var));
+	for (auto var : varids) {
+		vars.push_back(convert(var));
 	}
 	MinisatID::CPSumWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, bound);
 	extAdd(getSolver(), sentence);
@@ -96,7 +97,7 @@ template<typename Solver>
 void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel) {
 	MinisatID::Weight w = weight;
 	vector<MinisatID::VarID> vars;
-	for (auto var:varids) {
+	for (auto var : varids) {
 		vars.push_back(convert(var));
 	}
 	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, convert(bound));
@@ -159,12 +160,12 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	} else {
 		Assert(isa<CPWProdTerm>(*left));
 		auto var = right._varid;
-		if(not right._isvarid){
+		if (not right._isvarid) {
 			var = _translator->translateTerm(createDomElem(right._bound));
 		}
 		auto term = dynamic_cast<CPWProdTerm*>(left);
 		polAddCPVariables(term->varids(), _translator);
-		polAddCPVariables({var}, _translator);
+		polAddCPVariables( { var }, _translator);
 		polAddWeightedProd(createAtom(tseitin), term->varids(), term->weight(), var, comp);
 	}
 }
@@ -183,7 +184,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 		impltype = MinisatID::ImplicationType::IMPLIES;
 		break;
 	case TsType::RIMPL:
-		for(uint i=0; i<rhs.size(); ++i) {
+		for (uint i = 0; i < rhs.size(); ++i) {
 			newrhs[i] = -rhs[i];
 		}
 		newtseitin = -newtseitin;
@@ -196,7 +197,6 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 	}
 	extAdd(getSolver(), MinisatID::Implication(getDefConstrID(), createLiteral(newtseitin), impltype, createList(newrhs), newconj));
 }
-
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
@@ -212,7 +212,8 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 		msem = MinisatID::AggSem::DEF;
 		break;
 	}
-	extAdd(getSolver(), MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, definitionID.id));
+	extAdd(getSolver(),
+			MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, definitionID.id));
 }
 
 template<typename Solver>
@@ -224,23 +225,24 @@ void SolverPolicy<Solver>::polAddCPVariables(const varidlist& varids, GroundTran
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTranslator* termtranslator) {
-	if (_addedvarids.find(varid) == _addedvarids.end()) {
-		_addedvarids.insert(varid);
-		auto domain = termtranslator->domain(varid);
-		Assert(domain != NULL);
-		Assert(domain->approxFinite());
-		if (domain->isRange()) {
-			// the domain is a complete range from minvalue to maxvalue.
-			MinisatID::IntVarRange range(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int);
-			extAdd(getSolver(), range);
-		} else {
-			// the domain is not a complete range.
-			std::vector<MinisatID::Weight> w;
-			for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
-				w.push_back((MinisatID::Weight)(*it)->value()._int);
-			}
-			extAdd(getSolver(), MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
+	if (_addedvarids.find(varid) != _addedvarids.cend()) {
+		return;
+	}
+	_addedvarids.insert(varid);
+	auto domain = termtranslator->domain(varid);
+	Assert(domain != NULL);
+	Assert(domain->approxFinite());
+	if (domain->isRange()) {
+		// the domain is a complete range from minvalue to maxvalue.
+		MinisatID::IntVarRange range(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int);
+		extAdd(getSolver(), range);
+	} else {
+		// the domain is not a complete range.
+		std::vector<MinisatID::Weight> w;
+		for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
+			w.push_back((MinisatID::Weight) (*it)->value()._int);
 		}
+		extAdd(getSolver(), MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
 	}
 }
 
@@ -271,8 +273,10 @@ private:
 	std::vector<DelayGrounder*> grounders;
 
 public:
-	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders) :
-			lit(lit), args(args), grounders(grounders) {
+	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders)
+			: 	lit(lit),
+				args(args),
+				grounders(grounders) {
 	}
 
 	virtual void requestGrounding(MinisatID::Value) {
@@ -287,38 +291,37 @@ public:
 };
 
 template<class Solver>
-void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args,
-		std::vector<DelayGrounder*> grounders) {
+void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) {
 	auto mon = new LazyRuleMon(delaylit, args, grounders);
 	auto literal = createLiteral(delaylit);
 	auto value = MinisatID::Value::True;
-	if(context==Context::BOTH){
+	if (context == Context::BOTH) {
 		value = MinisatID::Value::Unknown;
-	}else if (context == Context::POSITIVE) { // In a positive context, should watch when the literal becomes false, or it's negation becomes true
+	} else if (context == Context::POSITIVE) { // In a positive context, should watch when the literal becomes false, or it's negation becomes true
 		value = MinisatID::Value::False;
 	}
 	MinisatID::LazyGroundLit lc(literal.getAtom(), value, mon);
 	extAdd(getSolver(), lc);
 }
 
-class LazyClauseMon: public MinisatID::LazyGrounder{
+class LazyClauseMon: public MinisatID::LazyGrounder {
 private:
 	LazyInstantiation* inst;
 
 public:
-	LazyClauseMon(LazyInstantiation* inst) :
-			inst(inst){
+	LazyClauseMon(LazyInstantiation* inst)
+			: inst(inst) {
 	}
 
-	virtual void requestGrounding(int ID, bool groundall, bool& stilldelayed){
+	virtual void requestGrounding(int ID, bool groundall, bool& stilldelayed) {
 		inst->notifyGroundingRequested(ID, groundall, stilldelayed);
 	}
 };
 
 template<class Solver>
-void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID){
+void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 	MinisatID::litlist list;
-	for(auto i=glist.cbegin(); i<glist.cend(); ++i) {
+	for (auto i = glist.cbegin(); i < glist.cend(); ++i) {
 		list.push_back(createLiteral(*i));
 	}
 	extAdd(getSolver(), MinisatID::LazyAddition(list, ID));
@@ -340,11 +343,11 @@ private:
 	LazyInstantiation* inst;
 
 public:
-	LazyLitMon(LazyInstantiation* inst) :
-			inst(inst){
+	LazyLitMon(LazyInstantiation* inst)
+			: inst(inst) {
 	}
 
-	virtual void requestGrounding(MinisatID::Value){
+	virtual void requestGrounding(MinisatID::Value) {
 		Assert(not isAlreadyGround());
 		bool temp;
 		inst->notifyGroundingRequested(-1, false, temp);
@@ -352,28 +355,28 @@ public:
 	}
 };
 template<class Solver>
-void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType type){
+void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType type) {
 	auto mon = new LazyLitMon(inst);
-	auto watchboth = type==TsType::RULE || type==TsType::EQ;
+	auto watchboth = type == TsType::RULE || type == TsType::EQ;
 	auto lit = createLiteral(inst->residual);
-	if(type==TsType::RIMPL){
+	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
 	auto value = MinisatID::Value::True;
-	if(watchboth){
+	if (watchboth) {
 		value = MinisatID::Value::Unknown;
-	}else if(lit.hasSign()){
+	} else if (lit.hasSign()) {
 		value = MinisatID::Value::False;
 	}
 	extAdd(getSolver(), MinisatID::LazyGroundLit(lit.getAtom(), value, mon));
 }
 
 template<class Solver>
-void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries){
+void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries) {
 	std::vector<std::vector<MinisatID::Lit> > list;
 	MinisatID::Symmetry s(list);
 	for (auto bs_it = symmetries.cbegin(); bs_it != symmetries.cend(); ++bs_it) {
-		s.symmetry.push_back(std::vector<MinisatID::Lit>{});
+		s.symmetry.push_back(std::vector<MinisatID::Lit> { });
 		for (auto s_it = bs_it->begin(); s_it != bs_it->end(); ++s_it) {
 			s.symmetry.back().push_back(SolverConnection::createLiteral(s_it->first));
 		}
