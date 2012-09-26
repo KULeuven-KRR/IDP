@@ -1086,14 +1086,12 @@ int domainatomIndex(lua_State* L) {
 	if (str == "symbol") {
 		auto s = atom->symbol();
 		if (isa<Predicate>(*s)) {
-			auto sp = new set<Predicate*>();
-			sp->insert(dynamic_cast<Predicate*>(s));
+			auto sp = new set<Predicate*>({dynamic_cast<Predicate*>(s)});
 			return convertToLua(L, InternalArgument(sp));
 		} else {
 			Assert(isa<Function>(*s));
-			auto sf = new set<Function*>();
-			sf->insert(dynamic_cast<Function*>(s));
-			return convertToLua(L, InternalArgument(sf));
+			auto sp = new set<Function*>({dynamic_cast<Function*>(s)});
+			return convertToLua(L, InternalArgument(sp));
 		}
 	} else if (str == "args") {
 		auto tuple = new ElementTuple(atom->args());
