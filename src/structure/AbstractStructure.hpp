@@ -34,15 +34,18 @@ protected:
 public:
 	// NOTE: cannot call changevoc in constructor (as its virtual), so CALL IN CHILD!
 	AbstractStructure(std::string name, const ParseInfo& pi)
-			: _name(name), _pi(pi), _vocabulary(NULL) {
+			: 	_name(name),
+				_pi(pi),
+				_vocabulary(NULL) {
 	}
 	virtual ~AbstractStructure();
 
 	// Mutators
 	virtual void changeVocabulary(Vocabulary* v);
 
-	virtual void changeInter(Predicate* p, PredInter* i) = 0; //!< CHANGE the interpretation of p to i
-	virtual void changeInter(Function* f, FuncInter* i) = 0; //!< CHANGE the interpretation of f to i
+	virtual void changeInter(Sort* f, SortTable* i) = 0; // CHANGE the interpretation of f to i
+	virtual void changeInter(Predicate* p, PredInter* i) = 0; // CHANGE the interpretation of p to i
+	virtual void changeInter(Function* f, FuncInter* i) = 0; // CHANGE the interpretation of f to i
 	virtual void clean() = 0; //!< make three-valued interpretations that are in fact
 							  //!< two-valued, two-valued.
 
@@ -58,10 +61,12 @@ public:
 	Vocabulary* vocabulary() const {
 		return _vocabulary;
 	}
+	virtual bool hasInter(const Sort* s) const = 0;
 	virtual SortTable* inter(const Sort* s) const = 0; // Return the domain of s.
 	virtual PredInter* inter(const Predicate* p) const = 0; // Return the interpretation of p.
 	virtual FuncInter* inter(const Function* f) const = 0; // Return the interpretation of f.
 	virtual PredInter* inter(const PFSymbol* s) const = 0; // Return the interpretation of s.
+	virtual const std::map<Sort*, SortTable*>& getSortInters() const = 0;
 	virtual const std::map<Predicate*, PredInter*>& getPredInters() const = 0;
 	virtual const std::map<Function*, FuncInter*>& getFuncInters() const = 0;
 

@@ -39,8 +39,9 @@ public:
 
 	void addStructure(AbstractStructure*);
 
-	void changeInter(Predicate* p, PredInter* i); //!< CHANGES the interpretation of p to i
-	void changeInter(Function* f, FuncInter* i); //!< CHANGES the interpretation of f to i
+	void changeInter(Sort* f, SortTable* i); // CHANGES the interpretation of f to i
+	void changeInter(Predicate* p, PredInter* i); // CHANGES the interpretation of p to i
+	void changeInter(Function* f, FuncInter* i); // CHANGES the interpretation of f to i
 
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
@@ -50,14 +51,18 @@ public:
 	void autocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
-	SortTable* inter(const Sort* s) const; //!< Return the domain of s.
-	PredInter* inter(const Predicate* p) const; //!< Return the interpretation of p.
-	FuncInter* inter(const Function* f) const; //!< Return the interpretation of f.
-	PredInter* inter(const PFSymbol* s) const; //!< Return the interpretation of s.
+	virtual bool hasInter(const Sort* s) const;
+	virtual SortTable* inter(const Sort* s) const; // Return the domain of s.
+	virtual PredInter* inter(const Predicate* p) const; // Return the interpretation of p.
+	virtual FuncInter* inter(const Function* f) const; // Return the interpretation of f.
+	virtual PredInter* inter(const PFSymbol* s) const; // Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
+	virtual const std::map<Sort*, SortTable*>& getSortInters() const {
+		return _sortinter;
+	}
 	virtual const std::map<Predicate*, PredInter*>& getPredInters() const {
 		return _predinter;
 	}

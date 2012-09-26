@@ -117,6 +117,12 @@ void Structure::changeVocabulary(Vocabulary* v) {
 	}
 }
 
+void Structure::changeInter(Sort* f, SortTable* i) {
+	Assert(_sortinter[f]!=NULL);
+	delete (_sortinter[f]);
+	_sortinter[f] = i;
+}
+
 void Structure::changeInter(Predicate* p, PredInter* i) {
 	Assert(_predinter[p]!=NULL);
 	delete (_predinter[p]);
@@ -396,7 +402,7 @@ void Structure::autocomplete() {
 								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
 						}
 					} else {
-						throw notyetimplemented("Completing non approx-finite tables");
+						Warning::warning("There is no auto-completion of infinite symbol interpretations");
 					}
 				}
 			}
@@ -470,6 +476,10 @@ void Structure::functionCheck() {
 	}
 }
 
+bool Structure::hasInter(const Sort* s) const {
+	return s != NULL && (s->builtin() || _sortinter.find(const_cast<Sort*>(s)) != _sortinter.cend());
+}
+
 SortTable* Structure::inter(const Sort* s) const {
 	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
 		throw IdpException("Sort was NULL");
@@ -479,18 +489,9 @@ SortTable* Structure::inter(const Sort* s) const {
 		return s->interpretation();
 	}
 
-	vector<SortTable*> tables;
-	auto list = s->getSortsForTable();
-	for (auto i = list.cbegin(); i < list.cend(); ++i) {
-		auto it = _sortinter.find(const_cast<Sort*>(*i));
-		Assert(it != _sortinter.cend());
-		tables.push_back((*it).second);
-	}
-	if (tables.size() == 1) {
-		return tables.back();
-	} else {
-		return new SortTable(new UnionInternalSortTable( { }, tables));
-	}
+	auto sortit = _sortinter.find(const_cast<Sort*>(s));
+	Assert(sortit != _sortinter.cend());
+	return sortit->second;
 }
 
 PredInter* Structure::inter(const Predicate* p) const {
