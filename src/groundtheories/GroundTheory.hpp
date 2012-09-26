@@ -71,6 +71,7 @@ protected:
 	 */
 	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false);
 
+	void addFoldedVarEquiv(VarId id);
 	CPTerm* foldCPTerm(CPTerm* cpterm);
 
 private:

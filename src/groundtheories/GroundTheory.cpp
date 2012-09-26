@@ -75,7 +75,7 @@ void GroundTheory<Policy>::closeTheory() {
 	}
 }
 
-// TODO important: before each add, do transformforadd
+// TODO important: before each add, do addTseitinInterpretations or addFoldedVarEquiv for all relevant literals/variables!
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
@@ -111,20 +111,27 @@ void GroundTheory<Policy>::add(GroundFixpDef*) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
-	//TODO also add variables (in a separate container?)
+void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
+	if (_printedvarids.find(id) != _printedvarids.end()) {
+		return;
+	}
+	_printedvarids.insert(id);
+	if (translator()->cprelation(id) == NULL) {
+		return;
+	}
+	auto cprelation = translator()->cprelation(id);
+	auto tseitin2 = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
+	addUnitClause(tseitin2);
+}
 
+template<class Policy>
+void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	body->left(foldCPTerm(body->left()));
 
-	//Add constraint for right hand side if necessary.
-	if (body->right()._isvarid && translator()->getFunction(body->right()._varid) == NULL) {
-		if (_printedvarids.find(body->right()._varid) == _printedvarids.end()) {
-			_printedvarids.insert(body->right()._varid);
-			auto cprelation = translator()->cprelation(body->right()._varid);
-			auto tseitin2 = translator()->translate(cprelation->left(),cprelation->comp(),cprelation->right(),cprelation->type());
-			addUnitClause(tseitin2);
-		}
+	if (body->right()._isvarid) {
+		addFoldedVarEquiv(body->right()._varid);
 	}
+
 	Policy::polAdd(tseitin, body);
 }
 
@@ -188,15 +195,7 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
-	//Add reified constraint necessary. TODO refactor
-	if (translator()->getFunction(varid) == NULL) {
-		if (_printedvarids.find(varid) == _printedvarids.end()) {
-			_printedvarids.insert(varid);
-			auto cprelation = translator()->cprelation(varid);
-			auto tseitin = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
-			addUnitClause(tseitin);
-		}
-	}
+	addFoldedVarEquiv(varid);
 	Policy::polAddOptimization(varid);
 }
 
