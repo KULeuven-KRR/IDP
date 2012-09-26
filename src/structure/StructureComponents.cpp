@@ -436,14 +436,14 @@ DomainAtomFactory* DomainAtomFactory::instance() {
 }
 
 const DomainAtom* DomainAtomFactory::create(PFSymbol* s, const ElementTuple& tuple) {
-	map<PFSymbol*, map<ElementTuple, DomainAtom*> >::const_iterator it = _atoms.find(s);
+	auto it = _atoms.find(s);
 	if (it != _atoms.cend()) {
-		map<ElementTuple, DomainAtom*>::const_iterator jt = it->second.find(tuple);
+		auto jt = it->second.find(tuple);
 		if (jt != it->second.cend()) {
 			return jt->second;
 		}
 	}
-	DomainAtom* newatom = new DomainAtom(s, tuple);
+	auto newatom = new DomainAtom(s, tuple);
 	_atoms[s][tuple] = newatom;
 	return newatom;
 }
@@ -3102,7 +3102,7 @@ bool InverseInternalPredTable::empty(const Universe& univ) const {
 		return true;
 	}
 	if (approxFinite(univ)) {
-		TableIterator ti = TableIterator(begin(univ));
+		auto ti = TableIterator(begin(univ));
 		return ti.isAtEnd();
 	} else {
 		notyetimplemented("Exact emptyness test on inverse predicate tables");
