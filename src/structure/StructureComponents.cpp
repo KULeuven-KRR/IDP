@@ -175,24 +175,21 @@ ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 }
 
 DomainElement::DomainElement()
-		: 	_type(DET_INT),
-			_value(1) {
+		: _type(DET_INT), _value(1) {
 }
 
 /**
  *	Constructor for domain elements that are integers
  */
 DomainElement::DomainElement(int value)
-		: 	_type(DET_INT),
-			_value(value) {
+		: _type(DET_INT), _value(value) {
 }
 
 /**
  *	Constructor for domain elements that are floating point numbers but not integers
  */
 DomainElement::DomainElement(double value)
-		: 	_type(DET_DOUBLE),
-			_value(value) {
+		: _type(DET_DOUBLE), _value(value) {
 	Assert(not isInt(value));
 	// TODO check rest of code for such errors
 }
@@ -201,8 +198,7 @@ DomainElement::DomainElement(double value)
  *	Constructor for domain elements that are strings but not floating point numbers
  */
 DomainElement::DomainElement(const string* value)
-		: 	_type(DET_STRING),
-			_value(value) {
+		: _type(DET_STRING), _value(value) {
 	Assert(not isDouble(*value));
 }
 
@@ -210,8 +206,7 @@ DomainElement::DomainElement(const string* value)
  *	Constructor for domain elements that are compounds
  */
 DomainElement::DomainElement(const Compound* value)
-		: 	_type(DET_COMPOUND),
-			_value(value) {
+		: _type(DET_COMPOUND), _value(value) {
 }
 
 ostream& DomainElement::put(ostream& output) const {
@@ -311,8 +306,7 @@ bool operator<(const DomainElement& d1, const DomainElement& d2) {
 }
 
 Compound::Compound(Function* function, const ElementTuple& arguments)
-		: 	_function(function),
-			_arguments(arguments) {
+		: _function(function), _arguments(arguments) {
 	Assert(function != NULL);
 }
 
@@ -518,9 +512,7 @@ SortIterator& SortIterator::operator++() {
 
 //TODO remove bool h (hasnext)
 CartesianInternalTableIterator::CartesianInternalTableIterator(const vector<SortIterator>& vsi, const vector<SortIterator>& low, bool h)
-		: 	_iterators(vsi),
-			_lowest(low),
-			_hasNext(h) {
+		: _iterators(vsi), _lowest(low), _hasNext(h) {
 	if (h) {
 		for (auto it = _iterators.cbegin(); it != _iterators.cend(); ++it) {
 			if (it->isAtEnd()) {
@@ -563,8 +555,7 @@ void CartesianInternalTableIterator::operator++() {
 
 // TODO bool flags
 GeneratorInternalTableIterator::GeneratorInternalTableIterator(InstGenerator* generator, const vector<const DomElemContainer*>& vars, bool reset, bool h)
-		: 	_generator(generator),
-			_vars(vars) {
+		: _generator(generator), _vars(vars) {
 	if (reset) {
 		_generator->begin();
 		_hasNext = not _generator->isAtEnd();
@@ -624,8 +615,7 @@ void ProcInternalTableIterator::operator++() {
 }
 
 ProcInternalTableIterator::ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ)
-		: 	_univ(univ),
-			_predicate(p) {
+		: _univ(univ), _predicate(p) {
 	vector<SortIterator> vsi1;
 	vector<SortIterator> vsi2;
 	for (unsigned int n = 0; n < univ.arity(); ++n) {
@@ -721,9 +711,7 @@ void UnionInternalIterator::setcurriterator() {
 }
 
 UnionInternalIterator::UnionInternalIterator(const vector<TableIterator>& its, const vector<InternalPredTable*>& outs, const Universe& univ)
-		: 	_iterators(its),
-			_universe(univ),
-			_outtables(outs) {
+		: _iterators(its), _universe(univ), _outtables(outs) {
 	setcurriterator();
 }
 
@@ -747,12 +735,7 @@ void UnionInternalIterator::operator++() {
 }
 
 InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its, InternalPredTable* out, const Universe& univ)
-		: 	_curr(its),
-			_lowest(its),
-			_universe(univ),
-			_outtable(out),
-			_end(false),
-			_currtuple(its.size()) {
+		: _curr(its), _lowest(its), _universe(univ), _outtable(out), _end(false), _currtuple(its.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (_curr[n].isAtEnd()) {
 			_end = true;
@@ -772,12 +755,7 @@ InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& its
 
 InverseInternalIterator::InverseInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, InternalPredTable* out,
 		const Universe& univ, bool end)
-		: 	_curr(curr),
-			_lowest(low),
-			_universe(univ),
-			_outtable(out),
-			_end(end),
-			_currtuple(curr.size()) {
+		: _curr(curr), _lowest(low), _universe(univ), _outtable(out), _end(end), _currtuple(curr.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
@@ -823,11 +801,7 @@ void InverseInternalIterator::operator++() {
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f)
-		: 	_curr(its),
-			_lowest(its),
-			_function(f),
-			_end(false),
-			_currtuple(its.size()) {
+		: _curr(its), _lowest(its), _function(f), _end(false), _currtuple(its.size()) {
 	for (unsigned int n = 0; n < _curr.size(); ++n) {
 		if (_curr[n].isAtEnd()) {
 			_end = true;
@@ -838,11 +812,7 @@ UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Functi
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end)
-		: 	_curr(curr),
-			_lowest(low),
-			_function(f),
-			_end(end),
-			_currtuple(curr.size()) {
+		: _curr(curr), _lowest(low), _function(f), _end(end), _currtuple(curr.size()) {
 	for (size_t n = 0; n < _curr.size(); ++n) {
 		if (not _curr[n].isAtEnd()) {
 			_currtuple[n] = *(_curr[n]);
@@ -905,8 +875,7 @@ EqualInternalIterator* EqualInternalIterator::clone() const {
 }
 
 UnionInternalSortIterator::UnionInternalSortIterator(const vector<SortIterator>& vsi, const vector<SortTable*>& tabs)
-		: 	_iterators(vsi),
-			_outtables(tabs) {
+		: _iterators(vsi), _outtables(tabs) {
 	setcurriterator();
 }
 
@@ -1027,9 +996,7 @@ bool StrictWeakNTupleOrdering::operator()(const ElementTuple& t1, const ElementT
 }
 
 FuncInternalPredTable::FuncInternalPredTable(FuncTable* table, bool linked)
-		: 	InternalPredTable(),
-			_table(table),
-			_linked(linked) {
+		: InternalPredTable(), _table(table), _linked(linked) {
 }
 
 FuncInternalPredTable::~FuncInternalPredTable() {
@@ -1163,9 +1130,7 @@ UnionInternalPredTable::UnionInternalPredTable()
 }
 
 UnionInternalPredTable::UnionInternalPredTable(const vector<InternalPredTable*>& intabs, const vector<InternalPredTable*>& outtabs)
-		: 	InternalPredTable(),
-			_intables(intabs),
-			_outtables(outtabs) {
+		: InternalPredTable(), _intables(intabs), _outtables(outtabs) {
 	for (auto it = intabs.cbegin(); it != intabs.cend(); ++it) {
 		(*it)->incrementRef();
 	}
@@ -1355,10 +1320,7 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 }
 
 BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const AbstractStructure* str)
-		: 	_manager(manager),
-			_bdd(bdd),
-			_vars(vars),
-			_structure(str) {
+		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str) {
 }
 
 bool BDDInternalPredTable::finite(const Universe& univ) const {
@@ -2964,8 +2926,7 @@ void SortTable::put(std::ostream& stream) const {
  ****************/
 
 PredTable::PredTable(InternalPredTable* table, const Universe& univ)
-		: 	_table(NULL),
-			_universe(univ) {
+		: _table(NULL), _universe(univ) {
 	setTable(table);
 	table->incrementRef();
 }
@@ -3099,8 +3060,7 @@ InternalTableIterator* ProcInternalPredTable::begin(const Universe& univ) const 
 }
 
 InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
-		: 	InternalPredTable(),
-			_invtable(inv) {
+		: InternalPredTable(), _invtable(inv) {
 	inv->incrementRef();
 }
 
@@ -3345,8 +3305,7 @@ void SortTable::remove(const DomainElement* el) {
  ****************/
 
 FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ)
-		: 	_table(table),
-			_universe(univ) {
+		: _table(table), _universe(univ) {
 	_table->incrementRef();
 }
 
@@ -4113,7 +4072,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
 				CHECKTERMINATION
 				// get unassigned domain element
-domainElementWithoutValue				= *domainIterator;
+				domainElementWithoutValue = *domainIterator;
 				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
 					++ctIterator;
 				}
