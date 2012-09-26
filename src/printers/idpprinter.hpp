@@ -300,7 +300,7 @@ public:
 	template<typename Visitor, typename List>
 	void visitList(Visitor v, const List& list) {
 		for (auto i = list.cbegin(); i < list.cend(); ++i) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			(*i)->accept(v);
 		}
 
@@ -312,7 +312,7 @@ public:
 		Assert(isTheoryOpen());
 		setTranslator(g->translator());
 		for (auto i = g->getClauses().cbegin(); i < g->getClauses().cend(); ++i) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			visit(*i);
 		}
 		visitList(this, g->getCPReifications());
@@ -320,7 +320,7 @@ public:
 		visitList(this, g->getAggregates());
 		visitList(this, g->getFixpDefinitions());
 		for (auto i = g->getDefinitions().cbegin(); i != g->getDefinitions().cend(); i++) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			openDefinition((*i).second->id());
 			(*i).second->accept(this);
 			closeDefinition();
@@ -334,8 +334,9 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		if (isNeg(f->sign()))
+		if (isNeg(f->sign())) {
 			output() << "~";
+		}
 		output() << toString(f->symbol());
 		if (not f->subterms().empty()) {
 			output() << "(";
@@ -359,7 +360,7 @@ public:
 		output() << "(";
 		f->subterms()[0]->accept(this);
 		for (size_t n = 0; n < f->comps().size(); ++n) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			output() << ' ' << toString(f->comps()[n]) << ' ';
 			f->subterms()[n + 1]->accept(this);
 			if (not f->conj() && (n + 1 < f->comps().size())) {
@@ -426,7 +427,7 @@ public:
 			output() << "?";
 		}
 		for (auto it = f->quantVars().cbegin(); it != f->quantVars().cend(); ++it) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			output() << " ";
 			output() << (*it)->name();
 			if ((*it)->sort()) {
@@ -482,7 +483,7 @@ public:
 		output() << "{\n";
 		indent();
 		for (auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			(*it)->accept(this);
 			output() << "\n";
 		}
@@ -500,12 +501,12 @@ public:
 		output() << (d->lfp() ? "LFD" : "GFD") << " [\n";
 		indent();
 		for (auto it = d->rules().cbegin(); it != d->rules().cend(); ++it) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			(*it)->accept(this);
 			output() << "\n";
 		}
 		for (auto it = d->defs().cbegin(); it != d->defs().cend(); ++it) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			(*it)->accept(this);
 		}
 		unindent();
@@ -861,7 +862,7 @@ public:
 			if (not kt.isAtEnd()) {
 				bool beginlist = true;
 				for (; not kt.isAtEnd(); ++kt) {
-					CHECKTERMINATION
+					CHECKTERMINATION;
 					if (not beginlist) {
 						output() << "; ";
 					}
@@ -906,7 +907,7 @@ public:
 					output() << "->" << toString(tuple.back());
 					++kt;
 					for (; not kt.isAtEnd(); ++kt) {
-						CHECKTERMINATION
+						CHECKTERMINATION;
 						output() << "; ";
 						tuple = *kt;
 						output() << toString(tuple[0]);
@@ -917,10 +918,11 @@ public:
 					}
 				}
 				output() << " }";
-			} else if (not kt.isAtEnd())
+			} else if (not kt.isAtEnd()){
 				output() << toString((*kt)[0]);
-			else
+			} else{
 				output() << "{ }";
+			}
 		} else {
 			output() << "possibly infinite table";
 		}
@@ -974,8 +976,9 @@ public:
 		if (f->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
 			output() << "overloaded function " << f->name() << '\n';
 		} else {
-			if (f->partial())
+			if (f->partial()){
 				output() << "partial ";
+			}
 			output() << f->name().substr(0, f->name().find('/'));
 			if (f->arity() > 0) {
 				output() << "(" << f->insort(0)->name();
@@ -1002,7 +1005,7 @@ public:
 				output() << toString((*it));
 				++it;
 				for (; not it.isAtEnd(); ++it) {
-					CHECKTERMINATION
+					CHECKTERMINATION;
 					output() << "; " << toString((*it));
 				}
 			}
@@ -1017,7 +1020,7 @@ public:
 		Assert(isTheoryOpen());
 		output() << "set_" << s->setnr() << " = [ ";
 		for (size_t n = 0; n < s->size(); ++n) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			if (s->weighted()) {
 				output() << '(';
 			}
@@ -1035,7 +1038,6 @@ public:
 
 private:
 	void printAtom(int atomnr) {
-		CHECKTERMINATION
 		Assert(_translator != NULL);
 
 		// The sign of the literal is handled on higher level.
@@ -1095,7 +1097,6 @@ private:
 	}
 
 	void printTerm(VarId termnr) {
-		CHECKTERMINATION
 		// Make sure there is a translator.
 		Assert(_translator != NULL);
 		// Get information from the term translator.
@@ -1182,11 +1183,12 @@ private:
 			output() << "->" << toString(tuple.back());
 			++kt;
 			for (; not kt.isAtEnd(); ++kt) {
-				CHECKTERMINATION
+				CHECKTERMINATION;
 				output() << "; ";
 				tuple = *kt;
-				if (tuple.size() > 1)
+				if (tuple.size() > 1){
 					output() << toString(tuple[0]);
+				}
 				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
 					output() << ',' << toString(tuple[n]);
 				}
