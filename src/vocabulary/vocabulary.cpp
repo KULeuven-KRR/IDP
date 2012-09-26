@@ -2151,11 +2151,11 @@ bool isContainedIn(Term* , Vocabulary* ) {
 }
 
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
-	if (child == NULL || parent == NULL) {
-		return false;
-	}
-	if (child == parent) {
+	if(parent==child || child==NULL){
 		return true;
+	}
+	if(parent==NULL){
+		return false;
 	}
 	std::map<Sort*, Sort*> child2parentsort;
 	for (auto i = child->firstSort(); i != child->lastSort(); ++i) {
