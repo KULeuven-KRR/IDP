@@ -4131,7 +4131,6 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 		(*j)->clean();
-		//Assert((*j)->approxTwoValued()); TODO: place this back and make it NOT approx
 	}
 
 // TODO delete all structures which were cloned and discarded
