@@ -14,6 +14,9 @@
 #include "IncludeComponents.hpp"
 #include "inferences/SolverInclude.hpp"
 
+class SymbolOffset;
+class AbstractGroundTheory;
+
 class TsSet;
 class LazyTseitinGrounderInterface;
 class LazyRuleGrounder;
@@ -70,6 +73,7 @@ protected:
 	void polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
+	void polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory);
 
 	void polAddOptimization(AggFunction function, SetId setid);
 	void polAddOptimization(VarId varid);

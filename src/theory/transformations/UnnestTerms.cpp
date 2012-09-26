@@ -61,6 +61,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
  * 		return v
  */
 Term* UnnestTerms::move(Term* origterm) {
+	Assert(origterm->sort()!=NULL);
 	if (getContext() == Context::BOTH) {
 		contextProblem(origterm);
 	}
@@ -76,6 +77,9 @@ Term* UnnestTerms::move(Term* origterm) {
 
 	auto varterm = new VarTerm(var, TermParseInfo(origterm->pi()));
 	auto equalatom = new PredForm(SIGN::POS, get(STDPRED::EQ, origterm->sort()), { varterm, origterm }, FormulaParseInfo());
+	for(auto sort: equalatom->symbol()->sorts()){
+		Assert(sort!=NULL);
+	}
 	_equalities.push_back(equalatom);
 	return varterm->clone();
 }

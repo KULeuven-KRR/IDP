@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef GROUNDING_GROUNDTHEORY_HPP_
 #define GROUNDING_GROUNDTHEORY_HPP_
@@ -57,6 +57,7 @@ public:
 	virtual void notifyLazyAddition(const litlist& glist, int ID);
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type);
+	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args);
 
 	std::ostream& put(std::ostream& s) const;
 

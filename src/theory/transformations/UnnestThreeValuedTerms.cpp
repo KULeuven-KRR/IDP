@@ -48,6 +48,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 }
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
+	// FIXME check whether it correctly handles recursively defined predicates
 	auto savedrel = _cpablerelation;
 	if (_cpablerelation != TruthValue::False) {
 		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
@@ -56,7 +57,10 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		auto args = predform->args();
 		args.pop_back();
 		auto ft = new FuncTerm(dynamic_cast<Function*>(predform->symbol()), args, TermParseInfo()); // TODO parseinfo
-		auto pf = new PredForm(predform->sign(), get(STDPRED::EQ), { ft, predform->args().back() }, predform->pi());
+		auto pf = new PredForm(predform->sign(), get(STDPRED::EQ, predform->symbol()->sorts().front()), { ft, predform->args().back() }, predform->pi());
+		for(auto sort: pf->symbol()->sorts()){
+			Assert(sort!=NULL);
+		}
 		return pf->accept(this);
 	}
 

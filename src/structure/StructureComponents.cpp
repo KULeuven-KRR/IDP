@@ -3474,7 +3474,7 @@ void PredInter::checkConsistency() {
 		return;
 	}
 	if (not _ct->approxFinite() && not _cf->approxFinite()) {
-		throw notyetimplemented("Check consistency of infinite tables");
+		throw notyetimplemented("Check consistency between an infinite certainly-true and an infinite certainly-false table");
 	}
 	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
 	auto largest = (smallest == _ct) ? _cf : _ct;
@@ -3490,9 +3490,9 @@ void PredInter::checkConsistency() {
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
 	for (; not smallIt.isAtEnd(); ++smallIt) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		// get unassigned domain element
-while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+		while(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION;
 #ifndef NDEBUG
 			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));

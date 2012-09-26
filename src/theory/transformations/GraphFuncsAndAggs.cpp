@@ -81,7 +81,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	auto left = pf->subterms()[0];
 	auto right = pf->subterms()[1];
 	bool usecp = _cpsupport
-			and VocabularyUtils::isIntComparisonPredicate(pf->symbol(), _vocabulary)
+			and eligibleForCP(pf, _vocabulary)
 			and eligibleForCP(left, _structure)
 			and eligibleForCP(right, _structure);
 

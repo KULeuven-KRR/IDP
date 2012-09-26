@@ -60,7 +60,8 @@ protected:
 	std::vector<TermGrounder*> _subtermgrounders;
 	InstChecker* const _ptchecker;
 	InstChecker* const _ctchecker;
-	SymbolOffset _symbol; // Stored for efficiency
+	PFSymbol* _symbol;
+	SymbolOffset _symboloffset; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
 	GenType gentype;
@@ -69,6 +70,7 @@ protected:
 	bool _recursive;
 
 	mutable ElementTuple _args;
+	mutable std::vector<GroundTerm> terms;
 
 	Lit run() const;
 

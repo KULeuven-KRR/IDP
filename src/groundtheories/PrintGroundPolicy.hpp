@@ -26,6 +26,9 @@ class DelayGrounder;
 
 class TsSet;
 
+class PFSymbol;
+class AbstractGroundTheory;
+
 /**
  * A ground theory which does not store the grounding, but directly writes it to its monitors.
  */
@@ -46,6 +49,9 @@ public:
 	}
 	void polNotifyLazyResidual(LazyInstantiation*, TsType){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polAddLazyElement(Lit, PFSymbol*, const std::vector<VarId>&, AbstractGroundTheory*){
+		throw notyetimplemented("Storing ground theories with lazy element constraints");
 	}
 
 	void polRecursiveDelete() {

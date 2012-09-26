@@ -334,8 +334,9 @@ void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType t
 	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
-	MinisatID::Implication implic(getDefConstrID(), lit, watchboth?MinisatID::ImplicationType::EQUIVALENT:MinisatID::ImplicationType::IMPLIES,MinisatID::litlist{}, conjunction);
-	extAdd(getSolver(), MinisatID::LazyGroundImpl(getDefConstrID(), implic , mon));
+	MinisatID::Implication implic(getDefConstrID(), lit, watchboth ? MinisatID::ImplicationType::EQUIVALENT : MinisatID::ImplicationType::IMPLIES,
+			MinisatID::litlist { }, conjunction);
+	extAdd(getSolver(), MinisatID::LazyGroundImpl(getDefConstrID(), implic, mon));
 }
 
 class LazyLitMon: public MinisatID::LazyGroundingCommand {
@@ -382,6 +383,105 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 		}
 	}
 	getSolver().add(s);
+}
+
+class RealElementGrounder: public MinisatID::ElementGrounder {
+private:
+	Lit headatom;
+	std::vector<VarId> args; // Constants!
+	PFSymbol* symbol;
+	SymbolOffset symboloffset;
+	AbstractGroundTheory* theory;
+
+public:
+	RealElementGrounder(Lit headatom, PFSymbol*symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory)
+			: 	headatom(headatom),
+				args(args),
+				symbol(symbol),
+				symboloffset(theory->translator()->addSymbol(symbol)),
+				theory(theory) {
+	}
+	virtual void ground(bool headvalue, const std::vector<int>& argvalues) {
+		cerr << "Grounding element constraint for head " << (headvalue ? "true" : "false") << " and instantiation " << toString(argvalues) << "\n";
+		Lit temphead;
+		auto translator = theory->translator();
+		if (symboloffset.functionlist) {
+			Assert(args.size()==argvalues.size()+1);
+			std::vector<GroundTerm> tuple;
+			ElementTuple elemtuple;
+			for (auto arg : argvalues) {
+				tuple.push_back(createDomElem(arg));
+				elemtuple.push_back(createDomElem(arg));
+			}
+			auto tempunitables = theory->structure()->inter(symbol)->universe().tables();
+			tempunitables.pop_back();
+			auto tempuni = Universe(tempunitables);
+			if (not tempuni.contains(elemtuple)) { // outside domain
+				temphead = _false;
+			} else {
+				temphead = translator->createNewUninterpretedNumber();
+				auto lhsvar = translator->translateTerm(symboloffset, tuple);
+				CPVarTerm left(lhsvar);
+				CPBound right(args.back());
+				CPTsBody b(TsType::EQ, &left, CompType::EQ, right);
+				theory->add(temphead, &b);
+			}
+		} else {
+			Assert(args.size()==argvalues.size());
+			ElementTuple tuple;
+			for (auto arg : argvalues) {
+				tuple.push_back(createDomElem(arg));
+			}
+			if (not theory->structure()->inter(symbol)->universe().contains(tuple)) { // outside domain
+				temphead = _false;
+			} else if (theory->structure()->inter(symbol)->isFalse(tuple)) {
+				temphead = _false;
+			} else if (theory->structure()->inter(symbol)->isTrue(tuple)) {
+				temphead = _true;
+			} else {
+				temphead = translator->translate(symboloffset, tuple);
+			}
+		}
+		GroundClause clause;
+		if (headvalue) {
+			clause.push_back(-headatom);
+			if (temphead == _true) {
+				return; // Clause satisfied
+			} else if (temphead != _false) {
+				clause.push_back(temphead);
+			}
+		} else {
+			clause.push_back(headatom);
+			if (temphead == _false) {
+				return; // Clause is satisfied
+			} else if (temphead != _true) {
+				clause.push_back(-temphead);
+			}
+		}
+		for (uint i = 0; i < argvalues.size(); ++i) {
+			auto varterm = new CPVarTerm(args[i]);
+			CPBound bound(argvalues[i]);
+			auto varlit = theory->translator()->translate(varterm, CompType::EQ, bound, TsType::EQ);
+			if (varlit == _false) {
+				return;
+			} else if (varlit != _true) {
+				clause.push_back(-varlit);
+			}
+		}
+		theory->add(clause);
+	}
+};
+
+template<class Solver>
+void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory) {
+	auto gr = new RealElementGrounder(head, symbol, args, theory);
+	vector<MinisatID::VarID> vars;
+	for (auto var : args) {
+		polAddCPVariable(var, _translator);
+		vars.push_back(convert(var));
+	}
+	auto le = MinisatID::LazyElement(getDefConstrID(), createLiteral(head), symbol->isFunction(), vars, gr);
+	extAdd(getSolver(), le);
 }
 
 // Explicit instantiations

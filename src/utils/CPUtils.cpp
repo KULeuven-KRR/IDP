@@ -18,7 +18,12 @@ using namespace std;
 namespace CPSupport {
 
 bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
-	return VocabularyUtils::isIntComparisonPredicate(pf->symbol(), voc);
+	//return VocabularyUtils::isIntComparisonPredicate(pf->symbol(), voc);
+	if(pf->symbol()->isFunction()){
+		return eligibleForCP(dynamic_cast<Function*>(pf->symbol()), voc);
+	}else{
+		return VocabularyUtils::isIntPredicate(pf->symbol(), voc);
+	}
 }
 
 bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {

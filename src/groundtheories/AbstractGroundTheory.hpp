@@ -18,6 +18,8 @@
 #include "visitors/VisitorFriends.hpp"
 
 class GroundTranslator;
+class SymbolOffset;
+class GroundTerm;
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
 
@@ -66,6 +68,7 @@ public:
 	virtual void notifyLazyAddition(const litlist& glist, int ID) = 0;
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) = 0;
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type) = 0;
+	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

@@ -17,6 +17,9 @@
 
 typedef std::vector<Lit> GroundClause;
 
+class PFSymbol;
+class AbstractGroundTheory;
+
 class GroundDefinition;
 class GroundFixpDef;
 class GroundSet;
@@ -59,6 +62,9 @@ protected:
 	}
 	void polNotifyLazyResidual(LazyInstantiation*, TsType){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
+	}
+	void polAddLazyElement(Lit, PFSymbol*, const std::vector<VarId>&, AbstractGroundTheory*){
+		throw notyetimplemented("Storing ground theories with lazy element constraints");
 	}
 
 public:

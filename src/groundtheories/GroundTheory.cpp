@@ -64,6 +64,14 @@ void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType ty
 }
 
 template<class Policy>
+void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args) {
+	for(auto arg:args){
+		addFoldedVarEquiv(arg);
+	}
+	Policy::polAddLazyElement(head, symbol, args, this);
+}
+
+template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
 	Policy::polRecursiveDelete();
 	delete (this);
@@ -80,6 +88,10 @@ void GroundTheory<Policy>::closeTheory() {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
+	for (auto lit : cl) {
+		Assert(lit!=_true);
+		Assert(lit!=_false);
+	}
 	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst);
 	Policy::polAdd(cl);
 }
