@@ -2185,14 +2185,13 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 			}
 		}
 	}
-	for (auto i = child->firstPred(); i != child->lastPred(); ++i) {
-		auto generalchildpred = i->second;
+	for(auto pred:child->getPreds()){
+		auto generalchildpred = pred.second;
 		if (generalchildpred->builtin()) {
 			continue;
 		}
 		auto allpreds = generalchildpred->nonbuiltins();
-		for (auto j = allpreds.cbegin(); j != allpreds.cend(); ++j) {
-			auto childpred = *j;
+		for(auto childpred: allpreds){
 			Assert(not childpred->overloaded());
 			auto parentpred = parent->pred(childpred->name());
 			if (parentpred == NULL) {
