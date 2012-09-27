@@ -34,10 +34,15 @@ struct tablesize {
 	tablesize operator-(const tablesize& rhs) const;
 	tablesize operator*(const tablesize& rhs) const;
 	void operator*=(const tablesize& rhs);
+	// Division operator executes a C++ int division, not returning a float
 	tablesize operator/(const tablesize& rhs) const;
 
 	bool isInfinite() const{
-		return _type==TST_INFINITE || _type==TST_UNKNOWN;
+		return _type==TST_INFINITE;
+	}
+
+	bool isUnknown() const{
+		return _type==TST_UNKNOWN;
 	}
 };
 
