@@ -503,6 +503,7 @@ eq_chain	: eq_chain '='  term	{ $$ = getInserter().eqchain(CompType::EQ,$1,$3,@1
 			;
 
 variables   : variables variable	{ $$ = $1; $$->insert($2);						}		
+			| variables ',' variable	{ $$ = $1; $$->insert($3);						}
             | variable				{ $$ = new std::set<Variable*>;	$$->insert($1);	}
 			;
 
