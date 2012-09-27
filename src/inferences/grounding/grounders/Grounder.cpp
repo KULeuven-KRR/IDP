@@ -88,7 +88,7 @@ int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_UNKNOWN, 0)) {
+		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
 }
 
 void Grounder::toplevelRun() const {

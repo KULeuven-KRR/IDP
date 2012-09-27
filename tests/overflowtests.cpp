@@ -66,7 +66,6 @@ TEST(OverflowTest, PlusTableSize) {
 	auto ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
-	auto unknown_ts = tablesize(TableSizeType::TST_UNKNOWN,0);
 
 	auto tmp = max_ts + ts0;
 	size_t eq = getMaxElem<unsigned long>();
@@ -86,11 +85,6 @@ TEST(OverflowTest, PlusTableSize) {
 	tmp = infinite_ts + max_ts;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_INFINITE);
 
-	tmp = max_ts + unknown_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
-	tmp = unknown_ts + max_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
-
 	tmp = ts1 + ts2;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	eq = 3;
@@ -102,7 +96,6 @@ TEST(OverflowTest, MinusTableSize) {
 	auto ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
-	auto unknown_ts = tablesize(TableSizeType::TST_UNKNOWN,0);
 
 	ASSERT_ANY_THROW(ts1-ts2);
 	ASSERT_ANY_THROW(ts2-infinite_ts);
@@ -112,10 +105,6 @@ TEST(OverflowTest, MinusTableSize) {
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	ASSERT_EQ(tmp._size,eq);
 
-	tmp = max_ts - unknown_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
-	tmp = unknown_ts - max_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
 }
 
 TEST(OverflowTest, TimesTableSize) {
@@ -127,7 +116,6 @@ TEST(OverflowTest, TimesTableSize) {
 	auto ts3 = tablesize(TableSizeType::TST_EXACT, 3);
 	auto ts4 = tablesize(TableSizeType::TST_EXACT, 4);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
-	auto unknown_ts = tablesize(TableSizeType::TST_UNKNOWN,0);
 
 	auto tmp = ts2 * ts3;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
@@ -167,11 +155,6 @@ TEST(OverflowTest, TimesTableSize) {
 	ASSERT_EQ(tmp._type,TableSizeType::TST_INFINITE);
 	tmp = infinite_ts * max_ts;
 	ASSERT_EQ(infinite_ts._type,TableSizeType::TST_INFINITE);
-
-	tmp = max_ts * unknown_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
-	tmp = unknown_ts * max_ts;
-	ASSERT_EQ(tmp._type,TableSizeType::TST_UNKNOWN);
 }
 
 }

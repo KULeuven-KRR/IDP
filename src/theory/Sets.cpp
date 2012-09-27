@@ -229,9 +229,7 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 }
 
 tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
-	if (structure == NULL) {
-		return tablesize(TST_UNKNOWN, 0);
-	}
+	Assert(not (structure == NULL));
 	auto t = tablesize(TST_EXACT, 1);
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		auto qvardom = structure->inter((*it)->sort());

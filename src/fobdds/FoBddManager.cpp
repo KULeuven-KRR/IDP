@@ -1574,7 +1574,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 			kernelFalseAnswers = kernelUnivSize._size * (1 - chance);
 			//WHY NOT univ - kernelanswers? Why use the chance?
 		} else {
-			Assert(kernelUnivSize._type == TST_INFINITE || kernelUnivSize._type == TST_UNKNOWN);
+			Assert(kernelUnivSize._type == TST_INFINITE);
 			if (chance == 0) {
 				kernelFalseAnswers = getMaxElem<double>();
 			} else {

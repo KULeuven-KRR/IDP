@@ -17,7 +17,7 @@
 #include "common.hpp"
 
 enum TableSizeType {
-	TST_APPROXIMATED, TST_INFINITE, TST_EXACT, TST_UNKNOWN
+	TST_APPROXIMATED, TST_INFINITE, TST_EXACT
 };
 
 struct tablesize {
@@ -27,7 +27,7 @@ struct tablesize {
 			: _type(tp), _size(sz) {
 	}
 	tablesize()
-			: _type(TST_UNKNOWN), _size(0) {
+			: _type(TST_EXACT), _size(0) { // Initial tablesize is empty
 	}
 
 	tablesize operator+(const tablesize& rhs) const;
@@ -39,10 +39,6 @@ struct tablesize {
 
 	bool isInfinite() const{
 		return _type==TST_INFINITE;
-	}
-
-	bool isUnknown() const{
-		return _type==TST_UNKNOWN;
 	}
 };
 

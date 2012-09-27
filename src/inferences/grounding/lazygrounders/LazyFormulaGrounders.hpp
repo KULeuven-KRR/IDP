@@ -72,7 +72,7 @@ public:
 	virtual void run(ConjOrDisj& formula) const;
 
 	tablesize getGroundedSize() const {
-		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
+		return tablesize(TableSizeType::TST_APPROXIMATED, 0); // TODO
 	}
 
 protected:
@@ -99,7 +99,7 @@ public:
 			AbstractGroundTheory* groundtheory, FormulaGrounder* sub, const GroundingContext& ct);
 
 	tablesize getGroundedSize() const {
-		return tablesize(TableSizeType::TST_UNKNOWN, 0); // TODO
+		return tablesize(TableSizeType::TST_APPROXIMATED, 0); // TODO
 	}
 
 	virtual void run(ConjOrDisj& formula) const;

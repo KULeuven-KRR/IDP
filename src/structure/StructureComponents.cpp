@@ -1178,7 +1178,6 @@ tablesize UnionInternalPredTable::size(const Universe& univ) const {
 		case TST_EXACT:
 			result += tp._size;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
 			type = tp._type;
 			break;
@@ -1194,9 +1193,8 @@ tablesize UnionInternalPredTable::size(const Universe& univ) const {
 			else
 				result = 0;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
-			type = TST_UNKNOWN;
+			type = TST_INFINITE; // Is possibly infinite
 			break;
 		}
 	}
@@ -1407,7 +1405,7 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 		unsigned int es = estimate;
 		return tablesize(TST_APPROXIMATED, es);
 	} else
-		return tablesize(TST_UNKNOWN, 0);
+		return tablesize(TST_INFINITE, 0);
 }
 
 std::vector<const DomElemContainer*> createVarSubstitutionFrom(const ElementTuple& tuple) {
@@ -2021,7 +2019,6 @@ tablesize UnionInternalSortTable::size() const {
 		case TST_EXACT:
 			result += tp._size;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
 			type = tp._type;
 			break;
@@ -2038,9 +2035,8 @@ tablesize UnionInternalSortTable::size() const {
 				result = 0;
 			}
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
-			type = TST_UNKNOWN;
+			type = TST_INFINITE; // Is possibly infinite
 			break;
 		}
 	}
@@ -2519,7 +2515,7 @@ tablesize ProcInternalFuncTable::size(const Universe& univ) const {
 		if (outsize._type == TST_EXACT) {
 			return tablesize(TST_EXACT, 0);
 		} else {
-			return tablesize(TST_UNKNOWN, 0);
+			return tablesize(TST_APPROXIMATED, 0);
 		}
 	}
 }
@@ -3081,13 +3077,11 @@ bool InverseInternalPredTable::approxEmpty(const Universe& univ) const {
 tablesize InverseInternalPredTable::size(const Universe& univ) const {
 	tablesize univsize = univ.size();
 	tablesize invsize = _invtable->size(univ);
-	if (univsize._type == TST_UNKNOWN) {
-		return univsize;
-	} else if (univsize._type == TST_INFINITE) {
+	if (univsize._type == TST_INFINITE) {
 		if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 			return tablesize(TST_INFINITE, 0);
 		} else {
-			return tablesize(TST_UNKNOWN, 0);
+			return tablesize(TST_INFINITE, 0);
 		}
 	} else if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 		unsigned int result = 0;
@@ -3100,7 +3094,7 @@ tablesize InverseInternalPredTable::size(const Universe& univ) const {
 			return tablesize(TST_APPROXIMATED, result);
 		}
 	} else {
-		return tablesize(TST_UNKNOWN, 0);
+		return tablesize(TST_INFINITE, 0); // possibly infinite
 	}
 }
 
@@ -3423,7 +3417,7 @@ bool PredInter::isConsistent() const {
 
 void PredInter::checkConsistency() {
 	_inconsistentElements.clear();
-	if (not _ct->approxFinite() || not _cf->approxFinite()) {
+	if (not _ct->approxFinite() && not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
 	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy

@@ -59,8 +59,6 @@ tablesize Universe::size() const {
 	for (auto it = _tables.cbegin(); it != _tables.cend(); ++it) {
 		tablesize ts = (*it)->size();
 		switch (ts._type) {
-		case TST_UNKNOWN:
-			return tablesize(TST_UNKNOWN, 0);
 		case TST_EXACT:
 			currsize = currsize * ts._size;
 			break;
