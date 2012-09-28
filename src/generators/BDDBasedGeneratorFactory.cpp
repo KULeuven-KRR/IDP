@@ -288,6 +288,10 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
  * If it is not possible, the original atom is returned
  */
 PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const AbstractStructure* structure) {
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
+		clog << "Trying to solve: " << toString(atom) << "\n";
+	}
+	PredForm* result = atom;
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
 			auto solvedterm = solve(*manager, atom, atomvars[n], false);
@@ -296,7 +300,8 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				PredForm* newatom = NULL;
 				newatom = new PredForm(atom->sign(), atom->symbol()->disambiguate({solvedterm->sort(), varterm->sort()}), { solvedterm, varterm }, atom->pi());
 				atom->recursiveDelete();
-				return newatom;
+				result = newatom;
+				break;
 			}
 
 			//It's not possible to rewrite it as "... op x". Thus, try "... op -x" and reverse the op afterwards to get something of the form "... op' x"
@@ -333,11 +338,15 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				solvedterm->sort(termsort);
 				PredForm* newatom = new PredForm(atom->sign(), newsymbol, { solvedterm, varterm }, atom->pi());
 				delete (atom);
-				return newatom;
+				result = newatom;
+				break;
 			}
 		}
 	}
-	return atom;
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
+		clog << "Result: "; clog << toString(result) << "\n";
+	}
+	return result;
 }
 
 /**
