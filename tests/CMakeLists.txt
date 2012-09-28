@@ -62,6 +62,7 @@ if(${BUILDTESTS})
 		generatortests.cpp
 		bddtests.cpp
 		bddestimatortests.cpp
+		tabletests.cpp
 		grounderfactorytests.cpp
 		parsertests.cpp
 		overflowtests.cpp
