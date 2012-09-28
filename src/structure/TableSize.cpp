@@ -31,13 +31,17 @@ tablesize tablesize::operator+(const tablesize& rhs) const{
 	}
 }
 tablesize tablesize::operator-(const tablesize& rhs) const{
-	Assert(not rhs.isInfinite());
+	if(rhs.isInfinite()){
+		throw IdpException("Trying to subtract with an infinite tablesize");
+	}
 
 	if(isInfinite()){
 		return *this;
 	}
+	if(_size < rhs._size){
+		throw IdpException("Trying to subtract with a bigger tablesize from a smaller one");
+	}
 
-	Assert(rhs._size <= _size); // result cannot be < 0
 	if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
 		return tablesize(TableSizeType::TST_APPROXIMATED, _size-rhs._size);
 	}else{

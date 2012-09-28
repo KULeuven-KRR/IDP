@@ -97,8 +97,8 @@ TEST(OverflowTest, MinusTableSize) {
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
 
-	ASSERT_ANY_THROW(ts1-ts2);
-	ASSERT_ANY_THROW(ts2-infinite_ts);
+	ASSERT_THROW(ts1-ts2,IdpException);
+	ASSERT_THROW(ts1-infinite_ts,IdpException);
 
 	auto tmp = max_ts - ts1;
 	size_t eq = getMaxElem<unsigned long>() - 1;
