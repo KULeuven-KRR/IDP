@@ -13,6 +13,7 @@ if(USEINTERACTIVE)
 endif()
 
 include_directories ("
+	"${PROJECT_SOURCE_DIR}/lib/safeint"
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/source"
 	"${PROJECT_SOURCE_DIR}/lib/minisatid/src/external"
