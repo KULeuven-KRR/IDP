@@ -238,7 +238,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	if (data.bdd->truebranch() == _manager->truebdd()) {
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-			clog << "True branch alwayss true\n";
+			clog << "True branch always true\n";
 		}
 		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
 
