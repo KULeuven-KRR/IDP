@@ -73,7 +73,7 @@ void tablesize::operator*=(const tablesize& rhs){
 	}
 }
 tablesize tablesize::operator/(const tablesize& rhs) const{
-	Assert(rhs._size!=0)
+	Assert(rhs._size!=0);
 	if(isInfinite()){
 		Assert(not rhs.isInfinite());
 		return tablesize(TST_INFINITE, 0);
