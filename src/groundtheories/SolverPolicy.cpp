@@ -105,7 +105,7 @@ void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
-	MinisatID::EqType comp;
+	MinisatID::EqType comp = MinisatID::EqType::EQ;
 	switch (body->comp()) {
 	case CompType::EQ:
 		comp = MinisatID::EqType::EQ;
@@ -172,7 +172,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
 	auto newtseitin = tseitin;
-	MinisatID::ImplicationType impltype;
+	MinisatID::ImplicationType impltype = MinisatID::ImplicationType::IMPLIES;
 	auto newconj = conjunction;
 	auto newrhs = rhs;
 	switch (type) {

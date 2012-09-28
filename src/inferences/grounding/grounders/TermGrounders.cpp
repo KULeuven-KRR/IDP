@@ -173,7 +173,7 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
 					int leftvalue = (*leftit)->value()._int;
 					int rightvalue = (*rightit)->value()._int;
-					int newvalue;
+					int newvalue = 0;
 					switch(_type){
 					case SumType::ST_PLUS:
 						newvalue = leftvalue + rightvalue;
