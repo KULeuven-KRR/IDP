@@ -95,6 +95,46 @@ double toDouble(const tablesize& val){
 	return val._size;
 }
 
+
+bool tablesize::operator==(const tablesize& rhs) const{
+	if (isInfinite() && rhs.isInfinite()){
+		return true; // infinite things are always equal
+	}
+	if (isInfinite() || rhs.isInfinite()){
+		return false; // One of the two is infinite -> false
+	}
+	// Comparing approx/exact types: Let the stored _size handle it
+	return (_size == rhs._size);
+//	return (not (this < rhs) &&  not (rhs < this));
+}
+
+bool tablesize::operator!=(const tablesize& rhs) const{
+	return not (*this==rhs);
+}
+
+bool tablesize::operator<(const tablesize& rhs) const{
+	if(isInfinite()){
+		return false;
+	}
+	if(rhs.isInfinite()){
+		return true;
+	}
+	// Comparing approx/exact types: Let the stored _size handle it
+	return _size < rhs._size;
+}
+
+bool tablesize::operator>(const tablesize& rhs) const{
+	return rhs<*this;
+}
+
+bool tablesize::operator<=(const tablesize& rhs) const{
+	return not (rhs<*this);
+}
+
+bool tablesize::operator>=(const tablesize& rhs) const{
+	return not (*this<rhs);
+}
+
 template<>
 std::string toString(const tablesize& obj){
 	std::stringstream ss;
