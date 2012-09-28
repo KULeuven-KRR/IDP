@@ -304,6 +304,12 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				break;
 			}
 
+			if(not SortUtils::isSubsort(atom->symbol()->sort(0), get(STDSORT::FLOATSORT), structure->vocabulary())){
+				break;
+			}
+			if (not SortUtils::isSubsort(atom->symbol()->sort(1), get(STDSORT::FLOATSORT), structure->vocabulary())) {
+				break;
+			}
 			//It's not possible to rewrite it as "... op x". Thus, try "... op -x" and reverse the op afterwards to get something of the form "... op' x"
 			auto invertedSolvedTerm = solve(*manager, atom, atomvars[n], true);
 			if (invertedSolvedTerm != NULL) {
