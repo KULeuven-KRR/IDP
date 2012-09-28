@@ -524,6 +524,11 @@ public:
 	//!< Returns false if the table size is infinite. May return true if the table size is finite.
 	virtual bool approxEmpty(const Universe&) const = 0;
 	//!< Returns false if the table is non-empty. May return true if the table is empty.
+	virtual bool approxEqual(const InternalPredTable*, const Universe&) const;
+	//!< Returns false if the tables are different. May return true if the tables are equal.
+	virtual bool approxInverse(const InternalPredTable*, const Universe&) const;
+	//!< Returns false if the tables are not each other inverse. May return true if the tables are complementary.
+
 
 	virtual bool contains(const ElementTuple& tuple, const Universe&) const = 0;
 	//!< Returns true iff the table contains the tuple.
@@ -615,6 +620,8 @@ public:
 	bool empty(const Universe&) const;
 	bool approxFinite(const Universe&) const;
 	bool approxEmpty(const Universe&) const;
+	bool approxEqual(const InternalPredTable*, const Universe&) const;
+	bool approxInverse(const InternalPredTable*, const Universe&) const;
 	tablesize size(const Universe&) const;
 
 	bool contains(const ElementTuple& tuple, const Universe&) const;
@@ -883,6 +890,7 @@ public:
 	bool empty(const Universe&) const;
 	bool approxFinite(const Universe&) const;
 	bool approxEmpty(const Universe&) const;
+	bool approxInverse(const InternalPredTable*, const Universe&) const;
 	tablesize size(const Universe&) const;
 	InternalPredTable* table() const {
 		return _invtable;

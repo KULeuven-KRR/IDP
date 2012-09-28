@@ -285,6 +285,8 @@ public:
 	unsigned int arity() const;
 	bool approxFinite() const;
 	bool approxEmpty() const;
+	bool approxEqual(const PredTable*) const;
+	bool approxInverse(const PredTable*) const;
 	bool contains(const ElementTuple& tuple) const;
 	tablesize size() const;
 	void add(const ElementTuple& tuple);

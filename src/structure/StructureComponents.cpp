@@ -45,6 +45,12 @@ bool PredTable::approxFinite() const {
 bool PredTable::approxEmpty() const {
 	return _table->approxEmpty(_universe);
 }
+bool PredTable::approxEqual(const PredTable* pt) const{
+	return _table->approxEqual(pt->internTable(),_universe);
+}
+bool PredTable::approxInverse(const PredTable* pt) const{
+	return _table->approxInverse(pt->internTable(),_universe);
+}
 bool PredTable::contains(const ElementTuple& tuple) const {
 	return _table->contains(tuple, _universe);
 }
@@ -1396,6 +1402,64 @@ bool BDDInternalPredTable::approxEmpty(const Universe& univ) const {
 		return false;
 	}
 }
+
+bool BDDInternalPredTable::approxEqual(const InternalPredTable* ipt, const Universe& u) const{
+	if(ipt == this){
+		return true;
+	}
+	if (_manager->isFalsebdd(_bdd)) {
+		return ipt->approxEmpty(u);
+	}
+	auto bipt = dynamic_cast<const BDDInternalPredTable* >(ipt);
+	if(bipt == NULL){
+		return InternalPredTable::approxEqual(ipt,u);
+	}
+	auto otherbdd = _manager->getBDD(bipt->bdd(),bipt->manager());
+	if(_bdd == otherbdd){
+		return true;
+	}
+	return false;
+}
+
+bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& u) const{
+	if(_manager->isTruebdd(_bdd)){
+		return ipt->approxEmpty(u);
+	}
+	auto bipt = dynamic_cast<const BDDInternalPredTable*>(ipt);
+	if (bipt == NULL) {
+		return InternalPredTable::approxInverse(ipt,u);
+	}
+	map<const FOBDDVariable*, const FOBDDVariable*> otherToThisVars;
+	auto othervars = bipt->vars();
+	if(othervars.size() != vars().size()){
+		return false;
+	}
+
+	//Set the bdds to the same variables
+	auto othervar = othervars.cbegin();
+	for(auto var: vars()){
+		auto varone = _manager->getVariable(*othervar);
+		auto vartwo = _manager->getVariable(var);
+		otherToThisVars[varone] = vartwo;
+		othervar++;
+	}
+	auto otherbdd = _manager->getBDD(bipt->bdd(), bipt->manager());
+	otherbdd = _manager->substitute(otherbdd,otherToThisVars);
+	if (_bdd == _manager->negation(otherbdd)) {
+		return true;
+	}
+
+	//Two tables are inverse if their intersection is empty (conjunction is false)
+	//And their unioin is everything (disjunction is true)
+	auto conj = _manager->conjunction(_bdd, otherbdd);
+	auto disj = _manager->disjunction(_bdd, otherbdd);
+	if(_manager->isFalsebdd(conj) && _manager->isTruebdd(disj)){
+		return true;
+	}
+	return false;
+}
+
+
 
 tablesize BDDInternalPredTable::size(const Universe&) const {
 	set<const FOBDDDeBruijnIndex*> indices;
@@ -2967,6 +3031,26 @@ void InternalPredTable::put(std::ostream& stream) const {
 	stream << typeid(*this).name();
 }
 
+bool InternalPredTable::approxEqual(const InternalPredTable* ipt, const Universe& u) const {
+	if (ipt == this) {
+		return true;
+	}
+	auto iipt = dynamic_cast<const InverseInternalPredTable*>(ipt);
+	if (iipt != NULL) {
+		return approxInverse(iipt->table(), u);
+	}
+	return false;
+}
+
+bool InternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& u) const {
+	auto iipt = dynamic_cast<const InverseInternalPredTable*>(ipt);
+	if (iipt == NULL) {
+		return false;
+	}
+	return approxEqual(iipt->table(), u);
+}
+
+
 void InternalFuncTable::put(std::ostream& stream) const {
 	stream << typeid(*this).name();
 }
@@ -3076,6 +3160,10 @@ bool InverseInternalPredTable::approxFinite(const Universe& univ) const {
  */
 bool InverseInternalPredTable::approxEmpty(const Universe& univ) const {
 	return univ.approxEmpty();
+}
+
+bool InverseInternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& univ) const {
+	return _invtable->approxEqual(ipt, univ);
 }
 
 tablesize InverseInternalPredTable::size(const Universe& univ) const {
@@ -3423,6 +3511,9 @@ bool PredInter::isConsistent() const {
 
 void PredInter::checkConsistency() {
 	_inconsistentElements.clear();
+	if(_ct->approxInverse(_cf)){
+		return;
+	}
 	if (not _ct->approxFinite() || not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
@@ -3464,7 +3555,7 @@ while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 bool PredInter::approxTwoValued() const {
 // TODO turn it into something that is smarter, without comparing the tables!
 // => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
-	return _ct->internTable() == _pt->internTable();
+	return isConsistent() && _ct->approxEqual(_pt);
 }
 
 void PredInter::makeUnknown(const ElementTuple& tuple) {

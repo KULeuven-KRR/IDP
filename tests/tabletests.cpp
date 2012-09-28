@@ -1,0 +1,54 @@
+/****************************************************************
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *  
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ * 
+ * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
+ * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************/
+
+#include <cmath>
+
+#include "gtest/gtest.h"
+#include "external/rungidl.hpp"
+#include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "testingtools.hpp"
+
+using namespace std;
+
+namespace Tests {
+
+TEST(TableTest, BDDApproxInverseAndApproxEqualTrivial) {
+	auto bts1 = getBDDTestingSet1(0, 0, 0, 0);
+	auto truetable = new BDDInternalPredTable(bts1.truebdd, bts1.manager, { }, bts1.ts1.structure);
+	auto falsetable = new BDDInternalPredTable(bts1.falsebdd, bts1.manager, { }, bts1.ts1.structure);
+	Universe u = Universe(std::vector<SortTable*> { });
+	ASSERT_TRUE(truetable->approxInverse(falsetable, u));
+	ASSERT_FALSE(truetable->approxEqual(falsetable, u));
+}
+
+TEST(TableTest, BDDApproxInverseAndApproxEqual) {
+	auto bts1 = getBDDTestingSet1(0, 0, 0, 0);
+	auto bdd = bts1.pxandqx;
+	auto y = new Variable(bts1.ts1.sort); // variable
+	map<const FOBDDVariable*, const FOBDDVariable*> mvv;
+	auto negbdd = bts1.manager->negation(bdd);
+	mvv[bts1.x] = bts1.manager->getVariable(y);
+	negbdd = bts1.manager->substitute(negbdd, mvv);
+	auto bddtable = new BDDInternalPredTable(bdd, bts1.manager, { bts1.x->variable() }, bts1.ts1.structure);
+	auto negbddtable = new BDDInternalPredTable(negbdd, bts1.manager, { y }, bts1.ts1.structure);
+	Universe u = Universe(std::vector<SortTable*> {bts1.ts1.sorttable});
+	ASSERT_TRUE(bddtable->approxInverse(negbddtable, u));
+	ASSERT_FALSE(bddtable->approxEqual(negbddtable, u));
+	auto othernegbddtable = new InverseInternalPredTable(bddtable);
+	ASSERT_TRUE(bddtable->approxInverse(othernegbddtable, u));
+	ASSERT_FALSE(bddtable->approxEqual(othernegbddtable, u));
+	ASSERT_TRUE(negbddtable->approxEqual(othernegbddtable, u));
+}
+
+}
