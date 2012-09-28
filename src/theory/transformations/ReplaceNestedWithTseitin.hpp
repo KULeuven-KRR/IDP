@@ -233,7 +233,7 @@ protected:
 
 		_indefbody = true;
 		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
-			auto newbody = (*j)->body()->accept(this);
+			(*j)->body()->accept(this);
 		}
 		_indefbody = false;
 

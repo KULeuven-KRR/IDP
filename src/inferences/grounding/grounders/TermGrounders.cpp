@@ -151,7 +151,8 @@ void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& ri
 			int rightmin = rightdomain->first()->value()._int;
 			int leftmax = leftdomain->last()->value()._int;
 			int rightmax = rightdomain->last()->value()._int;
-			int min, max;
+			int min = 0;
+			int max = 0;
 			switch(_type){
 			case SumType::ST_PLUS:
 				min = leftmin + rightmin;
@@ -440,6 +441,8 @@ Weight getNeutralElement(AggFunction type){
 	case AggFunction::MAX:
 		throw notyetimplemented("Neutral element for maximum aggregate function");
 	}
+	Assert(false);
+	return 0;
 }
 
 varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms){

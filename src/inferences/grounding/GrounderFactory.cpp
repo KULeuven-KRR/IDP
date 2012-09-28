@@ -721,7 +721,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 
 	// Search here to check whether to prevent lower searches, but repeat the search later on on the ground-ready formula
 	const PredForm* delayablepf = NULL;
-	const PredForm* twindelayablepf = NULL;
+	//const PredForm* twindelayablepf = NULL; NOT USED FIXME UNCOMMENT IF USED AGAIN (commented to avoid compiler warnings)
 	if (not getOption(SATISFIABILITYDELAY)) {
 		_context._allowDelaySearch = false;
 	}
@@ -732,7 +732,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 			delayablepf = FormulaUtils::findUnknownBoundLiteral(newqf, _structure, getGrounding()->translator(), lazycontext);
 		} else {
 			delayablepf = tuple[0];
-			twindelayablepf = tuple[1];
+			//twindelayablepf = tuple[1]; NOT USED FIXME UNCOMMENT IF USED AGAIN (commented to avoid compiler warnings)
 		}
 	}
 	if (delayablepf != NULL) {
@@ -1279,7 +1279,7 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 	return data;
 }
 
-InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* subformula,
+InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* ,
 		const std::vector<Pattern>& pattern) {
 	auto instgen = GeneratorFactory::create(table, pattern, data.containers, Universe(data.tables));
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless

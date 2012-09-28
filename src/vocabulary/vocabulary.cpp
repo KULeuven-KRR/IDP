@@ -2145,7 +2145,7 @@ bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
 }
 
-bool isContainedIn(Term* term, Vocabulary* voc) {
+bool isContainedIn(Term* , Vocabulary* ) {
 	// TODO not yet implemented, issue 190
 	return true;
 }

@@ -266,13 +266,24 @@ Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Contex
 }
 
 void addCompletion(AbstractTheory* t) {
-	auto newt = transform<AddCompletion, AbstractTheory*>(t);
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<AddCompletion, AbstractTheory*>(t);
+#ifndef NDEBUG
 	Assert(newt==t);
+#endif
+
 }
 
 void flatten(AbstractTheory* t) {
-	auto newt = transform<Flatten, AbstractTheory*>(t);
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<Flatten, AbstractTheory*>(t);
+#ifndef NDEBUG
 	Assert(newt==t);
+#endif
 }
 
 Theory* graphFuncsAndAggs(Theory* t, AbstractStructure* str, bool cpsupport, Context con) {
@@ -283,8 +294,13 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, boo
 }
 
 void pushNegations(AbstractTheory* t) {
-	auto newt = transform<PushNegations, AbstractTheory*>(t);
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<PushNegations, AbstractTheory*>(t);
+#ifndef NDEBUG
 	Assert(newt==t);
+#endif
 }
 
 AbstractTheory* calculateArithmetic(AbstractTheory* t) {
@@ -320,13 +336,23 @@ AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Con
  }*/
 
 void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
-	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
+#ifndef NDEBUG
 	Assert(newt==t);
+#endif
 }
 
 void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, AbstractStructure* str, Context con) {
-	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
+#ifndef NDEBUG
 	Assert(newt==t);
+#endif
 }
 
 int nrSubformulas(AbstractTheory* t) {

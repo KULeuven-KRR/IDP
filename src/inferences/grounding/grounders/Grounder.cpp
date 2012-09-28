@@ -17,16 +17,14 @@
 using namespace std;
 
 Conn negateConn(Conn c) {
-	Conn result;
 	switch (c) {
 	case Conn::DISJ:
-		result = Conn::CONJ;
-		break;
+		return Conn::CONJ;
 	case Conn::CONJ:
-		result = Conn::DISJ;
-		break;
+		return Conn::DISJ;
 	}
-	return result;
+	Assert(false);
+	return Conn::DISJ;
 }
 
 void ConjOrDisj::put(std::ostream& stream) const {

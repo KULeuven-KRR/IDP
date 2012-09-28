@@ -106,9 +106,15 @@ FullRuleGrounder::~FullRuleGrounder() {
 	delete (_headgenerator);
 }
 
-void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
+void FullRuleGrounder::run(DefId
+#ifndef NDEBUG
+		defid
+#endif
+		, GroundDefinition* grounddefinition) const {
 	notifyRun();
+#ifndef NDEBUG
 	Assert(defid == grounddefinition->id());
+#endif
 	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
 		CHECKTERMINATION
@@ -147,21 +153,16 @@ HeadGrounder::~HeadGrounder() {
 
 Lit HeadGrounder::run() const {
 	// Run subterm grounders
-	bool alldomelts = true;
-	vector<GroundTerm> groundsubterms;
 	ElementTuple args;
+	vector<GroundTerm> groundsubterms;
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		CHECKTERMINATION
 		auto term = _subtermgrounders[n]->run();
-		if (term.isVariable) {
-			alldomelts = false;
-		} else {
-			args.push_back(term._domelement);
-		}
+		Assert (not term.isVariable);
+		args.push_back(term._domelement);
 		groundsubterms.push_back(term);
 	}
 	// TODO guarantee that all subterm grounders return domain elements
-	Assert(alldomelts);
 
 	// Checking partial functions
 	for (size_t n = 0; n < args.size(); ++n) {

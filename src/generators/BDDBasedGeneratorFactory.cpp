@@ -52,6 +52,8 @@ std::string toString(const BRANCH& type) {
 	case BRANCH::TRUEBRANCH:
 		return "true branch";
 	}
+	Assert(false);
+	return "";
 }
 
 /*

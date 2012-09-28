@@ -46,6 +46,8 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	case TermType::DOM:
 		return false;
 	}
+	Assert(false);
+	return false;
 }
 
 Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {

@@ -2188,9 +2188,9 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 				newout.push_back(new SortTable((*it)->internTable()));
 			}
 			UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
-			InternalSortTable* temp = newtable->add(d);
-			Assert(temp == newtable);
-			return newtable;
+			InternalSortTable* newtableWithExtra = newtable->add(d);
+			Assert(newtableWithExtra == newtable);
+			return newtableWithExtra;
 		} else {
 			bool in = false;
 			for (size_t n = 0; n < _intables.size(); ++n) {
@@ -2226,9 +2226,9 @@ InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
 			newout.push_back(new SortTable((*it)->internTable()));
 		}
 		UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
-		InternalSortTable* temp = newtable->remove(d);
-		Assert(temp == newtable);
-		return newtable;
+		InternalSortTable* newtableWithoutExtra = newtable->remove(d);
+		Assert(newtableWithoutExtra == newtable);
+		return newtableWithoutExtra;
 	} else {
 		_outtables[0]->add(d);
 		return this;
@@ -3220,9 +3220,9 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple, const Univers
 InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
-		InternalPredTable* temp = newtable->add(tuple);
-		Assert(temp == newtable);
-		return newtable;
+		InternalPredTable* newtableWithExtra = newtable->add(tuple);
+		Assert(newtableWithExtra == newtable);
+		return newtableWithExtra;
 	} else {
 		InternalPredTable* temp = _invtable->remove(tuple);
 		if (temp != _invtable) {
@@ -3246,9 +3246,9 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
-		InternalPredTable* temp = newtable->remove(tuple);
-		Assert(temp == newtable);
-		return newtable;
+		InternalPredTable* newtableWithoutExtra = newtable->remove(tuple);
+		Assert(newtableWithoutExtra == newtable);
+		return newtableWithoutExtra;
 	} else {
 		InternalPredTable* temp = _invtable->add(tuple);
 		if (temp != _invtable) {
@@ -3523,8 +3523,10 @@ void PredInter::checkConsistency() {
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
+#ifndef NDEBUG
 	auto sPossTable = smallest == _ct ? _pt : _pf;
 	auto lPossTable = smallest == _ct ? _pf : _pt;
+#endif
 
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
@@ -3533,7 +3535,9 @@ void PredInter::checkConsistency() {
 		// get unassigned domain element
 while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION;
+#ifndef NDEBUG
 			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
+#endif
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
@@ -3541,7 +3545,9 @@ while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			_inconsistentElements.insert(&(*largeIt));
 		}
+#ifndef NDEBUG
 		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+#endif
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
