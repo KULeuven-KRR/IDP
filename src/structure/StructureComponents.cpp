@@ -2885,7 +2885,13 @@ void SortTable::put(std::ostream& stream) const {
 	if (empty()) {
 		stream << toString(_table) << " is empty";
 	} else {
-		stream << toString(_table) << "[" << toString(first()) << ", " << toString(last()) << "]";
+		stream << toString(_table) << "[" << toString(first()) << ", ";
+		if(finite()){
+			stream << toString(last());
+		}else{
+			stream << "...";
+		}
+		stream << "]";
 	}
 }
 
