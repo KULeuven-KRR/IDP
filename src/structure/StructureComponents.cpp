@@ -2374,7 +2374,7 @@ const DomainElement* AllStrings::first() const {
 }
 
 const DomainElement* AllStrings::last() const {
-	notyetimplemented("impossible to get the largest string");
+	throw notyetimplemented("impossible to get the largest string");
 	return NULL;
 }
 
