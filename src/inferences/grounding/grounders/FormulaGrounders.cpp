@@ -95,7 +95,7 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)),
-			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), args(_subtermgrounders.size()) {
+			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), args(_subtermgrounders.size()), _recursive(ct._defined.find(s)!=ct._defined.cend()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
@@ -166,56 +166,70 @@ Lit AtomGrounder::run() const {
 	for (size_t n = 0; n < args.size(); ++n) {
 		*(_checkargs[n]) = args[n];
 	}
+	bool littrue = false, litfalse = false;
 	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
 			clog << tabs() << "Certainly true checker succeeded" << "\n";
-			if (_origform != NULL) {
-				poptab();
-			}
-			//clog << tabs() << "Result is " << translator()->printLit(gentype == GenType::CANMAKETRUE ? _true : _false) << "\n";
-			clog << tabs() << "Result is true" << "\n";
 		}
-		//return gentype == GenType::CANMAKETRUE ? _true : _false;
-		return _true;
+		if(not _recursive){
+			if (verbosity() > 2) {
+				poptab();
+				clog << tabs() << "Result is true" << "\n";
+			}
+			return _true;
+		}else{
+			littrue = true;
+		}
 	}
 	if (not _ptchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			clog << tabs() << "Possibly true checker failed" << "\n";
-			if (_origform != NULL) {
-				poptab();
-			}
-			clog << tabs() << "Result is false" << "\n";
 		}
-		return _false;
+		if(not _recursive){
+			if (verbosity() > 2) {
+				poptab();
+				clog << tabs() << "Result is false" << "\n";
+			}
+			return _false;
+		}else{
+			litfalse = true;
+		}
 	}
 	if (_inter->isTrue(args)) {
-		if (verbosity() > 2) {
-			if (_origform != NULL) {
+		if(not _recursive){
+			if (verbosity() > 2) {
 				poptab();
+				clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
 			}
-			clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
+			return isPos(_sign) ? _true : _false;
+		}else{
+			littrue = isPos(_sign);
+			litfalse = isNeg(_sign);
 		}
-		return isPos(_sign) ? _true : _false;
 	}
 	if (_inter->isFalse(args)) {
-		if (verbosity() > 2) {
-			if (_origform != NULL) {
+		if(not _recursive){
+			if (verbosity() > 2) {
 				poptab();
+				clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 			}
-			clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
+			return isPos(_sign) ? _false : _true;
+		}else{
+			littrue = isNeg(_sign);
+			litfalse = isPos(_sign);
 		}
-		return isPos(_sign) ? _false : _true;
 	}
 
 	// Return grounding
-	Lit lit = translator()->translate(_symbol, args);
-	if (isNeg(_sign)) {
-		lit = -lit;
+	auto poslit = translator()->translate(_symbol, args);
+	auto lit = isPos(_sign)?poslit:-poslit;
+	if(littrue){
+		getGrounding()->addUnitClause(lit);
+	}else if(litfalse){
+		getGrounding()->addUnitClause(-lit);
 	}
 	if (verbosity() > 2) {
-		if (_origform != NULL) {
-			poptab();
-		}
+		poptab();
 		clog << tabs() << "Result is " << translator()->printLit(lit) << "\n";
 	}
 	return lit;
