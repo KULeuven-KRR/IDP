@@ -2,13 +2,14 @@ vocabulary V{
 	type Getal isa int
 	type Aantal isa int
    
-	Factor(Getal, Getal,Aantal)
+	Factor8(Getal,Aantal)
 }
 theory T:V{
-	prod{y a : Factor(8,y,a) : y} >= 8.
+	prod{y a : Factor8(y,a) : y} = 8.
+	!x y: Factor8(x,y) => MIN[:Aantal]=y | Factor8(x, y-1).
 }
 structure S:V{
-	Getal = { 2;3;4;7;8 }
+	Getal = { 2;3;4; }
 	Aantal = {1..3}
 }
 procedure getExpectedNbOfModels(){
