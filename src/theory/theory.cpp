@@ -369,8 +369,8 @@ AggForm* AggForm::cloneKeepVars() const {
 }
 
 AggForm* AggForm::clone(const map<Variable*, Variable*>& mvv) const {
-	Term* nl = getBound()->clone(mvv);
-	AggTerm* nr = getAggTerm()->clone(mvv);
+	auto nl = getBound()->clone(mvv);
+	auto nr = getAggTerm()->clone(mvv);
 	return new AggForm(sign(), nl, _comp, nr, pi());
 }
 

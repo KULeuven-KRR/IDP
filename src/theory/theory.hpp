@@ -460,10 +460,6 @@ public:
 	AggForm* cloneKeepVars() const;
 	AggForm* clone(const std::map<Variable*, Variable*>&) const;
 
-	//void getBound(Term* t) {
-	//	subterm(0, t);
-	//}
-
 	Term* getBound() const {
 		return subterms()[0];
 	}
