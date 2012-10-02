@@ -61,7 +61,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	}
 
 	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
-	if (_cpsupport and not CPSupport::eligibleForCP(predform, _vocabulary)) {
+	if (_cpsupport and not CPSupport::eligibleForCP(predform, _vocabulary) && not is(predform->symbol(), STDPRED::EQ)) {
 		std::vector<Formula*> aggforms;
 		for (size_t i = 0; i < predform->args().size(); ++i) {
 			auto origterm = predform->args().front();
@@ -92,7 +92,6 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	return result;
 }
 
-// TODO Add aggform (sum becomes cpable relation)
 
 Formula* UnnestThreeValuedTerms::visit(AggForm* af) {
 	auto savedparent = _cpablerelation;
