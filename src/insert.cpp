@@ -1611,7 +1611,7 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 	}
 }
 
-Term* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
+FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) {
 			incompatiblearity(toString(nst), nst->_pi);
@@ -1677,7 +1677,7 @@ Variable* Insert::getVar(const string& name) const {
 	return NULL;
 }
 
-Term* Insert::functerm(NSPair* nst) {
+Term* Insert::term(NSPair* nst) {
 	if (nst->_sortsincluded || (nst->_name).size() != 1) {
 		vector<Term*> vt = vector<Term*>(0);
 		return functerm(nst, vt);
@@ -1714,7 +1714,7 @@ Term* Insert::functerm(NSPair* nst) {
 	}
 }
 
-Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
+FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 	if (lt && rt) {
 		Function* f = _currvocabulary->func(string(1, c) + "/2");
 		Assert(f);
@@ -1737,23 +1737,22 @@ Term* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 	}
 }
 
-Term* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
-	if (t) {
-		Function* f = _currvocabulary->func(s + "/1");
-		Assert(f);
-		vector<Term*> vt(1, t);
-		vector<Term*> pivt(1, t->clone());
-		auto temp = new FuncTerm(f, pivt, TermParseInfo());
-		auto res = new FuncTerm(f, vt, termparseinfo(temp, l));
-		temp->recursiveDelete();
-		return res;
-	} else {
+FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
+	if (t == NULL) {
 		t->recursiveDelete();
 		return NULL;
 	}
+	Function* f = _currvocabulary->func(s + "/1");
+	Assert(f);
+	vector<Term*> vt(1, t);
+	vector<Term*> pivt(1, t->clone());
+	auto temp = new FuncTerm(f, pivt, TermParseInfo());
+	auto res = new FuncTerm(f, vt, termparseinfo(temp, l));
+	temp->recursiveDelete();
+	return res;
 }
 
-Term* Insert::domterm(int i, YYLTYPE l) const {
+DomainTerm* Insert::domterm(int i, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(i);
 	Sort* s = (i >= 0 ? get(STDSORT::NATSORT) : get(STDSORT::INTSORT));
 	auto temp = new DomainTerm(s, d, TermParseInfo());
@@ -1762,7 +1761,7 @@ Term* Insert::domterm(int i, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::domterm(double f, YYLTYPE l) const {
+DomainTerm* Insert::domterm(double f, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(f);
 	Sort* s = get(STDSORT::FLOATSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
@@ -1771,7 +1770,7 @@ Term* Insert::domterm(double f, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::domterm(std::string* e, YYLTYPE l) const {
+DomainTerm* Insert::domterm(std::string* e, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(e);
 	Sort* s = get(STDSORT::STRINGSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
@@ -1780,7 +1779,7 @@ Term* Insert::domterm(std::string* e, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::domterm(char c, YYLTYPE l) const {
+DomainTerm* Insert::domterm(char c, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(StringPointer(string(1, c)));
 	Sort* s = get(STDSORT::CHARSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
@@ -1789,7 +1788,7 @@ Term* Insert::domterm(char c, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
+DomainTerm* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 	const DomainElement* d = createDomElem(e);
 	Assert(s != NULL);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
@@ -1798,7 +1797,7 @@ Term* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
 	return new DomainTerm(s, d, pi);
 }
 
-Term* Insert::aggregate(AggFunction f, EnumSetExpr* s, YYLTYPE l) const {
+AggTerm* Insert::aggregate(AggFunction f, EnumSetExpr* s, YYLTYPE l) const {
 	if (s == NULL) {
 		return NULL;
 	}

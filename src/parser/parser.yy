@@ -4,6 +4,7 @@
 #include "GlobalData.hpp"
 #include "common.hpp"
 #include "insert.hpp"
+#include "theory/term.hpp" // Necessary for inheritance tree
 #include "parser/yyltype.hpp"
 
 // Lexer
@@ -523,8 +524,8 @@ term		: function		{ $$ = $1;	}
 			;
 
 function	: intern_pointer '(' term_tuple ')'		{ $$ = getInserter().functerm($1,*$3); delete($3);	}
-			| intern_pointer '(' ')'				{ $$ = getInserter().functerm($1);					}
-			| intern_pointer						{ $$ = getInserter().functerm($1);					}
+			| intern_pointer '(' ')'				{ $$ = getInserter().term($1);					}
+			| intern_pointer						{ $$ = getInserter().term($1);					}
 			;
 
 arterm		: term '-' term				{ $$ = getInserter().arterm('-',$1,$3,@1);	}				

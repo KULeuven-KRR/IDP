@@ -31,6 +31,9 @@ class FuncTable;
 class Structure;
 class AbstractStructure;
 class Term;
+class FuncTerm;
+class AggTerm;
+class DomainTerm;
 class SetExpr;
 class Query;
 class EnumSetExpr;
@@ -342,16 +345,16 @@ public:
 	Sort* theosortpointer(const longname& vs, YYLTYPE l) const;
 	//!< get a sort with a given name in the current vocabulary
 
-	Term* functerm(NSPair*, const std::vector<Term*>&); //!< create a new function term
-	Term* functerm(NSPair*); //!< create a new constant term
-	Term* arterm(char, Term*, Term*, YYLTYPE) const; //!< create a new binary arithmetic term
-	Term* arterm(const std::string&, Term*, YYLTYPE) const; //!< create a new unary arithmetic term
-	Term* domterm(int, YYLTYPE) const; //!< create a new domain element term
-	Term* domterm(double, YYLTYPE) const; //!< create a new domain element term
-	Term* domterm(std::string*, YYLTYPE) const; //!< create a new domain element term
-	Term* domterm(char, YYLTYPE) const; //!< create a new domain element term
-	Term* domterm(std::string*, Sort*, YYLTYPE) const; //!< create a new domain element term of a given sort
-	Term* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
+	FuncTerm* functerm(NSPair*, const std::vector<Term*>&); //!< create a new function term
+	Term* term(NSPair*); //
+	FuncTerm* arterm(char, Term*, Term*, YYLTYPE) const; //!< create a new binary arithmetic term
+	FuncTerm* arterm(const std::string&, Term*, YYLTYPE) const; //!< create a new unary arithmetic term
+	DomainTerm* domterm(int, YYLTYPE) const; //!< create a new domain element term
+	DomainTerm* domterm(double, YYLTYPE) const; //!< create a new domain element term
+	DomainTerm* domterm(std::string*, YYLTYPE) const; //!< create a new domain element term
+	DomainTerm* domterm(char, YYLTYPE) const; //!< create a new domain element term
+	DomainTerm* domterm(std::string*, Sort*, YYLTYPE) const; //!< create a new domain element term of a given sort
+	AggTerm* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
 	EnumSetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
