@@ -538,10 +538,10 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 Lit AggGrounder::run() const {
 	// Run subgrounders
 	auto setnr = _setgrounder->run();
-	const GroundTerm& groundbound = _boundgrounder->run();
+	auto groundbound = _boundgrounder->run();
 	Assert(not groundbound.isVariable);
 
-	const DomainElement* bound = groundbound._domelement;
+	auto bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
 	auto tsset = translator()->groundset(setnr);
