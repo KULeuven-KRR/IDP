@@ -1,0 +1,15 @@
+vocabulary V{
+	type x isa int
+	P(x)
+	Q(x)
+}
+theory T:V{
+	Q(min{x:P(x):x}).
+	#{x: Q(x)}=1.
+}
+structure S:V{
+	x = {1..10}
+}
+procedure getExpectedNbOfModels(){
+	return 1
+}

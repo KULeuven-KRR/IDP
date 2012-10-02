@@ -1,0 +1,14 @@
+vocabulary V{
+	type x isa int
+	P(x)
+}
+theory T:V{
+	{ P(x) <- sum{y:P(y) & y=x:y}>=3. }
+}
+structure S:V{
+	x = {1..10}
+	P = {3;5}
+}
+procedure getExpectedNbOfModels(){
+	return 0
+}
