@@ -3955,8 +3955,6 @@ bool needMoreModels(unsigned int found) {
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
 		vector<AbstractStructure*>& extensions) {
-	int currentnb = extensions.size();
-
 // go over all saved structures and generate a new structure for each possible value for it
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
 	vector<AbstractStructure*> partialfalsestructs;
