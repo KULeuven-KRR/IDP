@@ -55,7 +55,7 @@ enum IntType {
 	VERBOSE_DEFINITIONS,
 	VERBOSE_SYMMETRY,
 	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
-	LAST_VERBOSE = VERBOSE_SYMMETRY			  //IMPORTANT: this has to be the last of the verbosity options
+	LAST_VERBOSE = VERBOSE_SYMMETRY //IMPORTANT: this has to be the last of the verbosity options
 };
 
 enum BoolType {
@@ -73,7 +73,8 @@ enum BoolType {
 	CPSUPPORT,
 	SHAREDTSEITIN,
 	LIFTEDUNITPROPAGATION,
-	STABLESEMANTICS
+	STABLESEMANTICS,
+	REDUCEDGROUNDING
 };
 
 enum OptionType {
@@ -98,7 +99,7 @@ enum class PrintBehaviour {
 };
 
 template<typename OptionType>
-bool isVerbosityOption(OptionType){
+bool isVerbosityOption(OptionType) {
 	return false;
 }
 template<>
@@ -206,7 +207,7 @@ protected:
 public:
 	~OptionPolicy() {
 		for (auto option : _options) {
-			if(option!=NULL){
+			if (option != NULL) {
 				delete (option);
 			}
 		}
@@ -219,7 +220,8 @@ public:
 		return _options.at(_name2type.at(name))->getValue();
 	}
 	ValueType getValue(EnumType option) const {
-		Assert((unsigned int)option<_options.size() && _options.at(option)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)option<_options.size() && _options.at(option)!=NULL);
+		//If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		return _options.at(option)->getValue();
 	}
 	void setStrValue(const std::string& name, const ValueType& value) {
@@ -227,7 +229,8 @@ public:
 		setValue(_name2type.at(name), value);
 	}
 	void setValue(EnumType type, const ValueType& value) {
-		Assert((unsigned int)type<_options.size() && _options.at(type)!=NULL); //If this is not the case, check that you ask options through getOption, don't ask for them directly!!
+		Assert((unsigned int)type<_options.size() && _options.at(type)!=NULL);
+		//If this is not the case, check that you ask options through getOption, don't ask for them directly!!
 		_options.at(type)->setValue(value);
 	}
 	bool isAllowedValue(const std::string& name, const ValueType& value) const {
@@ -249,8 +252,8 @@ public:
 	// NOTE mainly used to get all suboption blocks
 	std::vector<ValueType> getOptionValues() const {
 		std::vector<ValueType> values;
-		for(auto option: _options){
-			if(option!=NULL){
+		for (auto option : _options) {
+			if (option != NULL) {
 				values.push_back(option->getValue());
 			}
 		}
@@ -356,7 +359,7 @@ public:
 	void setValue(EnumType type, const ValueType& value) {
 		OptionPolicy<EnumType, ValueType>::setValue(type, value);
 	}
-	bool isVerbosityBlock(){
+	bool isVerbosityBlock() {
 		return _isVerbosity;
 	}
 	void copyValues(Options*);
@@ -378,7 +381,7 @@ public:
 		return OptionPolicy<typename OptionValueTraits<ValueType>::EnumType, ValueType>::isAllowedValue(name, value);
 	}
 
-	std::vector<Options*> getSubOptionBlocks() const{
+	std::vector<Options*> getSubOptionBlocks() const {
 		return OptionPol::getOptionValues();
 	}
 };
