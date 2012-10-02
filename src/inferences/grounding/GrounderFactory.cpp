@@ -958,6 +958,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	}
 
 	// Create grounder for the bound
+	Assert(newaf->getBound()->type()==TermType::DOM || newaf->getBound()->type()==TermType::VAR);
 	descend(newaf->getBound());
 	auto boundgrounder = getTermGrounder();
 
