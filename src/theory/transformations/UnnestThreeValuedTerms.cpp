@@ -34,9 +34,6 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	}
 	case TermType::AGG: {
 		auto at = dynamic_cast<AggTerm*>(t);
-		if (SetUtils::approxTwoValued(at->set(), _structure)) {
-			return false;
-		}
 		if (_cpsupport and _cpablefunction and eligibleForCP(at, _structure)) {
 			return false;
 		}

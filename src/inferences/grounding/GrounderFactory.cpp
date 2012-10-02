@@ -1046,7 +1046,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 }
 
 void GrounderFactory::visit(const AggTerm* t) {
-	Assert(SetUtils::approxTwoValued(t->set(),_structure) or getOption(BoolType::CPSUPPORT));
+	Assert(getOption(BoolType::CPSUPPORT));
 
 	SaveContext();
 	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t->function())) {

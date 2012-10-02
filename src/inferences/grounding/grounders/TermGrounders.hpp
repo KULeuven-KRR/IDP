@@ -164,9 +164,7 @@ private:
 	AbstractGroundTheory* grounding;
 
 public:
-	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
-			: TermGrounder(dom, gt), _type(tp), _setgrounder(gr), grounding(grounding) {
-	}
+	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr);
 	GroundTerm run() const;
 };
 

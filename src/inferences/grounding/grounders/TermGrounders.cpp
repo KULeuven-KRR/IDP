@@ -517,6 +517,11 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 	return varids;
 }
 
+AggTermGrounder::AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
+		: TermGrounder(dom, gt), _type(tp), _setgrounder(gr), grounding(grounding) {
+	Assert(CPSupport::eligibleForCP(tp));
+}
+
 GroundTerm AggTermGrounder::run() const {
 	// Note: This grounder should only be used when the aggregate can be computed now, or when the aggregate is eligible for CPsupport!
 	if (verbosity() > 2) {
