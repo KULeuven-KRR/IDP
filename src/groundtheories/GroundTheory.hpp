@@ -22,7 +22,7 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<SetId> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
-	std::set<VarId> _printedvarids;
+	std::set<VarId> _printedvarids, _addedvarinterpretation;
 
 public:
 	GroundTheory(AbstractStructure const * const str);
@@ -70,6 +70,8 @@ protected:
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.
 	 */
 	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false);
+
+	void addVarIdInterpretation(VarId id);
 
 	void addFoldedVarEquiv(VarId id);
 	CPTerm* foldCPTerm(CPTerm* cpterm);

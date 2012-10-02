@@ -114,21 +114,50 @@ void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
 	if (_printedvarids.find(id) != _printedvarids.end()) {
 		return;
 	}
+	_printedvarids.insert(id);
+
+	// It has an internal meaning, add it here:
 	if (translator()->cprelation(id) == NULL) {
 		return;
 	}
-	_printedvarids.insert(id);
 	auto cprelation = translator()->cprelation(id);
 	auto tseitin2 = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
 	addUnitClause(tseitin2);
 }
 
 template<class Policy>
+void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
+	if (_addedvarinterpretation.find(id) != _addedvarinterpretation.end()) {
+		return;
+	}
+	_addedvarinterpretation.insert(id);
+
+	// It is already partially known:
+	auto symbol = translator()->getFunction(id);
+	auto ct = structure()->inter(symbol)->graphInter()->ct();
+	for(auto i=ct->begin(); not i.isAtEnd(); ++i){
+		auto lit = translator()->translate(symbol, *i);
+		addUnitClause(lit);
+	}
+	auto cf = structure()->inter(symbol)->graphInter()->cf();
+	for(auto i=cf->begin(); not i.isAtEnd(); ++i){
+		auto lit = translator()->translate(symbol, *i);
+		addUnitClause(-lit);
+	}
+}
+
+template<class Policy>
 void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 	body->left(foldCPTerm(body->left()));
 
+	for(auto var: body->left()->getVarIds()){
+		addVarIdInterpretation(var);
+	}
+
 	if (body->right()._isvarid) {
-		addFoldedVarEquiv(body->right()._varid);
+		auto id = body->right()._varid;
+		addVarIdInterpretation(id);
+		addFoldedVarEquiv(id);
 	}
 
 	Policy::polAdd(tseitin, body);
@@ -194,6 +223,7 @@ void GroundTheory<Policy>::addOptimization(AggFunction function, SetId setid) {
 
 template<class Policy>
 void GroundTheory<Policy>::addOptimization(VarId varid) {
+	addVarIdInterpretation(varid);
 	addFoldedVarEquiv(varid);
 	Policy::polAddOptimization(varid);
 }
