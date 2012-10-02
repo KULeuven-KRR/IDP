@@ -37,6 +37,10 @@ bool isFunc(Term* t) {
 	return t->type() == TermType::FUNC;
 }
 
+bool isDom(Term* t) {
+	return t->type() == TermType::DOM;
+}
+
 bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
 }
@@ -60,14 +64,10 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 /**
  * Given aggterm ~ dom/varterm, construct aggform
  */
-AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, Term* aggterm, const FormulaParseInfo& pi) const {
+AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) const {
 	Assert(not isFunc(valueterm));
 	Assert(not isAgg(valueterm));
-
-	Assert(isAgg(aggterm));
-	auto at = dynamic_cast<AggTerm*>(aggterm);
-
-	return new AggForm(SIGN::POS, valueterm, comp, at, pi);
+	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);
 }
 
 /**
@@ -106,9 +106,9 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		}
 	}
 	if (newformula == NULL and isAgg(left)) {
-		newformula = makeAggForm(right, invertComp(getComparison(pf)), left, pf->pi());
+		newformula = makeAggForm(right, invertComp(getComparison(pf)), dynamic_cast<AggTerm*>(left), pf->pi());
 	} else if (newformula == NULL and isAgg(right)) {
-		newformula = makeAggForm(left, getComparison(pf), right, pf->pi());
+		newformula = makeAggForm(left, getComparison(pf), dynamic_cast<AggTerm*>(right), pf->pi());
 	}
 	if (newformula != NULL) {
 		delete (pf);

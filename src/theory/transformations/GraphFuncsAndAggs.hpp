@@ -44,7 +44,7 @@ protected:
 	Formula* visit(EqChainForm* ef);
 private:
 	PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&) const;
-	AggForm* makeAggForm(Term* valueterm, CompType, Term* aggterm, const FormulaParseInfo&) const;
+	AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&) const;
 };
 
 #endif /* GRAPHFUNCSANDAGGS_HPP_ */
