@@ -45,6 +45,7 @@ protected:
 		setFreeVars();
 	}
 	void setSubFormula(Formula* formula) {
+		Assert(formula!=NULL);
 		_subformula = formula;
 		setFreeVars();
 	}
