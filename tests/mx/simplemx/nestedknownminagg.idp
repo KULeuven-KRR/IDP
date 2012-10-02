@@ -9,6 +9,7 @@ theory T:V{
 }
 structure S:V{
 	x = {1..10}
+	P = {3;5}
 }
 procedure getExpectedNbOfModels(){
 	return 1
