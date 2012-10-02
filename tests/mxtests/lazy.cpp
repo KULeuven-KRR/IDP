@@ -2,7 +2,7 @@
 
 namespace Tests {
 
-TEST_P(MXnbTest, DoesMXWithLazyTseitinDelaying) {
+TEST_P(MXnbTest, DISABLED_DoesMXWithLazyTseitinDelaying) {
 	runTests("modelexpansion.idp", GetParam(), "mxlazy()");
 }
 
