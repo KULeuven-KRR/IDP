@@ -1140,9 +1140,9 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	//Collect all occurrences of the wanted argument in the lhs
 	vector<const FOBDDTerm*> terms = fa.getTerms(atom->args(0));
 	unsigned int occcounter = 0;
-	unsigned int occterm;
+	unsigned int occterm = 0;
 	unsigned int invertedOcccounter = 0;
-	unsigned int invertedOccterm;
+	unsigned int invertedOccterm = 0;
 	for (size_t n = 0; n < terms.size(); ++n) {
 		if (contains(terms[n], argument)) {
 			++occcounter;
@@ -1574,7 +1574,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 			kernelFalseAnswers = kernelUnivSize._size * (1 - chance);
 			//WHY NOT univ - kernelanswers? Why use the chance?
 		} else {
-			Assert(kernelUnivSize._type == TST_INFINITE || kernelUnivSize._type == TST_UNKNOWN);
+			Assert(kernelUnivSize._type == TST_INFINITE);
 			if (chance == 0) {
 				kernelFalseAnswers = getMaxElem<double>();
 			} else {

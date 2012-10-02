@@ -126,6 +126,12 @@ PCSolver* createsolver(int nbmodels) {
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
 	modes.polarity = MinisatID::Polarity::STORED;
+	if (getOption(BoolType::STABLESEMANTICS)) {
+		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;
+	} else {
+		modes.defsem = MinisatID::DEFSEM::DEF_WELLF;
+
+	}
 	if (getOption(BoolType::MXRANDOMPOLARITYCHOICE)) {
 		modes.polarity = MinisatID::Polarity::RAND;
 	}

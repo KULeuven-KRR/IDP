@@ -45,6 +45,12 @@ bool PredTable::approxFinite() const {
 bool PredTable::approxEmpty() const {
 	return _table->approxEmpty(_universe);
 }
+bool PredTable::approxEqual(const PredTable* pt) const{
+	return _table->approxEqual(pt->internTable(),_universe);
+}
+bool PredTable::approxInverse(const PredTable* pt) const{
+	return _table->approxInverse(pt->internTable(),_universe);
+}
 bool PredTable::contains(const ElementTuple& tuple) const {
 	return _table->contains(tuple, _universe);
 }
@@ -1178,7 +1184,6 @@ tablesize UnionInternalPredTable::size(const Universe& univ) const {
 		case TST_EXACT:
 			result += tp._size;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
 			type = tp._type;
 			break;
@@ -1194,9 +1199,8 @@ tablesize UnionInternalPredTable::size(const Universe& univ) const {
 			else
 				result = 0;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
-			type = TST_UNKNOWN;
+			type = TST_INFINITE; // Is possibly infinite
 			break;
 		}
 	}
@@ -1397,6 +1401,64 @@ bool BDDInternalPredTable::approxEmpty(const Universe& univ) const {
 	}
 }
 
+bool BDDInternalPredTable::approxEqual(const InternalPredTable* ipt, const Universe& u) const{
+	if(ipt == this){
+		return true;
+	}
+	if (_manager->isFalsebdd(_bdd)) {
+		return ipt->approxEmpty(u);
+	}
+	auto bipt = dynamic_cast<const BDDInternalPredTable* >(ipt);
+	if(bipt == NULL){
+		return InternalPredTable::approxEqual(ipt,u);
+	}
+	auto otherbdd = _manager->getBDD(bipt->bdd(),bipt->manager());
+	if(_bdd == otherbdd){
+		return true;
+	}
+	return false;
+}
+
+bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& u) const{
+	if(_manager->isTruebdd(_bdd)){
+		return ipt->approxEmpty(u);
+	}
+	auto bipt = dynamic_cast<const BDDInternalPredTable*>(ipt);
+	if (bipt == NULL) {
+		return InternalPredTable::approxInverse(ipt,u);
+	}
+	map<const FOBDDVariable*, const FOBDDVariable*> otherToThisVars;
+	auto othervars = bipt->vars();
+	if(othervars.size() != vars().size()){
+		return false;
+	}
+
+	//Set the bdds to the same variables
+	auto othervar = othervars.cbegin();
+	for(auto var: vars()){
+		auto varone = _manager->getVariable(*othervar);
+		auto vartwo = _manager->getVariable(var);
+		otherToThisVars[varone] = vartwo;
+		othervar++;
+	}
+	auto otherbdd = _manager->getBDD(bipt->bdd(), bipt->manager());
+	otherbdd = _manager->substitute(otherbdd,otherToThisVars);
+	if (_bdd == _manager->negation(otherbdd)) {
+		return true;
+	}
+
+	//Two tables are inverse if their intersection is empty (conjunction is false)
+	//And their unioin is everything (disjunction is true)
+	auto conj = _manager->conjunction(_bdd, otherbdd);
+	auto disj = _manager->disjunction(_bdd, otherbdd);
+	if(_manager->isFalsebdd(conj) && _manager->isTruebdd(disj)){
+		return true;
+	}
+	return false;
+}
+
+
+
 tablesize BDDInternalPredTable::size(const Universe&) const {
 	set<const FOBDDDeBruijnIndex*> indices;
 	set<Variable*> fovars;
@@ -1407,7 +1469,7 @@ tablesize BDDInternalPredTable::size(const Universe&) const {
 		unsigned int es = estimate;
 		return tablesize(TST_APPROXIMATED, es);
 	} else
-		return tablesize(TST_UNKNOWN, 0);
+		return tablesize(TST_INFINITE, 0);
 }
 
 std::vector<const DomElemContainer*> createVarSubstitutionFrom(const ElementTuple& tuple) {
@@ -1835,6 +1897,16 @@ InternalSortTable* EnumeratedInternalSortTable::add(int i1, int i2) {
 	return this;
 }
 
+void EnumeratedInternalSortTable::countNBNotIntElements(){
+	nbNotIntElements = 0;
+	for(auto el: _table){
+		if(el->type() != DET_INT){
+			nbNotIntElements++;
+		}
+	}
+}
+
+
 InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
@@ -2011,7 +2083,6 @@ tablesize UnionInternalSortTable::size() const {
 		case TST_EXACT:
 			result += tp._size;
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
 			type = tp._type;
 			break;
@@ -2028,9 +2099,8 @@ tablesize UnionInternalSortTable::size() const {
 				result = 0;
 			}
 			break;
-		case TST_UNKNOWN:
 		case TST_INFINITE:
-			type = TST_UNKNOWN;
+			type = TST_INFINITE; // Is possibly infinite
 			break;
 		}
 	}
@@ -2118,9 +2188,9 @@ InternalSortTable* UnionInternalSortTable::add(const DomainElement* d) {
 				newout.push_back(new SortTable((*it)->internTable()));
 			}
 			UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
-			InternalSortTable* temp = newtable->add(d);
-			Assert(temp == newtable);
-			return newtable;
+			InternalSortTable* newtableWithExtra = newtable->add(d);
+			Assert(newtableWithExtra == newtable);
+			return newtableWithExtra;
 		} else {
 			bool in = false;
 			for (size_t n = 0; n < _intables.size(); ++n) {
@@ -2156,9 +2226,9 @@ InternalSortTable* UnionInternalSortTable::remove(const DomainElement* d) {
 			newout.push_back(new SortTable((*it)->internTable()));
 		}
 		UnionInternalSortTable* newtable = new UnionInternalSortTable(newin, newout);
-		InternalSortTable* temp = newtable->remove(d);
-		Assert(temp == newtable);
-		return newtable;
+		InternalSortTable* newtableWithoutExtra = newtable->remove(d);
+		Assert(newtableWithoutExtra == newtable);
+		return newtableWithoutExtra;
 	} else {
 		_outtables[0]->add(d);
 		return this;
@@ -2368,7 +2438,7 @@ const DomainElement* AllStrings::first() const {
 }
 
 const DomainElement* AllStrings::last() const {
-	notyetimplemented("impossible to get the largest string");
+	throw notyetimplemented("impossible to get the largest string");
 	return NULL;
 }
 
@@ -2509,7 +2579,7 @@ tablesize ProcInternalFuncTable::size(const Universe& univ) const {
 		if (outsize._type == TST_EXACT) {
 			return tablesize(TST_EXACT, 0);
 		} else {
-			return tablesize(TST_UNKNOWN, 0);
+			return tablesize(TST_APPROXIMATED, 0);
 		}
 	}
 }
@@ -2879,7 +2949,13 @@ void SortTable::put(std::ostream& stream) const {
 	if (empty()) {
 		stream << toString(_table) << " is empty";
 	} else {
-		stream << toString(_table) << "[" << toString(first()) << ", " << toString(last()) << "]";
+		stream << toString(_table) << "[" << toString(first()) << ", ";
+		if(finite()){
+			stream << toString(last());
+		}else{
+			stream << "...";
+		}
+		stream << "]";
 	}
 }
 
@@ -2956,6 +3032,26 @@ void InternalPredTable::incrementRef() {
 void InternalPredTable::put(std::ostream& stream) const {
 	stream << typeid(*this).name();
 }
+
+bool InternalPredTable::approxEqual(const InternalPredTable* ipt, const Universe& u) const {
+	if (ipt == this) {
+		return true;
+	}
+	auto iipt = dynamic_cast<const InverseInternalPredTable*>(ipt);
+	if (iipt != NULL) {
+		return approxInverse(iipt->table(), u);
+	}
+	return false;
+}
+
+bool InternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& u) const {
+	auto iipt = dynamic_cast<const InverseInternalPredTable*>(ipt);
+	if (iipt == NULL) {
+		return false;
+	}
+	return approxEqual(iipt->table(), u);
+}
+
 
 void InternalFuncTable::put(std::ostream& stream) const {
 	stream << typeid(*this).name();
@@ -3068,16 +3164,18 @@ bool InverseInternalPredTable::approxEmpty(const Universe& univ) const {
 	return univ.approxEmpty();
 }
 
+bool InverseInternalPredTable::approxInverse(const InternalPredTable* ipt, const Universe& univ) const {
+	return _invtable->approxEqual(ipt, univ);
+}
+
 tablesize InverseInternalPredTable::size(const Universe& univ) const {
 	tablesize univsize = univ.size();
 	tablesize invsize = _invtable->size(univ);
-	if (univsize._type == TST_UNKNOWN) {
-		return univsize;
-	} else if (univsize._type == TST_INFINITE) {
+	if (univsize._type == TST_INFINITE) {
 		if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 			return tablesize(TST_INFINITE, 0);
 		} else {
-			return tablesize(TST_UNKNOWN, 0);
+			return tablesize(TST_INFINITE, 0);
 		}
 	} else if (invsize._type == TST_APPROXIMATED || invsize._type == TST_EXACT) {
 		unsigned int result = 0;
@@ -3090,7 +3188,7 @@ tablesize InverseInternalPredTable::size(const Universe& univ) const {
 			return tablesize(TST_APPROXIMATED, result);
 		}
 	} else {
-		return tablesize(TST_UNKNOWN, 0);
+		return tablesize(TST_INFINITE, 0); // possibly infinite
 	}
 }
 
@@ -3122,9 +3220,9 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple, const Univers
 InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
-		InternalPredTable* temp = newtable->add(tuple);
-		Assert(temp == newtable);
-		return newtable;
+		InternalPredTable* newtableWithExtra = newtable->add(tuple);
+		Assert(newtableWithExtra == newtable);
+		return newtableWithExtra;
 	} else {
 		InternalPredTable* temp = _invtable->remove(tuple);
 		if (temp != _invtable) {
@@ -3148,9 +3246,9 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
 		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
-		InternalPredTable* temp = newtable->remove(tuple);
-		Assert(temp == newtable);
-		return newtable;
+		InternalPredTable* newtableWithoutExtra = newtable->remove(tuple);
+		Assert(newtableWithoutExtra == newtable);
+		return newtableWithoutExtra;
 	} else {
 		InternalPredTable* temp = _invtable->add(tuple);
 		if (temp != _invtable) {
@@ -3413,7 +3511,10 @@ bool PredInter::isConsistent() const {
 
 void PredInter::checkConsistency() {
 	_inconsistentElements.clear();
-	if (not _ct->approxFinite() || not _cf->approxFinite()) {
+	if(_ct->approxInverse(_cf)){
+		return;
+	}
+	if (not _ct->approxFinite() && not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency of infinite tables");
 	}
 	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
@@ -3422,8 +3523,10 @@ void PredInter::checkConsistency() {
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
+#ifndef NDEBUG
 	auto sPossTable = smallest == _ct ? _pt : _pf;
 	auto lPossTable = smallest == _ct ? _pf : _pt;
+#endif
 
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
@@ -3432,7 +3535,9 @@ void PredInter::checkConsistency() {
 		// get unassigned domain element
 while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION;
+#ifndef NDEBUG
 			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
+#endif
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
@@ -3440,7 +3545,9 @@ while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			_inconsistentElements.insert(&(*largeIt));
 		}
+#ifndef NDEBUG
 		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+#endif
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}
@@ -3454,7 +3561,7 @@ while		(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 bool PredInter::approxTwoValued() const {
 // TODO turn it into something that is smarter, without comparing the tables!
 // => return isConsistent() && isFinite(universe().size()._type) && _ct->size()+_cf->size()==universe().size()._size;
-	return _ct->internTable() == _pt->internTable();
+	return isConsistent() && _ct->approxEqual(_pt);
 }
 
 void PredInter::makeUnknown(const ElementTuple& tuple) {

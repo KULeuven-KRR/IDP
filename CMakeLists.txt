@@ -93,7 +93,7 @@ if(GPERF)
 endif()
 
 ### Printing information
-message(STATUS "Global CXX flags: ")
+message(STATUS "IDP CXX flags: ")
 message(STATUS "${CMAKE_CXX_FLAGS}")
 message(STATUS "build idp shared ${BUILD_SHARED_LIBS}")
 if(BUILD_IDP_STATIC)

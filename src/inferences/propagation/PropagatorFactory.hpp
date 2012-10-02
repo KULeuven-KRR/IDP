@@ -43,7 +43,8 @@ private:
 	bool _multiplymaxsteps;
 
 	void createleafconnector(PFSymbol*);
-	void initFalse(const Formula*); //!< Set the ct- and cf-domains of the given formula to empty
+	void initUnknown(const Formula*); //!< Set the ct- and cf-domains of the given formula to empty
+	void initTwoVal(const Formula*); //!< Set domain of this formula to be itself
 
 protected:
 	void visit(const Theory*);

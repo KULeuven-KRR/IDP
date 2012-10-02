@@ -111,7 +111,7 @@ double BddStatistics::estimateNrAnswers(const FOBDDKernel* kernel, const varset&
 		return 0;
 	}
 	auto univanswers = univNrAnswers(vars, indices, structure);
-	return toDouble(chance * univanswers);
+	return chance * toDouble(univanswers);
 }
 
 template<typename BddNode>

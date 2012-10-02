@@ -17,16 +17,14 @@
 using namespace std;
 
 Conn negateConn(Conn c) {
-	Conn result;
 	switch (c) {
 	case Conn::DISJ:
-		result = Conn::CONJ;
-		break;
+		return Conn::CONJ;
 	case Conn::CONJ:
-		result = Conn::DISJ;
-		break;
+		return Conn::DISJ;
 	}
-	return result;
+	Assert(false);
+	return Conn::DISJ;
 }
 
 void ConjOrDisj::put(std::ostream& stream) const {
@@ -88,7 +86,7 @@ int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_UNKNOWN, 0)) {
+		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
 }
 
 void Grounder::toplevelRun() const {

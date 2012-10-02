@@ -17,7 +17,7 @@
 #include "common.hpp"
 
 enum TableSizeType {
-	TST_APPROXIMATED, TST_INFINITE, TST_EXACT, TST_UNKNOWN
+	TST_APPROXIMATED, TST_INFINITE, TST_EXACT
 };
 
 struct tablesize {
@@ -27,55 +27,74 @@ struct tablesize {
 			: _type(tp), _size(sz) {
 	}
 	tablesize()
-			: _type(TST_UNKNOWN), _size(0) {
+			: _type(TST_EXACT), _size(0) { // Initial tablesize is empty
 	}
 
 	tablesize operator+(const tablesize& rhs) const;
 	tablesize operator-(const tablesize& rhs) const;
 	tablesize operator*(const tablesize& rhs) const;
 	void operator*=(const tablesize& rhs);
+	// Division operator executes a C++ int division, not returning a float
 	tablesize operator/(const tablesize& rhs) const;
 
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator==(const tablesize& rhs) const;
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator!=(const tablesize& rhs) const;
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator<(const tablesize& rhs) const;
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator>(const tablesize& rhs) const;
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator<=(const tablesize& rhs) const;
+	//Compares tablesizes. NOTE: Approximate values are handled as if they were exact
+	bool operator>=(const tablesize& rhs) const;
+
 	bool isInfinite() const{
-		return _type==TST_INFINITE || _type==TST_UNKNOWN;
+		return _type==TST_INFINITE;
 	}
 };
 
 double toDouble(const tablesize& val);
 
-template<class Num>
+
+
+/**
+ * Numerical operators
+ */
+template<typename Num>
 tablesize operator*(Num lhs, const tablesize& rhs){
 	return tablesize(TableSizeType::TST_EXACT, lhs)*rhs;
 }
-template<class Num>
+template<typename Num>
 tablesize operator*(const tablesize& lhs, Num rhs){
 	return rhs*lhs;
 }
-template<class Num>
+template<typename Num>
 tablesize operator/(Num lhs, const tablesize& rhs){
 	return tablesize(TableSizeType::TST_EXACT, lhs)/rhs;
 }
-template<class Num>
+template<typename Num>
 tablesize operator/(const tablesize& lhs, Num rhs){
 	return lhs/tablesize(TableSizeType::TST_EXACT, rhs);
 }
-template<class Num>
+template<typename Num>
 tablesize operator-(const tablesize& lhs, Num rhs){
 	return lhs - tablesize(TableSizeType::TST_EXACT, rhs);
 }
-template<class Num>
+template<typename Num>
 tablesize operator-(Num lhs, const tablesize& rhs){
 	return tablesize(TableSizeType::TST_EXACT, lhs)-rhs;
 }
-template<class Num>
+template<typename Num>
 tablesize operator+(Num lhs, const tablesize& rhs){
 	return tablesize(TableSizeType::TST_EXACT, lhs)+rhs;
 }
-template<class Num>
+template<typename Num>
 tablesize operator+(const tablesize& lhs, Num rhs){
 	return rhs+lhs;
 }
-template<class Num>
+template<typename Num>
 Num& operator+=(Num& val, const tablesize& rhs){
 	auto n= val+rhs;
 	if(n.isInfinite()){
@@ -85,7 +104,7 @@ Num& operator+=(Num& val, const tablesize& rhs){
 	}
 	return val;
 }
-template<class Num>
+template<typename Num>
 Num& operator*=(Num& val, const tablesize& rhs){
 	auto n= val*rhs;
 	if(n.isInfinite()){ //Voor unknown werkt dit niet goed
@@ -95,6 +114,65 @@ Num& operator*=(Num& val, const tablesize& rhs){
 	}
 	return val;
 }
+
+/**
+ * Comparison operators
+ */
+template<typename Num>
+bool operator== ( const tablesize& lhs, const Num& rhs){
+	return lhs == tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator== ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) == rhs;
+}
+
+
+template<typename Num>
+bool operator!= ( const tablesize& lhs, const Num& rhs){
+	return lhs != tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator!= ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) != rhs;
+}
+
+template<typename Num>
+bool operator< ( const tablesize& lhs, const Num& rhs){
+	return lhs < tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator< ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) < rhs;
+}
+
+template<typename Num>
+bool operator> ( const tablesize& lhs, const Num& rhs){
+	return lhs > tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator> ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) > rhs;
+}
+
+template<typename Num>
+bool operator<= ( const tablesize& lhs, const Num& rhs){
+	return lhs <= tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator<= ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) <= rhs;
+}
+
+template<typename Num>
+bool operator>= ( const tablesize& lhs, const Num& rhs){
+	return lhs >= tablesize(TableSizeType::TST_EXACT, rhs);
+}
+template<typename Num>
+bool operator>= ( const Num& lhs, const tablesize& rhs){
+	return tablesize(TableSizeType::TST_EXACT, lhs) >= rhs;
+}
+
 
 template<>
 std::string toString(const tablesize& obj);

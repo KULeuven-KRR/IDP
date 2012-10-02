@@ -575,6 +575,7 @@ Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
 
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 CompType getComparisonType(const PFSymbol* symbol);
+bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 

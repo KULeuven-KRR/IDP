@@ -219,9 +219,9 @@ public:
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);
-				printer->add(MinisatID::CPBinaryRelVar(getDefConstrID(), createAtom(cpr->_head), convert(term->varid()), convert(comp), convert(right._varid)));
+				printer->add(MinisatID::CPBinaryRelVar(getDefConstrID(), createLiteral(cpr->_head), convert(term->varid()), convert(comp), convert(right._varid)));
 			} else { // CPBinaryRel
-				printer->add(MinisatID::CPBinaryRel(getDefConstrID(), createAtom(cpr->_head), convert(term->varid()), convert(comp), createWeight(right._bound)));
+				printer->add(MinisatID::CPBinaryRel(getDefConstrID(), createLiteral(cpr->_head), convert(term->varid()), convert(comp), createWeight(right._bound)));
 			}
 		} else if (isa<CPWSumTerm>(*left)) {
 			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
@@ -257,7 +257,7 @@ private:
 		for (auto i = varids.cbegin(); i < varids.cend(); ++i) {
 			vars.push_back(convert(*i));
 		}
-		printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createAtom(head), vars, w, convert(rel), createWeight(bound)));
+		printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(head), vars, w, convert(rel), createWeight(bound)));
 	}
 
 	void printAggregate(AggFunction aggtype, TsType arrow, DefId defnr, bool geqthanbound, int head, SetId setnr, double bound) {

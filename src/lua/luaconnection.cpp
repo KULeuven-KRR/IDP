@@ -738,10 +738,10 @@ template<>
 int garbageCollect<Options*>(lua_State* L) {
 	auto options = *(Options**) lua_touserdata(L, 1);
 	auto& list = get<Options*>();
-	reduceCounter(options, list);
 	for(auto suboptions: options->getSubOptionBlocks()){
 		reduceCounter(suboptions, list);
 	}
+	reduceCounter(options, list);
 	return 0;
 }
 

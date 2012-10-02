@@ -24,13 +24,13 @@ void logActionAndTime(const std::string& action){
 	std::clog <<action <<" (" <<(clock()/(CLOCKS_PER_SEC*100))/(100*1.0) <<")\n";
 }
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm) {
+void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent) {
 	switch (getGlobal()->getOptions()->symmetryBreaking()) {
 	case SymmetryBreaking::NONE:
 		break;
 	case SymmetryBreaking::STATIC: {
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
-		addSymBreakingPredicates(grounding, ivsets);
+		addSymBreakingPredicates(grounding, ivsets, nbModelsEquivalent);
 		break;
 	}
 	case SymmetryBreaking::DYNAMIC: {

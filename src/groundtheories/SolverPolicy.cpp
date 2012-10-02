@@ -88,7 +88,7 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 	for (auto var:varids) {
 			vars.push_back(convert(var));
 	}
-	MinisatID::CPSumWeighted sentence(getDefConstrID(), head, vars, w, rel, bound);
+	MinisatID::CPSumWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, bound);
 	extAdd(getSolver(), sentence);
 }
 
@@ -99,13 +99,13 @@ void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const
 	for (auto var:varids) {
 		vars.push_back(convert(var));
 	}
-	MinisatID::CPProdWeighted sentence(getDefConstrID(), head, vars, w, rel, convert(bound));
+	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, convert(bound));
 	extAdd(getSolver(), sentence);
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
-	MinisatID::EqType comp;
+	MinisatID::EqType comp = MinisatID::EqType::EQ;
 	switch (body->comp()) {
 	case CompType::EQ:
 		comp = MinisatID::EqType::EQ;
@@ -133,10 +133,10 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 		polAddCPVariable(term->varid(), _translator);
 		if (right._isvarid) {
 			polAddCPVariable(right._varid, _translator);
-			MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createAtom(tseitin), convert(term->varid()), comp, convert(right._varid));
+			MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, convert(right._varid));
 			extAdd(getSolver(), sentence);
 		} else {
-			MinisatID::CPBinaryRel sentence(getDefConstrID(), createAtom(tseitin), convert(term->varid()), comp, right._bound);
+			MinisatID::CPBinaryRel sentence(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, right._bound);
 			extAdd(getSolver(), sentence);
 		}
 	} else if (isa<CPWSumTerm>(*left)) {
@@ -172,7 +172,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
 	auto newtseitin = tseitin;
-	MinisatID::ImplicationType impltype;
+	MinisatID::ImplicationType impltype = MinisatID::ImplicationType::IMPLIES;
 	auto newconj = conjunction;
 	auto newrhs = rhs;
 	switch (type) {
@@ -291,10 +291,13 @@ void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delayl
 		std::vector<DelayGrounder*> grounders) {
 	auto mon = new LazyRuleMon(delaylit, args, grounders);
 	auto literal = createLiteral(delaylit);
-	if (context == Context::POSITIVE) { // In a positive context, should watch when the literal becomes false, or it's negation becomes true
-		literal = not literal;
+	auto value = MinisatID::Value::True;
+	if(context==Context::BOTH){
+		value = MinisatID::Value::Unknown;
+	}else if (context == Context::POSITIVE) { // In a positive context, should watch when the literal becomes false, or it's negation becomes true
+		value = MinisatID::Value::False;
 	}
-	MinisatID::LazyGroundLit lc(context == Context::BOTH, literal, mon);
+	MinisatID::LazyGroundLit lc(literal.getAtom(), value, mon);
 	extAdd(getSolver(), lc);
 }
 
@@ -356,7 +359,13 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType
 	if(type==TsType::RIMPL){
 		lit = not lit;
 	}
-	extAdd(getSolver(), MinisatID::LazyGroundLit(watchboth, lit, mon));
+	auto value = MinisatID::Value::True;
+	if(watchboth){
+		value = MinisatID::Value::Unknown;
+	}else if(lit.hasSign()){
+		value = MinisatID::Value::False;
+	}
+	extAdd(getSolver(), MinisatID::LazyGroundLit(lit.getAtom(), value, mon));
 }
 
 template<class Solver>

@@ -34,6 +34,8 @@ private:
 			for (TableIterator it = ipt->begin(_universe); not it.isAtEnd(); ++it) {
 				_internpredtable->add(*it);
 			}
+		} else {
+			throw notyetimplemented("Enumerating infinite tables");
 		}
 	}
 
@@ -107,16 +109,20 @@ private:
 			for (TableIterator it = pift->begin(_universe); not it.isAtEnd(); ++it) {
 				_internfunctable->add(*it);
 			}
+		} else {
+			throw notyetimplemented("Enumerating infinite tables");
 		}
 	}
 
 	void visit(const UnionInternalSortTable* uist) {
 		tablesize ts = uist->size();
-		if (ts._type == TST_EXACT || ts._type == TST_APPROXIMATED) {
+		if (not ts.isInfinite()) {
 			_internsorttable = new EnumeratedInternalSortTable();
 			for (SortIterator it = SortIterator(uist->sortBegin()); not it.isAtEnd(); ++it) {
 				_internsorttable->add(*it);
 			}
+		} else {
+			throw notyetimplemented("Enumerating infinite tables");
 		}
 	}
 

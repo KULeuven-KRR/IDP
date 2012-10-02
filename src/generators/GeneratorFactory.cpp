@@ -140,7 +140,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 	}
 
 	bool allequal = true;
-	for (auto i = 0; i < universe.tables().size(); ++i) {
+	for (size_t i = 0; i < universe.tables().size(); ++i) {
 		if (universe.tables()[i]!=structure->inter(symbol->sorts()[i])) {
 			allequal = false;
 		}

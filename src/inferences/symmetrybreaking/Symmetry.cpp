@@ -403,9 +403,9 @@ ostream& IVSet::put(ostream& output) const {
 	}
 	output << "\n";
 	if(isEnkelvoudig()){
-		output << "The resulting symmetry group is completely broken.\n";
+		output << "The resulting symmetry group is broken completely.\n";
 	}else{
-		output << "The resulting symmetry group is probably not completely broken.\n";
+		output << "The resulting symmetry group is probably not broken completely.\n";
 	}
 	return output;
 }
@@ -618,13 +618,17 @@ pair<list<int>, list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt
 /**
  * 	For every binary symmetry permuting two succeeding domain elements of an IVSet, this method adds the symmetry breaking clauses to a given theory.
  */
-void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt) const {
+void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt, bool nbModelsEquivalent) const {
 	set<const DomainElement*>::const_iterator smaller = getElements().cbegin();
 	set<const DomainElement*>::const_iterator bigger = getElements().cbegin();
 	++bigger;
 	for (; bigger != getElements().cend(); ++bigger, ++smaller) {
 		pair<list<int>, list<int> > literals = getSymmetricLiterals(gt, *smaller, *bigger);
-		addSymBreakingClausesToGroundTheoryShortest(gt, literals.first, literals.second);
+		if(nbModelsEquivalent){
+			addSymBreakingClausesToGroundTheory(gt, literals.first, literals.second);
+		}else{
+			addSymBreakingClausesToGroundTheoryShortest(gt, literals.first, literals.second);
+		}
 	}
 }
 
@@ -1083,9 +1087,9 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
  *
  * 	@post: the ivsets are deleted
  */
-void addSymBreakingPredicates(AbstractGroundTheory* gt, vector<const IVSet*> ivsets) {
+void addSymBreakingPredicates(AbstractGroundTheory* gt, vector<const IVSet*> ivsets, bool nbModelsEquivalent) {
 	for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-		(*ivsets_it)->addSymBreakingPreds(gt);
+		(*ivsets_it)->addSymBreakingPreds(gt, nbModelsEquivalent);
 		delete (*ivsets_it);
 	}
 }

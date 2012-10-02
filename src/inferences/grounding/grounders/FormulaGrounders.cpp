@@ -117,40 +117,37 @@ Lit AtomGrounder::run() const {
 	}
 
 	// Run subterm grounders
-	bool alldomelts = true;
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		auto groundterm = _subtermgrounders[n]->run();
-		if (groundterm.isVariable) {
-			alldomelts = false;
-		} else {
-			args[n] = groundterm._domelement;
-			// Check partial functions
-			if (args[n] == NULL) {
-				//throw notyetimplemented("Partial function issue in grounding an atom.");
-				// FIXME what should happen here?
-				/*//TODO: produce a warning!
-				 if(context()._funccontext == Context::BOTH) {
-				 // TODO: produce an error
-				 * NO! TODO: this is correct. If partial functions goes out of bounds, we should ground "false".
-				 }*/
-				Lit result;
-				if (context()._funccontext == Context::POSITIVE) {
-					result = _true;
-				}
-				if (context()._funccontext == Context::NEGATIVE) {
-					result = _true;
-				} else {
-					throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
-				}
-				if (verbosity() > 2) {
-					clog << tabs() << "Partial function went out of bounds\n";
-					clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
-				}
-				return result;
+		Assert(not groundterm.isVariable);
+		args[n] = groundterm._domelement;
+		// Check partial functions
+		if (args[n] == NULL) {
+			//throw notyetimplemented("Partial function issue in grounding an atom.");
+			// FIXME what should happen here?
+			/*//TODO: produce a warning!
+			 if(context()._funccontext == Context::BOTH) {
+			 // TODO: produce an error
+			 * NO! TODO: this is correct. If partial functions goes out of bounds, we should ground "false".
+			 }*/
+			Lit result;
+			if (context()._funccontext == Context::POSITIVE) {
+				result = _true;
 			}
+			if (context()._funccontext == Context::NEGATIVE) {
+				result = _true;
+			} else {
+				throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+			}
+			if (verbosity() > 2) {
+				clog << tabs() << "Partial function went out of bounds\n";
+				clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
+			}
+				return result;
+
 
 			// Checking out-of-bounds
-			if (not _tables[n]->contains(args[n])) {
+			if (_tables[n]!=_subtermgrounders[n]->getDomain() && not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) {
@@ -163,8 +160,6 @@ Lit AtomGrounder::run() const {
 			}
 		}
 	}
-
-	Assert(alldomelts);
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
