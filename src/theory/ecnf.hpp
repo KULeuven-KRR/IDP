@@ -47,7 +47,9 @@ private:
 
 public:
 	GroundSet(SetId setnr, const litlist& s, const weightlist& lw)
-			: _setnr(setnr), _setlits(s), _litweights(lw) {
+			: 	_setnr(setnr),
+				_setlits(s),
+				_litweights(lw) {
 	}
 	virtual ~GroundSet() {
 	}
@@ -101,11 +103,21 @@ private:
 public:
 	// Constructors
 	GroundAggregate(AggFunction t, bool l, TsType e, Lit h, SetId s, double b)
-			: _head(h), _arrow(e), _bound(b), _lower(l), _type(t), _set(s) {
+			: 	_head(h),
+				_arrow(e),
+				_bound(b),
+				_lower(l),
+				_type(t),
+				_set(s) {
 		Assert(e != TsType::RULE);
 	}
 	GroundAggregate(const GroundAggregate& a)
-			: _head(a._head), _arrow(a._arrow), _bound(a._bound), _lower(a._lower), _type(a._type), _set(a._set) {
+			: 	_head(a._head),
+				_arrow(a._arrow),
+				_bound(a._bound),
+				_lower(a._lower),
+				_type(a._type),
+				_set(a._set) {
 		Assert(a._arrow != TsType::RULE);
 	}
 	virtual ~GroundAggregate() {
@@ -138,7 +150,9 @@ public:
 
 // Enumeration type for rules
 enum class RuleType {
-	CONJ, DISJ, AGG
+	CONJ,
+	DISJ,
+	AGG
 };
 
 /**
@@ -154,7 +168,9 @@ private:
 
 protected:
 	GroundRule(Lit head, RuleType type, bool rec)
-			: _head(head), _type(type), _recursive(rec) {
+			: 	_head(head),
+				_type(type),
+				_recursive(rec) {
 	}
 
 public:
@@ -193,11 +209,13 @@ private:
 public:
 	// Constructors
 	PCGroundRule(Lit head, RuleType type, const litlist& body, bool rec)
-			: GroundRule(head, type, rec), _body(body) {
+			: 	GroundRule(head, type, rec),
+				_body(body) {
 	}
 	PCGroundRule(Lit head, PCTsBody* body, bool rec);
 	PCGroundRule(const PCGroundRule& grb)
-			: GroundRule(grb.head(), grb.type(), grb.recursive()), _body(grb._body) {
+			: 	GroundRule(grb.head(), grb.type(), grb.recursive()),
+				_body(grb._body) {
 	}
 
 	~PCGroundRule() {
@@ -241,11 +259,19 @@ private:
 public:
 	// Constructors
 	AggGroundRule(Lit head, SetId setnr, AggFunction at, bool lower, double bound, bool rec)
-			: GroundRule(head, RuleType::AGG, rec), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+			: 	GroundRule(head, RuleType::AGG, rec),
+				_setnr(setnr),
+				_aggtype(at),
+				_lower(lower),
+				_bound(bound) {
 	}
 	AggGroundRule(Lit head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
-			: GroundRule(grb.head(), RuleType::AGG, grb.recursive()), _setnr(grb._setnr), _aggtype(grb._aggtype), _lower(grb._lower), _bound(grb._bound) {
+			: 	GroundRule(grb.head(), RuleType::AGG, grb.recursive()),
+				_setnr(grb._setnr),
+				_aggtype(grb._aggtype),
+				_lower(grb._lower),
+				_bound(grb._bound) {
 	}
 
 	~AggGroundRule() {
@@ -281,7 +307,8 @@ private:
 
 public:
 	GroundDefinition(DefId id, GroundTranslator* tr)
-			: _id(id), _translator(tr) {
+			: 	_id(id),
+				_translator(tr) {
 	}
 	GroundDefinition* clone() const;
 	void recursiveDelete();
@@ -352,7 +379,8 @@ public:
 	Lit _head;
 	CPTsBody* _body;
 	CPReification(Lit head, CPTsBody* body)
-			: _head(head), _body(body) {
+			: 	_head(head),
+				_body(body) {
 	}
 	virtual ~CPReification();
 	std::string toString(unsigned int spaces = 0) const;
@@ -365,11 +393,13 @@ struct GroundTerm {
 		VarId _varid;
 	};
 	GroundTerm(const DomainElement* domel)
-			: isVariable(false), _domelement(domel) {
+			: 	isVariable(false),
+				_domelement(domel) {
 		//Assert(domel!=NULL); //Correct?
 	}
 	GroundTerm(const VarId& varid)
-			: isVariable(true), _varid(varid) {
+			: 	isVariable(true),
+				_varid(varid) {
 	}
 	friend bool operator==(const GroundTerm&, const GroundTerm&);
 	friend bool operator<(const GroundTerm&, const GroundTerm&);
@@ -455,7 +485,9 @@ private:
 				// if false, the replaced subformula is the disjunction of the literals in _body
 public:
 	PCTsBody(TsType type, const litlist& body, bool conj)
-			: TsBody(type), _body(body), _conj(conj) {
+			: 	TsBody(type),
+				_body(body),
+				_conj(conj) {
 	}
 	litlist body() const {
 		return _body;
@@ -483,7 +515,11 @@ private:
 	//If _lower is false this means CARD{_setnr}>=_bound
 public:
 	AggTsBody(TsType type, double bound, bool lower, AggFunction at, SetId setnr)
-			: TsBody(type), _setnr(setnr), _aggtype(at), _lower(lower), _bound(bound) {
+			: 	TsBody(type),
+				_setnr(setnr),
+				_aggtype(at),
+				_lower(lower),
+				_bound(bound) {
 	}
 	SetId setnr() const {
 		return _setnr;
@@ -517,10 +553,12 @@ public:
 		VarId _varid;
 	};
 	CPBound(const int& bound)
-			: _isvarid(false), _bound(bound) {
+			: 	_isvarid(false),
+				_bound(bound) {
 	}
 	CPBound(const VarId& varid)
-			: _isvarid(true), _varid(varid) {
+			: 	_isvarid(true),
+				_varid(varid) {
 	}
 	virtual ~CPBound() {
 	}
@@ -539,7 +577,10 @@ private:
 	CPBound _right;
 public:
 	CPTsBody(TsType type, CPTerm* left, CompType comp, const CPBound& right)
-			: TsBody(type), _left(left), _comp(comp), _right(right) {
+			: 	TsBody(type),
+				_left(left),
+				_comp(comp),
+				_right(right) {
 		Assert(type!=TsType::RULE);
 		// Constraints within recursive definitions cannot be handled atm.
 	}
@@ -570,7 +611,8 @@ public:
 
 public:
 	LazyTsBody(LazyInstantiation* inst, TsType type)
-			: TsBody(type), inst(inst) {
+			: 	TsBody(type),
+				inst(inst) {
 	}
 	//FIXME bool operator==(const TsBody& rhs) const;
 	//FIXME bool operator<(const TsBody& rhs) const;
@@ -593,6 +635,7 @@ public:
 	virtual bool operator<(const CPTerm& body) const;
 	bool operator>(const CPTerm& rhs) const;
 	virtual void put(std::ostream& stream) const = 0;
+	virtual std::vector<VarId> getVarIds() const = 0;
 };
 
 /**
@@ -612,6 +655,9 @@ public:
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
 	virtual void put(std::ostream& stream) const;
+	virtual std::vector<VarId> getVarIds() const {
+		return {_varid};
+	}
 };
 
 /**
@@ -624,7 +670,8 @@ private:
 	intweightlist _weights;
 public:
 	CPWSumTerm(const varidlist& varids, const intweightlist& weights)
-			: _varids(varids), _weights(weights) {
+			: 	_varids(varids),
+				_weights(weights) {
 	}
 	const varidlist& varids() const {
 		return _varids;
@@ -643,6 +690,9 @@ public:
 	virtual void put(std::ostream&) const {
 		// TODO
 	}
+	virtual std::vector<VarId> getVarIds() const {
+		return varids();
+	}
 };
 
 /**
@@ -656,7 +706,8 @@ private:
 	int _weight;
 public:
 	CPWProdTerm(const varidlist& varids, const int& weight)
-			: _varids(varids), _weight(weight) {
+			: 	_varids(varids),
+				_weight(weight) {
 	}
 	const varidlist& varids() const {
 		return _varids;
@@ -674,6 +725,9 @@ public:
 	bool operator<(const CPTerm&) const;
 	virtual void put(std::ostream&) const {
 		// TODO
+	}
+	virtual std::vector<VarId> getVarIds() const {
+		return varids();
 	}
 };
 
