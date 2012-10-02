@@ -68,6 +68,9 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			if (origterm->freeVars().size() != 0 or origterm->type() != TermType::AGG) { // TODO handle free vars
 				continue;
 			}
+			if(not eligibleForCP(dynamic_cast<AggTerm*>(origterm)->function())){ // FIXME this seems necessary, because aggform unnesting is incorrect
+				continue;
+			}
 			auto sort = origterm->sort();
 			if (_structure != NULL and SortUtils::isSubsort(sort, get(STDSORT::INTSORT), _vocabulary)) {
 				sort = TermUtils::deriveSmallerSort(origterm, _structure);
