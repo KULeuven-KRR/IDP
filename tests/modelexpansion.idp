@@ -60,37 +60,79 @@ procedure mxwithsymm(){
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.symmetrybreaking = "static"
-	stdoptions.showwarnings = false //Avoid printing all warnings taht more models MIGHT exist
-	stdoptions.nbmodels = 0
-	solutions = allmodels(T,S)
-	io.stderr:write("Found "..#solutions.." models, expected at most "..getExpectedNbOfModels().." models.\n")
+	stdoptions.showwarnings = false // Do not print warnings that more models MIGHT exist
+	stdoptions.nbmodels = getExpectedNbOfModels()+1
+	solutions = modelexpand(T, S, Vout)
 	if(#solutions>getExpectedNbOfModels()) then
+		io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
 		return 0
-	end 
-	
-	return check(solutions)
+	else
+		io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n")
+		return check(solutions)
+	end 	
 }
 
 procedure run() {
-	stdoptions.nbmodels = 0
-	solutions = allmodels(T,S)
-	io.stderr:write("Found "..#solutions.." models, expected "..getExpectedNbOfModels().." models.\n")
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
+	solutions = modelexpand(T, S, Vout)
 	if(#solutions~=getExpectedNbOfModels()) then
+		if(#solutions>getExpectedNbOfModels()) then
+			io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
+		else
+			io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n") 
+		end
+		check(solutions)
 		return 0
-	end 
-	return check(solutions)
+	else
+		io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n")
+		return check(solutions)
+	end	
 }
 
 procedure check(solutions){
-local k  = 0
 	for i,v in ipairs(solutions) do
-		k = k +1
-		if( k <5 and #modelexpand(T, v)==0) then
-			io.stderr:write("Found an invalid solution.\n")
+		structure = v
+		if(Vout~=nil and Vout~=V)then
+			structure = merge(S,v)
+		end
+		if(#modelexpand(T, structure, Vout)==0) then
+			io.stderr:write("Found an invalid solution:\n")
 			io.stderr:write(tostring(v))
 			return 0
 		end
 	end
 	return 1
+}
 
+procedure checkmodelsandnonmodels() {
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.timeout=5
+	stdoptions.nbmodels=0
+	structures = nbModelsTwoValuedExtensions(S)
+	models = {}
+	nonmodels = {}
+	for i,structure in ipairs(structures) do
+		if(#modelexpand(T, structure, Vout)==1) then
+			table.insert(models,structure)
+		else
+			table.insert(nonmodels,structure)
+		end
+	end
+	if(#models > getExpectedNbOfModels()) then
+		io.stderr:write("At least one of these is not a model, but was not detected as such.\n")
+		for i,structure in ipairs(models) do
+			io.stderr:write(tostring(structure))
+		end
+		return 0
+	elseif(#models < getExpectedNbOfModels()) then
+		io.stderr:write("At least one of these is a model, but was not detected as such.\n")
+		for i,structure in ipairs(nonmodels) do
+			io.stderr:write(tostring(structure))
+		end
+		return 0
+	end
+	return 1
 }
