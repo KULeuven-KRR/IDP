@@ -1,0 +1,26 @@
+procedure getExpectedNbOfModels(){
+	return 0
+}
+
+vocabulary V{
+	type Node isa int
+ 
+	Path(Node,Node)
+ 
+	Start : Node
+	Reached(Node)
+}
+
+theory T : V {
+	{ 
+		Reached(y) <- Path(Start,y).
+	  	Reached(y) <- Path(x,y) & Reached(x).
+	}
+}
+
+structure S : V{ 
+	V::Node[V::Node] = { 2..3 }
+	Path[V::Node,V::Node] = { 2,2; 3,3 }
+	Reached[V::Node] = { 2; 3 }
+	Start[:V::Node] = 2
+}
