@@ -133,8 +133,7 @@ Lit AtomGrounder::run() const {
 			Lit result;
 			if (context()._funccontext == Context::POSITIVE) {
 				result = _true;
-			}
-			if (context()._funccontext == Context::NEGATIVE) {
+			}else if (context()._funccontext == Context::NEGATIVE) {
 				result = _true;
 			} else {
 				throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
