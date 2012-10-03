@@ -1,0 +1,27 @@
+vocabulary V {
+  type A isa int
+  P(A)
+  partial f(A):A
+  g(A):A
+  B:A
+}
+
+theory T : V {
+  P(f(g(B))).
+  ?x: f(g(B))=x.
+  !x y: f(x)=y => g(x)=y.
+  g(B) = 2.
+  ?x: ~P(x).
+}
+
+structure S : V {
+  V::A[V::A] = { 1..2 }
+  P[V::A] = { 1; 2 }
+  B[:V::A] = 1
+  f[V::A:V::A] = { 2->1 }
+  g[V::A:V::A] = { 1->1; 2->1 }
+}
+
+procedure getExpectedNbOfModels() {
+	return 0
+}
