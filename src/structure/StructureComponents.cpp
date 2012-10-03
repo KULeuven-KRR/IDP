@@ -3532,15 +3532,18 @@ void PredInter::makeUnknown(const ElementTuple& tuple) {
 }
 
 void PredInter::makeTrue(const ElementTuple& tuple) {
-	if (_cf->contains(tuple)) {
+	if (isFalse(tuple)) {
 		_inconsistentElements.insert(&tuple);
 	}
 	moveTupleFromTo(tuple, _pf, _ct);
 }
 
 void PredInter::makeFalse(const ElementTuple& tuple) {
-	if (_ct->contains(tuple)) {
+	if (isTrue(tuple)) {
 		_inconsistentElements.insert(&tuple);
+	}
+	if(not universe().contains(tuple)){
+		return; // already false
 	}
 	moveTupleFromTo(tuple, _pt, _cf);
 }
