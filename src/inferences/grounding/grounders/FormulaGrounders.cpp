@@ -104,7 +104,7 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 			_sign(sign),
 			_checkargs(checkargs),
 			_inter(inter),
-			args(_subtermgrounders.size()),
+			_args(_subtermgrounders.size()),
 			_recursive(ct._defined.find(s) != ct._defined.cend()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
@@ -130,9 +130,9 @@ Lit AtomGrounder::run() const {
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
 		auto groundterm = _subtermgrounders[n]->run();
 		Assert(not groundterm.isVariable);
-		args[n] = groundterm._domelement;
+		_args[n] = groundterm._domelement;
 		// Check partial functions
-		if (args[n] == NULL) {
+		if (_args[n] == NULL) {
 			//throw notyetimplemented("Partial function issue in grounding an atom.");
 			// FIXME what should happen here?
 			/*//TODO: produce a warning!
@@ -155,7 +155,7 @@ Lit AtomGrounder::run() const {
 			return result;
 
 			// Checking out-of-bounds
-			if (_tables[n] != _subtermgrounders[n]->getDomain() && not _tables[n]->contains(args[n])) {
+			if (_tables[n] != _subtermgrounders[n]->getDomain() && not _tables[n]->contains(_args[n])) {
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) {
@@ -171,8 +171,8 @@ Lit AtomGrounder::run() const {
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
-	for (size_t n = 0; n < args.size(); ++n) {
-		*(_checkargs[n]) = args[n];
+	for (size_t n = 0; n < _args.size(); ++n) {
+		*(_checkargs[n]) = _args[n];
 	}
 	bool littrue = false, litfalse = false;
 	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences
@@ -203,7 +203,7 @@ Lit AtomGrounder::run() const {
 			litfalse = true;
 		}
 	}
-	if (_inter->isTrue(args)) {
+	if (_inter->isTrue(_args)) {
 		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
@@ -215,7 +215,7 @@ Lit AtomGrounder::run() const {
 			litfalse = isNeg(_sign);
 		}
 	}
-	if (_inter->isFalse(args)) {
+	if (_inter->isFalse(_args)) {
 		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
@@ -229,7 +229,7 @@ Lit AtomGrounder::run() const {
 	}
 
 	// Return grounding
-	auto poslit = translator()->translate(_symbol, args);
+	auto poslit = translator()->translate(_symbol, _args);
 	auto lit = isPos(_sign) ? poslit : -poslit;
 	if (littrue) {
 		getGrounding()->addUnitClause(lit);

@@ -68,7 +68,7 @@ protected:
 	PredInter* _inter;
 	bool _recursive;
 
-	mutable ElementTuple args;
+	mutable ElementTuple _args;
 
 	Lit run() const;
 
