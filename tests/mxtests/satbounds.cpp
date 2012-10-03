@@ -10,4 +10,8 @@ TEST_P(MXsatTest, DoesSatMXNonReduced) {
 	runTests("satisfiability.idp", GetParam(), "satnonreduced()");
 }
 
+TEST_P(MXsatStableTest, DoesSatMXStable) {
+	runTests("satisfiability.idp", GetParam(), "satstable()");
+}
+
 }

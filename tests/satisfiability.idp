@@ -21,6 +21,14 @@ procedure satwithbounds(){
 	return run()
 }
 
+procedure satstable(){
+	stdoptions.stablesemantics=true
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 10
+	return run()
+}
+
 procedure satnonreduced(){
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
