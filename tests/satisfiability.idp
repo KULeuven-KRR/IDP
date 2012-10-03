@@ -3,7 +3,7 @@
 procedure satnobounds(){
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	return run()
 }
 
@@ -17,7 +17,7 @@ procedure satnoboundslong(){
 procedure satwithbounds(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	return run()
 }
 
@@ -25,7 +25,7 @@ procedure satnonreduced(){
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	return run()
 }
 
