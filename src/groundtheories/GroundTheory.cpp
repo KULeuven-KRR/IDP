@@ -134,6 +134,9 @@ void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
 
 	// It is already partially known:
 	auto symbol = translator()->getFunction(id);
+	if(symbol==NULL){
+		return;
+	}
 	auto ct = structure()->inter(symbol)->graphInter()->ct();
 	for(auto i=ct->begin(); not i.isAtEnd(); ++i){
 		auto lit = translator()->translate(symbol, *i);
