@@ -171,7 +171,7 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << tabs() << "Certainly true checker succeeded" << "\n";
 		}
-		if(not _recursive){
+		if(getOption(REDUCEDGROUNDING) && not _recursive){
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is true" << "\n";
@@ -185,7 +185,7 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << tabs() << "Possibly true checker failed" << "\n";
 		}
-		if(not _recursive){
+		if(getOption(REDUCEDGROUNDING) && not _recursive){
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is false" << "\n";
@@ -196,7 +196,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 	if (_inter->isTrue(args)) {
-		if(not _recursive){
+		if(getOption(REDUCEDGROUNDING) && not _recursive){
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
@@ -208,7 +208,7 @@ Lit AtomGrounder::run() const {
 		}
 	}
 	if (_inter->isFalse(args)) {
-		if(not _recursive){
+		if(getOption(REDUCEDGROUNDING) && not _recursive){
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
