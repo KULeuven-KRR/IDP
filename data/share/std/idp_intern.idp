@@ -69,7 +69,7 @@ procedure modelexpand(theory, structure) {
 	if stdoptions.verbosity.grounding>0 then
 		io.stderr:write("Extending partial models to full models\n")
 	end
-	local solutions2 = alltwovaluedextensions(solutions)
+	local solutions2 = nbModelsTwoValuedExtensions(solutions)
 	return solutions2, trace
 }
 
@@ -125,7 +125,7 @@ procedure minimize(theory, structure, term){
 	pushnegations(clonetheo)
 	flatten(clonetheo)
 	local solutions, trace = idpintern.minimize(clonetheo,structure,term)
-	local solutions2 = alltwovaluedextensions(solutions)
+	local solutions2 = nbModelsTwoValuedExtensions(solutions)
 	return solutions2, trace
 }
 

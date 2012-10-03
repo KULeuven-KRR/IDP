@@ -17,7 +17,7 @@
 class TwoValuedExtensionsOfStructureInference: public StructureBase {
 public:
 	TwoValuedExtensionsOfStructureInference()
-			: StructureBase("alltwovaluedextensions", "Generate all two-valued extensions of the given structure.") {
+			: StructureBase("nbModelsTwoValuedExtensions", "Generate all two-valued extensions of the given structure.") {
 		setNameSpace(getStructureNamespaceName());
 	}
 
@@ -41,7 +41,7 @@ typedef TypedInference<LIST(std::vector<InternalArgument>*)> TwoValuedExtensions
 class TwoValuedExtensionsOfTableInference: public TwoValuedExtensionsOfTableInferenceBase {
 public:
 	TwoValuedExtensionsOfTableInference()
-			: TwoValuedExtensionsOfTableInferenceBase("alltwovaluedextensions", "Generate all two-valued extensions of all of the given structures.") {
+			: TwoValuedExtensionsOfTableInferenceBase("nbModelsTwoValuedExtensions", "Generate all two-valued extensions of all of the given structures.") {
 		setNameSpace(getStructureNamespaceName());
 	}
 

@@ -65,7 +65,7 @@ procedure main() {
 	completion(T2)
 	print(T2)
 	print(S2)
-	twovals = alltwovaluedextensions(S2)
+	twovals = nbModelsTwoValuedExtensions(S2)
 	for i,t in pairs(twovals) do
 		isconsistent(t)
 		print(t)
