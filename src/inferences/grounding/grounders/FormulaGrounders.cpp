@@ -104,8 +104,8 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 			_sign(sign),
 			_checkargs(checkargs),
 			_inter(inter),
-			_args(_subtermgrounders.size()),
-			_recursive(ct._defined.find(s) != ct._defined.cend()) {
+			_recursive(ct._defined.find(s) != ct._defined.cend()),
+			_args(_subtermgrounders.size()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
