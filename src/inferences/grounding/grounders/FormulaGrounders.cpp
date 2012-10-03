@@ -24,7 +24,8 @@
 using namespace std;
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct), _origform(NULL) {
+		: 	Grounder(grounding, ct),
+			_origform(NULL) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
@@ -94,8 +95,17 @@ std::string FormulaGrounder::printFormula() const {
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
 		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
-		: FormulaGrounder(grounding, ct), _subtermgrounders(sg), _ptchecker(ptchecker), _ctchecker(ctchecker), _symbol(translator()->addSymbol(s)),
-			_tables(vst), _sign(sign), _checkargs(checkargs), _inter(inter), args(_subtermgrounders.size()), _recursive(ct._defined.find(s)!=ct._defined.cend()) {
+		: 	FormulaGrounder(grounding, ct),
+			_subtermgrounders(sg),
+			_ptchecker(ptchecker),
+			_ctchecker(ctchecker),
+			_symbol(translator()->addSymbol(s)),
+			_tables(vst),
+			_sign(sign),
+			_checkargs(checkargs),
+			_inter(inter),
+			args(_subtermgrounders.size()),
+			_recursive(ct._defined.find(s) != ct._defined.cend()) {
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
@@ -133,7 +143,7 @@ Lit AtomGrounder::run() const {
 			Lit result;
 			if (context()._funccontext == Context::POSITIVE) {
 				result = _true;
-			}else if (context()._funccontext == Context::NEGATIVE) {
+			} else if (context()._funccontext == Context::NEGATIVE) {
 				result = _true;
 			} else {
 				throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
@@ -142,11 +152,10 @@ Lit AtomGrounder::run() const {
 				clog << tabs() << "Partial function went out of bounds\n";
 				clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
 			}
-				return result;
-
+			return result;
 
 			// Checking out-of-bounds
-			if (_tables[n]!=_subtermgrounders[n]->getDomain() && not _tables[n]->contains(args[n])) {
+			if (_tables[n] != _subtermgrounders[n]->getDomain() && not _tables[n]->contains(args[n])) {
 				if (verbosity() > 2) {
 					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
 					if (_origform != NULL) {
@@ -170,13 +179,13 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << tabs() << "Certainly true checker succeeded" << "\n";
 		}
-		if(getOption(REDUCEDGROUNDING) && not _recursive){
+		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is true" << "\n";
 			}
 			return _true;
-		}else{
+		} else {
 			littrue = true;
 		}
 	}
@@ -184,36 +193,36 @@ Lit AtomGrounder::run() const {
 		if (verbosity() > 2) {
 			clog << tabs() << "Possibly true checker failed" << "\n";
 		}
-		if(getOption(REDUCEDGROUNDING) && not _recursive){
+		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is false" << "\n";
 			}
 			return _false;
-		}else{
+		} else {
 			litfalse = true;
 		}
 	}
 	if (_inter->isTrue(args)) {
-		if(getOption(REDUCEDGROUNDING) && not _recursive){
+		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
 			}
 			return isPos(_sign) ? _true : _false;
-		}else{
+		} else {
 			littrue = isPos(_sign);
 			litfalse = isNeg(_sign);
 		}
 	}
 	if (_inter->isFalse(args)) {
-		if(getOption(REDUCEDGROUNDING) && not _recursive){
+		if (getOption(REDUCEDGROUNDING) && not _recursive) {
 			if (verbosity() > 2) {
 				poptab();
 				clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
 			}
 			return isPos(_sign) ? _false : _true;
-		}else{
+		} else {
 			littrue = isNeg(_sign);
 			litfalse = isPos(_sign);
 		}
@@ -221,10 +230,10 @@ Lit AtomGrounder::run() const {
 
 	// Return grounding
 	auto poslit = translator()->translate(_symbol, args);
-	auto lit = isPos(_sign)?poslit:-poslit;
-	if(littrue){
+	auto lit = isPos(_sign) ? poslit : -poslit;
+	if (littrue) {
 		getGrounding()->addUnitClause(lit);
-	}else if(litfalse){
+	} else if (litfalse) {
 		getGrounding()->addUnitClause(-lit);
 	}
 	if (verbosity() > 2) {
@@ -297,7 +306,12 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 
 // TODO incorrect groundsize
 AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
-		: FormulaGrounder(grounding, gc), _setgrounder(sg), _boundgrounder(bg), _type(tp), _comp(comp), _sign(sign) {
+		: 	FormulaGrounder(grounding, gc),
+			_setgrounder(sg),
+			_boundgrounder(bg),
+			_type(tp),
+			_comp(comp),
+			_sign(sign) {
 	bool noAggComp = comp == CompType::NEQ || comp == CompType::LEQ || comp == CompType::GEQ;
 	bool signPosIfStrict = isPos(_sign) == not noAggComp;
 	_doublenegtseitin = (gc._tseitin == TsType::RULE)
@@ -495,11 +509,11 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 	auto newcomp = _comp;
 	switch (newcomp) {
 	case CompType::EQ:
-		if(not isInt(newboundvalue)){ // If bound is not an integer, can never be equal
+		if (not isInt(newboundvalue)) { // If bound is not an integer, can never be equal
 			return _false;
 		} // Otherwise fall through
 	case CompType::NEQ:
-		if(not isInt(newboundvalue)){ // If bound is not an integer, can never be equal
+		if (not isInt(newboundvalue)) { // If bound is not an integer, can never be equal
 			return _true;
 		}
 		if (minpossvalue > boundvalue || maxpossvalue < boundvalue) {
@@ -508,7 +522,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		break;
 	case CompType::GEQ:
 	case CompType::GT:
-		if(not isInt(newboundvalue)){ // If not integer, take floor and always make it >
+		if (not isInt(newboundvalue)) { // If not integer, take floor and always make it >
 			newboundvalue = floor(newboundvalue);
 			newcomp = CompType::GT;
 		}
@@ -521,7 +535,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		break;
 	case CompType::LEQ:
 	case CompType::LT:
-		if(not isInt(newboundvalue)){ // If not integer, take ceil and always make it <
+		if (not isInt(newboundvalue)) { // If not integer, take ceil and always make it <
 			newboundvalue = ceil(newboundvalue);
 			newcomp = CompType::LT;
 		}
@@ -833,7 +847,8 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 }
 
 BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct)
-		: ClauseGrounder(grounding, sign, conj, ct), _subgrounders(sub) {
+		: 	ClauseGrounder(grounding, sign, conj, ct),
+			_subgrounders(sub) {
 	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
 	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
 		size = size + (*i)->getMaxGroundSize();
@@ -855,7 +870,7 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 	formula.setType(connective());
 	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
@@ -875,8 +890,8 @@ std::string BoolGrounder::printFormula() const {
 		stringstream ss;
 		bool begin = true;
 		for (auto i = getSubGrounders().cbegin(); i != getSubGrounders().cend(); ++i) {
-			if(not begin){
-				ss << (connective()==Conn::CONJ ? " & " : " | ");
+			if (not begin) {
+				ss << (connective() == Conn::CONJ ? " & " : " | ");
 			}
 			begin = false;
 			ss << toString(*i);
@@ -887,7 +902,10 @@ std::string BoolGrounder::printFormula() const {
 
 QuantGrounder::QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
 		const GroundingContext& ct)
-		: ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct), _subgrounder(sub), _generator(gen), _checker(checker) {
+		: 	ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct),
+			_subgrounder(sub),
+			_generator(gen),
+			_checker(checker) {
 }
 
 QuantGrounder::~QuantGrounder() {
@@ -905,9 +923,9 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 	formula.setType(connective());
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		if (_checker->check()) {
-			formula.literals = litlist { context().gentype == GenType::CANMAKETRUE ? _true : _false };
+			formula.literals = litlist {context().gentype == GenType::CANMAKETRUE ? _true : _false};
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 				clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
@@ -927,7 +945,9 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 }
 
 EquivGrounder::EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct)
-		: ClauseGrounder(grounding, sign, true, ct), _leftgrounder(lg), _rightgrounder(rg) {
+		: 	ClauseGrounder(grounding, sign, true, ct),
+			_leftgrounder(lg),
+			_rightgrounder(rg) {
 	auto lsize = lg->getMaxGroundSize();
 	auto rsize = rg->getMaxGroundSize();
 	setMaxGroundSize(lsize + rsize);
