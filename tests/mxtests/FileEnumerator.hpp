@@ -13,11 +13,14 @@
 
 namespace Tests {
 
+std::vector<std::string> generateListOfSimpleMXnbFiles();
 std::vector<std::string> generateListOfMXnbFiles();
 std::vector<std::string> generateListOfMXsatFiles();
 std::vector<std::string> generateListOfMXsatStableFiles();
 std::vector<std::string> generateListOfSlowMXsatFiles();
 
+class SimpleMXnbTest: public ::testing::TestWithParam<std::string> {
+};
 class MXnbTest: public ::testing::TestWithParam<std::string> {
 };
 class MXsatTest: public ::testing::TestWithParam<std::string> {

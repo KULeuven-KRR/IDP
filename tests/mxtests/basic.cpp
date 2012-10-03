@@ -22,6 +22,10 @@ TEST_P(MXnbTest, DoesMXWithoutPushingNegationsOrFlattening) {
 	runTests("modelexpansionwithoutpushingnegations.idp", GetParam());
 }
 
+TEST_P(SimpleMXnbTest, VerifyAllStructures) {
+	runTests("modelexpansion.idp", GetParam(), "checkmodelsandnonmodels()");
+}
+
 TEST(MakeTrueTest, Correct) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
