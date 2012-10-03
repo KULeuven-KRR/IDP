@@ -33,7 +33,7 @@ void splitOverSameQuant(const VarSet& quantset, const FormulaList& formulasToSpl
 	}
 	splitformulas.resize(splitvariables.size());
 	for (auto i = formulasToSplit.cbegin(); i < formulasToSplit.cend(); ++i) {
-		for (size_t j = splitvariables.size() - 1; j > -1; --j) {
+		for (long j = (long)splitvariables.size() - 1; j > -1; --j) {
 			if ((*i)->freeVars().find(splitvariables[j]) != (*i)->freeVars().cend()) {
 				splitformulas[j].push_back(*i);
 				break;
@@ -72,12 +72,12 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 			}
 			// Construct new formula:
 			Formula* prevform = NULL;
-			for (size_t i = quantforms.size() - 1; i > -1; --i) {
+			for (long i = (long)quantforms.size() - 1; i > -1; --i) {
 				vector<vector<Formula*> > splitformulalevels;
 				vector<Variable*> splitvariables;
 				splitOverSameQuant(quantforms[i]->quantVars(), formulalevels[i + 1], splitformulalevels, splitvariables);
 				Assert(splitvariables.size()>0);
-				for (size_t j = splitvariables.size() - 1; j > -1; --j) {
+				for (long j = (long)splitvariables.size() - 1; j > -1; --j) {
 					auto subformulas = splitformulalevels[j];
 					if (prevform != NULL) {
 						subformulas.push_back(prevform);
