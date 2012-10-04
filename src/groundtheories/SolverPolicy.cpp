@@ -385,7 +385,7 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 	getSolver().add(s);
 }
 
-class RealElementGrounder: public MinisatID::ElementGrounder {
+class RealElementGrounder: public MinisatID::LazyAtomGrounder {
 private:
 	Lit headatom;
 	std::vector<VarId> args; // Constants!
@@ -401,8 +401,16 @@ public:
 				symboloffset(theory->translator()->addSymbol(symbol)),
 				theory(theory) {
 	}
+
+	bool isFunction() const{
+		return symbol->isFunction();
+	}
+	std::string getSymbolName() const{
+		return symbol->nameNoArity();
+	}
+
 	virtual void ground(bool headvalue, const std::vector<int>& argvalues) {
-		cerr << "Grounding element constraint for head " << (headvalue ? "true" : "false") << " and instantiation " << toString(argvalues) << "\n";
+	//	cerr << "Grounding element constraint for head " << (headvalue ? "true" : "false") << " and instantiation " << toString(argvalues) << "\n";
 		Lit temphead;
 		auto translator = theory->translator();
 		if (symboloffset.functionlist) {
@@ -480,7 +488,7 @@ void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const s
 		polAddCPVariable(var, _translator);
 		vars.push_back(convert(var));
 	}
-	auto le = MinisatID::LazyElement(getDefConstrID(), createLiteral(head), symbol->isFunction(), vars, gr);
+	auto le = MinisatID::LazyAtom(getDefConstrID(), createLiteral(head), vars, gr);
 	extAdd(getSolver(), le);
 }
 
