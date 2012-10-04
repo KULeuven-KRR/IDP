@@ -283,8 +283,8 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 	} else {
 		VarId varid = nextNumber();
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
-		var2Tuple[varid.id]->first = info.symbol;
-		var2Tuple[varid.id]->second = args;
+		auto ft = new ftpair(info.symbol, args);
+		var2Tuple[varid.id] = ft;
 		var2domain[varid.id] = _structure->inter(info.symbol->outsort());
 		return varid;
 	}
@@ -330,7 +330,7 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 VarId GroundTranslator::nextNumber() {
 	VarId id;
 	id.id = var2Tuple.size();
-	var2Tuple.push_back(new ftpair());
+	var2Tuple.push_back(NULL);
 	var2CTsBody.push_back(NULL);
 	var2domain.push_back(NULL);
 	return id;
@@ -340,23 +340,23 @@ string GroundTranslator::printTerm(const VarId& varid) const {
 	if (varid.id >= var2Tuple.size()) {
 		return "error";
 	}
-	auto func = getFunction(varid);
-	if (func == NULL) {
+	if (not hasVarIdMapping(varid)) {
 		stringstream s;
 		s << "var_" << varid;
 		return s.str();
 	}
+	auto func = getFunction(varid);
 	stringstream s;
 	s << toString(func);
-	if (not args(varid).empty()) {
+	if (not getArgs(varid).empty()) {
 		s << "(";
-		for (auto gtit = args(varid).cbegin(); gtit != args(varid).cend(); ++gtit) {
+		for (auto gtit = getArgs(varid).cbegin(); gtit != getArgs(varid).cend(); ++gtit) {
 			if ((*gtit).isVariable) {
 				s << printTerm((*gtit)._varid);
 			} else {
 				s << toString((*gtit)._domelement);
 			}
-			if (gtit != args(varid).cend() - 1) {
+			if (gtit != getArgs(varid).cend() - 1) {
 				s << ",";
 			}
 		}

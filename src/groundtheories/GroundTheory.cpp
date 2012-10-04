@@ -148,10 +148,11 @@ void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
 	_addedvarinterpretation.insert(id);
 
 	// It is already partially known:
-	auto symbol = translator()->getFunction(id);
-	if(symbol==NULL){
+	if(not translator()->hasVarIdMapping(id)){
 		return;
 	}
+	auto symbol = translator()->getFunction(id);
+#warning add in the relevant arguments (they should ALWAYS be instantiated at this point!)
 	auto ct = structure()->inter(symbol)->graphInter()->ct();
 	for(auto i=ct->begin(); not i.isAtEnd(); ++i){
 		auto lit = translator()->translate(symbol, *i);

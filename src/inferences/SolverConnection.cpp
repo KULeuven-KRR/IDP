@@ -210,16 +210,20 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Abstr
 	}
 	// Add terms to the output structure
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
-		auto function = translator->getFunction(getVar(cpvar->variable));
-		if (function == NULL || not init->vocabulary()->contains(function)) {
+		auto var = getVar(cpvar->variable);
+		if(not translator->hasVarIdMapping(var)){
+			continue;
+		}
+		auto function = translator->getFunction(var);
+		if (not init->vocabulary()->contains(function)) {
 			//Note: Only consider functions that are in the user's vocabulary, ignore internal ones.
 			continue;
 		}
-		const auto& gtuple = translator->args(getVar(cpvar->variable));
+		const auto& gtuple = translator->getArgs(var);
 		ElementTuple tuple;
 		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
 			if (it->isVariable) {
-				int value = variable2valuemap[it->_varid];
+				int value = variable2valuemap.at(it->_varid);
 				tuple.push_back(createDomElem(value));
 			} else {
 				tuple.push_back(it->_domelement);

@@ -1100,46 +1100,48 @@ private:
 		// Make sure there is a translator.
 		Assert(_translator != NULL);
 		// Get information from the term translator.
-		const Function* func = _translator->getFunction(termnr);
-		if (func) {
-			// Print the symbol's name.
-			output() << func->name().substr(0, func->name().find('/'));
-			// Print the symbol's sorts.
-			if (func->nrSorts()) {
-				output() << '[';
-				for (size_t n = 0; n < func->nrSorts(); ++n) {
-					if (func->sort(n)) {
-						output() << func->sort(n)->name();
-						if (n != func->nrSorts() - 1) {
-							output() << ',';
-						}
-					}
-				}
-				output() << ']';
-			}
-			// Get the arguments from the translator.
-			const std::vector<GroundTerm>& args = _translator->args(termnr);
-			// Print the arguments.
-			if (not args.empty()) {
-				output() << "(";
-				bool begin = true;
-				for (auto gtit = args.cbegin(); gtit != args.cend(); ++gtit) {
-					if (not begin) {
-						output() << ",";
-					}
-					begin = false;
-					if ((*gtit).isVariable) {
-						printTerm((*gtit)._varid);
-					} else {
-						output() << toString((*gtit)._domelement);
-					}
-				}
-				output() << ")";
-			}
-		} else {
+
+		if(not _translator->hasVarIdMapping(termnr)) {
 			output() << "var_" << termnr;
 			//		CPTsBody* cprelation = _translator->cprelation(varid);
 			//		CPReification(1,cprelation).accept(this);
+			return;
+		}
+
+		auto func = _translator->getFunction(termnr);
+		// Print the symbol's name.
+		output() << func->name().substr(0, func->name().find('/'));
+		// Print the symbol's sorts.
+		if (func->nrSorts()) {
+			output() << '[';
+			for (size_t n = 0; n < func->nrSorts(); ++n) {
+				if (func->sort(n)) {
+					output() << func->sort(n)->name();
+					if (n != func->nrSorts() - 1) {
+						output() << ',';
+					}
+				}
+			}
+			output() << ']';
+		}
+		// Get the arguments from the translator.
+		const auto& args = _translator->getArgs(termnr);
+		// Print the arguments.
+		if (not args.empty()) {
+			output() << "(";
+			bool begin = true;
+			for (auto gtit = args.cbegin(); gtit != args.cend(); ++gtit) {
+				if (not begin) {
+					output() << ",";
+				}
+				begin = false;
+				if ((*gtit).isVariable) {
+					printTerm((*gtit)._varid);
+				} else {
+					output() << toString((*gtit)._domelement);
+				}
+			}
+			output() << ")";
 		}
 	}
 

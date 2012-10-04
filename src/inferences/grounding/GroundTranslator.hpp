@@ -168,11 +168,18 @@ public:
 
 	// GROUND TERMS
 
+	bool hasVarIdMapping(const VarId& varid) const {
+		return var2Tuple.size()>varid.id && var2Tuple.at(varid.id)!=NULL;
+	}
+
 	// Methods for translating variable identifiers to terms
 	Function* getFunction(const VarId& varid) const {
+		Assert(hasVarIdMapping(varid));
+		Assert(var2Tuple.at(varid.id)->first!=NULL);
 		return var2Tuple.at(varid.id)->first;
 	}
-	const std::vector<GroundTerm>& args(const VarId& varid) const {
+	const std::vector<GroundTerm>& getArgs(const VarId& varid) const {
+		Assert(hasVarIdMapping(varid));
 		return var2Tuple.at(varid.id)->second;
 	}
 	CPTsBody* cprelation(const VarId& varid) const {
