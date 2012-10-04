@@ -19,6 +19,7 @@
 #include "commontypes.hpp"
 #include <utility>
 #include <unordered_map>
+#include <memory>
 
 #include "errorhandling/IdpException.hpp"
 
@@ -86,6 +87,14 @@ std::string toString(const std::vector<Type>& v) {
 	}
 	ss << ")";
 	return ss.str();
+}
+
+template<typename Type>
+std::string toString(const std::shared_ptr<Type>& v) {
+	if(v.get()==NULL){
+		return "empty pointer";
+	}
+	return toString(*v);
 }
 
 template<typename Type, class Type2>
