@@ -13,6 +13,7 @@
 
 #include "common.hpp"
 #include "GroundingContext.hpp"
+#include "utils/ListUtils.hpp"
 
 class Variable;
 class DomElemContainer;
