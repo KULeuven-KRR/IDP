@@ -224,22 +224,37 @@ public:
 				printer->add(MinisatID::CPBinaryRel(getDefConstrID(), createLiteral(cpr->_head), convert(term->varid()), convert(comp), createWeight(right._bound)));
 			}
 		} else if (isa<CPWSumTerm>(*left)) {
-			CPWSumTerm* term = dynamic_cast<CPWSumTerm*>(left);
-			if (right._isvarid) {
-				std::vector<VarId> varids = term->varids();
-				std::vector<int> weights = term->weights();
+			auto term = dynamic_cast<CPWSumTerm*>(left);
 
-				int bound = 0;
-				varids.push_back(right._varid);
-				weights.push_back(-1);
-
-				addWeightedSum(cpr->_head, varids, weights, bound, comp);
-			} else {
-				addWeightedSum(cpr->_head, term->varids(), term->weights(), right._bound, comp);
+			std::vector<MinisatID::VarID> varids;
+			std::vector<MinisatID::Weight> weights;
+			for(uint i=0; i<term->varids().size(); ++i){
+				varids.push_back(convert(term->varids()[i]));
+				weights.push_back(createWeight(term->weights()[i]));
 			}
+			auto bound = 0;
+			if (not right._isvarid) {
+				bound = right._bound;
+			} else {
+				varids.push_back(convert(right._varid));
+				weights.push_back(createWeight(-1));
+			}
+			printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, weights, convert(comp), createWeight(bound)));
 		} else {
 			Assert(isa<CPWProdTerm>(*left));
-			//TODO
+			if (not right._isvarid) {
+				throw notyetimplemented("Error, cannot be an integer"); // FIXME
+			}
+			auto var = convert(right._varid);
+
+			auto term = dynamic_cast<CPWProdTerm*>(left);
+			std::vector<MinisatID::VarID> varids;
+			std::vector<MinisatID::Weight> weights;
+			for(uint i=0; i<term->varids().size(); ++i){
+				varids.push_back(convert(term->varids()[i]));
+			}
+
+			printer->add(MinisatID::CPProdWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, createWeight(term->weight()), convert(comp), var));
 		}
 	}
 
