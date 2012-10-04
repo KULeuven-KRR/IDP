@@ -3440,10 +3440,13 @@ bool PredInter::isTrue(const ElementTuple& tuple) const {
  * \brief Returns true iff the tuple is false or inconsistent according to the predicate interpretation
  */
 bool PredInter::isFalse(const ElementTuple& tuple) const {
-	if (not _cf->contains(tuple)) {
-		return (not _cf->universe().contains(tuple));
+	if (_cf->contains(tuple)) {
+		return true;
 	}
-	return true;
+	if (not universe().contains(tuple)) {
+		return true;
+	}
+	return false;
 }
 
 /**
