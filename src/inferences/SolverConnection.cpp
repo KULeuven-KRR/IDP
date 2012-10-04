@@ -19,11 +19,11 @@ using namespace std;
 
 namespace SolverConnection {
 
-uint getDefConstrID(){
+uint getDefConstrID() {
 	return 1;
 }
 
-MinisatID::VarID convert(VarId varid){
+MinisatID::VarID convert(VarId varid) {
 	return {varid.id};
 }
 
@@ -73,7 +73,7 @@ MinisatID::Atom createAtom(const int lit) {
 }
 
 MinisatID::Lit createLiteral(const int lit) {
-	return MinisatID::mkLit(abs(lit), lit < 0);
+	return lit>0?MinisatID::mkPosLit(abs(lit)):MinisatID::mkNegLit(abs(lit));
 }
 
 MinisatID::literallist createList(const litlist& origlist) {
@@ -151,7 +151,7 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator) {
 
 PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
-	MinisatID::ModelExpandOptions opts(nbmodels, print?MinisatID::Models::ALL:MinisatID::Models::NONE, MinisatID::Models::ALL);
+	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
 	return new PCModelExpand(solver, opts, { });
 }
 
@@ -186,7 +186,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 	}
 }
 
-VarId getVar(MinisatID::VarID id){
+VarId getVar(MinisatID::VarID id) {
 	VarId var;
 	var.id = id.id;
 	return var;
