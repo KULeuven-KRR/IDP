@@ -36,7 +36,7 @@ ComparisonGenerator* ComparisonGenerator::clone() const {
 	return gen;
 }
 
-void ComparisonGenerator::setVarsAgain() {
+void ComparisonGenerator::internalSetVarsAgain() {
 	if (not leftIsInput()) {
 		_leftvar->operator =(_latestleft);
 	}

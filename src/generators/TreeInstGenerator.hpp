@@ -47,7 +47,7 @@ public:
 
 	virtual OneChildGenerator* clone() const;
 
-	void setVarsAgain();
+	void internalSetVarsAgain();
 
 	virtual void next();
 
@@ -75,7 +75,7 @@ public:
 
 	virtual TwoChildGenerator* clone() const;
 
-	void setVarsAgain();
+	void internalSetVarsAgain();
 
 	virtual void next();
 

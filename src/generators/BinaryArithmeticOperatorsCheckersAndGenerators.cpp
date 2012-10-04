@@ -161,7 +161,7 @@ void ArithOpGenerator::reset() {
 	alreadyrun = false;
 }
 
-void ArithOpGenerator::setVarsAgain(){ // NOTE: duplication with next()
+void ArithOpGenerator::internalSetVarsAgain(){ // NOTE: duplication with next()
 	double result;
 	ARITHRESULT status = doCalculation(getValue(_in1), getValue(_in2), result);
 	if (getOutType() == DET_INT && not isInt(result)) { // NOTE: checks whether no overflow occurred

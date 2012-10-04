@@ -26,7 +26,7 @@ TableChecker* TableChecker::clone() const {
 	return new TableChecker(*this);
 }
 
-void TableChecker::setVarsAgain() {
+void TableChecker::internalSetVarsAgain() {
 	// NO-OP
 }
 
@@ -152,7 +152,7 @@ InverseTableGenerator* InverseTableGenerator::clone() const {
 	return gen;
 }
 
-void InverseTableGenerator::setVarsAgain() {
+void InverseTableGenerator::internalSetVarsAgain() {
 	_universegen->setVarsAgain();
 }
 

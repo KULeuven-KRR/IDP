@@ -46,7 +46,7 @@ OneChildGenerator::~OneChildGenerator() {
 	delete (_child);
 }
 
-void OneChildGenerator::setVarsAgain() {
+void OneChildGenerator::internalSetVarsAgain() {
 	_generator->setVarsAgain();
 	_child->setVarsAgain();
 }
@@ -123,7 +123,7 @@ TwoChildGenerator::~TwoChildGenerator() {
 	delete (_truecheckbranch);
 }
 
-void TwoChildGenerator::setVarsAgain() {
+void TwoChildGenerator::internalSetVarsAgain() {
 	_generator->setVarsAgain();
 	_truecheckbranch->setVarsAgain();
 	_falsecheckbranch->setVarsAgain();

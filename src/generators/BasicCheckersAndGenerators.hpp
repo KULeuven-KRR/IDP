@@ -45,7 +45,7 @@ public:
 		return new EmptyGenerator(*this);
 	}
 
-	virtual void setVarsAgain(){
+	virtual void internalSetVarsAgain(){
 
 	}
 };
@@ -73,7 +73,7 @@ public:
 		first = true;
 	}
 
-	virtual void setVarsAgain(){
+	virtual void internalSetVarsAgain(){
 
 	}
 };

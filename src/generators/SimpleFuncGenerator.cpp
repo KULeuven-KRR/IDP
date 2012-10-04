@@ -14,8 +14,10 @@
 // NOTE: DOES NOT take ownership of table
 SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const Universe& univ, const std::vector<unsigned int>& firstocc)
-		: _functable(ft), _rangevar(vars.back()), _vars(vars), _universe(univ) {
+		: _reset(true), _functable(ft), _universe(univ), _vars(vars), _rangevar(vars.back()) {
 	Assert(pattern.back() == Pattern::OUTPUT);
+	Assert(pattern.size()==_vars.size());
+
 	auto domainpattern = pattern;
 	domainpattern.pop_back();
 
@@ -38,9 +40,7 @@ SimpleFuncGenerator::SimpleFuncGenerator(const FuncTable* ft, const std::vector<
 
 	_univgen = GeneratorFactory::create(_outvars, outtabs);
 
-	for (unsigned int i = 0; i < domainpattern.size(); ++i) {
-		_currenttuple.push_back(_vars[i]->get());
-	}
+	_currenttuple.resize(domainpattern.size(), NULL);
 }
 
 SimpleFuncGenerator::~SimpleFuncGenerator() {
@@ -53,12 +53,14 @@ SimpleFuncGenerator* SimpleFuncGenerator::clone() const {
 	return gen;
 }
 
-void SimpleFuncGenerator::setVarsAgain() {
+void SimpleFuncGenerator::internalSetVarsAgain() {
+	for (unsigned int i = 0; i < _outpos.size(); ++i) {
+		*_outvars[i] = _currenttuple[_outpos[i]];
+	}
 	auto result = _functable->operator [](_currenttuple);
 	if (result != NULL) {
-		if (_universe.tables().back()->contains(result)) {
-			//TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
-			_rangevar->operator =(result);
+		if (_universe.tables().back()->contains(result)) { //TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
+			*_rangevar = result;
 			return;
 		}
 	}
@@ -96,9 +98,8 @@ void SimpleFuncGenerator::next() {
 		}
 		auto result = _functable->operator [](_currenttuple);
 		if (result != NULL) {
-			if (_universe.tables().back()->contains(result)) {
-				//TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
-				_rangevar->operator =(result);
+			if (_universe.tables().back()->contains(result)) { //TODO: this is not guaranteed by the functable, since the universes may differ! Should be fixed!
+				*_rangevar = result;
 				return;
 			}
 		}

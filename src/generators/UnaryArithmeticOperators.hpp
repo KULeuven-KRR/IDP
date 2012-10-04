@@ -59,6 +59,7 @@ class AbsValueChecker: public UnaryArithmeticOperatorsChecker {
 public:
 	AbsValueChecker(const DomElemContainer* in, const DomElemContainer* out, Universe universe);
 	AbsValueChecker* clone() const;
+	void internalSetVarsAgain();
 protected:
 	virtual bool checkOperation();
 };
@@ -76,6 +77,7 @@ private:
 public:
 	InverseAbsValueGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* dom, NumType outputShouldBeInt);
 	InverseAbsValueGenerator* clone() const;
+	void internalSetVarsAgain();
 	void reset();
 	void next();
 

@@ -27,7 +27,7 @@ TrueQuantKernelGenerator* TrueQuantKernelGenerator::clone() const {
 	t->_subBddTrueGenerator = _subBddTrueGenerator->clone();
 	return t;
 }
-void TrueQuantKernelGenerator::setVarsAgain(){
+void TrueQuantKernelGenerator::internalSetVarsAgain(){
 	_subBddTrueGenerator->setVarsAgain();
 }
 
@@ -74,7 +74,7 @@ FalseQuantKernelGenerator* FalseQuantKernelGenerator::clone() const {
 	t->_universeGenerator = _universeGenerator->clone();
 	return t;
 }
-void FalseQuantKernelGenerator::setVarsAgain(){
+void FalseQuantKernelGenerator::internalSetVarsAgain(){
 	_universeGenerator->setVarsAgain();
 }
 

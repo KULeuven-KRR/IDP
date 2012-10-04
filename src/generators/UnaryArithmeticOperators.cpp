@@ -73,7 +73,7 @@ void UnaryMinusGenerator::doOperation() {
 	}
 }
 
-UnaryMinusGenerator* UnaryMinusGenerator::clone() const{
+UnaryMinusGenerator* UnaryMinusGenerator::clone() const {
 	return new UnaryMinusGenerator(*this);
 }
 
@@ -99,8 +99,11 @@ bool AbsValueChecker::checkOperation() {
 	return (outval >= 0 && (inval == outval || inval == -outval)) && _universe.contains( { _in->get(), _out->get() });
 }
 
-AbsValueChecker* AbsValueChecker::clone() const{
+AbsValueChecker* AbsValueChecker::clone() const {
 	return new AbsValueChecker(*this);
+}
+
+void AbsValueChecker::internalSetVarsAgain() {
 }
 
 InverseAbsValueGenerator::InverseAbsValueGenerator(const DomElemContainer* in, const DomElemContainer* out, SortTable* dom, NumType outputShouldBeInt)
@@ -109,6 +112,12 @@ InverseAbsValueGenerator::InverseAbsValueGenerator(const DomElemContainer* in, c
 
 InverseAbsValueGenerator* InverseAbsValueGenerator::clone() const {
 	return new InverseAbsValueGenerator(*this);
+}
+
+void InverseAbsValueGenerator::internalSetVarsAgain() {
+	if (not isAtEnd()) {
+		setValue(_state!=State::FIRSTDONE);
+	}
 }
 
 void InverseAbsValueGenerator::reset() {

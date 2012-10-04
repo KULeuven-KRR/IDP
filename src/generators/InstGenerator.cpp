@@ -29,24 +29,7 @@ void InstChecker::put(std::ostream& stream) const {
 	stream << "generate: " << typeid(*this).name();
 }
 
-// Can also be used for resets
-// SETS the instance to the FIRST value if it exists
-/*void InstGenerator::begin() {
-	end = false;
-	reset();
-	if (not isAtEnd()) {
-		next();
-	}
-}*/
-
-/*void InstGenerator::operator++() {
-	CHECKTERMINATION
-	Assert(not isAtEnd());
-	next();
-}
-*/
-
-void InstGenerator::setVarsAgain(){
+void InstGenerator::internalSetVarsAgain(){
 	std::stringstream ss;
 	ss << "Resetting variables for " << (typeid(*this).name()) << "\n";
 	throw notyetimplemented(ss.str());

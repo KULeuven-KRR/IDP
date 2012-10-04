@@ -41,7 +41,7 @@ public:
 	void next();
 	virtual void put(std::ostream& stream) const;
 
-	virtual void setVarsAgain();
+	virtual void internalSetVarsAgain();
 };
 
 #endif /* UNIONQUANTKERNELGENERATOR_HPP_ */

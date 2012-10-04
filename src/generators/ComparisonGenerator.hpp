@@ -52,7 +52,7 @@ public:
 
 	virtual void put(std::ostream& stream) const;
 	ComparisonGenerator* clone() const;
-	void setVarsAgain();
+	void internalSetVarsAgain();
 	void reset();
 
 	void next();

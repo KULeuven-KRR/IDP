@@ -28,7 +28,7 @@ UnionGenerator* UnionGenerator::clone() const {
 	return t;
 }
 
-void UnionGenerator::setVarsAgain(){
+void UnionGenerator::internalSetVarsAgain(){
 	if(_current<_generators.size()){
 		_generators[_current]->setVarsAgain();
 	}

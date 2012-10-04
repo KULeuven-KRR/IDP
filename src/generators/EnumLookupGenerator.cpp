@@ -74,7 +74,7 @@ void EnumLookupGenerator::next() {
 	}
 }
 
-void EnumLookupGenerator::setVarsAgain() {
+void EnumLookupGenerator::internalSetVarsAgain() {
 	if(_currpos==_table.cend()){
 		return;
 	}

@@ -34,7 +34,7 @@ public:
 	void reset();
 	// Increment is done AFTER returning a tuple!
 	void next();
-	void setVarsAgain();
+	void internalSetVarsAgain();
 	virtual void put(std::ostream& stream) const;
 };
 

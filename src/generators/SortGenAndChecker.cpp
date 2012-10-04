@@ -24,7 +24,7 @@ void SortGenerator::reset() {
 	_reset = true;
 }
 
-void SortGenerator::setVarsAgain() {
+void SortGenerator::internalSetVarsAgain() {
 	*_var = *_curr;
 }
 
@@ -44,7 +44,7 @@ void SortGenerator::next() {
 
 void SortGenerator::put(std::ostream& stream) const {
 	pushtab();
-	stream << "generator for sort: " << toString(_table)<<" starting from " << toString(_table->first());
+	stream << "generator for sort " << toString(_table)<<" starting from " << toString(_table->first());
 	poptab();
 }
 
@@ -56,7 +56,7 @@ SortChecker* SortChecker::clone() const {
 	return new SortChecker(*this);
 }
 
-void SortChecker::setVarsAgain(){
+void SortChecker::internalSetVarsAgain(){
 }
 
 void SortChecker::reset() {

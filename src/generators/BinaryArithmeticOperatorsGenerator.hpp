@@ -60,7 +60,7 @@ public:
 	void reset();
 	void next();
 	bool check() const;
-	void setVarsAgain();
+	void internalSetVarsAgain();
 private:
 	double getValue(const DomElemContainer* cont) const;
 };

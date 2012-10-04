@@ -36,7 +36,7 @@ public:
 	virtual bool check() = 0;
 
 	// NOTE: should be a deep clone
-	virtual InstChecker* clone() const = 0; // FIXME need to reimplemnt some as a deep clone!
+	virtual InstChecker* clone() const = 0;
 
 	virtual void put(std::ostream& stream) const;
 
@@ -65,6 +65,8 @@ protected:
 	//	Next will never be called when already at end.
 	virtual void next() = 0;
 	virtual void reset() = 0; // FIXME can probably make this static and drop all lower resets to this one
+
+	virtual void internalSetVarsAgain();
 
 public:
 	InstGenerator():end(false),initdone(false){
@@ -104,7 +106,12 @@ public:
 		next();
 	}
 
-	virtual void setVarsAgain();
+	virtual void setVarsAgain(){
+		if(not initdone || isAtEnd()){
+			return;
+		}
+		internalSetVarsAgain();
+	}
 
 	// NOTE: important to always call new XGen(*this); to guarantee that all parent variables are set correctly!
 	virtual InstGenerator* clone() const = 0;

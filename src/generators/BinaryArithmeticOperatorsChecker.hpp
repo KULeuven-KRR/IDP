@@ -51,6 +51,7 @@ public:
 	void reset();
 	void next();
 	bool check() const;
+	void internalSetVarsAgain(){} // No-op for any checker
 private:
 	double getValue(const DomElemContainer* cont) const;
 

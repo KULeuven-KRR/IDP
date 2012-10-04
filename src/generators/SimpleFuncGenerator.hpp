@@ -23,21 +23,21 @@ class DomainElement;
  */
 class SimpleFuncGenerator: public InstGenerator {
 private:
-	const FuncTable* _functable;
-	InstGenerator* _univgen;
-	std::vector<const DomElemContainer*> _outvars;
-	std::vector<unsigned int> _outpos;
-
-	const DomElemContainer* _rangevar;
 	bool _reset;
 
-	std::vector<const DomElemContainer*> _vars;
+	const FuncTable* _functable;
+	InstGenerator* _univgen;
+	Universe _universe;
+
 	ElementTuple _currenttuple;
 
-	std::vector<const DomElemContainer*> _invars;
-	std::vector<unsigned int> _inpos;
+	std::vector<const DomElemContainer*> _vars; // Argument variables
+	const DomElemContainer* _rangevar;			// Range variables
 
-	Universe _universe;
+	std::vector<const DomElemContainer*> _outvars;  // Output variables
+	std::vector<unsigned int> _outpos;				// Position of the associated domain elements in _currenttuple
+	std::vector<const DomElemContainer*> _invars;	// Input variables
+	std::vector<unsigned int> _inpos;				// Position of the associated domain elements in _currenttuple
 
 public:
 	// NOTE: DOES NOT take ownership of table
@@ -45,7 +45,7 @@ public:
 			const std::vector<unsigned int>& firstocc);
 	~SimpleFuncGenerator();
 	SimpleFuncGenerator* clone() const;
-	void setVarsAgain();
+	void internalSetVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;

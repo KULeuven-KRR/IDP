@@ -34,7 +34,7 @@ public:
 	// NOTE: does not take ownership of the table
 	TableChecker(const PredTable* t, const std::vector<const DomElemContainer*>& vars, const Universe& univ);
 	TableChecker* clone() const;
-	virtual void setVarsAgain();
+	virtual void internalSetVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;
@@ -79,7 +79,7 @@ public:
 	// NOTE: Does not take ownership of table;
 	InverseTableGenerator(PredTable* table, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars);
 	InverseTableGenerator* clone() const;
-	virtual void setVarsAgain();
+	virtual void internalSetVarsAgain();
 	void reset();
 	void next();
 	virtual void put(std::ostream& stream) const;
