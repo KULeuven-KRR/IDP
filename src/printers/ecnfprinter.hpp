@@ -211,11 +211,11 @@ public:
 
 	void visit(const CPReification* cpr) { // TODO duplication with solverpolicy (probably larger parts of this file too)
 		Assert(isTheoryOpen());
-		CompType comp = cpr->_body->comp();
-		CPTerm* left = cpr->_body->left();
-		CPBound right = cpr->_body->right();
+		auto comp = cpr->_body->comp();
+		auto left = cpr->_body->left();
+		auto right = cpr->_body->right();
 		if (isa<CPVarTerm>(*left)) {
-			CPVarTerm* term = dynamic_cast<CPVarTerm*>(left);
+			auto term = dynamic_cast<CPVarTerm*>(left);
 			printCPVariable(term->varid());
 			if (right._isvarid) { // CPBinaryRelVar
 				printCPVariable(right._varid);

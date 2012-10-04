@@ -47,14 +47,14 @@ AggGroundRule::AggGroundRule(Lit head, AggTsBody* body, bool rec)
 
 GroundDefinition* GroundDefinition::clone() const {
 	throw notyetimplemented("Cloning grounddefinitions");
-	GroundDefinition* newdef = new GroundDefinition(_id, _translator);
+	auto newdef = new GroundDefinition(_id, _translator);
 //	for(ruleit = _rules.cbegin(); ruleit != _rules.cend(); ++ruleit)
 	//TODO clone rules...
 	return newdef;
 }
 
 void GroundDefinition::recursiveDelete() {
-	for (ruleiterator it = begin(); it != end(); ++it) {
+	for (auto it = begin(); it != end(); ++it) {
 		delete ((*it).second);
 	}
 	delete (this);
