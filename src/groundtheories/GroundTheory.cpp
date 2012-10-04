@@ -32,14 +32,16 @@ using namespace std;
 template<class Policy>
 GroundTheory<Policy>::GroundTheory(AbstractStructure const * const str, bool nbModelsEquivalent)
 		: AbstractGroundTheory(str),
-		  _nbModelsEquivalent(nbModelsEquivalent){
+		  _nbModelsEquivalent(nbModelsEquivalent),
+		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
 }
 
 template<class Policy>
 GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * const str, bool nbModelsEquivalent)
 		: AbstractGroundTheory(voc, str),
-		  _nbModelsEquivalent(nbModelsEquivalent){
+		  _nbModelsEquivalent(nbModelsEquivalent),
+		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
 }
 
@@ -142,7 +144,7 @@ void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
 
 template<class Policy>
 void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
-	if (_addedvarinterpretation.find(id) != _addedvarinterpretation.end()) {
+	if (_addedvarinterpretation.find(id) != _addedvarinterpretation.cend()) {
 		return;
 	}
 	_addedvarinterpretation.insert(id);
@@ -259,12 +261,21 @@ std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 
 template<class Policy>
 void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst) {
-	size_t n = 0;
-	if (skipfirst) {
-		++n;
+	for(uint i=0; i<vi.size(); ++i){
+		if(i==0 && skipfirst){
+			continue;
+		}
+		tseitinqueue.push({vi[i], defnr});
 	}
-	for (; n < vi.size(); ++n) {
-		int tseitin = abs(vi[n]);
+	if(addingTseitins){
+		return;
+	}
+	addingTseitins = true;
+	while(not tseitinqueue.empty()){
+		auto tseitin = abs(tseitinqueue.front().first);
+		auto tseitindefnr = tseitinqueue.front().second;
+		tseitinqueue.pop();
+
 		// NOTE: checks whether the tseitin has already been added to the grounding
 		if (not translator()->isTseitinWithSubformula(tseitin) || _printedtseitins.find(tseitin) != _printedtseitins.end()) {
 			//clog <<"Tseitin" <<atom <<" already grounded" <<nt();
@@ -275,16 +286,16 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto tsbody = translator()->getTsBody(tseitin);
 		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
-			add(tseitin, body->type(), body->body(), body->conj(), defnr);
+			add(tseitin, body->type(), body->body(), body->conj(), tseitindefnr);
 			if(body->type()==TsType::RULE && useUFSAndOnlyIfSem() && _nbModelsEquivalent){
-				add(tseitin, TsType::RIMPL, body->body(), body->conj(), defnr);
+				add(tseitin, TsType::RIMPL, body->body(), body->conj(), tseitindefnr);
 			}
 		} else if (isa<AggTsBody>(*tsbody)) {
 			auto body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
-				Assert(defnr != getIDForUndefined());
-				add(body->setnr(), defnr, (body->aggtype() != AggFunction::CARD));
-				Policy::polAdd(defnr, new AggGroundRule(tseitin, body, true)); //TODO true (recursive) might not always be the case?
+				Assert(tseitindefnr != getIDForUndefined());
+				add(body->setnr(), tseitindefnr, (body->aggtype() != AggFunction::CARD));
+				Policy::polAdd(tseitindefnr, new AggGroundRule(tseitin, body, true)); //TODO true (recursive) might not always be the case?
 				if(useUFSAndOnlyIfSem() && _nbModelsEquivalent){
 					body->type(TsType::RIMPL);
 					add(tseitin, body);
@@ -302,6 +313,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			body->notifyTheoryOccurence();
 		}
 	}
+	addingTseitins = false;
 }
 
 template<class Policy>

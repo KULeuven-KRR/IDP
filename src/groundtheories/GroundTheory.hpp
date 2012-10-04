@@ -71,6 +71,8 @@ protected:
 	/**
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.
 	 */
+	std::queue<std::pair<int, DefId>> tseitinqueue; // pair of tseitin literal and its definition id
+	bool addingTseitins;
 	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false);
 
 	void addVarIdInterpretation(VarId id);
