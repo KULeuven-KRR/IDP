@@ -240,8 +240,6 @@ public:
 	void setvocab(const longname& vname, YYLTYPE); //!< set the vocabulary of the current theory or structure
 	void externvocab(const longname& vname, YYLTYPE) const; //!< add all symbols of 'vname' to the current vocabulary
 
-	void externoption(const std::vector<std::string>& name, YYLTYPE) const;
-
 	Sort* sort(Sort* s) const; //!< add an existing sort to the current vocabulary
 	Predicate* predicate(Predicate* p) const; //!< add an existing predicate to the current vocabulary
 	Function* function(Function* f) const; //!< add an existing function to the current vocabulary
