@@ -151,7 +151,8 @@ Lit AtomGrounder::run() const {
 					clog << tabs() << "Partial function went out of bounds\n";
 					clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
 				}
-			return result;
+				return result;
+			}
 
 			// Checking out-of-bounds
 			if (_tables[n] != _subtermgrounders[n]->getDomain() && not _tables[n]->contains(domelem)) {
@@ -168,25 +169,25 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
-	if(not alldomelts){
+	if (not alldomelts) {
 		std::vector<VarId> ids;
-		for(uint i=0; i<terms.size(); ++i){
-			if(not terms[i].isVariable){
+		for (uint i = 0; i < terms.size(); ++i) {
+			if (not terms[i].isVariable) {
 				ids.push_back(translator()->translateTerm(terms[i]._domelement));
-			}else{
+			} else {
 				ids.push_back(terms[i]._varid);
 			}
 		}
 		auto temphead = translator()->createNewUninterpretedNumber();
 		getGrounding()->addLazyElement(temphead, _symbol, ids);
-		return _sign==SIGN::POS?temphead:-temphead; // TODO is it necessary to verify the checkers?
+		return _sign == SIGN::POS ? temphead : -temphead; // TODO is it necessary to verify the checkers?
 	}
 
 	// Run instance checkers
 	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
 	for (size_t n = 0; n < terms.size(); ++n) {
-		args[n] = terms[n]._domelement;
-		*(_checkargs[n]) = args[n];
+		_args[n] = terms[n]._domelement;
+		*(_checkargs[n]) = _args[n];
 	}
 	bool littrue = false, litfalse = false;
 	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences

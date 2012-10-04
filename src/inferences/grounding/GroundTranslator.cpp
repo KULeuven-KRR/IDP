@@ -65,7 +65,7 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 		// TODO think that this is not necessary
 		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
 		//if (not symbolinfo.assocGrounders.empty()) {
-			//symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
+		//symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
 		//}
 		// ENDTODO
 	}
@@ -131,7 +131,7 @@ Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool con
 	return head;
 }
 
-bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context , DefId ) const {
+bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context, DefId) const {
 	auto symboloffset = getSymbol(pfs);
 	Assert(not symboloffset.functionlist);
 	auto symbolId = symboloffset.offset;
@@ -143,32 +143,32 @@ bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context , DefId ) const {
 		return true;
 	}
 	throw notyetimplemented("Checking allowed delays");
-/*	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		if (context == Context::BOTH) { // If unknown-delay, can only delay if in same DEFINITION
-			if (id == -1 || (*i)->getID() != id) {
-				return false;
-			}
-		} else if ((*i)->getContext() != context) { // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
-			return false;
-		}
-	}
-	return true;*/
+	/*	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
+	 if (context == Context::BOTH) { // If unknown-delay, can only delay if in same DEFINITION
+	 if (id == -1 || (*i)->getID() != id) {
+	 return false;
+	 }
+	 } else if ((*i)->getContext() != context) { // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
+	 return false;
+	 }
+	 }
+	 return true;*/
 }
 
-void GroundTranslator::notifyDelay(PFSymbol* , DelayGrounder* const ) {
+void GroundTranslator::notifyDelay(PFSymbol*, DelayGrounder* const) {
 	//Assert(grounder!=NULL);
 	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	throw notyetimplemented("Notifying of delays");
-/*	auto symbolID = addSymbol(pfs);
-	Assert(not symbolID.functionlist);
-	auto& grounders = symbols[symbolID.offset].assocGrounders;
-#ifndef NDEBUG
-	Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
-	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-		Assert(grounder != *i);
-	}
-#endif
-	grounders.push_back(grounder);*/
+	/*	auto symbolID = addSymbol(pfs);
+	 Assert(not symbolID.functionlist);
+	 auto& grounders = symbols[symbolID.offset].assocGrounders;
+	 #ifndef NDEBUG
+	 Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
+	 for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
+	 Assert(grounder != *i);
+	 }
+	 #endif
+	 grounders.push_back(grounder);*/
 }
 
 Lit GroundTranslator::translate(LazyInstantiation* instance, TsType tstype) {
@@ -310,7 +310,7 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 	auto value = element->value()._int;
 
 	auto it = storedTerms.find(value);
-	if(it!=storedTerms.cend()){
+	if (it != storedTerms.cend()) {
 		return it->second;
 	}
 
@@ -323,7 +323,7 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 	// Add a new domain containing only the given domain element
 	auto domain = TableUtils::createSortTable(value, value);
 	var2domain[varid.id] = domain;
-	storedTerms.insert({value, varid});
+	storedTerms.insert( { value, varid });
 	return varid;
 }
 

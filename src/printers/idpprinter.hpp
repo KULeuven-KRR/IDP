@@ -595,19 +595,19 @@ public:
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		switch (t->function()) {
-		case AggFunction::CARD:
+			case AggFunction::CARD:
 			output() << '#';
 			break;
-		case AggFunction::SUM:
+			case AggFunction::SUM:
 			output() << "sum";
 			break;
-		case AggFunction::PROD:
+			case AggFunction::PROD:
 			output() << "prod";
 			break;
-		case AggFunction::MIN:
+			case AggFunction::MIN:
 			output() << "min";
 			break;
-		case AggFunction::MAX:
+			case AggFunction::MAX:
 			output() << "max";
 			break;
 		}
@@ -743,16 +743,16 @@ public:
 		Assert(isTheoryOpen());
 		printAtom(a->head());
 		switch (a->arrow()) {
-		case TsType::IMPL:
+			case TsType::IMPL:
 			output() << " => ";
 			break;
-		case TsType::RIMPL:
+			case TsType::RIMPL:
 			output() << " <= ";
 			break;
-		case TsType::EQ:
+			case TsType::EQ:
 			output() << " <=> ";
 			break;
-		case TsType::RULE:
+			case TsType::RULE:
 			break;
 		}
 		printAggregate(a->bound(), a->lower(), a->type(), a->setnr());
@@ -765,37 +765,37 @@ public:
 		Assert(isTheoryOpen());
 		printAtom(cpr->_head);
 		switch (cpr->_body->type()) {
-		case TsType::RULE:
+			case TsType::RULE:
 			output() << " <- ";
 			break;
-		case TsType::IMPL:
+			case TsType::IMPL:
 			output() << " => ";
 			break;
-		case TsType::RIMPL:
+			case TsType::RIMPL:
 			output() << " <= ";
 			break;
-		case TsType::EQ:
+			case TsType::EQ:
 			output() << " <=> ";
 			break;
 		}
 		cpr->_body->left()->accept(this);
 		switch (cpr->_body->comp()) {
-		case CompType::EQ:
+			case CompType::EQ:
 			output() << " = ";
 			break;
-		case CompType::NEQ:
+			case CompType::NEQ:
 			output() << " ~= ";
 			break;
-		case CompType::LEQ:
+			case CompType::LEQ:
 			output() << " =< ";
 			break;
-		case CompType::GEQ:
+			case CompType::GEQ:
 			output() << " >= ";
 			break;
-		case CompType::LT:
+			case CompType::LT:
 			output() << " < ";
 			break;
-		case CompType::GT:
+			case CompType::GT:
 			output() << " > ";
 			break;
 		}
@@ -918,9 +918,9 @@ public:
 					}
 				}
 				output() << " }";
-			} else if (not kt.isAtEnd()){
+			} else if (not kt.isAtEnd()) {
 				output() << toString((*kt)[0]);
-			} else{
+			} else {
 				output() << "{ }";
 			}
 		} else {
@@ -976,7 +976,7 @@ public:
 		if (f->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
 			output() << "overloaded function " << f->name() << '\n';
 		} else {
-			if (f->partial()){
+			if (f->partial()) {
 				output() << "partial ";
 			}
 			output() << f->name().substr(0, f->name().find('/'));
@@ -1148,19 +1148,19 @@ private:
 	void printAggregate(double bound, bool lower, AggFunction aggtype, SetId setnr) {
 		output() << bound << (lower ? " =< " : " >= ");
 		switch (aggtype) {
-		case AggFunction::CARD:
+			case AggFunction::CARD:
 			output() << "card(";
 			break;
-		case AggFunction::SUM:
+			case AggFunction::SUM:
 			output() << "sum(";
 			break;
-		case AggFunction::PROD:
+			case AggFunction::PROD:
 			output() << "prod(";
 			break;
-		case AggFunction::MIN:
+			case AggFunction::MIN:
 			output() << "min(";
 			break;
-		case AggFunction::MAX:
+			case AggFunction::MAX:
 			output() << "max(";
 			break;
 		}
@@ -1188,7 +1188,7 @@ private:
 				CHECKTERMINATION;
 				output() << "; ";
 				tuple = *kt;
-				if (tuple.size() > 1){
+				if (tuple.size() > 1) {
 					output() << toString(tuple[0]);
 				}
 				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
