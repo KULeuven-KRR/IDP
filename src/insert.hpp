@@ -369,6 +369,7 @@ public:
 
 	void emptyinter(NSPair*) const; //!< Assign the empty interpretation
 	void sortinter(NSPair*, SortTable* t); //!< Assign a one dimensional table
+	void sortinter(NSPair*, const longname& sortidentifier); //!< Assign a sort to another sort
 	void predinter(NSPair*, PredTable* t) const; //!< Assign a predicate table
 	void funcinter(NSPair*, FuncTable* t) const; //!< Assign a function table
 	void truepredinter(NSPair*) const; //!< Assign true

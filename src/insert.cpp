@@ -2073,6 +2073,39 @@ void Insert::sortinter(NSPair* nst, SortTable* t) {
 	delete (nst);
 }
 
+void Insert::sortinter(NSPair* nst, const longname& sortidentifier) {
+	ParseInfo pi = nst->_pi;
+	longname name = nst->_name;
+	auto assignee = sortInScope(name, pi);
+	auto s = sortInScope(sortidentifier, pi);
+	if(s==NULL){
+		notDeclared(ComponentType::Predicate, toString(sortidentifier), pi);
+		return;
+	}
+	if(assignee==NULL){
+		notDeclared(ComponentType::Predicate, toString(name), pi);
+		return;
+	}
+	if(not _currstructure->hasInter(s)){
+		stringstream ss;
+		ss <<"The assigned sort " <<s->name() <<"does not have an interpretation. \n";
+		Error::error(ss.str());
+		return;
+	}
+	for(auto parent: assignee->parents()){
+		for(auto voc = assignee->firstVocabulary(); voc!=assignee->lastVocabulary(); ++voc){ // FIXME what does it mean to have multiple vocabularies?
+			if(not SortUtils::isSubsort(s, parent, *voc)){
+				stringstream ss;
+				ss <<"The assigned sort " <<s->name() <<" is not a subsort of the parent " <<parent->name() <<" of assignee " <<assignee->name() <<". \n";
+				Error::error(ss.str());
+				return;
+			}
+		}
+	}
+	auto inter = _currstructure->inter(s);
+	_currstructure->changeInter(assignee, new SortTable(inter->internTable()));
+}
+
 bool Insert::interpretationSpecifiedByUser(Sort *s) const {
 	return sortsOccurringInUserDefinedStructure.find(s) != sortsOccurringInUserDefinedStructure.cend();
 }
