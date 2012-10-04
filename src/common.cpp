@@ -257,6 +257,25 @@ Context operator~(Context t) {
 	return not t;
 }
 
+TruthValue operator not(TruthValue t) {
+	TruthValue result = TruthValue::Unknown;
+	switch (t) {
+	case TruthValue::Unknown:
+		result = TruthValue::Unknown;
+		break;
+	case TruthValue::True:
+		result = TruthValue::False;
+		break;
+	case TruthValue::False:
+		result = TruthValue::True;
+		break;
+	}
+	return result;
+}
+TruthValue operator~(TruthValue t) {
+	return not t;
+}
+
 bool isConj(SIGN sign, bool conj) {
 	return (sign == SIGN::POS && conj) || (sign == SIGN::NEG && ~conj);
 }

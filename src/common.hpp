@@ -275,6 +275,9 @@ QUANT operator not(QUANT t);
 Context operator not(Context t);
 Context operator~(Context t);
 
+TruthValue operator not(TruthValue t);
+TruthValue operator~(TruthValue t);
+
 bool isConj(SIGN sign, bool conj);
 
 template<class Stream>
