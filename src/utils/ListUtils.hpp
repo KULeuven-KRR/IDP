@@ -15,6 +15,14 @@
 #include <set>
 #include <map>
 
+template<typename T, typename T2>
+void addAll(std::map<T, T2>& list, const std::map<T, T2>& toadd){
+	for(const auto& elem: toadd){
+		list.insert(elem);
+	}
+
+}
+
 // Support for deleting lists of pointer elements
 template<typename T>
 void deleteList(std::vector<T*>& l) {
