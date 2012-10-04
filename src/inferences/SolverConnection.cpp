@@ -169,23 +169,12 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 		int atomnr = var(*literal);
 
 		if (translator->isInputAtom(atomnr)) {
-			PFSymbol* symbol = translator->getSymbol(atomnr);
-			const ElementTuple& args = translator->getArgs(atomnr);
-			if (isa<Predicate>(*symbol)) {
-				Predicate* pred = dynamic_cast<Predicate*>(symbol);
-				if (literal->hasSign()) {
-					init->inter(pred)->makeFalse(args);
-				} else {
-					init->inter(pred)->makeTrue(args);
-				}
+			auto symbol = translator->getSymbol(atomnr);
+			const auto& args = translator->getArgs(atomnr);
+			if (literal->hasSign()) {
+				init->inter(symbol)->makeFalse(args);
 			} else {
-				Assert(isa<Function>(*symbol));
-				Function* func = dynamic_cast<Function*>(symbol);
-				if (literal->hasSign()) {
-					init->inter(func)->graphInter()->makeFalse(args);
-				} else {
-					init->inter(func)->graphInter()->makeTrue(args);
-				}
+				init->inter(symbol)->makeTrue(args);
 			}
 #ifndef NDEBUG
 			if (not init->isConsistent()) {
