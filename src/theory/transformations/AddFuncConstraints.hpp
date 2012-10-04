@@ -20,6 +20,7 @@
 class Function;
 class Vocabulary;
 
+// TODO increase granularity to ground terms which occur in the theory
 class AddFuncConstraints: public DefaultTraversingTheoryVisitor {
 private:
 	std::set<Function*> _functions;
