@@ -1,0 +1,17 @@
+vocabulary V {
+	type x
+	Same(x,x)
+}
+
+query Q:V {
+	{x x : Same(x,x)}
+}
+
+structure S:V {
+	x = {1..2}
+	Same = {1,1;2,2}
+}
+
+procedure getExpectedSet(){
+  return {{1,1},{2,2}}
+}
