@@ -49,7 +49,7 @@ theory T : V {
 	  noOverlap(Sqr1,Sqr2) <- leftOf(Sqr1,Sqr2) | leftOf(Sqr2,Sqr1) | above(Sqr1,Sqr2) | above(Sqr2,Sqr1). }
 
   /* Put largest square with smallest identifier in a corner */
-  largest = min{ Sqr : size(Sqr) = max{ Sqr : square(Sqr) : size(Sqr) } : Sqr }.
+  largest = min{ Sqr : size(Sqr) = max{ Sqr2 : square(Sqr2) : size(Sqr2) } : Sqr }.
   //xPos(largest) = yPos(largest) = 0.
   //TODO manually rewritten above constraints, should be done automatically... or some other solution??
   ! Sqr : (Sqr = largest) => (xPos(Sqr) = 0) & (yPos(Sqr) = 0).
