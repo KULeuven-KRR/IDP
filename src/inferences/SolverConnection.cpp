@@ -159,6 +159,11 @@ PCUnitPropagate* initpropsolution(PCSolver* solver) {
 	return new PCUnitPropagate(solver, { });
 }
 
+bool useUFSAndOnlyIfSem(){
+	//return getOption(GROUNDLAZILY);
+	return true;
+}
+
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
 	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
 		int atomnr = var(*literal);

@@ -184,7 +184,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		printer->add(MinisatID::Rule(getDefConstrID(), createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr.id));
+		printer->add(MinisatID::Rule(getDefConstrID(), createAtom(b->head()), createList(b->body()), b->type() == RuleType::CONJ, _currentdefnr.id, useUFSAndOnlyIfSem()));
 	}
 
 	void visit(const AggGroundRule* a) {
@@ -286,7 +286,7 @@ private:
 			newsem = MinisatID::AggSem::DEF;
 			break;
 		}
-		printer->add(MinisatID::Aggregate(getDefConstrID(), createLiteral(newhead), setnr.id, createWeight(newbound), convert(aggtype), newsign, newsem, defnr.id));
+		printer->add(MinisatID::Aggregate(getDefConstrID(), createLiteral(newhead), setnr.id, createWeight(newbound), convert(aggtype), newsign, newsem, defnr.id, useUFSAndOnlyIfSem()));
 	}
 
 	void printCPVariables(std::vector<VarId> varids) {

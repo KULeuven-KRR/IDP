@@ -48,7 +48,7 @@ std::vector<std::pair<PFSymbol*, Formula*> > AddIfCompletion::getOnlyIfFormulas(
 			b = new BoolForm(SIGN::POS, false, formulas, FormulaParseInfo());
 		}
 		auto h = new PredForm(SIGN::POS, symbol, TermUtils::makeNewVarTerms(_headvars[symbol]), FormulaParseInfo());
-		h->negate();
+		b->negate();
 		auto ev = new BoolForm(SIGN::POS, false, h, b, FormulaParseInfo());
 		if (symbol->sorts().empty()) {
 			mapping.push_back({symbol, ev});

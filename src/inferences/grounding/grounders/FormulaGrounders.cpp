@@ -767,7 +767,7 @@ bool ClauseGrounder::decidesFormula(Lit lit) const {
 }
 
 TsType ClauseGrounder::getTseitinType() const {
-	return context()._tseitin;
+	return isNegative()?invertImplication(context()._tseitin):context()._tseitin;
 }
 
 Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype) const {

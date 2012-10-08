@@ -30,14 +30,16 @@
 using namespace std;
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(AbstractStructure const * const str)
-		: AbstractGroundTheory(str) {
+GroundTheory<Policy>::GroundTheory(AbstractStructure const * const str, bool nbModelsEquivalent)
+		: AbstractGroundTheory(str),
+		  _nbModelsEquivalent(nbModelsEquivalent){
 	Policy::polStartTheory(translator());
 }
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * const str)
-		: AbstractGroundTheory(voc, str) {
+GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * const str, bool nbModelsEquivalent)
+		: AbstractGroundTheory(voc, str),
+		  _nbModelsEquivalent(nbModelsEquivalent){
 	Policy::polStartTheory(translator());
 }
 
@@ -259,13 +261,20 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto tsbody = translator()->getTsBody(tseitin);
 		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
+			if(body->type()==TsType::RULE && useUFSAndOnlyIfSem() && _nbModelsEquivalent){
+				add(tseitin, TsType::RIMPL, body->body(), body->conj(), defnr);
+			}
 			add(tseitin, body->type(), body->body(), body->conj(), defnr);
 		} else if (isa<AggTsBody>(*tsbody)) {
-			AggTsBody* body = dynamic_cast<AggTsBody*>(tsbody);
+			auto body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
 				Assert(defnr != getIDForUndefined());
 				add(body->setnr(), defnr, (body->aggtype() != AggFunction::CARD));
 				Policy::polAdd(defnr, new AggGroundRule(tseitin, body, true)); //TODO true (recursive) might not always be the case?
+				if(useUFSAndOnlyIfSem() && _nbModelsEquivalent){
+					body->type(TsType::RIMPL);
+					add(tseitin, body);
+				}
 			} else {
 				add(tseitin, body);
 			}

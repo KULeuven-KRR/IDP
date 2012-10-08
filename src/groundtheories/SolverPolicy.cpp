@@ -213,7 +213,7 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 		break;
 	}
 	extAdd(getSolver(),
-			MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, definitionID.id));
+			MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, definitionID.id, useUFSAndOnlyIfSem()));
 }
 
 template<typename Solver>
@@ -252,7 +252,7 @@ void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> 
 	for (size_t n = 0; n < body.size(); ++n) {
 		list.push_back(createLiteral(body[n]));
 	}
-	extAdd(getSolver(), MinisatID::Rule(getDefConstrID(), createAtom(head), list, conjunctive, defnr.id));
+	extAdd(getSolver(), MinisatID::Rule(getDefConstrID(), createAtom(head), list, conjunctive, defnr.id, useUFSAndOnlyIfSem()));
 }
 
 template<typename Solver>
