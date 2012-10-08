@@ -43,7 +43,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
-		clog << "Query-BDD:" << endl << toString(bdd) << endl;
+		clog << "Query-BDD:" << "\n" << toString(bdd) << "\n";
 	}
 	Assert(manager != NULL);
 	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
@@ -68,7 +68,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 
 	InstGenerator* generator = btg.create(data);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
-		clog << "Query-Generator:" << endl << toString(generator) << endl;
+		clog << "Query-Generator:" << "\n" << toString(generator) << "\n";
 	}
 
 // Create an empty table
