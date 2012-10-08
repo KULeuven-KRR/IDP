@@ -31,6 +31,7 @@
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
 #include "transformations/AddCompletion.hpp"
+#include "transformations/AddIfCompletion.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
@@ -273,7 +274,16 @@ void addCompletion(AbstractTheory* t) {
 #ifndef NDEBUG
 	Assert(newt==t);
 #endif
+}
 
+void addIfCompletion(AbstractTheory* t) {
+#ifndef NDEBUG
+	auto newt =
+#endif
+			transform<AddIfCompletion, AbstractTheory*>(t);
+#ifndef NDEBUG
+	Assert(newt==t);
+#endif
 }
 
 void flatten(AbstractTheory* t) {

@@ -165,6 +165,11 @@ Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, b
 void addCompletion(AbstractTheory*);
 
 /**
+ * Add the If direction of the definition semantics. The old definition is not removed, but can be regarded as the remaining only if and ufs constraint.
+ */
+void addIfCompletion(AbstractTheory*);
+
+/**
  * Given a vocabulary and a map of function symbols to their function constraint, add
  * a new function constraints for all functions not already occurring in the list.
  */
