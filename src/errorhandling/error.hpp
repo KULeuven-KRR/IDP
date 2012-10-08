@@ -59,7 +59,7 @@ void nottotal(const std::string& f, const std::string& str);
 void threevalsort(const std::string& s, const ParseInfo& pi);
 
 enum class ComponentType {
-	Namespace, Vocabulary, Theory, Structure, Query, Term, Procedure, Predicate, Function, Symbol, Sort
+	Namespace, Vocabulary, Theory, Structure, Query, Term, Procedure, Predicate, Function, Symbol, Sort, Variable
 };
 
 /** Multiple incompatible declarations of the same object **/

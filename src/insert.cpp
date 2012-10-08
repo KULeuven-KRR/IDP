@@ -1577,6 +1577,10 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 }
 
 Variable* Insert::quantifiedvar(const string& name, YYLTYPE l) {
+	auto othervar = getVar(name);
+	if(getVar(name) != NULL){
+		declaredEarlier(ComponentType::Variable,name,parseinfo(l),othervar->pi());
+	}
 	auto pi = parseinfo(l);
 	auto v = new Variable(name, 0, pi);
 	_curr_vars.push_front(VarName(name, v));

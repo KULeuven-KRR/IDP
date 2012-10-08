@@ -50,6 +50,9 @@ std::ostream& operator<<(std::ostream& stream, ComponentType t) {
 	case ComponentType::Sort:
 		stream << "Sort";
 		break;
+	case ComponentType::Variable:
+		stream << "Variable";
+		break;
 	}
 	return stream;
 }
