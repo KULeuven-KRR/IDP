@@ -1,0 +1,20 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	r(x)
+	a(x)
+}
+
+theory T:V{
+	! var16[x] : (a(var16) | ~(~p(var16) | r(var16))).
+	!x: ~a(x).
+	!x: ~p(x).
+}
+
+structure S:V{
+	x = {1..1}
+}
+
+procedure getExpectedNbOfModels(){
+	return 0
+}
