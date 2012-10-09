@@ -58,9 +58,18 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	BddGeneratorData data;
 	data.bdd = bdd;
 	data.structure = structure;
+	std::map<Variable*,const DomElemContainer*> varsToDomElemContainers;
 	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
 		data.pattern.push_back(Pattern::OUTPUT);
-		data.vars.push_back(new const DomElemContainer());
+		auto dec = varsToDomElemContainers.find(*it);
+		if (dec == varsToDomElemContainers.cend()) {
+			auto res = new const DomElemContainer();
+			varsToDomElemContainers[*it] = res;
+			data.vars.push_back(res);
+
+		} else {
+			data.vars.push_back(dec->second);
+		}
 		data.bddvars.push_back(manager->getVariable(*it));
 		data.universe.addTable(structure->inter((*it)->sort()));
 	}
