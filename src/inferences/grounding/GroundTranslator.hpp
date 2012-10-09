@@ -122,18 +122,18 @@ public:
 	SymbolOffset addSymbol(PFSymbol* pfs);
 
 	// Translate into propositional variables
-	Lit translate(SymbolOffset offset, const ElementTuple&);
-	Lit translate(const litlist& cl, bool conj, TsType tp);
-	Lit translate(const Lit& head, const litlist& clause, bool conj, TsType tstype);
-	Lit translate(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
-	Lit translate(PFSymbol*, const ElementTuple&);
-	Lit translate(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translate(LazyInstantiation* instance, TsType type);
+	Lit translateReduced(SymbolOffset offset, const ElementTuple&);
+	Lit translateReduced(const litlist& cl, bool conj, TsType tp);
+	Lit translateReduced(const Lit& head, const litlist& clause, bool conj, TsType tstype);
+	Lit translateReduced(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
+	Lit translateReduced(PFSymbol*, const ElementTuple&);
+	Lit translateReduced(CPTerm*, CompType, const CPBound&, TsType);
+	Lit translateReduced(LazyInstantiation* instance, TsType type);
 
-	VarId translateTerm(Function*, const std::vector<GroundTerm>&);
-	VarId translateTerm(SymbolOffset offset, const std::vector<GroundTerm>&);
-	VarId translateTerm(CPTerm*, SortTable*);
-	VarId translateTerm(const DomainElement*);
+	VarId translateTermReduced(Function*, const std::vector<GroundTerm>&);
+	VarId translateTermReduced(SymbolOffset offset, const std::vector<GroundTerm>&);
+	VarId translateTermReduced(CPTerm*, SortTable*);
+	VarId translateTermReduced(const DomainElement*);
 
 	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const termlist&);
 

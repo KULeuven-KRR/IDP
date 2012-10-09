@@ -33,7 +33,12 @@ GroundTranslator::~GroundTranslator() {
 	deleteList<ftpair>(var2Tuple);
 }
 
-Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& args) {
+Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args) {
+	auto offset = addSymbol(s);
+	return translateReduced(offset, args);
+}
+
+Lit GroundTranslator::translateReduced(SymbolOffset symboloffset, const ElementTuple& args) {
 	if (symboloffset.functionlist) {
 		std::vector<GroundTerm> terms;
 		for (auto i = args.cbegin(); i < args.cend(); ++i) {
@@ -44,33 +49,27 @@ Lit GroundTranslator::translate(SymbolOffset symboloffset, const ElementTuple& a
 		// Otherwise, cannot be a cp-able function
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
-		auto lit = translate(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // Fixme TSType?
+		auto lit = translate(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // TODO TSType?
 		atom2Tuple[lit]->first = functions[symboloffset.offset].symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
 		return lit;
-	}
-	auto symbolID = symboloffset.offset;
-	Lit lit = 0;
-	auto& symbolinfo = symbols[symbolID];
-	auto jt = symbolinfo.tuple2atom.find(args);
-	if (jt != symbolinfo.tuple2atom.cend()) {
-		lit = jt->second;
-	} else {
-		lit = nextNumber(AtomType::INPUT);
-		symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
-		atom2Tuple[lit]->first = symbolinfo.symbol;
-		atom2Tuple[lit]->second = args;
+	}else{
+		Lit lit = 0;
+		auto& symbolinfo = symbols[symboloffset.offset];
+		auto jt = symbolinfo.tuple2atom.find(args);
+		if (jt != symbolinfo.tuple2atom.cend()) {
+			lit = jt->second;
+		} else {
+			// Todo check whether it already exists and whether to add its value to the solver as unit clause
+			lit = nextNumber(AtomType::INPUT);
+			symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
+			atom2Tuple[lit]->first = symbolinfo.symbol;
+			atom2Tuple[lit]->second = args;
+		}
 
-		// TODO think that this is not necessary
-		// NOTE: when getting here, a new literal was created, so have to check whether any lazy bounds are watching its symbol
-		//if (not symbolinfo.assocGrounders.empty()) {
-		//symbolinfo.assocGrounders.front()->notify(lit, args, symbolinfo.assocGrounders); // First part gets the grounding
-		//}
-		// ENDTODO
+		return lit;
 	}
-
-	return lit;
 }
 
 Vocabulary* GroundTranslator::vocabulary() const {
@@ -113,11 +112,6 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	} else {
 		return n;
 	}
-}
-
-Lit GroundTranslator::translate(PFSymbol* s, const ElementTuple& args) {
-	SymbolOffset offset = addSymbol(s);
-	return translate(offset, args);
 }
 
 Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype) {
