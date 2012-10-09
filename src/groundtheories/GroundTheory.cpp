@@ -101,6 +101,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
+	Assert(defid!=getIDForUndefined());
 	addTseitinInterpretations(rule->body(), defid);
 	Policy::polAdd(defid, rule);
 }
@@ -261,10 +262,10 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto tsbody = translator()->getTsBody(tseitin);
 		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
+			add(tseitin, body->type(), body->body(), body->conj(), defnr);
 			if(body->type()==TsType::RULE && useUFSAndOnlyIfSem() && _nbModelsEquivalent){
 				add(tseitin, TsType::RIMPL, body->body(), body->conj(), defnr);
 			}
-			add(tseitin, body->type(), body->body(), body->conj(), defnr);
 		} else if (isa<AggTsBody>(*tsbody)) {
 			auto body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
