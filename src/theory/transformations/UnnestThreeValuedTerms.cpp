@@ -93,7 +93,10 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		}
 	}
 
-	if (is(predform->symbol(), STDPRED::EQ) && isa<FuncTerm>(*predform->subterms()[0]) && not isa<AggTerm>(*predform->subterms()[1])) {
+	if (is(predform->symbol(), STDPRED::EQ)
+			&& isa<FuncTerm>(*predform->subterms()[0])
+			&& not isa<AggTerm>(*predform->subterms()[1])
+			&& _cpsupport) {
 		auto functerm = dynamic_cast<FuncTerm*>(predform->subterms()[0]);
 		if (not functerm->function()->builtin()) {
 			predform = GraphFuncsAndAggs::makeFuncGraph(predform->sign(), functerm, predform->subterms()[1], predform->pi());
