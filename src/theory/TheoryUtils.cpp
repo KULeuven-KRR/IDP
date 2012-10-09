@@ -192,7 +192,7 @@ Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, bool cpsupport, Context con) {
+Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Formula*>(f, str, cpsupport, con);
 }
 
@@ -296,10 +296,10 @@ void flatten(AbstractTheory* t) {
 #endif
 }
 
-Theory* graphFuncsAndAggs(Theory* t, AbstractStructure* str, bool cpsupport, Context con) {
+Theory* graphFuncsAndAggs(Theory* t, const AbstractStructure* str, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Theory*>(t, str, cpsupport, con);
 }
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, bool cpsupport, Context con) {
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, cpsupport, con);
 }
 

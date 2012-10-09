@@ -26,25 +26,26 @@ class AbstractStructure;
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	AbstractStructure* _structure;
+	const AbstractStructure* _structure;
 	Vocabulary* _vocabulary;
 	Context _context;
 	bool _cpsupport;
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str = NULL, bool cpsupport = false, Context c = Context::POSITIVE) {
+	T execute(T t, const AbstractStructure* str = NULL, bool cpsupport = false, Context c = Context::POSITIVE) {
 		_structure = str;
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
 		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
+
+	static PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&);
+	static AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&);
+
 protected:
 	Formula* visit(PredForm* pf);
 	Formula* visit(EqChainForm* ef);
-private:
-	PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&) const;
-	AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&) const;
 };
 
 #endif /* GRAPHFUNCSANDAGGS_HPP_ */

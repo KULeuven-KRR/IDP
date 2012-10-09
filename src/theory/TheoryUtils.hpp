@@ -113,7 +113,7 @@ double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool
 Formula* flatten(Formula*);
 
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas */
-Formula* graphFuncsAndAggs(Formula* f, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
+Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
@@ -182,8 +182,8 @@ void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
-Theory* graphFuncsAndAggs(Theory*, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
-AbstractTheory* graphFuncsAndAggs(AbstractTheory*, AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggs(Theory*, const AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const AbstractStructure* str, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);

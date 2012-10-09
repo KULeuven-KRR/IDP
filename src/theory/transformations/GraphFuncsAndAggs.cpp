@@ -48,9 +48,8 @@ bool isAggOrFunc(Term* t) {
 /**
  * Given functerm = dom/varterm, construct graph
  */
-PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) const {
+PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) {
 	Assert(not isAgg(valueterm));
-	Assert(not isFunc(valueterm));
 
 	Assert(isFunc(functerm));
 	auto ft = dynamic_cast<FuncTerm*>(functerm);
@@ -64,7 +63,7 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 /**
  * Given aggterm ~ dom/varterm, construct aggform
  */
-AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) const {
+AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) {
 	Assert(not isFunc(valueterm));
 	Assert(not isAgg(valueterm));
 	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);

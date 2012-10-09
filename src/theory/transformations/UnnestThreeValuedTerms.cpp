@@ -12,6 +12,7 @@
 #include "IncludeComponents.hpp"
 
 #include "theory/TheoryUtils.hpp"
+#include "GraphFuncsAndAggs.hpp"
 
 using namespace std;
 using namespace CPSupport;
@@ -53,16 +54,16 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	if (_cpablerelation != TruthValue::False) {
 		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
 	}
-	if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
+	/*if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
 		auto args = predform->args();
 		args.pop_back();
 		auto ft = new FuncTerm(dynamic_cast<Function*>(predform->symbol()), args, TermParseInfo()); // TODO parseinfo
 		auto pf = new PredForm(predform->sign(), get(STDPRED::EQ, predform->symbol()->sorts().front()), { ft, predform->args().back() }, predform->pi());
-		for(auto sort: pf->symbol()->sorts()){
+		for (auto sort : pf->symbol()->sorts()) {
 			Assert(sort!=NULL);
 		}
 		return pf->accept(this);
-	}
+	}*/
 
 	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
 	if (_cpsupport and not CPSupport::eligibleForCP(predform, _vocabulary) && not is(predform->symbol(), STDPRED::EQ)) {
@@ -72,7 +73,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			if (origterm->freeVars().size() != 0 or origterm->type() != TermType::AGG) { // TODO handle free vars
 				continue;
 			}
-			if(not eligibleForCP(dynamic_cast<AggTerm*>(origterm)->function())){ // FIXME this seems necessary, because aggform unnesting is incorrect
+			if (not eligibleForCP(dynamic_cast<AggTerm*>(origterm)->function())) { // FIXME this seems necessary, because aggform unnesting is incorrect
 				continue;
 			}
 			auto sort = origterm->sort();
@@ -92,13 +93,18 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		}
 	}
 
+	if (is(predform->symbol(), STDPRED::EQ) && isa<FuncTerm>(*predform->subterms()[0]) && not isa<AggTerm>(*predform->subterms()[1])) {
+		auto functerm = dynamic_cast<FuncTerm*>(predform->subterms()[0]);
+		if (not functerm->function()->builtin()) {
+			predform = GraphFuncsAndAggs::makeFuncGraph(predform->sign(), functerm, predform->subterms()[1], predform->pi());
+			Assert(not is(predform->symbol(), STDPRED::EQ));
+		}
+	}
 	auto result = UnnestTerms::visit(predform);
-
 	_cpablerelation = savedrel;
 
 	return result;
 }
-
 
 Formula* UnnestThreeValuedTerms::visit(AggForm* af) {
 	auto savedparent = _cpablerelation;
@@ -137,9 +143,8 @@ Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
 	} else {
 		_cpablefunction = false;
 	}
-	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary())
-		and not TermUtils::isTermWithIntFactor(t, _structure)
-		and not is(t->function(),STDFUNC::UNARYMINUS)) {
+	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary()) and not TermUtils::isTermWithIntFactor(t, _structure)
+			and not is(t->function(), STDFUNC::UNARYMINUS)) {
 		//Note: Leave cpable flag as is when the current functerm is a sum or a term with a factor!
 		// They get a special treatment for CP.
 		_cpablerelation = TruthValue::False;
