@@ -14,12 +14,34 @@
 #include "external/rungidl.hpp"
 #include "utils/FileManagement.hpp"
 #include "TestUtils.hpp"
+#include "testingtools.hpp"
+#include "inferences/querying/Query.hpp"
+#include "parseinfo.hpp"
+#include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
+#include "theory/Query.hpp"
 
 #include <exception>
 
 using namespace std;
 
 namespace Tests {
+TEST(InternalQueryTest,MultipleOccurencesOfSameVar){
+	auto ts1 = getTestingSet1();
+	auto q = new Query("query",{ts1.x,ts1.x},ts1.sxx,ParseInfo());
+	SortedElementTable els;
+	els.insert({createDomElem(0),createDomElem(0)});
+	els.insert({createDomElem(0),createDomElem(1)});
+	Universe univ({ts1.sorttable,ts1.sorttable});
+	auto str = ts1.structure;
+	str->changeInter(ts1.s,new PredInter(new PredTable(new EnumeratedInternalPredTable(els),univ),true));
+	auto res = Querying::doSolveQuery(q,str);
+	auto size = res->size();
+	auto sizeIsExact = (size._type==TableSizeType::TST_EXACT);
+	ASSERT_TRUE(sizeIsExact);
+	size_t one = 1;
+	ASSERT_EQ(one,size._size);
+}
 
 vector<string> generateListOfQueryFiles() {
 	vector<string> testdirs {"simple/", "aggregates/", "threevalued/"};
@@ -35,6 +57,5 @@ TEST_P(QueryTest, DoesQuerying) {
 
 
 INSTANTIATE_TEST_CASE_P(Querying, QueryTest, ::testing::ValuesIn(generateListOfQueryFiles()));
-
 
 }
