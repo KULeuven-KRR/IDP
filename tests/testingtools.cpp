@@ -29,17 +29,20 @@ TestingSet1 getTestingSet1() {
 	testingSet.p = new Predicate("P", { testingSet.sort }, false); //predicate P of [-2,2]
 	testingSet.q = new Predicate("Q", { testingSet.sort }, false); //predicate Q of [-2,2]
 	testingSet.r = new Predicate("R", { testingSet.sort }, false);
+	testingSet.s = new Predicate("S", { testingSet.sort,testingSet.sort }, false);
 	testingSet.vocabulary = new Vocabulary("V");
 	testingSet.vocabulary->add(testingSet.sort);
 	testingSet.vocabulary->add(testingSet.p);
 	testingSet.vocabulary->add(testingSet.q);
 	testingSet.vocabulary->add(testingSet.r);
+	testingSet.vocabulary->add(testingSet.s);
 	testingSet.structure = new Structure("S", ParseInfo());
 	testingSet.structure->changeVocabulary(testingSet.vocabulary);
 
 	testingSet.px = new PredForm(SIGN::POS, testingSet.p, { testingSet.sortterm }, FormulaParseInfo()); //P(x)
 	testingSet.qx = new PredForm(SIGN::POS, testingSet.q, { testingSet.sortterm }, FormulaParseInfo()); //Q(x)
 	testingSet.rx = new PredForm(SIGN::POS, testingSet.r, { testingSet.sortterm }, FormulaParseInfo()); //Q(x)
+	testingSet.sxx = new PredForm(SIGN::POS, testingSet.s, { testingSet.sortterm,testingSet.sortterm->clone() }, FormulaParseInfo()); //S(x,x)
 	testingSet.p0 = new PredForm(SIGN::POS, testingSet.p, { testingSet.nulterm }, FormulaParseInfo()); //P(0)
 	testingSet.q0 = new PredForm(SIGN::POS, testingSet.q, { testingSet.nulterm }, FormulaParseInfo()); //Q(0)
 	testingSet.r0 = new PredForm(SIGN::POS, testingSet.r, { testingSet.nulterm }, FormulaParseInfo()); //Q(0)

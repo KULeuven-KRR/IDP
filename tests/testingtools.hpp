@@ -48,12 +48,14 @@ struct TestingSet1 {
 	Predicate* p; //predicate P of [-2,2]
 	Predicate* q; //predicate Q of [-2,2]
 	Predicate* r; //predicate R of [-2,2]
+	Predicate* s; //binary predicate S of ([-2,2],[-2,2])
 	Vocabulary* vocabulary;
 	Structure* structure;
 
 	PredForm* px; //P(x)
 	PredForm* qx; //Q(x)
 	PredForm* rx; //R(x)
+	PredForm* sxx; //S(x,x)
 	PredForm* p0; //P(0)
 	PredForm* q0; //Q(0)
 	PredForm* r0; //R(0)
