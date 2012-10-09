@@ -204,11 +204,11 @@ Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory g
  *		This grounding can then be obtained by calling grounding() on the grounder.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
-	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure);
+	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.partialstructure, data.nbModelsEquivalent);
 	return createGrounder(data, groundtheory);
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
-	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure);
+	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.partialstructure, data.nbModelsEquivalent);
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator());
 	return createGrounder(data, groundtheory);
 }
@@ -229,7 +229,7 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
  *		the solver.
  */
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
-	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure);
+	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.partialstructure, data.nbModelsEquivalent);
 	groundtheory->initialize(solver, getOption(IntType::VERBOSE_GROUNDING), groundtheory->translator());
 	auto grounder = createGrounder(data, groundtheory);
 	SolverConnection::setTranslator(solver, grounder->getTranslator());
@@ -253,6 +253,9 @@ Grounder* GrounderFactory::ground() {
 	FormulaUtils::addFuncConstraints(_theory, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
 	if (_minimizeterm != NULL) {
 		FormulaUtils::addFuncConstraints(_minimizeterm, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
+	}
+	if(useUFSAndOnlyIfSem()){
+		FormulaUtils::addIfCompletion(_theory);
 	}
 
 	InitContext();

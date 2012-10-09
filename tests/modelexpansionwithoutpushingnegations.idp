@@ -1,7 +1,8 @@
 #include <mx>
 
 procedure main() {
-	stdoptions.nbmodels = 0
+	stdoptions.verbosity.grounding=0
+	stdoptions.nbmodels = getExpectedNbOfModels()+1
 	stdoptions.timeout = 10
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false

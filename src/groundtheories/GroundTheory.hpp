@@ -23,10 +23,11 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
 	std::set<VarId> _printedvarids, _addedvarinterpretation;
+	bool _nbModelsEquivalent;
 
 public:
-	GroundTheory(AbstractStructure const * const str);
-	GroundTheory(Vocabulary* voc, AbstractStructure const * const str);
+	GroundTheory(AbstractStructure const * const str, bool nbModelsEquivalent);
+	GroundTheory(Vocabulary* voc, AbstractStructure const * const str, bool nbModelsEquivalent);
 
 	virtual ~GroundTheory() {
 	}

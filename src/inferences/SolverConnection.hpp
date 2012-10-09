@@ -39,6 +39,8 @@ namespace SolverConnection {
 
 	// Parse cp-model into structure
 	void addTerms(const MinisatID::Model& model, GroundTranslator* termtranslator, AbstractStructure* init);
+
+	bool useUFSAndOnlyIfSem();
 }
 
 #endif //INFERENCE_SOLVERCONN_HPP_

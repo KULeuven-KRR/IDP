@@ -461,12 +461,16 @@ public:
  */
 class TsBody {
 protected:
-	const TsType _type; // the type of "tseitin definition"
+	TsType _type; // the type of "tseitin definition"
 	TsBody(TsType type)
 			: _type(type) {
 	}
 public:
 	virtual ~TsBody() {
+	}
+
+	void type(TsType type) {
+		_type = type;
 	}
 	TsType type() const {
 		return _type;

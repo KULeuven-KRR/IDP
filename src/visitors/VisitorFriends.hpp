@@ -43,6 +43,7 @@ class ConstructNewReducedForm;
 class Skolemize;
 class TopDownApproximatingDefinition;
 class BottomUpApproximatingDefinition;
+class AddIfCompletion;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -94,6 +95,7 @@ class BottomUpApproximatingDefinition;
 		friend class FindUnknownBoundLiteral;\
 		friend class FindDoubleDelayLiteral;\
 		friend class SplitIntoMonotoneAgg;\
+		friend class AddIfCompletion;\
 		friend class ReplaceNestedWithTseitinTerm;\
 		friend class ConstructNewReducedForm;\
 		friend class TopDownApproximatingDefinition;\
