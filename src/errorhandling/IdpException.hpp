@@ -18,11 +18,8 @@
 class Exception {
 public:
 	Exception(){
-#ifdef DEBUG
-		printStacktrace();
-#endif
 	}
-	~Exception() {
+	virtual ~Exception() {
 	}
 	virtual std::string getMessage() const = 0;
 };
@@ -41,6 +38,9 @@ private:
 public:
 	AssertionException(std::string message)
 			: message(message) {
+#ifdef DEBUG
+		printStacktrace();
+#endif
 	}
 	std::string getMessage() const {
 		std::stringstream ss;
@@ -55,7 +55,9 @@ private:
 public:
 	IdpException(std::string message)
 			: message(message) {
-
+#ifdef DEBUG
+		printStacktrace();
+#endif
 	}
 	std::string getMessage() const {
 		std::stringstream ss;
