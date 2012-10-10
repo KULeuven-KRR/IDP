@@ -85,7 +85,7 @@ void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool 
 					grb->body().push_back(body[n]);
 				}
 			} else {
-				Lit ts = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
+				Lit ts = _translator->reify(body, conj, (recursive ? TsType::RULE : TsType::EQ));
 				grb->body().push_back(ts);
 			}
 			grb->recursive(grb->recursive() || recursive);
@@ -99,13 +99,13 @@ void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool 
 					grb->body().push_back(body[n]);
 				}
 			} else if ((not conj) || body.size() == 1) {
-				Lit ts = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
+				Lit ts = _translator->reify(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
 				grb->type(RuleType::DISJ);
 				grb->body(body);
 				grb->body().push_back(ts);
 			} else {
-				Lit ts1 = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
-				Lit ts2 = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
+				Lit ts1 = _translator->reify(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
+				Lit ts2 = _translator->reify(body, conj, (recursive ? TsType::RULE : TsType::EQ));
 				grb->type(RuleType::DISJ);
 				grb->body() = {ts1, ts2};
 			}
@@ -116,14 +116,14 @@ void GroundDefinition::addPCRule(Lit head, const litlist& body, bool conj, bool 
 			auto grb = dynamic_cast<AggGroundRule*>(it->second);
 			CompType comp = (grb->lower() ? CompType::LEQ : CompType::GEQ);
 			if ((not conj) || body.size() == 1) {
-				Lit ts = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
+				Lit ts = _translator->reify(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
 				auto newgrb = new PCGroundRule(head, RuleType::DISJ, body, (recursive || grb->recursive()));
 				newgrb->body().push_back(ts);
 				delete (grb);
 				it->second = newgrb;
 			} else {
-				Lit ts1 = _translator->translate(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
-				Lit ts2 = _translator->translate(body, conj, (recursive ? TsType::RULE : TsType::EQ));
+				Lit ts1 = _translator->reify(grb->bound(), comp, grb->aggtype(), grb->setnr(), (grb->recursive() ? TsType::RULE : TsType::EQ));
+				Lit ts2 = _translator->reify(body, conj, (recursive ? TsType::RULE : TsType::EQ));
 				it->second = new PCGroundRule(head, RuleType::DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
 				delete (grb);
 			}
@@ -146,19 +146,19 @@ void GroundDefinition::addAggRule(Lit head, SetId setnr, AggFunction aggtype, bo
 		switch (it->second->type()) {
 		case RuleType::DISJ: {
 			auto grb = dynamic_cast<PCGroundRule*>(it->second);
-			Lit ts = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
+			Lit ts = _translator->reify(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
 			grb->body().push_back(ts);
 			grb->recursive(grb->recursive() || recursive);
 			break;
 		}
 		case RuleType::CONJ: {
 			auto grb = dynamic_cast<PCGroundRule*>(it->second);
-			Lit ts2 = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
+			Lit ts2 = _translator->reify(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
 			if (grb->body().size() == 1) {
 				grb->type(RuleType::DISJ);
 				grb->body().push_back(ts2);
 			} else {
-				Lit ts1 = _translator->translate(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
+				Lit ts1 = _translator->reify(grb->body(), true, (grb->recursive() ? TsType::RULE : TsType::EQ));
 				grb->type(RuleType::DISJ);
 				grb->body( { ts1, ts2 });
 			}
@@ -167,9 +167,9 @@ void GroundDefinition::addAggRule(Lit head, SetId setnr, AggFunction aggtype, bo
 		}
 		case RuleType::AGG: {
 			auto grb = dynamic_cast<AggGroundRule*>(it->second);
-			Lit ts1 = _translator->translate(grb->bound(), (grb->lower() ? CompType::LEQ : CompType::GEQ), grb->aggtype(), grb->setnr(),
+			Lit ts1 = _translator->reify(grb->bound(), (grb->lower() ? CompType::LEQ : CompType::GEQ), grb->aggtype(), grb->setnr(),
 					(grb->recursive() ? TsType::RULE : TsType::EQ));
-			Lit ts2 = _translator->translate(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
+			Lit ts2 = _translator->reify(bound, (lower ? CompType::LEQ : CompType::GEQ), aggtype, setnr, (recursive ? TsType::RULE : TsType::EQ));
 			it->second = new PCGroundRule(head, RuleType::DISJ, { ts1, ts2 }, (recursive || grb->recursive()));
 			delete (grb);
 			break;

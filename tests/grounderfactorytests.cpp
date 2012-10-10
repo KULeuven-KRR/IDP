@@ -28,7 +28,7 @@ namespace Tests {
 
 Grounder* getGrounder(Theory& t, AbstractStructure* s){
 	auto gddatb = generateBounds(&t, s, getOption(BoolType::LIFTEDUNITPROPAGATION)); //OK TO GET OPTION HERE?
-	auto topboolgrounder = dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, s, gddatb, true})));
+	auto topboolgrounder = dynamic_cast<BoolGrounder*>((GrounderFactory::create({&t, {s, gddatb}, true})));
 	//ASSERT_TRUE(topboolgrounder!=NULL);
 	//ASSERT_TRUE(topboolgrounder->getSubGrounders().size()>0);
 	return topboolgrounder->getSubGrounders().at(0);

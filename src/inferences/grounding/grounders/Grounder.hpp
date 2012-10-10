@@ -59,7 +59,7 @@ public:
 	virtual ~Grounder() {
 	}
 
-	void toplevelRun() const; // Guaranteed toplevel run.
+	bool toplevelRun() const; // Guaranteed toplevel run.
 	Lit groundAndReturnLit() const; // Explicitly request one literal equisat with subgrounding. NOTE: interprets returnvalue as if in conjunction (false is unsat, true is sat)
 
 	void wrapRun(ConjOrDisj& formula) const;

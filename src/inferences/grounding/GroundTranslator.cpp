@@ -15,10 +15,57 @@
 #include "utils/CPUtils.hpp"
 #include "utils/ListUtils.hpp"
 
+#include "inferences/grounding/GrounderFactory.hpp"
+#include "errorhandling/UnsatException.hpp"
+
 using namespace std;
 
-GroundTranslator::GroundTranslator(AbstractStructure* structure)
-		: _structure(structure) {
+int verbosity() {
+	return getOption(IntType::VERBOSE_GROUNDING);
+}
+
+SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
+		: symbol(symbol) {
+	inter = structure.concrstructure->inter(symbol);
+	GeneratorData data;
+	std::vector<Term*> varterms;
+	for (auto sort : symbol->sorts()) {
+		data.containers.push_back(new const DomElemContainer());
+		data.tables.push_back(structure.concrstructure->inter(sort));
+		data.fovars.push_back(new Variable(sort));
+		varterms.push_back(new VarTerm(data.fovars.back(), TermParseInfo()));
+	}
+	data.structure = structure.concrstructure;
+	containers = data.containers;
+
+	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
+	data.pattern = std::vector<Pattern>(data.containers.size(), Pattern::INPUT);
+	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure);
+	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
+}
+
+FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
+		: symbol(symbol) {
+	GeneratorData data;
+	std::vector<Term*> varterms;
+	for (auto sort : symbol->sorts()) {
+		data.containers.push_back(new const DomElemContainer());
+		data.tables.push_back(structure.concrstructure->inter(sort));
+		data.fovars.push_back(new Variable(sort));
+		varterms.push_back(new VarTerm(data.fovars.back(), TermParseInfo()));
+	}
+	data.structure = structure.concrstructure;
+
+	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
+	data.pattern = std::vector<Pattern>(data.containers.size()-1, Pattern::INPUT);
+	data.pattern.push_back(Pattern::OUTPUT);
+	containers = data.containers;
+	truerangegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
+	falserangegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_FALSE, data, structure.symstructure);
+}
+
+GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
+		: _structure(structure), _grounding(grounding) {
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);
@@ -33,12 +80,125 @@ GroundTranslator::~GroundTranslator() {
 	deleteList<ftpair>(var2Tuple);
 }
 
-Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args) {
+Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args, bool recursive) {
 	auto offset = addSymbol(s);
-	return translateReduced(offset, args);
+	return translateReduced(offset, args, recursive);
 }
 
-Lit GroundTranslator::translateReduced(SymbolOffset symboloffset, const ElementTuple& args) {
+void GroundTranslator::addKnown(VarId id){
+	if(not hasVarIdMapping(id)){
+		return;
+	}
+
+	auto symbol = getFunction(id);
+	auto offset = addSymbol(symbol);
+	auto& funcinfo = functions[offset.offset];
+	auto args = getArgs(id);
+	for(uint i=0; i<args.size(); ++i){
+		Assert(not args[i].isVariable); // FIXME check if correct?
+		*funcinfo.containers[i]=args[i]._domelement;
+	}
+	for(funcinfo.truerangegenerator->begin(); not funcinfo.truerangegenerator->isAtEnd(); funcinfo.truerangegenerator->operator ++()){
+		Assert(funcinfo.containers.back()->get()->type()==DomainElementType::DET_INT); // NOTE: change if we can handle more then ints!
+		CPBound bound(funcinfo.containers.back()->get()->value()._int);
+		auto lit = reify(new CPVarTerm(id), CompType::NEQ, bound, TsType::IMPL);
+		Assert(lit!=_true && lit!=_false);
+		_grounding->addUnitClause(lit);
+	}
+	for(funcinfo.falserangegenerator->begin(); not funcinfo.falserangegenerator->isAtEnd(); funcinfo.falserangegenerator->operator ++()){
+		Assert(funcinfo.containers.back()->get()->type()==DomainElementType::DET_INT); // NOTE: change if we can handle more then ints!
+		CPBound bound(funcinfo.containers.back()->get()->value()._int);
+		auto lit = reify(new CPVarTerm(id), CompType::NEQ, bound, TsType::RIMPL);
+		Assert(lit!=_true && lit!=_false);
+		_grounding->addUnitClause(-lit);
+	}
+}
+
+TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign) {
+	// Check partial functions
+	if (domelem == NULL) {
+		TruthValue result;
+		if (funccontext == Context::POSITIVE) {
+			result = TruthValue::True;
+		} else if (funccontext == Context::NEGATIVE) {
+			result = TruthValue::True;
+		} else {
+			throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+		}
+		if (verbosity() > 2) {
+			std::clog << tabs() << "Partial function went out of bounds\n";
+		}
+		return result;
+	}
+
+	// Checking out-of-bounds
+	if (predtable != termtable && not predtable->contains(domelem)) {
+		if (verbosity() > 2) {
+			std::clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
+		}
+
+		return isPos(sign) ? TruthValue::False : TruthValue::True;
+	}
+
+	return TruthValue::Unknown;
+}
+
+/*
+ * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
+ * 			or first search for the literal, and run the checkers if it was not yet grounded.
+ */
+Lit GroundTranslator::translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
+	auto& symboldata = symbols[offset.offset];
+	Assert(symboldata.ctchecker!=NULL);
+
+	bool littrue = false, litfalse = false;
+	for(uint i=0; i<args.size(); ++i){
+		*symboldata.containers[i] = args[i];
+	}
+	if (symboldata.ctchecker->check()) { // Literal is irrelevant in its occurrences
+		if (verbosity() > 2) {
+			std::clog << tabs() << "Certainly true checker succeeded" << "\n";
+		}
+		littrue = true;
+	}
+	if (not symboldata.ptchecker->check()) { // Literal decides formula if checker succeeds
+		if (verbosity() > 2) {
+			std::clog << tabs() << "Possibly true checker failed" << "\n";
+		}
+		litfalse = true;
+	}
+	if (not littrue && symboldata.inter->isTrue(args)) {
+		littrue = true;
+	}
+	if (not litfalse && symboldata.inter->isFalse(args)) {
+		litfalse = true;
+	}
+	if (littrue && litfalse) {
+		_grounding->addUnitClause(1);
+		_grounding->addUnitClause(-1); // TODO Remove when unsatexception is handled everywhere
+		throw UnsatException();
+	}
+
+	if (getOption(REDUCEDGROUNDING) && not recursivecontext) {
+		if (littrue) {
+			return _true;
+		} else if (litfalse) {
+			return _false;
+		}
+	}
+
+	auto lit = getLiteral(offset, args);
+	Assert(lit!=_true && lit!=_false);
+	if (littrue) {
+		_grounding->addUnitClause(lit);
+	} else if (litfalse) {
+		_grounding->addUnitClause(-lit);
+	}
+	return lit;
+}
+
+// TODO this can probably be optimized by storing _true/_false wherever applicable instead of lit
+Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& args) {
 	if (symboloffset.functionlist) {
 		std::vector<GroundTerm> terms;
 		for (auto i = args.cbegin(); i < args.cend(); ++i) {
@@ -49,7 +209,7 @@ Lit GroundTranslator::translateReduced(SymbolOffset symboloffset, const ElementT
 		// Otherwise, cannot be a cp-able function
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
-		auto lit = translate(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // TODO TSType?
+		auto lit = reify(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // TODO TSType?
 		atom2Tuple[lit]->first = functions[symboloffset.offset].symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
@@ -58,14 +218,14 @@ Lit GroundTranslator::translateReduced(SymbolOffset symboloffset, const ElementT
 		Lit lit = 0;
 		auto& symbolinfo = symbols[symboloffset.offset];
 		auto jt = symbolinfo.tuple2atom.find(args);
-		if (jt != symbolinfo.tuple2atom.cend()) {
+		if (jt != symbolinfo.tuple2atom.end()) {
 			lit = jt->second;
+			jt->second = lit;
 		} else {
-			// Todo check whether it already exists and whether to add its value to the solver as unit clause
 			lit = nextNumber(AtomType::INPUT);
-			symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
 			atom2Tuple[lit]->first = symbolinfo.symbol;
 			atom2Tuple[lit]->second = args;
+			symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
 		}
 
 		return lit;
@@ -73,7 +233,7 @@ Lit GroundTranslator::translateReduced(SymbolOffset symboloffset, const ElementT
 }
 
 Vocabulary* GroundTranslator::vocabulary() const {
-	return _structure == NULL ? NULL : _structure->vocabulary();
+	return _structure.concrstructure == NULL ? NULL : _structure.concrstructure->vocabulary();
 }
 
 // TODO expensive!
@@ -102,11 +262,11 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 		if (pfs->isFunction()) {
 			auto function = dynamic_cast<Function*>(pfs);
 			if (function != NULL && getOption(CPSUPPORT) && CPSupport::eligibleForCP(function, vocabulary())) {
-				functions.push_back(FunctionInfo(function));
+				functions.push_back(FunctionInfo(function, _structure));
 				return SymbolOffset(functions.size() - 1, true);
 			}
 		}
-		symbols.push_back(SymbolInfo(pfs));
+		symbols.push_back(SymbolInfo(pfs, _structure));
 		return SymbolOffset(symbols.size() - 1, false);
 
 	} else {
@@ -114,12 +274,8 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 	}
 }
 
-Lit GroundTranslator::translate(const litlist& clause, bool conj, TsType tstype) {
-	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	return translate(nr, clause, conj, tstype);
-}
-
-Lit GroundTranslator::translate(const Lit& head, const litlist& clause, bool conj, TsType tstype) {
+Lit GroundTranslator::reify(const litlist& clause, bool conj, TsType tstype) {
+	int head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 	auto tsbody = new PCTsBody(tstype, clause, conj);
 	atom2TsBody[head] = tsbody;
 	return head;
@@ -165,23 +321,22 @@ void GroundTranslator::notifyDelay(PFSymbol*, DelayGrounder* const) {
 	 grounders.push_back(grounder);*/
 }
 
-Lit GroundTranslator::translate(LazyInstantiation* instance, TsType tstype) {
+Lit GroundTranslator::reify(LazyInstantiation* instance, TsType tstype) {
 	auto tseitin = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-	//clog <<"Adding lazy tseitin" <<instance->residual <<nt();
 	auto tsbody = new LazyTsBody(instance, tstype);
 	atom2TsBody[tseitin] = tsbody;
 	return tseitin;
 }
 
-Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype) {
+Lit GroundTranslator::reify(double bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype) {
 	if (comp == CompType::EQ) {
-		auto l = translate(bound, CompType::LEQ, aggtype, setnr, tstype);
-		auto l2 = translate(bound, CompType::GEQ, aggtype, setnr, tstype);
-		return translate( { l, l2 }, true, tstype);
+		auto l = reify(bound, CompType::LEQ, aggtype, setnr, tstype);
+		auto l2 = reify(bound, CompType::GEQ, aggtype, setnr, tstype);
+		return reify( { l, l2 }, true, tstype);
 	} else if (comp == CompType::NEQ) {
-		auto l = translate(bound, CompType::GT, aggtype, setnr, tstype);
-		auto l2 = translate(bound, CompType::LT, aggtype, setnr, tstype);
-		return translate( { l, l2 }, false, tstype);
+		auto l = reify(bound, CompType::GT, aggtype, setnr, tstype);
+		auto l2 = reify(bound, CompType::LT, aggtype, setnr, tstype);
+		return reify( { l, l2 }, false, tstype);
 	} else {
 		auto head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		if (comp == CompType::LT) {
@@ -199,7 +354,6 @@ Lit GroundTranslator::translate(double bound, CompType comp, AggFunction aggtype
 }
 
 bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
-//	cerr << "Comparing " << toString(left) << " with " << toString(right) << "\n";
 	if (left == NULL) {
 		if (right == NULL) {
 			return false;
@@ -211,16 +365,11 @@ bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
 	return *left < *right;
 }
 
-Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
+Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto tsbody = new CPTsBody(tstype, left, comp, right);
 	// TODO => this should be generalized to sharing detection!
-//	cerr <<"Searching for " <<toString(left) <<toString(comp) <<toString(right) <<"in \n";
-//	for(auto i=cpset.cbegin(); i!=cpset.cend(); ++i){
-//		cerr <<toString(i->first) <<"\n";
-//	}
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {
-//		cerr <<"Found: literal " <<it->second <<"\n";
 		delete tsbody;
 		if (it->first->comp() != comp) { // NOTE: OPTIMIZATION! = and ~= map to the same tsbody etc. => look at ecnf.cpp:compEqThroughNeg
 			return -it->second;
@@ -228,7 +377,6 @@ Lit GroundTranslator::translate(CPTerm* left, CompType comp, const CPBound& righ
 			return it->second;
 		}
 	} else {
-//		cerr <<"Adding new\n";
 		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		atom2TsBody[nr] = tsbody;
 		cpset[tsbody] = nr;
@@ -279,7 +427,7 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
 		auto ft = new ftpair(info.symbol, args);
 		var2Tuple[varid.id] = ft;
-		var2domain[varid.id] = _structure->inter(info.symbol->outsort());
+		var2domain[varid.id] = _structure.concrstructure->inter(info.symbol->outsort());
 		return varid;
 	}
 }

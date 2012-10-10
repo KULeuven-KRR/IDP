@@ -23,6 +23,10 @@
 
 using namespace std;
 
+bool recursive(const PFSymbol& symbol, const GroundingContext& context){
+	return context._defined.find(const_cast<PFSymbol*>(&symbol))!=context._defined.cend();
+}
+
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
 		: 	Grounder(grounding, ct),
 			_origform(NULL) {
@@ -137,34 +141,15 @@ Lit AtomGrounder::run() const {
 			alldomelts = false;
 		} else {
 			auto domelem = groundterm._domelement;
-			// Check partial functions
-			if (domelem == NULL) {
-				Lit result;
-				if (context()._funccontext == Context::POSITIVE) {
-					result = _true;
-				} else if (context()._funccontext == Context::NEGATIVE) {
-					result = _true;
-				} else {
-					throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), context()._funccontext, _sign);
+			if(known!=TruthValue::Unknown){
+				if(verbosity()>2){
+				if (_origform != NULL) {
+					poptab();
 				}
-				if (verbosity() > 2) {
-					clog << tabs() << "Partial function went out of bounds\n";
-					clog << tabs() << "Result is " << (result == _true ? "true" : "false") << "\n";
+				clog << tabs() << "Result is " <<toString(known) << "\n";
 				}
-				return result;
-			}
-
-			// Checking out-of-bounds
-			if (_tables[n] != _subtermgrounders[n]->getDomain() && not _tables[n]->contains(domelem)) {
-				if (verbosity() > 2) {
-					clog << tabs() << "Term value out of predicate type" << "\n"; //TODO should be a warning
-					if (_origform != NULL) {
-						poptab();
-					}
-					clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
-				}
-
-				return isPos(_sign) ? _false : _true;
+				return known==TruthValue::True?_true:_false;
 			}
 		}
 	}
@@ -189,68 +174,10 @@ Lit AtomGrounder::run() const {
 		_args[n] = terms[n]._domelement;
 		*(_checkargs[n]) = _args[n];
 	}
-	bool littrue = false, litfalse = false;
-	if (_ctchecker->check()) { // Literal is irrelevant in its occurrences
-		if (verbosity() > 2) {
-			clog << tabs() << "Certainly true checker succeeded" << "\n";
-		}
-		if (getOption(REDUCEDGROUNDING) && not _recursive) {
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result is true" << "\n";
-			}
-			return _true;
-		} else {
-			littrue = true;
-		}
-	}
-	if (not _ptchecker->check()) { // Literal decides formula if checker succeeds
-		if (verbosity() > 2) {
-			clog << tabs() << "Possibly true checker failed" << "\n";
-		}
-		if (getOption(REDUCEDGROUNDING) && not _recursive) {
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result is false" << "\n";
-			}
-			return _false;
-		} else {
-			litfalse = true;
-		}
-	}
-	if (_inter->isTrue(_args)) {
-		if (getOption(REDUCEDGROUNDING) && not _recursive) {
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result is " << (isPos(_sign) ? "true" : "false") << "\n";
-			}
-			return isPos(_sign) ? _true : _false;
-		} else {
-			littrue = isPos(_sign);
-			litfalse = isNeg(_sign);
-		}
-	}
-	if (_inter->isFalse(_args)) {
-		if (getOption(REDUCEDGROUNDING) && not _recursive) {
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result is " << (isPos(_sign) ? "false" : "true") << "\n";
-			}
-			return isPos(_sign) ? _false : _true;
-		} else {
-			littrue = isNeg(_sign);
-			litfalse = isPos(_sign);
-		}
-	}
 
-	// Return grounding
-	auto poslit = translator()->translate(_symboloffset, _args);
-	auto lit = isPos(_sign) ? poslit : -poslit;
-	if (littrue) {
-		getGrounding()->addUnitClause(lit);
-	} else if (litfalse) {
-		getGrounding()->addUnitClause(-lit);
-	}
+	auto lit = translator()->translateReduced(_symboloffset, _args, _recursive);
+	lit = isPos(_sign) ? lit : -lit;
+
 	if (verbosity() > 2) {
 		poptab();
 		clog << tabs() << "Result is " << translator()->printLit(lit) << "\n";
@@ -285,12 +212,12 @@ Lit ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin);
+			result = translator()->reify(leftterm, _comparator, rightbound, context()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			result = translator()->translate(leftterm, _comparator, rightbound, context()._tseitin);
+			result = translator()->reify(leftterm, _comparator, rightbound, context()._tseitin);
 		}
 	} else {
 		Assert(not left.isVariable);
@@ -298,7 +225,7 @@ Lit ComparisonGrounder::run() const {
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			result = translator()->translate(rightterm, invertComp(_comparator), leftbound, context()._tseitin);
+			result = translator()->reify(rightterm, invertComp(_comparator), leftbound, context()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
@@ -345,7 +272,7 @@ AggGrounder::~AggGrounder() {
 //TODO:why?
 Lit AggGrounder::handleDoubleNegation(double boundvalue, SetId setnr, CompType comp) const {
 	TsType tp = context()._tseitin;
-	Lit tseitin = translator()->translate(boundvalue, negateComp(comp), _type, setnr, tp);
+	Lit tseitin = translator()->reify(boundvalue, negateComp(comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
 
@@ -411,14 +338,14 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 	if (simplify) {
 		if (_doublenegtseitin) {
 			if (negateset) {
-				Lit tseitin = translator()->translate(tsset.literals(), !conj, tp);
+				Lit tseitin = translator()->reify(tsset.literals(), !conj, tp);
 				return isPos(_sign) ? -tseitin : tseitin;
 			} else {
 				litlist newsetlits(tsset.size());
 				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
-				Lit tseitin = translator()->translate(newsetlits, !conj, tp);
+				Lit tseitin = translator()->reify(newsetlits, !conj, tp);
 				return isPos(_sign) ? -tseitin : tseitin;
 			}
 		} else {
@@ -427,10 +354,10 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 				for (size_t n = 0; n < tsset.size(); ++n) {
 					newsetlits[n] = -tsset.literal(n);
 				}
-				Lit tseitin = translator()->translate(newsetlits, conj, tp);
+				Lit tseitin = translator()->reify(newsetlits, conj, tp);
 				return isPos(_sign) ? tseitin : -tseitin;
 			} else {
-				Lit tseitin = translator()->translate(tsset.literals(), conj, tp);
+				Lit tseitin = translator()->reify(tsset.literals(), conj, tp);
 				return isPos(_sign) ? tseitin : -tseitin;
 			}
 		}
@@ -438,7 +365,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 		if (_doublenegtseitin)
 			return handleDoubleNegation(double(leftvalue), setnr, _comp);
 		else {
-			Lit tseitin = translator()->translate(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
+			Lit tseitin = translator()->reify(double(leftvalue), _comp, AggFunction::CARD, setnr, tp);
 			return isPos(_sign) ? tseitin : -tseitin;
 		}
 	}
@@ -489,26 +416,26 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
 	}
 	Lit tseitin;
 	if (newboundvalue == 0) {
-		tseitin = translator()->translate(zerolits, false, tp);
+		tseitin = translator()->reify(zerolits, false, tp);
 	} else {
-		Lit nozeros = -translator()->translate(zerolits, false, tp);
-		Lit prodright = translator()->translate(abs(newboundvalue), _comp, AggFunction::PROD, possetnumber, tp);
+		Lit nozeros = -translator()->reify(zerolits, false, tp);
+		Lit prodright = translator()->reify(abs(newboundvalue), _comp, AggFunction::PROD, possetnumber, tp);
 		litlist possiblecards;
 		if (newboundvalue > 0) {
-			Lit nonegatives = -translator()->translate(neglits, false, tp); //solver cannot handle empty sets.
+			Lit nonegatives = -translator()->reify(neglits, false, tp); //solver cannot handle empty sets.
 			possiblecards.push_back(nonegatives);
 			for (size_t i = 2; i <= neglits.size(); i = i + 2) {
-				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
+				Lit cardisi = translator()->reify(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
 				possiblecards.push_back(cardisi);
 			}
 		} else {
 			for (size_t i = 1; i <= neglits.size(); i = i + 2) {
-				Lit cardisi = translator()->translate(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
+				Lit cardisi = translator()->reify(i, CompType::EQ, AggFunction::CARD, negsetnumber, tp);
 				possiblecards.push_back(cardisi);
 			}
 		}
-		Lit cardright = translator()->translate(possiblecards, false, tp);
-		tseitin = translator()->translate( { nozeros, prodright, cardright }, true, tp);
+		Lit cardright = translator()->reify(possiblecards, false, tp);
+		tseitin = translator()->reify( { nozeros, prodright, cardright }, true, tp);
 	}
 	return isPos(_sign) ? tseitin : -tseitin;
 
@@ -571,7 +498,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		if (isNeg(_sign)) {
 			tp = invertImplication(tp);
 		}
-		tseitin = translator()->translate(newboundvalue, newcomp, _type, setnr, tp);
+		tseitin = translator()->reify(newboundvalue, newcomp, _type, setnr, tp);
 		return isPos(_sign) ? tseitin : -tseitin;
 	}
 }
@@ -675,12 +602,12 @@ Lit AggGrounder::run() const {
 			switch (_comp) {
 			case CompType::EQ:
 			case CompType::LEQ:
-				tseitin = -translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = -translator()->reify(tsset.literals(), false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::NEQ:
 			case CompType::GT:
-				tseitin = translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = translator()->reify(tsset.literals(), false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::GEQ:
@@ -716,12 +643,12 @@ Lit AggGrounder::run() const {
 			switch (_comp) {
 			case CompType::EQ:
 			case CompType::GEQ:
-				tseitin = -translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = -translator()->reify(tsset.literals(), false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::NEQ:
 			case CompType::LT:
-				tseitin = translator()->translate(tsset.literals(), false, TsType::EQ);
+				tseitin = translator()->reify(tsset.literals(), false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::LEQ:
@@ -811,7 +738,7 @@ Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula, TsType type) const 
 	if (negativeDefinedContext()) {
 		asConjunction = not asConjunction;
 	}
-	tseitin = translator()->translate(formula.literals, asConjunction, type);
+	tseitin = translator()->reify(formula.literals, asConjunction, type);
 	return tseitin;
 }
 
@@ -1037,8 +964,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 				formula.literals = litlist { _false };
 			}
 		} else {
-			auto ts1 = translator()->translate(aornotb, false, context()._tseitin);
-			auto ts2 = translator()->translate(notaorb, false, context()._tseitin);
+			auto ts1 = translator()->reify(aornotb, false, context()._tseitin);
+			auto ts2 = translator()->reify(notaorb, false, context()._tseitin);
 			formula.literals = litlist { ts1, ts2 };
 		}
 	}

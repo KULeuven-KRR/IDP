@@ -28,6 +28,8 @@ class PFSymbol;
 
 /*** Formula grounders ***/
 
+bool recursive(const PFSymbol& symbol, const GroundingContext& context);
+
 class FormulaGrounder: public Grounder {
 private:
 	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;

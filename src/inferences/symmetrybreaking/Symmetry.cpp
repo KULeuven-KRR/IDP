@@ -606,8 +606,8 @@ pair<list<int>, list<int> > IVSet::getSymmetricLiterals(AbstractGroundTheory* gt
 				for (auto ge_it = groundElements.cbegin(); ge_it != groundElements.cend(); ++ge_it) {
 					ElementTuple original = *ge_it;
 					ElementTuple symmetrical = symmetricalTuple(original, smaller, bigger, argumentPlaces);
-					originals.push_back(gt->translator()->translate(*relations_it, original));
-					symmetricals.push_back(gt->translator()->translate(*relations_it, symmetrical));
+					originals.push_back(gt->translator()->translateReduced(*relations_it, original, false));
+					symmetricals.push_back(gt->translator()->translateReduced(*relations_it, symmetrical, false));
 				}
 			}
 		}
@@ -703,7 +703,7 @@ vector<list<int> > IVSet::getInterchangeableLiterals(AbstractGroundTheory* gt) c
 					} else {
 						symmetrical = *ge_it;
 					}
-					result[list].push_back(gt->translator()->translate(*relations_it, symmetrical));
+					result[list].push_back(gt->translator()->translateReduced(*relations_it, symmetrical, false));
 				}
 				list++;
 			}

@@ -170,7 +170,7 @@ void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 
 	auto tseitintype = context()._tseitin;
-	auto tseitin = translator()->translate(inst, tseitintype);
+	auto tseitin = translator()->reify(inst, tseitintype);
 
 	if (isNegative()) {
 		tseitin = -tseitin;

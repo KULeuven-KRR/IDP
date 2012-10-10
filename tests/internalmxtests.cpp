@@ -81,14 +81,14 @@ TEST(OptimTest, DifferentVocabulary) {
 TEST(MXTest, GroundTheory) {
 	auto v = Vocabulary("one");
 	auto s = Structure("s", &v, ParseInfo());
-	auto t = GroundTheory<GroundPolicy>(&v, NULL, true);
+	auto t = GroundTheory<GroundPolicy>(&v, {NULL, NULL}, true);
 	ASSERT_THROW(ModelExpansion::doModelExpansion(&t, &s), IdpException);
 }
 
 TEST(OptimTest, GroundTheory) {
 	auto v = Vocabulary("one");
 	auto s = Structure("s", &v, ParseInfo());
-	auto t = GroundTheory<GroundPolicy>(&v, NULL, true);
+	auto t = GroundTheory<GroundPolicy>(&v, {NULL, NULL}, true);
 	auto sort = Sort("s");
 	auto var = Variable(&sort);
 	auto o = VarTerm(&var, TermParseInfo());

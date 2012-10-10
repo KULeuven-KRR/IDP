@@ -392,6 +392,7 @@ private:
 	PFSymbol* symbol;
 	SymbolOffset symboloffset;
 	AbstractGroundTheory* theory;
+	bool recursive;
 
 public:
 	RealElementGrounder(Lit headatom, PFSymbol*symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory)
@@ -399,7 +400,8 @@ public:
 				args(args),
 				symbol(symbol),
 				symboloffset(theory->translator()->addSymbol(symbol)),
-				theory(theory) {
+				theory(theory),
+				recursive(false){ // NOTE: currently cannot handle recursive occurrences
 	}
 
 	bool isFunction() const{
@@ -440,15 +442,7 @@ public:
 			for (auto arg : argvalues) {
 				tuple.push_back(createDomElem(arg));
 			}
-			if (not theory->structure()->inter(symbol)->universe().contains(tuple)) { // outside domain
-				temphead = _false;
-			} else if (theory->structure()->inter(symbol)->isFalse(tuple)) {
-				temphead = _false;
-			} else if (theory->structure()->inter(symbol)->isTrue(tuple)) {
-				temphead = _true;
-			} else {
-				temphead = translator->translate(symboloffset, tuple);
-			}
+			temphead = translator->translateReduced(symboloffset, tuple, recursive);
 		}
 		GroundClause clause;
 		if (headvalue) {
@@ -469,7 +463,7 @@ public:
 		for (uint i = 0; i < argvalues.size(); ++i) {
 			auto varterm = new CPVarTerm(args[i]);
 			CPBound bound(argvalues[i]);
-			auto varlit = theory->translator()->translate(varterm, CompType::EQ, bound, TsType::EQ);
+			auto varlit = theory->translator()->reify(varterm, CompType::EQ, bound, TsType::EQ);
 			if (varlit == _false) {
 				return;
 			} else if (varlit != _true) {

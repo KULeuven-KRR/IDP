@@ -16,6 +16,7 @@
 #include "theory/theory.hpp"
 #include "theory/ecnf.hpp"
 #include "visitors/VisitorFriends.hpp"
+#include "inferences/grounding/GroundUtils.hpp" // TODO for structureinfo
 
 class GroundTranslator;
 class SymbolOffset;
@@ -30,6 +31,7 @@ enum VIType {
 
 class LazyInstantiation;
 class DelayGrounder;
+class GenerateBDDAccordingToBounds;
 
 /**
  * Implements base class for ground theories
@@ -42,10 +44,8 @@ private:
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.
 
 public:
-	// Non-owning structure pointer, can be NULL!
-	AbstractGroundTheory(AbstractStructure const * const str);
-	// Non-owning structure pointer, can be NULL!
-	AbstractGroundTheory(Vocabulary* voc, AbstractStructure const * const str);
+	AbstractGroundTheory(StructureInfo structure);
+	AbstractGroundTheory(Vocabulary* voc, StructureInfo structure);
 
 	~AbstractGroundTheory();
 

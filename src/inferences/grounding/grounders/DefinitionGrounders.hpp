@@ -130,10 +130,11 @@ private:
 	SymbolOffset _symbol; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	PFSymbol* _pfsymbol;
+	GroundingContext _context;
 
 public:
 	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
-			const std::vector<SortTable*>&);
+			const std::vector<SortTable*>&, GroundingContext& context);
 	~HeadGrounder();
 	Lit run() const;
 

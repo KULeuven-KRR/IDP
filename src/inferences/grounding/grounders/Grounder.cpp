@@ -6,13 +6,14 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #include <ctime>
 #include "common.hpp"
 #include "Grounder.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "errorhandling/UnsatException.hpp"
 
 using namespace std;
 
@@ -59,7 +60,8 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	if (formula.literals.size() == 0) {
 		if (formula.getType() == Conn::DISJ) { // UNSAT
 			gt->addUnitClause(1);
-			gt->addUnitClause(-1);
+			gt->addUnitClause(-1); // TODO Remove when unsatexception is handled everywhere
+			throw UnsatException();
 		}
 	} else if (formula.literals.size() == 1) {
 		auto l = formula.literals.back();
@@ -86,35 +88,47 @@ int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
+		: 	_grounding(gt),
+			_context(context),
+			_maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
 }
 
-void Grounder::toplevelRun() const {
+bool Grounder::toplevelRun() const {
+	bool unsat = false;
+
 	ConjOrDisj formula;
-	wrapRun(formula);
-	addToGrounding(getGrounding(), formula);
-	getGrounding()->closeTheory(); // FIXME should move or be reentrant, as multiple grounders write to the same theory!
+	try {
+		wrapRun(formula);
+		addToGrounding(getGrounding(), formula);
+		getGrounding()->closeTheory(); // FIXME should move or be reentrant, as multiple grounders write to the same theory!
+	} catch (UnsatException& ex) {
+		if (verbosity() > 0) {
+			clog << "Unsat found during grounding\n";
+		}
+		unsat = true;
+	}
 
 	addToFullGroundSize(getMaxGroundSize());
 	if (verbosity() > 0) {
-		clog << "Already grounded " << toString(groundedAtoms()) <<" for a full grounding of " << toString(getMaxGroundSize()) << "\n";
+		clog << "Already grounded " << toString(groundedAtoms()) << " for a full grounding of " << toString(getMaxGroundSize()) << "\n";
 	}
+	return unsat;
 }
 
 #include <inferences/grounding/grounders/FormulaGrounders.hpp>
 
 // TODO unfinished code
-void Grounder::wrapRun(ConjOrDisj& formula) const{
+void Grounder::wrapRun(ConjOrDisj& formula) const {
 	auto start = clock();
 //	auto set = getGlobal()->getOptions()->verbosities();
 	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
 	auto printtimes = false;
-	if(printtimes){
-		cerr <<"Grounding formula " <<toString(this) <<"\n";
+	if (printtimes) {
+		cerr << "Grounding formula " << toString(this) << "\n";
 	}
 	run(formula);
-	if(printtimes){
-		cerr <<"Grounding it took " <<(clock()-start)/1000 <<"ms\n";
+	if (printtimes) {
+		cerr << "Grounding it took " << (clock() - start) / 1000 << "ms\n";
 	}
 }
 
@@ -130,7 +144,7 @@ Lit Grounder::groundAndReturnLit() const {
 	} else if (formula.literals.size() == 1) {
 		return formula.literals.back();
 	} else {
-		return getGrounding()->translator()->translate(formula.literals, formula.getType() == Conn::CONJ, context()._tseitin);
+		return getGrounding()->translator()->reify(formula.literals, formula.getType() == Conn::CONJ, context()._tseitin);
 	}
 }
 
@@ -138,6 +152,6 @@ void Grounder::setMaxGroundSize(const tablesize& maxsize) {
 	_maxsize = maxsize;
 }
 
-int Grounder::verbosity() const{
+int Grounder::verbosity() const {
 	return getOption(IntType::VERBOSE_GROUNDING);
 }

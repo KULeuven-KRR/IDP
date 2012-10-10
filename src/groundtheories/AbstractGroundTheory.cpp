@@ -12,20 +12,20 @@
 #include "IncludeComponents.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 
-AbstractGroundTheory::AbstractGroundTheory(AbstractStructure const * const str)
+AbstractGroundTheory::AbstractGroundTheory(StructureInfo structure)
 		: AbstractTheory("", ParseInfo()), _structure(NULL), _translator(NULL) {
-	if(str!=NULL){
-		_structure = str->clone();
+	if(structure.concrstructure!=NULL){
+		_structure = structure.concrstructure->clone();
 	}
-	_translator = new GroundTranslator(_structure);
+	_translator = new GroundTranslator(structure, this);
 }
 
-AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, AbstractStructure const * const str)
+AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, StructureInfo structure)
 		: AbstractTheory("", voc, ParseInfo()), _structure(NULL), _translator(NULL) {
-	if(str!=NULL){
-		_structure = str->clone();
+	if(structure.concrstructure!=NULL){
+		_structure = structure.concrstructure->clone();
 	}
-	_translator = new GroundTranslator(_structure);
+	_translator = new GroundTranslator(structure, this);
 }
 
 AbstractGroundTheory::~AbstractGroundTheory() {

@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef GROUNDTRANSLATOR_HPP_
 #define GROUNDTRANSLATOR_HPP_
@@ -29,38 +29,47 @@ class GroundTerm;
 class CPTsBody;
 class SortTable;
 
-struct SymbolOffset{
+struct SymbolOffset {
 	int offset;
 	bool functionlist;
 
-	SymbolOffset(int offset, bool function):offset(offset), functionlist(function){}
+	SymbolOffset(int offset, bool function)
+			: 	offset(offset),
+				functionlist(function) {
+	}
 
 };
 
 typedef std::unordered_map<ElementTuple, Lit, HashTuple> Tuple2AtomMap;
 typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
+#include "generators/InstGenerator.hpp" // TODO temporary (for PATTERN usage)
+class DomElemContainer;
 struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
 	std::vector<DelayGrounder*> assocGrounders;
+	InstChecker *ctchecker, *ptchecker;
+	std::vector<const DomElemContainer*> containers; // The containers used to construct the checkers, which should be fully instantiated before checking
+	PredInter* inter;
 
-	SymbolInfo(PFSymbol* symbol)
-			: symbol(symbol) {
-	}
+	SymbolInfo(PFSymbol* symbol, StructureInfo structure);
 };
 
 struct FunctionInfo {
 	Function* symbol;
 	std::map<std::vector<GroundTerm>, VarId> term2var;
+	InstGenerator *truerangegenerator, *falserangegenerator;
+	std::vector<const DomElemContainer*> containers;
 
-	FunctionInfo(Function* symbol)
-			: symbol(symbol) {
-	}
+	FunctionInfo(Function* symbol, StructureInfo structure);
 };
 
 enum class AtomType {
-	INPUT, TSEITINWITHSUBFORMULA, LONETSEITIN, CPGRAPHEQ
+	INPUT,
+	TSEITINWITHSUBFORMULA,
+	LONETSEITIN,
+	CPGRAPHEQ
 };
 
 typedef std::pair<PFSymbol*, ElementTuple> stpair;
@@ -79,7 +88,8 @@ struct CompareTs {
 
 class GroundTranslator {
 private:
-	AbstractStructure* _structure;
+	StructureInfo _structure;
+	AbstractGroundTheory* _grounding; //!< The ground theory that will be produce
 
 	// PROPOSITIONAL SYMBOLS
 	// SymbolID 2 Symbol + Tuple2Tseitin + grounders
@@ -89,8 +99,8 @@ private:
 	// Tseitin 2 tuple
 	// Tseitin 2 meaning (if applicable according to type)
 	std::vector<AtomType> atomtype;
-	std::vector<stpair*> atom2Tuple; 		// Owns pointers!
-	std::vector<TsBody*> atom2TsBody; 		// Owns pointers!
+	std::vector<stpair*> atom2Tuple; // Owns pointers!
+	std::vector<TsBody*> atom2TsBody; // Owns pointers!
 
 	Lit nextNumber(AtomType type);
 	SymbolOffset getSymbol(PFSymbol* pfs) const;
@@ -100,10 +110,10 @@ private:
 	std::vector<FunctionInfo> functions;
 
 	// Var 2 meaning
-	std::vector<ftpair*> var2Tuple; 		// Owns pointers!
+	std::vector<ftpair*> var2Tuple; // Owns pointers!
 	std::vector<CPTsBody*> var2CTsBody;
 	std::vector<SortTable*> var2domain;
-	std::map<int, VarId> storedTerms; 		// Tabling of terms which are equal to a domain element
+	std::map<int, VarId> storedTerms; // Tabling of terms which are equal to a domain element
 
 	std::map<CPTsBody*, Lit, CompareTs> cpset; // Used to detect identical Cpterms, is not used in any other way!
 
@@ -114,7 +124,7 @@ private:
 	std::vector<TsSet> _sets;
 
 public:
-	GroundTranslator(AbstractStructure* structure);
+	GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding);
 	~GroundTranslator();
 
 	Vocabulary* vocabulary() const;
@@ -122,18 +132,30 @@ public:
 	SymbolOffset addSymbol(PFSymbol* pfs);
 
 	// Translate into propositional variables
-	Lit translateReduced(SymbolOffset offset, const ElementTuple&);
-	Lit translateReduced(const litlist& cl, bool conj, TsType tp);
-	Lit translateReduced(const Lit& head, const litlist& clause, bool conj, TsType tstype);
-	Lit translateReduced(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
-	Lit translateReduced(PFSymbol*, const ElementTuple&);
-	Lit translateReduced(CPTerm*, CompType, const CPBound&, TsType);
-	Lit translateReduced(LazyInstantiation* instance, TsType type);
+private:
+	Lit getLiteral(SymbolOffset offset, const ElementTuple&);
+public:
+	Lit reify(const litlist& cl, bool conj, TsType tp);
+	Lit reify(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
+	Lit reify(CPTerm*, CompType, const CPBound&, TsType);
+	Lit reify(LazyInstantiation* instance, TsType type);
 
-	VarId translateTermReduced(Function*, const std::vector<GroundTerm>&);
-	VarId translateTermReduced(SymbolOffset offset, const std::vector<GroundTerm>&);
-	VarId translateTermReduced(CPTerm*, SortTable*);
-	VarId translateTermReduced(const DomainElement*);
+	VarId translateTerm(Function*, const std::vector<GroundTerm>&);
+	VarId translateTerm(SymbolOffset offset, const std::vector<GroundTerm>&);
+	VarId translateTerm(CPTerm*, SortTable*);
+	VarId translateTerm(const DomainElement*);
+
+	TruthValue checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign);
+
+	Lit translateReduced(PFSymbol*, const ElementTuple&, bool recursive);
+
+	void addKnown(VarId id);
+
+	/*
+	 * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
+	 * 			or first search for the literal, and run the checkers if it was not yet grounded.
+	 */
+	Lit translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext);
 
 	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const termlist&);
 
@@ -169,7 +191,7 @@ public:
 	// GROUND TERMS
 
 	bool hasVarIdMapping(const VarId& varid) const {
-		return var2Tuple.size()>varid.id && var2Tuple.at(varid.id)!=NULL;
+		return var2Tuple.size() > varid.id && var2Tuple.at(varid.id) != NULL;
 	}
 
 	// Methods for translating variable identifiers to terms
@@ -211,7 +233,6 @@ public:
 	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.
 	 */
 	void notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder);
-
 
 	// PRINTING
 

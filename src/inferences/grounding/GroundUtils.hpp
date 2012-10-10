@@ -50,4 +50,13 @@ void restoreOrigVars(DomElemList& originst, const DomInstList& freevarinst) {
 	}
 }
 
+class AbstractStructure;
+class GenerateBDDAccordingToBounds;
+
+// Always non-owning, can always be NULL!
+struct StructureInfo{
+	AbstractStructure* concrstructure;
+	GenerateBDDAccordingToBounds* symstructure;
+};
+
 #endif /* GROUNDING_UTILS_HPP_ */

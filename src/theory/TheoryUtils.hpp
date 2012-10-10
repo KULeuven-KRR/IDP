@@ -142,24 +142,24 @@ Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s = NULL);
 Formula* substituteTerm(Formula*, Term*, Variable*);
 
 /** Recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggs(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggs(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggsNonRecursive(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
-Formula* unnestDomainTerms(Formula*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestDomainTerms(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 
 /** Recursively move all partial terms outside atoms */
-Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** Recursively remove all nested terms */
-Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
-Formula* unnestThreeValuedTerms(Formula*, AbstractStructure*, Context context, bool cpsupport);
+Formula* unnestThreeValuedTerms(Formula*, const AbstractStructure*, Context context, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*);
@@ -207,18 +207,18 @@ AbstractTheory* removeEquivalences(AbstractTheory*);
 AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
-AbstractTheory* unnestDomainTerms(AbstractTheory*, AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestDomainTerms(AbstractTheory*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 
 /** Rewrite the theory so that there are no nested terms */
-void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-void unnestThreeValuedTerms(AbstractTheory*, bool cpsupport, Context con = Context::POSITIVE, AbstractStructure* str = NULL);
+void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestThreeValuedTerms(AbstractTheory*, bool cpsupport, Context con = Context::POSITIVE, const AbstractStructure* str = NULL);
 } /* namespace FormulaUtils */
 
 
@@ -268,9 +268,9 @@ void deriveSorts(Vocabulary* v, Rule* f);
 std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, AbstractStructure*, Context context, bool cpsupport);
+Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, bool cpsupport);
 
-Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context);
+Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context);
 } /* namespace DefinitionUtils */
 
 #endif /* IDP_THEORYUTILS_HPP_ */

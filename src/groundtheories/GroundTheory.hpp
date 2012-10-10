@@ -26,8 +26,8 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	bool _nbModelsEquivalent;
 
 public:
-	GroundTheory(AbstractStructure const * const str, bool nbModelsEquivalent);
-	GroundTheory(Vocabulary* voc, AbstractStructure const * const str, bool nbModelsEquivalent);
+	GroundTheory(StructureInfo structure, bool nbModelsEquivalent);
+	GroundTheory(Vocabulary* voc, StructureInfo structure, bool nbModelsEquivalent);
 
 	virtual ~GroundTheory() {
 	}

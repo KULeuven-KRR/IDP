@@ -36,7 +36,7 @@ private:
 	bool inhead;
 public:
 	template<typename T>
-	T execute(T t, AbstractStructure* str, Context context) {
+	T execute(T t, const AbstractStructure* str, Context context) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);

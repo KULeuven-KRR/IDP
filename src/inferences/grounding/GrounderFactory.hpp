@@ -57,16 +57,14 @@ struct GenAndChecker {
 struct GroundInfo {
 	AbstractTheory* theory;
 	Term* minimizeterm;
-	AbstractStructure* partialstructure;
-	GenerateBDDAccordingToBounds* symbolicstructure;
+	StructureInfo structure;
 	bool nbModelsEquivalent;
 
-	GroundInfo(AbstractTheory* theory, AbstractStructure* partialstructure, GenerateBDDAccordingToBounds* symbolicstructure,
+	GroundInfo(AbstractTheory* theory, StructureInfo structure,
 			bool nbModelsEquivalent, Term* minimizeterm = NULL)
 			: 	theory(theory),
 				minimizeterm(minimizeterm),
-				partialstructure(partialstructure),
-				symbolicstructure(symbolicstructure),
+				structure(structure),
 				nbModelsEquivalent(nbModelsEquivalent) {
 	}
 };
@@ -77,6 +75,7 @@ struct GeneratorData { // NOTE: all have the same order!
 	std::vector<Variable*> fovars, quantfovars;
 	std::vector<Pattern> pattern;
 	std::vector<const DomElemContainer*> containers;
+	const AbstractStructure* structure;
 };
 
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
@@ -87,8 +86,7 @@ private:
 	AbstractTheory* _theory;
 	Term* _minimizeterm;
 	Vocabulary* _vocabulary;
-	AbstractStructure* _structure; //!< The structure that will be used to reduce the grounding
-	GenerateBDDAccordingToBounds* _symstructure; //!< Used approximation
+	StructureInfo _structure;
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produced
 	AbstractGroundTheory* getGrounding() const {
 		return _grounding;
@@ -119,8 +117,12 @@ private:
 	// Descend in the parse tree while taking care of the context
 	template<typename T> void descend(T child);
 
-	AbstractStructure* structure() const {
-		return _structure;
+	AbstractStructure* getConcreteStructure() const {
+		return _structure.concrstructure;
+	}
+
+	GenerateBDDAccordingToBounds* getSymbolicStructure() const {
+		return _structure.symstructure;
 	}
 
 	const var2dommap& varmapping() const {
@@ -133,13 +135,18 @@ private:
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
 	GeneratorData getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars);
-	InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data);
-	InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data);
-	PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data);
+public:
+	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure);
+	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure);
+private:
+	static InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula*,
+			const std::vector<Pattern>& pattern);
+	static PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data,
+			GenerateBDDAccordingToBounds* symstructure);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
-	const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars);
+	static const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars, const AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure);
 
 	template<typename Grounding>
 	GrounderFactory(const GroundInfo& data, Grounding* grounding, bool nbModelsEquivalent);

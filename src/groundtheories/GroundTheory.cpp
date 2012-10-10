@@ -30,16 +30,16 @@
 using namespace std;
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(AbstractStructure const * const str, bool nbModelsEquivalent)
-		: AbstractGroundTheory(str),
+GroundTheory<Policy>::GroundTheory(StructureInfo info, bool nbModelsEquivalent)
+		: AbstractGroundTheory(info),
 		  _nbModelsEquivalent(nbModelsEquivalent),
 		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
 }
 
 template<class Policy>
-GroundTheory<Policy>::GroundTheory(Vocabulary* voc, AbstractStructure const * const str, bool nbModelsEquivalent)
-		: AbstractGroundTheory(voc, str),
+GroundTheory<Policy>::GroundTheory(Vocabulary* voc, StructureInfo info, bool nbModelsEquivalent)
+		: AbstractGroundTheory(voc, info),
 		  _nbModelsEquivalent(nbModelsEquivalent),
 		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
@@ -138,7 +138,7 @@ void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
 		return;
 	}
 	auto cprelation = translator()->cprelation(id);
-	auto tseitin2 = translator()->translate(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
+	auto tseitin2 = translator()->reify(cprelation->left(), cprelation->comp(), cprelation->right(), cprelation->type());
 	addUnitClause(tseitin2);
 }
 
@@ -150,21 +150,7 @@ void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
 	_addedvarinterpretation.insert(id);
 
 	// It is already partially known:
-	if(not translator()->hasVarIdMapping(id)){
-		return;
-	}
-	auto symbol = translator()->getFunction(id);
-#warning add in the relevant arguments (they should ALWAYS be instantiated at this point!)
-	auto ct = structure()->inter(symbol)->graphInter()->ct();
-	for(auto i=ct->begin(); not i.isAtEnd(); ++i){
-		auto lit = translator()->translate(symbol, *i);
-		addUnitClause(lit);
-	}
-	auto cf = structure()->inter(symbol)->graphInter()->cf();
-	for(auto i=cf->begin(); not i.isAtEnd(); ++i){
-		auto lit = translator()->translate(symbol, *i);
-		addUnitClause(-lit);
-	}
+	translator()->addKnown(id);
 }
 
 template<class Policy>
@@ -404,9 +390,9 @@ void GroundTheory<Policy>::addRangeConstraint(Function* f, const litlist& set, S
 	SetId setnr = translator()->translateSet(set, lw, {}, {});
 	Lit tseitin;
 	if (f->partial() || (not outSortTable->finite())) {
-		tseitin = translator()->translate(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
+		tseitin = translator()->reify(1, CompType::GEQ, AggFunction::CARD, setnr, TsType::IMPL);
 	} else {
-		tseitin = translator()->translate(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
+		tseitin = translator()->reify(1, CompType::EQ, AggFunction::CARD, setnr, TsType::IMPL);
 	}
 	addUnitClause(tseitin);
 }

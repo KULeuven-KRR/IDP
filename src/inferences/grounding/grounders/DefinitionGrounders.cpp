@@ -53,7 +53,7 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 		auto pt = getGrounding()->structure()->inter(symbol)->pt();
 		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION
-			auto translatedvar = getGrounding()->translator()->translate(symbol, (*ptIterator));
+			auto translatedvar = getGrounding()->translator()->translateReduced(symbol, (*ptIterator), recursive(*symbol, context()));
 			Assert(translatedvar>0);
 			if (not grounddefinition->hasRule(translatedvar)) {
 				getGrounding()->addUnitClause(-translatedvar);
@@ -143,8 +143,8 @@ void FullRuleGrounder::run(DefId
 }
 
 HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<SortTable*>& vst)
-		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s) {
+		const vector<SortTable*>& vst, GroundingContext& context)
+		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s), _context(context) {
 }
 
 HeadGrounder::~HeadGrounder() {
@@ -176,7 +176,7 @@ Lit HeadGrounder::run() const {
 	}
 
 	// Run instance checkers and return grounding
-	Lit atom = _grounding->translator()->translate(_symbol, args);
+	Lit atom = _grounding->translator()->translateReduced(_symbol, args, recursive(*_pfsymbol, _context));
 	if (_ct->contains(args)) {
 		_grounding->addUnitClause(atom);
 	} else if (_cf->contains(args)) {

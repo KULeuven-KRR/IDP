@@ -506,8 +506,8 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 		}else{
 			b = CPBound(cpterm._domelement->value()._int);
 		}
-		auto bl1 = translator->translate(new CPVarTerm(varid), CompType::EQ, b, TsType::EQ);
-		auto bl2 = translator->translate(new CPVarTerm(varid), CompType::EQ, getNeutralElement(type), TsType::EQ);
+		auto bl1 = translator->reify(new CPVarTerm(varid), CompType::EQ, b, TsType::EQ);
+		auto bl2 = translator->reify(new CPVarTerm(varid), CompType::EQ, getNeutralElement(type), TsType::EQ);
 		grounding->add({-conditions[i], bl1});
 		grounding->add({conditions[i], bl2});
 

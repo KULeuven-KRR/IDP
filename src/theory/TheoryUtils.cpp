@@ -122,10 +122,10 @@ std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, AbstractStructure* structure, Context context, bool cpsupport) {
+Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport);
 }
-Rule* unnestHeadTermsContainingVars(Rule* rule, AbstractStructure* structure, Context context) {
+Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context) {
 	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
 }
 }
@@ -238,7 +238,7 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
 
-Formula* unnestFuncsAndAggs(Formula* f, AbstractStructure* str, Context con) {
+Formula* unnestFuncsAndAggs(Formula* f, const AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
 
@@ -246,23 +246,23 @@ Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const AbstractStructure* str
 	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
 }
 
-Formula* unnestDomainTerms(Formula* f, AbstractStructure* str, Context con) {
+Formula* unnestDomainTerms(Formula* f, const AbstractStructure* str, Context con) {
 	return transform<UnnestDomainTerms, Formula*>(f, str, con);
 }
 
-Formula* unnestPartialTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+Formula* unnestPartialTerms(Formula* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
 }
 
-AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, AbstractTheory*>(f, con, str, voc);
 }
 
-Formula* unnestTerms(Formula* f, Context con, AbstractStructure* str, Vocabulary* voc) {
+Formula* unnestTerms(Formula* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, AbstractStructure* structure, Context context, bool cpsupport) {
+Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, Context context, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport);
 }
 
@@ -329,7 +329,7 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, AbstractStructure* str, Context con) {
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
@@ -337,7 +337,7 @@ AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const Abstract
 	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
 }
 
-AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Context con) {
+AbstractTheory* unnestDomainTerms(AbstractTheory* t, const AbstractStructure* str, Context con) {
 	return transform<UnnestDomainTerms, AbstractTheory*>(t, str, con);
 }
 
@@ -345,7 +345,7 @@ AbstractTheory* unnestDomainTerms(AbstractTheory* t, AbstractStructure* str, Con
  return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
  }*/
 
-void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabulary* voc) {
+void unnestTerms(AbstractTheory* t, Context con, const AbstractStructure* str, Vocabulary* voc) {
 #ifndef NDEBUG
 	auto newt =
 #endif
@@ -355,7 +355,7 @@ void unnestTerms(AbstractTheory* t, Context con, AbstractStructure* str, Vocabul
 #endif
 }
 
-void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, AbstractStructure* str, Context con) {
+void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, const AbstractStructure* str, Context con) {
 #ifndef NDEBUG
 	auto newt =
 #endif

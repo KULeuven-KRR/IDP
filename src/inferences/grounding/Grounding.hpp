@@ -131,7 +131,7 @@ private:
 			if (defCalculated.size() == 0) {
 				// TODO allow this without symbolic structure?
 				auto symstructure = generateBounds(_theory, _structure, getOption(BoolType::LIFTEDUNITPROPAGATION));
-				auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
+				auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
 				delete(symstructure);
 				return grounding;
 			}
@@ -148,14 +148,14 @@ private:
 			if (getOption(IntType::VERBOSE_GROUNDING) > 0 || getOption(IntType::VERBOSE_PROPAGATING) > 0) {
 				std::clog << "approximation detected UNSAT\n";
 			}
-			auto grounding = returnUnsat({_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm}, _receiver);
+			auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
 			delete (symstructure);
 			return grounding;
 		}
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Creating grounders");
 		}
-		auto gi = GroundInfo(_theory, _structure, symstructure, _nbmodelsequivalent, _minimizeterm);
+		auto gi = GroundInfo(_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm);
 		if (_receiver == NULL) {
 			_grounder = GrounderFactory::create(gi);
 		} else {
@@ -170,7 +170,8 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Grounding");
 		}
-		_grounder->toplevelRun();
+		bool unsat = _grounder->toplevelRun();
+#warning handle unsat here! (currently still added to solver too)
 
 		// Add symmetry breakers
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {

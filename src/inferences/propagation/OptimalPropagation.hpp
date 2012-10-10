@@ -35,8 +35,11 @@ public:
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure, true);
-		auto grounder = GrounderFactory::create({theory, structure, symstructure, false /*TODO CHeck*/}, data);
-		grounder->toplevelRun();
+		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false /*TODO CHeck*/}, data);
+		bool unsat = grounder->toplevelRun();
+		if(unsat){
+			return std::vector<AbstractStructure*> { };
+		}
 		auto grounding = grounder->getGrounding();
 
 		auto mx = SolverConnection::initsolution(data, 0);
