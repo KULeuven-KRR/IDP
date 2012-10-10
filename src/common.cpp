@@ -308,6 +308,23 @@ std::string toString(const TruthType& type){
 }
 
 template<>
+std::string toString(const TruthValue& type){
+	std::stringstream output;
+	switch (type) {
+	case TruthValue::True:
+		output << "true";
+		break;
+	case TruthValue::False:
+		output << "false";
+		break;
+	case TruthValue::Unknown:
+		output << "unknown";
+		break;
+	}
+	return output.str();
+}
+
+template<>
 std::string toString(const TsType& type) {
 	std::stringstream output;
 	switch (type) {

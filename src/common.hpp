@@ -167,6 +167,8 @@ template<>
 std::string toString(const TsType& type);
 template<>
 std::string toString(const AggFunction& type);
+template<>
+std::string toString(const TruthValue& type);
 
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
