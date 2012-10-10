@@ -522,49 +522,6 @@ TEST(UnnestThreeValuedTermsTest,NestedFuncThreeValuedInTwoValued) {
 // UnnestThreeValuedTerms - formula,rule
 //TODO
 
-TEST(FindUnknTest, DISABLED_NestedQuantFormula) {
-	auto s = sort("S", -2, 2);
-	auto x = var(s);
-	auto y = var(s);
-	auto p = pred("P", { s, s });
-	auto q = pred("Q", { s, s });
-	auto r = pred("R", { s, s });
-
-	auto voc = new Vocabulary("V");
-	add(voc, { s });
-	add(voc, { p.p(), r.p(), q.p() });
-
-	GroundTranslator translator(NULL);
-
-	auto& pf_p = p( { x, y });
-	auto& formula = forall(x, forall(y, pf_p | (q( { x, y }) | r( { x, y }))));
-
-	Context context = Context::BOTH;
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
-	ASSERT_EQ((void*)NULL, predform);
-}
-
-TEST(FindUnknTest,DISABLED_QuantFormula) {
-	auto s = sort("S", -2, 2);
-	auto x = var(s);
-	auto y = var(s);
-	auto p = pred("P", { s, s });
-	auto q = pred("Q", { s, s });
-	auto r = pred("R", { s, s });
-
-	auto voc = new Vocabulary("V");
-	add(voc, { s });
-	add(voc, { p.p(), r.p(), q.p() });
-
-	GroundTranslator translator(NULL);
-
-	auto& pf_p = p( { x, y });
-	auto& formula = forall( { x, y }, pf_p | (q( { x, y }) | r( { x, y })));
-
-	Context context = Context::BOTH;
-	auto predform = FormulaUtils::findUnknownBoundLiteral(&formula, NULL, &translator, context);
-	ASSERT_EQ(predform, &pf_p);
-}
 TEST(DeriveTermBoundsTest,Product) {
 	auto s1 = sort("S", -1, 1);
 	auto s2 = sort("S2", -1, 2);
