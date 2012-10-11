@@ -21,12 +21,12 @@
 class UnionGenerator: public InstGenerator {
 private:
 	std::vector<InstGenerator*> _generators;
-	std::vector<InstGenerator*> _checkers;
+	std::vector<InstChecker*> _checkers;
 	bool _reset;
 	unsigned int _current;
 
 public:
-	UnionGenerator(std::vector<InstGenerator*>& generators, std::vector<InstGenerator*>& checkers);
+	UnionGenerator(const std::vector<InstGenerator*>& generators, const std::vector<InstChecker*>& checkers);
 	~UnionGenerator() {
 		for (auto it = _generators.cbegin(); it != _generators.cend(); ++it) {
 			delete (*it);

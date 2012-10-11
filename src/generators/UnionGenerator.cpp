@@ -10,8 +10,9 @@
 
 #include "UnionGenerator.hpp"
 
-UnionGenerator::UnionGenerator(std::vector<InstGenerator*>& generators, std::vector<InstGenerator*>& checkers)
+UnionGenerator::UnionGenerator(const std::vector<InstGenerator*>& generators, const std::vector<InstChecker*>& checkers)
 		: _generators(generators), _checkers(checkers), _reset(false), _current(0) {
+	Assert(_generators.size()==_checkers.size());
 }
 
 UnionGenerator* UnionGenerator::clone() const {

@@ -260,9 +260,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 		auto falsegenerator = createFromBDD(branchdata);
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
-		std::vector<InstGenerator*> generators = { kernelgenerator, falsegenerator };
-		std::vector<InstGenerator*> checkers = { kernelchecker, falsechecker };
-		return new UnionGenerator(generators, checkers);
+		return new UnionGenerator({ kernelgenerator, falsegenerator }, { kernelchecker, falsechecker });
 	}
 
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {

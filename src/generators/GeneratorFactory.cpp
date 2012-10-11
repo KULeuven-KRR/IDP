@@ -26,7 +26,6 @@
 #include "UnionGenerator.hpp"
 #include "TreeInstGenerator.hpp"
 #include "EnumLookupGenerator.hpp"
-#include "UnionGenerator.hpp"
 #include "SortGenAndChecker.hpp"
 #include "TableCheckerAndGenerators.hpp"
 #include "ComparisonGenerator.hpp"
@@ -221,12 +220,8 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
 	}
 
-	std::vector<InstGenerator*> generators = { finalgenerator, outofboundsgenerator };
 	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe);
-
-	std::vector<InstGenerator*> checkers = { tablechecker, new FullGenerator() };
-
-	return new UnionGenerator(generators, checkers);
+	return new UnionGenerator({ finalgenerator, outofboundsgenerator } , { tablechecker, new FullGenerator() });
 
 }
 
@@ -326,8 +321,9 @@ void GeneratorFactory::visit(const FuncInternalPredTable* fipt) {
 
 void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 	std::vector<InstGenerator*> ingenerators(uipt->inTables().size());
-	std::vector<InstGenerator*> incheckers(uipt->inTables().size());
-	std::vector<InstGenerator*> outcheckers(uipt->outTables().size());
+	std::vector<InstChecker*> incheckers(uipt->inTables().size());
+	std::vector<InstGenerator*> outgenerators(uipt->outTables().size());
+	std::vector<InstChecker*> outcheckers(uipt->outTables().size());
 	unsigned int i = 0;
 	for (auto it = uipt->inTables().cbegin(); it != uipt->inTables().cend(); ++it, ++i) {
 		(*it)->accept(this);
@@ -345,11 +341,12 @@ void GeneratorFactory::visit(const UnionInternalPredTable* uipt) {
 	for (auto it = uipt->outTables().cbegin(); it != uipt->outTables().cend(); ++it, ++i) {
 		(*it)->accept(this);
 		outcheckers[i] = _generator;
+		outgenerators[i] = _generator;
 	}
 	_pattern = backuppattern;
 
 	auto ingenereator = new UnionGenerator(ingenerators, incheckers);
-	auto outchecker = new UnionGenerator(outcheckers, outcheckers);
+	auto outchecker = new UnionGenerator(outgenerators, outcheckers);
 	_generator = new TwoChildGenerator(outchecker, ingenereator, new FullGenerator(), new EmptyGenerator());
 }
 
@@ -854,10 +851,8 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		auto qFromMinusQGenerator = new MinusGenerator(varzero, minusQ, q, NumType::CERTAINLYINT, intSortTable);
 		auto negativeQGenerator = new TwoChildGenerator(minusQIsZeroChecker, positiveMinusQGenerator, qFromMinusQGenerator, new EmptyGenerator);
 
-		std::vector<InstGenerator*> allqs = { negativeQGenerator, positiveQGenerator };
-		std::vector<InstGenerator*> trivial = { new EmptyGenerator(), new EmptyGenerator() };
 		//By construction, we know that the trivial checkers suffice
-		auto allQGenerator = new UnionGenerator(allqs, trivial);
+		auto allQGenerator = new UnionGenerator({ negativeQGenerator, positiveQGenerator }, { new EmptyGenerator(), new EmptyGenerator() });
 		auto qTimesY = new DomElemContainer();
 		auto qTimesYGenerator = new TimesGenerator(q, _vars[1], qTimesY, NumType::CERTAINLYINT, intSortTable);
 		auto finalGenerator = new PlusGenerator(qTimesY, _vars[2], _vars[0], NumType::CERTAINLYINT, _universe.tables()[0]);
