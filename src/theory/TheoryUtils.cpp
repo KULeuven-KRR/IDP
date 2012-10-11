@@ -373,7 +373,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	if (not isa<Theory>(*at1) or not isa<Theory>(*at2)) {
 		throw notyetimplemented("Only merging of normal theories has been implemented...");
 	}
-	Vocabulary* voc;
+	auto voc = at1->vocabulary();
 	if (at1->vocabulary() != at2->vocabulary()) {
 		if (VocabularyUtils::isSubVocabulary(at1->vocabulary(),at2->vocabulary())) {
 			// We can safely add components from the first theory into the second theory.
@@ -389,10 +389,10 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 			voc->add(at2->vocabulary());
 		}
 	}
-	AbstractTheory* at = at1->clone();
+	auto at = at1->clone();
 	at->name(at1->name() + at2->name());
 	at->vocabulary(voc);
-	Theory* t2 = static_cast<Theory*>(at2);
+	auto t2 = static_cast<Theory*>(at2);
 	for (auto sentence : t2->sentences()) {
 		at->add(sentence->clone());
 	}
