@@ -90,10 +90,12 @@ void GroundTheory<Policy>::closeTheory() {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
+#ifdef DEBUG
 	for (auto lit : cl) {
 		Assert(lit!=_true);
 		Assert(lit!=_false);
 	}
+#endif
 	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst);
 	Policy::polAdd(cl);
 }
