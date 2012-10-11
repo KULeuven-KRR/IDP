@@ -160,8 +160,7 @@ PCUnitPropagate* initpropsolution(PCSolver* solver) {
 }
 
 bool useUFSAndOnlyIfSem(){
-	//return getOption(GROUNDLAZILY);
-	return true;
+	return getOption(GROUNDLAZILY);
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
