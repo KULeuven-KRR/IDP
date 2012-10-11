@@ -34,7 +34,6 @@
 #include "help.hpp"
 #include "iterators.hpp"
 #include "entails.hpp"
-// TODO issue #50 bdds #include "simplify.hpp"
 #include "tablesize.hpp"
 #include "twovaluedextensions.hpp"
 #include "calculatedefinitions.hpp"
