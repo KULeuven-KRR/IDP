@@ -10,6 +10,7 @@
 
 #include "allcommands.hpp"
 
+// NOTE: all inferences available externally should be included here and added to the vector of inferences.
 #include "internalargument.hpp"
 #include "printblocks.hpp"
 #include "printasbdd.hpp"
@@ -49,11 +50,12 @@ using namespace std;
 
 vector<shared_ptr<Inference>> inferences; // TODO move to globaldata and delete them there!
 
-// Important: pointer owner is transferred to receiver!
+// Note: pointer ownership is transferred to the receiver, so should be heap allocated data!
 const vector<shared_ptr<Inference>>& getAllInferences() {
 	if (inferences.size() != 0) {
 		return inferences;
 	}
+	// make_shared creates a new object based on a default constructor. Some inference classes can construct multiple inference objects, so make_shared should not be applied.
 	inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomTrueInference()));
 	inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomFalseInference()));
 	inferences.push_back(shared_ptr<Inference>(SetAtomValueInference::getMakeAtomUnknownInference()));
