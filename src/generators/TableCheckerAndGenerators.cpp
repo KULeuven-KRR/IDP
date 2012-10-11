@@ -15,7 +15,10 @@
  * A generator which checks whether a fully instantiated list of variables is a valid tuple for a certain predicate
  */
 TableChecker::TableChecker(const PredTable* t, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
-		: _table(t), _vars(vars), _universe(univ), _reset(true) {
+		: 	_table(t),
+			_vars(vars),
+			_universe(univ),
+			_reset(true) {
 	Assert(t->arity() == vars.size());
 }
 
@@ -62,7 +65,9 @@ void TableChecker::put(std::ostream& stream) const {
 
 TableGenerator::TableGenerator(const PredTable* table, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
 		const std::vector<unsigned int>& firstocc, const Universe& univ)
-		: _fulltable(table), _allvars(vars), _reset(true) {
+		: 	_fulltable(table),
+			_allvars(vars),
+			_reset(true) {
 	std::vector<SortTable*> outuniv;
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == Pattern::OUTPUT) {
@@ -94,20 +99,24 @@ void TableGenerator::reset() {
 void TableGenerator::next() {
 	if (_reset) {
 		_reset = false;
+		_currenttuple.clear();
 		for (auto i = _allvars.begin(); i < _allvars.end(); ++i) {
 			_currenttuple.push_back((*i)->get());
 		}
 		_current = _outputtable->begin();
-		while (not _current.isAtEnd() && not inFullTable()) {
-			++_current;
-		}
-		if (_current.isAtEnd()) {
-			notifyAtEnd();
-			return;
-		}
-	} else {
+	}else{
 		++_current;
-
+	}
+	while (not _current.isAtEnd() && not inFullTable()) {
+		++_current;
+	}
+	if (_current.isAtEnd()) {
+		notifyAtEnd();
+	}else{
+		const auto& values = *_current;
+		for(uint i=0; i<values.size(); ++i){
+			*_outvars[i] = values[i];
+		}
 	}
 }
 
@@ -168,7 +177,7 @@ void InverseTableGenerator::next() {
 		notifyAtEnd();
 	}
 }
-void InverseTableGenerator::put(std::ostream& stream)  const{
+void InverseTableGenerator::put(std::ostream& stream) const {
 	stream << "Inverse instance generater: inverse of" << nt() << toString(_predchecker);
 }
 
