@@ -45,13 +45,20 @@ typedef std::map<TsBody*, Lit, Compare<TsBody> > Ts2Atom;
 
 #include "generators/InstGenerator.hpp" // TODO temporary (for PATTERN usage)
 class DomElemContainer;
+
+struct CheckerInfo {
+	InstChecker *ctchecker, *ptchecker;
+	std::vector<const DomElemContainer*> containers; // The containers used to construct the checkers, which should be fully instantiated before checking
+	PredInter* inter;
+
+	CheckerInfo(PFSymbol* symbol, StructureInfo structure);
+};
+
 struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
 	std::vector<DelayGrounder*> assocGrounders;
-	InstChecker *ctchecker, *ptchecker;
-	std::vector<const DomElemContainer*> containers; // The containers used to construct the checkers, which should be fully instantiated before checking
-	PredInter* inter;
+	CheckerInfo* checkers;
 
 	SymbolInfo(PFSymbol* symbol, StructureInfo structure);
 };
@@ -60,7 +67,7 @@ struct FunctionInfo {
 	Function* symbol;
 	std::map<std::vector<GroundTerm>, VarId> term2var;
 	InstGenerator *truerangegenerator, *falserangegenerator;
-	std::vector<const DomElemContainer*> containers;
+	CheckerInfo* checkers;
 
 	FunctionInfo(Function* symbol, StructureInfo structure);
 };

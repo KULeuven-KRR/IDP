@@ -17,6 +17,8 @@
 
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "errorhandling/UnsatException.hpp"
+#include "generators/UnionGenerator.hpp"
+#include "generators/GeneratorFactory.hpp"
 
 using namespace std;
 
@@ -24,8 +26,7 @@ int verbosity() {
 	return getOption(IntType::VERBOSE_GROUNDING);
 }
 
-SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
-		: symbol(symbol) {
+CheckerInfo::CheckerInfo(PFSymbol* symbol, StructureInfo structure) {
 	inter = structure.concrstructure->inter(symbol);
 	GeneratorData data;
 	std::vector<Term*> varterms;
@@ -39,33 +40,51 @@ SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
 	containers = data.containers;
 
 	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
-	data.pattern = std::vector<Pattern>(data.containers.size(), Pattern::INPUT);
+	data.funccontext = Context::POSITIVE;
 	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure);
 	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
 }
 
+SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
+		: 	symbol(symbol),
+			checkers(new CheckerInfo(symbol, structure)) {
+}
+
 FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
-		: symbol(symbol) {
+		: 	symbol(symbol),
+			checkers(new CheckerInfo(symbol, structure)) {
 	GeneratorData data;
 	std::vector<Term*> varterms;
-	for (auto sort : symbol->sorts()) {
-		data.containers.push_back(new const DomElemContainer());
+	for (uint i = 0; i < symbol->sorts().size(); ++i) {
+		auto sort = symbol->sorts()[i];
 		data.tables.push_back(structure.concrstructure->inter(sort));
-		data.fovars.push_back(new Variable(sort));
-		varterms.push_back(new VarTerm(data.fovars.back(), TermParseInfo()));
+		auto var = new Variable(sort);
+		varterms.push_back(new VarTerm(var, TermParseInfo()));
+		data.fovars.push_back(var);
 	}
+	data.containers = checkers->containers;
 	data.structure = structure.concrstructure;
-
+	data.quantfovars.push_back(data.fovars.back());
+	data.funccontext = Context::POSITIVE;
 	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
-	data.pattern = std::vector<Pattern>(data.containers.size()-1, Pattern::INPUT);
-	data.pattern.push_back(Pattern::OUTPUT);
-	containers = data.containers;
-	truerangegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
-	falserangegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_FALSE, data, structure.symstructure);
+	auto pattern = std::vector<Pattern>(data.containers.size() - 1, Pattern::INPUT);
+	pattern.push_back(Pattern::OUTPUT);
+	auto allinput = std::vector<Pattern>(data.containers.size(), Pattern::INPUT);
+	auto symbolictruegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_TRUE, data, pattern, structure.symstructure, true);
+	auto symbolictruechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, true);
+	auto symbolicfalsegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_FALSE, data, pattern, structure.symstructure, true);
+	auto symbolicfalsechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_FALSE, data, structure.symstructure, true);
+	auto concretetruegenerator = GeneratorFactory::create(checkers->inter->ct(), pattern, checkers->containers, Universe(data.tables));
+	auto concretetruechecker = GeneratorFactory::create(checkers->inter->ct(), allinput, checkers->containers, Universe(data.tables));
+	auto concretefalsegenerator = GeneratorFactory::create(checkers->inter->cf(), pattern, checkers->containers, Universe(data.tables));
+	auto concretefalsechecker = GeneratorFactory::create(checkers->inter->cf(), allinput, checkers->containers, Universe(data.tables));
+	truerangegenerator = new UnionGenerator( { symbolictruegenerator, concretetruegenerator }, { symbolictruechecker, concretetruechecker });
+	falserangegenerator = new UnionGenerator( { symbolicfalsegenerator, concretefalsegenerator }, { symbolicfalsechecker, concretefalsechecker });
 }
 
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
-		: _structure(structure), _grounding(grounding) {
+		: 	_structure(structure),
+			_grounding(grounding) {
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);
@@ -85,8 +104,8 @@ Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args, bo
 	return translateReduced(offset, args, recursive);
 }
 
-void GroundTranslator::addKnown(VarId id){
-	if(not hasVarIdMapping(id)){
+void GroundTranslator::addKnown(VarId id) {
+	if (not hasVarIdMapping(id)) {
 		return;
 	}
 
@@ -94,21 +113,24 @@ void GroundTranslator::addKnown(VarId id){
 	auto offset = addSymbol(symbol);
 	auto& funcinfo = functions[offset.offset];
 	auto args = getArgs(id);
-	for(uint i=0; i<args.size(); ++i){
-		Assert(not args[i].isVariable); // FIXME check if correct?
-		*funcinfo.containers[i]=args[i]._domelement;
+	auto& containers = funcinfo.checkers->containers;
+	for (uint i = 0; i < args.size(); ++i) {
+		Assert(not args[i].isVariable); // TODO verify that this can never happen (shouldnt this be domelem instead of groundterms then?)
+		*containers[i] = args[i]._domelement;
 	}
-	for(funcinfo.truerangegenerator->begin(); not funcinfo.truerangegenerator->isAtEnd(); funcinfo.truerangegenerator->operator ++()){
-		Assert(funcinfo.containers.back()->get()->type()==DomainElementType::DET_INT); // NOTE: change if we can handle more then ints!
-		CPBound bound(funcinfo.containers.back()->get()->value()._int);
-		auto lit = reify(new CPVarTerm(id), CompType::NEQ, bound, TsType::IMPL);
+	for (funcinfo.truerangegenerator->begin(); not funcinfo.truerangegenerator->isAtEnd(); funcinfo.truerangegenerator->operator ++()) {
+		Assert(containers.back()->get()->type()==DomainElementType::DET_INT);
+		// NOTE: change if we can handle more then ints!
+		CPBound bound(containers.back()->get()->value()._int);
+		auto lit = reify(new CPVarTerm(id), CompType::EQ, bound, TsType::IMPL);
 		Assert(lit!=_true && lit!=_false);
 		_grounding->addUnitClause(lit);
 	}
-	for(funcinfo.falserangegenerator->begin(); not funcinfo.falserangegenerator->isAtEnd(); funcinfo.falserangegenerator->operator ++()){
-		Assert(funcinfo.containers.back()->get()->type()==DomainElementType::DET_INT); // NOTE: change if we can handle more then ints!
-		CPBound bound(funcinfo.containers.back()->get()->value()._int);
-		auto lit = reify(new CPVarTerm(id), CompType::NEQ, bound, TsType::RIMPL);
+	for (funcinfo.falserangegenerator->begin(); not funcinfo.falserangegenerator->isAtEnd(); funcinfo.falserangegenerator->operator ++()) {
+		Assert(containers.back()->get()->type()==DomainElementType::DET_INT);
+		// NOTE: change if we can handle more then ints!
+		CPBound bound(containers.back()->get()->value()._int);
+		auto lit = reify(new CPVarTerm(id), CompType::EQ, bound, TsType::RIMPL);
 		Assert(lit!=_true && lit!=_false);
 		_grounding->addUnitClause(-lit);
 	}
@@ -148,29 +170,34 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
  * 			or first search for the literal, and run the checkers if it was not yet grounded.
  */
 Lit GroundTranslator::translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
-	auto& symboldata = symbols[offset.offset];
-	Assert(symboldata.ctchecker!=NULL);
+	CheckerInfo* checkers = NULL;
+	if (offset.functionlist) {
+		checkers = functions[offset.offset].checkers;
+	} else {
+		checkers = symbols[offset.offset].checkers;
+	}
+	Assert(checkers->ctchecker!=NULL);
 
 	bool littrue = false, litfalse = false;
-	for(uint i=0; i<args.size(); ++i){
-		*symboldata.containers[i] = args[i];
+	for (uint i = 0; i < args.size(); ++i) {
+		*checkers->containers[i] = args[i];
 	}
-	if (symboldata.ctchecker->check()) { // Literal is irrelevant in its occurrences
+	if (checkers->ctchecker->check()) { // Literal is irrelevant in its occurrences
 		if (verbosity() > 2) {
 			std::clog << tabs() << "Certainly true checker succeeded" << "\n";
 		}
 		littrue = true;
 	}
-	if (not symboldata.ptchecker->check()) { // Literal decides formula if checker succeeds
+	if (not checkers->ptchecker->check()) { // Literal decides formula if checker succeeds
 		if (verbosity() > 2) {
 			std::clog << tabs() << "Possibly true checker failed" << "\n";
 		}
 		litfalse = true;
 	}
-	if (not littrue && symboldata.inter->isTrue(args)) {
+	if (not littrue && checkers->inter->isTrue(args)) {
 		littrue = true;
 	}
-	if (not litfalse && symboldata.inter->isFalse(args)) {
+	if (not litfalse && checkers->inter->isFalse(args)) {
 		litfalse = true;
 	}
 	if (littrue && litfalse) {
@@ -214,7 +241,7 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
 		return lit;
-	}else{
+	} else {
 		Lit lit = 0;
 		auto& symbolinfo = symbols[symboloffset.offset];
 		auto jt = symbolinfo.tuple2atom.find(args);

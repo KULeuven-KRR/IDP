@@ -73,9 +73,9 @@ struct GroundInfo {
 struct GeneratorData { // NOTE: all have the same order!
 	std::vector<SortTable*> tables;
 	std::vector<Variable*> fovars, quantfovars;
-	std::vector<Pattern> pattern;
 	std::vector<const DomElemContainer*> containers;
 	const AbstractStructure* structure;
+	Context funccontext;
 };
 
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
@@ -134,15 +134,25 @@ private:
 	template<class VarList>
 	InstGenerator* createVarMapAndGenerator(const Formula* original, const VarList& vars);
 
-	GeneratorData getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars);
+	std::pair<GeneratorData, std::vector<Pattern>> getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars);
 public:
-	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure);
-	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure);
+	/**
+	 * Create generator for the formula based on the SYMBOLIC structure
+	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
+	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
+	 */
+	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, bool exact = false);
+	/**
+	 * Create checker for the formula based on the SYMBOLIC structure
+	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
+	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
+	 */
+	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool exact = false);
 private:
 	static InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula*,
 			const std::vector<Pattern>& pattern);
 	static PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data,
-			GenerateBDDAccordingToBounds* symstructure);
+			GenerateBDDAccordingToBounds* symstructure, bool exact = false);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 

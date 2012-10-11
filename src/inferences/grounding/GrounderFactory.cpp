@@ -518,8 +518,8 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 			data.tables.push_back(getConcreteStructure()->inter((*it)->sort()));
 			data.fovars.push_back(new Variable((*it)->sort()));
 		}
-		data.pattern = vector<Pattern>(data.containers.size(), Pattern::INPUT);
 		data.structure = getConcreteStructure();
+		data.funccontext = getContext()._funccontext;
 		auto genpf = newpf;
 		if (getOption(BoolType::GROUNDWITHBOUNDS)) {
 			auto foterms = TermUtils::makeNewVarTerms(data.fovars);
@@ -1209,7 +1209,6 @@ InstGenerator* GrounderFactory::createVarMapAndGenerator(const Formula* original
 template<typename OrigConstruct>
 GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype) {
 	vector<Variable*> fovars, quantfovars;
-	vector<Pattern> pattern;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
 		quantfovars.push_back(*it);
 	}
@@ -1217,9 +1216,9 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		fovars.push_back(*it);
 	}
 
-	auto data = getPatternAndContainers(quantfovars, fovars);
-	auto generator = getGenerator(subformula, generatortype, data, getSymbolicStructure());
-	auto checker = getChecker(subformula, checkertype, data, getSymbolicStructure());
+	auto dataWpattern = getPatternAndContainers(quantfovars, fovars);
+	auto generator = getGenerator(subformula, generatortype, dataWpattern.first, dataWpattern.second, getSymbolicStructure());
+	auto checker = getChecker(subformula, checkertype, dataWpattern.first, getSymbolicStructure());
 
 	vector<SortTable*> directquanttables;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
@@ -1231,11 +1230,13 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 		checkGeneratorInfinite(checker, orig);
 	}
 
-	return GenAndChecker(data.containers, generator, checker, Universe(directquanttables));
+	return GenAndChecker(dataWpattern.first.containers, generator, checker, Universe(directquanttables));
 }
 
-GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars) {
-	GeneratorData data;
+std::pair<GeneratorData, std::vector<Pattern> > GrounderFactory::getPatternAndContainers(std::vector<Variable*> quantfovars, std::vector<Variable*> remvars) {
+	std::pair<GeneratorData, std::vector<Pattern>> both;
+	auto& data = both.first;
+	data.funccontext = getContext()._funccontext;
 	data.quantfovars = quantfovars;
 	data.fovars = data.quantfovars;
 	data.fovars.insert(data.fovars.end(), remvars.cbegin(), remvars.cend());
@@ -1248,15 +1249,15 @@ GeneratorData GrounderFactory::getPatternAndContainers(std::vector<Variable*> qu
 	for (auto it = quantfovars.cbegin(); it != quantfovars.cend(); ++it) {
 		auto d = createVarMapping(*it);
 		data.containers.push_back(d);
-		data.pattern.push_back(Pattern::OUTPUT);
+		both.second.push_back(Pattern::OUTPUT);
 	}
 	for (auto it = remvars.cbegin(); it != remvars.cend(); ++it) {
 		Assert(varmapping().find(*it) != varmapping().cend());
 		// Should already have a varmapping
 		data.containers.push_back(varmapping().at(*it));
-		data.pattern.push_back(Pattern::INPUT);
+		both.second.push_back(Pattern::INPUT);
 	}
-	return data;
+	return both;
 }
 
 DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
@@ -1267,25 +1268,30 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 	return d;
 }
 
-InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure) {
+InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, bool exact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
 		pushtab();
 		clog << nt();
 	}
 	PredTable* gentable = NULL;
+	bool approxastrue = generatortype == TruthType::POSS_TRUE || generatortype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		gentable = createTable(subformula, generatortype, data.quantfovars, true, data, symstructure);
+		gentable = createTable(subformula, generatortype, data.quantfovars, approxastrue, data, symstructure, exact);
 	} else {
-		gentable = TableUtils::createFullPredTable(Universe(data.tables));
+		if (approxastrue) {
+			gentable = TableUtils::createFullPredTable(Universe(data.tables));
+		} else {
+			gentable = TableUtils::createPredTable(Universe(data.tables));
+		}
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		poptab();
 	}
-	return createGen("Generator", generatortype, data, gentable, subformula, data.pattern);
+	return createGen("Generator", generatortype, data, gentable, subformula, pattern);
 }
 
-InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure) {
+InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool exact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
 		pushtab();
@@ -1294,7 +1300,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure);
+		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure, exact);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1305,7 +1311,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		poptab();
 	}
-	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.pattern.size(), Pattern::INPUT));
+	return createGen("Checker", checkertype, data, checktable, subformula, std::vector<Pattern>(data.containers.size(), Pattern::INPUT));
 }
 
 InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula* ,
@@ -1320,13 +1326,25 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
-		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure) {
+		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool exact) {
+#ifdef DEBUG
+	uint output = 0;
+	for(auto p:data.pattern){
+		if(p==Pattern::OUTPUT){
+			output++;
+		}
+	}
+	Assert(output==data.quantfovars.size());
+	Assert(data.pattern.size()==data.fovars.size());
+#endif
 	auto tempsubformula = subformula->clone();
-	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, Context::POSITIVE, data.structure); // FIXME removed because it needs the funccontext
+	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, false, Context::POSITIVE);  // FIXME removed because it needs the funccontext
+	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
-	bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure);
+	if(not exact){
+		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure);
+	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "Using the following BDD" << nt() << toString(bdd) << nt();
 	}
