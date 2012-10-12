@@ -45,6 +45,11 @@ CheckerInfo::CheckerInfo(PFSymbol* symbol, StructureInfo structure) {
 	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
 }
 
+CheckerInfo::~CheckerInfo(){
+	delete(ptchecker);
+	delete(ctchecker);
+}
+
 SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
 		: 	symbol(symbol),
 			checkers(new CheckerInfo(symbol, structure)) {
@@ -80,6 +85,11 @@ FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
 	auto concretefalsechecker = GeneratorFactory::create(checkers->inter->cf(), allinput, checkers->containers, Universe(data.tables));
 	truerangegenerator = new UnionGenerator( { symbolictruegenerator, concretetruegenerator }, { symbolictruechecker, concretetruechecker });
 	falserangegenerator = new UnionGenerator( { symbolicfalsegenerator, concretefalsegenerator }, { symbolicfalsechecker, concretefalsechecker });
+	delete(pf);
+}
+FunctionInfo::~FunctionInfo(){
+	delete(truerangegenerator);
+	delete(falserangegenerator);
 }
 
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
@@ -97,6 +107,8 @@ GroundTranslator::~GroundTranslator() {
 	deleteList<CPTsBody>(var2CTsBody);
 	deleteList<stpair>(atom2Tuple);
 	deleteList<ftpair>(var2Tuple);
+	deleteList<FunctionInfo>(functions);
+	deleteList<SymbolInfo>(symbols);
 }
 
 Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args, bool recursive) {
@@ -111,7 +123,7 @@ void GroundTranslator::addKnown(VarId id) {
 
 	auto symbol = getFunction(id);
 	auto offset = addSymbol(symbol);
-	auto& funcinfo = functions[offset.offset];
+	auto& funcinfo = *functions[offset.offset];
 	auto args = getArgs(id);
 	auto& containers = funcinfo.checkers->containers;
 	for (uint i = 0; i < args.size(); ++i) {
@@ -172,9 +184,9 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
 Lit GroundTranslator::translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
 	CheckerInfo* checkers = NULL;
 	if (offset.functionlist) {
-		checkers = functions[offset.offset].checkers;
+		checkers = functions[offset.offset]->checkers;
 	} else {
-		checkers = symbols[offset.offset].checkers;
+		checkers = symbols[offset.offset]->checkers;
 	}
 	Assert(checkers->ctchecker!=NULL);
 
@@ -237,13 +249,13 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
 		auto lit = reify(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // TODO TSType?
-		atom2Tuple[lit]->first = functions[symboloffset.offset].symbol;
+		atom2Tuple[lit]->first = functions[symboloffset.offset]->symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
 		return lit;
 	} else {
 		Lit lit = 0;
-		auto& symbolinfo = symbols[symboloffset.offset];
+		auto& symbolinfo = *symbols[symboloffset.offset];
 		auto jt = symbolinfo.tuple2atom.find(args);
 		if (jt != symbolinfo.tuple2atom.end()) {
 			lit = jt->second;
@@ -269,14 +281,14 @@ SymbolOffset GroundTranslator::getSymbol(PFSymbol* pfs) const {
 		auto function = dynamic_cast<Function*>(pfs);
 		if (function != NULL && getOption(CPSUPPORT) && CPSupport::eligibleForCP(function, vocabulary())) {
 			for (size_t n = 0; n < functions.size(); ++n) {
-				if (functions[n].symbol == pfs) {
+				if (functions[n]->symbol == pfs) {
 					return SymbolOffset(n, true);
 				}
 			}
 		}
 	}
 	for (size_t n = 0; n < symbols.size(); ++n) {
-		if (symbols[n].symbol == pfs) {
+		if (symbols[n]->symbol == pfs) {
 			return SymbolOffset(n, false);
 		}
 	}
@@ -289,11 +301,11 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 		if (pfs->isFunction()) {
 			auto function = dynamic_cast<Function*>(pfs);
 			if (function != NULL && getOption(CPSUPPORT) && CPSupport::eligibleForCP(function, vocabulary())) {
-				functions.push_back(FunctionInfo(function, _structure));
+				functions.push_back(new FunctionInfo(function, _structure));
 				return SymbolOffset(functions.size() - 1, true);
 			}
 		}
-		symbols.push_back(SymbolInfo(pfs, _structure));
+		symbols.push_back(new SymbolInfo(pfs, _structure));
 		return SymbolOffset(symbols.size() - 1, false);
 
 	} else {
@@ -315,7 +327,7 @@ bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context, DefId) const {
 	if (symbolId == -1) { // there is no such symbol yet
 		return true;
 	}
-	auto& grounders = symbols[symbolId].assocGrounders;
+	auto& grounders = symbols[symbolId]->assocGrounders;
 	if (grounders.empty()) {
 		return true;
 	}
@@ -445,7 +457,7 @@ Lit GroundTranslator::nextNumber(AtomType type) {
 
 VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTerm>& args) {
 	Assert(offset.functionlist);
-	auto& info = functions[offset.offset];
+	auto& info = *functions[offset.offset];
 	auto it = info.term2var.lower_bound(args);
 	if (it != info.term2var.cend() && it->first == args) {
 		return it->second;

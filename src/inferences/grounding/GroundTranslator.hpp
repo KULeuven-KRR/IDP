@@ -52,6 +52,7 @@ struct CheckerInfo {
 	PredInter* inter;
 
 	CheckerInfo(PFSymbol* symbol, StructureInfo structure);
+	~CheckerInfo();
 };
 
 struct SymbolInfo {
@@ -70,6 +71,7 @@ struct FunctionInfo {
 	CheckerInfo* checkers;
 
 	FunctionInfo(Function* symbol, StructureInfo structure);
+	~FunctionInfo();
 };
 
 enum class AtomType {
@@ -100,7 +102,7 @@ private:
 
 	// PROPOSITIONAL SYMBOLS
 	// SymbolID 2 Symbol + Tuple2Tseitin + grounders
-	std::vector<SymbolInfo> symbols;
+	std::vector<SymbolInfo*> symbols;
 
 	// Tseitin 2 atomtype
 	// Tseitin 2 tuple
@@ -114,7 +116,7 @@ private:
 
 	// GROUND TERMS
 	// FunctionID 2 Function + term2var
-	std::vector<FunctionInfo> functions;
+	std::vector<FunctionInfo*> functions;
 
 	// Var 2 meaning
 	std::vector<ftpair*> var2Tuple; // Owns pointers!
