@@ -470,23 +470,7 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 			}
 			lefttermgrounder = subtermgrounders[0];
 			righttermgrounder = subtermgrounders[1];
-		} /*else if (newpf->isGraphedFunction()) {
-			auto function = dynamic_cast<Function*>(newpf->symbol());
-			if (CPSupport::eligibleForCP(function, _structure->vocabulary())) {
-				useComparisonGrounder = true;
-				comp = CompType::EQ;
-				if (isNeg(newpf->sign())) {
-					comp = negateComp(comp);
-				}
-				righttermgrounder = subtermgrounders.back();
-				subtermgrounders.pop_back();
-				auto ftable = _structure->inter(function)->funcTable();
-				auto domain = _structure->inter(function->outsort());
-				lefttermgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, _structure),
-						subtermgrounders);
-				//ftgrounder->setOrig(...) TODO
-			}
-		}*/
+		}
 		if (useComparisonGrounder) {
 			SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
 						   // FIXME and why only in some cases check the sign of the formula for inverting the type?
@@ -505,7 +489,6 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 			deleteDeep(newpf);
 			return;
 		}
-
 	}
 
 	if (_context._component == CompContext::HEAD) {
