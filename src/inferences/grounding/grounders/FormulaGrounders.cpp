@@ -97,18 +97,15 @@ std::string FormulaGrounder::printFormula() const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, InstChecker* ptchecker, InstChecker* ctchecker, PredInter* inter, const vector<SortTable*>& vst,
+		const vector<const DomElemContainer*>& checkargs, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: 	FormulaGrounder(grounding, ct),
 			_subtermgrounders(sg),
-			_ptchecker(ptchecker),
-			_ctchecker(ctchecker),
 			_symbol(s),
 			_symboloffset(translator()->addSymbol(s)),
 			_tables(vst),
 			_sign(sign),
 			_checkargs(checkargs),
-			_inter(inter),
 			_recursive(ct._defined.find(s) != ct._defined.cend()),
 			_args(_subtermgrounders.size()),
 			terms(_subtermgrounders.size(), GroundTerm(NULL)) {
@@ -118,8 +115,6 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 
 AtomGrounder::~AtomGrounder() {
 	deleteList(_subtermgrounders);
-	delete (_ptchecker);
-	delete (_ctchecker);
 }
 
 Lit AtomGrounder::run() const {

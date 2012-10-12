@@ -508,11 +508,6 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 			auto foterms = TermUtils::makeNewVarTerms(data.fovars);
 			genpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
 		}
-		//Checkers for atoms CANNOT be approximated:
-		// * Either they are trivial (true or false) and the approximation is uselesss
-		// * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
-		auto possTrueChecker = getChecker(genpf, TruthType::POSS_TRUE, data, getSymbolicStructure(), true);
-		auto certTrueChecker = getChecker(genpf, TruthType::CERTAIN_TRUE, data, getSymbolicStructure(), true);
 
 		if (genpf != newpf) {
 			deleteDeep(genpf);
@@ -520,8 +515,7 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 
 		deleteList(data.fovars);
 
-		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, possTrueChecker, certTrueChecker,
-				getConcreteStructure()->inter(newpf->symbol()), argsorttables, _context);
+		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, argsorttables, _context);
 		_formgrounder->setOrig(newpf, varmapping());
 	}
 	if (_context._component == CompContext::SENTENCE) {

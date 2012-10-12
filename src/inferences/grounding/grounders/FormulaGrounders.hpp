@@ -60,15 +60,12 @@ public:
 class AtomGrounder: public FormulaGrounder {
 protected:
 	std::vector<TermGrounder*> _subtermgrounders;
-	InstChecker* const _ptchecker;
-	InstChecker* const _ctchecker;
 	PFSymbol* _symbol;
 	SymbolOffset _symboloffset; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
 	GenType gentype;
 	std::vector<const DomElemContainer*> _checkargs; // The variables representing the subterms of the atom. These are used in the generators and checkers
-	PredInter* _inter;
 	bool _recursive;
 
 	mutable ElementTuple _args;
@@ -78,7 +75,7 @@ protected:
 
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<const DomElemContainer*>& checkargs, InstChecker*, InstChecker*, PredInter* inter, const std::vector<SortTable*>&,
+			const std::vector<const DomElemContainer*>& checkargs, const std::vector<SortTable*>&,
 			const GroundingContext&);
 	~AtomGrounder();
 	void run(ConjOrDisj& formula) const;
