@@ -77,9 +77,11 @@ Term* UnnestTerms::move(Term* origterm) {
 
 	auto varterm = new VarTerm(var, TermParseInfo(origterm->pi()));
 	auto equalatom = new PredForm(SIGN::POS, get(STDPRED::EQ, origterm->sort()), { varterm, origterm }, FormulaParseInfo());
+#ifdef DEBUG
 	for(auto sort: equalatom->symbol()->sorts()){
 		Assert(sort!=NULL);
 	}
+#endif
 	_equalities.push_back(equalatom);
 	return varterm->clone();
 }
