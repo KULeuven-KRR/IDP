@@ -10,7 +10,7 @@
 
 #include "TestUtils.hpp"
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
+#include "external/runidp.hpp"
 #include "utils/FileManagement.hpp"
 
 

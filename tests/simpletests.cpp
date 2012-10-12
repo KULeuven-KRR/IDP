@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
+#include "external/runidp.hpp"
 #include "commontypes.hpp"
 #include "inferences/grounding/GroundUtils.hpp"
 #include "structure/TableSize.hpp"

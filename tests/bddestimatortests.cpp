@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
+#include "external/runidp.hpp"
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBdd.hpp"

@@ -14,7 +14,7 @@
 #include <exception>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
+#include "external/runidp.hpp"
 #include "IncludeComponents.hpp"
 #include "generators/ComparisonGenerator.hpp"
 #include "generators/SortGenAndChecker.hpp"

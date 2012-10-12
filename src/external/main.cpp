@@ -8,7 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#include "rungidl.hpp"
+#include "runidp.hpp"
 
 int main(int argc, char* argv[]) {
 	return run(argc, argv);

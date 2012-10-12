@@ -12,7 +12,7 @@
 #include <map>
 
 #include "gtest/gtest.h"
-#include "external/rungidl.hpp"
+#include "external/runidp.hpp"
 #include "IncludeComponents.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "options.hpp"
