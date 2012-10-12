@@ -378,7 +378,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	// Create grounders for all components
 	auto newtheory = theory;
 
-	/*	SKOLEM
+	/*	SKOLEM  TODO fix and add
 	 auto newtheory = new Theory("", _vocabulary, theory->pi());
 	 for (auto i = components.cbegin(); i < components.cend(); ++i) {
 	 auto component = *i;
