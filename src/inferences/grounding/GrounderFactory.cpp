@@ -1311,16 +1311,6 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
 		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
-#ifdef DEBUG
-	uint output = 0;
-	for(auto p:data.pattern){
-		if(p==Pattern::OUTPUT){
-			output++;
-		}
-	}
-	Assert(output==data.quantfovars.size());
-	Assert(data.pattern.size()==data.fovars.size());
-#endif
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
