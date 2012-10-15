@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef UNIX
+
 #include <execinfo.h>
 #include <cxxabi.h>
 
@@ -78,5 +81,12 @@ static inline void printStacktrace(FILE *out = stderr) {
 	free(funcname);
 	free(symbollist);
 }
+
+#else
+
+static inline void printStacktrace(FILE* = stderr) {
+}
+
+#endif
 
 #endif // _STACKTRACE_H_
