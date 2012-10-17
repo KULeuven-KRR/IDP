@@ -1,13 +1,18 @@
 // stacktrace.h (c) 2008, Timo Bingmann from http://idlebox.net/
 // published under the WTFPL v2.0
 
-#ifndef _STACKTRACE_H_
-#define _STACKTRACE_H_
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef UNIX
+#ifndef UNIX
+
+static inline void printStacktrace(FILE * = stderr) {
+
+}
+
+#else
 
 #include <execinfo.h>
 #include <cxxabi.h>
@@ -82,11 +87,4 @@ static inline void printStacktrace(FILE *out = stderr) {
 	free(symbollist);
 }
 
-#else
-
-static inline void printStacktrace(FILE* = stderr) {
-}
-
 #endif
-
-#endif // _STACKTRACE_H_
