@@ -87,6 +87,10 @@ if(WRONGBUILD)
 	message(FATAL_ERROR "Unsupported build-type \"${CMAKE_BUILD_TYPE}\", only Debug, DebugProfile, StaticDebug, Profile, Release and StaticRelease are allowed.")
 endif()
 
+if(UNIX)
+	addToCXX("-D UNIX")
+endif()
+
 option(GPERF  "Enable profiling support with google-perftools" OFF)
 if(GPERF)
 	include(cmake/perftools.cmake)
