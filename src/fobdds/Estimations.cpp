@@ -378,8 +378,6 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 			}
 
 			auto extra = tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
-			//cerr <<"Cost of " <<toString((*quantset)->subformula()) <<" is " <<extra <<"\n";
-			d = (d + extra < maxdouble) ? d + extra : maxdouble; // FIXME verify overflow checks in code
 			if (d == maxdouble) {
 				break;
 			}
@@ -547,6 +545,17 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 	}
 }
 
+double BddStatistics::tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices){
+	auto it = bddcosts[object][vars].find(indices);
+	double result = 0;
+	if(it==bddcosts[object][vars].cend()){
+		result = estimateCostAll(object, vars, indices);
+	}else{
+		result = it->second;
+	}
+	return result;
+}
+
 /**
  * Estimated the cost of generating all answers to this bdd.
  */
@@ -591,16 +600,10 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	auto kernelans = tabledEstimateNrAnswers(bdd->kernel(), kernelvars, kernelindices);
 	auto truecost = tabledEstimateCostAll(bdd->truebranch(), bddvars, bddindices);
 
-	auto maxcost = getMaxElem<double>();
-
 	// ONLY TRUE BRANCH: Only cost of kernel eval to true + kernel answers * true branch cost
 	if (bdd->falsebranch() == manager->falsebdd()) {
 		auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), kernelvars, kernelindices);
 		auto result = kernelcost + (kernelans * truecost);
-		if (result - kernelcost != kernelans * truecost) {
-			bddstorage[bdd][vars][ind] = maxcost;
-			return maxcost;
-		}
 		bddstorage[bdd][vars][ind] = result;
 		return result;
 	}
@@ -613,10 +616,6 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	if (bdd->truebranch() == manager->falsebdd()) {
 		auto kernelcost = tabledEstimateCostAll(false, bdd->kernel(), kernelvars, kernelindices);
 		auto result = kernelcost + (toDouble(invkernelans) * falsecost);
-		if (result - kernelcost != (toDouble(invkernelans) * falsecost)) {
-			bddstorage[bdd][vars][ind] = maxcost;
-			return maxcost;
-		}
 		bddstorage[bdd][vars][ind] = result;
 		return result;
 	}
@@ -624,10 +623,6 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	// BOTH BRANCHES: Cost of single kernel eval * kernelunivsize + true cost * kernel answers + false cost * NOT(kernel) answers
 	auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), { }, { });
 	auto result = toDouble(kernelunivsize) * kernelcost + kernelans * truecost + toDouble(invkernelans) * falsecost;
-	if (result - (toDouble(kernelunivsize) * kernelcost) != kernelans * truecost + toDouble(invkernelans) * falsecost) {
-		bddstorage[bdd][vars][ind] = maxcost;
-		return maxcost;
-	}
 	bddstorage[bdd][vars][ind] = result;
 	return result;
 }

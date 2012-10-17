@@ -130,16 +130,7 @@ private:
 		}
 		return result;
 	}
-	double tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices){
-		auto it = bddcosts[object][vars].find(indices);
-		double result = 0;
-		if(it==bddcosts[object][vars].cend()){
-			result = estimateCostAll(object, vars, indices);
-		}else{
-			result = it->second;
-		}
-		return result;
-	}
+	double tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices);
 	double estimateCostAll(bool, const FOBDDKernel*, const varset& vars, const indexset& indices);
 	double estimateCostAll(const FOBDD*, const varset& vars, const indexset& indices);
 
