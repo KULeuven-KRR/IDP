@@ -3552,6 +3552,7 @@ void PredInter::makeFalse(const ElementTuple& tuple) {
 }
 
 void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to) {
+	Assert(from->approxInverse(to));
 	if (tuple.size() != universe().arity()) {
 		stringstream ss;
 		ss << "Adding a tuple of size " << tuple.size() << " to a predicate with arity " << universe().arity();
@@ -3566,20 +3567,19 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 			throw IdpException(ss.str());
 		}
 	}
+
 	if (isa<InverseInternalPredTable>(*(from->internTable()))) {
-		to->internTable()->decrementRef();
+		Assert(dynamic_cast<InverseInternalPredTable*>(from->internTable())->table() == to->internTable());
 		auto old = to->internTable();
 		to->add(tuple);
-		old->incrementRef();
 		if (to->internTable() != old) {
 			auto internpf = dynamic_cast<InverseInternalPredTable*>(from->internTable());
 			internpf->internTable(to->internTable());
 		}
 	} else {
-		from->internTable()->decrementRef();
+		Assert(dynamic_cast<InverseInternalPredTable*>(to->internTable())->table() == from->internTable());
 		auto old = from->internTable();
 		from->remove(tuple);
-		old->incrementRef();
 		if (from->internTable() != old) {
 			auto internct = dynamic_cast<InverseInternalPredTable*>(to->internTable());
 			internct->internTable(from->internTable());

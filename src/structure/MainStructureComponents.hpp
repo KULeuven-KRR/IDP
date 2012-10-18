@@ -446,6 +446,7 @@ public:
 
 
 private:
+	//Can only be called if from and to are inverse tables
 	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to);
 };
 

@@ -1,0 +1,53 @@
+vocabulary V { 
+  type State isa int
+  type Label isa int
+  type Color isa int
+  // Trans sends a state and a label to the result of 
+  // choosing label in that state
+  partial Trans(State, Label) : State
+  Acc(State)
+  Rej(State)
+  // Represents the resulting automaton. 
+  partial CTrans(Color, Label) : Color
+  AccColor(Color)
+ // Used(Color)
+  ColorOf(State) : Color
+}
+
+theory T : V {
+  !x[State]: Acc(x) => AccColor(ColorOf(x)).
+  !x[State]: Rej(x) => ~AccColor(ColorOf(x)).
+
+  // trans induces CTrans:
+  ! v[State] a[Label] w[State] : Trans(v,a)=w => CTrans(ColorOf(v),a)=ColorOf(w).
+
+  // redundante constraint;
+  !v[State] l[Label] w[State] j[Color] :  Trans(w,l)=v &  CTrans(ColorOf(w),l)=j => ColorOf(v)=j.
+  
+  //EXTRA REDUNDANTE CONSTRAINT. NIET IN SAT ENCODING
+//   !v l w i : trans(w,l)=v &  CTrans(i,l)=colorOf(v) => colorOf(w)=i.
+
+  // determinisation conflicts
+  //!x y: Incompatible(x,y) => ColorOf(x) ~= ColorOf(y).
+  //Could this be something like Trans(v,a) = w & Acc(v) & Rej(w) => ...???
+  
+  //Use the cliques -> PRESENT IN STRUCTURE
+}
+
+structure S : V {
+  Color = {0..4}
+  State = {0..1}
+  Label = {1..2}
+  Trans = {0,1->1;0,2->1;1,1->1;1,2->1;}
+  Acc = {}
+  Rej = {0;1;}
+  ColorOf<ct> = {0->0;1->1;}
+  ColorOf<cf> = {0->1;}
+  CTrans<ct> = {0,1->1;0,2->1;1,1->1;1,2->1;}
+  AccColor<ct> = {}
+  AccColor<cf> = {0;1;}
+}
+
+procedure getExpectedAModel(){
+	return true
+}
