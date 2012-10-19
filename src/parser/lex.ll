@@ -310,6 +310,32 @@ COMMENTLINE		"//".*
 						  data.advancecol();
 						  return TERM_HEADER;
 						}
+"Vocabulary"			{ BEGIN(vocabulary);
+						  data.advancecol();
+						  return VOCAB_HEADER;		}
+"Theory"				{ BEGIN(theory);
+						  data.advancecol();
+						  return THEORY_HEADER;		}
+"Structure"				{ BEGIN(structure);
+						  data.advancecol();
+						  return STRUCT_HEADER;		}
+"Aspstructure"			{ BEGIN(aspstructure);
+						  data.advancecol();
+						  return ASP_HEADER;		}
+"Namespace"				{ BEGIN(spacename);
+						  data.advancecol();
+						  return NAMESPACE_HEADER;	}
+"Procedure"				{ BEGIN(procedure);
+						  data.advancecol();
+						  return PROCEDURE_HEADER;	}
+"Query"					{ BEGIN(theory);
+						  data.advancecol();
+						  return QUERY_HEADER;
+						}
+"Term"					{ BEGIN(theory);
+						  data.advancecol();
+						  return TERM_HEADER;
+						}
 
 	/**************
 		Include
