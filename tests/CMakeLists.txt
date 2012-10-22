@@ -84,6 +84,7 @@ if(${BUILDTESTS})
 		
 		#PLEASE MAKE SURE THE TESTS ARE ORDERED FROM LONGRUNNING TO SHORTRUNNING!
 		#this improves the efficiency of running "make check"
+		#IF ADDING TESTS HERE, ALSO ADD THEM BELOW THE ELSE
 		addMXTest(bounds bounds.cpp) 
 		addMXTest(boundsNoLUP boundsNoLUP.cpp)
 		addMXTest(satbounds satbounds.cpp) 
@@ -104,10 +105,12 @@ if(${BUILDTESTS})
 		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
 		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
 	else()
+		# ALSO ADD ABOVE ELSE!
 		set(LONGERTESTS
 			mxtests/basic.cpp
 			mxtests/bounds.cpp
 			mxtests/nobounds.cpp
+			mxtests/boundsNoLUP.cpp
 			mxtests/cp.cpp
 			mxtests/lazy.cpp
 			mxtests/symm.cpp
@@ -117,9 +120,8 @@ if(${BUILDTESTS})
 			mxtests/satcp.cpp
 		)
 		add_executable(idptests
-			#${FASTTESTS}
-			#${LONGERTESTS}
-			mxtests/bounds.cpp
+			${FASTTESTS}
+			${LONGERTESTS}
 			${MXINCLUDES}
 		)
 		addTest(idptests)
