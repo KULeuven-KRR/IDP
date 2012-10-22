@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef IDP_IDPEXCEPTION_HPP_
-#define IDP_IDPEXCEPTION_HPP_
+#pragma once
 
 #include <sstream>
 #include <string>
@@ -25,45 +24,21 @@ public:
 };
 
 class NoSuchProcedureException: public Exception {
-	std::string getMessage() const {
-		std::stringstream ss;
-		ss << "No such lua procedure";
-		return ss.str();
-	}
+	std::string getMessage() const;
 };
 
 class AssertionException: public Exception {
 private:
 	std::string message;
 public:
-	AssertionException(std::string message)
-			: message(message) {
-#ifdef DEBUG
-		printStacktrace();
-#endif
-	}
-	std::string getMessage() const {
-		std::stringstream ss;
-		ss << "AssertionException: " << message;
-		return ss.str();
-	}
+	AssertionException(std::string message);
+	std::string getMessage() const;
 };
 
 class IdpException: public Exception {
 private:
 	std::string message;
 public:
-	IdpException(std::string message)
-			: message(message) {
-#ifdef DEBUG
-		printStacktrace();
-#endif
-	}
-	std::string getMessage() const {
-		std::stringstream ss;
-		ss << "IdpException: " << message;
-		return ss.str();
-	}
+	IdpException(std::string message);
+	std::string getMessage() const;
 };
-
-#endif /* IDP_IDPEXCEPTION_HPP_ */
