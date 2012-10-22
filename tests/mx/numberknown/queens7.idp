@@ -1,0 +1,15 @@
+vocabulary V{
+	type A isa int
+	f(A):A
+}
+theory T:V{
+	!a a2: f(a)=f(a2) => a=a2.
+	!a a2: a~=a2 => abs(a-a2)~=abs(f(a)-f(a2)).
+}
+structure S:V{
+	A = {1..7}
+}
+
+procedure getExpectedNbOfModels() {
+	return 40
+}
