@@ -1,0 +1,21 @@
+vocabulary V{
+	type Node
+	A(Node)
+	B(Node, Node)
+	B2(Node, Node)
+	C(Node, Node, Node)
+	D(Node):Node
+	E:Node
+}
+theory T:V {
+}
+structure S:V{
+	Node = {1..10000}
+	B<ct> = {1,1;2,1;3,500;}
+	D<ct> = {2->2000}
+	D<cf> = {3->5000}
+	C<cf> = {3,9,18;}
+}
+procedure expectsModel(){
+	return true
+}

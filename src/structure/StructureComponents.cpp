@@ -4037,10 +4037,13 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
 	}
 
-	for (auto i = original->getFuncInters().cbegin(); i != original->getFuncInters().cend() && needMoreModels(extensions.size()); ++i) {
+	for (auto f2inter : original->getFuncInters()) {
 		CHECKTERMINATION;
-		auto function = (*i).first;
-		auto inter = (*i).second;
+		if(not needMoreModels(extensions.size())){
+			break;
+		}
+		auto function = f2inter.first;
+		auto inter = f2inter.second;
 		if (inter->approxTwoValued()) {
 			continue;
 		}
@@ -4050,9 +4053,9 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 		vector<SortIterator> domainIterators;
 		bool allempty = true;
-		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
+		for (auto sort : sorts) {
 			CHECKTERMINATION;
-			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
+			const auto& temp = SortIterator(sort->internTable()->sortBegin());
 			domainIterators.push_back(temp);
 			if (not temp.isAtEnd()) {
 				allempty = false;
@@ -4070,8 +4073,8 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 			TableIterator domainIterator(internaliterator);
 
 			auto ctIterator = ct->begin();
-			FirstNElementsEqual eq((*i).first->arity());
-			StrictWeakNTupleOrdering so((*i).first->arity());
+			FirstNElementsEqual eq(function->arity());
+			StrictWeakNTupleOrdering so(function->arity());
 
 			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
 				CHECKTERMINATION
@@ -4100,23 +4103,26 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 			continue;
 		}
 
-		const PredTable* pf = inter->pf();
-		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
+		auto pf = inter->pf();
+		for (auto ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION;
 			if(not pf->contains(*ptIterator)) {
 				continue;
 			}
 
 			vector<AbstractStructure*> newstructs;
-			for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(newstructs.size()); ++j) {
+			for (auto ext : extensions) {
 				CHECKTERMINATION;
-				auto news = (*j)->clone();
+				if(not needMoreModels(newstructs.size())){
+					break;
+				}
+				auto news = ext->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
 				if (not needMoreModels(newstructs.size())) {
 					break;
 				}
-				news = (*j)->clone();
+				news = ext->clone();
 				news->inter(pred)->makeFalse(*ptIterator);
 				newstructs.push_back(news);
 			}
@@ -4126,13 +4132,13 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 
 	if (needFixedNumberOfModels()) {
 		// In this case, not all structures might be two-valued, but are certainly extendable, so just choose a value for each of their elements
-		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-			(*j)->makeTwoValued();
+		for (auto ext : extensions) {
+			ext->makeTwoValued();
 		}
 	}
 
-	for (auto j = extensions.begin(); j < extensions.end(); ++j) {
-		(*j)->clean();
+	for (auto ext : extensions) {
+		ext->clean();
 	}
 
 // TODO delete all structures which were cloned and discarded

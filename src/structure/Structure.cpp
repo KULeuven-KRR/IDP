@@ -168,14 +168,15 @@ bool Structure::isConsistent() const {
 }
 
 void Structure::makeTwoValued() {
-	Assert(isConsistent());
+	if (not isConsistent()) {
+		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
+	}
 	if (approxTwoValued()) {
 		return;
 	}
-	//clog <<"Before: \n" <<toString(this) <<"\n";
-	for (auto i = _funcinter.begin(); i != _funcinter.end(); ++i) {
+	for (auto f2inter : _funcinter) {
 		CHECKTERMINATION;
-		auto inter = (*i).second;
+		auto inter = f2inter.second;
 		if (inter->approxTwoValued()) {
 			continue;
 		}
@@ -185,60 +186,50 @@ void Structure::makeTwoValued() {
 
 		vector<SortIterator> domainIterators;
 		bool allempty = true;
-		for (auto sort = sorts.cbegin(); sort != sorts.cend(); ++sort) {
-			const auto& temp = SortIterator((*sort)->internTable()->sortBegin());
+		for (auto sort : sorts) {
+			const auto& temp = SortIterator(sort->internTable()->sortBegin());
 			domainIterators.push_back(temp);
 			if (not temp.isAtEnd()) {
 				allempty = false;
 			}
 		}
 		domainIterators.pop_back();
+		if(domainIterators.size()==0) {
+			allempty = false;
+		}
 
 		auto ct = inter->graphInter()->ct();
 		auto cf = inter->graphInter()->cf();
 
 		//Now, choose an image for this domainelement
-		ElementTuple domainElementWithoutValue;
-		if (sorts.size() > 0) {
-			auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
-			TableIterator domainIterator(internaliterator);
+		auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
+		TableIterator domainIterator(internaliterator);
 
-			auto ctIterator = ct->begin();
-			FirstNElementsEqual eq((*i).first->arity());
-			StrictWeakNTupleOrdering so((*i).first->arity());
+		auto ctIterator = ct->begin();
+		FirstNElementsEqual eq(f2inter.first->arity());
+		StrictWeakNTupleOrdering so(f2inter.first->arity());
 
-			for (; not allempty && not domainIterator.isAtEnd(); ++domainIterator) {
-				CHECKTERMINATION
-				// get unassigned domain element
-				domainElementWithoutValue = *domainIterator;
-				while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
-					++ctIterator;
-				}
-				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
-					continue;
-				}
-
-				auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
-				for (; not imageIterator.isAtEnd(); ++imageIterator) {
-					CHECKTERMINATION
-					ElementTuple tuple(domainElementWithoutValue);
-					tuple.push_back(*imageIterator);
-					if (cf->contains(tuple)) {
-						continue;
-					}
-					inter->graphInter()->makeTrue(tuple);
-					break;
-				}
+		for (; not domainIterator.isAtEnd(); ++domainIterator) {
+			CHECKTERMINATION
+			// get unassigned domain element
+			auto domainElementWithoutValue = *domainIterator;
+			while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
+				++ctIterator;
 			}
-		} else {
+			if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
+				continue;
+			}
+
 			auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
 			for (; not imageIterator.isAtEnd(); ++imageIterator) {
+				CHECKTERMINATION
 				ElementTuple tuple(domainElementWithoutValue);
 				tuple.push_back(*imageIterator);
 				if (cf->contains(tuple)) {
 					continue;
 				}
 				inter->graphInter()->makeTrue(tuple);
+				break;
 			}
 		}
 	}
@@ -246,22 +237,9 @@ void Structure::makeTwoValued() {
 		CHECKTERMINATION;
 		auto inter = (*i).second;
 		Assert(inter!=NULL);
-		if (inter->approxTwoValued()) {
-			continue;
-		}
-
-		auto pf = inter->pf();
-		for (TableIterator ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			CHECKTERMINATION
-			if (not pf->contains(*ptIterator)) {
-				continue;
-			}
-
-			inter->makeFalse(*ptIterator);
-		}
+		inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
 	}
 	clean();
-	//clog <<"After: \n" <<toString(this) <<"\n";
 	Assert(approxTwoValued());
 }
 
