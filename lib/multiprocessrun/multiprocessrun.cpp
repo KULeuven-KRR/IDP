@@ -9,10 +9,12 @@
  ****************************************************************/
 
 #include <thread>
+#include <mutex>
 #include <queue>
 #include <iostream>
 #include <sstream>
 #include <cstdio>
+#include <unistd.h>
 
 using namespace std;
 
