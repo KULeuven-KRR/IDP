@@ -3071,9 +3071,9 @@ InverseInternalPredTable::~InverseInternalPredTable() {
 void InverseInternalPredTable::internTable(InternalPredTable* ipt) {
 	if(ipt!=NULL){
 		ipt->incrementRef();
-		if(_invtable!=NULL) {
-			_invtable->decrementRef();
-		}
+	}
+	if(_invtable!=NULL) {
+		_invtable->decrementRef();
 	}
 	_invtable = ipt;
 }
