@@ -1,0 +1,26 @@
+vocabulary V{
+	type V
+	edge(V,V)
+	eop(V,V)
+	reachable(V)
+	from:V
+	to:V
+}
+theory T:V{
+  { reachable(from).
+    reachable(y) <- eop(x,y) & reachable(x). }
+  ! x y : eop(x,y) => edge(x,y).
+  reachable(to).
+  from ~= to => ~(? x : eop(x,from)) & ~(? x : eop(to,x)).
+  ! x : (?<2 y : eop(y,x)) & (?<2 y : eop(x,y)).
+  ! x y : eop(x,y) => reachable(y).
+}
+structure S:V{
+	V = {1..100}
+	edge = {1,1;1,2;}
+	from=1
+	to=1
+}
+procedure expectsModel(){
+	return true;
+}
