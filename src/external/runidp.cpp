@@ -324,8 +324,7 @@ void interactive() {
 		command = trim(command);
 		if (command == "exit" || command == "quit" || command == "exit()" || command == "quit()") {
 			free(userline);
-			idp_rl_end();
-			return;
+			break;
 		}
 		if (command == "help") {
 			command = "help()";
@@ -333,6 +332,7 @@ void interactive() {
 		executeProcedure(command);
 		getGlobal()->clearStats();
 	}
+	idp_rl_end();
 }
 #endif
 
