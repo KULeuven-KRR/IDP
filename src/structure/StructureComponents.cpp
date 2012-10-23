@@ -3069,8 +3069,12 @@ InverseInternalPredTable::~InverseInternalPredTable() {
 }
 
 void InverseInternalPredTable::internTable(InternalPredTable* ipt) {
-	ipt->incrementRef();
-	_invtable->decrementRef();
+	if(ipt!=NULL){
+		ipt->incrementRef();
+		if(_invtable!=NULL) {
+			_invtable->decrementRef();
+		}
+	}
 	_invtable = ipt;
 }
 
@@ -3569,21 +3573,17 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 	}
 
 	if (isa<InverseInternalPredTable>(*(from->internTable()))) {
-		Assert(dynamic_cast<InverseInternalPredTable*>(from->internTable())->table() == to->internTable());
-		auto old = to->internTable();
+		auto internfrom = dynamic_cast<InverseInternalPredTable*>(from->internTable());
+		Assert(internfrom->table() == to->internTable());
+		internfrom->internTable(NULL);
 		to->add(tuple);
-		if (to->internTable() != old) {
-			auto internpf = dynamic_cast<InverseInternalPredTable*>(from->internTable());
-			internpf->internTable(to->internTable());
-		}
+		internfrom->internTable(to->internTable());
 	} else {
-		Assert(dynamic_cast<InverseInternalPredTable*>(to->internTable())->table() == from->internTable());
-		auto old = from->internTable();
+		auto internto = dynamic_cast<InverseInternalPredTable*>(to->internTable());
+		Assert(internto->table() == from->internTable());
+		internto->internTable(NULL);
 		from->remove(tuple);
-		if (from->internTable() != old) {
-			auto internct = dynamic_cast<InverseInternalPredTable*>(to->internTable());
-			internct->internTable(from->internTable());
-		}
+		internto->internTable(from->internTable());
 	}
 }
 
