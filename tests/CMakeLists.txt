@@ -73,7 +73,7 @@ if(${BUILDTESTS})
 		definitiontests.cpp
 		propagationtests.cpp
 	)
-	if(UNIX)
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		add_executable(idptests
 			${FASTTESTS}
 			${MXINCLUDES}
