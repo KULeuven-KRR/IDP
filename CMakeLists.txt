@@ -12,6 +12,7 @@ assureOutOfSourceBuilds()
 
 option(BUILDTESTS  "Run the gtest tests" ON)
 enable_testing()
+option(BUILDDOCUMENTATION "Build the documentation" ON)
 
 set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Buildtype (one of Release, Debug, StaticRelease, StaticDebug or Profile")
 
@@ -117,7 +118,9 @@ endif()
 add_subdirectory(lib/tinythread/source)
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(docs/official)
+if(BUILDDOCUMENTATION)
+	add_subdirectory(docs/official)
+endif()
 
 ### Allow packing
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
