@@ -8,6 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <csignal>
@@ -308,14 +309,26 @@ const DomainElement* executeProcedure(const string& proc) {
 #ifdef USEINTERACTIVE
 /** 
  * Interactive mode 
+ *
+ * Interactive mode terminates when
+ * - the user presses ^D (sets idp_terminateInteractive)
+ * - the user enters "quit" or "exit"
+ * - an error occurred during input (rl_gets returns NULL)
+ *
+ * Note that rl_gets also returns NULL when the user presses ^C.
+ * Since we do not want to terminate on ^C, we check errno, which
+ * is set to EAGAIN by linenoise when ^C is pressed.
  **/
 void interactive() {
 	cout << "Running IDP in interactive mode.\n";
 
 	idp_rl_start();
 	while (not idp_terminateInteractive()) {
+		errno = 0;
 		auto userline = rl_gets();
 		if (userline == NULL) {
+			if (errno != EAGAIN)
+				break;
 			cout << "\n";
 			continue;
 		}
@@ -324,8 +337,7 @@ void interactive() {
 		command = trim(command);
 		if (command == "exit" || command == "quit" || command == "exit()" || command == "quit()") {
 			free(userline);
-			idp_rl_end();
-			return;
+			break;
 		}
 		if (command == "help") {
 			command = "help()";
@@ -333,6 +345,7 @@ void interactive() {
 		executeProcedure(command);
 		getGlobal()->clearStats();
 	}
+	idp_rl_end();
 }
 #endif
 
