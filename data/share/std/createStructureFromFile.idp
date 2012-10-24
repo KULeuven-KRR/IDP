@@ -1,13 +1,17 @@
 namespace stdspace{
 namespace structures{
-	procedure createStructureFromFile(inputfilename){
+	procedure createStructureFromFile(inputfilename, aspstructure){
 		inputfile = io.open(inputfilename, "r")
 		if(inputfile==nil) then
 			io.stderr:write("File "..inputfilename.." does not exist.")
 			return nil
 		end
 		file = io.open("test", "w")
-		file:write("structure S:V{")
+		if(aspstructure)then
+			file:write("aspstructure S:V{")
+		else
+			file:write("structure S:V{")
+		end		
 		file:write(inputfile:read("*all"))
 		file:write("}")
 		file:close()
