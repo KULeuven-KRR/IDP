@@ -1,0 +1,15 @@
+vocabulary V{
+	type Partition isa int
+	type Number isa int
+	In(Number):Partition
+}
+theory T:V{
+	!x y: In(x)=In(y) => In(x)~=In(x+y).
+}
+structure S:V{
+	Partition = {1..5}
+	Number = {1..70}
+}
+procedure expectsModel(){
+	return true
+}
