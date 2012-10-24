@@ -1,7 +1,0 @@
-Step = {1..2}
-Loc = {1..4;}
-Top = {}
-Right = {1,2;2,3;3,4}
-Solution = {4}
-Box = {2}
-Sokoban = {1}
