@@ -495,27 +495,11 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 		auto inter = getConcreteStructure()->inter(newpf->symbol());
 		_headgrounder = new HeadGrounder(getGrounding(), inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables, _context);
 	} else {
-		GeneratorData data;
+		std::vector<const DomElemContainer*> containers;
 		for (auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
-			data.containers.push_back(new const DomElemContainer());
-			data.tables.push_back(getConcreteStructure()->inter((*it)->sort()));
-			data.fovars.push_back(new Variable((*it)->sort()));
+			containers.push_back(new const DomElemContainer());
 		}
-		data.structure = getConcreteStructure();
-		data.funccontext = getContext()._funccontext;
-		auto genpf = newpf;
-		if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-			auto foterms = TermUtils::makeNewVarTerms(data.fovars);
-			genpf = new PredForm(newpf->sign(), newpf->symbol(), foterms, FormulaParseInfo());
-		}
-
-		if (genpf != newpf) {
-			deleteDeep(genpf);
-		}
-
-		deleteList(data.fovars);
-
-		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, data.containers, argsorttables, _context);
+		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, containers, argsorttables, _context);
 		_formgrounder->setOrig(newpf, varmapping());
 	}
 	if (_context._component == CompContext::SENTENCE) {
