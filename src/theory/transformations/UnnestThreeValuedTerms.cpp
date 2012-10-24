@@ -52,7 +52,8 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	// FIXME check whether it correctly handles recursively defined predicates
 	auto savedrel = _cpablerelation;
 	if (_cpablerelation != TruthValue::False) {
-		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
+		//_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
+		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary) and VocabularyUtils::isIntComparisonPredicate(predform->symbol(), _vocabulary)) ? TruthValue::True : TruthValue::False;
 	}
 	/*if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
 		auto args = predform->args();
