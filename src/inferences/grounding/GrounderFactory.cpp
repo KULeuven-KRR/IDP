@@ -270,6 +270,14 @@ Grounder* GrounderFactory::ground() {
 		FormulaUtils::addIfCompletion(_theory);
 	}
 
+	allowskolemize = false;
+	for (auto i = funcconstraints.cbegin(); i != funcconstraints.cend(); ++i) {
+		InitContext();
+		descend(i->second);
+		grounders.push_back(getTopGrounder());
+	}
+	allowskolemize = true;
+
 	InitContext();
 	descend(_theory);
 	grounders.push_back(getTopGrounder());
@@ -309,14 +317,6 @@ Grounder* GrounderFactory::ground() {
 			}
 		}
 	}
-
-	allowskolemize = false;
-	for (auto i = funcconstraints.cbegin(); i != funcconstraints.cend(); ++i) {
-		InitContext();
-		descend(i->second);
-		grounders.push_back(getTopGrounder());
-	}
-	allowskolemize = true;
 
 	if (grounders.size() == 1) {
 		return grounders.front();
