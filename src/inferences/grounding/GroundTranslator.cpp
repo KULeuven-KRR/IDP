@@ -249,6 +249,7 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 		auto bound = image._domelement->value()._int;
 		terms.pop_back();
 		auto lit = reify(new CPVarTerm(translateTerm(symboloffset, terms)), CompType::EQ, CPBound(bound), TsType::EQ); // TODO TSType?
+		Assert(lit>=0);
 		atom2Tuple[lit]->first = functions[symboloffset.offset]->symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
@@ -262,6 +263,7 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 			jt->second = lit;
 		} else {
 			lit = nextNumber(AtomType::INPUT);
+			Assert(lit>=0);
 			atom2Tuple[lit]->first = symbolinfo.symbol;
 			atom2Tuple[lit]->second = args;
 			symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
@@ -307,7 +309,6 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 		}
 		symbols.push_back(new SymbolInfo(pfs, _structure));
 		return SymbolOffset(symbols.size() - 1, false);
-
 	} else {
 		return n;
 	}
@@ -405,7 +406,7 @@ bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
 }
 
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
-	auto tsbody = new CPTsBody(tstype, left, comp, right);
+	auto tsbody = new CPTsBody(tstype, left, comp==CompType::NEQ?CompType::EQ:comp, right);
 	// TODO => this should be generalized to sharing detection!
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {
@@ -419,6 +420,9 @@ Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, T
 		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		atom2TsBody[nr] = tsbody;
 		cpset[tsbody] = nr;
+		if(comp==CompType::NEQ){
+			nr=-nr;
+		}
 		return nr;
 	}
 }
