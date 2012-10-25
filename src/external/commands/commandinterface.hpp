@@ -21,7 +21,10 @@
 #include "loki/Typelist.h"
 
 std::string getInferenceNamespaceName();
+std::string getVocabularyNamespaceName();
 std::string getTheoryNamespaceName();
+std::string getTermNamespaceName();
+std::string getQueryNamespaceName();
 std::string getOptionsNamespaceName();
 std::string getStructureNamespaceName();
 
@@ -166,6 +169,7 @@ struct AddTypes<Loki::NullType, FullList> {
 
 typedef TypedInference<LIST()> EmptyBase;
 typedef TypedInference<LIST(AbstractStructure*)> StructureBase;
+typedef TypedInference<LIST(Term*)> TermBase;
 typedef TypedInference<LIST(std::string*)> StringBase;
 typedef TypedInference<LIST(AbstractTheory*)> TheoryBase;
 typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> TheoryStructureBase;
