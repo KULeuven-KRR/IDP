@@ -2,7 +2,7 @@
 
 namespace Tests {
 
-TEST_P(MXnbTest, DoesMX) {
+TEST_P(MXnbTest, DoesMXwithoutLUP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithboundswithoutLUP()");
 }
 
