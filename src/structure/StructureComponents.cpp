@@ -3657,19 +3657,22 @@ void PredInter::cfpf(PredTable* newcf) { // FIXME also change in other tables: i
 }
 
 void PredInter::materialize() {
+	bool getCT = (_ct->size() <= _pf->size());
+	bool getCF = (_cf->size() <= _pt->size());
+
 	if (approxTwoValued()) {
-		auto prt = _ct->materialize();
-		if (prt) {
-			ctpt(prt);
+		auto prt = getCT ? _ct->materialize() : _pf->materialize();
+		if (prt != NULL) { //Materializaton was possible
+			getCT ? ctpt(prt) : cfpf(prt);
 		}
 	} else {
-		auto prt = _ct->materialize();
-		if (prt) {
-			ct(prt);
+		auto prt = getCT ? _ct->materialize() : _pf->materialize();
+		if (prt != NULL) { //Materializaton was possible
+			getCT ? ct(prt) : pf(prt);
 		}
-		auto prf = _cf->materialize();
-		if (prf) {
-			cf(prf);
+		auto prf = getCF ? _cf->materialize() : _pt->materialize();
+		if (prf != NULL) { //Materializaton was possible
+			getCF ? cf(prf) : pt(prf);
 		}
 	}
 }
