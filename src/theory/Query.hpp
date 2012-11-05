@@ -7,8 +7,16 @@
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
-#ifndef FORMULAQUERY_HPP_
-#define FORMULAQUERY_HPP_
+#pragma once
+
+#include <vector>
+#include <string>
+#include "parseinfo.hpp"
+
+class Formula;
+class Variable;
+class Vocabulary;
+class ParseInfo;
 
 /**
  * Represents queries of the form {x1 ... xn: phi}
@@ -23,13 +31,7 @@ private:
 	Vocabulary* _vocabulary; //!< the vocabulary of the query
 
 public:
-	Query(std::string name, const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi)
-			: 	_variables(vars),
-				_query(q),
-				_pi(pi),
-				_name(name),
-				_vocabulary(NULL) {
-	}
+	Query(std::string name, const std::vector<Variable*>& vars, Formula* q, const ParseInfo& pi);
 
 	~Query() {
 	}
@@ -46,9 +48,7 @@ public:
 		return _name;
 	}
 
-	void recursiveDelete() {
-		_query->recursiveDelete(); //also deletes the variables.
-	}
+	void recursiveDelete();
 
 	Formula* query() const {
 		return _query;
@@ -61,5 +61,3 @@ public:
 	}
 
 };
-
-#endif /* FORMULAQUERY_HPP_ */

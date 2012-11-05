@@ -1,0 +1,16 @@
+ vocabulary Sigma{
+ 	type domain
+ 	Prerequ(domain,domain)
+}
+ 
+structure database: Sigma{
+ 	Prerequ={
+ 		CS230 , CS238; 
+		CS148 , CS230;
+		M100 , M200;
+ 	}
+}
+ 
+query O1Q1: Sigma{
+	{ : ?x: Prerequ(x, D) }
+}
