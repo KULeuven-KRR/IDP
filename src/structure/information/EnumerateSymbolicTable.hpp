@@ -97,7 +97,7 @@ private:
 		_internpredtable = iipt->table();
 		iipt->table()->accept(this);
 		if (_internpredtable != iipt->table()) {
-			_internpredtable = new InverseInternalPredTable(_internpredtable);
+			_internpredtable = InverseInternalPredTable::getInverseTable(_internpredtable);
 		} else {
 			_internpredtable = save;
 		}

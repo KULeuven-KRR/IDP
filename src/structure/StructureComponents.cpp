@@ -3064,6 +3064,15 @@ InverseInternalPredTable::InverseInternalPredTable(InternalPredTable* inv)
 	inv->incrementRef();
 }
 
+InternalPredTable* InverseInternalPredTable::getInverseTable(InternalPredTable* inv){
+	auto iipt = dynamic_cast<InverseInternalPredTable*>(inv);
+	if(iipt != NULL){
+		return iipt->table();
+	}
+	return new InverseInternalPredTable(inv);
+}
+
+
 InverseInternalPredTable::~InverseInternalPredTable() {
 	_invtable->decrementRef();
 }
@@ -3183,7 +3192,7 @@ bool InverseInternalPredTable::contains(const ElementTuple& tuple, const Univers
  */
 InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
-		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
+		auto newtable = InverseInternalPredTable::getInverseTable(_invtable);
 		InternalPredTable* newtableWithExtra = newtable->add(tuple);
 		Assert(newtableWithExtra == newtable);
 		return newtableWithExtra;
@@ -3209,7 +3218,7 @@ InternalPredTable* InverseInternalPredTable::add(const ElementTuple& tuple) {
  */
 InternalPredTable* InverseInternalPredTable::remove(const ElementTuple& tuple) {
 	if (_nrRefs > 1) {
-		InverseInternalPredTable* newtable = new InverseInternalPredTable(_invtable);
+		auto newtable = InverseInternalPredTable::getInverseTable(_invtable);
 		InternalPredTable* newtableWithoutExtra = newtable->remove(tuple);
 		Assert(newtableWithoutExtra == newtable);
 		return newtableWithoutExtra;
@@ -3377,8 +3386,8 @@ TableIterator FuncTable::begin() const {
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
-	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
-	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), ctpf->universe());
+	PredTable* inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
+	PredTable* inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), ctpf->universe());
 	_inconsistentElements = {};
 	if (ct) {
 		_ct = ctpf;
@@ -3407,8 +3416,8 @@ PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
  */
 PredInter::PredInter(PredTable* ctpf, bool ct) {
 	PredTable* cfpt = new PredTable(ctpf->internTable(), ctpf->universe());
-	PredTable* inverseCtpf = new PredTable(new InverseInternalPredTable(ctpf->internTable()), ctpf->universe());
-	PredTable* inverseCfpt = new PredTable(new InverseInternalPredTable(cfpt->internTable()), cfpt->universe());
+	PredTable* inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
+	PredTable* inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), cfpt->universe());
 	_inconsistentElements = {};
 	if (ct) {
 		_ct = ctpf;
@@ -3591,7 +3600,7 @@ void PredInter::ct(PredTable* t) {
 	delete (_ct);
 	delete (_pf);
 	_ct = t;
-	_pf = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	_pf = new PredTable(InverseInternalPredTable::getInverseTable(t->internTable()), t->universe());
 	checkConsistency();
 }
 
@@ -3599,7 +3608,7 @@ void PredInter::cf(PredTable* t) {
 	delete (_cf);
 	delete (_pt);
 	_cf = t;
-	_pt = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	_pt = new PredTable(InverseInternalPredTable::getInverseTable(t->internTable()), t->universe());
 	checkConsistency();
 }
 
@@ -3607,7 +3616,7 @@ void PredInter::pt(PredTable* t) {
 	delete (_pt);
 	delete (_cf);
 	_pt = t;
-	_cf = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	_cf = new PredTable(InverseInternalPredTable::getInverseTable(t->internTable()), t->universe());
 	checkConsistency();
 }
 
@@ -3615,7 +3624,7 @@ void PredInter::pf(PredTable* t) {
 	delete (_pf);
 	delete (_ct);
 	_pf = t;
-	_ct = new PredTable(new InverseInternalPredTable(t->internTable()), t->universe());
+	_ct = new PredTable(InverseInternalPredTable::getInverseTable(t->internTable()), t->universe());
 	checkConsistency();
 }
 
@@ -3629,8 +3638,8 @@ void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: i
 	delete (_cf);
 	_ct = clone;
 	_pt = new PredTable(_ct->internTable(), _ct->universe());
-	_pf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
-	_cf = new PredTable(new InverseInternalPredTable(_ct->internTable()), _ct->universe());
+	_pf = new PredTable(InverseInternalPredTable::getInverseTable(_ct->internTable()), _ct->universe());
+	_cf = new PredTable(InverseInternalPredTable::getInverseTable(_ct->internTable()), _ct->universe());
 }
 
 void PredInter::materialize() {
@@ -3676,7 +3685,7 @@ PredInter* PredInter::clone(const Universe& univ) const {
 		ncfpt = new PredTable(_pt->internTable(), univ);
 		cf = false;
 	}
-	auto inverseCfpt = new PredTable(new InverseInternalPredTable(ncfpt->internTable()), univ);
+	auto inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(ncfpt->internTable()), univ);
 	delete (result->_cf);
 	delete (result->_pt);
 	if (cf) {

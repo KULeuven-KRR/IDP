@@ -875,6 +875,7 @@ public:
 
 };
 
+
 /**
  *	This class implements the complement of an internal predicate table
  */
@@ -882,8 +883,10 @@ class InverseInternalPredTable: public InternalPredTable {
 private:
 	InternalPredTable* _invtable; //!< the inverse of the actual table
 
-public:
+private:
 	InverseInternalPredTable(InternalPredTable* inv);
+public:
+	static InternalPredTable* getInverseTable(InternalPredTable* inv);
 	~InverseInternalPredTable();
 
 	bool finite(const Universe&) const;
