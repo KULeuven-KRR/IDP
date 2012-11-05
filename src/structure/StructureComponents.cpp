@@ -3642,6 +3642,20 @@ void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: i
 	_cf = new PredTable(InverseInternalPredTable::getInverseTable(_ct->internTable()), _ct->universe());
 }
 
+// Direct implementation to prevent checking consistency unnecessarily
+void PredInter::cfpf(PredTable* newcf) { // FIXME also change in other tables: it is possible that an already assigned table is assigned otherwise, so it gets
+// deleted in the process!!!
+	auto clone = new PredTable(newcf->internTable(), newcf->universe());
+	delete (_ct);
+	delete (_pf);
+	delete (_pt);
+	delete (_cf);
+	_cf = clone;
+	_pf = new PredTable(_cf->internTable(), _cf->universe());
+	_pt = new PredTable(InverseInternalPredTable::getInverseTable(_cf->internTable()), _cf->universe());
+	_ct = new PredTable(InverseInternalPredTable::getInverseTable(_cf->internTable()), _cf->universe());
+}
+
 void PredInter::materialize() {
 	if (approxTwoValued()) {
 		auto prt = _ct->materialize();
