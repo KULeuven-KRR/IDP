@@ -120,6 +120,23 @@ bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
 	return ac.isArithmeticFormula(k);
 }
 
+double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term2sort) {
+	//We now have something of the form x=y.
+	//In general, the chance of this succeeding is:
+	// 1 / (|xsort| |ysort|) * |intersection(xsort,ysort)|
+	// If we assume that the sorts overlap enough (smallest is approximately a subsort of biggest), this is (approx) 1 / biggest.
+	//TODO: improve in cases where we can easily compute the overlap. (e.g. ranges)
+	auto term1NoBdd = manager->toTerm(term1);
+	auto term1sort = TermUtils::deriveSmallerSort(term1NoBdd, structure);
+	auto term1SortSize = structure->inter(term1sort)->size();
+	auto term2SortSize = structure->inter(term2sort)->size();
+	if (term1SortSize.isInfinite() || term2SortSize.isInfinite()) {
+		return 0;
+	}
+	auto biggest = term2SortSize > term1SortSize ? term2SortSize : term1SortSize;
+	return 1 / (double) biggest._size;
+}
+
 /**
  * Estimates the chance that this kernel evaluates to true
  */

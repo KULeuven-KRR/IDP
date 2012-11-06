@@ -88,6 +88,10 @@ public:
 	}
 
 private:
+	/*
+	 * Calculates the chance that term1 equals a random term of sort sort.
+	 */
+	double calculateEqualityChance(const FOBDDTerm* term1, Sort* sort);
 	std::map<const FOBDD*, std::map<varset, std::map<indexset, double> > > bddanswers;
 	std::map<const FOBDDKernel*, std::map<varset, std::map<indexset, double> > > kernelanswers;
 	double tabledEstimateNrAnswers(const FOBDDKernel* object, const varset& vars, const indexset& indices){
