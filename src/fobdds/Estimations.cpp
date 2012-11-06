@@ -173,24 +173,61 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		Assert(pinter!=NULL);
 
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
-		auto symbolsize = pt->size();
-		auto univsize = tablesize(TST_EXACT, 1);
-		for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
-			univsize *= structure->inter((*it))->size();
-		}
+		if (not VocabularyUtils::isComparisonPredicate(symbol)) {
+			auto symbolsize = pt->size();
+			auto univsize = tablesize(TST_EXACT, 1);
+			for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
+				univsize *= structure->inter((*it))->size();
+			}
 
-		if (symbolsize.isInfinite()) {
-			return 0.5;
+			if (symbolsize.isInfinite()) {
+				return 0.5;
+			}
+			if (univsize.isInfinite()) {
+				return 0;
+			}
+			if (toDouble(univsize) == 0) {
+				return 0;
+			}
+			Assert(toDouble(symbolsize) <= toDouble(univsize));
+			return toDouble(symbolsize) / toDouble(univsize);
 		}
-		if (univsize.isInfinite()) {
-			return 0;
+		//Now we know: arithmetic --> Special case!
+		Assert(VocabularyUtils::isComparisonPredicate(symbol));
+		// we try to rewrite as .. = x.
+		auto vars = variables(atomkernel, manager);
+		auto inds = indices(atomkernel, manager);
+		double result = 0;
+		bool stop = false;
+		for (auto var : vars) {
+			auto bddterm = manager->solve(atomkernel, var);
+			if (bddterm != NULL) {
+				result = calculateEqualityChance(bddterm, var->sort());
+				if (result == 0) {
+					continue;
+				}
+				stop = true;
+				break;
+			}
 		}
-		if (toDouble(univsize) == 0) {
-			return 0;
+		if (not stop) {
+			for (auto ind : inds) {
+				auto bddterm = manager->solve(atomkernel, ind);
+				if (bddterm != NULL) {
+					result = calculateEqualityChance(bddterm, ind->sort());
+					if (result == 0) {
+						continue;
+					}
+					break;
+				}
+			}
 		}
-		Assert(toDouble(symbolsize) <= toDouble(univsize));
-		return toDouble(symbolsize) / toDouble(univsize);
-
+		if (is(symbol, STDPRED::EQ)) {
+			//In case of equality, the calculated result is ok.
+			return result;
+		}
+		//In case of disequality, the chance is much higher. sqrt is an estimation
+		return sqrt(result);
 	}
 
 	Assert(isa<FOBDDQuantKernel> (*kernel));
