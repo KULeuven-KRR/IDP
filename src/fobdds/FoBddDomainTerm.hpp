@@ -23,8 +23,8 @@ private:
 	Sort* _sort;
 	const DomainElement* _value;
 
-	FOBDDDomainTerm(Sort* sort, const DomainElement* value)
-			: _sort(sort), _value(value) {
+	FOBDDDomainTerm(uint id, Sort* sort, const DomainElement* value)
+			: FOBDDTerm(id), _sort(sort), _value(value) {
 	}
 
 public:

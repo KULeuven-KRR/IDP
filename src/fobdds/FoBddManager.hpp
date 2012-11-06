@@ -80,7 +80,9 @@ typedef vector<Choice> Path;
  */
 class FOBDDManager {
 private:
-	//Options
+	uint _maxid;
+
+	//Option
 	bool _rewriteArithmetic; //<!normally, this is true, only false if explicitly asked not to do rewritings
 
 	// Leaf nodes

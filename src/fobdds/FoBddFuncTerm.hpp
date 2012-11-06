@@ -23,8 +23,8 @@ private:
 	Function* _function;
 	std::vector<const FOBDDTerm*> _args;
 
-	FOBDDFuncTerm(Function* func, const std::vector<const FOBDDTerm*>& args)
-			: _function(func), _args(args) {
+	FOBDDFuncTerm(uint id, Function* func, const std::vector<const FOBDDTerm*>& args)
+			: FOBDDTerm(id), _function(func), _args(args) {
 	}
 
 public:

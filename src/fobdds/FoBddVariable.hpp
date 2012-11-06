@@ -6,10 +6,9 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
-#ifndef FOBDDVARIABLE_HPP_
-#define FOBDDVARIABLE_HPP_
+#pragma once
 
 #include "fobdds/FoBddTerm.hpp"
 #include "vocabulary/vocabulary.hpp"
@@ -23,8 +22,9 @@ private:
 
 	Variable* _variable;
 
-	FOBDDVariable(Variable* var)
-			: _variable(var) {
+	FOBDDVariable(uint id, Variable* var)
+			: 	FOBDDTerm(id),
+				_variable(var) {
 	}
 
 public:
@@ -46,10 +46,10 @@ public:
 //This struct is needed in order to always quantify !x y in the same order.
 struct CompareBDDVars {
 	bool operator()(const FOBDDVariable* v1, const FOBDDVariable* v2) const {
-		if (v1->sort() < v2->sort()) {
+		if (v1->sort()->name() < v2->sort()->name()) {
 			return true;
 		}
-		if (v1->sort() > v2->sort()) {
+		if (v1->sort()->name() > v2->sort()->name()) {
 			return false;
 		}
 		if (v1->variable()->name() < v2->variable()->name()) {
@@ -61,5 +61,3 @@ struct CompareBDDVars {
 		return v1 < v2;
 	}
 };
-
-#endif /* FOBDDVARIABLE_HPP_ */

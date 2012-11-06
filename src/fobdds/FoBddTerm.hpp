@@ -6,11 +6,12 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #ifndef FOBDDTERM_HPP_
 #define FOBDDTERM_HPP_
 #include <iostream>
+#include "Assert.hpp"
 class Sort;
 class FOBDDVisitor;
 
@@ -19,7 +20,19 @@ class FOBDDVisitor;
  * or a DeBruyn index (which is in essence a variable)
  */
 class FOBDDTerm {
+private:
+	uint id; // For the order;
+
+protected:
+	FOBDDTerm(uint id)
+			: id(id) {
+
+	}
 public:
+	uint getID() const {
+		return id;
+	}
+
 	virtual ~FOBDDTerm() {
 	}
 	virtual bool containsDeBruijnIndex(unsigned int index) const = 0;
@@ -33,6 +46,10 @@ public:
 	virtual Sort* sort() const = 0;
 	virtual std::ostream& put(std::ostream& output) const=0;
 
+	bool before(const FOBDDTerm* rhs) const {
+		Assert(rhs != NULL);
+		return getID() < rhs->getID();
+	}
 };
 
 #endif /* FOBDDTERM_HPP_ */

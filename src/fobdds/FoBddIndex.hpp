@@ -22,8 +22,8 @@ private:
 	Sort* _sort;
 	unsigned int _index;
 
-	FOBDDDeBruijnIndex(Sort* sort, unsigned int index)
-			: _sort(sort), _index(index) {
+	FOBDDDeBruijnIndex(uint id, Sort* sort, unsigned int index)
+			: FOBDDTerm(id), _sort(sort), _index(index) {
 	}
 
 public:

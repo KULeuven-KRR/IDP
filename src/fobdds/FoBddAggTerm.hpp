@@ -24,8 +24,8 @@ private:
 	AggFunction _aggfunction;
 	const FOBDDEnumSetExpr* _setexpr;
 
-	FOBDDAggTerm(AggFunction agg, const FOBDDEnumSetExpr* setexpr)
-			: _aggfunction(agg), _setexpr(setexpr) {
+	FOBDDAggTerm(uint id, AggFunction agg, const FOBDDEnumSetExpr* setexpr)
+			: FOBDDTerm(id), _aggfunction(agg), _setexpr(setexpr) {
 	}
 
 public:

@@ -28,17 +28,17 @@ bool Addition::operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
 	auto arg2first = extractor.run(arg2);
 
 	if (arg1first == arg2first) {
-		return arg1 < arg2;//TODO: check which comparison is used here
+		return arg1->before(arg2);
 	} else if (isBddDomainTerm(arg1first)) {
 		if (isBddDomainTerm(arg2first)) {
-			return arg1 < arg2;
+			return arg1->before(arg2);
 		} else {
 			return true;
 		}
 	} else if (isBddDomainTerm(arg2first)) {
 		return false;
 	} else {
-		return arg1first < arg2first;
+		return arg1first->before(arg2first);
 	}
 }
 
@@ -47,25 +47,23 @@ const DomainElement* Multiplication::getNeutralElement() {
 }
 
 // Ordering method: true if ordered before
-// TODO comment and check what they do!
 bool Multiplication::operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
 	if (isBddDomainTerm(arg1)) {
 		if (isBddDomainTerm(arg2)) {
-			return arg1 < arg2;
+			return arg1->before(arg2);
 		} else {
 			return true;
 		}
 	} else if (isBddDomainTerm(arg2)) {
 		return false;
 	} else {
-		return arg1 < arg2;
+		return arg1->before(arg2);
 	}
 }
 
 #include "fobdds/bddvisitors/CollectSameOperationTerms.hpp"
 
 bool TermOrder::before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager) {
-	// TODO MAKE THIS INDEPENDENT OF POINTER ORDERING
 	CollectSameOperationTerms<Multiplication> fa(manager);
 	auto flat1 = fa.getTerms(arg1);
 	auto flat2 = fa.getTerms(arg2);

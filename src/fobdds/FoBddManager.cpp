@@ -396,7 +396,7 @@ set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::getVariables(const set<V
 
 FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
 	Assert(lookup < FOBDDVariable > (_variabletable, var) == NULL);
-	FOBDDVariable* newvariable = new FOBDDVariable(var);
+	FOBDDVariable* newvariable = new FOBDDVariable(_maxid++, var);
 	_variabletable[var] = newvariable;
 	return newvariable;
 }
@@ -414,7 +414,7 @@ const FOBDDDeBruijnIndex* FOBDDManager::getDeBruijnIndex(Sort* sort, unsigned in
 
 FOBDDDeBruijnIndex* FOBDDManager::addDeBruijnIndex(Sort* sort, unsigned int index) {
 	Assert(lookup < FOBDDDeBruijnIndex > (_debruijntable, sort, index) == NULL);
-	auto newindex = new FOBDDDeBruijnIndex(sort, index);
+	auto newindex = new FOBDDDeBruijnIndex(_maxid++, sort, index);
 	_debruijntable[sort][index] = newindex;
 	return newindex;
 }
@@ -689,7 +689,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 
 FOBDDFuncTerm* FOBDDManager::addFuncTerm(Function* func, const vector<const FOBDDTerm*>& args) {
 	Assert(lookup < FOBDDFuncTerm > (_functermtable, func, args) == NULL);
-	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(func, args);
+	FOBDDFuncTerm* newarg = new FOBDDFuncTerm(_maxid++, func, args);
 	_functermtable[func][args] = newarg;
 	return newarg;
 }
@@ -705,7 +705,7 @@ const FOBDDTerm* FOBDDManager::getAggTerm(AggFunction func, const FOBDDEnumSetEx
 
 FOBDDAggTerm* FOBDDManager::addAggTerm(AggFunction func, const FOBDDEnumSetExpr* set) {
 	Assert(lookup<FOBDDAggTerm>(_aggtermtable, func, set) == NULL);
-	FOBDDAggTerm* result = new FOBDDAggTerm(func, set);
+	FOBDDAggTerm* result = new FOBDDAggTerm(_maxid++, func, set);
 	_aggtermtable[func][set] = result;
 	return result;
 }
@@ -726,7 +726,7 @@ const FOBDDDomainTerm* FOBDDManager::getDomainTerm(Sort* sort, const DomainEleme
 
 FOBDDDomainTerm* FOBDDManager::addDomainTerm(Sort* sort, const DomainElement* value) {
 	Assert(lookup < FOBDDDomainTerm > (_domaintermtable, sort, value) == NULL);
-	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(sort, value);
+	FOBDDDomainTerm* newdt = new FOBDDDomainTerm(_maxid++, sort, value);
 	_domaintermtable[sort][value] = newdt;
 	return newdt;
 }
@@ -1629,7 +1629,7 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 }
 
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)
-		: _rewriteArithmetic(rewriteArithmetic) {
+		: _maxid(1), _rewriteArithmetic(rewriteArithmetic) {
 	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
 	_nextorder[KernelOrderCategory::STANDARDCATEGORY] = 0;
 	_nextorder[KernelOrderCategory::DEBRUIJNCATEGORY] = 0;
