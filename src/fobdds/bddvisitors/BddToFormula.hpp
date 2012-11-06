@@ -84,7 +84,7 @@ protected:
 	virtual void visit(const FOBDDDeBruijnIndex* index) {
 		auto it = _dbrmapping.find(index);
 		Variable* v;
-		Assert(it != _dbrmapping.cend());
+		//Assert(it != _dbrmapping.cend()); This assert is only valid if we assume that there are no free debruynindices in what we translate. Hence I removed it.
 		if (it == _dbrmapping.cend()) {
 			v = new Variable(index->sort());
 			_dbrmapping[index] = v;
