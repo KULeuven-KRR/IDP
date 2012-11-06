@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef ESTIMATIONS_HPP_
-#define ESTIMATIONS_HPP_
+#pragma once
 
 #include <map>
 #include <iostream>
@@ -169,5 +168,3 @@ private:
 	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*);
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD* bdd);
 };
-
-#endif /* ESTIMATIONS_HPP_ */
