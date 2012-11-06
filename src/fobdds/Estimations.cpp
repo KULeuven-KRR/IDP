@@ -239,7 +239,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 
 // FIXME review below
 	// some simple checks
-//	int quantsize = 0;
+	int quantsize = 0;
 	if (quanttablesize.isInfinite()) {
 		if (not quantsorttable->approxFinite()) {
 			// if the sort is infinite, the kernel is true iff the chance of the bdd is nonzero.
@@ -252,7 +252,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		if (quanttablesize._size == 0) {
 			return 0; // if the sort is empty, the kernel cannot be true
 		} else {
-//			quantsize = quanttablesize._size;
+			quantsize = quanttablesize._size;
 		}
 	}
 
@@ -324,16 +324,20 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 //		}
 //	}
 
-	auto sum = 1;
-	auto sumcount = 2;
-
-	// FIXME review above
-
-	if (sum == 0) { // no experiment succeeded
-		return 1;
-	} else { // at least one experiment succeeded: take average of all successfull experiments
-		return 1 - (sum / double(sumcount));
-	}
+//	auto sum = 1;
+//	auto sumcount = 2;
+//
+//	// FIXME review above
+//
+//	if (sum == 0) { // no experiment succeeded
+//		return 1;
+//	} else { // at least one experiment succeeded: take average of all successfull experiments
+//		return 1 - (sum / double(sumcount));
+//	}
+	auto subbdd = quantkernel->bdd();
+	auto subchance = estimateChance(subbdd, structure, manager);
+	auto totalchance = min(subchance*quantsize,0.99);
+	return totalchance;
 }
 
 // FIXME review this method
