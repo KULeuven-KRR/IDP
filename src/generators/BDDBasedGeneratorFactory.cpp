@@ -882,7 +882,14 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		}
 	}
 
-	Assert(left != NULL);
+	if(left == NULL){
+		//If left == NULL, this means, we cannot generate values, but we need a checker (left is a domainelement) ==> set the leftpattern to input!
+		auto leftDomElem = dynamic_cast<const FOBDDDomainTerm*>(ak->left());
+		Assert(leftDomElem != NULL); //NOTE: other functions and aggregates should be unnested.
+		left = new DomElemContainer();
+		left->operator =(leftDomElem->value());
+		leftpattern = Pattern::INPUT;
+	}
 	auto freegenerator = GeneratorFactory::create(freevars, freetables); //TODO: simplify if no free vars!
 
 	//Now, we start creating the formulagenerators and termgenerators for the agggenerator
