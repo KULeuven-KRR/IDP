@@ -120,6 +120,23 @@ bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
 	return ac.isArithmeticFormula(k);
 }
 
+double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term2sort) {
+	//We now have something of the form x=y.
+	//In general, the chance of this succeeding is:
+	// 1 / (|xsort| |ysort|) * |intersection(xsort,ysort)|
+	// If we assume that the sorts overlap enough (smallest is approximately a subsort of biggest), this is (approx) 1 / biggest.
+	//TODO: improve in cases where we can easily compute the overlap. (e.g. ranges)
+	auto term1NoBdd = manager->toTerm(term1);
+	auto term1sort = TermUtils::deriveSmallerSort(term1NoBdd, structure);
+	auto term1SortSize = structure->inter(term1sort)->size();
+	auto term2SortSize = structure->inter(term2sort)->size();
+	if (term1SortSize.isInfinite() || term2SortSize.isInfinite()) {
+		return 0;
+	}
+	auto biggest = term2SortSize > term1SortSize ? term2SortSize : term1SortSize;
+	return 1 / (double) biggest._size;
+}
+
 /**
  * Estimates the chance that this kernel evaluates to true
  */
@@ -156,24 +173,61 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		Assert(pinter!=NULL);
 
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
-		auto symbolsize = pt->size();
-		auto univsize = tablesize(TST_EXACT, 1);
-		for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
-			univsize *= structure->inter((*it))->size();
-		}
+		if (not VocabularyUtils::isComparisonPredicate(symbol)) {
+			auto symbolsize = pt->size();
+			auto univsize = tablesize(TST_EXACT, 1);
+			for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
+				univsize *= structure->inter((*it))->size();
+			}
 
-		if (symbolsize.isInfinite()) {
-			return 0.5;
+			if (symbolsize.isInfinite()) {
+				return 0.5;
+			}
+			if (univsize.isInfinite()) {
+				return 0;
+			}
+			if (toDouble(univsize) == 0) {
+				return 0;
+			}
+			Assert(toDouble(symbolsize) <= toDouble(univsize));
+			return toDouble(symbolsize) / toDouble(univsize);
 		}
-		if (univsize.isInfinite()) {
-			return 0;
+		//Now we know: arithmetic --> Special case!
+		Assert(VocabularyUtils::isComparisonPredicate(symbol));
+		// we try to rewrite as .. = x.
+		auto vars = variables(atomkernel, manager);
+		auto inds = indices(atomkernel, manager);
+		double result = 0;
+		bool stop = false;
+		for (auto var : vars) {
+			auto bddterm = manager->solve(atomkernel, var);
+			if (bddterm != NULL) {
+				result = calculateEqualityChance(bddterm, var->sort());
+				if (result == 0) {
+					continue;
+				}
+				stop = true;
+				break;
+			}
 		}
-		if (toDouble(univsize) == 0) {
-			return 0;
+		if (not stop) {
+			for (auto ind : inds) {
+				auto bddterm = manager->solve(atomkernel, ind);
+				if (bddterm != NULL) {
+					result = calculateEqualityChance(bddterm, ind->sort());
+					if (result == 0) {
+						continue;
+					}
+					break;
+				}
+			}
 		}
-		Assert(toDouble(symbolsize) <= toDouble(univsize));
-		return toDouble(symbolsize) / toDouble(univsize);
-
+		if (is(symbol, STDPRED::EQ)) {
+			//In case of equality, the calculated result is ok.
+			return result;
+		}
+		//In case of disequality, the chance is much higher. sqrt is an estimation
+		return sqrt(result);
 	}
 
 	Assert(isa<FOBDDQuantKernel> (*kernel));
@@ -185,7 +239,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 
 // FIXME review below
 	// some simple checks
-//	int quantsize = 0;
+	int quantsize = 0;
 	if (quanttablesize.isInfinite()) {
 		if (not quantsorttable->approxFinite()) {
 			// if the sort is infinite, the kernel is true iff the chance of the bdd is nonzero.
@@ -198,7 +252,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		if (quanttablesize._size == 0) {
 			return 0; // if the sort is empty, the kernel cannot be true
 		} else {
-//			quantsize = quanttablesize._size;
+			quantsize = quanttablesize._size;
 		}
 	}
 
@@ -270,16 +324,20 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 //		}
 //	}
 
-	auto sum = 1;
-	auto sumcount = 2;
-
-	// FIXME review above
-
-	if (sum == 0) { // no experiment succeeded
-		return 1;
-	} else { // at least one experiment succeeded: take average of all successfull experiments
-		return 1 - (sum / double(sumcount));
-	}
+//	auto sum = 1;
+//	auto sumcount = 2;
+//
+//	// FIXME review above
+//
+//	if (sum == 0) { // no experiment succeeded
+//		return 1;
+//	} else { // at least one experiment succeeded: take average of all successfull experiments
+//		return 1 - (sum / double(sumcount));
+//	}
+	auto subbdd = quantkernel->bdd();
+	auto subchance = estimateChance(subbdd, structure, manager);
+	auto totalchance = min(subchance*quantsize,0.99);
+	return totalchance;
 }
 
 // FIXME review this method
@@ -320,8 +378,6 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 			}
 
 			auto extra = tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
-			//cerr <<"Cost of " <<toString((*quantset)->subformula()) <<" is " <<extra <<"\n";
-			d = (d + extra < maxdouble) ? d + extra : maxdouble; // FIXME verify overflow checks in code
 			if (d == maxdouble) {
 				break;
 			}
@@ -489,6 +545,17 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 	}
 }
 
+double BddStatistics::tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices){
+	auto it = bddcosts[object][vars].find(indices);
+	double result = 0;
+	if(it==bddcosts[object][vars].cend()){
+		result = estimateCostAll(object, vars, indices);
+	}else{
+		result = it->second;
+	}
+	return result;
+}
+
 /**
  * Estimated the cost of generating all answers to this bdd.
  */
@@ -533,16 +600,10 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	auto kernelans = tabledEstimateNrAnswers(bdd->kernel(), kernelvars, kernelindices);
 	auto truecost = tabledEstimateCostAll(bdd->truebranch(), bddvars, bddindices);
 
-	auto maxcost = getMaxElem<double>();
-
 	// ONLY TRUE BRANCH: Only cost of kernel eval to true + kernel answers * true branch cost
 	if (bdd->falsebranch() == manager->falsebdd()) {
 		auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), kernelvars, kernelindices);
 		auto result = kernelcost + (kernelans * truecost);
-		if (result - kernelcost != kernelans * truecost) {
-			bddstorage[bdd][vars][ind] = maxcost;
-			return maxcost;
-		}
 		bddstorage[bdd][vars][ind] = result;
 		return result;
 	}
@@ -555,10 +616,6 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	if (bdd->truebranch() == manager->falsebdd()) {
 		auto kernelcost = tabledEstimateCostAll(false, bdd->kernel(), kernelvars, kernelindices);
 		auto result = kernelcost + (toDouble(invkernelans) * falsecost);
-		if (result - kernelcost != (toDouble(invkernelans) * falsecost)) {
-			bddstorage[bdd][vars][ind] = maxcost;
-			return maxcost;
-		}
 		bddstorage[bdd][vars][ind] = result;
 		return result;
 	}
@@ -566,10 +623,6 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 	// BOTH BRANCHES: Cost of single kernel eval * kernelunivsize + true cost * kernel answers + false cost * NOT(kernel) answers
 	auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), { }, { });
 	auto result = toDouble(kernelunivsize) * kernelcost + kernelans * truecost + toDouble(invkernelans) * falsecost;
-	if (result - (toDouble(kernelunivsize) * kernelcost) != kernelans * truecost + toDouble(invkernelans) * falsecost) {
-		bddstorage[bdd][vars][ind] = maxcost;
-		return maxcost;
-	}
 	bddstorage[bdd][vars][ind] = result;
 	return result;
 }

@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef ESTIMATIONS_HPP_
-#define ESTIMATIONS_HPP_
+#pragma once
 
 #include <map>
 #include <iostream>
@@ -89,6 +88,10 @@ public:
 	}
 
 private:
+	/*
+	 * Calculates the chance that term1 equals a random term of sort sort.
+	 */
+	double calculateEqualityChance(const FOBDDTerm* term1, Sort* sort);
 	std::map<const FOBDD*, std::map<varset, std::map<indexset, double> > > bddanswers;
 	std::map<const FOBDDKernel*, std::map<varset, std::map<indexset, double> > > kernelanswers;
 	double tabledEstimateNrAnswers(const FOBDDKernel* object, const varset& vars, const indexset& indices){
@@ -127,16 +130,7 @@ private:
 		}
 		return result;
 	}
-	double tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices){
-		auto it = bddcosts[object][vars].find(indices);
-		double result = 0;
-		if(it==bddcosts[object][vars].cend()){
-			result = estimateCostAll(object, vars, indices);
-		}else{
-			result = it->second;
-		}
-		return result;
-	}
+	double tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices);
 	double estimateCostAll(bool, const FOBDDKernel*, const varset& vars, const indexset& indices);
 	double estimateCostAll(const FOBDD*, const varset& vars, const indexset& indices);
 
@@ -169,5 +163,3 @@ private:
 	std::map<const FOBDDKernel*, double> kernelAnswers(const FOBDD*);
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD* bdd);
 };
-
-#endif /* ESTIMATIONS_HPP_ */
