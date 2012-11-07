@@ -176,7 +176,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		Assert(pinter!=NULL);
 
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
-		if (not VocabularyUtils::isComparisonPredicate(symbol)) {
+		if (not isArithmetic(kernel,manager)) {
 			auto symbolsize = pt->size();
 			auto univsize = tablesize(TST_EXACT, 1);
 			for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
@@ -196,7 +196,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 			return toDouble(symbolsize) / toDouble(univsize);
 		}
 		//Now we know: arithmetic --> Special case!
-		Assert(VocabularyUtils::isComparisonPredicate(symbol));
+		Assert(isArithmetic(kernel,manager));
 		// we try to rewrite as .. = x.
 		auto vars = variables(atomkernel, manager);
 		auto inds = indices(atomkernel, manager);
