@@ -87,14 +87,13 @@ public:
 
 	void visit(const UnionInternalPredTable* uipt) {
 		double result = 0;
-		double maxdouble = InfCost;
 		for (auto it = uipt->inTables().cbegin(); result < InfCost && it != uipt->inTables().cend(); ++it) {
 			(*it)->accept(this);
-			result = result + _result > maxdouble ? maxdouble : result + _result;
+			result = result + _result;
 		}
 		for (auto it = uipt->outTables().cbegin(); result < InfCost && it != uipt->outTables().cend(); ++it) {
 			(*it)->accept(this);
-			result = result + _result > maxdouble ? maxdouble : result + _result;
+			result = result + _result;
 		}
 		_result = result;
 	}

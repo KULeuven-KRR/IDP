@@ -1476,11 +1476,7 @@ double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBD
 	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, this);
 	double bddAnswers = BddStatistics::estimateNrAnswers(bdd, vars, indices, structure, this);
-	double totalBddCost = getMaxElem<double>();
-	if (bddCost + (bddAnswers * weightPerAns) < totalBddCost) {
-		totalBddCost = bddCost + (bddAnswers * weightPerAns);
-	}
-	return totalBddCost;
+	return bddCost + (bddAnswers * weightPerAns);
 }
 
 const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
@@ -1562,7 +1558,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 
 		//For the true and false branch, we calculate the weight as follows:
 		//The cost of one answer in truebranch is weight * kernelanswers (they speak about different variables)
-		double trueBranchWeight = (kernelAnswers * weightPerAns < getMaxElem<double>()) ? kernelAnswers * weightPerAns : getMaxElem<double>();
+		double trueBranchWeight = kernelAnswers * weightPerAns;
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "Truebranchweight is " << trueBranchWeight << "\n";
 			clog << "Making more " << (goal ? "true" : "false") << " for the true branch\n";
@@ -1570,23 +1566,12 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 
 		auto newtrue = makeMore(goal, bdd->truebranch(), branchvars, branchindices, structure, trueBranchWeight);
 
-		double kernelFalseAnswers;
-		if (kernelUnivSize._type == TST_APPROXIMATED || kernelUnivSize._type == TST_EXACT) {
-			kernelFalseAnswers = kernelUnivSize._size * (1 - chance);
-			//WHY NOT univ - kernelanswers? Why use the chance?
-		} else {
-			Assert(kernelUnivSize._type == TST_INFINITE);
-			if (chance == 0) {
-				kernelFalseAnswers = getMaxElem<double>();
-			} else {
-				Assert(chance>0);
-				kernelFalseAnswers = 1; //Why 1?}
-			}
-		}
+		double kernelFalseAnswers = toDouble(kernelUnivSize) * (1 - chance);
+
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "Kernel false answers is " << kernelFalseAnswers << "\n";
 		}
-		double falsebranchweight = (kernelFalseAnswers * weightPerAns < getMaxElem<double>()) ? kernelFalseAnswers * weightPerAns : getMaxElem<double>();
+		double falsebranchweight = kernelFalseAnswers * weightPerAns;
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "False branch weight is " << falsebranchweight << "\n";
 			clog << "Making more " << (goal ? "true" : "false") << " for the false branch\n";
