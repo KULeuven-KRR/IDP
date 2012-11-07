@@ -413,6 +413,7 @@ public:
 	void pt(PredTable*); //!< Replace the possibly true (and certainly false) tuples
 	void pf(PredTable*); //!< Replace the possibly false (and certainly true) tuples
 	void ctpt(PredTable*); //!< Replace the certainly and possibly true tuples
+	void cfpf(PredTable*); //!< Replace the certainly and possibly false tuples
 	void materialize(); //!< Replace symbolic tables by enumerated ones if possible
 
 	void makeTrue(const ElementTuple&); //!< Make the given tuple true

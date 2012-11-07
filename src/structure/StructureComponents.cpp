@@ -3642,20 +3642,37 @@ void PredInter::ctpt(PredTable* newct) { // FIXME also change in other tables: i
 	_cf = new PredTable(InverseInternalPredTable::getInverseTable(_ct->internTable()), _ct->universe());
 }
 
+// Direct implementation to prevent checking consistency unnecessarily
+void PredInter::cfpf(PredTable* newcf) { // FIXME also change in other tables: it is possible that an already assigned table is assigned otherwise, so it gets
+// deleted in the process!!!
+	auto clone = new PredTable(newcf->internTable(), newcf->universe());
+	delete (_ct);
+	delete (_pf);
+	delete (_pt);
+	delete (_cf);
+	_cf = clone;
+	_pf = new PredTable(_cf->internTable(), _cf->universe());
+	_pt = new PredTable(InverseInternalPredTable::getInverseTable(_cf->internTable()), _cf->universe());
+	_ct = new PredTable(InverseInternalPredTable::getInverseTable(_cf->internTable()), _cf->universe());
+}
+
 void PredInter::materialize() {
+	bool getCT = (_ct->size() <= _pf->size());
+	bool getCF = (_cf->size() <= _pt->size());
+
 	if (approxTwoValued()) {
-		auto prt = _ct->materialize();
-		if (prt) {
-			ctpt(prt);
+		auto prt = getCT ? _ct->materialize() : _pf->materialize();
+		if (prt != NULL) { //Materializaton was possible
+			getCT ? ctpt(prt) : cfpf(prt);
 		}
 	} else {
-		auto prt = _ct->materialize();
-		if (prt) {
-			ct(prt);
+		auto prt = getCT ? _ct->materialize() : _pf->materialize();
+		if (prt != NULL) { //Materializaton was possible
+			getCT ? ct(prt) : pf(prt);
 		}
-		auto prf = _cf->materialize();
-		if (prf) {
-			cf(prf);
+		auto prf = getCF ? _cf->materialize() : _pt->materialize();
+		if (prf != NULL) { //Materializaton was possible
+			getCF ? cf(prf) : pt(prf);
 		}
 	}
 }
