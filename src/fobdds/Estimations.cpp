@@ -133,6 +133,9 @@ double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term
 	if (term1SortSize.isInfinite() || term2SortSize.isInfinite()) {
 		return 0;
 	}
+	if(term1SortSize._size == 0 || term2SortSize._size == 0){
+		return 0;
+	}
 	auto biggest = term2SortSize > term1SortSize ? term2SortSize : term1SortSize;
 	return 1 / (double) biggest._size;
 }
@@ -378,7 +381,7 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 			}
 
 			auto extra = tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
-			if (d == maxdouble) {
+			if (d >= maxdouble) {
 				break;
 			}
 		}
@@ -398,26 +401,24 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 			varsvector.push_back(*it);
 			SortTable* st = structure->inter((*it)->sort());
 			tablesize stsize = st->size();
-			if (stsize._type == TST_EXACT || stsize._type == TST_APPROXIMATED)
-				varunivsizes.push_back(double(stsize._size));
-			else {
-				varunivsizes.push_back(maxdouble);
+			varunivsizes.push_back(toDouble(stsize));
+			if (stsize.isInfinite()) {
 				++nrinfinite;
-				if (!infinitevar)
+				if (!infinitevar) {
 					infinitevar = *it;
+				}
 			}
 		}
 		for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
 			indicesvector.push_back(*it);
 			SortTable* st = structure->inter((*it)->sort());
 			tablesize stsize = st->size();
-			if (stsize._type == TST_EXACT || stsize._type == TST_APPROXIMATED)
-				indexunivsizes.push_back(double(stsize._size));
-			else {
-				indexunivsizes.push_back(maxdouble);
+			indexunivsizes.push_back(toDouble(stsize));
+			if (stsize.isInfinite()) {
 				++nrinfinite;
-				if (!infiniteindex)
+				if (!infiniteindex){
 					infiniteindex = *it;
+				}
 			}
 		}
 		if (nrinfinite > 1) {
@@ -452,10 +453,10 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 		} else {
 			double maxresult = 1;
 			for (auto it = varunivsizes.cbegin(); it != varunivsizes.cend(); ++it) {
-				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
+				maxresult = maxresult * (*it);
 			}
 			for (auto it = indexunivsizes.cbegin(); it != indexunivsizes.cend(); ++it) {
-				maxresult = (maxresult * (*it) < maxdouble) ? (maxresult * (*it)) : maxdouble;
+				maxresult = maxresult * (*it);
 			}
 			if (maxresult < maxdouble) {
 				double bestresult = maxresult;
