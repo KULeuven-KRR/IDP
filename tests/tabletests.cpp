@@ -45,10 +45,20 @@ TEST(TableTest, BDDApproxInverseAndApproxEqual) {
 	Universe u = Universe(std::vector<SortTable*> {bts1.ts1.sorttable});
 	ASSERT_TRUE(bddtable->approxInverse(negbddtable, u));
 	ASSERT_FALSE(bddtable->approxEqual(negbddtable, u));
-	auto othernegbddtable = new InverseInternalPredTable(bddtable);
+	auto othernegbddtable = InverseInternalPredTable::getInverseTable(bddtable);
 	ASSERT_TRUE(bddtable->approxInverse(othernegbddtable, u));
 	ASSERT_FALSE(bddtable->approxEqual(othernegbddtable, u));
 	ASSERT_TRUE(negbddtable->approxEqual(othernegbddtable, u));
+}
+
+TEST(TableTest, InverseInverseInternalTableTest) {
+	auto onetable = new EnumeratedInternalPredTable();
+	auto invtable = InverseInternalPredTable::getInverseTable(onetable);
+	ASSERT_TRUE(isa<InverseInternalPredTable>(*invtable));
+	auto invinvtable = InverseInternalPredTable::getInverseTable(invtable);
+	ASSERT_FALSE(isa<InverseInternalPredTable>(*invinvtable));
+	auto invinvinvtable = InverseInternalPredTable::getInverseTable(invinvtable);
+	ASSERT_TRUE(isa<InverseInternalPredTable>(*invinvinvtable));
 }
 
 }
