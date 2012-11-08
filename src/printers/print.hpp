@@ -35,6 +35,7 @@ class CPReification;
 class GroundSet;
 class GroundAggregate;
 class GroundTranslator;
+class PredTable;
 typedef std::vector<Lit> GroundClause;
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
@@ -80,6 +81,7 @@ protected:
 	virtual void visit(const Query*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const GroundClause&) = 0;
+	virtual void visit(const PredTable*) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
 	virtual void visit(const GroundSet*) = 0;
 	virtual void visit(const PCGroundRule*) = 0;
@@ -113,6 +115,9 @@ public:
 	template<typename T>
 	void print(const T* t) {
 		t->accept(this);
+	}
+	void print(const PredTable* t){
+		visit(t);
 	}
 	void print(const GroundClause& clause) {
 		visit(clause);
