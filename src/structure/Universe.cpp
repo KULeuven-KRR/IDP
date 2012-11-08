@@ -67,7 +67,7 @@ tablesize Universe::size() const {
 			tst = TST_APPROXIMATED;
 			break;
 		case TST_INFINITE:
-			return tablesize(TST_INFINITE, 0);
+			return tablesize(TST_INFINITE, getMaxElem<size_t>());
 		}
 	}
 	return tablesize(tst, currsize);
