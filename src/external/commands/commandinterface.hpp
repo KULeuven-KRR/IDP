@@ -85,7 +85,7 @@ protected:
 
 public:
 	Inference(const std::string& name, const std::string& description, bool needprintmonitor = false)
-			: _name(name), _description(description), _space(getGlobalNamespaceName()), needprintmonitor_(needprintmonitor), printmonitor_(NULL) {
+			: _name(name), _description(description), _space(getGlobalNamespaceName()), needprintmonitor_(needprintmonitor), needtracemonitor_(false), printmonitor_(NULL) {
 	}
 	virtual ~Inference() {
 	}
