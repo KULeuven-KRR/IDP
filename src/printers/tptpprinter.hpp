@@ -66,7 +66,10 @@ public:
 
 protected:
 	void visit(const AbstractStructure*) {
-		Assert(false);
+		throw notyetimplemented("Converting AbstractStructure to tptp format.");
+	}
+	void visit(const PredTable*){
+		throw notyetimplemented("Converting PredTable to tptp format.");
 	}
 
 	void visit(const Vocabulary* v) {
@@ -88,7 +91,7 @@ protected:
 	}
 
 	void visit(const Query*) {
-		throw notyetimplemented("Printing queries in tptp format");
+		throw notyetimplemented("Converting Query to tptp format.");
 	}
 
 	void visit(const Theory* theory) {
@@ -436,20 +439,28 @@ protected:
 
 	// Unimplemented virtual methods
 	void visit(const GroundSet*) {
+		throw notyetimplemented("Converting GroundSet to tptp format.");
 	}
 	void visit(const Namespace*) {
+		throw notyetimplemented("Converting Namespace to tptp format.");
 	}
 	void visit(const GroundFixpDef*) {
+		throw notyetimplemented("Converting GroundFixpDef to tptp format.");
 	}
 	void visit(const GroundClause&) {
+		throw notyetimplemented("Converting GroundClause to tptp format.");
 	}
 	void visit(const AggGroundRule*) {
+		throw notyetimplemented("Converting AggGroundRule to tptp format.");
 	}
 	void visit(const GroundAggregate*) {
+		throw notyetimplemented("Converting GroundAggregate to tptp format.");
 	}
 	void visit(const CPReification*) {
+		throw notyetimplemented("Converting CPReification to tptp format.");
 	}
 	void visit(const PCGroundRule*) {
+		throw notyetimplemented("Converting PCGroundRule to tptp format.");
 	}
 
 private:
