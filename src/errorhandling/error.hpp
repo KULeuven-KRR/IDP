@@ -73,6 +73,7 @@ void notInVocabularyOf(ComponentType type, ComponentType parentType, const std::
 
 /** Using overlapping symbols **/
 void overloaded(ComponentType type, const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
+void overloaded(ComponentType type, const std::string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi);
 
 /** Sort hierarchy errors **/
 void notsubsort(const std::string&, const std::string&, const ParseInfo& pi);

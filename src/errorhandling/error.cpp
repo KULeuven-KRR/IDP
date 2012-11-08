@@ -269,6 +269,14 @@ void Error::overloaded(ComponentType type, const string& name, const ParseInfo& 
 	ss << " or the " << type << " declared at " << toString(p2) << ".";
 	error(ss.str(), pi);
 }
+void Error::overloaded(ComponentType type, const string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "The " << type << " " << name << " used here should be disambiguated as it might refer to :\n";
+	for(auto info:possiblelocations){
+		ss <<"\tThe " <<type <<" at " <<toString(info) <<"\n";
+	}
+	error(ss.str(), pi);
+}
 
 /** Sort hierarchy errors **/
 
