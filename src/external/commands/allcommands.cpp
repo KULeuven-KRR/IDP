@@ -81,6 +81,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintNamespaceInference>());
 	inferences.push_back(make_shared<PrintOptionInference>());
 	inferences.push_back(make_shared<PrintStructureInference>());
+	inferences.push_back(make_shared<PrintPredTableInference>());
 	inferences.push_back(make_shared<PrintAsBDDInference>());
 	inferences.push_back(make_shared<ModelExpandInference>());
 	inferences.push_back(make_shared<NewOptionsInference>());

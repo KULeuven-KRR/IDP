@@ -15,6 +15,7 @@
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
 #include "theory/Query.hpp"
+#include "structure/MainStructureComponents.hpp"
 
 #include "options.hpp"
 
@@ -124,6 +125,20 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto vocabulary = get<0>(args);
 		return InternalArgument(StringPointer(print(vocabulary)));
+	}
+};
+
+typedef TypedInference<LIST(const PredTable*)> PrintPredTableInferenceBase;
+class PrintPredTableInference: public PrintPredTableInferenceBase {
+public:
+	PrintPredTableInference()
+			: PrintPredTableInferenceBase("tostring", "Prints the given predicate table.") {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto table = get<0>(args);
+		return InternalArgument(StringPointer(toString(table)));
 	}
 };
 
