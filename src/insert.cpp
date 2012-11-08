@@ -1915,20 +1915,31 @@ void Insert::emptyinter(NSPair* nst) const {
 			predinter(nst, pt);
 		}
 	} else {
-		ParseInfo pi = nst->_pi;
-		auto vp = noArPredInScope(nst->_name, pi);
-		if (vp.empty())
-			notDeclared(ComponentType::Predicate, toString(nst), pi);
-		else if (vp.size() > 1) {
-			auto it = vp.cbegin();
-			auto p1 = *it;
-			++it;
-			auto p2 = *it;
-			overloaded(ComponentType::Predicate, toString(nst), p1->pi(), p2->pi(), pi);
-		} else {
+		auto pi = nst->_pi;
+		auto posspred = noArPredInScope(nst->_name, pi);
+		auto possfuncs = noArFuncInScope(nst->_name, pi);
+
+		if (posspred.empty() && possfuncs.empty()){
+			notDeclared(ComponentType::Symbol, toString(nst), pi);
+			return;
+		}
+		if(posspred.size()==0 && possfuncs.size()==1){
+			auto ipt = new EnumeratedInternalFuncTable();
+			auto pt = new FuncTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity()+1));
+			funcinter(nst, pt);
+		}else if(posspred.size()==1 && possfuncs.size()==0){
 			auto ipt = new EnumeratedInternalPredTable();
-			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
+			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(posspred.cbegin()))->arity()));
 			predinter(nst, pt);
+		} else {
+			std::vector<ParseInfo> infos;
+			for(auto p:posspred){
+				infos.push_back(p->pi());
+			}
+			for(auto f:possfuncs){
+				infos.push_back(f->pi());
+			}
+			overloaded(ComponentType::Symbol, toString(nst), infos, pi);
 		}
 	}
 }
