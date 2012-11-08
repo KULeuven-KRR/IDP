@@ -95,15 +95,19 @@ public:
 	}
 
 	void visit(const Vocabulary*) {
-		output() << "(vocabulary cannot be printed in ecnf)";
+		throw notyetimplemented("Printing vocabularies in ecnf format");
 	}
 
 	void visit(const Namespace*) {
-		output() << "(namespace cannot be printed in ecnf)";
+		throw notyetimplemented("Printing namespaces in ecnf format");
 	}
 
 	void visit(const AbstractStructure*) {
-		output() << "(structure cannot be printed in ecnf)";
+		throw notyetimplemented("Printing structures in ecnf format");
+	}
+
+	void visit(const PredTable*){
+		throw notyetimplemented("Printing tables in ecnf format");
 	}
 
 	void visit(const Query*) {

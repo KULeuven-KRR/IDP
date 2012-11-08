@@ -110,12 +110,14 @@ public:
 	virtual void visit(const GroundAggregate*) {
 		throw notyetimplemented("printing Vocabulary as BDD");
 	}
-
 	virtual void visit(const Vocabulary*) {
 		throw notyetimplemented("printing Vocabulary as BDD");
 	}
 	virtual void visit(const AbstractStructure*) {
 		throw notyetimplemented("printing AbstractStructure as BDD");
+	}
+	void visit(const PredTable*){
+		throw notyetimplemented("printing PredTable as BDD");
 	}
 	virtual void visit(const Query*) {
 		throw notyetimplemented("printing Query as BDD");
