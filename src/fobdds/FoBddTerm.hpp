@@ -11,6 +11,7 @@
 #ifndef FOBDDTERM_HPP_
 #define FOBDDTERM_HPP_
 #include <iostream>
+#include "common.hpp"
 #include "Assert.hpp"
 class Sort;
 class FOBDDVisitor;
