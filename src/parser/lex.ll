@@ -20,7 +20,7 @@ extern YYLTYPE yylloc;
 extern int yyparse();
 extern std::string getInstalledFilePath(std::string filename);
 
-Insert& getInserter();
+Insert& data();
 
 extern void setclconst(string,string);
 
@@ -77,7 +77,7 @@ struct ParserData{
 		// check if we are including from the included file
 		for(unsigned int n = 0; n < include_buffer_filenames.size(); ++n) {
 			if(*(include_buffer_filenames[n]) == s) {
-				ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
+				ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
 				Error::cyclicinclude(s,pi);
 				return;
 			}
@@ -90,14 +90,14 @@ struct ParserData{
 		
 		// store the current buffer
 		include_buffer_stack.push_back(YY_CURRENT_BUFFER);
-		include_buffer_filenames.push_back(getInserter().currfile());
+		include_buffer_filenames.push_back(data().currfile());
 		include_line_stack.push_back(yylloc.first_line);
 		include_col_stack.push_back(yylloc.first_column + prevlength);
 		// open the new buffer
 		FILE* oldfile = yyin;
 		yyin = fopen(s.c_str(),"r");
 		if(!yyin) {
-			ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
+			ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
 			Error::unexistingfile(s,pi);
 			include_buffer_stack.pop_back();
 			include_buffer_filenames.pop_back();
@@ -110,26 +110,26 @@ struct ParserData{
 			yylloc.first_column = 1;
 			yylloc.descr = 0;
 			prevlength = 0;
-			getInserter().currfile(s);
+			data().currfile(s);
 			yy_switch_to_buffer(yy_create_buffer(yyin,YY_BUF_SIZE));
 		}
 	}
 	void start_stdin_include() {
 		if(stdin_included) {
-			ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
+			ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
 			Error::twicestdin(pi);
 		}
 		else {
 			// store the current buffer
 			include_buffer_stack.push_back(YY_CURRENT_BUFFER);
-			include_buffer_filenames.push_back(getInserter().currfile());
+			include_buffer_filenames.push_back(data().currfile());
 			include_line_stack.push_back(yylloc.first_line);
 			include_col_stack.push_back(yylloc.first_column + prevlength);
 			// open then new buffer
 			Warning::readingfromstdin();
 			stdin_included = true;
 			yyin = stdin;
-			getInserter().currfile(0);
+			data().currfile(0);
 			yy_switch_to_buffer(yy_create_buffer(yyin,YY_BUF_SIZE));
 		}
 	}
@@ -143,7 +143,7 @@ struct ParserData{
 		yylloc.first_line = include_line_stack.back();
 		yylloc.first_column = include_col_stack.back();
 		prevlength = 0;
-		getInserter().currfile(include_buffer_filenames.back());
+		data().currfile(include_buffer_filenames.back());
 		include_buffer_stack.pop_back();
 		include_buffer_filenames.pop_back();
 		include_line_stack.pop_back();
@@ -151,10 +151,10 @@ struct ParserData{
 	}
 };
 
-ParserData data;
+ParserData parser;
 
 void reset(){
-	data = ParserData();
+	parser = ParserData();
 	BEGIN(0);
 }
 
@@ -198,43 +198,43 @@ COMMENTLINE		"//".*
 <*>{COMMENTLINE}			{							}
 
 	/* When encountering nested comment starts, ignore them (removes the need for bookkeeping lexer states with a stack)*/
-<comment>"/*"				{ data.advancecol(); }
-<description>"/*"			{ data.advancecol(); }
-<comment>"/**"/[^*]			{ data.advancecol(); }
-<description>"/**"/[^*]		{ data.advancecol(); }
+<comment>"/*"				{ parser.advancecol(); }
+<description>"/*"			{ parser.advancecol(); }
+<comment>"/**"/[^*]			{ parser.advancecol(); }
+<description>"/**"/[^*]		{ parser.advancecol(); }
 
-<*>"/**"/[^*]				{ data.commentcaller = YY_START;
+<*>"/**"/[^*]				{ parser.commentcaller = YY_START;
 							  BEGIN(description);
-							  data.advancecol();
+							  parser.advancecol();
 							  yylloc.descr = new stringstream();
 							}
-<description>[^*\n \r\t]*	{ data.advancecol(); (*yylloc.descr) << yytext; BEGIN(descontent);	}
-<description>[*]*			{ data.advancecol();													}
-<description>"*"+"/"		{ BEGIN(data.commentcaller);           
-							  data.advancecol();				}
-<descontent>[^*\n]*			{ data.advancecol(); (*yylloc.descr) << yytext;			}
-<descontent>[^*\n]*\n		{ data.advanceline(); (*yylloc.descr) << yytext << "        "; BEGIN(description);		}
-<descontent>"*"+[^*/\n]*	{ data.advancecol();	(*yylloc.descr) << yytext;			}
-<descontent>"*"+[^*/\n]*\n	{ data.advanceline(); (*yylloc.descr) << yytext << "        ";	BEGIN(description);		}
-<descontent>"*"+"/"			{ BEGIN(data.commentcaller);           
-							  data.advancecol();				}
+<description>[^*\n \r\t]*	{ parser.advancecol(); (*yylloc.descr) << yytext; BEGIN(descontent);	}
+<description>[*]*			{ parser.advancecol();													}
+<description>"*"+"/"		{ BEGIN(parser.commentcaller);           
+							  parser.advancecol();				}
+<descontent>[^*\n]*			{ parser.advancecol(); (*yylloc.descr) << yytext;			}
+<descontent>[^*\n]*\n		{ parser.advanceline(); (*yylloc.descr) << yytext << "        "; BEGIN(description);		}
+<descontent>"*"+[^*/\n]*	{ parser.advancecol();	(*yylloc.descr) << yytext;			}
+<descontent>"*"+[^*/\n]*\n	{ parser.advanceline(); (*yylloc.descr) << yytext << "        ";	BEGIN(description);		}
+<descontent>"*"+"/"			{ BEGIN(parser.commentcaller);           
+							  parser.advancecol();				}
 
-<*>"/*"						{ data.commentcaller = YY_START;
+<*>"/*"						{ parser.commentcaller = YY_START;
 							  BEGIN(comment);
-							  data.advancecol();				}
-<comment>[^*\n]*			{ data.advancecol();				}
-<comment>[^*\n]*\n			{ data.advanceline();			}
-<comment>"*"+[^*/\n]*		{ data.advancecol();				}
-<comment>"*"+[^*/\n]*\n		{ data.advanceline();			}
-<comment>"*"+"/"			{ BEGIN(data.commentcaller);           
-							  data.advancecol();				}
+							  parser.advancecol();				}
+<comment>[^*\n]*			{ parser.advancecol();				}
+<comment>[^*\n]*\n			{ parser.advanceline();			}
+<comment>"*"+[^*/\n]*		{ parser.advancecol();				}
+<comment>"*"+[^*/\n]*\n		{ parser.advanceline();			}
+<comment>"*"+"/"			{ BEGIN(parser.commentcaller);           
+							  parser.advancecol();				}
 
 	/*************
 		Include
 	*************/
 
-<*>"#include"				{ data.advancecol();
-							  data.includecaller = YY_START;
+<*>"#include"				{ parser.advancecol();
+							  parser.includecaller = YY_START;
 							  BEGIN(include);
 							}
 
@@ -242,42 +242,42 @@ COMMENTLINE		"//".*
 		Lua
 	**********/
 
-<procedure>"..."			{ data.advancecol();
+<procedure>"..."			{ parser.advancecol();
 							  return LUAVARARG;	}
-<procedure>"{"				{ data.advancecol();
+<procedure>"{"				{ parser.advancecol();
 							  BEGIN(lua);
-							  ++data.bracketcounter;		
-							  data.luacode = new stringstream();
+							  ++parser.bracketcounter;		
+							  parser.luacode = new stringstream();
 							  return *yytext;
 							}
 							
 	/* NOTE: important to have these before matches which work on lua syntax */
-<lua>{STR}				{ data.advancecol(); (*data.luacode) << yytext;	}
-<lua>{CHR}				{ data.advancecol(); (*data.luacode) << yytext;	}
+<lua>{STR}				{ parser.advancecol(); (*parser.luacode) << yytext;	}
+<lua>{CHR}				{ parser.advancecol(); (*parser.luacode) << yytext;	}
 
-<lua>"::"				{ data.advancecol(); (*data.luacode) << '.'; }
-<lua>"{"				{ data.advancecol();
-							 ++data.bracketcounter;
-							 (*data.luacode) << '{';
+<lua>"::"				{ parser.advancecol(); (*parser.luacode) << '.'; }
+<lua>"{"				{ parser.advancecol();
+							 ++parser.bracketcounter;
+							 (*parser.luacode) << '{';
 						}
-<lua>"}"				{ data.advancecol();
-						  --data.bracketcounter;
-				 		 if(data.bracketcounter == 0) { 
-							  yylval.sstr = data.luacode;
+<lua>"}"				{ parser.advancecol();
+						  --parser.bracketcounter;
+				 		 if(parser.bracketcounter == 0) { 
+							  yylval.sstr = parser.luacode;
 							  BEGIN(INITIAL); 
 							  delete(yylloc.descr);
 							  yylloc.descr = 0;
 							  return LUACHUNK;	
 						  }
-						  else (*data.luacode) << '}';
+						  else (*parser.luacode) << '}';
 						}
-<lua>\n					{ data.advanceline(); (*data.luacode) << '\n';	}
+<lua>\n					{ parser.advanceline(); (*parser.luacode) << '\n';	}
 <lua>[^/{}:\n\"\'*]* 	{
 							// \', \", //, :, { and } and \n are matched before (single / FALLS THROUGH to last one (.) )
-							data.advancecol();	
-							(*data.luacode) << yytext;
+							parser.advancecol();	
+							(*parser.luacode) << yytext;
 						}
-<lua>.					{ data.advancecol(); (*data.luacode) << *yytext;	}
+<lua>.					{ parser.advancecol(); (*parser.luacode) << *yytext;	}
 
 
 	/***************
@@ -285,55 +285,55 @@ COMMENTLINE		"//".*
 	***************/
 
 "vocabulary"			{ BEGIN(vocabulary);
-						  data.advancecol();
+						  parser.advancecol();
 						  return VOCAB_HEADER;		}
 "theory"				{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return THEORY_HEADER;		}
 "structure"				{ BEGIN(structure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return STRUCT_HEADER;		}
 "aspstructure"			{ BEGIN(aspstructure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return ASP_HEADER;		}
 "namespace"				{ BEGIN(spacename);
-						  data.advancecol();
+						  parser.advancecol();
 						  return NAMESPACE_HEADER;	}
 "procedure"				{ BEGIN(procedure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return PROCEDURE_HEADER;	}
 "query"					{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return QUERY_HEADER;
 						}
 "term"					{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return TERM_HEADER;
 						}
 "Vocabulary"			{ BEGIN(vocabulary);
-						  data.advancecol();
+						  parser.advancecol();
 						  return VOCAB_HEADER;		}
 "Theory"				{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return THEORY_HEADER;		}
 "Structure"				{ BEGIN(structure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return STRUCT_HEADER;		}
 "Aspstructure"			{ BEGIN(aspstructure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return ASP_HEADER;		}
 "Namespace"				{ BEGIN(spacename);
-						  data.advancecol();
+						  parser.advancecol();
 						  return NAMESPACE_HEADER;	}
 "Procedure"				{ BEGIN(procedure);
-						  data.advancecol();
+						  parser.advancecol();
 						  return PROCEDURE_HEADER;	}
 "Query"					{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return QUERY_HEADER;
 						}
 "Term"					{ BEGIN(theory);
-						  data.advancecol();
+						  parser.advancecol();
 						  return TERM_HEADER;
 						}
 
@@ -341,43 +341,43 @@ COMMENTLINE		"//".*
 		Include
 	**************/
 
-<include>"stdin"				{ data.advancecol();
-								  data.start_stdin_include();
-								  BEGIN(data.includecaller);
+<include>"stdin"				{ parser.advancecol();
+								  parser.start_stdin_include();
+								  BEGIN(parser.includecaller);
 								}
-<include>"<"[a-zA-Z0-9_/]*">"	{ data.advancecol();
+<include>"<"[a-zA-Z0-9_/]*">"	{ parser.advancecol();
 								  char* temp = yytext; ++temp;								  
 								  string str = getInstalledFilePath(string(temp,yyleng-2));
-								  data.start_include(str);	
-								  BEGIN(data.includecaller);
+								  parser.start_include(str);	
+								  BEGIN(parser.includecaller);
 								}
-<include>"$"[a-zA-Z0-9_]*		{ data.advancecol();
+<include>"$"[a-zA-Z0-9_]*		{ parser.advancecol();
 								  string temp(yytext);
 								  temp = temp.substr(1,temp.size()-1);
 								  if(GlobalData::instance()->getConstValues().find(temp) != GlobalData::instance()->getConstValues().end()) {
 									  auto clc = GlobalData::instance()->getConstValues().at(temp);
 									  if(typeid(*clc) == typeid(StrClConst)) {
 										  auto slc = dynamic_cast<StrClConst*>(clc);
-										  data.start_include(slc->value());
+										  parser.start_include(slc->value());
 									  } else {
-										  ParseInfo pi(yylloc.first_line,yylloc.first_column,getInserter().currfile());
+										  ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
 										  Error::stringconsexp(temp,pi);
 									  }
-									  BEGIN(data.includecaller);
+									  BEGIN(parser.includecaller);
 								  }
 								  else {
 									  clog << "Type a value for constant " << temp << endl << "> "; 
 									  string str;
 									  getline(cin,str);
-									  data.start_include(str);
-									  BEGIN(data.includecaller);
+									  parser.start_include(str);
+									  BEGIN(parser.includecaller);
 								  }
 								}
-<include>{STR}					{ data.advancecol();
+<include>{STR}					{ parser.advancecol();
 								  char* temp = yytext; ++temp;
 								  string str(temp,yyleng-2);
-								  data.start_include(str);	
-								  BEGIN(data.includecaller);
+								  parser.start_include(str);	
+								  BEGIN(parser.includecaller);
 								}
 
 	/****************
@@ -386,19 +386,19 @@ COMMENTLINE		"//".*
 
 	/** Keywords **/
 
-<vocabulary>"type"              { data.advancecol();
+<vocabulary>"type"              { parser.advancecol();
 								  return TYPE;				}
-<vocabulary>"partial"			{ data.advancecol();
+<vocabulary>"partial"			{ parser.advancecol();
 								  return PARTIAL;			}
-<vocabulary>"isa"				{ data.advancecol();
+<vocabulary>"isa"				{ parser.advancecol();
 								  return ISA;				}
-<vocabulary>"contains"			{ data.advancecol();
+<vocabulary>"contains"			{ parser.advancecol();
 								  return EXTENDS;			}
-<vocabulary>"extern"			{ data.advancecol();
+<vocabulary>"extern"			{ parser.advancecol();
 								  return EXTERN;			}
-<vocabulary>"extern vocabulary"	{ data.advancecol();
+<vocabulary>"extern vocabulary"	{ parser.advancecol();
 								  return EXTERNVOCABULARY;	}
-<vocabulary>\n                  { data.advanceline(); 
+<vocabulary>\n                  { parser.advanceline(); 
 									return NEWLINE; 		}
 
 	/*************
@@ -408,54 +408,54 @@ COMMENTLINE		"//".*
 
 	/** Aggregates **/
 
-<theory>"card"				{ data.advancecol();
+<theory>"card"				{ parser.advancecol();
 							  return P_CARD;				}
-<theory>"#"					{ data.advancecol();
+<theory>"#"					{ parser.advancecol();
 							  return P_CARD;				}
-<theory>"sum"				{ data.advancecol();
+<theory>"sum"				{ parser.advancecol();
 							  return P_SOM;				}
-<theory>"prod"				{ data.advancecol();
+<theory>"prod"				{ parser.advancecol();
 							  return P_PROD;				}
-<theory>"min"				{ data.advancecol();
+<theory>"min"				{ parser.advancecol();
 							  return P_MINAGG;			}
-<theory>"max"				{ data.advancecol();
+<theory>"max"				{ parser.advancecol();
 							  return P_MAXAGG;			}
 
 	/** Fixpoint definitions **/
 
-<theory>"LFD"				{ data.advancecol(); 
+<theory>"LFD"				{ parser.advancecol(); 
 							  return LFD;				}
-<theory>"GFD"				{ data.advancecol();
+<theory>"GFD"				{ parser.advancecol();
 							  return GFD;				}
 
 	/** Arrows **/
 
-<theory>"=>"                { data.advancecol();
+<theory>"=>"                { parser.advancecol();
 							  return P_IMPL;				}
-<theory>"<="				{ data.advancecol();
+<theory>"<="				{ parser.advancecol();
 							  return P_RIMPL;				}
-<theory>"<=>"				{ data.advancecol();
+<theory>"<=>"				{ parser.advancecol();
 							  return EQUIV;				}
-<theory>"<-"				{ data.advancecol();
+<theory>"<-"				{ parser.advancecol();
 							  return DEFIMP;			}
 	/** True and false **/
 
-<theory>"true"				{ data.advancecol();
+<theory>"true"				{ parser.advancecol();
 							  return TRUE;				}
-<theory>"false"				{ data.advancecol();
+<theory>"false"				{ parser.advancecol();
 							  return FALSE;				}
 
 	/** Comparison **/
 
-<theory>"=<"                { data.advancecol();
+<theory>"=<"                { parser.advancecol();
 						   	  return P_LEQ;				}
-<theory>">="                { data.advancecol();
+<theory>">="                { parser.advancecol();
 						   	  return P_GEQ;				}
-<theory>"~="                { data.advancecol();
+<theory>"~="                { parser.advancecol();
 							  return P_NEQ;				}
 	/** Ranges **/
 
-<theory>".."				{ data.advancecol();
+<theory>".."				{ parser.advancecol();
 							  return RANGE;				}
 
 
@@ -463,20 +463,20 @@ COMMENTLINE		"//".*
 		Structure 
 	****************/
 
-<structure>"->"				{ data.advancecol();
+<structure>"->"				{ parser.advancecol();
 							  return MAPS;				}
-<structure>".."				{ data.advancecol();
+<structure>".."				{ parser.advancecol();
 							  return RANGE;				}
-<structure>"true"			{ data.advancecol();
+<structure>"true"			{ parser.advancecol();
 							  return TRUE;				}
-<structure>"false"			{ data.advancecol();
+<structure>"false"			{ parser.advancecol();
 							  return FALSE;				}
-<structure>"procedure"		{ data.advancecol();
+<structure>"procedure"		{ parser.advancecol();
 							  return PROCEDURE;			}
-<structure>"generate"		{ data.advancecol();
+<structure>"generate"		{ parser.advancecol();
 							  return CONSTRUCTOR;		}
 <aspstructure>"%".*			{							}
-<aspstructure>".."			{ data.advancecol();
+<aspstructure>".."			{ parser.advancecol();
 							  return RANGE;				}
 
 
@@ -484,27 +484,27 @@ COMMENTLINE		"//".*
 		Identifiers
 	******************/
 
-<*>"using vocabulary"		{ data.advancecol();
+<*>"using vocabulary"		{ parser.advancecol();
 							  return USINGVOCABULARY;				
 							}
-<*>"using namespace"		{ data.advancecol();
+<*>"using namespace"		{ parser.advancecol();
 							  return USINGNAMESPACE;			
 							}
 <*>"using"					{
 								clog <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
 								yyterminate();
 							}
-<*>{CH}						{ data.advancecol();
+<*>{CH}						{ parser.advancecol();
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
-<*>{ID}						{ data.advancecol();
+<*>{ID}						{ parser.advancecol();
 							  yylval.str = StringPointer(yytext);
 							  return IDENTIFIER;		}
-<*>{STR}					{ data.advancecol();
+<*>{STR}					{ parser.advancecol();
 							  char* temp = yytext; ++temp;
 							  yylval.str = StringPointer(string(temp,yyleng-2));
 							  return STRINGCONS;		}
-<*>{INT}					{ data.advancecol();
+<*>{INT}					{ parser.advancecol();
 							  auto val = strtol(yytext, NULL, 10);
 							  if(errno==ERANGE || val>INT_MAX || val<INT_MIN){
 							  		Error::error("numeric value out of integer bounds");
@@ -512,18 +512,18 @@ COMMENTLINE		"//".*
 							  yylval.nmr = val;
 							  return INTEGER;		    
 							}
-<*>{FL}						{ data.advancecol();
+<*>{FL}						{ parser.advancecol();
 							  auto val = strtod(yytext, NULL);
 							  if(errno==ERANGE){
 							  		Error::error("numeric value out of double bounds");
 							  }
 							  yylval.dou = val;
 							  return FLNUMBER;			}
-<*>{CHR}					{ data.advancecol();
+<*>{CHR}					{ parser.advancecol();
 							  yylval.chr = (yytext)[1];
 							  return CHARCONS;
 							}
-<*>"$"[a-zA-Z0-9_]*			{ data.advancecol();
+<*>"$"[a-zA-Z0-9_]*			{ parser.advancecol();
 							  string temp(yytext);
 							  temp = temp.substr(1,temp.size()-1);
 							  if(GlobalData::instance()->getConstValues().find(temp)== GlobalData::instance()->getConstValues().end()) {
@@ -540,41 +540,41 @@ COMMENTLINE		"//".*
 		Whitespaces, newlines and rest
 	*************************************/
 
-<*>{WHITESPACE}             { data.advancecol();				}
-<*>"\t"						{ data.advancecol(); 
-							  data.prevlength = data.tablen;		}
-<*>"::"						{ data.advancecol();
+<*>{WHITESPACE}             { parser.advancecol();				}
+<*>"\t"						{ parser.advancecol(); 
+							  parser.prevlength = parser.tablen;		}
+<*>"::"						{ parser.advancecol();
 							  return NSPACE;			}
-<spacename>"{"				{ data.advancecol();
+<spacename>"{"				{ parser.advancecol();
 							  BEGIN(INITIAL);
 							  return *yytext;
 							}
-"{"							{ data.advancecol(); 
+"{"							{ parser.advancecol(); 
 							  return *yytext;
 							}
-"}"							{ data.advancecol(); 
+"}"							{ parser.advancecol(); 
 							  return *yytext;
 							}
-<*>"{"						{ data.advancecol(); 
-							  ++data.bracketcounter;
+<*>"{"						{ parser.advancecol(); 
+							  ++parser.bracketcounter;
 							  return *yytext;
 							}
-<*>"}"						{ data.advancecol();
-							  --data.bracketcounter;
-							  if(data.bracketcounter == 0) {
+<*>"}"						{ parser.advancecol();
+							  --parser.bracketcounter;
+							  if(parser.bracketcounter == 0) {
 								  BEGIN(INITIAL);
 								  delete(yylloc.descr);
 								  yylloc.descr = 0;
 							  }
 							  return *yytext;
 							}
-<*>.                        { data.advancecol();
+<*>.                        { parser.advancecol();
 							  return *yytext;			}
-<*>\n                       { data.advanceline(); 		}
+<*>\n                       { parser.advanceline(); 		}
 
 <<EOF>>						{ BEGIN(INITIAL);
-							  if(not data.include_buffer_stack.empty())	
-								  data.end_include();			
+							  if(not parser.include_buffer_stack.empty())	
+								  parser.end_include();			
 							  else yyterminate();
 							}
 
