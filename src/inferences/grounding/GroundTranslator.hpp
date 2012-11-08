@@ -221,13 +221,8 @@ public:
 	}
 
 	// SETS
-	bool isSet(SetId setID) const {
-		return _sets.size() > (size_t) setID.id;
-	}
-	const TsSet groundset(SetId setID) const {
-		Assert(isSet(setID));
-		return _sets[setID.id];
-	}
+	bool isSet(SetId setID) const;
+	const TsSet groundset(SetId setID) const;
 
 	// DELAYS
 

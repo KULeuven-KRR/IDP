@@ -440,15 +440,24 @@ Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, T
 //	return nr;
 //}
 
+// Note: set IDs start from 1
 SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const termlist& cpvars) {
 	TsSet tsset;
 	tsset._setlits = lits;
 	tsset._litweights = weights;
 	tsset._trueweights = trueweights;
 	tsset._cpvars = cpvars;
-	auto setnr = _sets.size();
+	auto setnr = _sets.size() + 1;
 	_sets.push_back(tsset);
 	return setnr;
+}
+
+bool GroundTranslator::isSet(SetId setID) const {
+	return _sets.size() > (size_t) setID.id - 1;
+}
+const TsSet GroundTranslator::groundset(SetId setID) const {
+	Assert(isSet(setID));
+	return _sets[setID.id - 1];
 }
 
 Lit GroundTranslator::nextNumber(AtomType type) {
