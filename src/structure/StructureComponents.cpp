@@ -3319,6 +3319,7 @@ void SortTable::remove(const DomainElement* el) {
 
 FuncTable::FuncTable(InternalFuncTable* table, const Universe& univ)
 		: _table(table), _universe(univ) {
+	Assert(univ.size()._size>0);
 	_table->incrementRef();
 }
 
