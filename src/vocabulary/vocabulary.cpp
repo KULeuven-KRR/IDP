@@ -869,13 +869,15 @@ bool EnumeratedPredGenerator::contains(const Predicate* predicate) const {
  * \brief Returns a null-pointer if such a predicate does not exist or is not unique
  */
 Predicate* EnumeratedPredGenerator::resolve(const vector<Sort*>& sorts) {
-	Predicate* candidate = 0;
+	Predicate* candidate = NULL;
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		Predicate* newcandidate = (*it)->resolve(sorts);
-		if (candidate && candidate != newcandidate) {
-			return 0;
-		} else {
-			candidate = newcandidate;
+		if (newcandidate) {
+			if (candidate and candidate != newcandidate) {
+				return NULL;
+			} else {
+				candidate = newcandidate;
+			}
 		}
 	}
 	return candidate;
@@ -889,10 +891,12 @@ Predicate* EnumeratedPredGenerator::disambiguate(const vector<Sort*>& sorts, con
 	Predicate* candidate = NULL;
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		Predicate* newcandidate = (*it)->disambiguate(sorts, vocabulary);
-		if (candidate && candidate != newcandidate) {
-			return NULL;
-		} else {
-			candidate = newcandidate;
+		if (newcandidate) {
+			if (candidate and candidate != newcandidate) {
+				return NULL;
+			} else {
+				candidate = newcandidate;
+			}
 		}
 	}
 	return candidate;
@@ -1311,10 +1315,12 @@ Function* EnumeratedFuncGenerator::resolve(const vector<Sort*>& sorts) {
 	Function* candidate = NULL;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
 		Function* newcandidate = (*it)->resolve(sorts);
-		if (candidate && newcandidate && candidate != newcandidate) {
-			return NULL;
-		} else if (newcandidate) {
-			candidate = newcandidate;
+		if (newcandidate) {
+			if (candidate and candidate != newcandidate) {
+				return NULL;
+			} else {
+				candidate = newcandidate;
+			}
 		}
 	}
 	return candidate;
@@ -1328,10 +1334,12 @@ Function* EnumeratedFuncGenerator::disambiguate(const vector<Sort*>& sorts, cons
 	Function* candidate = NULL;
 	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
 		Function* newcandidate = (*it)->disambiguate(sorts, vocabulary);
-		if (candidate != NULL && candidate != newcandidate) {
-			return NULL;
-		} else {
-			candidate = newcandidate;
+		if (newcandidate) {
+			if (candidate and candidate != newcandidate) {
+				return NULL;
+			} else {
+				candidate = newcandidate;
+			}
 		}
 	}
 	return candidate;
