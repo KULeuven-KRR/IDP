@@ -430,7 +430,7 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transpf = FormulaUtils::graphFuncsAndAggs(transpf, getConcreteStructure(), getOption(BoolType::CPSUPPORT) and not recursive(pf), _context._funccontext);
+	transpf = FormulaUtils::graphFuncsAndAggs(transpf, getConcreteStructure(), false, getOption(BoolType::CPSUPPORT) and not recursive(pf), _context._funccontext);
 
 	if (transpf != temppf) { // NOTE: the rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -862,7 +862,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), getConcreteStructure(), _context._funccontext,
 			(getOption(CPSUPPORT) and not recursive(clonedaf)));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transaf = FormulaUtils::graphFuncsAndAggs(transaf, getConcreteStructure(), (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
+	transaf = FormulaUtils::graphFuncsAndAggs(transaf, getConcreteStructure(), false, (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
@@ -1298,7 +1298,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, false, data.funccontext);
+	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, true, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
 	if(not forceexact){
 		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure);

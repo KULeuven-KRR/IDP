@@ -176,7 +176,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, NULL, newtheo->vocabulary());
 	FormulaUtils::unnestDomainTerms(newtheo);
 	FormulaUtils::splitComparisonChains(newtheo);
-	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, false);
+	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, true, false);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {

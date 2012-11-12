@@ -152,10 +152,10 @@ State Entails::checkEntailment(EntailmentData* data) const {
 
 	// Turn functions into predicates (for partial function support)
 	FormulaUtils::unnestTerms(axioms);
-	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, false /*TODO check*/);
+	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, true, false /*TODO check*/);
 
 	FormulaUtils::unnestTerms(conjectures);
-	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, false /*TODO check*/);
+	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, true, false /*TODO check*/);
 
 	// Clean up possibly existing files
 	remove(".tptpfile.tptp");

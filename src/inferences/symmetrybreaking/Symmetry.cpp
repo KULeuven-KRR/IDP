@@ -870,7 +870,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	//cout << "token" << toString(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
 	auto newt =t->clone();
-	FormulaUtils::graphFuncsAndAggs(newt, NULL, false /*TODO check*/);
+	FormulaUtils::graphFuncsAndAggs(newt, NULL, true, false /*TODO check*/);
 	tsa.analyze(newt);
 	if(minimizeTerm!=NULL){tsa.analyzeForOptimization(minimizeTerm);}
 

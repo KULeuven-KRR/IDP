@@ -192,8 +192,8 @@ Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, Formula*>(f, str, cpsupport, con);
+Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Formula*>(f, str, unnestall, cpsupport, con);
 }
 
 Formula* pushNegations(Formula* f) {
@@ -296,11 +296,11 @@ void flatten(AbstractTheory* t) {
 #endif
 }
 
-Theory* graphFuncsAndAggs(Theory* t, const AbstractStructure* str, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, Theory*>(t, str, cpsupport, con);
+Theory* graphFuncsAndAggs(Theory* t, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Theory*>(t, str, unnestall, cpsupport, con);
 }
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, cpsupport, con);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, unnestall, cpsupport, con);
 }
 
 void pushNegations(AbstractTheory* t) {

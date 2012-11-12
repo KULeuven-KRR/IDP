@@ -26,13 +26,15 @@ class AbstractStructure;
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
+	bool _alsoTwoValued;
 	const AbstractStructure* _structure;
 	Vocabulary* _vocabulary;
 	Context _context;
 	bool _cpsupport;
 public:
 	template<typename T>
-	T execute(T t, const AbstractStructure* str = NULL, bool cpsupport = false, Context c = Context::POSITIVE) {
+	T execute(T t, const AbstractStructure* str = NULL, bool unnestAll = true, bool cpsupport = false, Context c = Context::POSITIVE) {
+		_alsoTwoValued = unnestAll;
 		_structure = str;
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
