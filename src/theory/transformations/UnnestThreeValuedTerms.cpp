@@ -34,6 +34,7 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 		return true;
 	}
 	case TermType::AGG: {
+		// TODO check on two-valuedness?
 		auto at = dynamic_cast<AggTerm*>(t);
 		if (_cpsupport and _cpablefunction and eligibleForCP(at, _structure)) {
 			return false;
