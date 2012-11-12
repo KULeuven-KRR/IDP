@@ -108,6 +108,8 @@ private:
 	Formula* rewrite(Formula*);
 	Term* move(Term*);
 
+	void visitTermRecursive(Term* term);
+
 	Sort* deriveSort(Term*);
 };
 

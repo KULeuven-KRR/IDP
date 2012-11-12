@@ -1,0 +1,22 @@
+vocabulary V {
+	type x isa int
+	p(x)
+	q(x,x)
+	a(x):x
+
+}
+ 
+theory T : V {
+	{
+		p(a(x)+a(y)) <- q(x,y).
+	}
+}
+
+structure S : V {
+	x = {1..3}
+	q = {1,2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 27
+}

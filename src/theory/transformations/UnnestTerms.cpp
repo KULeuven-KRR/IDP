@@ -132,6 +132,18 @@ Theory* UnnestTerms::visit(Theory* theory) {
 	return theory;
 }
 
+void UnnestTerms::visitTermRecursive(Term* term){
+	for(uint i=0; i<term->subterms().size(); ++i){
+		auto subterm = term->subterms()[i];
+		if(shouldMove(subterm)){
+			auto newsub = move(subterm);
+			term->subterm(i, newsub);
+		}else{
+			visitTermRecursive(subterm);
+		}
+	}
+}
+
 void UnnestTerms::visitRuleHead(Rule* rule) {
 	Assert(_equalities.empty());
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
@@ -139,6 +151,8 @@ void UnnestTerms::visitRuleHead(Rule* rule) {
 		if (shouldMove(term)) {
 			auto new_head_term = move(term);
 			rule->head()->subterm(termposition, new_head_term);
+		}else{
+			visitTermRecursive(term);
 		}
 	}
 	if (not _equalities.empty()) {
