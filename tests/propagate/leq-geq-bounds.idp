@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+theory T:V{
+	!x: x>1 & x<3 => p(x).
+}
+structure S:V{
+	x = { 1..1000 }
+}
+
+procedure weakassertions(newS){
+	return (assert(newS[V.p].ct,2,"p(2)","true") and assertEmpty(newS[V.p].cf,"p<cf>"))
+}
+procedure strongassertions(newS){
+	return true
+}
+
