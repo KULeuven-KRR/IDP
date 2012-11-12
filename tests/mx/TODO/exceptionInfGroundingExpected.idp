@@ -1,0 +1,21 @@
+vocabulary V{
+	type Symbol
+	type ConstraintID isa int
+	type Cost isa int
+	type Bool
+	
+	groundSize(ConstraintID):Cost
+	delay(ConstraintID, Symbol, Bool)
+	
+	prod100(ConstraintID):Cost
+}
+theory T:V{	
+	!c: prod100(c)=prod{s b: delay(c,s,b): 100}.
+}
+structure S:V{
+	Bool = {True; False}	
+	Cost = {1..50}
+	Symbol = {P; Q}
+	ConstraintID = {1..4}
+	groundSize = {1->10;2->50;3->4;4->50}
+}
