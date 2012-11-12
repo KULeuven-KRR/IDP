@@ -95,30 +95,37 @@ void NSPair::includeArity(unsigned int n) {
 }
 
 ostream& NSPair::put(ostream& output) const {
-	Assert(!_name.empty());
+	Assert(not _name.empty());
 	string str = _name[0];
-	for (unsigned int n = 1; n < _name.size(); ++n)
+	for (size_t n = 1; n < _name.size(); ++n) {
 		str = str + "::" + _name[n];
+	}
 	if (_sortsincluded) {
-		if (_arityincluded)
+		if (_arityincluded) {
 			str = str.substr(0, str.rfind('/'));
+		}
 		str = str + '[';
-		if (!_sorts.empty()) {
-			if (_func && _sorts.size() == 1)
+		if (not _sorts.empty()) {
+			if (_func and _sorts.size() == 1) {
 				str = str + ':';
-			if (_sorts[0])
+			}
+			if (_sorts[0] != NULL) {
 				str = str + _sorts[0]->name();
-			for (unsigned int n = 1; n < _sorts.size() - 1; ++n) {
-				if (_sorts[n])
+			}
+			for (size_t n = 1; n < _sorts.size() - 1; ++n) {
+				if (_sorts[n] != NULL) {
 					str = str + ',' + _sorts[n]->name();
+				}
 			}
 			if (_sorts.size() > 1) {
-				if (_func)
+				if (_func) {
 					str = str + ':';
-				else
+				} else {
 					str = str + ',';
-				if (_sorts[_sorts.size() - 1])
+				}
+				if (_sorts[_sorts.size() - 1] != NULL) {
 					str = str + _sorts[_sorts.size() - 1]->name();
+				}
 			}
 		}
 		str = str + ']';
@@ -254,7 +261,7 @@ Predicate* Insert::predInScope(const string& name) const {
 	}
 }
 
-Predicate* Insert::predInScope(const vector<string>& vs, const ParseInfo& pi) const {
+Predicate* Insert::predInScope(const longname& vs, const ParseInfo& pi) const {
 	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return predInScope(vs[0]);
@@ -288,7 +295,7 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 	return s;
 }
 
-Sort* Insert::sortInScope(const vector<string>& vs, const ParseInfo& pi) const {
+Sort* Insert::sortInScope(const longname& vs, const ParseInfo& pi) const {
 	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return sortInScope(vs[0], pi);
@@ -1919,24 +1926,24 @@ void Insert::emptyinter(NSPair* nst) const {
 		auto posspred = noArPredInScope(nst->_name, pi);
 		auto possfuncs = noArFuncInScope(nst->_name, pi);
 
-		if (posspred.empty() && possfuncs.empty()){
+		if (posspred.empty() && possfuncs.empty()) {
 			notDeclared(ComponentType::Symbol, toString(nst), pi);
 			return;
 		}
-		if(posspred.size()==0 && possfuncs.size()==1){
+		if (posspred.size() == 0 && possfuncs.size() == 1) {
 			auto ipt = new EnumeratedInternalFuncTable();
-			auto pt = new FuncTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity()+1));
+			auto pt = new FuncTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity() + 1));
 			funcinter(nst, pt);
-		}else if(posspred.size()==1 && possfuncs.size()==0){
+		} else if (posspred.size() == 1 && possfuncs.size() == 0) {
 			auto ipt = new EnumeratedInternalPredTable();
 			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(posspred.cbegin()))->arity()));
 			predinter(nst, pt);
 		} else {
 			std::vector<ParseInfo> infos;
-			for(auto p:posspred){
+			for (auto p : posspred) {
 				infos.push_back(p->pi());
 			}
-			for(auto f:possfuncs){
+			for (auto f : possfuncs) {
 				infos.push_back(f->pi());
 			}
 			overloaded(ComponentType::Symbol, toString(nst), infos, pi);
@@ -1956,7 +1963,7 @@ void Insert::predinter(NSPair* nst, PredTable* t) const {
 	}
 	nst->includeArity(t->arity());
 	Predicate* p = predInScope(nst->_name, pi);
-	if (p != NULL && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
+	if (p != NULL and nst->_sortsincluded and (nst->_sorts).size() == t->arity()) {
 		p = p->resolve(nst->_sorts);
 	}
 	if (p != NULL) {
@@ -1986,7 +1993,7 @@ void Insert::funcinter(NSPair* nst, FuncTable* t) const {
 	}
 	nst->includeArity(t->arity());
 	Function* f = funcInScope(nst->_name, pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity() + 1) {
+	if (f and nst->_sortsincluded and (nst->_sorts).size() == t->arity() + 1) {
 		f = f->resolve(nst->_sorts);
 	}
 	if (f) {
@@ -2047,7 +2054,7 @@ void Insert::constructor(NSPair* nst) const {
 void Insert::sortinter(NSPair* nst, SortTable* t) {
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
-	auto s = sortInScope(name, pi);
+	Sort* s = sortInScope(name, pi);
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != 1) {
 			incompatiblearity(toString(nst), pi);
@@ -2058,8 +2065,9 @@ void Insert::sortinter(NSPair* nst, SortTable* t) {
 	}
 	nst->includeArity(1);
 	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == 1)
+	if (p and nst->_sortsincluded and (nst->_sorts).size() == 1) {
 		p = p->resolve(nst->_sorts);
+	}
 	if (s) {
 		if (belongsToVoc(s)) {
 			SortTable* st = _currstructure->inter(s);
@@ -2089,25 +2097,25 @@ void Insert::sortinter(NSPair* nst, const longname& sortidentifier) {
 	longname name = nst->_name;
 	auto assignee = sortInScope(name, pi);
 	auto s = sortInScope(sortidentifier, pi);
-	if(s==NULL){
+	if (s == NULL) {
 		notDeclared(ComponentType::Predicate, toString(sortidentifier), pi);
 		return;
 	}
-	if(assignee==NULL){
+	if (assignee == NULL) {
 		notDeclared(ComponentType::Predicate, toString(name), pi);
 		return;
 	}
-	if(not _currstructure->hasInter(s)){
+	if (not _currstructure->hasInter(s)) {
 		stringstream ss;
-		ss <<"The assigned sort " <<s->name() <<"does not have an interpretation. \n";
+		ss << "The assigned sort " << s->name() << "does not have an interpretation. \n";
 		Error::error(ss.str());
 		return;
 	}
-	for(auto parent: assignee->parents()){
-		for(auto voc = assignee->firstVocabulary(); voc!=assignee->lastVocabulary(); ++voc){ // FIXME what does it mean to have multiple vocabularies?
-			if(not SortUtils::isSubsort(s, parent, *voc)){
+	for (auto parent : assignee->parents()) {
+		for (auto voc = assignee->firstVocabulary(); voc != assignee->lastVocabulary(); ++voc) { // FIXME what does it mean to have multiple vocabularies?
+			if (not SortUtils::isSubsort(s, parent, *voc)) {
 				stringstream ss;
-				ss <<"The assigned sort " <<s->name() <<" is not a subsort of the parent " <<parent->name() <<" of assignee " <<assignee->name() <<". \n";
+				ss << "The assigned sort " << s->name() << " is not a subsort of the parent " << parent->name() << " of assignee " << assignee->name() << ". \n";
 				Error::error(ss.str());
 				return;
 			}
@@ -2280,10 +2288,11 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 	if (nst->_sortsincluded) {
 		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
 		PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
-		if (nst->_func)
+		if (nst->_func) {
 			threefuncinter(nst, utf, pt);
-		else
+		} else {
 			threepredinter(nst, utf, pt);
+		}
 	} else {
 		ParseInfo pi = nst->_pi;
 		std::set<Predicate*> vp = noArPredInScope(nst->_name, pi);
@@ -2306,15 +2315,18 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity())
+		if ((nst->_sorts).size() != t->arity()) {
 			incompatiblearity(toString(nst), pi);
-		if (nst->_func)
+		}
+		if (nst->_func) {
 			prednameexpected(pi);
+		}
 	}
 	nst->includeArity(t->arity());
 	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == t->arity())
+	if (p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
 		p = p->resolve(nst->_sorts);
+	}
 	if (p) {
 		if (p->arity() == 1 && p->sort(0)->pred() == p) {
 			threevalsort(p->name(), pi);
@@ -2341,26 +2353,31 @@ void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
 				case UTF_ERROR:
 					break;
 				}
-			} else
+			} else {
 				notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
+			}
 		}
-	} else
+	} else {
 		notDeclared(ComponentType::Predicate, toString(nst), pi);
+	}
 	delete (nst);
 }
 
 void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity())
+		if ((nst->_sorts).size() != t->arity()) {
 			incompatiblearity(toString(nst), pi);
-		if (!(nst->_func))
+		}
+		if (not nst->_func) {
 			funcnameexpected(pi);
+		}
 	}
 	nst->includeArity(t->arity() - 1);
 	Function* f = funcInScope(nst->_name, pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity())
+	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
 		f = f->resolve(nst->_sorts);
+	}
 	if (f) {
 		if (belongsToVoc(f)) {
 			PredTable* nt = new PredTable(t->internTable(), _currstructure->universe(f));
@@ -2384,10 +2401,12 @@ void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
 			case UTF_ERROR:
 				break;
 			}
-		} else
+		} else {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-	} else
+		}
+	} else {
 		notDeclared(ComponentType::Function, toString(nst), pi);
+	}
 }
 
 void Insert::threepredinter(NSPair* nst, const string& utf, SortTable* t) {
