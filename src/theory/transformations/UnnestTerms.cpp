@@ -180,10 +180,10 @@ Rule* UnnestTerms::visit(Rule* rule) {
 	visitRuleHead(rule);
 
 // Visit body
-	_context = Context::NEGATIVE;
+/*	_context = Context::NEGATIVE;
 	setAllowedToUnnest(false);
 	rule->body(rule->body()->accept(this));
-	setAllowedToUnnest(saveallowed);
+	setAllowedToUnnest(saveallowed);*/
 	return rule;
 }
 

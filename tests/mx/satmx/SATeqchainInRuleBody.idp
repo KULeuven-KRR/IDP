@@ -1,0 +1,22 @@
+vocabulary V{
+	type x
+	type n isa int
+	p(x,x)
+	a(x):n
+	b(x):n
+}
+theory T:V{
+	{
+		p(id1,id2) <- a(id1)=<a(id2)=<a(id1).
+	}
+}
+
+// Example data
+structure S:V{
+	x = {1..10}
+	n = {1..20}
+}
+
+procedure getExpectedAModel(){
+	return true
+}
