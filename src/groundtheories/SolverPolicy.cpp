@@ -231,7 +231,9 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTranslator
 	_addedvarids.insert(varid);
 	auto domain = termtranslator->domain(varid);
 	Assert(domain != NULL);
-	Assert(domain->approxFinite());
+	if(not domain->approxFinite()){
+		throw notyetimplemented("Derived a sort to range over an infinite domain, which cannot be handled by the solver.");
+	}
 	if (domain->isRange()) {
 		// the domain is a complete range from minvalue to maxvalue.
 		MinisatID::IntVarRange range(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int);
@@ -240,6 +242,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTranslator
 		// the domain is not a complete range.
 		std::vector<MinisatID::Weight> w;
 		for (auto it = domain->sortBegin(); not it.isAtEnd(); ++it) {
+			CHECKTERMINATION;
 			w.push_back((MinisatID::Weight) (*it)->value()._int);
 		}
 		extAdd(getSolver(), MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
