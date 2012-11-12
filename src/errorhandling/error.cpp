@@ -272,8 +272,8 @@ void Error::overloaded(ComponentType type, const string& name, const ParseInfo& 
 void Error::overloaded(ComponentType type, const string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi) {
 	stringstream ss;
 	ss << "The " << type << " " << name << " used here should be disambiguated as it might refer to :\n";
-	for(auto info:possiblelocations){
-		ss <<"\tThe " <<type <<" at " <<toString(info) <<"\n";
+	for (auto info : possiblelocations) {
+		ss << "\tThe " << type << " at " << toString(info) << "\n";
 	}
 	error(ss.str(), pi);
 }
@@ -314,7 +314,8 @@ void Error::nopredsort(const string& name, const ParseInfo& pi) {
 
 void Error::nofuncsort(const string& name, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "Could not derive the sorts of function " << name << ".";
+	ss << "Could not derive the sorts of function " << name << ".\n";
+	ss << "Possibly the sorts of its subterms are not subtypes of the sorts of the function's arguments? (e.g. missing isa declaration)";
 	error(ss.str(), pi);
 }
 
