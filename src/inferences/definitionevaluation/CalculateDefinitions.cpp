@@ -47,9 +47,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
 	// Collect solutions
 	auto abstractsolutions = mx->getSolutions();
-	if (abstractsolutions.empty()) {
-		return false;
-	} else {
+	if(not abstractsolutions.empty()){
 		Assert(abstractsolutions.size() == 1);
 		auto model = *(abstractsolutions.cbegin());
 		SolverConnection::addLiterals(*model, grounding->translator(), structure);
@@ -63,7 +61,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	delete (grounder);
 	delete (symstructure);
 
-	return structure->isConsistent();
+	return not abstractsolutions.empty() && structure->isConsistent();
 }
 
 std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const{
