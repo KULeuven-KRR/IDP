@@ -4,7 +4,7 @@ project (idp)
 ### The version number
 set (idp_VERSION_MAJOR 3)
 set (idp_VERSION_MINOR 1)
-set (idp_VERSION_PATCH 3)
+set (idp_VERSION_PATCH 4)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
 include(cmake/outofsourcecheck.cmake)
