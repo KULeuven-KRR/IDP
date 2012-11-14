@@ -45,30 +45,6 @@ bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
 }
 
-/**
- * Given functerm = dom/varterm, construct graph
- */
-PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) {
-	Assert(not isAgg(valueterm));
-
-	Assert(isFunc(functerm));
-	auto ft = dynamic_cast<FuncTerm*>(functerm);
-
-	auto args = ft->subterms();
-	args.push_back(valueterm);
-
-	return new PredForm(sign, ft->function(), args, pi);
-}
-
-/**
- * Given aggterm ~ dom/varterm, construct aggform
- */
-AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) {
-	Assert(not isFunc(valueterm));
-	Assert(not isAgg(valueterm));
-	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);
-}
-
 bool isTwoValued(const Term* t, const AbstractStructure* structure){
 	if(t==NULL){
 		return false;
@@ -94,6 +70,27 @@ bool isTwoValued(const Term* t, const AbstractStructure* structure){
 	case TermType::DOM:
 		return true;
 	}
+}
+
+/**
+ * Given functerm = dom/varterm, construct graph
+ */
+PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) {
+	Assert(not isAgg(valueterm) || isTwoValued(valueterm));
+	
+	Assert(isFunc(functerm));
+	auto ft = dynamic_cast<FuncTerm*>(functerm);
+	auto args = ft->subterms();
+	args.push_back(valueterm);
+	return new PredForm(sign, ft->function(), args, pi);
+}
+
+/**
+ * Given aggterm ~ dom/varterm, construct aggform
+ */
+AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) {
+	Assert((not isFunc(valueterm) && not isAgg(valueterm)) || isTwoValued(valueterm));
+	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);
 }
 
 /**
