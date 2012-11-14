@@ -992,6 +992,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 		return result;
 	}
 	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
+#warning this code explodes the bdd for large longestbranch option
 		const FOBDD* newfalse = quantify(sort, bdd->falsebranch());
 		const FOBDD* newtrue = quantify(sort, bdd->truebranch());
 		result = ifthenelse(bdd->kernel(), newtrue, newfalse);
