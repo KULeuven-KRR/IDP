@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef UNIVERSE_HPP_
-#define UNIVERSE_HPP_
+#pragma once
 
 #include <vector>
 #include "TableSize.hpp"
@@ -23,21 +22,16 @@ private:
 public:
 	Universe() {
 	}
-	Universe(const std::vector<SortTable*>& tables)
-			: _tables(tables) {
-	}
-	Universe(const Universe& univ)
-			: _tables(univ.tables()) {
-	}
+	Universe(const std::vector<SortTable*>& tables);
+	Universe(const Universe& univ);
+
 	~Universe() {
 	}
 
 	const std::vector<SortTable*>& tables() const {
 		return _tables;
 	}
-	void addTable(SortTable* table) {
-		_tables.push_back(table);
-	}
+	void addTable(SortTable* table);
 	unsigned int arity() const {
 		return _tables.size();
 	}
@@ -48,7 +42,6 @@ public:
 	bool approxFinite() const;
 	bool contains(const ElementTuple&) const;
 	tablesize size() const;
+
 	void put(std::ostream& stream) const;
 };
-
-#endif /* UNIVERSE_HPP_ */
