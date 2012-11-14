@@ -92,10 +92,12 @@ template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure, Vocabulary* outputvoc) const {
 	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
 		auto connector = it->second;
-		PFSymbol* symbol = connector->symbol();
+		auto symbol = connector->symbol();
+
 		if(outputvoc != NULL && not outputvoc->contains(symbol)){
 			continue;
 		}
+
 		auto newinter = structure->inter(symbol);
 		if (newinter->approxTwoValued()) {
 			Assert(getDomain(connector)._twovalued);
@@ -106,10 +108,13 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			pushtab();
 			clog << nt() << "Old interpretation was" << toString(newinter) << "\n";
 		}
+
 		vector<Variable*> vv;
-		for (auto jt = connector->subterms().cbegin(); jt != connector->subterms().cend(); ++jt) {
-			Assert((*jt)->freeVars().cbegin() != (*jt)->freeVars().cend());
-			vv.push_back(*((*jt)->freeVars().cbegin()));
+		Assert(connector->subterms().size()==symbol->nrSorts());
+		for (auto term : connector->subterms()) {
+			Assert(term->type()!=TermType::AGG && term->type()!=TermType::FUNC && term->type()!=TermType::DOM);
+			Assert(not term->freeVars().empty());
+			vv.push_back(*(term->freeVars().cbegin()));
 		}
 		CHECKTERMINATION;
 		Assert(_domains.find(connector) != _domains.cend());
