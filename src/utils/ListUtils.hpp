@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef IDP_LISTUTILS_HPP_
-#define IDP_LISTUTILS_HPP_
+#pragma once
 
 #include <vector>
 #include <set>
@@ -76,9 +75,16 @@ void deleteList(std::map<K, std::map<K, std::vector<T*> > >& l) {
 	l.clear();
 }
 
-template<typename List, typename Elem>
+template<typename Elem, class List>
 bool contains(const List& l, const Elem& e) {
 	return l.find(e) != l.cend();
 }
-
-#endif /* IDP_LISTUTILS_HPP_ */
+template<typename Elem>
+bool contains(const std::vector<Elem>& l, const Elem& e) {
+	for(auto elem:l){
+		if(elem==e){
+			return true;
+		}
+	}
+	return false;
+}
