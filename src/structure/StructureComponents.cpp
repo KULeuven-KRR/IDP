@@ -1321,6 +1321,11 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 
 BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const AbstractStructure* str)
 		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str) {
+#ifdef DEBUG
+	for(auto fobddvar: variables(bdd,manager)){
+		Assert(::contains(vars, fobddvar->variable()));
+	}
+#endif
 }
 
 bool BDDInternalPredTable::finite(const Universe& univ) const {
