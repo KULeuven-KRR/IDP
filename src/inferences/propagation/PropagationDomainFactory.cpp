@@ -146,34 +146,34 @@ bool FOPropTableDomainFactory::approxequals(FOPropTableDomain* left, FOPropTable
 PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain<FOPropBDDDomain>& dom, AbstractStructure* str) const {
 	// Construct the universe of the interpretation and two sets of new variables
 	vector<SortTable*> vst;
-	vector<Variable*> newctvars;
-	vector<Variable*> newcfvars;
-	map<const FOBDDVariable*, const FOBDDVariable*> ctmvv;
-	map<const FOBDDVariable*, const FOBDDVariable*> cfmvv;
+	vector<Variable*> newctvars, newcfvars;
+	map<const FOBDDVariable*, const FOBDDVariable*> ctmvv, cfmvv;
 	bool twovalued = dom._twovalued;
-	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
-		const FOBDDVariable* oldvar = _manager->getVariable(*it);
-		vst.push_back(str->inter((*it)->sort()));
-		Variable* ctv = new Variable((*it)->sort());
+	for (Variable* var : vars) {
+		auto oldvar = _manager->getVariable(var);
+		vst.push_back(str->inter(var->sort()));
+		auto ctv = new Variable(var->sort());
 		newctvars.push_back(ctv);
-		const FOBDDVariable* newctvar = _manager->getVariable(ctv);
+		auto newctvar = _manager->getVariable(ctv);
 		ctmvv[oldvar] = newctvar;
 		if (not twovalued) {
-			Variable* cfv = new Variable((*it)->sort());
+			auto cfv = new Variable(var->sort());
 			newcfvars.push_back(cfv);
-			const FOBDDVariable* newcfvar = _manager->getVariable(cfv);
+			auto newcfvar = _manager->getVariable(cfv);
 			cfmvv[oldvar] = newcfvar;
 		}
 	}
 	Universe univ(vst);
 	// Construct the ct-table and cf-table
-	const FOBDD* newctbdd = _manager->substitute(dom._ctdomain->bdd(), ctmvv);
-	PredTable* ct = new PredTable(new BDDInternalPredTable(newctbdd, _manager, newctvars, str), univ);
+	auto newctbdd = _manager->substitute(dom._ctdomain->bdd(), ctmvv);
+//	cerr <<"For vars " <<toString(newctvars) <<", the bdd is \n" <<toString(newctbdd) <<"\n";
+	auto ct = new PredTable(new BDDInternalPredTable(newctbdd, _manager, newctvars, str), univ);
 	if (twovalued) {
 		return new PredInter(ct, true);
 	} else {
-		const FOBDD* newcfbdd = _manager->substitute(dom._cfdomain->bdd(), cfmvv);
-		PredTable* cf = new PredTable(new BDDInternalPredTable(newcfbdd, _manager, newcfvars, str), univ);
+		auto newcfbdd = _manager->substitute(dom._cfdomain->bdd(), cfmvv);
+//		cerr <<"For vars " <<toString(newcfvars) <<", the bdd is \n" <<toString(newcfbdd) <<"\n";
+		auto cf = new PredTable(new BDDInternalPredTable(newcfbdd, _manager, newcfvars, str), univ);
 		return new PredInter(ct, cf, true, true);
 	}
 }
