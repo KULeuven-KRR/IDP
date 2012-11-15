@@ -11,6 +11,7 @@
 #include "GraphFuncsAndAggs.hpp"
 
 #include "theory/TheoryUtils.hpp"
+#include "structure/information/IsTwoValued.hpp"
 #include "IncludeComponents.hpp"
 
 using namespace std;
@@ -43,34 +44,6 @@ bool isDom(Term* t) {
 
 bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
-}
-
-bool isTwoValued(const Term* t, const AbstractStructure* structure) {
-	if (t == NULL) {
-		return false;
-	}
-	switch (t->type()) {
-	case TermType::FUNC: {
-		auto ft = dynamic_cast<const FuncTerm*>(t);
-		auto inter = ft->function()->interpretation(structure);
-		if (inter==NULL || not inter->approxTwoValued()) {
-			return false;
-		}
-		auto twoval = true && ft->subterms().size() > 0;
-		for (auto st : ft->subterms()) {
-			twoval &= isTwoValued(st, structure);
-		}
-		return twoval;
-	}
-	case TermType::AGG: {
-		// TODO check on two-valuedness?
-		return false;
-	}
-	case TermType::VAR:
-		return true;
-	case TermType::DOM:
-		return true;
-	}
 }
 
 /**
