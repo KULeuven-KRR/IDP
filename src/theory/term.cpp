@@ -296,8 +296,13 @@ Sort* deriveSmallerSort(const Term* term, const AbstractStructure* structure) {
 		auto intmax = bounds[1]->value()._int;
 		stringstream ss;
 		ss << "s" << intmin << ".." << intmax;
+		auto existingsort = structure->vocabulary()->sort(ss.str());
+		if(existingsort!=NULL){
+			return existingsort;
+		}
 		sort = new Sort(ss.str(), TableUtils::createSortTable(intmin, intmax));
 		sort->addParent(get(STDSORT::INTSORT));
+		structure->vocabulary()->add(sort);
 	}
 	return sort;
 }
