@@ -137,6 +137,9 @@ double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term
 		return 0;
 	}
 	auto biggest = term2SortSize > term1SortSize ? term2SortSize : term1SortSize;
+
+	term1NoBdd->recursiveDelete();
+
 	return 1 / (double) biggest._size;
 }
 
