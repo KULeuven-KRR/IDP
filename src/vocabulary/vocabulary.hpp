@@ -371,7 +371,6 @@ public:
 	unsigned int binding() const; //!< Returns binding strength
 	std::set<Sort*> allsorts() const;
 
-	// Built-in symbols
 	FuncInter* interpretation(const AbstractStructure*) const;
 
 	// Overloaded symbols

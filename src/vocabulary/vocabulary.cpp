@@ -1180,17 +1180,14 @@ unsigned int Function::binding() const {
 }
 
 /**
- * \brief Returns the interpretation of a built-in function
- *
- * PARAMETERS
- *		- structure: for some functions, e.g. //2 over a type A, the interpretation of A is 
- *		needed to generate the interpretation for //2. The structure contains the interpretation of 
- *		the relevant sorts.
+ * \brief Returns the interpretation of a function in the given structure (if any)
  */
 FuncInter* Function::interpretation(const AbstractStructure* structure) const {
 	if (_interpretation) {
 		return _interpretation->get(structure);
-	} else {
+	} else if(structure!=NULL){
+		return structure->inter(this);
+	} else{
 		return NULL;
 	}
 }
