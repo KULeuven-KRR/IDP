@@ -345,18 +345,6 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		temp = deriveddomain;
 		deriveddomain = _factory->substitute(deriveddomain, lcd._leaftoconnector);
 		delete (temp);
-		//TODO?
-		/*set<Variable*> freevars;
-		 map<Variable*,Variable*> mvv;
-		 for(auto it = pf->freeVars().cbegin(); it != pf->freeVars().cend(); ++it) {
-		 Variable* clone = new Variable((*it)->sort());
-		 freevars.insert(clone);
-		 mvv[(*it)] = clone;
-		 }
-		 temp = deriveddomain;
-		 deriveddomain = _factory->substitute(deriveddomain,mvv);
-		 delete(temp);
-		 deriveddomain = addToExists(deriveddomain,freevars);*/
 		updateDomain(connector, DOWN, (_ct == isPos(pf->sign())), deriveddomain, pf);
 
 	} else {
@@ -366,21 +354,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
 		}
 		Assert(_domains.find(connector) != _domains.cend());
 		deriveddomain = _ct ? getDomain(connector)._ctdomain->clone() : getDomain(connector)._cfdomain->clone();
-		// deriveddomain = _factory->conjunction(deriveddomain,lcd->_equalities);
-		temp = deriveddomain;
 		deriveddomain = _factory->substitute(deriveddomain, lcd._connectortoleaf);
-		delete (temp);
-		/*set<Variable*> freevars;
-		 map<Variable*,Variable*> mvv;
-		 for(auto it = connector->freeVars().cbegin(); it != connector->freeVars().cend(); ++it) {
-		 Variable* clone = new Variable((*it)->sort());
-		 freevars.insert(clone);
-		 mvv[(*it)] = clone;
-		 }
-		 temp = deriveddomain;
-		 deriveddomain = _factory->substitute(deriveddomain,mvv);
-		 delete(temp);
-		 deriveddomain = addToExists(deriveddomain,freevars);*/
 		updateDomain(pf, UP, (_ct == isPos(pf->sign())), deriveddomain);
 	}
 }
