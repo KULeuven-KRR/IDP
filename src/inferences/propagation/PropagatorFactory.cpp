@@ -323,9 +323,9 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 			Assert(typeid(*(leafconnector->subterms()[n])) == typeid(VarTerm));
 			Variable* leafvar = *(pf->subterms()[n]->freeVars().cbegin());
 			Variable* connectvar = *(leafconnector->subterms()[n]->freeVars().cbegin());
+			lcd._connectortoleaf[connectvar] = leafvar;
 			if (lcd._leaftoconnector.find(leafvar) == lcd._leaftoconnector.cend()) {
 				lcd._leaftoconnector[leafvar] = connectvar;
-				lcd._connectortoleaf[connectvar] = leafvar;
 			} else {
 				FOPropDomain* temp = lcd._equalities;
 				VarTerm* vt1 = new VarTerm(connectvar, TermParseInfo());
