@@ -274,42 +274,46 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
 	//disjunction -> Make the domains larger (thus the unknown part smaller)
 
-	if ((not _factory->approxequals(olddom, newdom)) && admissible(newdom, olddom)) {
-		ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
-		if (dir == DOWN) {
-			for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
-				//Propagate the newly found domain further down.
-				schedule(f, DOWN, ct, *it);
-			}
-			if (isa<PredForm>(*f)) {
-				const PredForm* pf = dynamic_cast<const PredForm*>(f);
-				auto it = _leafupward.find(pf);
-				if (it != _leafupward.cend()) {
-					for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-						if (*jt != child) {
-							schedule(*jt, UP, ct, f);
-						}
+	if (_factory->approxequals(olddom, newdom) || not admissible(newdom, olddom)) {
+		delete (newdom);
+		return;
+	}
+	ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
+	switch (dir) {
+	case DOWN: {
+		for (auto subf : f->subformulas()) {
+			//Propagate the newly found domain further down.
+			schedule(f, DOWN, ct, subf);
+		}
+		if (isa<PredForm>(*f)) {
+			auto pf = dynamic_cast<const PredForm*>(f);
+			auto it = _leafupward.find(pf);
+			if (it != _leafupward.cend()) {
+				for (auto formula : it->second) {
+					if (formula != child) {
+						schedule(formula, UP, ct, f);
 					}
-				} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
-					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
-					schedule(pf, DOWN, ct, 0);
 				}
-			}
-		} else {
-			Assert(dir == UP);
-			auto it = _upward.find(f);
-			if (it != _upward.cend()) {
-				schedule(it->second, UP, ct, f);
+			} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
+				Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
+				schedule(pf, DOWN, ct, 0);
 			}
 		}
-	} else {
-		delete (newdom);
+		break;
+	}
+	case UP: {
+		auto it = _upward.find(f);
+		if (it != _upward.cend()) {
+			schedule(it->second, UP, ct, f);
+		}
+		break;
+	}
 	}
 
 	if (child != NULL && dir == UP) {
-		for (auto it = f->subformulas().cbegin(); it != f->subformulas().cend(); ++it) {
-			if (*it != child) {
-				schedule(f, DOWN, !ct, *it);
+		for (auto subf : f->subformulas()) {
+			if (subf != child) {
+				schedule(f, DOWN, not ct, subf);
 			}
 		}
 	}
