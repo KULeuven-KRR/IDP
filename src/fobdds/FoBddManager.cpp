@@ -983,8 +983,9 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}
 		auto sortNotEmpty = getQuantKernel(sort,
-				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_TWOVALUED, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
-		return getBDD(sortNotEmpty, bdd, negation(bdd));
+				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_TWOVALUED, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd));
+		// sortNotEmpty is: ?x[Sort]:Sort(x)
+		return getBDD(sortNotEmpty, bdd, _falsebdd);
 	}
 
 	// Recursive case
