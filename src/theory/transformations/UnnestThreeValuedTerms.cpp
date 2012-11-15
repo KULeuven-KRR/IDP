@@ -101,7 +101,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			&& _cpsupport) {
 		auto functerm = dynamic_cast<FuncTerm*>(predform->subterms()[0]);
 		if (not functerm->function()->builtin()) {
-			predform = GraphFuncsAndAggs::makeFuncGraph(predform->sign(), functerm, predform->subterms()[1], predform->pi());
+			predform = GraphFuncsAndAggs::makeFuncGraph(predform->sign(), functerm, predform->subterms()[1], predform->pi(), _structure);
 			Assert(not is(predform->symbol(), STDPRED::EQ));
 		}
 	}

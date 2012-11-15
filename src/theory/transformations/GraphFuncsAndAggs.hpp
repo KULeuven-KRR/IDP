@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef GRAPHFUNCSANDAGGS_HPP_
-#define GRAPHFUNCSANDAGGS_HPP_
+#pragma once
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "parseinfo.hpp"
@@ -26,7 +25,7 @@ class AbstractStructure;
 class GraphFuncsAndAggs: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	bool _alsoTwoValued;
+	bool _all3valued; // True if during unnesting, should consider all symbols as three-valued
 	const AbstractStructure* _structure;
 	Vocabulary* _vocabulary;
 	Context _context;
@@ -34,7 +33,7 @@ private:
 public:
 	template<typename T>
 	T execute(T t, const AbstractStructure* str = NULL, bool unnestAll = true, bool cpsupport = false, Context c = Context::POSITIVE) {
-		_alsoTwoValued = unnestAll;
+		_all3valued = unnestAll;
 		_structure = str;
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
@@ -42,12 +41,10 @@ public:
 		return t->accept(this);
 	}
 
-	static PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&);
-	static AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&);
+	static PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&, const AbstractStructure* structure);
+	static AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&, const AbstractStructure* structure);
 
 protected:
 	Formula* visit(PredForm* pf);
 	Formula* visit(EqChainForm* ef);
 };
-
-#endif /* GRAPHFUNCSANDAGGS_HPP_ */

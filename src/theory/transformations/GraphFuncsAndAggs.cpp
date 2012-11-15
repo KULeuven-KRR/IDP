@@ -45,18 +45,19 @@ bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
 }
 
-bool isTwoValued(const Term* t, const AbstractStructure* structure){
-	if(t==NULL){
+bool isTwoValued(const Term* t, const AbstractStructure* structure) {
+	if (t == NULL) {
 		return false;
 	}
 	switch (t->type()) {
 	case TermType::FUNC: {
 		auto ft = dynamic_cast<const FuncTerm*>(t);
-		if (structure!=NULL && not structure->inter(ft->function())->approxTwoValued()) {
+		auto inter = ft->function()->interpretation(structure);
+		if (inter==NULL || not inter->approxTwoValued()) {
 			return false;
 		}
-		auto twoval = true && ft->subterms().size()>0;
-		for(auto st: ft->subterms()){
+		auto twoval = true && ft->subterms().size() > 0;
+		for (auto st : ft->subterms()) {
 			twoval &= isTwoValued(st, structure);
 		}
 		return twoval;
@@ -75,9 +76,9 @@ bool isTwoValued(const Term* t, const AbstractStructure* structure){
 /**
  * Given functerm = dom/varterm, construct graph
  */
-PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi) {
-	Assert(not isAgg(valueterm) || isTwoValued(valueterm));
-	
+PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi, const AbstractStructure* structure) {
+	Assert(not isAgg(valueterm) || isTwoValued(valueterm, structure));
+
 	Assert(isFunc(functerm));
 	auto ft = dynamic_cast<FuncTerm*>(functerm);
 	auto args = ft->subterms();
@@ -88,8 +89,8 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 /**
  * Given aggterm ~ dom/varterm, construct aggform
  */
-AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi) {
-	Assert((not isFunc(valueterm) && not isAgg(valueterm)) || isTwoValued(valueterm));
+AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi, const AbstractStructure* structure) {
+	Assert((not isFunc(valueterm) && not isAgg(valueterm)) || isTwoValued(valueterm, structure));
 	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);
 }
 
@@ -103,19 +104,16 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 
 	auto left = pf->subterms()[0];
 	auto right = pf->subterms()[1];
-	bool usecp = _cpsupport
-			and eligibleForCP(pf, _vocabulary)
-			and eligibleForCP(left, _structure)
-			and eligibleForCP(right, _structure);
+	bool usecp = _cpsupport and eligibleForCP(pf, _vocabulary) and eligibleForCP(left, _structure) and eligibleForCP(right, _structure);
 
 	if (usecp) {
 		return traverse(pf);
 	}
 
-	auto threevalleft = _alsoTwoValued || not isTwoValued(left, _structure);
-	auto threevalright = _alsoTwoValued || not isTwoValued(right, _structure);
+	auto threevalleft = _all3valued || not isTwoValued(left, _structure);
+	auto threevalright = _all3valued || not isTwoValued(right, _structure);
 
-	if(not threevalleft && not threevalright){
+	if (not threevalleft && not threevalright) {
 		return pf;
 	}
 
@@ -127,17 +125,17 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	Formula* newformula = NULL;
 	if (is(pf->symbol(), STDPRED::EQ)) {
 		if (isFunc(left) and threevalleft) {
-			newformula = makeFuncGraph(pf->sign(), left, right, pf->pi());
+			newformula = makeFuncGraph(pf->sign(), left, right, pf->pi(), _structure);
 			delete (left);
 		} else if (isFunc(right) and threevalright) {
-			newformula = makeFuncGraph(pf->sign(), right, left, pf->pi());
+			newformula = makeFuncGraph(pf->sign(), right, left, pf->pi(), _structure);
 			delete (right);
 		}
 	}
 	if (newformula == NULL and isAgg(left) and threevalleft) {
-		newformula = makeAggForm(right, invertComp(getComparison(pf)), dynamic_cast<AggTerm*>(left), pf->pi());
+		newformula = makeAggForm(right, invertComp(getComparison(pf)), dynamic_cast<AggTerm*>(left), pf->pi(), _structure);
 	} else if (newformula == NULL and isAgg(right) and threevalright) {
-		newformula = makeAggForm(left, getComparison(pf), dynamic_cast<AggTerm*>(right), pf->pi());
+		newformula = makeAggForm(left, getComparison(pf), dynamic_cast<AggTerm*>(right), pf->pi(), _structure);
 	}
 	if (newformula != NULL) {
 		delete (pf);
@@ -149,7 +147,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 
 Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 	bool needsSplit = false;
-	for(auto i=ef->subterms().cbegin(); i<ef->subterms().cend(); ++i) {
+	for (auto i = ef->subterms().cbegin(); i < ef->subterms().cend(); ++i) {
 		if (isAggOrFunc(*i)) {
 			needsSplit = true;
 			break;
