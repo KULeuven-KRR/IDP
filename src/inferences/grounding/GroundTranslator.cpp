@@ -45,9 +45,9 @@ CheckerInfo::CheckerInfo(PFSymbol* symbol, StructureInfo structure) {
 	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure);
 }
 
-CheckerInfo::~CheckerInfo(){
-	delete(ptchecker);
-	delete(ctchecker);
+CheckerInfo::~CheckerInfo() {
+	delete (ptchecker);
+	delete (ctchecker);
 }
 
 SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
@@ -85,11 +85,11 @@ FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
 	auto concretefalsechecker = GeneratorFactory::create(checkers->inter->cf(), allinput, checkers->containers, Universe(data.tables));
 	truerangegenerator = new UnionGenerator( { symbolictruegenerator, concretetruegenerator }, { symbolictruechecker, concretetruechecker });
 	falserangegenerator = new UnionGenerator( { symbolicfalsegenerator, concretefalsegenerator }, { symbolicfalsechecker, concretefalsechecker });
-	delete(pf);
+	delete (pf);
 }
-FunctionInfo::~FunctionInfo(){
-	delete(truerangegenerator);
-	delete(falserangegenerator);
+FunctionInfo::~FunctionInfo() {
+	delete (truerangegenerator);
+	delete (falserangegenerator);
 }
 
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
@@ -127,7 +127,8 @@ void GroundTranslator::addKnown(VarId id) {
 	auto args = getArgs(id);
 	auto& containers = funcinfo.checkers->containers;
 	for (uint i = 0; i < args.size(); ++i) {
-		Assert(not args[i].isVariable); // TODO verify that this can never happen (shouldnt this be domelem instead of groundterms then?)
+		Assert(not args[i].isVariable);
+		// TODO verify that this can never happen (shouldnt this be domelem instead of groundterms then?)
 		*containers[i] = args[i]._domelement;
 	}
 	for (funcinfo.truerangegenerator->begin(); not funcinfo.truerangegenerator->isAtEnd(); funcinfo.truerangegenerator->operator ++()) {
@@ -152,17 +153,20 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
 	// Check partial functions
 	if (domelem == NULL) {
 		TruthValue result;
-		if (funccontext == Context::POSITIVE) {
-			result = TruthValue::True;
-		} else if (funccontext == Context::NEGATIVE) {
-			result = TruthValue::True;
-		} else {
+		switch (funccontext) {
+		case Context::POSITIVE:
+			result = TruthValue::False;
+			break;
+		case Context::NEGATIVE:
+			result = TruthValue::False;
+			break;
+		case Context::BOTH:
 			throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
 		}
 		if (verbosity() > 2) {
 			std::clog << tabs() << "Partial function went out of bounds\n";
 		}
-		return result;
+		return isPos(sign) ? result : ~result;
 	}
 
 	// Checking out-of-bounds
@@ -406,7 +410,7 @@ bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
 }
 
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
-	auto tsbody = new CPTsBody(tstype, left, comp==CompType::NEQ?CompType::EQ:comp, right);
+	auto tsbody = new CPTsBody(tstype, left, comp == CompType::NEQ ? CompType::EQ : comp, right);
 	// TODO => this should be generalized to sharing detection!
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {
@@ -420,8 +424,8 @@ Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, T
 		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
 		atom2TsBody[nr] = tsbody;
 		cpset[tsbody] = nr;
-		if(comp==CompType::NEQ){
-			nr=-nr;
+		if (comp == CompType::NEQ) {
+			nr = -nr;
 		}
 		return nr;
 	}
