@@ -24,11 +24,10 @@
 #include "grounders/SetGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
 #include "lazygrounders/LazyDisjunctiveGrounders.hpp"
-//#include "grounders/LazyFormulaGrounders.hpp"
-//#include "grounders/LazyRuleGrounder.hpp"
 #include "inferences/grounding/grounders/OptimizationTermGrounders.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "inferences/SolverConnection.hpp"
+#include "structure/information/IsTwoValued.hpp"
 
 #include "generators/BasicCheckersAndGenerators.hpp"
 #include "generators/TableCheckerAndGenerators.hpp"
@@ -901,7 +900,7 @@ void GrounderFactory::visit(const AggForm* af) {
 	}
 
 	// Create grounder for the bound
-	Assert(newaf->getBound()->type()==TermType::DOM || newaf->getBound()->type()==TermType::VAR);
+	Assert(newaf->getBound()->type()==TermType::DOM or newaf->getBound()->type()==TermType::VAR or isTwoValued(newaf->getBound(), getConcreteStructure()));
 	descend(newaf->getBound());
 	auto boundgrounder = getTermGrounder();
 
