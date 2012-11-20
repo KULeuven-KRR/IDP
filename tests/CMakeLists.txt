@@ -72,6 +72,7 @@ if(${BUILDTESTS})
 		querytests.cpp
 		definitiontests.cpp
 		propagationtests.cpp
+		vocabularycommandtests.cpp
 	)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		add_executable(idptests
