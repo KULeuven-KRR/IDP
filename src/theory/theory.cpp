@@ -244,6 +244,9 @@ EquivForm* EquivForm::clone(const map<Variable*, Variable*>& mvv) const {
 }
 
 ostream& EquivForm::put(ostream& output) const {
+	if(isNeg(sign())){
+		output << '~';
+	}
 	output << '(';
 	left()->put(output);
 	output << " <=> ";
