@@ -180,7 +180,15 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 			second = GeneratorFactory::create(table, newpattern, vars, universe);
 		}
 		finalgenerator = new OneChildGenerator(first, second);
-	} else {
+	} else if(not allequal && not inverted){
+		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
+		for (size_t i = 0; i < universe.tables().size(); ++i) {
+			if (universe.tables()[i] != structure->inter(symbol->sorts()[i])) {
+				auto sortchecker = new SortChecker(universe.tables()[i]->internTable(), vars[i]);
+				finalgenerator = new OneChildGenerator(finalgenerator, sortchecker);
+			}
+		}
+	} else{
 		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
 	}
 
