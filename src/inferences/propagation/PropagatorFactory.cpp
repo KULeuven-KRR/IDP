@@ -30,6 +30,9 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 	if (doSymbolicPropagation) {
 		propagator->doPropagation();
 		if (LUP) {
+			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
+				clog <<"Applying propagation to structure\n";
+			}
 			propagator->applyPropagationToStructure(structure, outputvoc);
 		}
 	}
