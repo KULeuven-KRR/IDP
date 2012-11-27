@@ -2295,20 +2295,33 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 		}
 	} else {
 		ParseInfo pi = nst->_pi;
-		std::set<Predicate*> vp = noArPredInScope(nst->_name, pi);
-		if (vp.empty())
-			notDeclared(ComponentType::Predicate, toString(nst), pi);
-		else if (vp.size() > 1) {
-			std::set<Predicate*>::const_iterator it = vp.cbegin();
-			Predicate* p1 = *it;
-			++it;
-			Predicate* p2 = *it;
-			overloaded(ComponentType::Predicate, toString(nst), p1->pi(), p2->pi(), pi);
-		} else {
-			EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-			PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse((*(vp.cbegin()))->arity()));
-			threepredinter(nst, utf, pt);
+		auto posspred = noArPredInScope(nst->_name, pi);
+		auto possfuncs = noArFuncInScope(nst->_name, pi);
+
+		if (posspred.empty() && possfuncs.empty()) {
+			notDeclared(ComponentType::Symbol, toString(nst), pi);
+			return;
 		}
+		if (posspred.size() == 0 && possfuncs.size() == 1) {
+			auto ipt = new EnumeratedInternalPredTable();
+			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity() + 1));
+			threefuncinter(nst, utf, pt);
+		} else if (posspred.size() == 1 && possfuncs.size() == 0) {
+			auto ipt = new EnumeratedInternalPredTable();
+			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(posspred.cbegin()))->arity()));
+			threepredinter(nst, utf, pt);
+		} else {
+			std::vector<ParseInfo> infos;
+			for (auto p : posspred) {
+				infos.push_back(p->pi());
+			}
+			for (auto f : possfuncs) {
+				infos.push_back(f->pi());
+			}
+			overloaded(ComponentType::Symbol, toString(nst), infos, pi);
+		}
+
+
 	}
 }
 
