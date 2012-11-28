@@ -11,6 +11,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <csignal>
 #include "common.hpp"
 #include "errorhandling/error.hpp"
@@ -34,10 +35,23 @@ std::ostream& operator<<(std::ostream& stream, Status status) {
 }
 
 /**
+ * Return the basename of "name".
+ *
+ * Unlike the libc basename function, this function
+ * does not modify its argument.
+ **/
+static const char *base(const char *name) {
+	const char *slash = strrchr(name, '/');
+	return slash ? slash + 1 : name;
+}
+
+/**
  * Print help message and stop
  **/
-static void usage() {
-	cout << "Usage:\n" << "   gidl [options] [filename [filename [...]]]\n\n";
+static void usage(const char *name) {
+	name = base(name);
+	cout << "Usage:\n" << "   "
+	     << name << " [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 #ifdef USEINTERACTIVE
 	cout << "    -i, --interactive    run in interactive mode\n";
@@ -69,6 +83,7 @@ struct CLOptions {
  * Parse command line options 
  **/
 vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
+	const char *name = argv[0];
 	vector<string> inputfiles;
 	argc--;
 	argv++;
@@ -113,7 +128,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			cout << GIDLVERSION << "\n";
 			exit(0);
 		} else if (str == "-h" || str == "--help") {
-			usage();
+			usage(name);
 			exit(0);
 		} else if (str[0] == '-') {
 			Error::unknoption(str);
