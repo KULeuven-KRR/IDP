@@ -56,7 +56,7 @@ static void usage(const char *name) {
 #ifdef USEINTERACTIVE
 	cout << "    -i, --interactive    run in interactive mode\n";
 #endif
-	cout << "    -e \"<proc>\"        run procedure <proc> after parsing\n";
+	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
 	cout << "    -d <dirpath>         search for datafiles in the given directory\n";
 	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
