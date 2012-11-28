@@ -36,7 +36,7 @@ std::ostream& operator<<(std::ostream& stream, Status status) {
 /**
  * Print help message and stop
  **/
-void usage() {
+static void usage() {
 	cout << "Usage:\n" << "   gidl [options] [filename [filename [...]]]\n\n";
 	cout << "Options:\n";
 #ifdef USEINTERACTIVE
