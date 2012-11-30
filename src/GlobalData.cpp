@@ -15,6 +15,8 @@
 #include "internalargument.hpp"
 #include "insert.hpp"
 
+extern void resetParser();
+
 using namespace std;
 
 GlobalData::GlobalData()
@@ -42,6 +44,8 @@ GlobalData::~GlobalData() {
 	garbageCollectInternalArgumentVectors();
 	DomElemContainer::deleteAllContainers();
 	// Note: Options are handled by Lua's garbage collection.
+
+	resetParser(); // Reset the parser, which is also global data
 }
 
 //setoptions can only be called from the setoptionsinference! Otherwise, we could change the user-defined options

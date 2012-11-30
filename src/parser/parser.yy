@@ -17,9 +17,6 @@ std::string getInstalledFilePath(std::string filename);
 // Errors
 void yyerror(const char* s);
 
-typedef std::pair<int,std::string*> isp;
-typedef std::list<isp>				lisp;
-
 # define YYLLOC_DEFAULT(Current, Rhs, N)									 \
          do                                                                  \
            if (N)                                                            \
@@ -855,12 +852,13 @@ args				: args ',' identifier	{ data().procarg(*$3);		}
 %%
 
 #include <iostream>
+#include <string>
 #include "errorhandling/error.hpp"
 
 void yyrestart(FILE*);
 
 extern FILE* yyin;
-extern void reset();
+extern bool alreadyParsed(const std::string& filename);
 
 void yyerror(const char* s) {
 	ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
@@ -871,23 +869,54 @@ std::string getInstalledFilePath(std::string filename){
 	return getInstallDirectoryPath() + "share/std/" + filename + ".idp"; 
 }
 
-void parsefile(const std::string& str) {
-	reset();
+std::string state = "";
+void parse(const std::string& file) {
+	state = "";
+//	Assert(parser.include_buffer_stack.empty());
+	if(alreadyParsed(file)) {
+		return;
+	}
 	yylloc.first_line = 1;
 	yylloc.first_column = 1;
 	delete(yylloc.descr);
 	yylloc.descr = NULL;
-	yyrestart(GlobalData::instance()->openFile(str.c_str(),"r"));
-	if (not yyin) {
-		yyrestart(GlobalData::instance()->openFile(getInstalledFilePath(str).c_str(),"r"));
+
+	std::string temp(state+file);
+//	std::cerr <<"Opening PARSE" <<temp <<"\n";
+	auto origstate = state;
+	auto filep = GlobalData::instance()->openFile(temp.c_str(),"r");
+	if(filep){
+		auto index = temp.find_last_of('/');
+		if(index==std::string::npos){
+			state = "";
+		}else{
+			state = temp.substr(0, index+1);
+//			std::cerr <<"State set to " <<state <<"\n";
+		}
+	}
+	
+	yyrestart(filep);
+	if(not yyin){
+		yyrestart(GlobalData::instance()->openFile(getInstalledFilePath(file).c_str(),"r"));
 	}
 	if (yyin) {
-		data().currfile(str);
+		data().currfile(file);
 		yyparse();
 		GlobalData::instance()->closeFile(yyin);
 	}
 	else{
-		Error::unexistingfile(str);
+		Error::unexistingfile(temp);
+	}
+	state = origstate;
+}
+
+void parsefile(const std::string& file) {
+	parse(file);
+}
+
+void parsefiles(const std::vector<std::string>& files) {
+	for(auto file : files){
+		parse(file);
 	}
 }
 
