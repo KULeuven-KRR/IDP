@@ -228,13 +228,7 @@ void SIGUSR1_handler(int) {
 
 template<typename Handler, typename SIGNAL>
 void registerHandler(Handler f, SIGNAL s) {
-	signal(s, f);
-	/*	NON ISO - NON PORTABLE
-	 struct sigaction sigIntHandler;
-	 sigIntHandler.sa_handler = f;
-	 sigemptyset(&sigIntHandler.sa_mask);
-	 sigIntHandler.sa_flags = 0;
-	 sigaction(s, &sigIntHandler, NULL);*/
+	signal(s, f); // Note: sigaction objects are cleaner but are not in the ISO standard and poorly portable
 }
 
 void monitorShutdown(void*) {
