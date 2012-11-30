@@ -35,7 +35,6 @@ class GlobalData {
 private:
 	Namespace *_globalNamespace, *_stdNamespace;
 	Insert* _inserter;
-	std::map<std::string, CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
 	int _idcounter;
 
@@ -102,12 +101,6 @@ public:
 	Insert& getInserter() {
 		return *_inserter;
 	}
-
-	const std::map<std::string, CLConst*>& getConstValues() const {
-		return clconsts;
-	}
-
-	void setConstValue(const std::string& name1, const std::string& name2);
 
 	Options* getOptions() {
 		return _options;

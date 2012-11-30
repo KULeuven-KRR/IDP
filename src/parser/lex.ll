@@ -351,28 +351,6 @@ COMMENTLINE		"//".*
 								  parser.start_include(str);	
 								  BEGIN(parser.includecaller);
 								}
-<include>"$"[a-zA-Z0-9_]*		{ parser.advancecol();
-								  string temp(yytext);
-								  temp = temp.substr(1,temp.size()-1);
-								  if(GlobalData::instance()->getConstValues().find(temp) != GlobalData::instance()->getConstValues().end()) {
-									  auto clc = GlobalData::instance()->getConstValues().at(temp);
-									  if(typeid(*clc) == typeid(StrClConst)) {
-										  auto slc = dynamic_cast<StrClConst*>(clc);
-										  parser.start_include(slc->value());
-									  } else {
-										  ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
-										  Error::stringconsexp(temp,pi);
-									  }
-									  BEGIN(parser.includecaller);
-								  }
-								  else {
-									  clog << "Type a value for constant " << temp << endl << "> "; 
-									  string str;
-									  getline(cin,str);
-									  parser.start_include(str);
-									  BEGIN(parser.includecaller);
-								  }
-								}
 <include>{STR}					{ parser.advancecol();
 								  char* temp = yytext; ++temp;
 								  string str(temp,yyleng-2);
@@ -522,17 +500,6 @@ COMMENTLINE		"//".*
 <*>{CHR}					{ parser.advancecol();
 							  yylval.chr = (yytext)[1];
 							  return CHARCONS;
-							}
-<*>"$"[a-zA-Z0-9_]*			{ parser.advancecol();
-							  string temp(yytext);
-							  temp = temp.substr(1,temp.size()-1);
-							  if(GlobalData::instance()->getConstValues().find(temp)== GlobalData::instance()->getConstValues().end()) {
-								  clog << "Type a value for constant " << temp << endl << "> "; 
-								  string str;
-								  getline(cin,str);
-								  GlobalData::instance()->setConstValue(temp,str);
-							  }
-							  return (GlobalData::instance()->getConstValues().at(temp))->execute();
 							}
 
 

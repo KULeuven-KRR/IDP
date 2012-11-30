@@ -58,7 +58,6 @@ static void usage(const char *name) {
 #endif
 	cout << "    -e \"<proc>\"          run procedure <proc> after parsing\n";
 	cout << "    -d <dirpath>         search for datafiles in the given directory\n";
-	cout << "    -c <name1>=<name2>   substitute <name2> for <name1> in the input\n";
 	cout << "    --nowarnings         disable warnings\n";
 	cout << "    -I                   read from stdin\n";
 	cout << "    -v, --version        show version number and stop\n";
@@ -67,7 +66,7 @@ static void usage(const char *name) {
 }
 
 /** 
- * Parse command line constants 
+ * Parse command line options
  **/
 
 struct CLOptions {
@@ -79,9 +78,6 @@ struct CLOptions {
 	}
 };
 
-/** 
- * Parse command line options 
- **/
 vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 	const char *name = argv[0];
 	vector<string> inputfiles;
@@ -108,18 +104,6 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 			}
 			str = argv[0];
 			setInstallDirectoryPath(str);
-			argc--;
-			argv++;
-		} else if (str == "-c") {
-			str = argv[0];
-			if (argc && (str.find('=') != string::npos)) {
-				int p = str.find('=');
-				string name1 = str.substr(0, p);
-				string name2 = str.substr(p + 1, str.size());
-				GlobalData::instance()->setConstValue(name1, name2);
-			} else {
-				Error::constsetexp();
-			}
 			argc--;
 			argv++;
 		} else if (str == "--nowarnings") {
