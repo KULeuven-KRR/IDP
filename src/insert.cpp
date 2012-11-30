@@ -2284,10 +2284,13 @@ void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
 	}
 }
 
+//Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
+//Note: P can both be a function or a predicate symbol.
 void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 	if (nst->_sortsincluded) {
 		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
 		PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
+		//Depending on the kind of symbol we use, return the correct three-valued inter.
 		if (nst->_func) {
 			threefuncinter(nst, utf, pt);
 		} else {
@@ -2295,6 +2298,8 @@ void Insert::emptythreeinter(NSPair* nst, const string& utf) {
 		}
 	} else {
 		ParseInfo pi = nst->_pi;
+		//Collect all predicates and functions with arity zero and the right name. (since no sorts are included)
+		//If there is exactly one of them, we can disambiguate, otherwise, throw error.
 		auto posspred = noArPredInScope(nst->_name, pi);
 		auto possfuncs = noArFuncInScope(nst->_name, pi);
 

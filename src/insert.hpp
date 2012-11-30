@@ -382,7 +382,7 @@ public:
 	void truethreepredinter(NSPair*, const std::string& utf);
 	void falsethreepredinter(NSPair*, const std::string& utf);
 	void threefuncinter(NSPair*, const std::string& utf, PredTable* t);
-	void emptythreeinter(NSPair*, const std::string& utf);
+	void emptythreeinter(NSPair*, const std::string& utf); //!<Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
 
 	SortTable* createSortTable() const;
 	void addElement(SortTable*, int) const;
