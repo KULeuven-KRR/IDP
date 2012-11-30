@@ -31,6 +31,7 @@
 #include "transformations.hpp"
 #include "clean.hpp"
 #include "setvocabulary.hpp"
+#include "getvocabulary.hpp"
 #include "help.hpp"
 #include "iterators.hpp"
 #include "entails.hpp"
@@ -99,6 +100,10 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<CompletionInference>());
 	inferences.push_back(make_shared<CleanInference>());
 	inferences.push_back(make_shared<ChangeVocabularyInference>());
+	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractStructure*)>>());
+	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractTheory*)>>());
+	inferences.push_back(make_shared<GetVocabularyInference<LIST(Term*)>>());
+	inferences.push_back(make_shared<GetVocabularyInference<LIST(Query*)>>());
 	inferences.push_back(make_shared<HelpInference>());
 	inferences.push_back(make_shared<PrintGroundingInference>());
 	inferences.push_back(make_shared<EntailsInference>());

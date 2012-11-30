@@ -5,8 +5,20 @@ std::string getInferenceNamespaceName(){
 	return "inferences";
 }
 
+std::string getVocabularyNamespaceName(){
+	return "vocabulary";
+}
+
 std::string getTheoryNamespaceName(){
 	return "theory";
+}
+
+std::string getTermNamespaceName(){
+	return "term";
+}
+
+std::string getQueryNamespaceName(){
+	return "query";
 }
 
 std::string getOptionsNamespaceName(){

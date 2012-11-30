@@ -65,6 +65,7 @@ Furthermore: \code{stdspace} contains the following subnamespaces:
  \item[options]
  \item[structure]
  \item[theory]
+ \item[vocabulary]
 \end{description}
 
 \subsubsection{idpintern}
@@ -112,7 +113,6 @@ The \code{inferences} namespace and all its procedures are included in the globa
 		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
 		
 \end{description}
-
 
 \subsubsection{options}
 Like the \code{inferences} namespace, the \code{options} namespace and all its procedures are included in the global namespace. This namespace consists of the following procedures:
@@ -193,6 +193,21 @@ The \code{theory} namespace and all its procedures are included in the global na
 	\item[removenesting(theory)]
  		Move nested terms out of predicates (except for the equality-predicate) and functions.
  		Modifies the given theory.
+\end{description}
+
+\subsubsection{vocabulary}
+The \code{vocabulary} namespace and all its procedures are included in the global namespace. It contains methods for setting and getting vocabularies.
+\begin{description}
+	\item[getvocabulary(query)]
+		Returns the vocabulary of the given object.
+	\item[getvocabulary(structure)]
+		Returns the vocabulary of the given object.
+	\item[getvocabulary(term)]
+		Returns the vocabulary of the given object.
+	\item[getvocabulary(theory)]
+		Returns the vocabulary of the given object.
+	\item[setvocabulary(structure,vocabulary)]
+		Changes the vocabulary of a structure to the given one.
 \end{description}
 
 

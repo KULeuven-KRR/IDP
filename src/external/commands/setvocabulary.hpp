@@ -19,7 +19,7 @@ class ChangeVocabularyInference: public ChangeVocabularyInferenceBase {
 public:
 	ChangeVocabularyInference()
 			: ChangeVocabularyInferenceBase("setvocabulary", "Changes the vocabulary of a structure to the given one.") {
-		setNameSpace(getInternalNamespaceName());
+		setNameSpace(getVocabularyNamespaceName());
 		//If some symbol occurs both in V and in the previous vocabulary of S, its interpretation in S is kept.
 		//For all symbols that belong to V but not to the previous vocabulary of S,
 		//the interpretation in S is initialized to the least precise interpretation.
