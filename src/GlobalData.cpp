@@ -22,9 +22,9 @@ GlobalData::GlobalData()
 			_inserter(new Insert(_globalNamespace)),
 			_domainelemFactory(DomainElementFactory::createGlobal()),
 			_idcounter(1),
-			_terminateRequested(false),
 			_options(new Options(false)),
 			_tabsizestack() {
+	shouldTerminate = false;
 	_tabsizestack.push(0);
 	_stdNamespace = new Namespace("stdspace", _globalNamespace, ParseInfo());
 }
@@ -52,6 +52,7 @@ void GlobalData::setOptions(Options* options) {
 }
 
 GlobalData* _instance = NULL;
+bool GlobalData::shouldTerminate = false;
 
 GlobalData* GlobalData::instance() {
 	if (_instance == NULL) {
