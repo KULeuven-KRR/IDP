@@ -88,3 +88,16 @@ bool contains(const std::vector<Elem>& l, const Elem& e) {
 	}
 	return false;
 }
+
+/**
+ * Returns true if the contents of the first list are a subset or equal to the contents of the second
+ */
+template<class List, class List2>
+bool isSubset(const List& smaller, const List2& larger){
+	for (auto elem : smaller) {
+		if (not contains(larger, elem)) {
+			return false;
+		}
+	}
+	return true;
+}

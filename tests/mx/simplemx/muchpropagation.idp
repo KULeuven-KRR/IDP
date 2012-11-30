@@ -1,0 +1,26 @@
+vocabulary V{
+	type X isa char
+	P(X,X)
+	Q(X,X)	
+	R(X,X)
+	S(X,X)
+	T(X,X)
+}
+
+theory T : V{
+	! x[X]: P(x,x) <=> x = 'a'.
+	! x[X] y[X]: P(x,y) <=> Q(x,y).	
+	! x[X] y[X]: R(x,y) <=> Q(x,y).
+	! x[X]: R(x,x) => S(x,x).
+	! x y: S(x,y) => T(x,y).
+}
+
+structure S:V{
+	X = {'a'}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1 //everything is true
+}
+
+

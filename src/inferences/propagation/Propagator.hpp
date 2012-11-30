@@ -151,9 +151,11 @@ public:
 		return _domains.at(f);
 	}
 	void setCFOfDomain(const Formula* f, Domain* d) {
+		Assert(getFactory()->isValidAsDomainFor(d,f));
 		_domains.at(f)._cfdomain = d;
 	}
 	void setCTOfDomain(const Formula* f, Domain* d) {
+		Assert(getFactory()->isValidAsDomainFor(d,f));
 		_domains.at(f)._ctdomain = d;
 	}
 

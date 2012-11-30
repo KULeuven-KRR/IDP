@@ -2,6 +2,9 @@
 #include "PropagationDomain.hpp"
 #include "structure/MainStructureComponents.hpp"
 #include "fobdds/FoBdd.hpp"
+#include "fobdds/FoBddManager.hpp"
+#include "fobdds/FoBddVariable.hpp"
+#include "utils/ListUtils.hpp"
 
 
 FOPropDomain::FOPropDomain(const std::vector<Variable*>& vars)
@@ -11,6 +14,11 @@ FOPropDomain::~FOPropDomain() {
 }
 const std::vector<Variable*>& FOPropDomain::vars() const {
 	return _vars;
+}
+
+// A formula is valid iff _vars is a subset of the free variables of the formula
+bool FOPropDomain::isValidFor(const Formula* f) const {
+	return isSubset(_vars, f->freeVars());
 }
 
 FOPropBDDDomain::FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars)
@@ -23,6 +31,12 @@ FOPropBDDDomain* FOPropBDDDomain::clone() const {
 const FOBDD* FOPropBDDDomain::bdd() const {
 	return _bdd;
 }
+
+// Valid iff bddvars subset vars subset freevars(f)
+bool FOPropBDDDomain::isValidFor(const Formula* f, FOBDDManager* manager) const {
+	return isSubset(getFOVariables(variables(_bdd, manager)), _vars) && FOPropDomain::isValidFor(f);
+}
+
 void FOPropBDDDomain::put(std::ostream& stream) const{
 	stream << toString(_bdd);
 }

@@ -12,6 +12,7 @@
 
 #include "fobdds/FoBddTerm.hpp"
 #include "fobdds/FoBddDomainTerm.hpp"
+#include "fobdds/FoBddVariable.hpp"
 #include "fobdds/bddvisitors/FirstNonConstMultTerm.hpp"
 
 #include "IncludeComponents.hpp"
@@ -81,4 +82,12 @@ bool TermOrder::before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManage
 		}
 		return false;
 	}
+}
+
+std::set<Variable*> getFOVariables(const set<const FOBDDVariable*, CompareBDDVars>& vars){
+	std::set<Variable*> list;
+	for(auto var: vars){
+		list.insert(var->variable());
+	}
+	return list;
 }
