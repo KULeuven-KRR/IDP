@@ -33,6 +33,11 @@ ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) c
 	return output;
 }
 
+// Valid iff the free variables of the domain are a subset of the free variables of the formula
+bool FOPropBDDDomainFactory::isValidAsDomainFor(const FOPropBDDDomain* d, const Formula* f) const {
+	return d->isValidFor(f, _manager);
+}
+
 FOPropBDDDomain* FOPropBDDDomainFactory::trueDomain(const Formula* f) const {
 	const FOBDD* bdd = _manager->truebdd();
 	vector<Variable*> vv(f->freeVars().cbegin(), f->freeVars().cend());

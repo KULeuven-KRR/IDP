@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef PROPAGATEDOMFACT_HPP
-#define PROPAGATEDOMFACT_HPP
+#pragma once
 
 #include "PropagationCommon.hpp"
 #include "PropagationDomain.hpp"
@@ -26,8 +25,6 @@ class PredInter;
 class FOPropBDDDomain;
 class AbstractStructure;
 class FOPropTableDomain;
-
-
 
 template<class DomainType> struct ThreeValuedDomain;
 
@@ -52,6 +49,9 @@ public:
 	virtual bool approxequals(PropagatorDomain*, PropagatorDomain*) const = 0; //!< Checks if two domains are equal
 	virtual PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<PropagatorDomain>&, AbstractStructure*) const = 0;
 	virtual std::ostream& put(std::ostream&, PropagatorDomain*) const = 0;
+
+	// Checks whether domain is a possible domain for formula
+	virtual bool isValidAsDomainFor(const PropagatorDomain* domain, const Formula* formula) const = 0;
 };
 
 class FOPropBDDDomainFactory: public FOPropDomainFactory<FOPropBDDDomain> {
@@ -76,6 +76,9 @@ public:
 	bool approxequals(FOPropBDDDomain*, FOPropBDDDomain*) const;
 	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
 	std::ostream& put(std::ostream&, FOPropBDDDomain*) const;
+
+	// Valid iff the free variables of the domain are a subset of the free variables of the formula
+	virtual bool isValidAsDomainFor(const FOPropBDDDomain*, const Formula*) const;
 };
 
 class FOPropTableDomainFactory: public FOPropDomainFactory<FOPropTableDomain> {
@@ -97,9 +100,8 @@ public:
 	bool approxequals(FOPropTableDomain*, FOPropTableDomain*) const;
 	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, AbstractStructure*) const;
 	std::ostream& put(std::ostream&, FOPropTableDomain*) const;
+
+	virtual bool isValidAsDomainFor(const FOPropTableDomain*, const Formula*) const {
+		return true;
+	}
 };
-
-
-
-
-#endif //PROPAGATEDOMFACT_HPP
