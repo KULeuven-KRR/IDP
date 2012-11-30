@@ -15,6 +15,7 @@
 
 #include "PropagationCommon.hpp"
 #include "IncludeComponents.hpp"
+#include "fobdds/FoBddUtils.hpp"
 #include <set>
 #include <map>
 #include <iostream>
@@ -37,6 +38,9 @@ public:
 	virtual ~FOPropDomain();
 	const std::vector<Variable*>& vars() const;
 	virtual FOPropDomain* clone() const = 0; //!< Take a deep copy of the domain
+
+	// A formula is valid iff _vars is a subset of the free variables of the formula
+	bool isValidFor(const Formula* f) const;
 };
 
 /**
@@ -49,6 +53,12 @@ public:
 	FOPropBDDDomain(const FOBDD* bdd, const std::vector<Variable*>& vars);
 	FOPropBDDDomain* clone() const;
 	const FOBDD* bdd() const;
+
+	// Checks that the free vars of the bdd are contained in vars.
+	bool checkConsistency(FOBDDManager* ) const;
+
+	// Additional check (wrt the same method in FOPropDomain): that also internal consistency is achieved.
+	bool isValidFor(const Formula* , FOBDDManager* ) const;
 
 	void put(std::ostream& stream) const;
 };

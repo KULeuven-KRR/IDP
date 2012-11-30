@@ -16,6 +16,9 @@ class FOBDDFuncTerm;
 class FOBDDTerm;
 class DomainElement;
 class FOBDDManager;
+class FOBDDVariable;
+class Variable;
+class CompareBDDVars;
 
 #include "common.hpp"
 #include "CommonBddTypes.hpp"
@@ -163,4 +166,6 @@ void deleteAllMatching(std::map<T1, FinalType*>& m, T1 k) {
 	}
 }
 
+//Returns a the set of FO variables in the given set of FOBDDvariables
+std::set<Variable*> getFOVariables(const set<const FOBDDVariable*, CompareBDDVars>& vars);
 #endif /* KERNELORDER_HPP_ */
