@@ -255,7 +255,7 @@ private:
 		auto sorts = getRelevantDbrMappingSorts(bdd);
 
 		Assert(_vocabulary !=NULL);
-		auto tseitinsymbol = new Predicate(sorts, true);
+		auto tseitinsymbol = new Predicate(sorts);
 		_vocabulary->add(tseitinsymbol);
 		addTseitin(bdd, tseitinsymbol);
 		createTseitinAtom(tseitinsymbol, bdd);
@@ -275,7 +275,7 @@ private:
 		auto sorts = getRelevantDbrMappingSorts(kernel);
 
 		Assert(_vocabulary !=NULL);
-		auto tseitinsymbol = new Predicate(sorts, true);
+		auto tseitinsymbol = new Predicate(sorts);
 		_vocabulary->add(tseitinsymbol);
 		addTseitin(kernel, tseitinsymbol);
 		createTseitinAtom(tseitinsymbol, kernel);

@@ -644,14 +644,10 @@ Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, b
 		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
 }
 
-Predicate::Predicate(const vector<Sort*>& sorts, bool isTseitin)
+Predicate::Predicate(const vector<Sort*>& sorts)
 		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	if (isTseitin) {
-		setIsTseitin(isTseitin);
-		setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
-	} else {
-		setName("_internal_predicate_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
-	}
+	setIsTseitin(true);
+	setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
