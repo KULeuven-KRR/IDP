@@ -422,6 +422,7 @@ def_forms	: /* empty */
 /** Definitions **/
 
 definition	: '{' rules '}'		{ $$ = data().definition(*$2); delete($2);	}
+			| '{' '}' 			{ $$ = NULL;} //Ignore empty definitions (the inserter can handle NULL)	
 			;
 
 rules		: rules rule	{ $$ = $1; $1->push_back($2);	}				

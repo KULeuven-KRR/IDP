@@ -1173,6 +1173,9 @@ InternalArgument* Insert::call(const longname& proc, YYLTYPE l) const {
 	return call(proc, vl, l);
 }
 
+// add a definition to the current theory
+//in case the definition is NULL, nothing is done.
+// This invariant is used, since empty defintions are not created during parsing.
 void Insert::definition(Definition* d) const {
 	if (d != NULL) {
 		_currtheory->add(d);
