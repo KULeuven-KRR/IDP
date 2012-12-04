@@ -78,7 +78,7 @@ RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder*
 	Assert(_bodygenerator!=NULL);
 }
 
-void RuleGrounder::put(std::stringstream& stream) {
+void RuleGrounder::put(std::stringstream& stream) const {
 	stream << toString(_origrule);
 }
 

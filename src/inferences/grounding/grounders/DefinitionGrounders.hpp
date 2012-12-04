@@ -86,7 +86,7 @@ public:
 	virtual ~RuleGrounder();
 	virtual void run(DefId defid, GroundDefinition* grounddefinition) const = 0;
 
-	void put(std::stringstream& stream);
+	void put(std::stringstream& stream) const;
 
 	tablesize getMaxGroundSize() const;
 
