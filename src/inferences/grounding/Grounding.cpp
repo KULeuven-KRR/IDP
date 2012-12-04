@@ -29,11 +29,19 @@ void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, A
 	case SymmetryBreaking::NONE:
 		break;
 	case SymmetryBreaking::STATIC: {
+		// Add symmetry breakers
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
+			logActionAndTime("Adding symmetry breakers");
+		}
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		addSymBreakingPredicates(grounding, ivsets, nbModelsEquivalent);
 		break;
 	}
 	case SymmetryBreaking::DYNAMIC: {
+		// Add symmetry breakers
+		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
+			logActionAndTime("Adding symmetry propagators");
+		}
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
 			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));

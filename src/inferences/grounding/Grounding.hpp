@@ -179,10 +179,6 @@ private:
 		bool unsat = _grounder->toplevelRun();
 #warning handle unsat here! (currently still added to solver too)
 
-		// Add symmetry breakers
-		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Adding symmetry breakers");
-		}
 		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm, _nbmodelsequivalent);
 
 		// Print grounding statistics
