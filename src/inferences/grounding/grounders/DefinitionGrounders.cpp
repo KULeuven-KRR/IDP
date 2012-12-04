@@ -39,6 +39,10 @@ DefinitionGrounder::~DefinitionGrounder() {
 }
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
+	if(verbosity()>2){
+		clog <<"Grounding definition " <<toString(this) <<"\n";
+	}
+
 	auto grounddefinition = new GroundDefinition(id(), getTranslator());
 
 	std::vector<PFSymbol*> headsymbols;
@@ -115,9 +119,17 @@ void FullRuleGrounder::run(DefId
 #ifndef NDEBUG
 	Assert(defid == grounddefinition->id());
 #endif
+
+	if (verbosity() > 2) {
+		clog <<"Grounding rule " <<toString(this) <<"\n";
+	}
+
 	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
 		CHECKTERMINATION
+		if (verbosity() > 2) {
+			clog <<"Generating rule body\n";
+		}
 		ConjOrDisj body;
 		bodygrounder()->wrapRun(body);
 		auto conj = body.getType() == Conn::CONJ;
@@ -130,6 +142,10 @@ void FullRuleGrounder::run(DefId
 		for (headgenerator()->begin(); not headgenerator()->isAtEnd(); headgenerator()->operator++()) {
 			CHECKTERMINATION
 			Lit head = headgrounder()->run();
+			if (verbosity() > 2) {
+				auto trans = headgrounder()->grounding()->translator();
+				clog <<"Generated head " <<toString(trans->getSymbol(head)) <<toString(trans->getArgs(head)) <<"\n";
+			}
 			Assert(head != _true);
 			if (head != _false) {
 				if (truebody) {
