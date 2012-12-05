@@ -36,6 +36,7 @@ private:
 
 	//All symbols that were already propagated in earlier stages
 	// And hence, should never be replaced by their BDD
+	// If NULL, all symbols can be replaced!
 	Vocabulary* _symbolsThatCannotBeReplacedByBDDs;
 
 	const FOBDD* prunebdd(const FOBDD*, const std::vector<const FOBDDVariable*>&, AbstractStructure*, double);
@@ -56,7 +57,6 @@ public:
 			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v, Vocabulary* symbolsThatCannotBeReplacedByBDDs)
 			: _ownsmanager(true), _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL), _symbolsThatCannotBeReplacedByBDDs(symbolsThatCannotBeReplacedByBDDs) {
 		Assert(m!=NULL);
-		Assert(symbolsThatCannotBeReplacedByBDDs != NULL);
 	}
 	~GenerateBDDAccordingToBounds();
 	// Transfers ownership!
