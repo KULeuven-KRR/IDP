@@ -16,6 +16,7 @@
 #include "external/runidp.hpp"
 #include "IncludeComponents.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
+#include "inferences/grounding/LazyGroundingManager.hpp"
 #include "options.hpp"
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
 #include "testingtools.hpp"
@@ -31,10 +32,16 @@ Grounder* getGrounder(Theory& t, Structure* s) {
 	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS); //OK TO GET OPTION HERE?
 	auto gddatb = generateBounds(&t, s, propagate, LUP);
-	auto topboolgrounder = dynamic_cast<BoolGrounder*>((GrounderFactory::create( { &t, { s, gddatb }, true })));
-	//ASSERT_TRUE(topboolgrounder!=NULL);
-	//ASSERT_TRUE(topboolgrounder->getSubGrounders().size()>0);
-	return topboolgrounder->getSubGrounders().at(0);
+	auto topgrounder = dynamic_cast<LazyGroundingManager*>((GrounderFactory::create({&t, {s, gddatb}, NULL, true})));
+	if(topgrounder==NULL){
+		cerr <<"NULL topgrounder\n";
+		throw IdpException("Error");
+	}
+	if(topgrounder->getNonDelayedSubGrounders().empty()){
+		cerr <<"Empty topgrounder\n";
+		throw IdpException("Error");
+	}
+	return topgrounder->getNonDelayedSubGrounders().front();
 }
 
 TEST(Grounderfactory, DisjContext) {
@@ -42,8 +49,7 @@ TEST(Grounderfactory, DisjContext) {
 
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.p0vq0);
-	auto context = getGrounder(t, ts.structure)->context();
-	ASSERT_TRUE(CompContext::SENTENCE == context._component);
+	auto context = getGrounder(t, ts.structure)->getContext();
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 }
@@ -51,8 +57,7 @@ TEST(Grounderfactory, EquivContext) {
 	auto ts = getTestingSet1();
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.np0iffq0);
-	auto context = getGrounder(t, ts.structure)->context();
-	ASSERT_TRUE(CompContext::SENTENCE == context._component);
+	auto context = getGrounder(t, ts.structure)->getContext();
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 }
@@ -61,11 +66,10 @@ TEST(Grounderfactory, ForallContext) {
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.Axpx);
 	auto qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
-	auto context = qg->context();
-	ASSERT_TRUE(CompContext::SENTENCE==context._component);
+	auto context = qg->getContext();
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = qg->getSubGrounder()->context();
+	context = qg->getSubGrounder()->getContext();
 	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKEFALSE==context.gentype);
@@ -75,11 +79,10 @@ TEST(Grounderfactory, NegForallContext) {
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.nAxpx);
 	auto qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
-	auto context = qg->context();
-	ASSERT_TRUE(CompContext::SENTENCE==context._component);
+	auto context = qg->getContext();
 	ASSERT_FALSE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = qg->getSubGrounder()->context();
+	context = qg->getSubGrounder()->getContext();
 	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_FALSE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKETRUE==context.gentype);
@@ -89,11 +92,10 @@ TEST(Grounderfactory, NegExistsContext) {
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.nExqx);
 	auto qg = dynamic_cast<QuantGrounder*>(getGrounder(t, ts.structure));
-	auto context = qg->context();
-	ASSERT_TRUE(CompContext::SENTENCE==context._component);
+	auto context = qg->getContext();
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
-	context = qg->getSubGrounder()->context();
+	context = qg->getSubGrounder()->getContext();
 	//ASSERT_TRUE(CompContext::FORMULA==context._component); removed this because of the conjpathfromroot simplifications TODO: rethink about this
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(GenType::CANMAKEFALSE==context.gentype);
@@ -102,8 +104,7 @@ TEST(Grounderfactory, EqChainContext) {
 	auto ts = getTestingSet1();
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.xF);
-	auto context = getGrounder(t, ts.structure)->context();
-	ASSERT_TRUE(CompContext::SENTENCE==context._component);
+	auto context = getGrounder(t, ts.structure)->getContext();
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 }
@@ -111,8 +112,7 @@ TEST(Grounderfactory, AggContext) {
 	auto ts = getTestingSet1();
 	auto t = Theory("T", ts.vocabulary, ParseInfo());
 	t.add(ts.maxxpxgeq0);
-	auto context = getGrounder(t, ts.structure)->context();
-	ASSERT_TRUE(CompContext::SENTENCE==context._component);
+	auto context = getGrounder(t, ts.structure)->getContext();
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 }
 
@@ -124,8 +124,7 @@ TEST(Grounderfactory, BoolFormContext) {
 	auto theory = Theory("T", ts.vocabulary, ParseInfo());
 	theory.add(new BoolForm(SIGN::POS, false, { ts.Axpx }, FormulaParseInfo()));
 	auto grounder = getGrounder(theory, ts.structure);
-	auto context = grounder->context();
-	ASSERT_TRUE(CompContext::SENTENCE == context._component);
+	auto context = grounder->getContext();
 	ASSERT_TRUE(context._conjPathUntilNode);
 	ASSERT_TRUE(context._conjunctivePathFromRoot);
 	ASSERT_TRUE(dynamic_cast<QuantGrounder*>(grounder)!=NULL);

@@ -32,6 +32,7 @@ enum VIType {
 class LazyInstantiation;
 class DelayGrounder;
 class GenerateBDDAccordingToBounds;
+class LazyGroundingManager;
 
 /**
  * Implements base class for ground theories
@@ -57,7 +58,7 @@ public:
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;
 	virtual void add(const GroundDefinition& d) = 0;
-	virtual void add(DefId defid, PCGroundRule* rule) = 0;
+	virtual void add(DefId defid, const PCGroundRule& rule) = 0;
 	virtual void add(GroundFixpDef*) = 0;
 	virtual void add(Lit head, AggTsBody* body) = 0;
 	virtual void add(Lit tseitin, CPTsBody* body) = 0;
@@ -68,11 +69,12 @@ public:
 	virtual void addOptimization(AggFunction, SetId) = 0;
 	virtual void addOptimization(VarId) = 0;
 
-	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) = 0;
-	virtual void notifyLazyAddition(const litlist& glist, int ID) = 0;
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) = 0;
+	virtual void notifyLazyAddition(const litlist& glist, int ID) = 0;
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type) = 0;
 	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, bool recursive) = 0;
+
+	virtual void notifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager) = 0;
 
 	//NOTE: have to call these!
 	//TODO check whether they are called correctly (currently in theorygrounder->run), but probably missing several usecases

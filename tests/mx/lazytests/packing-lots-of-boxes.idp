@@ -29,9 +29,11 @@ structure S:V{
 }
 #include <mx>
 procedure main(){
+	stdoptions.longestbranch=15
 	stdoptions.verbosity.grounding=4
+	stdoptions.verbosity.creategrounders=0
 	stdoptions.verbosity.generatorsandcheckers=1
-	stdoptions.verbosity.solving=4
+	stdoptions.verbosity.solving=0
 	stdoptions.groundwithbounds=true
 	stdoptions.tseitindelay = true
 	stdoptions.satdelay = true

@@ -22,55 +22,54 @@
 #include "utils/CPUtils.hpp"
 
 #include <algorithm> // for min_element and max_element
-
 using namespace std;
 
 TermGrounder::~TermGrounder() {
-	if (_origterm != NULL) {
-		_origterm->recursiveDelete();
-		_origterm = NULL;
+	if (_term != NULL) {
+		_term->recursiveDelete();
+		_term = NULL;
 	}
 	if (not _varmap.empty()) {
 		for (auto i = _varmap.begin(); i != _varmap.end(); ++i) {
-			delete (i->first); // Delete the Variable
+			//FIXME delete (i->first); // Delete the Variable
 			// Don't delete the Domain element!
 		}
 		_varmap.clear();
 	}
 }
 
-void TermGrounder::setOrig(const Term* t, const var2dommap& mvd) {
-	map<Variable*, Variable*> mvv;
-	for (auto freevar : t->freeVars()) {
-		Variable* v = new Variable(freevar->name(), freevar->sort(), ParseInfo());
-		mvv[freevar] = v;
-		_varmap[v] = mvd.find(freevar)->second;
-	}
-	_origterm = t->clone(mvv);
-}
-
 void TermGrounder::printOrig() const {
-	clog << tabs() << "Grounding term " << print(_origterm) << "\n";
-	if (not _origterm->freeVars().empty()) {
+	clog << tabs() << "Grounding term " << print(getTerm()) << "\n";
+	if (not getTerm()->freeVars().empty()) {
 		pushtab();
 		clog << tabs() << "with instance ";
-		for (auto freevar : _origterm->freeVars()) {
-			clog << print(freevar) << " = ";
-			const DomainElement* e = _varmap.find(freevar)->second->get();
+		for (auto var : getTerm()->freeVars()) {
+			clog << print(var) << " = ";
+			auto e = _varmap.find(var)->second->get();
 			clog << print(e) << ' ';
 		}
 		clog << "\n";
 		poptab();
 	}
 }
-int TermGrounder::verbosity() const{
+int TermGrounder::verbosity() const {
 	return getOption(IntType::VERBOSE_GROUNDING);
 }
-
 
 GroundTerm DomTermGrounder::run() const {
 	Assert(_value != NULL);
 	return GroundTerm(_value);
+}
+
+FuncTermGrounder::FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<SortTable*>& tables,
+		const std::vector<TermGrounder*>& sub)
+		: TermGrounder(dom, tt), _function(func), _functable(ftable), _tables(tables), _subtermgrounders(sub) {
+	std::vector<Term*> subterms;
+	for(auto st:sub){
+		addAll(_varmap, st->getVarmapping());
+		subterms.push_back(st->getTerm()->cloneKeepVars());
+	}
+	setTerm(new FuncTerm(func, subterms, {}));
 }
 
 // TODO code duplication with AtomGrounder
@@ -83,7 +82,7 @@ GroundTerm FuncTermGrounder::run() const {
 	vector<GroundTerm> groundsubterms;
 	ElementTuple args(_subtermgrounders.size());
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto groundterm = _subtermgrounders[n]->run();
 		if (groundterm.isVariable) {
 			calculable = false;
@@ -120,7 +119,10 @@ GroundTerm FuncTermGrounder::run() const {
 	}
 
 	Assert(getOption(BoolType::CPSUPPORT));
-	Assert(CPSupport::eligibleForCP(_function, _translator->vocabulary()));
+	if (not CPSupport::eligibleForCP(_function, _translator->vocabulary())) {
+		throw IdpException("Invalid code path");
+	}
+
 	auto varid = _translator->translateTerm(_function, groundsubterms);
 	if (verbosity() > 2) {
 		poptab();
@@ -225,12 +227,13 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 	return newdomain;
 }
 
-
 CPTerm* createCPProdTerm(const litlist& conditions, const VarId& left, const VarId& right) {
 	return new CPSetTerm(AggFunction::PROD, conditions, { left, right }, {1});
 }
 
 CPTerm* createCPSumTerm(Lit condition, const DomainElement* factor, const VarId& varid) {
+			int min = *(std::min_element(allposs.begin(), allposs.end()));
+			int max = *(std::max_element(allposs.begin(), allposs.end()));
 	Assert(factor->type() == DomainElementType::DET_INT);
 	return createCPSumTerm({condition}, { varid }, { factor->value()._int });
 }
@@ -241,8 +244,8 @@ GroundTerm TwinTermGrounder::run() const {
 		pushtab();
 	}
 	// Run subtermgrounders
-	auto left = _lefttermgrounder->run();
-	auto right = _righttermgrounder->run();
+	auto left = _subtermgrounders[0]->run();
+	auto right = _subtermgrounders[1]->run();
 
 	if((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL)){
 		return GroundTerm(NULL);
@@ -325,10 +328,14 @@ Weight getNeutralElement(AggFunction type){
 	}
 	throw IdpException("Invalid code path.");
 }
-
-AggTermGrounder::AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
-		: TermGrounder(dom, gt), _type(tp), _setgrounder(gr), grounding(grounding) {
+AggTermGrounder::AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr)
+		: 	TermGrounder(dom, gt),
+			_type(tp),
+			_setgrounder(gr),
+			grounding(grounding) {
 	Assert(CPSupport::eligibleForCP(tp));
+	addAll(_varmap, gr->getVarmapping());
+	setTerm(new AggTerm(gr->getSet()->cloneKeepVars(), tp, { }));
 }
 
 GroundTerm AggTermGrounder::run() const {
@@ -342,6 +349,28 @@ GroundTerm AggTermGrounder::run() const {
 
 	auto trueweight = applyAgg(_type, tsset.trueweights());
 
+	if (not tsset.cpvars().empty()) {
+		auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
+		if (trueweight != getNeutralElement(_type)) {
+			varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
+		}
+		auto cpaggterm = createCPAggTerm(_type, varids);
+		auto varid = _translator->translateTerm(cpaggterm, getDomain());
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
+		}
+		return GroundTerm(varid);
+	} else {
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Result = " << toString(trueweight) << "\n";
+		}
+		return GroundTerm(createDomElem(trueweight));
+	}
+}
+
+varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms) {
 	GroundTerm result(0);
 	if(tsset.cpvars().empty()){
 		result = GroundTerm(createDomElem(trueweight));

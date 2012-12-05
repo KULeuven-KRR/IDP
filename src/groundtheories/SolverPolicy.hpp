@@ -26,6 +26,7 @@ typedef std::vector<const DomainElement*> ElementTuple;
 
 class LazyInstantiation;
 class DelayGrounder;
+class LazyGroundingManager;
 
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
@@ -34,8 +35,7 @@ template<class Solver>
 class SolverPolicy {
 private:
 	GroundTranslator* _translator;
-	Solver* _solver; // The SAT solver
-
+	Solver* _solver; // The SAT solver NOTE: do not call any methods of Solver itself!
 	std::map<PFSymbol*, std::set<Atom> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
 	int _verbosity;
@@ -49,10 +49,12 @@ private:
 
 public:
 	void initialize(Solver* solver, int verbosity, GroundTranslator* translator);
-	void polNotifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
 	void polAddLazyAddition(const litlist& glist, int ID);
 	void polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
 	void polNotifyLazyResidual(LazyInstantiation* inst, TsType type);
+	void polNotifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager);
+
+	void requestTwoValued(const litlist& lit);
 
 protected:
 	void polRecursiveDelete() {
@@ -65,7 +67,7 @@ protected:
 
 	void polAdd(const GroundClause& cl);
 	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
-	void polAdd(DefId defnr, PCGroundRule* rule);
+	void polAdd(DefId defnr, const PCGroundRule& rule);
 	void polAdd(DefId defnr, AggGroundRule* rule);
 	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
 	void polAdd(Lit head, AggTsBody* body);

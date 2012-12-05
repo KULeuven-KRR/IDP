@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef GROUNDER_HPP_
-#define GROUNDER_HPP_
+#pragma once
 
 #include "inferences/grounding/GroundUtils.hpp"
 #include <iostream>
@@ -22,6 +21,12 @@ enum class Conn {
 };
 
 Conn negateConn(Conn c);
+
+template<class T>
+void deleteDeep(T& object) {
+	object->recursiveDelete();
+	object = NULL;
+}
 
 struct ConjOrDisj {
 	litlist literals;
@@ -48,6 +53,22 @@ public:
 
 class AbstractGroundTheory;
 class GroundTranslator;
+class Formula;
+
+typedef std::set<const DomElemContainer*> containerset;
+
+/**
+ * Class representing a request on what to ground of the constraint at hand.
+ * A grounder is always allowed to ignore this information
+ */
+struct LazyGroundingRequest {
+	bool groundersdone;
+	containerset instantiation; // NOTE: variables which are already instantiated and should NOT be overwritten within the grounder (e.g. during quantification)
+
+	LazyGroundingRequest(const containerset& instantantiation)
+			: groundersdone(true), instantiation(instantantiation) {
+	}
+};
 
 class Grounder {
 private:
@@ -55,19 +76,29 @@ private:
 	GroundingContext _context;
 	tablesize _maxsize;
 
-public:
-	Grounder(AbstractGroundTheory* gt, const GroundingContext& context);
-	virtual ~Grounder() {
-	}
+	Formula* _formula; // The formula represented by this grounder, if any. Currently not representing generators/checkers
 
-	bool toplevelRun() const; // Guaranteed toplevel run.
-	Lit groundAndReturnLit() const; // Explicitly request one literal equisat with subgrounding. NOTE: interprets returnvalue as if in conjunction (false is unsat, true is sat)
-
-	void wrapRun(ConjOrDisj& formula) const;
-
+protected:
 	// NOTE: it is IMPERATIVE to set the type of the formula within run!
 	// NOTE: only call directly in wrapRun!
-	virtual void run(ConjOrDisj& formula) const = 0;
+	// NOTE: formula passed as reference argument to prevent vector copying during grounding
+	virtual void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) = 0;
+
+	// Passes ownership!!!
+	void setFormula(Formula* f);
+
+public:
+	Grounder(AbstractGroundTheory* gt, const GroundingContext& context);
+	virtual ~Grounder();
+
+	bool toplevelRun() { // Guaranteed toplevel run.
+		auto lgr = LazyGroundingRequest( { });
+		return toplevelRun(lgr);
+	}
+	bool toplevelRun(LazyGroundingRequest& request); // Guaranteed toplevel run.
+	Lit groundAndReturnLit(LazyGroundingRequest& request); // Explicitly request one literal equisat with subgrounding. NOTE: interprets returnvalue as if in conjunction (false is unsat, true is sat)
+
+	void run(ConjOrDisj& formula, LazyGroundingRequest& request);
 
 	AbstractGroundTheory* getGrounding() const {
 		return _grounding;
@@ -78,7 +109,7 @@ public:
 	void setConjUntilRoot(bool value){
 		_context._conjunctivePathFromRoot = value;
 	}
-	const GroundingContext& context() const {
+	const GroundingContext& getContext() const {
 		return _context;
 	}
 
@@ -92,13 +123,13 @@ public:
 	static int groundedAtoms() {
 		return _groundedatoms;
 	}
-	static void notifyGroundedAtom(){
+	static void notifyGroundedAtom() {
 		_groundedatoms++;
 	}
-	static const tablesize& getFullGroundSize(){
+	static const tablesize& getFullGroundingSize() {
 		return _fullgroundsize;
 	}
-	static void addToFullGroundSize(const tablesize& size){
+	static void addToFullGroundingSize(const tablesize& size) {
 		_fullgroundsize = _fullgroundsize + size;
 	}
 	tablesize getMaxGroundSize() const {
@@ -106,8 +137,40 @@ public:
 	}
 
 	int verbosity() const;
+	bool hasFormula() const {
+		return _formula != NULL;
+	}
+	Formula* getFormula() const {
+		Assert(hasFormula());
+		return _formula;
+	}
+};
+
+class TheoryGrounder: public Grounder {
+private:
+	std::vector<Grounder*> subgrounders;
+protected:
+	virtual void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+		formula.setType(Conn::CONJ);
+		for (auto sg : subgrounders) {
+			sg->toplevelRun(request);
+		}
+	}
+public:
+	TheoryGrounder(AbstractGroundTheory* gt, const GroundingContext& context, const std::vector<Grounder*>& subgrounders)
+			: Grounder(gt, context), subgrounders(subgrounders) {
+
+	}
+
+	const std::vector<Grounder*>& getSubGrounders() const {
+		return subgrounders;
+	}
+
+	virtual void put(std::ostream& stream) const {
+		for (auto sg : subgrounders) {
+			stream << toString(sg) << "\n";
+		}
+	}
 };
 
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula);
-
-#endif /* GROUNDER_HPP_ */

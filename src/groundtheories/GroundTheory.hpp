@@ -20,8 +20,8 @@ class GroundTerm;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
-	std::set<Lit> _printedtseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
-	std::set<SetId> _printedsets; //!< Set numbers produced by the translator that occur in the theory.
+	std::set<Lit> _addedTseitins; //!< Tseitin atoms produced by the translator that occur in the theory.
+	std::set<SetId> _addedSets; //!< Set numbers produced by the translator that occur in the theory.
 	std::set<int> _printedconstraints; //!< Atoms for which a connection to CP constraints are added.
 	std::set<CPTerm*> _foldedterms;
 	std::set<VarId> _printedvarids, _addedvarinterpretation;
@@ -53,7 +53,7 @@ public:
 
 	virtual void add(const GroundClause& cl, bool skipfirst = false);
 	virtual void add(const GroundDefinition& def);
-	virtual void add(DefId defid, PCGroundRule* rule);
+	virtual void add(DefId defid, const PCGroundRule& rule);
 	virtual void add(GroundFixpDef*);
 	virtual void add(Lit tseitin, CPTsBody* body);
 	virtual void add(SetId setnr, DefId defnr, bool weighted);
@@ -64,11 +64,12 @@ public:
 	virtual void addOptimization(AggFunction function, SetId setid);
 	virtual void addOptimization(VarId varid);
 
-	virtual void notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders);
-	virtual void notifyLazyAddition(const litlist& glist, int ID);
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
+	virtual void notifyLazyAddition(const litlist& glist, int ID);
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type);
 	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, bool recursive);
+
+	virtual void notifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager);
 
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);

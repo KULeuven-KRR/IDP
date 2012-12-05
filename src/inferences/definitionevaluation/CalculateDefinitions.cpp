@@ -18,6 +18,7 @@
 #include "groundtheories/SolverTheory.hpp"
 
 #include "inferences/grounding/grounders/Grounder.hpp"
+#include "inferences/grounding/LazyGroundingManager.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
@@ -28,9 +29,9 @@
 
 using namespace std;
 
-bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool withxsb) {
+bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
 	// TODO duplicate code with modelexpansion
-
+	#warning CALC DEF LAZY GROUNDING XSB SIZE CHECK
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " <<  toString(definition) << "\n";
 	}
@@ -66,7 +67,16 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
 		auto symstructure = generateBounds(&theory, structure, propagate, LUP);
-		auto grounder = GrounderFactory::create({&theory, {structure, symstructure}, true /*TODO CHECK*/}, data);
+		auto grounder = GrounderFactory::create(GroundInfo(&theory, {structure, symstructure}, NULL, true), data);
+
+		auto size = toDouble(grounder->getMaxGroundSize());
+		size = size<1?1:size;
+		if((satdelay or getOption(SATISFIABILITYDELAY)) and log(size)/log(2)>2*getOption(LAZYSIZETHRESHOLD)){
+			tooExpensive = true;
+			delete(data);
+			delete(grounder);
+			return true;
+		}
 
 		bool unsat = grounder->toplevelRun();
 
@@ -109,7 +119,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 	}
 }
 
-std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure) {
+std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure, bool satdelay) const {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
@@ -141,7 +151,16 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 				if(getOption(XSB) && hasrecursion) {
 					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 				}
-				auto satisfiable = calculateDefinition(definition, structure, getOption(XSB) && not hasrecursion);
+
+				bool tooexpensive = false;
+				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+					clog <<"Evaluating " <<toString(currentdefinition->first) <<"\n";
+				}
+				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion);
+				if(tooexpensive){
+					continue;
+				}
+
 				if (not satisfiable) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";

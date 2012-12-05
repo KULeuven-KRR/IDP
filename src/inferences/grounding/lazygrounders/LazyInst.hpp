@@ -37,12 +37,11 @@ public:
 	void notifyTheoryOccurrence(TsType type);
 	void notifyGroundingRequested(int ID, bool groundall, bool& stilldelayed);
 
-	void setGrounder(const LazyDisjunctiveGrounder* g) { grounder = g;}
 	const LazyDisjunctiveGrounder* getGrounder() const { return grounder; }
 
-	/*	bool operator==(const LazyInstantiation& rhs) const {
-	 return rhs.residual == residual && freevarinst == rhs.freevarinst;
-	 }*/
+	LazyInstantiation(const LazyDisjunctiveGrounder* grounder) : grounder(grounder), residual(0), generator(NULL), index(0){
+
+	}
 };
 
 #endif /* LAZYINST_HPP_ */

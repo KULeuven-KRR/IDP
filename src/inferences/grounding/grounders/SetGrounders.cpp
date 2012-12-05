@@ -26,18 +26,16 @@ using namespace std;
 SetGrounder::SetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt)
 		: id(gt->createNewQuantSetId()), _freevarcontainers(freevarcontainers), _translator(gt) {
 }
-EnumSetGrounder::EnumSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
-		: SetGrounder(freevarcontainers, gt), _subgrounders(subgrounders) {
-}
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights,
+void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights,
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
 		l = sublitgrounder.translator()->trueLit();
 	} else {
-		l = sublitgrounder.groundAndReturnLit();
+		auto lgr = LazyGroundingRequest({});
+		l = sublitgrounder->groundAndReturnLit(lgr);
 	}
 	if (l == sublitgrounder.translator()->falseLit()) {
 		return;
@@ -61,13 +59,14 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 }
 
 template<class LitGrounder, class TermGrounder>
-void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, weightlist& trueweights, litlist& conditions, termlist& cpterms,
+void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgrounder, weightlist& trueweights, litlist& conditions, termlist& cpterms,
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
 		l = sublitgrounder.translator()->trueLit();
 	} else {
-		l = sublitgrounder.groundAndReturnLit();
+		auto lgr = LazyGroundingRequest({});
+		l = sublitgrounder->groundAndReturnLit(lgr);
 	}
 	if (l == sublitgrounder.translator()->falseLit()) {
 		return;
@@ -88,11 +87,21 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	cpterms.push_back(groundweight);
 }
 
+EnumSetGrounder::EnumSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
+		: SetGrounder(freevarcontainers, gt), _set(NULL), _subgrounders(subgrounders) {
+	std::vector<QuantSetExpr*> exprs;
+	for(auto sg: subgrounders){
+		addAll(_varmap, sg->getVarmapping());
+		exprs.push_back(sg->getSet()->cloneKeepVars());
+	}
+	_set = new EnumSetExpr(exprs,{});
+}
+
 EnumSetGrounder::~EnumSetGrounder() {
 	deleteList(_subgrounders);
 }
 
-SetId EnumSetGrounder::run() const {
+SetId EnumSetGrounder::run() {
 	ElementTuple tuple;
 	for(auto container:_freevarcontainers){
 		tuple.push_back(container->get());
@@ -110,7 +119,7 @@ SetId EnumSetGrounder::run() const {
 	return _translator->translateSet(id, tuple, literals, weights, trueweights, { });
 }
 
-SetId EnumSetGrounder::runAndRewriteUnknowns() const {
+SetId EnumSetGrounder::runAndRewriteUnknowns() {
 	ElementTuple tuple;
 	for(auto container:_freevarcontainers){
 		tuple.push_back(container->get());
@@ -130,6 +139,8 @@ SetId EnumSetGrounder::runAndRewriteUnknowns() const {
 
 QuantSetGrounder::QuantSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
 		: SetGrounder(freevarcontainers, gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
+	addAll(_varmap, gr->getVarmapping());
+	addAll(_varmap, w->getVarmapping());
 }
 
 QuantSetGrounder::~QuantSetGrounder() {
@@ -139,19 +150,19 @@ QuantSetGrounder::~QuantSetGrounder() {
 	delete _weightgrounder;
 }
 
-void QuantSetGrounder::run(litlist& literals, weightlist& weights, weightlist& trueweights) const {
+void QuantSetGrounder::run(litlist& literals, weightlist& weights, weightlist& trueweights) {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator++()) {
-		groundSetLiteral(*_subgrounder, *_weightgrounder, literals, weights, trueweights, *_checker);
+		groundSetLiteral(_subgrounder, *_weightgrounder, literals, weights, trueweights, *_checker);
 	}
 }
 
-void QuantSetGrounder::run(weightlist& trueweights, litlist& conditions, termlist& cpvars) const {
+void QuantSetGrounder::run(weightlist& trueweights, litlist& conditions, termlist& cpvars) {
 	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator++()) {
-		groundSetLiteral(*_subgrounder, *_weightgrounder, trueweights, conditions, cpvars, *_checker);
+		groundSetLiteral(_subgrounder, *_weightgrounder, trueweights, conditions, cpvars, *_checker);
 	}
 }
 
-SetId QuantSetGrounder::run() const {
+SetId QuantSetGrounder::run() {
 	ElementTuple tuple;
 	for(auto container:_freevarcontainers){
 		tuple.push_back(container->get());
@@ -167,7 +178,7 @@ SetId QuantSetGrounder::run() const {
 	return _translator->translateSet(id, tuple, literals, weights, trueweights, { });
 }
 
-SetId QuantSetGrounder::runAndRewriteUnknowns() const {
+SetId QuantSetGrounder::runAndRewriteUnknowns() {
 	ElementTuple tuple;
 	for(auto container:_freevarcontainers){
 		tuple.push_back(container->get());

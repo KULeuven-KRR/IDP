@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef GROUNDING_UTILS_HPP_
-#define GROUNDING_UTILS_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "GroundingContext.hpp"
@@ -60,4 +59,6 @@ struct StructureInfo{
 	GenerateBDDAccordingToBounds* symstructure;
 };
 
-#endif /* GROUNDING_UTILS_HPP_ */
+bool useLazyGrounding();
+
+bool useUFSAndOnlyIfSem();

@@ -33,6 +33,7 @@ class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
 class GroundTerm;
+class LazyGroundingManager;
 
 class LazyInstantiation;
 class DelayGrounder;
@@ -52,9 +53,6 @@ private:
 	}
 
 protected:
-	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
-		throw notyetimplemented("Storing ground theories with lazy ground elements");
-	}
 	void polAddLazyAddition(const litlist&, int){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
@@ -66,6 +64,9 @@ protected:
 	}
 	void polAddLazyElement(Lit, PFSymbol*, const std::vector<GroundTerm>&, AbstractGroundTheory*, bool){
 		throw notyetimplemented("Storing ground theories with lazy element constraints");
+	}
+	void polNotifyLazyWatch(Atom, TruthValue, LazyGroundingManager*){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
 
 public:
@@ -97,7 +98,7 @@ public:
 	void polAdd(Lit tseitin, AggTsBody* body);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(const TsSet& tsset, SetId setnr, bool);
-	void polAdd(DefId defnr, PCGroundRule* rule);
+	void polAdd(DefId defnr, const PCGroundRule& rule);
 	void polAdd(DefId defnr, AggGroundRule* rule);
 
 	void polAddOptimization(AggFunction, SetId);

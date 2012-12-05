@@ -22,76 +22,52 @@
 #include <iostream>
 #include "errorhandling/error.hpp"
 #include "utils/StringUtils.hpp"
+#include "theory/TheoryUtils.hpp"
+#include "inferences/grounding/LazyGroundingManager.hpp"
+#include "inferences/grounding/grounders/InstantiationGrounder.hpp"
+#include "structure/StructureComponents.hpp"
+#include "inferences/grounding/GrounderFactory.hpp"
 
 using namespace std;
 
-bool recursive(const PFSymbol& symbol, const GroundingContext& context){
-	return context._defined.find(const_cast<PFSymbol*>(&symbol))!=context._defined.cend();
+bool recursive(const PFSymbol& symbol, const GroundingContext& context) {
+	return context._defined.find(const_cast<PFSymbol*>(&symbol)) != context._defined.cend();
 }
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: 	Grounder(grounding, ct),
-			_origform(NULL) {
+		: Grounder(grounding, ct) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
-	if (_origform != NULL) {
-		_origform->recursiveDelete();
-		_origform = NULL;
-	}
-	if (not _origvarmap.empty()) {
-		for (auto i = _origvarmap.begin(); i != _origvarmap.end(); ++i) {
-			delete (i->first);
-		}
-		_origvarmap.clear();
-	}
-}
-
-void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd) {
-	map<Variable*, Variable*> mvv;
-	for (auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {
-		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
-		mvv[*it] = v;
-		_varmap[*it] = mvd.find(*it)->second;
-		_origvarmap[v] = mvd.find(*it)->second;
-	}
-	_origform = f->clone(mvv);
 }
 
 #define dtype(container) decltype(*std::begin(container))
 
 void FormulaGrounder::printorig() const {
-	if (_origform == NULL) {
-		return;
-	}
-	clog << tabs() << "Grounding formula " << print(_origform) << "\n";
-	if (not _origform->freeVars().empty()) {
+	clog << tabs() << "Grounding formula " << print(getFormula()) << "\n";
+	if (not getFormula()->freeVars().empty()) {
 		pushtab();
 		clog << tabs() << "with instance ";
-		printList(clog, _origform->freeVars(), ", ",  [&](std::ostream& output, dtype(_origform->freeVars()) v){ output <<print(v) << " = " << print(_origvarmap.find(v)->second->get());});
+		printList(clog, getFormula()->freeVars(), ", ",  [&](std::ostream& output, dtype(getFormula()->freeVars()) v){ output <<print(v) << " = " << print(_varmap.find(v)->second->get());});
 		clog << "\n";
 		poptab();
 	}
 }
 
-void FormulaGrounder::put(std::ostream& output) const{
-	if (_origform == NULL) {
-		return;
-	}
-	output << print(_origform);
-	if (not _origform->freeVars().empty()) {
+void FormulaGrounder::put(std::ostream& output) const {
+	output << print(getFormula());
+	if (not getFormula()->freeVars().empty()) {
 		output << "[";
-		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
+		for (auto it = getFormula()->freeVars().cbegin(); it != getFormula()->freeVars().cend(); ++it) {
 			output << print(*it) << " = ";
-			auto e = _origvarmap.find(*it)->second->get();
+			auto e = _varmap.find(*it)->second->get();
 			output << print(e) << ',';
 		}
 		output << "]";
 	}
 }
 
-AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<const DomElemContainer*>& checkargs, const vector<SortTable*>& vst,
+AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst,
 		const GroundingContext& ct)
 		: 	FormulaGrounder(grounding, ct),
 			_subtermgrounders(sg),
@@ -99,10 +75,17 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 			_symboloffset(translator()->addSymbol(s)),
 			_tables(vst),
 			_sign(sign),
-			_checkargs(checkargs),
 			_recursive(ct._defined.find(s) != ct._defined.cend()),
 			_args(_subtermgrounders.size()),
 			terms(_subtermgrounders.size(), GroundTerm(NULL)) {
+
+	std::vector<Term*> args;
+	for (auto tg : sg) {
+		args.push_back(tg->getTerm()->cloneKeepVars());
+		addAll(_varmap, tg->getVarmapping());
+	}
+	setFormula(new PredForm(sign, s, args, { }));
+
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
@@ -112,13 +95,9 @@ AtomGrounder::~AtomGrounder() {
 }
 
 Lit AtomGrounder::run() const {
-	notifyGroundedAtom();
-
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL) {
-			pushtab();
-		}
+		pushtab();
 	}
 
 	// Run subterm grounders
@@ -130,15 +109,13 @@ Lit AtomGrounder::run() const {
 			alldomelts = false;
 		} else {
 			auto domelem = groundterm._domelement;
-			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), context()._funccontext, _sign);
-			if(known!=TruthValue::Unknown){
-				if(verbosity()>2){
-				if (_origform != NULL) {
+			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), getContext()._funccontext, _sign);
+			if (known != TruthValue::Unknown) {
+				if (verbosity() > 2) {
 					poptab();
+					clog << tabs() << "Result is " << print(known) << "\n";
 				}
-				clog << tabs() << "Result is " <<print(known) << "\n";
-				}
-				return known==TruthValue::True?_true:_false;
+				return known == TruthValue::True ? _true : _false;
 			}
 		}
 	}
@@ -146,18 +123,24 @@ Lit AtomGrounder::run() const {
 	Lit lit = 0;
 	if (not alldomelts) {
 		lit = translator()->addLazyElement(_symbol, terms, _recursive);
+		}
+		auto temphead = translator()->createNewUninterpretedNumber();
+		getGrounding()->addLazyElement(temphead, _symbol, terms, _recursive);
+		lit = temphead;
 	}else{
 		// Run instance checkers
 		// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
 		for (size_t n = 0; n < terms.size(); ++n) {
 			_args[n] = terms[n]._domelement;
 			*(_checkargs[n]) = _args[n];
-		}
 
 		lit = translator()->translateReduced(_symboloffset, _args, _recursive);
 	}
 	lit = isPos(_sign) ? lit : -lit;
 
+	if (lit != _true && lit != _false) {
+		notifyGroundedAtom();
+	}
 	if (verbosity() > 2) {
 		poptab();
 		clog << tabs() << "Result is " << translator()->printLit(lit) << "\n";
@@ -165,9 +148,24 @@ Lit AtomGrounder::run() const {
 	return lit;
 }
 
-void AtomGrounder::run(ConjOrDisj& formula) const {
+void AtomGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run());
+}
+
+ComparisonGrounder::ComparisonGrounder(AbstractGroundTheory* grounding, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc,
+		PFSymbol* symbol, SIGN sign)
+		: 	FormulaGrounder(grounding, gc),
+			_lefttermgrounder(ltg),
+			_righttermgrounder(rtg),
+			_comparator(comp) {
+	Assert(getContext()._tseitin!=TsType::RULE);
+
+	addAll(_varmap, ltg->getVarmapping());
+	addAll(_varmap, rtg->getVarmapping());
+	setFormula(new PredForm(sign, symbol, { ltg->getTerm()->cloneKeepVars(), rtg->getTerm()->cloneKeepVars() }, { }));
+
+	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
 
 ComparisonGrounder::~ComparisonGrounder() {
@@ -178,9 +176,7 @@ ComparisonGrounder::~ComparisonGrounder() {
 Lit ComparisonGrounder::run() const {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL) {
-			pushtab();
-		}
+		pushtab();
 	}
 	auto left = _lefttermgrounder->run();
 	auto right = _righttermgrounder->run();
@@ -194,12 +190,12 @@ Lit ComparisonGrounder::run() const {
 		CPTerm* leftterm = new CPVarTerm(left._varid);
 		if (right.isVariable) {
 			CPBound rightbound(right._varid);
-			result = translator()->reify(leftterm, _comparator, rightbound, context()._tseitin);
+			result = translator()->reify(leftterm, _comparator, rightbound, getContext()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
 			CPBound rightbound(rightvalue);
-			result = translator()->reify(leftterm, _comparator, rightbound, context()._tseitin);
+			result = translator()->reify(leftterm, _comparator, rightbound, getContext()._tseitin);
 		}
 	} else {
 		Assert(not left.isVariable);
@@ -207,7 +203,7 @@ Lit ComparisonGrounder::run() const {
 		if (right.isVariable) {
 			CPTerm* rightterm = new CPVarTerm(right._varid);
 			CPBound leftbound(leftvalue);
-			result = translator()->reify(rightterm, invertComp(_comparator), leftbound, context()._tseitin);
+			result = translator()->reify(rightterm, invertComp(_comparator), leftbound, getContext()._tseitin);
 		} else {
 			Assert(not right.isVariable);
 			int rightvalue = right._domelement->value()._int;
@@ -215,21 +211,19 @@ Lit ComparisonGrounder::run() const {
 		}
 	}
 	if (verbosity() > 2) {
-		if (_origform != NULL) {
-			poptab();
-		}
+		poptab();
 		clog << tabs() << "Result is " << translator()->printLit(result) << "\n";
 	}
 	return result;
 }
 
-void ComparisonGrounder::run(ConjOrDisj& formula) const {
+void ComparisonGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
 // TODO incorrect groundsize
-AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, SetGrounder* sg, SIGN sign)
+AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, EnumSetGrounder* sg, SIGN sign)
 		: 	FormulaGrounder(grounding, gc),
 			_setgrounder(sg),
 			_boundgrounder(bound),
@@ -240,6 +234,11 @@ AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, T
 	bool signPosIfStrict = isPos(_sign) == not noAggComp;
 	_doublenegtseitin = (gc._tseitin == TsType::RULE)
 			&& ((gc._monotone == Context::POSITIVE && signPosIfStrict) || (gc._monotone == Context::NEGATIVE && not signPosIfStrict));
+
+	addAll(_varmap, sg->getVarmapping());
+	addAll(_varmap, bg->getVarmapping());
+	setFormula(new AggForm(sign, bg->getTerm()->cloneKeepVars(), comp, new AggTerm(sg->getSet()->cloneKeepVars(), tp, { }), { }));
+
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
 }
 
@@ -251,9 +250,8 @@ AggGrounder::~AggGrounder() {
 /**
  * Negate the comparator and invert the sign of the tseitin when the aggregate is in a doubly negated context.
  */
-//TODO:why?
 Lit AggGrounder::handleDoubleNegation(double boundvalue, SetId setnr, CompType comp) const {
-	TsType tp = context()._tseitin;
+	TsType tp = getContext()._tseitin;
 	Lit tseitin = translator()->reify(boundvalue, negateComp(comp), _type, setnr, tp);
 	return isPos(_sign) ? -tseitin : tseitin;
 }
@@ -262,7 +260,7 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
 	int leftvalue = int(boundvalue - truevalue);
 	auto tsset = translator()->groundset(setnr);
 	int maxposscard = tsset.size();
-	TsType tp = context()._tseitin;
+	TsType tp = getContext()._tseitin;
 	bool simplify = false;
 	bool conj = false; // Note: Only used if simplify is true
 	bool negateset;
@@ -357,7 +355,6 @@ Lit AggGrounder::finishCard(double truevalue, double boundvalue, SetId setnr) co
  * This method is only made because the solver cannot handle products with sets containing zeros or negative values.
  * If the solver improves, this should be deleted.
  *
- * TODO Can be optimized more (for special cases like in the "finish"-method, but won't be called often anyway.
  */
 Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, double /*minpossvalue*/, double /*maxpossvalue*/, SetId setnr) const {
 	Assert(_type==AggFunction::PROD);
@@ -392,7 +389,7 @@ Lit AggGrounder::splitproducts(double /*boundvalue*/, double newboundvalue, doub
 	auto possetnumber = translator()->translateSet(poslits, posweights, tsset.trueweights(), { });
 	auto negsetnumber = translator()->translateSet(neglits, negweights, { }, { });
 
-	auto tp = context()._tseitin;
+	auto tp = getContext()._tseitin;
 	if (isNeg(_sign)) {
 		tp = invertImplication(tp);
 	}
@@ -476,7 +473,7 @@ Lit AggGrounder::finish(double boundvalue, double newboundvalue, double minpossv
 		return handleDoubleNegation(newboundvalue, setnr, newcomp);
 	} else {
 		Lit tseitin;
-		TsType tp = context()._tseitin;
+		TsType tp = getContext()._tseitin;
 		if (isNeg(_sign)) {
 			tp = invertImplication(tp);
 		}
@@ -495,7 +492,7 @@ Lit AggGrounder::run() const {
 	auto bound = groundbound._domelement;
 
 	// Retrieve the set, note that weights might be changed when handling min and max aggregates.
-	auto tsset = translator()->groundset(setnr);
+	const auto& tsset = translator()->groundset(setnr);
 
 	// Retrieve the value of the bound
 	Weight boundvalue = bound->type() == DET_INT ? (double) bound->value()._int : bound->value()._double;
@@ -510,7 +507,7 @@ Lit AggGrounder::run() const {
 	}
 
 	// Handle specific aggregates.
-	Lit tseitin;
+	auto tseitin = _true;
 	double minpossvalue = truevalue;
 	double maxpossvalue = truevalue;
 	switch (_type) {
@@ -547,111 +544,115 @@ Lit AggGrounder::run() const {
 			}
 		}
 		if (truevalue == 0) {
-			return boundvalue == 0 ? _true : _false;
-		}
-		if (containsneg) {
-			minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
-		}
-		if (containsneg || containszero) {
-			Assert(truevalue != 0);
-			//division is safe (see higher check for truevalue ==0)
-			tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+			tseitin = boundvalue == 0 ? _true : _false;
 		} else {
-			// Finish
-			tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+			if (containsneg) {
+				minpossvalue = (-maxpossvalue < minpossvalue ? -maxpossvalue : minpossvalue);
+			}
+			if (containsneg || containszero) {
+				Assert(truevalue != 0);
+				//division is safe (see higher check for truevalue ==0)
+				tseitin = splitproducts(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+			} else {
+				// Finish
+				tseitin = finish(boundvalue, (boundvalue / truevalue), minpossvalue, maxpossvalue, setnr);
+			}
 		}
 		break;
 	}
-	case AggFunction::MIN:
+	case AggFunction::MIN: {
 		// Compute the minimum possible value of the set.
-		for (size_t n = 0; n < tsset.size();) {
+		litlist lits;
+		for (size_t n = 0; n < tsset.size(); n++) {
 			minpossvalue = (tsset.weight(n) < minpossvalue) ? tsset.weight(n) : minpossvalue;
-			// TODO: what if some set is used in multiple expressions? Then we are changing the set???
-			if (tsset.weight(n) >= truevalue) {
-				tsset.removeLit(n);
-			} else {
-				++n;
+			if (tsset.weight(n) < truevalue) {
+				lits.push_back(tsset.literals()[n]);
 			}
 		}
 		//INVAR: we know that the real value of the aggregate is at most truevalue.
 		if (boundvalue > truevalue) {
 			if (_comp == CompType::EQ || _comp == CompType::LEQ || _comp == CompType::LT) {
-				return isPos(_sign) ? _false : _true;
+				tseitin = isPos(_sign) ? _false : _true;
 			} else {
-				return isPos(_sign) ? _true : _false;
+				tseitin = isPos(_sign) ? _true : _false;
 			}
 		} else if (boundvalue == truevalue) {
 			switch (_comp) {
 			case CompType::EQ:
 			case CompType::LEQ:
-				tseitin = -translator()->reify(tsset.literals(), false, TsType::EQ);
+				tseitin = -translator()->reify(lits, false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::NEQ:
 			case CompType::GT:
-				tseitin = translator()->reify(tsset.literals(), false, TsType::EQ);
+				tseitin = translator()->reify(lits, false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::GEQ:
-				return isPos(_sign) ? _true : _false;
+				tseitin = isPos(_sign) ? _true : _false;
 				break;
 			case CompType::LT:
-				return isPos(_sign) ? _false : _true;
+				tseitin = isPos(_sign) ? _false : _true;
 				break;
 			}
 		} else { //boundvalue < truevalue
-			// Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
-	case AggFunction::MAX:
+	}
+	case AggFunction::MAX: {
 		// Compute the maximum possible value of the set.
-		for (size_t n = 0; n < tsset.size();) {
+		litlist lits;
+		for (size_t n = 0; n < tsset.size(); n++) {
 			maxpossvalue = (tsset.weight(n) > maxpossvalue) ? tsset.weight(n) : maxpossvalue;
-			if (tsset.weight(n) <= truevalue) {
-				tsset.removeLit(n);
-			} else {
-				++n;
+			if (tsset.weight(n) > truevalue) {
+				lits.push_back(tsset.literals()[n]);
 			}
 		}
 		//INVAR: we know that the real value of the aggregate is at least truevalue.
 		if (boundvalue < truevalue) {
 			if (_comp == CompType::NEQ || _comp == CompType::LEQ || _comp == CompType::LT) {
-				return isPos(_sign) ? _true : _false;
+				tseitin = isPos(_sign) ? _true : _false;
 			} else {
-				return isPos(_sign) ? _false : _true;
+				tseitin = isPos(_sign) ? _false : _true;
 			}
 		} else if (boundvalue == truevalue) {
 			switch (_comp) {
 			case CompType::EQ:
 			case CompType::GEQ:
-				tseitin = -translator()->reify(tsset.literals(), false, TsType::EQ);
+				tseitin = -translator()->reify(lits, false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::NEQ:
 			case CompType::LT:
-				tseitin = translator()->reify(tsset.literals(), false, TsType::EQ);
+				tseitin = translator()->reify(lits, false, TsType::EQ);
 				tseitin = isPos(_sign) ? tseitin : -tseitin;
 				break;
 			case CompType::LEQ:
-				return isPos(_sign) ? _true : _false;
+				tseitin = isPos(_sign) ? _true : _false;
 				break;
 			case CompType::GT:
-				return isPos(_sign) ? _false : _true;
+				tseitin = isPos(_sign) ? _false : _true;
 				break;
 			}
 		} else { //boundvalue > truevalue
-			// Finish
 			tseitin = finish(boundvalue, boundvalue, minpossvalue, maxpossvalue, setnr);
 		}
 		break;
 	}
+	}
 	return tseitin;
 }
 
-void AggGrounder::run(ConjOrDisj& formula) const {
+void AggGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	formula.setType(Conn::CONJ);
-	formula.literals.push_back(run()); // TODO can do better?
+	formula.literals.push_back(run());
+}
+
+ClauseGrounder::ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct)
+		: 	FormulaGrounder(grounding, ct),
+			_sign(sign),
+			_conn(conj ? Conn::CONJ : Conn::DISJ) {
 }
 
 bool ClauseGrounder::isRedundantInFormula(Lit l) const {
@@ -691,7 +692,7 @@ bool ClauseGrounder::decidesFormula(Lit lit) const {
 }
 
 TsType ClauseGrounder::getTseitinType() const {
-	return isNegative()?invertImplication(context()._tseitin):context()._tseitin;
+	return isNegative() ? invertImplication(getContext()._tseitin) : getContext()._tseitin;
 }
 
 Lit ClauseGrounder::getReification(const ConjOrDisj& formula, TsType tseitintype) const {
@@ -715,31 +716,29 @@ Lit ClauseGrounder::getOneLiteralRepresenting(const ConjOrDisj& formula, TsType 
 
 // Takes context into account!
 Lit ClauseGrounder::createTseitin(const ConjOrDisj& formula, TsType type) const {
-	Lit tseitin;
 	bool asConjunction = formula.getType() == Conn::CONJ;
 	if (negativeDefinedContext()) {
 		asConjunction = not asConjunction;
 	}
-	tseitin = translator()->reify(formula.literals, asConjunction, type);
-	return tseitin;
+	return translator()->reify(formula.literals, asConjunction, type);
 }
 
-void ClauseGrounder::run(ConjOrDisj& formula) const {
-	internalRun(formula);
+void ClauseGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+	internalClauseRun(formula, request);
 	if (isNegative()) {
 		formula.literals = {-getReification(formula, getTseitinType())};
 	}
 }
 
-FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula) const {
-	auto origvalue = subgrounder->context()._conjunctivePathFromRoot;
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request) const {
+	auto origvalue = subgrounder->getContext()._conjunctivePathFromRoot;
 	if(conjFromRoot && considerAsConjunctiveWithSign){
 		subgrounder->setConjUntilRoot(true);
 	}
 	Assert(formula.getType()==connective());
 	_subformula.literals.clear();
 	auto& lits = _subformula.literals;
-	subgrounder->wrapRun(_subformula);
+	subgrounder->run(_subformula, request);
 	if (lits.size() == 0) {
 		lits.push_back(_subformula.getType() == Conn::CONJ ? _true : _false);
 	}
@@ -781,7 +780,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			} else {
 				formula.literals.push_back(
 						getReification(_subformula,
-								subgrounder->context()._tseitin));
+								subgrounder->getContext()._tseitin));
 			}
 		}
 	}
@@ -791,14 +790,22 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	return result;
 }
 
-BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct)
+BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<FormulaGrounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct)
 		: 	ClauseGrounder(grounding, sign, conj, ct),
 			_subgrounders(sub) {
+
+	std::vector<Formula*> formulas;
+	for (auto sg : _subgrounders) {
+		addAll(_varmap, sg->getVarmapping());
+		formulas.push_back(sg->getFormula()->cloneKeepVars());
+	}
+	setFormula(new BoolForm(sign, conj, formulas, { }));
+
 	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
 	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
 		size = size + (*i)->getMaxGroundSize();
 	}
-	setMaxGroundSize(size); // TODO move
+	setMaxGroundSize(size);
 }
 
 BoolGrounder::~BoolGrounder() {
@@ -806,12 +813,10 @@ BoolGrounder::~BoolGrounder() {
 }
 
 // NOTE: Optimized to avoid looping over the formula after construction
-void BoolGrounder::internalRun(ConjOrDisj& formula) const {
+void BoolGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL) {
-			pushtab();
-		}
+		pushtab();
 	}
 	formula.setType(connective());
 	for (auto grounder : _subgrounders) {
@@ -820,38 +825,48 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 		if(grounder==_subgrounders.back() && formula.literals.size()==0 && isPositive()){
 			considerAsConjunctiveWithSign = true;
 		}
-		if (runSubGrounder(grounder, context()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula) == FormStat::DECIDED) {
-			if (verbosity() > 2 and _origform != NULL) {
-				poptab();
-			}
+		if (runSubGrounder(grounder, getContext()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula, request) == FormStat::DECIDED) {
 			return;
 		}
-		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+		if(getContext()._conjunctivePathFromRoot && conjunctiveWithSign()){
 			for(auto lit: formula.literals){
 				getGrounding()->add(GroundClause{lit});
 			}
 			formula.literals.clear();
 		}
 	}
-	if (verbosity() > 2 and _origform != NULL) {
+	if (verbosity() > 2) {
 		poptab();
 	}
 }
 
 void BoolGrounder::put(std::ostream& output) const {
-	if (_origform != NULL) {
+	if (hasFormula()) {
 		FormulaGrounder::put(output);
 	} else {
 		printList(output, getSubGrounders(), connective() == Conn::CONJ ? " & " : " | ");
 	}
 }
 
-QuantGrounder::QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-		const GroundingContext& ct)
+QuantGrounder::QuantGrounder(LazyGroundingManager* manager, AbstractGroundTheory* grounding, FormulaGrounder* sub, InstGenerator* gen, InstChecker* checker,
+		const GroundingContext& ct, SIGN sign, QUANT quant, const std::set<const DomElemContainer*>& generates, const tablesize& quantsize)
 		: 	ClauseGrounder(grounding, sign, quant == QUANT::UNIV, ct),
 			_subgrounder(sub),
 			_generator(gen),
-			_checker(checker) {
+			_checker(checker),
+			_generatescontainers(generates),
+			_manager(manager),
+			replacementaftersplit(NULL) {
+
+	addAll(_varmap, sub->getVarmapping());
+	varset generatedvars;
+	for (auto var : sub->getFormula()->freeVars()) {
+		if (contains(generates, _varmap.at(var))) {
+			generatedvars.insert(var);
+		}
+	}
+	setFormula(new QuantForm(sign, quant, generatedvars, sub->getFormula()->cloneKeepVars(), { }));
+	setMaxGroundSize(quantsize * sub->getMaxGroundSize());
 }
 
 QuantGrounder::~QuantGrounder() {
@@ -860,38 +875,179 @@ QuantGrounder::~QuantGrounder() {
 	delete (_checker);
 }
 
-void QuantGrounder::internalRun(ConjOrDisj& formula) const {
+bool QuantGrounder::groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequest& request) {
+	if (_checker->check()) {
+		formula.literals = litlist { getContext().gentype == GenType::CANMAKETRUE ? _true : _false };
+		if (verbosity() > 2) {
+			poptab();
+			clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
+		}
+		return true;
+	}
+	if (runSubGrounder(_subgrounder, getContext()._conjunctivePathFromRoot, conjunctiveWithSign(), formula, request) == FormStat::DECIDED) {
+		if (verbosity() > 2) {
+			poptab();
+		}
+		return true;
+	}
+	return false;
+}
+
+// TODO should prevent firing of the remaining sentence in several cases
+// FIXME should NOT use implication when modelequivalence is necessary! But might be solved by having the other solution to invalidate models based on the output voc?!
+// TODO the outputvoc is not really the solution either, as it can be infinite while most of it can be constructed (just not when it is a definition).
+int splittingcount = 0;
+bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request, LazyGroundingManager* manager,
+		const var2dommap& varmapping, const containerset& instantiated, set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context,
+		bool alsoinstantiate) {
+	if (context._monotone == Context::BOTH) {
+		return false;
+	}
+	if (not getOption(SATISFIABILITYDELAY)) {
+		return false;
+	}
+	auto size = log(toDouble(getMaxGroundSize()));
+	size = size<0?0:size;
+//	if(size/log(2)<12){
+//		cerr <<"Not large enough\n";
+//		return false;
+//	}
+//	std::map<Variable*, Variable*> old2newvars;
+//	varset newvars;
+	auto qf = dynamic_cast<QuantForm*>(getFormula());
+	Assert(qf!=NULL);
+/*	for(auto var : qf->freeVars()){
+		auto table = new SortTable(new EnumeratedInternalSortTable());
+		auto domcontainer = getVarmapping().at(var);
+		table->add(domcontainer->get());
+		auto newsort = new Sort(table);
+		newsort->addParent(var->sort());
+		auto newvar = new Variable(newsort);
+		newvars.insert(newvar);
+		old2newvars[var] = newvar;
+	}*/
+//	auto newsub = qf->subformula()->clone(old2newvars); // Note: only replaces free variables!
+//	auto newqf = new QuantForm(qf->sign(), qf->quant(), newvars, newsub, qf->pi());
+
+	auto delay = FormulaUtils::findDelay(qf, getVarmapping(), manager);
+	if (delay.get() == NULL) {
+		return false;
+	}else if(getContext()._conjPathUntilNode){
+		manager->add(this, delay);
+		return true;
+	}
+//	clog <<"Could delay on " <<toString(delay) <<"\n";
+
+	auto grounding = manager->getGrounding();
+
+	vector<Sort*> sorts;
+	varset vars;
+	vector<TermGrounder*> origtermgrounders;
+	vector<Term*> terms;
+	vector<const DomElemContainer*> origcontainers;
+	vector<SortTable*> tables;
+	addAll(vars, qf->quantVars());
+	addAll(vars, qf->freeVars());
+	for(auto var: qf->freeVars()){
+		sorts.push_back(var->sort());
+		auto inter = manager->getStructure()->inter(var->sort());
+		tables.push_back(inter);
+		origtermgrounders.push_back(new VarTermGrounder(grounding->translator(), inter, var, getVarmapping().at(var)));
+		terms.push_back(new VarTerm(var, TermParseInfo()));
+		origcontainers.push_back(getVarmapping().at(var));
+	}
+
+	auto t = new Predicate(sorts);
+	manager->getStructure()->vocabulary()->add(t);
+
+	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, t, origtermgrounders, tables, context);
+
+	auto subqf = qf->subformula()->cloneKeepVars();
+	auto tseitinlhs = new PredForm(SIGN::NEG, t, terms, FormulaParseInfo());
+	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
+	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
+	auto newgrounder = GrounderFactory::createSentenceGrounder(manager, newqf);
+//	cerr <<"Looking for delay in " <<toString(newqf) <<"\n";
+	delay = FormulaUtils::findDelay(newqf, newgrounder->getVarmapping(), manager);
+	Assert(delay.get()!=NULL);
+//	clog <<"Delaying after split on " <<toString(delay) <<"\n";
+	manager->add(newgrounder, delay);
+#warning Probably bug in equivalence / definitional context as an implication is generated?
+
+	return true;
+}
+
+void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL) {
-			pushtab();
-		}
+		pushtab();
 	}
+
 	formula.setType(connective());
-	for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
-		CHECKTERMINATION;
-		if (_checker->check()) {
-			formula.literals = litlist {context().gentype == GenType::CANMAKETRUE ? _true : _false};
-			if (verbosity() > 2 and _origform != NULL) {
-				poptab();
-				clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
+
+	if(replacementaftersplit==NULL){
+		uint nbfound = 0; // Checker whether already instantiated by lazy grounding
+		set<const DomElemContainer*> instantiatedvars;
+		for (auto container : request.instantiation) {
+			if (contains(_generatescontainers, container)) {
+				instantiatedvars.insert(container);
+				nbfound++;
 			}
-			return;
 		}
-		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, conjunctiveWithSign(), formula) == FormStat::DECIDED) {
-			if (verbosity() > 2 and _origform != NULL) {
-				poptab();
+
+		/**
+		 * Either:
+		 * 		all variables instantiated
+		 * 			conjunctiveUntilNode: ground the child for the instantiation at hand and return
+		 * 			otherwise: ground the child for the instantiation at hand and add a tseitin for the remainder
+		 * 		some variables instantiated
+		 * 			currently handled as the one below. It can be optimized, but should be handled earlier, preventing these cases by rewriting.
+		 * 		no variables instantiated
+		 * 			find a new delay D for this formula F
+		 * 			if one exists: replace the grounding with a new tseitin symbol T and add the sentence T => F, delayed on D
+		 * 							and which first sets the correct variable instantiation for all earlier quantified variables
+		 * 			if none exists: generate all
+		 */
+		bool handledcheap = false;
+		if (nbfound == _generatescontainers.size()) {
+			if (getContext()._conjPathUntilNode) {
+				auto decided = groundAfterGeneration(formula, request);
+				if(not decided){
+					// By default: request.groundersdone is true, so the lazy grounding will stop then
+					request.groundersdone = false;
+				}
+				handledcheap = true;
+			} else if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
+				handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), true);
 			}
-			return;
+		} else if (nbfound == 0){
+			handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), false);
 		}
-		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+
+	#warning why is dropping the grounders when done incorrect?
+		//request.groundersdone = false;
+
+		if (not handledcheap) {
+			for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+				CHECKTERMINATION;
+				if(groundAfterGeneration(formula, request)) {
+					return;
+				}
+			}
+		}
+		if(getContext()._conjunctivePathFromRoot && conjunctiveWithSign()){
 			for(auto lit: formula.literals){
 				getGrounding()->add(GroundClause{lit});
 			}
 			formula.literals.clear();
 		}
 	}
-	if (verbosity() > 2 and _origform != NULL) {
+
+	if(replacementaftersplit!=NULL){
+		replacementaftersplit->Grounder::run(formula, request);
+	}
+
+	if (verbosity() > 2) {
 		poptab();
 	}
 }
@@ -900,6 +1056,11 @@ EquivGrounder::EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* l
 		: 	ClauseGrounder(grounding, sign, true, ct),
 			_leftgrounder(lg),
 			_rightgrounder(rg) {
+
+	addAll(_varmap, lg->getVarmapping());
+	addAll(_varmap, rg->getVarmapping());
+	setFormula(new EquivForm(sign, lg->getFormula()->cloneKeepVars(), rg->getFormula()->cloneKeepVars(), { }));
+
 	auto lsize = lg->getMaxGroundSize();
 	auto rsize = rg->getMaxGroundSize();
 	setMaxGroundSize(lsize + rsize);
@@ -910,14 +1071,10 @@ EquivGrounder::~EquivGrounder() {
 	delete (_rightgrounder);
 }
 
-void EquivGrounder::internalRun(ConjOrDisj& formula) const {
-	//Assert(not negated); I think this is not needed.
+void EquivGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	if (verbosity() > 2) {
 		printorig();
-		if (_origform != NULL) {
-			pushtab();
-		}
-
+		pushtab();
 		clog << tabs() << "Current formula: " << (isNegative() ? "~" : "");
 		_leftgrounder->printorig();
 		clog << "\n";
@@ -930,12 +1087,12 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	ConjOrDisj leftformula, rightformula;
 	leftformula.setType(connective());
 	rightformula.setType(connective());
-	Assert(_leftgrounder->context()._monotone==Context::BOTH);
-	Assert(_rightgrounder->context()._monotone==Context::BOTH);
-	Assert(_leftgrounder->context()._tseitin==TsType::EQ|| _leftgrounder->context()._tseitin==TsType::RULE);
-	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
-	runSubGrounder(_leftgrounder, false, conjunctiveWithSign(), leftformula);
-	runSubGrounder(_rightgrounder, false, conjunctiveWithSign(), rightformula);
+	Assert(_leftgrounder->getContext()._monotone==Context::BOTH);
+	Assert(_rightgrounder->getContext()._monotone==Context::BOTH);
+	Assert(_leftgrounder->getContext()._tseitin==TsType::EQ|| _leftgrounder->getContext()._tseitin==TsType::RULE);
+	Assert(_rightgrounder->getContext()._tseitin==TsType::EQ|| _rightgrounder->getContext()._tseitin==TsType::RULE);
+	runSubGrounder(_leftgrounder, false, conjunctiveWithSign(), leftformula, request);
+	runSubGrounder(_rightgrounder, false, conjunctiveWithSign(), rightformula, request);
 	auto left = getEquivalentReification(leftformula, getTseitinType());
 	auto right = getEquivalentReification(rightformula, getTseitinType());
 
@@ -963,7 +1120,7 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 		//									2: (A or ~B) and (~A or B) => already CNF => much better!
 		litlist aornotb = { left, -right };
 		litlist notaorb = { -left, right };
-		if (context()._conjunctivePathFromRoot) {
+		if (getContext()._conjunctivePathFromRoot) {
 			if (isPositive()) {
 				getGrounding()->add(aornotb);
 				getGrounding()->add(notaorb);
@@ -974,12 +1131,12 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 				formula.literals = litlist { _false };
 			}
 		} else {
-			auto ts1 = translator()->reify(aornotb, false, context()._tseitin);
-			auto ts2 = translator()->reify(notaorb, false, context()._tseitin);
+			auto ts1 = translator()->reify(aornotb, false, getContext()._tseitin);
+			auto ts2 = translator()->reify(notaorb, false, getContext()._tseitin);
 			formula.literals = litlist { ts1, ts2 };
 		}
 	}
-	if (verbosity() > 2 and _origform != NULL) {
+	if (verbosity() > 2) {
 		poptab();
 	}
 }

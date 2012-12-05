@@ -58,6 +58,7 @@
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
 #include "transformations/RemoveQuantificationsOverSort.hpp"
+#include "information/FindDelayPredForms.hpp"
 #include "information/ContainedVariables.hpp"
 
 using namespace std;
@@ -220,6 +221,11 @@ bool containsAggTerms(Formula* f) {
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
+}
+
+std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager) {
+	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
+	return transform<FindDelayPredForms, std::shared_ptr<Delay>, const Formula, const var2dommap&, const LazyGroundingManager*>(f, varmap, manager);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {

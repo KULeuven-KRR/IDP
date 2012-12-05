@@ -204,13 +204,12 @@ Domain* TypedFOPropagator<Factory, Domain>::addToDisjunction(Domain* disjunction
 template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, Variable* var) {
 	Variable* v = new Variable(var->name(), var->sort(), var->pi());
-	varset newqvars = { v };
 	map<Variable*, Variable*> mvv;
 	mvv[var] = v;
 
-	Domain* cl = _factory->substitute(exists, mvv);
+	auto cl = _factory->substitute(exists, mvv);
 	delete (exists);
-	Domain* q = _factory->exists(cl, newqvars);
+	auto q = _factory->exists(cl, {v});
 	delete (cl);
 	return q;
 }
@@ -218,12 +217,11 @@ Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, Variable
 template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, Variable* var) {
 	Variable* v = new Variable(var->name(), var->sort(), var->pi());
-	varset newqvars = { v };
 	map<Variable*, Variable*> mvv;
 	mvv[var] = v;
-	Domain* cl = _factory->substitute(forall, mvv);
+	auto cl = _factory->substitute(forall, mvv);
 	delete (forall);
-	Domain* q = _factory->forall(cl, newqvars);
+	auto q = _factory->forall(cl, {v});
 	delete (cl);
 	return q;
 }

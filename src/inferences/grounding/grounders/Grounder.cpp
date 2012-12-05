@@ -86,21 +86,29 @@ int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-		: 	_grounding(gt),
-			_context(context),
-			_maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
+		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)), _formula(NULL) {
 }
 
 GroundTranslator* Grounder::translator() const {
 	return getGrounding()->translator();
 }
 
-bool Grounder::toplevelRun() const {
-	bool unsat = false;
+Grounder::~Grounder() {
+	if(_formula!=NULL){
+		deleteDeep(_formula);
+	}
+}
 
+// Passes ownership!!!
+void Grounder::setFormula(Formula* f) {
+	_formula = f;
+}
+
+bool Grounder::toplevelRun(LazyGroundingRequest& request) {
+	auto unsat = false;
 	ConjOrDisj formula;
 	try {
-		wrapRun(formula);
+		run(formula, request);
 		addToGrounding(getGrounding(), formula);
 		getGrounding()->closeTheory(); // FIXME should move or be reentrant, as multiple grounders write to the same theory!
 	} catch (UnsatException& ex) {
@@ -110,8 +118,7 @@ bool Grounder::toplevelRun() const {
 		unsat = true;
 	}
 
-	addToFullGroundSize(getMaxGroundSize());
-	if (verbosity() > 0) {
+	if (verbosity() > 1) {
 		clog << "Already grounded " << print(groundedAtoms()) << " for a full grounding of " << print(getMaxGroundSize()) << "\n";
 	}
 	return unsat;
@@ -119,12 +126,12 @@ bool Grounder::toplevelRun() const {
 
 #include <inferences/grounding/grounders/FormulaGrounders.hpp>
 
-// TODO unfinished code
-void Grounder::wrapRun(ConjOrDisj& formula) const {
+// TODO unfinished code for printing the timings of a grounder
+void Grounder::run(ConjOrDisj& formula, LazyGroundingRequest& request){
 	_level++;
 	auto start = clock();
 	auto previousgroundsize = Grounder::groundedAtoms();
-	run(formula);
+	internalRun(formula, request);
 	if(verbosity()>0 && _level==3 && getMaxGroundSize()>10000){
 		clog <<"Formula " <<(isa<FormulaGrounder>(*this)?toString(this):(string)"unprintable grounder") <<"\n";
 		clog <<"\tResulted in " <<Grounder::groundedAtoms()-previousgroundsize <<" atoms.\n";
@@ -133,9 +140,9 @@ void Grounder::wrapRun(ConjOrDisj& formula) const {
 	_level--;
 }
 
-Lit Grounder::groundAndReturnLit() const {
+Lit Grounder::groundAndReturnLit(LazyGroundingRequest& request) {
 	ConjOrDisj formula;
-	run(formula);
+	internalRun(formula, request);
 	if (formula.literals.size() == 0) {
 		if (formula.getType() == Conn::DISJ) {
 			return _false;
@@ -145,7 +152,7 @@ Lit Grounder::groundAndReturnLit() const {
 	} else if (formula.literals.size() == 1) {
 		return formula.literals.back();
 	} else {
-		return getGrounding()->translator()->reify(formula.literals, formula.getType() == Conn::CONJ, context()._tseitin);
+		return getGrounding()->translator()->reify(formula.literals, formula.getType() == Conn::CONJ, getContext()._tseitin);
 	}
 }
 

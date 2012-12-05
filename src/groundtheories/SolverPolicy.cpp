@@ -17,6 +17,7 @@
 #include "errorhandling/UnsatException.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
+#include "inferences/grounding/LazyGroundingManager.hpp"
 
 #include "inferences/SolverConnection.hpp"
 
@@ -57,7 +58,7 @@ void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAdd(DefId defnr, PCGroundRule* rule) {
+void SolverPolicy<Solver>::polAdd(DefId defnr, const PCGroundRule& rule) {
 	adder.add(defnr, rule);
 }
 
@@ -74,7 +75,7 @@ void SolverPolicy<Solver>::polAdd(DefId defnr, Lit head, AggGroundRule* body, bo
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 	Assert(body->type() != TsType::RULE);
-	//FIXME getIDForUndefined() should be replaced by the number the SOLVER takes as undefined
+	//TODO getIDForUndefined() should be replaced by the number the SOLVER takes as undefined
 	polAddAggregate(getIDForUndefined(), head, body->bound(), body->lower(), body->setnr(), body->aggtype(), body->type());
 }
 
@@ -103,7 +104,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	adder.add(tseitin, body);
 }
 
-class LazyRuleMon: public MinisatID::LazyGroundingCommand {
+class LazyRuleMon: public MinisatID::LazyGroundingCommand{
 private:
 	Lit lit;
 	ElementTuple args;
@@ -127,21 +128,6 @@ public:
 	}
 };
 
-template<class Solver>
-void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delaylit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) {
-	auto mon = new LazyRuleMon(delaylit, args, grounders);
-	auto literal = adder.createLiteral(delaylit);
-	auto value = MinisatID::Value::True;
-	if (context == Context::BOTH) {
-		value = MinisatID::Value::Unknown;
-	} else if (context == Context::POSITIVE) { // In a positive context, should watch when the literal becomes false, or it's negation becomes true
-		value = MinisatID::Value::False;
-	}
-	MinisatID::LazyGroundLit lc(literal.getAtom(), value, mon);
-	extAdd(getSolver(), lc);
-	CHECKUNSAT;
-}
-
 class LazyClauseMon: public MinisatID::LazyGrounder {
 private:
 	LazyInstantiation* inst;
@@ -156,6 +142,22 @@ public:
 	}
 };
 
+MinisatID::ImplicationType convert(TsType type){
+	auto result = MinisatID::ImplicationType::EQUIVALENT;
+	switch(type){
+	case TsType::EQ:
+	case TsType::RULE:
+		break;
+	case TsType::IMPL:
+		result = MinisatID::ImplicationType::IMPLIES;
+		break;
+	case TsType::RIMPL:
+		result = MinisatID::ImplicationType::IMPLIEDBY;
+		break;
+	}
+	return result;
+}
+
 template<class Solver>
 void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 	adder.addLazyAddition(glist, ID);
@@ -163,16 +165,15 @@ void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 template<class Solver>
 void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
 	auto mon = new LazyClauseMon(inst);
-	auto watchboth = type == TsType::RULE || type == TsType::EQ;
-	auto lit = adder.createLiteral(inst->residual);
-	if (type == TsType::RIMPL) {
-		lit = not lit;
-	}
-	MinisatID::Implication implic(getDefConstrID(), lit, watchboth ? MinisatID::ImplicationType::EQUIVALENT : MinisatID::ImplicationType::IMPLIES,
-			MinisatID::litlist { }, conjunction);
-	extAdd(getSolver(), MinisatID::LazyGroundImpl(getDefConstrID(), implic, mon));
+	auto lit = createLiteral(inst->residual);
+	extAdd(getSolver(),
+			MinisatID::LazyGroundImpl(getDefConstrID(),
+					MinisatID::Implication(getDefConstrID(), lit, convert(type),
+							MinisatID::litlist { }, conjunction), mon));
 	CHECKUNSAT;
 }
+
+template<class Solver>
 
 class LazyLitMon: public MinisatID::LazyGroundingCommand {
 private:
@@ -184,7 +185,9 @@ public:
 	}
 
 	virtual void requestGrounding(MinisatID::Value) {
-		Assert(not isAlreadyGround());
+		if(isAlreadyGround()) {
+			return; // FIXME when can this happen?
+		}
 		bool temp;
 		inst->notifyGroundingRequested(-1, false, temp);
 		notifyGrounded();
@@ -193,18 +196,69 @@ public:
 template<class Solver>
 void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType type) {
 	auto mon = new LazyLitMon(inst);
-	auto watchboth = type == TsType::RULE || type == TsType::EQ;
+	auto watchboth = type == TsType::EQ;
+	if(not useUFSAndOnlyIfSem()){
+		watchboth |= type == TsType::RULE;
+	}
 	auto lit = adder.createLiteral(inst->residual);
 	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
-	auto value = MinisatID::Value::True;
-	if (watchboth) {
-		value = MinisatID::Value::Unknown;
-	} else if (lit.hasSign()) {
-		value = MinisatID::Value::False;
+	if(MinisatID::isNegative(lit) || watchboth){
+		extAdd(getSolver(), MinisatID::LazyGroundLit(MinisatID::var(lit), MinisatID::Value::False, mon));
 	}
-	extAdd(getSolver(), MinisatID::LazyGroundLit(lit.getAtom(), value, mon));
+	if(MinisatID::isPositive(lit) || watchboth){
+		extAdd(getSolver(), MinisatID::LazyGroundLit(MinisatID::var(lit), MinisatID::Value::True, mon));
+	}
+	CHECKUNSAT;
+}
+
+class LazyDelayMon: public MinisatID::LazyGroundingCommand {
+private:
+	Atom atom;
+	LazyGroundingManager* manager;
+public:
+	LazyDelayMon(Atom atom, LazyGroundingManager* manager)
+			: atom(atom), manager(manager) {
+	}
+
+	virtual void requestGrounding(MinisatID::Value currentValue) {
+		Assert(not isAlreadyGround());
+		switch (currentValue) {
+		case MinisatID::Value::True:
+			manager->notifyBecameTrue(atom);
+			break;
+		case MinisatID::Value::False:
+			manager->notifyBecameTrue(-atom);
+			break;
+		case MinisatID::Value::Unknown:
+			break;
+		}
+	}
+};
+
+MinisatID::Value convert(TruthValue value){
+	auto v = MinisatID::Value::True;
+	switch (value) {
+	case TruthValue::True:
+		v = MinisatID::Value::True;
+		break;
+	case TruthValue::Unknown:
+		v = MinisatID::Value::Unknown;
+		break;
+	case TruthValue::False:
+		v = MinisatID::Value::False;
+		break;
+	}
+	return v;
+}
+
+template<class Solver>
+void SolverPolicy<Solver>::polNotifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager) {
+	Assert(watches!=TruthValue::Unknown);
+	auto mon = new LazyDelayMon(atom, manager);
+	MinisatID::LazyGroundLit lc(atom, convert(watches), mon);
+	extAdd(getSolver(), lc);
 	CHECKUNSAT;
 }
 
@@ -215,8 +269,19 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 		for(auto litpair:symmap){
 			symdata.insert({adder.createLiteral(litpair.first), adder.createLiteral(litpair.second)});
 		}
-		getSolver().add(MinisatID::Symmetry(symdata));
+		extAdd(getSolver(), MinisatID::Symmetry(symdata));
+		CHECKUNSAT;
 	}
+}
+
+template<class Solver>
+void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
+	MinisatID::TwoValuedRequirement req( { });
+	for (auto lit : lits) {
+		req.atoms.push_back(createAtom(lit));
+	}
+	extAdd(getSolver(), req);
+	CHECKUNSAT;
 }
 
 class RealElementGrounder: public MinisatID::LazyAtomGrounder {

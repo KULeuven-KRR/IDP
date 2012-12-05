@@ -12,6 +12,8 @@
 #include "ModelExpansion.hpp"
 #include "inferences/SolverConnection.hpp"
 
+#include "structure/StructureComponents.hpp"
+
 #include "inferences/grounding/Grounding.hpp"
 #include "inferences/SolverInclude.hpp"
 #include "groundtheories/GroundTheory.hpp"
@@ -55,9 +57,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 		throw IdpException("Modelexpansion requires that the minimization term and the structure range over the same vocabulary.");
 	}
 	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor));
-	if (outputvoc != NULL) {
-		m->setOutputVocabulary(outputvoc);
-	}
+	m->setOutputVocabulary(outputvoc);
 	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
 		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.");
 	}
@@ -73,13 +73,14 @@ ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minim
 }
 
 void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
-	if (VocabularyUtils::isSubVocabulary(v, _theory->vocabulary())) {
+	if (not VocabularyUtils::isSubVocabulary(v, _theory->vocabulary())) {
 		throw IdpException("The output-vocabulary of model expansion can only be a subvocabulary of the theory.");
 	}
 	_outputvoc = v;
 }
 
-Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc);
+Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
+		Vocabulary* outputvoc);
 
 class SolverTermination: public TerminateMonitor {
 private:
@@ -95,12 +96,15 @@ public:
 
 MXResult ModelExpansion::expand() const {
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
-	auto inputvoc = _theory->vocabulary();
+	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
-    DefinitionUtils::splitDefinitions(clonetheory);
-	auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, newstructure, _minimizeterm,  _tracemonitor,
-			getOption(IntType::NBMODELS) != 1, data, _outputvoc);
+	DefinitionUtils::splitDefinitions(clonetheory);
+	auto groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor,
+			getOption(IntType::NBMODELS) != 1, data);
+	auto grounding = groundingAndExtender.first;
+	auto extender = groundingAndExtender.second;
+
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
@@ -151,18 +155,18 @@ MXResult ModelExpansion::expand() const {
 				logActionAndTime(ss.str());
 			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
-				solutions.push_back(handleSolution(newstructure, **i, grounding, inputvoc));
+				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc));
 			}
 		}
 	} else {
 		auto abstractsolutions = mx->getSolutions();
-		if (getOption(IntType::VERBOSE_SOLVING)  > 0) {
+		if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 			stringstream ss;
 			ss <<"Solver generated " << abstractsolutions.size() << " model(s): ";
 			logActionAndTime(ss.str());
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
-			solutions.push_back(handleSolution(newstructure, **model, grounding, inputvoc));
+			solutions.push_back(handleSolution(newstructure, **model, grounding, extender, targetvoc));
 		}
 	}
 
@@ -178,11 +182,22 @@ MXResult ModelExpansion::expand() const {
 	return result;
 }
 
-Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
+Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
+		Vocabulary* outputvoc) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->translator(), newsolution);
-	newsolution->changeVocabulary(inputvoc); // Project onto input vocabulary
+	if (extender != NULL && useLazyGrounding()) {
+		/*if(getOption(VERBOSE_GROUNDING)>0){
+			clog <<"Structure before extension = \n" <<toString(newsolution) <<"\n";
+		}*/
+		extender->extendStructure(newsolution);
+		newsolution->clean();
+		if(getOption(VERBOSE_GROUNDING)>1){
+			clog <<"Extended structure = \n" <<toString(newsolution) <<"\n";
+		}
+	}
+	newsolution->changeVocabulary(outputvoc);
 	newsolution->clean();
 	Assert(newsolution->isConsistent());
 	return newsolution;

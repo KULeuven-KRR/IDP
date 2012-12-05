@@ -14,6 +14,23 @@ procedure satnoboundslong(){
 	return run()
 }
 
+// NOTE: only based on lazy tseitin delaying!!!!
+procedure satlazy(){
+	stdoptions.tseitindelay = true
+	stdoptions.timeout = 10
+	return run()
+}
+
+// NOTE: never enable delaying here which depends on well-founded definitions!
+procedure satverylazy(){
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation=false
+	stdoptions.satdelay=true
+	stdoptions.tseitindelay=true
+	stdoptions.timeout = 10
+	return run()
+}
+
 procedure satwithbounds(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -71,13 +88,15 @@ procedure satwithsymm(){
 }
 
 procedure run() {
+	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=0
 	start = os.clock()
-	solution = onemodel(T,S)
+	stdoptions.nbmodels=1
+	solution = modelexpand(T,S,Vout)
 	io.stderr:write("Mx took "..os.clock()-start.." sec\n")
 	
-	if(solution==nil) then
+	if(solution==nil or #solution~=1) then
 		if(getExpectedAModel()) then
 			io.stderr:write("Found UNSAT, expected SAT.\n")
 			return 0
@@ -87,8 +106,10 @@ procedure run() {
 		end
 	end
 
-	if(#modelexpand(T, solution)==0) then
+	sols = modelexpand(T, solution[1], Vout)
+	if(sols==nil or #sols==0) then
 		io.stderr:write("Found an invalid partial model.\n")
+		io.stderr:write(tostring(solution))
 		return 0
 	end
 	io.stderr:write("Found SAT, expected SAT.\n")

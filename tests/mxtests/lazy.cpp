@@ -13,8 +13,16 @@
 
 namespace Tests {
 
-TEST_P(MXnbTest, DISABLED_DoesMXWithLazyTseitinDelaying) {
+TEST_P(MXnbTest, DoesMXWithLazyTseitinDelaying) {
 	runTests("modelexpansion.idp", GetParam(), "mxlazy()");
+}
+
+TEST_P(MXnbTest, DoesMXWithLazyCPTseitinDelaying) {
+	runTests("modelexpansion.idp", GetParam(), "mxlazycp()");
+}
+
+TEST_P(MXsatTest, DoesSatMXWithLazyTseitinDelaying) {
+	runTests("satisfiability.idp", GetParam(), "satlazy()");
 }
 
 }

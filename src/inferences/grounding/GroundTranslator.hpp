@@ -59,7 +59,6 @@ struct CheckerInfo {
 struct SymbolInfo {
 	PFSymbol* symbol;
 	Tuple2AtomMap tuple2atom;
-	std::vector<DelayGrounder*> assocGrounders;
 	CheckerInfo* checkers;
 
 	std::map<std::vector<GroundTerm>, Lit > lazyatoms2lit;
@@ -110,10 +109,13 @@ struct CPCompare {
  * 		for an input atom, what symbol it refers to and what elementtuple
  * 		for an atom which is neither, should not store anything, except that it is not stored.
  */
+class LazyGroundingManager;
+
 class GroundTranslator {
 private:
 	StructureInfo _structure;
 	AbstractGroundTheory* _grounding; //!< The ground theory that will be produce
+	LazyGroundingManager* _groundingmanager;
 
 	// PROPOSITIONAL SYMBOLS
 	// SymbolID 2 Symbol + Tuple2Tseitin + grounders
@@ -161,6 +163,10 @@ public:
 
 	~GroundTranslator();
 
+	void addMonitor(LazyGroundingManager* manager){
+		_groundingmanager = manager;
+	}
+
 	Vocabulary* vocabulary() const;
 
 	SymbolOffset addSymbol(PFSymbol* pfs);
@@ -181,15 +187,29 @@ public:
 
 	TruthValue checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign);
 
-	Lit translateReduced(PFSymbol*, const ElementTuple&, bool recursive);
+	Lit translateNonReduced(PFSymbol* symbol, const ElementTuple& args);
+	Lit translateReduced(PFSymbol* symbol, const ElementTuple& args, bool recursive);
+	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
+private:
+	std::map<bool, std::map<bool, std::map<int, std::map<ElementTuple, Lit> > > > knownlits;
+	Lit translate(const SymbolOffset& offset, const ElementTuple&, bool reduced);
+public:
 
 	void addKnown(VarId id);
 
-	/*
-	 * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
-	 * 			or first search for the literal, and run the checkers if it was not yet grounded.
-	 */
-	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
+	bool hasSymbol(PFSymbol* symbol) const {
+		return getSymbol(symbol).offset!=-1;
+	}
+
+	const Tuple2AtomMap& getIntroducedLiteralsFor(PFSymbol* symbol) const{
+		auto offset = getSymbol(symbol);
+		Assert(offset.offset!=-1);
+		if(offset.functionlist){
+			throw notyetimplemented("Lazy grounding with support for function symbols in the grounding");
+		}else{
+			return symbols[offset.offset]->tuple2atom;
+		}
+	}
 
 	Lit trueLit() const{
 		return _trueLit;
@@ -201,10 +221,10 @@ public:
 	Lit addLazyElement(PFSymbol* symbol, const std::vector<GroundTerm>& terms, bool recursive);
 
 	// PROPOSITIONAL ATOMS
-	bool isStored(Lit atom) const {
+	bool isStored(int atom) const {
 		return atom > 0 && atomtype.size() > (unsigned int) atom;
 	}
-	AtomType getType(Lit atom) const {
+	AtomType getType(int atom) const {
 		return atomtype[atom];
 	}
 	bool isInputAtom(int atom) const {
@@ -213,11 +233,11 @@ public:
 	bool isTseitinWithSubformula(int atom) const {
 		return isStored(atom) && (getType(atom) == AtomType::TSEITINWITHSUBFORMULA || getType(atom) == AtomType::CPGRAPHEQ);
 	}
-	PFSymbol* getSymbol(Lit atom) const {
+	PFSymbol* getSymbol(int atom) const {
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->first!=NULL);
 		return atom2Tuple[atom]->first;
 	}
-	const ElementTuple& getArgs(Lit atom) const {
+	const ElementTuple& getArgs(int atom) const {
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->first!=NULL);
 		return atom2Tuple[atom]->second;
 	}
@@ -268,20 +288,6 @@ public:
 		return translateSet(createNewQuantSetId(), {}, lits, posweights, negweights, terms);
 	}
 	SetId translateSet(int id, const ElementTuple& freevar_inst, const litlist&, const weightlist&, const weightlist&, const termlist&);
-
-	// DELAYS
-
-	/*
-	 * @precon: defid==-1 if a FORMULA will be delayed
-	 * @precon: context==POS if pfs occurs monotonously, ==NEG if anti-..., otherwise BOTH
-	 * Returns true iff delaying pfs in the given context cannot violate satisfiability because of existing watches
-	 */
-	bool canBeDelayedOn(PFSymbol* pfs, Context context, DefId defid) const;
-	/**
-	 * Same preconditions as canBeDelayedOn
-	 * Notifies the translator that the given symbol is delayed in the given context with the given grounder.
-	 */
-	void notifyDelay(PFSymbol* pfs, DelayGrounder* const grounder);
 
 	// PRINTING
 

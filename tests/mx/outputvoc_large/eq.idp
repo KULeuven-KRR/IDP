@@ -1,0 +1,21 @@
+vocabulary V{
+	type x isa int
+	a:x
+	b:x
+}
+
+vocabulary Vout{
+	extern V::b/0:1
+}
+
+theory T:V{
+	!x: a=x => b=x.
+}
+
+structure S:V{
+	x = { 1..10 }
+}
+
+procedure getExpectedNbOfModels(){
+	return 10
+}

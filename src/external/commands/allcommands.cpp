@@ -89,6 +89,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<PrintAsBDDInference>());
 	inferences.push_back(make_shared<ModelExpandInference>());
+	inferences.push_back(make_shared<ModelExpandWithOutputVocInference>());
 	inferences.push_back(make_shared<NewOptionsInference>());
 	inferences.push_back(make_shared<NewStructureInference>());
 	inferences.push_back(make_shared<CloneStructureInference>());

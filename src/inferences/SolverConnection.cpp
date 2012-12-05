@@ -124,18 +124,22 @@ PCSolver* createsolver(int nbmodels) {
 	modes.usegecode = getOption(GECODE);
 
 	modes.polarity = MinisatID::Polarity::STORED;
+
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;
 	} else {
 		modes.defsem = MinisatID::DEFSEM::DEF_WELLF;
-
 	}
+
+	if (useLazyGrounding()) {
+		modes.lazy = true;
+	}
+	if(getOption(BoolType::EXPANDIMMEDIATELY)){
+		modes.expandimmediately = true;
+	}
+
 	if (getOption(BoolType::MXRANDOMPOLARITYCHOICE)) {
 		modes.polarity = MinisatID::Polarity::RAND;
-	}
-
-	if (getOption(BoolType::GROUNDLAZILY)) {
-		modes.lazy = true;
 	}
 
 	return new PCSolver(modes);
@@ -155,10 +159,6 @@ PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
 
 PCUnitPropagate* initpropsolution(PCSolver* solver) {
 	return new PCUnitPropagate(solver, { });
-}
-
-bool useUFSAndOnlyIfSem(){
-	return getOption(GROUNDLAZILY);
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {

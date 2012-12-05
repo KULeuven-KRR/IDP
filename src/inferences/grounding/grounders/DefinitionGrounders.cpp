@@ -21,12 +21,14 @@
 #include "IncludeComponents.hpp"
 
 #include "utils/ListUtils.hpp"
+#include "errorhandling/error.hpp"
 
 using namespace std;
 
 // INVAR: definition is always toplevel, so certainly conjunctive path to the root
 DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<RuleGrounder*> subgr, const GroundingContext& context)
-		: Grounder(gt, context), _subgrounders(subgr) {
+		: 	Grounder(gt, context),
+			_subgrounders(subgr) {
 	Assert(context.getCurrentDefID()!=getIDForUndefined());
 	auto t = tablesize(TableSizeType::TST_EXACT, 0);
 	for (auto grounder : subgr) {
@@ -39,27 +41,35 @@ DefinitionGrounder::~DefinitionGrounder() {
 	deleteList(_subgrounders);
 }
 
-void DefinitionGrounder::run(ConjOrDisj& formula) const {
+void DefinitionGrounder::put(std::ostream& stream) const {
+	stream <<"definition " <<getDefinitionID().id <<" { \n";
+	for(auto rg: getSubGrounders()){
+		stream <<"\t" <<toString(rg) <<"\n";
+	}
+
+	stream <<"}\n";
+}
+
+void DefinitionGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
 	if(verbosity()>2){
 		clog <<"Grounding definition " <<print(this) <<"\n";
 	}
-
-	auto grounddefinition = new GroundDefinition(id(), translator());
+	auto grounddefinition = new GroundDefinition(getDefinitionID(), translator());
 
 	std::vector<PFSymbol*> headsymbols;
 	for (auto grounder : _subgrounders) {
 		CHECKTERMINATION;
-		grounder->run(id(), grounddefinition);
+		grounder->run(getDefinitionID(), grounddefinition, request);
 		headsymbols.push_back(grounder->getHead()->symbol());
 	}
-	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
+	getGrounding()->add(*grounddefinition);
 
 	for (auto symbol : headsymbols) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto pt = getGrounding()->structure()->inter(symbol)->pt();
 		for (auto ptIterator = pt->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
-			CHECKTERMINATION
-			auto translatedvar = getGrounding()->translator()->translateReduced(symbol, (*ptIterator), recursive(*symbol, context()));
+			CHECKTERMINATION;
+			auto translatedvar = getGrounding()->translator()->translateReduced(symbol, (*ptIterator), recursive(*symbol, getContext()));
 			Assert(translatedvar>0);
 			if (not grounddefinition->hasRule(translatedvar)) {
 				getGrounding()->addUnitClause(-translatedvar);
@@ -78,28 +88,32 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 }
 
 RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
-		: _origrule(rule->clone()), _headgrounder(hgr), _bodygrounder(bgr), _bodygenerator(big), _context(ct) {
+		: 	_origrule(rule->clone()),
+			_headgrounder(hgr),
+			_bodygrounder(bgr),
+			_nonheadgenerator(big),
+			_context(ct) {
 	Assert(_headgrounder!=NULL);
 	Assert(_bodygrounder!=NULL);
-	Assert(_bodygenerator!=NULL);
+	Assert(_nonheadgenerator!=NULL);
 }
 
-std::ostream& RuleGrounder::put(std::ostream& stream) const {
-	return stream << print(_origrule);
+void RuleGrounder::put(std::ostream& stream) const {
+	stream << print(_origrule);
 }
 
 tablesize RuleGrounder::getMaxGroundSize() const {
 	return headgrounder()->getUniverse().size() * bodygrounder()->getMaxGroundSize();
 }
 
-int RuleGrounder::verbosity() const{
+int RuleGrounder::verbosity() const {
 	return getOption(IntType::VERBOSE_GROUNDING);
 }
 
 RuleGrounder::~RuleGrounder() {
 	delete (_headgrounder);
 	delete (_bodygrounder);
-	delete (_bodygenerator);
+	delete (_nonheadgenerator);
 	_origrule->recursiveDelete();
 }
 
@@ -107,16 +121,34 @@ GroundTranslator* RuleGrounder::translator() const{
 	return _bodygrounder->translator();
 }
 
+const std::vector<const DomElemContainer*>& RuleGrounder::getHeadVarContainers() const {
+	return headgrounder()->getHeadVarContainers();
+}
+
 FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
-		: RuleGrounder(rule, hgr, bgr, big, ct), _headgenerator(hig), done(false) {
+		: 	RuleGrounder(rule, hgr, bgr, big, ct),
+			_headgenerator(hig),
+			done(false) {
 	Assert(hig!=NULL);
+
+	map<Variable*, vector<uint> > samevars;
+	for (uint i = 0; i < rule->head()->args().size(); ++i) {
+		auto arg = rule->head()->args()[i];
+		if (isa<VarTerm>(*arg)) {
+			auto varterm = dynamic_cast<VarTerm*>(arg);
+			samevars[varterm->var()].push_back(i);
+		}
+	}
+	for (auto var2list : samevars) {
+		samevalues.push_back(var2list.second);
+	}
 }
 
 FullRuleGrounder::~FullRuleGrounder() {
 	delete (_headgenerator);
 }
 
-void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
+void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition, LazyGroundingRequest& request) const {
 	notifyRun();
 	Assert(defid == grounddefinition->id());
 
@@ -127,12 +159,12 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 
 	Assert(bodygenerator()!=NULL);
 	for (bodygenerator()->begin(); not bodygenerator()->isAtEnd(); bodygenerator()->operator++()) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		if (verbosity() > 2) {
 			clog <<"Generating rule body\n";
 		}
 		ConjOrDisj body;
-		bodygrounder()->wrapRun(body);
+		bodygrounder()->run(body, request);
 		auto conj = body.getType() == Conn::CONJ;
 		auto falsebody = (body.literals.empty() && not conj) || (body.literals.size() == 1 && body.literals[0] == _false);
 		auto truebody = (body.literals.empty() && conj) || (body.literals.size() == 1 && body.literals[0] == _true);
@@ -141,7 +173,7 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 		}
 
 		for (headgenerator()->begin(); not headgenerator()->isAtEnd(); headgenerator()->operator++()) {
-			CHECKTERMINATION
+			CHECKTERMINATION;
 			Lit head = headgrounder()->run();
 			if (verbosity() > 2) {
 				auto trans = headgrounder()->grounding()->translator();
@@ -163,9 +195,81 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 	}
 }
 
-HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const vector<TermGrounder*>& sg,
-		const vector<SortTable*>& vst, GroundingContext& context)
-		: _grounding(gt), _subtermgrounders(sg), _ct(ct), _cf(cf), _symbol(gt->translator()->addSymbol(s)), _tables(vst), _pfsymbol(s), _context(context) {
+void FullRuleGrounder::groundForSetHeadInstance(GroundDefinition& def, const Lit& head, const ElementTuple& headinst) {
+	for (auto list : samevalues) {
+		auto first = headinst[list.front()];
+		for (auto value : list) {
+			if (headinst[value] != first) {
+				return;
+			}
+		}
+	}
+	for (uint i = 0; i < headinst.size(); ++i) {
+		auto arg = getHead()->args()[i];
+		switch (arg->type()) {
+		case TermType::DOM:
+			if (headinst[i] != dynamic_cast<DomainTerm*>(arg)->value()) { // Not matching this head
+				return;
+			}
+			break;
+		case TermType::VAR:
+			break;
+		case TermType::FUNC:
+		case TermType::AGG:
+			cerr << toString(getHead()) << "\n";
+			throw notyetimplemented("Lazy head grounding with non-unnested functions or aggregates");
+		}
+	}
+	//	FIXME Replace groundForSetHeadInstance with lazygroundingrequest
+	ConjOrDisj body;
+	auto lgr = LazyGroundingRequest( { });
+	bodygrounder()->run(body, lgr);
+
+	auto conj = body.getType() == Conn::CONJ;
+	litlist lits;
+	if (body.literals.size() > 0) {
+		// TODO why do we only need code here to erase true and false literals?
+		bool allfalse = true;
+		for (auto lit : body.literals) {
+			if (lit == _true) {
+				allfalse = false;
+				continue;
+			}
+			if (lit == _false) {
+				continue;
+			} else {
+				allfalse = false;
+			}
+
+			lits.push_back(lit);
+		}
+
+		if (lits.size() == 0) {
+			conj = not allfalse;
+		}
+	}
+
+	def.addPCRule(head, lits, conj, true);
+}
+
+HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst, GroundingContext& context)
+		: 	_grounding(gt),
+			_subtermgrounders(sg),
+			_symbol(gt->translator()->addSymbol(s)),
+			_tables(vst),
+			_pfsymbol(s),
+			_context(context) {
+	for (auto tg : _subtermgrounders) {
+		Assert(not getOption(SATISFIABILITYDELAY) || isa<VarTermGrounder>(*tg) || isa<DomTermGrounder>(*tg));
+		if (isa<VarTermGrounder>(*tg)) {
+			auto vg = dynamic_cast<VarTermGrounder*>(tg);
+			_headvarcontainers.push_back(vg->getElement());
+		} else if (isa<DomTermGrounder>(*tg)) {
+			auto vc = new DomElemContainer();
+			*vc = dynamic_cast<DomTermGrounder*>(tg)->getDomainElement();
+			_headvarcontainers.push_back(vc);
+		}
+	}
 }
 
 HeadGrounder::~HeadGrounder() {
@@ -176,36 +280,31 @@ GroundTranslator* HeadGrounder::translator() const {
 	return _grounding->translator();
 }
 
+const std::vector<const DomElemContainer*>& HeadGrounder::getHeadVarContainers() const {
+	return _headvarcontainers;
+}
+
 Lit HeadGrounder::run() const {
 	// Run subterm grounders
 	ElementTuple args;
 	vector<GroundTerm> groundsubterms;
 	for (size_t n = 0; n < _subtermgrounders.size(); ++n) {
-		CHECKTERMINATION
+		CHECKTERMINATION;
 		auto term = _subtermgrounders[n]->run();
 		Assert (not term.isVariable);
 		args.push_back(term._domelement);
 		groundsubterms.push_back(term);
 	}
-	// TODO guarantee that all subterm grounders return domain elements
 
 	// Checking partial functions
 	for (size_t n = 0; n < args.size(); ++n) {
-		//TODO: only check positions that can be out of bounds or ...! Also produce a warning!
-		if (not args[n]) {
-			return _false;
-		}
-		if (not _tables[n]->contains(args[n])) {
+		if (args[n] == NULL || not _tables[n]->contains(args[n])) {
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				Warning::warning("Out of bounds on headgrounder");
+			}
 			return _false;
 		}
 	}
 
-	// Run instance checkers and return grounding
-	Lit atom = _grounding->translator()->translateReduced(_symbol, args, recursive(*_pfsymbol, _context));
-	if (_ct->contains(args)) {
-		_grounding->addUnitClause(atom);
-	} else if (_cf->contains(args)) {
-		_grounding->addUnitClause(-atom);
-	}
-	return atom;
+	return _grounding->translator()->translateReduced(_symbol, args, recursive(*_pfsymbol, _context));
 }

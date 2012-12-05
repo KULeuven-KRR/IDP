@@ -38,6 +38,7 @@ class Function;
 class Theory;
 class TheoryComponent;
 class Sort;
+class LazyGroundingManager;
 class Delay;
 class Term;
 
@@ -103,6 +104,7 @@ bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
+std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);

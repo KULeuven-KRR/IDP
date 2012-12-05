@@ -46,10 +46,13 @@ GroundTheory<Policy>::GroundTheory(Vocabulary* voc, StructureInfo info, bool nbM
 }
 
 template<class Policy>
-void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit, const ElementTuple& args, std::vector<DelayGrounder*> grounders) {
-	Policy::polNotifyUnknBound(context, boundlit, args, grounders);
+void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction){
+	Policy::polStartLazyFormula(inst, type, conjunction);
 }
-
+template<class Policy>
+void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type){
+	Policy::polNotifyLazyResidual(inst, type);
+}
 template<class Policy>
 void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID) {
 	addTseitinInterpretations(glist, getIDForUndefined());
@@ -58,12 +61,8 @@ void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
-	Policy::polStartLazyFormula(inst, type, conjunction);
-}
-template<class Policy>
-void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType type) {
-	Policy::polNotifyLazyResidual(inst, type);
+void GroundTheory<Policy>::notifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager){
+	Policy::polNotifyLazyWatch(atom, watches, manager);
 }
 
 template<class Policy>
@@ -81,12 +80,13 @@ void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std:
 template<class Policy>
 void GroundTheory<Policy>::recursiveDelete() {
 	Policy::polRecursiveDelete();
+	deleteList(_foldedterms);
 	delete (this);
 }
 
 template<class Policy>
 void GroundTheory<Policy>::closeTheory() {
-	if (not getOption(BoolType::GROUNDLAZILY)) {
+	if (not useLazyGrounding()) {
 		Policy::polEndTheory();
 	}
 }
@@ -108,7 +108,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 		addTseitinInterpretations({head2rule.first}, def.id());
 		auto rule = head2rule.second;
 		if (isa<PCGroundRule>(*rule)) {
-			add(def.id(), dynamic_cast<PCGroundRule*>(rule));
+			add(def.id(), *dynamic_cast<PCGroundRule*>(rule));
 		} else {
 			Assert(isa<AggGroundRule>(*rule));
 			auto aggrule = dynamic_cast<AggGroundRule*>(rule);
@@ -120,11 +120,11 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
+void GroundTheory<Policy>::add(DefId defid, const PCGroundRule& rule) {
 	Assert(defid!=getIDForUndefined());
-	addTseitinInterpretations({rule->head()}, defid);
-	addTseitinInterpretations(rule->body(), defid);
-	notifyAtomsAdded(rule->body().size()+1);
+	addTseitinInterpretations({rule.head()}, defid);
+	addTseitinInterpretations(rule.body(), defid);
+	notifyAtomsAdded(rule.body().size()+1);
 	Policy::polAdd(defid, rule);
 }
 
@@ -181,10 +181,11 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
-	if (_printedsets.find(setnr) != _printedsets.end()) {
+	if (_addedSets.find(setnr) != _addedSets.end()) {
 		return;
 	}
-	_printedsets.insert(setnr);
+	_addedSets.insert(setnr);
+
 	auto tsset = translator()->groundset(setnr);
 	addTseitinInterpretations(tsset.literals(), defnr);
 	notifyAtomsAdded(tsset.literals().size());
@@ -227,9 +228,8 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 		}
 	}
 	if (type == TsType::RULE) {
-		// FIXME when doing this lazily, the rule should not be here until the tseitin has a value!
 		Assert(defnr != getIDForUndefined());
-		add(defnr, new PCGroundRule(head, conj ? RuleType::CONJ : RuleType::DISJ, body, true)); //TODO true (recursive) might not always be the case?
+		add(defnr, PCGroundRule(head, conj ? RuleType::CONJ : RuleType::DISJ, body, true)); //TODO true (recursive) might not always be the case?
 	}
 }
 
@@ -251,6 +251,7 @@ void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >&
 	for(auto symm: symmetry){
 		notifyAtomsAdded(symm.size());
 	}
+#warning do we need addTseitins here?
 	Policy::polAdd(symmetry);
 }
 
@@ -273,7 +274,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto atroot = elem.rootlevel;
 		tseitinqueue.pop();
 
-		if (not translator()->isTseitinWithSubformula(tseitin) || contains(_printedtseitins, tseitin)) {
+		if (not translator()->isTseitinWithSubformula(tseitin) || contains(tseitin, _addedTseitins)) {
 			if(atroot){
 				notifyAtomsAdded(1);
 				Policy::polAdd(GroundClause{elem.lit});
@@ -353,7 +354,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		}
 
 		if(not eliminated){
-			_printedtseitins.insert(tseitin);
+			_addedTseitins.insert(tseitin);
 			translator()->removeTsBody(tseitin);
 		}
 	}

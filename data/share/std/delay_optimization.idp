@@ -1,0 +1,174 @@
+vocabulary Delay_Voc{
+	type Bool
+	True:Bool
+	False:Bool
+	type delaycost isa int
+	not(Bool):Bool
+	cost(Bool):delaycost
+	
+	type Symbol
+	type PredForm
+	type DefID
+	symbol(PredForm):Symbol
+	
+	type Constraint
+	canDelayOn(Constraint, Bool, PredForm)
+	isDefinitionDelay(PredForm, Constraint, DefID)
+	isEquivalence(Constraint)
+	
+	type noninfcost isa int
+	groundSize(Constraint): noninfcost
+	
+	delay(Constraint, Bool, PredForm)
+	
+	defDelayUsed(Symbol, DefID)
+}
+theory Delay_Theory : Delay_Voc{
+	!c: ?<3 b p: delay(c,b,p).
+	
+	// Only allowed delays can be used
+	!c p b: delay(c, b, p) => canDelayOn(c, b, p).
+	
+	!c: isEquivalence(c) => #{b p: delay(c,b,p)}=0 | #{b p: delay(c,b,p)}=2. 
+		
+	// If delaying a symbol on opposite truth values, then both constraints are derived from a definitional rule with s as the head
+	!c1 c2 p1 p2 b: (delay(c1,b,p1) & delay(c2,not(b),p2) & symbol(p1)=symbol(p2)) => (c1=c2 & isEquivalence(c1)) | ?id: (isDefinitionDelay(p1,c1,id) & isDefinitionDelay(p2,c2,id)).
+	
+	// For all rules with the same head in the same definition, delay all or none
+	!s id: (?c p: delay(c,True,p) & symbol(p)=s & isDefinitionDelay(p, c, id)) => (!c p: isDefinitionDelay(p, c, id) & canDelayOn(c, True, p) & symbol(p)=s => delay(c,True,p)).
+	// Do not delay rules in different definitions over the same symbol
+	{
+		!s id: defDelayUsed(s, id) <- ?c b p: symbol(p)=s & delay(c,b,p) & isDefinitionDelay(p, c, id).
+	}
+	!s: ?<2 id: defDelayUsed(s, id).
+	
+	!s id: defDelayUsed(s,id) => !c b p: delay(c,b,p) & symbol(p)=s => isDefinitionDelay(p,c,id).
+	
+	// Do not delay too small constraints
+	!c: groundSize(c)<12 => !b p: ~delay(c, b, p).
+}
+term Delay_Minimization_Term : Delay_Voc{
+	// Term to minimize. The ground size of a constraint is multiplied by 1/10 for each symbol watched on true and by 9/10 for each symbol watched on false.
+	// TODO for functions, this should even become 1/domainsize
+	// TODO take into account the pre-interpretation size of symbols (and approximation?)
+	sum{c: (! b p: ~delay(c, b, p)): 100 * groundSize(c) }  
+	+ sum{c b1: ?p1: delay(c,b1,p1) & (!p2: p1~=p2 => !b2: ~delay(c, b2, p2)): cost(b1) * 10 * groundSize(c) } 
+	+ sum{c b1 b2: (? p1 p2: p1~=p2 & delay(c,b1,p1) & delay(c,b2,p2)): cost(b1) * cost(b2) * groundSize(c) }  
+}
+structure Delay_Basic_Data: Delay_Voc { // Testdata
+	Bool     = { True; False}
+	True	  = True
+	False	  = False
+	not      = { True->False; False->True; }
+	cost     = { True -> 1; False -> 3; }
+}
+
+// Testdata
+structure Delay_TestData : Delay_Voc { 
+	Bool     = { True; False}
+	True	  = True
+	False	  = False
+	not      = { True->False; False->True; }
+	cost     = { True -> 1; False -> 3; }
+	
+	Symbol   = { P; Q }
+	PredForm = { Px;Py;Qx; }
+	symbol 	  = { Px->P; Py->P; Qx->Q; }
+	Constraint = {1..5}
+	canDelayOn = { 1,True,Px; 2,False,Qx; 2,False,Py; 3,True,Qx; 4,True,Px; 4,True,Py; 5,False,Py}
+	isDefinitionDelay = {Qx,2,1;Qx,3,1}
+	groundSize = {1->100;2->50;3->40;4->5000; 5->6000}
+	isEquivalence = {}
+}
+
+structure Delay_TestData2: Delay_Voc {
+  Bool[Bool] = { False; True }
+  	True	  = True
+	False	  = False
+  Constraint[Constraint] = { 0..0 }
+  DefID[DefID] = { 0..0 }
+  PredForm[PredForm] = { 0..1 }
+  Symbol[Symbol] = { 2..3 }
+  delaycost[delaycost] = { 1; 3 }
+  noninfcost[noninfcost] = { 100000..100000 } // FIXME bug if this becomes too large!!!
+  canDelayOn[Constraint,Bool,PredForm] = { 0,False,1; 0,True,0 }
+  isDefinitionDelay[PredForm,Constraint,DefID] = { 0,0,0; 1,0,0 }
+  cost = { False->3; True->1 }
+  groundSize = { 0->100000 }
+  not = { False->True; True->False }
+  symbol = { 0->2; 1->3 }
+  isEquivalence = {}
+}
+
+structure Delay_TestData3 : Delay_Voc {
+  Bool[Bool] = { False; True }
+  False[:Bool] = False
+  True[:Bool] = True
+  cost[Bool:delaycost] = { False->3; True->1 }
+  not[Bool:Bool] = { False->True; True->False }
+  delaycost[delaycost] = { 1; 3 }
+  noninfcost[noninfcost] = { 0; 1; 2; 100 }
+    
+  Constraint[Constraint] = { Pif; Ponlyif; Qif; Qonlyif; Sent }
+  DefID[DefID] = { Pdef; Qdef }
+  PredForm[PredForm] = { Px1;Px2;Px3;Qxy1;Qxy2 }
+  Symbol[Symbol] = { P;Q }
+  canDelayOn[Constraint,Bool,PredForm] = { Pif,True,Px1; Ponlyif,False,Px2; Sent,True,Px3; Qif,True,Qxy1; Qonlyif,False,Qxy2 }
+  isDefinitionDelay[PredForm,Constraint,DefID] = { Px1,Pif,Pdef; Px2,Ponlyif,Pdef; Qxy1,Qif,Qdef; Qxy2,Qonlyif,Qdef }
+  groundSize[Constraint:noninfcost] = { Pif->1; Ponlyif->1; Sent->100; Qif->2; Qonlyif->2 }
+  symbol[PredForm:Symbol] = { Px1->P; Px2->P; Px3->P; Qxy1->Q; Qxy2->Q }
+  isEquivalence = {}
+}
+
+structure Delay_TestData4 : Delay_Voc {
+	delaycost[delaycost] = { 1; 3 }
+	Bool[Bool] = { False; True }
+    False[:Bool] = False
+  True[:Bool] = True
+  cost[Bool:delaycost] = { False->3; True->1 }
+  not[Bool:Bool] = { False->True; True->False }
+  
+  Constraint[Constraint] = { 0..3 }
+  DefID[DefID] = { 4..4 }
+  PredForm[PredForm] = { 0..3 }
+  Symbol[Symbol] = { 2..3 }
+  noninfcost[noninfcost] = { 0; 247483 } // TODO bug in mx if making the max value 2147483
+  canDelayOn[Constraint,Bool,PredForm] = { 0,True,0; 1,True,1; 2,False,2; 3,False,3 }
+  isDefinitionDelay[PredForm,Constraint,DefID] = { 0,0,4; 1,1,4; 2,2,4; 3,3,4 }
+  groundSize[Constraint:noninfcost] = { 0->247483; 1->247483; 2->247483; 3->0}
+  symbol[PredForm:Symbol] = { 0->2; 1->3; 2->3; 3->2 }
+  isEquivalence = {}
+}
+
+structure Delay_TestData5 : Delay_Voc{
+  Delay_Voc::Bool[Delay_Voc::Bool] = { False; True }
+  Delay_Voc::Constraint[Delay_Voc::Constraint] = { 0..0 }
+  Delay_Voc::DefID[Delay_Voc::DefID] = {  }
+  Delay_Voc::PredForm[Delay_Voc::PredForm] = { 0..1 }
+  Delay_Voc::Symbol[Delay_Voc::Symbol] = { 2..2 }
+  Delay_Voc::delaycost[Delay_Voc::delaycost] = { 1; 3 }
+  Delay_Voc::noninfcost[Delay_Voc::noninfcost] = { 27..27 }
+  canDelayOn[Delay_Voc::Constraint,Delay_Voc::Bool,Delay_Voc::PredForm] = { 0,False,1; 0,True,0 }
+  defDelayUsed[Delay_Voc::Symbol,Delay_Voc::DefID]<cf> = {  }
+  defDelayUsed[Delay_Voc::Symbol,Delay_Voc::DefID]<u> = { }
+  isDefinitionDelay[Delay_Voc::PredForm,Delay_Voc::Constraint,Delay_Voc::DefID]<cf> = {  }
+  isDefinitionDelay[Delay_Voc::PredForm,Delay_Voc::Constraint,Delay_Voc::DefID]<u> = { }
+  isEquivalence[Delay_Voc::Constraint] = { 0 }
+  False[:Delay_Voc::Bool] = False
+  True[:Delay_Voc::Bool] = True
+  cost[Delay_Voc::Bool:Delay_Voc::delaycost] = { False->3; True->1 }
+  groundSize[Delay_Voc::Constraint:Delay_Voc::noninfcost] = { 0->27 }
+  not[Delay_Voc::Bool:Delay_Voc::Bool] = { False->True; True->False }
+  symbol[Delay_Voc::PredForm:Delay_Voc::Symbol] = { 0->2; 1->2 }
+}
+
+procedure Delay_main(structure){
+	stdoptions.verbosity.generatorsandcheckers=0
+	stdoptions.verbosity.grounding=4
+	stdoptions.verbosity.solving=1
+	stdoptions.cpsupport=true;
+	stdoptions.liftedunitpropagation=false;
+	stdoptions.groundwithbounds=true;
+	print(minimize(Delay_Theory, structure, Delay_Minimization_Term)[1])
+}
+

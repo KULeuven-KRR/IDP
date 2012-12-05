@@ -28,7 +28,7 @@ public:
 		Querying c;
 		return c.solveQuery(q, s);
 	}
-	static PredTable* doSolveQuery(Query* q, AbstractStructure const * const s, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) {
+	static PredTable* doSolveQuery(Query* q, AbstractStructure const * const s, GenerateBDDAccordingToBounds* symbolicstructure) {
 		Querying c;
 		return c.solveQuery(q, s, symbolicstructure);
 	}

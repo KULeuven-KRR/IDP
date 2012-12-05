@@ -30,21 +30,37 @@ class GroundTranslator;
 class TermGrounder {
 private:
 	mutable SortTable* _domain;
-	Term* _origterm;
-	var2dommap _varmap;
+	Term* _term;
+
 protected:
 	GroundTranslator* _translator;
 	GroundTranslator* translator() const{return _translator;}
 
+	var2dommap _varmap;
+
+	void setTerm(Term* t){
+		_term = t;
+	}
+
 public:
 	// @parameter dom: the sort of the position the term occurs in
 	TermGrounder(SortTable* dom = NULL, GroundTranslator* translator = NULL)
-			: _domain(dom), _origterm(NULL), _translator(translator) {
+			: _domain(dom), _term(NULL), _translator(translator) {
 	}
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
 
-	void setOrig(const Term* t, const var2dommap& mvd);
+	bool hasTerm() const {
+		return _term!=NULL;
+	}
+	virtual Term* getTerm() const {
+		Assert(hasTerm());
+		return _term;
+	}
+	virtual const var2dommap& getVarmapping() const {
+		return _varmap;
+	}
+
 	void printOrig() const;
 
 	SortTable* getDomain() const {
@@ -67,18 +83,25 @@ class DomTermGrounder: public TermGrounder {
 private:
 	const DomainElement* _value;
 public:
-	DomTermGrounder(const DomainElement* val) :
-			_value(val) {
+	DomTermGrounder(Sort* sort, const DomainElement* val)
+			: _value(val) {
+		setTerm(new DomainTerm(sort, _value, {}));
 	}
 	GroundTerm run() const;
+	const DomainElement* getDomainElement() const {
+		return _value;
+	}
 };
 
 class VarTermGrounder: public TermGrounder {
 private:
 	const DomElemContainer* _value;
 public:
-	VarTermGrounder(GroundTranslator* tt, SortTable* domain, const DomElemContainer* a) : TermGrounder(domain, tt),
+	VarTermGrounder(GroundTranslator* tt, SortTable* domain, Variable* var, const DomElemContainer* a)
+			:TermGrounder(domain, tt),
 			_value(a) {
+		_varmap.insert({var, _value});
+		setTerm(new VarTerm(var, {}));
 	}
 	inline GroundTerm run() const {
 		Assert(_value->get() != NULL);
@@ -97,10 +120,9 @@ protected:
 	std::vector<SortTable*> _tables; // Function argument sorts
 	std::vector<TermGrounder*> _subtermgrounders;
 public:
-	FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<SortTable*>& tables, const std::vector<TermGrounder*>& sub) :
-			TermGrounder(dom, tt), _function(func), _functable(ftable), _tables(tables), _subtermgrounders(sub) {
-	}
-	GroundTerm run() const;
+	FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTable* ftable, SortTable* dom, const std::vector<SortTable*>& tables,
+			const std::vector<TermGrounder*>& sub);
+	virtual GroundTerm run() const;
 
 	// TODO? Optimisation:
 	//			Keep all values of the args + result of the previous call to run().
@@ -133,17 +155,17 @@ private:
 	SortTable* computeDomain(const GroundTerm& left, const GroundTerm& right) const;
 };
 
-class SetGrounder;
+class EnumSetGrounder;
 
 class AggTermGrounder: public TermGrounder {
 private:
 	AggFunction _type;
-	SetGrounder* _setgrounder;
+	EnumSetGrounder* _setgrounder;
 	AbstractGroundTheory* grounding;
 	mutable std::map<std::pair<uint,AggFunction>, VarId> aggterm2cpterm; // TODO memory management and move to translator!
 
 public:
-	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr);
+	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr);
 	GroundTerm run() const;
 };
 

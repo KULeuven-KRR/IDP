@@ -33,11 +33,8 @@ private:
 protected:
 	void printOrig() const;
 public:
-	OptimizationGrounder(AbstractGroundTheory* g, const GroundingContext& context)
-			: Grounder(g, context) {
-	}
+	OptimizationGrounder(AbstractGroundTheory* g, const GroundingContext& context, Term const*const origterm);
 	virtual ~OptimizationGrounder();
-	void setOrig(const Term* t);
 
 	GroundTranslator* getTranslator() const;
 };
@@ -48,13 +45,16 @@ class AggregateOptimizationGrounder: public OptimizationGrounder {
 private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
+
+protected:
+	virtual void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request);
+
 public:
 	// NOTE: passes grounder ownership!
-	AggregateOptimizationGrounder(AbstractGroundTheory* grounding, AggFunction tp, SetGrounder* gr, const GroundingContext& context)
-			: OptimizationGrounder(grounding, context), _type(tp), _setgrounder(gr) {
+	AggregateOptimizationGrounder(AbstractGroundTheory* grounding, AggFunction tp, SetGrounder* gr, const GroundingContext& context, Term const*const  origterm)
+			: OptimizationGrounder(grounding, context, origterm), _type(tp), _setgrounder(gr) {
 	}
 	~AggregateOptimizationGrounder();
-	virtual void run(ConjOrDisj& formula) const;
 
 	virtual void put(std::ostream&) const;
 };
@@ -64,13 +64,16 @@ class TermGrounder;
 class VariableOptimizationGrounder: public OptimizationGrounder {
 private:
 	TermGrounder* _termgrounder;
+
+protected:
+	virtual void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request);
+
 public:
 	// NOTE: passes grounder ownership!
-	VariableOptimizationGrounder(AbstractGroundTheory* grounding, TermGrounder* gr, const GroundingContext& context)
-			: OptimizationGrounder(grounding, context), _termgrounder(gr) {
+	VariableOptimizationGrounder(AbstractGroundTheory* grounding, TermGrounder* gr, const GroundingContext& context, Term const*const  origterm)
+			: OptimizationGrounder(grounding, context, origterm), _termgrounder(gr) {
 	}
 	~VariableOptimizationGrounder();
-	virtual void run(ConjOrDisj& formula) const;
 
 	virtual void put(std::ostream&) const;
 };

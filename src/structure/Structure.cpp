@@ -21,7 +21,7 @@ using namespace std;
 
 Structure::~Structure() {
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
-		delete (it->second);
+		//delete (it->second);
 	}
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		delete (it->second);

@@ -78,7 +78,7 @@ void SetExpr::deleteChildren(bool andvars) {
 			_subterm->recursiveDelete();
 		}
 		for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-			delete (*it);
+			//FIXME delete (*it);
 		}
 		for (auto i = _subsets.cbegin(); i < _subsets.cend(); ++i) {
 			(*i)->recursiveDelete();

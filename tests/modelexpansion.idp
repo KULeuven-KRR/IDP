@@ -10,8 +10,28 @@ procedure mxnobounds(){
 // NOTE: only based on lazy tseitin delaying!!!!
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxlazy(){
-	stdoptions.groundlazily = true
 	stdoptions.tseitindelay = true
+	stdoptions.groundwithbounds=true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.timeout = 5
+	return run()
+}
+
+procedure mxlazycp(){
+	stdoptions.cpsupport = true
+	stdoptions.tseitindelay = true
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 5
+	return run()
+}
+
+// NOTE: never enable delaying here which depends on well-founded definitions!
+procedure mxverylazy(){
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation=false
+	stdoptions.satdelay=true
+	stdoptions.tseitindelay=true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -109,15 +129,23 @@ procedure mxwithsymm(){
 }
 
 procedure run() {
+	stdoptions.timeout=0
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.transformations=0
+	stdoptions.verbosity.creategrounders=0
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
 	if(#solutions~=getExpectedNbOfModels()) then
 		if(#solutions>getExpectedNbOfModels()) then
 			io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
 		else
 			io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n") 
+		end
+		for i,v in ipairs(solutions) do
+			io.stderr:write(tostring(v))
 		end
 		check(solutions)
 		return 0
@@ -141,7 +169,6 @@ procedure check(solutions){
 	end
 	return 1
 }
-
 procedure checkmodelsandnonmodels() {
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0

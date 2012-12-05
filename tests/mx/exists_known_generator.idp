@@ -17,7 +17,7 @@ structure S:V{
 procedure main(){
 	stdoptions.timeout=1
 	stdoptions.liftedunitpropagation=false
-	sols = modelexpandpartial(T,S)
+	sols = modelexpandpartial(T,S, Vout)
 	if(#(sols)==1)
 	then
 		return 1

@@ -82,7 +82,7 @@ void Formula::deleteChildren(bool deleteVars) {
 			(*it)->recursiveDelete();
 		}
 		for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-			delete (*it);
+			//FIXME delete (*it);
 		}
 	} else {
 		for (auto it = _subterms.cbegin(); it != _subterms.cend(); ++it) {
@@ -407,7 +407,7 @@ void Rule::recursiveDelete() {
 	_head->recursiveDelete();
 	_body->recursiveDelete();
 	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
-		delete (*it);
+		//FIXME delete (*it);
 	}
 	delete (this);
 }

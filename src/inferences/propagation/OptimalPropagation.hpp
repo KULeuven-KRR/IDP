@@ -36,7 +36,7 @@ public:
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure, true, true);
-		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false, NULL /*TODO CHeck*/}, data);
+		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, NULL, false, NULL /*TODO CHeck*/}, data);
 		bool unsat = grounder->toplevelRun();
 		if(unsat){
 			return std::vector<Structure*> { };

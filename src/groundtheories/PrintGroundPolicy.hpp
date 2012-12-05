@@ -23,6 +23,7 @@
 
 class LazyInstantiation;
 class DelayGrounder;
+class LazyGroundingManager;
 
 class TsSet;
 
@@ -39,9 +40,6 @@ private:
 	Printer* printer_;
 
 public:
-	void polNotifyUnknBound(Context, const Lit&, const ElementTuple&, std::vector<DelayGrounder*>){
-		throw notyetimplemented("Printing ground theories with lazy ground elements");
-	}
 	void polAddLazyAddition(const litlist&, int){
 		throw notyetimplemented("Printing ground theories with lazy ground elements");
 	}
@@ -53,6 +51,9 @@ public:
 	}
 	void polAddLazyElement(Lit, PFSymbol*, const std::vector<GroundTerm>&, AbstractGroundTheory*, bool){
 		throw notyetimplemented("Storing ground theories with lazy element constraints");
+	}
+	void polNotifyLazyWatch(Atom, TruthValue, LazyGroundingManager*){
+		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
 
 	void polRecursiveDelete() {
@@ -94,10 +95,9 @@ public:
 		delete (agg);
 	}
 
-	void polAdd(DefId defnr, PCGroundRule* rule) {
+	void polAdd(DefId defnr, const PCGroundRule& rule) {
 		printer().checkOrOpen(defnr);
-		printer().print(rule);
-		delete (rule);
+		printer().print(&rule);
 	}
 
 	void polAdd(DefId defnr, AggGroundRule* rule) {

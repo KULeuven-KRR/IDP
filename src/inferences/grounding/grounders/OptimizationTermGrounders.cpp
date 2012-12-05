@@ -21,15 +21,15 @@
 
 using namespace std;
 
+OptimizationGrounder::OptimizationGrounder(AbstractGroundTheory* g, const GroundingContext& context, Term const*const origterm)
+		: Grounder(g, context), _origterm(origterm==NULL?NULL:origterm->clone()) {
+}
+
 OptimizationGrounder::~OptimizationGrounder() {
 	if (_origterm != NULL) {
 		_origterm->recursiveDelete();
 		_origterm = NULL;
 	}
-}
-
-void OptimizationGrounder::setOrig(const Term* t) {
-	_origterm = t->clone();
 }
 
 GroundTranslator* OptimizationGrounder::getTranslator() const {
@@ -45,7 +45,7 @@ AggregateOptimizationGrounder::~AggregateOptimizationGrounder() {
 	delete (_setgrounder);
 }
 
-void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const {
+void AggregateOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request){
 	formula.setType(Conn::CONJ);
 	if (verbosity() > 2) {
 		printOrig();
@@ -63,7 +63,7 @@ void AggregateOptimizationGrounder::run(ConjOrDisj& formula) const {
 }
 
 void AggregateOptimizationGrounder::put(std::ostream&) const {
-	throw notyetimplemented("Printing aggregate optimization grounder");
+	notyetimplemented("Printing aggregate optimization grounder"); // No reason to throw, this is only debug output
 }
 
 
@@ -71,7 +71,7 @@ VariableOptimizationGrounder::~VariableOptimizationGrounder() {
 	delete (_termgrounder);
 }
 
-void VariableOptimizationGrounder::run(ConjOrDisj& formula) const {
+void VariableOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request){
 	formula.setType(Conn::CONJ);
 	if (verbosity() > 2) {
 		printOrig();
@@ -93,5 +93,5 @@ void VariableOptimizationGrounder::run(ConjOrDisj& formula) const {
 }
 
 void VariableOptimizationGrounder::put(std::ostream&) const {
-	throw notyetimplemented("Printing variable optimization grounder");
+	notyetimplemented("Printing variable optimization grounder"); // No reason to throw, this is only debug output
 }

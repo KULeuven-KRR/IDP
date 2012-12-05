@@ -15,12 +15,12 @@
 #include "Grounder.hpp"
 
 #include "IncludeComponents.hpp"
-#include "inferences/grounding/GroundTranslator.hpp" // TODO Only for symboloffset
+#include "inferences/grounding/GroundTranslator.hpp"
 
 class TermGrounder;
 class InstChecker;
 class InstGenerator;
-class SetGrounder;
+class EnumSetGrounder;
 class PredInter;
 class Formula;
 class SortTable;
@@ -32,36 +32,29 @@ class PFSymbol;
 bool recursive(const PFSymbol& symbol, const GroundingContext& context);
 
 class FormulaGrounder: public Grounder {
-private:
-	var2dommap _varmap; // Maps the effective variables in the current formula to their instantiation;
-	var2dommap _origvarmap; // Maps the (cloned) variables in the original formula to their instantiation
 protected:
-	const var2dommap& varmap() const {
-		return _varmap;
-	}
-	Formula* _origform;
+	var2dommap _varmap; // Maps the (cloned) variables in the original formula to their instantiation
+	GroundTranslator* translator() const;
 public:
-	// FIXME verbosity should be passed in (or perhaps full option block?)
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);
 	virtual ~FormulaGrounder();
 
-	// TODO resolve this note?
-	// NOTE: required for correctness because it creates the associated varmap!
-	void setOrig(const Formula* f, const std::map<Variable*, const DomElemContainer*>& mvd);
-
 	void printorig() const;
+
 	virtual void put(std::ostream& stream) const;
+	const var2dommap& getVarmapping() const {
+		return _varmap;
+	}
 };
 
 class AtomGrounder: public FormulaGrounder {
-protected:
+private:
 	std::vector<TermGrounder*> _subtermgrounders;
 	PFSymbol* _symbol;
 	SymbolOffset _symboloffset; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	SIGN _sign;
 	GenType gentype;
-	std::vector<const DomElemContainer*> _checkargs; // The variables representing the subterms of the atom. These are used in the generators and checkers
 	bool _recursive;
 
 	mutable ElementTuple _args;
@@ -69,12 +62,13 @@ protected:
 
 	Lit run() const;
 
+protected:
+	void internalRun(ConjOrDisj& literals, LazyGroundingRequest& request);
+
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<const DomElemContainer*>& checkargs, const std::vector<SortTable*>&,
-			const GroundingContext&);
+			const std::vector<SortTable*>&, const GroundingContext&);
 	~AtomGrounder();
-	void run(ConjOrDisj& formula) const;
 };
 
 class ComparisonGrounder: public FormulaGrounder {
@@ -85,20 +79,20 @@ private:
 
 	Lit run() const;
 
+protected:
+	void internalRun(ConjOrDisj& literals, LazyGroundingRequest& request);
+
 public:
-	ComparisonGrounder(AbstractGroundTheory* grounding, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc)
-			: FormulaGrounder(grounding, gc), _lefttermgrounder(ltg), _righttermgrounder(rtg), _comparator(comp) {
-		Assert(context()._tseitin!=TsType::RULE);
-		setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
-	}
+	// NOTE: sign has been taken into account in comp, but is added for formula management!
+	ComparisonGrounder(AbstractGroundTheory* grounding, TermGrounder* ltg, CompType comp, TermGrounder* rtg, const GroundingContext& gc, PFSymbol* symbol,
+			SIGN sign);
 	~ComparisonGrounder();
-	void run(ConjOrDisj& formula) const;
 };
 
 // Expresses bound comp aggterm!
 class AggGrounder: public FormulaGrounder {
 private:
-	SetGrounder* _setgrounder;
+	EnumSetGrounder* _setgrounder;
 	TermGrounder* _boundgrounder;
 	AggFunction _type;
 	CompType _comp;
@@ -115,14 +109,17 @@ private:
 
 	Lit run() const;
 
+protected:
+	void internalRun(ConjOrDisj& literals, LazyGroundingRequest& request);
+
 public:
-	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, SetGrounder* sg, SIGN sign);
+	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, EnumSetGrounder* sg, SIGN sign);
 	~AggGrounder();
-	void run(ConjOrDisj& formula) const;
 };
 
 enum class FormStat {
-	UNKNOWN, DECIDED
+	UNKNOWN,
+	DECIDED
 };
 
 class ClauseGrounder: public FormulaGrounder {
@@ -132,29 +129,30 @@ private:
 	Conn _conn;
 
 	bool negativeDefinedContext() const {
-		return getTseitinType() == TsType::RULE && context()._monotone == Context::NEGATIVE;
+		return getTseitinType() == TsType::RULE && getContext()._monotone == Context::NEGATIVE;
 	}
 	Lit createTseitin(const ConjOrDisj& formula, TsType type) const;
 	Lit getOneLiteralRepresenting(const ConjOrDisj& formula, TsType type) const;
 
 public:
-	ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct)
-			: FormulaGrounder(grounding, ct), _sign(sign), _conn(conj ? Conn::CONJ : Conn::DISJ) {
-	}
+	ClauseGrounder(AbstractGroundTheory* grounding, SIGN sign, bool conj, const GroundingContext& ct);
 	virtual ~ClauseGrounder() {
 	}
-	void run(ConjOrDisj& formula) const;
 
 	bool conjunctiveWithSign() const {
 		return (_conn == Conn::CONJ && isPositive()) || (_conn == Conn::DISJ && isNegative());
 	}
 
 protected:
+	void internalRun(ConjOrDisj& literals, LazyGroundingRequest& request);
+	virtual void internalClauseRun(ConjOrDisj& literals, LazyGroundingRequest& request) = 0;
+
 	TsType getTseitinType() const;
 
 	Lit getReification(const ConjOrDisj& formula, TsType tseitintype) const;
 	Lit getEquivalentReification(const ConjOrDisj& formula, TsType tseitintype) const; // NOTE: creates a tseitin EQUIVALENT with form, EVEN if the current tseitintype is IMPL or RIMPL
 
+private:
 	// NOTE: used by internalrun, which does not take SIGN into account!
 	bool makesFormulaTrue(Lit l) const;
 	// NOTE: used by internalrun, which does not take SIGN into account!
@@ -168,6 +166,8 @@ protected:
 	// NOTE: used by internalrun, which does not take SIGN into account!
 	Lit getEmtyFormulaValue() const;
 
+protected:
+
 	Conn connective() const {
 		return _conn;
 	}
@@ -179,39 +179,55 @@ protected:
 		return isNeg(_sign);
 	}
 
-	virtual void internalRun(ConjOrDisj& formula) const = 0;
-
-	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula) const;
+	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request) const;
 };
 
 class BoolGrounder: public ClauseGrounder {
 private:
-	std::vector<Grounder*> _subgrounders;
+	std::vector<FormulaGrounder*> _subgrounders;
 protected:
-	virtual void internalRun(ConjOrDisj& literals) const;
+	virtual void internalClauseRun(ConjOrDisj& literals, LazyGroundingRequest& request);
 public:
-	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct);
+	BoolGrounder(AbstractGroundTheory* grounding, const std::vector<FormulaGrounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct);
 	~BoolGrounder();
-	const std::vector<Grounder*>& getSubGrounders() const {
+	const std::vector<FormulaGrounder*>& getSubGrounders() const {
 		return _subgrounders;
 	}
 
 	virtual void put(std::ostream& output) const;
 };
 
+class LazyGroundingManager;
+
 class QuantGrounder: public ClauseGrounder {
 protected:
 	FormulaGrounder* _subgrounder;
 	InstGenerator* _generator; // generates PF if univ, PT if exists => if generated, literal might decide formula (so otherwise irrelevant)
 	InstChecker* _checker; // Checks CF if univ, CT if exists => if checks, certainly decides formula
+	std::set<const DomElemContainer*> _generatescontainers;
+	LazyGroundingManager* _manager;
+	std::map<Variable*, SortTable*> map2delayedsorts; // Stored reduced tables during splitting
+	AtomGrounder* replacementaftersplit;
 protected:
-	virtual void internalRun(ConjOrDisj& literals) const;
+	virtual void internalClauseRun(ConjOrDisj& literals, LazyGroundingRequest& request);
 public:
-	QuantGrounder(AbstractGroundTheory* grounding, FormulaGrounder* sub, SIGN sign, QUANT quant, InstGenerator* gen, InstChecker* checker,
-			const GroundingContext& ct);
+	QuantGrounder(LazyGroundingManager* manager, AbstractGroundTheory* grounding, FormulaGrounder* sub, InstGenerator* gen, InstChecker* checker,
+			const GroundingContext& ct, SIGN sign, QUANT quant, const std::set<const DomElemContainer*>& generates, const tablesize& quantsize);
 	~QuantGrounder();
 	FormulaGrounder* getSubGrounder() const {
 		return _subgrounder;
+	}
+	const std::set<const DomElemContainer*>& getGeneratedContainers() const{
+		return _generatescontainers;
+	}
+private:
+	bool groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequest& request);
+
+	bool split(ConjOrDisj& formula, LazyGroundingRequest& request, LazyGroundingManager* manager, const var2dommap& varmapping, const containerset& instantiated,
+			std::set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context, bool alsoinstantiate);
+
+	LazyGroundingManager* getGroundingManager() const {
+		return _manager;
 	}
 };
 
@@ -220,10 +236,17 @@ private:
 	FormulaGrounder* _leftgrounder;
 	FormulaGrounder* _rightgrounder;
 protected:
-	virtual void internalRun(ConjOrDisj& literals) const;
+	virtual void internalClauseRun(ConjOrDisj& literals, LazyGroundingRequest& request);
 public:
 	EquivGrounder(AbstractGroundTheory* grounding, FormulaGrounder* lg, FormulaGrounder* rg, SIGN sign, const GroundingContext& ct);
 	~EquivGrounder();
+
+	FormulaGrounder* getLeftGrounder() const {
+		return _leftgrounder;
+	}
+	FormulaGrounder* getRightGrounder() const {
+		return _rightgrounder;
+	}
 };
 
 #endif /* FORMULAGROUNDERS_HPP_ */

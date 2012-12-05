@@ -16,7 +16,7 @@
 #include "vocabulary/VarCompare.hpp"
 
 enum class CompContext {
-	SENTENCE, HEAD, FORMULA
+	HEAD, FORMULA
 };
 enum class GenType {
 	CANMAKETRUE, CANMAKEFALSE
@@ -36,22 +36,24 @@ struct GroundingContext {
 	Context _funccontext;
 	Context _monotone;
 	CompContext _component; // Indicates the context of the visited formula
+
 	TsType _tseitin; // Indicates the type of tseitin definition that needs to be used.
 	DefId currentDefID; // If tstype = rule, this indicates the definition to which the grounders belong
+	std::set<PFSymbol*> _defined; // Indicates which symbols are defined, allowing to derive loops.
+
+	varset _mappedvars; // Keeps track of which variables where added to the varmapping.
+
+	// True if all parent nodes in the parse tree are such that the current node can be treated as if it was the root.
+	bool _conjPathUntilNode;
+	// True of all child nodes can be treated as if they were root themselves.
+	bool _conjunctivePathFromRoot;
+
+	TruthValue _cpablerelation; // Indicates whether the current object is in the context of a relation eligible for CP.
+
 	DefId getCurrentDefID() const {
 		Assert(_tseitin!=TsType::RULE || currentDefID!=getIDForUndefined());
 		return currentDefID;
 	}
-	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
-
-	varset _mappedvars; // Keeps track of which variables where added to the varmapping.
-
-	bool _conjPathUntilNode, _conjunctivePathFromRoot;
-	// If true, there is a conjunctive path from the root of the sentence parsetree to this node.
-	// NOTE advantage: can optimize by creating less tseitins by using the knowledge that the formula can be added directly into cnf
-
-	bool _allowDelaySearch;
-	TruthValue _cpablerelation; // Indicates whether the current object is in the context of a relation eligible for CP.
 };
 
 #endif /* GROUNDINGCONTEXT_HPP_ */

@@ -44,15 +44,27 @@ private:
 	static DefId _currentdefnb;
 	std::vector<RuleGrounder*> _subgrounders; //!< Grounders for the rules of the definition.
 public:
+	// NOTE: passed definition ownership
 	DefinitionGrounder(AbstractGroundTheory* groundtheory, std::vector<RuleGrounder*> subgr, const GroundingContext& context);
 	~DefinitionGrounder();
-	void run(ConjOrDisj& formula) const;
-	DefId id() const {
-		return context().getCurrentDefID();
+	void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request);
+	DefId getDefinitionID() const {
+		return getContext().getCurrentDefID();
 	}
 
-	virtual void put(std::ostream&) const {
-		// TODO not yet implemented.
+	virtual void put(std::ostream&) const;
+
+	const std::vector<RuleGrounder*>& getSubGrounders() const{
+		return _subgrounders;
+	}
+
+	void removeGrounder(RuleGrounder* grounder){
+		for(auto i=_subgrounders.begin(); i<_subgrounders.cend(); ++i){
+			if(*i==grounder){
+				_subgrounders.erase(i);
+				break;
+			}
+		}
 	}
 };
 
@@ -65,18 +77,35 @@ private:
 
 	HeadGrounder* _headgrounder;
 	FormulaGrounder* _bodygrounder;
-	InstGenerator* _bodygenerator;
+	InstGenerator* _nonheadgenerator;
 	GroundingContext _context;
 
 public:
+	RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
+	virtual ~RuleGrounder();
+
+	virtual void run(DefId defid, GroundDefinition* grounddefinition, LazyGroundingRequest& request) const = 0;
+
+	virtual void groundForSetHeadInstance(GroundDefinition& def, const Lit& head, const ElementTuple& headinst) = 0;
+
+	void put(std::ostream& stream) const;
+
+	tablesize getMaxGroundSize() const;
+
+	const std::vector<const DomElemContainer*>& getHeadVarContainers() const;
+
+	const Rule& getRule() const{
+		return *_origrule;
+	}
+
 	HeadGrounder* headgrounder() const {
 		return _headgrounder;
 	}
 	FormulaGrounder* bodygrounder() const {
 		return _bodygrounder;
 	}
-	InstGenerator* bodygenerator() const {
-		return _bodygenerator;
+	InstGenerator* bodygenerator() const { // Generates all variables occurring root in the body
+		return _nonheadgenerator;
 	}
 	GroundingContext context() const {
 		return _context;
@@ -84,14 +113,6 @@ public:
 
 	GroundTranslator* translator() const;
 
-public:
-	RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
-	virtual ~RuleGrounder();
-	virtual void run(DefId defid, GroundDefinition* grounddefinition) const = 0;
-
-	std::ostream& put(std::ostream& stream) const;
-
-	tablesize getMaxGroundSize() const;
 
 	PredForm* getHead() const {
 		return _origrule->head();
@@ -103,6 +124,7 @@ public:
 class FullRuleGrounder: public RuleGrounder {
 private:
 	InstGenerator* _headgenerator;
+	std::vector<std::vector<uint> > samevalues;
 
 	mutable bool done;
 	void notifyRun() const {
@@ -120,7 +142,10 @@ protected:
 public:
 	FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct);
 	virtual ~FullRuleGrounder();
-	virtual void run(DefId defid, GroundDefinition* grounddefinition) const;
+
+	virtual void run(DefId defid, GroundDefinition* grounddefinition, LazyGroundingRequest& request) const;
+
+	virtual void groundForSetHeadInstance(GroundDefinition& def, const Lit& head, const ElementTuple& headinst);
 };
 
 /** Grounder for a head of a rule **/
@@ -128,20 +153,23 @@ class HeadGrounder {
 private:
 	AbstractGroundTheory* _grounding;
 	std::vector<TermGrounder*> _subtermgrounders;
-	const PredTable* _ct;
-	const PredTable* _cf;
 	SymbolOffset _symbol; // Stored for efficiency
 	std::vector<SortTable*> _tables;
 	PFSymbol* _pfsymbol;
 	GroundingContext _context;
 
+	std::vector<const DomElemContainer*> _headvarcontainers;
+
 public:
-	HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const PredTable* cf, PFSymbol* s, const std::vector<TermGrounder*>&,
+	HeadGrounder(AbstractGroundTheory* gt, PFSymbol* s, const std::vector<TermGrounder*>&,
 			const std::vector<SortTable*>&, GroundingContext& context);
 	~HeadGrounder();
+
 	Lit run() const;
 
 	GroundTranslator* translator() const;
+
+	const std::vector<const DomElemContainer*>& getHeadVarContainers() const;
 
 	const std::vector<TermGrounder*>& subtermgrounders() const {
 		return _subtermgrounders;

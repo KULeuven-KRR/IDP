@@ -1,0 +1,31 @@
+#include <mx>
+
+vocabulary V{
+	type Vtx
+	Edge(Vtx,Vtx)
+	Reaches(Vtx,Vtx) //the query
+
+	Connected
+	Path(Vtx, Vtx)
+}
+vocabulary Vout{
+	extern V::Connected/0
+}
+theory T:V{
+	{
+		Path(a,x) <- Edge(a,x).
+		Path(a,x) <- Path(a,y) & Edge(y,x).
+	}
+	Connected <=> ?a b: Reaches(a,b) & Path(a,b).
+}
+structure S:V{
+}
+procedure main(inputfilename, tsdelay, satdelay){
+	stdoptions.tseitindelay = tsdelay
+	stdoptions.satdelay = satdelay
+	stdoptions.groundwithbounds=true
+	stdoptions.verbosity.creategrounders=0; 
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.solving=0
+	printmodels(modelexpand(T, S, Vout))
+}

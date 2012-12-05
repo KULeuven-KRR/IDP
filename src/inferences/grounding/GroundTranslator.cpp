@@ -11,8 +11,8 @@
 
 #include "GroundTranslator.hpp"
 #include "IncludeComponents.hpp"
-//#include "grounders/LazyFormulaGrounders.hpp"
 #include "grounders/DefinitionGrounders.hpp"
+#include "LazyGroundingManager.hpp"
 #include "utils/CPUtils.hpp"
 #include "utils/ListUtils.hpp"
 
@@ -97,7 +97,8 @@ GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory
 		: 	_structure(structure),
 			_grounding(grounding),
 			_trueLit(0), // IMPORTANT: _trueLit set on initialize!
-			maxquantsetid(1){
+			maxquantsetid(1),
+			_groundingmanager(NULL) {
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);
@@ -129,9 +130,18 @@ void GroundTranslator::removeTsBody(Lit atom){
 	}
 }
 
+Lit GroundTranslator::translateNonReduced(PFSymbol* symbol, const ElementTuple& args){
+	auto offset = addSymbol(symbol);
+	return translate(offset, args, false);
+}
+
 Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args, bool recursive) {
 	auto offset = addSymbol(s);
-	return translateReduced(offset, args, recursive);
+	return translate(offset, args, getOption(REDUCEDGROUNDING) && not recursive);
+}
+
+Lit GroundTranslator::translateReduced(const SymbolOffset& s, const ElementTuple& args, bool recursive) {
+	return translate(s, args, getOption(REDUCEDGROUNDING) && not recursive);
 }
 
 void GroundTranslator::addKnown(VarId id) {
@@ -203,7 +213,12 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
  * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
  * 			or first search for the literal, and run the checkers if it was not yet grounded.
  */
-Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
+Lit GroundTranslator::translate(const SymbolOffset& offset, const ElementTuple& args, bool reduced) { // reduction should not be allowed in recursive context or when reducedgrounding is off
+	auto& known = knownlits[reduced][offset.functionlist][offset.offset];
+	auto findknown = known.find(args);
+	if(findknown!=known.cend()){
+		return findknown->second;
+	}
 	CheckerInfo* checkers = NULL;
 	if (offset.functionlist) {
 		checkers = functions[offset.offset]->checkers;
@@ -240,10 +255,12 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 		throw UnsatException();
 	}
 
-	if (getOption(REDUCEDGROUNDING) && not recursivecontext) {
+	if (reduced) {
 		if (littrue) {
+			known[args] = trueLit();
 			return trueLit();
 		} else if (litfalse) {
+			known[args] = falseLit();
 			return falseLit();
 		}
 	}
@@ -255,6 +272,7 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 	} else if (litfalse) {
 		_grounding->addUnitClause(-lit);
 	}
+	known[args] = lit;
 	return lit;
 }
 
@@ -344,8 +362,11 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 		atom2Tuple[lit]->first = functions[symboloffset.offset]->symbol;
 		atom2Tuple[lit]->second = args;
 		atomtype[lit] = AtomType::CPGRAPHEQ;
+
+		// TODO handle lazy grounding here
+
 		return lit;
-	} else {
+	} else { // Atom had not been introduced yet, so do this here
 		Lit lit = 0;
 		auto& symbolinfo = *symbols[symboloffset.offset];
 		auto jt = symbolinfo.tuple2atom.find(args);
@@ -358,6 +379,10 @@ Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& 
 			atom2Tuple[lit]->first = symbolinfo.symbol;
 			atom2Tuple[lit]->second = args;
 			symbolinfo.tuple2atom.insert(jt, Tuple2Atom { args, lit });
+		}
+
+		if(_groundingmanager!=NULL){
+			_groundingmanager->notifyNewLiteral(symbolinfo.symbol, args, lit);
 		}
 
 		return lit;
@@ -410,46 +435,6 @@ Lit GroundTranslator::reify(const litlist& clause, bool conj, TsType tstype) {
 	auto tsbody = new PCTsBody(tstype, clause, conj);
 	atom2TsBody[head] = tsbody;
 	return head;
-}
-
-bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context, DefId) const {
-	auto symboloffset = getSymbol(pfs);
-	Assert(not symboloffset.functionlist);
-	auto symbolId = symboloffset.offset;
-	if (symbolId == -1) { // there is no such symbol yet
-		return true;
-	}
-	auto& grounders = symbols[symbolId]->assocGrounders;
-	if (grounders.empty()) {
-		return true;
-	}
-	throw notyetimplemented("Checking allowed delays");
-	/*	for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-	 if (context == Context::BOTH) { // If unknown-delay, can only delay if in same DEFINITION
-	 if (id == -1 || (*i)->getID() != id) {
-	 return false;
-	 }
-	 } else if ((*i)->getContext() != context) { // If true(false)-delay, can delay if we do not find any false(true) or unknown delay
-	 return false;
-	 }
-	 }
-	 return true;*/
-}
-
-void GroundTranslator::notifyDelay(PFSymbol*, DelayGrounder* const) {
-	//Assert(grounder!=NULL);
-	//clog <<"Notified that symbol " <<print(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
-	throw notyetimplemented("Notifying of delays");
-	/*	auto symbolID = addSymbol(pfs);
-	 Assert(not symbolID.functionlist);
-	 auto& grounders = symbols[symbolID.offset].assocGrounders;
-	 #ifndef NDEBUG
-	 Assert(canBeDelayedOn(pfs, grounder->getContext(), grounder->getID()));
-	 for (auto i = grounders.cbegin(); i < grounders.cend(); ++i) {
-	 Assert(grounder != *i);
-	 }
-	 #endif
-	 grounders.push_back(grounder);*/
 }
 
 Lit GroundTranslator::reify(LazyInstantiation* instance, TsType tstype) {
@@ -512,19 +497,6 @@ Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, T
 	return nr;
 }
 
-//// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
-//Lit GroundTranslator::addTseitinBody(TsBody* tsbody) {
-//// TODO optimization: check whether the same comparison has already been added and reuse the tseitin.
-//	auto it = _tsbodies2nr.lower_bound(tsbody);
-//	if (it != _tsbodies2nr.cend() && *(it->first) == *tsbody) { // Already exists
-//		delete tsbody;
-//		return it->second;
-//	}
-//	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-//	atom2TsBody[nr] = tspair(nr, tsbody);
-//	return nr;
-//}
-
 // Note: set IDs start from 1
 SetId GroundTranslator::translateSet(int id, const ElementTuple& freevar_inst, const litlist& lits, const weightlist& weights, const weightlist& trueweights, const termlist& cpvars) {
 	TsSet tsset;
@@ -581,7 +553,7 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 	if (it != info.term2var.cend() && it->first == args) {
 		return it->second;
 	} else {
-		VarId varid = nextVarNumber();
+		auto varid = nextVarNumber();
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
 		auto ft = new ftpair(info.symbol, args);
 		var2Tuple[varid.id] = ft;

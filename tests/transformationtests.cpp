@@ -17,8 +17,7 @@
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
 
-#include "inferences/grounding/GroundTranslator.hpp"
-//#include "inferences/grounding/grounders/LazyFormulaGrounders.hpp"
+#include "inferences/grounding/LazyGroundingManager.hpp"
 #include "groundtheories/GroundTheory.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
