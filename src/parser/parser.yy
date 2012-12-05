@@ -840,6 +840,7 @@ args				: args ',' identifier	{ data().procarg(*$3);		}
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include "errorhandling/error.hpp"
 
 void yyrestart(FILE*);
@@ -889,6 +890,7 @@ void parse(const std::string& file) {
 	if (yyin) {
 		data().currfile(file);
 		yyparse();
+		GlobalData::instance()->notifyParsed(temp);
 		GlobalData::instance()->closeFile(yyin);
 	}
 	else{

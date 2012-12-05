@@ -43,6 +43,7 @@ private:
 	std::stack<size_t> _tabsizestack;
 
 	std::vector<std::string> _errors, _warnings;
+	std::set<std::string> _parsedfiles;
 	std::set<FILE*> _openfiles;
 
 	std::vector<TerminateMonitor*> _monitors;
@@ -132,6 +133,12 @@ public:
 		_warnings.clear();
 	}
 
+	void notifyParsed(const std::string& filename){
+		_parsedfiles.insert(filename);
+	}
+	bool alreadyParsed(const std::string& filename){
+		return _parsedfiles.find(filename)!=_parsedfiles.cend();
+	}
 	FILE* openFile(const char* filename, const char* mode);
 	void closeFile(FILE* file);
 
