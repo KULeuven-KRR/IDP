@@ -209,6 +209,19 @@ void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
 	}
 }
 
+template<>
+void OptionPolicy<OptionType, Options*>::copyValues(Options* opts) {
+	for (auto option: _options) {
+		if(option==NULL){
+			continue;
+		}
+		auto value = option->getValue();
+		if(value->isVerbosityBlock()){
+			value->copyValues(opts->getValue(VERBOSITY));
+		}
+	}
+}
+
 template<class EnumType, class ConcreteType>
 std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {

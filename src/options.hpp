@@ -61,7 +61,7 @@ enum IntType {
 };
 
 enum BoolType {
-	SHOWWARNINGS, // TODO Temporary solution to be able to disable warnings in tests
+	SHOWWARNINGS,
 	TRACE,
 	AUTOCOMPLETE,
 	LONGNAMES,
@@ -81,6 +81,7 @@ enum BoolType {
 
 enum OptionType {
 	VERBOSITY
+	// IMPORTANT: the moment another one is added, OptionPolicy<OptionType, Options*>::copyValues(Options* opts) has to be adapted to iterate over all of them!
 };
 
 enum DoubleType {
