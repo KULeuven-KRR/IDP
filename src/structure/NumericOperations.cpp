@@ -33,6 +33,9 @@ std::string getDomElemOpErrorMessage(const std::string& operation) {
 template<typename IntOpType, typename DoubleOpType>
 const DomainElement* domElemOp(const DomainElement* d1, const DomainElement* d2, const DomainElement* (*opint)(IntOpType, IntOpType),
 		const DomainElement* (*opdouble)(DoubleOpType, DoubleOpType), const std::string& operation) {
+	if(d1==NULL || d2==NULL){
+		return NULL;
+	}
 	const DomainElement* dnew = NULL;
 	switch (d1->type()) {
 	case DET_INT:
