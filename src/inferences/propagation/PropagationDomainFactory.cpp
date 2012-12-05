@@ -24,7 +24,7 @@ FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
 }
 
 FOPropBDDDomainFactory::~FOPropBDDDomainFactory() {
-	//do not delete manager: is passed to symbolicstructure (GenerateBDDAccordingToBounds)
+	// NOTE: do not delete manager: is passed to symbolicstructure (GenerateBDDAccordingToBounds)
 }
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {

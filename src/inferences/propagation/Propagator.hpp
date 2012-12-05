@@ -98,6 +98,7 @@ public:
 	void applyPropagationToStructure(Structure* str, Vocabulary* outputvoc) const;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+	// a NULL vocabulary indicates that every symbol can be replaced
 	GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 

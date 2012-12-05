@@ -166,7 +166,6 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* 
 
 template<class Factory, class Domain>
 GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const {
-	Assert(symbolsThatCannotBeReplacedByBDDs != NULL);
 	map<PFSymbol*, vector<const FOBDDVariable*> > vars;
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
@@ -576,7 +575,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 		break;
 	}
 	case UP: {
-		const ThreeValuedDomain<Domain>& tvd = getDomain(qf->subformula());
+		const auto& tvd = getDomain(qf->subformula());
 		Domain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if (_ct == qf->isUniv()) {
 			deriveddomain = addToForall(deriveddomain, qf->quantVars());

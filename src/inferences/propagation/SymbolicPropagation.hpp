@@ -30,7 +30,7 @@ public:
 	std::vector<Structure*> propagate(AbstractTheory* theory, Structure* structure) {
 		auto result = structure->clone();
 		auto mpi = propagateVocabulary(theory, result);
-		auto propagator = createPropagator(theory, result, mpi);
+		auto propagator = createPropagator(theory, structure, mpi);
 		propagator->doPropagation();
 		propagator->applyPropagationToStructure(result, NULL);
 		return {result};

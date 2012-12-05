@@ -63,7 +63,8 @@ public:
 };
 
 // NOTE: structure can be NULL
-FOPropagator* createPropagator(AbstractTheory* theory, Structure* s, const std::map<PFSymbol*, InitBoundType> mpi);
+FOPropagator* createPropagator(const AbstractTheory* theory, const Structure* structure, const std::map<PFSymbol*, InitBoundType> mpi);
+GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure);
 
 /** Generates bounds for the given theory-structure combination
  *
@@ -74,12 +75,12 @@ FOPropagator* createPropagator(AbstractTheory* theory, Structure* s, const std::
  * NOTE: if applyPropagationToStructure == false, then outputvoc is useless and can savely be NULL
  * NOTE: if outputvoc == NULL, we will propagate for EVERY symbol in structure
  */
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure*& structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
 
 //GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, Structure* structure);
 
 /** Collect symbolic propagation vocabulary **/
-std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure* structure);
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure const * const structure);
 
 
 #endif /* PROPAGATORFACTORY_HPP_ */

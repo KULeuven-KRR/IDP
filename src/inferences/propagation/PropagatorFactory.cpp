@@ -23,7 +23,25 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure*& structure, bool doSymbolicPropagation, bool LUP,  Vocabulary* outputvoc) {
+FOPropagator* createPropagator(const AbstractTheory* theory, const Structure* structure, const std::map<PFSymbol*, InitBoundType> mpi) {
+	auto domainfactory = new FOPropBDDDomainFactory();
+	auto scheduler = new FOPropScheduler();
+	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory, scheduler, true, mpi);
+	return propfactory.create(theory, structure);
+}
+
+GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure) {
+	Assert(theory != NULL);
+	Assert(structure != NULL);
+	auto mpi = propagateVocabulary(theory, structure);
+	auto propagator = createPropagator(theory, structure, mpi);
+	auto result = propagator->symbolicstructure(theory->vocabulary());
+	delete (propagator);
+	return result;
+}
+
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool LUP,
+		Vocabulary* outputvoc) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
@@ -34,43 +52,37 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure*&
 			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 				clog <<"Applying propagation to structure\n";
 			}
-			propagator->applyPropagationToStructure(structure, outputvoc);
+			if(getOption(SATISFIABILITYDELAY)){
+				propagator->applyPropagationToStructure(structure, new Vocabulary("Temp"));
+			}else{
+				propagator->applyPropagationToStructure(structure, outputvoc);
+			}
 		}
 	}
 
-	//We ONLY want to replace atoms by their BDDs IF
-	// * We did not yet propagate ALL information
-	// * BUT, we are sure that we propagated ENOUGH information to the structure to be sure that the outputvoc is correct.
-	Vocabulary* symbolsThatShouldNotBeReplacedByBDDs;
-	if(not LUP || outputvoc == NULL){
+	// We ONLY want to replace atoms by their BDDs IF
+	//  * We did not yet propagate ALL information
+	//  * BUT, we are sure that we propagated ENOUGH information to the structure to be sure that the outputvoc is correct.
+	Vocabulary* symbolsThatShouldNotBeReplacedByBDDs = NULL;
+	if(LUP){
+		if(not getOption(SATISFIABILITYDELAY)){
+			if(outputvoc==NULL){
+				symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
+			}else{
+				symbolsThatShouldNotBeReplacedByBDDs = outputvoc;
+			}
+		}
+	}else{
+		 // FIXME Otherwise, allowed to replace every symbol by a bdd => BUGGED
 		symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
-	}
-	else{
-		symbolsThatShouldNotBeReplacedByBDDs = outputvoc;
 	}
 	auto result = propagator->symbolicstructure(symbolsThatShouldNotBeReplacedByBDDs);
 	delete (propagator);
 	return result;
 }
 
-FOPropagator* createPropagator(AbstractTheory* theory, Structure* structure, const std::map<PFSymbol*, InitBoundType> mpi) {
-//	if(getOption(BoolType::GROUNDWITHBOUNDS)){
-	auto domainfactory = new FOPropBDDDomainFactory();
-	auto scheduler = new FOPropScheduler();
-	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory, scheduler, true, mpi);
-	return propfactory.create(theory, structure);
-//	}else{
-//		TODO notyetimplemented("Propagation without bdds.");
-	/*auto domainfactory = new FOPropTableDomainFactory(s);
-	 auto scheduler = new FOPropScheduler();
-	 FOPropagatorFactory<FOPropTableDomainFactory, FOPropTableDomain> propfactory(domainfactory,scheduler,true,mpi);
-	 return propfactory.create(theory);*/
-//		return NULL;
-//	}
-}
-
 /** Collect symbolic propagation vocabulary **/
-std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure* structure) {
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure const * const structure) {
 	std::map<PFSymbol*, InitBoundType> mpi;
 	Vocabulary* v = theory->vocabulary();
 	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
@@ -383,11 +395,11 @@ template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 	_propagator->setUpward(ef->left(), ef);
 	_propagator->setUpward(ef->right(), ef);
-	varset leftqv = ef->freeVars();
+	auto leftqv = ef->freeVars();
 	for (auto it = ef->left()->freeVars().cbegin(); it != ef->left()->freeVars().cend(); ++it) {
 		leftqv.erase(*it);
 	}
-	varset rightqv = ef->freeVars();
+	auto rightqv = ef->freeVars();
 	for (auto it = ef->right()->freeVars().cbegin(); it != ef->right()->freeVars().cend(); ++it) {
 		rightqv.erase(*it);
 	}
@@ -399,13 +411,13 @@ void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 
 template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const BoolForm* bf) {
-	if(bf->subformulas().size() == 0){
+	if (bf->subformulas().size() == 0) {
 		initTwoVal(bf);
 		return;
 	}
 	for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 		_propagator->setUpward(*it, bf);
-		varset sv = bf->freeVars();
+		auto sv = bf->freeVars();
 		for (auto jt = (*it)->freeVars().cbegin(); jt != (*it)->freeVars().cend(); ++jt) {
 			sv.erase(*jt);
 		}

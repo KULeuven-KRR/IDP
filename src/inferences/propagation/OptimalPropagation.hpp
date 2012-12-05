@@ -36,7 +36,7 @@ public:
 
 		//Grounding
 		auto symstructure = generateBounds(theory, structure, true, true);
-		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false /*TODO CHeck*/}, data);
+		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false, NULL /*TODO CHeck*/}, data);
 		bool unsat = grounder->toplevelRun();
 		if(unsat){
 			return std::vector<Structure*> { };
@@ -72,22 +72,11 @@ public:
 			int atomnr = (*literal > 0) ? *literal : (-1) * (*literal);
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
-				const ElementTuple& args = translator->getArgs(atomnr);
-				if (isa<Predicate>(*symbol)) {
-					auto pred = dynamic_cast<Predicate*>(symbol);
-					if (*literal < 0) {
-						result->inter(pred)->makeFalse(args);
-					} else {
-						result->inter(pred)->makeTrue(args);
-					}
+				const auto& args = translator->getArgs(atomnr);
+				if (*literal < 0) {
+					result->inter(symbol)->makeFalse(args);
 				} else {
-					Assert(isa<Function>(*symbol));
-					Function* func = dynamic_cast<Function*>(symbol);
-					if (*literal < 0) {
-						result->inter(func)->graphInter()->makeFalse(args);
-					} else {
-						result->inter(func)->graphInter()->makeTrue(args);
-					}
+					result->inter(symbol)->makeTrue(args);
 				}
 			}
 		}
@@ -95,7 +84,6 @@ public:
 
 		delete (grounder);
 		grounding->recursiveDelete();
-		delete (symstructure);
 		delete(mx);
 		delete(data);
 

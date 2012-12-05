@@ -13,12 +13,12 @@
 #define PROPAGATORCOMM_HPP_
 
 #include <map>
+#include <memory>
+
 class PredForm;
 class Variable;
 class FOBDDManager;
 class FOPropBDDDomain;
-
-
 
 /**
  * Direction of propagation
