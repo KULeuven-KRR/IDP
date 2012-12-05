@@ -32,7 +32,7 @@ MXResult ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructur
 		throw IdpException("Unexpected NULL-pointer.");
 	}
 	if (not term->freeVars().empty()) {
-		throw IdpException("Cannot minimize over term with free variables.");
+		throw IdpException("Cannot minimized over term with free variables.");
 	}
 	auto m = createMX(theory, structure, term, outputvoc, tracemonitor);
 	return m->expand();
