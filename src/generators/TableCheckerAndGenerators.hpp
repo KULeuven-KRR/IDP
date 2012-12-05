@@ -19,6 +19,7 @@
 
 class PredTable;
 class DomElemContainer;
+class DomainElement;
 
 
 /**
@@ -30,6 +31,7 @@ private:
 	std::vector<const DomElemContainer*> _vars;
 	Universe _universe;
 	bool _reset;
+	std::vector<const DomainElement*> _currargs;
 
 public:
 	// NOTE: does not take ownership of the table
