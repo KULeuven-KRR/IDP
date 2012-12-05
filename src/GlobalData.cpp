@@ -25,6 +25,7 @@ GlobalData::GlobalData()
 			_inserter(new Insert(_globalNamespace)),
 			_domainelemFactory(DomainElementFactory::createGlobal()),
 			_idcounter(1),
+			_wastimeout(false),
 			_options(new Options(false)),
 			_tabsizestack() {
 	shouldTerminate = false;

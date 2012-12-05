@@ -52,3 +52,9 @@ public:
 	InternalIdpException(std::string message);
 	std::string getMessage() const;
 };
+
+class TimeoutException: public Exception {
+public:
+	TimeoutException();
+	std::string getMessage() const;
+};

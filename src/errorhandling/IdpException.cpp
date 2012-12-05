@@ -54,3 +54,12 @@ std::string InternalIdpException::getMessage() const {
 	ss << "InternalIdpException: " << message;
 	return ss.str();
 }
+
+TimeoutException::TimeoutException() {
+}
+
+std::string TimeoutException::getMessage() const {
+	std::stringstream ss;
+	ss << "Inference timed-out";
+	return ss.str();
+}

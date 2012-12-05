@@ -45,6 +45,8 @@ private:
 	DomainElementFactory* _domainelemFactory;
 	int _idcounter;
 
+	bool _wastimeout;
+
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
 
@@ -74,6 +76,9 @@ public:
 	static bool terminateRequested() {
 		return shouldTerminate;
 	}
+	bool timedout() const {
+		return shouldTerminate && _wastimeout;
+	}
 	static void reset() {
 		shouldTerminate = false;
 	}
@@ -97,6 +102,13 @@ public:
 				_monitors.erase(i);
 				break;
 			}
+		}
+	}
+	void notifyTimeout() {
+		_wastimeout = true;
+		shouldTerminate = true;
+		for (auto i = _monitors.cbegin(); i < _monitors.cend(); ++i) {
+			(*i)->notifyTerminateRequested();
 		}
 	}
 
@@ -174,6 +186,10 @@ void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueTy
 }
 
 #define CHECKTERMINATION \
+	if(GlobalData::instance()->timedout()){\
+		throw TimeoutException();\
+	}\
 	if(GlobalData::terminateRequested()){\
 		throw IdpException("Terminate requested");\
 	}
+
