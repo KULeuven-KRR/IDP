@@ -10,6 +10,7 @@
  ****************************************************************************/
 
 #include "QuantKernelGenerators.hpp"
+#include "utils/ListUtils.hpp"
 
 
 ElementTuple TrueQuantKernelGenerator::getDomainElements() {
@@ -48,13 +49,20 @@ void TrueQuantKernelGenerator::next() {
 		_subBddTrueGenerator->operator ++();
 	}
 	for (; not _subBddTrueGenerator->isAtEnd(); _subBddTrueGenerator->operator ++()) {
+		CHECKTERMINATION;
 		auto elements = getDomainElements();
-		if (_alreadySeen.find(elements) == _alreadySeen.cend()) {
+		if (not contains(_alreadySeen, elements)) {
 			_alreadySeen.insert(elements);
 			return;
 		}
+
+		// Check whether we already have all possible tuples in _alreadySeen given the outvars.
+		// NOTE: currentlty, the domain of outvars is unknown, so we can only check this for the empty tuple
+		if(_outvars.size()==0 && _alreadySeen.size()>0){
+			break;
+		}
 	}
-	if (_subBddTrueGenerator->isAtEnd()) {
+	if (_subBddTrueGenerator->isAtEnd() || (_outvars.size()==0 && _alreadySeen.size()>0)) {
 		notifyAtEnd();
 	}
 }
