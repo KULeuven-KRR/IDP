@@ -1,0 +1,23 @@
+vocabulary V{
+	type x
+	type y isa x
+	p(x)
+}
+
+vocabulary Vout{
+	extern V::p/1
+}
+
+theory T:V{
+	!y[y]: p(y).
+	?x[x]: ~p(x).
+}
+
+structure S:V{
+	x = {1..3}
+	y = {1..2}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

@@ -1,0 +1,19 @@
+vocabulary V{
+	type T isa int
+	type T2 isa int
+	a:T
+}
+
+
+query Q:V {
+	{x[T2]: ~(a=x)}
+}
+
+structure S:V {
+	T = {1..5}
+	T2 = {0..3}
+}
+
+procedure getExpectedSet(){
+  return {{0}}
+}

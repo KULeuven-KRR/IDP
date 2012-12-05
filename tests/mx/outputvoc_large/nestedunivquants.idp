@@ -1,18 +1,19 @@
 vocabulary V{
 	type x isa nat
 	p(x)
-	q(x)
+	q(x,x)
 	r(x)
+	a
 }
 
 vocabulary Vout{
+	a
 }
 
-theory T:V{ // Tests heuristics in lazy grounding ( it should not watch q in the first sentence )
-	!x y: p(x) & r(y) => q(x).
+theory T:V{
+	!x: p(x) => !y: r(y) & a & !z: q(x,z).
 	?x: p(x).
 	?x: r(x).
-	!x: ~q(x).
 }
 
 structure S:V{
@@ -20,5 +21,5 @@ structure S:V{
 }
 
 procedure getExpectedNbOfModels(){
-	return 0
+	return 2
 }

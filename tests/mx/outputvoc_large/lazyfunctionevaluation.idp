@@ -1,0 +1,33 @@
+vocabulary V{
+	type x isa int
+	T
+	p(x,x)
+	isSquare(x,x)
+}
+
+vocabulary Vout{
+	extern V::T/0
+}
+
+theory T:V{
+	{
+		p(x,y) <- isSquare(x,y).
+	}
+	T <=> p(5,24).
+}
+
+procedure checkSquare(x,y){
+	return x*x==y;
+}
+
+structure S:V{
+	x is int
+	isSquare = procedure checkSquare
+}
+
+#include <mx>
+procedure main(){
+	stdoptions.nbmodels=0
+	stdoptions.satdelay=true
+	printmodels(modelexpand(T,S, Vout))
+}

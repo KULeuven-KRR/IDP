@@ -1,0 +1,42 @@
+vocabulary V{
+	type Id
+	type S isa int
+	type X isa int
+	type Y isa int
+	
+	MaxX:X
+	MaxY:Y
+	
+	Area(X,Y)
+	
+	Square(Id):S
+	
+	PosX(Id,X)
+	PosY(Id,Y)
+}
+vocabulary Vout{
+	extern V::PosX/2
+	extern V::PosY/2
+}
+theory T:V{	
+	!id: ?x: PosX(id,x).
+	!id: ?x: PosY(id,x).
+	!id x x2: PosX(id,x) & PosX(id,x2) => x=x2.
+	!id x x2: PosY(id,x) & PosY(id,x2) => x=x2.
+	
+	!id x: PosX(id,x) => x=<MaxX-Square(id).
+	!id x: PosY(id,x) => x=<MaxY-Square(id).
+}
+structure S:V{
+	S = {12; 14; 15; 23; 30; 4; 42; 5; 7; 9}
+	Id = {1; 10; 11; 12; 2; 3; 4; 5; 6; 7; 8; 9}
+	X = {0..100}
+	Y = {0..50}
+	MaxX = 100
+	MaxY = 50
+	Area = {100,50}
+	Square = {1->4;10->4;11->7;12->5;2->23;3->42;4->9;5->30;6->15;7->14;8->12;9->7;}
+}
+procedure getExpectedAModel(){
+	return true
+}

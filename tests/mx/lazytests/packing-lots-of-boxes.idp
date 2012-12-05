@@ -1,0 +1,39 @@
+vocabulary V{
+	type Id
+	type S isa int
+	type X isa int
+	type Y isa int
+	
+	Size(Id):S
+	
+	Pos(Id, X, Y)
+	Box(X,Y,X,Y)  // min max coord to be filled
+}
+vocabulary Vout{
+}
+theory T:V{	
+//	!id x y x2 y2: Pos(id, x, y) & Pos(id, x2, y2) => x=x2 & y=y2.
+//	!id id2 x x2 y y2: Pos(id, x, y) & Pos(id2, x2, y2) => id=id2 | x+Size(id)<x2 | x2+Size(id)<x  | y+Size(id)<y2 | y2+Size(id)<y.
+	
+	// TODO cannot do approximation
+//	!xmin ymin xmax ymax: Box(xmin,ymin,xmax,ymax) => ?x y: x<xmax & x>xmin & y>ymin & y<ymax & ?id: Pos(id,x,y).
+	?x y: x<10 & x>0 & y<10 & y>0 & ?id: Pos(id,x,y).
+}
+structure S:V{
+	Id = {1..3}
+	S = {1..100}
+	X = {-100000..100000000}
+	Y = {-100000..100000000}
+	Size = {1->50; 2->25; 3->3}
+	Box = {0,0,10,10}
+}
+#include <mx>
+procedure main(){
+	stdoptions.verbosity.grounding=4
+	stdoptions.verbosity.generatorsandcheckers=1
+	stdoptions.verbosity.solving=4
+	stdoptions.groundwithbounds=true
+	stdoptions.tseitindelay = true
+	stdoptions.satdelay = true
+	printmodels(modelexpandpartial(T, S, Vout))
+}

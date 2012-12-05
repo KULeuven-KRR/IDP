@@ -8,7 +8,7 @@ vocabulary Vout{
 	extern V::q/0
 }
 
-theory T:V{
+theory T:V{ // NOTE: only solvable by skolemization (and cp support)
 	!x: p(x) => q.
 	?x: p(x).
 }

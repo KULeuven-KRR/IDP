@@ -1,20 +1,23 @@
 vocabulary V{
-	type x isa int
+	type x isa nat
 	p(x)
+	q(x,x)
+	r(x,x)
 }
 
 vocabulary Vout{
 }
 
 theory T:V{
-	!x: x<15000 & x>14900 => p(x).
 	{
-		p(x).
+		p(x) <- false.
+		q(x, y) <- r(x, y).
 	}
+	!x: p(x) => !y z: q(y,z).
 }
 
 structure S:V{
-	x is int
+	x = {1..100}
 }
 
 procedure getExpectedNbOfModels(){
