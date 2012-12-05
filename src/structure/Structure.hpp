@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef STRUCTURE_HPP_
-#define STRUCTURE_HPP_
+#pragma once
 
 #include "AbstractStructure.hpp"
 
@@ -76,4 +75,8 @@ public:
 	Universe universe(const PFSymbol*) const;
 };
 
-#endif /* STRUCTURE_HPP_ */
+/**
+ * Changes the interpretation to make all unknown atoms false by
+ * setting pt to ct and then cf and pf to NOT ct.
+ */
+void makeUnknownsFalse(PredInter* inter);

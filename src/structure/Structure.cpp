@@ -167,6 +167,16 @@ bool Structure::isConsistent() const {
 	return true;
 }
 
+void makeUnknownsFalse(PredInter* inter){
+	Assert(inter!=NULL);
+
+	if (inter->approxTwoValued()) {
+		return;
+	}
+	inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
+	inter->cfpf(new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe()));
+}
+
 void Structure::makeTwoValued() {
 	if (not isConsistent()) {
 		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
