@@ -96,27 +96,47 @@ Namespace* Namespace::subspace(const string& sn) const {
 }
 
 Vocabulary* Namespace::vocabulary(const string& vn) const {
-	Assert(isVocab(vn));
+	if(not isVocab(vn)){
+		stringstream ss;
+		ss <<"The vocabulary " <<vn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
 	return ((_vocabularies.find(vn))->second);
 }
 
 AbstractTheory* Namespace::theory(const string& tn) const {
-	Assert(isTheory(tn));
+	if(not isTheory(tn)){
+		stringstream ss;
+		ss <<"The theory " <<tn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
 	return ((_theories.find(tn))->second);
 }
 
 Query* Namespace::query(const string& fn) const {
-	Assert(isQuery(fn));
+	if(not isQuery(fn)){
+		stringstream ss;
+		ss <<"The query " <<fn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
 	return ((_queries.find(fn))->second);
 }
 
 Term* Namespace::term(const string& tn) const {
-	Assert(isTerm(tn));
+	if(not isTerm(tn)){
+		stringstream ss;
+		ss <<"The term " <<tn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
 	return ((_terms.find(tn))->second);
 }
 
 AbstractStructure* Namespace::structure(const string& sn) const {
-	Assert(isStructure(sn));
+	if(not isStructure(sn)){
+		stringstream ss;
+		ss <<"The structure " <<sn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
 	return ((_structures.find(sn))->second);
 }
 
