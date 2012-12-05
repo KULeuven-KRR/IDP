@@ -17,6 +17,7 @@
 
 using namespace std;
 using namespace CPSupport;
+using namespace TermUtils;
 
 CompType getComparison(const PredForm* pf) {
 	auto sign = pf->sign();
@@ -30,21 +31,6 @@ CompType getComparison(const PredForm* pf) {
 		Assert(is(symbol, STDPRED::GT));
 		return isPos(sign) ? CompType::GT : CompType::LEQ;
 	}
-}
-
-bool isAgg(Term* t) {
-	return t->type() == TermType::AGG;
-}
-bool isFunc(Term* t) {
-	return t->type() == TermType::FUNC;
-}
-
-bool isDom(Term* t) {
-	return t->type() == TermType::DOM;
-}
-
-bool isAggOrFunc(Term* t) {
-	return isAgg(t) || isFunc(t);
 }
 
 /**

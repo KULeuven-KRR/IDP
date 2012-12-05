@@ -87,11 +87,11 @@ public:
 
 	void visit(const UnionInternalPredTable* uipt) {
 		double result = 0;
-		for (auto it = uipt->inTables().cbegin(); result < InfCost && it != uipt->inTables().cend(); ++it) {
+		for (auto it = uipt->inTables().cbegin(); result < InfCost&& it != uipt->inTables().cend(); ++it) {
 			(*it)->accept(this);
 			result = result + _result;
 		}
-		for (auto it = uipt->outTables().cbegin(); result < InfCost && it != uipt->outTables().cend(); ++it) {
+		for (auto it = uipt->outTables().cbegin(); result < InfCost&& it != uipt->outTables().cend(); ++it) {
 			(*it)->accept(this);
 			result = result + _result;
 		}
@@ -140,8 +140,8 @@ public:
 		auto sz = getTableCost(function);
 		auto ts = toDouble(_table->size());
 		double lookupsize = sz < ts ? sz : ts;
-		if(lookupsize==0){
-			_result=1;
+		if (lookupsize == 0) {
+			_result = 1;
 			return;
 		}
 		auto lookuptime = log(lookupsize) / log(2);
@@ -208,7 +208,7 @@ public:
 
 	int getNbInputs(bool alsolastelem) {
 		unsigned int patterncount = 0;
-		auto max = alsolastelem?_pattern.size()-1:_pattern.size();
+		auto max = alsolastelem ? _pattern.size() - 1 : _pattern.size();
 		for (unsigned int n = 0; n < max; ++n) {
 			if (_pattern[n]) {
 				++patterncount;

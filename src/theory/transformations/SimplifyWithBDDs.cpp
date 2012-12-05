@@ -29,11 +29,11 @@ Theory* SimplifyWithBdds::execute(Theory* theo) {
 }
 
 Formula* SimplifyWithBdds::execute(Formula* f) {
-	FOBDDManager manager(false);
-	FOBDDFactory factory(&manager);
+	auto manager = new FOBDDManager();
+	FOBDDFactory factory(manager);
 	auto bdd = factory.turnIntoBdd(f);
 	f->recursiveDelete();
-	BDDToFO back(&manager);
+	BDDToFO back(manager);
 	return back.createFormula(bdd);
 }
 

@@ -14,10 +14,10 @@
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
-		: 	_manager(false),
-			_factory(&_manager),
-			_counter(&_manager),
-			_bddtofo(&_manager, &_counter) {
+		: 	_manager(new FOBDDManager()),
+			_factory(_manager),
+			_counter(_manager),
+			_bddtofo(_manager, &_counter) {
 }
 
 Theory* IntroduceSharedTseitins::execute(Theory* theo, Structure* s) {
@@ -35,8 +35,8 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo, Structure* s) {
 	for (auto def = theo->definitions().cbegin(); def != theo->definitions().cend(); ++def) {
 		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule) {
 			auto bdd = _factory.turnIntoBdd((*rule)->body(), s);
-			auto bddvars = _manager.getVariables((*rule)->quantVars());
-			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
+			auto bddvars = _manager->getVariables((*rule)->quantVars());
+			bdd = _manager->replaceFreeVariablesByIndices(bddvars, bdd);
 			_counter.count(bdd);
 		}
 	}
@@ -49,8 +49,8 @@ Theory* IntroduceSharedTseitins::execute(Theory* theo, Structure* s) {
 		_bddtofo.startDefinition();
 		for (auto rule = (*def)->rules().cbegin(); rule != (*def)->rules().cend(); ++rule, ++i) {
 			auto bdd = _factory.turnIntoBdd((*rule)->body(), s); //TODO: avoid double work by storing the bdds
-			auto bddvars = _manager.getVariables((*rule)->quantVars());
-			bdd = _manager.replaceFreeVariablesByIndices(bddvars, bdd);
+			auto bddvars = _manager->getVariables((*rule)->quantVars());
+			bdd = _manager->replaceFreeVariablesByIndices(bddvars, bdd);
 			auto newbody = _bddtofo.createFormulaWithFreeVars(bdd, bddvars);
 			(*rule)->body()->recursiveDeleteKeepVars();
 			(*rule)->body(newbody);

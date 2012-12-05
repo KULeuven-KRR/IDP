@@ -13,25 +13,40 @@
 
 #include <vector>
 #include <map>
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "visitors/TheoryVisitor.hpp"
 
 class Variable;
 class PFSymbol;
 
-class AddIfCompletion: public TheoryMutatingVisitor {
+struct OnlyIfFormula{
+	PredForm* head;
+	Formula* formula;
+	int definitionid;
+};
+
+class AddIfCompletion: public DefaultTraversingTheoryVisitor{
 	VISITORFRIENDS()
 private:
+	std::vector<OnlyIfFormula> _result;
+
 	std::map<PFSymbol*, std::vector<Variable*> > _headvars;
 	std::map<PFSymbol*, std::vector<Formula*> > _interres;
 
 public:
-	std::vector<std::pair<PFSymbol*, Formula*> > getOnlyIfFormulas(const Definition & definition);
+	std::vector<OnlyIfFormula> getOnlyIfFormulas(const Definition & definition);
+	std::vector<OnlyIfFormula> getOnlyIfFormulas(const AbstractTheory& theory);
+
 	template<typename T>
 	T* execute(T* t){
-		return t->accept(this);
+		_result.clear();
+		t->accept(this);
+		for(auto r: _result){
+			t->add(r.formula);
+		}
+		return t;
 	}
 
 protected:
-	Theory* visit(Theory*);
+	void visit(const Theory*);
 	void addFor(const Rule& rule );
 };

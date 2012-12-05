@@ -31,7 +31,7 @@ class Term;
  *	@returns The rewritten formula. If no rewriting was needed, it is the same pointer as pf.
  *	If rewriting was needed, pf can be deleted, but not recursively.
  */
-class UnnestHeadTermsContainingVars: public UnnestTerms {
+class UnnestHeadTermsNotVarsOrDomElems: public UnnestTerms {
 	VISITORFRIENDS()
 private:
 	bool inhead;
@@ -42,7 +42,8 @@ public:
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
 		setContext(context);
 		setAllowedToUnnest(false);
-		return t->accept(this);
+		auto result = t->accept(this);
+		return result;
 	}
 
 protected:
@@ -57,7 +58,7 @@ protected:
 	}
 
 	bool wouldMove(Term* t){
-		return inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR && t->freeVars().size()>0;
+		return inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR;
 	}
 };
 

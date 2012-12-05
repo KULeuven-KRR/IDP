@@ -866,7 +866,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	if (not getOption(SATISFIABILITYDELAY)) {
 		_context._allowDelaySearch = false;
 	}
-	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
+/*	if (getOption(BoolType::GROUNDLAZILY) and getOption(SATISFIABILITYDELAY) and getContext()._allowDelaySearch) {
 		auto lazycontext = Context::BOTH;
 		auto tuple = FormulaUtils::findDoubleDelayLiteral(newqf, getConcreteStructure(), getGrounding()->translator(), lazycontext);
 		if (tuple.size() != 2) {
@@ -875,7 +875,7 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 			delayablepf = tuple[0];
 			//twindelayablepf = tuple[1]; NOT USED FIXME UNCOMMENT IF USED AGAIN (commented to avoid compiler warnings)
 		}
-	}
+	}*/
 	if (delayablepf != NULL) {
 		_context._allowDelaySearch = false;
 	}

@@ -15,17 +15,22 @@
 
 using namespace std;
 
-Theory* AddIfCompletion::visit(Theory* theory){
+void AddIfCompletion::visit(const Theory* theory){
 	for(auto def: theory->definitions()){
 		auto result = getOnlyIfFormulas(*def);
-		for(auto p: result){
-			theory->add(p.second);
+		for(auto r: result){
+			_result.push_back(r);
 		}
 	}
-	return theory;
 }
 
-std::vector<std::pair<PFSymbol*, Formula*> > AddIfCompletion::getOnlyIfFormulas(const Definition& def) {
+std::vector<OnlyIfFormula> AddIfCompletion::getOnlyIfFormulas(const AbstractTheory& theory) {
+	_result.clear();
+	theory.accept(this);
+	return _result;
+}
+
+std::vector<OnlyIfFormula> AddIfCompletion::getOnlyIfFormulas(const Definition& def) {
 	_headvars.clear();
 	_interres.clear();
 	for (const auto& defsymbol : def.defsymbols()) {
@@ -39,7 +44,7 @@ std::vector<std::pair<PFSymbol*, Formula*> > AddIfCompletion::getOnlyIfFormulas(
 		addFor(*rule);
 	}
 
-	std::vector<std::pair<PFSymbol*, Formula*> > mapping;
+	std::vector<OnlyIfFormula> mapping;
 	for (const auto& symb2forms : _interres) {
 		const auto& symbol = symb2forms.first;
 		const auto& formulas = symb2forms.second;
@@ -52,11 +57,11 @@ std::vector<std::pair<PFSymbol*, Formula*> > AddIfCompletion::getOnlyIfFormulas(
 		b->negate();
 		auto ev = new BoolForm(SIGN::POS, false, h, b, FormulaParseInfo());
 		if (symbol->sorts().empty()) {
-			mapping.push_back({symbol, ev});
+			mapping.push_back({h, ev, def.getID()});
 		} else {
 			varset qv(_headvars[symbol].cbegin(), _headvars[symbol].cend());
 			auto qf = new QuantForm(SIGN::POS, QUANT::UNIV, qv, ev, FormulaParseInfo());
-			mapping.push_back({symbol, qf});
+			mapping.push_back({h, qf, def.getID()});
 		}
 	}
 

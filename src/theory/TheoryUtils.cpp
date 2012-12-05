@@ -40,6 +40,7 @@
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/SplitDefinitions.hpp"
+#include "transformations/SubstituteVarWithDom.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
@@ -57,11 +58,36 @@
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
 #include "transformations/RemoveQuantificationsOverSort.hpp"
+#include "information/ContainedVariables.hpp"
 
 using namespace std;
 
 /* TermUtils */
 namespace TermUtils {
+
+bool isAgg(Term* t) {
+	return t->type() == TermType::AGG;
+}
+bool isFunc(Term* t) {
+	return t->type() == TermType::FUNC;
+}
+
+bool isDom(Term* t) {
+	return t->type() == TermType::DOM;
+}
+
+bool isVar(Term* t) {
+	return t->type() == TermType::VAR;
+}
+
+bool isAggOrFunc(Term* t) {
+	return isAgg(t) || isFunc(t);
+}
+
+bool isVarOrDom(Term* t) {
+	return isVar(t) || isDom(t);
+}
+
 bool approxTwoValued(const Term* t, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(t, str);
 }
@@ -135,6 +161,24 @@ Rule* falseRule(PFSymbol* s) {
 	auto rule = new Rule(head->freeVars(), head, FormulaUtils::falseFormula(), ParseInfo());
 	return rule;
 }
+
+Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const AbstractStructure* structure, Context context) {
+	return transform<UnnestHeadTermsNotVarsOrDomElems, Rule*>(rule, structure, context);
+}
+Rule* moveOnlyBodyQuantifiers(Rule* rule){
+	ContainedVariables v;
+	auto occursinhead = v.execute(rule->head());
+	varset notinhead;
+	for(auto var: rule->quantVars()){
+		if(occursinhead.find(var)==occursinhead.cend()){
+			notinhead.insert(var);
+		}
+	}
+	if(notinhead.empty()){
+		return rule;
+	}
+	return new Rule(occursinhead, rule->head(), new QuantForm(SIGN::POS, QUANT::EXIST, notinhead, rule->body(), rule->body()->pi()), rule->pi());
+}
 }
 
 /* FormulaUtils */
@@ -176,18 +220,6 @@ bool containsAggTerms(Formula* f) {
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
-}
-
-const PredForm* findUnknownBoundLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context) {
-	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const Structure*, const GroundTranslator*, Context&>(f, structure,
-			translator, context);
-}
-std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator,
-		Context& context) {
-	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const Structure*, const GroundTranslator*, Context&>(f,
-			structure, translator, context);
 }
 
 void deriveSorts(Vocabulary* v, Formula* f) {
@@ -243,6 +275,14 @@ Theory* sharedTseitinTransform(Theory* t, Structure* s) {
 
 Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
+}
+
+Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const DomainElement*>& var2domelem){
+	return transform<SubstituteVarWithDom, Formula*>(formula, var2domelem);
+}
+
+Formula* pushQuantifiers(Formula* t) {
+	return transform<PushQuantifications, Formula*>(t);
 }
 
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str, Context con) {

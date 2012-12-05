@@ -38,6 +38,11 @@ class Function;
 class Theory;
 class TheoryComponent;
 class Sort;
+class Delay;
+class Term;
+
+class DomElemContainer;
+typedef std::map<Variable*, const DomElemContainer*> var2dommap;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -98,9 +103,6 @@ bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
-const PredForm* findUnknownBoundLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context);
-/** Returns an empty set if no such delay was possible **/
-std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);
@@ -143,6 +145,11 @@ Theory* sharedTseitinTransform(Theory* t, Structure* s = NULL);
 
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
+
+Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const DomainElement*>& var2domelem);
+
+/** Non-recursively push quantifiers down as far as possible **/
+Formula* pushQuantifiers(Formula* t);
 
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL, Context con = Context::POSITIVE);
@@ -240,6 +247,14 @@ AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s);
 
 
 namespace TermUtils {
+
+bool isAgg(Term* t);
+bool isFunc(Term* t);
+bool isDom(Term* t);
+bool isVar(Term* t);
+bool isAggOrFunc(Term* t);
+bool isVarOrDom(Term* t);
+
 /** Returns false if the term is not two-valued in the given structure.
  *  May return true if the term is two-valued in the structure. */
 bool approxTwoValued(const Term*, const Structure*);
@@ -296,5 +311,9 @@ Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context cont
 /** Create the rule P(\bar x) \lrule false*/
 Rule* falseRule(PFSymbol*);
 
+Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure, Context context);
+
+// Move head quantifiers of variables only occurring in the body to the body.
+Rule* moveOnlyBodyQuantifiers(Rule* rule);
 } /* namespace DefinitionUtils */
 

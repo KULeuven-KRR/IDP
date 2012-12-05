@@ -32,6 +32,7 @@ void DeriveSorts::checkVars(const varset& quantvars) {
 Formula* DeriveSorts::visit(QuantForm* qf) {
 	Assert(_assertsort == NULL);
 	checkVars(qf->quantVars());
+	checkVars(qf->freeVars());
 	return traverse(qf);
 }
 
@@ -45,6 +46,7 @@ Rule* DeriveSorts::visit(Rule* r) {
 
 QuantSetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 	Assert(_assertsort == NULL);
+	checkVars(qs->freeVars());
 	checkVars(qs->quantVars());
 	return traverse(qs);
 }

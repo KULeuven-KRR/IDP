@@ -51,6 +51,8 @@ class FormulaClauseBuilder;
 class CollectSymbols;
 class ReplaceLTCSymbols;
 class RemoveQuantificationsOverSort;
+class ContainedVariables;
+class SubstituteVarWithDom;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -96,12 +98,13 @@ class RemoveQuantificationsOverSort;
 		friend class SplitComparisonChains; \
 		friend class SplitDefinitions; \
 		friend class SubstituteTerm; \
+		friend class SubstituteVarWithDom; \
 		friend class UnnestTerms; \
 		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\
-		friend class UnnestHeadTermsContainingVars;\
-		friend class FindUnknownBoundLiteral;\
+		friend class UnnestHeadTermsNotVarsOrDomElems;\
+		friend class FindDelayPredForms;\
 		friend class FindDoubleDelayLiteral;\
 		friend class SplitIntoMonotoneAgg;\
 		friend class AddIfCompletion;\
@@ -109,6 +112,7 @@ class RemoveQuantificationsOverSort;
 		friend class ReplaceNestedWithTseitinTerm;\
 		friend class ConstructNewReducedForm;\
 		friend class TopDownApproximatingDefinition;\
+		friend class ContainedVariables;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
 		friend class CollectQuantifiedVariables;\
