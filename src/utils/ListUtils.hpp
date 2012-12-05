@@ -15,12 +15,11 @@
 #include <set>
 #include <map>
 
-template<typename T, typename T2>
-void addAll(std::map<T, T2>& list, const std::map<T, T2>& toadd){
-	for(const auto& elem: toadd){
-		list.insert(elem);
+template<typename List>
+void addAll(List& to, const List& from){
+	for(const auto& elem: from){
+		to.insert(elem);
 	}
-
 }
 
 // Support for deleting lists of pointer elements
