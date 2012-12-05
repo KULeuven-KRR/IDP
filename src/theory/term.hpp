@@ -22,6 +22,8 @@ class Function;
 class DomainElement;
 class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
+class Vocabulary;
+class AbstractStructure;
 
 enum class TermType {
 	VAR,
