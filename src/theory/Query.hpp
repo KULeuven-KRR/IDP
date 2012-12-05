@@ -20,6 +20,13 @@ class Variable;
 class Vocabulary;
 class ParseInfo;
 
+#include <vector>
+#include <iostream>
+#include "parseinfo.hpp"
+class Vocabulary;
+class Variable;
+class Formula;
+
 /**
  * Represents queries of the form {x1 ... xn: phi}
  */
@@ -61,5 +68,6 @@ public:
 	const ParseInfo& pi() const {
 		return _pi;
 	}
+	void put(std::ostream& stream) const;
 
 };

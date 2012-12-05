@@ -40,3 +40,7 @@ Query::Query(std::string name, const std::vector<Variable*>& vars, Formula* q, c
 void Query::recursiveDelete() {
 	_query->recursiveDelete(); //also deletes the variables.
 }
+
+void Query::put(std::ostream& stream) const {
+	stream << "Query " << name() << " represents tuples of assignments to " << toString(variables()) << " satisfying " << toString(query()) << "\n";
+}
