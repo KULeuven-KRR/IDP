@@ -44,6 +44,12 @@ TEST(TrailTest, NonEmptyTrail) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
+TEST(VocabularyTest, NonSharedVoc) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/term_theory_voc.idp" }););
+	ASSERT_EQ(Status::FAIL, result);
+}
+
 TEST(MXnbmodelsTest, DoesMX) {
 	string testfile(getTestDirectory() + "mx/nbmodels.idp");
 	cerr << "Testing " << testfile << "\n";

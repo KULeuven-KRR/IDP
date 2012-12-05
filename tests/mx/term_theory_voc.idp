@@ -1,0 +1,39 @@
+vocabulary shared {
+  type node 
+  from: node
+  to: node
+  edge(node,node)
+  reachable(node,node)
+}
+
+vocabulary sp_voc {
+  extern vocabulary shared
+  edgeOnPath(node,node)
+}
+
+vocabulary sp_voc2 {
+  extern vocabulary shared
+  edgeOnPath(node,node)
+}
+
+theory sp_theory4: sp_voc2 {
+}
+
+term lengthOfPath: sp_voc {
+	#{ x y : edgeOnPath(x,y) }
+}
+
+procedure main() {
+	setvocabulary(inputGraph,getvocabulary(sp_theory4))
+  	if #minimize(sp_theory4, inputGraph, lengthOfPath)>0 then
+  		return 1
+  	else
+  		return 0
+  	end
+}
+
+structure inputGraph : shared {
+  edge = { from,node1x1; node5x2,node5x1 }
+  from = from
+  to = to
+}
