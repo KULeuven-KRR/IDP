@@ -164,9 +164,7 @@ void ComparisonGenerator::next() {
 		}
 		break;
 	case Input::RIGHT:
-		Assert(false);
-		// Guaranteed not to happen
-		break;
+		throw InternalIdpException("Invalid code path in comparisongenerator.");
 	}
 	_latestleft = _leftvar->get();
 	_latestright = _rightvar->get();
