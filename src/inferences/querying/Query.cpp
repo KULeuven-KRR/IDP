@@ -23,19 +23,16 @@
 #include "fobdds/FoBddVariable.hpp"
 #include "theory/TheoryUtils.hpp"
 
-PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
+PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
 	// translate the formula to a bdd
 	FOBDDManager* manager;
 	const FOBDD* bdd;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
-		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
-		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,true,false); 
-		auto generateBDDaccToBounds = generateBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure, false, false);
-		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
-		manager = generateBDDaccToBounds->obtainManager();
-		delete generateBDDaccToBounds;
+		auto symbolicstructure = generateNonLiftedBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure);
+		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
+		manager = symbolicstructure->obtainManager();
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
 		manager = new FOBDDManager();
@@ -44,13 +41,42 @@ PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
 	}
 	newquery->recursiveDelete();
 
+	return solveBdd(q->variables(), manager, bdd, structure);
+}
+
+PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const {
+	// translate the formula to a bdd
+	FOBDDManager* manager;
+	const FOBDD* bdd;
+	auto newquery = q->query()->clone();
+	newquery = FormulaUtils::calculateArithmetic(newquery);
+	if (not structure->approxTwoValued()) {
+		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
+		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,true,false); 
+		auto symbolicstructure = generateBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure, false, false);
+		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
+		manager = symbolicstructure->obtainManager();
+		delete symbolicstructure;
+	} else {
+		//When working two-valued, we can simply turn formula to BDD
+		manager = new FOBDDManager();
+		FOBDDFactory factory(manager);
+		bdd = factory.turnIntoBdd(newquery);
+	}
+	newquery->recursiveDelete();
+
+	return solveBdd(q->variables(), manager, bdd, structure);
+}
+
+PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, AbstractStructure const * const structure) const {
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";
 	}
 	Assert(manager != NULL);
-	varset vars(q->variables().cbegin(), q->variables().cend());
-	auto bddvars = manager->getVariables(vars);
+
+	varset setvars(vars.cbegin(), vars.cend());
+	auto bddvars = manager->getVariables(setvars);
 	fobddindexset bddindices;
 
 	Assert(bdd != NULL);
@@ -60,7 +86,7 @@ PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
 	data.bdd = bdd;
 	data.structure = structure;
 	std::map<Variable*,const DomElemContainer*> varsToDomElemContainers;
-	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
+	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		data.pattern.push_back(Pattern::OUTPUT);
 		auto dec = varsToDomElemContainers.find(*it);
 		if (dec == varsToDomElemContainers.cend()) {
@@ -83,21 +109,20 @@ PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
 
 // Create an empty table
 	std::vector<SortTable*> vst;
-	for (auto it = q->variables().cbegin(); it != q->variables().cend(); ++it) {
+	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		vst.push_back(structure->inter((*it)->sort()));
 	}
 	Universe univ(vst);
 	auto result = TableUtils::createPredTable(univ);
 	// execute the query
-	ElementTuple currtuple(q->variables().size());
+	ElementTuple currtuple(vars.size());
 	//cerr <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
-		for (unsigned int n = 0; n < q->variables().size(); ++n) {
+		for (unsigned int n = 0; n < vars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();
 		}
 		result->add(currtuple);
 	}
 	delete generator;
-	delete (manager);
 	return result;
 }

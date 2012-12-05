@@ -9,22 +9,32 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef QUERY_HPP_
-#define QUERY_HPP_
+#pragma once
+
+#include <memory>
+#include <vector>
 
 class PredTable;
 class Query;
 class Structure;
+class FOBDD;
+class Variable;
+class FOBDDManager;
+class GenerateBDDAccordingToBounds;
 
 class Querying {
 public:
-	static PredTable* doSolveQuery(Query* q, Structure* s) {
+	static PredTable* doSolveQuery(Query* q, Structure const * const s) {
 		Querying c;
 		return c.solveQuery(q, s);
 	}
+	static PredTable* doSolveQuery(Query* q, AbstractStructure const * const s, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) {
+		Querying c;
+		return c.solveQuery(q, s, symbolicstructure);
+	}
 
 private:
-	PredTable* solveQuery(Query* q, Structure* s) const;
+	PredTable* solveQuery(Query* q, Structure const * const s) const;
+	PredTable* solveQuery(Query* q, Structure const * const s, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const;
+	PredTable* solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, Structure const * const structure) const;
 };
-
-#endif /* QUERY_HPP_ */
