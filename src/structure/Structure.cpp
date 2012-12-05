@@ -457,7 +457,7 @@ void Structure::addStructure(AbstractStructure*) {
 void Structure::sortCheck() const {
 	for (auto i = _sortinter.cbegin(); i != _sortinter.cend(); ++i) {
 		if ((*i).second->empty()) {
-			Warning::emptySort(i->first->name());
+			Warning::emptySort(i->first->name(), name());
 		}
 	}
 }

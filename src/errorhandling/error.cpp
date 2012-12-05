@@ -363,9 +363,9 @@ void Warning::triedAddingSubtypeToVocabulary(const std::string& boundedpredname,
 	warning(ss.str());
 }
 
-void Warning::emptySort(const std::string& sortname) {
+void Warning::emptySort(const std::string& sortname, const std::string& structurename) {
 	stringstream ss;
-	ss << "Sort " << sortname << " has an empty interpretation.";
+	ss << "Sort " << sortname << " in structure " <<structurename <<" has an empty interpretation.";
 	warning(ss.str());
 }
 
