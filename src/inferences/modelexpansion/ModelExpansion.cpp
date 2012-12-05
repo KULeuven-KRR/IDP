@@ -31,6 +31,9 @@ std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* t
 	if (term == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
+	if (not term->freeVars().empty()) {
+		throw IdpException("Cannot minimize over term with free variables.");
+	}
 	auto m = createMX(theory, structure, term, outputvoc, tracemonitor);
 	return m->expand();
 }
