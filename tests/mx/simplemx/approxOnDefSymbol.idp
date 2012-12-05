@@ -1,0 +1,14 @@
+vocabulary V{
+	type x isa int
+	P(x)
+}
+theory T:V{ // HOPEFULLY, this one will fail when using bounds and no lup because it will not ground the body if P(x) is already true (or this happens in a more complex case anyway)
+	{ P(x) <- ?y: x=y & P(y). }
+}
+structure S:V{
+	x = {1..2}
+	P<ct> = {1}
+}
+procedure getExpectedNbOfModels(){
+	return 0
+}
