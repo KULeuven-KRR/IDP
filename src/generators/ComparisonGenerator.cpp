@@ -24,6 +24,12 @@ ComparisonGenerator::ComparisonGenerator(SortTable* leftsort, SortTable* rightso
 		_input = Input::LEFT;
 		_comparison = invertComp(_comparison);
 	}
+	if (not leftIsInput() && not _left.isAtEnd()) {
+		_latestleft = *_left;
+	}
+	if (not rightIsInput() && not _right.isAtEnd()) {
+		_latestright = *_right;
+	}
 }
 
 void ComparisonGenerator::put(std::ostream& stream) const {
@@ -33,8 +39,7 @@ void ComparisonGenerator::put(std::ostream& stream) const {
 }
 
 ComparisonGenerator* ComparisonGenerator::clone() const {
-	auto gen = new ComparisonGenerator(*this);
-	return gen;
+	return new ComparisonGenerator(*this);
 }
 
 void ComparisonGenerator::internalSetVarsAgain() {
@@ -55,8 +60,10 @@ void ComparisonGenerator::findNext(SortIterator* finiteside, SortIterator* undef
 		const DomElemContainer* undefinedContainer, bool finiteGTorGEQundef) {
 	bool stop = false;
 	for (; not finiteside->isAtEnd() && not stop; ++(*finiteside)) {
+		CHECKTERMINATION;
 		if (_comparison != CompType::EQ) {
 			for (; not (*undefinedside).isAtEnd() && not stop; ++(*undefinedside)) {
+				CHECKTERMINATION;
 				if (checkAndSet() == CompResult::VALID) {
 					stop = true;
 					break; // NOTE: essential to prevent ++
@@ -142,6 +149,7 @@ void ComparisonGenerator::next() {
 			++_right;
 		}
 		for (; not _right.isAtEnd(); ++_right) {
+			CHECKTERMINATION;
 			if (checkAndSet() == CompResult::VALID) {
 				break;
 			} else if (_comparison == CompType::GEQ || _comparison == CompType::GT) {
