@@ -92,7 +92,7 @@ private:
 	/*
 	 * Calculates the chance that term1 equals a random term of sort sort.
 	 */
-	double calculateEqualityChance(const FOBDDTerm* term1, Sort* sort);
+	double calculateEqualityChance(const FOBDDTerm* term1, Sort* sort, bool ineq);
 	std::map<const FOBDD*, std::map<fobddvarset, std::map<indexset, double> > > bddanswers;
 	std::map<const FOBDDKernel*, std::map<fobddvarset, std::map<indexset, double> > > kernelanswers;
 	double tabledEstimateNrAnswers(const FOBDDKernel* object, const fobddvarset& vars, const indexset& indices){

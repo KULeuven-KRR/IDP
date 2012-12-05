@@ -122,7 +122,7 @@ bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
 	return ac.isArithmeticFormula(k);
 }
 
-double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term2sort) {
+double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term2sort, bool ineq) {
 	//We now have something of the form x=y.
 	//In general, the chance of this succeeding is:
 	// 1 / (|xsort| |ysort|) * |intersection(xsort,ysort)|
@@ -133,7 +133,7 @@ double BddStatistics::calculateEqualityChance(const FOBDDTerm* term1, Sort* term
 	auto term1SortSize = structure->inter(term1sort)->size();
 	auto term2SortSize = structure->inter(term2sort)->size();
 	if (term1SortSize.isInfinite() || term2SortSize.isInfinite()) {
-		return 0;
+		return ineq?0.5:0.01;
 	}
 	if(term1SortSize._size == 0 || term2SortSize._size == 0){
 		return 0;
@@ -233,10 +233,11 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		auto inds = indices(atomkernel, manager);
 		double result = 0;
 		bool stop = false;
+		bool ineq = not is(symbol, STDPRED::EQ);
 		for (auto var : vars) {
 			auto bddterm = manager->solve(atomkernel, var);
 			if (bddterm != NULL) {
-				result = calculateEqualityChance(bddterm, var->sort());
+				result = calculateEqualityChance(bddterm, var->sort(), ineq);
 				if (result == 0) {
 					continue;
 				}
@@ -248,7 +249,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 			for (auto ind : inds) {
 				auto bddterm = manager->solve(atomkernel, ind);
 				if (bddterm != NULL) {
-					result = calculateEqualityChance(bddterm, ind->sort());
+					result = calculateEqualityChance(bddterm, ind->sort(), ineq);
 					if (result == 0) {
 						continue;
 					}
@@ -256,7 +257,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 				}
 			}
 		}
-		if (is(symbol, STDPRED::EQ)) {
+		if (not ineq) {
 			//In case of equality, the calculated result is ok.
 			return result;
 		}
@@ -528,13 +529,13 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 		if (sign) {
 			if (atomkernel->type() == AtomKernelType::AKT_CF) {
 				pt = pinter->cf();
-			} else {
+			} else { // CT of TWOVAL
 				pt = pinter->ct();
 			}
 		} else {
 			if (atomkernel->type() == AtomKernelType::AKT_CF) {
 				pt = pinter->pt();
-			} else {
+			} else { // CT of TWOVAL
 				pt = pinter->pf();
 			}
 		}
@@ -570,8 +571,14 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 		for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
 			newindices.insert(manager->getDeBruijnIndex((*it)->sort(), (*it)->index() + 1));
 		}
-		newindices.insert(manager->getDeBruijnIndex(quantkernel->sort(), 0));
+		if (sign) {
+			newindices.insert(manager->getDeBruijnIndex(quantkernel->sort(), 0));
+		}
 		auto result = tabledEstimateCostAll(quantkernel->bdd(), vars, newindices);
+		auto sortsize = toDouble(structure->inter(quantkernel->sort())->size());
+		if (not sign) {
+			result *= sortsize;
+		}
 		kernelstorage[sign][kernel][vars][ind] = result;
 		return result;
 	}
