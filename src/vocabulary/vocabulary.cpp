@@ -267,6 +267,11 @@ void Sort::generatePred(SortTable* inter) {
 /**
  * Create an internal sort
  */
+Sort::Sort(SortTable* inter)
+		: _pi(), _interpretation(inter) {
+	_name = "sort" + convertToString(getGlobal()->getNewID());
+	generatePred(inter);
+}
 Sort::Sort(const string& name, SortTable* inter)
 		: _name(name), _pi(), _interpretation(inter) {
 	generatePred(inter);
