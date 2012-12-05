@@ -22,14 +22,14 @@ typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> L
  */
 class EnumLookupGenerator: public InstGenerator {
 private:
-	LookupTable _table;
+	std::shared_ptr<const LookupTable> _table;
 	LookupTable::const_iterator _currpos;
 	std::vector<ElementTuple>::const_iterator _iter;
 	std::vector<const DomElemContainer*> _invars, _outvars;
 	bool _reset;
 	mutable ElementTuple _currargs;
 public:
-	EnumLookupGenerator(const LookupTable& t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out);
+	EnumLookupGenerator(std::shared_ptr<const LookupTable> t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out);
 
 	EnumLookupGenerator* clone() const;
 	void reset();

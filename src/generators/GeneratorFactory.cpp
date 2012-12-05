@@ -407,7 +407,7 @@ void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
 }
 
 void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
-	LookupTable lookuptab;
+	auto lookuptab = shared_ptr<LookupTable>(new LookupTable());
 	vector<const DomElemContainer*> invars, outvars;
 
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
@@ -456,7 +456,7 @@ void GeneratorFactory::visit(const EnumeratedInternalPredTable*) {
 				outtuple.push_back(tuple[n]);
 			}
 		}
-		lookuptab[intuple].push_back(outtuple);
+		lookuptab->operator [](intuple).push_back(outtuple);
 	}
 	_generator = new EnumLookupGenerator(lookuptab, invars, outvars);
 }
@@ -588,7 +588,7 @@ void GeneratorFactory::visit(const UNAInternalFuncTable*) {
 
 void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 	// TODO: Use dynamic programming to improve this
-	LookupTable lookuptab;
+	auto lookuptab = shared_ptr<LookupTable>(new LookupTable());
 	vector<const DomElemContainer*> invars;
 	vector<const DomElemContainer*> outvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
@@ -621,7 +621,7 @@ void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
 					}
 				}
 			}
-			lookuptab[intuple].push_back(outtuple);
+			lookuptab->operator [](intuple).push_back(outtuple);
 		}
 	}
 	_generator = new EnumLookupGenerator(lookuptab, invars, outvars);

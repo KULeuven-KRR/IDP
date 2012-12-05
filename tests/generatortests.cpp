@@ -249,10 +249,10 @@ namespace Tests{
 		auto var1 = new DomElemContainer();
 		auto var2 = new DomElemContainer();
 		Universe universe({sort1, sort2});
-		LookupTable table;
-		table[ElementTuple{domelem(1)}]={{domelem(2)}};
-		table[ElementTuple{domelem(1)}]={{domelem(-1)}};
-		table[ElementTuple{domelem(-2)}]={{domelem(0)}};
+		auto table = shared_ptr<LookupTable>(new LookupTable());
+		table->operator [](ElementTuple{domelem(1)})={{domelem(2)}};
+		table->operator [](ElementTuple{domelem(1)})={{domelem(-1)}};
+		table->operator [](ElementTuple{domelem(-2)})={{domelem(0)}};
 
 		auto gen = new EnumLookupGenerator(table, {var1}, {var2});
 
