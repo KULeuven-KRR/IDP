@@ -28,7 +28,7 @@ struct ReducedPF {
 	PredForm *_origpf, *_newpf;
 	std::vector<Term*> _arglist; // NULL if remaining, otherwise a varfree term
 	std::vector<Term*> _remainingargs;
-	std::set<Variable*> _quantvars;
+	varset _quantvars;
 
 	ReducedPF(PredForm* origpf)
 			: 	_origpf(origpf),

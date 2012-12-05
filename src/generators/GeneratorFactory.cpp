@@ -291,9 +291,9 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	data.bdd = table->bdd();
 
 	// Collect all variables.
-	set<const FOBDDVariable*, CompareBDDVars> outvars;
+	fobddvarset outvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
-		const FOBDDVariable* var = table->manager()->getVariable(table->vars()[n]);
+		auto var = table->manager()->getVariable(table->vars()[n]);
 		data.bddvars.push_back(var);
 		if (_pattern[n] == Pattern::OUTPUT) {
 			outvars.insert(var);

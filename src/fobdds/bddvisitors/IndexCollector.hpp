@@ -24,7 +24,7 @@
  */
 class IndexCollector: public FOBDDVisitor {
 private:
-	std::set<const FOBDDDeBruijnIndex*> _result;
+	fobddindexset _result;
 	unsigned int _minimaldepth;
 
 public:
@@ -53,7 +53,7 @@ public:
 	}
 
 	template<typename Node>
-	const std::set<const FOBDDDeBruijnIndex*>& getVariables(const Node* arg) {
+	const fobddindexset& getVariables(const Node* arg) {
 		_result.clear();
 		arg->accept(this);
 		return _result;

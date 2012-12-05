@@ -29,6 +29,31 @@ void FOBDD::accept(FOBDDVisitor* visitor) const {
 	visitor->visit(this);
 }
 
+bool FOBDD::operator<(const FOBDD& rhs) const {
+	Assert((falsebranch()==NULL) == (truebranch()==NULL));
+
+	if(truebranch()==NULL){
+		return true;
+	}
+	if(rhs.truebranch()==NULL){
+		return false;
+	}
+
+	if(*kernel()<*rhs.kernel()){
+		return true;
+	}else if(*rhs.kernel()<*kernel()){
+		return false;
+	}else{
+		if(*falsebranch()<*rhs.falsebranch()){
+			return true;
+		}else if(*rhs.falsebranch()<*falsebranch()){
+			return false;
+		}else{
+			return *truebranch()<*rhs.truebranch();
+		}
+	}
+}
+
 std::ostream& FOBDD::put(std::ostream& output) const {
 	output << print(_kernel);
 	pushtab();

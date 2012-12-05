@@ -54,7 +54,7 @@ std::vector<std::pair<PFSymbol*, Formula*> > AddIfCompletion::getOnlyIfFormulas(
 		if (symbol->sorts().empty()) {
 			mapping.push_back({symbol, ev});
 		} else {
-			set<Variable*> qv(_headvars[symbol].cbegin(), _headvars[symbol].cend());
+			varset qv(_headvars[symbol].cbegin(), _headvars[symbol].cend());
 			auto qf = new QuantForm(SIGN::POS, QUANT::UNIV, qv, ev, FormulaParseInfo());
 			mapping.push_back({symbol, qf});
 		}

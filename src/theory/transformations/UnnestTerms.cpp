@@ -400,7 +400,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 QuantSetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	vector<Formula*> saveequalities = _equalities;
 	_equalities.clear();
-	set<Variable*> savevars = _variables;
+	varset savevars = _variables;
 	_variables.clear();
 	bool savemovecontext = isAllowedToUnnest();
 	setAllowedToUnnest(true);

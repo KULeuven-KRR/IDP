@@ -86,7 +86,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::cfDomain(const PredForm* pf) const {
 	return new FOPropBDDDomain(bdd, vv);
 }
 
-FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropBDDDomain* domain, const set<Variable*>& qvars) const {
+FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropBDDDomain* domain, const varset& qvars) const {
 	auto bddqvars = _manager->getVariables(qvars);
 	const FOBDD* qbdd = _manager->existsquantify(bddqvars, domain->bdd());
 	vector<Variable*> vv;
@@ -98,7 +98,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::exists(FOPropBDDDomain* domain, const s
 	return new FOPropBDDDomain(qbdd, vv);
 }
 
-FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropBDDDomain* domain, const std::set<Variable*>& qvars) const {
+FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropBDDDomain* domain, const varset& qvars) const {
 	auto bddqvars = _manager->getVariables(qvars);
 	const FOBDD* qbdd = _manager->univquantify(bddqvars, domain->bdd());
 	vector<Variable*> vv;
@@ -112,7 +112,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::forall(FOPropBDDDomain* domain, const s
 
 FOPropBDDDomain* FOPropBDDDomainFactory::conjunction(FOPropBDDDomain* domain1, FOPropBDDDomain* domain2) const {
 	const FOBDD* conjbdd = _manager->conjunction(domain1->bdd(), domain2->bdd());
-	set<Variable*> sv;
+	varset sv;
 	sv.insert(domain1->vars().cbegin(), domain1->vars().cend());
 	sv.insert(domain2->vars().cbegin(), domain2->vars().cend());
 	vector<Variable*> vv(sv.cbegin(), sv.cend());
@@ -121,7 +121,7 @@ FOPropBDDDomain* FOPropBDDDomainFactory::conjunction(FOPropBDDDomain* domain1, F
 
 FOPropBDDDomain* FOPropBDDDomainFactory::disjunction(FOPropBDDDomain* domain1, FOPropBDDDomain* domain2) const {
 	const FOBDD* disjbdd = _manager->disjunction(domain1->bdd(), domain2->bdd());
-	set<Variable*> sv;
+	varset sv;
 	sv.insert(domain1->vars().cbegin(), domain1->vars().cend());
 	sv.insert(domain2->vars().cbegin(), domain2->vars().cend());
 	vector<Variable*> vv(sv.cbegin(), sv.cend());
@@ -182,7 +182,7 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 	return createSmallestPredInter(ct, cf, dom._twovalued);
 }
 
-FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, const set<Variable*>& sv) const {
+FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, const varset& sv) const {
 	vector<bool> keepcol;
 	vector<Variable*> newvars;
 	vector<SortTable*> newunivcols;

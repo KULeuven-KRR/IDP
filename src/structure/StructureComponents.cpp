@@ -1334,8 +1334,8 @@ bool BDDInternalPredTable::approxFinite(const Universe& univ) const {
 	if (univ.approxFinite()) {
 		return true;
 	} else {
-		set<const FOBDDDeBruijnIndex*> indices;
-		set<Variable*> fovars;
+		fobddindexset indices;
+		varset fovars;
 		fovars.insert(_vars.cbegin(), _vars.cend());
 		auto bddvars = _manager->getVariables(fovars);
 		double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);
@@ -1412,8 +1412,8 @@ bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Uni
 
 
 tablesize BDDInternalPredTable::size(const Universe&) const {
-	set<const FOBDDDeBruijnIndex*> indices;
-	set<Variable*> fovars;
+	fobddindexset indices;
+	varset fovars;
 	fovars.insert(_vars.cbegin(), _vars.cend());
 	auto bddvars = _manager->getVariables(fovars);
 	double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);

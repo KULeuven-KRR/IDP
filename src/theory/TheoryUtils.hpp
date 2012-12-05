@@ -17,6 +17,7 @@
 #include "options.hpp"
 #include <typeinfo>
 #include <iostream>
+#include "vocabulary/VarCompare.hpp"
 
 class Definition;
 class SetExpr;
@@ -108,7 +109,7 @@ void deriveSorts(Vocabulary* v, Formula* f);
  *			- query does not contain any FuncTerm or AggTerm subterms
  *			- the query has a twovalue result in the given structure
  */
-double estimatedCostAll(Formula* query, const std::set<Variable*> freevars, bool inverse,const  AbstractStructure* structure);
+double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,const  AbstractStructure* structure);
 
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);

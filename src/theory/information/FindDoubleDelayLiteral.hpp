@@ -30,7 +30,7 @@ private:
 	const AbstractStructure* _structure;
 
 	const PredForm *_resultingliteral, *_resultingliteral2;
-	std::set<Variable*> _quantvars, _containingquantvars;
+	varset _quantvars, _containingquantvars;
 	Context _context, _resultingContext;
 
 public:

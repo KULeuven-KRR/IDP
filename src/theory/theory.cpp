@@ -317,7 +317,7 @@ QuantForm* QuantForm::cloneKeepVars() const {
 }
 
 QuantForm* QuantForm::clone(const map<Variable*, Variable*>& mvv) const {
-	set<Variable*> nv;
+	varset nv;
 	map<Variable*, Variable*> nmvv = mvv;
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		Variable* v = new Variable((*it)->name(), (*it)->sort(), pi());
@@ -392,7 +392,7 @@ ostream& AggForm::put(ostream& output) const {
 
 Rule* Rule::clone() const {
 	map<Variable*, Variable*> mvv;
-	set<Variable*> newqv;
+	varset newqv;
 	for (auto it = _quantvars.cbegin(); it != _quantvars.cend(); ++it) {
 		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
 		mvv[*it] = v;

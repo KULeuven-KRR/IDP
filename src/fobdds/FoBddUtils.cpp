@@ -85,8 +85,8 @@ bool TermOrder::before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManage
 	}
 }
 
-std::set<Variable*> getFOVariables(const set<const FOBDDVariable*, CompareBDDVars>& vars){
-	std::set<Variable*> list;
+varset getFOVariables(const fobddvarset& vars){
+	varset list;
 	for(auto var: vars){
 		list.insert(var->variable());
 	}

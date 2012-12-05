@@ -29,7 +29,7 @@ using namespace std;
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-tablesize univNrAnswers(const varset& vars, const indexset& ind, const AbstractStructure* structure) {
+tablesize univNrAnswers(const fobddvarset& vars, const indexset& ind, const AbstractStructure* structure) {
 	vector<SortTable*> vst;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		vst.push_back(structure->inter((*it)->variable()->sort()));
@@ -94,7 +94,7 @@ double BddStatistics::estimateChance(const FOBDD* bdd) {
  * Returns an estimate of the number of answers to the query { vars, indices | bdd(kernel) }
  * TODO Improve this if functional dependency is known
  */
-double BddStatistics::estimateNrAnswers(const FOBDD* bdd, const varset& vars, const indexset& indices) {
+double BddStatistics::estimateNrAnswers(const FOBDD* bdd, const fobddvarset& vars, const indexset& indices) {
 	auto chance = tabledEstimateChance(bdd);
 	if (chance <= 0) {
 		return 0;
@@ -106,7 +106,7 @@ double BddStatistics::estimateNrAnswers(const FOBDD* bdd, const varset& vars, co
 	Assert(0<= chance && chance <= 1);
 	return chance * toDouble(univanswers);
 }
-double BddStatistics::estimateNrAnswers(const FOBDDKernel* kernel, const varset& vars, const indexset& indices) {
+double BddStatistics::estimateNrAnswers(const FOBDDKernel* kernel, const fobddvarset& vars, const indexset& indices) {
 	auto chance = tabledEstimateChance(kernel);
 	if (chance <= 0) {
 		return 0;
@@ -348,7 +348,7 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 }
 
 // FIXME review this method
-double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, const varset& vars, const indexset& ind) {
+double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, const fobddvarset& vars, const indexset& ind) {
 	double maxdouble = getMaxElem<double>();
 
 	if (kernelstorage[sign][kernel][vars].find(ind) != kernelstorage[sign][kernel][vars].cend()) {
@@ -368,7 +368,7 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 		}
 
 		for (auto quantset = set->subsets().cbegin(); quantset != set->subsets().cend(); quantset++) {
-			std::set<const FOBDDDeBruijnIndex*> newindices;
+			fobddindexset newindices;
 			auto nbquantvars = (*quantset)->quantvarsorts().size();
 
 			// Schuif de indices op want we gaan 1 niveau dieper
@@ -539,7 +539,7 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 	} else {
 		Assert(isa<FOBDDQuantKernel>(*kernel));
 		auto quantkernel = dynamic_cast<const FOBDDQuantKernel*>(kernel);
-		set<const FOBDDDeBruijnIndex*> newindices;
+		fobddindexset newindices;
 		for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
 			newindices.insert(manager->getDeBruijnIndex((*it)->sort(), (*it)->index() + 1));
 		}
@@ -550,7 +550,7 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 	}
 }
 
-double BddStatistics::tabledEstimateCostAll(const FOBDD* object, const varset& vars, const indexset& indices){
+double BddStatistics::tabledEstimateCostAll(const FOBDD* object, const fobddvarset& vars, const indexset& indices){
 	auto it = bddcosts[object][vars].find(indices);
 	double result = 0;
 	if(it==bddcosts[object][vars].cend()){
@@ -564,7 +564,7 @@ double BddStatistics::tabledEstimateCostAll(const FOBDD* object, const varset& v
 /**
  * Estimated the cost of generating all answers to this bdd.
  */
-double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, const indexset& ind) {
+double BddStatistics::estimateCostAll(const FOBDD* bdd, const fobddvarset& vars, const indexset& ind) {
 	// Base case
 	if (bdd == manager->truebdd()) {
 		return toDouble(univNrAnswers(vars, ind, structure));
@@ -580,7 +580,7 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 
 	// get all variables not in the kernel -> bddvars
 	// get all variables in the kernel and in vars -> kernelvars
-	set<const FOBDDVariable*, CompareBDDVars> kernelvars, bddvars;
+	fobddvarset kernelvars, bddvars;
 	auto allkernelvars = variables(bdd->kernel(), manager);
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		if (allkernelvars.find(*it) == allkernelvars.cend()) {
@@ -592,7 +592,7 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const varset& vars, cons
 
 	// get all indices not in the kernel -> bddinds
 	// get all indices in the kernel and in indices -> kernelinds
-	set<const FOBDDDeBruijnIndex*> kernelindices, bddindices;
+	fobddindexset kernelindices, bddindices;
 	auto allkernelindices = indices(bdd->kernel(), manager);
 	for (auto it = ind.cbegin(); it != ind.cend(); ++it) {
 		if (allkernelindices.find(*it) == allkernelindices.cend()) {

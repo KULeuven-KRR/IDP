@@ -24,6 +24,8 @@ class CompareBDDVars;
 #include "common.hpp"
 #include "CommonBddTypes.hpp"
 #include <utility> // for relational operators (namespace rel_ops)
+#include "vocabulary/VarCompare.hpp"
+#include "FoBddVariable.hpp"
 using namespace std;
 using namespace rel_ops;
 
@@ -172,5 +174,5 @@ void deleteAllMatching(std::map<T1, FinalType*>& m, T1 k) {
 }
 
 //Returns a the set of FO variables in the given set of FOBDDvariables
-std::set<Variable*> getFOVariables(const set<const FOBDDVariable*, CompareBDDVars>& vars);
+varset getFOVariables(const fobddvarset& vars);
 #endif /* KERNELORDER_HPP_ */

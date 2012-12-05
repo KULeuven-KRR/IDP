@@ -18,7 +18,7 @@
 
 using namespace std;
 
-void DeriveSorts::checkVars(const set<Variable*>& quantvars) {
+void DeriveSorts::checkVars(const varset& quantvars) {
 	if (_firstvisit) {
 		for (auto it = quantvars.cbegin(); it != quantvars.cend(); ++it) {
 			if ((*it)->sort() == NULL) {

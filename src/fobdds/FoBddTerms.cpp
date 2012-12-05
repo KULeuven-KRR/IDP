@@ -111,3 +111,13 @@ const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, con
 	auto result = inter->funcTable()->operator[]( { d1->value(), d2->value() });
 	return manager->getDomainTerm(addsort, result);
 }
+
+bool CompareBDDIndices::operator()(const FOBDDDeBruijnIndex* lhs, const FOBDDDeBruijnIndex* rhs) const {
+	if(lhs==NULL){
+		return true;
+	}
+	if(rhs==NULL){
+		return false;
+	}
+	return lhs->index()<rhs->index();
+}

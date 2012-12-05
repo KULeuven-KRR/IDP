@@ -13,6 +13,7 @@
 #define GROUNDINGCONTEXT_HPP_
 
 #include "GroundUtils.hpp"
+#include "vocabulary/VarCompare.hpp"
 
 enum class CompContext {
 	SENTENCE, HEAD, FORMULA
@@ -43,7 +44,7 @@ struct GroundingContext {
 	}
 	std::set<PFSymbol*> _defined; // Indicates whether the visited rule is recursive.
 
-	std::set<Variable*> _mappedvars; // Keeps track of which variables where added to the varmapping.
+	varset _mappedvars; // Keeps track of which variables where added to the varmapping.
 
 	bool _conjPathUntilNode, _conjunctivePathFromRoot;
 	// If true, there is a conjunctive path from the root of the sentence parsetree to this node.

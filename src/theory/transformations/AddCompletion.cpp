@@ -51,7 +51,7 @@ Definition* AddCompletion::visit(Definition* def) {
 		if (it->first->sorts().empty()) {
 			_result.push_back(ev);
 		} else {
-			set<Variable*> qv(_headvars[it->first].cbegin(), _headvars[it->first].cend());
+			varset qv(_headvars[it->first].cbegin(), _headvars[it->first].cend());
 			QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, qv, ev, FormulaParseInfo());
 			_result.push_back(qf);
 		}

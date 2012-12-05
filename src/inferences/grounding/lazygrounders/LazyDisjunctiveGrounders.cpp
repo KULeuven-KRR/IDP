@@ -22,7 +22,7 @@
 
 using namespace std;
 
-LazyDisjunctiveGrounder::LazyDisjunctiveGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj,
+LazyDisjunctiveGrounder::LazyDisjunctiveGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj,
 		const GroundingContext& ct, bool explicitTseitins)
 		: 	ClauseGrounder(groundtheory, sign, conj, ct),
 			freevars(freevars),
@@ -186,7 +186,7 @@ void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 	poptab();
 }
 
-LazyExistsGrounder::LazyExistsGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
+LazyExistsGrounder::LazyExistsGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q,
 		InstGenerator* gen, InstChecker* checker, const GroundingContext& ct, bool explicitTseitins)
 		: 	LazyDisjunctiveGrounder(freevars, groundtheory, sign, q == QUANT::UNIV, ct, explicitTseitins),
 			_subgrounder(sub),
@@ -200,7 +200,7 @@ LazyExistsGrounder::~LazyExistsGrounder() {
 	delete (_checker);
 }
 
-LazyDisjGrounder::LazyDisjGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
+LazyDisjGrounder::LazyDisjGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
 		const GroundingContext& ct, bool explicitTseitins)
 		: 	LazyDisjunctiveGrounder(freevars, groundtheory, sign, conj, ct, explicitTseitins),
 			_subgrounders(sub) {

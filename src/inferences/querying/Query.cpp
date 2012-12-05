@@ -47,9 +47,9 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";
 	}
 	Assert(manager != NULL);
-	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
+	varset vars(q->variables().cbegin(), q->variables().cend());
 	auto bddvars = manager->getVariables(vars);
-	std::set<const FOBDDDeBruijnIndex*> bddindices;
+	fobddindexset bddindices;
 
 	Assert(bdd != NULL);
 

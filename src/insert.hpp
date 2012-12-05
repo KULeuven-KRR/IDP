@@ -20,6 +20,7 @@
 #include "parseinfo.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include <ostream>
+#include "vocabulary/VarCompare.hpp"
 
 class Sort;
 class Predicate;
@@ -50,7 +51,6 @@ class AbstractTheory;
 class Options;
 class UserProcedure;
 class Namespace;
-class Variable;
 
 struct YYLTYPE;
 class lua_State;
@@ -158,10 +158,10 @@ private:
 
 	Variable* getVar(const std::string&) const; //!< Returns the quantified variable with
 												//!< given name in the current scope
-	std::set<Variable*> freevars(const ParseInfo&, bool critical = false); //!< Return all currently free variables; if critical: throw an error for free variables
+	varset freevars(const ParseInfo&, bool critical = false); //!< Return all currently free variables; if critical: throw an error for free variables
 	void remove_vars(const std::vector<Variable*>&); //!< Remove the given variables from the
 													 //!< list of free variables
-	void remove_vars(const std::set<Variable*>&); //!< Remove the given variables from the
+	void remove_vars(const varset&); //!< Remove the given variables from the
 												  //!< list of free variables
 
 	void usenamespace(Namespace*); //!< add a using namespace statement
@@ -197,7 +197,7 @@ private:
 	bool belongsToVoc(Sort*) const;
 
 	Formula* boolform(bool, Formula*, Formula*, YYLTYPE) const;
-	Formula* quantform(bool, const std::set<Variable*>&, Formula*, YYLTYPE);
+	Formula* quantform(bool, const varset&, Formula*, YYLTYPE);
 
 	void assignunknowntables();
 
@@ -286,9 +286,9 @@ public:
 
 	Definition* definition(const std::vector<Rule*>& r) const; //!< create a new definition
 
-	Rule* rule(const std::set<Variable*>&, Formula* h, Formula* b, YYLTYPE);
+	Rule* rule(const varset&, Formula* h, Formula* b, YYLTYPE);
 	//!< create a new rule
-	Rule* rule(const std::set<Variable*>&, Formula* h, YYLTYPE);
+	Rule* rule(const varset&, Formula* h, YYLTYPE);
 	//!< create a new rule with an empty body
 
 	void addRule(FixpDef*, Rule*) const; //!< add a rule to a fixpoint definition
@@ -320,11 +320,11 @@ public:
 	//!< create a new formula of the form (phi1 => phi2)
 	Formula* revimplform(Formula*, Formula*, YYLTYPE) const;
 	//!< create a new formula of the form (phi1 <= phi2)
-	Formula* univform(const std::set<Variable*>&, Formula*, YYLTYPE l);
+	Formula* univform(const varset&, Formula*, YYLTYPE l);
 	//!< create a new formula of the form (! x1 ... xn : phi)
-	Formula* existform(const std::set<Variable*>&, Formula*, YYLTYPE l);
+	Formula* existform(const varset&, Formula*, YYLTYPE l);
 	//!< create a new formula of the form (? x1 ... xn : phi)
-	Formula* bexform(CompType, int, const std::set<Variable*>&, Formula*, YYLTYPE);
+	Formula* bexform(CompType, int, const varset&, Formula*, YYLTYPE);
 	//!< create a new formula of the form (?_op_n x1 ... xn : phi)
 	Formula* eqchain(CompType, Formula*, Term*, YYLTYPE) const;
 	//!< add a term to an equation chain
@@ -352,9 +352,9 @@ public:
 	AggTerm* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
-	EnumSetExpr* set(const std::set<Variable*>&, Formula*, YYLTYPE);
+	EnumSetExpr* set(const varset&, Formula*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi }
-	EnumSetExpr* set(const std::set<Variable*>&, Formula*, Term*, YYLTYPE);
+	EnumSetExpr* set(const varset&, Formula*, Term*, YYLTYPE);
 	//!< Create a new set of the form { x1 ... xn : phi : t }
 
 	EnumSetExpr* createEnum(YYLTYPE) const;

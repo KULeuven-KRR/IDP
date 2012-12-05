@@ -573,8 +573,8 @@ SetParseInfo Insert::setparseinfo(SetExpr* s, YYLTYPE l) const {
 	return SetParseInfo(l.first_line, l.first_column, _currfile, *s);
 }
 
-set<Variable*> Insert::freevars(const ParseInfo& pi, bool critical) {
-	std::set<Variable*> vv;
+varset Insert::freevars(const ParseInfo& pi, bool critical) {
+	varset vv;
 	string vs;
 	for (auto i = _curr_vars.cbegin(); i != _curr_vars.cend(); ++i) {
 		vv.insert(i->_var);
@@ -602,7 +602,7 @@ void Insert::remove_vars(const std::vector<Variable*>& v) {
 	}
 }
 
-void Insert::remove_vars(const std::set<Variable*>& v) {
+void Insert::remove_vars(const varset& v) {
 	for (auto it = v.cbegin(); it != v.cend(); ++it) {
 		for (auto i = _curr_vars.begin(); i != _curr_vars.end(); ++i) {
 			if (i->_name == (*it)->name()) {
@@ -820,7 +820,7 @@ bool varIsUnused(T const& t, Variable* var) {
 }
 
 template<class ... Args>
-void checkForUnusedVariables(std::set<Variable*> vv, Args&... args) {
+void checkForUnusedVariables(const varset& vv, Args&... args) {
 	for (auto var : vv) {
 		auto list = { varIsUnused(args, var)... };
 		auto containsvar = false;
@@ -838,7 +838,7 @@ void Insert::closequery(Query* q) {
 
 	_curr_vars.clear();
 	if (q != NULL) { // Allows for better error catching
-		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
+		varset sv(q->variables().cbegin(), q->variables().cend());
 		auto qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
 		checkForUnusedVariables(sv, qf);
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
@@ -1258,15 +1258,15 @@ Definition* Insert::definition(const vector<Rule*>& rules) const {
 	return d;
 }
 
-Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, YYLTYPE l) {
+Rule* Insert::rule(const varset& qv, Formula* head, Formula* body, YYLTYPE l) {
 	ParseInfo pi = parseinfo(l);
 	remove_vars(qv);
 	if (head && body) {
 		// Quantify the free variables
-		std::set<Variable*> vv = freevars(head->pi());
+		auto vv = freevars(head->pi());
 		remove_vars(vv);
 		// Split quantified variables in head and body variables
-		std::set<Variable*> hv, bv;
+		varset hv, bv;
 		for (auto it = qv.cbegin(); it != qv.cend(); ++it) {
 			if (head->contains(*it)) {
 				hv.insert(*it);
@@ -1308,7 +1308,7 @@ Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, Formula* body, 
 	}
 }
 
-Rule* Insert::rule(const std::set<Variable*>& qv, Formula* head, YYLTYPE l) {
+Rule* Insert::rule(const varset& qv, Formula* head, YYLTYPE l) {
 	return rule(qv, head, FormulaUtils::trueFormula(), l);
 }
 
@@ -1547,11 +1547,11 @@ Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	return boolform(false, rf, lf, l);
 }
 
-Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+Formula* Insert::quantform(bool univ, const varset& vv, Formula* f, YYLTYPE l) {
 	remove_vars(vv);
 	if (f) {
 		checkForUnusedVariables(vv, f);
-		std::set<Variable*> pivv;
+		varset pivv;
 		map<Variable*, Variable*> mvv;
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			Variable* v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
@@ -1572,15 +1572,15 @@ Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f,
 	}
 }
 
-Formula* Insert::univform(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+Formula* Insert::univform(const varset& vv, Formula* f, YYLTYPE l) {
 	return quantform(true, vv, f, l);
 }
 
-Formula* Insert::existform(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+Formula* Insert::existform(const varset& vv, Formula* f, YYLTYPE l) {
 	return quantform(false, vv, f, l);
 }
 
-Formula* Insert::bexform(CompType c, int bound, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+Formula* Insert::bexform(CompType c, int bound, const varset& vv, Formula* f, YYLTYPE l) {
 	if (f == NULL) {
 		return f;
 	}
@@ -1877,11 +1877,11 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 	}
 }
 
-EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
+EnumSetExpr* Insert::set(const varset& vv, Formula* f, Term* counter, YYLTYPE l) {
 	remove_vars(vv);
 	checkForUnusedVariables(vv, f, counter);
 	if (f && counter) {
-		std::set<Variable*> pivv;
+		varset pivv;
 		map<Variable*, Variable*> mvv;
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
 			auto v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
@@ -1908,7 +1908,7 @@ EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counte
 	}
 }
 
-EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
+EnumSetExpr* Insert::set(const varset& vv, Formula* f, YYLTYPE l) {
 	auto d = createDomElem(1);
 	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	return set(vv, f, counter, l);

@@ -75,7 +75,7 @@ void yyerror(const char* s);
 
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
-	std::set<Variable*>*				svar;
+	varset*				svar;
 	std::vector<Variable*>*				vvar;
 	std::vector<Term*>*					vter;
 	std::vector<Formula*>*				vfom;
@@ -434,7 +434,7 @@ rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@1); de
 			
 univquantvars 
 			: univquantvars '!' variables ':' 	{ $$ = $1; $1->insert($3->cbegin(), $3->cend()); delete($3);}
-			|  /* empty*/ 						{ $$ = new std::set<Variable*>(); }
+			|  /* empty*/ 						{ $$ = new varset(); }
 			;
 
 head		: predicate				{ $$ = $1;										}
@@ -504,7 +504,7 @@ eq_chain	: eq_chain '='  term	{ $$ = data().eqchain(CompType::EQ,$1,$3,@1);	}
 
 variables   : variables variable	{ $$ = $1; $$->insert($2);						}		
 			| variables ',' variable	{ $$ = $1; $$->insert($3);						}
-            | variable				{ $$ = new std::set<Variable*>;	$$->insert($1);	}
+            | variable				{ $$ = new varset; $$->insert($1);	}
 			;
 
 variable	: identifier							{ $$ = data().quantifiedvar(*$1,@1);		}

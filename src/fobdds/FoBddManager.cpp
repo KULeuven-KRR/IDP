@@ -388,8 +388,8 @@ const FOBDDVariable* FOBDDManager::getVariable(Variable* var) {
 	return addVariable(var);
 }
 
-set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::getVariables(const set<Variable*>& vars) {
-	set<const FOBDDVariable*, CompareBDDVars> bddvars;
+fobddvarset FOBDDManager::getVariables(const varset& vars) {
+	fobddvarset bddvars;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		bddvars.insert(getVariable(*it));
 	}
@@ -785,7 +785,7 @@ const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 	// Recursive case
 	if (bdd2 < bdd1) { //This check is done in order to have a uniform representation in the _conjunctiontable.  The order doens't matter as long as there is one
-		const FOBDD* temp = bdd1;
+		auto temp = bdd1;
 		bdd1 = bdd2;
 		bdd2 = temp;
 	}
@@ -798,17 +798,17 @@ const FOBDD* FOBDDManager::conjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 	//Lookup failed, calculate
 	if (*(bdd1->kernel()) < *(bdd2->kernel())) {
-		const FOBDD* falsebranch = conjunction(bdd1->falsebranch(), bdd2);
-		const FOBDD* truebranch = conjunction(bdd1->truebranch(), bdd2);
+		auto falsebranch = conjunction(bdd1->falsebranch(), bdd2);
+		auto truebranch = conjunction(bdd1->truebranch(), bdd2);
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
 	} else if (*(bdd1->kernel()) > *(bdd2->kernel())) {
-		const FOBDD* falsebranch = conjunction(bdd1, bdd2->falsebranch());
-		const FOBDD* truebranch = conjunction(bdd1, bdd2->truebranch());
+		auto falsebranch = conjunction(bdd1, bdd2->falsebranch());
+		auto truebranch = conjunction(bdd1, bdd2->truebranch());
 		result = getBDD(bdd2->kernel(), truebranch, falsebranch);
 	} else {
 		Assert(bdd1->kernel() == bdd2->kernel());
-		const FOBDD* falsebranch = conjunction(bdd1->falsebranch(), bdd2->falsebranch());
-		const FOBDD* truebranch = conjunction(bdd1->truebranch(), bdd2->truebranch());
+		auto falsebranch = conjunction(bdd1->falsebranch(), bdd2->falsebranch());
+		auto truebranch = conjunction(bdd1->truebranch(), bdd2->truebranch());
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
 	}
 	_conjunctiontable[bdd1][bdd2] = result;
@@ -832,7 +832,7 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 
 	// Recursive case
 	if (bdd2 < bdd1) {
-		const FOBDD* temp = bdd1;
+		auto temp = bdd1;
 		bdd1 = bdd2;
 		bdd2 = temp;
 	}
@@ -842,17 +842,17 @@ const FOBDD* FOBDDManager::disjunction(const FOBDD* bdd1, const FOBDD* bdd2) {
 	}
 
 	if (*(bdd1->kernel()) < *(bdd2->kernel())) {
-		const FOBDD* falsebranch = disjunction(bdd1->falsebranch(), bdd2);
-		const FOBDD* truebranch = disjunction(bdd1->truebranch(), bdd2);
+		auto falsebranch = disjunction(bdd1->falsebranch(), bdd2);
+		auto truebranch = disjunction(bdd1->truebranch(), bdd2);
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
 	} else if (*(bdd1->kernel()) > *(bdd2->kernel())) {
-		const FOBDD* falsebranch = disjunction(bdd1, bdd2->falsebranch());
-		const FOBDD* truebranch = disjunction(bdd1, bdd2->truebranch());
+		auto falsebranch = disjunction(bdd1, bdd2->falsebranch());
+		auto truebranch = disjunction(bdd1, bdd2->truebranch());
 		result = getBDD(bdd2->kernel(), truebranch, falsebranch);
 	} else {
 		Assert(bdd1->kernel() == bdd2->kernel());
-		const FOBDD* falsebranch = disjunction(bdd1->falsebranch(), bdd2->falsebranch());
-		const FOBDD* truebranch = disjunction(bdd1->truebranch(), bdd2->truebranch());
+		auto falsebranch = disjunction(bdd1->falsebranch(), bdd2->falsebranch());
+		auto truebranch = disjunction(bdd1->truebranch(), bdd2->truebranch());
 		result = getBDD(bdd1->kernel(), truebranch, falsebranch);
 	}
 	_disjunctiontable[bdd1][bdd2] = result;
@@ -943,7 +943,7 @@ const FOBDD* FOBDDManager::univquantify(const FOBDDVariable* var, const FOBDD* b
 	return negation(quantbdd);
 }
 
-const FOBDD* FOBDDManager::univquantify(const set<const FOBDDVariable*, CompareBDDVars>& qvars, const FOBDD* bdd) {
+const FOBDD* FOBDDManager::univquantify(const fobddvarset& qvars, const FOBDD* bdd) {
 	const FOBDD* negatedbdd = negation(bdd);
 	const FOBDD* quantbdd = existsquantify(qvars, negatedbdd);
 	return negation(quantbdd);
@@ -956,7 +956,7 @@ const FOBDD* FOBDDManager::existsquantify(const FOBDDVariable* var, const FOBDD*
 	return q;
 }
 
-const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*, CompareBDDVars>& qvars, const FOBDD* bdd) {
+const FOBDD* FOBDDManager::existsquantify(const fobddvarset& qvars, const FOBDD* bdd) {
 	const FOBDD* result = bdd;
 	for (auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
 		result = existsquantify(*it, result);
@@ -964,7 +964,7 @@ const FOBDD* FOBDDManager::existsquantify(const set<const FOBDDVariable*, Compar
 	return result;
 }
 
-const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>& vars, const FOBDD* bdd) {
+const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const fobddvarset& vars, const FOBDD* bdd) {
 	auto result = bdd;
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it) {
 		BumpIndices b(this, *it, 0);
@@ -1410,7 +1410,7 @@ set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* m
 /**
  * Returns all variables that occur in the given bdd
  */
-set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD* bdd, FOBDDManager* manager) {
+fobddvarset variables(const FOBDD* bdd, FOBDDManager* manager) {
 	VariableCollector vc(manager);
 	return vc.getVariables(bdd);
 }
@@ -1418,7 +1418,7 @@ set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD* bdd, FOBDDManag
 /**
  * Returns all variables that occur in the given kernel
  */
-set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel* kernel, FOBDDManager* manager) {
+fobddvarset variables(const FOBDDKernel* kernel, FOBDDManager* manager) {
 	VariableCollector vc(manager);
 	return vc.getVariables(kernel);
 }
@@ -1426,7 +1426,7 @@ set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel* kernel, F
 /**
  * Returns all De Bruijn indices that occur in the given bdd.
  */
-set<const FOBDDDeBruijnIndex*> indices(const FOBDD* bdd, FOBDDManager* manager) {
+fobddindexset indices(const FOBDD* bdd, FOBDDManager* manager) {
 	IndexCollector dbc(manager);
 	return dbc.getVariables(bdd);
 }
@@ -1434,12 +1434,12 @@ set<const FOBDDDeBruijnIndex*> indices(const FOBDD* bdd, FOBDDManager* manager) 
 /**
  * Returns all De Bruijn indices that occur in the given kernel
  */
-set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel* kernel, FOBDDManager* manager) {
+fobddindexset indices(const FOBDDKernel* kernel, FOBDDManager* manager) {
 	IndexCollector dbc(manager);
 	return dbc.getVariables(kernel);
 }
 
-void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+void FOBDDManager::optimizeQuery(const FOBDD* query, const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure) {
 	Assert(query != NULL);
 	if (query == _truebdd || query == _falsebdd) {
@@ -1478,8 +1478,8 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const set<const FOBDDVariab
 	}
 }
 
-double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
-		const set<const FOBDDDeBruijnIndex*>& indices, const AbstractStructure* structure, double weightPerAns) {
+double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& vars,
+		const fobddindexset& indices, const AbstractStructure* structure, double weightPerAns) {
 	// Recursive call
 	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, this);
@@ -1487,8 +1487,8 @@ double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBD
 	return bddCost + (bddAnswers * weightPerAns);
 }
 
-const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars,
-		const set<const FOBDDDeBruijnIndex*>& ind, const AbstractStructure* structure, double weightPerAns) {
+const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvarset& vars,
+		const fobddindexset& ind, const AbstractStructure* structure, double weightPerAns) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
@@ -1500,8 +1500,8 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 		// * branchvars and branchidices are the rest.
 		auto kernelvars = variables(bdd->kernel(), this);
 		auto kernelindices = indices(bdd->kernel(), this);
-		set<const FOBDDVariable*, CompareBDDVars> branchvars;
-		set<const FOBDDDeBruijnIndex*> branchindices;
+		fobddvarset branchvars;
+		fobddindexset branchindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 			if (kernelvars.find(*it) == kernelvars.cend())
 				branchvars.insert(*it);
@@ -1597,7 +1597,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 	}
 }
 
-const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "Making the following bdd more false: \n" << print(bdd) << "\nResulted in :\n";
@@ -1609,7 +1609,7 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDD
 	return result;
 }
 
-const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "Making the following bdd more true: \n" << print(bdd) << "\nResulted in :\n";
@@ -1622,15 +1622,15 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 }
 
 //Makes more parts of a bdd false. The resulting bdd will contain no symbols
-const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove){
+const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const std::set<PFSymbol*>& symbolsToRemove){
 	return makeMore(false,bdd,symbolsToRemove);
 }
 
-const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove ){
+const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const std::set<PFSymbol*>& symbolsToRemove ){
 	return makeMore(true,bdd,symbolsToRemove);
 }
 
-const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove) {
+const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<PFSymbol*>& symbolsToRemove) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	}

@@ -21,8 +21,8 @@
 
 using namespace std;
 
-template<class Elem>
-set<Elem> difference(const set<Elem>& v1, const set<Elem>& v2) {
+template<class... Args>
+set<Args...> difference(const set<Args...>& v1, const set<Args...>& v2) {
 	auto temp = v1;
 	for (auto i = v2.cbegin(); i != v2.cend(); ++i) {
 		temp.erase(*i);
@@ -112,7 +112,7 @@ public:
 		add(topdownrules, (*first)[qf->subformula()], (*first)[qf], data);
 
 		std::vector<Formula*> forms;
-		std::set<Variable*> vars;
+		varset vars;
 		for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
 			auto newvar = new Variable((*i)->sort());
 			vars.insert(newvar);

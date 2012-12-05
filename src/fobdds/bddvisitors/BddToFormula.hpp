@@ -130,7 +130,7 @@ protected:
 	virtual void visit(const FOBDDQuantSetExpr* set) {
 		std::map<const FOBDDDeBruijnIndex*, Variable*> savedmapping = _dbrmapping;
 		_dbrmapping.clear();
-		std::set<Variable*> vars;
+		varset vars;
 		int i = 0;
 		for (auto it = set->quantvarsorts().rbegin(); it != set->quantvarsorts().rend(); it++, i++) {
 			auto v = new Variable(*it);

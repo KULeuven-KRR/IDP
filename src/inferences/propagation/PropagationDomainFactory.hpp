@@ -43,8 +43,8 @@ public:
 	virtual PropagatorDomain* formuladomain(const Formula*) const = 0;
 	virtual PropagatorDomain* ctDomain(const PredForm*) const = 0;
 	virtual PropagatorDomain* cfDomain(const PredForm*) const = 0;
-	virtual PropagatorDomain* exists(PropagatorDomain*, const std::set<Variable*>&) const = 0;
-	virtual PropagatorDomain* forall(PropagatorDomain*, const std::set<Variable*>&) const = 0;
+	virtual PropagatorDomain* exists(PropagatorDomain*, const varset&) const = 0;
+	virtual PropagatorDomain* forall(PropagatorDomain*, const varset&) const = 0;
 	virtual PropagatorDomain* conjunction(PropagatorDomain*, PropagatorDomain*) const = 0;
 	virtual PropagatorDomain* disjunction(PropagatorDomain*, PropagatorDomain*) const = 0;
 	virtual PropagatorDomain* substitute(PropagatorDomain*, const std::map<Variable*, Variable*>&) const = 0;
@@ -71,8 +71,8 @@ public:
 	FOPropBDDDomain* formuladomain(const Formula*) const;
 	FOPropBDDDomain* ctDomain(const PredForm*) const;
 	FOPropBDDDomain* cfDomain(const PredForm*) const;
-	FOPropBDDDomain* exists(FOPropBDDDomain*, const std::set<Variable*>&) const;
-	FOPropBDDDomain* forall(FOPropBDDDomain*, const std::set<Variable*>&) const;
+	FOPropBDDDomain* exists(FOPropBDDDomain*, const varset&) const;
+	FOPropBDDDomain* forall(FOPropBDDDomain*, const varset&) const;
 	FOPropBDDDomain* conjunction(FOPropBDDDomain*, FOPropBDDDomain*) const;
 	FOPropBDDDomain* disjunction(FOPropBDDDomain*, FOPropBDDDomain*) const;
 	FOPropBDDDomain* substitute(FOPropBDDDomain*, const std::map<Variable*, Variable*>&) const;
@@ -95,8 +95,8 @@ public:
 	FOPropTableDomain* formuladomain(const Formula*) const;
 	FOPropTableDomain* ctDomain(const PredForm*) const;
 	FOPropTableDomain* cfDomain(const PredForm*) const;
-	FOPropTableDomain* exists(FOPropTableDomain*, const std::set<Variable*>&) const;
-	FOPropTableDomain* forall(FOPropTableDomain*, const std::set<Variable*>&) const;
+	FOPropTableDomain* exists(FOPropTableDomain*, const varset&) const;
+	FOPropTableDomain* forall(FOPropTableDomain*, const varset&) const;
 	FOPropTableDomain* conjunction(FOPropTableDomain*, FOPropTableDomain*) const;
 	FOPropTableDomain* disjunction(FOPropTableDomain*, FOPropTableDomain*) const;
 	FOPropTableDomain* substitute(FOPropTableDomain*, const std::map<Variable*, Variable*>&) const;

@@ -595,7 +595,7 @@ void GrounderFactory::visit(const BoolForm* bf) {
 	}
 }
 
-ClauseGrounder* createB(AbstractGroundTheory* grounding, const vector<Grounder*>& sub, const set<Variable*>& freevars, SIGN sign, bool conj,
+ClauseGrounder* createB(AbstractGroundTheory* grounding, const vector<Grounder*>& sub, const varset& freevars, SIGN sign, bool conj,
 		const GroundingContext& context, bool recursive) {
 	auto disjunction = (not conj && context._monotone == Context::POSITIVE) || (conj && context._monotone == Context::NEGATIVE);
 	auto lazyAllowed = getOption(TSEITINDELAY) && (disjunction || context._monotone == Context::BOTH) && sub.size() > 1;
@@ -1337,7 +1337,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
 
-	set<const FOBDDVariable*, CompareBDDVars> copyvars;
+	fobddvarset copyvars;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
 	}

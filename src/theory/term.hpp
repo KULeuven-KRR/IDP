@@ -14,10 +14,10 @@
 
 #include "parseinfo.hpp"
 #include "common.hpp"
+#include "vocabulary/VarCompare.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 class Sort;
-class Variable;
 class Function;
 class DomainElement;
 class DefaultTraversingTheoryVisitor;
@@ -36,7 +36,7 @@ class Term {
 ACCEPTDECLAREBOTH(Term)
 private:
 	TermType _type;
-	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
+	varset _freevars; //!< the EXACT set of variables occurring unquantified in the term
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
@@ -52,7 +52,7 @@ private:
 
 protected:
 	TermParseInfo _pi; //!< the place where the term was parsed
-	void setFreeVars(std::set<Variable*> freevars) {
+	void setFreeVars(varset freevars) {
 		_freevars = freevars;
 	}
 
@@ -120,7 +120,7 @@ public:
 	Vocabulary* vocabulary() const{
 		return _voc;
 	}
-	const std::set<Variable*>& freeVars() const {
+	const varset& freeVars() const {
 		return _freevars;
 	}
 	const std::vector<Term*>& subterms() const {

@@ -72,9 +72,9 @@ private:
 		auto terms = TermUtils::makeNewVarTerms(vars);
 		auto atom = new PredForm(SIGN::POS, function, terms, FormulaParseInfo());
 		auto y = vars.back();
-		std::set<Variable*> yset = { y };
+		varset yset = { y };
 		vars.pop_back();
-		std::set<Variable*> xset(vars.cbegin(), vars.cend());
+		varset xset(vars.cbegin(), vars.cend());
 
 		//{y|F(x)=y}
 		auto natsort = get(STDSORT::NATSORT);
