@@ -19,6 +19,7 @@
 
 #include "parser/yyltype.hpp"
 #include "parser.hh"
+#include "utils/ListUtils.hpp"
 #include "errorhandling/error.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"
@@ -34,6 +35,16 @@ using namespace std;
 using namespace LuaConnection;
 using namespace Error;
 //TODO add abstraction to remove lua dependence here
+
+typedef std::vector<ParseInfo> plist;
+template<class LocatedList>
+plist getLocations(const LocatedList& elems) {
+	plist infos;
+	for (auto p : elems) {
+		infos.push_back(p->pi());
+	}
+	return infos;
+}
 
 /**
  * Rewrite a vector of strings s1,s2,...,sn to the single string s1::s2::...::sn
@@ -156,15 +167,8 @@ bool Insert::belongsToVoc(Sort* s) const {
 	return false;
 }
 
-bool Insert::belongsToVoc(Predicate* p) const {
+bool Insert::belongsToVoc(PFSymbol* p) const {
 	if (_currvocabulary->contains(p)) {
-		return true;
-	}
-	return false;
-}
-
-bool Insert::belongsToVoc(Function* f) const {
-	if (_currvocabulary->contains(f)) {
 		return true;
 	}
 	return false;
@@ -298,7 +302,7 @@ Sort* Insert::sortInScope(const string& name, const ParseInfo& pi) const {
 			continue;
 		}
 		if (s != NULL) {
-			overloaded(ComponentType::Sort, s->name(), s->pi(), temp->pi(), pi);
+			overloaded(ComponentType::Sort, s->name(), plist { s->pi(), temp->pi() }, pi);
 		} else {
 			s = temp;
 		}
@@ -329,7 +333,7 @@ Namespace* Insert::namespaceInScope(const string& name, const ParseInfo& pi) con
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isSubspace(name)) {
 			if (ns) {
-				overloaded(ComponentType::Namespace, name, _usingspace[n]->pi(), ns->pi(), pi);
+				overloaded(ComponentType::Namespace, name, plist { _usingspace[n]->pi(), ns->pi() }, pi);
 			} else {
 				ns = _usingspace[n]->subspace(name);
 			}
@@ -360,7 +364,7 @@ Vocabulary* Insert::vocabularyInScope(const string& name, const ParseInfo& pi) c
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isVocab(name)) {
 			if (v) {
-				overloaded(ComponentType::Vocabulary, name, _usingspace[n]->vocabulary(name)->pi(), v->pi(), pi);
+				overloaded(ComponentType::Vocabulary, name, plist { _usingspace[n]->vocabulary(name)->pi(), v->pi() }, pi);
 			} else {
 				v = _usingspace[n]->vocabulary(name);
 			}
@@ -399,7 +403,7 @@ AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo&
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isStructure(name)) {
 			if (s) {
-				overloaded(ComponentType::Structure, name, _usingspace[n]->structure(name)->pi(), s->pi(), pi);
+				overloaded(ComponentType::Structure, name, plist { _usingspace[n]->structure(name)->pi(), s->pi() }, pi);
 			} else {
 				s = _usingspace[n]->structure(name);
 			}
@@ -434,7 +438,7 @@ Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isQuery(name)) {
 			if (q) {
-				overloaded(ComponentType::Query, name, _usingspace[n]->query(name)->pi(), q->pi(), pi);
+				overloaded(ComponentType::Query, name, plist { _usingspace[n]->query(name)->pi(), q->pi() }, pi);
 			} else {
 				q = _usingspace[n]->query(name);
 			}
@@ -448,7 +452,7 @@ Term* Insert::termInScope(const string& name, const ParseInfo& pi) const {
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isTerm(name)) {
 			if (t) {
-				overloaded(ComponentType::Term, name, _usingspace[n]->term(name)->pi(), t->pi(), pi);
+				overloaded(ComponentType::Term, name, plist { _usingspace[n]->term(name)->pi(), t->pi() }, pi);
 			} else {
 				t = _usingspace[n]->term(name);
 			}
@@ -462,7 +466,7 @@ AbstractTheory* Insert::theoryInScope(const string& name, const ParseInfo& pi) c
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isTheory(name)) {
 			if (th) {
-				overloaded(ComponentType::Theory, name, _usingspace[n]->theory(name)->pi(), th->pi(), pi);
+				overloaded(ComponentType::Theory, name, plist { _usingspace[n]->theory(name)->pi(), th->pi() }, pi);
 			} else {
 				th = _usingspace[n]->theory(name);
 			}
@@ -476,7 +480,7 @@ UserProcedure* Insert::procedureInScope(const string& name, const ParseInfo& pi)
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isProc(name)) {
 			if (lp) {
-				overloaded(ComponentType::Procedure, name, _usingspace[n]->procedure(name)->pi(), lp->pi(), pi);
+				overloaded(ComponentType::Procedure, name, plist { _usingspace[n]->procedure(name)->pi(), lp->pi() }, pi);
 			} else {
 				lp = _usingspace[n]->procedure(name);
 			}
@@ -503,19 +507,6 @@ UserProcedure* Insert::procedureInScope(const vector<string>& vs, const ParseInf
 		} else {
 			return NULL;
 		}
-	}
-}
-
-UTF getUTF(const string& utf, const ParseInfo& pi) {
-	if (utf == "u")
-		return UTF_UNKNOWN;
-	else if (utf == "ct")
-		return UTF_CT;
-	else if (utf == "cf")
-		return UTF_CF;
-	else {
-		expectedutf(utf, pi);
-		return UTF_ERROR;
 	}
 }
 
@@ -833,7 +824,7 @@ void checkForUnusedVariables(std::set<Variable*> vv, Args&... args) {
 	for (auto var : vv) {
 		auto list = { varIsUnused(args, var)... };
 		auto containsvar = false;
-		for(auto l:list){
+		for (auto l : list) {
 			containsvar |= l;
 		}
 		if (not containsvar) {
@@ -849,7 +840,7 @@ void Insert::closequery(Query* q) {
 	if (q != NULL) { // Allows for better error catching
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		auto qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
-		checkForUnusedVariables(sv,qf);
+		checkForUnusedVariables(sv, qf);
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
 		FormulaUtils::checkSorts(_currvocabulary, qf);
 		delete (qf); //No recursive delete, the rest of the query should still exist!
@@ -900,7 +891,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 
 void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
 	Assert(_currstructure);
-	assignunknowntables();
+	finalizePendingAssignments();
 	_currstructure->checkAndAutocomplete();
 	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
@@ -1122,7 +1113,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
  */
 Sort* Insert::sort(const string& name, YYLTYPE l) const {
 	vector<Sort*> vs(0);
-	return sort(name, vs,vs, l);
+	return sort(name, vs, vs, l);
 }
 
 /**
@@ -1340,7 +1331,7 @@ Formula* Insert::falseform(YYLTYPE l) const {
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size()) {
-			incompatiblearity(toString(nst), nst->_pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(), vt.size(), nst->_pi);
 		}
 		if (nst->_func) {
 			prednameexpected(nst->_pi);
@@ -1428,7 +1419,7 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) {
-			incompatiblearity(toString(nst), nst->_pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(), vt.size() + 1, nst->_pi);
 		}
 		if (not nst->_func) {
 			funcnameexpected(nst->_pi);
@@ -1558,7 +1549,7 @@ Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) const {
 Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
 	remove_vars(vv);
 	if (f) {
-		checkForUnusedVariables(vv,f);
+		checkForUnusedVariables(vv, f);
 		std::set<Variable*> pivv;
 		map<Variable*, Variable*> mvv;
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
@@ -1636,8 +1627,8 @@ Formula* Insert::eqchain(CompType c, Term* left, Term* right, YYLTYPE l) const {
 
 Variable* Insert::quantifiedvar(const string& name, YYLTYPE l) {
 	auto othervar = getVar(name);
-	if(getVar(name) != NULL){
-		declaredEarlier(ComponentType::Variable,name,parseinfo(l),othervar->pi());
+	if (getVar(name) != NULL) {
+		declaredEarlier(ComponentType::Variable, name, parseinfo(l), othervar->pi());
 	}
 	auto pi = parseinfo(l);
 	auto v = new Variable(name, 0, pi);
@@ -1676,7 +1667,7 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) {
-			incompatiblearity(toString(nst), nst->_pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(), vt.size() + 1, nst->_pi);
 		}
 		if (not nst->_func) {
 			funcnameexpected(nst->_pi);
@@ -1962,225 +1953,6 @@ EnumSetExpr* Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 	return addFT(s, f, t);
 }
 
-void Insert::emptyinter(NSPair* nst) const {
-	if (nst->_sortsincluded) {
-		if (nst->_func) {
-			auto ift = new EnumeratedInternalFuncTable();
-			auto ft = new FuncTable(ift, TableUtils::fullUniverse(nst->_sorts.size()));
-			funcinter(nst, ft);
-		} else {
-			auto ipt = new EnumeratedInternalPredTable();
-			auto pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
-			predinter(nst, pt);
-		}
-	} else {
-		auto pi = nst->_pi;
-		auto posspred = noArPredInScope(nst->_name, pi);
-		auto possfuncs = noArFuncInScope(nst->_name, pi);
-
-		if (posspred.empty() && possfuncs.empty()) {
-			notDeclared(ComponentType::Symbol, toString(nst), pi);
-			return;
-		}
-		if (posspred.size() == 0 && possfuncs.size() == 1) {
-			auto ipt = new EnumeratedInternalFuncTable();
-			auto pt = new FuncTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity() + 1));
-			funcinter(nst, pt);
-		} else if (posspred.size() == 1 && possfuncs.size() == 0) {
-			auto ipt = new EnumeratedInternalPredTable();
-			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(posspred.cbegin()))->arity()));
-			predinter(nst, pt);
-		} else {
-			std::vector<ParseInfo> infos;
-			for (auto p : posspred) {
-				infos.push_back(p->pi());
-			}
-			for (auto f : possfuncs) {
-				infos.push_back(f->pi());
-			}
-			overloaded(ComponentType::Symbol, toString(nst), infos, pi);
-		}
-	}
-}
-
-void Insert::predinter(NSPair* nst, PredTable* t) const {
-	ParseInfo pi = nst->_pi;
-	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity()) {
-			incompatiblearity(toString(nst), pi);
-		}
-		if (nst->_func) {
-			prednameexpected(pi);
-		}
-	}
-	nst->includeArity(t->arity());
-	Predicate* p = predInScope(nst->_name, pi);
-	if (p != NULL and nst->_sortsincluded and (nst->_sorts).size() == t->arity()) {
-		p = p->resolve(nst->_sorts);
-	}
-	if (p != NULL) {
-		if (belongsToVoc(p)) {
-			PredTable* nt = new PredTable(t->internTable(), _currstructure->universe(p));
-			delete (t);
-			PredInter* inter = _currstructure->inter(p);
-			inter->ctpt(nt);
-		} else {
-			notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-		}
-	} else {
-		notDeclared(ComponentType::Predicate, toString(nst), pi);
-	}
-	delete (nst);
-}
-
-void Insert::funcinter(NSPair* nst, FuncTable* t) const {
-	ParseInfo pi = nst->_pi;
-	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity() + 1) {
-			incompatiblearity(toString(nst), pi);
-		}
-		if (not nst->_func) {
-			funcnameexpected(pi);
-		}
-	}
-	nst->includeArity(t->arity());
-	Function* f = funcInScope(nst->_name, pi);
-	if (f and nst->_sortsincluded and (nst->_sorts).size() == t->arity() + 1) {
-		f = f->resolve(nst->_sorts);
-	}
-	if (f) {
-		if (belongsToVoc(f)) {
-			FuncTable* nt = new FuncTable(t->internTable(), _currstructure->universe(f));
-			delete (t);
-			FuncInter* inter = _currstructure->inter(f);
-			inter->funcTable(nt);
-		} else {
-			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-		}
-	} else {
-		notDeclared(ComponentType::Function, toString(nst), pi);
-	}
-	delete (nst);
-}
-
-void Insert::constructor(NSPair* nst) const {
-	ParseInfo pi = nst->_pi;
-	Function* f = 0;
-	if (nst->_sortsincluded) {
-		if (not nst->_func) {
-			funcnameexpected(pi);
-		}
-		nst->includeFuncArity();
-		f = funcInScope(nst->_name, pi);
-		if (f) {
-			f = f->resolve(nst->_sorts);
-		} else {
-			notDeclared(ComponentType::Function, toString(nst), pi);
-		}
-	} else {
-		std::set<Function*> vf = noArFuncInScope(nst->_name, pi);
-		if (vf.empty()) {
-			notDeclared(ComponentType::Function, toString(nst), pi);
-		} else if (vf.size() > 1) {
-			std::set<Function*>::const_iterator it = vf.cbegin();
-			Function* f1 = *it;
-			++it;
-			Function* f2 = *it;
-			overloaded(ComponentType::Function, toString(nst), f1->pi(), f2->pi(), pi);
-		} else {
-			f = *(vf.cbegin());
-		}
-	}
-	if (f) {
-		if (belongsToVoc(f)) {
-			UNAInternalFuncTable* uift = new UNAInternalFuncTable(f);
-			FuncTable* ft = new FuncTable(uift, _currstructure->universe(f));
-			FuncInter* inter = _currstructure->inter(f);
-			inter->funcTable(ft);
-		} else {
-			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-		}
-	}
-}
-
-void Insert::sortinter(NSPair* nst, SortTable* t) {
-	ParseInfo pi = nst->_pi;
-	longname name = nst->_name;
-	Sort* s = sortInScope(name, pi);
-	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != 1) {
-			incompatiblearity(toString(nst), pi);
-		}
-		if (nst->_func) {
-			prednameexpected(pi);
-		}
-	}
-	nst->includeArity(1);
-	Predicate* p = predInScope(nst->_name, pi);
-	if (p and nst->_sortsincluded and (nst->_sorts).size() == 1) {
-		p = p->resolve(nst->_sorts);
-	}
-	if (s) {
-		if (belongsToVoc(s)) {
-			SortTable* st = _currstructure->inter(s);
-			st->internTable(t->internTable());
-			sortsOccurringInUserDefinedStructure.insert(s);
-			delete (t);
-		} else {
-			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
-		}
-	} else if (p) {
-		if (belongsToVoc(p)) {
-			PredTable* pt = new PredTable(t->internTable(), _currstructure->universe(p));
-			PredInter* i = _currstructure->inter(p);
-			i->ctpt(pt);
-			delete (t);
-		} else {
-			notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-		}
-	} else {
-		notDeclared(ComponentType::Predicate, toString(nst), pi);
-	}
-	delete (nst);
-}
-
-void Insert::sortinter(NSPair* nst, const longname& sortidentifier) {
-	ParseInfo pi = nst->_pi;
-	longname name = nst->_name;
-	auto assignee = sortInScope(name, pi);
-	auto s = sortInScope(sortidentifier, pi);
-	if (s == NULL) {
-		notDeclared(ComponentType::Predicate, toString(sortidentifier), pi);
-		return;
-	}
-	if (assignee == NULL) {
-		notDeclared(ComponentType::Predicate, toString(name), pi);
-		return;
-	}
-	if (not _currstructure->hasInter(s)) {
-		stringstream ss;
-		ss << "The assigned sort " << s->name() << "does not have an interpretation. \n";
-		Error::error(ss.str());
-		return;
-	}
-	for (auto parent : assignee->parents()) {
-		for (auto voc = assignee->firstVocabulary(); voc != assignee->lastVocabulary(); ++voc) { // FIXME what does it mean to have multiple vocabularies?
-			if (not SortUtils::isSubsort(s, parent, *voc)) {
-				stringstream ss;
-				ss << "The assigned sort " << s->name() << " is not a subsort of the parent " << parent->name() << " of assignee " << assignee->name() << ". \n";
-				Error::error(ss.str());
-				return;
-			}
-		}
-	}
-	auto inter = _currstructure->inter(s);
-	_currstructure->changeInter(assignee, new SortTable(inter->internTable()));
-}
-
-bool Insert::interpretationSpecifiedByUser(Sort *s) const {
-	return sortsOccurringInUserDefinedStructure.find(s) != sortsOccurringInUserDefinedStructure.cend();
-}
-
 void Insert::addElement(SortTable* s, int i) const {
 	const DomainElement* d = createDomElem(i);
 	s->add(d);
@@ -2212,18 +1984,6 @@ void Insert::addElement(SortTable* s, char c1, char c2) const {
 
 SortTable* Insert::createSortTable() const {
 	return TableUtils::createSortTable();
-}
-
-void Insert::truepredinter(NSPair* nst) const {
-	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
-	ElementTuple et;
-	pt->add(et);
-	predinter(nst, pt);
-}
-
-void Insert::falsepredinter(NSPair* nst) const {
-	auto pt = TableUtils::createPredTable(Universe(vector<SortTable*>(0)));
-	predinter(nst, pt);
 }
 
 PredTable* Insert::createPredTable(unsigned int arity) const {
@@ -2285,220 +2045,6 @@ void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const
 	addTupleVal(ft, et, l);
 }
 
-void Insert::inter(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	UserProcedure* up = procedureInScope(procedure, pi);
-	string* proc = NULL;
-	if (up) {
-		proc = StringPointer(up->registryindex());
-	} else {
-		proc = LuaConnection::getProcedure(procedure, pi);
-	}
-	if (proc) {
-		vector<SortTable*> univ;
-		if (nsp->_sortsincluded) {
-			for (auto it = nsp->_sorts.cbegin(); it != nsp->_sorts.cend(); ++it) {
-				if (*it) {
-					univ.push_back(_currstructure->inter(*it));
-				}
-			}
-			if (nsp->_func) {
-				ProcInternalFuncTable* pift = new ProcInternalFuncTable(proc);
-				FuncTable* ft = new FuncTable(pift, Universe(univ));
-				funcinter(nsp, ft);
-			} else {
-				ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
-				PredTable* pt = new PredTable(pipt, Universe(univ));
-				predinter(nsp, pt);
-			}
-		} else {
-			ParseInfo pi = nsp->_pi;
-			std::set<Predicate*> vp = noArPredInScope(nsp->_name, pi);
-			if (vp.empty()) {
-				notDeclared(ComponentType::Predicate, toString(nsp), pi);
-			} else if (vp.size() > 1) {
-				std::set<Predicate*>::const_iterator it = vp.cbegin();
-				Predicate* p1 = *it;
-				++it;
-				Predicate* p2 = *it;
-				overloaded(ComponentType::Predicate, toString(nsp), p1->pi(), p2->pi(), pi);
-			} else {
-				for (auto it = (*(vp.cbegin()))->sorts().cbegin(); it != (*(vp.cbegin()))->sorts().cend(); ++it) {
-					if (*it) {
-						univ.push_back(_currstructure->inter(*it));
-					}
-				}
-				ProcInternalPredTable* pipt = new ProcInternalPredTable(proc);
-				PredTable* pt = new PredTable(pipt, Universe(univ));
-				predinter(nsp, pt);
-			}
-		}
-	}
-}
-
-//Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
-//Note: P can both be a function or a predicate symbol.
-void Insert::emptythreeinter(NSPair* nst, const string& utf) {
-	if (nst->_sortsincluded) {
-		EnumeratedInternalPredTable* ipt = new EnumeratedInternalPredTable();
-		PredTable* pt = new PredTable(ipt, TableUtils::fullUniverse(nst->_sorts.size()));
-		//Depending on the kind of symbol we use, return the correct three-valued inter.
-		if (nst->_func) {
-			threefuncinter(nst, utf, pt);
-		} else {
-			threepredinter(nst, utf, pt);
-		}
-	} else {
-		ParseInfo pi = nst->_pi;
-		//Collect all predicates and functions with arity zero and the right name. (since no sorts are included)
-		//If there is exactly one of them, we can disambiguate, otherwise, throw error.
-		auto posspred = noArPredInScope(nst->_name, pi);
-		auto possfuncs = noArFuncInScope(nst->_name, pi);
-
-		if (posspred.empty() && possfuncs.empty()) {
-			notDeclared(ComponentType::Symbol, toString(nst), pi);
-			return;
-		}
-		if (posspred.size() == 0 && possfuncs.size() == 1) {
-			auto ipt = new EnumeratedInternalPredTable();
-			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(possfuncs.cbegin()))->arity() + 1));
-			threefuncinter(nst, utf, pt);
-		} else if (posspred.size() == 1 && possfuncs.size() == 0) {
-			auto ipt = new EnumeratedInternalPredTable();
-			auto pt = new PredTable(ipt, TableUtils::fullUniverse((*(posspred.cbegin()))->arity()));
-			threepredinter(nst, utf, pt);
-		} else {
-			std::vector<ParseInfo> infos;
-			for (auto p : posspred) {
-				infos.push_back(p->pi());
-			}
-			for (auto f : possfuncs) {
-				infos.push_back(f->pi());
-			}
-			overloaded(ComponentType::Symbol, toString(nst), infos, pi);
-		}
-
-
-	}
-}
-
-void Insert::threepredinter(NSPair* nst, const string& utf, PredTable* t) {
-	ParseInfo pi = nst->_pi;
-	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity()) {
-			incompatiblearity(toString(nst), pi);
-		}
-		if (nst->_func) {
-			prednameexpected(pi);
-		}
-	}
-	nst->includeArity(t->arity());
-	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
-		p = p->resolve(nst->_sorts);
-	}
-	if (p) {
-		if (p->arity() == 1 && p->sort(0)->pred() == p) {
-			threevalsort(p->name(), pi);
-		} else {
-			if (belongsToVoc(p)) {
-				PredTable* nt = new PredTable(t->internTable(), _currstructure->universe(p));
-				delete (t);
-				switch (getUTF(utf, pi)) {
-				case UTF_UNKNOWN:
-					_unknownpredtables[p] = nt;
-					break;
-				case UTF_CT: {
-					PredInter* pt = _currstructure->inter(p);
-					pt->ct(nt);
-					_cpreds[p] = UTF_CT;
-					break;
-				}
-				case UTF_CF: {
-					PredInter* pt = _currstructure->inter(p);
-					pt->cf(nt);
-					_cpreds[p] = UTF_CF;
-					break;
-				}
-				case UTF_ERROR:
-					break;
-				}
-			} else {
-				notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-			}
-		}
-	} else {
-		notDeclared(ComponentType::Predicate, toString(nst), pi);
-	}
-	delete (nst);
-}
-
-void Insert::threefuncinter(NSPair* nst, const string& utf, PredTable* t) {
-	ParseInfo pi = nst->_pi;
-	if (nst->_sortsincluded) {
-		if ((nst->_sorts).size() != t->arity()) {
-			incompatiblearity(toString(nst), pi);
-		}
-		if (not nst->_func) {
-			funcnameexpected(pi);
-		}
-	}
-	nst->includeArity(t->arity() - 1);
-	Function* f = funcInScope(nst->_name, pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == t->arity()) {
-		f = f->resolve(nst->_sorts);
-	}
-	if (f) {
-		if (belongsToVoc(f)) {
-			PredTable* nt = new PredTable(t->internTable(), _currstructure->universe(f));
-			delete (t);
-			switch (getUTF(utf, pi)) {
-			case UTF_UNKNOWN:
-				_unknownfunctables[f] = nt;
-				break;
-			case UTF_CT: {
-				PredInter* ft = _currstructure->inter(f)->graphInter();
-				ft->ct(nt);
-				_cfuncs[f] = UTF_CT;
-				break;
-			}
-			case UTF_CF: {
-				PredInter* ft = _currstructure->inter(f)->graphInter();
-				ft->cf(nt);
-				_cfuncs[f] = UTF_CF;
-				break;
-			}
-			case UTF_ERROR:
-				break;
-			}
-		} else {
-			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
-		}
-	} else {
-		notDeclared(ComponentType::Function, toString(nst), pi);
-	}
-}
-
-void Insert::threepredinter(NSPair* nst, const string& utf, SortTable* t) {
-	PredTable* pt = new PredTable(t->internTable(), TableUtils::fullUniverse(1));
-	delete (t);
-	threepredinter(nst, utf, pt);
-}
-
-void Insert::truethreepredinter(NSPair* nst, const string& utf) {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
-	PredTable* pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
-	ElementTuple et;
-	pt->add(et);
-	threepredinter(nst, utf, pt);
-}
-
-void Insert::falsethreepredinter(NSPair* nst, const string& utf) {
-	EnumeratedInternalPredTable* eipt = new EnumeratedInternalPredTable();
-	PredTable* pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
-	threepredinter(nst, utf, pt);
-}
-
 pair<int, int>* Insert::range(int i1, int i2, YYLTYPE l) const {
 	if (i1 > i2) {
 		i2 = i1;
@@ -2519,7 +2065,7 @@ const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vte.size() + 1) {
-			incompatiblearity(toString(nst), pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(), vte.size() + 1, pi);
 		}
 		if (not nst->_func) {
 			funcnameexpected(pi);
@@ -2552,7 +2098,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != args.size()) {
-			incompatiblearity(toString(nst), pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(), args.size(), pi);
 		}
 		if (nst->_func) {
 			prednameexpected(pi);
@@ -2713,29 +2259,402 @@ void setOptionValue(Options* options, const string& opt, const OptionValue& val,
 	options->setValue(opt, val);
 }
 
-void Insert::assignunknowntables() {
-	// Assign the unknown predicate interpretations
-	for (auto it = _unknownpredtables.cbegin(); it != _unknownpredtables.cend(); ++it) {
-		auto pri = _currstructure->inter(it->first);
-		auto ctable = _cpreds[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		auto pt = new PredTable(ctable->internTable(), ctable->universe());
-		for (auto tit = it->second->begin(); not tit.isAtEnd(); ++tit) {
-			pt->add(*tit);
-		}
-		_cpreds[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
-		delete (it->second);
+/*******************
+ * Interpretations
+ *******************/
+
+bool Insert::interpretationSpecifiedByUser(AbstractStructure* structure, Sort *sort) const {
+	if (not contains(sortsOccurringInUserDefinedStructure, structure)) {
+		return false;
 	}
-	// Assign the unknown function interpretations
-	for (auto it = _unknownfunctables.cbegin(); it != _unknownfunctables.cend(); ++it) {
-		auto pri = _currstructure->inter(it->first)->graphInter();
-		auto ctable = _cfuncs[it->first] == UTF_CT ? pri->ct() : pri->cf();
-		auto pt = new PredTable(ctable->internTable(), ctable->universe());
-		for (auto tit = it->second->begin(); not tit.isAtEnd(); ++tit) {
-			pt->add(*tit);
-		}
-		_cfuncs[it->first] == UTF_CT ? pri->pt(pt) : pri->pf(pt);
-		delete (it->second);
+	return contains(sortsOccurringInUserDefinedStructure.at(structure), sort);
+}
+
+bool Insert::interpretationSpecifiedByUser(PFSymbol *symbol) const {
+	if (contains(_pendingAssignments, symbol)) {
+		return true;
 	}
-	_unknownpredtables.clear();
-	_unknownfunctables.clear();
+	return false;
+}
+
+void Insert::predinter(NSPair* nst, SortTable* t, const string& utf) const {
+	auto pt = new PredTable(t->internTable(), TableUtils::fullUniverse(1));
+	delete (t);
+	predinter(nst, pt, utf);
+}
+
+void Insert::truepredinter(NSPair* nst, const string& utf) const {
+	auto eipt = new EnumeratedInternalPredTable();
+	auto pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	ElementTuple et;
+	pt->add(et);
+	predinter(nst, pt, utf);
+}
+
+void Insert::falsepredinter(NSPair* nst, const string& utf) const {
+	auto eipt = new EnumeratedInternalPredTable();
+	auto pt = new PredTable(eipt, Universe(vector<SortTable*>(0)));
+	predinter(nst, pt, utf);
+}
+
+bool Insert::isValidTruthType(const string& utf) const {
+	return utf == "u" || utf == "ct" || utf == "cf" || /*utf == "pt" || utf == "pf" ||*/utf == "tv";
+}
+Insert::UTF Insert::getTruthType(const string& utf) const {
+	if (utf == "u") {
+		return Insert::UTF::U;
+	} else if (utf == "ct") {
+		return Insert::UTF::CT;
+	} else if (utf == "cf") {
+		return Insert::UTF::CF;
+	}/* else if (utf == "pt") {
+	 return Insert::UTF::PT;
+	 } else if (utf == "pf") {
+	 return Insert::UTF::PF;
+	 }*/else if (utf == "tv") {
+		return Insert::UTF::TWOVAL;
+	} else {
+		throw IdpException("Invalid code path");
+	}
+}
+
+void Insert::predinter(NSPair* nst, PredTable* t, const string& utf) const {
+	if (not isValidTruthType(utf)) {
+		expectedutf(utf, nst->_pi);
+		return;
+	}
+	setInter(nst, false, getTruthType(utf), t, t->arity());
+}
+
+void Insert::funcinter(NSPair* nst, PredTable* t, const string& utf) const {
+	if (not isValidTruthType(utf)) {
+		expectedutf(utf, nst->_pi);
+		return;
+	}
+	setInter(nst, true, getTruthType(utf), t, t->arity() - 1);
+}
+
+void Insert::funcinter(NSPair* nst, FuncTable* t, const string& utf) const {
+	if (not isValidTruthType(utf)) {
+		expectedutf(utf, nst->_pi);
+		return;
+	}
+	setInter(nst, true, getTruthType(utf), t, t->arity());
+}
+
+template<class Table>
+PredTable* newTable(Table t, const Universe& universe);
+template<>
+PredTable* newTable(PredTable* t, const Universe& universe) {
+	return new PredTable(t->internTable(), universe);
+}
+template<>
+PredTable* newTable(FuncTable* t, const Universe& universe) {
+	return new PredTable(new FuncInternalPredTable(new FuncTable(t->internTable(), universe), false), universe);
+}
+
+// Note: arity==-1 means arity unknown
+PFSymbol* Insert::retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arity) const {
+	auto pi = nst->_pi;
+	if (nst->_sortsincluded) {
+		if (arity != -1 && (int) (nst->_sorts).size() != (expectsFunc ? arity + 1 : arity)) {
+			incompatiblearity(toString(nst), (nst->_sorts).size(), (expectsFunc ? arity + 1 : arity), pi);
+			return NULL;
+		}
+		if (not expectsFunc && nst->_func) {
+			prednameexpected(pi);
+			return NULL;
+		}
+		if (expectsFunc && not nst->_func) {
+			funcnameexpected(pi);
+			return NULL;
+		}
+	}
+	PFSymbol* p = NULL;
+	if (arity != -1) {
+		if (not nst->_arityincluded) {
+			nst->includeArity(arity);
+		}
+		p = expectsFunc ? (PFSymbol*) funcInScope(nst->_name, pi) : (PFSymbol*) predInScope(nst->_name, pi);
+	} else {
+		if (expectsFunc) {
+			auto funcs = noArFuncInScope(nst->_name, pi);
+			if (funcs.size() != 1) {
+				overloaded(ComponentType::Function, toString(nst), getLocations(funcs), pi);
+			} else {
+				p = *funcs.begin();
+			}
+		} else {
+			auto preds = noArPredInScope(nst->_name, pi);
+			if (preds.size() != 1) {
+				overloaded(ComponentType::Predicate, toString(nst), getLocations(preds), pi);
+			} else {
+				p = *preds.begin();
+			}
+		}
+	}
+	if (p && nst->_sortsincluded && (int) (nst->_sorts).size() == arity && arity != -1) {
+		p = p->resolve(nst->_sorts);
+	}
+	return p;
+}
+
+template<class Table>
+void Insert::setInter(NSPair* nst, bool expectsFunc, UTF truthvalue, Table* t, int arity) const {
+	auto p = retrieveSymbolNoChecks(nst, expectsFunc, arity);
+	auto error = basicSymbolCheck(p, nst, truthvalue);
+	if (not error && t->arity() == 1 && p->sort(0)->pred() == p && truthvalue != UTF::TWOVAL) {
+		threevalsort(p->name(), nst->_pi);
+		error = true;
+	}
+	if (not error) {
+		auto nt = newTable(t, _currstructure->universe(p));
+		delete (t);
+		_pendingAssignments[p][truthvalue] = nt;
+	}
+	delete (nst);
+}
+
+bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst) const {
+	bool error = false;
+	if (not error && symbol == NULL) {
+		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
+		error = true;
+	}
+	if (not error && not belongsToVoc(symbol)) {
+		auto comptype = symbol->isFunction() ? ComponentType::Function : ComponentType::Predicate;
+		notInVocabularyOf(comptype, ComponentType::Structure, toString(nst), _currstructure->name(), nst->_pi);
+		error = true;
+	}
+	return error;
+}
+
+std::string Insert::print(UTF utf) const {
+	switch (utf) {
+	case UTF::TWOVAL:
+		return "tv";
+	case UTF::U:
+		return "u";
+	case UTF::CT:
+		return "ct";
+	case UTF::CF:
+		return "cf";
+	}
+	throw IdpException("invalid code path");
+}
+
+bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
+	bool error = basicSymbolCheck(symbol, nst);
+	if (contains(_pendingAssignments, symbol)) {
+		auto type = symbol->isFunction() ? ComponentType::Function : ComponentType::Predicate;
+		if (not error && contains(_pendingAssignments.at(symbol), utf)) {
+			stringstream ss;
+			ss << type << " " << symbol->name() << " was already interpreted for the truth value " <<print(utf) << ".";
+			Error::error(ss.str(), nst->_pi);
+			error = true;
+		}
+		if (not error && (_pendingAssignments.at(symbol).size() > 2 || contains(_pendingAssignments.at(symbol), UTF::TWOVAL) || utf == UTF::TWOVAL)) {
+			stringstream ss;
+			ss << type << " " << symbol->name() << " was already " << (utf == UTF::TWOVAL ? "partially" : "fully")
+					<< " interpreted earlier by other truth values than " << print(utf) << ".";
+			Error::error(ss.str(), nst->_pi);
+			error = true;
+		}
+	}
+	return error;
+}
+
+PFSymbol* Insert::findUniqueMatch(NSPair* nst) const {
+	auto pi = nst->_pi;
+	auto posspred = noArPredInScope(nst->_name, pi);
+	auto possfuncs = noArFuncInScope(nst->_name, pi);
+
+	if (posspred.empty() && possfuncs.empty()) {
+		notDeclared(ComponentType::Symbol, toString(nst), pi);
+		return NULL;
+	}
+	if (posspred.size() == 0 && possfuncs.size() == 1) {
+		return *possfuncs.cbegin();
+	} else if (posspred.size() == 1 && possfuncs.size() == 0) {
+		return *posspred.cbegin();
+	} else {
+		std::vector<ParseInfo> infos;
+		for (auto p : posspred) {
+			infos.push_back(p->pi());
+		}
+		for (auto f : possfuncs) {
+			infos.push_back(f->pi());
+		}
+		overloaded(ComponentType::Symbol, toString(nst), infos, pi);
+	}
+	return NULL;
+}
+
+void Insert::emptyinter(NSPair* nst, const string& utf) const {
+	bool func = false;
+	int universesize = -1;
+	if (nst->_sortsincluded) {
+		func = nst->_func;
+		universesize = nst->_sorts.size();
+	} else {
+		auto result = findUniqueMatch(nst);
+		if (result == NULL) {
+			return;
+		}
+		func = result->isFunction();
+		universesize = result->sorts().size();
+	}
+
+	if (func) {
+		auto ift = new EnumeratedInternalFuncTable();
+		auto ft = new FuncTable(ift, TableUtils::fullUniverse(universesize));
+		funcinter(nst, ft, utf);
+	} else {
+		auto ipt = new EnumeratedInternalPredTable();
+		auto pt = new PredTable(ipt, TableUtils::fullUniverse(universesize));
+		predinter(nst, pt, utf);
+	}
+}
+
+void Insert::interByProcedure(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
+	auto pi = parseinfo(l);
+	auto up = procedureInScope(procedure, pi);
+	string* proc = NULL;
+	if (up) {
+		proc = StringPointer(up->registryindex());
+	} else {
+		proc = LuaConnection::getProcedure(procedure, pi);
+	}
+	if (proc == NULL) {
+		notDeclared(ComponentType::Procedure, toString(procedure), pi);
+		return;
+	}
+
+	bool func = false;
+	vector<SortTable*> univ;
+	if (nsp->_sortsincluded) {
+		func = nsp->_func;
+		for (auto sort : nsp->_sorts) {
+			if (sort != NULL) {
+				univ.push_back(_currstructure->inter(sort));
+			}
+		}
+	} else {
+		auto result = findUniqueMatch(nsp);
+		if (result == NULL) {
+			return;
+		}
+		func = result->isFunction();
+		for (auto sort : result->sorts()) {
+			if (sort) {
+				univ.push_back(_currstructure->inter(sort));
+			}
+		}
+	}
+	if (func) {
+		auto pift = new ProcInternalFuncTable(proc);
+		auto ft = new FuncTable(pift, Universe(univ));
+		funcinter(nsp, ft);
+	} else {
+		auto pipt = new ProcInternalPredTable(proc);
+		auto pt = new PredTable(pipt, Universe(univ));
+		predinter(nsp, pt);
+	}
+}
+
+void Insert::constructor(NSPair* nst) const {
+	auto pi = nst->_pi;
+	auto f = retrieveSymbolNoChecks(nst, true, -1);
+	auto error = basicSymbolCheck(f, nst);
+	if (not error) {
+		auto function = dynamic_cast<Function*>(f);
+		auto uift = new UNAInternalFuncTable(function);
+		auto ft = new FuncTable(uift, _currstructure->universe(f));
+		funcinter(nst, ft);
+	}
+}
+
+void Insert::sortinter(NSPair* nst, SortTable* t) const {
+	ParseInfo pi = nst->_pi;
+	longname name = nst->_name;
+	Sort* s = sortInScope(name, pi);
+	if (nst->_sortsincluded) {
+		if ((nst->_sorts).size() != 1) {
+			incompatiblearity(toString(nst), (nst->_sorts).size(), 1, pi);
+		}
+		if (nst->_func) {
+			prednameexpected(pi);
+		}
+	}
+	nst->includeArity(1);
+	Predicate* p = predInScope(nst->_name, pi);
+	if (p and nst->_sortsincluded and (nst->_sorts).size() == 1) {
+		p = p->resolve(nst->_sorts);
+	}
+	if (s) {
+		if (belongsToVoc(s)) {
+			auto st = _currstructure->inter(s);
+			st->internTable(t->internTable());
+			sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
+			delete (t);
+		} else {
+			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
+		}
+		delete(nst);
+	} else if (p) {
+		predinter(nst, t, "tv");
+	} else {
+		notDeclared(ComponentType::Predicate, toString(nst), pi);
+		delete (nst);
+	}
+}
+
+void Insert::finalizePendingAssignments() {
+	for (auto symbol2valuetables : _pendingAssignments) {
+		auto& tables = symbol2valuetables.second;
+		Assert(tables.size()==1 || tables.size()==2);
+		auto inter = _currstructure->inter(symbol2valuetables.first);
+		if (tables.size() == 2) {
+			if (contains(tables, UTF::CT) && contains(tables, UTF::CF)) {
+				inter->ct(tables[UTF::CT]);
+				inter->cf(tables[UTF::CF]);
+			}else if (contains(tables, UTF::CT)) {
+				inter->ct(tables[UTF::CT]);
+				auto ctable = inter->ct();
+				auto pt = new PredTable(ctable->internTable(), ctable->universe());
+				for (auto i = tables[UTF::U]->begin(); not i.isAtEnd(); ++i) {
+					pt->add(*i);
+				}
+				inter->pt(pt);
+			} else if (contains(tables, UTF::CF)) {
+				inter->cf(tables[UTF::CF]);
+				auto ctable = inter->cf();
+				auto pf = new PredTable(ctable->internTable(), ctable->universe());
+				for (auto i = tables[UTF::U]->begin(); not i.isAtEnd(); ++i) {
+					pf->add(*i);
+				}
+				inter->pf(pf);
+			}
+		} else {
+			auto value2table = *tables.cbegin();
+			switch (value2table.first) {
+			case UTF::TWOVAL:
+				inter->ctpt(value2table.second);
+				break;
+			case UTF::CT:
+				inter->ct(value2table.second);
+				break;
+			case UTF::CF:
+				inter->cf(value2table.second);
+				break;
+			case UTF::U:{
+				stringstream ss;
+				ss <<"Only specified unknown truthvalue for symbol " <<toString(symbol2valuetables.first) <<"\n";
+				Error::error(ss.str());
+				break;
+			}
+			}
+		}
+	}
+	_pendingAssignments.clear();
 }

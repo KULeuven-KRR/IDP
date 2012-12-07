@@ -18,6 +18,7 @@
 #include <sstream>
 #include "commontypes.hpp"
 #include "parseinfo.hpp"
+#include "vocabulary/vocabulary.hpp"
 #include <ostream>
 
 class Sort;
@@ -27,6 +28,7 @@ class Vocabulary;
 class DomainElement;
 class Compound;
 class SortTable;
+class AbstractTable;
 class PredTable;
 class FuncTable;
 class Structure;
@@ -125,10 +127,6 @@ struct VarName {
 	std::ostream& put(std::ostream& os) const;
 };
 
-enum UTF {
-	UTF_UNKNOWN, UTF_CT, UTF_CF, UTF_ERROR
-};
-
 class Insert {
 private:
 	lua_State* _state; //!< the lua state objects are added to
@@ -195,20 +193,14 @@ private:
 	UserProcedure* procedureInScope(const std::string&, const ParseInfo&) const;
 	UserProcedure* procedureInScope(const longname&, const ParseInfo&) const;
 
-	bool belongsToVoc(Predicate*) const;
-	bool belongsToVoc(Function*) const;
+	bool belongsToVoc(PFSymbol*) const;
 	bool belongsToVoc(Sort*) const;
 
 	Formula* boolform(bool, Formula*, Formula*, YYLTYPE) const;
 	Formula* quantform(bool, const std::set<Variable*>&, Formula*, YYLTYPE);
 
-	std::map<Predicate*, PredTable*> _unknownpredtables;
-	std::map<Function*, PredTable*> _unknownfunctables;
-	std::map<Predicate*, UTF> _cpreds;
-	std::map<Function*, UTF> _cfuncs;
 	void assignunknowntables();
 
-	std::set<Sort*> sortsOccurringInUserDefinedStructure;
 	std::set<Predicate*> parsedpreds;
 	std::set<Function*> parsedfuncs;
 
@@ -372,22 +364,44 @@ public:
 	EnumSetExpr* addFT(EnumSetExpr*, Formula*, Term*) const;
 	//!< Add a tuple (phi,t) to an EnumSetExpr
 
-	void emptyinter(NSPair*) const; //!< Assign the empty interpretation
-	void sortinter(NSPair*, SortTable* t); //!< Assign a one dimensional table
-	void sortinter(NSPair*, const longname& sortidentifier); //!< Assign a sort to another sort
-	void predinter(NSPair*, PredTable* t) const; //!< Assign a predicate table
-	void funcinter(NSPair*, FuncTable* t) const; //!< Assign a function table
-	void truepredinter(NSPair*) const; //!< Assign true
-	void falsepredinter(NSPair*) const; //!< Assign false
-	void inter(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure
+	// Interpretations
+private:
+	enum class UTF {
+		TWOVAL,
+		U,
+		CT,
+		CF
+	};
+	std::string print(UTF utf)const;
+	mutable std::map<AbstractStructure*, std::set<Sort*>> sortsOccurringInUserDefinedStructure;
+	std::set<AbstractStructure*, std::set<PFSymbol*> > symbolsOccurringInUserDefinedStructure;
+	mutable std::map<PFSymbol*, std::map<UTF, PredTable*> > _pendingAssignments;
+	void finalizePendingAssignments();
+	bool basicSymbolCheck(PFSymbol* symbol, NSPair* nst)const;
+	bool basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf)const;
+	bool isValidTruthType(const std::string& utf)const;
+	UTF getTruthType(const std::string& utf)const;
+	PFSymbol* retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arity) const;
+	template<class Table>
+	void setInter(NSPair* nst, bool expectsFunc, UTF truthvalue, Table* t, int arity) const;
+	PFSymbol* findUniqueMatch(NSPair* nst)const;
+public:
+	/**
+	 * Returns true if this sort occurred in the user provided theory.
+	 */
+	bool interpretationSpecifiedByUser(AbstractStructure* structure, Sort* sort) const;
+	bool interpretationSpecifiedByUser(PFSymbol* symbol) const;
+	void sortinter(NSPair*, SortTable* t)const; //!< Assign a one dimensional table
+	void interByProcedure(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure
 	void constructor(NSPair*) const; //!< Assign a constructor
+	void predinter(NSPair*, PredTable* t, const std::string& utf = "tv")const;
+	void predinter(NSPair*, SortTable* t, const std::string& utf = "tv")const;
+	void truepredinter(NSPair*, const std::string& utf = "tv") const;
+	void falsepredinter(NSPair*, const std::string& utf = "tv") const;
+	void funcinter(NSPair*, PredTable* t, const std::string& utf = "tv")const;
+	void funcinter(NSPair*, FuncTable* t, const std::string& utf = "tv")const;
+	void emptyinter(NSPair*, const std::string& utf = "tv")const; //!<Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
 
-	void threepredinter(NSPair*, const std::string& utf, PredTable* t);
-	void threepredinter(NSPair*, const std::string& utf, SortTable* t);
-	void truethreepredinter(NSPair*, const std::string& utf);
-	void falsethreepredinter(NSPair*, const std::string& utf);
-	void threefuncinter(NSPair*, const std::string& utf, PredTable* t);
-	void emptythreeinter(NSPair*, const std::string& utf); //!<Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
 
 	SortTable* createSortTable() const;
 	void addElement(SortTable*, int) const;
@@ -433,11 +447,6 @@ public:
 	void procarg(const std::string&) const; //!< Add an argument to the current procedure
 
 	static const DomainElement* exec(const std::string&);
-
-	/**
-	 * Returns true if this sort occurred in the user provided theory.
-	 */
-	bool interpretationSpecifiedByUser(Sort *s) const;
 };
 
 #endif

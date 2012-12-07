@@ -16,7 +16,7 @@
 using namespace std;
 using namespace Error;
 
-std::ostream& operator<<(std::ostream& stream, ComponentType t) {
+std::ostream& Error::operator<<(std::ostream& stream, ComponentType t) {
 	switch (t) {
 	case ComponentType::Namespace:
 		stream << "Namespace";
@@ -166,9 +166,9 @@ void Error::wrongarity(const ParseInfo& pi) {
 	error(ss.str(), pi);
 }
 
-void Error::incompatiblearity(const string& n, const ParseInfo& pi) {
+void Error::incompatiblearity(const string& n, int symbolarity, int tablearity, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "The arity of symbol " << n << " is different from the arity of the table assigned to it.";
+	ss << "The arity of symbol " << n << "(" <<symbolarity <<") is different from the arity of the table (" <<tablearity <<")assigned to it.";
 	error(ss.str(), pi);
 }
 
@@ -187,7 +187,7 @@ void Error::funcnameexpected(const ParseInfo& pi) {
 /** Invalid interpretations **/
 void Error::expectedutf(const string& s, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "Unexpected '" << s << "', expected 'u', 'ct' or 'cf'.";
+	ss << "Unexpected '" << s << "', expected 'u'(unknown), 'ct'(certainly true), 'cf'(certainly false).";
 	error(ss.str(), pi);
 }
 
@@ -258,22 +258,6 @@ void Error::notDeclared(ComponentType type, const string& name, const ParseInfo&
 void Error::notInVocabularyOf(ComponentType type, ComponentType parentType, const string& name, const string& tname, const ParseInfo& pi) {
 	stringstream ss;
 	ss << type << " " << name << " is not in the vocabulary of " << parentType << " " << tname << ".";
-	error(ss.str(), pi);
-}
-
-/** Using overlapping symbols **/
-void Error::overloaded(ComponentType type, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& pi) {
-	stringstream ss;
-	ss << "The " << type << " " << name << " used here could be the " << type << " declared at " << print(p1);
-	ss << " or the " << type << " declared at " << print(p2) << ".";
-	error(ss.str(), pi);
-}
-void Error::overloaded(ComponentType type, const string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi) {
-	stringstream ss;
-	ss << "The " << type << " " << name << " used here should be disambiguated as it might refer to :\n";
-	for (auto info : possiblelocations) {
-		ss << "\tThe " << type << " at " << print(info) << "\n";
-	}
 	error(ss.str(), pi);
 }
 
