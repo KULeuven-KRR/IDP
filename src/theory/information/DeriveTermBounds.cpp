@@ -217,8 +217,9 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 			currentmin = domElemSum(currentmin, domElemProd(maxsizeElem, min(_minimum, neutral, Compare<DomainElement>())));
 			break;
 		case AggFunction::PROD:
-			currentmax = domElemProd(currentmax, domElemPow(maxsizeElem, max(_maximum, neutral, Compare<DomainElement>())));
-			currentmin = domElemProd(currentmin, domElemPow(maxsizeElem, min(_minimum, neutral, Compare<DomainElement>())));
+			//If we have a set with maxsize 4, and maximum 10, we want the max to be 10^4
+			currentmax = domElemProd(currentmax, domElemPow(max(_maximum, neutral, Compare<DomainElement>()), maxsizeElem));
+			currentmin = domElemProd(currentmin, domElemPow(min(_minimum, neutral, Compare<DomainElement>()), maxsizeElem));
 			break;
 		case AggFunction::MIN:
 			if (start) {
