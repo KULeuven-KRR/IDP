@@ -400,6 +400,13 @@ void Warning::freevars(const string& fv, const ParseInfo& pi) {
 	warning(ss.str(), pi);
 }
 
+/** Unused variables **/
+void Warning::unusedvar(const string& uv, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Quantified variable " << uv << " is unused.";
+	warning(ss.str(), pi);
+}
+
 /** Unexpeded type derivation **/
 void Warning::derivevarsort(const string& varname, const string& sortname, const ParseInfo& pi) {
 	stringstream ss;

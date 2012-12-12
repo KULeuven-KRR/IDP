@@ -109,6 +109,9 @@ void varcouldbeconst(const std::string&, const ParseInfo& thisplace);
 /** Free variables **/
 void freevars(const std::string& fv, const ParseInfo& thisplace);
 
+/** Unused variables **/
+void unusedvar(const std::string& uv, const ParseInfo& pi);
+
 /** Unexpeded type derivation **/
 void derivevarsort(const std::string& varname, const std::string& sortname, const ParseInfo& thisplace);
 
