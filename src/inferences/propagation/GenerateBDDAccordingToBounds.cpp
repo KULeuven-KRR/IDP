@@ -16,6 +16,7 @@
 #include "GenerateBDDAccordingToBounds.hpp"
 
 #include "theory/TheoryUtils.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 
@@ -66,7 +67,6 @@ const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) 
 }
 
 void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
-
 	//NOTE: all the commented code in this method is old code.
 	//This code can be used if the symbolic structure is not "applied to structure" after propagation.
 	//For example, in the case of lazy grounding, this might be useful.
@@ -86,9 +86,10 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			getct = not getct;
 			clone->negate();
 		}
-		Assert(_symbolsThatCannotBeReplacedByBDDs != NULL);
-		if(not _symbolsThatCannotBeReplacedByBDDs->contains(atom->symbol())){
-			auto bdd = getct ? _ctbounds[atom->symbol()] : _cfbounds[atom->symbol()];
+
+		if ((_symbolsThatCannotBeReplacedByBDDs == NULL || not _symbolsThatCannotBeReplacedByBDDs->contains(atom->symbol()))
+				&& contains(_ctbounds, atom->symbol()) && contains(_cfbounds, atom->symbol())) {
+			auto bdd = getct ? _ctbounds.at(atom->symbol()) : _cfbounds.at(atom->symbol());
 			map<const FOBDDVariable*, const FOBDDTerm*> mva;
 			const auto& vars = _vars[atom->symbol()];
 			for (unsigned int n = 0; n < vars.size(); ++n) {
@@ -107,7 +108,7 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 		}
 	}
 
-	//SAVENESS FOR PARTIAL FUNCTIONS
+	// SAFENESS FOR PARTIAL FUNCTIONS
 	if (atom->symbol()->isFunction()) {
 		auto f = dynamic_cast<Function*>(atom->symbol());
 		if (f->partial() || is(atom->symbol(), STDFUNC::DIVISION) || is(atom->symbol(), STDFUNC::MODULO)) {
