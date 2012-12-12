@@ -20,7 +20,7 @@
 #include "modelexpand.hpp"
 #include "clone.hpp"
 #include "mergetheories.hpp"
-#include "joinstructures.hpp"
+#include "mergestructures.hpp"
 #include "idptype.hpp"
 #include "setatomvalue.hpp"
 #include "settablevalue.hpp"
@@ -92,7 +92,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<IdpTypeInference>());
 	inferences.push_back(make_shared<FlattenInference>());
 	inferences.push_back(make_shared<MergeTheoriesInference>());
-	inferences.push_back(make_shared<JoinStructuresInference>());
+	inferences.push_back(make_shared<MergeStructuresInference>());
 	inferences.push_back(make_shared<PushNegationsInference>());
 	inferences.push_back(make_shared<QueryInference>());
 	inferences.push_back(make_shared<CreateRangeInference>());

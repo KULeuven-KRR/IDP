@@ -15,11 +15,11 @@
 #include "theory/TheoryUtils.hpp"
 #include "errorhandling/error.hpp"
 
-typedef TypedInference<LIST(AbstractStructure*, AbstractStructure*)> JoinStructuresInferenceBase;
-class JoinStructuresInference: public JoinStructuresInferenceBase {
+typedef TypedInference<LIST(AbstractStructure*, AbstractStructure*)> MergeStructuresInferenceBase;
+class MergeStructuresInference: public MergeStructuresInferenceBase {
 public:
-	JoinStructuresInference()
-			: JoinStructuresInferenceBase("merge", "Make the first structure more precise using the second one. Only shared relations are combined.") {
+	MergeStructuresInference()
+			: MergeStructuresInferenceBase("merge", "Make the first structure more precise using the second one. Only shared relations are combined.") {
 		setNameSpace(getStructureNamespaceName());
 	}
 
