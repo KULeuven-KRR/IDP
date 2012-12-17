@@ -179,6 +179,11 @@ MXResult ModelExpansion::expand() const {
 	delete (data);
 	delete (mx);
 	result._models = solutions;
+
+	if(getOption(VERBOSE_GROUNDSTATS) > 0){
+		logActionAndTime("total-time");
+	}
+
 	return result;
 }
 

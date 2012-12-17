@@ -12,7 +12,7 @@
 #include "structure/StructureComponents.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
-#include "utils/LogActionTime.hpp"
+#include "utils/LogAction.hpp"
 
 extern void parsefile(const std::string&);
 

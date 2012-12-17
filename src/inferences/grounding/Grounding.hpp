@@ -29,7 +29,7 @@
 #include "grounders/Grounder.hpp"
 #include "errorhandling/UnsatException.hpp"
 #include "LazyGroundingManager.hpp"
-#include "utils/LogActionTime.hpp"
+#include "utils/LogAction.hpp"
 
 class Theory;
 class AbstractTheory;
