@@ -1,0 +1,19 @@
+vocabulary V{
+	type X
+	K(X,X,X)
+	K2(X,X,X)
+	R(X,X)
+}
+theory T:V{
+	~K(x,y,z) => K2(x,y,z).
+	K2(x,y,z) => R(x,y).
+}
+structure S:V{
+	X = {1..1000}
+	K = {}
+}
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+//NOTE: this test will probably timeout when groundwithbounds and liftedunitpropagation are disabled!

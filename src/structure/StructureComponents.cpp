@@ -3381,23 +3381,14 @@ TableIterator FuncTable::begin() const {
  Predicate interpretations
  ********************************/
 
-/**
- * \brief Create a three- or four-valued interpretation
- *
- * PARAMETERS
- *	- ctpf	: the certainly true or possibly false tuples
- *	- cfpt	: the certainly false or possibly true tuples
- *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
- *	- cf	: if true (false), cfpt stores the certainly false (possibly true) tuples
- *	- univ	: all possible domain elements of the sorts of the columns of the table
- */
+
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
 	setTables(ctpf,cfpt,ct,cf);
 }
 
 void PredInter::setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf){
-	PredTable* inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
-	PredTable* inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), ctpf->universe());
+	auto inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
+	auto inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), ctpf->universe());
 	_inconsistentElements = {};
 	if (ct) {
 		_ct = ctpf;
@@ -3416,27 +3407,19 @@ void PredInter::setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf){
 	checkConsistency();
 }
 
-/**
- * \brief Create a two-valued interpretation
- *
- * PARAMETERS
- *	- ctpf	: the certainly true or possibly false tuples
- *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
- *	- univ	: all possible domain elements of the sorts of the columns of the table
- */
-PredInter::PredInter(PredTable* ctpf, bool ct) {
-	PredTable* cfpt = new PredTable(ctpf->internTable(), ctpf->universe());
-	PredTable* inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
-	PredTable* inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), cfpt->universe());
+PredInter::PredInter(PredTable* table, bool ct) {
+	auto copiedtable = new PredTable(table->internTable(), table->universe());
+	auto inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(table->internTable()), table->universe());
+	auto inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(copiedtable->internTable()), copiedtable->universe());
 	_inconsistentElements = {};
 	if (ct) {
-		_ct = ctpf;
-		_pt = cfpt;
+		_ct = table;
+		_pt = copiedtable;
 		_cf = inverseCtpf;
 		_pf = inverseCfpt;
 	} else {
-		_pf = ctpf;
-		_cf = cfpt;
+		_pf = table;
+		_cf = copiedtable;
 		_ct = inverseCtpf;
 		_pt = inverseCfpt;
 	}
@@ -3450,6 +3433,46 @@ PredInter::~PredInter() {
 	delete (_cf);
 	delete (_pt);
 	delete (_pf);
+}
+
+PredInter* createSmallestPredInter(PredTable* ct, PredTable* cf, bool known_twovalued){
+	if (known_twovalued || ct->approxInverse(cf)) {
+		//In case the interpretation is twovalued, we only need to keep one table.
+		//We decide to keep the smallest of ct and cf
+		if (ct->size() > cf->size()) {
+			delete ct;
+			return new PredInter(cf, false);
+		}
+		delete cf;
+		return new PredInter(ct, true);
+	}
+
+	Assert(not twovalued);
+	//In the other case, where the inter will not be twovalued.
+	//We need to keep two tables: the ct or the pf and the cf or the pt
+	//In both cases, we want to keep the smallest of the two.
+	//Thus: first we check which of the two will be the smallest.
+	auto pf = new PredTable(InverseInternalPredTable::getInverseTable(ct->internTable()), ct->universe());
+	auto pt = new PredTable(InverseInternalPredTable::getInverseTable(cf->internTable()), cf->universe());
+	auto ctbigger = ct->size() > pf->size();
+	auto cfbigger = cf->size() > pt->size();
+	//Now we make to predtable representing the table we keep: ctpf is either ct or pf and analogously for the cfpt
+	PredTable *ctpf, *cfpt;
+	if (ctbigger) {
+		delete (ct);
+		ctpf = pf;
+	} else{
+		delete (pf);
+		ctpf = ct;
+	}
+	if (cfbigger) {
+		delete (cf);
+		cfpt = pt;
+	} else{
+		delete (pt);
+		cfpt = cf;
+	}
+	return new PredInter(ctpf, cfpt, not ctbigger, not cfbigger);
 }
 
 /**

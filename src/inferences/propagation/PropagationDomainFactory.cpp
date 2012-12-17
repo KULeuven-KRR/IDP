@@ -152,8 +152,8 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 	// Construct the universe of the interpretation and two sets of new variables
 	vector<SortTable*> vst;
 	vector<Variable*> newctvars, newcfvars;
+	//First, we map the variables in the threevalueddomain to the right variables.
 	map<const FOBDDVariable*, const FOBDDVariable*> ctmvv, cfmvv;
-	bool twovalued = dom._twovalued;
 	for (Variable* var : vars) {
 		auto oldvar = _manager->getVariable(var);
 		vst.push_back(str->inter(var->sort()));
@@ -161,28 +161,20 @@ PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const Th
 		newctvars.push_back(ctv);
 		auto newctvar = _manager->getVariable(ctv);
 		ctmvv[oldvar] = newctvar;
-		if (not twovalued) {
-			auto cfv = new Variable(var->sort());
-			newcfvars.push_back(cfv);
-			auto newcfvar = _manager->getVariable(cfv);
-			cfmvv[oldvar] = newcfvar;
-		}
+		auto cfv = new Variable(var->sort());
+		newcfvars.push_back(cfv);
+		auto newcfvar = _manager->getVariable(cfv);
+		cfmvv[oldvar] = newcfvar;
 	}
 	Universe univ(vst);
-	// Construct the ct-table and cf-table
+	// Construct the ct-table and cf-table.
 	auto newctbdd = _manager->substitute(dom._ctdomain->bdd(), ctmvv);
-//	cerr <<"For vars " <<toString(newctvars) <<", the bdd is \n" <<toString(newctbdd) <<"\n";
+	auto newcfbdd = _manager->substitute(dom._cfdomain->bdd(), cfmvv);
 	auto ct = new PredTable(new BDDInternalPredTable(newctbdd, _manager, newctvars, str), univ);
-	if (twovalued) {
-		return new PredInter(ct, true);
-	} else {
-		auto newcfbdd = _manager->substitute(dom._cfdomain->bdd(), cfmvv);
-//		cerr <<"For vars " <<toString(newcfvars) <<", the bdd is \n" <<toString(newcfbdd) <<"\n";
-		auto cf = new PredTable(new BDDInternalPredTable(newcfbdd, _manager, newcfvars, str), univ);
-		return new PredInter(ct, cf, true, true);
-	}
-}
+	auto cf = new PredTable(new BDDInternalPredTable(newcfbdd, _manager, newcfvars, str), univ);
 
+	return createSmallestPredInter(ct, cf, dom._twovalued);
+}
 
 FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, const set<Variable*>& sv) const {
 	vector<bool> keepcol;
