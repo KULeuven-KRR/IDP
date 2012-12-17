@@ -1,0 +1,44 @@
+vocabulary V{
+	type Symbol
+	type PredForm
+	type ConstraintID isa int
+	type Cost isa int
+	type Bool
+	not(Bool):Bool
+	
+	groundSize(ConstraintID):Cost
+	symbol(PredForm):Symbol
+	canDelayOn(Bool, PredForm, ConstraintID)
+	isDefinitionDelay(Symbol, ConstraintID)
+	
+	expose(Symbol)
+	delay(ConstraintID, Symbol, Bool)
+	
+	prod100(ConstraintID):Cost
+	prod99(ConstraintID):Cost
+}
+theory T:V{
+	// Only allowed delays can be used
+	!c s b p: delay(c, s, b) & symbol(p)=s => canDelayOn(b, p, c).
+	
+	// If delaying a symbol on opposite truth values, then the symbol is exposed or both constraints are derived from a definitional rule with s as the head
+	!c1 c2 s b: delay(c1,s,b) & delay(c2,s,not(b)) => expose(s) | (isDefinitionDelay(s,c1) & isDefinitionDelay(s,c2)).
+	
+	!c: prod100(c)=prod{s b: delay(c,s,b): 100}.
+}
+structure S:V{
+	Bool = {True; False}
+	not = {True->False; False->True;}
+	
+	Cost = {1..100}
+	Symbol = {P; Q}
+	PredForm = {Px;Py;Qx}
+	symbol = {Px -> P; Py -> P; Qx -> Q}
+	ConstraintID = {1..4}
+	canDelayOn = {True, Px, 1; False, Qx, 2; False, Py, 2; True, Qx, 3; True, Py, 4; True, Py, 4}
+	isDefinitionDelay = {Q,2;Q,3}
+	groundSize = {1->10;2->50;3->4;4->50}
+}
+procedure getExpectedAModel(){
+	return true
+}
