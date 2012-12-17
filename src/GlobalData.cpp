@@ -15,6 +15,8 @@
 #include "options.hpp"
 #include "internalargument.hpp"
 #include "insert.hpp"
+#include "inferences/grounding/grounders/Grounder.hpp"
+#include "utils/LogAction.hpp"
 
 extern void resetParser();
 
@@ -132,5 +134,18 @@ void GlobalData::notifyOfWarning(const std::string& errormessage) {
 	auto res = _warnings.insert(errormessage);
 	if(res.second){
 		clog <<errormessage;
+	}
+}
+
+void callTerminate(){
+	if (GlobalData::instance()->timedout()) {
+		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
+		logActionAndValue("effective-size", Grounder::groundedAtoms());
+		throw TimeoutException();
+	}
+	if (GlobalData::instance()->terminateRequested()) {
+		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
+		logActionAndValue("effective-size", Grounder::groundedAtoms());
+		throw IdpException("Terminate requested");
 	}
 }

@@ -185,11 +185,7 @@ void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueTy
 	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
 
-#define CHECKTERMINATION \
-	if(GlobalData::instance()->timedout()){\
-		throw TimeoutException();\
-	}\
-	if(GlobalData::terminateRequested()){\
-		throw IdpException("Terminate requested");\
-	}
+void callTerminate();
+
+#define CHECKTERMINATION callTerminate();
 
