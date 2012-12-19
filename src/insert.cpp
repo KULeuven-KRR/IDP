@@ -808,11 +808,20 @@ void Insert::closetheory() {
 	closeblock();
 }
 
+void checkForUnusedVariables(std::set<Variable*> vv, Formula* f){
+	for (auto var : vv) {
+		if (not f->contains(var)) {
+			Warning::unusedvar(toString(var), var->pi());
+		}
+	}
+}
+
 void Insert::closequery(Query* q) {
 	_curr_vars.clear();
 	if (q != NULL) { // Allows for better error catching
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
 		QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, sv, q->query(), FormulaParseInfo());
+		checkForUnusedVariables(sv,f);
 		FormulaUtils::deriveSorts(_currvocabulary, qf);
 		FormulaUtils::checkSorts(_currvocabulary, qf);
 		delete (qf); //No recursive delete, the rest of the query should still exist!
@@ -1511,6 +1520,7 @@ Formula* Insert::revimplform(Formula* lf, Formula* rf, YYLTYPE l) const {
 Formula* Insert::quantform(bool univ, const std::set<Variable*>& vv, Formula* f, YYLTYPE l) {
 	remove_vars(vv);
 	if (f) {
+		checkForUnusedVariables(vv,f);
 		std::set<Variable*> pivv;
 		map<Variable*, Variable*> mvv;
 		for (auto it = vv.cbegin(); it != vv.cend(); ++it) {
@@ -1839,6 +1849,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 
 EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
 	remove_vars(vv);
+	checkForUnusedVariables(vv,f);
 	if (f && counter) {
 		std::set<Variable*> pivv;
 		map<Variable*, Variable*> mvv;

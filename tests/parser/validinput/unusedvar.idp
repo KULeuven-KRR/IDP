@@ -1,0 +1,16 @@
+vocabulary MyVoc{
+ 	type Person
+	P(Person)
+}
+
+structure S1 : MyVoc{
+ 	Person = {Bob2}
+}
+ 
+theory T:MyVoc{
+	! x y: P(x).
+}
+
+procedure main(){
+	return 1
+}
