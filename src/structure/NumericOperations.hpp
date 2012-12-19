@@ -73,4 +73,9 @@ const DomainElement* domElemPow(const DomainElement* d1, const DomainElement* d2
 const DomainElement* domElemAbs(const DomainElement* d);
 const DomainElement* domElemUmin(const DomainElement* d);
 
+bool isPositive(const DomainElement* d); //<! returns true if d >= 0
+bool isNegative(const DomainElement* d); //<! returns true if d < 0
+
+
+
 #endif /* DOMELEMNUMOPS_HPP_ */

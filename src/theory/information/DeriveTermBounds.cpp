@@ -100,7 +100,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			auto min1 = _subtermminimums[_level][1];
 			auto max0 = _subtermmaximums[_level][0];
 			auto max1 = _subtermmaximums[_level][1];
-			auto allpossibilities = std::vector<DomainElement> { 
+			auto allpossibilities = std::vector<DomainElement> {
 			                *(*functable)[ElementTuple { min0, min1 }],
 			                *(*functable)[ElementTuple { min0, max1 }],
 			                *(*functable)[ElementTuple { max0, min1 }],
@@ -216,11 +216,27 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 			currentmax = domElemSum(currentmax, domElemProd(maxsizeElem, max(_maximum, neutral, Compare<DomainElement>())));
 			currentmin = domElemSum(currentmin, domElemProd(maxsizeElem, min(_minimum, neutral, Compare<DomainElement>())));
 			break;
-		case AggFunction::PROD:
+		case AggFunction::PROD: {
+			Assert(neutral == createDomElem(1));
 			//If we have a set with maxsize 4, and maximum 10, we want the max to be 10^4
-			currentmax = domElemProd(currentmax, domElemPow(max(_maximum, neutral, Compare<DomainElement>()), maxsizeElem));
-			currentmin = domElemProd(currentmin, domElemPow(min(_minimum, neutral, Compare<DomainElement>()), maxsizeElem));
+			//In case negative values appear, we should incorporate them, i.e. reason on the absolute value. Therefor, we take the biggest element of
+			// |maximum|, neutral and |minimum|. However, this is the same as the biggest of maximum, neutral and -minimum
+			// (since neutral is one and maximum >= minimum, hence -minimum>=-maximum)
+			auto absmax = max( { _maximum, neutral, domElemUmin(_minimum) }, Compare<DomainElement>());
+			//Now, this value can occur maximum maxsizeElem times hence take the power of absmax with maxsizeElem
+			auto maxOfThisSet = domElemPow(absmax, maxsizeElem);
+			currentmax = domElemProd(currentmax, maxOfThisSet);
+			//In case all values are positive, currentmin is zero Otherwise, the minimum of a product is minus the maximum:
+			auto minOfThisSet = isPositive(_minimum) ? createDomElem(0) : domElemUmin(maxOfThisSet);
+			//Also multiply current with this new currentmin. BUT be careful with negative values!
+			//If both values are negative, watch out for not making currentmin positive!
+			if (isNegative(currentmin) && isNegative(minOfThisSet)) {
+				currentmin = domElemProd(currentmin, domElemUmin(minOfThisSet));
+			} else {
+				currentmin = domElemProd(currentmin, minOfThisSet);
+			}
 			break;
+		}
 		case AggFunction::MIN:
 			if (start) {
 				currentmin = _minimum;
