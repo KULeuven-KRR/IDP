@@ -1952,7 +1952,10 @@ const ParseInfo& Vocabulary::pi() const {
 
 bool Vocabulary::contains(const Sort* s) const {
 	auto it = _name2sort.find(s->name());
-	return it != _name2sort.cend();
+	if(it == _name2sort.cend()){
+		return false;
+	}
+	return it->second == s;
 }
 
 bool Vocabulary::containsOverloaded(const Predicate* p) const {
