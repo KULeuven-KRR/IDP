@@ -796,9 +796,9 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		}
 		//We want to generate all y such that ? x : phi(x,y) is false
 		//This cannot be done very smart (without enumerating the universe of y)
-		//Thus: we make a twochildgenerator which generates the universe of y and than calls a checker for ?x  ph(x,y)
+		//Thus: we make a twochildgenerator which generates the universe of y and then calls a checker for ?x  ph(x,y)
 
-		//Thee universe generator of y:
+		//The universe generator of y:
 		auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
 
 		//A checker for phi(x,y):
