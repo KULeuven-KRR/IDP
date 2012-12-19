@@ -1,0 +1,13 @@
+vocabulary V{
+	type node
+}
+vocabulary V2{
+	type node
+} 
+structure S : V {
+  node = { N1 }
+ }
+
+structure S2 : V2 {
+  V::node[V::node] = { N2; N3 }
+}
