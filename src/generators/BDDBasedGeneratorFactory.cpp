@@ -794,10 +794,21 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 				univgentables.push_back(quantdata.universe.tables()[n]);
 			}
 		}
+		//We want to generate all y such that ? x : phi(x,y) is false
+		//This cannot be done very smart (without enumerating the universe of y)
+		//Thus: we make a twochildgenerator which generates the universe of y and than calls a checker for ?x  ph(x,y)
+
+		//Thee universe generator of y:
 		auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
 
+		//A checker for phi(x,y):
 		auto bddtruechecker = btg.create(quantdata);
-		return new FalseQuantKernelGenerator(univgenerator, bddtruechecker);
+
+		//A checker for ?x phi(x,y)
+		auto existsChecker = new TrueQuantKernelGenerator(bddtruechecker,{});
+
+		//Finally, the generator we need:
+		return new TwoChildGenerator(existsChecker,univgenerator,new FullGenerator(),new EmptyGenerator());
 	} else {
 		vector<const DomElemContainer*> outvars;
 		for (unsigned int n = 0; n < pattern.size(); ++n) {
