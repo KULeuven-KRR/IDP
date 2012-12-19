@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef TRUEQUANTKERNELGENERATOR_HPP_
-#define TRUEQUANTKERNELGENERATOR_HPP_
+#pragma once
 
 #include "InstGenerator.hpp"
 #include "structure/MainStructureComponents.hpp"
@@ -42,26 +41,3 @@ public:
 	virtual void put(std::ostream& stream) const;
 
 };
-
-/**
- * Generate all x such that ?x phi(x) is false.
- * Given is a generator for the universe and a checker which returns true if phi(x) is true.
- */
-//TODO: might be seen as a special case of a twochildgenerator...
-class FalseQuantKernelGenerator: public InstGenerator {
-private:
-	InstGenerator* _universeGenerator;
-	InstChecker* _quantKernelTrueChecker;
-	bool _reset;
-
-public:
-	FalseQuantKernelGenerator(InstGenerator* universegenerator, InstChecker* bddtruechecker);
-	FalseQuantKernelGenerator* clone() const;
-	void internalSetVarsAgain();
-	void reset();
-	void next();
-	virtual void put(std::ostream& stream) const;
-
-};
-
-#endif /* TRUEQUANTKERNELGENERATOR_HPP_ */
