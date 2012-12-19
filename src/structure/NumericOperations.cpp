@@ -9,6 +9,7 @@
 ****************************************************************/
 
 #include "NumericOperations.hpp"
+#include "structure/StructureComponents.hpp"
 
 using namespace std;
 
@@ -108,4 +109,11 @@ const DomainElement* domElemUmin(const DomainElement* d) {
 		throw notyetimplemented("Negative value of domain elements of nonnumerical types");
 	}
 	return dnew;
+}
+
+bool isPositive(const DomainElement* d) {
+	return (*d >= *createDomElem(0));
+}
+bool isNegative(const DomainElement* d) {
+	return not isPositive(d);
 }
