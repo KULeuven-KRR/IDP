@@ -23,34 +23,93 @@ public:
 		setNameSpace(getStructureNamespaceName());
 	}
 
-	void makeMorePrecise(PFSymbol* symbol, PredInter* inter, AbstractStructure const * const newinfo) const {
-		if (not newinfo->vocabulary()->contains(symbol)) {
-			return;
-		}
-		auto newinter = newinfo->inter(symbol);
-		auto newct = newinter->ct();
-		auto newcf = newinter->cf();
-		for (auto tupleit = newct->begin(); not tupleit.isAtEnd(); ++tupleit) {
-			inter->makeTrue(*tupleit);
-		}
-		for (auto tupleit = newcf->begin(); not tupleit.isAtEnd(); ++tupleit) {
-			inter->makeFalse(*tupleit);
+	void addToSortTable(SortTable* toAddTo, SortTable* toGetFrom) const {
+		for (auto it = toGetFrom->sortBegin(); not it.isAtEnd(); ++it) {
+			toAddTo->add(*it);
 		}
 	}
 
-	AbstractStructure* merge(AbstractStructure const * const orig, AbstractStructure const * const newinfo) const {
-		auto target = orig->clone();
-		// Sorts
-		Warning::warning("Sorts are not combined by merging of structures");
+	void addToPredInter(PredInter* toAddTo, PredInter* toGetFrom) const {
+		for (auto it = toGetFrom->ct()->begin(); not it.isAtEnd(); ++it) {
+			toAddTo->makeTrue(*it);
+		}
+		for (auto it = toGetFrom->cf()->begin(); not it.isAtEnd(); ++it) {
+			toAddTo->makeFalse(*it);
+		}
+	}
+
+	void warnIfNoLongerTwoValued(AbstractStructure const * const firstStructure, AbstractStructure const * const secondStructure,
+			AbstractStructure* result) const {
+		//In case some relation was originally two-valued, but no longer is two-valued now (due to the merging of the sorts), we want to warn the user
+
+		if (not result->isConsistent()) {
+			Warning::warning("Merging structures resulted in an inconsistent structure.");
+		}
+
 		// Predicates
-		for (auto targetinter : target->getPredInters()) {
-			makeMorePrecise(targetinter.first, targetinter.second, newinfo);
+		for (auto pred2inter : result->getPredInters()) {
+			auto pred = pred2inter.first;
+			bool wasTwoValued = firstStructure->inter(pred)->approxTwoValued() | secondStructure->inter(pred)->approxTwoValued();
+			if (wasTwoValued) {
+				if (not pred2inter.second->approxTwoValued()) {
+					std::stringstream ss;
+					ss << "Merging sorts resulted in a structure where the relation " << toString(pred) << " is no longer two-valued.";
+					Warning::warning(ss.str());
+				}
+			}
 		}
 		// Functions
-		for (auto targetinter : target->getFuncInters()) {
-			makeMorePrecise(targetinter.first, targetinter.second->graphInter(), newinfo);
+		for (auto func2inter : result->getFuncInters()) {
+			auto func = func2inter.first;
+			bool wasTwoValued = firstStructure->inter(func)->approxTwoValued() | secondStructure->inter(func)->approxTwoValued();
+			if (wasTwoValued) {
+				if (not func2inter.second->approxTwoValued()) {
+					std::stringstream ss;
+					ss << "Merging sorts resulted in a structure where the relation " << toString(func) << " is no longer two-valued.";
+					Warning::warning(ss.str());
+				}
+			}
 		}
-		return target;
+	}
+
+	AbstractStructure* merge(AbstractStructure const * const firstStructure, AbstractStructure const * const secondStructure) const {
+
+		auto result = firstStructure->clone();
+		if (firstStructure->vocabulary() != secondStructure->vocabulary()) {
+			//In case the vocabularies differ, we merge but give a warning.
+			std::stringstream ss;
+			ss << "merge_of_" << firstStructure->vocabulary()->name() << "_and_" << secondStructure->vocabulary()->name();
+			auto voc = new Vocabulary(ss.str());
+			voc->add(firstStructure->vocabulary());
+			voc->add(secondStructure->vocabulary());
+			Warning::warning("Vocabularies of the structures that I should merge, are not equal. The result will be a structure over a merged vocabulary.");
+			result->changeVocabulary(voc);
+		}
+
+		// Sorts
+		for (auto sort2inter : result->getSortInters()) {
+			addToSortTable(sort2inter.second, secondStructure->inter(sort2inter.first));
+		}
+		// Predicates
+		for (auto pred2inter : result->getPredInters()) {
+			addToPredInter(pred2inter.second, secondStructure->inter(pred2inter.first));
+		}
+		// Functions
+		for (auto func2inter : result->getFuncInters()) {
+			auto func = func2inter.first;
+			auto funcinter = func2inter.second;
+
+			//In case that the sorts have changed, the functable becomes invalid and we should remove it.
+			//We do this by setting thegraphinter again.
+			funcinter->graphInter(funcinter->graphInter()->clone(funcinter->universe()));
+			addToPredInter(funcinter->graphInter(), secondStructure->inter(func)->graphInter());
+		}
+
+		result->clean();
+
+		warnIfNoLongerTwoValued(firstStructure, secondStructure, result);
+
+		return result;
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

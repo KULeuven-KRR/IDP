@@ -44,6 +44,12 @@ TEST(TrailTest, NonEmptyTrail) {
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 
+TEST(MergeTest, MergeSorts) {
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mergetest.idp" }););
+	ASSERT_EQ(Status::SUCCESS, result);
+}
+
 TEST(VocabularyTest, NonSharedVoc) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/term_theory_voc.idp" }););

@@ -1,0 +1,25 @@
+vocabulary MyVoc{
+ 	type Person
+}
+
+structure S1 : MyVoc{
+ 	Person = {Bob2}
+}
+ 
+structure S2 : MyVoc{
+ 	Person = {Bob}
+ }
+
+procedure main(){
+ 	newS1 = merge(S1, S2) 	
+	newS2 = merge(S2, S1)
+	found1 = 0
+	found2 = 0
+	for e in elements(newS1[MyVoc::Person.type]) do
+		found1 = found1+1
+	end
+	for e in elements(newS2[MyVoc::Person.type]) do
+		found2 = found2+1
+	end
+	return (found1==2 and found2==2)
+ }
