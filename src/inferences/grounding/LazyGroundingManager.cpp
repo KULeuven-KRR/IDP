@@ -828,7 +828,7 @@ void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstr
 	alreadyAddedToOutputVoc.insert(symbol);
 
 	// go over the symbol table, find all unknown literals and notify the solver that it should decide them.
-	if (symbol->builtin() || symbol->overloaded()) {
+	if (symbol->builtin() || symbol->overloaded() || getStructure()->inter(symbol)->approxTwoValued()) {
 		return;
 	}
 
@@ -841,6 +841,7 @@ void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstr
 		varterms.push_back(new VarTerm(newvar, TermParseInfo()));
 		varterms2.push_back(new VarTerm(newvar, TermParseInfo()));
 	}
+	// FIXME expensive when they are in fact each others inverse
 	auto posstrue = new PredForm(SIGN::POS, symbol->derivedSymbol(SymbolType::ST_PT), varterms, FormulaParseInfo());
 	auto possfalse = new PredForm(SIGN::POS, symbol->derivedSymbol(SymbolType::ST_PF), varterms2, FormulaParseInfo());
 	auto formula = new BoolForm(SIGN::POS, true, posstrue, possfalse, FormulaParseInfo());
