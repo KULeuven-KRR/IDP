@@ -128,6 +128,14 @@ MXResult ModelExpansion::expand() const {
 	t.requestStop();
 	time.join();
 
+	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+		auto stats = mx->getStats();
+		logActionAndValue("decisions", stats.decisions);
+		logActionAndValue("first_decision", stats.first_decision);
+		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
+		logActionAndValue("effective-size", Grounder::groundedAtoms());
+	}
+
 	if (getGlobal()->terminateRequested()) {
 		throw IdpException("Solver was terminated");
 	}
@@ -180,7 +188,7 @@ MXResult ModelExpansion::expand() const {
 	delete (mx);
 	result._models = solutions;
 
-	if(getOption(VERBOSE_GROUNDSTATS) > 0){
+	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
 		logActionAndTime("total-time");
 	}
 

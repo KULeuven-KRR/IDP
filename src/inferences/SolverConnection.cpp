@@ -133,6 +133,7 @@ PCSolver* createsolver(int nbmodels) {
 
 	if (useLazyGrounding()) {
 		modes.lazy = true;
+		modes.lazyheur = true;
 	}
 	if(getOption(BoolType::EXPANDIMMEDIATELY)){
 		modes.expandimmediately = true;
