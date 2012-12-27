@@ -189,7 +189,7 @@ MXResult ModelExpansion::expand() const {
 	result._models = solutions;
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		logActionAndTime("total-time");
+		logActionAndTime("total-mx-time");
 	}
 
 	return result;

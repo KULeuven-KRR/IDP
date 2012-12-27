@@ -92,7 +92,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 		clog << "Grounding lazy tseitin " << toString(instance->residual) << "\n";
 	}
 
-	auto nbiterations = isa<LazyExistsGrounder>(*this) ? 10 : 3;
+	auto nbiterations = isa<LazyExistsGrounder>(*this) ? getOption(EXISTSEXPANSIONSTEPS) : 3;
 	auto counter = 0;
 	auto decidedformula = false;
 	while ((groundall || counter < nbiterations) && not isAtEnd(instance) && not decidedformula) {

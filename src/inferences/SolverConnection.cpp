@@ -133,11 +133,10 @@ PCSolver* createsolver(int nbmodels) {
 
 	if (useLazyGrounding()) {
 		modes.lazy = true;
-		modes.lazyheur = true;
 	}
-	if(getOption(BoolType::EXPANDIMMEDIATELY)){
-		modes.expandimmediately = true;
-	}
+	modes.lazyheur = getOption(LAZYHEURISTIC);
+	modes.watchedrelevance = getOption(WATCHEDRELEVANCE);
+	modes.expandimmediately = getOption(BoolType::EXPANDIMMEDIATELY);
 
 	if (getOption(BoolType::MXRANDOMPOLARITYCHOICE)) {
 		modes.polarity = MinisatID::Polarity::RAND;

@@ -148,7 +148,8 @@ private:
 			cout <<"\ndefs&&max:" <<toDouble(Grounder::getFullGroundingSize()) <<"&&grounded:" <<Grounder::groundedAtoms() <<"\n";
 		}
 		if (defCalculated.size() == 0) {
-			return returnUnsat(GroundInfo { _theory, { _structure, NULL }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
+			// FIXME bugged: NULL as symstructure
+			return returnUnsat(GroundInfo { _theory, { _structure, generateBounds(_theory, _structure, false, false, _outputvocabulary) }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
 		}
 		Assert(defCalculated[0]->isConsistent());
 		_structure = defCalculated[0];

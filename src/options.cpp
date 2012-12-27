@@ -132,6 +132,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::WATCHEDRELEVANCE, "relevancewatched", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, _option2name, PrintBehaviour::PRINT);
@@ -154,6 +156,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 
 		IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
 		IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
+
+		IntPol::createOption(IntType::EXISTSEXPANSIONSTEPS, "existsexpansion", 1, getMaxElem<int>(), 10, _option2name, PrintBehaviour::PRINT);
 
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 		// Afterwards, setting them to 0 stops the timing
