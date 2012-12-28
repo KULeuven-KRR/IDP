@@ -193,6 +193,7 @@ private:
 		}
 		if (getOption(VERBOSE_GROUNDSTATS) >= 1) {
 			logActionAndTime("grounding-start");
+			logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
 		}
 		bool unsat = _grounder->toplevelRun();
 		if(unsat){

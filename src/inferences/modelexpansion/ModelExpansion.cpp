@@ -132,7 +132,6 @@ MXResult ModelExpansion::expand() const {
 		auto stats = mx->getStats();
 		logActionAndValue("decisions", stats.decisions);
 		logActionAndValue("first_decision", stats.first_decision);
-		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
 		logActionAndValue("effective-size", Grounder::groundedAtoms());
 	}
 

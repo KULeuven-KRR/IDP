@@ -23,6 +23,7 @@
 #include "insert.hpp"
 #include "GlobalData.hpp"
 #include "utils/Timer.hpp"
+#include "utils/LogAction.hpp"
 
 #include "utils/StringUtils.hpp"
 
@@ -385,6 +386,7 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 }
 
 int run(int argc, char* argv[]) {
+	logActionAndTime("program-start");
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
 
