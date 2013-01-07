@@ -396,6 +396,7 @@ set<const FOBDDVariable*, CompareBDDVars> FOBDDManager::getVariables(const set<V
 
 FOBDDVariable* FOBDDManager::addVariable(Variable* var) {
 	Assert(lookup < FOBDDVariable > (_variabletable, var) == NULL);
+	Assert(var->sort() != NULL);
 	FOBDDVariable* newvariable = new FOBDDVariable(_maxid++, var);
 	_variabletable[var] = newvariable;
 	return newvariable;
