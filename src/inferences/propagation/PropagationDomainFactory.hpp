@@ -74,6 +74,7 @@ public:
 	FOPropBDDDomain* disjunction(FOPropBDDDomain*, FOPropBDDDomain*) const;
 	FOPropBDDDomain* substitute(FOPropBDDDomain*, const std::map<Variable*, Variable*>&) const;
 	bool approxequals(FOPropBDDDomain*, FOPropBDDDomain*) const;
+	//Returns the interpretation of a threevalueddomain in a given structure.
 	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
 	std::ostream& put(std::ostream&, FOPropBDDDomain*) const;
 

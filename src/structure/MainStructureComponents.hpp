@@ -402,7 +402,26 @@ private:
 	void checkConsistency();
 
 public:
+	/**
+	 * \brief Create a three- or four-valued interpretation
+	 *
+	 * PARAMETERS
+	 *	- ctpf	: the certainly true or possibly false tuples
+	 *	- cfpt	: the certainly false or possibly true tuples
+	 *	- ct	: if true (false), ctpf stores the certainly true (possibly false) tuples
+	 *	- cf	: if true (false), cfpt stores the certainly false (possibly true) tuples
+	 *	- univ	: all possible domain elements of the sorts of the columns of the table
+	 */
 	PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf);
+
+	/**
+	 * \brief Create a two-valued interpretation
+	 *
+	 * PARAMETERS
+	 *	- table : the true or false tuples
+	 *	- ct	: if true (false), table stores the true (false) tuples
+	 *	- univ	: all possible domain elements of the sorts of the columns of the table
+	 */
 	PredInter(PredTable* ctpf, bool ct);
 
 	~PredInter();
@@ -451,6 +470,12 @@ private:
 	//Can only be called if from and to are inverse tables
 	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to);
 };
+
+/**
+ * Given a ct and cf table, checks which truth tables are the cheapest to store and stores those.
+ * IMPORTANT: only use if creating the inverse tables of the given ones is cheap (e.g. when represented as bdds)
+ */
+PredInter* createSmallestPredInter(PredTable* ct, PredTable* cf, bool known_twovalued = false);
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation);
 
