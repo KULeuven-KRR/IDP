@@ -3447,7 +3447,6 @@ PredInter* createSmallestPredInter(PredTable* ct, PredTable* cf, bool known_twov
 		return new PredInter(ct, true);
 	}
 
-	Assert(not twovalued);
 	//In the other case, where the inter will not be twovalued.
 	//We need to keep two tables: the ct or the pf and the cf or the pt
 	//In both cases, we want to keep the smallest of the two.
