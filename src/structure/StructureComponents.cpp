@@ -3392,6 +3392,10 @@ TableIterator FuncTable::begin() const {
  *	- univ	: all possible domain elements of the sorts of the columns of the table
  */
 PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
+	setTables(ctpf,cfpt,ct,cf);
+}
+
+void PredInter::setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf){
 	PredTable* inverseCtpf = new PredTable(InverseInternalPredTable::getInverseTable(ctpf->internTable()), ctpf->universe());
 	PredTable* inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), ctpf->universe());
 	_inconsistentElements = {};
@@ -3663,22 +3667,23 @@ void PredInter::cfpf(PredTable* newcf) { // FIXME also change in other tables: i
 }
 
 void PredInter::materialize() {
-	bool getCT = (_ct->size() <= _pf->size());
-	bool getCF = (_cf->size() <= _pt->size());
+	auto getCT = (_ct->size() <= _pf->size());
+	auto getCF = (_cf->size() <= _pt->size());
 
 	if (approxTwoValued()) {
-		auto prt = getCT ? _ct->materialize() : _pf->materialize();
-		if (prt != NULL) { //Materializaton was possible
-			getCT ? ctpt(prt) : cfpf(prt);
+		auto newt = getCT ? _ct->materialize() : _pf->materialize();
+		if (newt != NULL) {
+			getCT ? ctpt(newt) : cfpf(newt);
 		}
 	} else {
-		auto prt = getCT ? _ct->materialize() : _pf->materialize();
-		if (prt != NULL) { //Materializaton was possible
-			getCT ? ct(prt) : pf(prt);
-		}
-		auto prf = getCF ? _cf->materialize() : _pt->materialize();
-		if (prf != NULL) { //Materializaton was possible
-			getCF ? cf(prf) : pt(prf);
+		auto newt = getCT ? _ct->materialize() : _pf->materialize();
+		auto newf = getCF ? _cf->materialize() : _pt->materialize();
+		if (newt != NULL && newf != NULL) {
+			setTables(newt, newf, getCT, getCF);
+		} else if (newt != NULL) {
+			getCT ? ct(newt) : pf(newt);
+		} else if (newf != NULL) {
+			getCF ? cf(newf) : pt(newf);
 		}
 	}
 }

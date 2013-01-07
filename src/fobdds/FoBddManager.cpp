@@ -978,13 +978,14 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	if (bdd == _falsebdd) {
 		return bdd;
 	}
-	if (bdd == _truebdd) {
+	if (bdd == _truebdd || not bdd->containsDeBruijnIndex(0)) {
 		if (sort->builtin()) {
 			return sort->interpretation()->empty() ? negation(bdd) : bdd;
 		}
 		auto sortNotEmpty = getQuantKernel(sort,
-				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_TWOVALUED, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd)); // ?x[Sort]:Sort(x)
-		return getBDD(sortNotEmpty, bdd, negation(bdd));
+				getBDD(getAtomKernel(sort->pred(), AtomKernelType::AKT_TWOVALUED, { getDeBruijnIndex(sort, 0) }), _truebdd, _falsebdd));
+		// sortNotEmpty is: ?x[Sort]:Sort(x)
+		return getBDD(sortNotEmpty, bdd, _falsebdd);
 	}
 
 	// Recursive case
@@ -994,11 +995,11 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 	}
 	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
 #warning this code explodes the bdd for large longestbranch option
-		const FOBDD* newfalse = quantify(sort, bdd->falsebranch());
-		const FOBDD* newtrue = quantify(sort, bdd->truebranch());
+		auto newfalse = quantify(sort, bdd->falsebranch());
+		auto newtrue = quantify(sort, bdd->truebranch());
 		result = ifthenelse(bdd->kernel(), newtrue, newfalse);
 	} else {
-		const FOBDDKernel* kernel = getQuantKernel(sort, bdd);
+		auto kernel = getQuantKernel(sort, bdd);
 		result = getBDD(kernel, _truebdd, _falsebdd);
 	}
 	_quanttable[sort][bdd] = result;

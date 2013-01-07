@@ -295,7 +295,7 @@ public:
 	TableIterator begin() const;
 
 	const Universe& universe() const;
-	PredTable* materialize() const;
+	PredTable* materialize() const; // Returns NULL if no materialization is possible OR if it would result in the same table
 
 	virtual void put(std::ostream& stream) const;
 
@@ -343,7 +343,7 @@ public:
 	const DomainElement* last() const;
 
 	InternalSortTable* internTable() const;
-	SortTable* materialize() const;
+	SortTable* materialize() const; // Returns NULL if no materialization is possible OR if it would result in the same table
 
 	virtual void put(std::ostream& stream) const;
 };
@@ -379,7 +379,7 @@ public:
 	InternalFuncTable* internTable() const;
 
 	const Universe& universe() const;
-	FuncTable* materialize() const;
+	FuncTable* materialize() const;  // Returns NULL if no materialization is possible OR if it would result in the same table
 
 	virtual void put(std::ostream& stream) const;
 };
@@ -414,6 +414,7 @@ public:
 	void pf(PredTable*); //!< Replace the possibly false (and certainly true) tuples
 	void ctpt(PredTable*); //!< Replace the certainly and possibly true tuples
 	void cfpf(PredTable*); //!< Replace the certainly and possibly false tuples
+	void setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf); //Sets the tables if initialized with these values
 	void materialize(); //!< Replace symbolic tables by enumerated ones if possible
 
 	void makeTrue(const ElementTuple&); //!< Make the given tuple true
