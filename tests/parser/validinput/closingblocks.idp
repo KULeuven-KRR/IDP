@@ -12,7 +12,7 @@ namespace packing {
   }
 
   term sumOfPos : voc {
-	Size(x)
+	Size(1)
   }
   query Q: voc{
   	{x y:Size(x)=y}
