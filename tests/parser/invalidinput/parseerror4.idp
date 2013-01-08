@@ -4,3 +4,7 @@ vocabulary V{
 	f(X):Y
 	f(X):Y
 }
+
+procedure main(){
+	return 1
+}

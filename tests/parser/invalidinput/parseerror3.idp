@@ -2,3 +2,7 @@ vocabulary V{
 	type X
 	type X
 }
+
+procedure main(){
+	return 1
+}

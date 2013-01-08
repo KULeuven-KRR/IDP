@@ -1,1 +1,5 @@
 This is not an idp-file
+
+procedure main(){
+	return 1
+}

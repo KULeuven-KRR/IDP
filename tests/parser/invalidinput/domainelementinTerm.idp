@@ -1,0 +1,38 @@
+vocabulary V{
+	type Symbol
+	type PredForm
+	type ConstraintID isa int
+	type Cost isa int
+	type Bool
+	not(Bool):Bool
+	
+	groundSize(ConstraintID):Cost
+	symbol(PredForm):Symbol
+	canDelayOn(Bool, PredForm, ConstraintID)
+	isDefinitionDelay(Symbol, ConstraintID)
+	
+	expose(Symbol)
+	delay(ConstraintID, Symbol, Bool)
+}
+theory T:V{
+}
+term t:V{
+	sum{c[ConstraintID]: true : groundSize(c) / prod{s[Symbol] b[Bool]: delay(c,s,b): 100} * prod{s[Symbol]: delay(c,s,False): 99} }
+}
+structure S:V{
+	Bool = {True; False}
+	not = {True->False; False->True;}
+	
+	Cost = {4;10;50}
+	Symbol = {P; Q}
+	PredForm = {Px;Py;Qx}
+	symbol = {Px -> P; Py -> P; Qx -> Q}
+	ConstraintID = {1..4}
+	canDelayOn = {True, Px, 1; False, Qx, 2; False, Py, 2; True, Qx, 3; True, Py, 4; True, Py, 4}
+	isDefinitionDelay = {Q,2;Q,3}
+	groundSize = {1->10;2->50;3->4;4->50}
+}
+
+procedure main(){
+	return 1
+}

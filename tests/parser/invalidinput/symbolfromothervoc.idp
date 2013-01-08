@@ -11,3 +11,7 @@ structure S : V {
 structure S2 : V2 {
   V::node[V::node] = { N2; N3 }
 }
+
+procedure main(){
+	return 1
+}
