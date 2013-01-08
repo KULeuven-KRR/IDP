@@ -16,6 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <list>
 #include "commontypes.hpp"
 #include <utility>
 #include <unordered_map>
@@ -48,7 +49,7 @@ struct PutInStream {
 		if (object == NULL) {
 			ss << "NULL";
 		} else {
-			object->put(ss);
+			ss << toString(*object);
 		}
 	}
 };
@@ -104,6 +105,11 @@ std::string toString(const std::pair<Type, Type2>& v) {
 	return ss.str();
 }
 
+template<>
+std::string toString(const std::string& type);
+template<>
+std::string toString(const char& type);
+std::string toString(const char* type);
 template<typename Type>
 std::string toString(const std::set<Type>& v) {
 	std::stringstream ss;
@@ -121,6 +127,21 @@ std::string toString(const std::set<Type>& v) {
 
 template<typename Type, typename CompareType>
 std::string toString(const std::set<Type, CompareType>& v) {
+	std::stringstream ss;
+	ss << "{";
+	for (auto obj = v.cbegin(); obj != v.cend();) {
+		ss << toString(*obj);
+		++obj;
+		if (obj != v.cend()) {
+			ss << ", ";
+		}
+	}
+	ss << "}";
+	return ss.str();
+}
+
+template<typename Type>
+std::string toString(const std::list<Type>& v) {
 	std::stringstream ss;
 	ss << "{";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
@@ -178,6 +199,14 @@ template<>
 std::string toString(const AggFunction& type);
 template<>
 std::string toString(const TruthValue& type);
+
+
+template<class Arg1, class Arg2, class ... Args>
+std::string toString(Arg1& a, Arg2& b, const Args&... args) {
+	std::stringstream ss;
+	ss << toString(a) << toString(b, args...);
+	return ss.str();
+}
 
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
