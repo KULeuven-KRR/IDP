@@ -18,6 +18,8 @@
 #include "theory/Query.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 
+#include "utils/StringUtils.hpp"
+
 #include "inferences/grounding/GroundTranslator.hpp"
 
 //TODO is not guaranteed to generate correct idp files!
@@ -67,17 +69,10 @@ public:
 		ss << o->nameNoArity();
 		if (o->sorts().size() > 0) {
 			ss << "[";
-			bool begin = true;
-			for (auto i = o->sorts().cbegin(); i < o->sorts().cend() - 1; ++i) {
-				if (not begin) {
-					ss << ",";
-				}
-				begin = false;
-				ss << toString(*i);
-			}
+			ss << listToString(o->sorts(), ",", false);
 			if (o->isFunction()) {
 				ss << ":";
-			} else if (not begin) {
+			} else if (not o->sorts().empty()) {
 				ss << ",";
 			}
 			ss << toString(*o->sorts().back());

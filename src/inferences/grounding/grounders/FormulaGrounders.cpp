@@ -20,6 +20,7 @@
 #include <cmath>
 #include <iostream>
 #include "errorhandling/error.hpp"
+#include "utils/StringUtils.hpp"
 
 using namespace std;
 
@@ -60,6 +61,8 @@ void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomEl
 	_origform = f->clone(mvv);
 }
 
+#define dtype(container) decltype(*std::begin(container))
+
 void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
@@ -67,13 +70,9 @@ void FormulaGrounder::printorig() const {
 	clog << tabs() << "Grounding formula " << toString(_origform) << "\n";
 	if (not _origform->freeVars().empty()) {
 		pushtab();
-		clog << tabs() << "with instance ";
-		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
-			clog << toString(*it) << " = ";
-			const DomainElement* e = _origvarmap.find(*it)->second->get();
-			clog << toString(e) << ' ';
-		}
-		clog << "\n";
+		clog << tabs() << "with instance "
+			 << listToString(_origform->freeVars(), ", ",  [&](dtype(_origform->freeVars()) v){ return toString(v) + " = " + toString(_origvarmap.find(v)->second->get());})
+			 << "\n";
 		poptab();
 	}
 }
@@ -824,16 +823,7 @@ std::string BoolGrounder::printFormula() const {
 	if (_origform != NULL) {
 		return FormulaGrounder::printFormula();
 	} else {
-		stringstream ss;
-		bool begin = true;
-		for (auto i = getSubGrounders().cbegin(); i != getSubGrounders().cend(); ++i) {
-			if (not begin) {
-				ss << (connective() == Conn::CONJ ? " & " : " | ");
-			}
-			begin = false;
-			ss << toString(*i);
-		}
-		return ss.str();
+		return listToString(getSubGrounders(), connective() == Conn::CONJ ? " & " : " | ");
 	}
 }
 
