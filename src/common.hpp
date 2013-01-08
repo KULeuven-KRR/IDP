@@ -69,9 +69,19 @@ struct PutInStream<false, true, Type, Stream> {
 };
 
 template<typename Type>
-std::string toString(const Type& object) {
+std::string printObject(const Type& object) {
 	std::stringstream ss;
 	PutInStream<Loki::TypeTraits<Type>::isPointer, Loki::TypeTraits<Type>::isFundamental, Type, std::stringstream>()(object, ss);
+	return ss.str();
+}
+
+template<class ... Args>
+std::string toString(const Args&... args) {
+	std::stringstream ss;
+	auto list = { printObject(args)... };
+	for(auto l:list){
+		ss <<l;
+	}
 	return ss.str();
 }
 
