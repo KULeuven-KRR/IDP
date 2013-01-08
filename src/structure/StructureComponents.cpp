@@ -3530,10 +3530,8 @@ void PredInter::checkConsistency() {
 	auto smallIt = smallest->begin();
 	auto largeIt = largest->begin();
 
-#ifndef NDEBUG
 	auto sPossTable = smallest == _ct ? _pt : _pf;
 	auto lPossTable = smallest == _ct ? _pf : _pt;
-#endif
 
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
