@@ -808,9 +808,20 @@ void Insert::closetheory() {
 	closeblock();
 }
 
-void checkForUnusedVariables(std::set<Variable*> vv, Formula* f){
+template<class T>
+bool varIsUnused(T const& t, Variable* var) {
+	return t != NULL && t->contains(var);
+}
+
+template<class ... Args>
+void checkForUnusedVariables(std::set<Variable*> vv, Args&... args) {
 	for (auto var : vv) {
-		if (not f->contains(var)) {
+		auto list = { varIsUnused(args, var)... };
+		auto containsvar = false;
+		for(auto l:list){
+			containsvar |= l;
+		}
+		if (not containsvar) {
 			Warning::unusedvar(toString(var), var->pi());
 		}
 	}
@@ -1849,7 +1860,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 
 EnumSetExpr* Insert::set(const std::set<Variable*>& vv, Formula* f, Term* counter, YYLTYPE l) {
 	remove_vars(vv);
-	checkForUnusedVariables(vv,f);
+	checkForUnusedVariables(vv, f, counter);
 	if (f && counter) {
 		std::set<Variable*> pivv;
 		map<Variable*, Variable*> mvv;
