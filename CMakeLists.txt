@@ -93,8 +93,7 @@ endif()
 
 option(GPERF  "Enable profiling support with google-perftools" OFF)
 if(GPERF)
-	include(cmake/perftools.cmake)
-	set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} -L${PERFTOOLSLIBDIR} -ltcmalloc_and_profiler")
+	addToCXX("-fno-omit-frame-pointer")
 endif()
 
 ### Printing information

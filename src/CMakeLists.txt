@@ -54,6 +54,9 @@ add_library(idp
 if(NOT CMAKE_COMPILER_IS_MINGW)
 	target_link_libraries(idp dl)
 endif()
+if(GPERF)
+	target_link_libraries(idp tcmalloc_and_profiler)
+endif()
 target_link_libraries(idp minisatid lua linenoise tinythread)
 
 add_executable(idp-bin external/main.cpp)
