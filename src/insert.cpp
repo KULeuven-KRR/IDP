@@ -1041,10 +1041,10 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	ParseInfo pi = parseinfo(l);
 
 	// Create the sort
-	Sort* s = new Sort(name, pi);
+	auto s = new Sort(name, pi);
 
 	// Add the sort to the current vocabulary
-	if (_currvocabulary->contains(s)) {
+	if (_currvocabulary->hasSortWithName(s->name())) {
 		error("An identical sort already exists " + name);
 	} else {
 		_currvocabulary->add(s);
@@ -1103,7 +1103,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
  */
 Sort* Insert::sort(const string& name, YYLTYPE l) const {
 	vector<Sort*> vs(0);
-	return sort(name, vs, vs, l);
+	return sort(name, vs,vs, l);
 }
 
 /**
@@ -1123,15 +1123,15 @@ Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YY
 }
 
 Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + convertToString(sorts.size());
+	auto pi = parseinfo(l);
+	auto nar = string(name) + '/' + convertToString(sorts.size());
 	for (size_t n = 0; n < sorts.size(); ++n) {
 		if (sorts[n] == NULL) {
 			return NULL;
 		}
 	}
-	Predicate* p = new Predicate(nar, sorts, pi);
-	if (_currvocabulary->containsOverloaded(p)) {
+	auto p = new Predicate(nar, sorts, pi);
+	if (_currvocabulary->hasPredWithName(p->name())) {
 		auto oldp = _currvocabulary->pred(p->name());
 		auto existsp = oldp->resolve(sorts);
 		if (existsp != NULL) {
@@ -1148,8 +1148,8 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 }
 
 Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	string nar = string(name) + '/' + convertToString(insorts.size());
+	auto pi = parseinfo(l);
+	auto nar = string(name) + '/' + convertToString(insorts.size());
 	for (size_t n = 0; n < insorts.size(); ++n) {
 		if (insorts[n] == NULL) {
 			return NULL;
@@ -1158,8 +1158,8 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	if (outsort == NULL) {
 		return NULL;
 	}
-	Function* f = new Function(nar, insorts, outsort, pi);
-	if (_currvocabulary->containsOverloaded(f)) {
+	auto f = new Function(nar, insorts, outsort, pi);
+	if (_currvocabulary->hasFuncWithName(f->name())) {
 		auto oldf = _currvocabulary->func(f->name());
 		auto v = insorts;
 		v.push_back(outsort);

@@ -502,10 +502,13 @@ public:
 
 	static Vocabulary* std(); //!< Returns the standard vocabulary
 	const std::string& name() const; //!< Returns the name of the vocabulary
-	const ParseInfo& pi() const; //!< Returns the parse info of the vocabulary
+	const ParseInfo& pi() const; //!< Returns the parse info of the vocabularyPred
+
+	bool hasSortWithName(const std::string& name) const;
+	bool hasPredWithName(const std::string& name) const;
+	bool hasFuncWithName(const std::string& name) const;
+
 	bool contains(const Sort* s) const; //!< True iff the vocabulary contains the sort
-	bool containsOverloaded(const Predicate* p) const; //!< True iff the vocabulary contains the predicate
-	bool containsOverloaded(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const Predicate* p) const; //!< True iff the vocabulary contains the predicate
 	bool contains(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
