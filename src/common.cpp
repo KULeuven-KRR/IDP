@@ -281,6 +281,23 @@ bool isConj(SIGN sign, bool conj) {
 }
 
 template<>
+std::string toString(const std::string& s) {
+	return s;
+}
+
+template<>
+std::string toString(const char& s) {
+	stringstream ss;
+	ss << s;
+	return ss.str();
+}
+std::string toString(const char* s) {
+	stringstream ss;
+	ss << s;
+	return ss.str();
+}
+
+template<>
 std::string toString(const CompType& type) {
 	std::stringstream output;
 	switch (type) {
