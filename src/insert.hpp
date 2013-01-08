@@ -120,6 +120,8 @@ struct VarName {
 	VarName(const std::string& n, Variable* v)
 			: _name(n), _var(v) {
 	}
+
+	std::ostream& put(std::ostream& os) const;
 };
 
 enum UTF {
