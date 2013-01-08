@@ -73,6 +73,15 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 }
 
 /*************
+ VARNAME
+ *************/
+
+std::ostream& VarName::put(std::ostream& os) const {
+	os << " (" << _name << "," << toString(_var) << ") ";
+	return os;
+}
+
+/*************
  NSPair
  *************/
 
