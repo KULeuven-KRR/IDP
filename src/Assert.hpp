@@ -19,7 +19,7 @@
 #ifndef NDEBUG
 #define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
 #else
-#define Assert(x) do {} while(0)
+#define Assert(x) do { (void)(x); } while(0)
 #endif
 
 #endif // ASSERT_H
