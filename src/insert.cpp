@@ -849,6 +849,8 @@ void Insert::closequery(Query* q) {
 }
 
 void Insert::closeterm(Term* t) {
+	freevars(t->pi(), true);
+
 	_curr_vars.clear();
 	if (t != NULL) { // Allows for better error catching
 		TermUtils::deriveSorts(_currvocabulary, t);
