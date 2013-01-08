@@ -21,5 +21,8 @@ procedure main(){
 	for e in elements(newS2[MyVoc::Person.type]) do
 		found2 = found2+1
 	end
-	return (found1==2 and found2==2)
+	if found1==2 and found2==2 then
+		return 1
+	end
+	return 0
  }
