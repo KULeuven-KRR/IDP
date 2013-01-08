@@ -1950,6 +1950,16 @@ const ParseInfo& Vocabulary::pi() const {
 	return _pi;
 }
 
+bool Vocabulary::hasSortWithName(const std::string& name) const{
+	return _name2sort.find(name)!=_name2sort.cend();
+}
+bool Vocabulary::hasPredWithName(const std::string& name) const{
+	return _name2pred.find(name)!=_name2pred.cend();
+}
+bool Vocabulary::hasFuncWithName(const std::string& name) const{
+	return _name2func.find(name)!=_name2func.cend();
+}
+
 bool Vocabulary::contains(const Sort* s) const {
 	auto it = _name2sort.find(s->name());
 	if(it == _name2sort.cend()){
@@ -1958,28 +1968,8 @@ bool Vocabulary::contains(const Sort* s) const {
 	return it->second == s;
 }
 
-bool Vocabulary::containsOverloaded(const Predicate* p) const {
-	auto it = _name2pred.find(p->name());
-	if (it != _name2pred.cend()) {
-		Assert(it->second!=NULL);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-bool Vocabulary::containsOverloaded(const Function* f) const {
-	auto it = _name2func.find(f->name());
-	if (it != _name2func.cend()) {
-		Assert(it->second!=NULL);
-		return true;
-	} else {
-		return false;
-	}
-}
-
 bool Vocabulary::contains(const Predicate* p) const {
-	map<string, Predicate*>::const_iterator it = _name2pred.find(p->name());
+	auto it = _name2pred.find(p->name());
 	if (it != _name2pred.cend()) {
 		return it->second->contains(p);
 	} else {
