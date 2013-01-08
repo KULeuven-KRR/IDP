@@ -3,3 +3,7 @@
 vocabulary V{
 	type Struct is int
 }
+
+procedure main(){
+	return 1
+}

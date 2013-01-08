@@ -33,3 +33,6 @@ structure S:V{
 	groundSize = {1->10;2->50;3->4;4->50}
 }
 
+procedure main(){
+	return 1
+}

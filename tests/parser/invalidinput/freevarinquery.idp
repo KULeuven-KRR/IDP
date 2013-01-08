@@ -14,3 +14,8 @@ structure database: Sigma{
 query O1Q1: Sigma{
 	{ : ?x: Prerequ(x, D) }
 }
+
+
+procedure main(){
+	return 1
+}

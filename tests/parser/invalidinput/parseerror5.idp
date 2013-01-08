@@ -3,3 +3,7 @@ vocabulary V{
 	P(X)
 	P(X)
 }
+
+procedure main(){
+	return 1
+}
