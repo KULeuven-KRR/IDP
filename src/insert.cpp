@@ -832,6 +832,8 @@ void checkForUnusedVariables(std::set<Variable*> vv, Args&... args) {
 }
 
 void Insert::closequery(Query* q) {
+	freevars(q->pi(), true);
+
 	_curr_vars.clear();
 	if (q != NULL) { // Allows for better error catching
 		std::set<Variable*> sv(q->variables().cbegin(), q->variables().cend());
