@@ -571,15 +571,19 @@ SetParseInfo Insert::setparseinfo(SetExpr* s, YYLTYPE l) const {
 	return SetParseInfo(l.first_line, l.first_column, _currfile, *s);
 }
 
-set<Variable*> Insert::freevars(const ParseInfo& pi) {
+set<Variable*> Insert::freevars(const ParseInfo& pi, bool critical) {
 	std::set<Variable*> vv;
 	string vs;
 	for (auto i = _curr_vars.cbegin(); i != _curr_vars.cend(); ++i) {
 		vv.insert(i->_var);
 		vs = vs + ' ' + i->_name;
 	}
-	if (not vv.empty() && getOption(BoolType::SHOWWARNINGS)) {
-		Warning::freevars(vs, pi);
+	if (not vv.empty()) {
+		if (critical) {
+			Error::freevars(vs, pi);
+		} else if (getOption(BoolType::SHOWWARNINGS)) {
+			Warning::freevars(vs, pi);
+		}
 	}
 	_curr_vars.clear();
 	return vv;

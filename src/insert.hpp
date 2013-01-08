@@ -157,7 +157,7 @@ private:
 
 	Variable* getVar(const std::string&) const; //!< Returns the quantified variable with
 												//!< given name in the current scope
-	std::set<Variable*> freevars(const ParseInfo&); //!< Return all currently free variables
+	std::set<Variable*> freevars(const ParseInfo&, bool critical = false); //!< Return all currently free variables; if critical: throw an error for free variables
 	void remove_vars(const std::vector<Variable*>&); //!< Remove the given variables from the
 													 //!< list of free variables
 	void remove_vars(const std::set<Variable*>&); //!< Remove the given variables from the

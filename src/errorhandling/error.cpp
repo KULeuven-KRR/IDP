@@ -298,7 +298,7 @@ void Error::freevars(const string& fv, const ParseInfo& pi) {
 	if (fv.size() > 1) {
 		ss << "Variables" << fv << " are not quantified.";
 	} else {
-		ss << "Variable" << fv[0] << " is not quantified.";
+		ss << "Variable" << fv << " is not quantified.";
 	}
 	error(ss.str(), pi);
 }
