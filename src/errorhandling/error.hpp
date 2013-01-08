@@ -79,6 +79,9 @@ void overloaded(ComponentType type, const std::string& name, const std::vector<P
 void notsubsort(const std::string&, const std::string&, const ParseInfo& pi);
 void cyclichierarchy(const std::string&, const std::string&, const ParseInfo& pi);
 
+/** Free variables **/
+void freevars(const std::string& fv, const ParseInfo& thisplace);
+
 /** Type checking **/
 void novarsort(const std::string&, const ParseInfo& thisplace);
 void nopredsort(const std::string&, const ParseInfo& thisplace);

@@ -292,6 +292,17 @@ void Error::cyclichierarchy(const string& c, const string& p, const ParseInfo& p
 	error(ss.str(), pi);
 }
 
+/** Free variables **/
+void Error::freevars(const string& fv, const ParseInfo& pi) {
+	stringstream ss;
+	if (fv.size() > 1) {
+		ss << "Variables" << fv << " are not quantified.";
+	} else {
+		ss << "Variable" << fv[0] << " is not quantified.";
+	}
+	error(ss.str(), pi);
+}
+
 /** Type checking **/
 
 void Error::novarsort(const string& name, const ParseInfo& pi) {
