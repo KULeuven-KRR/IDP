@@ -267,33 +267,18 @@ Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, 
 }
 
 void addCompletion(AbstractTheory* t) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<AddCompletion, AbstractTheory*>(t);
-#ifndef NDEBUG
+	auto newt =	transform<AddCompletion, AbstractTheory*>(t);
 	Assert(newt==t);
-#endif
 }
 
 void addIfCompletion(AbstractTheory* t) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<AddIfCompletion, AbstractTheory*>(t);
-#ifndef NDEBUG
+	auto newt = transform<AddIfCompletion, AbstractTheory*>(t);
 	Assert(newt==t);
-#endif
 }
 
 void flatten(AbstractTheory* t) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<Flatten, AbstractTheory*>(t);
-#ifndef NDEBUG
+	auto newt = transform<Flatten, AbstractTheory*>(t);
 	Assert(newt==t);
-#endif
 }
 
 Theory* graphFuncsAndAggs(Theory* t, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
@@ -304,13 +289,8 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const AbstractStructure* st
 }
 
 void pushNegations(AbstractTheory* t) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<PushNegations, AbstractTheory*>(t);
-#ifndef NDEBUG
+	auto newt = transform<PushNegations, AbstractTheory*>(t);
 	Assert(newt==t);
-#endif
 }
 
 AbstractTheory* calculateArithmetic(AbstractTheory* t) {
@@ -346,23 +326,13 @@ AbstractTheory* unnestDomainTerms(AbstractTheory* t, const AbstractStructure* st
  }*/
 
 void unnestTerms(AbstractTheory* t, Context con, const AbstractStructure* str, Vocabulary* voc) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
-#ifndef NDEBUG
+	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
 	Assert(newt==t);
-#endif
 }
 
 void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, const AbstractStructure* str, Context con) {
-#ifndef NDEBUG
-	auto newt =
-#endif
-			transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
-#ifndef NDEBUG
+	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
 	Assert(newt==t);
-#endif
 }
 
 int nrSubformulas(AbstractTheory* t) {

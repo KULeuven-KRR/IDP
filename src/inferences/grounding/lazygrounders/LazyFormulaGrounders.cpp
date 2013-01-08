@@ -101,14 +101,8 @@ void DelayGrounder::doGrounding() {
 	_isGrounding = false;
 }
 
-void LazyUnknUnivGrounder::doGround(const Lit&
-#ifndef NDEBUG
-		head
-#endif
-		, const ElementTuple& headargs) {
-#ifndef NDEBUG
+void LazyUnknUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
-#endif
 	for (auto i = getSameargs().cbegin(); i < getSameargs().cend(); ++i) {
 		if (headargs[i->first] != headargs[i->second]) {
 			return;
@@ -157,15 +151,8 @@ dominstlist LazyTwinDelayUnivGrounder::createInst(const ElementTuple& args) {
 	return domlist;
 }
 
-void LazyTwinDelayUnivGrounder::doGround(const Lit&
-#ifndef NDEBUG
-		head
-#endif
-		, const ElementTuple& headargs) {
-
-#ifndef NDEBUG
+void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& headargs) {
 	Assert(head!=_true && head!=_false);
-#endif
 
 	_seen.push_back(headargs);
 

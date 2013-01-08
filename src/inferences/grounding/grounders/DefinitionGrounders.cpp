@@ -110,15 +110,9 @@ FullRuleGrounder::~FullRuleGrounder() {
 	delete (_headgenerator);
 }
 
-void FullRuleGrounder::run(DefId
-#ifndef NDEBUG
-		defid
-#endif
-		, GroundDefinition* grounddefinition) const {
+void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) const {
 	notifyRun();
-#ifndef NDEBUG
 	Assert(defid == grounddefinition->id());
-#endif
 
 	if (verbosity() > 2) {
 		clog <<"Grounding rule " <<toString(this) <<"\n";
