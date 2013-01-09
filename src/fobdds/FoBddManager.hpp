@@ -196,6 +196,10 @@ public:
 	Formula* toFormula(const FOBDDKernel*);
 	Term* toTerm(const FOBDDTerm*);
 
+	/*
+	 * Optimizes a bdd for being queried. The BDDBasedGeneratorfactory (the only class querying BDDs) will execute this. Hence execution of this method is not needed in most cases.
+	 * However, if you want to make more true/false it's best to optimize first (to be sure not to throw away too much information)
+	 */
 	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*);
 
@@ -203,6 +207,11 @@ public:
 			const AbstractStructure*, double weight_per_ans);
 	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*, double weight_per_ans);
+
+	//Makes more parts of a bdd false. The resulting bdd will contain no symbols from the given list of symbols to remove
+	const FOBDD* makeMoreFalse(const FOBDD*, std::set<PFSymbol*> symbolsToRemove);
+	//Makes more parts of a bdd true. The resulting bdd will contain no symbols from the given list of symbols to remove
+	const FOBDD* makeMoreTrue(const FOBDD*, std::set<PFSymbol*> symbolsToRemove );
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
 
@@ -254,6 +263,7 @@ private:
 
 	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
 			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
+	const FOBDD* makeMore(bool goal, const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove); //Depending on goal, makes more pieces of the BDD true or false such that result contains no forbidden symbols
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
 
