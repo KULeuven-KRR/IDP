@@ -158,7 +158,7 @@ void LazyTwinDelayUnivGrounder::doGround(const Lit& head, const ElementTuple& he
 
 	for (auto other = _seen.cbegin(); other < _seen.cend(); ++other) {
 		auto tuple = *other;
-		tuple.insert(tuple.end(), headargs.cbegin(), headargs.cend());
+		insertAtEnd(tuple, headargs);
 
 		// If multiple vars are the same, checks that their instantiation are also the same!
 		bool different = false;

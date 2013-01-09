@@ -130,6 +130,7 @@ enum class FormStat {
 
 class ClauseGrounder: public FormulaGrounder {
 private:
+	mutable ConjOrDisj _subformula;
 	SIGN _sign;
 	Conn _conn;
 

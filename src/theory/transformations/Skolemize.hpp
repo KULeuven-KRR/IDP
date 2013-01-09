@@ -12,6 +12,7 @@
 #define SKOLEMIZE_HPP_
 
 #include "visitors/TheoryMutatingVisitor.hpp"
+#include "utils/ListUtils.hpp"
 
 /**
  * Replaced an atom with function occurrences with a new propositional symbol and an equivalence.
@@ -66,7 +67,7 @@ protected:
 	Formula* visit(QuantForm* qf){
 		Assert(qf->sign()==SIGN::POS); // FIXME require pushed negations!
 		if(qf->isUniv()){
-			quantified.insert(quantified.end(), qf->quantVars().cbegin(), qf->quantVars().cend());
+			insertAtEnd(quantified, qf->quantVars());
 			return traverse(qf);
 		}else{
 			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i) {

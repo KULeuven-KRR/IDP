@@ -338,7 +338,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 				if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
 					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
-					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+					insertAtEnd(newvarids, subterm->varids());
 					for (auto it = subterm->weights().begin(); it != subterm->weights().end(); ++it) {
 						newweights.push_back((*it) * (*wit));
 					}
@@ -367,7 +367,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 				if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
 					auto subterm = static_cast<CPWProdTerm*>(left);
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
-					newvarids.insert(newvarids.end(), subterm->varids().begin(), subterm->varids().end());
+					insertAtEnd(newvarids, subterm->varids());
 					newweight *= subterm->weight();
 				} else { //TODO Need to do something special in other cases?
 					newvarids.push_back(*vit);
