@@ -119,17 +119,17 @@ bool Grounder::toplevelRun() const {
 
 // TODO unfinished code
 void Grounder::wrapRun(ConjOrDisj& formula) const {
-	auto start = clock();
+//	auto start = clock();
 //	auto set = getGlobal()->getOptions()->verbosities();
 	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
-	auto printtimes = false;
-	if (printtimes) {
-		cerr << "Grounding formula " << toString(this) << "\n";
-	}
+//	auto printtimes = false;
+//	if (printtimes) {
+//		cerr << "Grounding formula " << toString(this) << "\n";
+//	}
 	run(formula);
-	if (printtimes) {
-		cerr << "Grounding it took " << (clock() - start) / 1000 << "ms\n";
-	}
+//	if (printtimes) {
+//		cerr << "Grounding it took " << (clock() - start) / 1000 << "ms\n";
+//	}
 }
 
 Lit Grounder::groundAndReturnLit() const {
