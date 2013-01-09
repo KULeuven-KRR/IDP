@@ -164,7 +164,7 @@ public:
 	 * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
 	 * 			or first search for the literal, and run the checkers if it was not yet grounded.
 	 */
-	Lit translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext);
+	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
 
 	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const termlist&);
 

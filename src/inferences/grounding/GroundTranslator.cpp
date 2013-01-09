@@ -185,7 +185,7 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
  * TODO it might be interesting to see which is faster: first executing the checkers and if they return no answer, search/create the literal
  * 			or first search for the literal, and run the checkers if it was not yet grounded.
  */
-Lit GroundTranslator::translateReduced(SymbolOffset offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
+Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext) { // reduction should not be allowed in recursive context or when reducedgrounding is off
 	CheckerInfo* checkers = NULL;
 	if (offset.functionlist) {
 		checkers = functions[offset.offset]->checkers;
