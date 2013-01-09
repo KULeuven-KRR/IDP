@@ -27,6 +27,8 @@
 #include "fobdds/FoBddManager.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "grounders/Grounder.hpp"
+#include "errorhandling/UnsatException.hpp"
+
 
 class Theory;
 class AbstractTheory;
@@ -112,7 +114,11 @@ private:
 		}else{
 			_grounder = GrounderFactory::create(info, receiver);
 		}
-		_grounder->getGrounding()->addEmptyClause();
+		try {
+			_grounder->getGrounding()->addEmptyClause();
+		} catch (UnsatException&) {
+
+		}
 		return _grounder->getGrounding();
 	}
 
@@ -177,7 +183,11 @@ private:
 			logActionAndTime("Grounding");
 		}
 		bool unsat = _grounder->toplevelRun();
-#warning handle unsat here! (currently still added to solver too)
+		if(unsat){
+			auto grounding = returnUnsat(GroundInfo { _theory, { _structure, symstructure }, _nbmodelsequivalent, _minimizeterm }, _receiver);
+			delete (symstructure);
+			return grounding;
+		}
 
 		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm, _nbmodelsequivalent);
 
