@@ -50,8 +50,6 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	auto bddvars = manager->getVariables(vars);
 	std::set<const FOBDDDeBruijnIndex*> bddindices;
 
-	// optimize the query
-	manager->optimizeQuery(bdd, bddvars, bddindices, structure);
 	Assert(bdd != NULL);
 
 	// create a generator

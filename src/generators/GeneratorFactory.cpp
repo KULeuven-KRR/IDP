@@ -287,27 +287,20 @@ void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	data.structure = table->structure();
 	data.universe = _universe;
 
-	// Add necessary types to the bdd to ensure, if possible, finite querying
-	FOBDDManager optimizemanager;
-	data.bdd = optimizemanager.getBDD(table->bdd(), table->manager());
+	data.bdd = table->bdd();
 
-	// Optimize the bdd for querying
+	// Collect all variables.
 	set<const FOBDDVariable*, CompareBDDVars> outvars;
 	for (unsigned int n = 0; n < _pattern.size(); ++n) {
-		const FOBDDVariable* var = optimizemanager.getVariable(table->vars()[n]);
+		const FOBDDVariable* var = table->manager()->getVariable(table->vars()[n]);
 		data.bddvars.push_back(var);
 		if (_pattern[n] == Pattern::OUTPUT) {
 			outvars.insert(var);
 		}
 	}
-	set<const FOBDDDeBruijnIndex*> indices;
-	optimizemanager.optimizeQuery(data.bdd, outvars, indices, table->structure());
 
-	// Generate a generator for the optimized bdd
-	BDDToGenerator btg(&optimizemanager);
-	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
-		clog  << "or no, on second thought for\n" << toString(data.bdd) << "\n";
-	}
+	// Generate a generator for the bdd (we do not optimize the bdd since BDDToGenerator will already do this)
+	BDDToGenerator btg(table->manager());
 	_generator = btg.create(data);
 }
 

@@ -114,7 +114,11 @@ private:
 			const std::vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure,
 			std::vector<Formula*> conjunction, Formula *origatom, BRANCH branchToGenerate);
 
-	InstGenerator* createFromBDD(const BddGeneratorData& data);
+	/**
+	 * The boolean represents whether or not we should optimze the Bdd. In general: we optimize every time we enter a quantkernel (and initially)
+	 * --> Every time an extra variable is queried
+	 */
+	InstGenerator* createFromBDD(const BddGeneratorData& data, bool optimize = false);
 
 public:
 	BDDToGenerator(FOBDDManager* manager);
