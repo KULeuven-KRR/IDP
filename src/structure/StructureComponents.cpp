@@ -3822,7 +3822,8 @@ StrLessThanInterGenerator* StrLessThanInterGeneratorGenerator::get(const std::ve
 
 FuncInter::FuncInter(FuncTable* ft)
 		: _functable(ft) {
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
+	//We cannot pass ft to the predtable since on several occasions, _functable gets deleted
+	PredTable* ct = new PredTable(new FuncInternalPredTable(new FuncTable(ft->internTable(), ft->universe()), true), ft->universe());
 	_graphinter = new PredInter(ct, true);
 }
 
@@ -3846,7 +3847,8 @@ void FuncInter::funcTable(FuncTable* ft) {
 	delete (_functable);
 	delete (_graphinter);
 	_functable = ft;
-	PredTable* ct = new PredTable(new FuncInternalPredTable(ft, true), ft->universe());
+	//We cannot pass ft to the predtable since on several occasions, _functable gets deleted
+	PredTable* ct = new PredTable(new FuncInternalPredTable(new FuncTable(ft->internTable(), ft->universe()), true), ft->universe());
 	_graphinter = new PredInter(ct, true);
 }
 
