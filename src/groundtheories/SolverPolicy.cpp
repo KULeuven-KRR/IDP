@@ -13,6 +13,7 @@
 #include "IncludeComponents.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
 #include "inferences/grounding/lazygrounders/LazyInst.hpp"
+#include "errorhandling/UnsatException.hpp"
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
@@ -22,6 +23,11 @@
 
 using namespace std;
 using namespace SolverConnection;
+
+#define CHECKUNSAT \
+		if(getSolver().isCertainlyUnsat()){\
+			throw UnsatException();\
+		}
 
 template<typename Solver>
 void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTranslator* translator) {
@@ -37,6 +43,7 @@ void SolverPolicy<Solver>::polAdd(const GroundClause& cl) {
 		clause.literals.push_back(createLiteral(cl[n]));
 	}
 	extAdd(getSolver(), clause);
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -54,6 +61,7 @@ void SolverPolicy<Solver>::polAdd(const TsSet& tsset, SetId setnr, bool weighted
 		}
 		extAdd(getSolver(), set);
 	}
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -91,6 +99,7 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 	}
 	MinisatID::CPSumWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, bound);
 	extAdd(getSolver(), sentence);
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -102,6 +111,7 @@ void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const
 	}
 	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, convert(bound));
 	extAdd(getSolver(), sentence);
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -136,9 +146,11 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			polAddCPVariable(right._varid, _translator);
 			MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, convert(right._varid));
 			extAdd(getSolver(), sentence);
+			CHECKUNSAT;
 		} else {
 			MinisatID::CPBinaryRel sentence(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, right._bound);
 			extAdd(getSolver(), sentence);
+			CHECKUNSAT;
 		}
 	} else if (isa<CPWSumTerm>(*left)) {
 		auto term = dynamic_cast<CPWSumTerm*>(left);
@@ -196,6 +208,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 		break;
 	}
 	extAdd(getSolver(), MinisatID::Implication(getDefConstrID(), createLiteral(newtseitin), impltype, createList(newrhs), newconj));
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -214,6 +227,7 @@ void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lo
 	}
 	extAdd(getSolver(),
 			MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, definitionID.id, useUFSAndOnlyIfSem()));
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -247,6 +261,7 @@ void SolverPolicy<Solver>::polAddCPVariable(const VarId& varid, GroundTranslator
 		}
 		extAdd(getSolver(), MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
 	}
+	CHECKUNSAT;
 }
 
 template<typename Solver>
@@ -256,17 +271,20 @@ void SolverPolicy<Solver>::polAddPCRule(DefId defnr, Lit head, std::vector<int> 
 		list.push_back(createLiteral(body[n]));
 	}
 	extAdd(getSolver(), MinisatID::Rule(getDefConstrID(), createAtom(head), list, conjunctive, defnr.id, useUFSAndOnlyIfSem()));
+	CHECKUNSAT;
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(AggFunction function, SetId setid) {
 	extAdd(getSolver(), MinisatID::MinimizeAgg(1, setid.id, convert(function)));
+	CHECKUNSAT;
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddOptimization(VarId varid) {
 	polAddCPVariable(varid, _translator);
 	extAdd(getSolver(), MinisatID::MinimizeVar(1, convert(varid)));
+	CHECKUNSAT;
 }
 
 class LazyRuleMon: public MinisatID::LazyGroundingCommand {
@@ -305,6 +323,7 @@ void SolverPolicy<Solver>::polNotifyUnknBound(Context context, const Lit& delayl
 	}
 	MinisatID::LazyGroundLit lc(literal.getAtom(), value, mon);
 	extAdd(getSolver(), lc);
+	CHECKUNSAT;
 }
 
 class LazyClauseMon: public MinisatID::LazyGrounder {
@@ -328,6 +347,7 @@ void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 		list.push_back(createLiteral(*i));
 	}
 	extAdd(getSolver(), MinisatID::LazyAddition(list, ID));
+	CHECKUNSAT;
 }
 template<class Solver>
 void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
@@ -340,6 +360,7 @@ void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType t
 	MinisatID::Implication implic(getDefConstrID(), lit, watchboth ? MinisatID::ImplicationType::EQUIVALENT : MinisatID::ImplicationType::IMPLIES,
 			MinisatID::litlist { }, conjunction);
 	extAdd(getSolver(), MinisatID::LazyGroundImpl(getDefConstrID(), implic, mon));
+	CHECKUNSAT;
 }
 
 class LazyLitMon: public MinisatID::LazyGroundingCommand {
@@ -373,6 +394,7 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType
 		value = MinisatID::Value::False;
 	}
 	extAdd(getSolver(), MinisatID::LazyGroundLit(lit.getAtom(), value, mon));
+	CHECKUNSAT;
 }
 
 template<class Solver>
@@ -487,6 +509,7 @@ void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const s
 	}
 	auto le = MinisatID::LazyAtom(getDefConstrID(), createLiteral(head), vars, gr);
 	extAdd(getSolver(), le);
+	CHECKUNSAT;
 }
 
 // Explicit instantiations
