@@ -493,15 +493,39 @@ private:
 	PredInter* _graphinter; //!< the interpretation for the graph of the function
 
 public:
+	/**
+	 * Creates a FuncInter with the given Functable,
+	 * As graphinter, it creates a new predtable consistent with ft
+	 * Takes responsibility of ft (will delete ft when needed)
+	 */
 	FuncInter(FuncTable* ft);
+	/**
+	 * Creates a FuncInter with pt as graphinter.
+	 * FuncTable is set to be NULL
+	 * Takes responsibility of pt (will delete pt when needed)
+	 *
+	 */
 	FuncInter(PredInter* pt)
 			: 	_functable(0),
 				_graphinter(pt) {
 	}
 	~FuncInter();
 
-	void graphInter(PredInter*);
-	void funcTable(FuncTable*);
+	/**
+	 * Deletes the old functable and graphinter.
+	 * Creates a FuncInter with pt as graphinter.
+	 * FuncTable is set to be NULL
+	 * Takes responsibility of pt (will delete pt when needed)
+	 */
+	void graphInter(PredInter* pt);
+
+	/**
+	 * Deletes the old functable and graphinter.
+	 * Sets functable to be the given argument
+	 * As graphinter, it creates a new predtable consistent with ft
+	 * Takes responsibility of ft (will delete ft when needed)
+	 */
+	void funcTable(FuncTable* ft);
 
 	bool isConsistent() const;
 	void materialize();
