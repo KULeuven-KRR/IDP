@@ -68,7 +68,8 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 		if (l == _true or l == _false) {
 			if (formula.getType() == Conn::CONJ and l == _false) { // UNSAT
 				gt->addUnitClause(1);
-				gt->addUnitClause(-1);
+				gt->addUnitClause(-1);// TODO Remove when unsatexception is handled everywhere
+				throw UnsatException();
 			} // else SAT or irrelevant
 		} else {
 			gt->addUnitClause(l);

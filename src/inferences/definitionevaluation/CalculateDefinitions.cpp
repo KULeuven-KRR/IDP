@@ -35,6 +35,16 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	auto grounder = GrounderFactory::create({&theory, {structure, symstructure}, true /*TODO CHECK*/}, data);
 
 	bool unsat = grounder->toplevelRun();
+
+	//It's possible that unsat is found (for example when we have a conflict with function constraints)
+	if (unsat) {
+		// Cleanup
+		delete (data);
+		delete (grounder);
+		delete (symstructure);
+		return false;
+	}
+
 	Assert(not unsat);
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 

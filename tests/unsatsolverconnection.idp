@@ -1,0 +1,19 @@
+vocabulary V{
+	type large isa nat
+	q(large,large,large, large, large)
+}
+theory T:V{
+	!a b c d e: q(a,b,c,d,e) & ~q(a,b,c,d,e).
+}
+structure S:V{
+	large = {1..10000}
+}
+procedure main(){
+	stdoptions.groundwithbounds=false
+	stdoptions.liftedunitpropagation=false
+	stdoptions.timeout = 5
+	if #modelexpand(T,S) > 0 then
+		return 0
+	end
+	return 1
+}
