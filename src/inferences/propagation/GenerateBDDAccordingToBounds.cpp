@@ -223,33 +223,6 @@ void GenerateBDDAccordingToBounds::visit(const AggForm*) {
 	}
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::prunebdd(const FOBDD* bdd, const vector<const FOBDDVariable*>& bddvars, AbstractStructure* structure, double mcpa) {
-// 1. Optimize the query
-	FOBDDManager optimizemanager;
-	auto copybdd = optimizemanager.getBDD(bdd, _manager);
-	set<const FOBDDVariable*, CompareBDDVars> copyvars;
-	set<const FOBDDDeBruijnIndex*> indices;
-	for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it) {
-		copyvars.insert(optimizemanager.getVariable((*it)->variable()));
-	}
-	optimizemanager.optimizeQuery(copybdd, copyvars, indices, structure);
-
-// 2. Remove certain leaves
-	auto pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, indices, structure, mcpa);
-
-// 3. Replace result
-	return _manager->getBDD(pruned, &optimizemanager);
-}
-
-void GenerateBDDAccordingToBounds::filter(AbstractStructure* structure, double max_cost_per_answer) {
-	for (auto it = _ctbounds.begin(); it != _ctbounds.end(); ++it) {
-		it->second = prunebdd(it->second, _vars[it->first], structure, max_cost_per_answer);
-	}
-	for (auto it = _cfbounds.begin(); it != _cfbounds.end(); ++it) {
-		it->second = prunebdd(it->second, _vars[it->first], structure, max_cost_per_answer);
-	}
-}
-
 ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
 

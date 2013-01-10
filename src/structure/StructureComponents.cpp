@@ -3540,7 +3540,7 @@ void PredInter::checkConsistency() {
 		// get unassigned domain element
 		while(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
 			CHECKTERMINATION;
-			Assert(sPossTable->size()._size > 1000 || not sPossTable->contains(*largeIt));
+			Assert(sPossTable->size()._size > 5 || not sPossTable->contains(*largeIt));
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
 			++largeIt;
@@ -3548,7 +3548,7 @@ void PredInter::checkConsistency() {
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
 			_inconsistentElements.insert(&(*largeIt));
 		}
-		Assert(lPossTable->size()._size>1000 || not lPossTable->contains(*smallIt));
+		Assert(lPossTable->size()._size > 5 || not lPossTable->contains(*smallIt));
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 		//Should always be true...
 	}

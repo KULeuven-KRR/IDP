@@ -39,10 +39,6 @@ private:
 	// If NULL, all symbols can be replaced!
 	Vocabulary* _symbolsThatCannotBeReplacedByBDDs;
 
-	const FOBDD* prunebdd(const FOBDD*, const std::vector<const FOBDDVariable*>&, AbstractStructure*, double);
-
-	/** Make the symbolic structure less precise, based on the given structure **/
-	void filter(AbstractStructure* structure, double max_cost_per_answer);
 
 protected:
 	void visit(const PredForm*);

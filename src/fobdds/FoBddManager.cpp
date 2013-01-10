@@ -12,6 +12,7 @@
 #include "commontypes.hpp"
 #include "FoBddManager.hpp"
 #include "bddvisitors/OrderTerms.hpp"
+#include "bddvisitors/SymbolCollector.hpp"
 #include "bddvisitors/TermOccursNested.hpp"
 #include "bddvisitors/ContainsPartialFunctions.hpp"
 #include "bddvisitors/TermCollector.hpp"
@@ -1614,6 +1615,32 @@ const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDV
 		clog << "\nResulted in :\n" << toString(result) << "\n";
 	}
 	return result;
+}
+
+//Makes more parts of a bdd false. The resulting bdd will contain no symbols
+const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove){
+	return makeMore(false,bdd,symbolsToRemove);
+}
+
+const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove ){
+	return makeMore(true,bdd,symbolsToRemove);
+}
+
+const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove) {
+	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
+		return bdd;
+	}
+	SymbolCollector sc(this);
+	auto goalbdd = goal ? _truebdd : _falsebdd;
+	auto kernelsymbols = sc.collectSymbols(bdd->kernel());
+	for (auto sym : symbolsToRemove) {
+		if (kernelsymbols.find(sym) != kernelsymbols.end()) {
+			return goalbdd;
+		}
+	}
+	auto newtrue = makeMore(goal, bdd->truebranch(), symbolsToRemove);
+	auto newfalse = makeMore(goal, bdd->falsebranch(), symbolsToRemove);
+	return getBDD(bdd->kernel(), newtrue, newfalse);
 }
 
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)

@@ -139,6 +139,10 @@ BDDToGenerator::BDDToGenerator(FOBDDManager* manager)
 }
 
 InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
+	return createFromBDD(data, true);
+}
+
+InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool optimize) {
 	Assert(data.check());
 	if (data.bdd == _manager->falsebdd()) {
 		return new EmptyGenerator();
@@ -151,12 +155,6 @@ InstGenerator* BDDToGenerator::create(const BddGeneratorData& data) {
 		extractFirstOccurringOutputs(data, firstocc, outvars, tables);
 		return GeneratorFactory::create(outvars, tables);
 	}
-
-	return createFromBDD(data);
-}
-
-InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
-	Assert(data.check());
 
 	//The base-cases are already covered in BDDToGenerator::create
 	if (data.bdd == _manager->falsebdd() || data.bdd == _manager->truebdd()) {
@@ -171,10 +169,39 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	}
 
 	// Otherwise: recursive case
+	BddGeneratorData newdata = data;
 
+	//Create a new manager (will only be used for optimization)
+	auto optimizemanager = new FOBDDManager();
+	//Back up the old manager
+	auto backupmanager = _manager;
+
+	if (optimize) {
+		//OPTIMIZE FOR THIS (part of a) BDD
+		newdata = BddGeneratorData(data);
+		newdata.bdd = optimizemanager->getBDD(data.bdd, _manager);
+		newdata.bddvars.clear();
+
+		// Optimize the bdd for querying
+		set<const FOBDDVariable*, CompareBDDVars> outvars;
+		for (unsigned int n = 0; n < data.pattern.size(); ++n) {
+			const FOBDDVariable* var = optimizemanager->getVariable(data.bddvars[n]->variable());
+			newdata.bddvars.push_back(var);
+			if (data.pattern[n] == Pattern::OUTPUT) {
+				outvars.insert(var);
+			}
+		}
+		set<const FOBDDDeBruijnIndex*> indices;
+		optimizemanager->optimizeQuery(newdata.bdd, outvars, indices, newdata.structure);
+
+		//From now on, used the optimized BDD and manager.
+		//IMPORTANT!!! every return should reset the _manager!!!
+		_manager = optimizemanager;
+	}
 	// Copy data to branchdata.  This data will be used for one of the branches.
 	// It is practically the same as data except for the pattern (since the kernel might set some variables)
-	BddGeneratorData branchdata = data;
+	BddGeneratorData branchdata = newdata;
+
 	branchdata.pattern.clear();
 
 	// split variables into kernel and branch and also extract first-occurring kernel output variables
@@ -182,21 +209,21 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 	vector<const DomElemContainer*> kernvars, kernoutputvars;
 	vector<const FOBDDVariable*> kernbddvars;
 	vector<SortTable*> kerntables, kernoutputtables;
-	for (unsigned int n = 0; n < data.pattern.size(); ++n) {
-		if (not _manager->contains(data.bdd->kernel(), data.bddvars[n])) {
+	for (unsigned int n = 0; n < newdata.pattern.size(); ++n) {
+		if (not _manager->contains(newdata.bdd->kernel(), newdata.bddvars[n])) {
 			//Variable does not appear in kernel
-			branchdata.pattern.push_back(data.pattern[n]);
+			branchdata.pattern.push_back(newdata.pattern[n]);
 			continue;
 		}
 
 		//Variable appears in kernel
-		kernpattern.push_back(data.pattern[n]);
-		kernvars.push_back(data.vars[n]);
-		kernbddvars.push_back(data.bddvars[n]);
-		kerntables.push_back(data.universe.tables()[n]);
+		kernpattern.push_back(newdata.pattern[n]);
+		kernvars.push_back(newdata.vars[n]);
+		kernbddvars.push_back(newdata.bddvars[n]);
+		kerntables.push_back(newdata.universe.tables()[n]);
 
 		//Extract first occuring output
-		if (data.pattern[n] == Pattern::OUTPUT) {
+		if (newdata.pattern[n] == Pattern::OUTPUT) {
 			bool firstocc = true;
 			for (unsigned int m = 0; m < kernoutputvars.size(); ++m) {
 				if (kernoutputvars[m] == kernvars.back()) {
@@ -205,8 +232,8 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 				}
 			}
 			if (firstocc) {
-				kernoutputvars.push_back(data.vars[n]);
-				kernoutputtables.push_back(data.universe.tables()[n]);
+				kernoutputvars.push_back(newdata.vars[n]);
+				kernoutputtables.push_back(newdata.universe.tables()[n]);
 			}
 		}
 
@@ -214,52 +241,61 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 		branchdata.pattern.push_back(Pattern::INPUT);
 	}
 
-	if (data.bdd->falsebranch() == _manager->falsebdd()) {
+	if (newdata.bdd->falsebranch() == _manager->falsebdd()) {
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "Only generate true branch\n";
 		}
 		// Only generate the true branch possibilities
-		branchdata.bdd = data.bdd->truebranch();
-		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
+		branchdata.bdd = newdata.bdd->truebranch();
+		auto kernelgenerator = createFromKernel(newdata.bdd->kernel(), kernpattern, kernvars, kernbddvars, newdata.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
 		auto truegenerator = createFromBDD(branchdata);
+
+		delete optimizemanager;
+		_manager=backupmanager;
 		return new OneChildGenerator(kernelgenerator, truegenerator);
 	}
 
-	if (data.bdd->truebranch() == _manager->falsebdd()) {
+	if (newdata.bdd->truebranch() == _manager->falsebdd()) {
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "Only generate false branch\n";
 		}
 		// Only generate the false branch possibilities
-		branchdata.bdd = data.bdd->falsebranch();
-		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::FALSEBRANCH,
+		branchdata.bdd = newdata.bdd->falsebranch();
+		auto kernelgenerator = createFromKernel(newdata.bdd->kernel(), kernpattern, kernvars, kernbddvars, newdata.structure, BRANCH::FALSEBRANCH,
 				Universe(kerntables));
 		auto falsegenerator = createFromBDD(branchdata);
+
+		delete optimizemanager;
+		_manager=backupmanager;
 		return new OneChildGenerator(kernelgenerator, falsegenerator);
 	}
 
-	if (data.bdd->truebranch() == _manager->truebdd()) {
+	if (newdata.bdd->truebranch() == _manager->truebdd()) {
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 			clog << "True branch always true\n";
 		}
 		//Avoid creating a twochildgeneratornode (too expensive since it has a univgenerator)
 
-		auto kernelgenerator = createFromKernel(data.bdd->kernel(), kernpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH,
+		auto kernelgenerator = createFromKernel(newdata.bdd->kernel(), kernpattern, kernvars, kernbddvars, newdata.structure, BRANCH::TRUEBRANCH,
 				Universe(kerntables));
 
-		auto kernelchecker = createFromKernel(data.bdd->kernel(), vector<Pattern>(kernpattern.size(), Pattern::INPUT), kernvars, kernbddvars, data.structure,
+		auto kernelchecker = createFromKernel(newdata.bdd->kernel(), vector<Pattern>(kernpattern.size(), Pattern::INPUT), kernvars, kernbddvars, newdata.structure,
 				BRANCH::TRUEBRANCH, Universe(kerntables));
-		branchdata.bdd = data.bdd->truebranch();
+		branchdata.bdd = newdata.bdd->truebranch();
 		//branchdata.pattern = data.pattern;
 		kernelgenerator = new OneChildGenerator(kernelgenerator, createFromBDD(branchdata));
 		kernelchecker = new OneChildGenerator(kernelchecker, new FullGenerator());
 		//Truegenerator for instatiating all output vars of of truebdd.
 
-		branchdata.bdd = data.bdd->falsebranch();
-		branchdata.pattern = data.pattern;
+		branchdata.bdd = newdata.bdd->falsebranch();
+		branchdata.pattern = newdata.pattern;
 		auto falsegenerator = createFromBDD(branchdata);
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
+
+		delete optimizemanager;
+		_manager=backupmanager;
 		return new UnionGenerator({ kernelgenerator, falsegenerator }, { kernelchecker, falsechecker });
 	}
 
@@ -269,16 +305,18 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data) {
 
 	// Both branches possible: create a checker and a generator for all possibilities
 	vector<Pattern> checkerpattern(kernpattern.size(), Pattern::INPUT);
-	auto kernelchecker = createFromKernel(data.bdd->kernel(), checkerpattern, kernvars, kernbddvars, data.structure, BRANCH::TRUEBRANCH, Universe(kerntables));
+	auto kernelchecker = createFromKernel(newdata.bdd->kernel(), checkerpattern, kernvars, kernbddvars, newdata.structure, BRANCH::TRUEBRANCH, Universe(kerntables));
 
 	//Generator for the universe of kerneloutput
 	auto kernelgenerator = GeneratorFactory::create(kernoutputvars, kernoutputtables);
-	branchdata.bdd = data.bdd->falsebranch();
+	branchdata.bdd = newdata.bdd->falsebranch();
 	auto falsegenerator = createFromBDD(branchdata);
 
-	branchdata.bdd = data.bdd->truebranch();
+	branchdata.bdd = newdata.bdd->truebranch();
 	auto truegenerator = createFromBDD(branchdata);
 
+	delete optimizemanager;
+	_manager=backupmanager;
 	return new TwoChildGenerator(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
 
@@ -802,7 +840,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		auto univgenerator = GeneratorFactory::create(univgenvars, univgentables);
 
 		//A checker for phi(x,y):
-		auto bddtruechecker = btg.create(quantdata);
+		auto bddtruechecker = btg.createFromBDD(quantdata, true);
 
 		//A checker for ?x phi(x,y)
 		auto existsChecker = new TrueQuantKernelGenerator(bddtruechecker,{});
@@ -816,7 +854,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 				outvars.push_back(vars[n]);
 			}
 		}
-		auto bddtruegenerator = btg.create(quantdata);
+		auto bddtruegenerator = btg.createFromBDD(quantdata, true);
 		return new TrueQuantKernelGenerator(bddtruegenerator, outvars);
 	}
 }
@@ -839,7 +877,7 @@ InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<
 	data.pattern = pattern;
 	data.structure = structure;
 	data.universe = universe;
-	return create(data);
+	return createFromBDD(data, false);
 }
 
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
@@ -938,7 +976,7 @@ InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, con
 		data.universe = Universe(subformtables);
 
 		data.bdd = _manager->substitute((*subs)->subformula(), deBruynMapping);
-		formulagenerators[subsetnumber] = create(data);
+		formulagenerators[subsetnumber] = createFromBDD(data, false);
 		const DomElemContainer* newvar = new DomElemContainer();
 		terms[subsetnumber] = newvar;
 		auto sort = (*subs)->subterm()->sort();

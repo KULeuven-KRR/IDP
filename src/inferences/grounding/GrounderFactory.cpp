@@ -1181,8 +1181,8 @@ GenAndChecker GrounderFactory::createVarsAndGenerators(Formula* subformula, Orig
 	}
 
 	auto dataWpattern = getPatternAndContainers(quantfovars, fovars);
-	auto generator = getGenerator(subformula, generatortype, dataWpattern.first, dataWpattern.second, getSymbolicStructure());
-	auto checker = getChecker(subformula, checkertype, dataWpattern.first, getSymbolicStructure());
+	auto generator = getGenerator(subformula, generatortype, dataWpattern.first, dataWpattern.second, getSymbolicStructure(), getContext()._defined);
+	auto checker = getChecker(subformula, checkertype, dataWpattern.first, getSymbolicStructure(), getContext()._defined);
 
 	vector<SortTable*> directquanttables;
 	for (auto it = orig->quantVars().cbegin(); it != orig->quantVars().cend(); ++it) {
@@ -1232,7 +1232,7 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 	return d;
 }
 
-InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
+InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
 		pushtab();
@@ -1241,7 +1241,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 	PredTable* gentable = NULL;
 	bool approxastrue = generatortype == TruthType::POSS_TRUE || generatortype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		gentable = createTable(subformula, generatortype, data.quantfovars, approxastrue, data, symstructure, forceexact);
+		gentable = createTable(subformula, generatortype, data.quantfovars, approxastrue, data, symstructure, definedsymbols, forceexact);
 	} else {
 		if (approxastrue) {
 			gentable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1258,7 +1258,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 //Checkers for atoms CANNOT be approximated:
 // * Either they are trivial (true or false) and the approximation is uselesss
 // * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
-InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
+InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
 		pushtab();
@@ -1267,7 +1267,7 @@ InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkert
 	PredTable* checktable = NULL;
 	bool approxastrue = checkertype == TruthType::POSS_TRUE || checkertype == TruthType::POSS_FALSE;
 	if (getOption(BoolType::GROUNDWITHBOUNDS)) {
-		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure, forceexact);
+		checktable = createTable(subformula, checkertype, { }, approxastrue, data, symstructure, definedsymbols, forceexact);
 	} else {
 		if (approxastrue) {
 			checktable = TableUtils::createFullPredTable(Universe(data.tables));
@@ -1293,14 +1293,14 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
-		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, bool forceexact) {
+		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, true, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
-	if(not forceexact){
-		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure);
+	if (not forceexact) {
+		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure, definedsymbols);
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "Using the following BDD" << nt() << toString(bdd) << nt();
@@ -1310,7 +1310,8 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	return table;
 }
 
-const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars, const AbstractStructure* structure, GenerateBDDAccordingToBounds* symstructure) {
+const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars, const AbstractStructure* structure,
+		GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols) {
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		clog << tabs() << "improving the following " << (approxastrue ? "maketrue" : "makefalse") << " BDD:" << "\n";
 		pushtab();
@@ -1326,15 +1327,18 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		copyvars.insert(optimizemanager.getVariable(*it));
 	}
+
 	optimizemanager.optimizeQuery(copybdd, copyvars, { }, structure);
 
 	// Remove certain leaves
 	const FOBDD* pruned = NULL;
 	auto mcpa = 1; // TODO experiment with variations?
 	if (approxastrue) {
-		pruned = optimizemanager.makeMoreTrue(copybdd, copyvars, { }, structure, mcpa);
+		pruned = optimizemanager.makeMoreTrue(copybdd, definedsymbols);
+		pruned = optimizemanager.makeMoreTrue(pruned, copyvars, { }, structure, mcpa);
 	} else {
-		pruned = optimizemanager.makeMoreFalse(copybdd, copyvars, { }, structure, mcpa);
+		pruned = optimizemanager.makeMoreFalse(copybdd, definedsymbols);
+		pruned = optimizemanager.makeMoreFalse(pruned, copyvars, { }, structure, mcpa);
 	}
 
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
