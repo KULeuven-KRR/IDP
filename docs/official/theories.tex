@@ -33,7 +33,9 @@ A \emph{formula} is inductively defined by:
 	\item if $t_1$ and $t_2$ are terms, then $t_1 = t_2$ is a formula;
 	\item if $\varphi$ and $\psi$ are formulas and $x$ is a variable, then the following are formulas: $\lnot \varphi$, $\varphi \land \psi$, $\varphi \lor \psi$, $\varphi \limplies \psi$, $\varphi \limpliedby \psi$, $\varphi \lequiv \psi$, $\forall x\ \varphi$, and $\exists x\ \varphi$.
 \end{itemize}
-The following order of binding is used: $\lnot$ binds tightest, next $\land$ and $\lor$, then $\limplies$ and $\lequiv$, and finally $\forall$ and $\exists$. Desambiguation can be done using brackets `(' and `)'. E.g. the formula $\forall x\ P(x) \land \lnot Q(x) \limplies R(x)$ is equivalent to the formula $\forall x\ ((P(x) \land (\lnot Q(x))) \limplies R(x))$.
+The following order of binding is used: $\lnot$ binds tightest, next $\land$, then $\lor$, then $\limpliedby$, followed by $\limplies$, then $\lequiv$, and finally $\forall$ and $\exists$. 
+All operators are right associative, for example $P \limplies Q \limplies R$ is equivalent to the formula $P \limplies (Q \limplies R)$.
+Disambiguation can be done using brackets `(' and `)'. E.g. the formula $\forall x\ P(x) \land \lnot Q(x) \limplies R(x)$ is equivalent to the formula $\forall x\ ((P(x) \land (\lnot Q(x))) \limplies R(x))$. 
 
 As for terms, if term $t$ occurs in predicate $P$, then the type of $t$ and the type of the input position of $P$ where it occurs must have a common ancestor type. For formulas of the form $t_1 = t_2$, $t_1$ and $t_2$ must have a common ancestor type.
 
