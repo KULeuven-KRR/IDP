@@ -140,18 +140,17 @@ bool tablesize::operator>=(const tablesize& rhs) const{
 }
 
 template<>
-std::string toString(const tablesize& obj){
-	std::stringstream ss;
+std::ostream& print(std::ostream& stream, const tablesize& obj){
 	switch(obj._type){
 	case TableSizeType::TST_APPROXIMATED:
-		ss <<"approximated to " <<obj._size;
+		stream <<"approximated to " <<obj._size;
 		break;
 	case TableSizeType::TST_EXACT:
-		ss <<obj._size;
+		stream <<obj._size;
 		break;
 	case TableSizeType::TST_INFINITE:
-		ss <<"infinite";
+		stream <<"infinite";
 		break;
 	}
-	return ss.str();
+	return stream;
 }

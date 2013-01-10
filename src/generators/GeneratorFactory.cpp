@@ -101,7 +101,7 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
-		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << toString(symbol) << " on pattern " << toString(pattern) << "\n";
+		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << print(symbol) << " on pattern " << print(pattern) << "\n";
 	}
 	bool inverted = inverse;
 	const PredTable* table = NULL;
@@ -279,7 +279,7 @@ void GeneratorFactory::visit(const ProcInternalPredTable*) {
 
 void GeneratorFactory::visit(const BDDInternalPredTable* table) {
 	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
-		clog  << "Creating a generator for \n" << toString(table->bdd()) << "\n";
+		clog  << "Creating a generator for \n" << print(table->bdd()) << "\n";
 	}
 	BddGeneratorData data;
 	data.pattern = _pattern;

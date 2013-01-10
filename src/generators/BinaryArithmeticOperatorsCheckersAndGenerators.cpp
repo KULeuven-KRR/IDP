@@ -69,7 +69,7 @@ DivChecker* DivChecker::clone() const {
 }
 
 void DivChecker::put(std::ostream& stream) const{
-	stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	stream << print(getIn1()) << "(in)" << " / " << print(getIn2()) << "(in)" << " = " << print(getIn3()) << "(in)";
 }
 
 ARITHRESULT TimesChecker::doCalculation(double left, double right, double& result) const {
@@ -85,7 +85,7 @@ TimesChecker* TimesChecker::clone() const {
 }
 
 void TimesChecker::put(std::ostream& stream)const {
-	stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	stream << print(getIn1()) << "(in)" << " * " << print(getIn2()) << "(in)" << " = " << print(getIn3()) << "(in)";
 }
 
 ARITHRESULT MinusChecker::doCalculation(double left, double right, double& result) const {
@@ -101,7 +101,7 @@ MinusChecker* MinusChecker::clone() const {
 }
 
 void MinusChecker::put(std::ostream& stream)const {
-	stream << toString(getIn1()) << "(in)" << " - " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	stream << print(getIn1()) << "(in)" << " - " << print(getIn2()) << "(in)" << " = " << print(getIn3()) << "(in)";
 }
 
 ARITHRESULT PlusChecker::doCalculation(double left, double right, double& result) const {
@@ -117,7 +117,7 @@ PlusChecker* PlusChecker::clone() const {
 }
 
 void PlusChecker::put(std::ostream& stream) const{
-	stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	stream << print(getIn1()) << "(in)" << " + " << print(getIn2()) << "(in)" << " = " << print(getIn3()) << "(in)";
 }
 
 ARITHRESULT ModChecker::doCalculation(double left, double right, double& result) const {
@@ -139,7 +139,7 @@ ModChecker* ModChecker::clone() const {
 }
 
 void ModChecker::put(std::ostream& stream)const {
-	stream << toString(getIn1()) << "(in)" << " % " << toString(getIn2()) << "(in)" << " = " << toString(getIn3()) << "(in)";
+	stream << print(getIn1()) << "(in)" << " % " << print(getIn2()) << "(in)" << " = " << print(getIn3()) << "(in)";
 }
 
 DomainElementType ArithOpGenerator::getOutType() {
@@ -234,7 +234,7 @@ DivGenerator* DivGenerator::clone() const {
 }
 
 void DivGenerator::put(std::ostream& stream) const {
-	stream << toString(getIn1()) << "(in)" << " / " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
+	stream << print(getIn1()) << "(in)" << " / " << print(getIn2()) << "(in)" << " = " << print(getOutDom()) << "[" << print(getOutDom()) << "]"
 			<< "(out)";
 }
 DomainElementType DivGenerator::getOutType() {
@@ -261,7 +261,7 @@ TimesGenerator* TimesGenerator::clone() const {
 }
 
 void TimesGenerator::put(std::ostream& stream) const {
-	stream << toString(getIn1()) << "(in)" << " * " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
+	stream << print(getIn1()) << "(in)" << " * " << print(getIn2()) << "(in)" << " = " << print(getOutDom()) << "[" << print(getOutDom()) << "]"
 			<< "(out)";
 }
 
@@ -279,7 +279,7 @@ MinusGenerator* MinusGenerator::clone() const {
 }
 
 void MinusGenerator::put(std::ostream& stream) const {
-	stream << toString(getIn1()) << "(in)" << " - " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
+	stream << print(getIn1()) << "(in)" << " - " << print(getIn2()) << "(in)" << " = " << print(getOutDom()) << "[" << print(getOutDom()) << "]"
 			<< "(out)";
 }
 
@@ -297,7 +297,7 @@ PlusGenerator* PlusGenerator::clone() const {
 }
 
 void PlusGenerator::put(std::ostream& stream) const {
-	stream << toString(getIn1()) << "(in)" << " + " << toString(getIn2()) << "(in)" << " = " << toString(getOutDom()) << "[" << toString(getOutDom()) << "]"
+	stream << print(getIn1()) << "(in)" << " + " << print(getIn2()) << "(in)" << " = " << print(getOutDom()) << "[" << print(getOutDom()) << "]"
 			<< "(out)";
 }
 

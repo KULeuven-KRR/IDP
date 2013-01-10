@@ -140,11 +140,11 @@ struct ThreeValuedDomain {
 	std::ostream& put(std::ostream& stream) const{
 		stream << "ct:";
 		pushtab();
-		stream << nt() << toString(_ctdomain);
+		stream << nt() << print(_ctdomain);
 		poptab();
 		stream << nt() << "cf:";
 		pushtab();
-		stream << nt() << toString(_cfdomain);
+		stream << nt() << print(_cfdomain);
 		poptab();
 		return stream;
 	}

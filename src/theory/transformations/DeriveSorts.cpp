@@ -49,7 +49,7 @@ QuantSetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 }
 
 Term* DeriveSorts::visit(VarTerm* vt) {
-	//cerr <<"Visiting varterm " <<toString(vt) <<"\n";
+	//cerr <<"Visiting varterm " <<print(vt) <<"\n";
 	if (_underivable) {
 		_underivableVariables.insert(vt->var());
 		return vt;
@@ -61,7 +61,7 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 		} else {
 			newsort = SortUtils::resolve(vt->sort(), _assertsort);
 		}
-		//cerr <<"\tnewsort = " <<toString(newsort) <<"\n";
+		//cerr <<"\tnewsort = " <<print(newsort) <<"\n";
 		if (newsort == NULL) {
 			_underivableVariables.insert(vt->var());
 		} else if (vt->sort() != newsort) {
@@ -95,7 +95,7 @@ Term* DeriveSorts::visit(AggTerm* t) {
 }
 
 Term* DeriveSorts::visit(FuncTerm* term) {
-	//cerr << "Visiting " << toString(term) << "\n";
+	//cerr << "Visiting " << print(term) << "\n";
 	auto f = term->function();
 	if (not _useBuiltIns && f->builtin()) {
 		return term;
@@ -137,7 +137,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 }
 
 Formula* DeriveSorts::visit(PredForm* f) {
-	//cerr << "Visiting " << toString(f) << "\n";
+	//cerr << "Visiting " << print(f) << "\n";
 	auto p = f->symbol();
 	if (not _useBuiltIns && p->builtin()) {
 		return f;
@@ -183,7 +183,7 @@ Formula* DeriveSorts::visit(PredForm* f) {
 }
 
 Formula* DeriveSorts::visit(EqChainForm* formula) {
-	//cerr << "Visiting " << toString(formula) << "\n";
+	//cerr << "Visiting " << print(formula) << "\n";
 	if (_useBuiltIns) {
 		Sort* temp = NULL;
 		if (not _firstvisit) {
@@ -218,7 +218,7 @@ void DeriveSorts::derivefuncs() {
 			}
 			vs.push_back(NULL);
 
-			//clog <<"Disambiguating for " <<f->name() <<" with " <<toString(vs) <<"\n";
+			//clog <<"Disambiguating for " <<f->name() <<" with " <<print(vs) <<"\n";
 
 			auto rf = f->disambiguate(vs, _vocab);
 			if (rf != NULL) {

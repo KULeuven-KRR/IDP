@@ -59,9 +59,9 @@ const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) 
 	_result = NULL;
 	f->accept(this);
 	/*if (not needPossible(type)) {
-	 std::cerr << "INPUT" << toString(f) << endl;
+	 std::cerr << "INPUT" << print(f) << endl;
 	 std::cerr << (needPossible(type) ? "P" : "C") << (needFalse(type) ? "F" : "T") << endl;
-	 std::cerr << "OUTPUT" << toString(_result) << endl;
+	 std::cerr << "OUTPUT" << print(_result) << endl;
 	 }*/
 	return _result;
 }
@@ -232,17 +232,17 @@ ostream& GenerateBDDAccordingToBounds::put(ostream& output) const {
 		output << "vars:";
 		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
 			output << ' ';
-			output << toString(*jt);
+			output << print(*jt);
 		}
 		output << nt();
 		pushtab();
 		output << "ct:" << nt();
-		output << toString(_ctbounds.find(it->first)->second);
+		output << print(_ctbounds.find(it->first)->second);
 		poptab();
 		output << nt() << "cf:";
 		pushtab();
 		output << nt();
-		output << toString(_cfbounds.find(it->first)->second);
+		output << print(_cfbounds.find(it->first)->second);
 		poptab();
 		poptab();
 		output << nt();

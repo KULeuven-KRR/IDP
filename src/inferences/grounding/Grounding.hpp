@@ -195,8 +195,8 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			auto maxsize = _grounder->getFullGroundSize();
 			//cout <<"full|grounded|%|time\n";
-			//cout <<toString(maxsize) <<"|" <<toString(grounder->groundedAtoms()) <<"|";
-			std::clog << "Grounded " << toString(_grounder->groundedAtoms()) << " for a full grounding of " << toString(maxsize) << "\n";
+			//cout <<print(maxsize) <<"|" <<print(grounder->groundedAtoms()) <<"|";
+			std::clog << "Grounded " << print(_grounder->groundedAtoms()) << " for a full grounding of " << print(maxsize) << "\n";
 			if (maxsize._type == TableSizeType::TST_EXACT) {
 				//cout <<(double)grounder->groundedAtoms()/maxsize._size*100 <<"\\%";
 				std::clog << ">>> " << (double) (_grounder->groundedAtoms()) / maxsize._size * 100 << "% of the full grounding.\n";

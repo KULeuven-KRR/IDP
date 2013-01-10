@@ -59,6 +59,6 @@ void TrueQuantKernelGenerator::next() {
 }
  void TrueQuantKernelGenerator::put(std::ostream& stream)  const{
 	pushtab();
-	stream << "all true instances of: " << nt() << toString(_subBddTrueGenerator);
+	stream << "all true instances of: " << nt() << print(_subBddTrueGenerator);
 	poptab();
 }

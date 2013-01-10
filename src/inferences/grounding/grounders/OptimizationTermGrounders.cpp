@@ -36,7 +36,7 @@ GroundTranslator* OptimizationGrounder::getTranslator() const {
 }
 
 void OptimizationGrounder::printOrig() const {
-	clog << tabs() << "Grounding optimization over term " << toString(_origterm) << "\n";
+	clog << tabs() << "Grounding optimization over term " << print(_origterm) << "\n";
 }
 
 

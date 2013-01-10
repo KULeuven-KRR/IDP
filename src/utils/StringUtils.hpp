@@ -38,8 +38,7 @@ std::vector<std::string> split(const std::string &s, const std::string& delim);
  * Return a string representing a list of elements (not including last if printlast is false), delimited by delim and which are printed themselves by calling the provided function).
  */
 template<template<class, typename ...> class List, class Element, typename... Args, class FunctionFromElementToString>
-std::string listToString(const List<Element, Args...>& list, const std::string& delim, const FunctionFromElementToString& func, bool printlast = true) {
-	std::stringstream ss;
+void printList(std::ostream& stream, const List<Element, Args...>& list, const std::string& delim, const FunctionFromElementToString& func, bool printlast = true) {
 	auto begin = true;
 	typename List<Element, Args...>::size_type counter = 0;
 	for (auto s = list.cbegin(); s!=list.cend(); ++s) {
@@ -48,14 +47,13 @@ std::string listToString(const List<Element, Args...>& list, const std::string& 
 		}
 		counter++;
 		if (not begin) {
-			ss << delim;
+			stream << delim;
 		}
 		begin = false;
-		ss << func(*s);
+		func(stream, *s);
 	}
-	return ss.str();
 }
 template<template<class, typename ...> class List, class Element, typename... Args>
-std::string listToString(const List<Element, Args...>& list, const std::string& delim, bool printlast = true) {
-	return listToString(list, delim, [] (Element element) {return toString(element);}, printlast);
+void printList(std::ostream& stream, const List<Element, Args...>& list, const std::string& delim, bool printlast = true) {
+	printList(stream, list, delim, [] (std::ostream& output, Element element) { output <<print(element);}, printlast);
 }

@@ -209,7 +209,7 @@ ostream& EqChainForm::put(ostream& output) const {
 	output << '(';
 	subterms()[0]->put(output);
 	for (size_t n = 0; n < _comps.size(); ++n) {
-		output << ' ' << toString(comps()[n]) << ' ';
+		output << ' ' << print(comps()[n]) << ' ';
 		subterms()[n + 1]->put(output);
 		if (not _conj && n + 1 < _comps.size()) {
 			output << " | ";
@@ -383,7 +383,7 @@ ostream& AggForm::put(ostream& output) const {
 	}
 	output << '(';
 	getBound()->put(output);
-	output << ' ' << toString(_comp) << ' ';
+	output << ' ' << print(_comp) << ' ';
 	getAggTerm()->put(output);
 	output << ')';
 	return output;
@@ -646,13 +646,13 @@ std::ostream& Theory::put(std::ostream& output) const {
 	pushtab();
 	output << " {";
 	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		output << nt() << toString(*it);
+		output << nt() << print(*it);
 	}
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		output << nt() << toString(*it);
+		output << nt() << print(*it);
 	}
 	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		output << nt() << toString(*it);
+		output << nt() << print(*it);
 	}
 	poptab();
 	output << nt() << "}";

@@ -1489,7 +1489,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 		return bdd;
 	} else {
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-			clog << "For bdd \n" << toString(bdd) << "\n";
+			clog << "For bdd \n" << print(bdd) << "\n";
 		}
 		// Split variables
 		// * kernelvars and kernelindices are all vars and indices that appear in the kernel.
@@ -1596,11 +1596,11 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const set<const
 const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Making the following bdd more false: \n" << toString(bdd) << "\nResulted in :\n";
+		clog << "Making the following bdd more false: \n" << print(bdd) << "\nResulted in :\n";
 	}
 	auto result = makeMore(false, bdd, vars, indices, structure, weightPerAns);
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "\nResulted in :\n" << toString(result) << "\n";
+		clog << "\nResulted in :\n" << print(result) << "\n";
 	}
 	return result;
 }
@@ -1608,11 +1608,11 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const set<const FOBDD
 const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
 		const AbstractStructure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Making the following bdd more true: \n" << toString(bdd) << "\nResulted in :\n";
+		clog << "Making the following bdd more true: \n" << print(bdd) << "\nResulted in :\n";
 	}
 	auto result = makeMore(true, bdd, vars, indices, structure, weightPerAns);
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "\nResulted in :\n" << toString(result) << "\n";
+		clog << "\nResulted in :\n" << print(result) << "\n";
 	}
 	return result;
 }

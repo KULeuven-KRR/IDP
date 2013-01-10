@@ -52,10 +52,10 @@ void OneChildGenerator::internalSetVarsAgain() {
 }
 
 void OneChildGenerator::put(std::ostream& stream) const {
-	stream << "generate: " << toString(_generator) << nt();
+	stream << "generate: " << print(_generator) << nt();
 	stream << "then ";
 	pushtab();
-	stream << toString(_child);
+	stream << print(_child);
 	poptab();
 }
 
@@ -132,19 +132,19 @@ void TwoChildGenerator::internalSetVarsAgain() {
 void TwoChildGenerator::put(std::ostream& stream) const {
 	stream << "generate: ";
 	pushtab();
-	stream << toString(_generator);
+	stream << print(_generator);
 	poptab();
 	stream << nt() << "if result is in ";
 	pushtab();
-	stream << toString(_checker);
+	stream << print(_checker);
 	poptab();
 
 	stream << nt() << "THEN";
 	pushtab();
-	stream << nt() << toString(_truecheckbranch);
+	stream << nt() << print(_truecheckbranch);
 	poptab();
 	stream << nt() << "ELSE";
 	pushtab();
-	stream << nt() << toString(_falsecheckbranch);
+	stream << nt() << print(_falsecheckbranch);
 	poptab();
 }

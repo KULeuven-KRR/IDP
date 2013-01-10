@@ -11,9 +11,7 @@
 #include "common.hpp"
 #include "InstGenerator.hpp"
 
-template<>
-std::string toString(const Pattern& type){
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const Pattern& type){
 	switch (type) {
 	case Pattern::INPUT:
 		output << "in";
@@ -22,12 +20,13 @@ std::string toString(const Pattern& type){
 		output << "out";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
 void InstChecker::put(std::ostream& stream) const {
 	stream << "generate: " << typeid(*this).name();
 }
+PRINTTOSTREAMIMPL(Pattern)
 
 void InstGenerator::internalSetVarsAgain(){
 	std::stringstream ss;

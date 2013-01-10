@@ -119,7 +119,7 @@ public:
 	void visit(const SortTable* table) {
 		Assert(isTheoryOpen());
 		for (auto it = table->sortBegin(); not it.isAtEnd(); ++it) {
-			output() << _currentSymbol << "(" << toString(*it) << ").";
+			output() << _currentSymbol << "(" << print(*it) << ").";
 		}
 		output() << "\n";
 	}
@@ -142,7 +142,7 @@ public:
 							output() << ',';
 						}
 						begintuple = false;
-						output() << toString(*lt);
+						output() << print(*lt);
 					}
 					output() << ").";
 				}

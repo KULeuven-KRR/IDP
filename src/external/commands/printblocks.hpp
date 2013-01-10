@@ -18,7 +18,7 @@
 #include "options.hpp"
 
 template<class Object>
-std::string print(Object o) {
+std::string printToString(Object o) {
 	std::stringstream stream;
 	auto printer = Printer::create<std::stringstream>(stream);
 	printer->startTheory();
@@ -38,6 +38,6 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto a = this-> template get<0>(args);
-		return InternalArgument(StringPointer(print(a)));
+		return InternalArgument(StringPointer(printToString(a)));
 	}
 };

@@ -351,7 +351,7 @@ bool GroundTranslator::canBeDelayedOn(PFSymbol* pfs, Context, DefId) const {
 
 void GroundTranslator::notifyDelay(PFSymbol*, DelayGrounder* const) {
 	//Assert(grounder!=NULL);
-	//clog <<"Notified that symbol " <<toString(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
+	//clog <<"Notified that symbol " <<print(pfs) <<" is defined on id " <<grounder->getID() <<".\n";
 	throw notyetimplemented("Notifying of delays");
 	/*	auto symbolID = addSymbol(pfs);
 	 Assert(not symbolID.functionlist);
@@ -545,14 +545,14 @@ string GroundTranslator::printTerm(const VarId& varid) const {
 	}
 	auto func = getFunction(varid);
 	stringstream s;
-	s << toString(func);
+	s << print(func);
 	if (not getArgs(varid).empty()) {
 		s << "(";
 		for (auto gtit = getArgs(varid).cbegin(); gtit != getArgs(varid).cend(); ++gtit) {
 			if ((*gtit).isVariable) {
 				s << printTerm((*gtit)._varid);
 			} else {
-				s << toString((*gtit)._domelement);
+				s << print((*gtit)._domelement);
 			}
 			if (gtit != getArgs(varid).cend() - 1) {
 				s << ",";
@@ -563,10 +563,9 @@ string GroundTranslator::printTerm(const VarId& varid) const {
 	return s.str();
 }
 
-string GroundTranslator::print(Lit lit) {
+string GroundTranslator::printL(Lit lit) {
 	return printLit(lit);
 }
-
 string GroundTranslator::printLit(const Lit& lit) const {
 	stringstream s;
 	Lit nr = lit;
@@ -587,7 +586,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 	switch (atomtype[nr]) {
 	case AtomType::INPUT: {
 		PFSymbol* pfs = getSymbol(nr);
-		s << toString(pfs);
+		s << print(pfs);
 		auto tuples = getArgs(nr);
 		if (not tuples.empty()) {
 			s << "(";
@@ -597,7 +596,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 					s << ", ";
 				}
 				begin = false;
-				s << toString(*i);
+				s << print(*i);
 			}
 			s << ")";
 		}

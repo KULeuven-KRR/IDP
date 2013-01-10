@@ -48,7 +48,7 @@ void FOBDDAggKernel::accept(FOBDDVisitor* v) const {
 }
 
 std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
-	output << toString(_symbol);
+	output << print(_symbol);
 	if (_type == AtomKernelType::AKT_CF) {
 		output << "<cf>";
 	} else if (_type == AtomKernelType::AKT_CT) {
@@ -58,10 +58,10 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 		Assert(_args.size()==_symbol->nrSorts());
 		if (_symbol->nrSorts() > 0) {
 			output << "(";
-			output << toString(args(0));
+			output << print(args(0));
 			for (size_t n = 1; n < _symbol->nrSorts(); ++n) {
 				output << ",";
-				output << toString(args(n));
+				output << print(args(n));
 			}
 			output << ")";
 		}
@@ -69,29 +69,29 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 		Assert(isa<Function>(*_symbol));
 		if (_symbol->nrSorts() > 1) {
 			output << "(";
-			output << toString(args(0));
+			output << print(args(0));
 			for (size_t n = 1; n < _symbol->nrSorts() - 1; ++n) {
 				output << ",";
-				output << toString(args(n));
+				output << print(args(n));
 			}
 			output << ")";
 		}
 		output << " = ";
-		output << toString(args(_symbol->nrSorts() - 1));
+		output << print(args(_symbol->nrSorts() - 1));
 	}
 	return output;
 }
 std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
-	output << "EXISTS(" << toString(_sort) << ") {";
+	output << "EXISTS(" << print(_sort) << ") {";
 	pushtab();
-	output << "" << nt() << toString(_bdd);
+	output << "" << nt() << print(_bdd);
 	poptab();
 	output << "" << nt();
 	output << "}";
 	return output;
 }
 std::ostream& FOBDDAggKernel::put(std::ostream& output) const {
-	output << toString(_left) << " " << toString(_comp) << " " << toString(_right);
+	output << print(_left) << " " << print(_comp) << " " << print(_right);
 	return output;
 }
 

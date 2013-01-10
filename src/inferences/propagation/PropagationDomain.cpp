@@ -38,7 +38,7 @@ bool FOPropBDDDomain::isValidFor(const Formula* f, FOBDDManager* manager) const 
 }
 
 void FOPropBDDDomain::put(std::ostream& stream) const{
-	stream << toString(_bdd);
+	stream << print(_bdd);
 }
 
 

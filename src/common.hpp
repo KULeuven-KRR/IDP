@@ -43,13 +43,27 @@ std::string getPathOfLuaInternals();
 std::string getPathOfIdpInternals();
 std::string getPathOfConfigFile();
 
+/*
+    *** Printing stuff ***
+
+    Refactored the toString method for efficiency:
+    a print method returning a ToStream object
+    a templated method operator<<(stream, ToStream<T>)
+    with a default implementation using a put for objects and pointers (except when they are fundamental, then writing them directly).
+    which can be overridden for specialized behavior without a put method.
+
+    Advantages: no intermediate string construction + more logical naming
+
+    a toString method is still available which does generate the string first but so should be used only when the string itself is important!
+*/
+
 template<bool isPointer, bool isFundamental, typename Type, typename Stream>
 struct PutInStream {
 	void operator()(const Type& object, Stream& ss) {
 		if (object == NULL) {
 			ss << "NULL";
 		} else {
-			ss << toString(*object);
+			ss << print(*object);
 		}
 	}
 };
@@ -69,161 +83,171 @@ struct PutInStream<false, true, Type, Stream> {
 };
 
 template<typename Type>
-std::string printObject(const Type& object) {
-	std::stringstream ss;
-	PutInStream<Loki::TypeTraits<Type>::isPointer, Loki::TypeTraits<Type>::isFundamental, Type, std::stringstream>()(object, ss);
-	return ss.str();
+std::ostream& print(std::ostream& output, const Type& object) {
+	PutInStream<Loki::TypeTraits<Type>::isPointer, Loki::TypeTraits<Type>::isFundamental, Type, std::ostream>()(object, output);
+	return output;
 }
 
-template<class ... Args>
-std::string toString(const Args&... args) {
-	std::stringstream ss;
-	auto list = { printObject(args)... };
-	for(auto l:list){
-		ss <<l;
+template<class T>
+class ToStream{
+public:
+	const T& object;
+
+	ToStream(const T& object): object(object){
+
 	}
+
+	template<class T2> friend std::ostream& operator<<(std::ostream& stream, const ToStream<T2>& obj);
+};
+
+template<class T>
+ToStream<const T&> print(const T& object){
+	return ToStream<const T&>(object);
+}
+
+template<class T>
+std::ostream& operator<<(std::ostream& stream, const ToStream<T>& object){
+	return print(stream, object.object);
+}
+
+template<class T>
+std::string toString(const T& object){
+	std::stringstream ss;
+	auto o = print(object);
+	ss << o;
 	return ss.str();
 }
 
-template<typename Type>
-std::string toString(const std::vector<Type>& v) {
-	std::stringstream ss;
-	ss << "(";
+template<class Head, class Head2, class ... Args>
+std::ostream& print(std::ostream& output, const Head& head, const Head2& head2, const Args&... args) {
+	print(output, head);
+	print(output, head2);
+	print(output, args...);
+	return output;
+}
+#define PRINTTOSTREAM(x) template<>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x&>& o);
+#define PRINTTOSTREAMIMPL(x) template<>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x&>& o) {\
+		return output <<o.object;\
+	}
+
+#define TEMPLPRINTTOSTREAM(x) template<class... Type>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x<Type...>&>& o) {\
+		return output <<o.object;\
+	}
+
+template<class Type>
+std::ostream& operator<<(std::ostream& output, const std::vector<Type>& v) {
+	output << "(";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
-		ss << toString(*obj);
+		output << print(*obj);
 		++obj;
 		if (obj != v.cend()) {
-			ss << ", ";
+			output << ", ";
 		}
 	}
-	ss << ")";
-	return ss.str();
+	output << ")";
+	return output;
 }
+TEMPLPRINTTOSTREAM(std::vector)
 
-template<typename Type>
-std::string toString(const std::shared_ptr<Type>& v) {
+template<class Type>
+std::ostream& operator<<(std::ostream& output, const std::shared_ptr<Type>& v) {
 	if(v.get()==NULL){
 		return "empty pointer";
 	}
 	return toString(*v);
 }
+TEMPLPRINTTOSTREAM(std::shared_ptr)
 
-template<typename Type, class Type2>
-std::string toString(const std::pair<Type, Type2>& v) {
-	std::stringstream ss;
-	ss << "(" <<toString(v.first) <<", " <<toString(v.second) <<")";
-	return ss.str();
+template<class... Type>
+std::ostream& operator<<(std::ostream& output, const std::pair<Type...>&v) {
+	output << "(" <<print(v.first) <<", " <<print(v.second) <<")";
+	return output;
 }
+TEMPLPRINTTOSTREAM(std::pair)
 
-template<>
-std::string toString(const std::string& type);
-template<>
-std::string toString(const char& type);
-std::string toString(const char* type);
-template<typename Type>
-std::string toString(const std::set<Type>& v) {
-	std::stringstream ss;
-	ss << "{";
+PRINTTOSTREAM(std::string)
+PRINTTOSTREAM(char)
+PRINTTOSTREAM(char*)
+
+template<typename... Type>
+std::ostream& operator<<(std::ostream& output, const std::set<Type...>& v) {
+	output << "{";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
-		ss << toString(*obj);
+		output << print(*obj);
 		++obj;
 		if (obj != v.cend()) {
-			ss << ", ";
+			output << ", ";
 		}
 	}
-	ss << "}";
-	return ss.str();
+	output << "}";
+	return output;
 }
 
-template<typename Type, typename CompareType>
-std::string toString(const std::set<Type, CompareType>& v) {
-	std::stringstream ss;
-	ss << "{";
+TEMPLPRINTTOSTREAM(std::set)
+
+template<typename... Type>
+std::ostream& operator<<(std::ostream& output, const std::list<Type...>& v) {
+	output << "{";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
-		ss << toString(*obj);
+		output << print(*obj);
 		++obj;
 		if (obj != v.cend()) {
-			ss << ", ";
+			output << ", ";
 		}
 	}
-	ss << "}";
-	return ss.str();
+	output << "}";
+	return output;
 }
 
-template<typename Type>
-std::string toString(const std::list<Type>& v) {
-	std::stringstream ss;
-	ss << "{";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
-		ss << toString(*obj);
-		++obj;
-		if (obj != v.cend()) {
-			ss << ", ";
-		}
-	}
-	ss << "}";
-	return ss.str();
-}
+TEMPLPRINTTOSTREAM(std::list)
 
 template<typename Map>
-std::string printMap(const Map& map){
-	std::stringstream ss;
-	ss << "(";
+std::ostream& printMap(std::ostream& output, const Map& map){
+	output << "(";
 	for (auto obj = map.cbegin(); obj != map.cend();) {
-		ss << toString((*obj).first);
-		ss << "->";
-		ss << toString((*obj).second);
+		output << print((*obj).first);
+		output << "->";
+		output << print((*obj).second);
 		++obj;
 		if (obj != map.cend()) {
-			ss << "; ";
+			output << "; ";
 		}
 	}
-	ss << ")";
-	return ss.str();
+	output << ")";
+	return output;
 }
 
-template<typename Type1, typename Type2>
-std::string toString(const std::map<Type1, Type2>& map) {
-	return printMap(map);
+template<typename... Type>
+std::ostream& operator<<(std::ostream& output, const std::map<Type...>& map) {
+	return printMap(output, map);
 }
-template<typename Type1, typename Type2, typename Type3> //to allow for a "compare" in the maps
-std::string toString(const std::map<Type1, Type2, Type3>& map) {
-	return printMap(map);
+template<typename... Type>
+std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type...>& map) {
+	return printMap(output, map);
 }
-template<typename Type1, typename Type2>
-std::string toString(const std::unordered_map<Type1, Type2>& map) {
-	return printMap(map);
-}
-template<typename Type1, typename Type2, typename Type3>
-std::string toString(const std::unordered_map<Type1, Type2, Type3>& map) {
-	return printMap(map);
-}
+TEMPLPRINTTOSTREAM(std::map)
+TEMPLPRINTTOSTREAM(std::unordered_map)
 
-template<>
-std::string toString(const CompType& type);
-template<>
-std::string toString(const TruthType& type);
-template<>
-std::string toString(const TsType& type);
-template<>
-std::string toString(const AggFunction& type);
-template<>
-std::string toString(const TruthValue& type);
-
-
-template<class Arg1, class Arg2, class ... Args>
-std::string toString(Arg1& a, Arg2& b, const Args&... args) {
-	std::stringstream ss;
-	ss << toString(a) << toString(b, args...);
-	return ss.str();
-}
+std::ostream& operator<<(std::ostream& output, const CompType& type);
+std::ostream& operator<<(std::ostream& output, const TruthType& type);
+std::ostream& operator<<(std::ostream& output, const TsType& type);
+std::ostream& operator<<(std::ostream& output, const AggFunction& type);
+std::ostream& operator<<(std::ostream& output, const TruthValue& type);
+PRINTTOSTREAM(CompType)
+PRINTTOSTREAM(TruthType)
+PRINTTOSTREAM(TsType)
+PRINTTOSTREAM(AggFunction)
+PRINTTOSTREAM(TruthValue)
 
 /*#if __GNUC__ < 4 || \
               (__GNUC__ == 4 && __GNUC_MINOR__ < 6)
 
  template<typename Stream>
  Stream& operator<<(Stream& out, CompType ct) {
- out << toString(ct);
+ out << print(ct);
  return out;
  }
  #endif*/

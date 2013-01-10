@@ -44,7 +44,9 @@ private:
 
 	std::string printProcedure(const std::string& name, const std::vector<std::string>& args, const std::string& description) const {
 		std::stringstream sstr;
-		sstr << name << '(' << listToString(args, ",") << ")\n";
+		sstr << name << '(';
+		printList(sstr, args, ",");
+		sstr << ")\n";
 		auto tempdesc = replaceAllAndTrimEachLine(description, "\n", "\n\t\t\t");
 		sstr << "\t\t\t" << tempdesc;
 		return sstr.str();

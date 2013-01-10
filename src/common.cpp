@@ -280,26 +280,16 @@ bool isConj(SIGN sign, bool conj) {
 	return (sign == SIGN::POS && conj) || (sign == SIGN::NEG && ~conj);
 }
 
-template<>
-std::string toString(const std::string& s) {
-	return s;
-}
+PRINTTOSTREAMIMPL(std::string)
+PRINTTOSTREAMIMPL(char)
+PRINTTOSTREAMIMPL(char*)
+PRINTTOSTREAMIMPL(CompType)
+PRINTTOSTREAMIMPL(TruthType)
+PRINTTOSTREAMIMPL(TsType)
+PRINTTOSTREAMIMPL(AggFunction)
+PRINTTOSTREAMIMPL(TruthValue)
 
-template<>
-std::string toString(const char& s) {
-	stringstream ss;
-	ss << s;
-	return ss.str();
-}
-std::string toString(const char* s) {
-	stringstream ss;
-	ss << s;
-	return ss.str();
-}
-
-template<>
-std::string toString(const CompType& type) {
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const CompType& type) {
 	switch (type) {
 	case CompType::EQ:
 		output << " = ";
@@ -320,12 +310,10 @@ std::string toString(const CompType& type) {
 		output << " >= ";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
-template<>
-std::string toString(const TruthType& type){
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const TruthType& type){
 	switch (type) {
 	case TruthType::CERTAIN_FALSE:
 		output << " cf ";
@@ -340,12 +328,10 @@ std::string toString(const TruthType& type){
 		output << " pt ";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
-template<>
-std::string toString(const TruthValue& type){
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const TruthValue& type){
 	switch (type) {
 	case TruthValue::True:
 		output << "true";
@@ -357,12 +343,10 @@ std::string toString(const TruthValue& type){
 		output << "unknown";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
-template<>
-std::string toString(const TsType& type) {
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const TsType& type) {
 	switch (type) {
 	case TsType::RIMPL:
 		output << " <= ";
@@ -377,12 +361,10 @@ std::string toString(const TsType& type) {
 		output << " <=> ";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
-template<>
-std::string toString(const AggFunction& type) {
-	std::stringstream output;
+std::ostream& operator<<(std::ostream& output, const AggFunction& type) {
 	switch (type) {
 	case AggFunction::CARD:
 		output << "card";
@@ -400,7 +382,7 @@ std::string toString(const AggFunction& type) {
 		output << "min";
 		break;
 	}
-	return output.str();
+	return output;
 }
 
 /*********************
@@ -492,43 +474,4 @@ CompType negateComp(CompType comp) {
 		break;
 	}
 	return result;
-}
-
-ostream& operator<<(ostream& out, AggFunction aggtype) {
-	switch (aggtype) {
-	case AggFunction::CARD:
-		out << "#";
-		break;
-	case AggFunction::PROD:
-		out << "prod";
-		break;
-	case AggFunction::SUM:
-		out << "sum";
-		break;
-	case AggFunction::MIN:
-		out << "min";
-		break;
-	case AggFunction::MAX:
-		out << "max";
-		break;
-	}
-	return out;
-}
-
-ostream& operator<<(ostream& out, TsType tstype) {
-	switch (tstype) {
-	case TsType::RULE:
-		out << "<-";
-		break;
-	case TsType::IMPL:
-		out << "=>";
-		break;
-	case TsType::RIMPL:
-		out << "<=";
-		break;
-	case TsType::EQ:
-		out << "<=>";
-		break;
-	}
-	return out;
 }

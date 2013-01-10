@@ -187,7 +187,7 @@ tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
 ostream& EnumSetExpr::put(ostream& output) const {
 	output << "[ ";
 	for (auto i = getSets().cbegin(); i < getSets().cend(); ++i) {
-		output << toString(*i) << " ";
+		output << print(*i) << " ";
 	}
 	output << "]";
 	return output;
@@ -243,10 +243,10 @@ ostream& QuantSetExpr::put(ostream& output) const {
 	output << "{";
 //	if (not quantVars().empty()) { // TODO when syntax changes
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
-		output << ' ' << toString(*it);
+		output << ' ' << print(*it);
 	}
 	output << " :";
 //	}
-	output << " " << toString(getCondition()) << " : " << toString(getTerm()) << " }";
+	output << " " << print(getCondition()) << " : " << print(getTerm()) << " }";
 	return output;
 }

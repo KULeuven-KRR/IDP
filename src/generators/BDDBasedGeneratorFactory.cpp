@@ -44,17 +44,18 @@
 
 using namespace std;
 
-template<>
-std::string toString(const BRANCH& type) {
+std::ostream& operator<<(std::ostream& output, const BRANCH& type) {
 	switch (type) {
 	case BRANCH::FALSEBRANCH:
-		return "false branch";
+		output <<"false branch";
+		break;
 	case BRANCH::TRUEBRANCH:
-		return "true branch";
+		output << "true branch";
+		break;
 	}
-	Assert(false);
-	return "";
+	return output;
 }
+PRINTTOSTREAMIMPL(BRANCH)
 
 /*
  * Tries to rewrite the given predform with var in the right hand side. Or -var in the righthandside (depending on bool invert)
@@ -165,7 +166,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 	}
 
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Generating for\n" << toString(data.bdd) << "\n";
+		clog << "Generating for\n" << print(data.bdd) << "\n";
 	}
 
 	// Otherwise: recursive case
@@ -327,7 +328,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
  */
 PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const AbstractStructure* structure) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
-		clog << "Trying to solve: " << toString(atom) << "\n";
+		clog << "Trying to solve: " << print(atom) << "\n";
 	}
 	PredForm* result = atom;
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
@@ -388,7 +389,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 		}
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
-		clog << "Result: "; clog << toString(result) << "\n";
+		clog << "Result: "; clog << print(result) << "\n";
 	}
 	return result;
 }
@@ -666,7 +667,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 3) {
-		clog << "BDDGeneratorFactory visiting: " << toString(newatom) << "\n";
+		clog << "BDDGeneratorFactory visiting: " << print(newatom) << "\n";
 	}
 	if (is(newatom->symbol(), STDPRED::EQ)) {
 		if (FormulaUtils::containsFuncTermsOutsideOfSets(newatom)) {
@@ -764,7 +765,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fobddvars, universe));
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Creating generator for kernel " << toString(kernel) << "\n";
+		clog << "Creating generator for kernel " << print(kernel) << "\n";
 	}
 	if (isa<FOBDDAggKernel>(*kernel)) {
 		return createFromAggKernel(dynamic_cast<const FOBDDAggKernel*>(kernel), pattern, vars, fobddvars, structure, branchToGenerate, universe);
@@ -779,7 +780,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 		auto gen = createFromFormula(formula, pattern, vars, atomvars, structure, branchToGenerate, universe);
 		formula->recursiveDelete();
 		if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 2) {
-			clog << "Created kernel generator: " << toString(gen) << "\n";
+			clog << "Created kernel generator: " << print(gen) << "\n";
 		}
 		return gen;
 	}
@@ -885,7 +886,7 @@ InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<P
 	Assert(checkInput(pattern, vars, fovars, universe));
 
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Creating from " << toString(f) << " on pattern " << toString(pattern) << " for branch " << toString(branchToGenerate) << "\n";
+		clog << "Creating from " << print(f) << " on pattern " << print(pattern) << " for branch " << print(branchToGenerate) << "\n";
 	}
 
 	if (isa<PredForm>(*f)) {

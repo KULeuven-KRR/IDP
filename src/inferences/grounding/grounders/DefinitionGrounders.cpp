@@ -40,7 +40,7 @@ DefinitionGrounder::~DefinitionGrounder() {
 
 void DefinitionGrounder::run(ConjOrDisj& formula) const {
 	if(verbosity()>2){
-		clog <<"Grounding definition " <<toString(this) <<"\n";
+		clog <<"Grounding definition " <<print(this) <<"\n";
 	}
 
 	auto grounddefinition = new GroundDefinition(id(), getTranslator());
@@ -82,8 +82,8 @@ RuleGrounder::RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder*
 	Assert(_bodygenerator!=NULL);
 }
 
-void RuleGrounder::put(std::stringstream& stream) const {
-	stream << toString(_origrule);
+std::ostream& RuleGrounder::put(std::ostream& stream) const {
+	return stream << print(_origrule);
 }
 
 tablesize RuleGrounder::getMaxGroundSize() const {
@@ -115,7 +115,7 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 	Assert(defid == grounddefinition->id());
 
 	if (verbosity() > 2) {
-		clog <<"Grounding rule " <<toString(this) <<"\n";
+		clog <<"Grounding rule " <<print(this) <<"\n";
 	}
 
 	Assert(bodygenerator()!=NULL);
@@ -138,7 +138,7 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 			Lit head = headgrounder()->run();
 			if (verbosity() > 2) {
 				auto trans = headgrounder()->grounding()->translator();
-				clog <<"Generated head " <<toString(trans->getSymbol(head)) <<toString(trans->getArgs(head)) <<"\n";
+				clog <<"Generated head " <<print(trans->getSymbol(head)) <<print(trans->getArgs(head)) <<"\n";
 			}
 			Assert(head != _true);
 			if (head != _false) {

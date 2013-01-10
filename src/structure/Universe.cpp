@@ -87,7 +87,7 @@ tablesize Universe::size() const {
 	return tablesize(tst, currsize);
 }
 void Universe::put(std::ostream& stream) const {
-	stream << "UNIVERSE:" << toString(_tables) << "\n";
+	stream << "UNIVERSE:" << print(_tables) << "\n";
 }
 
 bool Universe::contains(const ElementTuple& tuple) const {

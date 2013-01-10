@@ -175,7 +175,7 @@ bool operator>= ( const Num& lhs, const tablesize& rhs){
 
 
 template<>
-std::string toString(const tablesize& obj);
+std::ostream& print(std::ostream& stream, const tablesize& obj);
 
 bool isFinite(const tablesize& tsize);
 

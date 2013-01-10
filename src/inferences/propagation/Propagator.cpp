@@ -66,13 +66,13 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << "  Propagate ";
 			if (_direction == DOWN) {
-				clog << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ") <<toString(parent);
+				clog << "downward from " << (_ct ? "the ct-bound of " : "the cf-bound of ") <<print(parent);
 				if (_child) {
 					clog << " to ";
 					_child->put(clog);
 				}
 			} else {
-				clog << "upward to " << ((_ct == isPos(parent->sign())) ? "the ct-bound of " : "the cf-bound of ") <<toString(parent);
+				clog << "upward to " << ((_ct == isPos(parent->sign())) ? "the ct-bound of " : "the cf-bound of ") <<print(parent);
 				if (_child) {
 					clog << " from ";
 					_child->put(clog);
@@ -104,9 +104,9 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			continue;
 		}
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
-			clog << "**   Applying propagation for " << toString(symbol);
+			clog << "**   Applying propagation for " << print(symbol);
 			pushtab();
-			clog << nt() << "Old interpretation was" << toString(newinter) << "\n";
+			clog << nt() << "Old interpretation was" << print(newinter) << "\n";
 		}
 
 		vector<Variable*> vv;
@@ -126,13 +126,13 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 				clog << nt() << "CT: ";
 				BDDInternalPredTable* cttable = dynamic_cast<BDDInternalPredTable*>(bddinter->ct()->internTable());
 				auto ctbdd = cttable->bdd();
-				clog << nt() << toString(ctbdd);
+				clog << nt() << print(ctbdd);
 				clog << nt() << "CF: ";
 				BDDInternalPredTable* cftable = dynamic_cast<BDDInternalPredTable*>(bddinter->cf()->internTable());
 				auto cfbdd = cftable->bdd();
-				clog << nt() << toString(cfbdd);
+				clog << nt() << print(cfbdd);
 			}
-			clog << nt() << "Derived symbols: " << toString(bddinter) << "\n";
+			clog << nt() << "Derived symbols: " << print(bddinter) << "\n";
 		}
 		if (newinter->ct()->empty() && newinter->cf()->empty()) {
 			bddinter->materialize();
@@ -151,7 +151,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			}
 		}
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
-			clog << nt() << "Result: " << toString(structure->inter(symbol));
+			clog << nt() << "Result: " << print(structure->inter(symbol));
 			poptab();
 			clog << nt() << "**" << "\n";
 		}

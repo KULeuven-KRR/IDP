@@ -169,6 +169,10 @@ PredTable* TableUtils::createFullPredTable(const Universe& universe) {
  Domain elements
  **********************/
 
+ostream& operator<<(ostream& out, const DomainElement& domelem) {
+	return out <<print(domelem);
+}
+
 ostream& operator<<(ostream& out, const DomainElementType& domeltype) {
 	string DomElTypeStrings[4] = { "int", "double", "string", "compound" };
 	return out << DomElTypeStrings[domeltype];
@@ -235,10 +239,6 @@ void DomElemContainer::deleteAllContainers() {
 		}
 	}
 	containers.clear();
-}
-
-ostream& operator<<(ostream& output, const DomainElement& d) {
-	return d.put(output);
 }
 
 ostream& operator<<(ostream& output, const ElementTuple& tuple) {
@@ -336,16 +336,6 @@ ostream& Compound::put(ostream& output) const {
 	return output;
 }
 
-string Compound::toString() const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
-}
-
-ostream& operator<<(ostream& output, const Compound& c) {
-	return c.put(output);
-}
-
 /**
  * \brief Comparison of two compound domain element values
  */
@@ -406,12 +396,6 @@ ostream& DomainAtom::put(ostream& output) const {
 		}
 	}
 	return output;
-}
-
-string DomainAtom::toString() const {
-	stringstream sstr;
-	put(sstr);
-	return sstr.str();
 }
 
 bool isFinite(const tablesize& tsize) {
@@ -2742,7 +2726,7 @@ void EnumeratedInternalFuncTable::put(std::ostream& stream) const {
 		if (i != 0) {
 			stream << ", ";
 		}
-		stream << toString(it->first) << "->" << (toString(it->second));
+		stream << print(it->first) << "->" << (print(it->second));
 	}
 	if (_table.size() > i) {
 		stream << ",...";
@@ -2909,16 +2893,16 @@ void PredTable::put(std::ostream& stream) const {
 }
 
 void FuncTable::put(std::ostream& stream) const {
-	stream << toString(_table);
+	stream << print(_table);
 }
 
 void SortTable::put(std::ostream& stream) const {
 	if (empty()) {
-		stream << toString(_table) << " is empty";
+		stream << print(_table) << " is empty";
 	} else {
-		stream << toString(_table) << "[" << toString(first()) << ", ";
+		stream << print(_table) << "[" << print(first()) << ", ";
 		if(finite()){
-			stream << toString(last());
+			stream << print(last());
 		}else{
 			stream << "...";
 		}
@@ -3602,7 +3586,7 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 	for (; table < universe().tables().cend(); ++table, ++elem) {
 		if (not (*table)->contains(*elem)) {
 			stringstream ss;
-			ss << "Element " << toString(*elem) << " is not part of table " << toString(*table) << ", but you are trying to assign it to such a table";
+			ss << "Element " << print(*elem) << " is not part of table " << print(*table) << ", but you are trying to assign it to such a table";
 			throw IdpException(ss.str());
 		}
 	}
@@ -3755,10 +3739,10 @@ void PredInter::put(std::ostream& stream) const {
 }
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) {
-	stream << "Certainly true: " << toString(interpretation.ct()) << "\n";
-	stream << "Certainly false: " << toString(interpretation.cf()) << "\n";
-	stream << "Possibly true: " << toString(interpretation.pt()) << "\n";
-	stream << "Possibly false: " << toString(interpretation.pf()) << "\n";
+	stream << "Certainly true: " << print(interpretation.ct()) << "\n";
+	stream << "Certainly false: " << print(interpretation.cf()) << "\n";
+	stream << "Possibly true: " << print(interpretation.pt()) << "\n";
+	stream << "Possibly false: " << print(interpretation.pf()) << "\n";
 	return stream;
 }
 

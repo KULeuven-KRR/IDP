@@ -144,7 +144,7 @@ PCSolver* createsolver(int nbmodels) {
 }
 
 void setTranslator(PCSolver* solver, GroundTranslator* translator) {
-	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::print));
+	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::printL));
 	solver->setTranslator(trans);
 	// FIXME trans is not deleted anywhere
 }
@@ -178,7 +178,7 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Ab
 			}
 #ifndef NDEBUG
 			if (not init->isConsistent()) {
-				std::cerr << "mx made " << toString(symbol) << " inconsistent when adding the element " << toString(args) << endl;
+				std::cerr << "mx made " << print(symbol) << " inconsistent when adding the element " << print(args) << endl;
 			}
 			Assert(init->isConsistent());
 #endif
@@ -222,7 +222,7 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Abstr
 			}
 		}
 		tuple.push_back(createDomElem(cpvar->value));
-		//	cerr <<"Adding tuple " <<toString(tuple) <<" to " <<toString(getFunction) <<"\n";
+		//	cerr <<"Adding tuple " <<print(tuple) <<" to " <<print(getFunction) <<"\n";
 		init->inter(function)->graphInter()->makeTrue(tuple);
 	}
 }

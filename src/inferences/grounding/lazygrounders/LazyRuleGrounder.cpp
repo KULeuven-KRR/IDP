@@ -19,7 +19,7 @@ using namespace std;
 LazyRuleGrounder::LazyRuleGrounder(const Rule* rule, const vector<Term*>& headterms, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct)
 		: RuleGrounder(rule, hgr, bgr, big, ct), DelayGrounder(rule->head()->symbol(), headterms, Context::BOTH, ct.getCurrentDefID(), hgr->grounding()), grounded(0) {
 	if(verbosity()>1){
-		clog <<"Lazily grounding " <<toString(rule) <<" by unknown-delay of the head.\n";
+		clog <<"Lazily grounding " <<print(rule) <<" by unknown-delay of the head.\n";
 	}
 }
 
@@ -32,7 +32,7 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 			auto result = grounder->run(); // TODO running the grounder each time again?
 			Assert(not result.isVariable);
 			if(headargs[i]!=result._domelement){
-				//clog <<"Head of rule " <<toString(this) <<" not unifiable with " <<toString(headargs) <<"\n";
+				//clog <<"Head of rule " <<print(this) <<" not unifiable with " <<print(headargs) <<"\n";
 				return Substitutable::NO_UNIFIER;
 			}
 		}else{
@@ -40,7 +40,7 @@ LazyRuleGrounder::Substitutable LazyRuleGrounder::createInst(const ElementTuple&
 			domlist.push_back(dominst { var, headargs[i] });
 		}
 	}
-	//clog <<"Head of rule " <<toString(this) <<" unifies with " <<toString(headargs) <<"\n";
+	//clog <<"Head of rule " <<print(this) <<" unifies with " <<print(headargs) <<"\n";
 	return Substitutable::UNIFIABLE;
 }
 

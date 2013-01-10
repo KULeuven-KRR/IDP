@@ -30,7 +30,7 @@ Query::Query(std::string name, const std::vector<Variable*>& vars, Formula* q, c
 	for(auto freevar: q->freeVars()){
 		if(not contains(queriedvars, freevar)){
 			stringstream ss;
-			ss <<"The query {" <<toString(vars) <<" : " <<toString(q) <<"} contains the completely free variable " <<toString(freevar) <<" which is not allowed.\n";
+			ss <<"The query {" <<print(vars) <<" : " <<print(q) <<"} contains the completely free variable " <<print(freevar) <<" which is not allowed.\n";
 			throw IdpException(ss.str());
 		}
 	}
