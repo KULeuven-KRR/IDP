@@ -37,4 +37,5 @@ bool isTwoValued(const Term* t, const AbstractStructure* structure) {
 	case TermType::DOM:
 		return true;
 	}
+	throw IdpException("Invalid code path");
 }

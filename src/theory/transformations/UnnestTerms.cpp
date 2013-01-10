@@ -183,8 +183,9 @@ Rule* UnnestTerms::visit(Rule* rule) {
 // Visit body
 /*	_context = Context::NEGATIVE;
 	setAllowedToUnnest(false);
-	rule->body(rule->body()->accept(this));
-	setAllowedToUnnest(saveallowed);*/
+	rule->body(rule->body()->accept(this));*/
+
+	setAllowedToUnnest(saveallowed);
 	return rule;
 }
 

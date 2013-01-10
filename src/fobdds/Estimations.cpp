@@ -383,7 +383,7 @@ double BddStatistics::estimateCostAll(bool sign, const FOBDDKernel* kernel, cons
 				newindices = ind;
 			}
 
-			auto extra = tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
+			d += tabledEstimateCostAll((*quantset)->subformula(), newvars, newindices);
 			if (d >= maxdouble) {
 				break;
 			}
