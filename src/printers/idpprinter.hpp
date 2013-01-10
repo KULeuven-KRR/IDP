@@ -69,13 +69,11 @@ public:
 		ss << o->nameNoArity();
 		if (o->sorts().size() > 0) {
 			ss << "[";
-			ss << listToString(o->sorts(), ",", false);
+			ss << listToString(o->sorts(), ",", not o->isFunction());
 			if (o->isFunction()) {
 				ss << ":";
-			} else if (not o->sorts().empty()) {
-				ss << ",";
+				ss << toString(*o->sorts().back());
 			}
-			ss << toString(*o->sorts().back());
 			ss << "]";
 		}
 		return ss.str();
