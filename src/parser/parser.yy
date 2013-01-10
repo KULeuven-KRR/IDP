@@ -146,9 +146,9 @@ typedef std::list<isp>				lisp;
 
 /** Precedence declarations for connectives (higher line number = higher precedence)  **/
 %right ':'
-%nonassoc "<=>"
-%nonassoc "=>"
-%nonassoc "<="
+%right "<=>"
+%right "=>"
+%right "<="
 %right '|'
 %right '&'
 %right '~' 
