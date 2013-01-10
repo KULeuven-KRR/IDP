@@ -1203,7 +1203,7 @@ std::pair<GeneratorData, std::vector<Pattern> > GrounderFactory::getPatternAndCo
 	data.funccontext = getContext()._funccontext;
 	data.quantfovars = quantfovars;
 	data.fovars = data.quantfovars;
-	data.fovars.insert(data.fovars.end(), remvars.cbegin(), remvars.cend());
+	insertAtEnd(data.fovars, remvars);
 	data.structure = getConcreteStructure();
 	for (auto i = data.fovars.cbegin(); i < data.fovars.cend(); ++i) {
 		auto st = getConcreteStructure()->inter((*i)->sort());

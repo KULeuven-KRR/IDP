@@ -1,0 +1,16 @@
+vocabulary V{
+	type n isa int
+	p(n,n)
+}
+theory T:V{
+	?x x2 x3 x4: p(x,x2) | p(x3,x4).
+}
+
+// Example data
+structure S:V{
+	n = {1..20}
+}
+
+procedure getExpectedAModel(){
+	return true
+}

@@ -13,6 +13,7 @@
 
 #include "errorhandling/error.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "utils/ListUtils.hpp"
 #include "theory/term.hpp"
 
 #include <numeric> // for accumulate
@@ -381,7 +382,7 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 			//_equalities.push_back(s->subformulas()[n]);
 			//s->subformula(n, new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo()));
 			savevars.insert(_variables.cbegin(), _variables.cend());
-			saveequalities.insert(saveequalities.end(), _equalities.cbegin(), _equalities.cend());
+			insertAtEnd(saveequalities, _equalities);
 			_equalities.clear();
 			_variables.clear();
 		}

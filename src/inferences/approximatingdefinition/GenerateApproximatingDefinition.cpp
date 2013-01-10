@@ -6,6 +6,7 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "creation/cppinterface.hpp"
 #include "theory/term.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 
@@ -351,7 +352,7 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
 	std::vector<Rule*> result;
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto rules = TopDownApproximatingDefinition().execute(*i, data);
-		result.insert(result.end(), rules.cbegin(), rules.cend());
+		insertAtEnd(result, rules);
 	}
 	return result;
 }
@@ -360,7 +361,7 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 	std::vector<Rule*> result;
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto rules = BottomUpApproximatingDefinition().execute(*i, data);
-		result.insert(result.end(), rules.cbegin(), rules.cend());
+		insertAtEnd(result, rules);
 	}
 	return result;
 }

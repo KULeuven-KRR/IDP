@@ -13,6 +13,7 @@
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include <list>
+#include "utils/ListUtils.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -1078,7 +1079,7 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 			clog << toString(*result_it) << "\n";
 		}
 	}
-	result.insert(result.end(), potentials.cbegin(), potentials.cend());
+	insertAtEnd(result, potentials);
 	return result;
 }
 

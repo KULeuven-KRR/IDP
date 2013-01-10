@@ -745,13 +745,14 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 
 FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const {
 	Assert(formula.getType()==connective());
-	ConjOrDisj subformula;
-	subgrounder->wrapRun(subformula);
-	if (subformula.literals.size() == 0) {
-		subformula.literals.push_back(subformula.getType() == Conn::CONJ ? _true : _false);
+	_subformula.literals.clear();
+	auto& lits = _subformula.literals;
+	subgrounder->wrapRun(_subformula);
+	if (lits.size() == 0) {
+		lits.push_back(_subformula.getType() == Conn::CONJ ? _true : _false);
 	}
-	if (subformula.literals.size() == 1) {
-		Lit l = subformula.literals[0];
+	if (lits.size() == 1) {
+		Lit l = lits[0];
 		if (makesFormulaFalse(l)) {
 			formula.literals = litlist { _false };
 			return FormStat::DECIDED;
@@ -765,18 +766,18 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	}
 	// otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
 	if (conjFromRoot && conjunctiveWithSign()) {
-		if (subformula.getType() == Conn::CONJ) {
-			for (auto i = subformula.literals.cbegin(); i < subformula.literals.cend(); ++i) {
+		if (_subformula.getType() == Conn::CONJ) {
+			for (auto i = lits.cbegin(); i < lits.cend(); ++i) {
 				getGrounding()->addUnitClause(*i);
 			}
 		} else {
-			getGrounding()->add(subformula.literals);
+			getGrounding()->add(lits);
 		}
 	} else {
-		if (subformula.getType() == formula.getType()) {
-			formula.literals.insert(formula.literals.begin(), subformula.literals.cbegin(), subformula.literals.cend());
+		if (_subformula.getType() == formula.getType()) {
+			insertAtEnd(formula.literals, lits);
 		} else {
-			formula.literals.push_back(getReification(subformula, subgrounder->context()._tseitin));
+			formula.literals.push_back(getReification(_subformula, subgrounder->context()._tseitin));
 		}
 	}
 	return FormStat::UNKNOWN;

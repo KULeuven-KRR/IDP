@@ -101,3 +101,17 @@ bool isSubset(const List& smaller, const List2& larger){
 	}
 	return true;
 }
+
+/*
+ * Inserts elements at the end of a list.
+ * MUCH FASTER than e.g. vector::insert!
+ */
+template<class List, class List2>
+void insertAtEnd(List& list, const List2& addition){
+	auto i=list.size();
+	list.resize(list.size()+addition.size());
+	for(const auto& lit:addition){
+		list[i]=lit;
+		i++;
+	}
+}

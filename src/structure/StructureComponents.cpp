@@ -4048,7 +4048,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		}
 	}
 	extensions = newstructs;
-	extensions.insert(extensions.end(), partialfalsestructs.cbegin(), partialfalsestructs.cend());
+	insertAtEnd(extensions, partialfalsestructs);
 	Assert(extensions.size()>0);
 }
 
@@ -4060,7 +4060,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
 	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
 		if (not (*i)->approxTwoValued()) {
 			auto extensions = generateEnoughTwoValuedExtensions(*i);
-			result.insert(result.end(), extensions.begin(), extensions.end());
+			insertAtEnd(result, extensions);
 		} else {
 			result.push_back(*i);
 		}
