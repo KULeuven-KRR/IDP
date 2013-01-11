@@ -39,7 +39,7 @@ theory T : V {
 
 	// Define where the train is.
 	{ TrIsAt(tr,0,TrInitAt(tr)).
-	  TrIsAt(tr,t+1,s) <- TrIsAt(tr,t,s) & ! s : MoveTo(tr,t) ~= s. 
+	  TrIsAt(tr,t+1,s) <- TrIsAt(tr,t,s) & ! s' : MoveTo(tr,t) ~= s'. //no moving 
 	  TrIsAt(tr,t+1,MoveTo(tr,t)) <- Time(t). }
 
 }

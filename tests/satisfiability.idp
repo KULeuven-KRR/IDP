@@ -60,8 +60,12 @@ procedure satwithsymm(){
 	return run()
 }
 
-procedure run() {	
+procedure run() {
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.solving=0
+	start = os.clock()
 	solution = onemodel(T,S)
+	io.stderr:write("Mx took "..os.clock()-start.." sec\n")
 	
 	if(solution==nil) then
 		if(getExpectedAModel()) then
