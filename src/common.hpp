@@ -132,8 +132,16 @@ std::ostream& print(std::ostream& output, const Head& head, const Head2& head2, 
 		return output <<o.object;\
 	}
 
-#define TEMPLPRINTTOSTREAM(x) template<class... Type>\
-	std::ostream& operator<<(std::ostream& output, const ToStream<const x<Type...>&>& o) {\
+#define TEMPLPRINTTOSTREAM(x) template<class T>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x<T>&>& o) {\
+		return output <<o.object;\
+	}
+#define TEMPL2PRINTTOSTREAM(x) template<class T, class T2>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x<T, T2>&>& o) {\
+		return output <<o.object;\
+	}
+#define TEMPL3PRINTTOSTREAM(x) template<class T, class T2, class T3>\
+	std::ostream& operator<<(std::ostream& output, const ToStream<const x<T, T2, T3>&>& o) {\
 		return output <<o.object;\
 	}
 
@@ -161,19 +169,19 @@ std::ostream& operator<<(std::ostream& output, const std::shared_ptr<Type>& v) {
 }
 TEMPLPRINTTOSTREAM(std::shared_ptr)
 
-template<class... Type>
-std::ostream& operator<<(std::ostream& output, const std::pair<Type...>&v) {
+template<class Type1, class Type2>
+std::ostream& operator<<(std::ostream& output, const std::pair<Type1, Type2>&v) {
 	output << "(" <<print(v.first) <<", " <<print(v.second) <<")";
 	return output;
 }
-TEMPLPRINTTOSTREAM(std::pair)
+TEMPL2PRINTTOSTREAM(std::pair)
 
 PRINTTOSTREAM(std::string)
 PRINTTOSTREAM(char)
 PRINTTOSTREAM(char*)
 
-template<typename... Type>
-std::ostream& operator<<(std::ostream& output, const std::set<Type...>& v) {
+template<typename Type>
+std::ostream& operator<<(std::ostream& output, const std::set<Type>& v) {
 	output << "{";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
 		output << print(*obj);
@@ -188,8 +196,8 @@ std::ostream& operator<<(std::ostream& output, const std::set<Type...>& v) {
 
 TEMPLPRINTTOSTREAM(std::set)
 
-template<typename... Type>
-std::ostream& operator<<(std::ostream& output, const std::list<Type...>& v) {
+template<typename Type>
+std::ostream& operator<<(std::ostream& output, const std::list<Type>& v) {
 	output << "{";
 	for (auto obj = v.cbegin(); obj != v.cend();) {
 		output << print(*obj);
@@ -220,16 +228,23 @@ std::ostream& printMap(std::ostream& output, const Map& map){
 	return output;
 }
 
-template<typename... Type>
-std::ostream& operator<<(std::ostream& output, const std::map<Type...>& map) {
+template<typename Type, typename Type2>
+std::ostream& operator<<(std::ostream& output, const std::map<Type, Type2>& map) {
 	return printMap(output, map);
 }
-template<typename... Type>
-std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type...>& map) {
+template<typename Type, typename Type2>
+std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type, Type2>& map) {
 	return printMap(output, map);
 }
-TEMPLPRINTTOSTREAM(std::map)
-TEMPLPRINTTOSTREAM(std::unordered_map)
+template<typename Type, typename Type2, typename Type3>
+std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type, Type2, Type3>& map) {
+	return printMap(output, map);
+}
+
+TEMPL2PRINTTOSTREAM(std::map)
+TEMPL3PRINTTOSTREAM(std::map)
+TEMPL2PRINTTOSTREAM(std::unordered_map)
+TEMPL3PRINTTOSTREAM(std::unordered_map)
 
 std::ostream& operator<<(std::ostream& output, const CompType& type);
 std::ostream& operator<<(std::ostream& output, const TruthType& type);
