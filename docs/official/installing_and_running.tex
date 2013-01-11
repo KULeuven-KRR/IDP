@@ -35,14 +35,14 @@ Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 \subsubsection{Batch mode}
 One-shot execution of a procedure \code{proc} with a set of files \code{files} is achieved by running
 \begin{lstlisting}
-runidp -e "proc()" files
+idp -e "proc()" files
 \end{lstlisting}
 Omitting the \code{-e} option results in execution of the \code{main} method if any is available.
 
 \subsubsection{Interactive mode}
 An interactive session, with (optionally) a set of files \code{files}, is started with 
 \begin{lstlisting}
-runidp files -i
+idp files -i
 \end{lstlisting}
 
 Afterwards, help can be requested with the \code{help()} command. 

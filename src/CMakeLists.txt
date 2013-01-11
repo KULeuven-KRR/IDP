@@ -60,16 +60,17 @@ endif()
 target_link_libraries(idp minisatid lua linenoise tinythread)
 
 add_executable(idp-bin external/main.cpp)
+target_link_libraries(idp-bin idp)
+
 if(BUILD_IDP_STATIC)
 	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-static ")
 	set_target_properties(idp PROPERTIES LINK_FLAGS "-static ")
 endif()
-target_link_libraries(idp-bin idp)
-set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
-set_target_properties(
-	idp idp-bin PROPERTIES
-	VERSION ${idp_VERSION}
+
+set_target_properties(idp-bin PROPERTIES 
+		OUTPUT_NAME kbs
+		VERSION ${idp_VERSION}
 )
 
 set(DATAFILES "")
@@ -79,9 +80,14 @@ file(GLOB DATAFILES "${PROJECT_SOURCE_DIR}/data/share/std/*.idp")
 # add the install targets
 install (TARGETS idp-bin DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 install (TARGETS idp DESTINATION lib)
-install (FILES ${PROJECT_SOURCE_DIR}/scripts/runidp.sh ${PROJECT_SOURCE_DIR}/scripts/runidp.bat DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+if(UNIX)
+	install (FILES ${PROJECT_SOURCE_DIR}/scripts/unix/idp DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+else()
+	install (FILES ${PROJECT_SOURCE_DIR}/scripts/windows/idp.bat DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endif()
+
 install (FILES ${PROJECT_SOURCE_DIR}/data/var/.idprc DESTINATION var)
 install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
 		DESTINATION share/std)
 
-#?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} idp runidp.bat runidp.sh")
+#?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} kbs idp.bat idp")
