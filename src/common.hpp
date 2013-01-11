@@ -30,6 +30,8 @@
 #include <typeinfo>
 
 #include "Assert.hpp"
+#include "utils/StringUtils.hpp"
+
 
 typedef unsigned int uint;
 
@@ -148,13 +150,7 @@ std::ostream& print(std::ostream& output, const Head& head, const Head2& head2, 
 template<class Type>
 std::ostream& operator<<(std::ostream& output, const std::vector<Type>& v) {
 	output << "(";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
-		output << print(*obj);
-		++obj;
-		if (obj != v.cend()) {
-			output << ", ";
-		}
-	}
+	printList(output, v, ",",true);
 	output << ")";
 	return output;
 }
@@ -183,13 +179,7 @@ PRINTTOSTREAM(char*)
 template<typename Type>
 std::ostream& operator<<(std::ostream& output, const std::set<Type>& v) {
 	output << "{";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
-		output << print(*obj);
-		++obj;
-		if (obj != v.cend()) {
-			output << ", ";
-		}
-	}
+	printList(output, v, ",", true);
 	output << "}";
 	return output;
 }
@@ -199,46 +189,33 @@ TEMPLPRINTTOSTREAM(std::set)
 template<typename Type>
 std::ostream& operator<<(std::ostream& output, const std::list<Type>& v) {
 	output << "{";
-	for (auto obj = v.cbegin(); obj != v.cend();) {
-		output << print(*obj);
-		++obj;
-		if (obj != v.cend()) {
-			output << ", ";
-		}
-	}
+	printList(output, v, ",", true);
 	output << "}";
 	return output;
 }
 
 TEMPLPRINTTOSTREAM(std::list)
 
-template<typename Map>
-std::ostream& printMap(std::ostream& output, const Map& map){
+template<typename Map, typename First, typename Second>
+std::ostream& printMap(std::ostream& output, const Map& map) {
 	output << "(";
-	for (auto obj = map.cbegin(); obj != map.cend();) {
-		output << print((*obj).first);
-		output << "->";
-		output << print((*obj).second);
-		++obj;
-		if (obj != map.cend()) {
-			output << "; ";
-		}
-	}
+	printList(output, map, ",", [] (std::ostream& output, std::pair<First,Second> element) {output << print(element.first)<<"->"<<print(element.second);},
+			true);
 	output << ")";
 	return output;
 }
 
 template<typename Type, typename Type2>
 std::ostream& operator<<(std::ostream& output, const std::map<Type, Type2>& map) {
-	return printMap(output, map);
+	return printMap<const std::map<Type, Type2>, Type, Type2>(output, map);
 }
 template<typename Type, typename Type2>
 std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type, Type2>& map) {
-	return printMap(output, map);
+	return printMap<const std::unordered_map<Type, Type2>, Type, Type2>(output, map);
 }
 template<typename Type, typename Type2, typename Type3>
 std::ostream& operator<<(std::ostream& output, const std::unordered_map<Type, Type2, Type3>& map) {
-	return printMap(output, map);
+	return printMap<const std::unordered_map<Type, Type2, Type3>, Type, Type2>(output, map);
 }
 
 TEMPL2PRINTTOSTREAM(std::map)
