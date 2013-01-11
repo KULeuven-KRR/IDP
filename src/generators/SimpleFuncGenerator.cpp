@@ -111,15 +111,15 @@ void SimpleFuncGenerator::next() {
 }
 
 void SimpleFuncGenerator::put(std::ostream& stream) const {
-	stream << toString(_functable) << "(";
+	stream << print(_functable) << "(";
 	bool begin = true;
 	for (size_t n = 0; n < _vars.size() - 1; ++n) {
 		if (not begin) {
 			stream << ", ";
 		}
 		begin = false;
-		stream << toString(_vars[n]);
-		stream << toString(_universe.tables()[n]);
+		stream << print(_vars[n]);
+		stream << print(_universe.tables()[n]);
 		for (auto i = _outpos.begin(); i < _outpos.end(); ++i) {
 			if (n == *i) {
 				stream << "(out)";
@@ -131,6 +131,6 @@ void SimpleFuncGenerator::put(std::ostream& stream) const {
 			}
 		}
 	}
-	stream << "):" << toString(_rangevar) << toString(_universe.tables().back()) << "(out)";
+	stream << "):" << print(_rangevar) << print(_universe.tables().back()) << "(out)";
 }
 

@@ -84,7 +84,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 
 		auto subgrounder = getLazySubGrounder(instance);
 		if (getOption(VERBOSE_GROUNDING) > 1) {
-			clog << "Grounding additional subformula " << toString(subgrounder) << "\n";
+			clog << "Grounding additional subformula " << print(subgrounder) << "\n";
 		}
 		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
 
@@ -127,7 +127,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 		subfgrounding.push_back(newresidual);
 		instance->residual = newresidual;
 		if (verbosity() > 3) {
-			clog << "Added lazy tseitin: " << toString(instance->residual) << toString(tseitintype) << printFormula() << "[[" << instance->index << " to end ]]"
+			clog << "Added lazy tseitin: " << print(instance->residual) << print(tseitintype) << print(this) << "[[" << instance->index << " to end ]]"
 					<< nt();
 		}
 		getGrounding()->notifyLazyResidual(instance, tseitintype); // set on not-decide and add to watchlist
@@ -144,7 +144,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
  */
 void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 	if (verbosity() > 0) {
-		clog << "Lazy disjunctive grounder for " << toString(this) << "\n";
+		clog << "Lazy disjunctive grounder for " << print(this) << "\n";
 	}
 
 	formula.setType(connective());
@@ -162,7 +162,7 @@ void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 
 	if (isAtEnd(inst)) {
 		if (verbosity() > 3) {
-			clog << "Empty grounder" << toString(this) << "\n";
+			clog << "Empty grounder" << print(this) << "\n";
 		}
 		delete (inst);
 		poptab();
@@ -179,7 +179,7 @@ void LazyDisjunctiveGrounder::internalRun(ConjOrDisj& formula) const {
 	inst->residual = tseitin;
 
 	if (verbosity() > 3) {
-		clog << "Added lazy tseitin: " << toString(tseitin) << toString(tseitintype) << printFormula() << nt();
+		clog << "Added lazy tseitin: " << print(tseitin) << print(tseitintype) << print(this) << nt();
 	}
 
 	poptab();

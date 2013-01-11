@@ -82,7 +82,7 @@ void UnionGenerator::put(std::ostream& stream)  const{
 		} else {
 			first = false;
 		}
-		stream << "*" << toString(*it);
+		stream << "*" << print(*it);
 	}
 	poptab();
 }

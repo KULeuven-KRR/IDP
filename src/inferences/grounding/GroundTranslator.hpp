@@ -240,7 +240,7 @@ public:
 
 	// PRINTING
 
-	std::string print(Lit atom);
+	std::string printL(Lit atom);
 	std::string printLit(const Lit& atom) const;
 	std::string printTerm(const VarId&) const;
 };

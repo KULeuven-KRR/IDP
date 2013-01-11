@@ -69,10 +69,10 @@ public:
 		ss << o->nameNoArity();
 		if (o->sorts().size() > 0) {
 			ss << "[";
-			ss << listToString(o->sorts(), ",", not o->isFunction());
+			printList(ss, o->sorts(), ",", not o->isFunction());
 			if (o->isFunction()) {
 				ss << ":";
-				ss << toString(*o->sorts().back());
+				ss << print(*o->sorts().back());
 			}
 			ss << "]";
 		}
@@ -101,7 +101,7 @@ public:
 			auto s = it->second;
 			if (not s->builtin()) {
 				printTab();
-				output() << toString(s) << "[" << toString(s) << "]" << " = ";
+				output() << print(s) << "[" << print(s) << "]" << " = ";
 				auto st = structure->inter(s);
 				visit(st);
 				output() << '\n';
@@ -330,7 +330,7 @@ public:
 		if (isNeg(f->sign())) {
 			output() << "~";
 		}
-		output() << toString(f->symbol());
+		output() << print(f->symbol());
 		if (not f->subterms().empty()) {
 			output() << "(";
 			f->subterms()[0]->accept(this);
@@ -354,7 +354,7 @@ public:
 		f->subterms()[0]->accept(this);
 		for (size_t n = 0; n < f->comps().size(); ++n) {
 			CHECKTERMINATION;
-			output() << ' ' << toString(f->comps()[n]) << ' ';
+			output() << ' ' << print(f->comps()[n]) << ' ';
 			f->subterms()[n + 1]->accept(this);
 			if (not f->conj() && (n + 1 < f->comps().size())) {
 				output() << " | ";
@@ -441,7 +441,7 @@ public:
 		}
 		output() << '(';
 		f->getBound()->accept(this);
-		output() << ' ' << toString(f->comp()) << ' ';
+		output() << ' ' << print(f->comp()) << ' ';
 		f->getAggTerm()->accept(this);
 		output() << ')';
 		_printTermsAsBlock = backup;
@@ -546,7 +546,7 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		output() << toString(t->function());
+		output() << print(t->function());
 		if (not t->subterms().empty()) {
 			output() << "(";
 			t->subterms()[0]->accept(this);
@@ -867,7 +867,7 @@ public:
 							output() << ',';
 						}
 						begintuple = false;
-						output() << toString(*lt);
+						output() << print(*lt);
 					}
 				}
 			}
@@ -893,26 +893,26 @@ public:
 				output() << "{ ";
 				if (not kt.isAtEnd()) {
 					ElementTuple tuple = *kt;
-					output() << toString(tuple[0]);
+					output() << print(tuple[0]);
 					for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-						output() << ',' << toString(tuple[n]);
+						output() << ',' << print(tuple[n]);
 					}
-					output() << "->" << toString(tuple.back());
+					output() << "->" << print(tuple.back());
 					++kt;
 					for (; not kt.isAtEnd(); ++kt) {
 						CHECKTERMINATION;
 						output() << "; ";
 						tuple = *kt;
-						output() << toString(tuple[0]);
+						output() << print(tuple[0]);
 						for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-							output() << ',' << toString(tuple[n]);
+							output() << ',' << print(tuple[n]);
 						}
-						output() << "->" << toString(tuple.back());
+						output() << "->" << print(tuple.back());
 					}
 				}
 				output() << " }";
 			} else if (not kt.isAtEnd()) {
-				output() << toString((*kt)[0]);
+				output() << print((*kt)[0]);
 			} else {
 				output() << "{ }";
 			}
@@ -991,15 +991,15 @@ public:
 		Assert(isTheoryOpen());
 		output() << "{ ";
 		if (table->isRange()) {
-			output() << toString(table->first()) << ".." << toString(table->last());
+			output() << print(table->first()) << ".." << print(table->last());
 		} else {
 			auto it = table->sortBegin();
 			if (not it.isAtEnd()) {
-				output() << toString((*it));
+				output() << print((*it));
 				++it;
 				for (; not it.isAtEnd(); ++it) {
 					CHECKTERMINATION;
-					output() << "; " << toString((*it));
+					output() << "; " << print((*it));
 				}
 			}
 		}
@@ -1066,7 +1066,7 @@ private:
 			if (not args.empty()) {
 				output() << "(";
 				for (size_t n = 0; n < args.size(); ++n) {
-					output() << toString(args[n]);
+					output() << print(args[n]);
 					if (n != args.size() - 1) {
 						output() << ",";
 					}
@@ -1078,14 +1078,14 @@ private:
 			if (args.size() > 1) {
 				output() << "(";
 				for (size_t n = 0; n < args.size() - 1; ++n) {
-					output() << toString(args[n]);
+					output() << print(args[n]);
 					if (n != args.size() - 2) {
 						output() << ",";
 					}
 				}
 				output() << ")";
 			}
-			output() << " = " << toString(args.back());
+			output() << " = " << print(args.back());
 		}
 	}
 
@@ -1131,7 +1131,7 @@ private:
 				if ((*gtit).isVariable) {
 					printTerm((*gtit)._varid);
 				} else {
-					output() << toString((*gtit)._domelement);
+					output() << print((*gtit)._domelement);
 				}
 			}
 			output() << ")";
@@ -1170,24 +1170,24 @@ private:
 		if (not kt.isAtEnd()) {
 			ElementTuple tuple = *kt;
 			if (tuple.size() > 1) {
-				output() << toString(tuple[0]);
+				output() << print(tuple[0]);
 			}
 			for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-				output() << ',' << toString(tuple[n]);
+				output() << ',' << print(tuple[n]);
 			}
-			output() << "->" << toString(tuple.back());
+			output() << "->" << print(tuple.back());
 			++kt;
 			for (; not kt.isAtEnd(); ++kt) {
 				CHECKTERMINATION;
 				output() << "; ";
 				tuple = *kt;
 				if (tuple.size() > 1) {
-					output() << toString(tuple[0]);
+					output() << print(tuple[0]);
 				}
 				for (unsigned int n = 1; n < tuple.size() - 1; ++n) {
-					output() << ',' << toString(tuple[n]);
+					output() << ',' << print(tuple[n]);
 				}
-				output() << "->" << toString(tuple.back());
+				output() << "->" << print(tuple.back());
 			}
 		}
 		output() << " }";

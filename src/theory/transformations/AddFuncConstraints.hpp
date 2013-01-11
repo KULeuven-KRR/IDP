@@ -64,7 +64,7 @@ private:
 
 	Formula* createFuncConstraints(Function* function) {
 		if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
-			clog << "Adding function constraint for " << toString(function) << "\n";
+			clog << "Adding function constraint for " << print(function) << "\n";
 		}
 		//Atom: F(x)=y
 		auto vars = VarUtils::makeNewVariables(function->sorts());

@@ -75,7 +75,7 @@ void Error::error(const std::string& message) {
 void Error::error(const std::string& message, const ParseInfo& p) {
 	stringstream ss;
 	ss << message << "\n";
-	ss << "\tEncountered at " << toString(p);
+	ss << "\tEncountered at " << print(p);
 	error(ss.str());
 }
 
@@ -91,7 +91,7 @@ void Warning::warning(const std::string& message) {
 void Warning::warning(const std::string& message, const ParseInfo& p) {
 	stringstream ss;
 	ss << message << "\n";
-	ss << "\tEncountered at " << toString(p);
+	ss << "\tEncountered at " << print(p);
 	warning(ss.str());
 }
 
@@ -242,7 +242,7 @@ void Error::threevalsort(const string&, const ParseInfo& pi) {
 
 void Error::declaredEarlier(ComponentType type, const string& whatname, const ParseInfo& pi, const ParseInfo& prevdeclplace) {
 	stringstream ss;
-	ss << type << " " << whatname << " is already declared in this scope" << ", namely at " << toString(prevdeclplace) << ".";
+	ss << type << " " << whatname << " is already declared in this scope" << ", namely at " << print(prevdeclplace) << ".";
 	error(ss.str(), pi);
 }
 
@@ -265,15 +265,15 @@ void Error::notInVocabularyOf(ComponentType type, ComponentType parentType, cons
 /** Using overlapping symbols **/
 void Error::overloaded(ComponentType type, const string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& pi) {
 	stringstream ss;
-	ss << "The " << type << " " << name << " used here could be the " << type << " declared at " << toString(p1);
-	ss << " or the " << type << " declared at " << toString(p2) << ".";
+	ss << "The " << type << " " << name << " used here could be the " << type << " declared at " << print(p1);
+	ss << " or the " << type << " declared at " << print(p2) << ".";
 	error(ss.str(), pi);
 }
 void Error::overloaded(ComponentType type, const string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi) {
 	stringstream ss;
 	ss << "The " << type << " " << name << " used here should be disambiguated as it might refer to :\n";
 	for (auto info : possiblelocations) {
-		ss << "\tThe " << type << " at " << toString(info) << "\n";
+		ss << "\tThe " << type << " at " << print(info) << "\n";
 	}
 	error(ss.str(), pi);
 }

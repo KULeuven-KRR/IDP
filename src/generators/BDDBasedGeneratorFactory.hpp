@@ -42,7 +42,7 @@ struct BddGeneratorData {
 	}
 
 	bool check() const {
-		//std::cerr <<toString(bdd) <<"\n\n";
+		//std::cerr <<print(bdd) <<"\n\n";
 		return bdd!=NULL && structure!=NULL && pattern.size() == vars.size() && pattern.size() == bddvars.size() && pattern.size() == universe.tables().size();
 	}
 };
@@ -51,8 +51,8 @@ enum class BRANCH {
 	FALSEBRANCH, TRUEBRANCH
 };
 
-template<>
-std::string toString(const BRANCH& type);
+std::ostream& operator<<(std::ostream& output, const BRANCH& type);
+PRINTTOSTREAM(BRANCH)
 
 /**
  * Class to convert a bdd into a generator

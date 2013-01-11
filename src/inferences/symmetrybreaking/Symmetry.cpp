@@ -354,9 +354,9 @@ ostream& OccurrencesCounter::put(ostream& output) const {
 	output << "COUNTER:\n";
 	output << "structure: " << getStructure()->name() << "\n";
 	for (auto occurrences_it = occurrences_.cbegin(); occurrences_it != occurrences_.cend(); ++occurrences_it) {
-		output << toString(occurrences_it->first.first) << "-" << toString(occurrences_it->first.second) << "\n";
+		output << print(occurrences_it->first.first) << "-" << print(occurrences_it->first.second) << "\n";
 		for (auto element_it = occurrences_it->second.cbegin(); element_it != occurrences_it->second.cend(); ++element_it) {
-			output << "   " << toString(element_it->first) << ": " << element_it->second.first << "," << element_it->second.second << "\n";
+			output << "   " << print(element_it->first) << ": " << element_it->second.first << "," << element_it->second.second << "\n";
 		}
 	}
 	return output;
@@ -395,12 +395,12 @@ IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> element
 ostream& IVSet::put(ostream& output) const {
 	output << "Set of interchangeable domain elements (" << getElements().size() <<" in size): \n";
 	for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
-		output << toString(*elements_it) << " | ";
+		output << print(*elements_it) << " | ";
 	}
 	output << "\n";
 	output << "Corresponding sorts:\n";
 	for (auto sorts_it = getSorts().cbegin(); sorts_it != getSorts().cend(); ++sorts_it) {
-		output << toString(*sorts_it) << " | ";
+		output << print(*sorts_it) << " | ";
 	}
 	output << "\n";
 	if(isEnkelvoudig()){
@@ -750,7 +750,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerm
 }
 
 void TheorySymmetryAnalyzer::visit(const PredForm* f) {
-//	clog << "Predform: " << toString(f) << "\n";
+//	clog << "Predform: " << print(f) << "\n";
 	if (f->symbol()->builtin() || f->symbol()->overloaded()) {
 		if (not is(f->symbol(), STDPRED::EQ)) {
 			for (unsigned int it = 0; it < f->args().size(); it++) {
@@ -786,7 +786,7 @@ void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 }
 
 void TheorySymmetryAnalyzer::visit(const DomainTerm* t) {
-//	clog << "DomainTerm: " << toString(t) << "\n";
+//	clog << "DomainTerm: " << print(t) << "\n";
 	markAsUnfitForSymmetry(t->value());
 }
 
@@ -868,7 +868,7 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  */
 set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
-	//cout << "token" << toString(t) << endl;
+	//cout << "token" << print(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
 	auto newt =t->clone();
 	FormulaUtils::graphFuncsAndAggs(newt, NULL, true, false /*TODO check*/);
@@ -888,7 +888,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "Sorts occurring in asymmetric predicates or aggregates (no symmetry will be detected for their interpretations): ";
 		for (auto it = forbiddenSorts.cbegin(); it != forbiddenSorts.cend(); ++it) {
-			clog << toString(*it) << " ";
+			clog << print(*it) << " ";
 		}
 		clog << "\n";
 	}
@@ -906,7 +906,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "Elements occurring in theory (no symmetry will be detected for these elements): ";
 		for (auto it = forbiddenElements.cbegin(); it != forbiddenElements.cend(); ++it) {
-			clog << toString(*it) << " ";
+			clog << print(*it) << " ";
 		}
 		clog << "\n";
 	}
@@ -924,7 +924,7 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "Sorts for which symmetry will be detected: ";
 		for (auto it = allowedSorts.cbegin(); it != allowedSorts.cend(); ++it) {
-			clog << toString(*it) << " ";
+			clog << print(*it) << " ";
 		}
 		clog << "\n";
 	}
@@ -957,12 +957,12 @@ set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractThe
 		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
 			clog << "The elements: " ;
 			for(auto elements_it=it->second.cbegin(); elements_it!=it->second.cend(); ++elements_it){
-				clog << toString(*elements_it) << " ";
+				clog << print(*elements_it) << " ";
 			}
 			clog << "\n";
 			clog << "With as sorts: " ;
 			for(auto sorts_it=it->first.cbegin(); sorts_it!=it->first.cend(); ++sorts_it){
-				clog << toString(*sorts_it) << " ";
+				clog << print(*sorts_it) << " ";
 			}
 			clog << "\n";
 		}
@@ -1065,7 +1065,7 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 	vector<const IVSet*> result = extractDontCares(potentials);
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = result.cbegin(); result_it != result.cend(); ++result_it) {
-			clog << toString(*result_it) << "\n";
+			clog << print(*result_it) << "\n";
 		}
 	}
 
@@ -1076,7 +1076,7 @@ vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure
 	splitByBinarySymmetries(potentials);
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		for (auto result_it = potentials.cbegin(); result_it != potentials.cend(); ++result_it) {
-			clog << toString(*result_it) << "\n";
+			clog << print(*result_it) << "\n";
 		}
 	}
 	insertAtEnd(result, potentials);

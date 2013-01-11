@@ -43,7 +43,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
-		clog << "Query-BDD:" << "\n" << toString(bdd) << "\n";
+		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";
 	}
 	Assert(manager != NULL);
 	std::set<Variable*> vars(q->variables().cbegin(), q->variables().cend());
@@ -75,7 +75,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 
 	InstGenerator* generator = btg.create(data);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
-		clog << "Query-Generator:" << "\n" << toString(generator) << "\n";
+		clog << "Query-Generator:" << "\n" << print(generator) << "\n";
 	}
 
 // Create an empty table
@@ -87,7 +87,7 @@ PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
 	auto result = TableUtils::createPredTable(univ);
 	// execute the query
 	ElementTuple currtuple(q->variables().size());
-	//cerr <<"Generator: " <<toString(generator) <<"\n";
+	//cerr <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < q->variables().size(); ++n) {
 			currtuple[n] = data.vars[n]->get();

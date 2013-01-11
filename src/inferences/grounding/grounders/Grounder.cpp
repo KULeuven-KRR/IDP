@@ -42,7 +42,7 @@ void ConjOrDisj::put(std::ostream& stream) const {
 			}
 		}
 		begin = false;
-		stream << toString(*i);
+		stream << print(*i);
 	}
 }
 void ConjOrDisj::negate() {
@@ -111,7 +111,7 @@ bool Grounder::toplevelRun() const {
 
 	addToFullGroundSize(getMaxGroundSize());
 	if (verbosity() > 0) {
-		clog << "Already grounded " << toString(groundedAtoms()) << " for a full grounding of " << toString(getMaxGroundSize()) << "\n";
+		clog << "Already grounded " << print(groundedAtoms()) << " for a full grounding of " << print(getMaxGroundSize()) << "\n";
 	}
 	return unsat;
 }
@@ -125,7 +125,7 @@ void Grounder::wrapRun(ConjOrDisj& formula) const {
 	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
 //	auto printtimes = false;
 //	if (printtimes) {
-//		cerr << "Grounding formula " << toString(this) << "\n";
+//		cerr << "Grounding formula " << print(this) << "\n";
 //	}
 	run(formula);
 //	if (printtimes) {

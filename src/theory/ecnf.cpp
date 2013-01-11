@@ -222,7 +222,7 @@ std::ostream& GroundTerm::put(std::ostream& s) const {
 	if (isVariable) {
 		s << "var_" << _varid;
 	} else {
-		s << toString(_domelement);
+		s << print(_domelement);
 	}
 	return s;
 }
@@ -486,10 +486,10 @@ void LazyTsBody::notifyTheoryOccurence() {
 }
 
 void TsBody::put(std::ostream& stream) const {
-	stream << toString(_type);
+	stream << print(_type);
 }
 void CPTsBody::put(std::ostream& stream) const {
-	stream << toString(type()) << " " << toString(left()) << toString(comp()) << toString(right());
+	stream << print(type()) << " " << print(left()) << print(comp()) << print(right());
 }
 void CPVarTerm::put(std::ostream& stream) const {
 	stream << "var" << varid();

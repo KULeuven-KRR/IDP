@@ -21,8 +21,8 @@ enum class Pattern {
 	INPUT, OUTPUT
 };
 
-template<>
-std::string toString(const Pattern& type);
+std::ostream& operator<<(std::ostream& stream, const Pattern& type);
+PRINTTOSTREAM(Pattern)
 
 class InstChecker {
 private:

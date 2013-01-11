@@ -304,7 +304,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 			auto formulaDomain = ThreeValuedDomain<Domain>(_propagator->getFactory(), pf);
 			_propagator->setDomain(pf, formulaDomain);
 			if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 2) {
-				clog << "  " << toString(pf) << " is builtin. Updated its domain to" << "\n" << toString(formulaDomain)<<nt();
+				clog << "  " << print(pf) << " is builtin. Updated its domain to" << "\n" << print(formulaDomain)<<nt();
 			}
 			_propagator->schedule(it->second, UP, true, pf);
 			_propagator->schedule(it->second, UP, false, pf);
@@ -312,7 +312,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 	} else {
 #ifndef NDEBUG
 		if (_leafconnectors.find(symbol) == _leafconnectors.cend()) {
-			clog << toString(symbol);
+			clog << print(symbol);
 		}
 		Assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
 #endif

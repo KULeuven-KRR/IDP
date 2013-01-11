@@ -24,7 +24,7 @@ protected:
 	void checkMonotonicityAndThrow(AggForm* agg) {
 		if (not FormulaUtils::isMonotone(agg) && not FormulaUtils::isAntimonotone(agg)) {
 			std::stringstream ss;
-			ss << "Splitting into monotone aggregates for " << toString(agg);
+			ss << "Splitting into monotone aggregates for " << print(agg);
 			throw notyetimplemented(ss.str());
 		}
 	}

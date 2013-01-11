@@ -61,7 +61,6 @@ public:
 	}
 
 	std::ostream& put(std::ostream&) const;
-	std::string toString() const;
 
 	friend class DomainAtomFactory;
 };

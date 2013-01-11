@@ -67,32 +67,30 @@ void FormulaGrounder::printorig() const {
 	if (_origform == NULL) {
 		return;
 	}
-	clog << tabs() << "Grounding formula " << toString(_origform) << "\n";
+	clog << tabs() << "Grounding formula " << print(_origform) << "\n";
 	if (not _origform->freeVars().empty()) {
 		pushtab();
-		clog << tabs() << "with instance "
-			 << listToString(_origform->freeVars(), ", ",  [&](dtype(_origform->freeVars()) v){ return toString(v) + " = " + toString(_origvarmap.find(v)->second->get());})
-			 << "\n";
+		clog << tabs() << "with instance ";
+		printList(clog, _origform->freeVars(), ", ",  [&](std::ostream& output, dtype(_origform->freeVars()) v){ output <<print(v) << " = " << print(_origvarmap.find(v)->second->get());});
+		clog << "\n";
 		poptab();
 	}
 }
 
-std::string FormulaGrounder::printFormula() const {
+void FormulaGrounder::put(std::ostream& output) const{
 	if (_origform == NULL) {
-		return "";
+		return;
 	}
-	stringstream ss;
-	ss << toString(_origform);
+	output << print(_origform);
 	if (not _origform->freeVars().empty()) {
-		ss << "[";
+		output << "[";
 		for (auto it = _origform->freeVars().cbegin(); it != _origform->freeVars().cend(); ++it) {
-			ss << toString(*it) << " = ";
-			const DomainElement* e = _origvarmap.find(*it)->second->get();
-			ss << toString(e) << ',';
+			output << print(*it) << " = ";
+			auto e = _origvarmap.find(*it)->second->get();
+			output << print(e) << ',';
 		}
-		ss << "]";
+		output << "]";
 	}
-	return ss.str();
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg,
@@ -141,7 +139,7 @@ Lit AtomGrounder::run() const {
 				if (_origform != NULL) {
 					poptab();
 				}
-				clog << tabs() << "Result is " <<toString(known) << "\n";
+				clog << tabs() << "Result is " <<print(known) << "\n";
 				}
 				return known==TruthValue::True?_true:_false;
 			}
@@ -820,11 +818,11 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 	}
 }
 
-std::string BoolGrounder::printFormula() const {
+void BoolGrounder::put(std::ostream& output) const {
 	if (_origform != NULL) {
-		return FormulaGrounder::printFormula();
+		FormulaGrounder::put(output);
 	} else {
-		return listToString(getSubGrounders(), connective() == Conn::CONJ ? " & " : " | ");
+		printList(output, getSubGrounders(), connective() == Conn::CONJ ? " & " : " | ");
 	}
 }
 

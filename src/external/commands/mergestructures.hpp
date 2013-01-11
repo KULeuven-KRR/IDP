@@ -53,7 +53,7 @@ public:
 			if (wasTwoValued) {
 				if (not pred2inter.second->approxTwoValued()) {
 					std::stringstream ss;
-					ss << "Merging sorts resulted in a structure where the relation " << toString(pred) << " is no longer two-valued.";
+					ss << "Merging sorts resulted in a structure where the relation " << print(pred) << " is no longer two-valued.";
 					Warning::warning(ss.str());
 				}
 			}
@@ -65,7 +65,7 @@ public:
 			if (wasTwoValued) {
 				if (not func2inter.second->approxTwoValued()) {
 					std::stringstream ss;
-					ss << "Merging sorts resulted in a structure where the relation " << toString(func) << " is no longer two-valued.";
+					ss << "Merging sorts resulted in a structure where the relation " << print(func) << " is no longer two-valued.";
 					Warning::warning(ss.str());
 				}
 			}

@@ -64,12 +64,12 @@ const FOBDDTerm* FOBDDAggTerm::acceptchange(FOBDDVisitor* v) const {
 	return v->change(this);
 }
 std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
-	output << toString(_function);
+	output << print(_function);
 	if (_function->arity() > 0) {
 		output << "(";
-		output << toString(args(0));
+		output << print(args(0));
 		for (size_t n = 1; n < _function->arity(); ++n) {
-			output << "," << toString(args(n));
+			output << "," << print(args(n));
 		}
 		output << ")";
 	}
@@ -77,22 +77,22 @@ std::ostream& FOBDDFuncTerm::put(std::ostream& output) const {
 }
 
 std::ostream& FOBDDVariable::put(std::ostream& output) const {
-	output << toString(_variable);
+	output << print(_variable);
 	return output;
 }
 
 std::ostream& FOBDDDeBruijnIndex::put(std::ostream& output) const {
-	output << "<" << toString(_index) << ">[" << toString(_sort) << "]";
+	output << "<" << print(_index) << ">[" << print(_sort) << "]";
 	return output;
 }
 
 std::ostream& FOBDDDomainTerm::put(std::ostream& output) const {
-	output << toString(_value) << "[" << toString(_sort) << "]";
+	output << print(_value) << "[" << print(_sort) << "]";
 	return output;
 }
 
 std::ostream& FOBDDAggTerm::put(std::ostream& output) const {
-	output << toString(_aggfunction)<<"{ "<<toString(_setexpr)<<nt()<<"}";
+	output << print(_aggfunction)<<"{ "<<print(_setexpr)<<nt()<<"}";
 	return output;
 }
 

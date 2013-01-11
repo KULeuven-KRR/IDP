@@ -58,7 +58,7 @@ private:
 	void printFormula(const Formula* f) {
 		FOBDDFactory factory(_manager);
 		auto bdd = factory.turnIntoBdd(f);
-		output() << "FORMULA\n"<< toString(f)<<"\nBECOMES \n"<< toString(bdd) << "\n\n";
+		output() << "FORMULA\n"<< print(f)<<"\nBECOMES \n"<< print(bdd) << "\n\n";
 	}
 public:
 

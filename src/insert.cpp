@@ -37,19 +37,20 @@ using namespace Error;
 /**
  * Rewrite a vector of strings s1,s2,...,sn to the single string s1::s2::...::sn
  */
-string toString(const longname& vs) {
-	stringstream sstr;
+template<>
+std::ostream& print(std::ostream& output, const longname& vs) {
 	if (!vs.empty()) {
-		sstr << vs[0];
-		for (unsigned int n = 1; n < vs.size(); ++n)
-			sstr << "::" << vs[n];
+		output << vs[0];
+		for (unsigned int n = 1; n < vs.size(); ++n){
+			output << "::" << vs[n];
+		}
 	}
-	return sstr.str();
+	return output;
 }
 
 string predName(const longname& name, const vector<Sort*>& vs) {
 	stringstream sstr;
-	sstr << toString(name);
+	sstr << print(name);
 	if (!vs.empty()) {
 		sstr << '[' << vs[0]->name();
 		for (unsigned int n = 1; n < vs.size(); ++n)
@@ -62,7 +63,7 @@ string predName(const longname& name, const vector<Sort*>& vs) {
 string funcName(const longname& name, const vector<Sort*>& vs) {
 	Assert(!vs.empty());
 	stringstream sstr;
-	sstr << toString(name) << '[';
+	sstr << print(name) << '[';
 	if (vs.size() > 1) {
 		sstr << vs[0]->name();
 		for (unsigned int n = 1; n < vs.size() - 1; ++n)
@@ -77,7 +78,7 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
  *************/
 
 std::ostream& VarName::put(std::ostream& os) const {
-	os << " (" << _name << "," << toString(_var) << ") ";
+	os << " (" << _name << "," << print(_var) << ") ";
 	return os;
 }
 

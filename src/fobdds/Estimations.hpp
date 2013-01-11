@@ -56,12 +56,12 @@ public:
 	 */
 	template<class BDD>
 	static double estimateCostAll(const BDD* bdd, const varset& vars, const indexset& indices, const AbstractStructure* structure, FOBDDManager* manager) {
-/*		std::cerr << "Estimating costs for " <<toString(bdd) <<"\n";
+/*		std::cerr << "Estimating costs for " <<print(bdd) <<"\n";
 		for(auto i=vars.cbegin(); i!=vars.cend(); ++i) {
-			std::cerr <<toString(*i) <<" ";
+			std::cerr <<print(*i) <<" ";
 		}
 		for(auto i=indices.cbegin(); i!=indices.cend(); ++i) {
-			std::cerr <<toString(*i) <<" ";
+			std::cerr <<print(*i) <<" ";
 		}
 		std::cerr <<"\nCost is ===> ";*/
 		Assert(bdd!=NULL);

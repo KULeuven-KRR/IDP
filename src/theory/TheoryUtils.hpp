@@ -42,13 +42,13 @@ template<typename Transformer, typename ReturnType, typename Construct, typename
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
-		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << print(object) << "\n";
 		pushtab();
 	}
 	auto result = t.execute(object, parameters...);
 	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
 		poptab();
-		std::clog << tabs() << "Resulted in: " << nt() << toString(result) << "\n\n";
+		std::clog << tabs() << "Resulted in: " << nt() << print(result) << "\n\n";
 	}
 	return result;
 }
@@ -57,13 +57,13 @@ template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
 	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
-		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << toString(object) << "\n";
+		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << print(object) << "\n";
 		pushtab();
 	}
 	t.execute(object, parameters...);
 	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
 		poptab();
-		std::clog << tabs() << "Resulted in: " << nt() << toString(object) << "\n\n";
+		std::clog << tabs() << "Resulted in: " << nt() << print(object) << "\n\n";
 	}
 }
 

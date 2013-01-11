@@ -104,7 +104,7 @@ GrounderFactory::GrounderFactory(const GroundInfo& data, Grounding* grounding, b
 	// Create a symbolic structure if no such structure is given
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 2) {
 		clog << tabs() << "Using the following symbolic structure to ground:" << "\n";
-		clog << tabs() << toString(_structure.symstructure) << "\n";
+		clog << tabs() << print(_structure.symstructure) << "\n";
 	}
 }
 
@@ -334,14 +334,14 @@ void GrounderFactory::descend(T child) {
 
 	if (getContext()._component == CompContext::SENTENCE) {
 		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0) {
-			clog << tabs() << "Creating a grounder for " << toString(child) << "\n";
+			clog << tabs() << "Creating a grounder for " << print(child) << "\n";
 			if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
 				pushtab();
 			}
 		}
 	} else {
 		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
-			clog << tabs() << "Creating a subgrounder for " << toString(child) << "\n";
+			clog << tabs() << "Creating a subgrounder for " << print(child) << "\n";
 			pushtab();
 		}
 	}
@@ -1234,7 +1234,7 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating generator for truthtype " << toString(generatortype) << " for subformula " <<  toString(subformula);
+		clog << "Creating generator for truthtype " << print(generatortype) << " for subformula " <<  print(subformula);
 		pushtab();
 		clog << nt();
 	}
@@ -1260,7 +1260,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 // * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << "Creating Checker for truthtype " << toString(checkertype) << " for subformula " <<  toString(subformula);
+		clog << "Creating Checker for truthtype " << print(checkertype) << " for subformula " <<  print(subformula);
 		pushtab();
 		clog << nt();
 	}
@@ -1287,7 +1287,7 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 	//In either case, the newly created tables are now useless: the bddtable is turned into a treeinstgenerator, the other are also useless
 	delete (table);
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
-		clog << tabs() << name << " for " << toString(type) << ": \n" << tabs() << toString(instgen) << "\n";
+		clog << tabs() << name << " for " << print(type) << ": \n" << tabs() << print(instgen) << "\n";
 	}
 	return instgen;
 }
@@ -1303,7 +1303,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure, definedsymbols);
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Using the following BDD" << nt() << toString(bdd) << nt();
+		clog << "Using the following BDD" << nt() << print(bdd) << nt();
 	}
 	auto table = new PredTable(new BDDInternalPredTable(bdd, symstructure->obtainManager(), data.fovars, data.structure), Universe(data.tables));
 	deleteDeep(tempsubformula);
@@ -1315,7 +1315,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		clog << tabs() << "improving the following " << (approxastrue ? "maketrue" : "makefalse") << " BDD:" << "\n";
 		pushtab();
-		clog << tabs() << toString(bdd) << "\n";
+		clog << tabs() << print(bdd) << "\n";
 	}
 	auto manager = symstructure->obtainManager();
 
@@ -1345,7 +1345,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 		poptab();
 		clog << tabs() << "Resulted in:" << "\n";
 		pushtab();
-		clog << tabs() << toString(pruned) << "\n";
+		clog << tabs() << print(pruned) << "\n";
 		poptab();
 	}
 

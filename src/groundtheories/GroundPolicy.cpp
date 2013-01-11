@@ -104,7 +104,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 	}
 	std::clog << "Has " << _definitions.size() << " definitions." << "\n";
 	for (auto i = _definitions.cbegin(); i != _definitions.cend(); ++i) {
-		s << toString((*i).second);
+		s << print((*i).second);
 	}
 	std::clog << "Has " << _sets.size() << " sets." << "\n";
 	for (auto i = _sets.cbegin(); i != _sets.cend(); ++i) {
@@ -153,7 +153,7 @@ std::ostream& GroundPolicy::polPut(std::ostream& s, GroundTranslator* translator
 			CPVarTerm* cpt = dynamic_cast<CPVarTerm*>(left);
 			s << translator->printTerm(cpt->varid());
 		}
-		s << ' ' << toString(cpr->_body->comp()) << ' ';
+		s << ' ' << print(cpr->_body->comp()) << ' ';
 		CPBound right = cpr->_body->right();
 		if (right._isvarid) {
 			s << translator->printTerm(right._varid);

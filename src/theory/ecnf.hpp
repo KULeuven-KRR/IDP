@@ -383,7 +383,7 @@ public:
 				_body(body) {
 	}
 	virtual ~CPReification();
-	std::string toString(unsigned int spaces = 0) const;
+	std::string print(unsigned int spaces = 0) const;
 };
 
 struct GroundTerm {

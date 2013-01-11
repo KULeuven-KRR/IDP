@@ -25,7 +25,7 @@ LazyUnknUnivGrounder::LazyUnknUnivGrounder(const PredForm* pf, Context context, 
 			DelayGrounder(pf->symbol(), pf->args(), context, -1, groundtheory),
 			_subgrounder(sub) {
 	if (verbosity() > 2) {
-		clog << "Delaying the grounding " << sub->printFormula() << " on " << toString(pf) << ".\n";
+		clog << "Delaying the grounding " << print(sub) << " on " << print(pf) << ".\n";
 	}
 
 	for (auto i = pf->args().cbegin(); i < pf->args().cend(); ++i) {
@@ -128,7 +128,7 @@ LazyTwinDelayUnivGrounder::LazyTwinDelayUnivGrounder(PFSymbol* symbol, const std
 			DelayGrounder(symbol, terms, context, -1, groundtheory),
 			_subgrounder(sub) {
 	if (verbosity() > 1) {
-		clog << "Delaying the grounding " << sub->printFormula() << " on " << "TODO" << " and " << "TODO" << ".\n"; // TODO
+		clog << "Delaying the grounding " << print(sub) << " on " << "TODO" << " and " << "TODO" << ".\n"; // TODO
 	}
 	for (auto i = terms.cbegin(); i < terms.cend(); ++i) {
 		auto var = dynamic_cast<VarTerm*>(*i)->var();

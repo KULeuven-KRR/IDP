@@ -526,7 +526,7 @@ public:
 
 	// Output
 	std::ostream& put(std::ostream&) const;
-	std::string toString(unsigned int spaces = 0) const;
+	std::string print(unsigned int spaces = 0) const;
 };
 
 std::ostream& operator<<(std::ostream&, const Rule&);

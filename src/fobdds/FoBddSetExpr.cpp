@@ -46,15 +46,15 @@ std::ostream& FOBDDQuantSetExpr::put(std::ostream& output) const {
 	pushtab();
 	output << nt() << "* Quantified variables of sorts:";
 	pushtab();
-	output << nt() << toString(_quantvarsorts);
+	output << nt() << print(_quantvarsorts);
 	poptab();
 	output << nt() << "* Formula:";
 	pushtab();
-	output << nt() << toString(_subformula);
+	output << nt() << print(_subformula);
 	poptab();
 	output << nt() << "* Term:";
 	pushtab();
-	output << nt() << toString(_subterm);
+	output << nt() << print(_subterm);
 	poptab();
 	poptab();
 	return output;
@@ -63,7 +63,7 @@ std::ostream& FOBDDEnumSetExpr::put(std::ostream& output) const {
 	output << "ENUMSET WITH:";
 	pushtab();
 	for (auto it = _subsets.cbegin(); it != _subsets.cend(); it++) {
-		output << nt() << "- " << toString(*it);
+		output << nt() << "- " << print(*it);
 	}
 	poptab();
 	return output;

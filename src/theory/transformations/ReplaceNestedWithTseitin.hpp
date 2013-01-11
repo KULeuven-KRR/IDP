@@ -61,7 +61,7 @@ public:
 
 private:
 	void execute(PredForm* pf, const std::set<ReducedPF*>& list, Vocabulary* vocabulary) {
-		cerr <<"Reducing " <<toString(pf) <<" to ";
+		cerr <<"Reducing " <<print(pf) <<" to ";
 		_reduced = NULL;
 
 		if (pf->symbol()->builtin()) { // TODO handle builtins?
@@ -103,14 +103,14 @@ private:
 			}
 		}
 		if (identicalfound) {
-			cerr <<toString(_reduced->_newpf) <<".\n";
+			cerr <<print(_reduced->_newpf) <<".\n";
 			return;
 		}
 
 		auto newsymbol = new Predicate(sorts);
 		vocabulary->add(newsymbol);
 		_reduced->_newpf = new PredForm(SIGN::POS, newsymbol, _reduced->_remainingargs, pf->pi());
-		cerr <<toString(_reduced->_newpf) <<".\n";
+		cerr <<print(_reduced->_newpf) <<".\n";
 	}
 
 	virtual void visit(const PredForm* pf) {

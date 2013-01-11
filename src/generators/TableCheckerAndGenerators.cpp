@@ -51,7 +51,7 @@ void TableChecker::next() {
 }
 
 void TableChecker::put(std::ostream& stream) const {
-	stream << toString(_table) << "(";
+	stream << print(_table) << "(";
 	bool begin = true;
 	for (unsigned int n = 0; n < _vars.size(); ++n) {
 		if (not begin) {
@@ -178,6 +178,6 @@ void InverseTableGenerator::next() {
 	}
 }
 void InverseTableGenerator::put(std::ostream& stream) const {
-	stream << "Inverse instance generater: inverse of" << nt() << toString(_predchecker);
+	stream << "Inverse instance generater: inverse of" << nt() << print(_predchecker);
 }
 

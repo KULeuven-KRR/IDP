@@ -49,14 +49,14 @@ void TermGrounder::setOrig(const Term* t, const var2dommap& mvd) {
 }
 
 void TermGrounder::printOrig() const {
-	clog << tabs() << "Grounding term " << toString(_origterm) << "\n";
+	clog << tabs() << "Grounding term " << print(_origterm) << "\n";
 	if (not _origterm->freeVars().empty()) {
 		pushtab();
 		clog << tabs() << "with instance ";
 		for (auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
-			clog << toString(*it) << " = ";
+			clog << print(*it) << " = ";
 			const DomainElement* e = _varmap.find(*it)->second->get();
-			clog << toString(e) << ' ';
+			clog << print(e) << ' ';
 		}
 		clog << "\n";
 		poptab();
@@ -109,7 +109,7 @@ GroundTerm FuncTermGrounder::run() const {
 		if (verbosity() > 2) {
 			if (result) {
 				poptab();
-				clog << tabs() << "Result = " << toString(result) << "\n";
+				clog << tabs() << "Result = " << print(result) << "\n";
 			} else {
 				poptab();
 				clog << tabs() << "Result = **invalid term**" << "\n";
@@ -220,7 +220,7 @@ GroundTerm SumTermGrounder::run() const {
 			Assert(domelem);
 			if (verbosity() > 2) {
 				poptab();
-				clog << tabs() << "Result = " << toString(domelem) << "\n";
+				clog << tabs() << "Result = " << print(domelem) << "\n";
 			}
 			return GroundTerm(domelem);
 		}
@@ -320,7 +320,7 @@ GroundTerm ProdTermGrounder::run() const {
 			Assert(domelem);
 			if (verbosity() > 2) {
 				poptab();
-				clog << tabs() << "Result = " << toString(domelem) << "\n";
+				clog << tabs() << "Result = " << print(domelem) << "\n";
 			}
 			return GroundTerm(domelem);
 		}
@@ -403,7 +403,7 @@ GroundTerm TermWithFactorGrounder::run() const {
 		Assert(domelem);
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << toString(domelem) << "\n";
+			clog << tabs() << "Result = " << print(domelem) << "\n";
 		}
 		return GroundTerm(domelem);
 	}
@@ -548,7 +548,7 @@ GroundTerm AggTermGrounder::run() const {
 	} else {
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << toString(trueweight) << "\n";
+			clog << tabs() << "Result = " << print(trueweight) << "\n";
 		}
 		return GroundTerm(createDomElem(trueweight));
 	}
