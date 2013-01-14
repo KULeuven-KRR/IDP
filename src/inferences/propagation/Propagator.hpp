@@ -68,6 +68,8 @@ private:
 
 	Domain* addToConjunction(Domain* conjunction, Domain* newconjunct);
 	Domain* addToDisjunction(Domain* disjunction, Domain* newdisjunct);
+	Domain* addToExists(Domain* exists, Variable*);
+	Domain* addToForall(Domain* forall, Variable*);
 	Domain* addToExists(Domain* exists, const std::set<Variable*>&);
 	Domain* addToForall(Domain* forall, const std::set<Variable*>&);
 

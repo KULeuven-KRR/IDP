@@ -197,14 +197,12 @@ Domain* TypedFOPropagator<Factory, Domain>::addToDisjunction(Domain* disjunction
 }
 
 template<class Factory, class Domain>
-Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, const set<Variable*>& qvars) {
-	set<Variable*> newqvars;
+Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, Variable* var) {
+	Variable* v = new Variable(var->name(), var->sort(), var->pi());
+	set<Variable*> newqvars = { v };
 	map<Variable*, Variable*> mvv;
-	for (auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
-		Variable* v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
-		newqvars.insert(v);
-		mvv[*it] = v;
-	}
+	mvv[var] = v;
+
 	Domain* cl = _factory->substitute(exists, mvv);
 	delete (exists);
 	Domain* q = _factory->exists(cl, newqvars);
@@ -213,19 +211,66 @@ Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, const se
 }
 
 template<class Factory, class Domain>
-Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, const set<Variable*>& qvars) {
-	set<Variable*> newqvars;
+Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, Variable* var) {
+	Variable* v = new Variable(var->name(), var->sort(), var->pi());
+	set<Variable*> newqvars = { v };
 	map<Variable*, Variable*> mvv;
-	for (auto it = qvars.cbegin(); it != qvars.cend(); ++it) {
-		Variable* v = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());
-		newqvars.insert(v);
-		mvv[*it] = v;
-	}
+	mvv[var] = v;
 	Domain* cl = _factory->substitute(forall, mvv);
 	delete (forall);
 	Domain* q = _factory->forall(cl, newqvars);
 	delete (cl);
 	return q;
+}
+
+/**
+ * Returns a false domain with as vars the free variables of  \forall qvars: orig
+ */
+template<class Factory, class Domain>
+Domain* falseDomain(Domain* orig, const set<Variable*>& qvars, Factory* factory) {
+	auto origdomainvars = orig->vars();
+	vector<Variable*> domainvars;
+	for (auto domainvar : origdomainvars) {
+		if (not contains(qvars, domainvar)) {
+			domainvars.push_back(domainvar);
+		}
+	}
+	delete orig;
+	return factory->falseDomain(domainvars);
+}
+
+/**
+ * Returns a domain that is either
+ * * Equal to the domain \exists qvars: orig
+ * * Or, in case that the previous domain is inadmissible, a false domain with as vars the free variables of  \exists qvars: orig
+ */
+template<class Factory, class Domain>
+Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* orig, const set<Variable*>& qvars) {
+	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
+	for (auto var : qvars) {
+		orig = addToExists(orig, var);
+		if (not admissible(orig, NULL)) {
+			return falseDomain(orig, qvars, _factory);
+		}
+	}
+	return orig;
+}
+
+/**
+ * Returns a domain that is either
+ * * Equal to the domain \forall qvars: orig
+ * * Or, in case that the previous domain is inadmissible, a false domain with as vars the free variables of  \forall qvars: orig
+ */
+template<class Factory, class Domain>
+Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* orig, const set<Variable*>& qvars) {
+	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
+	for (auto var : qvars) {
+		orig = addToForall(orig, var);
+		if (not admissible(orig, NULL)) {
+			return falseDomain(orig, qvars, _factory);
+		}
+	}
+	return orig;
 }
 
 template<class Factory, class Domain>

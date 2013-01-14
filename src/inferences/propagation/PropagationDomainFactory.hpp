@@ -37,6 +37,7 @@ public:
 	virtual ~FOPropDomainFactory() {
 	}
 	virtual PropagatorDomain* trueDomain(const Formula*) const = 0; //!< Create a domain containing all tuples
+	virtual PropagatorDomain* falseDomain(const vector<Variable*>& vars) const = 0;
 	virtual PropagatorDomain* falseDomain(const Formula*) const = 0; //!< Create an empty domain
 	virtual PropagatorDomain* formuladomain(const Formula*) const = 0;
 	virtual PropagatorDomain* ctDomain(const PredForm*) const = 0;
@@ -64,6 +65,7 @@ public:
 		return _manager;
 	}
 	FOPropBDDDomain* trueDomain(const Formula*) const;
+	FOPropBDDDomain* falseDomain(const vector<Variable*>& vars) const;
 	FOPropBDDDomain* falseDomain(const Formula*) const;
 	FOPropBDDDomain* formuladomain(const Formula*) const;
 	FOPropBDDDomain* ctDomain(const PredForm*) const;
