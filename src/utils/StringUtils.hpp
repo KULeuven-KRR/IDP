@@ -53,7 +53,3 @@ void printList(std::ostream& stream, const List<Element, Args...>& list, const s
 		func(stream, *s);
 	}
 }
-template<template<class, typename ...> class List, class Element, typename... Args>
-void printList(std::ostream& stream, const List<Element, Args...>& list, const std::string& delim, bool printlast = true) {
-	printList(stream, list, delim, [] (std::ostream& output, Element element) { output <<print(element);}, printlast);
-}

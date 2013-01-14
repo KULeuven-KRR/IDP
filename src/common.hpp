@@ -112,6 +112,11 @@ std::ostream& operator<<(std::ostream& stream, const ToStream<T>& object){
 	return print(stream, object.object);
 }
 
+template<template<class, typename ...> class List, class Element, typename... Args>
+void printList(std::ostream& stream, const List<Element, Args...>& list, const std::string& delim, bool printlast = true) {
+	printList(stream, list, delim, [] (std::ostream& output, Element element) { output <<print(element);}, printlast);
+}
+
 template<class T>
 std::string toString(const T& object){
 	std::stringstream ss;
