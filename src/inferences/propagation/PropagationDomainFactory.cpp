@@ -44,6 +44,11 @@ FOPropBDDDomain* FOPropBDDDomainFactory::trueDomain(const Formula* f) const {
 	return new FOPropBDDDomain(bdd, vv);
 }
 
+FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const vector<Variable*>& vars) const {
+	auto bdd = _manager->falsebdd();
+	return new FOPropBDDDomain(bdd, vars);
+}
+
 FOPropBDDDomain* FOPropBDDDomainFactory::falseDomain(const Formula* f) const {
 	const FOBDD* bdd = _manager->falsebdd();
 	vector<Variable*> vv(f->freeVars().cbegin(), f->freeVars().cend());
