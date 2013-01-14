@@ -14,9 +14,6 @@ using namespace std;
 
 namespace Tests {
 
-TEST_P(SlowMXsatTest, DoesSlowMXBasic) {
-	runTests("satisfiability.idp", GetParam(), "satnoboundslong()");
-}
 TEST_P(SlowMXsatTest, DoesSlowMXWithBounds) {
 	runTests("satisfiability.idp", GetParam(), "satwithboundslong()");
 }
