@@ -1,0 +1,21 @@
+vocabulary V{
+	type x isa int
+	p(x)
+}
+
+theory T:V{
+	!x[x]: x<10 => p(x).
+}
+
+structure S:V{
+	x = {0..20}
+}
+
+
+procedure weakassertions(newS){
+	return assertNotEmpty(newS[V.p].ct, "p<ct>")
+}
+
+procedure strongassertions(newS){
+	return (assert2(newS[V.p].ct,{0,1,2,3,4,5,6,7,8,9},"p<ct>") and assert2(newS[V.p].cf,{},"p<cf>"))
+}

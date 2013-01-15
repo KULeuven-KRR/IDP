@@ -22,13 +22,25 @@ class UnnestDomainTerms: public UnnestTerms {
 	VISITORFRIENDS()
 public:
 	template<typename T>
-	T execute(T t, const AbstractStructure* str, Context con) {
-		auto voc = (str != NULL) ? str->vocabulary() : NULL;
-		return UnnestTerms::execute(t, con, str, voc);
+	T execute(T t) {
+		return UnnestTerms::execute(t, Context::POSITIVE, NULL, NULL);
 	}
 
 protected:
 	virtual bool shouldMove(Term* t);
+};
+
+class UnnestDomainTermsFromNonBuiltins: public UnnestDomainTerms {
+	VISITORFRIENDS()
+public:
+	template<typename T>
+	T execute(T t) {
+		return UnnestDomainTerms::execute(t);
+	}
+protected:
+	virtual Formula* visit(PredForm*);
+
+
 };
 
 #endif /* UNNESTDOMTERMS_HPP_ */

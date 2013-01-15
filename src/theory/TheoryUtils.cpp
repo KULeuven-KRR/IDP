@@ -246,9 +246,14 @@ Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const AbstractStructure* str
 	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
 }
 
-Formula* unnestDomainTerms(Formula* f, const AbstractStructure* str, Context con) {
-	return transform<UnnestDomainTerms, Formula*>(f, str, con);
+Formula* unnestDomainTerms(Formula* f) {
+	return transform<UnnestDomainTerms, Formula*>(f);
 }
+
+Formula* unnestDomainTermsFromNonBuiltins(Formula* f) {
+	return transform<UnnestDomainTermsFromNonBuiltins, Formula*>(f);
+}
+
 
 Formula* unnestPartialTerms(Formula* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
@@ -317,10 +322,13 @@ AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const Abstract
 	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
 }
 
-AbstractTheory* unnestDomainTerms(AbstractTheory* t, const AbstractStructure* str, Context con) {
-	return transform<UnnestDomainTerms, AbstractTheory*>(t, str, con);
+AbstractTheory* unnestDomainTerms(AbstractTheory* t) {
+	return transform<UnnestDomainTerms, AbstractTheory*>(t);
 }
 
+AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory* t) {
+	return transform<UnnestDomainTermsFromNonBuiltins, AbstractTheory*>(t);
+}
 /*AbstractTheory* mergeRulesOnSameSymbol(AbstractTheory* t) {
  return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
  }*/

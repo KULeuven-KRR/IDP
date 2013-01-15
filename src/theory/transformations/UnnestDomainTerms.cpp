@@ -13,3 +13,10 @@
 bool UnnestDomainTerms::shouldMove(Term* t) {
 	return isAllowedToUnnest() && t->type() == TermType::DOM;
 }
+
+Formula* UnnestDomainTermsFromNonBuiltins::visit(PredForm* pf){
+	if( pf->symbol()->builtin()){
+		return pf;
+	}
+	return UnnestDomainTerms::visit(pf);
+}
