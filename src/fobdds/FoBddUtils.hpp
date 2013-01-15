@@ -29,7 +29,11 @@ using namespace rel_ops;
 /**
  *	A kernel order contains two numbers to order kernels (nodes) in a BDD.
  *	Kernels with a higher category appear further from the root than kernels with a lower category
- *	Within a category, kernels are ordered according to the second number.
+ *	Within a category, kernels are ordered reversed according to the second number.
+ *
+ *	The reason for this reversed ordering is to avoid too many reorderings
+ *	(during several operations (quantify) we create much new
+ *	bdds and don't want every of them to be moved to the top of the BDD
  */
 struct KernelOrder {
 	KernelOrderCategory _category; //!< The category of this kernel
@@ -46,7 +50,7 @@ struct KernelOrder {
 		} else if (ko._category < _category) {
 			return false;
 		} else {
-			return _number < ko._number;
+			return _number > ko._number;
 		}
 	}
 };
