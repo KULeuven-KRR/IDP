@@ -177,9 +177,14 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo);
 	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, NULL, newtheo->vocabulary());
-	FormulaUtils::unnestDomainTerms(newtheo);
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, true, false);
+	/* Since we will create "leafconnectors" for all (non-builtin) predicates, it is important that we unnest
+	 * all terms to achieve that predforms are always of the form P(\bar x)
+	 * All terms should have been unnested before, we only need to unnest domainterms now.
+	 *
+	 * Since we don't create leafconnectors for built-in predicates, we only unnest from non builtins */
+	FormulaUtils::unnestDomainTermsFromNonBuiltins(newtheo);
 
 	// Add function constraints
 	for (auto it = _initbounds.cbegin(); it != _initbounds.cend(); ++it) {

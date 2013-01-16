@@ -1047,6 +1047,9 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* var
 }
 
 int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
+	if (kernel == _truekernel || kernel == _falsekernel) {
+		return 0;
+	}
 	if (isa<FOBDDAtomKernel>(*kernel)) {
 		return 1;
 	} else if (isa<FOBDDQuantKernel>(*kernel)) {

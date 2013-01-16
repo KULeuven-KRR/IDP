@@ -148,7 +148,8 @@ Formula* unnestFuncsAndAggs(Formula*, const AbstractStructure* str = NULL, Conte
 Formula* unnestFuncsAndAggsNonRecursive(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
-Formula* unnestDomainTerms(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestDomainTerms(Formula*);
+Formula* unnestDomainTermsFromNonBuiltins(Formula*);
 
 
 /** Recursively move all partial terms outside atoms */
@@ -213,7 +214,8 @@ AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const AbstractStructure* str
 AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
-AbstractTheory* unnestDomainTerms(AbstractTheory*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestDomainTerms(AbstractTheory*);
+AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 
 /** Rewrite the theory so that there are no nested terms */
