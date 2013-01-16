@@ -259,7 +259,7 @@ COMMENTLINE		"//".*
 		Include
 	*************/
 
-<*>"#include"				{ parser.advancecol();
+<*>"include"				{ parser.advancecol();
 							  parser.includecaller = YY_START;
 							  BEGIN(include);
 							}

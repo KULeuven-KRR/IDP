@@ -15,7 +15,7 @@ structure S:V{
 	Aantal = {1..3}
 	PriemGetal = {2;3;4;7}
 }
-#include <mx>
+include <mx>
 procedure main(){
 	stdoptions.groundwithbounds=false
 	stdoptions.liftedunitpropagation=false

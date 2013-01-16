@@ -1,4 +1,4 @@
-#include <mx>
+include <mx>
 
 vocabulary voc {
 	type Block isa nat
