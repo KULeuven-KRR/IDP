@@ -118,7 +118,7 @@ void AggGenerator::next() {
 		_left->operator =(createDomElem(_result));
 	} else {
 		//Think about the meaning of this. We want maxdouble? or mindouble in this case?
-		notyetimplemented("Overflows in aggregategenerators");
+		throw notyetimplemented("Overflows in aggregategenerators");
 		Assert(false);
 	}
 

@@ -1176,7 +1176,7 @@ bool UnionInternalPredTable::finite(const Universe& univ) const {
 	if (approxFinite(univ)) {
 		return true;
 	} else {
-		notyetimplemented("Exact finiteness test on union predicate tables");
+		throw notyetimplemented("Exact finiteness test on union predicate tables");
 		return approxFinite(univ);
 	}
 }
@@ -1185,7 +1185,7 @@ bool UnionInternalPredTable::empty(const Universe& univ) const {
 	if (approxEmpty(univ)) {
 		return true;
 	} else {
-		notyetimplemented("Exact emptyness test on union predicate tables");
+		throw notyetimplemented("Exact emptyness test on union predicate tables");
 		return approxEmpty(univ);
 	}
 }
@@ -2062,7 +2062,7 @@ bool UnionInternalSortTable::finite() const {
 	if (approxFinite()) {
 		return true;
 	} else {
-		notyetimplemented("Exact finiteness test on union sort tables");
+		throw notyetimplemented("Exact finiteness test on union sort tables");
 		return approxFinite();
 	}
 }
@@ -2071,7 +2071,7 @@ bool UnionInternalSortTable::empty() const {
 	if (approxEmpty()) {
 		return true;
 	} else {
-		notyetimplemented("Exact emptyness test on union sort tables");
+		throw notyetimplemented("Exact emptyness test on union sort tables");
 		return approxEmpty();
 	}
 }
@@ -2195,7 +2195,7 @@ InternalSortIterator* UnionInternalSortTable::sortBegin() const {
 }
 
 InternalSortIterator* UnionInternalSortTable::sortIterator(const DomainElement*) const {
-	notyetimplemented("intermediate sortiterator for UnionInternalSortTable");
+	throw notyetimplemented("intermediate sortiterator for UnionInternalSortTable");
 	return NULL;
 }
 
@@ -2224,13 +2224,13 @@ const DomainElement* UnionInternalSortTable::last() const {
 		}
 	}
 	if (not result) {
-		notyetimplemented("Computation of last element of a UnionInternalSortTable");
+		throw notyetimplemented("Computation of last element of a UnionInternalSortTable");
 	}
 	return result;
 }
 
 bool UnionInternalSortTable::isRange() const {
-	notyetimplemented("Exact range test of a UnionInternalSortTable");
+	throw notyetimplemented("Exact range test of a UnionInternalSortTable");
 	return false;
 }
 
@@ -2553,7 +2553,7 @@ bool ProcInternalFuncTable::empty(const Universe& univ) const {
 			return true;
 		}
 	}
-	notyetimplemented("Exact emptyness test on procedural function tables");
+	throw notyetimplemented("Exact emptyness test on procedural function tables");
 	return false;
 }
 
@@ -2583,12 +2583,12 @@ const DomainElement* ProcInternalFuncTable::operator[](const ElementTuple& tuple
 }
 
 InternalFuncTable* ProcInternalFuncTable::add(const ElementTuple&) {
-	notyetimplemented("adding a tuple to a procedural function interpretation");
+	throw notyetimplemented("adding a tuple to a procedural function interpretation");
 	return this;
 }
 
 InternalFuncTable* ProcInternalFuncTable::remove(const ElementTuple&) {
-	notyetimplemented("removing a tuple from a procedural function interpretation");
+	throw notyetimplemented("removing a tuple from a procedural function interpretation");
 	return this;
 }
 
@@ -2614,7 +2614,7 @@ bool UNAInternalFuncTable::empty(const Universe& univ) const {
 			return true;
 		}
 	}
-	notyetimplemented("Exact emptyness test on constructor function tables");
+	throw notyetimplemented("Exact emptyness test on constructor function tables");
 	return false;
 }
 
@@ -2651,12 +2651,12 @@ const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple)
 }
 
 InternalFuncTable* UNAInternalFuncTable::add(const ElementTuple&) {
-	notyetimplemented("adding a tuple to a generated function interpretation");
+	throw notyetimplemented("adding a tuple to a generated function interpretation");
 	return this;
 }
 
 InternalFuncTable* UNAInternalFuncTable::remove(const ElementTuple&) {
-	notyetimplemented("removing a tuple from a generated function interpretation");
+	throw notyetimplemented("removing a tuple from a generated function interpretation");
 	return this;
 }
 
@@ -3035,12 +3035,12 @@ bool ProcInternalPredTable::contains(const ElementTuple& tuple, const Universe& 
 }
 
 InternalPredTable* ProcInternalPredTable::add(const ElementTuple&) {
-	notyetimplemented("Adding a tuple to a procedural predicate table");
+	throw notyetimplemented("Adding a tuple to a procedural predicate table");
 	return this;
 }
 
 InternalPredTable* ProcInternalPredTable::remove(const ElementTuple&) {
-	notyetimplemented("Removing a tuple from a procedural predicate table");
+	throw notyetimplemented("Removing a tuple from a procedural predicate table");
 	return this;
 }
 
@@ -3088,7 +3088,7 @@ bool InverseInternalPredTable::finite(const Universe& univ) const {
 	} else if (_invtable->finite(univ)) {
 		return false;
 	} else {
-		notyetimplemented("Exact finiteness test on inverse predicate tables");
+		throw notyetimplemented("Exact finiteness test on inverse predicate tables");
 		return approxEmpty(univ);
 	}
 }
@@ -3107,7 +3107,7 @@ bool InverseInternalPredTable::empty(const Universe& univ) const {
 		auto ti = TableIterator(begin(univ));
 		return ti.isAtEnd();
 	} else {
-		notyetimplemented("Exact emptyness test on inverse predicate tables");
+		throw notyetimplemented("Exact emptyness test on inverse predicate tables");
 		return approxEmpty(univ);
 	}
 }
@@ -3904,17 +3904,13 @@ FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
 FuncInter* SuccInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2, st);
-	FuncTable* ft = 0; // TODO
-	notyetimplemented("successor function");
-	return new FuncInter(ft);
+	throw notyetimplemented("successor function");
 }
 
 FuncInter* InvSuccInterGenerator::get(const AbstractStructure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2, st);
-	FuncTable* ft = 0; // TODO
-	notyetimplemented("successor function");
-	return new FuncInter(ft);
+	throw notyetimplemented("successor function");
 }
 
 MinInterGenerator* MinInterGeneratorGenerator::get(const vector<Sort*>& sorts) {
