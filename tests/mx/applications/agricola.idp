@@ -1,0 +1,78 @@
+vocabulary V{
+	type Player
+	type Action	
+	type Time isa int
+	Start:Time
+	Do(Action, Time)
+	
+	EndTurn:Action
+	
+	InitTurn:Player
+	partial c_turn(Time):Player
+	current(Time):Player
+	next(Time):Player
+	
+	type ResourceType
+	wheat:ResourceType
+	type ResourceNb isa int
+	Has(Player, ResourceType, Time): ResourceNb
+	InitResource(Player, ResourceType):ResourceNb
+	c_resource(Player, ResourceType, Time):ResourceNb
+	
+	Empty:Action
+	Emptying(ResourceType, Time)
+	Add:Action
+	partial Adding(ResourceType, Time):ResourceNb
+}
+theory T:V{
+	{
+		current(Start)=InitTurn().
+		current(t+1)=current(t) <- !x: x~=c_turn(t).
+		current(t+1)=c_turn(t).
+
+		next(t) = MIN[:Player] <- current(t) = MAX[:Player].
+		next(t) = SUCC(current(t)) <- current(t) ~= MAX[:Player]. 
+	}
+	{
+		c_turn(t)=next(t) <- Do(EndTurn, t). 
+	}
+
+	{
+		Has(p, r, t)=InitResource(p, r).
+		Has(p, r, t)=Has(p, r, t) <- !x: x~=c_resource(p, r, t).
+		Has(p, r, t)=c_resource(p, r, t).
+	}
+	{
+		c_resource(current(t), r, t)=0 <- Do(Empty, t) & Emptying(r,t).
+		c_resource(current(t), r, t)=Adding(r, t) <- Do(Add, t).
+	}
+	
+	!t: ?1 a: Do(a, t).
+	
+	!r t: Has(current(t),r,t)+Adding(r,t)=<MAX[:ResourceNb].
+	!t r n: Adding(r,t)=n => n<4.
+	
+	?t: Has(current(t), wheat, t)=MAX[:ResourceNb].
+}
+structure S:V{
+	Time = {1..3}
+	Start = 1
+	EndTurn = et
+	
+	InitTurn = one
+	
+	ResourceNb = {0..10}
+	wheat = wheat
+	InitResource = { 
+		one, wood -> 1; one, clay -> 5; one, wheat -> 0; 
+		two, wood -> 0; two, clay -> 10; two, wheat -> 5; 
+	}
+	
+	Empty = e
+	Add = a
+}
+include <mx>
+procedure main(){
+	stdoptions.verbosity.grounding=1
+	print(onemodel(T,S))
+}
