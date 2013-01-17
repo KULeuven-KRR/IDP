@@ -1,4 +1,4 @@
-#include <mx>
+include <mx>
 
 // voc V, theory T, minimization term t, structure S
 // getExpectedAModel() if at least one model exists

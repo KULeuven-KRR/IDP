@@ -1,15 +1,21 @@
 \section{Include statements}
-Everywhere in an \idp file, a statement 
+Everywhere in an \idp file at location \code{dir}, a statement 
 \begin{lstlisting}
-#include "path/to/file"
+include "path/to/file"
 \end{lstlisting}
-is replaced by the contents of the file \code{path/to/file}.
+is replaced by the contents of \code{dir/path/to/file} or \code{path/to/file} if the first one does not exists. 
+If none exist, an error is thrown.
+Every file can only be included once; if it is included more often, it will be ignored the second time.
+However, if you include a file multiple times in different ways (by using different symbol links for example), we might not detect that it is the same file, and include it more than once.
+We discourage this behavior.
+
+
 A statement
 \begin{lstlisting}
-#include <filename>
+include <filename>
 \end{lstlisting}
-
-is replaced by the contents of the standard library file \code{filename}.  Currently the following standard library files are available:
+is replaced by the contents of the standard library file \code{filename}.
+Currently the following standard library files are available:
 \begin{description}
 \item[mx] Contains some useful model expansion procedures.
 \item[table\_utils] Contains tools for manipulating tables and converting IDP tables to lua tables.

@@ -18,6 +18,7 @@ using namespace std;
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
 extern int yyparse();
+extern std::string state;
 extern std::string getInstalledFilePath(std::string filename);
 
 Insert& data();
@@ -27,7 +28,6 @@ extern void setclconst(string,string);
 struct ParserData{
 
 	ParserData(): tablen(4), bracketcounter(0), prevlength(0), stdin_included(false){
-
 	}
 	
 	// Return to right mode after a comment
@@ -73,12 +73,11 @@ struct ParserData{
 	vector<unsigned int>	include_col_stack;			// column number of the corresponding buffer
 	bool					stdin_included;
 	set<string>				earlierincludes;			// Files that have already been included
+	vector<string>			earlierstates;
 	void start_include(string s) {
 		// check if we are including from the included file
 		for(unsigned int n = 0; n < include_buffer_filenames.size(); ++n) {
 			if(*(include_buffer_filenames[n]) == s) {
-				ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
-				Error::cyclicinclude(s,pi);
 				return;
 			}
 		}
@@ -95,7 +94,29 @@ struct ParserData{
 		include_col_stack.push_back(yylloc.first_column + prevlength);
 		// open the new buffer
 		FILE* oldfile = yyin;
-		yyin = fopen(s.c_str(),"r");
+		
+		if(earlierstates.size()==0){
+			earlierstates.push_back(state);
+		}
+		std::string temp(earlierstates.back()+s);
+//		std::cerr <<"Opening LEX" <<temp <<"\n";
+		auto filep = fopen(temp.c_str(),"r");
+		auto origstate = state;
+		if(filep){
+			auto index = temp.find_last_of('/');
+			if(index==std::string::npos){
+				state = "";
+			}else{
+				state = temp.substr(0, index+1);
+			}
+//			std::cerr <<"State set to " <<state <<"\n";
+			earlierstates.push_back(state);
+		}
+		
+		yyin = filep;
+		if(yyin==NULL){
+			yyin = fopen(s.c_str(),"r");
+		}
 		if(!yyin) {
 			ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
 			Error::unexistingfile(s,pi);
@@ -104,6 +125,7 @@ struct ParserData{
 			include_line_stack.pop_back();
 			include_col_stack.pop_back();
 			yyin = oldfile;
+			state = origstate;
 		}
 		else {
 			yylloc.first_line = 1;
@@ -148,14 +170,18 @@ struct ParserData{
 		include_buffer_filenames.pop_back();
 		include_line_stack.pop_back();
 		include_col_stack.pop_back();
+		earlierstates.pop_back();
 	}
 };
 
 ParserData parser;
 
-void reset(){
+void resetParser(){
 	parser = ParserData();
 	BEGIN(0);
+}
+bool alreadyParsed(const std::string& filename){
+	return parser.earlierincludes.find(filename)!=parser.earlierincludes.cend();
 }
 
 
@@ -233,7 +259,7 @@ COMMENTLINE		"//".*
 		Include
 	*************/
 
-<*>"#include"				{ parser.advancecol();
+<*>"include"				{ parser.advancecol();
 							  parser.includecaller = YY_START;
 							  BEGIN(include);
 							}
@@ -350,28 +376,6 @@ COMMENTLINE		"//".*
 								  string str = getInstalledFilePath(string(temp,yyleng-2));
 								  parser.start_include(str);	
 								  BEGIN(parser.includecaller);
-								}
-<include>"$"[a-zA-Z0-9_]*		{ parser.advancecol();
-								  string temp(yytext);
-								  temp = temp.substr(1,temp.size()-1);
-								  if(GlobalData::instance()->getConstValues().find(temp) != GlobalData::instance()->getConstValues().end()) {
-									  auto clc = GlobalData::instance()->getConstValues().at(temp);
-									  if(typeid(*clc) == typeid(StrClConst)) {
-										  auto slc = dynamic_cast<StrClConst*>(clc);
-										  parser.start_include(slc->value());
-									  } else {
-										  ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
-										  Error::stringconsexp(temp,pi);
-									  }
-									  BEGIN(parser.includecaller);
-								  }
-								  else {
-									  clog << "Type a value for constant " << temp << endl << "> "; 
-									  string str;
-									  getline(cin,str);
-									  parser.start_include(str);
-									  BEGIN(parser.includecaller);
-								  }
 								}
 <include>{STR}					{ parser.advancecol();
 								  char* temp = yytext; ++temp;
@@ -522,17 +526,6 @@ COMMENTLINE		"//".*
 <*>{CHR}					{ parser.advancecol();
 							  yylval.chr = (yytext)[1];
 							  return CHARCONS;
-							}
-<*>"$"[a-zA-Z0-9_]*			{ parser.advancecol();
-							  string temp(yytext);
-							  temp = temp.substr(1,temp.size()-1);
-							  if(GlobalData::instance()->getConstValues().find(temp)== GlobalData::instance()->getConstValues().end()) {
-								  clog << "Type a value for constant " << temp << endl << "> "; 
-								  string str;
-								  getline(cin,str);
-								  GlobalData::instance()->setConstValue(temp,str);
-							  }
-							  return (GlobalData::instance()->getConstValues().at(temp))->execute();
 							}
 
 

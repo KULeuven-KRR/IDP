@@ -1,4 +1,4 @@
-#include <mx>
+include <mx>
 
 namespace packing {
 	vocabulary A {

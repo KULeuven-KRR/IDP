@@ -15,6 +15,8 @@
 #include "internalargument.hpp"
 #include "insert.hpp"
 
+extern void resetParser();
+
 using namespace std;
 
 GlobalData::GlobalData()
@@ -22,9 +24,9 @@ GlobalData::GlobalData()
 			_inserter(new Insert(_globalNamespace)),
 			_domainelemFactory(DomainElementFactory::createGlobal()),
 			_idcounter(1),
-			_terminateRequested(false),
 			_options(new Options(false)),
 			_tabsizestack() {
+	shouldTerminate = false;
 	_tabsizestack.push(0);
 	_stdNamespace = new Namespace("stdspace", _globalNamespace, ParseInfo());
 }
@@ -42,6 +44,8 @@ GlobalData::~GlobalData() {
 	garbageCollectInternalArgumentVectors();
 	DomElemContainer::deleteAllContainers();
 	// Note: Options are handled by Lua's garbage collection.
+
+	resetParser(); // Reset the parser, which is also global data
 }
 
 //setoptions can only be called from the setoptionsinference! Otherwise, we could change the user-defined options
@@ -52,6 +56,7 @@ void GlobalData::setOptions(Options* options) {
 }
 
 GlobalData* _instance = NULL;
+bool GlobalData::shouldTerminate = false;
 
 GlobalData* GlobalData::instance() {
 	if (_instance == NULL) {
@@ -75,23 +80,6 @@ void GlobalData::close() {
 	Assert(_instance!=NULL);
 	delete (_instance);
 	_instance = NULL;
-}
-
-void GlobalData::setConstValue(const std::string& name1, const std::string& name2) {
-	CLConst* c;
-	if (isInt(name2))
-		c = new IntClConst(toInt(name2));
-	else if (isDouble(name2))
-		c = new DoubleClConst(toDouble(name2));
-	else if (name2.size() == 1)
-		c = new CharCLConst(name2[0], false);
-	else if (name2.size() == 3 && name2[0] == '\'' && name2[2] == '\'')
-		c = new CharCLConst(name2[1], true);
-	else if (name2.size() >= 2 && name2[0] == '"' && name2[name2.size() - 1] == '"')
-		c = new StrClConst(name2.substr(1, name2.size() - 2), true);
-	else
-		c = new StrClConst(name2, false);
-	clconsts[name1] = c;
 }
 
 FILE* GlobalData::openFile(const char* filename, const char* mode) {

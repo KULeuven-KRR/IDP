@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef GLOBALDATA_HPP_
-#define GLOBALDATA_HPP_
+#pragma once
 
 #include <cstdio>
 #include <set>
@@ -36,11 +35,8 @@ class GlobalData {
 private:
 	Namespace *_globalNamespace, *_stdNamespace;
 	Insert* _inserter;
-	std::map<std::string, CLConst*> clconsts;
 	DomainElementFactory* _domainelemFactory;
 	int _idcounter;
-
-	bool _terminateRequested;
 
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
@@ -59,15 +55,26 @@ public:
 		return ++_idcounter;
 	}
 
+	static bool shouldTerminate;
 	static GlobalData* instance();
 	static DomainElementFactory* getGlobalDomElemFactory();
 	static Namespace* getGlobalNamespace();
 	static Namespace* getStdNamespace();
 	static void close();
 
-	bool terminateRequested() const {
-		return _terminateRequested;
+	static bool terminateRequested() {
+		return shouldTerminate;
 	}
+	static void reset() {
+		shouldTerminate = false;
+	}
+	void notifyTerminateRequested() {
+		shouldTerminate = true;
+		for (auto i = _monitors.cbegin(); i < _monitors.cend(); ++i) {
+			(*i)->notifyTerminateRequested();
+		}
+	}
+
 	void addTerminationMonitor(TerminateMonitor* m) {
 		_monitors.push_back(m);
 	}
@@ -77,15 +84,6 @@ public:
 				_monitors.erase(i);
 				break;
 			}
-		}
-	}
-	void reset() {
-		_terminateRequested = false;
-	}
-	void notifyTerminateRequested() {
-		_terminateRequested = true;
-		for (auto i = _monitors.cbegin(); i < _monitors.cend(); ++i) {
-			(*i)->notifyTerminateRequested();
 		}
 	}
 
@@ -103,12 +101,6 @@ public:
 	Insert& getInserter() {
 		return *_inserter;
 	}
-
-	const std::map<std::string, CLConst*>& getConstValues() const {
-		return clconsts;
-	}
-
-	void setConstValue(const std::string& name1, const std::string& name2);
 
 	Options* getOptions() {
 		return _options;
@@ -166,9 +158,7 @@ void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueTy
 	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
 
-// TODO improve check by bool flag!
 #define CHECKTERMINATION \
-		if(GlobalData::instance()->terminateRequested()){\
-			throw IdpException("Terminate requested");\
-		}
-#endif /* GLOBALDATA_HPP_ */
+	if(GlobalData::terminateRequested()){\
+		throw IdpException("Terminate requested");\
+	}

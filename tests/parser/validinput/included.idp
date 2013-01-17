@@ -1,0 +1,5 @@
+include "../included1.idp"
+
+procedure main(){
+	return 1
+}
