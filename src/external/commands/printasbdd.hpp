@@ -8,24 +8,13 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef PRINTBDD_HPP_
-#define PRINTBDD_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
 #include "printers/bddprinter.hpp"
 
-
 #include "options.hpp"
-
-template<class Object>
-void printAsBDD(Object o) {
-	auto printer = new BDDPrinter<std::ostream>(std::clog);
-	printer->startTheory();
-	printer->print(o);
-	printer->endTheory();
-	delete(printer);
-}
 
 typedef TypedInference<LIST(AbstractTheory*)> PrintTheoryInferenceBase;
 class PrintAsBDDInference: public PrintTheoryInferenceBase {
@@ -37,10 +26,13 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto theory = get<0>(args);
-		printAsBDD(theory);
+
+		auto printer = new BDDPrinter<std::ostream>(std::cout);
+		printer->startTheory();
+		printer->print(theory);
+		printer->endTheory();
+		delete(printer);
+
 		return InternalArgument();
 	}
 };
-
-
-#endif /* PRINTBDD_HPP_ */

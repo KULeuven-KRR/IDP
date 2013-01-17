@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************/
 
-#ifndef BDDPRINTER_HPP_
-#define BDDPRINTER_HPP_
+#pragma once
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
@@ -24,9 +23,6 @@
 
 #include "inferences/grounding/GroundTranslator.hpp"
 
-//TODO is not guaranteed to generate correct idp files!
-// FIXME do we want this? Because printing cp constraints etc. should be done correctly then!
-//TODO usage of stored parameters might be incorrect in some cases.
 
 template<typename Stream>
 class BDDPrinter: public StreamPrinter<Stream> {
@@ -58,12 +54,12 @@ private:
 	void printFormula(const Formula* f) {
 		FOBDDFactory factory(_manager);
 		auto bdd = factory.turnIntoBdd(f);
-		output() << "FORMULA\n"<< print(f)<<"\nBECOMES \n"<< print(bdd) << "\n\n";
+		output() << ">>> Formula\n\t"<< print(f)<<"\n>>> is the BDD\n"<< print(bdd) << "\n\n";
 	}
 public:
 
 	virtual void visit(const Theory* t) {
-		Warning::warning("Only printing formulas as bdd is supported. I will ignore ALL definitions etc.");
+		Warning::warning("Only the sentences of the given theory are printed as BDDs.");
 		for (auto sent = t->sentences().cbegin(); sent != t->sentences().cend(); sent++) {
 			printFormula(*sent);
 		}
@@ -96,43 +92,42 @@ public:
 	}
 
 	virtual void visit(const GroundDefinition*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Ground definitions cannot be printed as BDDs");
 	}
 	virtual void visit(const PCGroundRule*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Ground rules cannot be printed as BDDs");
 	}
 	virtual void visit(const AggGroundRule*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Ground rules cannot be printed as BDDs");
 	}
 	virtual void visit(const GroundSet*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Ground sets cannot be printed as BDDs");
 	}
 	virtual void visit(const GroundAggregate*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Ground aggregates cannot be printed as BDDs");
 	}
 	virtual void visit(const Vocabulary*) {
-		throw notyetimplemented("printing Vocabulary as BDD");
+		throw IdpException("Vocabularies cannot be printed as BDDs");
 	}
 	virtual void visit(const AbstractStructure*) {
-		throw notyetimplemented("printing AbstractStructure as BDD");
+		throw IdpException("Structures cannot be printed as BDDs");
 	}
 	void visit(const PredTable*){
-		throw notyetimplemented("printing PredTable as BDD");
+		throw IdpException("Tables cannot be printed as BDDs");
 	}
 	virtual void visit(const Query*) {
-		throw notyetimplemented("printing Query as BDD");
+		throw IdpException("Queries cannot be printed as BDDs");
 	}
 	virtual void visit(const Namespace*) {
-		throw notyetimplemented("printing Namespace as BDD");
+		throw IdpException("Namespaces cannot be printed as BDDs");
 	}
 	virtual void visit(const GroundClause&) {
-		throw notyetimplemented("printing GroundClause as BDD");
+		throw IdpException("Ground clauses cannot be printed as BDDs");
 	}
 	virtual void visit(const GroundFixpDef*) {
-		throw notyetimplemented("printing GroundFixpDef as BDD");
+		throw IdpException("Ground fixpoint definitions cannot be printed as BDDs");
 	}
 	virtual void visit(const CPReification*) {
-		throw notyetimplemented("printing CPReification as BDD");
+		throw IdpException("CP reifications cannot be printed as BDDs");
 	}
 };
-#endif //BDDPRINTER_HPP_
