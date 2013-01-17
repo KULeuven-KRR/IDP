@@ -24,7 +24,7 @@ AssertionException::AssertionException(std::string message)
 }
 std::string AssertionException::getMessage() const {
 	std::stringstream ss;
-	ss << "AssertionException: " << message;
+	ss << message;
 	return ss.str();
 }
 
@@ -37,6 +37,6 @@ IdpException::IdpException(std::string message)
 
 std::string IdpException::getMessage() const {
 	std::stringstream ss;
-	ss << "IdpException: " << message;
+	ss << message;
 	return ss.str();
 }

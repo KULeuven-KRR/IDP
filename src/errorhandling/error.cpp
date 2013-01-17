@@ -67,22 +67,21 @@ unsigned int Warning::nr_of_warnings() {
 
 void Error::error(const std::string& message) {
 	stringstream ss;
-	ss << ">>> Error: " << message << "\n";
+	ss << "Error: " << message << "\n";
 	GlobalData::instance()->notifyOfError(ss.str());
 	clog << ss.str();
 }
 
 void Error::error(const std::string& message, const ParseInfo& p) {
 	stringstream ss;
-	ss << message << "\n";
-	ss << "\tEncountered at " << print(p);
+	ss << message <<" At " << print(p);
 	error(ss.str());
 }
 
 void Warning::warning(const std::string& message) {
 	if (getOption(BoolType::SHOWWARNINGS)) {
 		stringstream ss;
-		ss << ">>> Warning: " << message << "\n";
+		ss << "Warning: " << message << "\n";
 		GlobalData::instance()->notifyOfWarning(ss.str());
 		clog << ss.str();
 	}
@@ -90,8 +89,7 @@ void Warning::warning(const std::string& message) {
 
 void Warning::warning(const std::string& message, const ParseInfo& p) {
 	stringstream ss;
-	ss << message << "\n";
-	ss << "\tEncountered at " << print(p);
+	ss << message << " At " << print(p);
 	warning(ss.str());
 }
 

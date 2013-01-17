@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <csignal>
+#include <csetjmp>
 #include "common.hpp"
 #include "errorhandling/error.hpp"
 #include "lua/luaconnection.hpp"
@@ -157,13 +158,9 @@ void handleAndRun(void* d) {
 	try {
 		*data->result = Insert::exec(data->proc);
 	} catch (const Exception& ex) {
-		stringstream ss;
-		ss << "Exception caught: " << ex.getMessage();
-		Error::error(ss.str());
+		Error::error(ex.getMessage());
 	} catch (const std::exception& ex) {
-		stringstream ss;
-		ss << "Exception caught: " << ex.what();
-		Error::error(ss.str());
+		Error::error(ex.what());
 		throwfromexecution = true;
 	}
 	clog.flush();
@@ -214,17 +211,15 @@ void timeout(void*) {
 	}
 }
 
-void SIGINT_handler(int) {
-	if (not shouldStop() && running) {
-		GlobalData::instance()->notifyTerminateRequested();
-	} else {
-		exit(1);
-	}
-}
-
-void SIGUSR1_handler(int) {
-	sleep(1000000);
-}
+jmp_buf main_loop;
+volatile sig_atomic_t abortcode;
+volatile sig_atomic_t jumpback; //Only jump back when this is 0
+static void SIGABRT_handler(int signum);
+static void SIGFPE_handler(int signum);
+static void SIGSEGV_handler(int signum);
+static void SIGTERM_handler(int signum);
+static void SIGINT_handler(int signum);
+void handleSignals();
 
 template<typename Handler, typename SIGNAL>
 void registerHandler(Handler f, SIGNAL s) {
@@ -270,26 +265,48 @@ const DomainElement* executeProcedure(const string& proc) {
 	throwfromexecution = false;
 	getGlobal()->reset();
 
-	registerHandler(SIGINT_handler, SIGINT);
-	//TODO registerHandler(SIGUSR1_handler, SIGUSR1);
+	signal(SIGABRT, SIGABRT_handler);
+	signal(SIGFPE, SIGFPE_handler);
+	signal(SIGTERM, SIGTERM_handler);
+	signal(SIGSEGV, SIGSEGV_handler);
+	signal(SIGINT, SIGINT_handler);
+#if defined(__linux__)
+	signal(SIGHUP, SIGINT_handler);
+#endif
 
-	thread signalhandling(&timeout, NULL);
+	//IMPORTANT: because signals are handled asynchronously, a special mechanism is needed to recover from them (exception throwing does not work)
+	//setjmp maintains a jump point to which any stack can jump back, re-executing this statement with different return value,
+	//so if this happens, we jump out
+	bool stoprunning = false;
+	if (setjmp(main_loop)) {
+		jumpback = 1;
+		handleSignals();
+		stoprunning = true;
+	}
+	if (!stoprunning) {
+		jumpback = 0;
 
-	RunData d;
-	d.proc = temp;
-	d.result = &result;
-	thread execution(&handleAndRun, &d);
-	executionhandle = execution.native_handle();
-	execution.join();
+		thread signalhandling(&timeout, NULL);
 
-	hasStopped = true;
-	running = false;
-	setStop(true);
-	signalhandling.join();
+		RunData d;
+		d.proc = temp;
+		d.result = &result;
+		thread execution(&handleAndRun, &d);
+		executionhandle = execution.native_handle();
+		execution.join();
+
+		hasStopped = true;
+		running = false;
+		setStop(true);
+		signalhandling.join();
+
+		jumpback = 1;
+	}
+	jumpback = 1;
 
 	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
-		cerr << "First critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
-		cerr << "\t" << *getGlobal()->getErrors().cbegin();
+		cerr << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
+		cerr << *getGlobal()->getErrors().cbegin();
 	}
 
 	if (throwfromexecution) {
@@ -443,4 +460,62 @@ int run(int argc, char* argv[]) {
 	}
 
 	return Error::nr_of_errors();
+}
+
+
+static void SIGFPE_handler(int) {
+	abortcode = SIGFPE;
+	if (jumpback == 0) {
+		longjmp(main_loop, 1);
+	}
+}
+
+//IMPORTANT: assumed this is always called externally
+static void SIGTERM_handler(int) {
+	abortcode = SIGTERM;
+	if (jumpback == 0) {
+		longjmp(main_loop, 1);
+	}
+}
+
+static void SIGABRT_handler(int) {
+	abortcode = SIGABRT;
+	if (jumpback == 0) {
+		longjmp(main_loop, 1);
+	}
+}
+
+static void SIGSEGV_handler(int) {
+	abortcode = SIGSEGV;
+	if (jumpback == 0) {
+		longjmp(main_loop, 1);
+	}
+}
+
+void SIGINT_handler(int) {
+	if (not shouldStop() && running) {
+		GlobalData::instance()->notifyTerminateRequested();
+	} else {
+		exit(1);
+	}
+}
+
+void handleSignals() {
+	switch (abortcode) {
+	case SIGFPE:
+		clog << "Exit: Floating point error signal received\n";
+		break;
+	case SIGABRT:
+		clog << "Exit: Abort signal received\n";
+		break;
+	case SIGINT:
+		//clog << ">>> Ctrl-c signal received\n";
+		break;
+	case SIGSEGV:
+		clog << "Exit: Segmentation fault signal received\n";
+		break;
+	case SIGTERM:
+		clog << "Exit: Terminate signal received\n";
+		break;
+	}
 }
