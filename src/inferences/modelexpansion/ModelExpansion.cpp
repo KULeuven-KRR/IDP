@@ -113,15 +113,18 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	}
 
 	if (getGlobal()->terminateRequested()) {
-		throw IdpException("Solver was terminated");
+		if(mx->getSpace()->isOptimizationProblem()){
+			Warning::warning("Optimization inference interrupted: will continue with the (single!) best model found to date (if any).");
+			getGlobal()->reset();
+		}else{
+			throw IdpException("Solver was terminated");
+		}
 	}
 
 	// Collect solutions
-	auto abstractsolutions = mx->getSolutions();
-	//FIXME propagator code broken structure = propagator->currstructure(structure);
 	std::vector<AbstractStructure*> solutions;
 	if (_minimizeterm != NULL) { // Optimizing
-		if (abstractsolutions.size() > 0) {
+		if (mx->getSolutions().size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
 			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
@@ -134,6 +137,7 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 			}
 		}
 	} else {
+		auto abstractsolutions = mx->getSolutions();
 		if (getOption(IntType::VERBOSE_SOLVING)  > 0) {
 			stringstream ss;
 			ss <<"Solver generated " << abstractsolutions.size() << " models";
