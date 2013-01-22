@@ -1003,18 +1003,18 @@ int symbolIndex(lua_State* L) {
 		if (str == "type") {
 			convertToLua(L, InternalArgument(new set<Sort*>(*(symb->sorts()))));
 			return 1;
-		} else if (str == "predicate") {
+		} else if (str == "pred") {
 			convertToLua(L, InternalArgument(new set<Predicate*>(*(symb->preds()))));
 			return 1;
-		} else if (str == "function") {
+		} else if (str == "func") {
 			convertToLua(L, InternalArgument(new set<Function*>(*(symb->funcs()))));
 			return 1;
 		} else {
-			lua_pushstring(L, "A symbol can only be indexed by a tuple of sorts or the strings \"type\", \"predicate\", or \"function\".");
+			lua_pushstring(L, "A symbol can only be indexed by a tuple of sorts or the strings \"type\", \"pred\", or \"func\".");
 			return lua_error(L);
 		}
 	} else {
-		lua_pushstring(L, "A symbol can only be indexed by a tuple of sorts or the strings \"type\", \"predicate\", or \"function\".");
+		lua_pushstring(L, "A symbol can only be indexed by a tuple of sorts or the strings \"type\", \"pred\", or \"func\".");
 		return lua_error(L);
 	}
 }
