@@ -271,7 +271,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	signal(SIGSEGV, SIGSEGV_handler);
 	signal(SIGINT, SIGINT_handler);
 #if defined(__linux__)
-	signal(SIGHUP, SIGINT_handler);
+	signal(SIGHUP, SIGABRT_handler);
 #endif
 
 	//IMPORTANT: because signals are handled asynchronously, a special mechanism is needed to recover from them (exception throwing does not work)
@@ -303,6 +303,16 @@ const DomainElement* executeProcedure(const string& proc) {
 		jumpback = 1;
 	}
 	jumpback = 1;
+	
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGFPE, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+#if defined(__linux__)
+	signal(SIGHUP, SIG_DFL);
+#endif
+
 
 	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
 		cerr << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
