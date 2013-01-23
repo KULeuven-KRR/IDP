@@ -340,16 +340,17 @@ ostream& Compound::put(ostream& output) const {
  * \brief Comparison of two compound domain element values
  */
 bool operator<(const Compound& c1, const Compound& c2) {
-	if (c1.function() < c2.function())
+	if (c1.function()->name() < c2.function()->name()) {
 		return true;
-	else if (c1.function() > c2.function())
+	} else if (c1.function()->name() > c2.function()->name()) {
 		return false;
-	else {
+	} else {
 		for (unsigned int n = 0; n < c1.function()->arity(); ++n) {
-			if (c1.arg(n) < c2.arg(n))
+			if (*c1.arg(n) < *c2.arg(n)) {
 				return true;
-			else if (c1.arg(n) > c2.arg(n))
+			} else if (*c1.arg(n) > *c2.arg(n)) {
 				return false;
+			}
 		}
 	}
 	return false;
