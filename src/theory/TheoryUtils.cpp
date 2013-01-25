@@ -307,6 +307,9 @@ AbstractTheory* calculateArithmetic(AbstractTheory* t) {
 	return transform<CalculateKnownArithmetic, AbstractTheory*>(t);
 }
 
+Formula* pushQuantifiers(Formula* t) {
+	return transform<PushQuantifications, Formula*>(t);
+}
 AbstractTheory* pushQuantifiers(AbstractTheory* t) {
 	return transform<PushQuantifications, AbstractTheory*>(t);
 }
