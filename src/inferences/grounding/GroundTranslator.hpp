@@ -85,17 +85,27 @@ enum class AtomType {
 typedef std::pair<PFSymbol*, ElementTuple> stpair;
 typedef std::pair<Function*, std::vector<GroundTerm> > ftpair;
 
+template<class T>
+struct CPCompare {
+	bool operator()(T* left, T* right){
+		if (left == NULL) {
+			if (right == NULL) {
+				return false;
+			}
+			return true;
+		} else if (right == NULL) {
+			return false;
+		}
+		return *left < *right;
+	}
+};
+
 /**
  * Translator stores:
  * 		for a tseitin atom, what its interpretation is
  * 		for an input atom, what symbol it refers to and what elementtuple
  * 		for an atom which is neither, should not store anything, except that it is not stored.
  */
-
-struct CompareTs {
-	bool operator()(CPTsBody* left, CPTsBody* right);
-};
-
 class GroundTranslator {
 private:
 	StructureInfo _structure;
@@ -125,7 +135,9 @@ private:
 	std::vector<SortTable*> var2domain;
 	std::map<int, VarId> storedTerms; // Tabling of terms which are equal to a domain element
 
-	std::map<CPTsBody*, Lit, CompareTs> cpset; // Used to detect identical Cpterms, is not used in any other way!
+	// Maps used to detect identical CP terms and atoms
+	std::map<CPTsBody*, Lit, CPCompare<CPTsBody> > cpset; // Used to detect identical Cpterms, is not used in any other way!
+	std::map<CPTerm*, std::map<SortTable*, VarId>, CPCompare<CPTerm> > cp2id; // Used to detect identical Cpterms, is not used in any other way!
 
 	VarId nextNumber();
 
