@@ -129,8 +129,8 @@ GroundTerm FuncTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
-CPTerm* createCPSumTerm(const SumType& type, const VarId& left, const VarId& right) {
-	return new CPWSumTerm( { left, right }, { 1, (type == SumType::ST_MINUS?-1:1) });
+CPTerm* createCPSumTerm(const varidlist& ids, const intweightlist& costs) {
+	return new CPWSumTerm(ids, costs);
 }
 
 void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -232,7 +232,7 @@ GroundTerm SumTermGrounder::run() const {
 		rightid = _translator->translateTerm(right._domelement);
 	}
 	// Create addition of both terms
-	auto sumterm = createCPSumTerm(_type, leftid, rightid);
+	auto sumterm = createCPSumTerm({leftid, rightid}, { 1, (_type == SumType::ST_MINUS?-1:1) });
 	auto varid = _translator->translateTerm(sumterm, getDomain());
 
 	// Return result
@@ -346,7 +346,7 @@ GroundTerm ProdTermGrounder::run() const {
 
 CPTerm* createCPSumTerm(const DomainElement* factor, const VarId& varid) {
 	Assert(factor->type() == DomainElementType::DET_INT);
-	return new CPWSumTerm( { varid }, { factor->value()._int });
+	return createCPSumTerm({ varid }, { factor->value()._int });
 }
 
 void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const GroundTerm& groundsubterm) const {
@@ -424,7 +424,7 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	Assert(CPSupport::eligibleForCP(f));
 	switch (f) {
 	case SUM:
-		return new CPWSumTerm(varids, intweightlist(varids.size(),1));
+		return createCPSumTerm(varids, intweightlist(varids.size(),1));
 	case PROD:
 		return new CPWProdTerm(varids, 1);
 	default:
