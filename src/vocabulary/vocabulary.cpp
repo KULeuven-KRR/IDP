@@ -2139,11 +2139,6 @@ bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
 }
 
-bool isContainedIn(Term* , Vocabulary* ) {
-	// TODO not yet implemented, issue 190
-	return true;
-}
-
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 	if(parent==child || child==NULL){
 		return true;

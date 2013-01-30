@@ -37,8 +37,10 @@ private:
 	std::vector<Term*> _subterms; //!< the subterms of the term
 	std::vector<EnumSetExpr*> _subsets; //!< the subsets of the term
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
-	std::string _name; //!<Terms sometimes have a name
-	Vocabulary* _voc; //!<Terms sometimes have a vocabulary
+
+	// Terms declared in blocks have additional properties:
+	std::string _name;
+	Vocabulary* _voc;
 
 private:
 	virtual void setFreeVars(); //!< Compute the free variables of the term

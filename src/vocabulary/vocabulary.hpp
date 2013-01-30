@@ -588,7 +588,6 @@ bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 
-bool isContainedIn(Term* term, Vocabulary* voc);
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 }
 
