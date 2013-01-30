@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef ASSERT_HPP
-#define ASSERT_HPP
+#pragma once
 
 #include <string>
 #include <sstream>
@@ -19,7 +18,5 @@
 #ifndef NDEBUG
 #define Assert(condition) { if(!(condition)){ std::stringstream ss; ss << "ASSERT FAILED: " << #condition << " @ " << __FILE__ << " (" << __LINE__ << ")"; throw AssertionException(ss.str());} }
 #else
-#define Assert(x) do { (void)(x); } while(0)
+#define Assert(x) do { (void)sizeof(x); } while(0)
 #endif
-
-#endif // ASSERT_H
