@@ -196,7 +196,7 @@ void GrounderFactory::DeeperContext(SIGN sign) {
 
 template<class GroundTheory>
 Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory groundtheory) {
-	Assert(VocabularyUtils::isSubVocabulary(data.minimizeterm->vocabulary(), data.structure.concrstructure->vocabulary()));
+	Assert(data.minimizeterm==NULL || VocabularyUtils::isSubVocabulary(data.minimizeterm->vocabulary(), data.structure.concrstructure->vocabulary()));
 	Assert(VocabularyUtils::isSubVocabulary(data.theory->vocabulary(), data.structure.concrstructure->vocabulary()));
 	GrounderFactory g(data, groundtheory, data.nbModelsEquivalent);
 	return g.ground();
