@@ -40,19 +40,8 @@ Printer* Printer::create(Stream& stream) {
 	}
 }
 
-template<class Stream>
-Printer* Printer::create(Stream& stream, bool arithmetic) {
-	if (getGlobal()->getOptions()->language() == Language::TPTP) {
-		return new TPTPPrinter<Stream>(arithmetic, stream);
-	} else {
-		return create<Stream>(stream);
-	}
-}
-
 template Printer* Printer::create<ostream>(ostream&);
-template Printer* Printer::create<ostream>(ostream&, bool);
 template Printer* Printer::create<stringstream>(stringstream&);
-template Printer* Printer::create<stringstream>(stringstream&, bool);
 template Printer* Printer::create<InteractivePrintMonitor>(InteractivePrintMonitor&);
 
 void Printer::visit(const AbstractTheory* t) {
