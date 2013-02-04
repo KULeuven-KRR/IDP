@@ -9,8 +9,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TESTS_UTILS_HPP_
-#define TESTS_UTILS_HPP_
+#pragma once
+
 #include <string>
 
 std::string getTestDirectory();
@@ -21,5 +21,3 @@ void runTests(const char* inferencefilename, const std::string& instancefile, co
 }
 
 void throwexc();
-
-#endif /* TESTS_UTILS_HPP_ */
