@@ -33,14 +33,14 @@ enum Format {
 
 enum StringType {
 	LANGUAGE,
-	SYMMETRYBREAKING
+	SYMMETRYBREAKING,
+	PROVERCOMMAND,
 };
 
 enum IntType {
 	NBMODELS,
 	NRPROPSTEPS,
 	LONGESTBRANCH,
-	PROVERTIMEOUT,
 	TIMEOUT,
 	RANDOMSEED,
 	// DO NOT MIX verbosity and non-verbosity options!
@@ -52,6 +52,7 @@ enum IntType {
 	VERBOSE_PROPAGATING,
 	VERBOSE_CREATE_PROPAGATORS,
 	VERBOSE_QUERY,
+	VERBOSE_ENTAILMENT,
 	VERBOSE_DEFINITIONS,
 	VERBOSE_SYMMETRY,
 	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
@@ -192,6 +193,20 @@ public:
 	virtual std::string printOption() const;
 };
 
+template<class EnumType, class ConcreteType>
+class AnyOption: public TypedOption<EnumType, ConcreteType> {
+public:
+	AnyOption(EnumType type, const std::string& name, PrintBehaviour visible)
+			: 	TypedOption<EnumType, ConcreteType>(type, name, visible) {
+	}
+
+	bool isAllowedValue(const ConcreteType&) {
+		return true;
+	}
+
+	virtual std::string printOption() const;
+};
+
 class Options;
 
 template<class EnumType, class ValueType>
@@ -204,6 +219,7 @@ protected:
 			std::vector<std::string>& option2name, PrintBehaviour visible);
 	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
 			std::vector<std::string>& option2name, PrintBehaviour visible);
+	void createOption(EnumType type, const std::string& name, const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
 		for (auto option : _options) {

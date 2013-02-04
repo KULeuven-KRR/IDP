@@ -138,6 +138,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_ENTAILMENT, "entails", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
@@ -171,8 +172,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 		// Afterwards, setting them to 0 stops the timing
 		IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::PROVERTIMEOUT, "provertimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::DONOTPRINT);
 
+		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", _option2name, PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
 				_option2name, PrintBehaviour::PRINT);
@@ -208,6 +209,20 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
+void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& defaultValue,
+		std::vector<std::string>& option2name, PrintBehaviour visible) {
+	_name2type[name] = type;
+	auto newoption = new AnyOption<EnumType, ValueType>(type, name, visible);
+	newoption->setValue(defaultValue);
+	if (_options.size() <= (unsigned int) type) {
+		_options.resize(type + 1, NULL);
+		option2name.resize(type + 1, "");
+	}
+	_options[type] = newoption;
+	option2name[type] = name;
+}
+
+template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
 	for (auto option: _options) {
 		if(option!=NULL){
@@ -228,6 +243,17 @@ std::string RangeOption<EnumType, ConcreteType>::printOption() const {
 	}
 }
 
+template<class EnumType, class ConcreteType>
+std::string AnyOption<EnumType, ConcreteType>::printOption() const {
+	if (TypedOption<EnumType, ConcreteType>::shouldPrint()) {
+		std::stringstream ss;
+		ss << "\t" << TypedOption<EnumType, ConcreteType>::getName() << " = " << TypedOption<EnumType, ConcreteType>::getValue() <<"\n";
+		return ss.str();
+	} else {
+		return "";
+	}
+}
+
 template<>
 std::string EnumeratedOption<BoolType, bool>::printOption() const {
 	if (TypedOption<BoolType, bool>::shouldPrint()) {
@@ -241,6 +267,27 @@ std::string EnumeratedOption<BoolType, bool>::printOption() const {
 			}
 			begin = false;
 			ss << ((*i) ? "true" : "false");
+		}
+		ss << "]\n";
+		return ss.str();
+	} else {
+		return "";
+	}
+}
+
+template<>
+std::string EnumeratedOption<StringType, string>::printOption() const {
+	if (TypedOption<StringType, string>::shouldPrint()) {
+		std::stringstream ss;
+		ss << "\t" << TypedOption<StringType, string>::getName() << " = " << TypedOption<StringType, string>::getValue();
+		ss << "\n\t\t => one of [";
+		bool begin = true;
+		for (auto i = getAllowedValues().cbegin(); i != getAllowedValues().cend(); ++i) {
+			if (not begin) {
+				ss << ", ";
+			}
+			begin = false;
+			ss << "\"" <<*i <<"\"";
 		}
 		ss << "]\n";
 		return ss.str();
