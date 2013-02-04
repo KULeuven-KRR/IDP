@@ -438,6 +438,16 @@ int run(int argc, char* argv[]) {
 		readfromstdin = true;
 	}
 
+	if (cloptions._exec == "") {
+		stringstream ss;
+		ss << "return " << getGlobalNamespaceName() << ".main()";
+		cloptions._exec = ss.str();
+	}
+
+	return run(inputfiles, cloptions._interactive, readfromstdin, cloptions._exec);
+}
+
+int run(const std::vector<std::string>& inputfiles, bool interact, bool readstdin, const std::string& command){
 	try {
 		parse(inputfiles);
 	} catch (const Exception& ex) {
@@ -447,23 +457,18 @@ int run(int argc, char* argv[]) {
 		clog.flush();
 	}
 
-	if (readfromstdin) {
+	if (readstdin) {
 		Warning::readingfromstdin();
 		parsestdin();
-	}
-	if (cloptions._exec == "") {
-		stringstream ss;
-		ss << "return " << getGlobalNamespaceName() << ".main()";
-		cloptions._exec = ss.str();
 	}
 
 	if (Error::nr_of_errors() == 0) {
 #ifdef USEINTERACTIVE
-		if (cloptions._interactive) {
+		if (interact) {
 			interactive();
 		} else {
 #endif
-			auto value = executeProcedure(cloptions._exec);
+			auto value = executeProcedure(command);
 			if (value != NULL && value->type() == DomainElementType::DET_INT && Error::nr_of_errors()==0) {
 				return value->value()._int;
 			}

@@ -22,6 +22,7 @@ enum class Status {
 std::ostream& operator<<(std::ostream& stream, Status status);
 
 int run(int argc, char* argv[]);
+int run(const std::vector<std::string>& inputfiles, bool interact, bool readstdin, const std::string& command);
 
 Status test(const std::vector<std::string>& inputfileurls, const std::string& executioncommand = "");
 
