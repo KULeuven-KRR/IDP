@@ -345,6 +345,10 @@ struct InternalArgument {
 			: _type(AT_NAMESPACE) {
 		_value._namespace = n;
 	}
+	InternalArgument(bool i)
+			: _type(AT_BOOLEAN) {
+		_value._boolean = i;
+	}
 	InternalArgument(int i)
 			: _type(AT_INT) {
 		_value._int = i;
