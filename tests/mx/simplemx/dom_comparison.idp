@@ -1,0 +1,10 @@
+vocabulary V{
+}
+theory T:V{
+	0<1.
+}
+structure S:V{
+}
+procedure getExpectedNbOfModels() {
+  return 1
+}
