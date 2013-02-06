@@ -165,9 +165,10 @@ TEMPLPRINTTOSTREAM(std::vector)
 template<class Type>
 std::ostream& operator<<(std::ostream& output, const std::shared_ptr<Type>& v) {
 	if(v.get()==NULL){
-		return "empty pointer";
+		output << "empty pointer";
 	}
-	return toString(*v);
+	output << print(*v);
+	return output;
 }
 TEMPLPRINTTOSTREAM(std::shared_ptr)
 
