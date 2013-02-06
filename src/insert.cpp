@@ -897,12 +897,22 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 	}
 }
 
-void Insert::closestructure() {
+void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
 	Assert(_currstructure);
 	assignunknowntables();
 	_currstructure->checkAndAutocomplete();
 	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
+	if(considerInterpretedSymbolsTwoValued){
+		for(auto pred: parsedpreds){
+			makeUnknownsFalse(_currstructure->inter(pred));
+		}
+		for(auto func: parsedfuncs){
+			makeUnknownsFalse(_currstructure->inter(func)->graphInter());
+		}
+	}
+	parsedpreds.clear();
+	parsedfuncs.clear();
 	if (_currspace->isGlobal()) {
 		LuaConnection::addGlobal(_currstructure);
 	}
@@ -2537,7 +2547,7 @@ const Compound* Insert::compound(NSPair* nst) const {
 	return compound(nst, t);
 }
 
-void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
+void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 	ParseInfo pi = nst->_pi;
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != args.size()) {
@@ -2552,108 +2562,102 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) const {
 	if (p && nst->_sortsincluded && (nst->_sorts).size() == args.size()) {
 		p = p->resolve(nst->_sorts);
 	}
-	if (p) {
-		if (belongsToVoc(p)) {
-			if (p->arity() == 1 && p == (*(p->sorts().cbegin()))->pred()) {
-				Sort* s = *(p->sorts().cbegin());
-				SortTable* st = _currstructure->inter(s);
-				switch (args[0]._type) {
-				case ERE_EL:
-					st->add(args[0]._value._element);
-					break;
-				case ERE_INT:
-					st->add(args[0]._value._intrange->first, args[0]._value._intrange->second);
-					break;
-				case ERE_CHAR:
-					for (char c = args[0]._value._charrange->first; c != args[0]._value._charrange->second; ++c) {
-						st->add(createDomElem(StringPointer(string(1, c))));
-					}
-					break;
-				}
-			} else {
-				ElementTuple tuple(p->arity());
-				for (size_t n = 0; n < args.size(); ++n) {
-					switch (args[n]._type) {
-					case ERE_EL:
-						tuple[n] = args[n]._value._element;
-						break;
-					case ERE_INT:
-						tuple[n] = createDomElem(args[n]._value._intrange->first);
-						break;
-					case ERE_CHAR:
-						tuple[n] = createDomElem(StringPointer(string(1, args[n]._value._charrange->first)));
-						break;
-					}
-				}
-				PredInter* inter = _currstructure->inter(p);
-				if (t) {
-					inter->makeTrue(tuple, true);
-				} else {
-					inter->makeFalse(tuple, true);
-				}
-				while (true) {
-					size_t n = 0;
-					bool end = false;
-					for (; not end && n < args.size(); ++n) {
-						switch (args[n]._type) {
-						case ERE_EL:
-							break;
-						case ERE_INT: {
-							int current = tuple[n]->value()._int;
-							if (current == args[n]._value._intrange->second) {
-								current = args[n]._value._intrange->first;
-							} else {
-								++current;
-								end = true;
-							}
-							tuple[n] = createDomElem(current);
-							break;
-						}
-						case ERE_CHAR: {
-							char current = tuple[n]->value()._string->operator[](0);
-							if (current == args[n]._value._charrange->second) {
-								current = args[n]._value._charrange->first;
-							} else {
-								++current;
-								end = true;
-							}
-							tuple[n] = createDomElem(StringPointer(string(1, current)));
-							break;
-						}
-						}
-					}
-					if (n < args.size()) {
-						if (t) {
-							inter->makeTrue(tuple, true);
-						} else {
-							inter->makeFalse(tuple, true);
-						}
-					} else {
-						break;
-					}
-				}
+	if (p == NULL) {
+		notDeclared(ComponentType::Predicate, toString(nst), pi);
+		delete (nst);
+		return;
+	}
+	if (not belongsToVoc(p)) {
+		notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
+		delete (nst);
+		return;
+	}
+
+	parsedpreds.insert(p);
+	if (p->arity() == 1 && p == (*(p->sorts().cbegin()))->pred()) {
+		auto s = *(p->sorts().cbegin());
+		auto st = _currstructure->inter(s);
+		switch (args[0]._type) {
+		case ERE_EL:
+			st->add(args[0]._value._element);
+			break;
+		case ERE_INT:
+			st->add(args[0]._value._intrange->first, args[0]._value._intrange->second);
+			break;
+		case ERE_CHAR:
+			for (char c = args[0]._value._charrange->first; c != args[0]._value._charrange->second; ++c) {
+				st->add(createDomElem(StringPointer(string(1, c))));
 			}
-		} else {
-			notInVocabularyOf(ComponentType::Predicate, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
+			break;
 		}
 	} else {
-		notDeclared(ComponentType::Predicate, toString(nst), pi);
+		ElementTuple tuple(p->arity());
+		for (size_t n = 0; n < args.size(); ++n) {
+			switch (args[n]._type) {
+			case ERE_EL:
+				tuple[n] = args[n]._value._element;
+				break;
+			case ERE_INT:
+				tuple[n] = createDomElem(args[n]._value._intrange->first);
+				break;
+			case ERE_CHAR:
+				tuple[n] = createDomElem(StringPointer(string(1, args[n]._value._charrange->first)));
+				break;
+			}
+		}
+		auto inter = _currstructure->inter(p);
+		if (t) {
+			inter->makeTrue(tuple, true);
+		} else {
+			inter->makeFalse(tuple, true);
+		}
+		while (true) {
+			size_t n = 0;
+			bool end = false;
+			for (; not end && n < args.size(); ++n) {
+				switch (args[n]._type) {
+				case ERE_EL:
+					break;
+				case ERE_INT: {
+					int current = tuple[n]->value()._int;
+					if (current == args[n]._value._intrange->second) {
+						current = args[n]._value._intrange->first;
+					} else {
+						++current;
+						end = true;
+					}
+					tuple[n] = createDomElem(current);
+					break;
+				}
+				case ERE_CHAR: {
+					char current = tuple[n]->value()._string->operator[](0);
+					if (current == args[n]._value._charrange->second) {
+						current = args[n]._value._charrange->first;
+					} else {
+						++current;
+						end = true;
+					}
+					tuple[n] = createDomElem(StringPointer(string(1, current)));
+					break;
+				}
+				}
+			}
+			if (n >= args.size()) {
+				break;
+			}
+			if (t) {
+				inter->makeTrue(tuple, true);
+			} else {
+				inter->makeFalse(tuple, true);
+			}
+		}
 	}
 	delete (nst);
 }
 
-void Insert::predatom(NSPair* nst, bool t) const {
+void Insert::predatom(NSPair* nst, bool t) {
 	vector<ElRange> ver;
 	predatom(nst, ver, t);
-}
-
-void Insert::funcatom(NSPair*, const vector<ElRange>&, const DomainElement*, bool) const {
-	// TODO TODO TODO
-}
-
-void Insert::funcatom(NSPair* nst, const DomainElement* d, bool t) const {
-	vector<ElRange> ver;
-	funcatom(nst, ver, d, t);
 }
 
 vector<ElRange>* Insert::domaintuple(vector<ElRange>* dt, const DomainElement* d) const {
