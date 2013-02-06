@@ -62,43 +62,20 @@ inline SymmetryBreaking operator*(SymmetryBreaking& x) {
 	return x;
 }
 inline bool operator<(Language x, Language y) {
-	if (y == IDP) {
-		return false;
-	}
-	if (y == ECNF) {
-		return x == IDP;
-	}
-	if (y == TPTP) {
-		return x == IDP || x == ECNF;
-	}
-	if (y == FLATZINC) {
-		return x != FLATZINC && x != ASP;
-	}
-	if (y == ASP) {
-		return x != ASP;
-	}
-	Assert(false);
-	return false;
+	return (int)x < (int)y;
 }
 inline bool operator<(SymmetryBreaking x, SymmetryBreaking y) {
-	if (y == SymmetryBreaking::NONE) {
-		return false;
-	}
-	if (y == SymmetryBreaking::STATIC) {
-		return x == SymmetryBreaking::NONE;
-	}
-	if (y == SymmetryBreaking::DYNAMIC) {
-		return x != SymmetryBreaking::DYNAMIC;
-	}
-	Assert( false);
-	return false;
+	return (int)x < (int)y;
 }
 
 template<class T>
 std::set<T> possibleValues() {
 	std::set<T> s;
-	for (auto i = T::FIRST; i != T::LAST; ++i) {
+	for (auto i = T::FIRST; ; ++i) {
 		s.insert(*i);
+		if(i==T::LAST) {
+			break;
+		}
 	}
 	return s;
 }
