@@ -18,7 +18,7 @@ theory T: V{
 	~P.
 }
 
-aspstructure S: V{
+factlist S: V{
 	Colour(red).
 	Colour(blue).
 	Colour(yellow).

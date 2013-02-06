@@ -18,7 +18,7 @@ theory T : V {
 	}
 }
 
-aspstructure S : V{ 
+factlist S : V{ 
 	Path(2,2).
 	Path(3,3).
 	Reached(2).

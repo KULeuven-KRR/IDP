@@ -319,7 +319,7 @@ COMMENTLINE		"//".*
 "structure"				{ BEGIN(structure);
 						  parser.advancecol();
 						  return STRUCT_HEADER;		}
-"aspstructure"			{ BEGIN(aspstructure);
+"factlist"				{ BEGIN(aspstructure);
 						  parser.advancecol();
 						  return ASP_HEADER;		}
 "namespace"				{ BEGIN(spacename);
