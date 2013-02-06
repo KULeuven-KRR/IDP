@@ -900,9 +900,7 @@ void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
 void Insert::closestructure() {
 	Assert(_currstructure);
 	assignunknowntables();
-	if (getOption(BoolType::AUTOCOMPLETE)) {
-		_currstructure->autocomplete();
-	}
+	_currstructure->checkAndAutocomplete();
 	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
 	if (_currspace->isGlobal()) {

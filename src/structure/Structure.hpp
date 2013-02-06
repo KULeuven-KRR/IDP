@@ -47,8 +47,9 @@ public:
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
 
 	void sortCheck() const; // Checks whether any sorts are empty and throws a warning for those
-	void functionCheck(); //!< check the correctness of the function tables
-	void autocomplete(); //!< make the domains consistent with the predicate and function tables
+	// Check whether no term maps to multiple elements and whether non-partial functions are specified completely.
+	void functionCheck();
+	void checkAndAutocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
 	virtual bool hasInter(const Sort* s) const;
