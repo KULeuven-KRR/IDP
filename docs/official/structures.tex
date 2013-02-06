@@ -98,5 +98,11 @@ Shorthands like `{\tt MyType = \{1..10; 15..20\}}' or `{\tt MyType = \{ a..e; A.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{ASP structures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-An ASP structure consists of a list of facts in the usual ASP syntax.  In particular, everything from a \code{\%} till the end of the line is considered a comment, and \code{-} before an atom denotes classical negation (negation as failure is not available).  A fact about functions is written like \code{F(a)=b} or \code{-F(c)=d}.
+An ASP structure consists of a list of facts in the usual syntax \code{symbolname(list of domain elements).}.
+Semantically, an ASP structure is the structure which:
+\begin{itemize}
+\item All facts are true in the structure.
+\item All other atoms over symbols which occur at least once in the ASP structure are \textbf{false}.
+\end{itemize}
+Currently, three-valued structures, structures which are partially given and partially defined (as in standard ASP) and function interpretations cannot be specified.
 
