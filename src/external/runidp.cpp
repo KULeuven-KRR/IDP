@@ -463,13 +463,16 @@ int run(int argc, char* argv[]) {
 			interactive();
 		} else {
 #endif
-			executeProcedure(cloptions._exec);
+			auto value = executeProcedure(cloptions._exec);
+			if (value != NULL && value->type() == DomainElementType::DET_INT && Error::nr_of_errors()==0) {
+				return value->value()._int;
+			}
 #ifdef USEINTERACTIVE
 		}
 #endif
 	}
 
-	return Error::nr_of_errors();
+	return -Error::nr_of_errors();
 }
 
 
