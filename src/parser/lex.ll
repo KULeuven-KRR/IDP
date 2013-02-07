@@ -77,7 +77,8 @@ struct ParserData{
 	void start_include(string s) {
 		// check if we are including from the included file
 		for(unsigned int n = 0; n < include_buffer_filenames.size(); ++n) {
-			if(*(include_buffer_filenames[n]) == s) {
+			auto filen = include_buffer_filenames[n];
+			if( filen != NULL && *filen == s) {
 				return;
 			}
 		}
