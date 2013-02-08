@@ -779,6 +779,7 @@ asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ data().
 
 atoms	: /* empty */
 		| atoms predatom '.'
+		| atoms predatom '?'
 		| atoms using
 		;
 
