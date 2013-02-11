@@ -20,6 +20,8 @@
 using namespace std;
 using namespace rel_ops;
 
+template<typename Stream> bool ASPPrinter<Stream>::threevalWarningIssued = false;
+
 template<class Stream>
 Printer* Printer::create(Stream& stream) {
 	switch (getGlobal()->getOptions()->language()) {

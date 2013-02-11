@@ -43,7 +43,7 @@ private:
 
 public:
 	ASPPrinter(Stream& stream)
-		: StreamPrinter<Stream>(stream), _translator(NULL), threevalWarningIssued(false) {
+		: StreamPrinter<Stream>(stream), _translator(NULL) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
