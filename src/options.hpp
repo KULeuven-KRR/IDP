@@ -34,7 +34,7 @@ enum Format {
 enum StringType {
 	LANGUAGE,
 	SYMMETRYBREAKING,
-	PROVERCOMMAND,
+	PROVERCOMMAND
 };
 
 enum IntType {
