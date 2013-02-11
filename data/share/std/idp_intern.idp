@@ -148,15 +148,16 @@ procedure groundeq(theory, structure, modeleq) {
 
 /**
  * Create the reduced grounding of the given theory and structure, preserving the number of models */
-procedure ground(theory, structure) {
-	return groundeq(theory,structure, true) 
+procedure ground(theory, structure, modelequivalent) {
+	if(modelequivalent==nil) then modelequivalent = true end
+	return groundeq(theory,structure, modelequivalent) 
 }
 
 
 /**
  * Print the reduced grounding of the given theory and structure
  * MEMORY EFFICIENT: does not store the grounding internally */
-procedure printgrounding(theory, structure) {
+procedure printgrounding(theory, structure, modelequivalent) {
 	if type(theory) ~= "theory" then
 		io.stderr:write("Error: theory expected\n")
 		return
@@ -168,7 +169,9 @@ procedure printgrounding(theory, structure) {
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	return idpintern.printgrounding(clonetheo,structure,true)
+	
+	if(modelequivalent==nil) then modelequivalent = true end
+	return idpintern.printgrounding(clonetheo,structure,modelequivalent)
 }
 
 /**
