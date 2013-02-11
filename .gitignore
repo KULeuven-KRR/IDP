@@ -22,7 +22,6 @@
 *depend.mk
 builds/*
 *.settings/*
-*config.*
 documentation/generateddocs
 documentation/generateddocs/*
 docs/official/idp-manual.out

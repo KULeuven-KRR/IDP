@@ -214,6 +214,7 @@ STR				\"[^\"]*\"
 CHR				\'.\'
 WHITESPACE		[\r ]*
 COMMENTLINE		"//".*
+COMMENTLINE2	"--".*
 
 %%
 
@@ -223,6 +224,7 @@ COMMENTLINE		"//".*
 	***************/
 
 <*>{COMMENTLINE}			{							}
+<*>{COMMENTLINE2}			{							}
 
 	/* When encountering nested comment starts, ignore them (removes the need for bookkeeping lexer states with a stack)*/
 <comment>"/*"				{ parser.advancecol(); }
