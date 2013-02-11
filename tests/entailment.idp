@@ -1,6 +1,7 @@
 include <mx>
 
 procedure checkEntails(){
+	stdoptions.timeout=5
 	result = entails(T1, T2)	
 	if(result == isEntailed() ) then
 		return 1;
