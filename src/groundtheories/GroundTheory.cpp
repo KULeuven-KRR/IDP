@@ -92,12 +92,11 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 	}
 #endif
 	bool propagates = cl.size()==1;
-	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst, propagates);
-
-	// If it did propagated and was a tseitin, it will have been added to the grounding if necessary by addTseitinInterpretations
+	// If propagates is true, it will have been added to the grounding if necessary by addTseitinInterpretations
 	if(not propagates){
 		Policy::polAdd(cl);
 	}
+	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst, propagates);
 }
 
 template<class Policy>
@@ -272,20 +271,19 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			continue;
 		}
 
-		bool eliminated = false;
-
+		auto eliminated = false;
 		auto tsbody = translator()->getTsBody(tseitin);
 		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
 
 			if(atroot && body->type()!=TsType::RULE){
 				/*
-				 * if tseitin at root level has to be true: for EQ and IMPL, add body at root
+				 * if tseitin at root level has to be true: for EQ and IMPL, add body as (set of) sentence(s)
 				 * 											for RIMPL, skip
 				 * if tseitin at root has to be false: for IMPL: skip
 				 * 										for EQ and RIMPL: add negation of body at root
 				 */
-				if(elem.lit > 0 && body->type()!=TsType::RIMPL){ // Tseitin has to be true
+				if(elem.lit > 0 && body->type()!=TsType::RIMPL){
 					eliminated = true;
 					if(body->conj()){
 						for(auto lit: body->body()){
@@ -295,7 +293,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 						add(body->body());
 					}
 				}
-				if(elem.lit < 0 && body->type()!=TsType::IMPL){ // Tseitin has to be true
+				if(elem.lit < 0 && body->type()!=TsType::IMPL){
 					eliminated = true;
 					if(body->conj()){
 						litlist lits;

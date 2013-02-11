@@ -86,7 +86,7 @@ litlist LazyDisjunctiveGrounder::groundMore(bool groundall, LazyInstantiation * 
 		if (getOption(VERBOSE_GROUNDING) > 1) {
 			clog << "Grounding additional subformula " << print(subgrounder) << "\n";
 		}
-		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, formula);
+		runSubGrounder(subgrounder, context()._conjunctivePathFromRoot, conjunctiveWithSign(), formula);
 
 		decidedformula = increment(instance);
 		if(decidedformula){
