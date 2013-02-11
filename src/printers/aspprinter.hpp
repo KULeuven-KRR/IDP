@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef ASPPRINTER_HPP_
-#define ASPPRINTER_HPP_
+#pragma once
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
@@ -39,9 +38,12 @@ private:
 
 	std::string _currentSymbol; //!< Variable to hold the string representing the symbol currently being printed.
 
+	// Indicates whether the warning concerning three-valued structures (where only false atoms are printed) has already been issued.
+	static bool threevalWarningIssued;
+
 public:
 	ASPPrinter(Stream& stream)
-		: StreamPrinter<Stream>(stream), _translator(NULL) {
+		: StreamPrinter<Stream>(stream), _translator(NULL), threevalWarningIssued(false) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
@@ -90,12 +92,11 @@ public:
 				auto pred = *jt;
 				if (pred->arity() != 1 || pred->sorts()[0]->pred() != pred) {
 					auto predinter = structure->inter(pred);
-					if (predinter->approxTwoValued()) {
-						_currentSymbol = toString(pred);
-						visit(predinter->ct());
-					} else {
-						throw notyetimplemented("Printing three-valued symbols in ASP format");
+					if(not predinter->approxTwoValued() && not threevalWarningIssued){
+						Warning::warning("Printing only true facts of three-valued structures.");
+						threevalWarningIssued = true;
 					}
+					_currentSymbol = toString(pred);
 				}
 			}
 		}
@@ -105,13 +106,14 @@ public:
 			for (auto jt = udfuncs.cbegin(); jt != udfuncs.cend(); ++jt) {
 				auto func = *jt;
 				auto funcinter = structure->inter(func);
-				if (funcinter->approxTwoValued()) {
-					auto funcgraph = funcinter->graphInter();
-					_currentSymbol = toString(func);
-					visit(funcgraph->ct());
-				} else {
-					throw notyetimplemented("Printing three-valued symbols in ASP format");
+
+				if(not funcinter->approxTwoValued() && not threevalWarningIssued){
+					Warning::warning("Printing only true facts of three-valued structures.");
+					threevalWarningIssued = true;
 				}
+				auto funcgraph = funcinter->graphInter();
+				_currentSymbol = toString(func);
+				visit(funcgraph->ct());
 			}
 		}
 	}
@@ -177,7 +179,4 @@ public:
 	virtual void visit(const CPReification*) {
 		throw notyetimplemented("Printing ground constraints in ASP format");
 	}
-
 };
-
-#endif /* ASPPRINTER_HPP_ */
