@@ -23,6 +23,7 @@
 #include "utils/ListUtils.hpp"
 #include "insert.hpp"
 #include "structure/StructureComponents.hpp"
+#include "external/runidp.hpp"
 
 using namespace std;
 using namespace LuaConnection;
@@ -2112,19 +2113,20 @@ void makeLuaConnection() {
 	// Parse standard input file
 	parsefile(getPathOfIdpInternals());
 
-	// Parse configuration file
-	err = luaL_dofile(_state,getPathOfConfigFile().c_str());
-	if (err) {
-		clog << "Error in configuration file, searched in " << getPathOfConfigFile() << "\n";
-		exit(1);
-	}
-
 	for (auto i = GlobalData::getGlobalNamespace()->subspaces().cbegin(); i != GlobalData::getGlobalNamespace()->subspaces().cend(); ++i) {
 		checkedAddToGlobal(i->second);
 	}
 	// NOTE: nested std namespaces are NOT added!
 	for (auto i = GlobalData::getStdNamespace()->subspaces().cbegin(); i != GlobalData::getStdNamespace()->subspaces().cend(); ++i) {
 		checkedAddToGlobal(i->second);
+	}
+
+	// Parse and run configuration file
+	auto errornb = run({getPathOfConfigFile()}, false, false, "configIDP()"); // TODO string also in config.idp
+	if(errornb!=0){
+		clog << lua_tostring(_state,-1) << "\n";
+		clog << "Error in " << getPathOfConfigFile() << ".\n";
+		exit(1);
 	}
 }
 

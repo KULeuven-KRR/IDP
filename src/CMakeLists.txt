@@ -27,7 +27,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D GIDLVERSION=\\\"${idp_VERSION}\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_PREFIX}/\\\"\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/.idprc\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/config.idp\\\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	addToCXX("-pthread") 
 endif()
@@ -86,7 +86,7 @@ else()
 	install (FILES ${PROJECT_SOURCE_DIR}/scripts/windows/idp.bat DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif()
 
-install (FILES ${PROJECT_SOURCE_DIR}/data/var/.idprc DESTINATION var)
+install (FILES ${PROJECT_SOURCE_DIR}/data/var/config.idp DESTINATION var)
 install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
 		DESTINATION share/std)
 
