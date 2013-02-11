@@ -71,9 +71,17 @@ protected:
 	/**
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.
 	 */
-	std::queue<std::pair<int, DefId>> tseitinqueue; // pair of tseitin literal and its definition id
+	struct TseitinInfo{
+		int lit;
+		DefId defid;
+		bool rootlevel;
+	};
+	std::queue<TseitinInfo> tseitinqueue; // pair of tseitin literal and its definition id
 	bool addingTseitins;
-	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false);
+
+	// If propagated is true, handles the literals as if they should already have been propagated true
+	// in that case, if they are not dropped, they have to be added as a unit clause to the policy
+	void addTseitinInterpretations(const litlist& vi, DefId defnr, bool skipfirst = false, bool propagated = false);
 
 	void addVarIdInterpretation(VarId id);
 
