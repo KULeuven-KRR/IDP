@@ -33,7 +33,7 @@ private:
 	int _currenthead;
 	DefId _currentdefnr;
 	Structure* _structure;
-	const GroundTranslator* _translator;
+	GroundTranslator* _translator;
 	std::set<VarId> _printedvarids;
 	bool writeTranslation_;
 
@@ -228,38 +228,48 @@ public:
 			} else { // CPBinaryRel
 				printer->add(MinisatID::CPBinaryRel(getDefConstrID(), createLiteral(cpr->_head), convert(term->varid()), convert(comp), createWeight(right._bound)));
 			}
-		} else if (isa<CPWSumTerm>(*left)) {
-			auto term = dynamic_cast<CPWSumTerm*>(left);
+		} else if (isa<CPSetTerm>(*left)) {
+			auto term = dynamic_cast<CPSetTerm*>(left);
 
-			std::vector<MinisatID::VarID> varids;
-			std::vector<MinisatID::Weight> weights;
-			for(uint i=0; i<term->varids().size(); ++i){
-				varids.push_back(convert(term->varids()[i]));
-				weights.push_back(createWeight(term->weights()[i]));
+			switch(term->type()){
+			case AggFunction::SUM:{
+				std::vector<MinisatID::VarID> varids;
+				std::vector<MinisatID::Weight> weights;
+				for(uint i=0; i<term->varids().size(); ++i){
+					varids.push_back(convert(term->varids()[i]));
+					weights.push_back(createWeight(term->weights()[i]));
+				}
+				auto bound = 0;
+				if (not right._isvarid) {
+					bound = right._bound;
+				} else {
+					varids.push_back(convert(right._varid));
+					weights.push_back(createWeight(-1));
+				}
+				printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, weights, convert(comp), createWeight(bound)));
+				break;
 			}
-			auto bound = 0;
-			if (not right._isvarid) {
-				bound = right._bound;
-			} else {
-				varids.push_back(convert(right._varid));
-				weights.push_back(createWeight(-1));
-			}
-			printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, weights, convert(comp), createWeight(bound)));
-		} else {
-			Assert(isa<CPWProdTerm>(*left));
-			if (not right._isvarid) {
-				throw notyetimplemented("Error, cannot be an integer"); // FIXME
-			}
-			auto var = convert(right._varid);
+			case AggFunction::PROD:{
+				VarId rhsvarid;
+				if(right._isvarid){
+					rhsvarid = right._varid;
+				}else{
+					rhsvarid = _translator->translateTerm(createDomElem(right._bound));
+				}
+				auto var = convert(rhsvarid);
 
-			auto term = dynamic_cast<CPWProdTerm*>(left);
-			std::vector<MinisatID::VarID> varids;
-			std::vector<MinisatID::Weight> weights;
-			for(uint i=0; i<term->varids().size(); ++i){
-				varids.push_back(convert(term->varids()[i]));
-			}
+				std::vector<MinisatID::VarID> varids;
+				std::vector<MinisatID::Weight> weights;
+				for(uint i=0; i<term->varids().size(); ++i){
+					varids.push_back(convert(term->varids()[i]));
+				}
 
-			printer->add(MinisatID::CPProdWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, createWeight(term->weight()), convert(comp), var));
+				printer->add(MinisatID::CPProdWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, createWeight(term->weights().back()), convert(comp), var));
+				break;
+			}
+			default: // TODO handle min and max
+				throw notyetimplemented("Printing min or max aggregates in ecnf with cp support.");
+			}
 		}
 	}
 

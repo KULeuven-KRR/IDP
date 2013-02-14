@@ -136,8 +136,7 @@ class DomainTerm;
 class AggTerm;
 class CPTerm;
 class CPVarTerm;
-class CPWSumTerm;
-class CPWProdTerm;
+class CPSetTerm;
 class CPReification;
 class SetExpr;
 class EnumSetExpr;
@@ -171,8 +170,7 @@ class QuantSetExpr;
 		friend class AggTerm; \
 		friend class CPTerm; \
 		friend class CPVarTerm; \
-		friend class CPWSumTerm; \
-		friend class CPWProdTerm; \
+		friend class CPSetTerm; \
 		friend class CPReification; \
 		friend class SetExpr; \
 		friend class EnumSetExpr; \

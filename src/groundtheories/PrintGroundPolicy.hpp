@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef PRINTGROUNDTHEORY_HPP_
-#define PRINTGROUNDTHEORY_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 
@@ -127,10 +126,4 @@ public:
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*) const {
-		Assert(false);
-		return "";
-	}
 };
-
-#endif /* PRINTGROUNDTHEORY_HPP_ */

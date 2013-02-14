@@ -244,11 +244,6 @@ void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >&
 }
 
 template<class Policy>
-std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
-	return Policy::polPut(s, translator());
-}
-
-template<class Policy>
 void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst, bool propagated) {
 	for(uint i=0; i<vi.size(); ++i){
 		if(i==0 && skipfirst){
@@ -364,72 +359,75 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 			return cpterm;
 		}
 		auto cprelation = translator()->cprelation(varterm->varid());
-		auto left = foldCPTerm(cprelation->left());
-		if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
-			Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
-			return left;
-		} else if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
-			Assert(cprelation->right()._isvarid and cprelation->right()._varid == varterm->varid());
-			return left;
+		auto replacement = foldCPTerm(cprelation->left());
+		auto replacementvar = dynamic_cast<CPVarTerm*>(replacement);
+		if (replacementvar==NULL) {
+			if(cprelation->comp() != CompType::EQ || not cprelation->right()._isvarid || cprelation->right()._varid != varterm->varid()){
+				throw InternalIdpException("Invalid code path");
+			}
+			return replacement;
 		}
-	} else if (isa<CPWSumTerm>(*cpterm)) {
-		auto sumterm = dynamic_cast<CPWSumTerm*>(cpterm);
+		return cpterm;
+	}
+
+	auto term = dynamic_cast<CPSetTerm*>(cpterm);
+	Assert(term!=NULL);
+	switch(term->type()){
+	case AggFunction::SUM:{
 		varidlist newvarids;
 		intweightlist newweights;
-		auto vit = sumterm->varids().begin();
-		auto wit = sumterm->weights().begin();
-		for (; vit != sumterm->varids().end(); ++vit, ++wit) {
-			if (translator()->cprelation(*vit) != NULL) {
-				CPTsBody* cprelation = translator()->cprelation(*vit);
-				CPTerm* left = foldCPTerm(cprelation->left());
-				if (isa<CPWSumTerm>(*left) and cprelation->comp() == CompType::EQ) {
-					CPWSumTerm* subterm = static_cast<CPWSumTerm*>(left);
-					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
-					insertAtEnd(newvarids, subterm->varids());
-					for (auto it = subterm->weights().begin(); it != subterm->weights().end(); ++it) {
-						newweights.push_back((*it) * (*wit));
-					}
-				} else { //TODO Need to do something special in other cases?
-					newvarids.push_back(*vit);
-					newweights.push_back(*wit);
-				}
-			} else {
-				newvarids.push_back(*vit);
-				newweights.push_back(*wit);
-			}
-		}
-		sumterm->varids(newvarids);
-		sumterm->weights(newweights);
-		return sumterm;
-	} else {
-		//TODO
-		Assert(isa<CPWProdTerm>(*cpterm));
-		auto prodterm = dynamic_cast<CPWProdTerm*>(cpterm);
-		varidlist newvarids;
-		int newweight = prodterm->weight();
-		for (auto vit = prodterm->varids().begin(); vit != prodterm->varids().end(); ++vit) {
+		auto vit = term->varids().begin();
+		auto wit = term->weights().begin();
+		for (; vit != term->varids().end(); ++vit, ++wit) {
 			if (translator()->cprelation(*vit) != NULL) {
 				auto cprelation = translator()->cprelation(*vit);
 				auto left = foldCPTerm(cprelation->left());
-				if (isa<CPWProdTerm>(*left) and cprelation->comp() == CompType::EQ) {
-					auto subterm = static_cast<CPWProdTerm*>(left);
+				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
+				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::SUM and cprelation->comp() == CompType::EQ) {
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
-					insertAtEnd(newvarids, subterm->varids());
-					newweight *= subterm->weight();
-				} else { //TODO Need to do something special in other cases?
-					newvarids.push_back(*vit);
-					//Note: weight doesn't change
+					insertAtEnd(newvarids, leftassetterm->varids());
+					for (auto it = leftassetterm->weights().begin(); it != leftassetterm->weights().end(); ++it) {
+						newweights.push_back((*it) * (*wit));
+					}
+					continue;
 				}
-			} else {
-				newvarids.push_back(*vit);
-				//Note: weight doesn't change
 			}
+			newvarids.push_back(*vit);
+			newweights.push_back(*wit);
 		}
-		prodterm->varids(newvarids);
-		prodterm->weight(newweight);
-		return prodterm;
+		term->varids(newvarids);
+		term->weights(newweights);
+		return term;
 	}
-	return cpterm;
+	case AggFunction::PROD:{
+		varidlist newvarids;
+		int newweight = term->weights().back();
+		for (auto vit = term->varids().begin(); vit != term->varids().end(); ++vit) {
+			if (translator()->cprelation(*vit) != NULL) {
+				auto cprelation = translator()->cprelation(*vit);
+				auto left = foldCPTerm(cprelation->left());
+				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
+				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::PROD and cprelation->comp() == CompType::EQ) {
+					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
+					insertAtEnd(newvarids, leftassetterm->varids());
+					newweight *= leftassetterm->weights().back();
+					continue;
+				}
+			}
+			newvarids.push_back(*vit);
+			//Note: weight doesn't change
+		}
+		term->varids(newvarids);
+		term->weights({newweight});
+		return term;
+	}
+	default: // TODO better solution for min and max?
+		for(auto var: cpterm->getVarIds()){
+			addFoldedVarEquiv(var);
+		}
+
+		return cpterm;
+	}
 }
 
 template<class Policy>

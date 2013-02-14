@@ -146,10 +146,7 @@ protected:
 	void visit(const CPVarTerm*) {
 		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPVarTerm.");
 	}
-	void visit(const CPWSumTerm*) {
+	void visit(const CPSetTerm*) {
 		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPWSumTerm.");
-	}
-	void visit(const CPWProdTerm*) {
-		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPWProdTerm.");
 	}
 };

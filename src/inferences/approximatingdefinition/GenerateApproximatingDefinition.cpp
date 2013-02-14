@@ -189,10 +189,7 @@ public:
 	virtual void visit(const CPVarTerm*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
-	virtual void visit(const CPWSumTerm*) {
-		throw IdpException("Illegal execution path, aborting.");
-	}
-	virtual void visit(const CPWProdTerm*) {
+	virtual void visit(const CPSetTerm*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
 	virtual void visit(const EnumSetExpr*) {
@@ -330,10 +327,7 @@ public:
 	virtual void visit(const CPVarTerm*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
-	virtual void visit(const CPWSumTerm*) {
-		throw IdpException("Illegal execution path, aborting.");
-	}
-	virtual void visit(const CPWProdTerm*) {
+	virtual void visit(const CPSetTerm*) {
 		throw IdpException("Illegal execution path, aborting.");
 	}
 	virtual void visit(const EnumSetExpr*) {

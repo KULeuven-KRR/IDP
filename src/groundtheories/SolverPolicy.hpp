@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef SOLVERPOLICY_HPP_
-#define SOLVERPOLICY_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "inferences/SolverInclude.hpp"
@@ -86,16 +85,12 @@ protected:
 		Assert(false);
 		return s;
 	}
-	std::string polToString(GroundTranslator*, bool) const {
-		Assert(false);
-		return "";
-	}
 
 private:
 	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
 	void polAddCPVariables(const varidlist& varids, GroundTranslator* mtranslator);
 	void polAddCPVariable(const VarId& varid, GroundTranslator* translator);
 	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive);
-};
 
-#endif /* SOLVERPOLICY_HPP_ */
+	litlist addList(const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid);
+};

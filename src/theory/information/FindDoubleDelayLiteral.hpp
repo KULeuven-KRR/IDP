@@ -212,14 +212,11 @@ protected:
 		_start = false;
 		return;
 	}
-	virtual void visit(const CPWSumTerm*){
+	virtual void visit(const CPSetTerm*){
 		_start = false;
 		return;
 	}
-	virtual void visit(const CPWProdTerm*){
-		_start = false;
-		return;
-	}
+
 	virtual void visit(const EnumSetExpr*){
 		_start = false;
 		return;

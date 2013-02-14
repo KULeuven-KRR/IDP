@@ -27,8 +27,7 @@ IMPLACCEPTBOTH(AggGroundRule, GroundRule)
 IMPLACCEPTBOTH(GroundDefinition, AbstractDefinition)
 
 IMPLACCEPTNONMUTATING(CPVarTerm)
-IMPLACCEPTNONMUTATING(CPWSumTerm)
-IMPLACCEPTNONMUTATING(CPWProdTerm)
+IMPLACCEPTNONMUTATING(CPSetTerm)
 
 IMPLACCEPTNONMUTATING(GroundSet)
 IMPLACCEPTNONMUTATING(GroundAggregate)
@@ -406,53 +405,32 @@ bool CPVarTerm::operator<(const CPTerm& body) const {
 	return false;
 }
 
-bool CPWSumTerm::operator==(const CPTerm& body) const {
+bool CPSetTerm::operator==(const CPTerm& body) const {
 	if (not CPTerm::operator==(body)) {
 		return false;
 	}
-	const auto& rhs = dynamic_cast<const CPWSumTerm&>(body);
-	return _varids == rhs._varids;
+	const auto& rhs = dynamic_cast<const CPSetTerm&>(body);
+	return _type==rhs._type && _varids == rhs._varids && _weights==rhs._weights;
 }
 
-bool CPWSumTerm::operator<(const CPTerm& body) const {
+bool CPSetTerm::operator<(const CPTerm& body) const {
 	if (CPTerm::operator<(body)) {
 		return true;
 	} else if (not CPTerm::operator==(body)) {
 		return false;
 	}
-	const auto& rhs = dynamic_cast<const CPWSumTerm&>(body);
+	const auto& rhs = dynamic_cast<const CPSetTerm&>(body);
+	if(_type<rhs._type){
+		return true;
+	}else if(_type>rhs._type){
+		return false;
+	}
 	if (_varids < rhs._varids) {
 		return true;
 	} else if (_varids > rhs._varids) {
 		return false;
 	}
 	if (_weights < rhs._weights) {
-		return true;
-	}
-	return false;
-}
-
-bool CPWProdTerm::operator==(const CPTerm& body) const {
-	if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	const auto& rhs = dynamic_cast<const CPWProdTerm&>(body);
-	return _varids == rhs._varids;
-}
-
-bool CPWProdTerm::operator<(const CPTerm& body) const {
-	if (CPTerm::operator<(body)) {
-		return true;
-	} else if (not CPTerm::operator==(body)) {
-		return false;
-	}
-	const auto& rhs = dynamic_cast<const CPWProdTerm&>(body);
-	if (_varids < rhs._varids) {
-		return true;
-	} else if (_varids > rhs._varids) {
-		return false;
-	}
-	if (_weight < rhs._weight) {
 		return true;
 	}
 	return false;

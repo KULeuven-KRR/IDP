@@ -257,13 +257,12 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 			break;
 		}
 		case AggFunction::MIN:
+		case AggFunction::MAX:
 			if (start) {
 				currentmin = _minimum;
 			} else {
 				currentmin = min(_minimum, currentmin, Compare<DomainElement>());
 			}
-			break;
-		case AggFunction::MAX:
 			if (start) {
 				currentmax = _maximum;
 			} else {
@@ -279,7 +278,8 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	_maximum = currentmax;
 	_minimum = currentmin;
 
-	if (t->function() == AggFunction::MIN) {
+	// FIXME change MAX and MIN occurrences such that empty sets are handled externally, such that the solver does not need infinite just to handle empty sets.
+/*	if (t->function() == AggFunction::MIN) {
 		_maximum = NULL;
 		if (start) {
 			_minimum = NULL;
@@ -290,5 +290,5 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 		if (start) {
 			_maximum = NULL;
 		}
-	}
+	}*/
 }

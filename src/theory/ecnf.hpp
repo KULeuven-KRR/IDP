@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ECNF_HPP
-#define ECNF_HPP
+#pragma once
 
 #include "common.hpp"
 #include <ostream>
@@ -666,17 +665,38 @@ public:
 };
 
 /**
- * CP term consisting of a weighted sum of CP variables.
+ * CP term consisting of a weighted sum of CP variables and an operator type.
+ * Represents sum (all weighted), prod (one weight) and min and max (no weights)
  */
-class CPWSumTerm: public CPTerm {
+class CPSetTerm: public CPTerm {
 ACCEPTNONMUTATING()
 private:
+	AggFunction _type;
 	varidlist _varids;
 	intweightlist _weights;
 public:
-	CPWSumTerm(const varidlist& varids, const intweightlist& weights)
-			: 	_varids(varids),
+	CPSetTerm(AggFunction type, const varidlist& varids, const intweightlist& weights)
+			: 	_type(type), _varids(varids),
 				_weights(weights) {
+		switch(type){
+		case AggFunction::CARD:
+			throw IdpException("Invalid code path");
+		case AggFunction::SUM:
+			Assert(weights.size()==varids.size());
+			break;
+		case AggFunction::PROD:
+			Assert(weights.size()==1);
+			break;
+		case AggFunction::MIN:
+			Assert(weights.size()==0);
+			break;
+		case AggFunction::MAX:
+			Assert(weights.size()==0);
+			break;
+		}
+	}
+	AggFunction type() const {
+		return _type;
 	}
 	const varidlist& varids() const {
 		return _varids;
@@ -699,41 +719,3 @@ public:
 		return varids();
 	}
 };
-
-/**
- * CP term consisting of a weighted product of CP variables.
- * TODO: typedef int intweight
- */
-class CPWProdTerm: public CPTerm {
-ACCEPTNONMUTATING()
-private:
-	varidlist _varids;
-	int _weight;
-public:
-	CPWProdTerm(const varidlist& varids, const int& weight)
-			: 	_varids(varids),
-				_weight(weight) {
-	}
-	const varidlist& varids() const {
-		return _varids;
-	}
-	const int& weight() const {
-		return _weight;
-	}
-	void varids(const varidlist& newids) {
-		_varids = newids;
-	}
-	void weight(const int& newweight) {
-		_weight = newweight;
-	}
-	bool operator==(const CPTerm&) const;
-	bool operator<(const CPTerm&) const;
-	virtual void put(std::ostream&) const {
-		// TODO
-	}
-	virtual std::vector<VarId> getVarIds() const {
-		return varids();
-	}
-};
-
-#endif

@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef GROUNDTHEORY_HPP_
-#define GROUNDTHEORY_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "structure/fwstructure.hpp"
@@ -105,8 +104,4 @@ public:
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator) const;
-
-	std::string polToString(GroundTranslator* translator) const;
 };
-
-#endif /* GROUNDTHEORY_HPP_ */

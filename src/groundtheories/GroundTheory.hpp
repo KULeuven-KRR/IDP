@@ -60,14 +60,17 @@ public:
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type);
 	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args);
 
-	std::ostream& put(std::ostream& s) const;
-
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);
 
 	bool containsComplexDefinitions() const{
 		return false;
 	}
+
+	std::ostream& put(std::ostream& s) const{
+		throw notyetimplemented("Printing of ground theories");
+	}
+
 protected:
 	/**
 	 * Adds the theory interpretation of tseitins that have not been added to the ground theory before.

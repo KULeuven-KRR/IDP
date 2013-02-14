@@ -130,7 +130,7 @@ GroundTerm FuncTermGrounder::run() const {
 }
 
 CPTerm* createCPSumTerm(const varidlist& ids, const intweightlist& costs) {
-	return new CPWSumTerm(ids, costs);
+	return new CPSetTerm(AggFunction::SUM, ids, costs);
 }
 
 void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -245,7 +245,7 @@ GroundTerm SumTermGrounder::run() const {
 
 
 CPTerm* createCPProdTerm(const VarId& left, const VarId& right) {
-	return new CPWProdTerm( { left, right }, 1);
+	return new CPSetTerm(AggFunction::PROD, { left, right }, {1});
 }
 
 void ProdTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -426,7 +426,11 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	case SUM:
 		return createCPSumTerm(varids, intweightlist(varids.size(),1));
 	case PROD:
-		return new CPWProdTerm(varids, 1);
+		return new CPSetTerm(AggFunction::PROD, varids, {1});
+	case MIN:
+		return new CPSetTerm(AggFunction::MIN, varids, {});
+	case MAX:
+		return new CPSetTerm(AggFunction::MAX, varids, {});
 	default:
 		throw IdpException("Invalid code path.");
 	}
@@ -445,8 +449,7 @@ Weight getNeutralElement(AggFunction type){
 	case AggFunction::MAX:
 		throw notyetimplemented("Neutral element for maximum aggregate function");
 	}
-	Assert(false);
-	return 0;
+	throw IdpException("Invalid code path.");
 }
 
 varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms){

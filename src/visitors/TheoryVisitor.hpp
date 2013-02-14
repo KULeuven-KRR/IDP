@@ -58,8 +58,7 @@ protected:
 	virtual void visit(const AggTerm*) = 0;
 
 	virtual void visit(const CPVarTerm*) = 0;
-	virtual void visit(const CPWSumTerm*) = 0;
-	virtual void visit(const CPWProdTerm*) = 0;
+	virtual void visit(const CPSetTerm*) = 0;
 	virtual void visit(const EnumSetExpr*) = 0;
 	virtual void visit(const QuantSetExpr*) = 0;
 };
@@ -107,10 +106,7 @@ protected:
 	virtual void visit(const CPVarTerm*) {
 		// TODO
 	}
-	virtual void visit(const CPWSumTerm*) {
-		// TODO
-	}
-	virtual void visit(const CPWProdTerm*) {
+	virtual void visit(const CPSetTerm*) {
 		// TODO
 	}
 

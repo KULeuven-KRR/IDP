@@ -90,6 +90,9 @@ void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 template<typename Solver>
 void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound,
 		MinisatID::EqType rel) {
+
+	polAddCPVariables(varids, _translator);
+
 	vector<MinisatID::Weight> w;
 	for (auto i = weights.cbegin(); i < weights.cend(); ++i) {
 		w.push_back(MinisatID::Weight(*i));
@@ -105,6 +108,9 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel) {
+	polAddCPVariables(varids, _translator);
+	polAddCPVariables( { bound }, _translator);
+
 	MinisatID::Weight w = weight;
 	vector<MinisatID::VarID> vars;
 	for (auto var : varids) {
@@ -113,6 +119,19 @@ void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const
 	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, convert(bound));
 	extAdd(getSolver(), sentence);
 	CHECKUNSAT;
+}
+
+template<typename Solver>
+litlist SolverPolicy<Solver>::addList(const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid){
+	litlist tseitins;
+	for(auto var: varids){
+		auto newtseitin = _translator->createNewUninterpretedNumber();
+		tseitins.push_back(newtseitin);
+		MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createLiteral(newtseitin), convert(var), comp, convert(rhsvarid));
+		extAdd(getSolver(), sentence);
+		CHECKUNSAT;
+	}
+	return tseitins;
 }
 
 template<typename Solver>
@@ -153,33 +172,136 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			extAdd(getSolver(), sentence);
 			CHECKUNSAT;
 		}
-	} else if (isa<CPWSumTerm>(*left)) {
-		auto term = dynamic_cast<CPWSumTerm*>(left);
-		polAddCPVariables(term->varids(), _translator);
-		//TODO: same as for CPWProdTerms, don't move bound when it is a variable!
-		if (right._isvarid) {
-			polAddCPVariable(right._varid, _translator);
-			auto varids = term->varids();
-			auto weights = term->weights();
+	} else if (isa<CPSetTerm>(*left)) {
+		auto term = dynamic_cast<CPSetTerm*>(left);
 
-			int bound = 0;
-			varids.push_back(right._varid);
-			weights.push_back(-1);
+		switch(term->type()){
+		case AggFunction::SUM:{
+			polAddCPVariables(term->varids(), _translator);
 
-			polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp);
-		} else {
-			polAddWeightedSum(createAtom(tseitin), term->varids(), term->weights(), right._bound, comp);
+			auto bound = 0;
+			if (right._isvarid) {
+				auto varids = term->varids();
+				auto weights = term->weights();
+
+				int bound = 0;
+				varids.push_back(right._varid);
+				weights.push_back(-1);
+
+				polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp);
+			} else {
+				polAddWeightedSum(createAtom(tseitin), term->varids(), term->weights(), right._bound, comp);
+			}
+			break;
 		}
-	} else {
-		Assert(isa<CPWProdTerm>(*left));
-		auto var = right._varid;
-		if (not right._isvarid) {
-			var = _translator->translateTerm(createDomElem(right._bound));
+		case AggFunction::PROD:{
+			VarId rhsvarid;
+			if(right._isvarid){
+				rhsvarid = right._varid;
+			}else{
+				rhsvarid = _translator->translateTerm(createDomElem(right._bound));
+			}
+
+			polAddWeightedProd(createAtom(tseitin), term->varids(), term->weights().back(), rhsvarid, comp);
+			break;
 		}
-		auto term = dynamic_cast<CPWProdTerm*>(left);
-		polAddCPVariables(term->varids(), _translator);
-		polAddCPVariables( { var }, _translator);
-		polAddWeightedProd(createAtom(tseitin), term->varids(), term->weight(), var, comp);
+		case AggFunction::MIN:{
+			VarId rhsvarid;
+			if(right._isvarid){
+				rhsvarid = right._varid;
+			}else{
+				rhsvarid = _translator->translateTerm(createDomElem(right._bound));
+			}
+
+			polAddCPVariable(rhsvarid, _translator);
+			polAddCPVariables(term->varids(), _translator);
+
+			/**
+			 * ==
+			 * 		forall setelem: elem >= rightvar
+			 * 		exists setelem: elem =< rightvar
+			 * ~=
+			 * 		exists setelem: elem > rightvar  |
+			 * 				forall setelem: elem < rightvar
+			 * <
+			 * 		forall setelem: elem < rightvar
+			 * >
+			 * 		exists setelem: elem > rightvar
+			 * =<
+			 * 		forall setelem: elem =< rightvar
+			 * >=
+			 * 		exists setelem: elem >= rightvar
+			 */
+			switch (body->comp()) {
+			case CompType::EQ:{
+				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
+				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
+				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, {ts1,ts2}, true);
+				break;}
+			case CompType::NEQ:{
+				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
+				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), false);
+				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, {ts1,ts2}, false);
+				break;}
+			case CompType::LEQ:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+				break;
+			case CompType::GEQ:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
+				break;
+			case CompType::LT:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), false);
+				break;
+			case CompType::GT:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), true);
+				break;
+			}
+			break;
+		}
+		case AggFunction::MAX:{
+			VarId rhsvarid;
+			if(right._isvarid){
+				rhsvarid = right._varid;
+			}else{
+				rhsvarid = _translator->translateTerm(createDomElem(right._bound));
+			}
+
+			polAddCPVariable(rhsvarid, _translator);
+			polAddCPVariables(term->varids(), _translator);
+
+			switch (body->comp()) {
+			case CompType::EQ:{
+				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
+				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
+				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, {ts1,ts2}, true);
+				break;}
+			case CompType::NEQ:{
+				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
+				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), false);
+				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, {ts1,ts2}, false);
+				break;}
+			case CompType::LEQ:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
+				break;
+			case CompType::GEQ:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+				break;
+			case CompType::LT:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), true);
+				break;
+			case CompType::GT:
+				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), false);
+				break;
+			}
+			break;
+		}
+		default:
+			throw IdpException("Invalid code path");
+		}
 	}
 }
 

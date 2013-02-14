@@ -61,7 +61,7 @@ bool eligibleForCP(const FuncTerm* ft, const Vocabulary* voc) {
 }
 
 bool eligibleForCP(const AggFunction& f) {
-	return (f == AggFunction::SUM) or (f == AggFunction::PROD) or (f==AggFunction::CARD);
+	return (f == AggFunction::SUM) or (f == AggFunction::PROD) or (f==AggFunction::CARD) or (f == AggFunction::MAX) or (f == AggFunction::MIN);
 }
 
 bool eligibleForCP(const AggTerm* at, const Structure* str) {

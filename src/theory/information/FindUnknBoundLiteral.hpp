@@ -197,11 +197,7 @@ protected:
 		_start = false;
 		return;
 	}
-	virtual void visit(const CPWSumTerm*){
-		_start = false;
-		return;
-	}
-	virtual void visit(const CPWProdTerm*){
+	virtual void visit(const CPSetTerm*){
 		_start = false;
 		return;
 	}

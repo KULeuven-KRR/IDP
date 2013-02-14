@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef IDPPRINTER_HPP_
-#define IDPPRINTER_HPP_
+#pragma once
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
@@ -814,35 +813,27 @@ public:
 		_printTermsAsBlock = backup;
 	}
 
-	void visit(const CPWSumTerm* cpt) {
+	void visit(const CPSetTerm* cpt) {
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		output() << "wsum[ ";
-		auto vit = cpt->varids().cbegin();
-		auto wit = cpt->weights().cbegin();
-		for (; vit != cpt->varids().cend() && wit != cpt->weights().cend(); ++vit, ++wit) {
-			output() << '(';
-			printTerm(*vit);
-			output() << ',' << *wit << ')';
-			if (*vit != cpt->varids().back()) {
-				output() << "; ";
-			}
+		output() << "w" <<print(cpt->type());
+		bool printweightinset = cpt->weights().size()!=1;
+		if(not printweightinset){
+			output() <<cpt->weights().back() <<"*";
 		}
-		output() << " ]";
-		_printTermsAsBlock = backup;
-	}
-
-	void visit(const CPWProdTerm* cpt) {
-		auto backup = _printTermsAsBlock;
-		_printTermsAsBlock = false;
-		Assert(isTheoryOpen());
-		output() << "wprod[ ";
-		for (auto vit = cpt->varids().cbegin(); vit != cpt->varids().cend(); ++vit) {
-			printTerm(*vit);
+		output() <<"[ ";
+		for (uint i=0; i < cpt->varids().size(); ++i) {
+			if(printweightinset){
+				output() << '(';
+			}
+			printTerm(cpt->varids()[i]);
+			if(printweightinset){
+				output() << ',' << cpt->weights()[i] << ')';
+			}
 			output() << "; ";
 		}
-		output() << cpt->weight() << " ]";
+		output() << " ]";
 		_printTermsAsBlock = backup;
 	}
 
@@ -1205,5 +1196,3 @@ private:
 		output() << " }";
 	}
 };
-
-#endif /* IDPPRINTER_HPP_ */

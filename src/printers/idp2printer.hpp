@@ -350,10 +350,7 @@ public:
 	void visit(const QuantSetExpr*) {
 		throw notyetimplemented("Printing set expressions in IDP2 format");
 	}
-	void visit(const CPWSumTerm*) {
-		throw notyetimplemented("Printing CP thingies in IDP2 format");
-	}
-	void visit(const CPWProdTerm*) {
+	void visit(const CPSetTerm*) {
 		throw notyetimplemented("Printing CP thingies in IDP2 format");
 	}
 	void visit(const CPVarTerm*) {
