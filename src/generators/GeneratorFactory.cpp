@@ -203,9 +203,8 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const Structure*
 
 	for (size_t i = 0; i < universe.tables().size(); ++i) {
 		auto symbolSort = symbol->sorts()[i];
-		auto symbolSortInter = structure->inter(symbolSort);
 		auto varSortInter = universe.tables()[i];
-		if (varSortInter == symbolSortInter) {
+		if (varSortInter == structure->inter(symbolSort)) {
 			symbolSortVSVarSort[i] = Relation::EQUAL;
 			continue;
 		}

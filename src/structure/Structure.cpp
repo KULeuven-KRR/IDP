@@ -616,6 +616,12 @@ SortTable* Structure::inter(const Sort* s) const {
 	return sortit->second;
 }
 
+SortTable* Structure::storableInter(const Sort* s) const {
+	auto unstorableSortTable = inter(s);
+	auto tmp = new SortTable(unstorableSortTable->internTable());
+	return tmp;
+}
+
 PredInter* Structure::inter(const Predicate* p) const {
 	if (p == NULL) {
 		throw IdpException("Predicate was NULL");

@@ -556,7 +556,7 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
 		auto ft = new ftpair(info.symbol, args);
 		var2Tuple[varid.id] = ft;
-		var2domain[varid.id] = _structure.concrstructure->inter(info.symbol->outsort());
+		var2domain[varid.id] = _structure.concrstructure->storableInter(info.symbol->outsort());
 		return varid;
 	}
 }
