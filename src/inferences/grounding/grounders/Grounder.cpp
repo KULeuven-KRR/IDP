@@ -59,16 +59,14 @@ GroundTranslator* Grounder::getTranslator() const {
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	if (formula.literals.size() == 0) {
 		if (formula.getType() == Conn::DISJ) { // UNSAT
-			gt->addUnitClause(1);
-			gt->addUnitClause(-1); // TODO Remove when unsatexception is handled everywhere
+			gt->add(GroundClause{}); // TODO Remove when unsatexception is handled everywhere
 			throw UnsatException();
 		}
 	} else if (formula.literals.size() == 1) {
 		auto l = formula.literals.back();
 		if (l == _true or l == _false) {
 			if (formula.getType() == Conn::CONJ and l == _false) { // UNSAT
-				gt->addUnitClause(1);
-				gt->addUnitClause(-1);// TODO Remove when unsatexception is handled everywhere
+				gt->add(GroundClause{}); // TODO Remove when unsatexception is handled everywhere
 				throw UnsatException();
 			} // else SAT or irrelevant
 		} else {
