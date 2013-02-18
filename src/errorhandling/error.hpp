@@ -140,6 +140,9 @@ void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const st
 
 void emptySort(const std::string& sortname);
 
+/** Warn that ASP queries do not have a specific handling */
+void aspQueriesAreParsedAsFacts();
+
 }
 
 #endif

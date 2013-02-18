@@ -442,3 +442,9 @@ void Warning::addingeltosort(const string& elname, const string& sortname, const
 void Warning::readingfromstdin() {
 	clog << "(Reading from stdin)\n";
 }
+
+void Warning::aspQueriesAreParsedAsFacts(){
+	stringstream ss;
+	ss << "ASP Queries are currently parsed as ASP facts.";
+	warning(ss.str());
+}

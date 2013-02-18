@@ -1,0 +1,25 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+vocabulary V{
+	type Node isa int
+ 
+	Path(Node,Node)
+ 
+	Start : Node
+	Reached(Node)
+}
+
+theory T : V {
+	{ 
+		Reached(y) <- Path(Start,y).
+	  	Reached(y) <- Path(x,y) & Reached(x).
+	}
+}
+
+factlist S : V{ 
+	Path(2,2).
+	Path(3,3).
+	Reached(2).
+}

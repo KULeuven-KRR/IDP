@@ -437,9 +437,9 @@ public:
 	void setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf); //Sets the tables if initialized with these values
 	void materialize(); //!< Replace symbolic tables by enumerated ones if possible
 
-	void makeTrue(const ElementTuple&); //!< Make the given tuple true
-	void makeFalse(const ElementTuple&); //!< Make the given tuple false
-	void makeUnknown(const ElementTuple&); //!< Make the given tuple unknown
+	void makeTrue(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple true
+	void makeFalse(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple false
+	void makeUnknown(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple unknown
 
 	// Inspectors
 	PredTable* ct() const {
@@ -454,9 +454,9 @@ public:
 	PredTable* pf() const {
 		return _pf;
 	}
-	bool isTrue(const ElementTuple& tuple) const;
-	bool isFalse(const ElementTuple& tuple) const;
-	bool isUnknown(const ElementTuple& tuple) const;
+	bool isTrue(const ElementTuple& tuple, bool ignoresortchecks = false) const;
+	bool isFalse(const ElementTuple& tuple, bool ignoresortchecks = false) const;
+	bool isUnknown(const ElementTuple& tuple, bool ignoresortchecks = false) const;
 	bool isInconsistent(const ElementTuple& tuple) const;
 	bool isConsistent() const;
 	bool approxTwoValued() const;
@@ -469,7 +469,7 @@ public:
 
 private:
 	//Can only be called if from and to are inverse tables
-	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to);
+	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to, bool ignoresortchecks);
 };
 
 /**

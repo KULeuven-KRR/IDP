@@ -7,7 +7,7 @@ A (three-valued) structure with name \code{MyStruct} over a vocabulary \code{MyV
 \end{lstlisting}
 or by 
 \begin{lstlisting}
-	aspstructure MyStruct: MyVoc {
+	factlist MyStruct: MyVoc {
 		//contents of the structures
 	}
 \end{lstlisting}
@@ -96,7 +96,13 @@ is used to interpret a predicate or function symbol \code{P} by a procedure \cod
 Shorthands like `{\tt MyType = \{1..10; 15..20\}}' or `{\tt MyType = \{ a..e; A..E \}}' may be used for enumerating types or predicates with only one argument.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{ASP structures}
+\subsection{factlist}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-An ASP structure consists of a list of facts in the usual ASP syntax.  In particular, everything from a \code{\%} till the end of the line is considered a comment, and \code{-} before an atom denotes classical negation (negation as failure is not available).  A fact about functions is written like \code{F(a)=b} or \code{-F(c)=d}.
+A factlist consists of a list of facts in the usual syntax \code{symbolname(list of domain elements).}.
+Semantically, a factlist is the structure which:
+\begin{itemize}
+\item All facts are true in the structure.
+\item All other atoms over symbols which occur at least once in the factlist are \textbf{false}.
+\end{itemize}
+Currently, three-valued structures, structures which are partially given and partially defined (as in standard ASP for example) and function interpretations cannot be specified.
 

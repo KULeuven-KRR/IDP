@@ -3462,18 +3462,18 @@ PredInter* createSmallestPredInter(PredTable* ct, PredTable* cf, bool known_twov
 /**
  * \brief Returns true iff the tuple is true or inconsistent according to the predicate interpretation
  */
-bool PredInter::isTrue(const ElementTuple& tuple) const {
+bool PredInter::isTrue(const ElementTuple& tuple, bool) const {
 	return _ct->contains(tuple);
 }
 
 /**
  * \brief Returns true iff the tuple is false or inconsistent according to the predicate interpretation
  */
-bool PredInter::isFalse(const ElementTuple& tuple) const {
+bool PredInter::isFalse(const ElementTuple& tuple, bool ignoresortchecks) const {
 	if (_cf->contains(tuple)) {
 		return true;
 	}
-	if (not universe().contains(tuple)) {
+	if (not ignoresortchecks && not universe().contains(tuple)) {
 		return true;
 	}
 	return false;
@@ -3482,11 +3482,11 @@ bool PredInter::isFalse(const ElementTuple& tuple) const {
 /**
  * \brief Returns true iff the tuple is unknown according to the predicate interpretation
  */
-bool PredInter::isUnknown(const ElementTuple& tuple) const {
+bool PredInter::isUnknown(const ElementTuple& tuple, bool ignoresortchecks) const {
 	if (approxTwoValued()) {
 		return false;
 	} else {
-		return not (isFalse(tuple) || isTrue(tuple));
+		return not (isFalse(tuple, ignoresortchecks) || isTrue(tuple, ignoresortchecks));
 	}
 }
 
@@ -3550,45 +3550,47 @@ bool PredInter::approxTwoValued() const {
 	return isConsistent() && _ct->approxEqual(_pt);
 }
 
-void PredInter::makeUnknown(const ElementTuple& tuple) {
+void PredInter::makeUnknown(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (_inconsistentElements.find(&tuple) != _inconsistentElements.cend()) {
 		_inconsistentElements.erase(&tuple);
 	}
-	moveTupleFromTo(tuple, _cf, _pt);
-	moveTupleFromTo(tuple, _ct, _pf);
+	moveTupleFromTo(tuple, _cf, _pt, ignoresortchecks);
+	moveTupleFromTo(tuple, _ct, _pf, ignoresortchecks);
 }
 
-void PredInter::makeTrue(const ElementTuple& tuple) {
-	if (isFalse(tuple)) {
+void PredInter::makeTrue(const ElementTuple& tuple, bool ignoresortchecks) {
+	if (isFalse(tuple, ignoresortchecks)) {
 		_inconsistentElements.insert(&tuple);
 	}
-	moveTupleFromTo(tuple, _pf, _ct);
+	moveTupleFromTo(tuple, _pf, _ct, ignoresortchecks);
 }
 
-void PredInter::makeFalse(const ElementTuple& tuple) {
-	if (isTrue(tuple)) {
+void PredInter::makeFalse(const ElementTuple& tuple, bool ignoresortchecks) {
+	if (isTrue(tuple, ignoresortchecks)) {
 		_inconsistentElements.insert(&tuple);
 	}
 	if(not universe().contains(tuple)){
 		return; // already false
 	}
-	moveTupleFromTo(tuple, _pt, _cf);
+	moveTupleFromTo(tuple, _pt, _cf, ignoresortchecks);
 }
 
-void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to) {
+void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to, bool ignoresortchecks) {
 	Assert(from->approxInverse(to));
 	if (tuple.size() != universe().arity()) {
 		stringstream ss;
 		ss << "Adding a tuple of size " << tuple.size() << " to a predicate with arity " << universe().arity();
 		throw IdpException(ss.str());
 	}
-	auto table = universe().tables().cbegin();
-	auto elem = tuple.cbegin();
-	for (; table < universe().tables().cend(); ++table, ++elem) {
-		if (not (*table)->contains(*elem)) {
-			stringstream ss;
-			ss << "Element " << print(*elem) << " is not part of table " << print(*table) << ", but you are trying to assign it to such a table";
-			throw IdpException(ss.str());
+	if (not ignoresortchecks) {
+		auto table = universe().tables().cbegin();
+		auto elem = tuple.cbegin();
+		for (; table < universe().tables().cend(); ++table, ++elem) {
+			if (not (*table)->contains(*elem)) {
+				stringstream ss;
+				ss << "Element " << print(*elem) << " is not part of table " << print(*table) << ", but you are trying to assign it to such a table";
+				throw IdpException(ss.str());
+			}
 		}
 	}
 

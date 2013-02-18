@@ -168,6 +168,16 @@ bool Structure::isConsistent() const {
 	return true;
 }
 
+void makeUnknownsFalse(PredInter* inter){
+	Assert(inter!=NULL);
+
+	if (inter->approxTwoValued()) {
+		return;
+	}
+	inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
+	inter->cfpf(new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe()));
+}
+
 void Structure::makeTwoValued() {
 	if (not isConsistent()) {
 		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
@@ -245,18 +255,20 @@ void Structure::makeTwoValued() {
 }
 
 void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
-	if (scores.find(s) == scores.cend()) {
-		unsigned int sc = 0;
-		for (auto it = s->parents().cbegin(); it != s->parents().cend(); ++it) {
-			computescore(*it, scores);
-			if (scores[*it] >= sc)
-				sc = scores[*it] + 1;
-		}
-		scores[s] = sc;
+	if(contains(scores, s)){
+		return;
 	}
+	unsigned int sc = 0;
+	for (auto it = s->parents().cbegin(); it != s->parents().cend(); ++it) {
+		computescore(*it, scores);
+		if (scores[*it] >= sc){
+			sc = scores[*it] + 1;
+		}
+	}
+	scores[s] = sc;
 }
 
-void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
+void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, const string& structname) {
 	if (not pt->approxFinite()) {
 		return;
 	}
@@ -265,7 +277,7 @@ void completeSortTable(const PredTable* pt, PFSymbol* symbol, const string& stru
 		for (unsigned int col = 0; col < tuple.size(); ++col) {
 			auto sort = symbol->sorts()[col];
 			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
-			if (not sort->builtin() && not getGlobal()->getInserter().interpretationSpecifiedByUser(sort)) {
+			if (not sort->builtin() && not getGlobal()->getInserter().interpretationSpecifiedByUser(sort) && getOption(AUTOCOMPLETE)) {
 				pt->universe().tables()[col]->add(tuple[col]);
 			} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
 				if (typeid(*symbol) == typeid(Predicate)) {
@@ -282,21 +294,23 @@ void addUNAPattern(Function*) {
 	throw notyetimplemented("una pattern type");
 }
 
-void Structure::autocomplete() {
+void Structure::checkAndAutocomplete() {
 	// Adding elements from predicate interpretations to sorts
-	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		if (it->first->arity() != 1 || it->first->sorts()[0]->pred() != it->first) {
-			auto pt1 = it->second->ct();
+	for (auto pred2inter : _predinter) {
+		auto pred = pred2inter.first;
+		auto inter = pred2inter.second;
+		if (pred->arity() != 1 || pred->sorts()[0]->pred() != pred) {
+			auto pt1 = inter->ct();
 			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
-				pt1 = it->second->pf();
+				pt1 = inter->pf();
 			}
-			completeSortTable(pt1, it->first, _name);
-			if (not it->second->approxTwoValued()) {
-				auto pt2 = it->second->cf();
+			checkAndCompleteSortTable(pt1, pred, _name);
+			if (not inter->approxTwoValued()) {
+				auto pt2 = inter->cf();
 				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
-					pt2 = it->second->pt();
+					pt2 = inter->pt();
 				}
-				completeSortTable(pt2, it->first, _name);
+				checkAndCompleteSortTable(pt2, pred, _name);
 			}
 		}
 	}
@@ -309,64 +323,64 @@ void Structure::autocomplete() {
 			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
 				pt1 = it->second->graphInter()->pf();
 			}
-			completeSortTable(pt1, it->first, _name);
+			checkAndCompleteSortTable(pt1, it->first, _name);
 			if (not it->second->approxTwoValued()) {
 				auto pt2 = it->second->graphInter()->cf();
 				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
 					pt2 = it->second->graphInter()->pt();
 				}
-				completeSortTable(pt2, it->first, _name);
+				checkAndCompleteSortTable(pt2, it->first, _name);
 			}
 		}
 	}
 
-	// Adding elements from subsorts to supersorts
-	map<Sort*, unsigned int> scores;
-	for (auto it = _vocabulary->firstSort(); it != _vocabulary->lastSort(); ++it) {
-		computescore(it->second, scores);
-	}
-	map<unsigned int, vector<Sort*> > invscores;
-	for (auto it = scores.cbegin(); it != scores.cend(); ++it) {
-		if (_vocabulary->contains(it->first)) {
-			invscores[it->second].push_back(it->first);
+	if(getOption(AUTOCOMPLETE)){
+		// Adding elements from subsorts to supersorts
+		map<Sort*, unsigned int> levels; // Maps a sort to a level such that all its parents are on lower levels and no 2 sorts in the same hierarchy have the same level.
+		for (auto it = _vocabulary->firstSort(); it != _vocabulary->lastSort(); ++it) {
+			computescore(it->second, levels);
 		}
-	}
-	for (auto it = invscores.rbegin(); it != invscores.rend(); ++it) {
-		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-			Sort* s = *jt;
-			set<Sort*> notextend = { s };
-			vector<Sort*> toextend;
-			vector<Sort*> tocheck;
-			while (not notextend.empty()) {
-				Sort* e = *(notextend.cbegin());
-				for (auto kt = e->parents().cbegin(); kt != e->parents().cend(); ++kt) {
-					Sort* sp = *kt;
-					if (_vocabulary->contains(sp)) {
-						if (sp->builtin()) {
-							tocheck.push_back(sp);
-						} else {
-							toextend.push_back(sp);
-						}
-					} else {
-						notextend.insert(sp);
-					}
-				}
-				notextend.erase(e);
+		map<unsigned int, vector<Sort*> > levels2sorts; // Map a level to all the sorts in it
+		for (auto sort2level : levels) {
+			if (_vocabulary->contains(sort2level.first)) {
+				levels2sorts[sort2level.second].push_back(sort2level.first);
 			}
-			auto st = inter(s);
-			for (auto kt = toextend.cbegin(); kt != toextend.cend(); ++kt) {
-				auto kst = inter(*kt);
-				if (st->approxFinite()) {
+		}
+		// Go over the level from lowest to highest (so starting at the lowest sorts in the hierarchy) and at each level adding its elements to the parent sorts.
+		for (auto level2sorts : levels2sorts) {
+			for (auto sort : level2sorts.second) {
+				set<Sort*> notextend = { sort };
+				vector<Sort*> toextend, tocheck;
+				while (not notextend.empty()) {
+					auto e = *(notextend.cbegin());
+					for (auto sp : e->parents()) {
+						if (_vocabulary->contains(sp)) {
+							if (sp->builtin()) {
+								tocheck.push_back(sp);
+							} else {
+								toextend.push_back(sp);
+							}
+						} else {
+							notextend.insert(sp);
+						}
+					}
+					notextend.erase(e);
+				}
+				auto st = inter(sort);
+				for (auto kt : toextend) {
+					auto kst = inter(kt);
+					if(not st->approxFinite()){
+						throw notyetimplemented("Completing non approx-finite tables");
+					}
 					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
 						kst->add(*lt);
 					}
-				} else {
-					throw notyetimplemented("Completing non approx-finite tables");
 				}
-			}
-			if (not s->builtin()) {
-				for (auto kt = tocheck.cbegin(); kt != tocheck.cend(); ++kt) {
-					auto kst = inter(*kt);
+				if (sort->builtin()) {
+					continue;
+				}
+				for (auto kt : tocheck) {
+					auto kst = inter(kt);
 					// TODO speedup for common cases (expensive if both tables are large) => should be in some general visitor which checks this!
 					if (dynamic_cast<AllIntegers*>(kst->internTable()) != NULL && dynamic_cast<IntRangeInternalSortTable*>(st->internTable()) != NULL) {
 						continue;
@@ -375,13 +389,14 @@ void Structure::autocomplete() {
 							&& dynamic_cast<IntRangeInternalSortTable*>(st->internTable())->first()->value()._int > -1) {
 						continue;
 					}
-					if (st->approxFinite()) {
-						for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
-							if (not kst->contains(*lt))
-								Error::sortelnotinsort(toString(*lt), s->name(), (*kt)->name(), _name);
-						}
-					} else {
+					if (not st->approxFinite()) {
 						Warning::warning("There is no auto-completion of infinite symbol interpretations");
+						continue;
+					}
+					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
+						if (not kst->contains(*lt)){
+							Error::sortelnotinsort(toString(*lt), sort->name(), kt->name(), _name);
+						}
 					}
 				}
 			}

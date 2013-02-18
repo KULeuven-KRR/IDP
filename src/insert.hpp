@@ -209,6 +209,8 @@ private:
 	void assignunknowntables();
 
 	std::set<Sort*> sortsOccurringInUserDefinedStructure;
+	std::set<Predicate*> parsedpreds;
+	std::set<Function*> parsedfuncs;
 
 public:
 	Insert(Namespace* ns);
@@ -230,7 +232,7 @@ public:
 	void closetheory(); //!< Close the current theory
 	void closequery(Query*); //!< Close the current named query
 	void closeterm(Term*); //!< Close the current named term
-	void closestructure(); //!< Close the current structure
+	void closestructure(bool considerInterpretedSymbolsTwoValued = false); //!< Close the current structure
 	void closeprocedure(std::stringstream*); //!< Close the current procedure
 
 	void usingvocab(const longname& vname, YYLTYPE); //!< use vocabulary 'vname' when parsing
@@ -418,10 +420,8 @@ public:
 	const Compound* compound(NSPair*) const;
 	const Compound* compound(NSPair*, const std::vector<const DomainElement*>&) const;
 
-	void predatom(NSPair*, const std::vector<ElRange>&, bool) const;
-	void predatom(NSPair*, bool) const;
-	void funcatom(NSPair*, const std::vector<ElRange>&, const DomainElement*, bool) const;
-	void funcatom(NSPair*, const DomainElement*, bool) const;
+	void predatom(NSPair*, const std::vector<ElRange>&, bool);
+	void predatom(NSPair*, bool);
 
 	std::vector<ElRange>* domaintuple(const DomainElement*) const;
 	std::vector<ElRange>* domaintuple(std::pair<int, int>*) const;

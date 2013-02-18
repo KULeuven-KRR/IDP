@@ -3,6 +3,7 @@
 #include <sstream>
 #include "GlobalData.hpp"
 #include "common.hpp"
+#include "errorhandling/error.hpp"
 #include "insert.hpp"
 #include "theory/term.hpp" // Necessary for inheritance tree
 #include "parser/yyltype.hpp"
@@ -774,33 +775,19 @@ identifier		: IDENTIFIER	{ $$ = $1;	}
 	ASP structure
 ********************/
 
-asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ data().closestructure();	}
+asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ data().closestructure(true);	}
 				;
 
 atoms	: /* empty */
-		| atoms atom '.'
+		| atoms predatom '.'
+		| atoms predatom '?'						{ Warning::aspQueriesAreParsedAsFacts();		}
 		| atoms using
-		;
-
-atom	: predatom
-		| funcatom
 		;
 
 predatom	: intern_pointer '(' domain_tuple ')'		{ data().predatom($1,*$3,true);	delete($3);		}
 			| intern_pointer '(' ')'					{ data().predatom($1,true);						}
 			| intern_pointer							{ data().predatom($1,true);						}
-			| '-' intern_pointer '(' domain_tuple ')'	{ data().predatom($2,*$4,false); delete($4);	}
-			| '-' intern_pointer '(' ')'				{ data().predatom($2,false);					}
-			| '-' intern_pointer						{ data().predatom($2,false);					}
 			; 
-
-funcatom	: intern_pointer '(' domain_tuple ')' '=' domain_element		{ data().funcatom($1,*$3,$6,true); delete($3);	}
-			| intern_pointer '(' ')' '=' domain_element				        { data().funcatom($1,$5,true);		}
-			| intern_pointer '=' domain_element						        { data().funcatom($1,$3,true);		}
-			| '-' intern_pointer '(' domain_tuple ')' '=' domain_element	{ data().funcatom($2,*$4,$7,false);	delete($4);	}
-			| '-' intern_pointer '(' ')' '=' domain_element				    { data().funcatom($2,$6,false);		}
-			| '-' intern_pointer '=' domain_element						    { data().funcatom($2,$4,false);		}
-			;
 
 domain_tuple	: domain_tuple ',' domain_element	{ $$ = data().domaintuple($1,$3);				}
 				| domain_tuple ',' intrange			{ $$ = data().domaintuple($1,$3); delete($3);	}
