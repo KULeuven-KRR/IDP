@@ -833,6 +833,12 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 			}
 			return;
 		}
+		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+			for(auto lit: formula.literals){
+				getGrounding()->add(GroundClause{lit});
+			}
+			formula.literals.clear();
+		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
 		poptab();
@@ -884,6 +890,12 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 				poptab();
 			}
 			return;
+		}
+		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+			for(auto lit: formula.literals){
+				getGrounding()->add(GroundClause{lit});
+			}
+			formula.literals.clear();
 		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
