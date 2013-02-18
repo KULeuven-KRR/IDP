@@ -82,7 +82,7 @@ public:
 		}
 	}
 
-	virtual void checkOrOpen(int defid) {
+	virtual void checkOrOpen(DefId defid) {
 		Printer::checkOrOpen(defid);
 		_currentdefnr = defid;
 	}
