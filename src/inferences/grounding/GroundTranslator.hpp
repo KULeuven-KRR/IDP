@@ -109,7 +109,7 @@ private:
 	// Tseitin 2 meaning (if applicable according to type)
 	std::vector<AtomType> atomtype;
 	std::vector<stpair*> atom2Tuple; // Owns pointers!
-	std::vector<TsBody*> atom2TsBody; // Owns pointers!
+	std::vector<TsBody*> atom2TsBody; // Owns pointers! // Important: gets deleted the moment it is added to the ground theory!!! (except for cp, where it is needed later for sharing detection)
 
 	Lit nextNumber(AtomType type);
 	SymbolOffset getSymbol(PFSymbol* pfs) const;
@@ -189,10 +189,12 @@ public:
 		Assert(isInputAtom(atom) && atom2Tuple[atom]->first!=NULL);
 		return atom2Tuple[atom]->second;
 	}
+
 	TsBody* getTsBody(Lit atom) const {
 		Assert(isTseitinWithSubformula(atom));
 		return atom2TsBody[atom];
 	}
+	void removeTsBody(Lit atom);
 	int createNewUninterpretedNumber() {
 		return nextNumber(AtomType::LONETSEITIN);
 	}

@@ -342,6 +342,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 
 		if(not eliminated){
 			_printedtseitins.insert(tseitin);
+			translator()->removeTsBody(tseitin);
 		}
 	}
 	addingTseitins = false;
