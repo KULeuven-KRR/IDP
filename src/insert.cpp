@@ -903,6 +903,7 @@ void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
 			makeUnknownsFalse(_currstructure->inter(func)->graphInter());
 		}
 	}
+	_currstructure->clean();
 	parsedpreds.clear();
 	parsedfuncs.clear();
 	if (_currspace->isGlobal()) {
