@@ -14,6 +14,8 @@
 
 #include <string>
 #include <vector>
+#include <set>
+#include "common.hpp"
 
 class ParseInfo;
 
@@ -44,7 +46,7 @@ void invalidrange(char c1, char c2, const ParseInfo& pi);
 
 /** Invalid tuples **/
 void wrongarity(const ParseInfo& pi);
-void incompatiblearity(const std::string& n, const ParseInfo& pi);
+void incompatiblearity(const std::string& n, int symbolarity, int tablearity, const ParseInfo& pi);
 
 /** Function name where predicate is expected, and vice versa **/
 void prednameexpected(const ParseInfo& pi);
@@ -63,6 +65,8 @@ enum class ComponentType {
 	Namespace, Vocabulary, Theory, Structure, Query, Term, Procedure, Predicate, Function, Symbol, Sort, Variable
 };
 
+std::ostream& operator<<(std::ostream& stream, ComponentType t);
+
 /** Multiple incompatible declarations of the same object **/
 void declaredEarlier(ComponentType type, const std::string& name, const ParseInfo& thisplace, const ParseInfo& prevdeclplace);
 
@@ -73,8 +77,19 @@ void notDeclared(ComponentType type, const std::string& name, const ParseInfo& t
 void notInVocabularyOf(ComponentType type, ComponentType parentType, const std::string& sname, const std::string& tname, const ParseInfo& thisplace);
 
 /** Using overlapping symbols **/
-void overloaded(ComponentType type, const std::string& name, const ParseInfo& p1, const ParseInfo& p2, const ParseInfo& thisplace);
-void overloaded(ComponentType type, const std::string& name, const std::vector<ParseInfo>& possiblelocations, const ParseInfo& pi);
+template<class List>
+void overloaded(ComponentType type, const std::string& name, const List& possiblelocations, const ParseInfo& pi) {
+	if(possiblelocations.size()==0){
+		notDeclared(type, name, pi);
+		return;
+	}
+	std::stringstream ss;
+	ss << "The " << type << " " << name << " used here should be disambiguated as it might refer to :\n";
+	for (auto info : possiblelocations) {
+		ss << "\tThe " << type << " at " << toString(info) << "\n";
+	}
+	error(ss.str(), pi);
+}
 
 /** Sort hierarchy errors **/
 void notsubsort(const std::string&, const std::string&, const ParseInfo& pi);

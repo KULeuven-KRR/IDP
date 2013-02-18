@@ -1,0 +1,14 @@
+vocabulary V{
+ 	type X isa int
+ 	x:X
+}
+theory T:V{
+	x=1 & ?x: x=1.
+}
+
+structure S : V{
+	X = {1}
+}
+procedure main(){
+	return 1
+}

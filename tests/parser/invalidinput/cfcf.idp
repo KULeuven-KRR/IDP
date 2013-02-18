@@ -1,0 +1,16 @@
+vocabulary V{
+	type x
+	p(x)
+	f(x):x
+}
+structure S:V{
+	x = {1..10}
+	p<cf> = {1}
+	p<cf> = {2}
+	p<cf> = {3}
+	f<cf> = {1->1}
+	f<cf> = {2->2}
+}
+procedure main(){
+	return 1	
+}

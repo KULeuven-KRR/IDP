@@ -707,7 +707,7 @@ f3tuples		: f3tuples ';' ftuple			{ $$ = $1; data().addTuple($$,*$3,@3); delete(
 
 /** Procedural interpretations **/
 
-proc_inter		: intern_pointer '=' PROCEDURE pointer_name	{ data().inter($1,*$4,@1); delete($4);	}
+proc_inter		: intern_pointer '=' PROCEDURE pointer_name	{ data().interByProcedure($1,*$4,@1); delete($4);	}
 				;
 
 /** Three-valued interpretations **/
@@ -717,20 +717,20 @@ three_inter		: threepred_inter
 				| threeempty_inter
 				;
 
-threeempty_inter	: intern_pointer '<' identifier '>' '=' '{' '}'			{ data().emptythreeinter($1,*$3); }
+threeempty_inter	: intern_pointer '<' identifier '>' '=' '{' '}'			{ data().emptyinter($1,*$3); }
 					;
 
-threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ data().threepredinter($1,*$3,$7);		}
-				| intern_pointer '<' identifier '>' '=' '{' elements_es '}'	{ data().threepredinter($1,*$3,$7);		}
-				| intern_pointer '<' identifier '>' '=' TRUE				{ data().truethreepredinter($1,*$3);	}
-				| intern_pointer '<' identifier '>' '=' FALSE				{ data().falsethreepredinter($1,*$3);	}
+threepred_inter : intern_pointer '<' identifier '>' '=' '{' ptuples_es '}'	{ data().predinter($1,$7,*$3);		}
+				| intern_pointer '<' identifier '>' '=' '{' elements_es '}'	{ data().predinter($1,$7,*$3);		}
+				| intern_pointer '<' identifier '>' '=' TRUE				{ data().truepredinter($1,*$3);	}
+				| intern_pointer '<' identifier '>' '=' FALSE				{ data().falsepredinter($1,*$3);	}
 				;
 
-threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' f3tuples_es '}'	{ data().threefuncinter($1,*$3,$7);		}
+threefunc_inter	: intern_pointer '<' identifier '>' '=' '{' f3tuples_es '}'	{ data().funcinter($1,$7,*$3);		}
 				| intern_pointer '<' identifier '>' '=' pelement			{ PredTable* ft = data().createPredTable(1);
 																			  std::vector<const DomainElement*> vd(1,$6);
 																			  data().addTuple(ft,vd,@6);
-																			  data().threefuncinter($1,*$3,ft);		}
+																			  data().funcinter($1,ft,*$3);		}
 				;
 
 /** Ranges **/
