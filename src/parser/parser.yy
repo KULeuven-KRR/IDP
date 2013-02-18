@@ -3,6 +3,7 @@
 #include <sstream>
 #include "GlobalData.hpp"
 #include "common.hpp"
+#include "errorhandling/error.hpp"
 #include "insert.hpp"
 #include "theory/term.hpp" // Necessary for inheritance tree
 #include "parser/yyltype.hpp"
@@ -779,7 +780,7 @@ asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ data().
 
 atoms	: /* empty */
 		| atoms predatom '.'
-		| atoms predatom '?'
+		| atoms predatom '?'						{ Warning::aspQueriesAreParsedAsFacts();		}
 		| atoms using
 		;
 
