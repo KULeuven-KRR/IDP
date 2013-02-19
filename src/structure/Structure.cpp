@@ -153,15 +153,21 @@ bool Structure::approxTwoValued() const {
 }
 
 bool Structure::isConsistent() const {
-	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend(); ++funcInterIterator) {
-		FuncInter* fi = (*funcInterIterator).second;
-		if (not fi->isConsistent()) {
+	for (auto name2func : _funcinter) {
+		auto inter = name2func.second;
+		if (not inter->isConsistent()) {
+			stringstream ss;
+			ss <<"Inconsistent interpretation for " <<print(name2func.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			Warning::warning(ss.str());
 			return false;
 		}
 	}
-	for (auto predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend(); ++predInterIterator) {
-		PredInter* pi = (*predInterIterator).second;
-		if (not pi->isConsistent()) {
+	for (auto name2pred :  _predinter) {
+		auto inter = name2pred.second;
+		if (not inter->isConsistent()) {
+			stringstream ss;
+			ss <<"Inconsistent interpretation for " <<print(name2pred.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			Warning::warning(ss.str());
 			return false;
 		}
 	}

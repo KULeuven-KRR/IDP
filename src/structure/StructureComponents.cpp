@@ -3494,11 +3494,15 @@ bool PredInter::isUnknown(const ElementTuple& tuple, bool ignoresortchecks) cons
  * \brief Returns true iff the tuple is inconsistent according to the predicate interpretation
  */
 bool PredInter::isInconsistent(const ElementTuple& tuple) const {
-	return _inconsistentElements.find(&tuple) != _inconsistentElements.cend();
+	return _inconsistentElements.find(tuple) != _inconsistentElements.cend();
 }
 
 bool PredInter::isConsistent() const {
 	return _inconsistentElements.size() == 0;
+}
+
+const std::set<ElementTuple>& PredInter::getInconsistentAtoms() const{
+	return _inconsistentElements;
 }
 
 void PredInter::checkConsistency() {
@@ -3531,7 +3535,7 @@ void PredInter::checkConsistency() {
 			++largeIt;
 		}
 		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
-			_inconsistentElements.insert(&(*largeIt));
+			_inconsistentElements.insert(*largeIt);
 		}
 		Assert(lPossTable->size()._size > 5 || not lPossTable->contains(*smallIt));
 		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
@@ -3551,8 +3555,8 @@ bool PredInter::approxTwoValued() const {
 }
 
 void PredInter::makeUnknown(const ElementTuple& tuple, bool ignoresortchecks) {
-	if (_inconsistentElements.find(&tuple) != _inconsistentElements.cend()) {
-		_inconsistentElements.erase(&tuple);
+	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
+		_inconsistentElements.erase(tuple);
 	}
 	moveTupleFromTo(tuple, _cf, _pt, ignoresortchecks);
 	moveTupleFromTo(tuple, _ct, _pf, ignoresortchecks);
@@ -3560,14 +3564,14 @@ void PredInter::makeUnknown(const ElementTuple& tuple, bool ignoresortchecks) {
 
 void PredInter::makeTrue(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (isFalse(tuple, ignoresortchecks)) {
-		_inconsistentElements.insert(&tuple);
+		_inconsistentElements.insert(tuple);
 	}
 	moveTupleFromTo(tuple, _pf, _ct, ignoresortchecks);
 }
 
 void PredInter::makeFalse(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (isTrue(tuple, ignoresortchecks)) {
-		_inconsistentElements.insert(&tuple);
+		_inconsistentElements.insert(tuple);
 	}
 	if(not universe().contains(tuple)){
 		return; // already false
@@ -3857,6 +3861,14 @@ bool FuncInter::isConsistent() const {
 		Assert(_graphinter != NULL);
 		return _graphinter->isConsistent();
 	}
+}
+
+std::set<ElementTuple> emptyset;
+const std::set<ElementTuple>& FuncInter::getInconsistentAtoms() const{
+	if(isConsistent()){
+		return emptyset;
+	}
+	return _graphinter->getInconsistentAtoms();
 }
 
 FuncInter* FuncInter::clone(const Universe& univ) const {

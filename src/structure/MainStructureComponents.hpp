@@ -398,7 +398,7 @@ private:
 	PredTable* _cf; //!< stores certainly false tuples
 	PredTable* _pt; //!< stores possibly true tuples
 	PredTable* _pf; //!< stores possibly false tuples
-	std::set<const ElementTuple*> _inconsistentElements; //!<stores all elements that are inconsistent in this interpretation
+	std::set<ElementTuple> _inconsistentElements; //!<stores all elements that are inconsistent in this interpretation
 
 	void checkConsistency();
 
@@ -459,6 +459,7 @@ public:
 	bool isUnknown(const ElementTuple& tuple, bool ignoresortchecks = false) const;
 	bool isInconsistent(const ElementTuple& tuple) const;
 	bool isConsistent() const;
+	const std::set<ElementTuple>& getInconsistentAtoms() const;
 	bool approxTwoValued() const;
 	const Universe& universe() const {
 		return _ct->universe();
@@ -529,6 +530,7 @@ public:
 	void funcTable(FuncTable* ft);
 
 	bool isConsistent() const;
+	const std::set<ElementTuple>& getInconsistentAtoms() const;
 	void materialize();
 
 	PredInter* graphInter() const {
