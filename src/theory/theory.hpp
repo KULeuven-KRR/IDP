@@ -157,7 +157,6 @@ public:
 		return _pi;
 	}
 	bool contains(const Variable*) const; //!< true iff the formula contains the variable
-	bool contains(const PFSymbol*) const; //!< true iff the formula contains the symbol
 	virtual bool trueFormula() const {
 		return false;
 	}

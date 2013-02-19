@@ -115,10 +115,6 @@ bool Formula::contains(const Variable* v) const {
 	return false;
 }
 
-bool Formula::contains(const PFSymbol* s) const {
-	return FormulaUtils::containsSymbol(s, this);
-}
-
 ostream& operator<<(ostream& output, const TheoryComponent& f) {
 	return f.put(output);
 }

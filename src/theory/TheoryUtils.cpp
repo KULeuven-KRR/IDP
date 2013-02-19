@@ -63,6 +63,10 @@ bool approxTwoValued(const Term* t, const AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(t, str);
 }
 
+bool containsSymbol(const PFSymbol* s, const Term* f) {
+	return transform<CheckContainment, bool>(s, f);
+}
+
 void checkSorts(Vocabulary* voc, Term* term) {
 	transform<CheckSorts>(term, voc);
 }
