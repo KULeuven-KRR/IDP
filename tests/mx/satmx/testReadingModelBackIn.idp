@@ -21,6 +21,6 @@ structure S:V{
 	from=1
 	to=1
 }
-procedure expectsModel(){
+procedure getExpectedAModel(){
 	return true;
 }

@@ -1940,28 +1940,28 @@ InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
 }
 
 InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
-	if (not contains(d)) {
+	if (not contains(d) || d->type()!=DomainElementType::DET_INT) {
 		return this;
 	}
-	if (d->type() == DET_INT) {
-		if (d->value()._int == _first) {
-			if (_nrRefs < 2) {
-				_first = _first + 1;
-				return this;
-			}
-		} else if (d->value()._int == _last) {
-			if (_nrRefs < 2) {
-				_last = _last - 1;
-				return this;
-			}
+	if (d->value()._int == _first) {
+		if (_nrRefs < 2) {
+			_first = _first + 1;
+			return this;
+		}
+	} else if (d->value()._int == _last) {
+		if (_nrRefs < 2) {
+			_last = _last - 1;
+			return this;
 		}
 	}
 	auto eist = new EnumeratedInternalSortTable();
 	InternalSortTable* ist = eist;
 	for (int n = _first; n <= _last; ++n) {
+		if(d->value()._int==n){
+			continue;
+		}
 		ist = ist->add(createDomElem(n));
 	}
-	ist = ist->remove(d);
 	if (ist != eist) {
 		delete (eist);
 	}

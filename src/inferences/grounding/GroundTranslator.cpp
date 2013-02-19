@@ -112,6 +112,14 @@ GroundTranslator::~GroundTranslator() {
 	deleteList<SymbolInfo>(symbols);
 }
 
+void GroundTranslator::removeTsBody(Lit atom){
+	auto body = atom2TsBody[atom];
+	if(not isa<CPTsBody>(*body)){
+		delete(body);
+		atom2TsBody[atom] = NULL;
+	}
+}
+
 Lit GroundTranslator::translateReduced(PFSymbol* s, const ElementTuple& args, bool recursive) {
 	auto offset = addSymbol(s);
 	return translateReduced(offset, args, recursive);

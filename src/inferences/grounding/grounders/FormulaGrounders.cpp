@@ -742,7 +742,11 @@ void ClauseGrounder::run(ConjOrDisj& formula) const {
 	}
 }
 
-FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const {
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula) const {
+	auto origvalue = subgrounder->context()._conjunctivePathFromRoot;
+	if(conjFromRoot && considerAsConjunctiveWithSign){
+		subgrounder->setConjUntilRoot(true);
+	}
 	Assert(formula.getType()==connective());
 	_subformula.literals.clear();
 	auto& lits = _subformula.literals;
@@ -763,8 +767,7 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		}
 		return FormStat::UNKNOWN;
 	}
-	// otherwise INVAR: subformula is not true nor false and does not contain true nor false literals
-	if (conjFromRoot && conjunctiveWithSign()) {
+	if (conjFromRoot && considerAsConjunctiveWithSign) {
 		if (_subformula.getType() == Conn::CONJ) {
 			for (auto i = lits.cbegin(); i < lits.cend(); ++i) {
 				getGrounding()->addUnitClause(*i);
@@ -772,6 +775,17 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 		} else {
 			getGrounding()->add(lits);
 		}
+		Lit l = _true;
+		if (makesFormulaFalse(l)) {
+			formula.literals = litlist { _false };
+			return FormStat::DECIDED;
+		} else if (makesFormulaTrue(l)) {
+			formula.literals = litlist { _true };
+			return FormStat::DECIDED;
+		} else if (not isRedundantInFormula(l)) {
+			formula.literals.push_back(l);
+		}
+		return FormStat::UNKNOWN;
 	} else {
 		if (_subformula.getType() == formula.getType()) {
 			insertAtEnd(formula.literals, lits);
@@ -779,6 +793,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 			formula.literals.push_back(getReification(_subformula, subgrounder->context()._tseitin));
 		}
 	}
+
+	subgrounder->setConjUntilRoot(origvalue);
+
 	return FormStat::UNKNOWN;
 }
 
@@ -805,13 +822,23 @@ void BoolGrounder::internalRun(ConjOrDisj& formula) const {
 		}
 	}
 	formula.setType(connective());
-	for (auto g = _subgrounders.cbegin(); g < _subgrounders.cend(); g++) {
+	for (auto grounder : _subgrounders) {
 		CHECKTERMINATION;
-		if (runSubGrounder(*g, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
+		auto considerAsConjunctiveWithSign = conjunctiveWithSign();
+		if(grounder==_subgrounders.back() && formula.literals.size()==0 && isPositive()){
+			considerAsConjunctiveWithSign = true;
+		}
+		if (runSubGrounder(grounder, context()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 			}
 			return;
+		}
+		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+			for(auto lit: formula.literals){
+				getGrounding()->add(GroundClause{lit});
+			}
+			formula.literals.clear();
 		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
@@ -859,11 +886,17 @@ void QuantGrounder::internalRun(ConjOrDisj& formula) const {
 			}
 			return;
 		}
-		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, formula) == FormStat::DECIDED) {
+		if (runSubGrounder(_subgrounder, context()._conjunctivePathFromRoot, conjunctiveWithSign(), formula) == FormStat::DECIDED) {
 			if (verbosity() > 2 and _origform != NULL) {
 				poptab();
 			}
 			return;
+		}
+		if(context()._conjunctivePathFromRoot && conjunctiveWithSign()){
+			for(auto lit: formula.literals){
+				getGrounding()->add(GroundClause{lit});
+			}
+			formula.literals.clear();
 		}
 	}
 	if (verbosity() > 2 and _origform != NULL) {
@@ -909,8 +942,8 @@ void EquivGrounder::internalRun(ConjOrDisj& formula) const {
 	Assert(_rightgrounder->context()._monotone==Context::BOTH);
 	Assert(_leftgrounder->context()._tseitin==TsType::EQ|| _leftgrounder->context()._tseitin==TsType::RULE);
 	Assert(_rightgrounder->context()._tseitin==TsType::EQ|| _rightgrounder->context()._tseitin==TsType::RULE);
-	runSubGrounder(_leftgrounder, false, leftformula);
-	runSubGrounder(_rightgrounder, false, rightformula);
+	runSubGrounder(_leftgrounder, false, conjunctiveWithSign(), leftformula);
+	runSubGrounder(_rightgrounder, false, conjunctiveWithSign(), rightformula);
 	auto left = getEquivalentReification(leftformula, getTseitinType());
 	auto right = getEquivalentReification(rightformula, getTseitinType());
 

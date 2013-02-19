@@ -181,7 +181,7 @@ protected:
 
 	virtual void internalRun(ConjOrDisj& formula) const = 0;
 
-	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, ConjOrDisj& formula) const;
+	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula) const;
 };
 
 class BoolGrounder: public ClauseGrounder {

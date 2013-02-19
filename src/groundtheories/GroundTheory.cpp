@@ -13,20 +13,17 @@
 
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
-
+#include "inferences/SolverInclude.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "visitors/VisitorFriends.hpp"
-
 #include "utils/ListUtils.hpp"
-
 #include "SolverPolicy.hpp"
 #include "PrintGroundPolicy.hpp"
 #include "GroundPolicy.hpp"
 
-#include "inferences/SolverInclude.hpp"
+// IMPORTANT IMPORTANT: before each add, do addTseitinInterpretations or addFoldedVarEquiv for all relevant literals/variables!
 
 using namespace std;
 
@@ -87,8 +84,6 @@ void GroundTheory<Policy>::closeTheory() {
 	}
 }
 
-// TODO important: before each add, do addTseitinInterpretations or addFoldedVarEquiv for all relevant literals/variables!
-
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 #ifdef DEBUG
@@ -97,8 +92,12 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 		Assert(lit!=_false);
 	}
 #endif
-	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst);
-	Policy::polAdd(cl);
+	bool propagates = cl.size()==1;
+	// If propagates is true, it will have been added to the grounding if necessary by addTseitinInterpretations
+	if(not propagates){
+		Policy::polAdd(cl);
+	}
+	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst, propagates);
 }
 
 template<class Policy>
@@ -125,8 +124,7 @@ void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(GroundFixpDef*) {
-	Assert(false);
-	//TODO
+	throw notyetimplemented("Adding ground fixpoint definitions to a groundtheory.");
 }
 
 template<class Policy>
@@ -249,35 +247,72 @@ std::ostream& GroundTheory<Policy>::put(std::ostream& s) const {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst) {
+void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst, bool propagated) {
 	for(uint i=0; i<vi.size(); ++i){
 		if(i==0 && skipfirst){
 			continue;
 		}
-		tseitinqueue.push({vi[i], defnr});
+		tseitinqueue.push(TseitinInfo{vi[i], defnr, propagated});
 	}
 	if(addingTseitins){
 		return;
 	}
 	addingTseitins = true;
 	while(not tseitinqueue.empty()){
-		auto tseitin = abs(tseitinqueue.front().first);
-		auto tseitindefnr = tseitinqueue.front().second;
+		auto elem = tseitinqueue.front();
+		auto tseitin = abs(elem.lit);
+		auto tseitindefnr = elem.defid;
+		auto atroot = elem.rootlevel;
 		tseitinqueue.pop();
 
-		// NOTE: checks whether the tseitin has already been added to the grounding
 		if (not translator()->isTseitinWithSubformula(tseitin) || _printedtseitins.find(tseitin) != _printedtseitins.end()) {
-			//clog <<"Tseitin" <<atom <<" already grounded" <<nt();
+			if(atroot){
+				Policy::polAdd(GroundClause{elem.lit});
+			}
 			continue;
 		}
-		//clog <<"Adding tseitin" <<atom <<" to grounding" <<nt();
-		_printedtseitins.insert(tseitin);
+
+		auto eliminated = false;
 		auto tsbody = translator()->getTsBody(tseitin);
 		if (isa<PCTsBody>(*tsbody)) {
 			auto body = dynamic_cast<PCTsBody*>(tsbody);
-			add(tseitin, body->type(), body->body(), body->conj(), tseitindefnr);
-			if(body->type()==TsType::RULE && useUFSAndOnlyIfSem() && _nbModelsEquivalent){
-				add(tseitin, TsType::RIMPL, body->body(), body->conj(), tseitindefnr);
+
+			if(atroot && body->type()!=TsType::RULE){
+				/*
+				 * if tseitin at root level has to be true: for EQ and IMPL, add body as (set of) sentence(s)
+				 * 											for RIMPL, skip
+				 * if tseitin at root has to be false: for IMPL: skip
+				 * 										for EQ and RIMPL: add negation of body at root
+				 */
+				if(elem.lit > 0 && body->type()!=TsType::RIMPL){
+					eliminated = true;
+					if(body->conj()){
+						for(auto lit: body->body()){
+							add({lit});
+						}
+					}else{
+						add(body->body());
+					}
+				}
+				if(elem.lit < 0 && body->type()!=TsType::IMPL){
+					eliminated = true;
+					if(body->conj()){
+						litlist lits;
+						for(auto lit: body->body()){
+							lits.push_back(-lit);
+						}
+						add(lits);
+					}else{
+						for(auto lit: body->body()){
+							add({-lit});
+						}
+					}
+				}
+			}else{
+				add(tseitin, body->type(), body->body(), body->conj(), tseitindefnr);
+				if(body->type()==TsType::RULE && useUFSAndOnlyIfSem() && _nbModelsEquivalent){
+					add(tseitin, TsType::RIMPL, body->body(), body->conj(), tseitindefnr);
+				}
 			}
 		} else if (isa<AggTsBody>(*tsbody)) {
 			auto body = dynamic_cast<AggTsBody*>(tsbody);
@@ -300,6 +335,15 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			Assert(isa<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);
 			body->notifyTheoryOccurence();
+		}
+
+		if(atroot && not eliminated){
+			Policy::polAdd(GroundClause{elem.lit});
+		}
+
+		if(not eliminated){
+			_printedtseitins.insert(tseitin);
+			translator()->removeTsBody(tseitin);
 		}
 	}
 	addingTseitins = false;
