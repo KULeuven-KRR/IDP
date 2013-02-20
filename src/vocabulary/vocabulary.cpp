@@ -1637,10 +1637,10 @@ Vocabulary::~Vocabulary() {
 	}
 }
 
-template<class List>
-void updateStructures(Vocabulary* v, const List& structures) {
+template<class Elem, class List>
+void updateStructures(Elem elem, const List& structures) {
 	for (auto i = structures.cbegin(); i != structures.cend(); ++i) {
-		(*i)->changeVocabulary(v);
+		(*i)->notifyAddedToVoc(elem);
 	}
 }
 
@@ -1652,7 +1652,7 @@ void Vocabulary::add(Sort* s) {
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
 	add(s->pred());
-	updateStructures(this, structures);
+	updateStructures(s, structures);
 }
 
 // TODO cleaner?
@@ -1685,7 +1685,7 @@ void Vocabulary::add(Predicate* p) {
 		add(*it);
 	}
 	p->addVocabulary(this);
-	updateStructures(this, structures);
+	updateStructures(p, structures);
 }
 
 void Vocabulary::add(Function* f) {
@@ -1704,7 +1704,7 @@ void Vocabulary::add(Function* f) {
 		add(*it);
 	}
 	f->addVocabulary(this);
-	updateStructures(this, structures);
+	updateStructures(f, structures);
 }
 
 void Vocabulary::add(Vocabulary* v) {

@@ -46,6 +46,46 @@ Structure* Structure::clone() const {
 	return s;
 }
 
+void Structure::notifyAddedToVoc(Sort* sort){
+	if (sort->builtin()) {
+		return;
+	}
+	if (_sortinter.find(sort) == _sortinter.cend()) {
+		auto st = TableUtils::createSortTable();
+		_sortinter[sort] = st;
+		vector<SortTable*> univ(1, st);
+		auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
+		_predinter[sort->pred()] = new PredInter(pt, true);
+	}
+}
+void Structure::notifyAddedToVoc(PFSymbol* symbol){
+	if(symbol->isFunction()){
+		auto func = dynamic_cast<Function*>(symbol);
+		auto sf = func->nonbuiltins();
+		for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
+			if (_funcinter.find(*jt) == _funcinter.cend()) {
+				vector<SortTable*> univ;
+				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
+					univ.push_back(inter(*kt));
+				}
+				_funcinter[(*jt)] = TableUtils::leastFuncInter(Universe(univ));
+			}
+		}
+	}else{
+		auto pred = dynamic_cast<Predicate*>(symbol);
+		auto sp = pred->nonbuiltins();
+		for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
+			if (_predinter.find(*jt) == _predinter.cend()) {
+				vector<SortTable*> univ;
+				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
+					univ.push_back(inter(*kt));
+				}
+				_predinter[*jt] = TableUtils::leastPredInter(Universe(univ));
+			}
+		}
+	}
+}
+
 /**
  * This method changes the vocabulary of the structure
  * All tables of symbols that do not occur in the new vocabulary are deleted.
