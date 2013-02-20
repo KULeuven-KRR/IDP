@@ -401,10 +401,13 @@ GroundTerm TermWithFactorGrounder::run() const {
 	} else {
 		Assert(not groundterm.isVariable and (_functable != NULL));
 		auto domelem = _functable->operator[]( { factor._domelement, groundterm._domelement });
-		Assert(domelem);
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << print(domelem) << "\n";
+			if(domelem==NULL){ // For example after overflow of +
+				clog << tabs() << "Result = **invalid_term** \n";
+			}else{
+				clog << tabs() << "Result = " << print(domelem) << "\n";
+			}
 		}
 		return GroundTerm(domelem);
 	}
@@ -456,6 +459,7 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 	auto translator = grounding->translator();
 
 	Assert(conditions.size()==cpterms.size());
+
 	for(uint i=0; i<conditions.size(); ++i){
 		if(conditions[i]==_true){
 			auto term = cpterms[i];

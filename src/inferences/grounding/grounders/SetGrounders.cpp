@@ -67,7 +67,9 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 
 	if (l == _true && not groundweight.isVariable) {
 		const auto& d = groundweight._domelement;
-		Assert(d != NULL);
+		if(d==NULL){
+			throw notyetimplemented("Invalid term in set expression");
+		}
 		auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 		trueweights.push_back(w);
 		return;
