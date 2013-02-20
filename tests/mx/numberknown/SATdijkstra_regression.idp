@@ -1,0 +1,30 @@
+vocabulary V{
+	type Node
+	Edge(Node,Node)
+	type length isa int
+	Distance(Node,Node):length
+}
+
+theory T:V{
+	{
+		Distance(x,y) = z <- x ~=y &  z = min{x': Edge(x,x'): Distance(x',y) + 1}.
+		Distance(x,x) = 0.
+		Distance(x,y)= 1 <-  x ~= y & Edge(x,y).
+	}
+
+}
+
+structure S:V{
+	Edge = {
+		A,B	;
+		B,C ;
+		C,D ;
+		D,E ;
+		E,A	;
+	}
+	length = {0..5}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1;
+}
