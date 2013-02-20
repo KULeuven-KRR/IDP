@@ -486,6 +486,9 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 			}
 		}else{
 			domain = TableUtils::createSortTable();
+			if(cpterm._domelement==NULL){
+				throw notyetimplemented("Undefined term in cp-expression");
+			}
 			domain->add(cpterm._domelement);
 		}
 		domain->add(createDomElem(getNeutralElement(type)));
