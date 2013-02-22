@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	P(x)
+	f(x):x
+}
+theory T:V{
+	{
+		f(x) = y <- P(y). 
+		P(f(x)). 
+	}
+}
+structure S:V{
+	x = {1..3}
+	f = {1->3; 3->3; 2->3;}
+	P = {3}
+}
+procedure getExpectedNbOfModels(){
+	return 0
+}
