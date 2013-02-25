@@ -271,9 +271,12 @@ Grounder* GrounderFactory::ground() {
 	}
 
 	allowskolemize = false;
-	for (auto i = funcconstraints.cbegin(); i != funcconstraints.cend(); ++i) {
+	for (auto func2constr : funcconstraints) {
+		if(getConcreteStructure()->inter(func2constr.first)->approxTwoValued()){
+			continue; // Do not add function constraints for two-valued functions
+		}
 		InitContext();
-		descend(i->second);
+		descend(func2constr.second);
 		grounders.push_back(getTopGrounder());
 	}
 	allowskolemize = true;
