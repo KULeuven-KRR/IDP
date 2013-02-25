@@ -45,7 +45,12 @@ void SortGenerator::next() {
 
 void SortGenerator::put(std::ostream& stream) const {
 	pushtab();
-	stream << "generator for sort " << print(_table)<<" starting from " << print(_table->first());
+	stream << "generator for sort " << print(_table) << " from " << print(_table->first()) << " until ";
+	if (_table->finite()) {
+		stream << print(_table->last());
+	} else {
+		stream << "...";
+	}
 	poptab();
 }
 
@@ -76,7 +81,12 @@ void SortChecker::next() {
 }
 void SortChecker::put(std::ostream& stream) const {
 	pushtab();
-	stream << "checker for sort: " << print(_table)<<" starting from " << print(_table->first());
+	stream << "checker for sort: " << print(_table) << " from " << print(_table->first()) << " until ";
+	if (_table->finite()) {
+		stream << print(_table->last());
+	} else {
+		stream << "...";
+	}
 	poptab();
 }
 
