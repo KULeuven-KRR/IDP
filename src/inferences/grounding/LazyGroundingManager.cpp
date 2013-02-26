@@ -227,7 +227,10 @@ public:
 			: 	manager(manager),
 				maxid(1) {
 		if (not getGlobal()->instance()->alreadyParsed("delay_optimization")) {
+			auto warnings = getOption(BoolType::SHOWWARNINGS);
+			setOption(BoolType::SHOWWARNINGS, false);
 			parsefile("delay_optimization");
+			setOption(BoolType::SHOWWARNINGS, warnings);
 		}
 
 		auto ns = getGlobal()->getGlobalNamespace();
