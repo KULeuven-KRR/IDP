@@ -100,11 +100,24 @@ MXResult ModelExpansion::expand() const {
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
 	DefinitionUtils::splitDefinitions(clonetheory);
-	auto groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor,
+	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
+	try{
+		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor,
+	}
+
 			getOption(IntType::NBMODELS) != 1, data);
+	}catch(...){
+		if(getOption(VERBOSE_GROUNDSTATS) > 0){
+			logActionAndValue("effective-size", Grounder::groundedAtoms());
+		}
+		throw;
+	}
 	auto grounding = groundingAndExtender.first;
 	auto extender = groundingAndExtender.second;
 
+	if(getOption(VERBOSE_GROUNDSTATS) > 0){
+		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
+	}
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
@@ -120,6 +133,14 @@ MXResult ModelExpansion::expand() const {
 	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
 	} catch (MinisatID::idpexception& error) {
+
+		if(getOption(VERBOSE_GROUNDSTATS) > 0){
+			auto stats = mx->getStats();
+			logActionAndValue("decisions", stats.decisions);
+			logActionAndValue("first_decision", stats.first_decision);
+			logActionAndValue("effective-size", Grounder::groundedAtoms());
+		}
+
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
 		throw IdpException(ss.str());
