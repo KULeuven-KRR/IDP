@@ -46,6 +46,46 @@ Structure* Structure::clone() const {
 	return s;
 }
 
+void Structure::notifyAddedToVoc(Sort* sort){
+	if (sort->builtin()) {
+		return;
+	}
+	if (_sortinter.find(sort) == _sortinter.cend()) {
+		auto st = TableUtils::createSortTable();
+		_sortinter[sort] = st;
+		vector<SortTable*> univ(1, st);
+		auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
+		_predinter[sort->pred()] = new PredInter(pt, true);
+	}
+}
+void Structure::notifyAddedToVoc(PFSymbol* symbol){
+	if(symbol->isFunction()){
+		auto func = dynamic_cast<Function*>(symbol);
+		auto sf = func->nonbuiltins();
+		for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
+			if (_funcinter.find(*jt) == _funcinter.cend()) {
+				vector<SortTable*> univ;
+				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
+					univ.push_back(inter(*kt));
+				}
+				_funcinter[(*jt)] = TableUtils::leastFuncInter(Universe(univ));
+			}
+		}
+	}else{
+		auto pred = dynamic_cast<Predicate*>(symbol);
+		auto sp = pred->nonbuiltins();
+		for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
+			if (_predinter.find(*jt) == _predinter.cend()) {
+				vector<SortTable*> univ;
+				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
+					univ.push_back(inter(*kt));
+				}
+				_predinter[*jt] = TableUtils::leastPredInter(Universe(univ));
+			}
+		}
+	}
+}
+
 /**
  * This method changes the vocabulary of the structure
  * All tables of symbols that do not occur in the new vocabulary are deleted.
@@ -153,15 +193,21 @@ bool Structure::approxTwoValued() const {
 }
 
 bool Structure::isConsistent() const {
-	for (auto funcInterIterator = _funcinter.cbegin(); funcInterIterator != _funcinter.cend(); ++funcInterIterator) {
-		FuncInter* fi = (*funcInterIterator).second;
-		if (not fi->isConsistent()) {
+	for (auto name2func : _funcinter) {
+		auto inter = name2func.second;
+		if (not inter->isConsistent()) {
+			stringstream ss;
+			ss <<"Inconsistent interpretation for " <<print(name2func.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			Warning::warning(ss.str());
 			return false;
 		}
 	}
-	for (auto predInterIterator = _predinter.cbegin(); predInterIterator != _predinter.cend(); ++predInterIterator) {
-		PredInter* pi = (*predInterIterator).second;
-		if (not pi->isConsistent()) {
+	for (auto name2pred :  _predinter) {
+		auto inter = name2pred.second;
+		if (not inter->isConsistent()) {
+			stringstream ss;
+			ss <<"Inconsistent interpretation for " <<print(name2pred.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			Warning::warning(ss.str());
 			return false;
 		}
 	}

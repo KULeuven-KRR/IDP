@@ -593,8 +593,9 @@ string GroundTranslator::printLit(const Lit& lit) const {
 	}
 
 	switch (atomtype[nr]) {
+	case AtomType::CPGRAPHEQ:
 	case AtomType::INPUT: {
-		PFSymbol* pfs = getSymbol(nr);
+		auto pfs = getSymbol(nr);
 		s << print(pfs);
 		auto tuples = getArgs(nr);
 		if (not tuples.empty()) {
@@ -611,10 +612,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 		}
 		break;
 	}
-	case AtomType::CPGRAPHEQ:
 	case AtomType::TSEITINWITHSUBFORMULA:
-		s << "tseitin_" << nr;
-		break;
 	case AtomType::LONETSEITIN:
 		s << "tseitin_" << nr;
 		break;

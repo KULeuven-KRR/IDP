@@ -117,7 +117,16 @@ GrounderFactory::~GrounderFactory() {
  */
 bool GrounderFactory::recursive(const Formula* f) {
 	for (auto it = _context._defined.cbegin(); it != _context._defined.cend(); ++it) {
-		if (f->contains(*it)) {
+		if (FormulaUtils::containsSymbol(*it, f)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool GrounderFactory::recursive(const Term* f) {
+	for (auto it = _context._defined.cbegin(); it != _context._defined.cend(); ++it) {
+		if (TermUtils::containsSymbol(*it, f)) {
 			return true;
 		}
 	}
@@ -458,7 +467,7 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 
 	// Create checkers and grounder
 	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
-		Assert(not recursive(newpf) and _context._component != CompContext::HEAD);
+		Assert(_context._component != CompContext::HEAD);	// FIXME what if CompContext is HEAD?
 		// Note: CP does not work in the defined case
 		TermGrounder* lefttermgrounder;
 		TermGrounder* righttermgrounder;
@@ -477,14 +486,9 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 		if (useComparisonGrounder) {
 			SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
 						   // FIXME and why only in some cases check the sign of the formula for inverting the type?
-			if (recursive(newpf)) {
-				_context._tseitin = TsType::RULE;
-			}
 			_formgrounder = new ComparisonGrounder(getGrounding(), lefttermgrounder, comp, righttermgrounder, _context);
 			_formgrounder->setOrig(newpf, varmapping());
 			RestoreContext();
-
-			// FIXME what if CompContext is HEAD?
 
 			if (_context._component == CompContext::SENTENCE) {
 				_topgrounder = getFormGrounder();
@@ -966,26 +970,30 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	auto function = t->function();
 	auto ftable = getConcreteStructure()->inter(function)->funcTable();
 	auto domain = getConcreteStructure()->inter(function->outsort());
-	if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntSum(function, getConcreteStructure()->vocabulary())) {
-		_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
-				is(function, STDFUNC::ADDITION) ? ST_PLUS : ST_MINUS);
-	} else if (getOption(BoolType::CPSUPPORT) and TermUtils::isTermWithIntFactor(t, getConcreteStructure())) {
-		if (TermUtils::isFactor(t->subterms()[0], getConcreteStructure())) { //TODO move switch to constructor?
-			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
-		} else {
-			Assert(TermUtils::isFactor(t->subterms()[1], getConcreteStructure()));
-			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
+	_termgrounder = NULL;
+	if(getOption(BoolType::CPSUPPORT) && not recursive(t)){
+		if (FuncUtils::isIntSum(function, getConcreteStructure()->vocabulary())) {
+			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
+					is(function, STDFUNC::ADDITION) ? ST_PLUS : ST_MINUS);
+		} else if (TermUtils::isTermWithIntFactor(t, getConcreteStructure())) {
+			if (TermUtils::isFactor(t->subterms()[0], getConcreteStructure())) { //TODO move switch to constructor?
+				_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			} else {
+				Assert(TermUtils::isFactor(t->subterms()[1], getConcreteStructure()));
+				_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
+			}
+		} else if (is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
+			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+			auto producttable = getConcreteStructure()->inter(product)->funcTable();
+			auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
+			descend(factorterm);
+			auto factorgrounder = getTermGrounder();
+			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), producttable, domain, factorgrounder, subtermgrounders[0]);
+		} else if (FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {
+			_termgrounder = new ProdTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
-	} else if (getOption(BoolType::CPSUPPORT) and is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
-		auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
-		auto producttable = getConcreteStructure()->inter(product)->funcTable();
-		auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
-		descend(factorterm);
-		auto factorgrounder = getTermGrounder();
-		_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), producttable, domain, factorgrounder, subtermgrounders[0]);
-	} else if (getOption(BoolType::CPSUPPORT) and FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {
-		_termgrounder = new ProdTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
-	} else {
+	}
+	if(_termgrounder==NULL){
 		_termgrounder = new FuncTermGrounder(getGrounding()->translator(), function, ftable, domain, getArgTables(function, getConcreteStructure()), subtermgrounders);
 	}
 
@@ -993,10 +1001,12 @@ void GrounderFactory::visit(const FuncTerm* t) {
 }
 
 void GrounderFactory::visit(const AggTerm* t) {
-	Assert(getOption(BoolType::CPSUPPORT));
+	if(not getOption(BoolType::CPSUPPORT) || recursive(t)){
+		throw IdpException("Invalid code path");
+	}
 
 	SaveContext();
-	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t->function())) {
+	if (CPSupport::eligibleForCP(t->function())) {
 		_context._cpablerelation = TruthValue::True;
 	}
 
@@ -1005,7 +1015,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 
 	// Compute domain
 	SortTable* domain = NULL;
-	if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(t, getConcreteStructure())) {
+	if (CPSupport::eligibleForCP(t, getConcreteStructure())) {
 		domain = TermUtils::deriveSmallerSort(t, getConcreteStructure())->interpretation();
 	}
 	RestoreContext();

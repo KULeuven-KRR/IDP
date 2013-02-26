@@ -42,6 +42,8 @@ public:
 	virtual ~AbstractStructure();
 
 	// Mutators
+	virtual void notifyAddedToVoc(Sort*) {}
+	virtual void notifyAddedToVoc(PFSymbol*) {}
 	virtual void changeVocabulary(Vocabulary* v);
 
 	virtual void changeInter(Sort* f, SortTable* i) = 0; // CHANGE the interpretation of f to i

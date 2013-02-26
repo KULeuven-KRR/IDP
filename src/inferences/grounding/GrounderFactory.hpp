@@ -193,6 +193,7 @@ public:
 	static Grounder* create(const GroundInfo& data, InteractivePrintMonitor* printmonitor);
 
 	bool recursive(const Formula*);
+	bool recursive(const Term*);
 
 	void InitContext(); // Initialize the context - public for debugging purposes
 

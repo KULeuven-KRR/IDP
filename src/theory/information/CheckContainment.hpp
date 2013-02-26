@@ -9,10 +9,10 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef CONTAINMENTCHECKER_HPP_
-#define CONTAINMENTCHECKER_HPP_
+#pragma once
 
 #include "visitors/TheoryVisitor.hpp"
+#include "vocabulary/vocabulary.hpp"
 
 class PFSymbol;
 
@@ -23,11 +23,30 @@ private:
 	bool _result;
 
 public:
-	bool execute(const PFSymbol* s, const Formula* f);
+	template<class T>
+	bool execute(const PFSymbol* s, const T* f) {
+		_symbol = s;
+		_result = false;
+		f->accept(this);
+		return _result;
+	}
 
 protected:
-	void visit(const PredForm* pf);
-	void visit(const FuncTerm* ft);
-};
+	void visit(const PredForm* pf) {
+		if (pf->symbol() == _symbol) {
+			_result = true;
+			return;
+		} else {
+			traverse(pf);
+		}
+	}
 
-#endif /* CONTAINMENTCHECKER_HPP_ */
+	void visit(const FuncTerm* ft) {
+		if (ft->function() == _symbol) {
+			_result = true;
+			return;
+		} else {
+			traverse(ft);
+		}
+	}
+};

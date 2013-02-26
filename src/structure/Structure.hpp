@@ -35,7 +35,9 @@ public:
 	~Structure();
 
 	// Mutators
-	void changeVocabulary(Vocabulary* v); //!< CHANGE the vocabulary of the structure
+	virtual void notifyAddedToVoc(Sort* sort);
+	virtual void notifyAddedToVoc(PFSymbol* symbol);
+	virtual void changeVocabulary(Vocabulary* v); //!< CHANGE the vocabulary of the structure
 
 	void addStructure(AbstractStructure*);
 

@@ -102,15 +102,16 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundDefinition& def) {
-	for (auto i = def.begin(); i != def.end(); ++i) {
-		if (isa<PCGroundRule>(*(*i).second)) {
-			auto rule = dynamic_cast<PCGroundRule*>((*i).second);
-			add(def.id(), rule);
+	for (auto head2rule : def) {
+		addTseitinInterpretations({head2rule.first}, def.id());
+		auto rule = head2rule.second;
+		if (isa<PCGroundRule>(*rule)) {
+			add(def.id(), dynamic_cast<PCGroundRule*>(rule));
 		} else {
-			Assert(isa<AggGroundRule>(*(*i).second));
-			auto rule = dynamic_cast<AggGroundRule*>((*i).second);
-			add(rule->setnr(), def.id(), (rule->aggtype() != AggFunction::CARD));
-			Policy::polAdd(def.id(), rule);
+			Assert(isa<AggGroundRule>(*rule));
+			auto aggrule = dynamic_cast<AggGroundRule*>(rule);
+			add(aggrule->setnr(), def.id(), (aggrule->aggtype() != AggFunction::CARD));
+			Policy::polAdd(def.id(), aggrule);
 		}
 	}
 }
@@ -118,6 +119,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 template<class Policy>
 void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 	Assert(defid!=getIDForUndefined());
+	addTseitinInterpretations({rule->head()}, defid);
 	addTseitinInterpretations(rule->body(), defid);
 	Policy::polAdd(defid, rule);
 }
