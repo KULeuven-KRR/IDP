@@ -444,7 +444,9 @@ int run(const std::vector<std::string>& inputfiles, bool interact, bool readstdi
 
 static void SIGFPE_handler(int) {
 	abortcode = SIGFPE;
-	if (jumpback == 0) {
+	if (not shouldStop() && running) {
+		GlobalData::instance()->notifyTerminateRequested();
+	} else if (jumpback == 0) {
 		longjmp(main_loop, 1);
 	}
 }
@@ -452,21 +454,27 @@ static void SIGFPE_handler(int) {
 //IMPORTANT: assumed this is always called externally
 static void SIGTERM_handler(int) {
 	abortcode = SIGTERM;
-	if (jumpback == 0) {
+	if (not shouldStop() && running) {
+		GlobalData::instance()->notifyTerminateRequested();
+	} else if (jumpback == 0) {
 		longjmp(main_loop, 1);
 	}
 }
 
 static void SIGABRT_handler(int) {
 	abortcode = SIGABRT;
-	if (jumpback == 0) {
+	if (not shouldStop() && running) {
+		GlobalData::instance()->notifyTerminateRequested();
+	} else if (jumpback == 0) {
 		longjmp(main_loop, 1);
 	}
 }
 
 static void SIGSEGV_handler(int) {
 	abortcode = SIGSEGV;
-	if (jumpback == 0) {
+	if (not shouldStop() && running) {
+		GlobalData::instance()->notifyTerminateRequested();
+	} else if (jumpback == 0) {
 		longjmp(main_loop, 1);
 	}
 }
