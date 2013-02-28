@@ -59,7 +59,8 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 		clog << "=== Start propagation ===\n";
 	}
 	while (_scheduler->hasNext()) {
-		FOPropagation* propagation = _scheduler->next();
+		CHECKTERMINATION;
+		auto propagation = _scheduler->next();
 		_direction = propagation->getDirection();
 		_ct = propagation->isCT();
 		_child = propagation->getChild();
@@ -125,13 +126,17 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStr
 			if (getOption(IntType::VERBOSE_PROPAGATING) > 3) {
 				clog << nt() << "The used BDDs are:";
 				clog << nt() << "CT: ";
-				BDDInternalPredTable* cttable = dynamic_cast<BDDInternalPredTable*>(bddinter->ct()->internTable());
-				auto ctbdd = cttable->bdd();
-				clog << nt() << print(ctbdd);
+				auto cttable = dynamic_cast<BDDInternalPredTable*>(bddinter->ct()->internTable());
+				if(cttable!=NULL){
+					auto ctbdd = cttable->bdd();
+					clog << nt() << print(ctbdd);
+				}
 				clog << nt() << "CF: ";
-				BDDInternalPredTable* cftable = dynamic_cast<BDDInternalPredTable*>(bddinter->cf()->internTable());
-				auto cfbdd = cftable->bdd();
-				clog << nt() << print(cfbdd);
+				auto cftable = dynamic_cast<BDDInternalPredTable*>(bddinter->cf()->internTable());
+				if(cftable!=NULL){
+					auto cfbdd = cftable->bdd();
+					clog << nt() << print(cfbdd);
+				}
 			}
 			clog << nt() << "Derived symbols: " << print(bddinter) << "\n";
 		}
@@ -320,40 +325,41 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
 	//disjunction -> Make the domains larger (thus the unknown part smaller)
 
-	if (_factory->approxequals(olddom, newdom) || not admissible(newdom, olddom)) {
+	if (not admissible(newdom, olddom)) {
 		delete (newdom);
 		return;
-	}
-	ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
-	switch (dir) {
-	case DOWN: {
-		for (auto subf : f->subformulas()) {
-			//Propagate the newly found domain further down.
-			schedule(f, DOWN, ct, subf);
-		}
-		if (isa<PredForm>(*f)) {
-			auto pf = dynamic_cast<const PredForm*>(f);
-			auto it = _leafupward.find(pf);
-			if (it != _leafupward.cend()) {
-				for (auto formula : it->second) {
-					if (formula != child) {
-						schedule(formula, UP, ct, f);
-					}
-				}
-			} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
-				Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
-				schedule(pf, DOWN, ct, 0);
+	}else if(not _factory->approxequals(olddom, newdom)){
+		ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
+		switch (dir) {
+		case DOWN: {
+			for (auto subf : f->subformulas()) {
+				//Propagate the newly found domain further down.
+				schedule(f, DOWN, ct, subf);
 			}
+			if (isa<PredForm>(*f)) {
+				auto pf = dynamic_cast<const PredForm*>(f);
+				auto it = _leafupward.find(pf);
+				if (it != _leafupward.cend()) {
+					for (auto formula : it->second) {
+						if (formula != child) {
+							schedule(formula, UP, ct, f);
+						}
+					}
+				} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
+					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
+					schedule(pf, DOWN, ct, 0);
+				}
+			}
+			break;
 		}
-		break;
-	}
-	case UP: {
-		auto it = _upward.find(f);
-		if (it != _upward.cend()) {
-			schedule(it->second, UP, ct, f);
+		case UP: {
+			auto it = _upward.find(f);
+			if (it != _upward.cend()) {
+				schedule(it->second, UP, ct, f);
+			}
+			break;
 		}
-		break;
-	}
+		}
 	}
 
 	if (child != NULL && dir == UP) {
