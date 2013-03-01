@@ -91,6 +91,15 @@ TEST(OptimTest, GroundTheory) {
 	auto s = Structure("s", &v, ParseInfo());
 	auto t = GroundTheory<GroundPolicy>(&v, {NULL, NULL}, true);
 	auto sort = Sort("s");
+	auto o = DomainTerm(&sort, createDomElem(1), TermParseInfo());
+	ASSERT_THROW(ModelExpansion::doMinimization(&t, &s, &o), IdpException);
+}
+
+TEST(OptimTest, FreeVariableInTerm) {
+	auto v = Vocabulary("one");
+	auto s = Structure("s", &v, ParseInfo());
+	auto t = Theory("t", &v, ParseInfo());
+	auto sort = Sort("s");
 	auto var = Variable(&sort);
 	auto o = VarTerm(&var, TermParseInfo());
 	ASSERT_THROW(ModelExpansion::doMinimization(&t, &s, &o), IdpException);

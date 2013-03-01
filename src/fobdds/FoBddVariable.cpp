@@ -22,3 +22,14 @@ Sort* FOBDDVariable::sort() const {
 Sort* FOBDDFuncTerm::sort() const {
 	return _function->outsort();
 }
+
+bool CompareBDDVars::operator()(const FOBDDVariable* lhs, const FOBDDVariable* rhs) const {
+	if(lhs==NULL){
+		return true;
+	}
+	if(rhs==NULL){
+		return false;
+	}
+	VarCompare v;
+	return v.operator ()(lhs->variable(), rhs->variable());
+}

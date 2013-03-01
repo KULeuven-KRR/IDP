@@ -44,7 +44,7 @@ public:
 				_boundary(1) {
 	}
 	template<typename BddNode>
-	Formula* createFormulaWithFreeVars(const BddNode* object, set<const FOBDDVariable*, CompareBDDVars> freebddvars) {
+	Formula* createFormulaWithFreeVars(const BddNode* object, const fobddvarset& freebddvars) {
 		reset();
 		setDBRMappingToMatch(freebddvars);
 		object->accept(this);
@@ -128,7 +128,7 @@ private:
 	template<typename BDDConstruct>
 	Formula* tseitinFormula(Predicate* pred, const BDDConstruct* arg) {
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
-		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
+		varset varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars, arg);
 		createTseitinAtom(pred, arg);
 		auto tseitinAtom = _currformula;
@@ -144,7 +144,7 @@ private:
 	template<typename BDDConstruct>
 	Rule* tseitinRule(Predicate* pred, const BDDConstruct* arg) {
 		auto vars = VarUtils::makeNewVariables(pred->sorts());
-		std::set<Variable*> varsset(vars.cbegin(), vars.cend());
+		varset varsset(vars.cbegin(), vars.cend());
 		setDBRMappingToMatch(vars, arg);
 		createTseitinAtom(pred, arg);
 		Assert(isa<PredForm>(*_currformula));
@@ -174,7 +174,7 @@ private:
 
 	}
 
-	void setDBRMappingToMatch(set<const FOBDDVariable*, CompareBDDVars> bddvars) {
+	void setDBRMappingToMatch(const fobddvarset& bddvars) {
 		_dbrmapping.clear();
 		size_t i = 0;
 		for (auto it = bddvars.cbegin(); it != bddvars.cend(); ++it, ++i) {

@@ -19,7 +19,8 @@ TableChecker::TableChecker(const PredTable* t, const std::vector<const DomElemCo
 		: 	_table(t),
 			_vars(vars),
 			_universe(univ),
-			_reset(true) {
+			_reset(true),
+			_currargs(vars.size(), NULL) {
 	Assert(t->arity() == vars.size());
 }
 
@@ -38,11 +39,10 @@ void TableChecker::reset() {
 void TableChecker::next() {
 	if (_reset) {
 		_reset = false;
-		std::vector<const DomainElement*> _currargs;
-		for (auto i = _vars.begin(); i < _vars.end(); ++i) {
-			_currargs.push_back((*i)->get());
+		for(uint i=0; i<_vars.size(); ++i){
+			_currargs[i] = (_vars[i])->get();
 		}
-		bool allowedvalue = (_table->contains(_currargs) && _universe.contains(_currargs));
+		auto allowedvalue = (_table->contains(_currargs) && _universe.contains(_currargs));
 		if (not allowedvalue) {
 			notifyAtEnd();
 		}

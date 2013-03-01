@@ -1,31 +1,26 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
 procedure getExpectedAModel(){
 	return true
 }
 
-/************************************
-        Even and Odd numbers
-************************************/
-
 vocabulary V{
-type Num isa int
-Even(Num)
-Odd(Num)
-Nul:Num
-
-
+	type Num isa int
+	Even(Num)
+	Odd(Num)
+	Nul:Num
 }
 
 theory T : V { 
-// Definition of even and odd
-{ Even(Nul).
-  Odd(x+1) <- Even(x).
-  Even(x+1) <- Odd(x). }
-
-
-
+	{ 
+		Even(Nul).
+		Odd(x+1) <- Even(x).
+		Even(x+1) <- Odd(x). 
+	}
 }
 
 structure S : V{ 
-Num = {0..5}
-Nul = 0
+	Num = {0..5}
+	Nul = 0
 }

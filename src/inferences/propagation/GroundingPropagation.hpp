@@ -50,21 +50,10 @@ public:
 			if (translator->isInputAtom(atomnr)) {
 				auto symbol = translator->getSymbol(atomnr);
 				auto args = translator->getArgs(atomnr);
-				if (isa<Predicate>(*symbol)) {
-					auto pred = dynamic_cast<Predicate*>(symbol);
-					if (sign(*literal)) {
-						result->inter(pred)->makeFalse(args);
-					} else {
-						result->inter(pred)->makeTrue(args);
-					}
+				if (sign(*literal)) {
+					result->inter(symbol)->makeFalse(args);
 				} else {
-					Assert(isa<Function>(*symbol));
-					auto func = dynamic_cast<Function*>(symbol);
-					if (sign(*literal)) {
-						result->inter(func)->graphInter()->makeFalse(args);
-					} else {
-						result->inter(func)->graphInter()->makeTrue(args);
-					}
+					result->inter(symbol)->makeTrue(args);
 				}
 			}
 		}

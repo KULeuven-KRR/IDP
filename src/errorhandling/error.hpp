@@ -153,7 +153,7 @@ void possiblyInfiniteGrounding(const std::string& formula);
 
 void triedAddingSubtypeToVocabulary(const std::string& boundedpredname, const std::string& predname, const std::string& vocname);
 
-void emptySort(const std::string& sortname);
+void emptySort(const std::string& sortname, const std::string& structurename);
 
 /** Warn that ASP queries do not have a specific handling */
 void aspQueriesAreParsedAsFacts();

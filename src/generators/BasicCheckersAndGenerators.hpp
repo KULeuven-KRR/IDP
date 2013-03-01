@@ -49,6 +49,10 @@ public:
 	virtual void internalSetVarsAgain(){
 
 	}
+
+	void put(std::ostream& stream) const {
+		stream << "false";
+	}
 };
 
 class FullGenerator: public InstGenerator {
@@ -76,6 +80,10 @@ public:
 
 	virtual void internalSetVarsAgain(){
 
+	}
+
+	void put(std::ostream& stream) const {
+		stream << "true";
 	}
 };
 

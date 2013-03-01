@@ -63,6 +63,8 @@ public:
 
 	void accept(FOBDDVisitor* visitor) const;
 
+	bool operator<(const FOBDD& rhs) const;
+
 	virtual std::ostream& put(std::ostream& output) const;
 
 };

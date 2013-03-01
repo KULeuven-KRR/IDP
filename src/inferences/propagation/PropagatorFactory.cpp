@@ -201,10 +201,10 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 			vector<Term*> terms = TermUtils::makeNewVarTerms(vars);
 			PredForm* atom = new PredForm(SIGN::POS, function, terms, FormulaParseInfo());
 			Variable* y = vars.back();
-			set<Variable*> yset = { y };
+			varset yset = { y };
 			QuantForm* exists = new QuantForm(SIGN::POS, QUANT::EXIST, yset, atom, FormulaParseInfo());
 			vars.pop_back();
-			set<Variable*> xset(vars.cbegin(), vars.cend());
+			varset xset(vars.cbegin(), vars.cend());
 			if (xset.size() == 0) {
 				newtheo->add(exists);
 			} else {
@@ -232,7 +232,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 		atoms.push_back(new PredForm(SIGN::NEG, function, zy2terms, FormulaParseInfo()));
 		atoms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, function->outsort()), y1y2terms, FormulaParseInfo()));
 		BoolForm* disjunction = new BoolForm(SIGN::POS, false, atoms, FormulaParseInfo());
-		set<Variable*> zy1y2set;
+		varset zy1y2set;
 		zy1y2set.insert(zvars.cbegin(), zvars.cend());
 		zy1y2set.insert(y1var);
 		zy1y2set.insert(y2var);
@@ -383,11 +383,11 @@ template<class Factory, class Domain>
 void FOPropagatorFactory<Factory, Domain>::visit(const EquivForm* ef) {
 	_propagator->setUpward(ef->left(), ef);
 	_propagator->setUpward(ef->right(), ef);
-	set<Variable*> leftqv = ef->freeVars();
+	varset leftqv = ef->freeVars();
 	for (auto it = ef->left()->freeVars().cbegin(); it != ef->left()->freeVars().cend(); ++it) {
 		leftqv.erase(*it);
 	}
-	set<Variable*> rightqv = ef->freeVars();
+	varset rightqv = ef->freeVars();
 	for (auto it = ef->right()->freeVars().cbegin(); it != ef->right()->freeVars().cend(); ++it) {
 		rightqv.erase(*it);
 	}
@@ -405,7 +405,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const BoolForm* bf) {
 	}
 	for (auto it = bf->subformulas().cbegin(); it != bf->subformulas().cend(); ++it) {
 		_propagator->setUpward(*it, bf);
-		set<Variable*> sv = bf->freeVars();
+		varset sv = bf->freeVars();
 		for (auto jt = (*it)->freeVars().cbegin(); jt != (*it)->freeVars().cend(); ++jt) {
 			sv.erase(*jt);
 		}

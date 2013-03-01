@@ -44,21 +44,8 @@ public:
 
 };
 
-//This struct is needed in order to always quantify !x y in the same order.
 struct CompareBDDVars {
-	bool operator()(const FOBDDVariable* v1, const FOBDDVariable* v2) const {
-		if (v1->sort()->name() < v2->sort()->name()) {
-			return true;
-		}
-		if (v1->sort()->name() > v2->sort()->name()) {
-			return false;
-		}
-		if (v1->variable()->name() < v2->variable()->name()) {
-			return true;
-		}
-		if (v1->variable()->name() > v2->variable()->name()) {
-			return false;
-		}
-		return v1 < v2;
-	}
+	bool operator()(const FOBDDVariable* lhs, const FOBDDVariable* rhs) const;
 };
+
+typedef std::set<const FOBDDVariable*, CompareBDDVars> fobddvarset;

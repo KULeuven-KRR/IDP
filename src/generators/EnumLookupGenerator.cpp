@@ -15,10 +15,10 @@
 
 typedef std::unordered_map<ElementTuple, std::vector<ElementTuple>, HashTuple> LookupTable;
 
-EnumLookupGenerator::EnumLookupGenerator(const LookupTable& t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out)
-		: _table(t), _currpos(_table.cend()), _invars(in), _outvars(out), _reset(true), _currargs(_invars.size()) {
+EnumLookupGenerator::EnumLookupGenerator(std::shared_ptr<const LookupTable> t, const std::vector<const DomElemContainer*>& in, const std::vector<const DomElemContainer*>& out)
+		: _table(t), _currpos(_table->cend()), _invars(in), _outvars(out), _reset(true), _currargs(_invars.size()) {
 #ifdef DEBUG
-	for(auto i=_table.cbegin(); i!=_table.cend(); ++i) {
+	for(auto i=_table->cbegin(); i!=_table->cend(); ++i) {
 		for(auto j=(*i).second.cbegin(); j<(*i).second.cend(); ++j) {
 			Assert((*j).size()==out.size());
 		}
@@ -32,14 +32,13 @@ EnumLookupGenerator::EnumLookupGenerator(const LookupTable& t, const std::vector
 #endif
 }
 
-// TODO quite expensive
 EnumLookupGenerator* EnumLookupGenerator::clone() const {
 	auto g = new EnumLookupGenerator(*this);
-	if(_currpos==_table.cend()){
-		g->_currpos = g->_table.cend();
+	if(_currpos==_table->cend()){
+		g->_currpos = g->_table->cend();
 	}else{
-		g->_currpos = g->_table.find(g->_currargs);
-		Assert(g->_currpos!=g->_table.cend());
+		g->_currpos = g->_table->find(g->_currargs);
+		Assert(g->_currpos!=g->_table->cend());
 		g->_iter = g->_currpos->second.cbegin();
 	}
 	return g;
@@ -56,8 +55,8 @@ void EnumLookupGenerator::next() {
 		for (unsigned int i = 0; i < _invars.size(); ++i) {
 			_currargs[i] = _invars[i]->get();
 		}
-		_currpos = _table.find(_currargs);
-		if (_currpos == _table.cend() || _currpos->second.size() == 0) {
+		_currpos = _table->find(_currargs);
+		if (_currpos == _table->cend() || _currpos->second.size() == 0) {
 			notifyAtEnd();
 			return;
 		}
@@ -76,7 +75,7 @@ void EnumLookupGenerator::next() {
 }
 
 void EnumLookupGenerator::internalSetVarsAgain() {
-	if(_currpos==_table.cend()){
+	if(_currpos==_table->cend()){
 		return;
 	}
 	if (_iter != _currpos->second.cend()) {
@@ -90,6 +89,11 @@ void EnumLookupGenerator::internalSetVarsAgain() {
 }
 
   void EnumLookupGenerator::put(std::ostream& stream) const{
-	stream <<"enumerating table" <<print(_table);
+	stream <<"enumerating table";
+	if(_table->size()<10){
+		stream <<print(_table);
+	}else{
+		stream <<"(too large to print)";
+	}
 }
 

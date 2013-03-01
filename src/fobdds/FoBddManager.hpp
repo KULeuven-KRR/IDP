@@ -17,10 +17,12 @@
 #include <set>
 #include <string>
 
-#include "fobdds/FoBddUtils.hpp"
+#include "FoBddUtils.hpp"
+#include "FoBddVariable.hpp"
+#include "vocabulary/VarCompare.hpp"
+#include "FoBddIndex.hpp"
 
 class FOBDDTerm;
-class FOBDDVariable;
 class FOBDDFuncTerm;
 class FOBDDDeBruijnIndex;
 class FOBDDDomainTerm;
@@ -116,7 +118,7 @@ private:
 	//Or, said differently: (kernel, truebdd, falsebdd) -> result
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
-	double getTotalWeigthedCost(const FOBDD* bdd, const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+	double getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 			const AbstractStructure* structure, double weightPerAns);
 	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
@@ -161,18 +163,18 @@ public:
 	const FOBDDDomainTerm* getDomainTerm(const DomainTerm* dt);
 	const FOBDDDomainTerm* getDomainTerm(Sort* sort, const DomainElement* value);
 
-	std::set<const FOBDDVariable*, CompareBDDVars> getVariables(const std::set<Variable*>& vars);
+	fobddvarset getVariables(const varset& vars);
 
 	const FOBDD* negation(const FOBDD*);
 	const FOBDD* conjunction(const FOBDD*, const FOBDD*);
 	const FOBDD* disjunction(const FOBDD*, const FOBDD*);
 	const FOBDD* univquantify(const FOBDDVariable*, const FOBDD*);
 	const FOBDD* existsquantify(const FOBDDVariable*, const FOBDD*);
-	const FOBDD* univquantify(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
-	const FOBDD* existsquantify(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
+	const FOBDD* univquantify(const fobddvarset&, const FOBDD*);
+	const FOBDD* existsquantify(const fobddvarset&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
 
-	const FOBDD* replaceFreeVariablesByIndices(const std::set<const FOBDDVariable*, CompareBDDVars>&, const FOBDD*);
+	const FOBDD* replaceFreeVariablesByIndices(const fobddvarset&, const FOBDD*);
 
 	const FOBDDQuantSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
@@ -201,18 +203,18 @@ public:
 	 * Optimizes a bdd for being queried. The BDDBasedGeneratorfactory (the only class querying BDDs) will execute this. Hence execution of this method is not needed in most cases.
 	 * However, if you want to make more true/false it's best to optimize first (to be sure not to throw away too much information)
 	 */
-	void optimizeQuery(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	void optimizeQuery(const FOBDD*, const fobddvarset&, const fobddindexset&,
 			const AbstractStructure*);
 
-	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	const FOBDD* makeMoreFalse(const FOBDD*, const fobddvarset&, const fobddindexset&,
 			const AbstractStructure*, double weight_per_ans);
-	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	const FOBDD* makeMoreTrue(const FOBDD*, const fobddvarset&, const fobddindexset&,
 			const AbstractStructure*, double weight_per_ans);
 
 	//Makes more parts of a bdd false. The resulting bdd will contain no symbols from the given list of symbols to remove
-	const FOBDD* makeMoreFalse(const FOBDD*, std::set<PFSymbol*> symbolsToRemove);
+	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<PFSymbol*>& symbolsToRemove);
 	//Makes more parts of a bdd true. The resulting bdd will contain no symbols from the given list of symbols to remove
-	const FOBDD* makeMoreTrue(const FOBDD*, std::set<PFSymbol*> symbolsToRemove );
+	const FOBDD* makeMoreTrue(const FOBDD*, const std::set<PFSymbol*>& symbolsToRemove );
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
 
@@ -262,9 +264,9 @@ private:
 
 	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const AbstractStructure* structure);
 
-	const FOBDD* makeMore(bool goal, const FOBDD*, const std::set<const FOBDDVariable*, CompareBDDVars>&, const std::set<const FOBDDDeBruijnIndex*>&,
+	const FOBDD* makeMore(bool goal, const FOBDD*, const fobddvarset&, const fobddindexset&,
 			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
-	const FOBDD* makeMore(bool goal, const FOBDD* bdd, std::set<PFSymbol*> symbolsToRemove); //Depending on goal, makes more pieces of the BDD true or false such that result contains no forbidden symbols
+	const FOBDD* makeMore(bool goal, const FOBDD* bdd, const std::set<PFSymbol*>& symbolsToRemove); //Depending on goal, makes more pieces of the BDD true or false such that result contains no forbidden symbols
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
 
@@ -272,17 +274,17 @@ private:
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
 };
 
-std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDDKernel*, FOBDDManager* manager);
-std::set<const FOBDDVariable*, CompareBDDVars> variables(const FOBDD*, FOBDDManager* manager);
-std::set<const FOBDDDeBruijnIndex*> indices(const FOBDDKernel*, FOBDDManager* manager);
-std::set<const FOBDDDeBruijnIndex*> indices(const FOBDD*, FOBDDManager* manager);
+fobddvarset variables(const FOBDDKernel*, FOBDDManager* manager);
+fobddvarset variables(const FOBDD*, FOBDDManager* manager);
+fobddindexset indices(const FOBDDKernel*, FOBDDManager* manager);
+fobddindexset indices(const FOBDD*, FOBDDManager* manager);
 std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* manager);
 std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager);
 
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-tablesize univNrAnswers(const set<const FOBDDVariable*, CompareBDDVars>& vars, const set<const FOBDDDeBruijnIndex*>& indices,
+tablesize univNrAnswers(const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure);
 
 #endif

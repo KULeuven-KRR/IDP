@@ -16,12 +16,12 @@
 
 class LazyDisjunctiveGrounder: public ClauseGrounder {
 private:
-	const std::set<Variable*> freevars; // The freevariables according to which we have to ground
+	const varset freevars; // The freevariables according to which we have to ground
 	mutable tablesize alreadyground; // Statistics
 	bool useExplicitTseitins;
 
 public:
-	LazyDisjunctiveGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct, bool explicitTseitins);
+	LazyDisjunctiveGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, SIGN sign, bool conj, const GroundingContext& ct, bool explicitTseitins);
 	virtual ~LazyDisjunctiveGrounder() {
 	}
 
@@ -46,7 +46,7 @@ private:
 	InstGenerator* _generator;
 	InstChecker* _checker;
 public:
-	LazyExistsGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
+	LazyExistsGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, FormulaGrounder* sub, SIGN sign, QUANT q, InstGenerator* gen,
 			InstChecker* checker, const GroundingContext& ct, bool explicitTseitins);
 	~LazyExistsGrounder();
 
@@ -66,7 +66,7 @@ class LazyDisjGrounder: public LazyDisjunctiveGrounder {
 private:
 	std::vector<Grounder*> _subgrounders;
 public:
-	LazyDisjGrounder(const std::set<Variable*>& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
+	LazyDisjGrounder(const varset& freevars, AbstractGroundTheory* groundtheory, std::vector<Grounder*> sub, SIGN sign, bool conj,
 			const GroundingContext& ct, bool explicitTseitins);
 	~LazyDisjGrounder();
 

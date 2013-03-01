@@ -68,7 +68,7 @@ struct TestingSet1 {
 	QuantForm* Axpx; // !x: P(x)
 	QuantForm* nAxpx; // ~!x: P(x)
 	QuantForm* nExqx; // ?x: Q(x)
-	EqChainForm* xF; // x This is false (empty conjuction)
+	EqChainForm* xF; // 0 =< 0 =< 0
 	AggForm* maxxpxgeq0; // MAX{x|P(x)} >= 0
 };
 

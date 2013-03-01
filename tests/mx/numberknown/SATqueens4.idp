@@ -1,0 +1,28 @@
+procedure getExpectedAModel() {
+	return true
+}
+procedure getExpectedNbOfModels(){
+	return 2
+}
+
+/*********************
+   n-Queens problem
+*********************/
+
+vocabulary V {
+  type Num isa int
+  Queen(Num,Num)
+  Diag(Num,Num,Num,Num)
+}
+
+theory T:V {
+  { Diag(x1,y1,x2,y2) <- x1 < x2 & abs(x1-x2) = abs(y1-y2). }
+  
+  ! x : ?1 y : Queen(x,y).
+  ! y : ?1 x : Queen(x,y).
+  ! x1 y1 x2 y2 : Diag(x1,y1,x2,y2) => ~(Queen(x1,y1) & Queen(x2,y2)).
+}
+
+structure S: V{
+  Num = {1..4}
+}

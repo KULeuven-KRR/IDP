@@ -267,6 +267,11 @@ void Sort::generatePred(SortTable* inter) {
 /**
  * Create an internal sort
  */
+Sort::Sort(SortTable* inter)
+		: _pi(), _interpretation(inter) {
+	_name = "sort" + convertToString(getGlobal()->getNewID());
+	generatePred(inter);
+}
 Sort::Sort(const string& name, SortTable* inter)
 		: _name(name), _pi(), _interpretation(inter) {
 	generatePred(inter);
@@ -1651,8 +1656,8 @@ void Vocabulary::add(Sort* s) {
 
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
-	add(s->pred());
 	updateStructures(s, structures);
+	add(s->pred());
 }
 
 // TODO cleaner?

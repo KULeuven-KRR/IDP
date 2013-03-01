@@ -1334,8 +1334,8 @@ bool BDDInternalPredTable::approxFinite(const Universe& univ) const {
 	if (univ.approxFinite()) {
 		return true;
 	} else {
-		set<const FOBDDDeBruijnIndex*> indices;
-		set<Variable*> fovars;
+		fobddindexset indices;
+		varset fovars;
 		fovars.insert(_vars.cbegin(), _vars.cend());
 		auto bddvars = _manager->getVariables(fovars);
 		double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);
@@ -1412,8 +1412,8 @@ bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Uni
 
 
 tablesize BDDInternalPredTable::size(const Universe&) const {
-	set<const FOBDDDeBruijnIndex*> indices;
-	set<Variable*> fovars;
+	fobddindexset indices;
+	varset fovars;
 	fovars.insert(_vars.cbegin(), _vars.cend());
 	auto bddvars = _manager->getVariables(fovars);
 	double estimate = BddStatistics::estimateNrAnswers(_bdd, bddvars, indices, _structure, _manager);
@@ -1943,21 +1943,23 @@ InternalSortTable* IntRangeInternalSortTable::remove(const DomainElement* d) {
 	if (not contains(d) || d->type()!=DomainElementType::DET_INT) {
 		return this;
 	}
-	if (d->value()._int == _first) {
-		if (_nrRefs < 2) {
-			_first = _first + 1;
-			return this;
-		}
-	} else if (d->value()._int == _last) {
-		if (_nrRefs < 2) {
-			_last = _last - 1;
-			return this;
-		}
+
+	if(_nrRefs>1){
+		return (new IntRangeInternalSortTable(_first, _last))->remove(d);
 	}
+	auto value = d->value()._int;
+	if (value == _first) {
+		_first = _first + 1;
+		return this;
+	} else if (value == _last) {
+		_last = _last - 1;
+		return this;
+	}
+	// TODO create new <multi range> table and replace code here with that!
 	auto eist = new EnumeratedInternalSortTable();
 	InternalSortTable* ist = eist;
 	for (int n = _first; n <= _last; ++n) {
-		if(d->value()._int==n){
+		if(value==n){
 			continue;
 		}
 		ist = ist->add(createDomElem(n));

@@ -185,15 +185,15 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 		newdata.bddvars.clear();
 
 		// Optimize the bdd for querying
-		set<const FOBDDVariable*, CompareBDDVars> outvars;
+		fobddvarset outvars;
 		for (unsigned int n = 0; n < data.pattern.size(); ++n) {
-			const FOBDDVariable* var = optimizemanager->getVariable(data.bddvars[n]->variable());
+			auto var = optimizemanager->getVariable(data.bddvars[n]->variable());
 			newdata.bddvars.push_back(var);
 			if (data.pattern[n] == Pattern::OUTPUT) {
 				outvars.insert(var);
 			}
 		}
-		set<const FOBDDDeBruijnIndex*> indices;
+		fobddindexset indices;
 		optimizemanager->optimizeQuery(newdata.bdd, outvars, indices, newdata.structure);
 
 		//From now on, used the optimized BDD and manager.
@@ -569,7 +569,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 
 }
 
-vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, set<Variable*> free_vars,
+vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, varset free_vars,
 		const AbstractStructure *& structure) {
 	vector<Formula*> orderedconjunction;
 	while (not atoms_to_order.empty()) {
@@ -580,7 +580,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 			if (*it == origatom) {
 				currinverse = (branchToGenerate == BRANCH::FALSEBRANCH);
 			}
-			set<Variable*> projectedfree;
+			varset projectedfree;
 			//projectedfree are the free variables that occur free in THIS atom
 			for (auto jt = free_vars.cbegin(); jt != free_vars.cend(); ++jt) {
 				if ((*it)->freeVars().find(*jt) != (*it)->freeVars().cend()) {
@@ -729,7 +729,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 	}
 	Formula *origatom = boolform->subformulas().back();
 	//All variables that are still free: the original free variables + the quantvars
-	set<Variable*> all_free_vars;
+	varset all_free_vars;
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == Pattern::OUTPUT) {
 			all_free_vars.insert(atomvars[n]);

@@ -17,6 +17,7 @@
 #include <cstddef>
 
 #include "visitors/TheoryMutatingVisitor.hpp"
+#include "vocabulary/VarCompare.hpp"
 
 class Sort;
 class Variable;
@@ -35,8 +36,8 @@ class Vocabulary;
 class DeriveSorts: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	std::set<Variable*> _underivableVariables;
-	std::set<Variable*> _untypedvariables;
+	varset _underivableVariables;
+	varset _untypedvariables;
 	std::set<PredForm*> _overloadedatoms;
 	std::set<FuncTerm*> _overloadedterms;
 	std::set<DomainTerm*> _domelements; // The untyped domain elements
@@ -88,7 +89,7 @@ private:
 	void derivefuncs(); // disambiguate the overloaded functions
 	void derivepreds(); // disambiguate the overloaded predicates
 
-	void checkVars(const std::set<Variable*>& quantvars);
+	void checkVars(const varset& quantvars);
 
 	void check();
 };

@@ -68,7 +68,7 @@ public:
 		auto vars = bipt->vars();
 		Assert(_pattern.size() == vars.size());
 
-		std::set<const FOBDDVariable*, CompareBDDVars> bddvars;
+		fobddvarset bddvars;
 		int i = 0;
 		for (auto v = vars.cbegin(); v != vars.cend(); ++v, ++i) {
 			if (not _pattern[i]) {

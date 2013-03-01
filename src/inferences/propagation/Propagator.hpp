@@ -51,7 +51,7 @@ private:
 	InterpretationFactory* _factory; //!< Manages and creates domains for formulas
 	FOPropScheduler* _scheduler; //!< Schedules propagations
 	std::map<const Formula*, ThreeValuedDomain<Domain> > _domains; //!< Map each formula to its current domain
-	std::map<const Formula*, std::set<Variable*> > _quantvars; //What is this?
+	std::map<const Formula*, varset> _quantvars; //What is this?
 	//Every symbol has exactly one "connector". A "prototype" of an atom by this symbol
 	//If we want the interpretation of an other PredForm over the same symbol, we should
 	//first replace all it's subterms by the ones given in leafconnectdata
@@ -71,8 +71,8 @@ private:
 	Domain* addToDisjunction(Domain* disjunction, Domain* newdisjunct);
 	Domain* addToExists(Domain* exists, Variable*);
 	Domain* addToForall(Domain* forall, Variable*);
-	Domain* addToExists(Domain* exists, const std::set<Variable*>&);
-	Domain* addToForall(Domain* forall, const std::set<Variable*>&);
+	Domain* addToExists(Domain* exists, const varset&);
+	Domain* addToForall(Domain* forall, const varset&);
 
 	void updateDomain(const Formula* tobeupdated, FOPropDirection, bool ct, Domain* newdomain, const Formula* child = 0);
 	bool admissible(Domain*, Domain*) const; //!< Returns true iff the first domain is an allowed
@@ -129,7 +129,7 @@ public:
 		}
 		_theory = t;
 	}
-	void setQuantVar(const Formula* key, const std::set<Variable*>& value) {
+	void setQuantVar(const Formula* key, const varset& value) {
 		_quantvars[key] = value;
 	}
 	void setUpward(const Formula* key, const Formula* value) {

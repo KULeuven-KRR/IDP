@@ -198,7 +198,7 @@ ostream& EnumSetExpr::put(ostream& output) const {
  *  QuantSetExpr
  *****************/
 
-QuantSetExpr::QuantSetExpr(const set<Variable*>& qvars, Formula* formula, Term* term, const SetParseInfo& pi)
+QuantSetExpr::QuantSetExpr(const varset& qvars, Formula* formula, Term* term, const SetParseInfo& pi)
 		: SetExpr(pi) {
 	setTerm(term);
 	setQuantVars(qvars);
@@ -217,7 +217,7 @@ QuantSetExpr* QuantSetExpr::cloneKeepVars() const {
 }
 
 QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
-	set<Variable*> newvars;
+	varset newvars;
 	map<Variable*, Variable*> nmvv = mvv;
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {
 		auto nv = new Variable((*it)->name(), (*it)->sort(), (*it)->pi());

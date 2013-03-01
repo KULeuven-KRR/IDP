@@ -200,7 +200,7 @@ Domain* TypedFOPropagator<Factory, Domain>::addToDisjunction(Domain* disjunction
 template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, Variable* var) {
 	Variable* v = new Variable(var->name(), var->sort(), var->pi());
-	set<Variable*> newqvars = { v };
+	varset newqvars = { v };
 	map<Variable*, Variable*> mvv;
 	mvv[var] = v;
 
@@ -214,7 +214,7 @@ Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* exists, Variable
 template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, Variable* var) {
 	Variable* v = new Variable(var->name(), var->sort(), var->pi());
-	set<Variable*> newqvars = { v };
+	varset newqvars = { v };
 	map<Variable*, Variable*> mvv;
 	mvv[var] = v;
 	Domain* cl = _factory->substitute(forall, mvv);
@@ -228,7 +228,7 @@ Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* forall, Variable
  * Returns a false domain with as vars the free variables of  \forall qvars: orig
  */
 template<class Factory, class Domain>
-Domain* falseDomain(Domain* orig, const set<Variable*>& qvars, Factory* factory) {
+Domain* falseDomain(Domain* orig, const varset& qvars, Factory* factory) {
 	auto origdomainvars = orig->vars();
 	vector<Variable*> domainvars;
 	for (auto domainvar : origdomainvars) {
@@ -246,7 +246,7 @@ Domain* falseDomain(Domain* orig, const set<Variable*>& qvars, Factory* factory)
  * * Or, in case that the previous domain is inadmissible, a false domain with as vars the free variables of  \exists qvars: orig
  */
 template<class Factory, class Domain>
-Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* orig, const set<Variable*>& qvars) {
+Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* orig, const varset& qvars) {
 	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
 	for (auto var : qvars) {
 		orig = addToExists(orig, var);
@@ -263,7 +263,7 @@ Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* orig, const set<
  * * Or, in case that the previous domain is inadmissible, a false domain with as vars the free variables of  \forall qvars: orig
  */
 template<class Factory, class Domain>
-Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* orig, const set<Variable*>& qvars) {
+Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* orig, const varset& qvars) {
 	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
 	for (auto var : qvars) {
 		orig = addToForall(orig, var);
@@ -432,7 +432,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const EquivForm* ef) {
 		Domain* parentdomain = _ct ? getDomain(ef)._ctdomain : getDomain(ef)._cfdomain;
 		Domain* domain1 = _factory->conjunction(parentdomain, tvd._ctdomain);
 		Domain* domain2 = _factory->conjunction(parentdomain, tvd._cfdomain);
-		const set<Variable*>& qvars = _quantvars[_child];
+		const auto& qvars = _quantvars[_child];
 		domain1 = addToExists(domain1, qvars);
 		domain2 = addToExists(domain2, qvars);
 		updateDomain(_child, DOWN, (_ct == isPos(ef->sign())), domain1);
@@ -472,7 +472,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const BoolForm* bf) {
 				const ThreeValuedDomain<Domain>& subfdomain = getDomain(subform);
 				if (not subfdomain._twovalued) {
 					Domain* deriveddomain;
-					const set<Variable*>& qvars = _quantvars[subform];
+					const auto& qvars = _quantvars[subform];
 					if (longnewdomain) {
 						deriveddomain = bfdomain->clone();
 						for (size_t m = 0; m < subdomains.size(); ++m) {
@@ -519,7 +519,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 		const ThreeValuedDomain<Domain>& tvd = getDomain(qf);
 		Domain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if (_ct != qf->isUnivWithSign()) {
-			set<Variable*> newvars;
+			varset newvars;
 			map<Variable*, Variable*> mvv;
 			Domain* conjdomain = _factory->trueDomain(qf->subformula());
 			vector<CompType> comps(1, CompType::EQ);

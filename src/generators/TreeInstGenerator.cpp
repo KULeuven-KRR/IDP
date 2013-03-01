@@ -33,6 +33,7 @@ void OneChildGenerator::next() {
 	}
 	// Here, the generator is at a new value
 	for (; not _generator->isAtEnd(); _generator->operator ++()) {
+		CHECKTERMINATION;
 		_child->begin();
 		if (not _child->isAtEnd()) {
 			return;
@@ -53,8 +54,8 @@ void OneChildGenerator::internalSetVarsAgain() {
 }
 
 void OneChildGenerator::put(std::ostream& stream) const {
-	stream << "generate: " << print(_generator) << nt();
-	stream << "then ";
+	stream << "generate values for: " << print(_generator) << nt();
+	stream << "then for each such instantiation ";
 	pushtab();
 	stream << print(_child);
 	poptab();
@@ -100,6 +101,7 @@ void TwoChildGenerator::next() {
 	}
 	// Here, the generator is at a new value
 	for (; not _generator->isAtEnd(); _generator->operator ++()) {
+		CHECKTERMINATION;
 		if (_checker->check()) {
 			_truecheckbranch->begin();
 			if (not _truecheckbranch->isAtEnd()) {

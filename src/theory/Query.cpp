@@ -24,7 +24,7 @@ Query::Query(std::string name, const std::vector<Variable*>& vars, Formula* q, c
 			_name(name),
 			_vocabulary(NULL) {
 	//NOTE: these things are checked at parsetime. However, they are checked here again for in case queries are constructed directly (without going through parser)
-	std::set<Variable*> queriedvars;
+	varset queriedvars;
 	for(auto var: vars){
 		queriedvars.insert(var);
 	}
@@ -39,4 +39,8 @@ Query::Query(std::string name, const std::vector<Variable*>& vars, Formula* q, c
 
 void Query::recursiveDelete() {
 	_query->recursiveDelete(); //also deletes the variables.
+}
+
+void Query::put(std::ostream& stream) const {
+	stream << "Query " << name() << " represents tuples of assignments to " << toString(variables()) << " satisfying " << toString(query()) << "\n";
 }

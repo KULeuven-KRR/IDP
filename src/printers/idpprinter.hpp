@@ -112,23 +112,32 @@ public:
 			auto sp = it->second->nonbuiltins();
 			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				auto p = *jt;
-				if (p->arity() != 1 || p->sorts()[0]->pred() != p) {
-					auto pi = structure->inter(p);
-					if (pi->approxTwoValued()) {
-						printTab();
+				if (p->arity() == 1 && p->sorts()[0]->pred() == p) { // If it is in fact a sort, ignore it
+					continue;
+				}
+				auto pi = structure->inter(p);
+				if (pi->approxTwoValued()) {
+					printTab();
+					if(toDouble(pi->ct()->size())<10*toDouble(pi->cf()->size())){
 						output() << printFullyQualified(p) << " = ";
 						visit(pi->ct());
 						output() << '\n';
-					} else {
-						printTab();
-						output() << printFullyQualified(p) << "<ct> = ";
-						visit(pi->ct());
-						output() << '\n';
-						printTab();
+					}else{
 						output() << printFullyQualified(p) << "<cf> = ";
 						visit(pi->cf());
 						output() << '\n';
+						printTab();
+						output() << printFullyQualified(p) << "<u> = { }\n";
 					}
+				} else {
+					printTab();
+					output() << printFullyQualified(p) << "<ct> = ";
+					visit(pi->ct());
+					output() << '\n';
+					printTab();
+					output() << printFullyQualified(p) << "<cf> = ";
+					visit(pi->cf());
+					output() << '\n';
 				}
 			}
 		}

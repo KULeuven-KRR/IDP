@@ -43,3 +43,12 @@ public:
 	IdpException(std::string message);
 	std::string getMessage() const;
 };
+
+// Exception which indicates a bug in the code (so maybe should not be shown to the user, ...)
+class InternalIdpException: public Exception {
+private:
+	std::string message;
+public:
+	InternalIdpException(std::string message);
+	std::string getMessage() const;
+};

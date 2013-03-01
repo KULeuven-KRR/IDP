@@ -13,10 +13,10 @@
 
 #include "parseinfo.hpp"
 #include "common.hpp"
+#include "vocabulary/VarCompare.hpp"
 #include "visitors/VisitorFriends.hpp"
 
 class QuantSetExpr;
-class Variable;
 class tablesize;
 class Sort;
 class AbstractStructure;
@@ -25,10 +25,10 @@ class AbstractStructure;
  * Base class for first-order set expressions
  */
 class SetExpr {
-ACCEPTDECLAREBOTH(SetExpr)
+	ACCEPTDECLAREBOTH(SetExpr)
 private:
-	std::set<Variable*> _quantvars; //!< The quantified variables of the set expression
-	std::set<Variable*> _freevars; //!< the EXACT set of variables occurring unquantified in the term
+	varset _quantvars; //!< The quantified variables of the set expression
+	varset _freevars; //!< the EXACT set of variables occurring unquantified in the term
 
 	SetParseInfo _pi; //!< the place where the set was parsed
 	bool _allwaysDeleteRecursively; //!<Standard: false. If true, always deletes recursively (for use in ParseInfo)
@@ -68,14 +68,14 @@ protected:
 	const std::vector<QuantSetExpr*>& getSubSets() const {
 		return _subsets;
 	}
-	const std::set<Variable*>& getSubQuantVars() const {
+	const varset& getSubQuantVars() const {
 		return _quantvars;
 	}
 	void addSubQuantVar(Variable* var) {
 		_quantvars.insert(var);
 		setFreeVars();
 	}
-	void setQuantVars(const std::set<Variable*>& vars) {
+	void setQuantVars(const varset& vars) {
 		_quantvars = vars;
 		setFreeVars();
 	}
@@ -103,7 +103,7 @@ public:
 		_allwaysDeleteRecursively = aRD;
 	}
 
-	const std::set<Variable*>& freeVars() const {
+	const varset& freeVars() const {
 		return _freevars;
 	}
 
@@ -162,7 +162,7 @@ public:
 class QuantSetExpr: public SetExpr {
 ACCEPTBOTH(QuantSetExpr)
 public:
-	QuantSetExpr(const std::set<Variable*>& v, Formula* s, Term* t, const SetParseInfo& pi);
+	QuantSetExpr(const varset& v, Formula* s, Term* t, const SetParseInfo& pi);
 
 	Formula* getCondition() const {
 		return getSubFormula();
@@ -181,7 +181,7 @@ public:
 	QuantSetExpr* cloneKeepVars() const;
 	QuantSetExpr* clone(const std::map<Variable*, Variable*>&) const;
 
-	const std::set<Variable*>& quantVars() const {
+	const varset& quantVars() const {
 		return getSubQuantVars();
 	}
 	void addQuantVar(Variable* v) {

@@ -41,3 +41,16 @@ std::string IdpException::getMessage() const {
 	ss << message;
 	return ss.str();
 }
+
+InternalIdpException::InternalIdpException(std::string message)
+		: message(message) {
+#ifdef DEBUG
+	printStacktrace();
+#endif
+}
+
+std::string InternalIdpException::getMessage() const {
+	std::stringstream ss;
+	ss << "InternalIdpException: " << message;
+	return ss.str();
+}

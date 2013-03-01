@@ -40,7 +40,7 @@ VarTerm* varterm(Sort* s) {
 	return new VarTerm(variable, TermParseInfo());
 }
 
-EnumSetExpr* qset(const std::set<Variable*>& vars, Formula& subform, Term* subterm) {
+EnumSetExpr* qset(const varset& vars, Formula& subform, Term* subterm) {
 	return new EnumSetExpr({new QuantSetExpr(vars, &subform, subterm, SetParseInfo())}, SetParseInfo());
 }
 
@@ -95,21 +95,21 @@ Formula& conj(const std::vector<Formula*>& formulas){
 }
 
 Formula& forall(Variable* var, Formula& formula) {
-	return forall(std::set<Variable*>{var}, formula);
+	return forall(varset{var}, formula);
 }
 Formula& exists(Variable* var, Formula& formula) {
-	return exists(std::set<Variable*>{var}, formula);
+	return exists(varset{var}, formula);
 }
 
-Formula& quant(QUANT q, const std::set<Variable*>& vars, Formula& formula){
+Formula& quant(QUANT q, const varset& vars, Formula& formula){
 	return *new QuantForm(SIGN::POS, q, vars, &formula, FormulaParseInfo());
 }
 
-Formula& exists(const std::set<Variable*>& vars, Formula& formula) {
+Formula& exists(const varset& vars, Formula& formula) {
 	return quant(QUANT::EXIST, vars, formula);
 }
 
-Formula& forall(const std::set<Variable*>& vars, Formula& formula) {
+Formula& forall(const varset& vars, Formula& formula) {
 	return quant(QUANT::UNIV, vars, formula);
 }
 

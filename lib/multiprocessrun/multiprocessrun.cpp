@@ -15,20 +15,16 @@
 #include <sstream>
 #include <cstdio>
 #include <unistd.h>
+#include <mutex>
 
 using namespace std;
 
 int runningProcesses = 0;
-//bool printing = false;
 mutex cs;
 
 std::vector<stringstream*> files;
 
 void run(const char* exec) {
-//	cs.lock();
-//	auto currentlyprinting = printing;
-//	cs.unlock();
-//	if (currentlyprinting) {
 	stringstream ss;
 	ss << exec << " " << "2>&1";
 	cs.lock();
@@ -51,18 +47,6 @@ void run(const char* exec) {
 
 	cs.lock();
 	files.push_back(output);
-	cs.unlock();
-	/*	} else {
-	 cs.lock();
-	 printing = true;
-	 cs.unlock();
-	 printing = true;
-	 system(exec);
-	 cs.lock();
-	 printing = false;
-	 cs.unlock();
-	 }*/
-	cs.lock();
 	runningProcesses--;
 	cs.unlock();
 }
@@ -80,14 +64,11 @@ int main(int argc, char** argv) {
 	argv++;
 
 	queue<const char*> execs;
-//	cerr <<"Queued ";
 	while (argc > 0) {
-//		cerr <<*argv <<" ";
 		execs.push(*argv);
 		argv++;
 		argc--;
 	}
-//	cerr <<" spread over " <<maxnb <<" threads.\n";
 
 	vector<thread> threads;
 	while (true) {
@@ -107,12 +88,12 @@ int main(int argc, char** argv) {
 			sleep(0.25);
 		}
 	}
-	for (auto i = threads.begin(); i < threads.end(); ++i) {
+	for (auto i = threads.begin(); i<threads.end(); ++i) {
 		i->join();
 	}
-	for (auto i = files.cbegin(); i < files.cend(); ++i) {
-		cout << (*i)->str() << "\n";
-		delete (*i);
+	for (auto file : files) {
+		cout << file->str() << "\n";
+		delete (file);
 	}
 	return 0;
 }

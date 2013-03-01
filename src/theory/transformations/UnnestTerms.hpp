@@ -35,7 +35,7 @@ private:
 	Context _context; //!< Keeps track of the current context where terms are moved
 	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
-	std::set<Variable*> _variables; //!< used to temporarily store the freshly introduced variables
+	varset _variables; //!< used to temporarily store the freshly introduced variables
 
 	void contextProblem(Term* t);
 

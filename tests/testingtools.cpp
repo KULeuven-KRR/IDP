@@ -55,7 +55,7 @@ TestingSet1 getTestingSet1() {
 	testingSet.Axpx = new QuantForm(SIGN::POS, QUANT::UNIV, { testingSet.x }, testingSet.px, FormulaParseInfo()); // !x: P(x)
 	testingSet.nAxpx = new QuantForm(SIGN::NEG, QUANT::UNIV, { testingSet.x }, testingSet.px, FormulaParseInfo()); // ~!x: P(x)
 	testingSet.nExqx = new QuantForm(SIGN::NEG, QUANT::EXIST, { testingSet.x }, testingSet.qx, FormulaParseInfo()); // ?x: Q(x)
-	testingSet.xF = new EqChainForm(SIGN::POS, true, testingSet.sortterm, FormulaParseInfo()); // x This is false (empty conjuction)
+	testingSet.xF = new EqChainForm(SIGN::POS, true, {testingSet.nulterm, testingSet.nulterm, testingSet.nulterm}, {CompType::LEQ, CompType::LEQ}, FormulaParseInfo()); // 0 =< 0 =< 0
 	testingSet.maxxpxgeq0 = new AggForm(SIGN::POS, testingSet.nulterm, CompType::LEQ, testingSet.maxxpx, FormulaParseInfo()); // MAX{x|P(x)} >= 0
 	return testingSet;
 }

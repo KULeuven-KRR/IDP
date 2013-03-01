@@ -36,6 +36,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include "vocabulary/VarCompare.hpp"
 
 class Sort;
 class DomainElement;
@@ -62,7 +63,7 @@ DomainTerm* domainterm(Sort*, int value);
 Variable* var(Sort*);
 VarTerm* varterm(Sort*);
 
-EnumSetExpr* qset(const std::set<Variable*>&, Formula&, Term*);
+EnumSetExpr* qset(const varset&, Formula&, Term*);
 AggTerm* sum(EnumSetExpr*);
 
 Term& functerm(Function*, const std::vector<Variable*>&);
@@ -80,8 +81,8 @@ Formula& conj(const std::vector<Formula*>& formulas);
 
 Formula& forall(Variable*, Formula&);
 Formula& exists(Variable*, Formula&);
-Formula& forall(const std::set<Variable*>&, Formula&);
-Formula& exists(const std::set<Variable*>& vars, Formula& formula);
+Formula& forall(const varset&, Formula&);
+Formula& exists(const varset& vars, Formula& formula);
 PredForm& atom(Predicate*, const std::vector<Variable*>&);
 
 void add(Vocabulary*, const std::vector<Sort*>);

@@ -388,7 +388,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(Formula* query, const std::set<Variable*> freevars /*Shouldn't this be outvars?*/, bool inverse, const AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const varset& freevars /*Shouldn't this be outvars?*/, bool inverse, const AbstractStructure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);

@@ -15,6 +15,7 @@
 #include <set>
 #include <vector>
 #include "common.hpp"
+#include "vocabulary/VarCompare.hpp"
 #include "parseinfo.hpp"
 #include "visitors/VisitorFriends.hpp"
 
@@ -74,8 +75,8 @@ class Formula: public TheoryComponent {
 ACCEPTDECLAREBOTH(Formula)
 private:
 	SIGN _sign; //!< the sign of the formula: NEG is that it is negated
-	std::set<Variable*> _freevars; //!< the free variables of the formula
-	std::set<Variable*> _quantvars; //!< the quantified variables of the formula
+	varset _freevars; //!< the free variables of the formula
+	varset _quantvars; //!< the quantified variables of the formula
 	std::vector<Term*> _subterms; //!< the direct subterms of the formula
 	std::vector<Formula*> _subformulas; //!< the direct subformulas of the formula
 	FormulaParseInfo _pi; //!< the place where the formula was parsed
@@ -141,7 +142,7 @@ public:
 		_subformulas = vf;
 		setFreeVars();
 	}
-	void quantVars(const std::set<Variable*>& sv) {
+	void quantVars(const varset& sv) {
 		_quantvars = sv;
 		setFreeVars();
 	}
@@ -166,10 +167,10 @@ public:
 	}
 	//!< true iff the formula is the empty disjunction
 
-	const std::set<Variable*>& freeVars() const {
+	const varset& freeVars() const {
 		return _freevars;
 	}
-	const std::set<Variable*>& quantVars() const {
+	const varset& quantVars() const {
 		return _quantvars;
 	}
 	const std::vector<Term*>& subterms() const {
@@ -396,7 +397,7 @@ private:
 
 public:
 	// Constructors
-	QuantForm(SIGN sign, QUANT quant, const std::set<Variable*>& v, Formula* sf, const FormulaParseInfo& pi)
+	QuantForm(SIGN sign, QUANT quant, const varset& v, Formula* sf, const FormulaParseInfo& pi)
 			: Formula(sign, pi), _quantifier(quant) {
 		subformulas(std::vector<Formula*>(1, sf));
 		quantVars(v);
@@ -485,11 +486,11 @@ ACCEPTBOTH(Rule)
 private:
 	PredForm* _head; //!< the head of the rule
 	Formula* _body; //!< the body of the rule
-	std::set<Variable*> _quantvars; //!< the universally quantified variables of the rule
+	varset _quantvars; //!< the universally quantified variables of the rule
 	ParseInfo _pi; //!< the place where the rule was parsed
 
 public:
-	Rule(const std::set<Variable*>& vv, PredForm* h, Formula* b, const ParseInfo& pi)
+	Rule(const varset& vv, PredForm* h, Formula* b, const ParseInfo& pi)
 			: _head(h), _body(b), _quantvars(vv), _pi(pi) {
 	}
 
@@ -520,7 +521,7 @@ public:
 	const ParseInfo& pi() const {
 		return _pi;
 	}
-	const std::set<Variable*>& quantVars() const {
+	const varset& quantVars() const {
 		return _quantvars;
 	}
 

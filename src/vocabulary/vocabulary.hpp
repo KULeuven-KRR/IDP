@@ -49,6 +49,7 @@ protected:
 	}
 
 public:
+	Sort(SortTable* inter = NULL); //!< Create an internal sort
 	Sort(const std::string& name, SortTable* inter = NULL); //!< Create an internal sort
 	Sort(const std::string& name, const ParseInfo& pi, SortTable* inter = NULL); //!< Create a user-declared sort
 

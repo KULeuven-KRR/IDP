@@ -29,7 +29,7 @@
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "grounders/Grounder.hpp"
 #include "errorhandling/UnsatException.hpp"
-
+#include "utils/LogActionTime.hpp"
 
 class Theory;
 class AbstractTheory;
@@ -46,7 +46,6 @@ template<> void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolve
 
 void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent);
 
-void logActionAndTime(const std::string& action);
 
 //GroundingReciever can be a solver, a printmonitor, ...
 template<typename GroundingReceiver>
