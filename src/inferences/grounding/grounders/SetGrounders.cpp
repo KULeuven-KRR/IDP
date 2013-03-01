@@ -47,7 +47,6 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 	if (d == NULL) {
 		throw notyetimplemented("invalid term (partial function?) in set expression");
 	}
-	Assert(d != NULL);
 	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 
 	if (l == sublitgrounder.translator()->trueLit()) {
