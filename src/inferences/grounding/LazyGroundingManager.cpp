@@ -13,6 +13,7 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "utils/LogAction.hpp"
+#include "errorhandling/UnsatException.hpp"
 
 extern void parsefile(const std::string&);
 
@@ -637,7 +638,9 @@ void LazyGroundingManager::resolveQueues() {
 			if (verbosity() > 2) {
 				clog << "Grounding not-delayed " << toString(grounder) << ".\n";
 			}
-			grounder->toplevelRun();
+			if(grounder->toplevelRun()){
+				throw UnsatException();
+			}
 		}
 
 		while (not queuedforgrounding.empty()) {
