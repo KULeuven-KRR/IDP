@@ -1656,8 +1656,8 @@ void Vocabulary::add(Sort* s) {
 
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
-	add(s->pred());
 	updateStructures(s, structures);
+	add(s->pred());
 }
 
 // TODO cleaner?
