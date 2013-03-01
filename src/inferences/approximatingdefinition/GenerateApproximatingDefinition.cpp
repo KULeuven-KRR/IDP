@@ -21,8 +21,8 @@
 
 using namespace std;
 
-template<class... Args>
-set<Args...> difference(const set<Args...>& v1, const set<Args...>& v2) {
+template<class T, class C>
+set<T,C> difference(const set<T,C>& v1, const set<T,C>& v2) {
 	auto temp = v1;
 	for (auto i = v2.cbegin(); i != v2.cend(); ++i) {
 		temp.erase(*i);
