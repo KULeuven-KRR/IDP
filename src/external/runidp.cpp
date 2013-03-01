@@ -472,10 +472,10 @@ static void SIGABRT_handler(int) {
 
 static void SIGSEGV_handler(int) {
 	abortcode = SIGSEGV;
-	if (not shouldStop() && running) {
-		GlobalData::instance()->notifyTerminateRequested();
-	} else if (jumpback == 0) {
+	if (jumpback == 0) {
 		longjmp(main_loop, 1);
+	}else{
+		exit(1);
 	}
 }
 
