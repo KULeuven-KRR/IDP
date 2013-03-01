@@ -76,6 +76,9 @@ public:
 	void makeTwoValued();
 
 	Universe universe(const PFSymbol*) const;
+
+private:
+	void autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter);
 };
 
 /**

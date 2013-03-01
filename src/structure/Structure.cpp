@@ -340,44 +340,45 @@ void addUNAPattern(Function*) {
 	throw notyetimplemented("una pattern type");
 }
 
-void Structure::checkAndAutocomplete() {
-	// Adding elements from predicate interpretations to sorts
-	for (auto pred2inter : _predinter) {
-		auto pred = pred2inter.first;
-		auto inter = pred2inter.second;
-		if (pred->arity() != 1 || pred->sorts()[0]->pred() != pred) {
-			auto pt1 = inter->ct();
-			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
-				pt1 = inter->pf();
-			}
-			checkAndCompleteSortTable(pt1, pred, this);
-			if (not inter->approxTwoValued()) {
-				auto pt2 = inter->cf();
-				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
-					pt2 = inter->pt();
-				}
-				checkAndCompleteSortTable(pt2, pred, this);
-			}
+void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter){
+	auto pt1 = inter->ct();
+	if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
+		pt1 = inter->pf();
+	}
+	checkAndCompleteSortTable(pt1, symbol, this);
+	if (not inter->approxTwoValued()) {
+		auto pt2 = inter->cf();
+		if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
+			pt2 = inter->pt();
 		}
+		checkAndCompleteSortTable(pt2, symbol, this);
+	}
+}
+
+void Structure::checkAndAutocomplete() {
+	if(getOption(SHOWWARNINGS)){
+		Warning::warning("Autocompleting structure");
+	}
+	// Adding elements from predicate interpretations to sorts
+	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
+		auto pred = it->first;
+		if (pred->arity() == 1 && pred->sorts()[0]->pred() == pred) {
+			continue; // It was a sort itself
+		}
+
+		autocompleteFromSymbol(pred, it->second);
 	}
 	// Adding elements from function interpretations to sorts
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		if (it->second->funcTable() && isa<UNAInternalFuncTable>(*(it->second->funcTable()->internTable()))) {
-			addUNAPattern(it->first);
-		} else {
-			auto pt1 = it->second->graphInter()->ct();
-			if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
-				pt1 = it->second->graphInter()->pf();
-			}
-			checkAndCompleteSortTable(pt1, it->first, this);
-			if (not it->second->approxTwoValued()) {
-				auto pt2 = it->second->graphInter()->cf();
-				if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
-					pt2 = it->second->graphInter()->pt();
-				}
-				checkAndCompleteSortTable(pt2, it->first, this);
-			}
+		auto func = it->first;
+		auto inter = it->second;
+
+		if (inter->funcTable() && isa<UNAInternalFuncTable>(*(inter->funcTable()->internTable()))) {
+			addUNAPattern(func);
+			continue;
 		}
+
+		autocompleteFromSymbol(func, inter->graphInter());
 	}
 
 	if(getOption(AUTOCOMPLETE)){
