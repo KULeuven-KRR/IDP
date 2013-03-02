@@ -826,6 +826,9 @@ void BoolGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest& 
 			considerAsConjunctiveWithSign = true;
 		}
 		if (runSubGrounder(grounder, getContext()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula, request) == FormStat::DECIDED) {
+			if (verbosity() > 2) {
+				poptab();
+			}
 			return;
 		}
 		if(getContext()._conjunctivePathFromRoot && conjunctiveWithSign()){
@@ -908,10 +911,10 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	}
 	auto size = log(toDouble(getMaxGroundSize()));
 	size = size<0?0:size;
-//	if(size/log(2)<12){
-//		cerr <<"Not large enough\n";
-//		return false;
-//	}
+	if(size/log(2)<12){
+	//	cerr <<"Not large enough\n";
+		return false;
+	}
 //	std::map<Variable*, Variable*> old2newvars;
 //	varset newvars;
 	auto qf = dynamic_cast<QuantForm*>(getFormula());
@@ -929,7 +932,11 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 //	auto newsub = qf->subformula()->clone(old2newvars); // Note: only replaces free variables!
 //	auto newqf = new QuantForm(qf->sign(), qf->quant(), newvars, newsub, qf->pi());
 
-	auto delay = FormulaUtils::findDelay(qf, getVarmapping(), manager);
+	auto varmap = getVarmapping();
+	for(auto freevar: qf->freeVars()){
+		varmap.erase(freevar);
+	}
+	auto delay = FormulaUtils::findDelay(qf, varmap, manager);
 	if (delay.get() == NULL) {
 		return false;
 	}else if(getContext()._conjPathUntilNode){
@@ -1031,6 +1038,9 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 			for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 				CHECKTERMINATION;
 				if(groundAfterGeneration(formula, request)) {
+					if (verbosity() > 2) {
+						poptab();
+					}
 					return;
 				}
 			}

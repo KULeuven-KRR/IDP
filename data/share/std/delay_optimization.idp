@@ -8,7 +8,7 @@ procedure Delay_main(structure){
 	print(minimize(Delay_Theory, structure, Delay_Minimization_Term)[1])
 }
 
-vocabulary Delay_Voc{
+vocabulary Delay_Voc_Input{
 	type Bool
 	True:Bool
 	False:Bool
@@ -28,9 +28,11 @@ vocabulary Delay_Voc{
 	
 	type noninfcost isa int
 	groundSize(Constraint): noninfcost
+}
+vocabulary Delay_Voc{
+	extern vocabulary Delay_Voc_Input
 	
 	delay(Constraint, Bool, PredForm)
-	
 	defDelayUsed(Symbol, DefID)
 }
 theory Delay_Theory : Delay_Voc{
@@ -65,7 +67,7 @@ term Delay_Minimization_Term : Delay_Voc{
 	+ sum{c b1: ?p1: delay(c,b1,p1) & (!p2: p1~=p2 => !b2: ~delay(c, b2, p2)): cost(b1) * 10 * groundSize(c) } 
 	+ sum{c b1 b2: (? p1 p2: p1~=p2 & delay(c,b1,p1) & delay(c,b2,p2)): cost(b1) * cost(b2) * groundSize(c) }  
 }
-structure Delay_Basic_Data: Delay_Voc { // Testdata
+structure Delay_Basic_Data: Delay_Voc_Input { // Testdata
 	Bool     = { True; False}
 	True	  = True
 	False	  = False
@@ -171,3 +173,23 @@ structure Delay_TestData5 : Delay_Voc{
   not[Delay_Voc::Bool:Delay_Voc::Bool] = { False->True; True->False }
   symbol[Delay_Voc::PredForm:Delay_Voc::Symbol] = { 0->2; 1->2 }
 }
+
+structure Delay_TestData6 : Delay_Voc {
+  Delay_Voc::Bool[Delay_Voc::Bool] = { False; True }
+  Delay_Voc::Constraint[Delay_Voc::Constraint] = { 0..24 }
+  Delay_Voc::DefID[Delay_Voc::DefID] = { 12..14 }
+  Delay_Voc::PredForm[Delay_Voc::PredForm] = { 0..30 }
+  Delay_Voc::Symbol[Delay_Voc::Symbol] = { 2..7 }
+  Delay_Voc::delaycost[Delay_Voc::delaycost] = { 1; 3 }
+  Delay_Voc::noninfcost[Delay_Voc::noninfcost] = { 5; 9; 11; 13; 16; 17; 20; 29 }
+  canDelayOn[Delay_Voc::Constraint,Delay_Voc::Bool,Delay_Voc::PredForm] = { 0,True,0; 1,True,1; 2,True,2; 3,True,3; 4,True,4; 5,True,5; 6,True,6; 7,True,7; 8,True,8; 9,True,9; 10,True,10; 11,True,11; 12,True,12; 13,True,13; 14,True,14; 15,True,15; 16,True,16; 16,True,17; 16,True,18; 17,True,19; 17,True,20; 18,True,21; 18,True,22; 18,True,23; 18,True,24; 19,False,25; 20,True,26; 21,False,27; 22,False,28; 23,False,29; 24,False,30 }
+  isDefinitionDelay[Delay_Voc::PredForm,Delay_Voc::Constraint,Delay_Voc::DefID] = { 0,0,12; 1,1,13; 2,2,13; 3,3,13; 4,4,13; 5,5,13; 6,6,13; 7,7,13; 8,8,13; 9,9,13; 10,10,14; 11,11,14; 12,12,14; 13,13,14; 14,14,14; 15,15,14 }
+  isEquivalence[Delay_Voc::Constraint] = {  }
+  False[:Delay_Voc::Bool] = False
+  True[:Delay_Voc::Bool] = True
+  cost[Delay_Voc::Bool:Delay_Voc::delaycost] = { False->3; True->1 }
+  groundSize[Delay_Voc::Constraint:Delay_Voc::noninfcost] = { 0->13; 1->17; 2->17; 3->17; 4->17; 5->17; 6->17; 7->17; 8->17; 9->17; 10->29; 11->29; 12->29; 13->29; 14->29; 15->29; 16->9; 17->11; 18->17; 19->16; 20->20; 21->5; 22->5; 23->5; 24->5 }
+  not[Delay_Voc::Bool:Delay_Voc::Bool] = { False->True; True->False }
+  symbol[Delay_Voc::PredForm:Delay_Voc::Symbol] = { 0->2; 1->3; 2->3; 3->3; 4->3; 5->3; 6->3; 7->3; 8->3; 9->3; 10->4; 11->4; 12->4; 13->4; 14->4; 15->4; 16->5; 17->6; 18->6; 19->5; 20->6; 21->5; 22->6; 23->4; 24->3; 25->4; 26->4; 27->7; 28->7; 29->7; 30->7 }
+}
+

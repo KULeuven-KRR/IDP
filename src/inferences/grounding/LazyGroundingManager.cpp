@@ -235,7 +235,7 @@ public:
 		}
 
 		auto ns = getGlobal()->getGlobalNamespace();
-		voc = ns->vocabulary("Delay_Voc");
+		voc = ns->vocabulary("Delay_Voc_Input");
 		theory = ns->theory("Delay_Theory");
 		minimterm = ns->term("Delay_Minimization_Term");
 		structure = dynamic_cast<Structure*>(ns->structure("Delay_Basic_Data"))->clone();
@@ -263,7 +263,6 @@ public:
 	}
 
 	void addGrounder(Grounder* grounder) {
-		cerr <<"Adding " <<print(grounder) <<"\n";
 		if (grounder->hasFormula() && isa<FormulaGrounder>(*grounder)) {
 			auto fg = dynamic_cast<FormulaGrounder*>(grounder);
 			auto delay = FormulaUtils::findDelay(fg->getFormula(), fg->getVarmapping(), manager);
@@ -348,6 +347,7 @@ public:
 		makeUnknownsFalse(groundsize);
 		makeUnknownsFalse(isdefdelay);
 		makeUnknownsFalse(isequivalence);
+		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
 		structure->clean();
 
 		std::vector<AbstractStructure*> solutions;
@@ -359,9 +359,9 @@ public:
 		auto savedoptions = getGlobal()->getOptions();
 		auto newoptions = new Options(false);
 		getGlobal()->setOptions(newoptions);
-		setOption(VERBOSE_GROUNDING, 1);
+		setOption(VERBOSE_GROUNDING, 0);
 		setOption(VERBOSE_CREATE_GROUNDERS, 0);
-		setOption(VERBOSE_SOLVING, 1);
+		setOption(VERBOSE_SOLVING, 0);
 		setOption(VERBOSE_GROUNDSTATS, 0);
 		setOption(VERBOSE_PROPAGATING, 0);
 		setOption(GROUNDWITHBOUNDS, true);
@@ -396,7 +396,7 @@ public:
 				clog << "Minimal solution: " << print(solutions[0]) << "\n";
 			}
 
-			auto delayInter = solutions[0]->inter(voc->pred("delay/3"));
+			auto delayInter = solutions[0]->inter(solutions[0]->vocabulary()->pred("delay/3"));
 
 			std::set<uint> idsseen;
 			for (auto tupleit = delayInter->ct()->begin(); not tupleit.isAtEnd(); ++tupleit) {
@@ -464,6 +464,11 @@ public:
 				clog << "Did not delay " << toString(g) << "\n";
 			}
 			manager->toGround.push(g);
+		}
+		for(auto def : defgrounders){
+			if (getOption(VERBOSE_GROUNDING) > 0) {
+				clog << "Did not delay " << toString(def) << "\n";
+			}
 		}
 		if (getOption(VERBOSE_GROUNDING) > 0) {
 			logActionAndTime("Finding delays done");
@@ -723,6 +728,14 @@ void LazyGroundingManager::delay(FormulaGrounder* grounder, shared_ptr<Delay> de
 			recurse = qf->subformula();
 		}
 		varset delayed, notdelayed;
+
+		map<Variable*, const DomainElement*> var2dom;
+		for(auto freevar: formula->freeVars()){
+			var2dom[freevar] = grounder->getVarmapping().at(freevar)->get();
+		}
+
+		recurse = FormulaUtils::substituteVarWithDom(recurse, var2dom);
+
 		for (auto var : rootquantvars) {
 			auto container = grounder->getVarmapping().find(var)->second;
 			if (contains(delayedcontainers, container)) {
@@ -739,8 +752,11 @@ void LazyGroundingManager::delay(FormulaGrounder* grounder, shared_ptr<Delay> de
 				origcontainer2var[var2cont.second] = var2cont.first;
 			}
 
-			auto newformula = new QuantForm(SIGN::POS, QUANT::UNIV, delayed, new QuantForm(SIGN::POS, QUANT::UNIV, notdelayed, recurse, formula->pi()),
-					formula->pi());
+			auto newformula = new QuantForm(SIGN::POS, QUANT::UNIV, notdelayed, recurse, formula->pi());
+			if(not delayed.empty()){
+				newformula = new QuantForm(SIGN::POS, QUANT::UNIV, delayed, newformula, formula->pi());
+			}
+
 			grounder = GrounderFactory::createSentenceGrounder(this, newformula);
 
 			for (auto& conjunct : delay->condition) {
@@ -866,15 +882,11 @@ void LazyGroundingManager::checkAddedDelay(PredForm* pf, bool watchedvalue, bool
 		throw notyetimplemented("Invalid code path: lazy grounding with support for function symbols in the grounding.");
 	}
 
-//	cerr <<"Adding\n";
 	addKnownToStructures(pf, watchedvalue);
-//	cerr <<"Outputting\n";
 	addToOutputVoc(pf->symbol(), expensiveConstruction);
-//	cerr <<"Introduced\n";
 	for(auto tuple2lit: getTranslator()->getIntroducedLiteralsFor(pf->symbol())){
 		needWatch(watchedvalue, tuple2lit.second); // FIXME not if already known?
 	}
-//	cerr <<"Done\n";
 }
 
 void LazyGroundingManager::needWatch(bool watchedvalue, Lit translatedliteral) {

@@ -89,7 +89,7 @@ protected:
 			watchtrue = not watchtrue;
 		}
 
-		if (not _manager->canBeDelayedOn(symbol, not watchtrue)) {
+		if (not _manager->canBeDelayedOn(symbol, not watchtrue) || pf->symbol()->builtin() || pf->symbol()->overloaded()) {
 			//std::cerr << "Cannot be delayed\n";
 			return;
 		}
@@ -162,8 +162,11 @@ protected:
 		return;
 	}
 
-	virtual void visit(const VarTerm*) {
+	virtual void visit(const VarTerm* vt) {
 		_rootquant = false;
+		if(not contains(_varmapping, vt->var())){
+			_allquantvars = false;
+		}
 		return;
 	}
 	virtual void visit(const FuncTerm*) {
