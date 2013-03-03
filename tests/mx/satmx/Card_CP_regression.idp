@@ -1,0 +1,20 @@
+vocabulary V {
+ 	type Package
+ 	type Step isa int
+ 
+ 	Load(Package,Step)
+ 	Unload(Package,Step)
+}
+ 
+structure S:V{
+ 	Package={p0;p1;p2;p3;p4;p5}
+ 	Step={1..19}
+}
+ 
+ theory T:V{
+	! step: #{package: Load(package,step)}+#{package: Unload(package,step)}<2.
+ }
+ 
+procedure getExpectedAModel(){
+	return true;
+}
