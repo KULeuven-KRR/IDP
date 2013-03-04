@@ -1,0 +1,110 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V{
+	type  Step isa int
+	type  Row isa int
+	type  Col isa int
+	type  PushLength isa int
+	type Dir 
+	Down:Dir
+	Up:Dir
+	Left:Dir
+	Right:Dir
+
+	Square(Row,Col)
+	Goal(Row,Col)
+	InitBlock(Row,Col)
+	InitMan(Row,Col)
+
+ 
+	MoveTo(Step,Row,Col)
+	Push(Step) : Dir
+	Length(Step) : PushLength
+	FinalStep : Step
+	
+ 
+	Block(Step,Row,Col)
+	Reachable(Step,Row,Col)
+	NextTo(Row,Col,Row,Col)
+	Man(Step,Row,Col)
+	Pushed(Step,Row,Col)
+	SBFree(Step,Row,Col)
+	
+}
+
+theory T : V { 
+
+	// Goal
+	! r c : Block(FinalStep,r,c) => Goal(r,c).
+
+	// Reachable positions
+   { NextTo(r1,c1,r2,c2) <- abs(r1-r2) + abs(c1-c2) = 1 & Square(r1,c1) & Square(r2,c2). }
+	{ Reachable(s,r,c) <- Man(s,r,c).
+	  Reachable(s,r,c) <- NextTo(r,c,or,oc) & Reachable(s,or,oc) & ~Block(s,r,c). }
+
+	// Only move to reachable positions
+	! s r c : MoveTo(s,r,c) => Reachable(s,r,c).
+
+	// Only one move per timestep
+	! s r1 c1 r2 c2 : MoveTo(s,r1,c1) & MoveTo(s,r2,c2) => (r1 = r2 & c1 = c2).
+	
+	// Only stop at FinalStep
+	! s[Step] : s >= 0 & s < FinalStep => ? r c : MoveTo(s,r,c).
+	! s[Step] r c : s >= FinalStep => ~MoveTo(s,r,c).
+
+	// Only move next to a block
+	! s r c : Push(s) = Up & MoveTo(s,r,c) => Block(s,r-1,c).
+	! s r c : Push(s) = Down & MoveTo(s,r,c) => Block(s,r+1,c).
+	! s r c : Push(s) = Left & MoveTo(s,r,c) => Block(s,r,c-1).
+	! s r c : Push(s) = Right & MoveTo(s,r,c) => Block(s,r,c+1).
+
+	// Move blocks over free lines
+	{ 
+	  SBFree(s,or,c) <- or < r-1 & or > r-l-2 & MoveTo(s,r,c) & Push(s) = Up & Length(s) = l.
+	  SBFree(s,or,c) <- or > r+1 & or < r+l+2 & MoveTo(s,r,c) & Push(s) = Down & Length(s) = l.
+	  SBFree(s,r,oc) <- oc < c-1 & oc > c-l-2 & MoveTo(s,r,c) & Push(s) = Left & Length(s) = l.
+	  SBFree(s,r,oc) <- oc > c+1 & oc < c+l+2 & MoveTo(s,r,c) & Push(s) = Right & Length(s) = l.
+	}
+	! s r c : SBFree(s,r,c) => Square(r,c) & ~Block(s,r,c).
+
+	// Position of man and blocks
+	{ Pushed(s,r-1,c) <- Block(s,r-1,c) & MoveTo(s,r,c) & Push(s) = Up.
+	  Pushed(s,r+1,c) <- Block(s,r+1,c) & MoveTo(s,r,c) & Push(s) = Down.
+	  Pushed(s,r,c-1) <- Block(s,r,c-1) & MoveTo(s,r,c) & Push(s) = Left.
+	  Pushed(s,r,c+1) <- Block(s,r,c+1) & MoveTo(s,r,c) & Push(s) = Right. 
+	  
+	 Block(0,r,c) <- InitBlock(r,c).
+	  Block(s+1,r,c) <- Block(s,r,c) & ~Pushed(s,r,c).
+	  Block(s+1,r-l,c) <- Block(s,r,c) & Pushed(s,r,c) & Push(s) = Up & Length(s) = l.
+	  Block(s+1,r+l,c) <- Block(s,r,c) & Pushed(s,r,c) & Push(s) = Down & Length(s) = l.
+	  Block(s+1,r,c-l) <- Block(s,r,c) & Pushed(s,r,c) & Push(s) = Left & Length(s) = l.
+	  Block(s+1,r,c+l) <- Block(s,r,c) & Pushed(s,r,c) & Push(s) = Right & Length(s) = l.  }
+
+	{ Man(0,r,c) <- InitMan(r,c).
+	  Man(s+1,r-l,c) <- MoveTo(s,r,c) & Push(s) = Up & Length(s) = l.
+	  Man(s+1,r+l,c) <- MoveTo(s,r,c) & Push(s) = Down & Length(s) = l.
+	  Man(s+1,r,c-l) <- MoveTo(s,r,c) & Push(s) = Left & Length(s) = l.
+	  Man(s+1,r,c+l) <- MoveTo(s,r,c) & Push(s) = Right & Length(s) = l.  }
+
+}
+
+structure S : V{ 
+Dir = {u;d;r;l}
+Up = u
+Down = d
+Right = r
+Left = l
+Row = {0..5}
+Col = {0..8}
+Step = {0..8}
+PushLength = {1..5}
+InitBlock = { 3,6; 2,6 }
+InitMan = {4,6}
+Square = {         1,3;1,4;
+			  2,1;2,2;2,3;2,4;2,5;2,6;2,7; 
+			  3,1;    3,3;3,4;    3,6;3,7; 
+			  4,1;4,2;4,3;4,4;    4,6;4,7 }
+Goal = { 4,2; 4,4 }
+}
