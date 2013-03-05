@@ -201,8 +201,8 @@ void pushNegations(AbstractTheory*);
 AbstractTheory* calculateArithmetic(AbstractTheory*) ;
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
-Formula* pushQuantifiers(Formula*);
-AbstractTheory* pushQuantifiers(AbstractTheory*);
+Formula* pushQuantifiersAndNegations(Formula*);
+AbstractTheory* pushQuantifiersAndNegations(AbstractTheory*);
 
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);

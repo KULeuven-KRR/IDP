@@ -307,10 +307,14 @@ AbstractTheory* calculateArithmetic(AbstractTheory* t) {
 	return transform<CalculateKnownArithmetic, AbstractTheory*>(t);
 }
 
-Formula* pushQuantifiers(Formula* t) {
+Formula* pushQuantifiersAndNegations(Formula* t) {
+	t = FormulaUtils::pushNegations(t);
+	t = FormulaUtils::flatten(t);
 	return transform<PushQuantifications, Formula*>(t);
 }
-AbstractTheory* pushQuantifiers(AbstractTheory* t) {
+AbstractTheory* pushQuantifiersAndNegations(AbstractTheory* t) {
+	FormulaUtils::pushNegations(t);
+	FormulaUtils::flatten(t);
 	return transform<PushQuantifications, AbstractTheory*>(t);
 }
 
