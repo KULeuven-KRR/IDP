@@ -62,14 +62,14 @@ TEST(OverflowTest, ArithPlusGenerator) {
 }
 
 TEST(OverflowTest, PlusTableSize) {
-	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long long>()); // long unsigned int max value
 	auto ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
 
 	auto tmp = max_ts + ts0;
-	size_t eq = getMaxElem<unsigned long>();
+	auto eq = getMaxElem<long long>();
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	ASSERT_EQ(tmp._size,eq);
 	tmp = ts0 + max_ts;
@@ -93,7 +93,7 @@ TEST(OverflowTest, PlusTableSize) {
 }
 
 TEST(OverflowTest, MinusTableSize) {
-	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long long>()); // long unsigned int max value
 	auto ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
 	auto infinite_ts = tablesize(TableSizeType::TST_INFINITE,0);
@@ -102,15 +102,15 @@ TEST(OverflowTest, MinusTableSize) {
 	ASSERT_THROW(ts1-infinite_ts,IdpException);
 
 	auto tmp = max_ts - ts1;
-	size_t eq = getMaxElem<unsigned long>() - 1;
+	auto eq = getMaxElem<long long>() - 1;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	ASSERT_EQ(tmp._size,eq);
 
 }
 
 TEST(OverflowTest, TimesTableSize) {
-	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
-	auto onethirdmax_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()/3); // long unsigned int max value
+	auto max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long long>()); // long unsigned int max value
+	auto onethirdmax_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long long>()/3); // long unsigned int max value
 	auto ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto ts2 = tablesize(TableSizeType::TST_EXACT, 2);
@@ -120,7 +120,7 @@ TEST(OverflowTest, TimesTableSize) {
 
 	auto tmp = ts2 * ts3;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
-	size_t eq = 6;
+	long long eq = 6;
 	ASSERT_EQ(tmp._size,eq);
 
 	tmp = max_ts * ts0;
@@ -132,7 +132,7 @@ TEST(OverflowTest, TimesTableSize) {
 	ASSERT_EQ(tmp._size,eq);
 
 	tmp = onethirdmax_ts * ts1;
-	eq = getMaxElem<unsigned long>()/3;
+	eq = getMaxElem<long long>()/3;
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	ASSERT_EQ(tmp._size,eq);
 	tmp = ts1 * onethirdmax_ts;
@@ -140,7 +140,7 @@ TEST(OverflowTest, TimesTableSize) {
 	ASSERT_EQ(tmp._size,eq);
 
 	tmp = onethirdmax_ts * ts3;
-	eq = 3*(getMaxElem<unsigned long>()/3);
+	eq = 3*(getMaxElem<long long>()/3);
 	ASSERT_EQ(tmp._type,TableSizeType::TST_EXACT);
 	ASSERT_EQ(tmp._size,eq);
 	tmp = ts3 * onethirdmax_ts;

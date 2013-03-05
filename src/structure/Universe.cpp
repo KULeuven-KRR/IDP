@@ -69,7 +69,7 @@ bool Universe::approxFinite() const {
 }
 
 tablesize Universe::size() const {
-	size_t currsize = 1;
+	long long currsize = 1;
 	TableSizeType tst = TST_EXACT;
 	for (auto it = _tables.cbegin(); it != _tables.cend(); ++it) {
 		tablesize ts = (*it)->size();

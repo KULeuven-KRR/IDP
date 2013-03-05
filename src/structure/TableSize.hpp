@@ -23,10 +23,10 @@ enum TableSizeType {
 
 struct tablesize {
 	TableSizeType _type;
-	size_t _size;
+	long long _size;
 
 	// If tp==TST_INFINITE, the size is set to 0.
-	tablesize(TableSizeType tp, size_t sz)
+	tablesize(TableSizeType tp, long long sz)
 			: _type(tp), _size(tp==TST_INFINITE?0:sz) {
 	}
 	tablesize()

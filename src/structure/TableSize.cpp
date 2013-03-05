@@ -19,7 +19,7 @@ tablesize tablesize::operator+(const tablesize& rhs) const{
 
 	// bool 'safe' indicates whether numerical operation was executed safely
 	bool safe = true;
-	size_t result = 0;
+	long long result = 0;
 	addition(_size,rhs._size,result,safe);
 	if(safe){
 		if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){
@@ -62,7 +62,7 @@ void tablesize::operator*=(const tablesize& rhs){
 
 	// bool 'safe' indicates whether numerical operation was executed safely
 	bool safe = true;
-	size_t result = 0;
+	long long result = 0;
 	multiplication(_size,rhs._size,result,safe);
 	if(safe) {
 		if(rhs._type==TableSizeType::TST_APPROXIMATED || _type==TableSizeType::TST_APPROXIMATED){

@@ -25,10 +25,10 @@ using namespace std;
 TEST(SimpleTest, TestTableSizeEquality) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
-	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
 	auto approx_ts0 = tablesize(TableSizeType::TST_APPROXIMATED, 0);
 	auto approx_ts1 = tablesize(TableSizeType::TST_APPROXIMATED, 1);
-	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<long>()); // long unsigned int max value
 	auto infinite_ts_1 = tablesize(TableSizeType::TST_INFINITE,0);
 
 	ASSERT_TRUE(exact_ts0 == exact_ts0);
@@ -91,10 +91,10 @@ TEST(SimpleTest, TestTableSizeEquality) {
 TEST(SimpleTest, TestTableSizeSmallerThan) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
-	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
 	auto approx_ts0 = tablesize(TableSizeType::TST_APPROXIMATED, 0);
 	auto approx_ts1 = tablesize(TableSizeType::TST_APPROXIMATED, 1);
-	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<long>()); // long unsigned int max value
 	auto infinite_ts_1 = tablesize(TableSizeType::TST_INFINITE,0);
 
 	ASSERT_FALSE(exact_ts0 < exact_ts0);
@@ -157,10 +157,10 @@ TEST(SimpleTest, TestTableSizeSmallerThan) {
 TEST(SimpleTest, TestTableSizeGreaterThan) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
-	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
 	auto approx_ts0 = tablesize(TableSizeType::TST_APPROXIMATED, 0);
 	auto approx_ts1 = tablesize(TableSizeType::TST_APPROXIMATED, 1);
-	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<long>()); // long unsigned int max value
 	auto infinite_ts_1 = tablesize(TableSizeType::TST_INFINITE,0);
 
 	ASSERT_FALSE(exact_ts0 > exact_ts0);
@@ -223,10 +223,10 @@ TEST(SimpleTest, TestTableSizeGreaterThan) {
 TEST(SimpleTest, TestTableSizeSmallerThanOrEqual) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
-	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
 	auto approx_ts0 = tablesize(TableSizeType::TST_APPROXIMATED, 0);
 	auto approx_ts1 = tablesize(TableSizeType::TST_APPROXIMATED, 1);
-	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<long>()); // long unsigned int max value
 	auto infinite_ts_1 = tablesize(TableSizeType::TST_INFINITE,0);
 
 	ASSERT_TRUE(exact_ts0 <= exact_ts0);
@@ -289,10 +289,10 @@ TEST(SimpleTest, TestTableSizeSmallerThanOrEqual) {
 TEST(SimpleTest, TestTableSizeGreaterThanOrEqual) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
-	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
 	auto approx_ts0 = tablesize(TableSizeType::TST_APPROXIMATED, 0);
 	auto approx_ts1 = tablesize(TableSizeType::TST_APPROXIMATED, 1);
-	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<unsigned long>()); // long unsigned int max value
+	auto approx_max_ts = tablesize(TableSizeType::TST_APPROXIMATED, getMaxElem<long>()); // long unsigned int max value
 	auto infinite_ts_1 = tablesize(TableSizeType::TST_INFINITE,0);
 
 	ASSERT_TRUE(exact_ts0 >= exact_ts0);
