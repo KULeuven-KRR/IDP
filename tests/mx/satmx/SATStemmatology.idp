@@ -18,7 +18,7 @@ theory T: V {
 	// EQ is symmetric, transitive closure of Eq
 	! x y: Eq(x,y) => EQ(x,y). 
 	! x y: EQ(x,y) => EQ(y,x).             //symmetrisch
-	! x y z: EQ(x,z) & EQ(z,y) => EQ(x,y). //transitief
+	! x y: EQ(x,y) | !z: (~EQ(x,z) | EQ(z,y)). //transitief
 	
 	// TEq is symmetric, transitive closure of Eq
 	{ !x y: TEq(x,y) <- Eq(x,y).
