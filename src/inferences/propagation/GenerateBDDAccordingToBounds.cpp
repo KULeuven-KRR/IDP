@@ -48,22 +48,19 @@ bool needPossible(TruthType value) {
 	return value == TruthType::POSS_TRUE || value == TruthType::POSS_FALSE;
 }
 
-GenerateBDDAccordingToBounds::~GenerateBDDAccordingToBounds(){
-	if(_ownsmanager){
-		delete(_manager);
+GenerateBDDAccordingToBounds::~GenerateBDDAccordingToBounds() {
+	if (_ownsmanager) {
+		delete (_manager);
 	}
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type) {
-
+const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type, const AbstractStructure* structure) {
+	auto oldstructure = _structure;
+	_structure = structure;
 	_type = type;
 	_result = NULL;
 	f->accept(this);
-	/*if (not needPossible(type)) {
-	 std::cerr << "INPUT" << print(f) << endl;
-	 std::cerr << (needPossible(type) ? "P" : "C") << (needFalse(type) ? "F" : "T") << endl;
-	 std::cerr << "OUTPUT" << print(_result) << endl;
-	 }*/
+	_structure = oldstructure;
 	return _result;
 }
 
@@ -73,7 +70,8 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 	//For example, in the case of lazy grounding, this might be useful.
 	FOBDDFactory factory(_manager);
 
-	if (atom->symbol()->builtin()) {
+	auto symbol = atom->symbol();
+	if (symbol->builtin()) {
 		_result = factory.turnIntoBdd(atom);
 		if (needFalse(_type)) {
 			_result = _manager->negation(_result);
@@ -88,51 +86,60 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			clone->negate();
 		}
 
-		if ((_symbolsThatCannotBeReplacedByBDDs == NULL || not _symbolsThatCannotBeReplacedByBDDs->contains(atom->symbol()))
-				&& contains(_ctbounds, atom->symbol()) && contains(_cfbounds, atom->symbol())) {
-			auto bdd = getct ? _ctbounds.at(atom->symbol()) : _cfbounds.at(atom->symbol());
+		if ((_symbolsThatCannotBeReplacedByBDDs == NULL || not _symbolsThatCannotBeReplacedByBDDs->contains(symbol)) && contains(_ctbounds, symbol)
+				&& contains(_cfbounds, symbol)) {
+			auto bdd = getct ? _ctbounds.at(symbol) : _cfbounds.at(symbol);
 			map<const FOBDDVariable*, const FOBDDTerm*> mva;
-			const auto& vars = _vars[atom->symbol()];
+			const auto& vars = _vars[symbol];
 			for (unsigned int n = 0; n < vars.size(); ++n) {
 				mva[vars[n]] = factory.turnIntoBdd(atom->subterms()[n]);
 			}
 			_result = _manager->substitute(bdd, mva);
-		}
-		else {
-			auto symbol = getct ? clone->symbol()->derivedSymbol(SymbolType::ST_CT) : clone->symbol()->derivedSymbol(SymbolType::ST_CF);
-			clone->symbol(symbol);
+		} else {
+			bool shouldUseThreeValuedSymbol = true;
+			if(_structure != NULL){
+				if(_structure->inter(symbol)->approxTwoValued()){
+					//In case our symbol is already twovalued, don't query over the three-valued vocabulary.
+					shouldUseThreeValuedSymbol = false;
+				}
+			}
+
+			if (shouldUseThreeValuedSymbol) {
+				auto newsymbol = getct ? clone->symbol()->derivedSymbol(SymbolType::ST_CT) : clone->symbol()->derivedSymbol(SymbolType::ST_CF);
+				clone->symbol(newsymbol);
+			} else{
+				if(not getct){
+					clone->negate();
+				}
+			}
 			_result = factory.turnIntoBdd(clone);
+
 		}
 
 		if (needPossible(_type)) {
 			_result = _manager->negation(_result);
 		}
-	}
 
-	// SAFENESS FOR PARTIAL FUNCTIONS
-	if (atom->symbol()->isFunction()) {
-		auto f = dynamic_cast<Function*>(atom->symbol());
-		if (f->partial() || is(atom->symbol(), STDFUNC::DIVISION) || is(atom->symbol(), STDFUNC::MODULO)) {
-			auto newatom = atom->clone();
-			if(newatom->sign()==SIGN::NEG){
-				newatom->negate();
+		//Now, the entire BDD for atom has been built. We add extra sort information:
+		//The entire atom can (will) be false if something goes out-of-bounds
+		//If NOT switchsign && needFalse, we add the disjunction: something goes out-of-bounds
+		//If switchsign && NOT needFalse, IDEM
+		//Otherwise, add the conjunction: nothing is out of bounds
+		auto sorts = symbol->sorts();
+		auto terms = atom->subterms();
+		auto disj = (switchsign != needFalse(_type));
+		for (size_t i = 0; i < sorts.size(); i++) {
+			auto sorti = sorts[i];
+			auto termi = terms[i];
+			auto termisort = termi->sort();
+			if (termisort == sorti || termisort->ancestors().find(sorti) != termisort->ancestors().cend()) {
+				continue;
 			}
-			auto arity = newatom->subterms().size();
-			auto lastsubterm = newatom->subterms()[arity-1];
-			auto newvar = new Variable(lastsubterm->sort());
-			auto varterm = new VarTerm(newvar, TermParseInfo());
-			newatom->subterm(arity-1, varterm);
-			auto newformula = new QuantForm(SIGN::POS, QUANT::EXIST, { newvar }, newatom, newatom->pi());
-			auto hasimage = factory.turnIntoBdd(newformula);
-			//Partial functions are always dangerous. Therefore, we play safe here. If we need certain, we make a stronger condition, if we need possible bounds,
-			//we weaken the condition
-			if(needPossible(_type)){
-				_result = _manager->disjunction(_result, hasimage);
-			}
-			else{
-				_result = _manager->conjunction(_result, hasimage);
-			}
-			newformula->recursiveDelete();
+			auto outofpredtype = new PredForm(SIGN::NEG, sorti->pred(), { termi }, FormulaParseInfo());
+			auto insorttpe = new PredForm(SIGN::POS, termisort->pred(), { termi }, FormulaParseInfo());
+			auto outofboundsbf = new BoolForm(SIGN::POS,true,outofpredtype,insorttpe,FormulaParseInfo());
+			auto outofbounds = factory.turnIntoBdd(outofboundsbf);
+			_result = disj ? _manager->disjunction(outofbounds, _result) : _manager->conjunction(_manager->negation(outofbounds), _result);
 		}
 	}
 
@@ -184,7 +191,7 @@ void GenerateBDDAccordingToBounds::visit(const BoolForm* boolform) {
 	}
 
 	for (auto it = boolform->subformulas().cbegin(); it != boolform->subformulas().cend(); ++it) {
-		auto newbdd = evaluate(*it, rectype);
+		auto newbdd = evaluate(*it, rectype, _structure);
 		currbdd = conjunction ? _manager->conjunction(currbdd, newbdd) : _manager->disjunction(currbdd, newbdd);
 	}
 	_result = currbdd;
@@ -196,7 +203,7 @@ void GenerateBDDAccordingToBounds::visit(const QuantForm* quantform) {
 		universal = not universal;
 	}
 	auto rectype = quantform->sign() == SIGN::POS ? _type : swapTF(_type);
-	auto subbdd = evaluate(quantform->subformula(), rectype);
+	auto subbdd = evaluate(quantform->subformula(), rectype, _structure);
 	auto vars = _manager->getVariables(quantform->quantVars());
 	_result = universal ? _manager->univquantify(vars, subbdd) : _manager->existsquantify(vars, subbdd);
 }
@@ -204,14 +211,14 @@ void GenerateBDDAccordingToBounds::visit(const QuantForm* quantform) {
 void GenerateBDDAccordingToBounds::visit(const EqChainForm* eqchainform) {
 	Formula* cloned = eqchainform->clone();
 	cloned = FormulaUtils::splitComparisonChains(cloned);
-	_result = evaluate(cloned, _type);
+	_result = evaluate(cloned, _type, _structure);
 	cloned->recursiveDelete();
 }
 
 void GenerateBDDAccordingToBounds::visit(const EquivForm* equivform) {
 	Formula* cloned = equivform->clone();
 	cloned = FormulaUtils::removeEquivalences(cloned);
-	_result = evaluate(cloned, _type);
+	_result = evaluate(cloned, _type, _structure);
 	cloned->recursiveDelete();
 }
 

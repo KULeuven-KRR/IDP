@@ -142,18 +142,18 @@ public:
 	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
 	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
 	 */
-	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 	/**
 	 * Create checker for the formula based on the SYMBOLIC structure
 	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
 	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
 	 */
-	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 private:
 	static InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula*,
 			const std::vector<Pattern>& pattern);
 	static PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data,
-			GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+			GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 

@@ -42,8 +42,8 @@ CheckerInfo::CheckerInfo(PFSymbol* symbol, StructureInfo structure) {
 
 	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
 	data.funccontext = Context::POSITIVE;
-	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure, { });
-	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, { });
+	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure, structure.concrstructure, { });
+	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, structure.concrstructure, { });
 }
 
 CheckerInfo::~CheckerInfo() {
@@ -76,10 +76,10 @@ FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
 	auto pattern = std::vector<Pattern>(data.containers.size() - 1, Pattern::INPUT);
 	pattern.push_back(Pattern::OUTPUT);
 	auto allinput = std::vector<Pattern>(data.containers.size(), Pattern::INPUT);
-	auto symbolictruegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_TRUE, data, pattern, structure.symstructure, { }, true);
-	auto symbolictruechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, { }, true);
-	auto symbolicfalsegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_FALSE, data, pattern, structure.symstructure, { }, true);
-	auto symbolicfalsechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_FALSE, data, structure.symstructure, { }, true);
+	auto symbolictruegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_TRUE, data, pattern, structure.symstructure, structure.concrstructure, { }, true);
+	auto symbolictruechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, structure.concrstructure, { }, true);
+	auto symbolicfalsegenerator = GrounderFactory::getGenerator(pf, TruthType::CERTAIN_FALSE, data, pattern, structure.symstructure, structure.concrstructure, { }, true);
+	auto symbolicfalsechecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_FALSE, data, structure.symstructure, structure.concrstructure, { }, true);
 	auto concretetruegenerator = GeneratorFactory::create(checkers->inter->ct(), pattern, checkers->containers, Universe(data.tables));
 	auto concretetruechecker = GeneratorFactory::create(checkers->inter->ct(), allinput, checkers->containers, Universe(data.tables));
 	auto concretefalsegenerator = GeneratorFactory::create(checkers->inter->cf(), pattern, checkers->containers, Universe(data.tables));

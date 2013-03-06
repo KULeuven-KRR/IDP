@@ -378,6 +378,12 @@ bool TypedFOPropagator<Factory, Domain>::admissible(Domain* newd, Domain* oldd) 
 
 template<class Factory, class Domain>
 void TypedFOPropagator<Factory, Domain>::visit(const PredForm* pf) {
+	if(_leafconnectdata.find(pf) == _leafconnectdata.cend()){
+		//Normally, this does not happen since we don't schedule predform-level up/down propagation for builtins.
+		//However, in case the builtin is a topformula, we will once schedule down-propagation from this.
+		Assert(pf->symbol()->builtin());
+		return;
+	}
 	Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
 	Assert(pf!=NULL);
 	auto lcd = _leafconnectdata[pf];

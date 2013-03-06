@@ -37,6 +37,8 @@ using namespace rel_ops;
  *	The reason for this reversed ordering is to avoid too many reorderings
  *	(during several operations (quantify) we create much new
  *	bdds and don't want every of them to be moved to the top of the BDD
+ *
+ *	kernelAbove and kernelBelow are based on this order!!!
  */
 struct KernelOrder {
 	KernelOrderCategory _category; //!< The category of this kernel
