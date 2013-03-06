@@ -137,7 +137,7 @@ void ComparisonGenerator::next() {
 				} else {
 					notifyAtEnd();
 				}
-				return;
+				break;
 			} else {
 				_right = _rightsort->sortBegin();
 			}
