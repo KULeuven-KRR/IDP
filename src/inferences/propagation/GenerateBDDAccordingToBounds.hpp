@@ -34,6 +34,7 @@ private:
 
 	TruthType _type;
 	const FOBDD* _result;
+	const AbstractStructure* _structure; //Can be NULL. If different from NULL, structure can be used to improve BDDs, e.g.~not generate <ct> and <cf> symbols for known predicates
 
 	//All symbols that were already propagated in earlier stages
 	// And hence, should never be replaced by their BDD
@@ -52,7 +53,7 @@ protected:
 public:
 	GenerateBDDAccordingToBounds(FOBDDManager* m, const Bound& ctbounds, const Bound& cfbounds,
 			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v, Vocabulary* symbolsThatCannotBeReplacedByBDDs)
-			: _ownsmanager(true), _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL), _symbolsThatCannotBeReplacedByBDDs(symbolsThatCannotBeReplacedByBDDs) {
+			: _ownsmanager(true), _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL), _structure(NULL), _symbolsThatCannotBeReplacedByBDDs(symbolsThatCannotBeReplacedByBDDs) {
 		Assert(m!=NULL);
 	}
 	~GenerateBDDAccordingToBounds();
@@ -66,7 +67,7 @@ public:
 	 * Generate a bdd which contains exactly all instances for which the given formula has the requested truth type.
 	 * @pre: GRAPHED functions and aggregates!
 	 */
-	const FOBDD* evaluate(Formula* formula, TruthType truthvalue);
+	const FOBDD* evaluate(Formula* formula, TruthType truthvalue, const AbstractStructure*);
 
 	std::ostream& put(std::ostream&) const;
 };
