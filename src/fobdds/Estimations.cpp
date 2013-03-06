@@ -183,8 +183,10 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 		if (not isArithmetic(kernel,manager)) {
 			auto symbolsize = pt->size();
 			auto univsize = tablesize(TST_EXACT, 1);
-			for (auto it = atomkernel->symbol()->sorts().cbegin(); it != atomkernel->symbol()->sorts().cend(); ++it) {
-				univsize *= structure->inter((*it))->size();
+
+			for (auto subterm: atomkernel->args()){
+				//Univsize should be calculated in terms of the variables that will be instantiated.
+				univsize *= structure->inter(subterm->sort())->size();
 			}
 
 			if (symbolsize.isInfinite()) {
@@ -195,6 +197,10 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 			}
 			if (toDouble(univsize) == 0) {
 				return 0;
+			}
+			if(toDouble(symbolsize) > toDouble(univsize)){
+				//Can happen in case the subterms have smaller sorts
+				return 1;
 			}
 			Assert(toDouble(symbolsize) <= toDouble(univsize));
 			return toDouble(symbolsize) / toDouble(univsize);
