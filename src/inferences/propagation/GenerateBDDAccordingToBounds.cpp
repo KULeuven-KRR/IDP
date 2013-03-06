@@ -141,33 +141,6 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			auto outofbounds = factory.turnIntoBdd(outofboundsbf);
 			_result = disj ? _manager->disjunction(outofbounds, _result) : _manager->conjunction(_manager->negation(outofbounds), _result);
 		}
-
-	}
-
-	// SAFENESS FOR PARTIAL FUNCTIONS
-	if (symbol->isFunction()) {
-		auto f = dynamic_cast<Function*>(symbol);
-		if (f->partial() || is(symbol, STDFUNC::DIVISION) || is(symbol, STDFUNC::MODULO)) {
-			auto newatom = atom->clone();
-			if (newatom->sign() == SIGN::NEG) {
-				newatom->negate();
-			}
-			auto arity = newatom->subterms().size();
-			auto lastsubterm = newatom->subterms()[arity - 1];
-			auto newvar = new Variable(lastsubterm->sort());
-			auto varterm = new VarTerm(newvar, TermParseInfo());
-			newatom->subterm(arity - 1, varterm);
-			auto newformula = new QuantForm(SIGN::POS, QUANT::EXIST, { newvar }, newatom, newatom->pi());
-			auto hasimage = factory.turnIntoBdd(newformula);
-			//Partial functions are always dangerous. Therefore, we play safe here. If we need certain, we make a stronger condition, if we need possible bounds,
-			//we weaken the condition
-			if (needPossible(_type)) {
-				_result = _manager->disjunction(_result, hasimage);
-			} else {
-				_result = _manager->conjunction(_result, hasimage);
-			}
-			newformula->recursiveDelete();
-		}
 	}
 
 	/*//THE OLD CODE MAYBE USEFUL WHEN LAZY GROUNDING
