@@ -1313,11 +1313,14 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, true, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type); // !x phi(x) => generate all x possibly false
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "For formula " << print(tempsubformula) << ", I found the following BDD (might be improved)" << nt() << print(bdd) << nt();
+	}
 	if (not forceexact) {
 		bdd = improve(approxvalue, bdd, quantfovars, data.structure, symstructure, definedsymbols);
 	}
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
-		clog << "Using the following BDD" << nt() << print(bdd) << nt();
+		clog << "Using the following (final) BDD" << nt() << print(bdd) << nt();
 	}
 	auto table = new PredTable(new BDDInternalPredTable(bdd, symstructure->obtainManager(), data.fovars, data.structure), Universe(data.tables));
 	deleteDeep(tempsubformula);
@@ -1343,6 +1346,10 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	}
 
 	optimizemanager.optimizeQuery(copybdd, copyvars, { }, structure);
+
+	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 2) {
+		clog << "optimized but not yet pruned BDD" << nt() << print(bdd) << nt();
+	}
 
 	// Remove certain leaves
 	const FOBDD* pruned = NULL;

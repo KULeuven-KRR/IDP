@@ -1492,7 +1492,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "For bdd \n" << print(bdd) << "\n";
 		}
 		// Split variables
@@ -1514,38 +1514,38 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 		// Recursive call
 		//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 		auto totalBddCost = getTotalWeigthedCost(bdd, vars, ind, structure, weightPerAns);
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "The total cost is " << totalBddCost << "\n";
 		}
 
 		if (isGoalbdd(not goal, bdd->falsebranch())) {
-			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 				clog << "Only interested in the truebranch, which has cost ";
 			}
 			//If the falsebranch is a bdd we are not interested in, we might just return the truebranch,
 			// which will in general have a lower cost, but might provide for more answers.
 			auto totalBranchCost = getTotalWeigthedCost(bdd->truebranch(), vars, ind, structure, weightPerAns);
-			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 				clog << totalBranchCost << "\n";
 			}
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
-				if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 					clog << "Which is smaller, to going into the true part\n";
 				}
 				return makeMore(goal, bdd->truebranch(), vars, ind, structure, weightPerAns);
 			}
 		} else if (isGoalbdd(not goal, bdd->truebranch())) {
-			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 				clog << "Only interested in the falsebranch, which has cost ";
 			}
 			//If the truebranch is a bdd we are not interested in, we might just return the falsebranch,
 			// which will in general have a lower cost, but might provide for more answers.
 			auto totalBranchCost = getTotalWeigthedCost(bdd->falsebranch(), vars, ind, structure, weightPerAns);
-			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 				clog << totalBranchCost << "\n";
 			}
 			if (totalBranchCost < totalBddCost) { //Note: smaller branch, so lower cost, but one answer less.
-				if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+				if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 					clog << "Which is smaller, to going into the false part\n";
 				}
 				return makeMore(goal, bdd->falsebranch(), vars, ind, structure, weightPerAns);
@@ -1554,20 +1554,20 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 
 		//Number of answers in the kernel.
 		double kernelAnswers = BddStatistics::estimateNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure, this);
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Number of kernel answers is " << kernelAnswers << "\n";
 		}
 
 		tablesize kernelUnivSize = univNrAnswers(kernelvars, kernelindices, structure);
 		double chance = BddStatistics::estimateChance(bdd->kernel(), structure, this);
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Kernel chance is " << chance << "\n";
 		}
 
 		//For the true and false branch, we calculate the weight as follows:
 		//The cost of one answer in truebranch is weight * kernelanswers (they speak about different variables)
 		double trueBranchWeight = kernelAnswers * weightPerAns;
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Truebranchweight is " << trueBranchWeight << "\n";
 			clog << "Making more " << (goal ? "true" : "false") << " for the true branch\n";
 		}
@@ -1576,18 +1576,18 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 
 		double kernelFalseAnswers = toDouble(kernelUnivSize) * (1 - chance);
 
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Kernel false answers is " << kernelFalseAnswers << "\n";
 		}
 		double falsebranchweight = kernelFalseAnswers * weightPerAns;
-		if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "False branch weight is " << falsebranchweight << "\n";
 			clog << "Making more " << (goal ? "true" : "false") << " for the false branch\n";
 		}
 
 		auto newfalse = makeMore(goal, bdd->falsebranch(), branchvars, branchindices, structure, falsebranchweight);
 		if (newtrue != bdd->truebranch() || newfalse != bdd->falsebranch()) {
-			if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+			if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 				clog << "Truebranch not true or falsebranch not false, so creating reduced bdd and calling recursively\n";
 			}
 			return makeMore(goal, getBDD(bdd->kernel(), newtrue, newfalse), vars, ind, structure, weightPerAns);
@@ -1599,11 +1599,11 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 
 const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure, double weightPerAns) {
-	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "Making the following bdd more false: \n" << print(bdd) << "\nResulted in :\n";
 	}
 	auto result = makeMore(false, bdd, vars, indices, structure, weightPerAns);
-	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "\nResulted in :\n" << print(result) << "\n";
 	}
 	return result;
@@ -1611,11 +1611,11 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const fobddvarset& va
 
 const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 		const AbstractStructure* structure, double weightPerAns) {
-	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "Making the following bdd more true: \n" << print(bdd) << "\nResulted in :\n";
 	}
 	auto result = makeMore(true, bdd, vars, indices, structure, weightPerAns);
-	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "\nResulted in :\n" << print(result) << "\n";
 	}
 	return result;
