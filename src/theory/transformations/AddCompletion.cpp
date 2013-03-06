@@ -16,11 +16,12 @@
 using namespace std;
 
 Theory* AddCompletion::visit(Theory* theory) {
-	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
-		(*it)->accept(this);
-		for (auto jt = _result.cbegin(); jt != _result.cend(); ++jt)
-			theory->add(*jt);
-		(*it)->recursiveDelete();
+	for (auto def : theory->definitions()) {
+		def->accept(this);
+		for (auto sentence : _sentences){
+			theory->add(sentence);
+		}
+		def->recursiveDelete();
 	}
 	theory->definitions().clear();
 	return theory;
@@ -28,83 +29,97 @@ Theory* AddCompletion::visit(Theory* theory) {
 
 Definition* AddCompletion::visit(Definition* def) {
 	_headvars.clear();
-	_interres.clear();
-	_result.clear();
-	for (auto it = def->defsymbols().cbegin(); it != def->defsymbols().cend(); ++it) {
+	_symbol2sentences.clear();
+	_sentences.clear();
+
+	for (auto defsymbol : def->defsymbols()) {
 		vector<Variable*> vv;
-		for (auto jt = (*it)->sorts().cbegin(); jt != (*it)->sorts().cend(); ++jt) {
-			vv.push_back(new Variable(*jt));
+		for (auto sort : defsymbol->sorts()) {
+			vv.push_back(new Variable(sort));
 		}
-		_headvars[*it] = vv;
-	}
-	for (auto it = def->rules().cbegin(); it != def->rules().cend(); ++it) {
-		(*it)->accept(this);
+		_headvars[defsymbol] = vv;
 	}
 
-	for (auto it = _interres.cbegin(); it != _interres.cend(); ++it) {
-		Assert(!it->second.empty());
-		Formula* b = it->second[0];
-		if (it->second.size() > 1)
-			b = new BoolForm(SIGN::POS, false, it->second, FormulaParseInfo());
-		PredForm* h = new PredForm(SIGN::POS, it->first, TermUtils::makeNewVarTerms(_headvars[it->first]), FormulaParseInfo());
-		EquivForm* ev = new EquivForm(SIGN::POS, h, b, FormulaParseInfo());
-		if (it->first->sorts().empty()) {
-			_result.push_back(ev);
-		} else {
-			varset qv(_headvars[it->first].cbegin(), _headvars[it->first].cend());
-			QuantForm* qf = new QuantForm(SIGN::POS, QUANT::UNIV, qv, ev, FormulaParseInfo());
-			_result.push_back(qf);
+	for (auto rule : def->rules()) {
+		rule->accept(this);
+	}
+
+	for (auto symbol2sentences : _symbol2sentences) {
+		auto symbol = symbol2sentences.first;
+		const auto& sentences = symbol2sentences.second;
+
+		Assert(not sentences.empty());
+
+		auto body = sentences.size()==1?sentences[0]:new BoolForm(SIGN::POS, false, sentences, FormulaParseInfo());
+		auto head = new PredForm(SIGN::POS, symbol, TermUtils::makeNewVarTerms(_headvars[symbol]), FormulaParseInfo());
+		head->negate();
+		Formula* sentence = new BoolForm(SIGN::POS, false, {head, body}, FormulaParseInfo());
+
+		if(not _headvars.empty()){
+			varset qv(_headvars[symbol].cbegin(), _headvars[symbol].cend());
+			sentence = new QuantForm(SIGN::POS, QUANT::UNIV, qv, sentence, FormulaParseInfo());
 		}
+
+		_sentences.push_back(sentence);
 	}
 
 	return def;
 }
 
 Rule* AddCompletion::visit(Rule* rule) {
-	vector<Formula*> vf;
-	auto vv = _headvars[rule->head()->symbol()];
+	// Add sentence body implies head
+	varset vars;
+	map<Variable*,Variable*> mappedvars;
+	for(auto oldvar:rule->quantVars()){
+		auto newvar = new Variable(oldvar->sort());
+		vars.insert(newvar);
+		mappedvars[oldvar]=newvar;
+	}
+	auto left = rule->body()->clone(mappedvars);
+	left->negate();
+	auto right = rule->head()->clone(mappedvars);
+	_sentences.push_back(new QuantForm(SIGN::POS, QUANT::UNIV, vars, new BoolForm(SIGN::POS, false, {left, right}, rule->body()->pi()),rule->body()->pi()));
+
+	// Create part of the sentence head implies body
+	vector<Formula*> equalities;
+	auto newheadvars = _headvars[rule->head()->symbol()];
 	auto freevars = rule->quantVars();
 	map<Variable*, Variable*> mvv;
 
 	for (size_t n = 0; n < rule->head()->subterms().size(); ++n) {
+		auto newheadvar = newheadvars[n];
 		Term* t = rule->head()->subterms()[n];
 		if (typeid(*t) != typeid(VarTerm)) {
-			VarTerm* bvt = new VarTerm(vv[n], TermParseInfo());
-			vector<Term*> args;
-			args.push_back(bvt);
-			args.push_back(t->clone());
-			Predicate* p = get(STDPRED::EQ, vv[n]->sort());
-			PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
-			vf.push_back(pf);
+			auto bvt = new VarTerm(newheadvar, TermParseInfo());
+			auto p = get(STDPRED::EQ, newheadvar->sort());
+			auto pf = new PredForm(SIGN::POS, p, {bvt, t->clone()}, FormulaParseInfo());
+			equalities.push_back(pf);
 		} else {
-			Variable* v = *(t->freeVars().cbegin());
+			auto v = *(t->freeVars().cbegin());
 			if (mvv.find(v) == mvv.cend()) {
-				mvv[v] = vv[n];
+				mvv[v] = newheadvar;
 				freevars.erase(v);
 			} else {
-				VarTerm* bvt1 = new VarTerm(vv[n], TermParseInfo());
-				VarTerm* bvt2 = new VarTerm(mvv[v], TermParseInfo());
-				vector<Term*> args;
-				args.push_back(bvt1);
-				args.push_back(bvt2);
-				Predicate* p = get(STDPRED::EQ, v->sort());
-				PredForm* pf = new PredForm(SIGN::POS, p, args, FormulaParseInfo());
-				vf.push_back(pf);
+				auto bvt1 = new VarTerm(newheadvar, TermParseInfo());
+				auto bvt2 = new VarTerm(mvv[v], TermParseInfo());
+				auto p = get(STDPRED::EQ, v->sort());
+				auto pf = new PredForm(SIGN::POS, p, {bvt1,bvt2}, FormulaParseInfo());
+				equalities.push_back(pf);
 			}
 		}
 	}
 	Formula* b = rule->body()->clone(mvv);
-	if (!vf.empty()) {
-		vf.push_back(b);
-		b = new BoolForm(SIGN::POS, true, vf, FormulaParseInfo());
+	if (not equalities.empty()) {
+		equalities.push_back(b);
+		b = new BoolForm(SIGN::POS, true, equalities, FormulaParseInfo());
 	}
-	if (!freevars.empty()) {
+	if (not freevars.empty()) {
 		b = new QuantForm(SIGN::POS, QUANT::EXIST, freevars, b, FormulaParseInfo());
 	}
 	auto c = b->clone(mvv);
 	//Not complete (some variables might be useless), but better than no memorymanagement. TODO improve
 	b->recursiveDeleteKeepVars();
-	_interres[rule->head()->symbol()].push_back(c);
+	_symbol2sentences[rule->head()->symbol()].push_back(c);
 
 	return rule;
 }
