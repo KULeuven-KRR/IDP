@@ -754,49 +754,52 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 	if (lits.size() == 0) {
 		lits.push_back(_subformula.getType() == Conn::CONJ ? _true : _false);
 	}
+
+	auto result = FormStat::UNKNOWN;
 	if (lits.size() == 1) {
 		Lit l = lits[0];
 		if (makesFormulaFalse(l)) {
 			formula.literals = litlist { _false };
-			return FormStat::DECIDED;
+			result = FormStat::DECIDED;
 		} else if (makesFormulaTrue(l)) {
 			formula.literals = litlist { _true };
-			return FormStat::DECIDED;
+			result = FormStat::DECIDED;
 		} else if (not isRedundantInFormula(l)) {
 			formula.literals.push_back(l);
 		}
-		return FormStat::UNKNOWN;
-	}
-	if (conjFromRoot && considerAsConjunctiveWithSign) {
-		if (_subformula.getType() == Conn::CONJ) {
-			for (auto i = lits.cbegin(); i < lits.cend(); ++i) {
-				getGrounding()->addUnitClause(*i);
+	} else {
+		if (conjFromRoot && considerAsConjunctiveWithSign) {
+			if (_subformula.getType() == Conn::CONJ) {
+				for (auto i = lits.cbegin(); i < lits.cend(); ++i) {
+					getGrounding()->addUnitClause(*i);
+				}
+			} else {
+				getGrounding()->add(lits);
+			}
+			Lit l = _true;
+			if (makesFormulaFalse(l)) {
+				formula.literals = litlist { _false };
+				result = FormStat::DECIDED;
+			} else if (makesFormulaTrue(l)) {
+				formula.literals = litlist { _true };
+				result = FormStat::DECIDED;
+			} else if (not isRedundantInFormula(l)) {
+				formula.literals.push_back(l);
 			}
 		} else {
-			getGrounding()->add(lits);
-		}
-		Lit l = _true;
-		if (makesFormulaFalse(l)) {
-			formula.literals = litlist { _false };
-			return FormStat::DECIDED;
-		} else if (makesFormulaTrue(l)) {
-			formula.literals = litlist { _true };
-			return FormStat::DECIDED;
-		} else if (not isRedundantInFormula(l)) {
-			formula.literals.push_back(l);
-		}
-		return FormStat::UNKNOWN;
-	} else {
-		if (_subformula.getType() == formula.getType()) {
-			insertAtEnd(formula.literals, lits);
-		} else {
-			formula.literals.push_back(getReification(_subformula, subgrounder->context()._tseitin));
+			if (_subformula.getType() == formula.getType()) {
+				insertAtEnd(formula.literals, lits);
+			} else {
+				formula.literals.push_back(
+						getReification(_subformula,
+								subgrounder->context()._tseitin));
+			}
 		}
 	}
 
 	subgrounder->setConjUntilRoot(origvalue);
 
-	return FormStat::UNKNOWN;
+	return result;
 }
 
 BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Grounder*>& sub, SIGN sign, bool conj, const GroundingContext& ct)
