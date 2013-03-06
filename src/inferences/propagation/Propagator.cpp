@@ -325,49 +325,52 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 	Domain* newdom = _factory->disjunction(olddom, newdomain);
 	//disjunction -> Make the domains larger (thus the unknown part smaller)
 
-	if (not admissible(newdom, olddom)) {
-		delete (newdom);
-		return;
-	}else if(not _factory->approxequals(olddom, newdom)){
-		ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
-		switch (dir) {
-		case DOWN: {
-			for (auto subf : f->subformulas()) {
-				//Propagate the newly found domain further down.
-				schedule(f, DOWN, ct, subf);
-			}
-			if (isa<PredForm>(*f)) {
-				auto pf = dynamic_cast<const PredForm*>(f);
-				auto it = _leafupward.find(pf);
-				if (it != _leafupward.cend()) {
-					for (auto formula : it->second) {
-						if (formula != child) {
-							schedule(formula, UP, ct, f);
-						}
-					}
-				} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
-					Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
-					schedule(pf, DOWN, ct, 0);
-				}
-			}
-			break;
-		}
-		case UP: {
-			auto it = _upward.find(f);
-			if (it != _upward.cend()) {
-				schedule(it->second, UP, ct, f);
-			}
-			break;
-		}
-		}
-	}
-
+	// If we were propagating UP, this means that child has changed, and hence extra information can be
+	// propagated from parent to the other children.
 	if (child != NULL && dir == UP) {
 		for (auto subf : f->subformulas()) {
 			if (subf != child) {
 				schedule(f, DOWN, not ct, subf);
 			}
 		}
+	}
+
+	//In case actual propagation took place (the domain changed),
+	//extra propagation in the same direction can be done.
+	if (_factory->approxequals(olddom, newdom) || not admissible(newdom, olddom)) {
+		delete (newdom);
+		return;
+	}
+	ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);
+	switch (dir) {
+	case DOWN: {
+		for (auto subf : f->subformulas()) {
+			//Propagate the newly found domain further down.
+			schedule(f, DOWN, ct, subf);
+		}
+		if (isa<PredForm>(*f)) {
+			auto pf = dynamic_cast<const PredForm*>(f);
+			auto it = _leafupward.find(pf);
+			if (it != _leafupward.cend()) {
+				for (auto formula : it->second) {
+					if (formula != child) {
+						schedule(formula, UP, ct, f);
+					}
+				}
+			} else if (not pf->symbol()->builtin()) { //TODO: I (Bart) added this condition, is it right?
+				Assert(_leafconnectdata.find(pf) != _leafconnectdata.cend());
+				schedule(pf, DOWN, ct, 0);
+			}
+		}
+		break;
+	}
+	case UP: {
+		auto it = _upward.find(f);
+		if (it != _upward.cend()) {
+			schedule(it->second, UP, ct, f);
+		}
+		break;
+	}
 	}
 
 	delete (newdomain);
