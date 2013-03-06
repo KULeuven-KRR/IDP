@@ -117,6 +117,7 @@ struct ParserData{
 		yyin = filep;
 		if(yyin==NULL){
 			yyin = fopen(s.c_str(),"r");
+			earlierstates.push_back("");
 		}
 		if(!yyin) {
 			ParseInfo pi(yylloc.first_line,yylloc.first_column,data().currfile());
