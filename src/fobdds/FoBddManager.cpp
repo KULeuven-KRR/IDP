@@ -75,19 +75,46 @@ void FOBDDManager::clearDynamicTables() {
 	_quanttable.clear();
 }
 
+FOBDDKernel* FOBDDManager::kernelAbove(const FOBDDKernel* kernel) {
+	auto cat = kernel->category();
+	if (cat == KernelOrderCategory::TRUEFALSECATEGORY) {
+		return NULL;
+	}
+	Assert(_kernels.find(cat) != _kernels.cend());
+	auto catkernels = _kernels[cat];
+
+	unsigned int nr = kernel->number();
+	auto kernelabove = catkernels.find(nr + 1);
+	if (kernelabove != catkernels.cend()) {
+		Assert(*(kernelabove->second) < *kernel);
+		return kernelabove->second;
+	}
+	return NULL;
+
+}
+FOBDDKernel* FOBDDManager::kernelBelow(const FOBDDKernel* kernel) {
+	auto cat = kernel->category();
+	if (cat == KernelOrderCategory::TRUEFALSECATEGORY) {
+		return NULL;
+	}
+	Assert(_kernels.find(cat) != _kernels.cend());
+	auto catkernels = _kernels[cat];
+	unsigned int nr = kernel->number();
+	auto kernelbelow = catkernels.find(nr - 1);
+	if (kernelbelow != catkernels.cend()) {
+		Assert((*kernelbelow->second) > *kernel);
+		return kernelbelow->second;
+	}
+	return NULL;
+}
+
 void FOBDDManager::moveUp(const FOBDDKernel* kernel) {
 	clearDynamicTables();
-	auto cat = kernel->category();
-	if (cat != KernelOrderCategory::TRUEFALSECATEGORY) {
-		unsigned int nr = kernel->number();
-		if (nr != 0) {
-			--nr;
-			Assert(_kernels.find(cat) != _kernels.cend());
-			Assert(_kernels[cat].find(nr) != _kernels[cat].cend());
-			const FOBDDKernel* pkernel = _kernels[cat][nr];
-			moveDown(pkernel);
-		}
+	auto kernelabove = kernelAbove(kernel);
+	if(kernelabove == NULL){
+		return;
 	}
+	moveDown(kernelabove);
 }
 
 void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
@@ -97,11 +124,11 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 		unsigned int nr = kernel->number();
 		vector<const FOBDD*> falseerase;
 		vector<const FOBDD*> trueerase;
-		Assert(_kernels.find(cat) != _kernels.cend());
-		if (_kernels[cat].find(nr + 1) == _kernels[cat].cend()) {
+		const FOBDDKernel* nextkernel = kernelBelow(kernel);
+		if(nextkernel == NULL){
 			return;
 		}
-		const FOBDDKernel* nextkernel = _kernels[cat][nr + 1];
+		auto nextKernelNumber = nextkernel->number();
 		//bdds contains all bdds with kernel as kernel
 		const MBDDMBDDBDD& bdds = _bddtable[kernel];
 		for (auto it = bdds.cbegin(); it != bdds.cend(); ++it) {
@@ -151,11 +178,11 @@ void FOBDDManager::moveDown(const FOBDDKernel* kernel) {
 		}
 		//We make new kernels, because previously the originals are const.
 		FOBDDKernel* tkernel = _kernels[cat][nr];
-		FOBDDKernel* nkernel = _kernels[cat][nr + 1];
+		FOBDDKernel* nkernel = _kernels[cat][nextKernelNumber];
 		nkernel->replacenumber(nr);
-		tkernel->replacenumber(nr + 1);
+		tkernel->replacenumber(nextKernelNumber);
 		_kernels[cat][nr] = nkernel;
-		_kernels[cat][nr + 1] = tkernel;
+		_kernels[cat][nextKernelNumber] = tkernel;
 	}
 }
 
@@ -1449,15 +1476,14 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const fobddvarset& vars, co
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		CHECKTERMINATION;
 		// move kernel to the top
-		while ((*it)->number() != 0) {
+		while (kernelAbove(*it) != NULL) {
 			moveUp(*it);
 		}
-
 		double bestscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
 		int bestposition = 0;
 		//AT THIS POINT: bestposition is the number of "movedowns" needed from the top to get to bestpositions
 		// move downward
-		while ((*it)->number() < _kernels[(*it)->category()].size() - 1) {
+		while (kernelBelow(*it) != NULL) {
 			moveDown(*it);
 			double currscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
 			if (currscore < bestscore) {

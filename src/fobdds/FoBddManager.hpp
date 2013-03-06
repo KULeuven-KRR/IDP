@@ -272,6 +272,9 @@ private:
 
 	void moveDown(const FOBDDKernel*); //!< Swap the given kernel with its successor in the kernelorder
 	void moveUp(const FOBDDKernel*); //!< Swap the given kernel with its predecessor in the kernelorder
+
+	FOBDDKernel* kernelAbove(const FOBDDKernel*); //!< Returns the kernel of the same category, directly above the given one. Returns NULL if none such exists
+	FOBDDKernel* kernelBelow(const FOBDDKernel*); //!< Returns the kernel of the same category, directly below the given one. Returns NULL if none such exists
 };
 
 fobddvarset variables(const FOBDDKernel*, FOBDDManager* manager);
