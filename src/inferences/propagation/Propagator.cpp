@@ -254,10 +254,10 @@ template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToExists(Domain* orig, const varset& qvars) {
 	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
 	for (auto var : qvars) {
-		orig = addToExists(orig, var);
 		if (not admissible(orig, NULL)) {
 			return falseDomain(orig, qvars, _factory);
 		}
+		orig = addToExists(orig, var);
 	}
 	return orig;
 }
