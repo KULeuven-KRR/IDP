@@ -118,11 +118,13 @@ public:
 				auto pi = structure->inter(p);
 				if (pi->approxTwoValued()) {
 					printTab();
-					if(toDouble(pi->ct()->size())<10*toDouble(pi->cf()->size())){
+					auto ctsize = pi->ct()->size();
+					auto cfsize = pi->cf()->size();
+					if (ctsize < 20 || toDouble(ctsize) < 10 * toDouble(cfsize)) {
 						output() << printFullyQualified(p) << " = ";
 						visit(pi->ct());
 						output() << '\n';
-					}else{
+					} else {
 						output() << printFullyQualified(p) << "<cf> = ";
 						visit(pi->cf());
 						output() << '\n';
