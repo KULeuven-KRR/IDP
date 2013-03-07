@@ -436,6 +436,7 @@ CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
 	}
 }
 
+// IMPORTANT: should be the same neutrals as returned by commontypes.hpp
 Weight getNeutralElement(AggFunction type){
 	switch(type){
 	case AggFunction::CARD:
@@ -445,9 +446,9 @@ Weight getNeutralElement(AggFunction type){
 	case AggFunction::PROD:
 		return 1;
 	case AggFunction::MIN:
-		throw notyetimplemented("Neutral element for minimum aggregate function");
+		return getMaxElem<int>();
 	case AggFunction::MAX:
-		throw notyetimplemented("Neutral element for maximum aggregate function");
+		return getMinElem<int>();
 	}
 	throw IdpException("Invalid code path.");
 }

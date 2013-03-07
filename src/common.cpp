@@ -140,13 +140,13 @@ double applyAgg(const AggFunction& agg, const vector<double>& args) {
 		}
 		break;
 	case AggFunction::MIN:
-		d = getMaxElem<double>();
+		d = getMaxElem<int>();
 		for (size_t n = 0; n < args.size(); ++n) {
 			d = (d <= args[n] ? d : args[n]);
 		}
 		break;
 	case AggFunction::MAX:
-		d = getMinElem<double>();
+		d = getMinElem<int>();
 		for (size_t n = 0; n < args.size(); ++n) {
 			d = (d >= args[n] ? d : args[n]);
 		}
