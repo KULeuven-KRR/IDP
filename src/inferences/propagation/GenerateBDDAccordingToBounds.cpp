@@ -132,7 +132,8 @@ void GenerateBDDAccordingToBounds::visit(const PredForm* atom) {
 			auto sorti = sorts[i];
 			auto termi = terms[i];
 			auto termisort = termi->sort();
-			if (termisort == sorti || termisort->ancestors().find(sorti) != termisort->ancestors().cend()) {
+			auto ancestors = termisort->ancestors();
+			if (termisort == sorti || contains(ancestors, sorti)) {
 				continue;
 			}
 			auto outofpredtype = new PredForm(SIGN::NEG, sorti->pred(), { termi }, FormulaParseInfo());
