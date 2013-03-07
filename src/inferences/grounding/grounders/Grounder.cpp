@@ -84,6 +84,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	}
 }
 
+int Grounder::_level = 0;
 int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
@@ -119,17 +120,16 @@ bool Grounder::toplevelRun() const {
 
 // TODO unfinished code
 void Grounder::wrapRun(ConjOrDisj& formula) const {
-//	auto start = clock();
-//	auto set = getGlobal()->getOptions()->verbosities();
-	//auto printtimes = set.find("t")!=string::npos && context()._component==CompContext::SENTENCE;
-//	auto printtimes = false;
-//	if (printtimes) {
-//		cerr << "Grounding formula " << print(this) << "\n";
-//	}
+	_level++;
+	auto start = clock();
+	auto previousgroundsize = Grounder::groundedAtoms();
 	run(formula);
-//	if (printtimes) {
-//		cerr << "Grounding it took " << (clock() - start) / 1000 << "ms\n";
-//	}
+	if(verbosity()>0 && _level==3 && getMaxGroundSize()>10000){
+		clog <<"Formula " <<(isa<FormulaGrounder>(*this)?toString(this):(string)"unprintable grounder") <<"\n";
+		clog <<"\tResulted in " <<Grounder::groundedAtoms()-previousgroundsize <<" atoms.\n";
+		clog <<"\tTook " <<(clock() - start) / 1000 <<"sec.\n";
+	}
+	_level--;
 }
 
 Lit Grounder::groundAndReturnLit() const {

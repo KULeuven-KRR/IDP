@@ -115,6 +115,7 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 	notifyRun();
 	Assert(defid == grounddefinition->id());
 
+	auto previousgroundsize = Grounder::groundedAtoms();
 	if (verbosity() > 2) {
 		clog <<"Grounding rule " <<print(this) <<"\n";
 	}
@@ -150,6 +151,10 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition) cons
 				grounddefinition->addPCRule(head, body.literals, conj, context()._tseitin == TsType::RULE);
 			}
 		}
+	}
+
+	if (verbosity() > 0) {
+		clog <<"Rule " <<print(this) <<" was grounded to " <<Grounder::groundedAtoms()-previousgroundsize <<" atoms.\n";
 	}
 }
 
