@@ -53,12 +53,12 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 	return result;
 }
 
-FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure*, const std::map<PFSymbol*, InitBoundType> mpi) {
+FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* structure, const std::map<PFSymbol*, InitBoundType> mpi) {
 //	if(getOption(BoolType::GROUNDWITHBOUNDS)){
 	auto domainfactory = new FOPropBDDDomainFactory();
 	auto scheduler = new FOPropScheduler();
 	FOPropagatorFactory<FOPropBDDDomainFactory, FOPropBDDDomain> propfactory(domainfactory, scheduler, true, mpi);
-	return propfactory.create(theory);
+	return propfactory.create(theory, structure);
 //	}else{
 //		TODO notyetimplemented("Propagation without bdds.");
 	/*auto domainfactory = new FOPropTableDomainFactory(s);
@@ -169,15 +169,15 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 }
 
 template<class Factory, class Domain>
-TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory) {
+TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory, const AbstractStructure* structure) {
 	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 		clog << "=== initialize propagation datastructures\n";
 	}
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
-	FormulaUtils::addCompletion(newtheo);
-	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, NULL, newtheo->vocabulary());
+	FormulaUtils::addCompletion(newtheo, structure);
+	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, structure, newtheo->vocabulary());
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, true, false);
 	/* Since we will create "leafconnectors" for all (non-builtin) predicates, it is important that we unnest

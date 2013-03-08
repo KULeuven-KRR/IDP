@@ -276,8 +276,8 @@ Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, 
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport);
 }
 
-void addCompletion(AbstractTheory* t) {
-	auto newt = transform<AddCompletion, AbstractTheory*>(t);
+void addCompletion(AbstractTheory* t, const AbstractStructure* s) {
+	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);
 }
 

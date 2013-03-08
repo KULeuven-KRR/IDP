@@ -59,7 +59,7 @@ public:
 	FOPropagatorFactory(InterpretationFactory*, FOPropScheduler*, bool as, const std::map<PFSymbol*, InitBoundType>&);
 	~FOPropagatorFactory();
 
-	Propagator* create(const AbstractTheory*);
+	Propagator* create(const AbstractTheory*, const AbstractStructure*);
 };
 
 // NOTE: structure can be NULL
