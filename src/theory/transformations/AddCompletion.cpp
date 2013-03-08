@@ -12,6 +12,7 @@
 #include "AddCompletion.hpp"
 
 #include "IncludeComponents.hpp"
+#include "theory/TheoryUtils.hpp"
 
 using namespace std;
 
@@ -55,7 +56,7 @@ Definition* AddCompletion::visit(Definition* def) {
 		head->negate();
 		Formula* sentence = new BoolForm(SIGN::POS, false, {head, body}, FormulaParseInfo());
 
-		if(not _headvars.empty()){
+		if(not _headvars[symbol].empty()){
 			varset qv(_headvars[symbol].cbegin(), _headvars[symbol].cend());
 			sentence = new QuantForm(SIGN::POS, QUANT::UNIV, qv, sentence, FormulaParseInfo());
 		}
@@ -67,59 +68,47 @@ Definition* AddCompletion::visit(Definition* def) {
 }
 
 Rule* AddCompletion::visit(Rule* rule) {
+	auto newrule = DefinitionUtils::unnestNonVarHeadTerms(rule->clone(), NULL, Context::BOTH);
+
+	// Split quantified variables in head and body variables
+	varset hv, bv;
+	for (auto var : newrule->quantVars()) {
+		if (newrule->head()->contains(var)) {
+			hv.insert(var);
+		} else {
+			bv.insert(var);
+		}
+	}
+	auto body = newrule->body()->cloneKeepVars();
+	newrule = new Rule(hv, newrule->head()->cloneKeepVars(), new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi()))), newrule->pi());
+
 	// Add sentence body implies head
 	varset vars;
 	map<Variable*,Variable*> mappedvars;
-	for(auto oldvar:rule->quantVars()){
+	for(auto oldvar:newrule->quantVars()){
 		auto newvar = new Variable(oldvar->sort());
 		vars.insert(newvar);
 		mappedvars[oldvar]=newvar;
 	}
-	auto left = rule->body()->clone(mappedvars);
+	auto left = newrule->body()->clone(mappedvars);
 	left->negate();
-	auto right = rule->head()->clone(mappedvars);
-	_sentences.push_back(new QuantForm(SIGN::POS, QUANT::UNIV, vars, new BoolForm(SIGN::POS, false, {left, right}, rule->body()->pi()),rule->body()->pi()));
+	auto right = newrule->head()->clone(mappedvars);
+	_sentences.push_back(new QuantForm(SIGN::POS, QUANT::UNIV, vars, new BoolForm(SIGN::POS, false, {left, right}, newrule->body()->pi()),newrule->body()->pi()));
 
 	// Create part of the sentence head implies body
-	vector<Formula*> equalities;
-	auto newheadvars = _headvars[rule->head()->symbol()];
-	auto freevars = rule->quantVars();
-	map<Variable*, Variable*> mvv;
+	std::map<Variable*, Variable*> old2newheadvars;
+	const auto& newheadvars = _headvars[newrule->head()->symbol()];
+	for(uint i=0; i<newrule->head()->subterms().size(); ++i){
+		auto vt = dynamic_cast<VarTerm*>(newrule->head()->subterms()[i]);
+		Assert(vt!=NULL);
+		old2newheadvars[vt->var()]=newheadvars[i];
+	}
+	auto newbody = newrule->body()->clone(old2newheadvars);
+	_symbol2sentences[rule->head()->symbol()].push_back(newbody);
 
-	for (size_t n = 0; n < rule->head()->subterms().size(); ++n) {
-		auto newheadvar = newheadvars[n];
-		Term* t = rule->head()->subterms()[n];
-		if (typeid(*t) != typeid(VarTerm)) {
-			auto bvt = new VarTerm(newheadvar, TermParseInfo());
-			auto p = get(STDPRED::EQ, newheadvar->sort());
-			auto pf = new PredForm(SIGN::POS, p, {bvt, t->clone()}, FormulaParseInfo());
-			equalities.push_back(pf);
-		} else {
-			auto v = *(t->freeVars().cbegin());
-			if (mvv.find(v) == mvv.cend()) {
-				mvv[v] = newheadvar;
-				freevars.erase(v);
-			} else {
-				auto bvt1 = new VarTerm(newheadvar, TermParseInfo());
-				auto bvt2 = new VarTerm(mvv[v], TermParseInfo());
-				auto p = get(STDPRED::EQ, v->sort());
-				auto pf = new PredForm(SIGN::POS, p, {bvt1,bvt2}, FormulaParseInfo());
-				equalities.push_back(pf);
-			}
-		}
-	}
-	Formula* b = rule->body()->clone(mvv);
-	if (not equalities.empty()) {
-		equalities.push_back(b);
-		b = new BoolForm(SIGN::POS, true, equalities, FormulaParseInfo());
-	}
-	if (not freevars.empty()) {
-		b = new QuantForm(SIGN::POS, QUANT::EXIST, freevars, b, FormulaParseInfo());
-	}
-	auto c = b->clone(mvv);
-	//Not complete (some variables might be useless), but better than no memorymanagement. TODO improve
-	b->recursiveDeleteKeepVars();
-	_symbol2sentences[rule->head()->symbol()].push_back(c);
+	newrule->body()->recursiveDeleteKeepVars();
+	newrule->head()->recursiveDeleteKeepVars();
+	delete(newrule);
 
 	return rule;
 }

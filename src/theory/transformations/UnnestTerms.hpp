@@ -32,6 +32,7 @@ protected:
 	Vocabulary* _vocabulary; //!< Used to do type derivation during rewrites
 
 private:
+	bool _onlyrulehead;
 	Context _context; //!< Keeps track of the current context where terms are moved
 	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
 	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
@@ -61,11 +62,12 @@ public:
 	UnnestTerms();
 
 	template<typename T>
-	T execute(T t, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL) {
+	T execute(T t, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL, bool onlyrulehead = false) {
 		_context = con;
 		_structure = str;
 		_vocabulary = voc;
 		_allowedToUnnest = false;
+		_onlyrulehead = onlyrulehead;
 		return t->accept(this);
 	}
 

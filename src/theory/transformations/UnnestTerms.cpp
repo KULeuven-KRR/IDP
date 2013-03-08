@@ -43,7 +43,7 @@ void UnnestTerms::contextProblem(Term* t) {
  * (this is the most important method to overwrite in subclasses)
  */
 bool UnnestTerms::shouldMove(Term* t) {
-	return isAllowedToUnnest() && t->type() != TermType::VAR && t->type() != TermType::DOM;
+	return isAllowedToUnnest() && t->type() != TermType::VAR && (_onlyrulehead || t->type() != TermType::DOM);
 }
 /**
  * Tries to derive a sort for the term given a structure.
@@ -182,9 +182,11 @@ Rule* UnnestTerms::visit(Rule* rule) {
 	visitRuleHead(rule);
 
 // Visit body
-	_context = Context::NEGATIVE;
-	setAllowedToUnnest(false);
-	rule->body(rule->body()->accept(this));
+	if(not _onlyrulehead){
+		_context = Context::NEGATIVE;
+		setAllowedToUnnest(false);
+		rule->body(rule->body()->accept(this));
+	}
 
 	setAllowedToUnnest(saveallowed);
 	return rule;

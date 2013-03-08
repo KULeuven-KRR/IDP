@@ -276,8 +276,7 @@ std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, bool cpsupport);
-
-Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context);
 } /* namespace DefinitionUtils */
 
 #endif /* IDP_THEORYUTILS_HPP_ */

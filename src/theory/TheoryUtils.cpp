@@ -130,8 +130,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport);
 }
-Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context) {
-	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context){
+	return transform<UnnestTerms, Rule*, Rule, Context, const AbstractStructure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
 }
 }
 
