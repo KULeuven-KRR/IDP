@@ -75,7 +75,7 @@ public:
 		Assert(isTheoryOpen());
 
 		printTab();
-		output() << "DATA: " << '\n';
+		output() << "Data: " << '\n';
 		indent();
 
 		auto voc = structure->vocabulary();
@@ -83,7 +83,9 @@ public:
 			auto s = it->second;
 			if (not s->builtin()) {
 				printTab();
-				output() << print(s) << " = ";
+				auto name = s->name();
+				name = capitalize(name);
+				output() << name << " = ";
 				auto st = structure->inter(s);
 				visit(st);
 				output() << '\n';
@@ -101,15 +103,17 @@ public:
 					continue;
 				}
 				if(not pi->approxTwoValued()){
-					output() << "PARTIAL: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
+					output() << "Partial: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
 				}
 				printTab();
-				output() << p->nameNoArity() << " = ";
+				auto name = p->nameNoArity();
+				name = capitalize(name);
+				output() << name << " = ";
 				visit(pi->ct());
 				if (not pi->approxTwoValued()) {
 					visit(pi->cf());
 					output() << '\n';
-					output() << "DATA: "; //RETURN TO DATA BLOCK
+					output() << "Data: "; //RETURN TO DATA BLOCK
 				}
 				output() << '\n';
 			}
@@ -121,11 +125,13 @@ public:
 				auto fi = structure->inter(f);
 				if (fi->approxTwoValued()) {
 					printTab();
-					output() << f->nameNoArity() << " = ";
+					auto name = f->nameNoArity();
+					name = capitalize(name);
+					output() << name << " = ";
 					auto ft = fi->funcTable();
 					visit(ft);
 				} else {
-					output() << "PARTIAL: " << '\n';//TEMPORARY GO TO PARTIAL BLOCK
+					output() << "Partial: " << '\n';//TEMPORARY GO TO PARTIAL BLOCK
 					printTab();
 					auto pi = fi->graphInter();
 					auto ct = pi->ct();
@@ -133,7 +139,7 @@ public:
 					auto cf = pi->cf();
 					printAsFunc(cf);
 					output() << '\n';
-					output() << "DATA: ";//RETURN TO DATA BLOCK
+					output() << "Data: ";//RETURN TO DATA BLOCK
 				}
 				output() << '\n';
 			}
@@ -414,5 +420,16 @@ private:
 		}
 		output() << " }";
 	}
-};
 
+
+
+std::string capitalize(std::string str){
+    std::string::iterator it(str.begin());
+    if (it != str.end())
+        str[0] = toupper((unsigned char)str[0]);
+    while(++it != str.end()){
+        *it = tolower((unsigned char)*it);
+    }
+    return str;
+}
+};
