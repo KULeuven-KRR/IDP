@@ -27,8 +27,9 @@ void DeriveTermBounds::visit(const VarTerm* t) {
 	Assert(_structure != NULL && t->sort() != NULL);
 	auto domain = _structure->inter(t->sort());
 	Assert(domain != NULL);
-	if (not domain->approxFinite()) {
-		throw BoundsUnderivableException();
+	if (not domain->approxFinite() or domain->empty()) {
+		_underivable = true;
+		return;
 	} else {
 		_minimum = domain->first();
 		_maximum = domain->last();
@@ -57,6 +58,9 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 
 	// Derive bounds on subterms
 	traverse(t);
+	if(_underivable){
+		return;
+	}
 	bool cancalculate = true;
 	//TODO: is this approach correct? Sometimes min might be calculated when Max = infty;..
 	for (auto it = _subtermmaximums[_level].cbegin(); it != _subtermmaximums[_level].cend(); it++) {
@@ -101,34 +105,38 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			auto min1 = _subtermminimums[_level][1];
 			auto max0 = _subtermmaximums[_level][0];
 			auto max1 = _subtermmaximums[_level][1];
-			auto allpossibilities = std::vector<DomainElement> {
-			                *(*functable)[ElementTuple { min0, min1 }],
-			                *(*functable)[ElementTuple { min0, max1 }],
-			                *(*functable)[ElementTuple { max0, min1 }],
-			                *(*functable)[ElementTuple { max0, max1 }] };
-			auto minimumDE = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
-			auto maximumDE = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
-			if(minimumDE.type() == DomainElementType::DET_INT){
-				_minimum = createDomElem(minimumDE.value()._int);
-			} else {
-				Assert(minimumDE.type() == DomainElementType::DET_DOUBLE);
-				_minimum = createDomElem(minimumDE.value()._double);
+			auto minmin = (*functable)[ElementTuple { min0, min1 }];
+			auto minmax = (*functable)[ElementTuple { min0, max1 }];
+			auto maxmin = (*functable)[ElementTuple { max0, min1 }];
+			auto maxmax = (*functable)[ElementTuple { max0, max1 }];
+			if(minmin!=NULL && minmax!=NULL && maxmin!=NULL && maxmax!=NULL){
+				auto allpossibilities = std::vector<DomainElement> { *minmin, *minmax, *maxmin, *maxmax};
+				auto minimumDE = *(std::min_element(allpossibilities.cbegin(), allpossibilities.cend()));
+				auto maximumDE = *(std::max_element(allpossibilities.cbegin(), allpossibilities.cend()));
+				if(minimumDE.type() == DomainElementType::DET_INT){
+					_minimum = createDomElem(minimumDE.value()._int);
+				} else {
+					Assert(minimumDE.type() == DomainElementType::DET_DOUBLE);
+					_minimum = createDomElem(minimumDE.value()._double);
+				}
+				if (maximumDE.type() == DomainElementType::DET_INT) {
+					_maximum = createDomElem(maximumDE.value()._int);
+				} else {
+					Assert(maximumDE.type() == DomainElementType::DET_DOUBLE);
+					_maximum = createDomElem(maximumDE.value()._double);
+				}
+			}else{
+				_underivable = true;
+				return;
 			}
-			if (maximumDE.type() == DomainElementType::DET_INT) {
-				_maximum = createDomElem(maximumDE.value()._int);
-			} else {
-				Assert(maximumDE.type() == DomainElementType::DET_DOUBLE);
-				_maximum = createDomElem(maximumDE.value()._double);
-
-			}
-			//THIS IS A HACK: we cannot use pointer arithmetic, but we need the original pointers, thus we request the domainelement with the right vaule again!
 			break;
 		}
 		case STDFUNC::MAXELEM: {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			if (domain->empty()) {
-				throw BoundsUnderivableException();
+				_underivable = true;
+				return;
 			}
 			_maximum = domain->last();
 			_minimum = domain->last();
@@ -138,7 +146,8 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			auto domain = _structure->inter(t->sort());
 			Assert(domain != NULL);
 			if (domain->empty()) {
-				throw BoundsUnderivableException();
+				_underivable = true;
+				return;
 			}
 			_maximum = domain->first();
 			_minimum = domain->first();
@@ -148,21 +157,26 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 			_maximum = createDomElem(0);
 			_minimum = _subtermmaximums[_level][1];
 			break;
-		case STDFUNC::DIVISION:
-			throw BoundsUnderivableException(); // TODO
-		case STDFUNC::EXPONENTIAL:
-			throw BoundsUnderivableException(); // TODO
-		case STDFUNC::SUCCESSOR:
-			throw BoundsUnderivableException(); // TODO
-		case STDFUNC::PREDECESSOR:
-			throw BoundsUnderivableException(); // TODO
+		case STDFUNC::DIVISION: // TODO handle
+			_underivable = true;
+			return;
+		case STDFUNC::EXPONENTIAL: // TODO handle
+			_underivable = true;
+			return;
+		case STDFUNC::SUCCESSOR: // TODO handle
+			_underivable = true;
+			return;
+		case STDFUNC::PREDECESSOR: // TODO handle
+			_underivable = true;
+			return;
 		}
 	} else {
 		Assert(t->sort() != NULL);
 		auto domain = _structure->inter(t->sort());
 		Assert(domain != NULL);
 		if (not domain->approxFinite() or domain->empty()) { //FIXME: Never return NULL... return infinity thingies.
-			throw BoundsUnderivableException();
+			_underivable = true;
+			return;
 		}
 		_minimum = domain->first();
 		_maximum = domain->last();
@@ -200,12 +214,16 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 	for (auto i = t->set()->getSets().cbegin(); i < t->set()->getSets().cend(); ++i) {
 		_level++;
 		(*i)->getSubTerm()->accept(this);
+		if(_underivable){
+			return;
+		}
 		// TODO might optimize the value if the condition is already known
 		_level--;
 
 		auto maxsize = (*i)->maxSize(_structure); // minsize always 1
 		if (maxsize._type != TST_EXACT) {
-			throw BoundsUnderivableException();
+			_underivable = true;
+			return;
 		}
 		auto maxsizeElem = createDomElem(maxsize._size, NumType::CERTAINLYINT);
 
