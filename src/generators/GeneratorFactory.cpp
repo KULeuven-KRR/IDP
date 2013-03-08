@@ -139,17 +139,29 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 		table = inverse ? inter->cf() : inter->ct();
 	}
 
-	bool allequal = true;
+	auto alldescendants = true;
 	for (size_t i = 0; i < universe.tables().size(); ++i) {
-		if (universe.tables()[i]!=structure->inter(symbol->sorts()[i])) {
-			allequal = false;
+		auto sort = symbol->sorts()[i];
+		if (universe.tables()[i]!=structure->inter(sort)) {
+			auto found = false;
+			for(auto child: sort->descendents(NULL)){
+				if(universe.tables()[i]==structure->inter(child)){
+					found = true;
+					break;
+				}
+			}
+			if(found){
+				continue;
+			}
+			alldescendants = false;
+			break;
 		}
 	}
 
 	InstGenerator* finalgenerator;
 	//If symbol is a symbol to check for a sort, this will return a fullgenerator. However, in this case no outofboundschecks are done
 	//Therefor, we do the following:
-	if (not allequal && not inverted && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
+	if (not alldescendants && not inverted && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
 		//if allequal, nothing needs to be done.
 		//if inverse, the outofboundschecks are performed below
 		auto ist = structure->inter(symbol->sorts()[0])->internTable();
@@ -181,7 +193,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 			second = GeneratorFactory::create(table, newpattern, vars, universe);
 		}
 		finalgenerator = new OneChildGenerator(first, second);
-	} else if(not allequal && not inverted){
+	} else if(not alldescendants && not inverted){
 		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
 		for (size_t i = 0; i < universe.tables().size(); ++i) {
 			if (universe.tables()[i] != structure->inter(symbol->sorts()[i])) {
@@ -189,7 +201,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 				finalgenerator = new OneChildGenerator(finalgenerator, sortchecker);
 			}
 		}
-	} else{
+	} else {
 		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
 	}
 
@@ -197,7 +209,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractSt
 	//If all domains are equal there is no need for out-of-bounds checks
 	//Comparisongenerators allready generate the "outofbounds".
 	//Thus, in this case the checks are also not needed (and in many cases, will lead to infinite running stuff if you do include them)
-	if (not inverted || allequal || VocabularyUtils::isComparisonPredicate(symbol)) {
+	if (not inverted || alldescendants || VocabularyUtils::isComparisonPredicate(symbol)) {
 		return finalgenerator;
 	}
 

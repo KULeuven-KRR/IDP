@@ -23,6 +23,7 @@
 #include "bddvisitors/CheckIsArithmeticFormula.hpp"
 #include <algorithm>
 #include "structure/information/EstimateBDDInferenceCost.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 
@@ -181,15 +182,35 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 
 		auto pt = atomkernel->type() == AtomKernelType::AKT_CF ? pinter->cf() : pinter->ct(); // TODO in general, should be adapted to handle the unknowns
 		if (not isArithmetic(kernel,manager)) {
-			auto symbolsize = pt->size();
-			auto univsize = tablesize(TST_EXACT, 1);
+			auto sizeOfTable = pt->size();
 
+			auto univsize = tablesize(TST_EXACT, 1);
 			for (auto subterm: atomkernel->args()){
 				//Univsize should be calculated in terms of the variables that will be instantiated.
 				univsize *= structure->inter(subterm->sort())->size();
 			}
 
-			if (symbolsize.isInfinite()) {
+			if(atomkernel->type() == AtomKernelType::AKT_CF){
+				//In this case, we also need to generate the "out of bounds", all univ elements not belonging to the type of P.
+				//Therefor, we calculate fullunivsize, the size of the generated universe and compare it with the universe of P
+				//We approximate the universe of P to be a part of the full universe (this might sometimes not be the case, but
+				//we are estimating things anyway)
+				auto fullunivsize = tablesize(TST_EXACT, 1);
+				for (uint n=0; n< atomkernel->args().size(); ++n) {
+					Sort* sort = atomkernel->args()[n]->sort();
+					fullunivsize *= structure->inter(sort)->size();
+				}
+				if(fullunivsize > univsize){
+					//the difference of fullunivsize and univsize is approximately the number of out-of-bounds-elements
+					sizeOfTable = sizeOfTable + (fullunivsize - univsize);
+					if (sizeOfTable > univsize) {
+						//In this case, our approximation was wrong, hence we approximate tablesize by univsize
+						sizeOfTable = univsize;
+					}
+				}
+			}
+
+			if (sizeOfTable.isInfinite()) {
 				return 0.5;
 			}
 			if (univsize.isInfinite()) {
@@ -198,12 +219,12 @@ double BddStatistics::estimateChance(const FOBDDKernel* kernel) {
 			if (toDouble(univsize) == 0) {
 				return 0;
 			}
-			if(toDouble(symbolsize) > toDouble(univsize)){
+			if(toDouble(sizeOfTable) > toDouble(univsize)){
 				//Can happen in case the subterms have smaller sorts
 				return 1;
 			}
-			Assert(toDouble(symbolsize) <= toDouble(univsize));
-			return toDouble(symbolsize) / toDouble(univsize);
+			Assert(toDouble(sizeOfTable) <= toDouble(univsize));
+			return toDouble(sizeOfTable) / toDouble(univsize);
 		}
 		//Now we know: arithmetic --> Special case!
 		Assert(isArithmetic(kernel,manager));
@@ -583,6 +604,8 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const fobddvarset& vars,
 	}
 
 	// Recursive case
+	double result = -1;
+	bool done = false;
 
 	// get all variables not in the kernel -> bddvars
 	// get all variables in the kernel and in vars -> kernelvars
@@ -614,26 +637,31 @@ double BddStatistics::estimateCostAll(const FOBDD* bdd, const fobddvarset& vars,
 	// ONLY TRUE BRANCH: Only cost of kernel eval to true + kernel answers * true branch cost
 	if (bdd->falsebranch() == manager->falsebdd()) {
 		auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), kernelvars, kernelindices);
-		auto result = kernelcost + (kernelans * truecost);
-		bddstorage[bdd][vars][ind] = result;
-		return result;
+		result = kernelcost + (kernelans * truecost);
+		done = true;
 	}
 
-	auto kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
-	auto invkernelans = kernelunivsize - kernelans;
-	auto falsecost = tabledEstimateCostAll(bdd->falsebranch(), bddvars, bddindices);
+	if (not done) {
+		auto kernelunivsize = univNrAnswers(kernelvars, kernelindices, structure);
+		auto invkernelans = kernelunivsize - kernelans;
+		auto falsecost = tabledEstimateCostAll(bdd->falsebranch(), bddvars, bddindices);
 
-	// ONLY FALSE BRANCH: Only cost of kernel eval to false + NOT(kernel) answers * false branch cost
-	if (bdd->truebranch() == manager->falsebdd()) {
-		auto kernelcost = tabledEstimateCostAll(false, bdd->kernel(), kernelvars, kernelindices);
-		auto result = kernelcost + (toDouble(invkernelans) * falsecost);
-		bddstorage[bdd][vars][ind] = result;
-		return result;
+		// ONLY FALSE BRANCH: Only cost of kernel eval to false + NOT(kernel) answers * false branch cost
+		if (bdd->truebranch() == manager->falsebdd()) {
+			auto kernelcost = tabledEstimateCostAll(false, bdd->kernel(), kernelvars, kernelindices);
+			result = kernelcost + (toDouble(invkernelans) * falsecost);
+			done = true;
+		}
+
+		if (not done) {
+			// BOTH BRANCHES: Cost of single kernel eval * kernelunivsize + true cost * kernel answers + false cost * NOT(kernel) answers
+			auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), { }, { });
+			result = toDouble(kernelunivsize) * kernelcost
+					+ kernelans * truecost + toDouble(invkernelans) * falsecost;
+			done = true;
+		}
 	}
 
-	// BOTH BRANCHES: Cost of single kernel eval * kernelunivsize + true cost * kernel answers + false cost * NOT(kernel) answers
-	auto kernelcost = tabledEstimateCostAll(true, bdd->kernel(), { }, { });
-	auto result = toDouble(kernelunivsize) * kernelcost + kernelans * truecost + toDouble(invkernelans) * falsecost;
 	bddstorage[bdd][vars][ind] = result;
 	return result;
 }

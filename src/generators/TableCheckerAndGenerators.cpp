@@ -179,6 +179,6 @@ void InverseTableGenerator::next() {
 	}
 }
 void InverseTableGenerator::put(std::ostream& stream) const {
-	stream << "Inverse instance generater: inverse of" << nt() << print(_predchecker);
+	stream << "Inverse instance generator: inverse of" << nt() << print(_predchecker);
 }
 
