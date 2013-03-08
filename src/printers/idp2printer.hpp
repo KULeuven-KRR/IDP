@@ -20,10 +20,6 @@
 
 #include "utils/StringUtils.hpp"
 
-//TODO is not guaranteed to generate correct idp files!
-// FIXME do we want this? Because printing cp constraints etc. should be done correctly then!
-//TODO usage of stored parameters might be incorrect in some cases.
-
 template<typename Stream>
 class IDP2Printer: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
@@ -41,10 +37,9 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDP2Printer(Stream& stream)
-			: 	StreamPrinter<Stream>(stream) {
+	IDP2Printer(Stream& stream) :
+			StreamPrinter<Stream>(stream) {
 	}
-
 
 	virtual void startTheory() {
 		openTheory();
@@ -68,8 +63,6 @@ public:
 		}
 		return ss.str();
 	}
-
-
 
 	void visit(const AbstractStructure* structure) {
 		Assert(isTheoryOpen());
@@ -99,10 +92,10 @@ public:
 					continue;
 				}
 				auto pi = structure->inter(p);
-				if(pi->ct()->size() == 0 && pi->cf()->size() == 0){
+				if (pi->ct()->size() == 0 && pi->cf()->size() == 0) {
 					continue;
 				}
-				if(not pi->approxTwoValued()){
+				if (not pi->approxTwoValued()) {
 					output() << "Partial: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
 				}
 				printTab();
@@ -131,7 +124,7 @@ public:
 					auto ft = fi->funcTable();
 					visit(ft);
 				} else {
-					output() << "Partial: " << '\n';//TEMPORARY GO TO PARTIAL BLOCK
+					output() << "Partial: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
 					printTab();
 					auto pi = fi->graphInter();
 					auto ct = pi->ct();
@@ -139,7 +132,7 @@ public:
 					auto cf = pi->cf();
 					printAsFunc(cf);
 					output() << '\n';
-					output() << "Data: ";//RETURN TO DATA BLOCK
+					output() << "Data: "; //RETURN TO DATA BLOCK
 				}
 				output() << '\n';
 			}
@@ -148,114 +141,12 @@ public:
 		output() << '\n';
 	}
 
-	void visit(const Query* q) {
-		throw notyetimplemented("Printing queries in IDP2 format");
-	}
-
-	void visit(const Vocabulary* v) {
-		throw notyetimplemented("Printing vocabularies in IDP2 format");
-	}
-
-	void visit(const Namespace* s) {
-		throw notyetimplemented("Printing namespaces in IDP2 format");
-	}
-
-	void visit(const Theory* t) {
-		throw notyetimplemented("Printing theories in IDP2 format");
-	}
-
 	template<typename Visitor, typename List>
 	void visitList(Visitor v, const List& list) {
 		for (auto i = list.cbegin(); i < list.cend(); ++i) {
 			CHECKTERMINATION;
 			(*i)->accept(v);
 		}
-
-	}
-
-	void visit(const GroundTheory<GroundPolicy>* g) {
-		throw notyetimplemented("Printing (ground)theories in IDP2 format");
-	}
-
-	/** Formulas **/
-
-	void visit(const PredForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	void visit(const EqChainForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	void visit(const EquivForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	void visit(const BoolForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	void visit(const QuantForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	void visit(const AggForm* f) {
-		throw notyetimplemented("Printing formulas in IDP2 format");
-	}
-
-	/** Definitions **/
-
-	void visit(const Rule* r) {
-		throw notyetimplemented("Printing rules in IDP2 format");
-	}
-
-	void visit(const Definition* d) {
-		throw notyetimplemented("Printing definitions in IDP2 format");
-	}
-
-	void visit(const FixpDef* d) {
-		throw notyetimplemented("Printing fixpdefinitions in IDP2 format");
-	}
-
-
-	void visit(const VarTerm* t) {
-		throw notyetimplemented("Printing terms in IDP2 format");
-	}
-
-	void visit(const FuncTerm* t) {
-		throw notyetimplemented("Printing terms in IDP2 format");
-	}
-
-	void visit(const DomainTerm* t) {
-		throw notyetimplemented("Printing terms in IDP2 format");
-	}
-
-	void visit(const AggTerm* t) {
-		throw notyetimplemented("Printing terms in IDP2 format");
-	}
-
-	/** Set expressions **/
-
-	void visit(const EnumSetExpr* s) {
-		throw notyetimplemented("Printing set expressions in IDP2 format");
-	}
-
-	void visit(const QuantSetExpr* s) {
-		throw notyetimplemented("Printing set expressions in IDP2 format");
-	}
-
-
-
-	void visit(const CPWSumTerm* cpt) {
-		throw notyetimplemented("Printing CP thingies in IDP2 format");
-	}
-
-	void visit(const CPWProdTerm* cpt) {
-		throw notyetimplemented("Printing CP thingies in IDP2 format");
-	}
-
-	void visit(const CPVarTerm* cpt) {
-		throw notyetimplemented("Printing CP thingies in IDP2 format");
 	}
 
 	void visit(const PredTable* table) {
@@ -332,18 +223,6 @@ public:
 		}
 	}
 
-	void visit(const Sort* s) {
-		throw notyetimplemented("Printing sorts in IDP2 format");
-	}
-
-	void visit(const Predicate* p) {
-		throw notyetimplemented("Printing predicates in IDP2 format");
-	}
-
-	void visit(const Function* f) {
-		throw notyetimplemented("Printing functions in IDP2 format");
-	}
-
 	void visit(const SortTable* table) {
 		Assert(isTheoryOpen());
 		output() << "{ ";
@@ -363,31 +242,7 @@ public:
 		output() << " }";
 	}
 
-	virtual void visit(const GroundClause&) {
-		throw notyetimplemented("Printing ground clauses in IDP2 format");
-	}
-	virtual void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Printing groud fixpoint definitions in IDP2 format");
-	}
-	virtual void visit(const GroundSet*) {
-		throw notyetimplemented("Printing ground sets in IDP2 format");
-	}
-	virtual void visit(const PCGroundRule*) {
-		throw notyetimplemented("Printing ground rules in IDP2 format");
-	}
-	virtual void visit(const AggGroundRule*) {
-		throw notyetimplemented("Printing ground rules in IDP2 format");
-	}
-	virtual void visit(const GroundAggregate*) {
-		throw notyetimplemented("Printing ground aggregates in IDP2 format");
-	}
-	virtual void visit(const CPReification*) {
-		throw notyetimplemented("Printing ground constraints in IDP2 format");
-	}
-
 private:
-
-
 	void printAsFunc(const PredTable* table) {
 		if (not table->finite()) {
 			std::clog << "Requested to print infinite predtable, did not print it.\n";
@@ -421,15 +276,114 @@ private:
 		output() << " }";
 	}
 
+	std::string capitalize(std::string str) {
+		std::string::iterator it(str.begin());
+		if (it != str.end())
+		str[0] = toupper((unsigned char)str[0]);
+		while(++it != str.end()) {
+			*it = tolower((unsigned char)*it);
+		}
+		return str;
+	}
 
-
-std::string capitalize(std::string str){
-    std::string::iterator it(str.begin());
-    if (it != str.end())
-        str[0] = toupper((unsigned char)str[0]);
-    while(++it != str.end()){
-        *it = tolower((unsigned char)*it);
-    }
-    return str;
-}
+public:
+	void visit(const Query*) {
+		throw notyetimplemented("Printing queries in IDP2 format");
+	}
+	void visit(const Vocabulary*) {
+		throw notyetimplemented("Printing vocabularies in IDP2 format");
+	}
+	void visit(const Namespace*) {
+		throw notyetimplemented("Printing namespaces in IDP2 format");
+	}
+	void visit(const Theory*) {
+		throw notyetimplemented("Printing theories in IDP2 format");
+	}
+	void visit(const GroundTheory<GroundPolicy>*) {
+		throw notyetimplemented("Printing (ground)theories in IDP2 format");
+	}
+	void visit(const PredForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const EqChainForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const EquivForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const BoolForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const QuantForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const AggForm*) {
+		throw notyetimplemented("Printing formulas in IDP2 format");
+	}
+	void visit(const Rule*) {
+		throw notyetimplemented("Printing rules in IDP2 format");
+	}
+	void visit(const Definition*) {
+		throw notyetimplemented("Printing definitions in IDP2 format");
+	}
+	void visit(const FixpDef*) {
+		throw notyetimplemented("Printing fixpdefinitions in IDP2 format");
+	}
+	void visit(const VarTerm*) {
+		throw notyetimplemented("Printing terms in IDP2 format");
+	}
+	void visit(const FuncTerm*) {
+		throw notyetimplemented("Printing terms in IDP2 format");
+	}
+	void visit(const DomainTerm*) {
+		throw notyetimplemented("Printing terms in IDP2 format");
+	}
+	void visit(const AggTerm*) {
+		throw notyetimplemented("Printing terms in IDP2 format");
+	}
+	void visit(const EnumSetExpr*) {
+		throw notyetimplemented("Printing set expressions in IDP2 format");
+	}
+	void visit(const QuantSetExpr*) {
+		throw notyetimplemented("Printing set expressions in IDP2 format");
+	}
+	void visit(const CPWSumTerm*) {
+		throw notyetimplemented("Printing CP thingies in IDP2 format");
+	}
+	void visit(const CPWProdTerm*) {
+		throw notyetimplemented("Printing CP thingies in IDP2 format");
+	}
+	void visit(const CPVarTerm*) {
+		throw notyetimplemented("Printing CP thingies in IDP2 format");
+	}
+	void visit(const Sort*) {
+		throw notyetimplemented("Printing sorts in IDP2 format");
+	}
+	void visit(const Predicate*) {
+		throw notyetimplemented("Printing predicates in IDP2 format");
+	}
+	void visit(const Function*) {
+		throw notyetimplemented("Printing functions in IDP2 format");
+	}
+	virtual void visit(const GroundClause&) {
+		throw notyetimplemented("Printing ground clauses in IDP2 format");
+	}
+	virtual void visit(const GroundFixpDef*) {
+		throw notyetimplemented("Printing groud fixpoint definitions in IDP2 format");
+	}
+	virtual void visit(const GroundSet*) {
+		throw notyetimplemented("Printing ground sets in IDP2 format");
+	}
+	virtual void visit(const PCGroundRule*) {
+		throw notyetimplemented("Printing ground rules in IDP2 format");
+	}
+	virtual void visit(const AggGroundRule*) {
+		throw notyetimplemented("Printing ground rules in IDP2 format");
+	}
+	virtual void visit(const GroundAggregate*) {
+		throw notyetimplemented("Printing ground aggregates in IDP2 format");
+	}
+	virtual void visit(const CPReification*) {
+		throw notyetimplemented("Printing ground constraints in IDP2 format");
+	}
 };
