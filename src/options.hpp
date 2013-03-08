@@ -19,6 +19,7 @@
 
 enum Language {/* TXT,*/
 	IDP,
+	IDP2,
 	ECNF, /*LATEX, CNF, */
 	TPTP,
 	FLATZINC,

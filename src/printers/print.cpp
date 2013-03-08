@@ -15,6 +15,7 @@
 
 #include "printers/print.hpp"
 #include "printers/idpprinter.hpp"
+#include "printers/idp2printer.hpp"
 #include "printers/ecnfprinter.hpp"
 #include "printers/tptpprinter.hpp"
 #include "printers/aspprinter.hpp"
@@ -28,6 +29,8 @@ Printer* Printer::create(Stream& stream) {
 	switch (getGlobal()->getOptions()->language()) {
 	case Language::IDP:
 		return new IDPPrinter<Stream>(stream);
+	case Language::IDP2:
+		return new IDP2Printer<Stream>(stream);
 	case Language::ECNF:
 		return new EcnfPrinter<Stream>(getOption(BoolType::CREATETRANSLATION), stream);
 	case Language::TPTP:

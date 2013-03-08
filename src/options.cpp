@@ -20,6 +20,8 @@ std::string str(Language choice) {
 	switch (choice) {
 	case Language::IDP:
 		return "idp";
+	case Language::IDP2:
+			return "idp2";
 	case Language::ECNF:
 		return "ecnf";
 	case Language::TPTP:
