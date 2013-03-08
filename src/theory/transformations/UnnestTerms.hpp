@@ -109,7 +109,7 @@ protected:
 
 private:
 	Formula* rewrite(Formula*);
-	Term* move(Term*);
+	Term* move(Term*, Sort* newsort = NULL);
 
 	void visitTermRecursive(Term* term);
 

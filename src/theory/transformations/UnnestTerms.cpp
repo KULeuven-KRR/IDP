@@ -25,6 +25,7 @@ using namespace std;
 UnnestTerms::UnnestTerms()
 		: 	_structure(NULL),
 			_vocabulary(NULL),
+			_onlyrulehead(false),
 			_context(Context::POSITIVE),
 			_allowedToUnnest(false),
 			_chosenVarSort(NULL) {
@@ -62,12 +63,14 @@ Sort* UnnestTerms::deriveSort(Term* term) {
  * 		Add an equality t =_sort(t) v
  * 		return v
  */
-Term* UnnestTerms::move(Term* origterm) {
+Term* UnnestTerms::move(Term* origterm, Sort* newsort) {
 	Assert(origterm->sort()!=NULL);
 	if (getContext() == Context::BOTH) {
 		contextProblem(origterm);
 	}
-	auto newsort = deriveSort(origterm);
+	if(newsort==NULL){
+		newsort = deriveSort(origterm);
+	}
 	Assert(newsort != NULL);
 
 	auto var = new Variable(newsort);
@@ -151,7 +154,7 @@ void UnnestTerms::visitRuleHead(Rule* rule) {
 	for (size_t termposition = 0; termposition < rule->head()->subterms().size(); ++termposition) {
 		auto term = rule->head()->subterms()[termposition];
 		if (shouldMove(term)) {
-			auto new_head_term = move(term);
+			auto new_head_term = move(term, rule->head()->symbol()->sort(termposition));
 			rule->head()->subterm(termposition, new_head_term);
 		}else{
 			visitTermRecursive(term);
