@@ -7,21 +7,16 @@
  * Jo Devriendt, Joachim Jansen and Pieter Van Hertum 
  * K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************************/
+ ****************************************************************/
 
 #include "Entails.hpp"
 #include <cstdlib>
 #include <cstdio>
 #include <fstream>
-#include <unistd.h>
-#include <signal.h>
-#include <setjmp.h>
-#include "printers/print.hpp"
 #include "printers/tptpprinter.hpp"
 #include "IncludeComponents.hpp"
 #include "errorhandling/error.hpp"
 #include "internalargument.hpp"
-
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
@@ -50,19 +45,8 @@ public:
 	bool definitionFound() {
 		return _definitionFound;
 	}
-	void definitionFound(bool definitionFound) {
-		_definitionFound = definitionFound;
-	}
-	void theorySupported(bool theorySupported) {
-		_theorySupported = theorySupported;
-	}
-	void arithmeticFound(bool arithmeticFound) {
-		_arithmeticFound = arithmeticFound;
-	}
 
 protected:
-	void visit(const FuncTerm* f);
-	void visit(const EqChainForm* f);
 	void visit(const EnumSetExpr*) {
 		_theorySupported = false;
 	}
@@ -78,221 +62,172 @@ protected:
 	void visit(const Definition*) {
 		_definitionFound = true;
 	}
-};
 
-void TheorySupportedChecker::visit(const EqChainForm* f) {
-	CompType arithmeticComparator[4] = { CompType::LEQ, CompType::GEQ, CompType::LT, CompType::GT };
-	for (unsigned int n = 0; n < f->comps().size(); ++n) {
-		for (unsigned int i = 0; i < 4; ++i) {
-			if (f->comps()[n] == arithmeticComparator[i]) {
+	void visit(const EqChainForm* f) {
+		auto arithmeticComparators = { CompType::LEQ, CompType::GEQ, CompType::LT, CompType::GT };
+		for (unsigned int n = 0; n < f->comps().size(); ++n) {
+			for (auto arithcomparison : arithmeticComparators) {
+				if (f->comps()[n] == arithcomparison) {
+					_arithmeticFound = true;
+				}
+			}
+		}
+		if (not _arithmeticFound) {
+			traverse(f);
+		}
+	}
+
+	void visit(const FuncTerm* f) {
+		auto arithFunctions = { "+", "-", "/", "*", "%", "abs", "MAX", "MIN", "SUCC", "PRED" };
+		for (auto arithFunc : arithFunctions) {
+			if (toString(f->function()) == arithFunc) {
 				_arithmeticFound = true;
 			}
 		}
+		if (toString(f->function()) == "%") {
+			_theorySupported = false;
+		}
+		if (not _arithmeticFound) {
+			traverse(f);
+		}
 	}
-	if (!_arithmeticFound) {
-		traverse(f);
-	}
-}
+};
 
-void TheorySupportedChecker::visit(const FuncTerm* f) {
-	std::string arithmeticFunction[10] = { "+", "-", "/", "*", "%", "abs", "MAX", "MIN", "SUCC", "PRED" };
-	for (unsigned int n = 0; n < 5; ++n) {
-		if (toString(f->function()) == arithmeticFunction[n])
-			_arithmeticFound = true;
-	}
-	if (toString(f->function()) == "%")
-		_theorySupported = false;
-	if (!_arithmeticFound) {
-		traverse(f);
-	}
-}
+Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures)
+		: 	command(command),
+			axioms(axioms),
+			conjectures(conjectures),
+			hasArithmetic(true) {
 
-static jmp_buf _timeoutJump;
-void timeout(int) {
-	longjmp(_timeoutJump, 1);
-}
-
-State Entails::checkEntailment(EntailmentData* data) const {
-#if defined(__linux__)
-#define COMMANDS_INDEX 0
-#elif defined(_WIN32)
-#define COMMANDS_INDEX 1
-#elif defined(__APPLE__)
-#define COMMANDS_INDEX 2
-#else
-#define COMMANDS_INDEX 3 // TODO purely for compilation, should remove this
-	Error::error("\"entails\" is not supported on this platform.\n");
-	return State::UNKNOWN;
-#endif
-	InternalArgument& fofCommand = data->fofCommands[COMMANDS_INDEX];
-	InternalArgument& tffCommand = data->tffCommands[COMMANDS_INDEX];
-
-	auto axioms = data->axioms->clone();
-	auto conjectures = data->conjectures->clone();
+	provenStrings.push_back("SZS status Theorem");
+	provenStrings.push_back("SPASS beiseite: Proof found.");
+	disprovenStrings.push_back("SZS status CounterSatisfiable");
+	disprovenStrings.push_back("SPASS beiseite: Completion found.");
 
 	// Determine whether the theories are compatible with this inference
 	// and whether arithmetic support is required
-	TheorySupportedChecker sc;
-	sc.runCheck(axioms);
-	if (sc.definitionFound()) {
-		Warning::warning("The input contains a definition. Entailment will be decided based on its (potentially weaker) completion.");
+	TheorySupportedChecker axiomsSupported;
+	axiomsSupported.runCheck(axioms);
+	if (axiomsSupported.definitionFound()) {
+		Warning::warning("The input contains a definition. A (possibly) weaker form of entailment will be verified, based on its completion.");
 		FormulaUtils::addCompletion(axioms);
-		sc.definitionFound(false);
 	}
-	sc.runCheck(conjectures);
-	if (!sc.theorySupported()) {
-		Error::error("\"entails\" is not supported for the given theories. "
+
+	TheorySupportedChecker conjecturesSupported;
+	conjecturesSupported.runCheck(conjectures);
+	if (not axiomsSupported.theorySupported() || not conjecturesSupported.theorySupported() || conjecturesSupported.definitionFound()) {
+		throw IdpException("Entailment checking is not supported for the provided theories. "
 				"Only first-order theories (with arithmetic) are supported, with the addition of "
-				"definitions in the axiom theory. (No aggregates, fixpoint definitions,...)\n");
+				"definitions in the axiom theory. (No aggregates, fixpoint definitions,...).");
 	}
-	if (sc.definitionFound()) {
-		Error::error("Definitions in the conjecture are not supported for \"entails\".\n");
-		return State::UNKNOWN;
-	}
-	bool arithmeticFound = sc.arithmeticFound();
 
 	// Turn functions into predicates (for partial function support)
 	FormulaUtils::unnestTerms(axioms);
-	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, true, false /*TODO check*/);
+	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, true, false);
 
 	FormulaUtils::unnestTerms(conjectures);
-	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, true, false /*TODO check*/);
+	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, true, false);
 
-	// Clean up possibly existing files
-	remove(".tptpfile.tptp");
-	remove(".tptpresult.txt");
-
-	std::stringstream stream;
-	TPTPPrinter<std::stringstream>* printer;
-	try {
-		printer = dynamic_cast<TPTPPrinter<std::stringstream>*>(Printer::create<std::stringstream>(stream, arithmeticFound));
-	} catch (std::bad_cast&) {
-		Error::error("\"entails\" requires the printer to be set to the TPTPPrinter.\n");
-		return State::UNKNOWN;
+	if (not conjecturesSupported.arithmeticFound() && not axiomsSupported.arithmeticFound()) {
+		hasArithmetic = false;
 	}
+}
+
+State Entails::checkEntailment() {
+	char tptpinput_filename[L_tmpnam];
+	char tptpoutput_filename[L_tmpnam];
+	auto file = tmpnam(tptpinput_filename);
+	auto file2 = tmpnam(tptpoutput_filename);
+	Assert(file==tptpinput_filename);
+	Assert(file2==tptpoutput_filename);
+	std::ofstream tptpFile(tptpinput_filename);
+	auto printer = new TPTPPrinter<std::ofstream>(hasArithmetic, tptpFile);
 
 	// Print the theories to a TPTP file
+	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+		clog << "Adding axioms " << print(axioms) << "\n";
+	}
 	printer->print(axioms->vocabulary());
 	printer->print(axioms);
 	printer->conjecture(true);
 	if (axioms->vocabulary() != conjectures->vocabulary()) {
 		printer->print(conjectures->vocabulary());
 	}
+	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+		clog << "Adding conjectures " << print(conjectures) << "\n";
+	}
 	printer->print(conjectures);
 	delete (printer);
-
-	std::ofstream tptpFile;
-	tptpFile.open(".tptpfile.tptp");
-	if (!tptpFile.is_open()) {
-		Error::error("Could not successfully open file \".tptpfile.tptp\" for writing. "
-				"Check whether you have write rights in the current directory.\n");
-		return State::UNKNOWN;
-	}
-	tptpFile << stream.str();
 	tptpFile.close();
 
-	// Assemble the command of the prover.
-	std::vector<InternalArgument> command;
-	if (arithmeticFound) {
-		if (tffCommand._type != AT_TABLE) {
-			Error::error("No prover command was specified. Please add a prover command to .idprc that "
-					"accepts input in TPTP TFF syntax.\n");
-			return State::UNKNOWN;
-		}
-		command = *tffCommand._value._table;
-	} else {
-		if (fofCommand._type != AT_TABLE) {
-			Error::error("No prover command was specified. Please add a prover command to .idprc that "
-					"accepts input in TPTP FOF syntax.\n");
-			return State::UNKNOWN;
-		}
-		command = *fofCommand._value._table;
-	}
-	if (command.size() != 2 || command[0]._type != AT_STRING || command[1]._type != AT_STRING) {
-		Error::error("The prover command must contain 2 strings: The prover application and its "
-				"arguments. Please check your .idprc file.\n");
-		return State::UNKNOWN;
-	}
-	std::string& arguments = *command[1]._value._string;
-
-	std::stringstream applicationStream;
-	applicationStream << getenv("PROVERDIR") << "/" << *command[0]._value._string;
-
-	if (access(applicationStream.str().c_str(), X_OK)) {
-		Error::error("Prover application:\n" + applicationStream.str() + "\nnot found or not executable. "
-				"Please check your .idprc file or set the PROVERDIR environment variable.\n");
-		return State::UNKNOWN;
-	}
-
-	auto pos = arguments.find("%i");
+	auto tempcommand = command;
+	auto pos = tempcommand.find("%i");
 	if (pos == std::string::npos) {
-		Error::error("The argument string for the prover must indicate where the input file "
-				"must be inserted. (Marked by '%i')\n");
-		return State::UNKNOWN;
+		throw IdpException("The argument string must contain the string \"%i\", indicating where to insert the input file.");
 	}
-	arguments.replace(pos, 2, ".tptpfile.tptp");
-	pos = arguments.find("%o");
+	tempcommand.replace(pos, 2, tptpinput_filename);
+
+	pos = tempcommand.find("%o");
 	if (pos == std::string::npos) {
 		// If %o was not found, assume output redirection
-		arguments += " > %o";
-		pos = arguments.find("%o");
+		tempcommand += " > %o";
+		pos = tempcommand.find("%o");
 	}
-	arguments.replace(pos, 2, ".tptpresult.txt");
+	tempcommand.replace(pos, 2, tptpoutput_filename);
 
 	// Call the prover with timeout.
-	auto callresult = system((applicationStream.str() + " " + arguments).c_str());
-	// TODO call the prover with the prover timeout
-	if(callresult!=0){
-		Error::error("The theorem prover did not finish within the specified timeout.");
-		return State::UNKNOWN;
+	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+		clog << "Calling " << tempcommand << "\n";
 	}
-
-	std::vector<InternalArgument> theoremStrings;
-	std::vector<InternalArgument> counterSatisfiableStrings;
-	if (arithmeticFound) {
-		theoremStrings = data->tffTheoremStrings;
-		counterSatisfiableStrings = data->tffCounterSatisfiableStrings;
-	} else {
-		theoremStrings = data->fofTheoremStrings;
-		counterSatisfiableStrings = data->fofCounterSatisfiableStrings;
+	auto callresult = system(tempcommand.c_str());
+	// TODO call the prover with the prover timeout
+	if (callresult != 0) {
+		throw IdpException("The automated theorem prover ran out of time, gave up or stopped in an irregular state.");
 	}
 
 	// Retrieve the status from the result
-	std::string line;
 	std::ifstream tptpResult;
-	tptpResult.open(".tptpresult.txt");
+	tptpResult.open(tptpoutput_filename);
 	if (!tptpResult.is_open()) {
-		Error::error("Could not open file \".tptpresult.txt\" for reading.\n");
+		stringstream ss;
+		ss << "Could not open file " << tptpoutput_filename << " for reading.\n";
+		throw IdpException(ss.str());
 	}
+
+	auto state = State::UNKNOWN;
+
+	std::string line;
 	getline(tptpResult, line);
 	pos = std::string::npos;
-	bool result = false;
 	while (pos == std::string::npos && !tptpResult.eof()) {
-		unsigned int i = 0;
-		while (i < theoremStrings.size() && pos == std::string::npos) {
-			pos = line.find(*theoremStrings[i]._value._string);
-			result = true;
-			i++;
+		for (auto provenString : provenStrings) {
+			pos = line.find(provenString);
+			if (pos != std::string::npos) {
+				state = State::PROVEN;
+				break;
+			}
 		}
-		i = 0;
-		while (i < counterSatisfiableStrings.size() && pos == std::string::npos) {
-			pos = line.find(*counterSatisfiableStrings[i]._value._string);
-			result = false;
-			i++;
+		if (state != State::UNKNOWN) {
+			break;
 		}
+		for (auto disProvenString : disprovenStrings) {
+			pos = line.find(disProvenString);
+			if (pos != std::string::npos) {
+				state = State::DISPROVEN;
+				break;
+			}
+		}
+		if (state != State::UNKNOWN) {
+			break;
+		}
+
 		getline(tptpResult, line);
 	}
 	tptpResult.close();
 
-#ifndef DEBUG
-	remove(".tptpfile.tptp");
-	remove(".tptpresult.txt");
-#endif
-
 	if (pos == std::string::npos) {
-		Error::error("The automated theorem prover gave up or stopped in an irregular state.");
-		return State::UNKNOWN;
+		throw IdpException("The automated theorem prover gave up or stopped in an irregular state.");
 	}
 
-	return result ? State::PROVEN : State::DISPROVEN;
+	return state;
 }

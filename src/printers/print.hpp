@@ -95,7 +95,6 @@ public:
 
 	// Factory method
 	template<class Stream> static Printer* create(Stream& stream);
-	template<class Stream> static Printer* create(Stream& stream, bool arithmetic);
 
 	virtual void checkOrOpen(DefId defid) {
 		if (!isDefOpen(defid)) {

@@ -7,56 +7,33 @@
  * Jo Devriendt, Joachim Jansen and Pieter Van Hertum 
  * K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
- ****************************************************************************/
+ ****************************************************************/
 
-#ifndef ENTAILSINFERENCE_HPP_
-#define ENTAILSINFERENCE_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "inferences/entailment/Entails.hpp"
 #include "errorhandling/error.hpp"
 
 typedef std::vector<InternalArgument> ialist;
-typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*, ialist*, ialist*, ialist*, ialist*, ialist*, ialist*)> EntailsInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*)> EntailsInferenceBase;
 class EntailsInference: public EntailsInferenceBase {
 public:
 	EntailsInference()
-			: EntailsInferenceBase("entails", "Checks whether the first theory entails the second. ") {
-		setNameSpace(getInternalNamespaceName());
-		/*		add(AT_THEORY);
-		 add(AT_THEORY);
-		 // Prover commands
-		 add(AT_TABLE); // fof
-		 add(AT_TABLE); // tff
-		 // theorem/countersatisfiable strings
-		 add(AT_TABLE); // fof theorem
-		 add(AT_TABLE); // fof countersatisfiable
-		 add(AT_TABLE); // tff theorem
-		 add(AT_TABLE); // tff countersatisfiable
-		 add(AT_OPTIONS);*/
+			: EntailsInferenceBase("entails", "Checks whether the first theory entails the second, using the set prover and arguments. ") {
+		setNameSpace(getTheoryNamespaceName());
 	}
 
-	// TODO passing options as internalarguments (e.g. the xsb path) is very ugly and absolutely not intended!
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		EntailmentData* data = new EntailmentData();
-		//TODO: check that no input is changed by this command.
-		data->fofCommands = *get<2>(args);
-		data->tffCommands = *get<3>(args);
-
-		data->fofTheoremStrings = *get<4>(args);
-		data->fofCounterSatisfiableStrings = *get<5>(args);
-		data->tffTheoremStrings = *get<6>(args);
-		data->tffCounterSatisfiableStrings = *get<7>(args);
-
-		data->axioms = get<0>(args)->clone();
-		data->conjectures = get<1>(args)->clone();
-		if (not isa<Theory>(*data->axioms) || not isa<Theory>(*data->conjectures)) {
-			Error::error("\"entails\" can only take regular Theory objects as axioms and conjectures.");
-			return nilarg();
+		if (not isa<Theory>(*get<0>(args)) || not isa<Theory>(*get<1>(args))) {
+			throw IdpException("Entails only accepts regular Theory objects (not ground theories) as axioms and conjectures.");
 		}
 
-		State state = Entails::doCheckEntailment(data);
-		delete (data);
+		auto axioms = dynamic_cast<Theory*>(get<0>(args)->clone());
+		auto conjectures = dynamic_cast<Theory*>(get<1>(args)->clone());
+		auto state = Entails::doCheckEntailment(getOption(PROVERCOMMAND), axioms, conjectures);
+		delete (axioms);
+		delete (conjectures);
 
 		switch (state) {
 		case State::PROVEN:
@@ -68,5 +45,3 @@ public:
 		}
 	}
 };
-
-#endif /* ENTAILSINFERENCE_HPP_ */

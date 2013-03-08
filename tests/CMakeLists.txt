@@ -38,7 +38,8 @@ include_directories ("
 ")
 
 set(MXTESTS "mxtests")
-set(MXINCLUDES TestUtils.hpp TestUtils.cpp testingtools.hpp testingtools.cpp testsuite.cpp mxtests/FileEnumerator.hpp mxtests/FileEnumerator.cpp)
+set(TESTINCLUDES TestUtils.hpp TestUtils.cpp testingtools.hpp testingtools.cpp testsuite.cpp)
+set(MXINCLUDES ${TESTINCLUDES} mxtests/FileEnumerator.hpp mxtests/FileEnumerator.cpp)
 
 set(TESTBINARIES "")
 set(TESTCOMMANDBINARIES "")
@@ -114,6 +115,13 @@ if(${BUILDTESTS})
 			${MXINCLUDES}
 		)
 		addTest(slow)
+		
+		add_executable(entailment
+			EntailmentTests.cpp
+			${TESTINCLUDES}
+		)
+		addTest(entailment)
+		
 		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
 		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
 	else()
@@ -144,6 +152,12 @@ if(${BUILDTESTS})
 			${MXINCLUDES}
 		)
 		addTest(slow)
+		
+		add_executable(entailment
+			EntailmentTests.cpp
+			${TESTINCLUDES}
+		)
+		addTest(entailment)
 		
 		add_custom_target(check ${PROJECT_BINARY_DIR}/tests/idptests DEPENDS idptests)
 		add_custom_target(fullcheck ${PROJECT_BINARY_DIR}/tests/slow DEPENDS slow)

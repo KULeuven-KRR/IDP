@@ -1,0 +1,16 @@
+include <mx>
+
+procedure checkEntails(){
+	stdoptions.timeout=5
+	result = entails(T1, T2)	
+	if(result == isEntailed() ) then
+		return 1;
+	else
+		if(isEntailed()) then
+			io.stderr:write("T1 entails T2, but the prover concluded it didn't.\n")
+		else
+			io.stderr:write("T1 does not entail T2, but the prover concluded it does.\n")
+		end
+		return 0;
+	end	
+}

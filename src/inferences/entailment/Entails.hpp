@@ -9,41 +9,30 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ENTAILS_HPP_
-#define ENTAILS_HPP_
+#pragma once
 
 #include <vector>
-class Options;
-class AbstractTheory;
-class InternalArgument;
-
-// TODO remove internalargument dependency
-// TODO cleanup code
+#include <string>
+class Theory;
 
 enum class State {
 	PROVEN, DISPROVEN, UNKNOWN
 };
 
-struct EntailmentData {
-	std::vector<InternalArgument> fofCommands;
-	std::vector<InternalArgument> tffCommands;
-	std::vector<InternalArgument> fofTheoremStrings;
-	std::vector<InternalArgument> fofCounterSatisfiableStrings;
-	std::vector<InternalArgument> tffTheoremStrings;
-	std::vector<InternalArgument> tffCounterSatisfiableStrings;
-	AbstractTheory* axioms;
-	AbstractTheory* conjectures;
-};
-
 class Entails {
+private:
+	std::string command;
+	Theory *axioms, *conjectures;
+	bool hasArithmetic; // Note: not writing out arithmetic format output if none is present allows to use more provers.
+	std::vector<std::string> provenStrings, disprovenStrings;
+
 public:
-	static State doCheckEntailment(EntailmentData* data) {
-		Entails c;
-		return c.checkEntailment(data);
+	static State doCheckEntailment(const std::string& command, Theory* axioms, Theory* conjectures) {
+		Entails c(command, axioms, conjectures);
+		return c.checkEntailment();
 	}
 
 private:
-	State checkEntailment(EntailmentData* data) const;
+	Entails(const std::string& command, Theory* axioms, Theory* conjectures);
+	State checkEntailment();
 };
-
-#endif /* ENTAILS_HPP_ */

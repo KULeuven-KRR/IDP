@@ -1,0 +1,14 @@
+vocabulary V{
+	type X
+	P(X,X,X)
+}
+theory T1:V{
+	!x y: ?z: P(z,x,y).
+	!x y z z2: P(z,x,y) & P(z2,x,y) => z=z2.
+}
+theory T2:V{
+	!z z2: z~=z2 => !x y: P(z,x,y) => ~P(z2,x,y).
+}
+procedure isEntailed(){
+	return true;
+}
