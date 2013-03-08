@@ -9,14 +9,14 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef PUSHQUANTIFICATIONS_HPP_
-#define PUSHQUANTIFICATIONS_HPP_
+#pragma once
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 class PushQuantifications: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 public:
+	// NOTE: requires pushed quantifications, which IS guaranteed when going through theoryUtils.
 	template<typename T>
 	T execute(T t) {
 		return t->accept(this);
@@ -25,5 +25,3 @@ public:
 protected:
 	Formula* visit(QuantForm*);
 };
-
-#endif /* PUSHQUANTIFICATIONS_HPP_ */

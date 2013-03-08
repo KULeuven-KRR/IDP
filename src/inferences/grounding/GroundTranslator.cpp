@@ -406,38 +406,23 @@ Lit GroundTranslator::reify(double bound, CompType comp, AggFunction aggtype, Se
 	}
 }
 
-bool CompareTs::operator()(CPTsBody* left, CPTsBody* right) {
-	if (left == NULL) {
-		if (right == NULL) {
-			return false;
-		}
-		return true;
-	} else if (right == NULL) {
-		return false;
-	}
-	return *left < *right;
-}
-
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto tsbody = new CPTsBody(tstype, left, comp == CompType::NEQ ? CompType::EQ : comp, right);
-	// TODO => this should be generalized to sharing detection!
+
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {
 		delete tsbody;
-		if (it->first->comp() != comp) { // NOTE: OPTIMIZATION! = and ~= map to the same tsbody etc. => look at ecnf.cpp:compEqThroughNeg
-			return -it->second;
-		} else {
-			return it->second;
-		}
-	} else {
-		int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
-		atom2TsBody[nr] = tsbody;
-		cpset[tsbody] = nr;
-		if (comp == CompType::NEQ) {
-			nr = -nr;
-		}
-		return nr;
+		auto storedcomparison = it->first->comp(); // NOTE: OPTIMIZATION! = and ~= map to the same tsbody etc. => look at ecnf.cpp:compEqThroughNeg
+		return storedcomparison==comp?it->second:-it->second;
 	}
+
+	int nr = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+	atom2TsBody[nr] = tsbody;
+	cpset[tsbody] = nr;
+	if (comp == CompType::NEQ) {
+		nr = -nr;
+	}
+	return nr;
 }
 
 //// Adds a tseitin body only if it does not yet exist. TODO why does this seem only relevant for CP Terms?
@@ -504,11 +489,21 @@ VarId GroundTranslator::translateTerm(Function* function, const vector<GroundTer
 }
 
 VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
+	auto termit = cp2id.find(cpterm);
+	if (termit != cp2id.cend()) {
+		auto& sort2id = termit->second;
+		auto domainit = sort2id.find(domain);
+		if(domainit != sort2id.cend()){
+			return domainit->second;
+		}
+	}
+
 	auto varid = nextNumber();
 	CPBound bound(varid);
 	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	var2CTsBody[varid.id] = cprelation;
 	var2domain[varid.id] = domain;
+	cp2id[cpterm][domain] = varid;
 	return varid;
 }
 

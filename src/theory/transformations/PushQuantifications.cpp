@@ -44,7 +44,6 @@ void splitOverSameQuant(const VarSet& quantset, const FormulaList& formulasToSpl
 }
 
 Formula* PushQuantifications::visit(QuantForm* qf) {
-	// TODO requires PUSHING negations AND Flattening!
 	bool conj = true;
 	vector<QuantForm*> quantforms;
 	quantforms.push_back(qf);

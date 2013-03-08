@@ -661,23 +661,33 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 }
 
 void GrounderFactory::visit(const QuantForm* qf) {
-	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && qf->isUnivWithSign();
+	Formula* tempqf = qf->clone();
+	tempqf = FormulaUtils::pushQuantifiersAndNegations(tempqf);
+	if(not isa<QuantForm>(*tempqf)){
+		tempqf->accept(this);
+		deleteDeep(tempqf);
+		return;
+	}
+
+	auto newqf = dynamic_cast<QuantForm*>(tempqf);
+	_context._conjPathUntilNode = _context._conjunctivePathFromRoot && newqf->isUnivWithSign();
 
 	// Create instance generator
-	Formula* newsubformula = qf->subformula()->clone();
+	Formula* newsubformula = newqf->subformula()->clone();
 	// !x phi(x) => generate all x possibly false
 	// !x phi(x) => check for x certainly false
-	auto gc = createVarsAndGenerators(newsubformula, qf, qf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
-			qf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
+	auto gc = createVarsAndGenerators(newsubformula, newqf, newqf->isUnivWithSign() ? TruthType::POSS_FALSE : TruthType::POSS_TRUE,
+			newqf->isUnivWithSign() ? TruthType::CERTAIN_FALSE : TruthType::CERTAIN_TRUE);
 
 	// Handle a top-level conjunction without creating tseitin atoms
-	_context.gentype = qf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
+	_context.gentype = newqf->isUnivWithSign() ? GenType::CANMAKEFALSE : GenType::CANMAKETRUE;
 	if (_context._conjunctivePathFromRoot) {
-		createTopQuantGrounder(qf, newsubformula, gc);
+		createTopQuantGrounder(newqf, newsubformula, gc);
 	} else {
-		createNonTopQuantGrounder(qf, newsubformula, gc);
+		createNonTopQuantGrounder(newqf, newsubformula, gc);
 	}
 	deleteDeep(newsubformula);
+	deleteDeep(newqf);
 }
 
 ClauseGrounder* createQ(AbstractGroundTheory* grounding, FormulaGrounder* subgrounder, QuantForm const * const qf, const GenAndChecker& gc,
