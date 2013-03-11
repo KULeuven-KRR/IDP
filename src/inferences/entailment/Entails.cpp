@@ -144,10 +144,20 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	// Turn functions into predicates (for partial function support)
 	FormulaUtils::unnestTerms(axioms);
 	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, {}, true, false);
+	std::map<Function*, Formula*> axiom_funcconstraints;
+	FormulaUtils::addFuncConstraints(axioms, axioms->vocabulary(), axiom_funcconstraints);
+	for(auto func2formula: axiom_funcconstraints){
+		axioms->add(func2formula.second);
+	}
 
 	FormulaUtils::unnestTerms(conjectures);
 	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, {}, true, false);
-        
+	std::map<Function*, Formula*> conj_funcconstraints;
+	FormulaUtils::addFuncConstraints(conjectures, conjectures->vocabulary(), conj_funcconstraints);
+	for(auto func2formula: conj_funcconstraints){
+		conjectures->add(func2formula.second);
+	}
+
 	if(axiomsSupported.aggregateFound()){
 		Warning::warning("The input contains aggregates. Non-cardinality aggregates will be dropped, resulting in a weaker form of entailment.");
 	}
