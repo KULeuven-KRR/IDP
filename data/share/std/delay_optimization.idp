@@ -28,7 +28,8 @@ vocabulary Delay_Voc_Input{
 	
 	type noninfcost isa int
 	groundSize(Constraint): noninfcost
-	sizeThreshold:int
+	type threshold isa int
+	sizeThreshold:threshold
 }
 vocabulary Delay_Voc{
 	extern vocabulary Delay_Voc_Input
@@ -74,6 +75,7 @@ structure Delay_Basic_Data: Delay_Voc_Input { // Testdata
 	False	  = False
 	not      = { True->False; False->True; }
 	cost     = { True -> 1; False -> 3; }
+	threshold = {0..20}
 }
 
 // Testdata
