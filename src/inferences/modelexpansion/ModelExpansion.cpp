@@ -124,6 +124,7 @@ MXResult ModelExpansion::expand() const {
 	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 		logActionAndTime("Starting solving at ");
 	}
+	bool unsat = false;
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
 
@@ -132,8 +133,8 @@ MXResult ModelExpansion::expand() const {
 
 	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
+		unsat = mx->getSolutions().size()==0;
 	} catch (MinisatID::idpexception& error) {
-
 		if(getOption(VERBOSE_GROUNDSTATS) > 0){
 			auto stats = mx->getStats();
 			logActionAndValue("decisions", stats.decisions);
@@ -144,6 +145,8 @@ MXResult ModelExpansion::expand() const {
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
 		throw IdpException(ss.str());
+	} catch(UnsatException& ex){
+		unsat = true;
 	}
 
 	t.requestStop();
@@ -171,7 +174,7 @@ MXResult ModelExpansion::expand() const {
 	// Collect solutions
 	std::vector<Structure*> solutions;
 	if (_minimizeterm != NULL) { // Optimizing
-		if (mx->getSolutions().size() > 0) {
+		if (not unsat) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
 			auto bestvalue = mx->getBestValueFound();
@@ -186,7 +189,7 @@ MXResult ModelExpansion::expand() const {
 				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc));
 			}
 		}
-	} else {
+	} else if(not unsat){
 		auto abstractsolutions = mx->getSolutions();
 		if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 			stringstream ss;
@@ -202,6 +205,7 @@ MXResult ModelExpansion::expand() const {
 	grounding->recursiveDelete();
 	clonetheory->recursiveDelete();
 	getGlobal()->removeTerminationMonitor(terminator);
+	delete (extender);
 	delete (terminator);
 	delete (newstructure);
 	delete (data);
