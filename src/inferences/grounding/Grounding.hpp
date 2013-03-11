@@ -115,9 +115,9 @@ private:
 			clog << "Unsat detected during grounding\n";
 		}
 		try {
-			if(receiver==NULL){
+			if (receiver == NULL) {
 				_grounder = GrounderFactory::create(info);
-			}else{
+			} else {
 				_grounder = GrounderFactory::create(info, receiver);
 			}
 			_grounder->getGrounding()->addEmptyClause();
