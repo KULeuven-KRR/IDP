@@ -971,9 +971,7 @@ void GrounderFactory::checkAndAddAsTopGrounder() {
 void GrounderFactory::visit(const EquivForm* ef) {
 	if(getOption(SATISFIABILITYDELAY)){ // TODO remove this when it has been fixed properly for lazy grounding!
 		auto changed = FormulaUtils::removeEquivalences(ef->cloneKeepVars());
-		SaveContext();
-		descend(changed);
-		RestoreContext();
+		changed->accept(this);
 		// TODO memory
 		return;
 	}
