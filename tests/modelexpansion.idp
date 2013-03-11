@@ -140,6 +140,7 @@ procedure run() {
 	stdoptions.verbosity.creategrounders=0
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
+	io.stderr:write("MX done")
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.groundwithbounds=true
@@ -168,6 +169,7 @@ procedure check(solutions){
 	for i,v in ipairs(solutions) do
 		structure = v
 		if(Vout~=nil and Vout~=V)then
+			setvocabulary(v,V)
 			structure = merge(S,v)
 		end
 		if(#modelexpand(T, structure, Vout)==0) then
