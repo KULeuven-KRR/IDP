@@ -106,10 +106,15 @@ procedure run() {
 		end
 	end
 
-	sols = modelexpand(T, solution[1], Vout)
+	structure = solution[1]
+	if(Vout~=nil and Vout~=V) then
+		setvocabulary(structure,V) // TODO merge should do setvoc?
+		structure = merge(S,structure)
+	end
+	sols = modelexpand(T, structure, Vout)
 	if(sols==nil or #sols==0) then
 		io.stderr:write("Found an invalid partial model.\n")
-		io.stderr:write(tostring(solution))
+		io.stderr:write(tostring(structure))
 		return 0
 	end
 	io.stderr:write("Found SAT, expected SAT.\n")
