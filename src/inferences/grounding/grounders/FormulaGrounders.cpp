@@ -800,7 +800,7 @@ BoolGrounder::BoolGrounder(AbstractGroundTheory* grounding, const std::vector<Fo
 	}
 	setFormula(new BoolForm(sign, conj, formulas, { }));
 
-	tablesize size = tablesize(TableSizeType::TST_EXACT, 0);
+	tablesize size = tablesize(TableSizeType::TST_EXACT, 1); // Count true/false as atom
 	for (auto i = sub.cbegin(); i < sub.cend(); ++i) {
 		size = size + (*i)->getMaxGroundSize();
 	}
@@ -869,7 +869,7 @@ QuantGrounder::QuantGrounder(LazyGroundingManager* manager, AbstractGroundTheory
 		}
 	}
 	setFormula(new QuantForm(sign, quant, generatedvars, sub->getFormula()->cloneKeepVars(), { }));
-	setMaxGroundSize(quantsize * sub->getMaxGroundSize());
+	setMaxGroundSize((quantsize+1) * sub->getMaxGroundSize()); // Count true/false as an atom (to be sure, for corner cases (0) )
 }
 
 QuantGrounder::~QuantGrounder() {
