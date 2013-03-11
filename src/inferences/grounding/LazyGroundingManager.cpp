@@ -258,8 +258,8 @@ public:
 		groundsize = groundsize->clone(groundsize->universe());
 		isdefdelay = structure->inter(isdefdelayPred);
 		isequivalence = structure->inter(isequivalencePred);
-		truedm = createDomElem(new string("True"));
-		falsedm = createDomElem(new string("False"));
+		truedm = createDomElem(StringPointer("True"));
+		falsedm = createDomElem(StringPointer("False"));
 	}
 
 	void addGrounder(Grounder* grounder) {

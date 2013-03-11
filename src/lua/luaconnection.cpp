@@ -1229,7 +1229,7 @@ InternalArgument getValue(Options* opts, const string& name) {
 	if (opts->isOptionOfType<int>(name)) {
 		return InternalArgument(opts->getValueOfType<int>(name));
 	} else if (opts->isOptionOfType<std::string>(name)) {
-		return InternalArgument(new string(opts->getValueOfType<std::string>(name)));
+		return InternalArgument(StringPointer(opts->getValueOfType<std::string>(name)));
 	} else if (opts->isOptionOfType<bool>(name)) {
 		return InternalArgument(opts->getValueOfType<bool>(name));
 	} else if (opts->isOptionOfType<double>(name)) {
