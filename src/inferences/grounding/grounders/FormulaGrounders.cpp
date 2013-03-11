@@ -858,6 +858,7 @@ QuantGrounder::QuantGrounder(LazyGroundingManager* manager, AbstractGroundTheory
 			_checker(checker),
 			_generatescontainers(generates),
 			_manager(manager),
+			splitallowed(true),
 			replacementaftersplit(NULL) {
 
 	addAll(_varmap, sub->getVarmapping());
@@ -941,6 +942,7 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 		manager->add(this, delay);
 		return true;
 	}
+
 //	clog <<"Could delay on " <<toString(delay) <<"\n";
 
 	auto grounding = manager->getGrounding();
@@ -965,6 +967,7 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	auto t = new Predicate(sorts);
 	manager->getStructure()->vocabulary()->add(t);
 
+	splitallowed = false;
 	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, t, origtermgrounders, tables, context);
 
 	auto subqf = qf->subformula()->cloneKeepVars();
@@ -972,6 +975,23 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
 	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
 	auto newgrounder = GrounderFactory::createSentenceGrounder(manager, newqf);
+
+	auto newquantgrounder = dynamic_cast<QuantGrounder*>(newgrounder);
+	bool foundquants = true;
+	if(newquantgrounder!=NULL){
+		newquantgrounder->splitallowed=false;
+		const auto& subg = dynamic_cast<BoolGrounder*>(newquantgrounder->getSubGrounder())->getSubGrounders();
+		for(auto sg:subg){
+			auto newquantgrounder2 = dynamic_cast<QuantGrounder*>(sg);
+			if(newquantgrounder2!=NULL){
+				foundquants = true;
+				newquantgrounder2->splitallowed = false;
+			}
+		}
+	}
+	if(not foundquants){
+		throw InternalIdpException("Splitting grounders");
+	}
 //	cerr <<"Looking for delay in " <<toString(newqf) <<"\n";
 	delay = FormulaUtils::findDelay(newqf, newgrounder->getVarmapping(), manager);
 	Assert(delay.get()!=NULL);
@@ -991,46 +1011,47 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 	formula.setType(connective());
 
 	if(replacementaftersplit==NULL){
-		uint nbfound = 0; // Checker whether already instantiated by lazy grounding
-		set<const DomElemContainer*> instantiatedvars;
-		for (auto container : request.instantiation) {
-			if (contains(_generatescontainers, container)) {
-				instantiatedvars.insert(container);
-				nbfound++;
-			}
-		}
-
-		/**
-		 * Either:
-		 * 		all variables instantiated
-		 * 			conjunctiveUntilNode: ground the child for the instantiation at hand and return
-		 * 			otherwise: ground the child for the instantiation at hand and add a tseitin for the remainder
-		 * 		some variables instantiated
-		 * 			currently handled as the one below. It can be optimized, but should be handled earlier, preventing these cases by rewriting.
-		 * 		no variables instantiated
-		 * 			find a new delay D for this formula F
-		 * 			if one exists: replace the grounding with a new tseitin symbol T and add the sentence T => F, delayed on D
-		 * 							and which first sets the correct variable instantiation for all earlier quantified variables
-		 * 			if none exists: generate all
-		 */
 		bool handledcheap = false;
-		if (nbfound == _generatescontainers.size()) {
-			if (getContext()._conjPathUntilNode) {
-				auto decided = groundAfterGeneration(formula, request);
-				if(not decided){
-					// By default: request.groundersdone is true, so the lazy grounding will stop then
-					request.groundersdone = false;
+		if(splitallowed){
+			/**
+			 * Either:
+			 * 		all variables instantiated
+			 * 			conjunctiveUntilNode: ground the child for the instantiation at hand and return
+			 * 			otherwise: ground the child for the instantiation at hand and add a tseitin for the remainder
+			 * 		some variables instantiated
+			 * 			currently handled as the one below. It can be optimized, but should be handled earlier, preventing these cases by rewriting.
+			 * 		no variables instantiated
+			 * 			find a new delay D for this formula F
+			 * 			if one exists: replace the grounding with a new tseitin symbol T and add the sentence T => F, delayed on D
+			 * 							and which first sets the correct variable instantiation for all earlier quantified variables
+			 * 			if none exists: generate all
+			 */
+			uint nbfound = 0; // Checker whether already instantiated by lazy grounding
+			set<const DomElemContainer*> instantiatedvars;
+			for (auto container : request.instantiation) {
+				if (contains(_generatescontainers, container)) {
+					instantiatedvars.insert(container);
+					nbfound++;
 				}
-				handledcheap = true;
-			} else if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
-				handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), true);
 			}
-		} else if (nbfound == 0){
-			handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), false);
-		}
+			if (nbfound == _generatescontainers.size()) {
+				if (getContext()._conjPathUntilNode) {
+					auto decided = groundAfterGeneration(formula, request);
+					if(not decided){
+						// By default: request.groundersdone is true, so the lazy grounding will stop then
+						request.groundersdone = false;
+					}
+					handledcheap = true;
+				} else if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
+					handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), true);
+				}
+			} else if (nbfound == 0){
+				handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), false);
+			}
 
-	#warning why is dropping the grounders when done incorrect?
-		//request.groundersdone = false;
+			#warning why is dropping the grounders when done incorrect?
+			//request.groundersdone = false;
+		}
 
 		if (not handledcheap) {
 			for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {

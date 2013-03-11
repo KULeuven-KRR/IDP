@@ -207,6 +207,8 @@ protected:
 	std::set<const DomElemContainer*> _generatescontainers;
 	LazyGroundingManager* _manager;
 	std::map<Variable*, SortTable*> map2delayedsorts; // Stored reduced tables during splitting
+
+	bool splitallowed;
 	AtomGrounder* replacementaftersplit;
 protected:
 	virtual void internalClauseRun(ConjOrDisj& literals, LazyGroundingRequest& request);
