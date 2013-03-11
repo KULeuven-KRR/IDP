@@ -342,6 +342,7 @@ public:
 		structure->inter(groundsizeFunc)->graphInter(groundsize);
 		structure->inter(symbolFunc)->graphInter(symbol);
 		structure->checkAndAutocomplete();
+		structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrue({createDomElem(getOption(LAZYSIZETHRESHOLD))});
 		makeUnknownsFalse(symbol);
 		makeUnknownsFalse(candelayon);
 		makeUnknownsFalse(groundsize);
@@ -485,7 +486,7 @@ private:
 			auto dsize = log(toDouble(gsize)) / log(2);
 			size = (int) min(dsize, (double) getMaxElem<int>());
 		}
-		size = size < 0 ? 0 : size; // Handle log of 0
+		size = size <= 0 ? 1 : size; // Handle log of 0
 		groundsize->makeTrue( { id, createDomElem(size) }, true);
 	}
 

@@ -28,6 +28,7 @@ vocabulary Delay_Voc_Input{
 	
 	type noninfcost isa int
 	groundSize(Constraint): noninfcost
+	sizeThreshold:int
 }
 vocabulary Delay_Voc{
 	extern vocabulary Delay_Voc_Input
@@ -57,7 +58,7 @@ theory Delay_Theory : Delay_Voc{
 	!s id: defDelayUsed(s,id) => !c b p: delay(c,b,p) & symbol(p)=s => isDefinitionDelay(p,c,id).
 	
 	// Do not delay too small constraints
-	!c: groundSize(c)<12 => !b p: ~delay(c, b, p).
+	!c: groundSize(c)<sizeThreshold => !b p: ~delay(c, b, p).
 }
 term Delay_Minimization_Term : Delay_Voc{
 	// Term to minimize. The ground size of a constraint is multiplied by 1/10 for each symbol watched on true and by 9/10 for each symbol watched on false.

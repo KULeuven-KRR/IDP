@@ -157,6 +157,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
 		IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
 
+		IntPol::createOption(IntType::LAZYSIZETHRESHOLD, "lazysizelimit", 1, getMaxElem<int>(), 12, _option2name, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::EXISTSEXPANSIONSTEPS, "existsexpansion", 1, getMaxElem<int>(), 10, _option2name, PrintBehaviour::PRINT);
 
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.

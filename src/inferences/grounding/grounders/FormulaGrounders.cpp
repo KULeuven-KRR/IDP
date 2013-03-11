@@ -911,7 +911,7 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	}
 	auto size = log(toDouble(getMaxGroundSize()));
 	size = size<0?0:size;
-	if(size/log(2)<12){
+	if(size/log(2)<getOption(LAZYSIZETHRESHOLD)){
 	//	cerr <<"Not large enough\n";
 		return false;
 	}
