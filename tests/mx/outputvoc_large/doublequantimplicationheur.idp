@@ -16,7 +16,7 @@ theory T:V{ // Tests heuristics in lazy grounding ( it should not watch q in the
 }
 
 structure S:V{
-	x is nat
+	x = {0..1000000000}
 }
 
 procedure getExpectedNbOfModels(){

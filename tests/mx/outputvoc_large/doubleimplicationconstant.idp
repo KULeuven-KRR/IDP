@@ -19,7 +19,7 @@ theory T:V{
 }
 
 structure S:V{
-	x is nat
+	x = {0..1000000000}
 }
 
 procedure getExpectedNbOfModels(){

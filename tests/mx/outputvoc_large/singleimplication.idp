@@ -12,7 +12,7 @@ theory T:V{
 }
 
 structure S:V{
-	x is int
+	x = {-1000000000..1000000000}
 }
 
 procedure getExpectedNbOfModels(){
