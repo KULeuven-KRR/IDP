@@ -165,7 +165,7 @@ Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const AbstractSt
 Formula* unnestThreeValuedTerms(Formula*, const AbstractStructure*, Context context, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
-void addCompletion(AbstractTheory*);
+void addCompletion(AbstractTheory*, const AbstractStructure* s);
 
 /**
  * Add the If direction of the definition semantics. The old definition is not removed, but can be regarded as the remaining only if and ufs constraint.
@@ -276,8 +276,7 @@ std::set<PFSymbol*> opens(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, bool cpsupport);
-
-Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context);
 } /* namespace DefinitionUtils */
 
 #endif /* IDP_THEORYUTILS_HPP_ */

@@ -9,27 +9,22 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef DERIVETERMBOUNDS_HPP_
-#define DERIVETERMBOUNDS_HPP_
+#pragma once
 
 //TODO Implement a TermVisitor for this kind of visit functionality...
 
 #include "visitors/TheoryVisitor.hpp"
+#include "theory/term.hpp"
 #include <vector>
-#include <exception>
 
 class AbstractStructure;
 class DomainElement;
-
-class BoundsUnderivableException: public std::exception {
-
-};
 
 /**
  * Derives lower and upper bounds for a term given a structure.
  * Returns <NULL, NULL> when it cannot derive a bound.
  */
-class DeriveTermBounds: public DefaultTraversingTheoryVisitor {
+class DeriveTermBounds: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
 	const AbstractStructure* _structure;
@@ -39,17 +34,19 @@ private:
 	std::vector<std::vector<const DomainElement*>> _subtermminimums;
 	std::vector<std::vector<const DomainElement*>> _subtermmaximums;
 
+	bool _underivable;
+
 public:
-	template<typename T>
-	std::vector<const DomainElement*> execute(T t, const AbstractStructure* str) {
+	std::vector<const DomainElement*> execute(const Term* t, const AbstractStructure* str) {
 		Assert(str != NULL);
 		_structure = str;
 		_level = 0;
-		try {
-			t->accept(this);
-			return std::vector<const DomainElement*> { _minimum, _maximum };
-		} catch (const BoundsUnderivableException& e) {
+		_underivable = false;
+		t->accept(this);
+		if(_underivable){
 			return std::vector<const DomainElement*> { NULL, NULL };
+		}else{
+			return std::vector<const DomainElement*> { _minimum, _maximum };
 		}
 	}
 
@@ -68,6 +65,9 @@ protected:
 		for (auto it = t->subterms().cbegin(); it != t->subterms().cend(); ++it) {
 			_level++;
 			(*it)->accept(this);
+			if(_underivable){
+				return;
+			}
 			_level--;
 			_subtermminimums[_level].push_back(_minimum);
 			_subtermmaximums[_level].push_back(_maximum);
@@ -81,83 +81,75 @@ protected:
 
 	// Disable all other visit methods..
 	void traverse(const Formula*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on Formula.");
 	}
-
 	void visit(const EnumSetExpr*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on EnumSetExpr.");
 	}
 	void visit(const QuantSetExpr*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on QuantSetExpr.");
 	}
-
 	void visit(const Theory*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on Theory.");
 	}
 	void visit(const AbstractGroundTheory*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on AbstractGroundTheory.");
 	}
 	void visit(const GroundTheory<GroundPolicy>*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on GroundTheory<GroundPolicy>.");
 	}
-
 	void visit(const PredForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on PredForm.");
 	}
 	void visit(const EqChainForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on EqChainForm.");
 	}
 	void visit(const EquivForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on EquivForm.");
 	}
 	void visit(const BoolForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on BoolForm.");
 	}
 	void visit(const QuantForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on QuantForm.");
 	}
 	void visit(const AggForm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on AggForm.");
 	}
-
 	void visit(const Rule*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on Rule.");
 	}
 	void visit(const Definition*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on Definition.");
 	}
 	void visit(const FixpDef*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on FixpDef.");
 	}
-
 	void visit(const GroundDefinition*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on GroundDefinition.");
 	}
 	void visit(const PCGroundRule*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on PCGroundRule.");
 	}
 	void visit(const AggGroundRule*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on AggGroundRule.");
 	}
 	void visit(const GroundSet*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on GroundSet.");
 	}
 	void visit(const GroundAggregate*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on GroundAggregate.");
 	}
-
 	void visit(const CPReification*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPReification.");
 	}
 	void visit(const CPVarTerm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPVarTerm.");
 	}
 	void visit(const CPWSumTerm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPWSumTerm.");
 	}
 	void visit(const CPWProdTerm*) {
-		Assert(false);
+		throw InternalIdpException("Cannot derive apply derivation of term bounds on CPWProdTerm.");
 	}
 };
-
-#endif /* DERIVEBOUNDS_HPP_ */

@@ -244,12 +244,7 @@ void DomElemContainer::deleteAllContainers() {
 
 ostream& operator<<(ostream& output, const ElementTuple& tuple) {
 	output << '(';
-	for (auto it = tuple.cbegin(); it != tuple.cend(); ++it) {
-		output << **it;
-		if (it != tuple.cend() - 1) {
-			output << ',';
-		}
-	}
+	printList(output, tuple, ",", true);
 	output << ')';
 	return output;
 }

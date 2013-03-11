@@ -1,0 +1,22 @@
+procedure getExpectedAModel(){
+	return true;
+}
+
+vocabulary V{
+	type Node
+	Edge(Node,Node)
+	type length isa int
+	Distance(Node,Node):length
+	P
+}
+
+theory T:V{
+	Distance(x,y)=min{x': Edge(x,x') | Edge(x',x): Distance(x',y)}.
+}
+
+structure S:V{
+	Edge = {
+		A,B	;
+	}
+	length = {0..2}
+}

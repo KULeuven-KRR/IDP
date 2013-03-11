@@ -1,0 +1,32 @@
+vocabulary V {
+	type X isa int
+	A(X)
+	B(X)
+	C(X)
+	D(X)
+	F(X)
+}
+
+theory T: V {
+	{
+		A(x) <- B(x).
+		A(x) <- C(x).
+		A(x) <- A(x-1).
+		D(x) <- A(x).
+		D(x) <- A(x+1).
+	}
+}
+
+structure S: V {
+	X = {1..10}
+	B = {1}
+	C = {3}
+}
+
+procedure weakassertions(newS){
+	return (assert2(newS[V.A].ct,{1;3},"A<ct>") and assert2(newS[V.D].ct,{1;3},"D<ct>"))
+}
+
+procedure strongassertions(newS){
+	return (assert2(newS[V.A].ct,{1;2;3;4;5;6;7;8;9;10},"A<ct>") and assert2(newS[V.D].ct,{1;2;3;4;5;6;7;8;9;10},"D<ct>"))
+}
