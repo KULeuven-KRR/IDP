@@ -30,6 +30,10 @@ procedure mxlazycp(){
 procedure mxverylazy(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation=false
+	stdoptions.lazyheur=true
+	stdoptions.relevancewatched=true
+	stdoptions.existsexpansion=2
+	stdoptions.lazysizelimit=3
 	stdoptions.satdelay=true
 	stdoptions.tseitindelay=true
 	stdoptions.timeout = 5
@@ -138,6 +142,11 @@ procedure run() {
 	solutions = modelexpand(T, S, Vout)
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
+	stdoptions.groundwithbounds=true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.satdelay=false
+	stdoptions.tseitindelay=false
+	stdoptions.lazyheur=false
 	if(#solutions~=getExpectedNbOfModels()) then
 		if(#solutions>getExpectedNbOfModels()) then
 			io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
