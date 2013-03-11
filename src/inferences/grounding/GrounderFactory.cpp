@@ -387,7 +387,6 @@ LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* mini
 // TODO should not need any func constraints
 // TODO NOT allowed to combine quantforms
 FormulaGrounder* GrounderFactory::createSentenceGrounder(LazyGroundingManager* manager, Formula* sentence) {
-	cerr <<"Grounding " <<print(sentence) <<"\n";
 	GrounderFactory g(manager);
 	g.InitContext();
 	g.descend(sentence);

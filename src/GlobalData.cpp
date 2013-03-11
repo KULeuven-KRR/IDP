@@ -11,7 +11,6 @@
 
 #include "GlobalData.hpp"
 #include "IncludeComponents.hpp"
-#include "parser/clconst.hpp"
 #include "options.hpp"
 #include "internalargument.hpp"
 #include "insert.hpp"

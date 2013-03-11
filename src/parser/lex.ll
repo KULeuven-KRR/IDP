@@ -11,7 +11,6 @@
 #include <climits>
 #include <sstream>
 #include <typeinfo>
-#include "parser/clconst.hpp"
 #include "insert.hpp"
 #include "parser.hh"
 #include "errorhandling/error.hpp"

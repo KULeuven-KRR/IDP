@@ -24,7 +24,6 @@
 #include "utils/StringUtils.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "inferences/grounding/LazyGroundingManager.hpp"
-#include "inferences/grounding/grounders/InstantiationGrounder.hpp"
 #include "structure/StructureComponents.hpp"
 #include "inferences/grounding/GrounderFactory.hpp"
 
@@ -899,7 +898,6 @@ bool QuantGrounder::groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequ
 // TODO should prevent firing of the remaining sentence in several cases
 // FIXME should NOT use implication when modelequivalence is necessary! But might be solved by having the other solution to invalidate models based on the output voc?!
 // TODO the outputvoc is not really the solution either, as it can be infinite while most of it can be constructed (just not when it is a definition).
-int splittingcount = 0;
 bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request, LazyGroundingManager* manager,
 		const var2dommap& varmapping, const containerset& instantiated, set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context,
 		bool alsoinstantiate) {
