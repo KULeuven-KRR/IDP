@@ -63,7 +63,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		FormulaUtils::addCompletion(get<0>(args));
+		FormulaUtils::addCompletion(get<0>(args), NULL); // TODO can be improved with structure
 		return nilarg();
 	}
 };

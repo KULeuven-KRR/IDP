@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ADDCOMPLETION_HPP_
-#define ADDCOMPLETION_HPP_
+#pragma once
 
 #include <vector>
 #include <map>
@@ -18,17 +17,20 @@
 
 class Variable;
 class PFSymbol;
+class AbstractStructure;
 
 class AddCompletion: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	std::vector<Formula*> _result;
+	const AbstractStructure* _structure;
+	std::vector<Formula*> _sentences;
 	std::map<PFSymbol*, std::vector<Variable*> > _headvars;
-	std::map<PFSymbol*, std::vector<Formula*> > _interres;
+	std::map<PFSymbol*, std::vector<Formula*> > _symbol2sentences;
 
 public:
 	template<typename T>
-	T execute(T t) {
+	T execute(T t, const AbstractStructure* structure) {
+		_structure = structure;
 		return t->accept(this);
 	}
 
@@ -37,5 +39,3 @@ protected:
 	Definition* visit(Definition*);
 	Rule* visit(Rule*);
 };
-
-#endif /* ADDCOMPLETION_HPP_ */

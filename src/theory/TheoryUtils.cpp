@@ -130,8 +130,8 @@ std::set<PFSymbol*> opens(Definition* d) {
 Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport);
 }
-Rule* unnestHeadTermsContainingVars(Rule* rule, const AbstractStructure* structure, Context context) {
-	return transform<UnnestHeadTermsContainingVars, Rule*>(rule, structure, context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context){
+	return transform<UnnestTerms, Rule*, Rule, Context, const AbstractStructure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
 }
 }
 
@@ -276,8 +276,8 @@ Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, 
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport);
 }
 
-void addCompletion(AbstractTheory* t) {
-	auto newt = transform<AddCompletion, AbstractTheory*>(t);
+void addCompletion(AbstractTheory* t, const AbstractStructure* s) {
+	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);
 }
 

@@ -1,13 +1,13 @@
+include <table_utils>
+
 procedure main(){
 	stdoptions.timeout = 5
-	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false // To allow testing propagation of grounding by itself
+	
 	S1=groundpropagate(T,S)
-	if not weakassertions(S1) then
-		io.stderr:write("Error in groundpropagate.\n")
-		return 0
-	end
 	S2=optimalpropagate(T,S)
 	S3=propagate(T,S)
+	
 	returnvalue = 1
 	if  not weakassertions(S1) then
 		returnvalue = 0
@@ -86,21 +86,24 @@ procedure assert2multi(table, values, name){
 	
 }
 
-procedure assert2(table, values, name){
+// NOTE only arity ONE !!!
+procedure assert2(tupletable, values, name){
 	result = true
-	index = 1
-	for t in tuples(table) do 
-		if t[1] ~= values[index] then 
-			result = false
+	for i,v in ipairs(values) do
+		found = false
+		for t in tuples(tupletable) do 
+			if t[1] == v then 
+				found = true
+			end
 		end
-		index = index+1
+		if found==false then
+			result = false 
+		end
 	end 
-	if result == false or #values ~= index-1 then
-		result = false
-		io.stderr:write("FAIL!  table "..name.." is not as expected\n")
+	if result == false then
+		io.stderr:write("FAIL!  table "..name.." was expected to be a superset of "..tabletostring(values)..", but consists of "..tostring(tupletable).."\n")
 	end
-	return result
-	
+	return result	
 }
 
 procedure consistent(expected, Struct){
