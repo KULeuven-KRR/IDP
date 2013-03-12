@@ -1003,6 +1003,7 @@ const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const fobddvarset& vars
 }
 
 const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
+	CHECKTERMINATION;
 	// base case
 	if (bdd == _falsebdd) {
 		return bdd;
