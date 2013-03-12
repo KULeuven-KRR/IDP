@@ -235,6 +235,8 @@ private:
 
 	AggForm* rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure);
 	void internalVisit(const PredForm* newaf);
+	static const FOBDD* simplify(const std::vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
+			const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const AbstractStructure* structure);
 };
 
 #endif /* GROUNDERFACTORY_HPP */

@@ -271,10 +271,10 @@ template<class Factory, class Domain>
 Domain* TypedFOPropagator<Factory, Domain>::addToForall(Domain* orig, const varset& qvars) {
 	//We quantify the variables one by one. As soon as the domain becomes unadmissible, we return the falsedomain (i.e. the domain that derives nothing)
 	for (auto var : qvars) {
-		orig = addToForall(orig, var);
 		if (not admissible(orig, NULL)) {
 			return falseDomain(orig, qvars, _factory);
 		}
+		orig = addToForall(orig, var);
 	}
 	return orig;
 }
@@ -379,8 +379,9 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 template<class Factory, class Domain>
 bool TypedFOPropagator<Factory, Domain>::admissible(Domain* newd, Domain* oldd) const {
 	for (auto it = _admissiblecheckers.cbegin(); it != _admissiblecheckers.cend(); ++it) {
-		if (not ((*it)->check(newd, oldd)))
+		if (not ((*it)->check(newd, oldd))){
 			return false;
+		}
 	}
 	return true;
 }
@@ -497,7 +498,8 @@ void TypedFOPropagator<Factory, Domain>::visit(const BoolForm* bf) {
 						}
 						deriveddomain = addToExists(deriveddomain, qvars);
 					} else {
-						deriveddomain = _factory->exists(bfdomain, qvars);
+						//Clone because addToExists deletes old domains and the superformula still needs its domain.
+						deriveddomain = addToExists(bfdomain->clone(), qvars);
 					}
 					updateDomain(subform, DOWN, (_ct == isPos(bf->sign())), deriveddomain);
 				}

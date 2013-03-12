@@ -1339,6 +1339,22 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	return table;
 }
 
+const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
+		const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const AbstractStructure* structure) {
+	fobddvarset bddvars;
+	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
+		bddvars.insert(manager->getVariable(*it));
+	}
+	if (approxastrue) {
+		bdd = manager->makeMoreTrue(bdd, definedsymbols);
+		bdd = manager->makeMoreTrue(bdd, bddvars, { }, structure, cost_per_answer);
+	} else {
+		bdd = manager->makeMoreFalse(bdd, definedsymbols);
+		bdd = manager->makeMoreFalse(bdd, bddvars, { }, structure, cost_per_answer);
+	}
+	return bdd;
+}
+
 const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars, const AbstractStructure* structure,
 		GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols) {
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
@@ -1348,6 +1364,10 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 	}
 	auto manager = symstructure->obtainManager();
 
+	double cost_per_answer = 1; // TODO experiment with variations?
+	double smaller_cost_per_answer =  cost_per_answer / 10;
+
+	bdd = simplify(fovars, manager, approxastrue, bdd, definedsymbols, smaller_cost_per_answer, structure);
 	// Optimize the query
 	FOBDDManager optimizemanager;
 	auto copybdd = optimizemanager.getBDD(bdd, manager);
@@ -1365,14 +1385,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 
 	// Remove certain leaves
 	const FOBDD* pruned = NULL;
-	auto mcpa = 1; // TODO experiment with variations?
-	if (approxastrue) {
-		pruned = optimizemanager.makeMoreTrue(copybdd, definedsymbols);
-		pruned = optimizemanager.makeMoreTrue(pruned, copyvars, { }, structure, mcpa);
-	} else {
-		pruned = optimizemanager.makeMoreFalse(copybdd, definedsymbols);
-		pruned = optimizemanager.makeMoreFalse(pruned, copyvars, { }, structure, mcpa);
-	}
+	pruned = simplify(fovars,&optimizemanager,approxastrue,copybdd,definedsymbols,cost_per_answer,structure);
 
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		poptab();
