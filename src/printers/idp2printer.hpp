@@ -124,12 +124,18 @@ public:
 					auto ft = fi->funcTable();
 					visit(ft);
 				} else {
-					output() << "Partial: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
-					printTab();
 					auto pi = fi->graphInter();
 					auto ct = pi->ct();
-					printAsFunc(ct);
 					auto cf = pi->cf();
+					if (ct->approxEmpty() && cf->approxEmpty()) {
+						continue;
+					}
+					output() << "Partial: " << '\n'; //TEMPORARY GO TO PARTIAL BLOCK
+					printTab();
+					auto name = f->nameNoArity();
+					name = capitalize(name);
+					output() << name << " = ";
+					printAsFunc(ct);
 					printAsFunc(cf);
 					output() << '\n';
 					output() << "Data: "; //RETURN TO DATA BLOCK
