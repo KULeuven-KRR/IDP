@@ -26,3 +26,4 @@ documentation/generateddocs
 documentation/generateddocs/*
 docs/official/idp-manual.out
 .autotools
+lib/XSB/*
