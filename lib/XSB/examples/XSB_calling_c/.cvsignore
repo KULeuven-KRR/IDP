@@ -1,0 +1,10 @@
+*.o
+*.xwam
+*.def
+*.dll
+*.exp
+*.ilk
+*.lib
+*.idb
+*.pdb
+*.stackdump

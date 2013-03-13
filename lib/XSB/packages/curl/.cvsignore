@@ -1,0 +1,6 @@
+Installation_summary
+autom4te.cache
+config.status
+*.lineno
+curl_info.P
+*.xwam

@@ -1,0 +1,46 @@
+
+%:- export get_mode_flora/2.
+
+abstract_modes_flora(Flora,Moded):-
+	flora_prolog(Flora,Prolog),
+	abstract_modes(Prolog,Moded).
+
+abstract_modes(Term,Moded):-
+	compound(Term),!,
+	Term =.. [F|Args],
+	abstract_modes_args(Args,NewArgs),
+	Moded =.. [F|NewArgs].
+abstract_modes(Term,Term).
+
+abstract_modes_args([],[]).
+abstract_modes_args([H|T],[M|TM]):-
+	(var(H) -> 
+	    M = v
+	  ; (ground(H) -> 
+	      M = g ; M = m) ),
+	abstract_modes_args(T,TM).
+
+flora_prolog(T,Prolog):- 
+	T =.. ['_$_$_flora''mod''main''tblflapply'|Args],
+	Args = [Outer|Rest],
+	nonvar(Outer),!,
+	hilog_prolog_list(Rest,NewRest),
+	Prolog =.. [Outer|NewRest].
+flora_prolog(T,T).
+
+hilog_prolog_list([],[]).
+hilog_prolog_list([H|T],[H1|T1]):-
+	hilog_prolog(H,H1),
+	hilog_prolog_list(T,T1).
+
+hilog_prolog(Term,Term1):-
+	compound(Term),!,
+	Term =.. [H|Args],
+	(H == flapply ->
+	    Args = [H1|Args1],
+	    hilog_prolog_list(Args1,NewArgs),
+	    Term1 =.. [H1|NewArgs]
+	  ; hilog_prolog_list(Args,NewArgs),
+	    Term1 =.. [H|NewArgs] ).
+hilog_prolog(Term,Term).
+

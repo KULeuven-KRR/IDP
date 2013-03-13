@@ -1,0 +1,8 @@
+/.cvsignore/1.2/Wed Aug 18 03:10:39 2010//
+/NMakefile.mak/1.5/Mon Aug  1 03:48:07 2011/-kb/
+/NMakefile64.mak/1.5/Mon Aug  1 03:48:07 2011/-kb/
+/deprecation.h/1.1/Sun May  1 05:46:13 2011//
+/pcre4pl.c/1.5/Fri Aug  5 09:10:53 2011//
+D/bin////
+D/bin64////
+D/pcre////

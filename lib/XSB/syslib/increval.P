@@ -1,0 +1,314 @@
+/* File:      increval.P
+** Author(s): Diptikalyan Saha, C. R. Ramakrishnan, David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id: increval.P,v 1.5 2010/04/24 20:48:50 tswift Exp $
+** 
+*/
+:- compiler_options([xpp_on,sysmod]).
+#include "builtin.h"
+#include "incr_xsb_defs.h"
+
+%--------
+
+incr_table_update :-
+	get_affected_calls(Affected),
+	reeval(Affected).
+
+incr_table_update(Y) :-
+	incr_table_update([],Y).
+
+incr_table_update(FiltList,Changed):- 
+ 	get_affected_calls(Affected),
+	reeval(Affected),
+	get_changed_calls(FiltList,Changed).
+
+get_affected_calls(X) :-
+	incr_eval_builtin(GET_AFFECTED_CALLS, X).
+
+reeval(Calls) :-
+	(member(Call,Calls),
+	 call_if_affected(Call),
+	 fail
+	 ;
+	 true
+	).
+
+call_if_affected(C) :-
+	incr_eval_builtin(CALL_IF_AFFECTED,C,_).
+
+/* Filt is a list of skeletons of goals to include in returned list.
+If Filt is [], then return ALL changed subgoals */
+get_changed_calls(Filt,X) :-
+	incr_eval_builtin(GET_CHANGED_CALLS, Filt, X).
+
+:- import call_c/1 from standard.
+:- import reverse/2 from basics.
+lazy_reeval(Call):- 
+	create_lazy_call_list(Call,CALL_LIST_CREATE_EVAL,List),
+	reverse(List,ListR),
+	lazy_reeval_1(ListR),
+	call_c(Call).
+
+lazy_reeval_1([_Call]):- !.
+lazy_reeval_1([Call|Rest]):- 
+	(call_if_affected(Call),fail ; true),
+	lazy_reeval_1(Rest).	
+
+lazy_reeval_trap(Call):- 
+	create_lazy_call_list(Call,CALL_LIST_EVAL,List),
+	reverse(List,ListR),
+	lazy_reeval_1(ListR),
+	call_c(Call).
+
+create_lazy_call_list(Call,Flag,List) :-
+	incr_eval_builtin(CREATE_LAZY_CALL_LIST,Call,Flag,List).
+
+%--------
+
+incr_directly_depends(X,Y):-	
+	(nonvar(X),var(Y)
+	 ->	immed_depends(X,Y)
+	 ; nonvar(Y),var(X)
+	 ->	immed_affects(Y,X)
+	 ; nonvar(X),nonvar(Y)
+	 ->	immed_depends(X,Z),
+		Z=Y
+	 ;	instantiation_error(incr_directly_depends/2,'1 and 2','at least one nonvar')
+	).
+
+immed_depends(Call,Call2):-
+	incr_eval_builtin(IMMED_DEPENDS_LIST, Call, CallList),
+	member(Call2,CallList).		
+
+immed_affects(Call,Call2):-
+	incr_eval_builtin(IMMED_AFFECTS_LIST, Call, CallList),
+	member(Call2,CallList).		
+
+%--------
+:- import abolish_table_call/1 from tables.
+
+incr_trans_depends(X,Y):-
+	(nonvar(X),var(Y)
+	 ->	check_incrementally_tabled(X,predicate_not_icrementally_tabled),
+	        abolish_table_call(trans_depends(X,Y)),
+	 	trans_depends(X,Y)
+	 ; var(X),nonvar(Y)
+	 ->	check_incrementally_tabled(Y,predicate_not_icrementally_tabled),
+	        abolish_table_call(trans_affects(Y,X)),
+	 	trans_affects(Y,X)
+	 ; nonvar(X),nonvar(Y)
+	 ->	check_incrementally_tabled(X,predicate_not_icrementally_tabled),
+	 	check_incrementally_tabled(Y,predicate_not_icrementally_tabled),
+	        abolish_table_call(trans_depends(X,Z)),
+	        trans_depends(X,Z),
+		Z=Y
+	 ;	instantiation_error(incr_trans_depends/2,'1 and 2','at least one nonvar')
+	).
+
+:- table trans_affects/2 as variant, incremental.
+trans_affects(Call1,Call2):-
+	immed_affects(Call1,Call2).
+trans_affects(Call1,Call2):-
+	trans_affects(Call1,Call3),
+	immed_affects(Call3,Call2).
+
+:- table trans_depends/2 as variant, incremental.
+trans_depends(Call1,Call2):-
+	immed_depends(Call1,Call2).
+trans_depends(Call1,Call2):-
+	trans_depends(Call1,Call3),
+	immed_depends(Call3,Call2).
+
+%--------
+
+invalidate_callnode(CALLNODEPTR):-
+	incr_eval_builtin(INVALIDATE_CALLNODE,CALLNODEPTR).
+
+invalidate_callnode_trie(Trie):-
+	incr_eval_builtin(INVALIDATE_CALLNODE_TRIE,Trie).
+
+%TLS shd. be invalidate call*s*
+incr_invalidate_call(Call) :-
+	get_calls(Call,SF,_),
+	incr_eval_builtin(INVALIDATE_SF,SF,Call),
+	fail.
+incr_invalidate_call(_Call).
+
+incr_assert(Term) :-
+	incr_assert_inval(Term,1,1),
+	incr_table_update.
+
+incr_asserta(Term) :-
+	incr_assert_inval(Term,0,1),
+	incr_table_update.
+
+incr_assertz(Term) :-
+	incr_assert_inval(Term,1,1),
+	incr_table_update.
+
+incr_assert_inval(Term) :- incr_assert_inval(Term,1,1).
+incr_asserta_inval(Term) :- incr_assert_inval(Term,0,1).
+incr_assertz_inval(Term) :- incr_assert_inval(Term,1,1).
+
+incr_assert(Term,AZL,Index) :-
+	incr_assert_inval(Term,AZL,Index),
+	incr_table_update.
+
+incr_assert_inval(Term,AZL,Index):-
+	(Term = (:-(H,_)) -> Head = H ; Head = Term),
+	check_incremental(Head,dynamic_incremental_predicate,incr_assert,1),
+	assert(Term,AZL,Index),
+	(get_calls_incr(Head,A),
+	 invalidate_callnode(A),
+	 fail
+	 ;	
+	 true
+	).
+
+incr_retractall(Term) :-
+	incr_retractall_inval(Term),
+	incr_table_update.
+
+incr_retractall_inval(Term):-
+	check_incremental(Term,dynamic_incremental_predicate,incr_retractall,1),
+	retractall(Term),
+	(get_calls_incr(Term,A),
+	 invalidate_callnode(A),
+	 fail
+	 ;	
+	 true
+	).
+
+incr_retract(Term) :-
+	incr_retract_inval(Term),
+	incr_table_update.
+
+incr_retract_inval(Term):-
+	(Term = (:-(H,_)) -> Head = H ; Head = Term),
+	check_incremental(Head,dynamic_incremental_predicate,incr_retract,1),
+	retract(Term),
+	(get_calls_incr(Head,A),
+	 invalidate_callnode(A),
+	 fail
+	 ;	
+	 true
+	).
+
+%--------
+
+check_incrementally_tabled(Term,Msg) :-
+	term_psc(Term,Psc),
+	(psc_tabled(Psc,T),T > 0
+	 ->	true
+	 ;	table_error(Msg)
+	),
+	psc_get_incr(Psc,INCR),
+	(INCR =:= INCREMENTAL
+	 ->	true
+	 ;	table_error(Msg)
+	).	 
+
+% Succeeds if Term is incremental or opaque
+check_incremental(Term,Type,Pred,Arity):- 
+	incr_eval_builtin(CHECK_INCREMENTAL,Term,Type,Pred,Arity).
+
+%-----------
+% returns callnodeptr as handle
+get_calls_incr(CallTerm, Handle) :-
+	findall(get_calls_incr(CallTerm,Handle),
+		get_calls_incr_each(CallTerm,Handle),
+		List),
+	member(get_calls_incr(CallTerm,Handle),List).
+
+get_calls_incr_each(CallTerm,CallNodePtr) :-
+	get_calls(CallTerm),
+	get_callnodeptr_incr(CallTerm, CallNodePtr).
+
+get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
+
+get_callnodeptr_incr(CallTerm,CallNodePtr):-
+		incr_eval_builtin(GET_CALLNODEPTR_INCR, CallTerm, CallNodePtr).	
+
+%-----------
+
+incr_eval_builtin(_BuiltinNo, _A) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+
+incr_eval_builtin(_BuiltinNo, _A, _B) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+	
+incr_eval_builtin(_BuiltinNo, _A, _B, _C) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+
+incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+
+end_of_file.
+==========================================================================================
+/*
+%incr_eval_builtin(_BuiltinNo) :-
+%	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A, _B, _C) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D, _E) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+*/
+
+/***print_call(SF):-
+	incr_eval_builtin(PRINT_CALL, SF).***/
+
+/*** Not Used 
+get_call_graph:-
+	incr_eval_builtin(GET_CALL_GRAPH).
+***/
+
+The following were rewritten in C.
+/*
+call_if_affected(C) :-
+	get_call(C,SF,_),
+	(incr_eval_builtin(IS_AFFECTED,SF)
+	 ->	(call_c(C), fail
+		 ;	
+		 true
+		)
+	 ;	
+	 true
+	).
+:- import writeln/1 from standard.
+call_if_affected(C) :- call_if_affected_internal(C),fail.
+*/
+
+
+/*
+check_incremental(Term,Msg) :-
+	term_psc(Term,Psc),
+	psc_get_incr(Psc,INCR),
+	(INCR > NONINCREMENTAL
+	 ->	true
+	 ;	table_error(Msg)
+	).
+*/
+
+/*
+invalidate_SF(SF):-
+	incr_eval_builtin(INVALIDATE_SF,SF).
+*/

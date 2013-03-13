@@ -1,0 +1,10 @@
+*.O
+*.def
+*.dll
+*.exp
+*.lib
+*.o
+*.obj
+*.so
+*.xwam
+sgml2pl.H

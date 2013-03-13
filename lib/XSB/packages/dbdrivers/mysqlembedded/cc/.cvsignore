@@ -1,0 +1,6 @@
+*.xwam
+mysql_driver.H
+mysql_driver.def
+mysql_driver.exp
+mysql_driver.lib
+mysqlembedded_driver.H

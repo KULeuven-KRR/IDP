@@ -1,0 +1,27 @@
+/.cvsignore/1.3/Wed Aug 18 03:10:26 2010//
+/my_getindexes.sp/1.2/Wed Aug 18 03:10:26 2010//
+/newpp.P/1.2/Wed Aug 18 03:10:26 2010//
+/oms_cdf.P/1.7/Wed Aug 18 03:10:26 2010//
+/oms_components.P/1.18/Wed Aug 18 03:10:26 2010//
+/oms_config.P/1.6/Wed Aug 18 03:10:26 2010//
+/oms_constraints.P/1.3/Wed Aug 18 03:10:26 2010//
+/oms_db_storage.P/1.17/Wed Aug 18 03:10:26 2010//
+/oms_db_updatable.P/1.14/Wed Aug 18 03:10:26 2010//
+/oms_diffs.P/1.2/Wed Aug 18 03:10:26 2010//
+/oms_exceptions.P/1.5/Wed Aug 18 03:10:26 2010//
+/oms_filters.P/1.2/Wed Aug 18 03:10:26 2010//
+/oms_init_oms.P/1.40/Wed Aug 18 03:10:26 2010//
+/oms_io.P/1.18/Wed Aug 18 03:10:26 2010//
+/oms_oblivion.P/1.6/Wed Aug 18 03:10:26 2010//
+/oms_odbc.P/1.9/Wed Aug 18 03:10:26 2010//
+/oms_q_annot.P/1.7/Wed Aug 18 03:10:26 2010//
+/oms_queries.P/1.9/Wed Aug 18 03:10:26 2010//
+/oms_rules.P/1.3/Wed Aug 18 03:10:26 2010//
+/oms_utilities.P/1.6/Wed Aug 18 03:10:26 2010//
+/oms_utils.P/1.2/Wed Aug 18 03:10:26 2010//
+/todo/1.14/Wed Aug 18 03:10:26 2010//
+/xsb_logger.P/1.6/Thu Aug 19 15:03:38 2010//
+D/doc////
+D/rdf////
+D/test////
+D/theoremprover////

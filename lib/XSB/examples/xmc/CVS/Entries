@@ -1,0 +1,13 @@
+/.cvsignore/1.5/Wed Aug 18 03:10:17 2010//
+/gentest.sh/1.3/Wed Aug 18 03:10:17 2010//
+/test.P/1.4/Wed Aug 18 03:10:17 2010//
+/testall.sh/1.4/Thu Aug 19 15:03:38 2010//
+/testsuite.sh/1.4/Thu Aug 19 15:03:38 2010//
+D/ABP////
+D/Iproto////
+D/Leader////
+D/Metalock////
+D/Needham////
+D/Rether////
+D/Sieve////
+D/Tests////

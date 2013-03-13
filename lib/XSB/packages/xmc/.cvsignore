@@ -1,0 +1,10 @@
+*.o
+*.xwam
+a.out
+cmd...
+lex.yy.c
+parse
+xl.tab.c
+xl.tab.h
+xlparse.def
+xmc-gui

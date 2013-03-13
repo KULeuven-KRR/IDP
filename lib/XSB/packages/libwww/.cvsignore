@@ -1,0 +1,7 @@
+*.xwam
+cmd...
+Installation*
+libwww_init.P
+*.cache
+*.log
+*.status

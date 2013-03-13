@@ -1,0 +1,187 @@
+/* File:      mysql_driver_config.P -- loader for the MySQL driver
+** Author:    Saikat Mukherjee, Hui Wan
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2002-2008
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+:- import slash/1, str_cat/3, machine_file_exists/1 from machine.
+:- import fmt_write_string/3, file_time/2 from file_io.
+:- import search_module/6 from consult.
+:- import xsb_configuration/2 from xsb_configuration.
+:- import mysql_info/2 from mysql_init.
+:- import rename/2 from shell.
+:- import compile_so/3, runtime_loader_flag/3 from foreign.
+:- import path_sysop/3, path_sysop/2 from file_io.
+
+make_mysql_driverH(CC, CC_opts) :-
+   	slash(Slash),
+	xsb_configuration(compiler, XCC),
+	xsb_configuration(configuration, XSBconfiguration),
+	xsb_configuration(config_libdir, ConfigLibdir),
+	mysql_info(libdir,MysqlLibdir),
+	(MysqlLibdir == ''
+	-> MysqlLibdir_flag = ''
+	;  str_cat('-L', MysqlLibdir, MysqlLibdir_flag)
+	),
+	package_configuration(dir(mysql_driver), MySQLDriverDir),
+	%% Creates something like -Wl,-rpath,<libdir>
+	runtime_loader_flag(XCC, MysqlLibdir, MysqlRunpathFlag),
+	('_$_mysql_running_under'(cygwin) ->
+				% cygwin specific stuff
+
+	    xsb_configuration(config_bindir, ConfigBindir),
+	    fmt_write_string(LD_flags,
+			     ' %s %s%sdriver_manager.dll -lmysqlclient -lWS2_32 ',
+			     f(MysqlLibdir_flag, ConfigBindir, Slash))
+	; %% windows specific stuff
+	    '_$_mysql_running_under'(windows) -> true
+	; %% other unixes
+	    fmt_write_string(LD_flags,
+			 ' %s %s -lmysqlclient %s%sdriver_manager.so %s%smysql_driver.so',
+	                  f(MysqlRunpathFlag, MysqlLibdir_flag,
+	                    ConfigLibdir, Slash, ConfigLibdir, Slash))	   
+	),  
+	fmt_write_string(LD_directives_file,
+			 '%s%scc%smysql_driver.H', 
+			 f(MySQLDriverDir, Slash, Slash)),
+	telling(OldTell),
+	tell(LD_directives_file),
+	writeln('%% This file is generated on-the-fly by mysql_driver_config.P'),
+	writeln('%% Do not edit--any changes will be written over.'),
+	write('%% XSB config:    '), writeln(XSBconfiguration),
+	write('%% XSB CC:        '), writeln(XCC),
+	write('%% CC:       '), writeln(CC),
+	write('%% CC Opts: '), writeln(CC_opts), 
+	writeln(':- export driverMySQL_register/0.'),
+	writeln(':- export driverMySQL_initialise/0.'),
+	write(':- ldoption('''),
+	write(LD_flags),
+	writeln(''').'),
+	told,
+	tell(OldTell).
+
+
+:-  package_configuration(dir(mysql_driver), MySQLDriverDir),
+    slash(Slash),
+    Basename = mysql_driver,
+    fmt_write_string(Module,
+		     '%s%scc%s%s', f(MySQLDriverDir, Slash, Slash, Basename)),
+    xsb_configuration(config_bindir, ConfigBinDir),
+    xsb_configuration(config_libdir, ConfigLibDir),
+    str_cat(Module, '.xwam', ObjfileX),
+    fmt_write_string(LibObjFileX,
+			 '%s%s%s.xwam', a(ConfigLibDir, Slash, Basename)),
+    (('_$_mysql_running_under'(windows) ; '_$_mysql_running_under'(cygwin))
+	->
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
+     ; '_$_mysql_running_under'(darwin)
+	->
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.dylib',  f(ConfigLibDir, Slash, Basename))
+     ;
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
+    ),  
+    (  %% avoid recompilation: check if mysql_driver.xwam exists and 
+	%% is newer than mysql_driver.c.
+	search_module(Basename,Dir,_Mod,_Ext,_Base,ModuleO),
+	str_cat(Module, '.c', ModuleSourceFile),
+	str_cat(Module, '.H', ModuleH),
+	machine_file_exists(ModuleH),
+	file_time(ModuleO, time(CT1,CT2)),
+	file_time(ModuleSourceFile, time(ST1,ST2)),
+	time(ST1,ST2) @< time(CT1,CT2)
+    %% module compiled and is current, so just load
+    -> [Basename]
+    ;('_$_mysql_running_under'(cygwin) ->
+		%% cygwin specific stuff
+		fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', 
+				 f(PackagesDir, Slash, Slash)),
+		fmt_write_string(CC_opts,
+				 ' %s -I %s -I %s',
+				 f(CCflags, ConfigDir, DBDriversDir)),
+		str_cat(Module, '.dll', SharedLib),
+		make_mysql_driverH(CC, CC_opts),
+		consult(Module, [cc(CC), cc_opts(CC_opts)]),
+		'_$_mysql_force_rename'(SharedLib, ConfigSharedMod),
+		'_$_mysql_force_rename'(ObjfileX, LibObjFileX),
+		str_cat(Module, '.o', ObjfileO),
+		fmt_write_string(LibObjFileO,
+				 '%s%s%s.o', f(ConfigBinDir, Slash, Basename)),
+		'_$_mysql_force_rename'(ObjfileO, LibObjFileO),
+		str_cat(Module, '.a', ObjfileA),
+		fmt_write_string(LibObjFileA,
+				 '%s%s%s.a', f(ConfigBinDir, Slash, Basename)),
+		'_$_mysql_force_rename'(ObjfileA, LibObjFileA),
+		str_cat(Module, '.def', ObjfileDef),
+		fmt_write_string(LibObjFileDef,
+				 '%s%s%s.def', f(ConfigBinDir, Slash, Basename)),
+		'_$_mysql_force_rename'(ObjfileDef, LibObjFileDef)
+
+    ; %% windows - don't compile; supposed to be compiled already
+	xsb_configuration(architecture,A), str_sub(windows,A) ->
+		make_mysql_driverH(CC, ''),
+		[Basename],
+        	'_$_mysql_force_rename'(ObjfileX, LibObjFileX)
+
+    ; %% Module isn't compiled or is old -- recompile
+	xsb_configuration(compiler, CC),
+	mysql_info(ccflags, CCflags),
+	mysql_info(ldflags, LDflags),
+	xsb_configuration(config_dir, ConfigDir),
+	xsb_configuration(packagesdir, PackagesDir),
+	fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', a(PackagesDir, Slash, Slash)),
+	fmt_write_string(CC_opts,
+			 ' %s -I %s -I %s',
+			 f(CCflags, ConfigDir, DBDriversDir)),
+	make_mysql_driverH(CC, CC_opts),
+	compile_so(Module, [cc(CC), cc_opts(CC_opts)], LDflags),
+	str_cat(Module, '.so', SharedLib),
+	fmt_write_string(LibMod, '%s%s%s.so', a(ConfigLibDir,Slash,Basename)),
+	rename(SharedLib, LibMod),
+	consult(Module, [cc(CC), cc_opts(CC_opts)]),
+	fmt_write_string(LibSharedObjFile,
+			 '%s%s%s.so', a(ConfigLibDir, Slash, Basename)),
+	rename(SharedLib, LibSharedObjFile),
+	rename(ObjfileX, LibObjFileX)
+     )).
+	
+
+'_$_mysql_running_under'(cygwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(cygwin, A),
+	!.
+'_$_mysql_running_under'(windows) :-
+	xsb_configuration(architecture, A),
+	str_sub(windows, A),
+	!.
+'_$_mysql_running_under'(darwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(darwin, A),
+	!.
+'_$_mysql_running_under'(unix) :-
+	\+ '_$_mysql_running_under'(cygwin),
+	\+ '_$_mysql_running_under'(darwin),
+        \+ '_$_mysql_running_under'(windows).
+
+%% Windows semantics for renaming is such that the op fails, 
+%% if the target exists
+'_$_mysql_force_rename'(Orig,Target) :-
+	(path_sysop(unlink,Target), !; true),
+	path_sysop(rename,Orig,Target).
+
