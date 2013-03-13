@@ -497,15 +497,7 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 		}
 		domain->add(createDomElem(getNeutralElement(type)));
 
-		auto sort = new Sort("_internal_sort_" + convertToString(getGlobal()->getNewID()), domain);
-		sort->addParent(get(STDSORT::INTSORT));
-		translator->vocabulary()->add(sort);
-
-		// Term t' is a new constant with the computed domain
-		auto constant = new Function(vector<Sort*>{}, sort, ParseInfo());
-		translator->vocabulary()->add(constant);
-
-		auto varid = translator->translateTerm(constant, vector<GroundTerm>{});
+		auto varid = translator->translateTerm(new CPVarTerm(translator->createNewVarIdNumber()), domain);
 
 		// Add formulas to the grounding
 		CPBound b(0);

@@ -211,6 +211,9 @@ public:
 	int createNewUninterpretedNumber() {
 		return nextNumber(AtomType::LONETSEITIN);
 	}
+	VarId createNewVarIdNumber() {
+		return nextNumber();
+	}
 
 	// GROUND TERMS
 

@@ -86,6 +86,7 @@ public:
 
 	void setMaxGroundSize(const tablesize& maxsize);
 
+	static int _level;
 	static int _groundedatoms;
 	static tablesize _fullgroundsize;
 	static int groundedAtoms() {
