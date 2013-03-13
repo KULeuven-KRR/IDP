@@ -1,0 +1,92 @@
+@setfilename dfg2dfg.info
+@settitle calculate approximations of problems
+@page
+@node dfg2dfg, dfg2tptp, dfg2otter.pl, Top
+@chapter dfg2dfg
+
+@section NAME
+@noindent 
+@c man begin NAME
+dfg2dfg - calculate approximations of problems
+@c man end
+
+@section SYNOPSIS
+@noindent
+@c man begin SYNOPSIS
+@strong{dfg2dfg} [-horn] [-monadic] [-linear] [-shallow] [@var{infile}] [@var{outfile}]
+@c man end
+
+@section DESCRIPTION
+@noindent
+@c man begin DESCRIPTION
+@strong{dfg2dfg} is a program that reads clauses from an input file in DFG
+syntax.
+It then calculates an approximation of the clause set depending on the
+command line options.
+Finally it writes the approximated clause set in DFG syntax to a file.
+
+If neither @var{infile} nor @var{outfile} are given, @strong{dfg2dfg} reads
+from standard input and writes to standard output.
+If one file name is given, it reads from that file and writes the output to
+standard output.
+If more than one file name is given, @strong{dfg2dfg} reads from the first
+file and writes to the second.
+
+The approximations are described in technical detail in the separate paper 
+@strong{dfg2dfg.ps} included in the SPASS distribution.
+@c man end
+
+@section OPTIONS
+@noindent
+@c man begin OPTIONS
+@strong{dfg2dfg} has four different command line options that may be combined.
+@table @kbd
+@item -horn
+@*This option enables the transformation of non-horn clauses into horn clauses.
+Each non-horn clause with @emph{n} positive literals is transformed into
+@emph{n} horn clauses, where the @emph{i}-th clause contains the @emph{i}-th
+positive literal and all negative literals of the non-horn clause.
+See also section 3 of the paper.
+@item -monadic[=n]
+With this option atoms with non-monadic predicate symbols are transformed into
+monadic atoms.
+If @emph{n} is omitted or @emph{n}=1 a term encoding is applied, i.e., all
+non-monadic predicates are moved to the term level.
+With @emph{n}=2 a projection is applied. All non-monadic atoms are replaced
+by their monadic argument projections.
+See section 4.1 section 4.2 of the paper for more details.
+@item -linear
+This approximation transforms a clause with monadic literals and non-linear
+variable occurrences in succedent atoms, into a new clause with possibly
+more negative literals, that doesn't contain any non-linear variables in the
+succedent.
+See section 5 of the paper for details.
+@item -shallow[=n]
+This transformation tries to reduce the depth of the terms in positive
+literals.
+The transformation is applied to horn clauses with monadic literals only.
+If @emph{n} is omitted or @emph{n}=1 a strict transformation is applied,
+that is equivalence preserving, however.
+For @emph{n}=2 some preconditions are removed.
+This allows the transformation to be applied more often, but the transformation
+isn't equivalence preserving any more.
+For @emph{n}=3 even more preconditions are removed.
+Take a look at section 6.@emph{n} of the paper for the details of the command
+line option @emph{-monadic=n}.
+@end table
+@c man end 
+
+@section AUTHORS
+@noindent
+@c man begin AUTHORS
+Enno Keen
+
+Contact : spass@@mpi-inf.mpg.de
+
+@c man end
+
+@section SEE ALSO
+@noindent
+@c man begin SEEALSO
+SPASS(1)
+@c man end

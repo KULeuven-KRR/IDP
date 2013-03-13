@@ -1,0 +1,75 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename script.info
+@settitle Documentation for SPASS-scripts
+@c %**end of header
+
+@setchapternewpage on
+
+@titlepage
+@title SPASS
+@subtitle a documentation of SPASS and related tools 
+@author Thorsten Engel
+@author Christian Theobalt
+
+@end titlepage
+
+
+@node    Top,           ,         , (dir)
+@comment node-name, next, previous, up
+
+@menu
+* SPASS::           describes SPASS
+* checkstat::       describes the checkstat script
+* filestat::        describes the filestat script
+* pcs::             describes the pcs script
+* pgen::            describes the pgen script
+* rescmp::          describes the rescmp script
+* tpform::          describes the tpform script
+* tpget::           describes the tpget script
+* deprose::         describes the deprose script
+* dfg2ascii::	    describes the dfg2ascii program
+* dfg2otter::       describes dfg2otter.pl
+* dfg2otter.pl::    describes dfg2otter.pl
+* dfg2dfg::         describes the dfg2dfg program
+* dfg2tptp::	    describes the dfg2tptp program
+* tptp2dfg::        describes the tptp2dfg program
+* daVinci and VCG:: daVinci and VCG
+* spassfaq::        frequently asked questions about SPASS
+@end menu
+
+@include SPASS.texi
+
+@include checkstat.texi
+
+@include filestat.texi
+
+@include pcs.texi
+
+@include pgen.texi
+
+@include rescmp.texi
+
+@include tpform.texi
+
+@include tpget.texi
+
+@include deprose.texi
+
+@include dfg2ascii.texi
+
+@include dfg2otter.texi
+
+@include dfg2otter.pl.texi
+
+@include dfg2dfg.texi
+
+@include dfg2tptp.texi
+
+@include tptp2dfg.texi
+
+@include spassfaq.texi
+
+@shortcontents
+
+@bye

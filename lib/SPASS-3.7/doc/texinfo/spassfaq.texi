@@ -1,0 +1,41 @@
+@setfilename spassfaq.info
+@settitle frequently asked questions about SPASS
+
+@page
+@node spassfaq, , tptp2dfg, Top
+@chapter spassfaq
+
+@section QUESTIONS
+
+Q:      How can I get an answer substitution?
+
+@section ANSWERS
+
+A:      There are no meta predicates in SPASS available. Hence,
+        this functionality is not directly supported. However it
+        can be achieved by a trick. The idea is to add a new literal
+        to the conjecture clause that carries the substitution and
+        will definitely be resolved away in the final step of the proof.
+        For example: let x be the variable where we are
+        interested in the subsitution. Let x occur in the single
+        conjecture clause C. Then extend this clause to C,P(x,a,y)
+        and add the clause -P(z,u,b), where P is new, and a,b are
+        constants. Furthermore make P a minimal predicate using
+        a set_DomPred declaration (see the SPASS man page). This
+        will force that the final step in the proof is the one that
+        eliminates the P literal and the x will be instantiated accordingly.
+        To make this work it may be necessary to turn off certain reduction
+        rules of SPASS. To get it rid of that, a trick is to extend all
+        predicates in C by a further argument with the variable y and all
+        other occurrences of these predicate with fresh variables.
+
+
+@section AUTHORS
+@noindent
+Thomas Hillenbrand, Dalibor Topic and Christoph Weidenbach
+
+Contact : spass@@mpi-inf.mpg.de
+
+@section SEE ALSO
+@noindent
+SPASS(1)

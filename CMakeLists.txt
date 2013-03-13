@@ -135,6 +135,16 @@ if(BUILDDOCUMENTATION)
 	add_subdirectory(docs/official)
 endif()
 
+include(ExternalProject)
+ExternalProject_Add(
+  spass
+  SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7
+  CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7/configure --prefix=${CMAKE_INSTALL_PREFIX}
+  PREFIX ${CMAKE_INSTALL_PREFIX}
+  BUILD_COMMAND make
+  BUILD_IN_SOURCE 0
+)
+
 ### Allow packing
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/COPYING.LESSER")
 set(CPACK_PACKAGE_VERSION_MAJOR	${idp_VERSION_MAJOR})
