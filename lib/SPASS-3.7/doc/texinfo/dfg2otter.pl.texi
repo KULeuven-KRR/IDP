@@ -1,0 +1,53 @@
+@setfilename dfg2otter.pl.info
+@settitle transforms DFG clause files into Otter format including Otter options
+@page
+@node dfg2otter.pl, dfg2dfg, dfg2otter, Top
+@chapter dfg2otter.pl
+
+@section NAME
+@noindent 
+@c man begin NAME
+dfg2otter.pl - transforms DFG clause files into Otter format including Otter options
+@c man end
+
+@section SYNOPSIS
+@noindent
+@c man begin SYNOPSIS
+@strong{dfg2otter.pl} [options] [infile] [outfile]
+@c man end
+
+@section DESCRIPTION
+@noindent
+@c man begin DESCRIPTION
+@strong{dfg2otter.pl} is a @strong{Perl} wrapper for the @strong{dfg2otter}. Mainly, it adds
+a set of @sc{otter} parameters to the transformation result of
+@strong{dfg2otter}. Additionally, input/output redirection is simpler: 
+If no file arguments are given, @strong{dfg2otter.pl} reads from stdin and writes
+to stdout. If one file argument is given, @strong{dfg2otter.pl} read from
+that file, and if a second argument is present, @strong{dfg2otter.pl} writes
+to it.
+@c man end
+
+@section OPTIONS
+@c man begin OPTIONS
+@table @kbd
+@item -t @i{n} 
+@*Sets the time limit for the @sc{otter} proof attempt to @i{n} seconds.
+@end table
+@c man end
+
+@section AUTHORS
+@noindent
+@c man begin AUTHORS
+Thorsten Engel and Christian Theobalt.
+
+Contact : spass@@mpi-inf.mpg.de
+
+@c man end
+
+@section SEE ALSO
+@noindent
+@c man begin SEEALSO
+checkstat(1), filestat(1), pcs(1), pgen(1), rescmp(1), tpform(1), tpget(1), deprose(1), dfg2otter(1), SPASS(1)
+@c man end
+

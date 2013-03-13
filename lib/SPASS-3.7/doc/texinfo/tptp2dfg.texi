@@ -1,0 +1,57 @@
+@setfilename tptp2dfg.info
+@settitle transforms DFG files into TPTP files.
+
+@page
+@node tptp2dfg, spassfaq, dfg2tptp, Top
+@chapter tptp2dfg
+
+@section NAME
+@noindent 
+@c man begin NAME
+tptp2dfg - transforms DFG files into TPTP files.
+@c man end
+
+@section SYNOPSIS
+@noindent
+@c man begin SYNOPSIS
+@strong{tptp2dfg} [-include] <input-file> <output-file>
+@c man end
+
+@section DESCRIPTION
+@noindent
+@c man begin DESCRIPTION
+@strong{tptp2dfg} is a program which converts a problem input file in
+@strong{TPTP} format into a problem input file in @strong{DFG} format.
+The @strong{TPTP} problem format is used by the 
+TPTP library of test problems for automated theorem proving, available
+at @strong{http://www.math.miami.edu/~tptp/}.
+@c man end
+
+@section OPTIONS
+@noindent
+@c man begin OPTIONS
+@strong{tptp2dfg} supports the following command line options.
+@table @kbd
+@item -include
+@*This option enables the expansion of include directives in tptp files.
+If set all TPTP include directives in hte input-file are replaced by the respective file content
+during translation. If not set the TPTP include directives are translated
+into DFG include directives.
+Default is off.
+@end table
+@c man end 
+
+@section AUTHORS
+@noindent
+@c man begin AUTHORS
+Martin Suda and Christoph Weidenbach
+
+Contact : spass@@mpi-inf.mpg.de
+
+@c man end
+
+@section SEE ALSO
+@noindent
+@c man begin SEEALSO
+dfg2tptp(1), dfg2otter(1), SPASS(1)
+@c man end
