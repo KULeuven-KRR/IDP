@@ -27,3 +27,4 @@ documentation/generateddocs/*
 docs/official/idp-manual.out
 .autotools
 lib/XSB/*
+lib/XSB/bin/chr_pp
