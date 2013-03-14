@@ -2,7 +2,7 @@
 @settitle automated theorem prover for full first-order logic with equality
 
 @page
-@node    SPASS, checkstat,      Top, Top
+@node    SPASS, dfg2ascii,      Top, Top
 @comment node-name,     next,          previous, up
 @chapter SPASS
 @cindex  SPASS

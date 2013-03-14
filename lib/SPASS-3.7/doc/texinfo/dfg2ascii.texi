@@ -1,7 +1,7 @@
 @setfilename dfg2ascii.info
 @settitle transforms DFG files into pretty printed ASCII files
 @page
-@node dfg2ascii, dfg2otter, deprose, Top
+@node dfg2ascii, dfg2otter, SPASS, Top
 @chapter dfg2ascii
 
 @section NAME
