@@ -427,9 +427,6 @@ std::string capitalize(std::string str){
     std::string::iterator it(str.begin());
     if (it != str.end())
         str[0] = toupper((unsigned char)str[0]);
-    while(++it != str.end()){
-        *it = tolower((unsigned char)*it);
-    }
     return str;
 }
 };
