@@ -276,6 +276,9 @@ std::set<PFSymbol*> opens(Definition*);
 /** Check whether the definition has recursion over negation */
 bool hasRecursionOverNegation(Definition*);
 
+/** Stratify all definitions in a theory */
+void splitDefinitions(Theory* t);
+
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 

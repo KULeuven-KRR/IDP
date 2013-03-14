@@ -97,6 +97,7 @@ MXResult ModelExpansion::expand() const {
 	auto inputvoc = _theory->vocabulary();
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
+    DefinitionUtils::splitDefinitions(clonetheory);
 	auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, newstructure, _minimizeterm,  _tracemonitor,
 			getOption(IntType::NBMODELS) != 1, data, _outputvoc);
 

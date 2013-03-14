@@ -39,6 +39,7 @@
 #include "transformations/PushQuantifications.hpp"
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
+#include "transformations/SplitDefinitions.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
@@ -130,6 +131,10 @@ std::set<PFSymbol*> opens(Definition* d) {
 
 bool hasRecursionOverNegation(Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
+}
+
+void splitDefinitions(Theory* t) {
+	transform<SplitDefinitions>(t);
 }
 
 Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
