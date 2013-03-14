@@ -651,7 +651,7 @@ Predicate::Predicate(const vector<Sort*>& sorts)
 			_parent(0),
 			_interpretation(0),
 			_overpredgenerator(0) {
-	setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
+	setName("idp_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
