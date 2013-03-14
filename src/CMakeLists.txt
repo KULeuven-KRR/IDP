@@ -20,10 +20,10 @@ endif()
 MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
 
 include_directories (
-	"${XSB_INSTALL_DIR}/3.3.7/emu"
-	"${XSB_INSTALL_DIR}/3.3.7/config/${XSB_CONFIG_STRING}"
+	"${XSB_BUILD_DIR}/3.3.7/emu"
+	"${XSB_BUILD_DIR}/3.3.7/config/${XSB_CONFIG_STRING}"
 )
-SET(XSB_OBJECT_FILES "${XSB_INSTALL_DIR}/3.3.7/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+SET(XSB_OBJECT_FILES "${XSB_BUILD_DIR}/3.3.7/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
 addToCXX("-D WITHXSB")
 
 include_directories (
