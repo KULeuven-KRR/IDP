@@ -564,9 +564,10 @@ public:
 class Definition: public AbstractDefinition {
 ACCEPTBOTH(Definition)
 private:
-	std::vector<Rule*> _rules; //!< The rules in the definition
+	ruleset _rules; //!< The rules in the definition
 	std::set<PFSymbol*> _defsyms; //!< Symbols defined by the definition
 	int id;
+	void updateDefinedSymbols();
 
 public:
 	Definition();
@@ -582,16 +583,19 @@ public:
 	void recursiveDelete();
 
 	void add(Rule*); //!< add a rule to the definition
+	void remove(Rule*); //!< remove a rule of the definition
 	template<typename List>
 	void add(const List& list){
 		for(auto i=list.cbegin(); i!=list.cend(); ++i){
 			add(*i);
 		}
 	}
-	void rule(unsigned int n, Rule* r); //!< Replace the n'th rule of the definition
 
-	const std::vector<Rule*>& rules() const {
+	const ruleset& rules() const {
 		return _rules;
+	}
+	void rules(ruleset& r) {
+		_rules = r;
 	}
 	const std::set<PFSymbol*>& defsymbols() const {
 		return _defsyms;

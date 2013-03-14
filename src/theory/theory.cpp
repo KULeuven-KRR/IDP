@@ -446,33 +446,38 @@ Definition* Definition::clone() const {
 	return newdef;
 }
 
+void Definition::updateDefinedSymbols() {
+	_defsyms.clear();
+	for (auto rule : _rules) {
+		_defsyms.insert(rule->head()->symbol());
+	}
+}
+
 void Definition::recursiveDelete() {
-	for (size_t n = 0; n < _rules.size(); ++n) {
-		_rules[n]->recursiveDelete();
+	for (auto rule : _rules) {
+		rule->recursiveDelete();
 	}
 	delete (this);
 }
 
 void Definition::add(Rule* r) {
-	_rules.push_back(r);
+	_rules.insert(r);
 	_defsyms.insert(r->head()->symbol());
 }
 
-void Definition::rule(unsigned int n, Rule* r) {
-	_rules[n] = r;
-	_defsyms.clear();
-	for (auto it = _rules.cbegin(); it != _rules.cend(); ++it) {
-		_defsyms.insert((*it)->head()->symbol());
-	}
+void Definition::remove(Rule* r) {
+	_rules.erase(r);
+	_defsyms.insert(r->head()->symbol());
+	updateDefinedSymbols();
 }
 
 ostream& Definition::put(ostream& output) const {
 	output << "{";
 	if (not _rules.empty()) {
 		pushtab();
-		for (size_t n = 0; n < _rules.size(); ++n) {
+		for (auto rule : _rules) {
 			output << nt();
-			_rules[n]->put(output);
+			rule->put(output);
 		}
 		poptab();
 	}
