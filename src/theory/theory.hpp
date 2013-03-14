@@ -15,6 +15,8 @@
 #include <set>
 #include <vector>
 #include "common.hpp"
+#include "GlobalData.hpp"
+#include "RuleCompare.hpp"
 #include "vocabulary/VarCompare.hpp"
 #include "parseinfo.hpp"
 #include "visitors/VisitorFriends.hpp"
@@ -496,10 +498,15 @@ private:
 	Formula* _body; //!< the body of the rule
 	varset _quantvars; //!< the universally quantified variables of the rule
 	ParseInfo _pi; //!< the place where the rule was parsed
+	int id;
 
 public:
 	Rule(const varset& vv, PredForm* h, Formula* b, const ParseInfo& pi)
-			: _head(h), _body(b), _quantvars(vv), _pi(pi) {
+			: _head(h), _body(b), _quantvars(vv), _pi(pi), id(getGlobal()->getNewID()) {
+	}
+
+	int getID() const {
+		return id;
 	}
 
 	Rule* clone() const; //!< Make a deep copy of the rule
