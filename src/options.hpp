@@ -13,6 +13,7 @@
 #define OPTIONS_HPP
 
 #include "common.hpp"
+#include "errorhandling/error.hpp"
 #include "parseinfo.hpp"
 
 // TODO enum class does not yet support comparison operators in 4.4.3
@@ -77,7 +78,8 @@ enum BoolType {
 	SHAREDTSEITIN,
 	LIFTEDUNITPROPAGATION,
 	STABLESEMANTICS,
-	REDUCEDGROUNDING
+	REDUCEDGROUNDING,
+	XSB
 };
 
 enum OptionType {
@@ -281,6 +283,19 @@ public:
 
 	void copyValues(Options* opts);
 };
+
+// Note: Makes sure users cannot set the XSB option when there is no XSB available.
+template<>
+inline void OptionPolicy<BoolType, bool>::setValue(BoolType type, const bool& value) {
+#ifndef WITHXSB
+	if (type == BoolType::XSB and value != false) {
+		Warning::warning("XSB support is not available. Option xsb is ignored.\n");
+		return;
+	}
+#endif
+
+	_options.at(type)->setValue(value);
+}
 
 typedef OptionPolicy<IntType, int> IntPol;
 typedef OptionPolicy<BoolType, bool> BoolPol;

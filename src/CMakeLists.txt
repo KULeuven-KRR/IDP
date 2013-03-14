@@ -17,6 +17,15 @@ if(USEINTERACTIVE)
 	addToCXX("-D USEINTERACTIVE")
 endif()
 
+MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
+
+include_directories (
+	"${XSB_INSTALL_DIR}/3.3.7/emu"
+	"${XSB_INSTALL_DIR}/3.3.7/config/${XSB_CONFIG_STRING}"
+)
+SET(XSB_OBJECT_FILES "${XSB_INSTALL_DIR}/3.3.7/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+addToCXX("-D WITHXSB")
+
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/safeint"
@@ -38,6 +47,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_P
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/config.idp\\\" ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_DIR=\\\"\"${XSB_INSTALL_DIR}/\\\"\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	addToCXX("-pthread") 
 endif()
@@ -58,7 +68,7 @@ LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
 add_library(idp
 	${LIBGIDLHPPFILES}
 	${LIBGIDLCPPFILES}
-	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS}
+	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} ${XSB_OBJECT_FILES}
 )
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
@@ -76,6 +86,13 @@ if(BUILD_IDP_STATIC)
 	set_target_properties(idp-bin PROPERTIES LINK_FLAGS "-static ")
 	set_target_properties(idp PROPERTIES LINK_FLAGS "-static ")
 endif()
+
+target_link_libraries(idp-bin idp minisatid lua linenoise tinythread)
+if(INCLUDE_XSB)
+	target_link_libraries(idp-bin dl)
+endif()
+
+set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 
 set_target_properties(idp-bin PROPERTIES 
@@ -97,7 +114,7 @@ else()
 endif()
 
 install (FILES ${PROJECT_SOURCE_DIR}/data/var/config.idp DESTINATION var)
-install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua 
+install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P 
 		DESTINATION share/std)
 
 #?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} kbs idp.bat idp")
