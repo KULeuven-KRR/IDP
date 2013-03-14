@@ -46,6 +46,7 @@ class Skolemize;
 class TopDownApproximatingDefinition;
 class BottomUpApproximatingDefinition;
 class AddIfCompletion;
+class FormulaClauseBuilder;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -99,6 +100,7 @@ class AddIfCompletion;
 		friend class FindDoubleDelayLiteral;\
 		friend class SplitIntoMonotoneAgg;\
 		friend class AddIfCompletion;\
+		friend class FormulaClauseBuilder; \
 		friend class ReplaceNestedWithTseitinTerm;\
 		friend class ConstructNewReducedForm;\
 		friend class TopDownApproximatingDefinition;\

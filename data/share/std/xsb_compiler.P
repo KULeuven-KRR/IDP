@@ -1,0 +1,32 @@
+idpxsb_abs(0,0).
+idpxsb_abs(X,Y) :- Y is X, Y > 0.
+idpxsb_abs(X,Z) :- Y is X, Y < 0, Z is -Y.
+
+idpxsb_sum(List,Sum) :- idpxsb_sum(List,Sum,0).
+idpxsb_sum([],X,X).
+idpxsb_sum([H|T],Sum,Agg) :- Agg2 is Agg + H, idpxsb_sum(T,Sum,Agg2).
+
+idpxsb_prod(List,Prod) :- idpxsb_prod(List,Prod,1).
+idpxsb_prod([],X,X).
+idpxsb_prod([H|T],Prod,Agg) :- Agg2 is Agg * H, idpxsb_prod(T,Prod,Agg2).
+
+idpxsb_card(List,Card) :- length(List,Card).
+
+idpxsb_min([X|Rest],Min) :- idpxsb_min(Rest,Min,X).
+
+idpxsb_min([],Min,Min).
+idpxsb_min([X|Rest],Min,TmpMin) :-
+	X < TmpMin,
+	idpxsb_min(Rest,Min,X).
+idpxsb_min([X|Rest],Min,TmpMin) :-
+	X >= TmpMin,
+	idpxsb_min(Rest,Min,TmpMin).
+
+idpxsb_max([X|Rest],Max) :- idpxsb_max(Rest,Max,X).
+idpxsb_max([],Max,Max).
+idpxsb_max([X|Rest],Max,TmpMax) :-
+	X > TmpMax,
+	idpxsb_max(Rest,Max,X).
+idpxsb_max([X|Rest],Max,TmpMax) :-
+	X =< TmpMax,
+	idpxsb_max(Rest,Max,TmpMax).
