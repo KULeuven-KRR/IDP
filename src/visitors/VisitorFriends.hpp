@@ -56,6 +56,7 @@ class ContainedVariables;
 class SubstituteVarWithDom;
 class CombineAggregates;
 class AddMarkers;
+class ReplacePredByPred;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -120,6 +121,7 @@ class AddMarkers;
 		friend class TopDownApproximatingDefinitionForallRule;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
+		friend class ReplacePredByPred;\
 		friend class CollectQuantifiedVariables;\
 		friend class CollectSymbols;\
 		friend class CollectSymbolOccurences;\

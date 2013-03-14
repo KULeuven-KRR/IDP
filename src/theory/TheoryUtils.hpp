@@ -155,6 +155,9 @@ void removeInterpretationOfDefinedSymbols(const Definition*, Structure*);
 /** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
 Theory* replaceWithNestedTseitins(Theory* theory);
 
+Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory);
+Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory);
+
 /** Recursively rewrite all EqChainForms in the given formula to BoolForms */
 Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 

@@ -56,6 +56,7 @@
 #include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
+#include "transformations/ReplacePredByPred.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
@@ -467,12 +468,20 @@ Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const 
 	return transform<SubstituteVarWithDom, Formula*>(formula, var2domelem);
 }
 
+Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory){
+	return transform<ReplacePredByPred, Theory*>(theory, origPred, newPred);
+}
+
 Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var){
 	return transform<SubstituteVarWithVar, Formula*>(formula, var2var);
 }
 
 Formula* pushQuantifiers(Formula* t) {
 	return transform<PushQuantifications, Formula*>(t);
+}
+
+Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory){
+	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
 }
 
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
