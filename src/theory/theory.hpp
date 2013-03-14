@@ -542,6 +542,9 @@ public:
 	const varset& quantVars() const {
 		return _quantvars;
 	}
+	void setQuantVars(const varset& vars){
+		_quantvars = vars;
+	}
 
 	// Output
 	std::ostream& put(std::ostream&) const;
