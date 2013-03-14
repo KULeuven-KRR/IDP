@@ -20,10 +20,11 @@ endif()
 MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
 
 include_directories (
-	"${XSB_BUILD_DIR}/3.3.7/emu"
-	"${XSB_BUILD_DIR}/3.3.7/config/${XSB_CONFIG_STRING}"
+	"${XSB_BUILD_DIR}/emu"
+	"${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}"
 )
-SET(XSB_OBJECT_FILES "${XSB_BUILD_DIR}/3.3.7/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+SET(XSB_OBJECT_FILE "${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+set_source_files_properties(${XSB_OBJECT_FILE} PROPERTIES DEPEND xsb)
 addToCXX("-D WITHXSB")
 
 include_directories (
@@ -68,8 +69,10 @@ LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
 add_library(idp
 	${LIBGIDLHPPFILES}
 	${LIBGIDLCPPFILES}
-	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} ${XSB_OBJECT_FILES}
+	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} ${XSB_OBJECT_FILE}
 )
+
+add_dependencies(idp xsb)
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
 	target_link_libraries(idp dl)
