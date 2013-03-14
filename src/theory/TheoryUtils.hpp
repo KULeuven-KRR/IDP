@@ -274,6 +274,9 @@ void deriveSorts(Vocabulary* v, Rule* f);
 /** Compute the open symbols of a definition */
 std::set<PFSymbol*> opens(Definition*);
 
+/** Check whether the definition has recursion over negation */
+bool hasRecursionOverNegation(Definition*);
+
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, bool cpsupport);
 Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context);

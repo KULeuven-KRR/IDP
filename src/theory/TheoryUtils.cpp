@@ -26,6 +26,7 @@
 #include "information/CheckPartialTerm.hpp"
 #include "information/CheckSorts.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
+#include "information/HasRecursionOverNegation.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
 #include "transformations/PushNegations.hpp"
@@ -125,6 +126,10 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
+}
+
+bool hasRecursionOverNegation(Definition* d) {
+	return transform<HasRecursionOverNegation, bool>(d);
 }
 
 Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, bool cpsupport) {

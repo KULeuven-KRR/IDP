@@ -23,6 +23,7 @@ class CheckContainsFuncTerms;
 class CheckPartialTerm;
 class CheckSorts;
 class CollectOpensOfDefinitions;
+class HasRecursionOverNegation;
 class CountNbOfSubFormulas;
 class DefaultFormulaVisitor;
 class FOBDDFactory;
@@ -58,6 +59,7 @@ class AddIfCompletion;
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
+		friend class HasRecursionOverNegation; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
 		friend class DeriveTermBounds; \
