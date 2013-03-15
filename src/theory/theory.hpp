@@ -467,6 +467,14 @@ public:
 	AggTerm* getAggTerm() const {
 		return _aggterm;
 	}
+
+	void setBound(Term* bound) {
+		subterm(0, bound);
+	}
+	void setAggTerm(AggTerm* agg) {
+		_aggterm = agg;
+	}
+
 	CompType comp() const {
 		return _comp;
 	}

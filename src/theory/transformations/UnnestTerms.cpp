@@ -213,8 +213,17 @@ Formula* UnnestTerms::visit(EquivForm* ef) {
 }
 
 Formula* UnnestTerms::visit(AggForm* af) {
-	auto newaf = traverse(af);
-	return doRewrite(newaf);
+	auto savecontext = _context;
+	auto savemovecontext = isAllowedToUnnest();
+	if (isNeg(af->sign())) {
+		setContext(not _context);
+	}
+	af->setAggTerm(dynamic_cast<AggTerm*>(af->getAggTerm()->accept(this)));
+	setAllowedToUnnest(true);
+	af->setBound(af->getBound()->accept(this));
+	setContext(savecontext);
+	setAllowedToUnnest(savemovecontext);
+	return doRewrite(af);
 }
 
 Formula* UnnestTerms::visit(EqChainForm* ecf) {
