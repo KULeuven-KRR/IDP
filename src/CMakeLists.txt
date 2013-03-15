@@ -23,8 +23,6 @@ include_directories (
 	"${XSB_BUILD_DIR}/emu"
 	"${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}"
 )
-SET(XSB_OBJECT_FILE "${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
-set_source_files_properties(${XSB_OBJECT_FILE} PROPERTIES DEPEND xsb)
 addToCXX("-D WITHXSB")
 
 include_directories (
@@ -66,10 +64,17 @@ file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src" "*.cpp")
 file(GLOB_RECURSE LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src" "*.hpp")
 LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
 
+set_source_files_properties(
+    ${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
+    EXTERNAL_OBJECT TRUE  # Identifies this as an object file
+    GENERATED TRUE  # Avoids need for file to exist at configure-time
+)
+
 add_library(idp
 	${LIBGIDLHPPFILES}
 	${LIBGIDLCPPFILES}
-	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} ${XSB_OBJECT_FILE}
+	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} 
+	${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o
 )
 
 add_dependencies(idp xsb)
@@ -96,7 +101,6 @@ if(INCLUDE_XSB)
 endif()
 
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
-
 
 set_target_properties(idp-bin PROPERTIES 
 		OUTPUT_NAME kbs
