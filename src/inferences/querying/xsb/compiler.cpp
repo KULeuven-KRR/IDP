@@ -360,7 +360,7 @@ string PrologProgram::getFacts() {
 				output << term_name(strip((*it)->name())) << "(";
 				const ElementTuple& tmp = *tuple;
 				for (auto el = tmp.begin(); el != tmp.end();) {
-					output << term_name(toString(*el));
+					output << domainelement_prolog(toString(*el));
 					if (++el != tmp.end()) {
 						output << ",";
 					}
