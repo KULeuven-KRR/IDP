@@ -473,7 +473,7 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 	if (it != info.term2var.cend() && it->first == args) {
 		return it->second;
 	} else {
-		VarId varid = nextNumber();
+		VarId varid = nextVarNumber();
 		info.term2var.insert(it, pair<vector<GroundTerm>, VarId> { args, varid });
 		auto ft = new ftpair(info.symbol, args);
 		var2Tuple[varid.id] = ft;
@@ -494,15 +494,15 @@ VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
 		auto& sort2id = termit->second;
 		auto domainit = sort2id.find(domain);
 		if(domainit != sort2id.cend()){
+			var2domain[domainit->second.id] = domain;
 			return domainit->second;
 		}
 	}
 
-	auto varid = nextNumber();
+	auto varid = nextVarNumber(domain);
 	CPBound bound(varid);
 	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	var2CTsBody[varid.id] = cprelation;
-	var2domain[varid.id] = domain;
 	cp2id[cpterm][domain] = varid;
 	return varid;
 }
@@ -516,7 +516,7 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 		return it->second;
 	}
 
-	auto varid = nextNumber();
+	auto varid = nextVarNumber();
 	auto cpterm = new CPVarTerm(varid);
 	CPBound bound(value);
 	// Add a new CP constraint
@@ -529,12 +529,12 @@ VarId GroundTranslator::translateTerm(const DomainElement* element) {
 	return varid;
 }
 
-VarId GroundTranslator::nextNumber() {
+VarId GroundTranslator::nextVarNumber(SortTable* domain) {
 	VarId id;
 	id.id = var2Tuple.size();
 	var2Tuple.push_back(NULL);
 	var2CTsBody.push_back(NULL);
-	var2domain.push_back(NULL);
+	var2domain.push_back(domain);
 	return id;
 }
 

@@ -497,7 +497,7 @@ varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* groundi
 		}
 		domain->add(createDomElem(getNeutralElement(type)));
 
-		auto varid = translator->translateTerm(new CPVarTerm(translator->createNewVarIdNumber()), domain);
+		VarId varid(translator->createNewVarIdNumber(domain));
 
 		// Add formulas to the grounding
 		CPBound b(0);

@@ -139,7 +139,7 @@ private:
 	std::map<CPTsBody*, Lit, CPCompare<CPTsBody> > cpset; // Used to detect identical Cpterms, is not used in any other way!
 	std::map<CPTerm*, std::map<SortTable*, VarId>, CPCompare<CPTerm> > cp2id; // Used to detect identical Cpterms, is not used in any other way!
 
-	VarId nextNumber();
+	VarId nextVarNumber(SortTable* domain = NULL);
 
 	// SETS
 	// SetID 2 set
@@ -211,8 +211,8 @@ public:
 	int createNewUninterpretedNumber() {
 		return nextNumber(AtomType::LONETSEITIN);
 	}
-	VarId createNewVarIdNumber() {
-		return nextNumber();
+	VarId createNewVarIdNumber(SortTable* domain = NULL) {
+		return nextVarNumber(domain);
 	}
 
 	// GROUND TERMS
