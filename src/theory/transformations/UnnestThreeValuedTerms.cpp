@@ -12,6 +12,7 @@
 #include "UnnestThreeValuedTerms.hpp"
 #include "IncludeComponents.hpp"
 
+#include "utils/ListUtils.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "GraphFuncsAndAggs.hpp"
 
@@ -26,6 +27,9 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 	switch (t->type()) {
 	case TermType::FUNC: {
 		auto ft = dynamic_cast<FuncTerm*>(t);
+		if(contains(_definedsymbols, ft->function())){
+			return true;
+		}
 		if (_structure->inter(ft->function())->approxTwoValued()) {
 			return false;
 		}

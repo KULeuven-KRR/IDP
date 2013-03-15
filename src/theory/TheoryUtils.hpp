@@ -162,7 +162,7 @@ AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSIT
 Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
 
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
-Formula* unnestThreeValuedTerms(Formula*, const AbstractStructure*, Context context, bool cpsupport);
+Formula* unnestThreeValuedTerms(Formula*, const AbstractStructure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*, const AbstractStructure* s);
@@ -223,7 +223,6 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-void unnestThreeValuedTerms(AbstractTheory*, bool cpsupport, Context con = Context::POSITIVE, const AbstractStructure* str = NULL);
 } /* namespace FormulaUtils */
 
 
@@ -260,7 +259,7 @@ namespace SetUtils {
 bool approxTwoValued(const SetExpr*, const AbstractStructure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr*, AbstractStructure*, Context context, bool cpsupport, TruthValue cpablerelation);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
 } /* namespace SetUtils */
 
 
@@ -278,7 +277,8 @@ std::set<PFSymbol*> opens(Definition*);
 bool hasRecursionOverNegation(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, bool cpsupport);
+Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
+
 Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context);
 } /* namespace DefinitionUtils */
 

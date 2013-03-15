@@ -53,6 +53,7 @@ class Term;
 class UnnestThreeValuedTerms: public UnnestTerms {
 	VISITORFRIENDS()
 private:
+	std::set<PFSymbol*> _definedsymbols;
 	bool _cpsupport;
 
 	TruthValue _cpablerelation;
@@ -60,8 +61,9 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t,const AbstractStructure* str, Context context, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
+	T execute(T t,const AbstractStructure* str, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
 		Assert(str!=NULL);
+		_definedsymbols = definedsymbols;
 		_structure = str;
 		_vocabulary = str->vocabulary();
 		setContext(context);

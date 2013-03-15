@@ -108,8 +108,8 @@ bool approxTwoValued(const SetExpr* exp, const AbstractStructure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, bool cpsupport, TruthValue cpablerelation) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, cpsupport, cpablerelation);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, definedsymbols, cpsupport, cpablerelation);
 }
 }
 
@@ -132,8 +132,8 @@ bool hasRecursionOverNegation(Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, bool cpsupport) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, cpsupport);
+Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, definedsymbols, cpsupport);
 }
 Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context){
 	return transform<UnnestTerms, Rule*, Rule, Context, const AbstractStructure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
@@ -277,8 +277,8 @@ Formula* unnestTerms(Formula* f, Context con, const AbstractStructure* str, Voca
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, Context context, bool cpsupport) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, cpsupport);
+Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, definedsymbols, cpsupport);
 }
 
 void addCompletion(AbstractTheory* t, const AbstractStructure* s) {
@@ -352,11 +352,6 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory* t) {
 
 void unnestTerms(AbstractTheory* t, Context con, const AbstractStructure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
-	Assert(newt==t);
-}
-
-void unnestThreeValuedTerms(AbstractTheory* t, bool cpsupport, const AbstractStructure* str, Context con) {
-	auto newt = transform<UnnestThreeValuedTerms, AbstractTheory*>(t, str, con, cpsupport);
 	Assert(newt==t);
 }
 

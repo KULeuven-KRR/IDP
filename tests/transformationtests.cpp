@@ -507,7 +507,7 @@ TEST(UnnestThreeValuedTermsTest,NestedFuncThreeValuedInTwoValued) {
 	auto lt = get(STDPRED::LT)->disambiguate( { s, s });
 	std::vector<Term*> terms = { sum, zero };
 	auto form = new PredForm(SIGN::POS, lt, terms, FormulaParseInfo());
-	auto result = FormulaUtils::unnestThreeValuedTerms(form, struc, Context::POSITIVE, false);
+	auto result = FormulaUtils::unnestThreeValuedTerms(form, struc, Context::POSITIVE, {}, false);
 	EXPECT_TRUE(isa<QuantForm>(*result));
 
 	result->recursiveDelete();

@@ -440,7 +440,7 @@ bool isAggTerm(const Term* term) {
 
 void GrounderFactory::internalVisit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, getOption(BoolType::CPSUPPORT) and not recursive(pf));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transpf = FormulaUtils::graphFuncsAndAggs(transpf, getConcreteStructure(), false, getOption(BoolType::CPSUPPORT) and not recursive(pf), _context._funccontext);
 
@@ -876,7 +876,7 @@ AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure
 void GrounderFactory::visit(const AggForm* af) {
 	auto clonedaf = rewriteSumOrCardIntoSum(af->clone(), getConcreteStructure());
 
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), getConcreteStructure(), _context._funccontext,
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), getConcreteStructure(), _context._funccontext, _context._defined,
 			(getOption(CPSUPPORT) and not recursive(clonedaf)));
 	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
 	transaf = FormulaUtils::graphFuncsAndAggs(transaf, getConcreteStructure(), false, (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
@@ -1052,7 +1052,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Move three-valued terms in the set expression: from term to condition
-	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), getConcreteStructure(), _context._funccontext, getOption(CPSUPPORT), _context._cpablerelation);
+	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT), _context._cpablerelation);
 	if (not isa<QuantSetExpr>(*transqs)) {
 		descend(transqs);
 		return;
@@ -1102,7 +1102,7 @@ void GrounderFactory::visit(const Rule* rule) {
 	//FIXME: if negations are already pushed, this is too much work. But on the other hand, checking if they are pushed is as expensive as pushing them
 	//However, pushing negations here is important to avoid errors such as {p <- ~~p} turning into {p <- ~q; q<- ~p}
 	newrule->body(FormulaUtils::pushNegations(newrule->body()));
-	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, getConcreteStructure(), _context._funccontext, getOption(CPSUPPORT));
+	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
 
 	/*	auto groundlazily = false;
 	 if (getOption(SATISFIABILITYDELAY)) {
