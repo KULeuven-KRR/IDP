@@ -84,7 +84,8 @@ XSBInterface::XSBInterface() {
 	_pp = NULL;
 	_structure = NULL;
 	stringstream ss;
-	ss << XSB_INSTALL_DIR << " -n --quietload";
+	ss << getInstallDirectoryPath() << XSB_INSTALL_URL << " -n --quietload";
+	cerr <<"OUTPUT " <<ss.str() <<"\n";
 	xsb_init_string(const_cast<char*>(ss.str().c_str()));
 	xsb_command_string("[basics].");
 	stringstream ss2;
