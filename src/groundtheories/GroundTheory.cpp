@@ -67,6 +67,7 @@ template<class Policy>
 void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, bool recursive) {
 	for(auto arg:args){
 		if(arg.isVariable){
+			addVarIdInterpretation(arg._varid);
 			addFoldedVarEquiv(arg._varid);
 		}
 	}
