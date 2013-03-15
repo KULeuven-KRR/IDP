@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef UNNESTTERMS_HPP_
-#define UNNESTTERMS_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
@@ -28,21 +27,20 @@ class Term;
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 protected:
-	const AbstractStructure* _structure; //!< Used to find bounds on introduced variables for aggregates
-	Vocabulary* _vocabulary; //!< Used to do type derivation during rewrites
+	const AbstractStructure* _structure; 	// Used to find bounds on introduced variables
+	Vocabulary* _vocabulary; 				// Used to do type derivation during rewrites
 
 private:
 	bool _onlyrulehead;
-	Context _context; //!< Keeps track of the current context where terms are moved
-	bool _allowedToUnnest; // Indicates whether in the current context, it is allowed to unnest terms
-	std::vector<Formula*> _equalities; //!< used to temporarily store the equalities generated when moving terms
-	varset _variables; //!< used to temporarily store the freshly introduced variables
+	Context _context; 					// Keeps track of the current context where terms are moved
+	bool _allowedToUnnest; 				// Indicates whether in the current context, it is allowed to unnest terms
 
-	void contextProblem(Term* t);
+	// Temporary information
+	Sort* _chosenVarSort;				// Sort for the newly introduced variable
+	std::vector<Formula*> _equalities; 	// generated equalities
+	varset _variables; 					// newly introduced variables
 
 protected:
-	Sort* _chosenVarSort;
-
 	virtual bool shouldMove(Term* t);
 
 	bool isAllowedToUnnest() const {
@@ -115,5 +113,3 @@ private:
 
 	Sort* deriveSort(Term*);
 };
-
-#endif /* UNNESTTERMS_HPP_ */

@@ -31,14 +31,6 @@ UnnestTerms::UnnestTerms()
 			_chosenVarSort(NULL) {
 }
 
-void UnnestTerms::contextProblem(Term* t) {
-	if (t->pi().userDefined()) {
-		if (TermUtils::isPartial(t)) {
-			Warning::ambigpartialterm(toString(t->pi().originalobject()), t->pi());
-		}
-	}
-}
-
 /**
  * Returns true is the term should be moved
  * (this is the most important method to overwrite in subclasses)
@@ -65,8 +57,8 @@ Sort* UnnestTerms::deriveSort(Term* term) {
  */
 Term* UnnestTerms::move(Term* origterm, Sort* newsort) {
 	Assert(origterm->sort()!=NULL);
-	if (getContext() == Context::BOTH) {
-		contextProblem(origterm);
+	if (getContext() == Context::BOTH && origterm->pi().userDefined() && TermUtils::isPartial(origterm)) {
+		Warning::ambigpartialterm(toString(origterm->pi().originalobject()), origterm->pi());
 	}
 	if(newsort==NULL){
 		newsort = deriveSort(origterm);
