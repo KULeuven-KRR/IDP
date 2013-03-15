@@ -64,7 +64,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 	auto savedrel = _cpablerelation;
 	if (_cpablerelation != TruthValue::False) {
 		//_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary)) ? TruthValue::True : TruthValue::False;
-		_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary) and VocabularyUtils::isIntComparisonPredicate(predform->symbol(), _vocabulary)) ? TruthValue::True : TruthValue::False;
+		_cpablerelation = _cpsupport ? TruthValue::True : TruthValue::False;
 	}
 	/*if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
 		auto args = predform->args();
@@ -115,7 +115,9 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			Assert(not is(predform->symbol(), STDPRED::EQ));
 		}
 	}
+
 	auto result = UnnestTerms::visit(predform);
+
 	_cpablerelation = savedrel;
 
 	return result;
