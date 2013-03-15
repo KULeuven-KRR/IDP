@@ -1015,6 +1015,10 @@ void GrounderFactory::visit(const AggTerm* t) {
 		throw IdpException("Invalid code path");
 	}
 
+	if(t->function()==AggFunction::CARD){
+		t = new AggTerm(t->set()->clone(), AggFunction::SUM, t->pi());
+	}
+
 	SaveContext();
 	if (CPSupport::eligibleForCP(t->function())) {
 		_context._cpablerelation = TruthValue::True;
