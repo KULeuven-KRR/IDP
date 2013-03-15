@@ -143,7 +143,9 @@ private:
 
 	// SETS
 	// SetID 2 set
+	int maxquantsetid;
 	std::vector<TsSet> _sets;
+	std::map<int, std::map<ElementTuple, SetId, Compare<ElementTuple> > > _freevar2set;
 
 public:
 	GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding);
@@ -178,8 +180,6 @@ public:
 	 * 			or first search for the literal, and run the checkers if it was not yet grounded.
 	 */
 	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
-
-	SetId translateSet(const litlist&, const weightlist&, const weightlist&, const termlist&);
 
 	// PROPOSITIONAL ATOMS
 	bool isStored(Lit atom) const {
@@ -239,8 +239,16 @@ public:
 	}
 
 	// SETS
+	int createNewQuantSetId(){
+		return maxquantsetid++;
+	}
+	SetId getPossibleSet(int id, const ElementTuple& freevar_inst) const;
 	bool isSet(SetId setID) const;
 	const TsSet groundset(SetId setID) const;
+	SetId translateSet(const litlist& lits, const weightlist& posweights, const weightlist& negweights, const termlist& terms){
+		return translateSet(createNewQuantSetId(), {}, lits, posweights, negweights, terms);
+	}
+	SetId translateSet(int id, const ElementTuple& freevar_inst, const litlist&, const weightlist&, const weightlist&, const termlist&);
 
 	// DELAYS
 

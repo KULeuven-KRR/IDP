@@ -551,7 +551,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 					aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
 					newagg = true;
 				}
-				if (aggterm->function() == AggFunction::SUM) {
+				if (aggterm->function() == AggFunction::SUM && bound->type()!=TermType::VAR) { // TODO or anything else known at ground time
 					auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
 					auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
 					auto newset = aggterm->set()->clone();
@@ -856,7 +856,7 @@ AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure
 				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
 			}
 		}
-		if (af->getAggTerm()->function() == AggFunction::SUM) {
+		if (af->getAggTerm()->function() == AggFunction::SUM && af->getBound()->type()!=TermType::VAR) { // FIXME also for anything else that will be known (better shared set detection)
 			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
 			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
 //			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
@@ -1047,7 +1047,11 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 	}
 	RestoreContext();
 
-	_setgrounder = new EnumSetGrounder(getGrounding()->translator(), subgrounders);
+	std::vector<const DomElemContainer*> tuple;
+	for(auto freevar: s->freeVars()){
+		tuple.push_back(varmapping().at(freevar));
+	}
+	_setgrounder = new EnumSetGrounder(tuple, getGrounding()->translator(), subgrounders);
 }
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
@@ -1074,7 +1078,11 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	descend(newqs->getTerm());
 	auto wgr = getTermGrounder();
 
-	_quantsetgrounder = new QuantSetGrounder(getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+		std::vector<const DomElemContainer*> tuple;
+		for(auto freevar: newqs->freeVars()){
+			tuple.push_back(varmapping().at(freevar));
+		}
+	_quantsetgrounder = new QuantSetGrounder(tuple, getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
 	_setgrounder = _quantsetgrounder;
 	delete newqs;
 }

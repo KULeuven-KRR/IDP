@@ -23,11 +23,11 @@ class FormulaGrounder;
 
 class SetGrounder {
 protected:
+	int id;
+	std::vector<const DomElemContainer*> _freevarcontainers;
 	GroundTranslator* _translator;
 public:
-	SetGrounder(GroundTranslator* gt)
-			: _translator(gt) {
-	}
+	SetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt);
 	virtual ~SetGrounder() {
 	}
 	virtual SetId run() const = 0;
@@ -40,9 +40,7 @@ class EnumSetGrounder: public SetGrounder {
 private:
 	std::vector<QuantSetGrounder*> _subgrounders;
 public:
-	EnumSetGrounder(GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
-			: SetGrounder(gt), _subgrounders(subgrounders) {
-	}
+	EnumSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders);
 	~EnumSetGrounder();
 	SetId run() const;
 	SetId runAndRewriteUnknowns() const;
@@ -55,9 +53,7 @@ private:
 	InstChecker* _checker;
 	TermGrounder* _weightgrounder;
 public:
-	QuantSetGrounder(GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
-			: SetGrounder(gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
-	}
+	QuantSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w);
 	~QuantSetGrounder();
 	SetId run() const;
 	SetId runAndRewriteUnknowns() const;

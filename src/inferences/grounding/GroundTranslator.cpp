@@ -95,7 +95,8 @@ FunctionInfo::~FunctionInfo() {
 
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
 		: 	_structure(structure),
-			_grounding(grounding) {
+			_grounding(grounding),
+			maxquantsetid(1){
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);
@@ -439,7 +440,7 @@ Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, T
 //}
 
 // Note: set IDs start from 1
-SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weights, const weightlist& trueweights, const termlist& cpvars) {
+SetId GroundTranslator::translateSet(int id, const ElementTuple& freevar_inst, const litlist& lits, const weightlist& weights, const weightlist& trueweights, const termlist& cpvars) {
 	TsSet tsset;
 	tsset._setlits = lits;
 	tsset._litweights = weights;
@@ -447,6 +448,7 @@ SetId GroundTranslator::translateSet(const litlist& lits, const weightlist& weig
 	tsset._cpvars = cpvars;
 	auto setnr = _sets.size() + 1;
 	_sets.push_back(tsset);
+	_freevar2set[id][freevar_inst] = setnr;
 	return setnr;
 }
 
@@ -456,6 +458,18 @@ bool GroundTranslator::isSet(SetId setID) const {
 const TsSet GroundTranslator::groundset(SetId setID) const {
 	Assert(isSet(setID));
 	return _sets[setID.id - 1];
+}
+SetId GroundTranslator::getPossibleSet(int id, const ElementTuple& freevar_inst) const{
+	if(not contains(_freevar2set, id)){
+		return SetId(-1);
+	}
+	const auto& atid = _freevar2set.at(id);
+	auto setid = atid.find(freevar_inst);
+	if(setid!=atid.cend()){
+		return setid->second;
+	}else{
+		return SetId(-1);
+	}
 }
 
 Lit GroundTranslator::nextNumber(AtomType type) {

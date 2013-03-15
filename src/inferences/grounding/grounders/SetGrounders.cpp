@@ -23,6 +23,13 @@
 
 using namespace std;
 
+SetGrounder::SetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt)
+		: _translator(gt), id(gt->createNewQuantSetId()), _freevarcontainers(freevarcontainers) {
+}
+EnumSetGrounder::EnumSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
+		: SetGrounder(freevarcontainers, gt), _subgrounders(subgrounders) {
+}
+
 template<class LitGrounder, class TermGrounder>
 void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& subtermgrounder, litlist& literals, weightlist& weights, weightlist& trueweights,
 		InstChecker& checker) {
@@ -83,24 +90,43 @@ EnumSetGrounder::~EnumSetGrounder() {
 }
 
 SetId EnumSetGrounder::run() const {
+	ElementTuple tuple;
+	for(auto container:_freevarcontainers){
+		tuple.push_back(container->get());
+	}
+	auto possset = _translator->getPossibleSet(id, tuple);
+	if(possset.id!=-1){
+		return possset;
+	}
 	litlist literals;
 	weightlist weights;
 	weightlist trueweights;
 	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
 		(*i)->run(literals, weights, trueweights);
 	}
-	auto s = _translator->translateSet(literals, weights, trueweights, { });
-	return s;
+	return _translator->translateSet(id, tuple, literals, weights, trueweights, { });
 }
 
 SetId EnumSetGrounder::runAndRewriteUnknowns() const {
+	ElementTuple tuple;
+	for(auto container:_freevarcontainers){
+		tuple.push_back(container->get());
+	}
+	auto possset = _translator->getPossibleSet(id, tuple);
+	if(possset.id!=-1){
+		return possset;
+	}
 	weightlist trueweights;
 	termlist cpterms;
 	litlist conditions;
 	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
 		(*i)->run(trueweights, conditions, cpterms);
 	}
-	return _translator->translateSet(conditions, { }, trueweights, cpterms);
+	return _translator->translateSet(id, tuple, conditions, { }, trueweights, cpterms);
+}
+
+QuantSetGrounder::QuantSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
+		: SetGrounder(freevarcontainers, gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
 }
 
 QuantSetGrounder::~QuantSetGrounder() {
@@ -123,17 +149,33 @@ void QuantSetGrounder::run(weightlist& trueweights, litlist& conditions, termlis
 }
 
 SetId QuantSetGrounder::run() const {
+	ElementTuple tuple;
+	for(auto container:_freevarcontainers){
+		tuple.push_back(container->get());
+	}
+	auto possset = _translator->getPossibleSet(id, tuple);
+	if(possset.id!=-1){
+		return possset;
+	}
 	litlist literals;
 	weightlist weights;
 	weightlist trueweights;
 	run(literals, weights, trueweights);
-	return _translator->translateSet(literals, weights, trueweights, { });
+	return _translator->translateSet(id, tuple, literals, weights, trueweights, { });
 }
 
 SetId QuantSetGrounder::runAndRewriteUnknowns() const {
+	ElementTuple tuple;
+	for(auto container:_freevarcontainers){
+		tuple.push_back(container->get());
+	}
+	auto possset = _translator->getPossibleSet(id, tuple);
+	if(possset.id!=-1){
+		return possset;
+	}
 	weightlist trueweights;
 	termlist cpterms;
 	litlist conditions;
 	run(trueweights, conditions, cpterms);
-	return _translator->translateSet(conditions, { }, trueweights, cpterms);
+	return _translator->translateSet(id, tuple, conditions, { }, trueweights, cpterms);
 }
