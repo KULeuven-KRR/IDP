@@ -551,7 +551,7 @@ public:
 	}
 
 	bool isFunction() const{
-		return symbol->isFunction();
+		return symboloffset.functionlist;
 	}
 	std::string getSymbolName() const{
 		return symbol->nameNoArity();
