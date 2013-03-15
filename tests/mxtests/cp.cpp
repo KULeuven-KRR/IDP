@@ -17,4 +17,8 @@ TEST_P(MXnbTest, DoesMXWithCP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
 }
 
+TEST_P(MXnbTest, DoesMXWithFullCP) {
+	runTests("modelexpansion.idp", GetParam(), "mxwithfullcp()");
+}
+
 }

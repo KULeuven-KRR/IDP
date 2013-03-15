@@ -129,6 +129,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, _option2name, PrintBehaviour::PRINT);

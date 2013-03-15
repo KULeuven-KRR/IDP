@@ -46,11 +46,21 @@ procedure satwithboundslong(){
 
 procedure satwithcp(){
 	stdoptions.cpsupport = true
+	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
+procedure satwithfullcp(){
+	stdoptions.cpsupport = true
+	stdoptions.cpgroundatoms = true
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 5
+	return run()
+}
+
 
 procedure satwithsymm(){
 	stdoptions.timeout = 5
