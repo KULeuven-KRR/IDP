@@ -534,20 +534,34 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 class RealElementGrounder: public MinisatID::LazyAtomGrounder {
 private:
 	Lit headatom;
-	std::vector<VarId> args; // Constants!
+	std::vector<GroundTerm> args; // Constants!
+	std::map<int,int> var2arg, arg2var;
 	PFSymbol* symbol;
 	SymbolOffset symboloffset;
 	AbstractGroundTheory* theory;
 	bool recursive;
 
 public:
-	RealElementGrounder(Lit headatom, PFSymbol*symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory)
+	RealElementGrounder(Lit headatom, PFSymbol*symbol, const std::vector<GroundTerm>& args, AbstractGroundTheory* theory, bool recursive)
 			: 	headatom(headatom),
 				args(args),
 				symbol(symbol),
 				symboloffset(theory->translator()->addSymbol(symbol)),
 				theory(theory),
-				recursive(false){ // NOTE: currently cannot handle recursive occurrences
+				recursive(false){ // TODO comparison constraints do not support recursively defined symbols yet
+
+		if(recursive){
+			throw IdpException("No ground atoms over recursive symbols.");
+		}
+
+		int varpos = 0;
+		for(uint i=0; i<args.size(); ++i){
+			if(args[i].isVariable){
+				var2arg[varpos]=i;
+				arg2var[i]=varpos;
+				varpos++;
+			}
+		}
 	}
 
 	bool isFunction() const{
@@ -557,18 +571,26 @@ public:
 		return symbol->nameNoArity();
 	}
 
-	virtual void ground(bool headvalue, const std::vector<int>& argvalues) {
-	//	cerr << "Grounding element constraint for head " << (headvalue ? "true" : "false") << " and instantiation " << print(argvalues) << "\n";
+	virtual void ground(bool headvalue, const std::vector<int>& varvalues) {
 		Lit temphead;
 		auto translator = theory->translator();
-		if (symboloffset.functionlist) {
-			Assert(args.size()==argvalues.size()+1);
-			std::vector<GroundTerm> tuple;
-			ElementTuple elemtuple;
-			for (auto arg : argvalues) {
-				tuple.push_back(createDomElem(arg));
-				elemtuple.push_back(createDomElem(arg));
+
+		std::vector<GroundTerm> tuple;
+		ElementTuple elemtuple;
+		for(uint i=0; i<args.size(); ++i){
+			if(isFunction() && i==args.size()-1){
+				break;
 			}
+			if(args[i].isVariable){
+				tuple.push_back(createDomElem(varvalues[arg2var.at(i)]));
+				elemtuple.push_back(createDomElem(varvalues[arg2var.at(i)]));
+			}else{
+				tuple.push_back(args[i]._domelement);
+				elemtuple.push_back(args[i]._domelement);
+			}
+		}
+
+		if (symboloffset.functionlist) {
 			auto tempunitables = theory->structure()->inter(symbol)->universe().tables();
 			tempunitables.pop_back();
 			auto tempuni = Universe(tempunitables);
@@ -578,17 +600,24 @@ public:
 				temphead = translator->createNewUninterpretedNumber();
 				auto lhsvar = translator->translateTerm(symboloffset, tuple);
 				CPVarTerm left(lhsvar);
-				CPBound right(args.back());
+				CPBound right(1);
+				if(args.back().isVariable){
+					right = CPBound(args.back()._varid);
+				}else{
+					if(args.back()._domelement->type()!=DomainElementType::DET_INT){
+						throw InternalIdpException("Incorrect domain element type.");
+					}
+					right = CPBound(args.back()._domelement->value()._int);
+				}
 				CPTsBody b(TsType::EQ, &left, CompType::EQ, right);
-				theory->add(temphead, &b);
+				try{
+					theory->add(temphead, &b);
+				}catch(const UnsatException& ){
+
+				}
 			}
 		} else {
-			Assert(args.size()==argvalues.size());
-			ElementTuple tuple;
-			for (auto arg : argvalues) {
-				tuple.push_back(createDomElem(arg));
-			}
-			temphead = translator->translateReduced(symboloffset, tuple, recursive);
+			temphead = translator->translateReduced(symboloffset, elemtuple, recursive);
 		}
 		GroundClause clause;
 		if (headvalue) {
@@ -606,27 +635,39 @@ public:
 				clause.push_back(-temphead);
 			}
 		}
-		for (uint i = 0; i < argvalues.size(); ++i) {
-			auto varterm = new CPVarTerm(args[i]);
-			CPBound bound(argvalues[i]);
-			auto varlit = theory->translator()->reify(varterm, CompType::EQ, bound, TsType::EQ);
-			if (varlit == _false) {
-				return;
-			} else if (varlit != _true) {
-				clause.push_back(-varlit);
+		for (uint i = 0; i < varvalues.size(); ++i) {
+			if(args[i].isVariable){
+				auto varterm = new CPVarTerm(args[var2arg.at(i)]._varid);
+				CPBound bound(varvalues[i]);
+				auto varlit = theory->translator()->reify(varterm, CompType::EQ, bound, TsType::EQ);
+				if (varlit == _false) {
+					return;
+				} else if (varlit != _true) {
+					clause.push_back(-varlit);
+				}
 			}
 		}
-		theory->add(clause);
+		try{
+			theory->add(clause);
+		}catch(const UnsatException& ){
+
+		}
 	}
 };
 
 template<class Solver>
-void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args, AbstractGroundTheory* theory) {
-	auto gr = new RealElementGrounder(head, symbol, args, theory);
+void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, AbstractGroundTheory* theory, bool recursive) {
+	auto gr = new RealElementGrounder(head, symbol, args, theory, recursive);
 	vector<MinisatID::VarID> vars;
-	for (auto var : args) {
-		polAddCPVariable(var, _translator);
-		vars.push_back(convert(var));
+	for (uint i=0; i<args.size(); ++i) {
+		if(i==args.size()-1 && gr->isFunction()){
+			break;
+		}
+		auto arg = args[i];
+		if(arg.isVariable){
+			polAddCPVariable(arg._varid, _translator);
+			vars.push_back(convert(arg._varid));
+		}
 	}
 	auto le = MinisatID::LazyAtom(getDefConstrID(), createLiteral(head), vars, gr);
 	extAdd(getSolver(), le);

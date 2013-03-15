@@ -148,16 +148,8 @@ Lit AtomGrounder::run() const {
 	}
 
 	if (not alldomelts) {
-		std::vector<VarId> ids;
-		for (uint i = 0; i < terms.size(); ++i) {
-			if (not terms[i].isVariable) {
-				ids.push_back(translator()->translateTerm(terms[i]._domelement));
-			} else {
-				ids.push_back(terms[i]._varid);
-			}
-		}
 		auto temphead = translator()->createNewUninterpretedNumber();
-		getGrounding()->addLazyElement(temphead, _symbol, ids);
+		getGrounding()->addLazyElement(temphead, _symbol, terms, _recursive);
 		return _sign == SIGN::POS ? temphead : -temphead; // TODO is it necessary to verify the checkers?
 	}
 

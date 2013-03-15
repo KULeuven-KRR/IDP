@@ -64,11 +64,13 @@ void GroundTheory<Policy>::notifyLazyResidual(LazyInstantiation* inst, TsType ty
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args) {
+void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, bool recursive) {
 	for(auto arg:args){
-		addFoldedVarEquiv(arg);
+		if(arg.isVariable){
+			addFoldedVarEquiv(arg._varid);
+		}
 	}
-	Policy::polAddLazyElement(head, symbol, args, this);
+	Policy::polAddLazyElement(head, symbol, args, this, recursive);
 }
 
 template<class Policy>

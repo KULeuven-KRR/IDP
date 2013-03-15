@@ -16,6 +16,7 @@
 #include "AbstractGroundTheory.hpp"
 
 class LazyInstantiation;
+class GroundTerm;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {
@@ -58,7 +59,7 @@ public:
 	virtual void notifyLazyAddition(const litlist& glist, int ID);
 	virtual void startLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction);
 	virtual void notifyLazyResidual(LazyInstantiation* inst, TsType type);
-	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<VarId>& args);
+	virtual void addLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, bool recursive);
 
 	void accept(TheoryVisitor* v) const;
 	AbstractTheory* accept(TheoryMutatingVisitor* v);

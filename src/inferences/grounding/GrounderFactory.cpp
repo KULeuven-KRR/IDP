@@ -453,6 +453,38 @@ void GrounderFactory::internalVisit(const PredForm* pf) {
 
 	auto newpf = dynamic_cast<PredForm*>(transpf);
 
+	// NOTE: graph again if cp will not be used (MOVE)
+	if (not getOption(BoolType::CPSUPPORT) || recursive(newpf)) {
+		auto symbol = newpf->symbol();
+		auto terms = newpf->subterms();
+		if (VocabularyUtils::isComparisonPredicate(symbol)) {
+			auto left = terms[0]; auto right = terms[1];
+			if(is(symbol, STDPRED::EQ) && left->type()==TermType::FUNC){
+				auto functerm = dynamic_cast<FuncTerm*>(left);
+				terms = functerm->subterms();
+				terms.push_back(right);
+				newpf->subterms(terms);
+				newpf->symbol(functerm->function());
+			}else if(is(symbol, STDPRED::EQ) && right->type()==TermType::FUNC){
+				auto functerm = dynamic_cast<FuncTerm*>(right);
+				terms = functerm->subterms();
+				terms.push_back(left);
+				newpf->subterms(terms);
+				newpf->symbol(functerm->function());
+			}else if(left->type()==TermType::AGG){
+				auto agg = new AggForm(pf->sign(), right->clone(), invertComp(VocabularyUtils::getComparisonType(pf->symbol())), dynamic_cast<AggTerm*>(left->clone()), pf->pi());
+				descend(agg);
+				deleteDeep(agg);
+				return;
+			}else if(right->type()==TermType::AGG){
+				auto agg = new AggForm(pf->sign(), left->clone(), VocabularyUtils::getComparisonType(pf->symbol()), dynamic_cast<AggTerm*>(right->clone()), pf->pi());
+				descend(agg);
+				deleteDeep(agg);
+				return;
+			}
+		}
+	}
+
 	// Create grounders for the subterms
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;

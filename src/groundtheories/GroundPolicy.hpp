@@ -32,6 +32,7 @@ class TsSet;
 class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
+class GroundTerm;
 
 class LazyInstantiation;
 class DelayGrounder;
@@ -63,7 +64,7 @@ protected:
 	void polNotifyLazyResidual(LazyInstantiation*, TsType){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
-	void polAddLazyElement(Lit, PFSymbol*, const std::vector<VarId>&, AbstractGroundTheory*){
+	void polAddLazyElement(Lit, PFSymbol*, const std::vector<GroundTerm>&, AbstractGroundTheory*, bool){
 		throw notyetimplemented("Storing ground theories with lazy element constraints");
 	}
 
