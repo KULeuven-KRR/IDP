@@ -1,0 +1,18 @@
+vocabulary V{
+	type x isa nat
+	type y isa nat
+	p(x)
+}
+
+theory T:V{
+	?y[y]: #{x: p(x)}>0.
+}
+
+structure S:V{
+	x = {0..10000}
+	y = {1..1000}
+}
+
+procedure getExpectedAModel(){
+	return 1
+}
