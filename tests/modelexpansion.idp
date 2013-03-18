@@ -133,7 +133,6 @@ procedure mxwithsymm(){
 }
 
 procedure run() {
-	stdoptions.timeout=0
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.transformations=0
