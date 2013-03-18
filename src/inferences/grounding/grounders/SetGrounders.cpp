@@ -136,8 +136,8 @@ SetId EnumSetGrounder::runAndRewriteUnknowns() {
 	return _translator->translateSet(id, tuple, conditions, { }, trueweights, cpterms);
 }
 
-QuantSetGrounder::QuantSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
-		: SetGrounder(freevarcontainers, gt), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
+QuantSetGrounder::QuantSetGrounder(QuantSetExpr* expr, std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w)
+		: SetGrounder(freevarcontainers, gt), _set(expr), _subgrounder(gr), _generator(ig), _checker(checker), _weightgrounder(w) {
 	addAll(_varmap, gr->getVarmapping());
 	addAll(_varmap, w->getVarmapping());
 }

@@ -1107,10 +1107,9 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 		return;
 	}
 	auto newqs = dynamic_cast<QuantSetExpr*>(transqs);
-	auto newsubformula = newqs->getCondition()->clone();
 
 	// NOTE: generator generates possibly true instances, checker checks the certainly true ones
-	auto gc = createVarsAndGenerators(newsubformula, newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
+	auto gc = createVarsAndGenerators(newqs->getCondition(), newqs, TruthType::POSS_TRUE, TruthType::CERTAIN_TRUE);
 
 	// Create grounder for subformula
 	SaveContext();
@@ -1123,11 +1122,11 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	descend(newqs->getTerm());
 	auto wgr = getTermGrounder();
 
-		std::vector<const DomElemContainer*> tuple;
-		for(auto freevar: newqs->freeVars()){
-			tuple.push_back(varmapping().at(freevar));
-		}
-	_quantsetgrounder = new QuantSetGrounder(tuple, getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
+	std::vector<const DomElemContainer*> tuple;
+	for(auto freevar: newqs->freeVars()){
+		tuple.push_back(varmapping().at(freevar));
+	}
+	_quantsetgrounder = new QuantSetGrounder(newqs->clone(), tuple, getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
 	delete newqs;
 }
 

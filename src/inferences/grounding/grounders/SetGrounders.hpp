@@ -71,7 +71,7 @@ private:
 	InstChecker* _checker;
 	TermGrounder* _weightgrounder;
 public:
-	QuantSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w);
+	QuantSetGrounder(QuantSetExpr* expr, std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, FormulaGrounder* gr, InstGenerator* ig, InstChecker* checker, TermGrounder* w);
 	~QuantSetGrounder();
 	SetId run();
 	SetId runAndRewriteUnknowns();
