@@ -69,16 +69,8 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 			_cpablerelation = (_cpsupport and eligibleForCP(predform, _vocabulary) and VocabularyUtils::isIntComparisonPredicate(predform->symbol(), _vocabulary)) ? TruthValue::True : TruthValue::False;
 		}
 	}
-	/*if (predform->isGraphedFunction() and (_cpablerelation == TruthValue::True)) {
-		auto args = predform->args();
-		args.pop_back();
-		auto ft = new FuncTerm(dynamic_cast<Function*>(predform->symbol()), args, TermParseInfo()); // TODO parseinfo
-		auto pf = new PredForm(predform->sign(), get(STDPRED::EQ, predform->symbol()->sorts().front()), { ft, predform->args().back() }, predform->pi());
-		for (auto sort : pf->symbol()->sorts()) {
-			Assert(sort!=NULL);
-		}
-		return pf->accept(this);
-	}*/
+
+	Formula* result = NULL;
 
 	// Optimization to prevent aggregate duplication (TODO might be done for functions too?)
 	if (_cpsupport and not CPSupport::eligibleForCP(predform, _vocabulary) && not is(predform->symbol(), STDPRED::EQ)) {
@@ -104,22 +96,13 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		if (aggforms.size() > 0) {
 			aggforms.push_back(predform);
 			auto boolform = new BoolForm(SIGN::POS, true, aggforms, predform->pi());
-			return boolform->accept(this);
+			result = boolform->accept(this);
 		}
 	}
 
-	if (is(predform->symbol(), STDPRED::EQ)
-			&& isa<FuncTerm>(*predform->subterms()[0])
-			&& not isa<AggTerm>(*predform->subterms()[1])
-			&& _cpsupport) {
-		auto functerm = dynamic_cast<FuncTerm*>(predform->subterms()[0]);
-		if (not functerm->function()->builtin()) {
-			predform = GraphFuncsAndAggs::makeFuncGraph(predform->sign(), functerm, predform->subterms()[1], predform->pi(), _structure);
-			Assert(not is(predform->symbol(), STDPRED::EQ));
-		}
+	if(result==NULL){
+		result = UnnestTerms::visit(predform);
 	}
-
-	auto result = UnnestTerms::visit(predform);
 
 	_cpablerelation = savedrel;
 

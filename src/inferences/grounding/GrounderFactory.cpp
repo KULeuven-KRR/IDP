@@ -438,178 +438,278 @@ bool isAggTerm(const Term* term) {
 	return term->type() == TermType::AGG;
 }
 
-void GrounderFactory::internalVisit(const PredForm* pf) {
-	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
-	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transpf = FormulaUtils::graphFuncsAndAggs(transpf, getConcreteStructure(), false, getOption(BoolType::CPSUPPORT) and not recursive(pf), _context._funccontext);
+// Rewrite card ~ func, card ~ var, sum ~ func, sum ~ var into sum ~ 0
+const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) {
+	if (af->getBound()->type() == TermType::FUNC or af->getBound()->type() == TermType::VAR) {
+		if (af->getAggTerm()->function() == AggFunction::CARD) {
+			af = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
+					new AggTerm(af->getAggTerm()->set()->clone(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
+			for (auto i = af->getAggTerm()->set()->getSets().cbegin(); i < af->getAggTerm()->set()->getSets().cend(); ++i) {
+				Assert((*i)->getTerm()->type()==TermType::DOM);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
+				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
+			}
+		}
+		if (af->getAggTerm()->function() == AggFunction::SUM && af->getBound()->type()!=TermType::VAR) { // FIXME also for anything else that will be known (better shared set detection)
+			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
+			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
+			auto newset = af->getAggTerm()->set()->clone();
+			newset->addSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+			af = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),
+					new AggTerm(newset, af->getAggTerm()->function(), af->getAggTerm()->pi()), af->pi());
+		}
+	}
+	return af;
+}
 
-	if (transpf != temppf) { // NOTE: the rewriting changed the atom
-		Assert(_context._component != CompContext::HEAD);
-		descend(transpf);
+void GrounderFactory::visit(const PredForm* pf) {
+	auto temppf = pf->clone();
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT));
+
+	if (not isa<PredForm>(*transpf)) {
+		transpf->accept(this);
 		deleteDeep(transpf);
 		return;
 	}
 
 	auto newpf = dynamic_cast<PredForm*>(transpf);
 
-	// NOTE: graph again if cp will not be used (MOVE)
-	if (not getOption(BoolType::CPSUPPORT) || recursive(newpf)) {
-		auto symbol = newpf->symbol();
-		auto terms = newpf->subterms();
-		if (VocabularyUtils::isComparisonPredicate(symbol)) {
-			auto left = terms[0]; auto right = terms[1];
+	auto aggform = tryToTurnIntoAggForm(newpf);
+	if(aggform!=NULL){
+		aggform->accept(this);
+		delete(aggform);
+		return;
+	}
+
+	bool cpable = getOption(BoolType::CPSUPPORT) and not recursive(pf) and _context._component != CompContext::HEAD;
+	// Ungraph if cp can be used
+	if(newpf->isGraphedFunction()){
+		auto func = dynamic_cast<Function*>(newpf->symbol());
+		if(not CPSupport::eligibleForCP(func, _vocabulary)){
+			cpable = false;
+		}else{
+			auto terms = newpf->subterms();
+			auto image = terms.back();
+			terms.pop_back();
+			newpf = new PredForm(newpf->sign(), get(STDPRED::EQ, image->sort()), {new FuncTerm(func, terms, TermParseInfo()), image}, newpf->pi());
+		}
+	}
+	// But do not use a comparison generator if CP cannot be used for BOTH terms
+	if(VocabularyUtils::isComparisonPredicate(newpf->symbol()) && is(newpf->symbol(), STDPRED::EQ) &&
+			((newpf->subterms()[0]->type()==TermType::FUNC && not CPSupport::eligibleForCP(dynamic_cast<FuncTerm*>(newpf->subterms()[0])->function(), _vocabulary))
+					||
+			 (newpf->subterms()[1]->type()==TermType::FUNC && not CPSupport::eligibleForCP(dynamic_cast<FuncTerm*>(newpf->subterms()[1])->function(), _vocabulary)))){
+		cpable = false;
+	}
+
+	if(cpable and VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), getConcreteStructure()->vocabulary())){
+		handleWithComparisonGenerator(newpf);
+	}else{
+		handleGeneralPredForm(newpf);
+	}
+
+	if (_context._component == CompContext::SENTENCE) {
+		_topgrounder = getFormGrounder();
+	}
+
+	deleteDeep(newpf);
+}
+
+void GrounderFactory::handleWithComparisonGenerator(const PredForm* pf){
+	auto comp = VocabularyUtils::getComparisonType(pf->symbol());
+	if (isNeg(pf->sign())) {
+		comp = negateComp(comp);
+	}
+
+	vector<TermGrounder*> subtermgrounders;
+	SaveContext();
+	for (auto subterm: pf->subterms()) {
+		descend(subterm);
+		subtermgrounders.push_back(getTermGrounder());
+	}
+	RestoreContext();
+
+	_formgrounder = new ComparisonGrounder(getGrounding(), subtermgrounders[0], comp, subtermgrounders[1], _context);
+	_formgrounder->setOrig(pf, varmapping());
+}
+
+void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
+	auto symbol = pf->symbol();
+	auto terms = pf->subterms();
+	if (VocabularyUtils::isComparisonPredicate(symbol)) {
+		auto left = terms[0]; auto right = terms[1];
+
+		if(isAggTerm(left) || isAggTerm(right)){
+			auto aggterm = isAggTerm(left)? dynamic_cast<AggTerm*>(left) :  dynamic_cast<AggTerm*>(right);
+			auto other = isAggTerm(left)? right :  left;
+			auto agg = new AggForm(pf->sign(), other->clone(), invertComp(VocabularyUtils::getComparisonType(pf->symbol())), aggterm->clone(), pf->pi());
+			descend(agg);
+			deleteDeep(agg);
+			return;
+		}
+
+		// Graph if CP is off
+		if(not getOption(CPSUPPORT) || recursive(pf) || not CPSupport::eligibleForCP(left, getConcreteStructure()) || not CPSupport::eligibleForCP(right, getConcreteStructure())){
 			if(is(symbol, STDPRED::EQ) && left->type()==TermType::FUNC){
 				auto functerm = dynamic_cast<FuncTerm*>(left);
 				terms = functerm->subterms();
 				terms.push_back(right);
-				newpf->subterms(terms);
-				newpf->symbol(functerm->function());
+				symbol = functerm->function();
 			}else if(is(symbol, STDPRED::EQ) && right->type()==TermType::FUNC){
 				auto functerm = dynamic_cast<FuncTerm*>(right);
 				terms = functerm->subterms();
 				terms.push_back(left);
-				newpf->subterms(terms);
-				newpf->symbol(functerm->function());
-			}else if(left->type()==TermType::AGG){
-				auto agg = new AggForm(pf->sign(), right->clone(), invertComp(VocabularyUtils::getComparisonType(pf->symbol())), dynamic_cast<AggTerm*>(left->clone()), pf->pi());
-				descend(agg);
-				deleteDeep(agg);
-				return;
-			}else if(right->type()==TermType::AGG){
-				auto agg = new AggForm(pf->sign(), left->clone(), VocabularyUtils::getComparisonType(pf->symbol()), dynamic_cast<AggTerm*>(right->clone()), pf->pi());
-				descend(agg);
-				deleteDeep(agg);
-				return;
+				symbol = functerm->function();
 			}
 		}
 	}
 
-	// Create grounders for the subterms
+	for(auto term:terms){
+		if(recursive(term)){
+			stringstream ss;
+			ss <<print(term) <<" in " <<print(pf) <<" is recursive, which should not have been produced.\n";
+			throw InternalIdpException(ss.str());
+		}
+	}
+
 	vector<TermGrounder*> subtermgrounders;
 	vector<SortTable*> argsorttables;
-	SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
-				   // FIXME and why only in some cases check the sign of the formula for inverting the type?
-	for (size_t n = 0; n < newpf->subterms().size(); ++n) {
-		descend(newpf->subterms()[n]);
+	SaveContext();
+	for (size_t n = 0; n < terms.size(); ++n) {
+		descend(terms[n]);
 		subtermgrounders.push_back(getTermGrounder());
-		argsorttables.push_back(getConcreteStructure()->inter(newpf->symbol()->sorts()[n]));
+		argsorttables.push_back(getConcreteStructure()->inter(symbol->sorts()[n]));
 	}
 	RestoreContext();
 
-	// Create checkers and grounder
-	if (getOption(BoolType::CPSUPPORT) and not recursive(newpf)) {
-		Assert(_context._component != CompContext::HEAD);	// FIXME what if CompContext is HEAD?
-		// Note: CP does not work in the defined case
-		TermGrounder* lefttermgrounder;
-		TermGrounder* righttermgrounder;
-		CompType comp;
-		bool useComparisonGrounder = false;
-		if (VocabularyUtils::isIntComparisonPredicate(newpf->symbol(), getConcreteStructure()->vocabulary())) {
-			useComparisonGrounder = true;
-			Assert(subtermgrounders.size() == 2);
-			comp = VocabularyUtils::getComparisonType(newpf->symbol());
-			if (isNeg(newpf->sign())) {
-				comp = negateComp(comp);
-			}
-			lefttermgrounder = subtermgrounders[0];
-			righttermgrounder = subtermgrounders[1];
-		}
-		if (useComparisonGrounder) {
-			SaveContext(); // FIXME why shouldnt savecontext always be accompanied by checking the tseitin type for defined symbols?
-						   // FIXME and why only in some cases check the sign of the formula for inverting the type?
-			_formgrounder = new ComparisonGrounder(getGrounding(), lefttermgrounder, comp, righttermgrounder, _context);
-			_formgrounder->setOrig(newpf, varmapping());
-			RestoreContext();
-
-			if (_context._component == CompContext::SENTENCE) {
-				_topgrounder = getFormGrounder();
-			}
-			deleteDeep(newpf);
-			return;
-		}
-	}
-
 	if (_context._component == CompContext::HEAD) {
-		auto inter = getConcreteStructure()->inter(newpf->symbol());
-		_headgrounder = new HeadGrounder(getGrounding(), inter->ct(), inter->cf(), newpf->symbol(), subtermgrounders, argsorttables, _context);
+		auto inter = getConcreteStructure()->inter(symbol);
+		_headgrounder = new HeadGrounder(getGrounding(), inter->ct(), inter->cf(), symbol, subtermgrounders, argsorttables, _context);
 	} else {
 		std::vector<const DomElemContainer*> containers;
-		for (auto it = newpf->subterms().cbegin(); it != newpf->subterms().cend(); ++it) {
+		for (uint i=0; i<subtermgrounders.size(); ++i) {
 			containers.push_back(new const DomElemContainer());
 		}
-		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, containers, argsorttables, _context);
-		_formgrounder->setOrig(newpf, varmapping());
+		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, containers, argsorttables, _context);
+		_formgrounder->setOrig(new PredForm(pf->sign(), symbol, terms, pf->pi()), varmapping());
 	}
+}
+
+void GrounderFactory::visit(const AggForm* af) {
+	auto clonedaf = rewriteSumOrCardIntoSum(af, getConcreteStructure())->clone();
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
+	if (recursive(transaf)) {
+		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
+	}
+
+	if(not isa<AggForm>(*transaf)){
+		descend(transaf);
+		deleteDeep(transaf);
+		return;
+	}
+
+	auto newaf = dynamic_cast<AggForm*>(transaf);
+	Assert(not recursive(newaf) or FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
+
+	auto bound = newaf->getBound();
+	auto aggterm = newaf->getAggTerm();
+	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(aggterm, getConcreteStructure()) and CPSupport::eligibleForCP(bound, getConcreteStructure())) {
+		groundAggWithCP(newaf->sign(), bound, newaf->comp(), aggterm);
+	}else{
+		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, newaf->comp(), aggterm);
+	}
+
+	deleteDeep(newaf);
+}
+
+void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, AggTerm* agg){
+	if (isNeg(sign)) {
+		comp = negateComp(comp); // TODO tseitin?
+	}
+	descend(agg);
+	auto boundgrounder = getTermGrounder();
+	descend(bound);
+	auto termgrounder = getTermGrounder();
+	_formgrounder = new ComparisonGrounder(getGrounding(), termgrounder, comp, boundgrounder, _context);
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = getFormGrounder();
 	}
-	deleteDeep(newpf);
 }
 
-void GrounderFactory::visit(const PredForm* pf) {
-	// FIXME apparently, transforming any predform which is in fact an aggform really into an aggform goes very wrong
-/*	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
-		auto comp = VocabularyUtils::getComparisonType(pf->symbol());
-		AggForm* aggform = NULL;
-		if (isAggTerm(pf->subterms()[0])) {
-			aggform = new AggForm(pf->sign(), pf->subterms()[1], negateComp(comp), dynamic_cast<AggTerm*>(pf->subterms()[0]), pf->pi());
+void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sign, Term* bound, CompType comp, AggTerm* agg){
+	// Create grounder for the bound
+	Assert(bound->type()==TermType::DOM or bound->type()==TermType::VAR or isTwoValued(bound, getConcreteStructure()));
+	descend(bound);
+	auto boundgrounder = getTermGrounder();
+
+	// Create grounder for the set
+	SaveContext();
+	DeeperContext((not antimono) ? SIGN::POS : SIGN::NEG);
+	descend(agg->set());
+	auto setgrounder = getSetGrounder();
+	RestoreContext();
+
+	// Create aggregate grounder
+	SaveContext();
+	if (recursive) {
+		_context._tseitin = TsType::RULE;
+	}
+	_formgrounder = new AggGrounder(getGrounding(), _context, agg->function(), setgrounder, boundgrounder, comp, sign);
+
+	RestoreContext();
+	if (_context._component == CompContext::SENTENCE) {
+		_topgrounder = getFormGrounder();
+	}
+}
+
+AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
+	if (not VocabularyUtils::isComparisonPredicate(pf->symbol())) {
+		return NULL;
+	}
+	AggTerm* aggterm = NULL;
+	Term* bound = NULL;
+	bool aggwasfirst = false;
+	if (isAggTerm(pf->subterms()[0])) {
+		aggterm = dynamic_cast<AggTerm*>(pf->subterms()[0]);
+		bound = pf->subterms()[1];
+		aggwasfirst = true;
+	} else if (isAggTerm(pf->subterms()[1])) {
+		aggterm = dynamic_cast<AggTerm*>(pf->subterms()[1]);
+		bound = pf->subterms()[0];
+	}
+	if (aggterm == NULL) {
+		return NULL;
+	}
+	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
+	if (bound->type() == TermType::FUNC or bound->type() == TermType::VAR) {
+		bool newagg = false, newbound = false;
+		if (aggterm->function() == AggFunction::CARD) {
+			aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
+			newagg = true;
 		}
-		if (isAggTerm(pf->subterms()[1])) {
-			aggform = new AggForm(pf->sign(), pf->subterms()[0], comp, dynamic_cast<AggTerm*>(pf->subterms()[1]), pf->pi());
+		if (aggterm->function() == AggFunction::SUM && bound->type()!=TermType::VAR) { // TODO or anything else known at ground time
+			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+			auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
+			auto newset = aggterm->set()->clone();
+			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+			bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
+			aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
+			newagg = true;
+			newbound = true;
 		}
-		if (aggform != NULL) {
-			descend(aggform);
-			delete(aggform);
-			return;
+		if (not newagg) {
+			aggterm = aggterm->clone();
 		}
-	}*/
-	auto temppf = pf->clone();
-	if (VocabularyUtils::isComparisonPredicate(pf->symbol())) {
-		AggTerm* aggterm = NULL;
-		Term* bound = NULL;
-		if (isAggTerm(pf->subterms()[0])) {
-			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[0]);
-			bound = pf->subterms()[1];
-		} else if (isAggTerm(pf->subterms()[1])) {
-			aggterm = dynamic_cast<AggTerm*>(pf->subterms()[1]);
-			bound = pf->subterms()[0];
-		}
-		if (aggterm != NULL) {
-			// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
-			if (bound->type() == TermType::FUNC or bound->type() == TermType::VAR) {
-				bool newagg = false, newbound = false;
-				if (aggterm->function() == AggFunction::CARD) {
-					aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
-					newagg = true;
-				}
-				if (aggterm->function() == AggFunction::SUM && bound->type()!=TermType::VAR) { // TODO or anything else known at ground time
-					auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
-					auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
-					auto newset = aggterm->set()->clone();
-					newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
-					bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
-					aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
-					newagg = true;
-					newbound = true;
-				}
-				if (not newagg) {
-					aggterm = aggterm->clone();
-				}
-				if (not newbound) {
-					bound = bound->clone();
-				}
-				if (isAggTerm(pf->subterms()[0])) {
-					temppf = new PredForm(pf->sign(), pf->symbol(), { aggterm, bound }, pf->pi());
-				} else {
-					temppf = new PredForm(pf->sign(), pf->symbol(), { bound, aggterm }, pf->pi());
-				}
-			}
+		if (not newbound) {
+			bound = bound->clone();
 		}
 	}
 
-	internalVisit(temppf);
-	deleteDeep(temppf);
+	auto comp = VocabularyUtils::getComparisonType(pf->symbol());
+	if(aggwasfirst){
+		comp = invertComp(comp);
+	}
+	return new AggForm(pf->sign(), bound, comp, aggterm, pf->pi());
 }
 
 void GrounderFactory::visit(const BoolForm* bf) {
@@ -872,113 +972,6 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = getFormGrounder();
 	}
-}
-
-AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, Structure* structure) {
-	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
-	if (af->getBound()->type() == TermType::FUNC or af->getBound()->type() == TermType::VAR) {
-		if (af->getAggTerm()->function() == AggFunction::CARD) {
-			auto prevaf = af;
-			af = new AggForm(af->sign(), af->getBound()->clone(), af->comp(),
-					new AggTerm(af->getAggTerm()->set()->clone(), AggFunction::SUM, af->getAggTerm()->pi()), af->pi());
-			deleteDeep(prevaf);
-			for (auto i = af->getAggTerm()->set()->getSets().cbegin(); i < af->getAggTerm()->set()->getSets().cend(); ++i) {
-				Assert((*i)->getTerm()->type()==TermType::DOM);
-				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->type()==DomainElementType::DET_INT);
-				Assert(dynamic_cast<DomainTerm*>((*i)->getTerm())->value()->value()._int==1);
-			}
-		}
-		if (af->getAggTerm()->function() == AggFunction::SUM && af->getBound()->type()!=TermType::VAR) { // FIXME also for anything else that will be known (better shared set detection)
-			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
-			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
-//			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, _structure->vocabulary());
-//			auto newft = new FuncTerm(product, { clonedaf->getBound()->clone(), new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()) }, TermParseInfo());
-			auto newset = af->getAggTerm()->set()->clone();
-			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
-			auto temp = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),
-					new AggTerm(newset, af->getAggTerm()->function(), af->getAggTerm()->pi()), af->pi());
-			deleteDeep(af);
-			af = temp;
-		}
-	}
-	return af;
-}
-
-
-void GrounderFactory::visit(const AggForm* af) {
-	auto clonedaf = rewriteSumOrCardIntoSum(af->clone(), getConcreteStructure());
-
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf->clone(), getConcreteStructure(), _context._funccontext, _context._defined,
-			(getOption(CPSUPPORT) and not recursive(clonedaf)));
-	// TODO recursive could be more fine-grained (unnest any not rec defined symbol)
-	transaf = FormulaUtils::graphFuncsAndAggs(transaf, getConcreteStructure(), false, (getOption(CPSUPPORT) and not recursive(clonedaf)), _context._funccontext);
-	if (recursive(transaf)) {
-		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
-	}
-
-	deleteDeep(clonedaf);
-
-	if (not isa<AggForm>(*transaf)) {
-		if (isa<PredForm>(*transaf)) { // Rewriting created a predform again, so do NOT recurse!
-			internalVisit(dynamic_cast<PredForm*>(transaf));
-		} else {
-			descend(transaf);
-		}
-		deleteDeep(transaf);
-		return;
-	}
-
-	auto newaf = dynamic_cast<AggForm*>(transaf);
-
-	// Use CP support if possible
-	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(newaf->getAggTerm(), getConcreteStructure())
-			and CPSupport::eligibleForCP(newaf->getBound(), getConcreteStructure())) {
-		auto comp = newaf->comp();
-		if (isNeg(newaf->sign())) {
-			comp = negateComp(comp);
-		}
-		descend(newaf->getAggTerm());
-		auto boundgrounder = getTermGrounder();
-		descend(newaf->getBound());
-		auto termgrounder = getTermGrounder();
-		_formgrounder = new ComparisonGrounder(getGrounding(), termgrounder, comp, boundgrounder, _context);
-		if (_context._component == CompContext::SENTENCE) {
-			_topgrounder = getFormGrounder();
-		}
-		deleteDeep(newaf);
-		return;
-	}
-
-	// Create grounder for the bound
-	Assert(newaf->getBound()->type()==TermType::DOM or newaf->getBound()->type()==TermType::VAR or isTwoValued(newaf->getBound(), getConcreteStructure()));
-	descend(newaf->getBound());
-	auto boundgrounder = getTermGrounder();
-
-	// Create grounder for the set
-	SaveContext();
-	if (recursive(newaf)) {
-		Assert(FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
-	}
-	DeeperContext((not FormulaUtils::isAntimonotone(newaf)) ? SIGN::POS : SIGN::NEG);
-	descend(newaf->getAggTerm()->set());
-	auto setgrounder = getSetGrounder();
-	RestoreContext();
-
-	// Create aggregate grounder
-	SaveContext();
-	if (recursive(newaf)) {
-		_context._tseitin = TsType::RULE;
-	}
-	if (isNeg(newaf->sign())) {
-		_context._tseitin = invertImplication(_context._tseitin);
-	}
-	_formgrounder = new AggGrounder(getGrounding(), _context, newaf->getAggTerm()->function(), setgrounder, boundgrounder, newaf->comp(), newaf->sign());
-
-	RestoreContext();
-	if (_context._component == CompContext::SENTENCE) {
-		_topgrounder = getFormGrounder();
-	}
-	deleteDeep(newaf);
 }
 
 void GrounderFactory::visit(const EqChainForm* ef) {

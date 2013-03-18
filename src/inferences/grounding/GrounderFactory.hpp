@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef GROUNDERFACTORY_HPP
-#define GROUNDERFACTORY_HPP
+#pragma once
 
 #include <stack>
 #include "IncludeComponents.hpp"
@@ -233,10 +232,12 @@ private:
 	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 
-	AggForm* rewriteSumOrCardIntoSum(AggForm* af, Structure* structure);
-	void internalVisit(const PredForm* newaf);
+	void handleWithComparisonGenerator(const PredForm* pf);
+	void handleGeneralPredForm(const PredForm* pf);
+	void groundAggWithCP(SIGN sign, Term* bound, CompType comp, AggTerm* agg);
+	void groundAggWithoutCP(bool antimono, bool recursive, SIGN sign, Term* bound, CompType comp, AggTerm* agg);
+	AggForm* tryToTurnIntoAggForm(const PredForm* pf);
+
 	static const FOBDD* simplify(const std::vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
 			const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const Structure* structure);
 };
-
-#endif /* GROUNDERFACTORY_HPP */
