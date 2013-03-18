@@ -541,25 +541,21 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 			varset newvars;
 			map<Variable*, Variable*> mvv;
 			Domain* conjdomain = _factory->trueDomain(qf->subformula());
-			vector<CompType> comps(1, CompType::EQ);
-			for (auto it = qf->quantVars().cbegin(); it != qf->quantVars().cend(); ++it) {
-				Variable* newvar = new Variable((*it)->sort());
+			for (auto var : qf->quantVars()) {
+				auto newvar = new Variable(var->sort());
 				newvars.insert(newvar);
-				mvv[*it] = newvar;
-				vector<Term*> terms(2);
-				terms[0] = new VarTerm((*it), TermParseInfo());
-				terms[1] = new VarTerm(newvar, TermParseInfo());
-				EqChainForm* ef = new EqChainForm(SIGN::POS, true, terms, comps, FormulaParseInfo());
+				mvv[var] = newvar;
+				auto ef = new EqChainForm(SIGN::POS, true, {new VarTerm((var), TermParseInfo()), new VarTerm(newvar, TermParseInfo())}, {CompType::EQ}, FormulaParseInfo());
 				Domain* equaldomain = _factory->formuladomain(ef);
 				ef->recursiveDelete();
 				conjdomain = addToConjunction(conjdomain, equaldomain);
 				delete (equaldomain);
 			}
-			Domain* substdomain = _factory->substitute((_ct ? tvd._cfdomain : tvd._ctdomain), mvv);
-			Domain* disjdomain = addToDisjunction(conjdomain, substdomain);
-			delete (substdomain);
-			Domain* univdomain = addToForall(disjdomain, newvars);
+			auto substdomain = _factory->substitute((_ct ? tvd._cfdomain : tvd._ctdomain), mvv);
+			auto univdomain = addToForall(addToDisjunction(conjdomain, substdomain), newvars);
 			deriveddomain = addToConjunction(deriveddomain, univdomain);
+
+			delete (substdomain);
 			delete (univdomain);
 			for(auto v:qf->quantVars()){
 				//If subformula does not depend on one of those variables, it suffices that the derived domain is t
@@ -574,7 +570,7 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 	}
 	case UP: {
 		const auto& tvd = getDomain(qf->subformula());
-		Domain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
+		auto deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if (_ct == qf->isUniv()) {
 			deriveddomain = addToForall(deriveddomain, qf->quantVars());
 		} else {
