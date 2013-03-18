@@ -24,7 +24,7 @@
 using namespace std;
 
 SetGrounder::SetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt)
-		: _translator(gt), id(gt->createNewQuantSetId()), _freevarcontainers(freevarcontainers) {
+		: id(gt->createNewQuantSetId()), _freevarcontainers(freevarcontainers), _translator(gt) {
 }
 EnumSetGrounder::EnumSetGrounder(std::vector<const DomElemContainer*> freevarcontainers, GroundTranslator* gt, const std::vector<QuantSetGrounder*>& subgrounders)
 		: SetGrounder(freevarcontainers, gt), _subgrounders(subgrounders) {
@@ -95,7 +95,7 @@ SetId EnumSetGrounder::run() const {
 		tuple.push_back(container->get());
 	}
 	auto possset = _translator->getPossibleSet(id, tuple);
-	if(possset.id!=-1){
+	if(_translator->isSet(possset)){
 		return possset;
 	}
 	litlist literals;
@@ -113,7 +113,7 @@ SetId EnumSetGrounder::runAndRewriteUnknowns() const {
 		tuple.push_back(container->get());
 	}
 	auto possset = _translator->getPossibleSet(id, tuple);
-	if(possset.id!=-1){
+	if(_translator->isSet(possset)){
 		return possset;
 	}
 	weightlist trueweights;
@@ -154,7 +154,7 @@ SetId QuantSetGrounder::run() const {
 		tuple.push_back(container->get());
 	}
 	auto possset = _translator->getPossibleSet(id, tuple);
-	if(possset.id!=-1){
+	if(_translator->isSet(possset)){
 		return possset;
 	}
 	litlist literals;
@@ -170,7 +170,7 @@ SetId QuantSetGrounder::runAndRewriteUnknowns() const {
 		tuple.push_back(container->get());
 	}
 	auto possset = _translator->getPossibleSet(id, tuple);
-	if(possset.id!=-1){
+	if(_translator->isSet(possset)){
 		return possset;
 	}
 	weightlist trueweights;

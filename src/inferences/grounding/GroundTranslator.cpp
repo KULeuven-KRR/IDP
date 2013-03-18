@@ -453,7 +453,7 @@ SetId GroundTranslator::translateSet(int id, const ElementTuple& freevar_inst, c
 }
 
 bool GroundTranslator::isSet(SetId setID) const {
-	return _sets.size() > (size_t) setID.id - 1;
+	return setID.id!=0 && _sets.size() > (size_t) setID.id - 1;
 }
 const TsSet GroundTranslator::groundset(SetId setID) const {
 	Assert(isSet(setID));
@@ -461,14 +461,14 @@ const TsSet GroundTranslator::groundset(SetId setID) const {
 }
 SetId GroundTranslator::getPossibleSet(int id, const ElementTuple& freevar_inst) const{
 	if(not contains(_freevar2set, id)){
-		return SetId(-1);
+		return SetId(0);
 	}
 	const auto& atid = _freevar2set.at(id);
 	auto setid = atid.find(freevar_inst);
 	if(setid!=atid.cend()){
 		return setid->second;
 	}else{
-		return SetId(-1);
+		return SetId(0);
 	}
 }
 
