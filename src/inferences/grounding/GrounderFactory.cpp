@@ -603,8 +603,7 @@ void GrounderFactory::handleWithComparisonGenerator(const PredForm* pf){
 	}
 	RestoreContext();
 
-	_formgrounder = new ComparisonGrounder(getGrounding(), subtermgrounders[0], comp, subtermgrounders[1], _context);
-	_formgrounder->setOrig(pf, varmapping());
+	_formgrounder = new ComparisonGrounder(getGrounding(), subtermgrounders[0], comp, subtermgrounders[1], _context, pf->symbol(), pf->sign());
 }
 
 void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
@@ -659,12 +658,7 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 	if (_context._component == CompContext::HEAD) {
 		_headgrounder = new HeadGrounder(getGrounding(), symbol, subtermgrounders, argsorttables, _context);
 	} else {
-		std::vector<const DomElemContainer*> containers;
-		for (uint i=0; i<subtermgrounders.size(); ++i) {
-			containers.push_back(new const DomElemContainer());
-		}
-		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, containers, argsorttables, _context);
-		_formgrounder->setOrig(new PredForm(pf->sign(), symbol, terms, pf->pi()), varmapping());
+		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context);
 	}
 }
 
@@ -684,14 +678,15 @@ void GrounderFactory::visit(const AggForm* af) {
 	auto newaf = dynamic_cast<AggForm*>(transaf);
 	Assert(not recursive(newaf) or FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
 
-	auto comp = newaf->comp();
 	auto bound = newaf->getBound();
 	auto aggterm = newaf->getAggTerm();
 	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(aggterm, getConcreteStructure()) and CPSupport::eligibleForCP(bound, getConcreteStructure())) {
-		groundAggWithCP(newaf->sign(), bound, comp, aggterm);
+		groundAggWithCP(newaf->sign(), bound, newaf->comp(), aggterm);
 	}else{
-		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, comp, aggterm);
+		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, newaf->comp(), aggterm);
 	}
+
+	checkAndAddAsTopGrounder();
 
 	deleteDeep(newaf);
 }
@@ -701,13 +696,10 @@ void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, Agg
 		comp = negateComp(comp); // TODO tseitin?
 	}
 	descend(agg);
-	auto aggrounder = getTermGrounder();
-	descend(bound);
 	auto boundgrounder = getTermGrounder();
-	_formgrounder = new ComparisonGrounder(getGrounding(), boundgrounder, comp, aggrounder, _context);
-	if (_context._component == CompContext::SENTENCE) {
-		_topgrounder = getFormGrounder();
-	}
+	descend(bound);
+	auto termgrounder = getTermGrounder();
+	_formgrounder = new ComparisonGrounder(getGrounding(), termgrounder, comp, boundgrounder, _context, get(STDPRED::EQ, agg->sort()), sign);
 }
 
 void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sign, Term* bound, CompType comp, AggTerm* agg){
@@ -731,7 +723,6 @@ void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sig
 	_formgrounder = new AggGrounder(getGrounding(), _context, boundgrounder, comp, agg->function(), setgrounder, sign);
 
 	RestoreContext();
-	checkAndAddAsTopGrounder();
 }
 
 AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
