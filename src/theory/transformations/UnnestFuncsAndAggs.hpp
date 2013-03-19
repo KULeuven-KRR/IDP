@@ -31,10 +31,6 @@ protected:
 	bool shouldMove(Term* t) {
 		return isAllowedToUnnest() and (t->type() == TermType::FUNC or t->type() == TermType::AGG);
 	}
-
-	Term* traverse(Term* t) {
-		return t;
-	}
 };
 
 #endif /* UNNESTFUNCSANDAGGS_HPP_ */
