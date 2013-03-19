@@ -850,7 +850,10 @@ void GrounderFactory::createBoolGrounderDisjPath(const BoolForm* bf) {
 
 void GrounderFactory::visit(const QuantForm* qf) {
 	Formula* tempqf = qf->clone();
-	tempqf = FormulaUtils::pushQuantifiersAndNegations(tempqf);
+	if(getOption(SATISFIABILITYDELAY)){
+#warning Instead of not pushing, lazy grounding should pull quantifications before searching delays!
+		tempqf = FormulaUtils::pushQuantifiersAndNegations(tempqf);
+	}
 	if(not isa<QuantForm>(*tempqf)){
 		tempqf->accept(this);
 		deleteDeep(tempqf);

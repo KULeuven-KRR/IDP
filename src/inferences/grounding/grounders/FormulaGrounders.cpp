@@ -970,8 +970,8 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	splitallowed = false;
 	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, t, origtermgrounders, tables, context);
 
-	auto subqf = qf->subformula()->cloneKeepVars();
 	auto tseitinlhs = new PredForm(SIGN::NEG, t, terms, FormulaParseInfo());
+	auto subqf = qf->subformula()->cloneKeepVars();
 	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
 	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
 	auto newgrounder = GrounderFactory::createSentenceGrounder(manager, newqf);
@@ -992,10 +992,11 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	if(not foundquants){
 		throw InternalIdpException("Splitting grounders");
 	}
-//	cerr <<"Looking for delay in " <<toString(newqf) <<"\n";
-	delay = FormulaUtils::findDelay(newqf, newgrounder->getVarmapping(), manager);
+	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
+	cerr <<"Looking for delay in " <<toString(newf) <<"\n";
+	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager);
 	Assert(delay.get()!=NULL);
-//	clog <<"Delaying after split on " <<toString(delay) <<"\n";
+	clog <<"Delaying after split on " <<toString(delay) <<"\n";
 	manager->add(newgrounder, delay);
 #warning Probably bug in equivalence / definitional context as an implication is generated?
 
@@ -1010,39 +1011,30 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 
 	formula.setType(connective());
 
+	cerr <<"Lazy grounding request contains " <<print(request.instantiation) <<"\n";
+
 	if(replacementaftersplit==NULL){
 		bool handledcheap = false;
-		if(splitallowed){
-			/**
-			 * Either:
-			 * 		all variables instantiated
-			 * 			conjunctiveUntilNode: ground the child for the instantiation at hand and return
-			 * 			otherwise: ground the child for the instantiation at hand and add a tseitin for the remainder
-			 * 		some variables instantiated
-			 * 			currently handled as the one below. It can be optimized, but should be handled earlier, preventing these cases by rewriting.
-			 * 		no variables instantiated
-			 * 			find a new delay D for this formula F
-			 * 			if one exists: replace the grounding with a new tseitin symbol T and add the sentence T => F, delayed on D
-			 * 							and which first sets the correct variable instantiation for all earlier quantified variables
-			 * 			if none exists: generate all
-			 */
-			uint nbfound = 0; // Checker whether already instantiated by lazy grounding
-			set<const DomElemContainer*> instantiatedvars;
-			for (auto container : request.instantiation) {
-				if (contains(_generatescontainers, container)) {
-					instantiatedvars.insert(container);
-					nbfound++;
-				}
+		uint nbfound = 0; // Checker whether already instantiated by lazy grounding
+		set<const DomElemContainer*> instantiatedvars;
+		for (auto container : request.instantiation) {
+			if (contains(_generatescontainers, container)) {
+				instantiatedvars.insert(container);
+				nbfound++;
 			}
+		}
+		if (nbfound == _generatescontainers.size() && getContext()._conjPathUntilNode) {
+			auto decided = groundAfterGeneration(formula, request);
+			if (not decided) {
+				// By default: request.groundersdone is true, so the lazy grounding will stop then
+				request.groundersdone = false;
+			}
+			handledcheap = true;
+		}
+
+		if(splitallowed && not handledcheap){
 			if (nbfound == _generatescontainers.size()) {
-				if (getContext()._conjPathUntilNode) {
-					auto decided = groundAfterGeneration(formula, request);
-					if(not decided){
-						// By default: request.groundersdone is true, so the lazy grounding will stop then
-						request.groundersdone = false;
-					}
-					handledcheap = true;
-				} else if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
+				if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
 					handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), true);
 				}
 			} else if (nbfound == 0){
@@ -1054,6 +1046,7 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 		}
 
 		if (not handledcheap) {
+			cerr <<"Could not handle " <<print(getFormula()) <<" with containers " <<print(_generatescontainers) <<" cheaply\n";
 			for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 				CHECKTERMINATION;
 				if(groundAfterGeneration(formula, request)) {
