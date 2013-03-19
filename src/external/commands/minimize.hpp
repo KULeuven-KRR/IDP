@@ -25,7 +25,7 @@ public:
 	MinimizeInference() :
 			OptimizeInferenceBase(
 					"minimize",
-					"Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term",
+					"Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. The third value is the optimal value of the term.",
 					false) {
 		setNameSpace(getInternalNamespaceName());
 	}
@@ -39,6 +39,7 @@ public:
 		auto mxresult = ModelExpansion::doMinimization(get<0>(args), get<1>(args), get<2>(args), NULL, tracer);
 		auto models = mxresult._models;
 		auto optimumfound = mxresult._optimumfound;
+		auto value = mxresult._optimalvalue;
 
 		// Convert models to internal arguments
 		InternalArgument luamodels;
@@ -57,8 +58,14 @@ public:
 
 		//Optimumfound
 		InternalArgument opt;
-		opt._type=AT_BOOLEAN;
-		opt._value._boolean=optimumfound;
+		opt._type = AT_BOOLEAN;
+		opt._value._boolean = optimumfound;
+		randt._value._table->push_back(opt);
+
+		//Optimal value
+		InternalArgument val;
+		opt._type = AT_INT;
+		opt._value._int = value;
 		randt._value._table->push_back(opt);
 
 		if (tracer != NULL) {

@@ -26,6 +26,7 @@ class Vocabulary;
 
 struct MXResult{
 	std::vector<AbstractStructure*> _models;
+	int _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
 	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
 };
 /**

@@ -115,12 +115,13 @@ MXResult ModelExpansion::expand() const {
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
 		throw IdpException(ss.str());
 	}
+	MXResult result;
+	result._optimumfound = true;
 
-	bool optimumFound = true;
 
 	if (getGlobal()->terminateRequested()) {
-		if(mx->getSpace()->isOptimizationProblem()){
-			optimumFound = false;
+		if (mx->getSpace()->isOptimizationProblem() && mx->getSolutions().size() > 0) {
+			result._optimumfound = false;
 			Warning::warning("Optimization inference interrupted: will continue with the (single!) best model found to date (if any).");
 			getGlobal()->reset();
 		}else{
@@ -134,10 +135,11 @@ MXResult ModelExpansion::expand() const {
 		if (mx->getSolutions().size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
-			auto value = mx->getBestValueFound();
+			auto bestvalue = mx->getBestValueFound();
+			result._optimalvalue = bestvalue;
 			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 				stringstream ss;
-				ss <<"The best value found was " <<value <<"\n";
+				ss <<"The best value found was " <<bestvalue <<"\n";
 				ss <<"Solver generated " << list.size() << " models";
 				logActionAndTime(ss.str());
 			}
@@ -165,9 +167,7 @@ MXResult ModelExpansion::expand() const {
 	delete (newstructure);
 	delete (data);
 	delete (mx);
-	MXResult result;
 	result._models = solutions;
-	result._optimumfound = optimumFound;
 	return result;
 }
 
