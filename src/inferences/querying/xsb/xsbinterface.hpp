@@ -15,6 +15,10 @@ private:
 	void loadInterpretation(PFSymbol*);
 	void sendToXSB(std::string, bool);
 	XSBInterface();
+
+	void commandCall(const std::string& command);
+	void handleResult(int xsb_status);
+
 public:
 	static XSBInterface* instance();
 	void setStructure(AbstractStructure* structure);

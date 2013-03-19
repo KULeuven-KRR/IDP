@@ -80,17 +80,30 @@ PrologTerm* atom2term(PFSymbol* symbol, ElementTuple el) {
 	return term;
 }
 
+void XSBInterface::commandCall(const std::string& command) {
+	auto checkvalue = xsb_command_string(const_cast<char*>(command.c_str()));
+	handleResult(checkvalue);
+}
+
+void XSBInterface::handleResult(int xsb_status){
+	if(xsb_status==XSB_ERROR){
+		stringstream ss;
+		ss <<"Error in XSB: " << xsb_get_error_message();
+		throw InternalIdpException(ss.str());
+	}
+}
+
 XSBInterface::XSBInterface() {
 	_pp = NULL;
 	_structure = NULL;
 	stringstream ss;
 	ss << getInstallDirectoryPath() << XSB_INSTALL_URL << " -n --quietload";
-	cerr <<"OUTPUT " <<ss.str() <<"\n";
-	xsb_init_string(const_cast<char*>(ss.str().c_str()));
-	xsb_command_string("[basics].");
+	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
+	handleResult(checkvalue);
+	commandCall("[basics].");
 	stringstream ss2;
 	ss2 << "consult('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
-	xsb_command_string(const_cast<char*>(ss2.str().c_str()));
+	commandCall(ss2.str());
 }
 
 void XSBInterface::loadDefinition(Definition* d) {
@@ -103,19 +116,12 @@ void XSBInterface::loadDefinition(Definition* d) {
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
 	_pp->addDefinition(d);
-//	cout << toString(theory);
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
 	auto str2 = _pp->getFacts();
-//	cout << "CODE:\n\n" << endl;
-//	cout << str << endl;
-//	cout << "FACTS:\n\n" << endl;
-//	cout << str2 << endl;
-//	cout << "RANGES:\n\n" << endl;
-//	cout << str3 << endl;
-	this->sendToXSB(str3, false);
-	this->sendToXSB(str2, true);
-	this->sendToXSB(str, false);
+	sendToXSB(str3, false);
+	sendToXSB(str2, true);
+	sendToXSB(str, false);
 }
 
 void XSBInterface::sendToXSB(string str, bool load) {
@@ -131,7 +137,7 @@ void XSBInterface::sendToXSB(string str, bool load) {
 	} else {
 		ss << "load_dyn('" << name << "').\n";
 	}
-	xsb_command_string(const_cast<char*>(ss.str().c_str()));
+	commandCall(ss.str());
 	remove(name);
 }
 
@@ -139,11 +145,9 @@ void XSBInterface::reset() {
 	for(auto pred : _pp->allPredicates()) {
 		stringstream ss;
 		ss << "abolish(" << pred << ").\n";
-		xsb_command_string(const_cast<char*>(ss.str().c_str()));
+		commandCall(ss.str());
 	}
-	stringstream ss2;
-	ss2 << "abolish_all_tables.\n";
-	xsb_command_string(const_cast<char*>(ss2.str().c_str()));
+	commandCall("abolish_all_tables.\n");
 }
 
 void XSBInterface::exit() {
@@ -153,7 +157,6 @@ void XSBInterface::exit() {
 }
 
 SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
-
 	auto term = symbol2term(s);
 
 	SortedElementTable result;
@@ -164,7 +167,8 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	ss << *term << ".";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
-	int rc = xsb_query_string_string(query, &buff, " ");
+	auto rc = xsb_query_string_string(query, &buff, " ");
+	handleResult(rc);
 	while (rc == XSB_SUCCESS) {
 		std::list<string> answer = split(buff.string);
 		ElementTuple tuple;
@@ -175,6 +179,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 		result.insert(tuple);
 
 		rc = xsb_next_string(&buff, " ");
+		handleResult(rc);
 	}
 	XSB_StrDestroy(&buff);
 
@@ -183,7 +188,6 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 }
 
 bool XSBInterface::query(PFSymbol* s, ElementTuple t) {
-
 	auto term = atom2term(s, t);
 
 	XSB_StrDefine (buff);
@@ -192,7 +196,8 @@ bool XSBInterface::query(PFSymbol* s, ElementTuple t) {
 	ss << *term << ".";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
-	int rc = xsb_query_string_string(query, &buff, " ");
+	auto rc = xsb_query_string_string(query, &buff, " ");
+	handleResult(rc);
 
 	bool result = false;
 	if (rc == XSB_SUCCESS) {
