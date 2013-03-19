@@ -28,15 +28,14 @@
 
 using namespace std;
 
-bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure) const {
-	if (getOption(XSB)) {
-//		cerr <<"Structure before: " <<toString(structure) <<"\n";
+bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure, bool withxsb) {
+	// TODO duplicate code with modelexpansion
+
+	if (withxsb) {
 		auto xsb_interface = XSBInterface::instance();
 		xsb_interface->setStructure(structure);
-		// TODO duplicate code with modelexpansion
-		// Create solver and grounder
+
 		xsb_interface->loadDefinition(definition);
-		//xsbprogrambuilder.load_from_structure
 		auto symbols = definition->defsymbols();
 		for (auto it = symbols.begin(); it != symbols.end(); ++it) {
 			auto sorted = xsb_interface->queryDefinition(*it);
@@ -45,11 +44,9 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 
             structure->inter(*it)->ctpt(predtable1);
 		}
-//		cerr <<"\nStructure after:\n" << toString(structure) <<"\n";
+		xsb_interface->exit();
 		return structure->isConsistent();
 	} else {
-		// TODO duplicate code with modelexpansion
-		// Create solver and grounder
 		auto data = SolverConnection::createsolver(1);
 		Theory theory("", structure->vocabulary(), ParseInfo());
 		theory.add(definition);
@@ -100,8 +97,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 }
 
 // Note: this method should only be called if the XSB option is on
-bool CalculateDefinitions::calculateAllDefinitions(std::set<Definition*> definitions, AbstractStructure* structure) const {
-//	cerr <<"Structure before: " <<toString(structure) <<"\n";
+bool CalculateDefinitions::evaluateUsingXSB(std::set<Definition*> definitions, AbstractStructure* structure) {
 	auto totaldef = new Definition();
 	for (auto it = definitions.cbegin(); it != definitions.cend();++it) {
 		auto def = (*it);
@@ -121,32 +117,30 @@ bool CalculateDefinitions::calculateAllDefinitions(std::set<Definition*> definit
 	}
 	structure->clean();
 	xsb_interface->reset();
-//	cerr <<"\nStructure after:\n" << toString(structure) <<"\n";
 	return structure->isConsistent();
 }
 
-std::set<Definition*> CalculateDefinitions::getAllCalculatableDefinitions(Theory* theory, AbstractStructure* structure) const {
+std::set<Definition*> CalculateDefinitions::getAllXSBCalculatableDefinitions(Theory* theory, AbstractStructure* structure) {
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
 
-
 	// Collect the open symbols of all definitions
-	std::map<Definition*, std::set<PFSymbol*> > opens;
+	std::map<Definition*, std::set<PFSymbol*> > def2opens;
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
 		if(DefinitionUtils::hasRecursionOverNegation(*it)) {
-			throw notyetimplemented("XSB support for definitions that have recursion over negation");
+			Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
+			continue;
 		}
-		else {
-			opens[*it] = DefinitionUtils::opens(*it);
-		}
+
+		def2opens[*it] = DefinitionUtils::opens(*it);
 	}
 
 	bool fixpoint = false;
 	std::set<Definition*> calculatableDefs;
 	while (not fixpoint) {
 		fixpoint = true;
-		for (auto it = opens.begin(); it != opens.end();) {
-			auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
+		for (auto it = def2opens.begin(); it != def2opens.end();) { // NOTE: set erasure does only invalidate iterators pointing to the erased elements
+			auto currentdefinition = it++;
 
 			// Remove opens that have a two-valued interpretation
 			// Loop over all symbols to see which ones are not given / cannot be calculated
@@ -168,7 +162,7 @@ std::set<Definition*> CalculateDefinitions::getAllCalculatableDefinitions(Theory
 			// If no opens are left, add this definition to the definitions that can be calculated
 			if (currentdefinition->second.empty()) {
 				calculatableDefs.insert(currentdefinition->first);
-				opens.erase(currentdefinition->first);
+				def2opens.erase(currentdefinition->first);
 				fixpoint = false;
 			}
 		}
@@ -176,7 +170,7 @@ std::set<Definition*> CalculateDefinitions::getAllCalculatableDefinitions(Theory
 	return calculatableDefs;
 }
 
-std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const {
+std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
@@ -184,8 +178,8 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 	if (getOption(XSB)) {
 		// Calculate the interpretation of the defined atoms from definitions that do not have
 		// three-valued open symbols
-		std::set<Definition*> calculatableDefs = getAllCalculatableDefinitions(theory,structure);
-		bool satisfiable = calculateAllDefinitions(calculatableDefs, structure);
+		auto calculatableDefs = getAllXSBCalculatableDefinitions(theory,structure);
+		bool satisfiable = evaluateUsingXSB(calculatableDefs, structure);
 		if (not satisfiable) {
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 				clog << "The given structure is not a model of the definition.\n";
@@ -197,49 +191,46 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 			theory->remove(*def);
 			(*def)->recursiveDelete();
 		}
-		if (not structure->isConsistent()) {
-			return std::vector<AbstractStructure*> { };
-		}
-	} else {
-		// Collect the open symbols of all definitions
-		std::map<Definition*, std::set<PFSymbol*> > opens;
-		for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
-			opens[*it] = DefinitionUtils::opens(*it);
-		}
+	}
 
-		// Calculate the interpretation of the defined atoms from definitions that do not have
-		// three-valued open symbols
-		bool fixpoint = false;
-		while (not fixpoint) {
-			fixpoint = true;
-			for (auto it = opens.begin(); it != opens.end();) {
-				auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
-				// Remove opens that have a two-valued interpretation
-				for (auto symbol = currentdefinition->second.begin(); symbol != currentdefinition->second.end();) {
-					auto currentsymbol = symbol++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
-					if (structure->inter(*currentsymbol)->approxTwoValued()) {
-						currentdefinition->second.erase(currentsymbol);
-					}
-				}
-				// If no opens are left, calculate the interpretation of the defined atoms
-				if (currentdefinition->second.empty()) {
-					bool satisfiable = calculateDefinition(currentdefinition->first, structure);
-					if (not satisfiable) {
-						if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-							clog << "The given structure is not a model of the definition.\n";
-						}
-						return std::vector<AbstractStructure*> { };
-					}
-					theory->remove(currentdefinition->first);
-					currentdefinition->first->recursiveDelete();
-					opens.erase(currentdefinition);
-					fixpoint = false;
+	// Collect the open symbols of all definitions
+	std::map<Definition*, std::set<PFSymbol*> > opens;
+	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
+		opens[*it] = DefinitionUtils::opens(*it);
+	}
+
+	// Calculate the interpretation of the defined atoms from definitions that do not have
+	// three-valued open symbols
+	bool fixpoint = false;
+	while (not fixpoint) {
+		fixpoint = true;
+		for (auto it = opens.begin(); it != opens.end();) {
+			auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
+			// Remove opens that have a two-valued interpretation
+			for (auto symbol = currentdefinition->second.begin(); symbol != currentdefinition->second.end();) {
+				auto currentsymbol = symbol++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
+				if (structure->inter(*currentsymbol)->approxTwoValued()) {
+					currentdefinition->second.erase(currentsymbol);
 				}
 			}
+			// If no opens are left, calculate the interpretation of the defined atoms
+			if (currentdefinition->second.empty()) {
+				bool satisfiable = calculateDefinition(currentdefinition->first, structure, false);
+				if (not satisfiable) {
+					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+						clog << "The given structure is not a model of the definition.\n";
+					}
+					return std::vector<AbstractStructure*> { };
+				}
+				theory->remove(currentdefinition->first);
+				currentdefinition->first->recursiveDelete();
+				opens.erase(currentdefinition);
+				fixpoint = false;
+			}
 		}
-		if (not structure->isConsistent()) {
-			return std::vector<AbstractStructure*> { };
-		}
+	}
+	if (not structure->isConsistent()) {
+		return std::vector<AbstractStructure*> { };
 	}
 	return {structure};
 }
