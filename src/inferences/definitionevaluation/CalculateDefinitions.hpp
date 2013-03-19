@@ -28,9 +28,5 @@ public:
 
 private:
 	std::vector<AbstractStructure*> calculateKnownDefinitions(Theory* theory, AbstractStructure* structure);
-
 	bool calculateDefinition(Definition* definition, AbstractStructure* structure, bool withxsb);
-
-	bool evaluateUsingXSB(std::set<Definition*> definitions, AbstractStructure* structure);
-	std::set<Definition*> getAllXSBCalculatableDefinitions(Theory* theory, AbstractStructure* structure);
 };

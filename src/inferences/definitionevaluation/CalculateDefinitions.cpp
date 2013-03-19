@@ -41,10 +41,17 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 			auto sorted = xsb_interface->queryDefinition(*it);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(*it));
-
+            if(not isConsistentWith(predtable1, structure->inter(*it))){
+            	xsb_interface->reset();
+            	return false;
+            }
             structure->inter(*it)->ctpt(predtable1);
+			if(not structure->inter(*it)->isConsistent()){ // E.g. for functions
+				xsb_interface->reset();
+				return false;
+			}
 		}
-		xsb_interface->exit();
+		xsb_interface->reset();
 		return structure->isConsistent();
 	} else {
 		auto data = SolverConnection::createsolver(1);
@@ -96,101 +103,9 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	}
 }
 
-// Note: this method should only be called if the XSB option is on
-bool CalculateDefinitions::evaluateUsingXSB(std::set<Definition*> definitions, AbstractStructure* structure) {
-	auto totaldef = new Definition();
-	for (auto it = definitions.cbegin(); it != definitions.cend();++it) {
-		auto def = (*it);
-		totaldef->add(def->rules());
-	}
-	auto xsb_interface = XSBInterface::instance();
-	xsb_interface->setStructure(structure);
-	auto definition = totaldef;
-	xsb_interface->loadDefinition(definition);
-	auto symbols = definition->defsymbols();
-	for (auto it = symbols.cbegin(); it != symbols.cend(); ++it) {
-		auto sorted = xsb_interface->queryDefinition(*it);
-		auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
-		auto predtable1 = new PredTable(internpredtable1, structure->universe(*it));
-
-		structure->inter(*it)->ctpt(predtable1);
-	}
-	structure->clean();
-	xsb_interface->reset();
-	return structure->isConsistent();
-}
-
-std::set<Definition*> CalculateDefinitions::getAllXSBCalculatableDefinitions(Theory* theory, AbstractStructure* structure) {
-	// Calculate the interpretation of the defined atoms from definitions that do not have
-	// three-valued open symbols
-
-	// Collect the open symbols of all definitions
-	std::map<Definition*, std::set<PFSymbol*> > def2opens;
-	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
-		if(DefinitionUtils::hasRecursionOverNegation(*it)) {
-			Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
-			continue;
-		}
-
-		def2opens[*it] = DefinitionUtils::opens(*it);
-	}
-
-	bool fixpoint = false;
-	std::set<Definition*> calculatableDefs;
-	while (not fixpoint) {
-		fixpoint = true;
-		for (auto it = def2opens.begin(); it != def2opens.end();) { // NOTE: set erasure does only invalidate iterators pointing to the erased elements
-			auto currentdefinition = it++;
-
-			// Remove opens that have a two-valued interpretation
-			// Loop over all symbols to see which ones are not given / cannot be calculated
-			for (auto symbol = currentdefinition->second.cbegin(); symbol != currentdefinition->second.cend();) {
-				auto currentsymbol = symbol++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
-				if (structure->inter(*currentsymbol)->approxTwoValued()) {
-					currentdefinition->second.erase(currentsymbol);
-				} else {
-					// Else: check if the symbol is defined by one of the definitions we know we can fully calculate.
-					for (auto it2 = calculatableDefs.cbegin(); it2 != calculatableDefs.cend();) {
-						auto def = it2++;
-						if ((*def)->defsymbols().find(*currentsymbol) != (*def)->defsymbols().end()) {
-							currentdefinition->second.erase(currentsymbol);
-							break;
-						}
-					}
-				}
-			}
-			// If no opens are left, add this definition to the definitions that can be calculated
-			if (currentdefinition->second.empty()) {
-				calculatableDefs.insert(currentdefinition->first);
-				def2opens.erase(currentdefinition->first);
-				fixpoint = false;
-			}
-		}
-	}
-	return calculatableDefs;
-}
-
 std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
-	}
-
-	if (getOption(XSB)) {
-		// Calculate the interpretation of the defined atoms from definitions that do not have
-		// three-valued open symbols
-		auto calculatableDefs = getAllXSBCalculatableDefinitions(theory,structure);
-		bool satisfiable = evaluateUsingXSB(calculatableDefs, structure);
-		if (not satisfiable) {
-			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-				clog << "The given structure is not a model of the definition.\n";
-			}
-			return std::vector<AbstractStructure*> { };
-		}
-		for (auto it2 = calculatableDefs.begin(); it2 != calculatableDefs.end();) {
-			auto def = it2++;
-			theory->remove(*def);
-			(*def)->recursiveDelete();
-		}
 	}
 
 	// Collect the open symbols of all definitions
@@ -215,15 +130,21 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 			}
 			// If no opens are left, calculate the interpretation of the defined atoms
 			if (currentdefinition->second.empty()) {
-				bool satisfiable = calculateDefinition(currentdefinition->first, structure, false);
+				auto definition = currentdefinition->first;
+				auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
+				if(getOption(XSB) && hasrecursion) {
+					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
+				}
+
+				auto satisfiable = calculateDefinition(definition, structure, getOption(XSB) && not hasrecursion);
 				if (not satisfiable) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
 					return std::vector<AbstractStructure*> { };
 				}
-				theory->remove(currentdefinition->first);
-				currentdefinition->first->recursiveDelete();
+				theory->remove(definition);
+				definition->recursiveDelete();
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}

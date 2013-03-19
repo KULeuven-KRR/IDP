@@ -4302,3 +4302,33 @@ FuncTable* FuncTable::materialize() const {
 	return m.run(this);
 }
 
+bool isConsistentWith(PredTable* table, PredInter* inter){
+	auto cf = inter->cf();
+	if(not intersectionEmpty(table, cf)){
+		return false;
+	}
+
+	auto ct = inter->ct();
+	for(auto i = ct->begin(); not i.isAtEnd(); ++i){
+		if(not table->contains(*i)){
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool intersectionEmpty(PredTable* left, PredTable* right){
+	if(right->size()<left->size()){
+		auto temp = left;
+		left = right;
+		right = temp;
+	}
+
+	for(auto i = left->begin(); not i.isAtEnd(); ++i){
+		if(right->contains(*i)){
+			return false;
+		}
+	}
+	return true;
+}
