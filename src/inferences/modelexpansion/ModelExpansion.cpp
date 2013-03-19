@@ -131,8 +131,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		if (mx->getSolutions().size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
+			auto value = mx->getBestValueFound();
 			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 				stringstream ss;
+				ss <<"The best value found was " <<value <<"\n";
 				ss <<"Solver generated " << list.size() << " models";
 				logActionAndTime(ss.str());
 			}
