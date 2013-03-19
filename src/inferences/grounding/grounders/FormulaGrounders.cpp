@@ -147,20 +147,21 @@ Lit AtomGrounder::run() const {
 		}
 	}
 
+	Lit lit = 0;
 	if (not alldomelts) {
 		auto temphead = translator()->createNewUninterpretedNumber();
 		getGrounding()->addLazyElement(temphead, _symbol, terms, _recursive);
-		return _sign == SIGN::POS ? temphead : -temphead; // TODO is it necessary to verify the checkers?
-	}
+		lit = temphead;
+	}else{
+		// Run instance checkers
+		// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
+		for (size_t n = 0; n < terms.size(); ++n) {
+			_args[n] = terms[n]._domelement;
+			*(_checkargs[n]) = _args[n];
+		}
 
-	// Run instance checkers
-	// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
-	for (size_t n = 0; n < terms.size(); ++n) {
-		_args[n] = terms[n]._domelement;
-		*(_checkargs[n]) = _args[n];
+		lit = translator()->translateReduced(_symboloffset, _args, _recursive);
 	}
-
-	auto lit = translator()->translateReduced(_symboloffset, _args, _recursive);
 	lit = isPos(_sign) ? lit : -lit;
 
 	if (verbosity() > 2) {
