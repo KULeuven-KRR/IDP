@@ -25,7 +25,7 @@ public:
 	MinimizeInference() :
 			OptimizeInferenceBase(
 					"minimize",
-					"Return a model of the given theory, more precise than the given structure and optimal concerning the given term (no model which compares smaller given that term exists).",
+					"Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term",
 					false) {
 		setNameSpace(getInternalNamespaceName());
 	}
@@ -36,31 +36,41 @@ public:
 		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
 		}
-		auto models = ModelExpansion::doMinimization(get<0>(args), get<1>(args), get<2>(args), NULL, tracer);
+		auto mxresult = ModelExpansion::doMinimization(get<0>(args), get<1>(args), get<2>(args), NULL, tracer);
+		auto models = mxresult._models;
+		auto optimumfound = mxresult._optimumfound;
 
-		// Convert to internal arguments
-		InternalArgument result;
-		result._type = AT_TABLE;
-		result._value._table = new std::vector<InternalArgument>();
-		addToGarbageCollection(result._value._table);
+		// Convert models to internal arguments
+		InternalArgument luamodels;
+		luamodels._type = AT_TABLE;
+		luamodels._value._table = new std::vector<InternalArgument>();
+		addToGarbageCollection(luamodels._value._table);
 		for (auto it = models.cbegin(); it != models.cend(); ++it) {
-			result._value._table->push_back(InternalArgument(*it));
+			luamodels._value._table->push_back(InternalArgument(*it));
 		}
 
+		//All return values
+		InternalArgument randt;
+		randt._type = AT_MULT;
+		randt._value._table = new std::vector<InternalArgument>(1, luamodels);
+		addToGarbageCollection(randt._value._table);
+
+		//Optimumfound
+		InternalArgument opt;
+		opt._type=AT_BOOLEAN;
+		opt._value._boolean=optimumfound;
+		randt._value._table->push_back(opt);
+
 		if (tracer != NULL) {
-			InternalArgument randt;
-			randt._type = AT_MULT;
-			randt._value._table = new std::vector<InternalArgument>(1, result);
-			addToGarbageCollection(randt._value._table);
+
 			InternalArgument trace;
 			trace._type = AT_REGISTRY;
 			trace._value._string = tracer->index();
 			randt._value._table->push_back(trace);
-			result = randt;
 			delete (tracer);
 		}
 
-		return result;
+		return randt;
 	}
 };
 

@@ -34,7 +34,8 @@ public:
 		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
 		}
-		auto models = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), NULL, tracer);
+		auto mxresult = ModelExpansion::doModelExpansion(get<0>(args), get<1>(args), NULL, tracer);
+		auto models = mxresult._models;
 
 		// Convert to internal arguments
 		InternalArgument result;

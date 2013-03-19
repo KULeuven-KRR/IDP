@@ -106,8 +106,7 @@ procedure sat(theory, structure) {
 }
 
 /**
- *  Returns all models of the theory that extend the given structure and such that the term is minimal.
- */
+ *  Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term.*/
 procedure minimize(theory, structure, term){
 	if type(theory) ~= "theory" then
 		io.stderr:write("Error: theory expected\n")
@@ -124,9 +123,9 @@ procedure minimize(theory, structure, term){
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	local solutions, trace = idpintern.minimize(clonetheo,structure,term)
+	local solutions, optimal, trace = idpintern.minimize(clonetheo,structure,term)
 	local solutions2 = nbModelsTwoValuedExtensions(solutions)
-	return solutions2, trace
+	return solutions2, optimal, trace
 }
 
 /**

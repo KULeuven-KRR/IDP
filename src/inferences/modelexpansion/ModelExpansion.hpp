@@ -24,6 +24,10 @@ class TraceMonitor;
 class Term;
 class Vocabulary;
 
+struct MXResult{
+	std::vector<AbstractStructure*> _models;
+	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
+};
 /**
  * Does model expansion or optimization over:
  * 	- a theory and a structure, with the same vocabulary
@@ -33,8 +37,8 @@ class Vocabulary;
  */
 class ModelExpansion {
 public:
-	static std::vector<AbstractStructure*> doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
-	static std::vector<AbstractStructure*> doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
+	static MXResult doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
+	static MXResult doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
 
 private:
 	Theory* _theory;
@@ -49,6 +53,6 @@ private:
 
 	void setOutputVocabulary(Vocabulary* v);
 
-	std::vector<AbstractStructure*> expand() const;
+	MXResult expand() const;
 };
 #endif //MODELEXPANSION_HPP_

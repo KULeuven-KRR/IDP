@@ -67,7 +67,7 @@ bool AtomQuerying::queryAtom(Query* p, Theory* theory, AbstractStructure* struct
 		auto old = getOption(IntType::NBMODELS);
 		setOption(IntType::NBMODELS,0);
 		// model expansion
-		auto models = ModelExpansion::doModelExpansion(theory,structure,NULL);
+		auto models = ModelExpansion::doModelExpansion(theory,structure,NULL)._models;
 		for(auto model = models.begin(); model != models.end();++model ){
 			if((*model)->inter(symbol)->isTrue(tuple)){
 				result = true;

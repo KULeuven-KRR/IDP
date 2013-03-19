@@ -21,12 +21,12 @@
 
 using namespace std;
 
-std::vector<AbstractStructure*> ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc,
+MXResult ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc,
 		TraceMonitor* tracemonitor) {
 	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor);
 	return m->expand();
 }
-std::vector<AbstractStructure*> ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
+MXResult ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
 		TraceMonitor* tracemonitor) {
 	if (term == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
@@ -92,7 +92,7 @@ public:
 	}
 };
 
-std::vector<AbstractStructure*> ModelExpansion::expand() const {
+MXResult ModelExpansion::expand() const {
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	auto inputvoc = _theory->vocabulary();
 	auto clonetheory = _theory->clone();
@@ -116,8 +116,11 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 		throw IdpException(ss.str());
 	}
 
+	bool optimumFound = true;
+
 	if (getGlobal()->terminateRequested()) {
 		if(mx->getSpace()->isOptimizationProblem()){
+			optimumFound = false;
 			Warning::warning("Optimization inference interrupted: will continue with the (single!) best model found to date (if any).");
 			getGlobal()->reset();
 		}else{
@@ -162,7 +165,10 @@ std::vector<AbstractStructure*> ModelExpansion::expand() const {
 	delete (newstructure);
 	delete (data);
 	delete (mx);
-	return solutions;
+	MXResult result;
+	result._models = solutions;
+	result._optimumfound = optimumFound;
+	return result;
 }
 
 AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
