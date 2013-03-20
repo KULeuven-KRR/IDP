@@ -219,6 +219,7 @@ string PrologProgram::getCode() {
 		_all_predicates.insert(predname);
 	}
 	stringstream s;
+	s <<":- set_prolog_flag(unknown, fail).\n";
 	s << *this;
 	return s.str();
 }
