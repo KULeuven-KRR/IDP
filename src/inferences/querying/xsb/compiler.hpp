@@ -44,23 +44,15 @@ protected:
 public:
 	FormulaClause(FormulaClause* parent)
 			: 	_parent(parent),
-				_arguments(),
-				_variables(),
-				_instantiatedVariables(),
-				_name(),
-				_formula(),
-				_numeric(false),
-				_numericVars() {
+				_name(NULL),
+				_formula(NULL),
+				_numeric(false) {
 	}
 	FormulaClause(const std::string& name = "")
 			: 	_parent(NULL),
-				_arguments(),
-				_variables(),
-				_instantiatedVariables(),
 				_name(name),
-				_formula(),
-				_numeric(false),
-				_numericVars() {
+				_formula(NULL),
+				_numeric(false){
 	}
 	virtual void accept(FormulaClauseVisitor*) = 0;
 	virtual PrologTerm* asTerm();
@@ -80,12 +72,10 @@ public:
 		return _parent;
 	}
 	void parent(FormulaClause* parent) {
-
 		_parent = parent;
 		if (parent != NULL) {
 			parent->addChild(this);
 		}
-
 	}
 	void arguments(std::list<PrologTerm*> arguments) {
 		_arguments = arguments;
@@ -109,7 +99,6 @@ public:
 		if (find(_variables.begin(), _variables.end(), v) == _variables.end()) {
 			_variables.push_back(v);
 		}
-
 	}
 
 	void addVariables(std::list<PrologVariable*> l) {
@@ -160,7 +149,6 @@ class PrologTerm: public FormulaClause {
 	friend std::ostream& operator<<(std::ostream& output, const PrologTerm& pt);
 protected:
 	bool _infix;
-	PFSymbol* _symbol;
 	bool _sign;
 	bool _tabled;
 	bool _prefix;
@@ -169,29 +157,15 @@ public:
 	PrologTerm(std::string functor, std::list<PrologTerm*> args)
 			: 	FormulaClause(functor),
 				_infix(false),
-				_symbol(),
 				_sign(true),
 				_tabled(false),
 				_prefix(true),
 				_fact(false) {
 		_arguments = args;
 	}
-	PrologTerm(std::string functor, std::set<PrologVariable*> arguments)
-			: 	FormulaClause(functor),
-				_infix(false),
-				_symbol(),
-				_sign(true),
-				_tabled(false),
-				_prefix(true),
-				_fact(false) {
-		for (auto it = arguments.begin(); it != arguments.end(); ++it) {
-			addArgument((PrologTerm*) *it);
-		}
-	}
 	PrologTerm(std::string functor)
 			: 	FormulaClause(functor),
 				_infix(false),
-				_symbol(),
 				_sign(true),
 				_tabled(false),
 				_prefix(true),
@@ -243,13 +217,6 @@ public:
 		return this;
 	}
 
-	void symbol(PFSymbol* symbol) {
-		_symbol = symbol;
-	}
-
-	PFSymbol* symbol() {
-		return _symbol;
-	}
 	void addChild(FormulaClause* f) {
 		addArgument((PrologTerm*) f);
 	}

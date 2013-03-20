@@ -67,7 +67,7 @@ string transformIntoTermName(string str) {
 		}
 	}
 	stringstream ss;
-	if (str == "card" | str == "prod" | str == "min" | str == "max" | str == "abs") {
+	if (str == "card" | str == "prod" | str == "min" | str == "max" | str == "abs" | str=="sum") {
 		ss << IDPXSB_PREFIX << "_";
 	} else if (!numeric && str != "findall") {
 		ss << IDPXSB_PREFIX << identifier++ << "_";
@@ -364,17 +364,16 @@ string PrologProgram::getFacts() {
 		if (!(*it)->builtin() && _loaded.find((*it)->nameNoArity()) == _loaded.end()) {
 			_loaded.insert((*it)->nameNoArity());
 			_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->sorts().size()));
-			PredTable* st = _structure->inter(*it)->ct();
+			auto st = _structure->inter(*it)->ct();
 			for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-				output << term_name(strip((*it)->name())) << "(";
-				const ElementTuple& tmp = *tuple;
-				for (auto el = tmp.begin(); el != tmp.end();) {
-					output << domainelement_prolog(toString(*el));
-					if (++el != tmp.end()) {
-						output << ",";
-					}
+				output << term_name(strip((*it)->name()));
+				const auto& tmp = *tuple;
+				if(tmp.size()>0){
+					output << "(";
+					printList(output, tmp, ",", true);
+					output <<")";
 				}
-				output << ")." << endl;
+				output << ".\n";
 			}
 		}
 	}
@@ -704,8 +703,8 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 	auto term = new AggregateClause();
 	term->type(compType2string(a->comp()));
 	enter(term);
-	a->getAggTerm()->accept(this);
 	a->getBound()->accept(this);
+	a->getAggTerm()->accept(this);
 	leave();
 	term->arguments(vars2terms(term->variables()));
 	_parent->addVariables(term->variables());
@@ -856,7 +855,9 @@ PrologTerm* SymbolClause::asTerm() {
 
 PrologTerm* FormulaClause::asTerm() {
 	if (_name.length() == 0) {
-		_name = address(this);
+		stringstream ss;
+		ss <<"temp" <<getGlobal()->getNewID();
+		_name = ss.str();
 	}
 	auto tmp = new PrologTerm(_name, _arguments);
 	tmp->variables(variables());
