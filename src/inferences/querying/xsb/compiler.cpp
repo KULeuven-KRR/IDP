@@ -370,7 +370,7 @@ string PrologProgram::getFacts() {
 				const auto& tmp = *tuple;
 				if(tmp.size()>0){
 					output << "(";
-					printList(output, tmp, ",", true);
+					printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(toString(domelem)); }, true);
 					output <<")";
 				}
 				output << ".\n";
