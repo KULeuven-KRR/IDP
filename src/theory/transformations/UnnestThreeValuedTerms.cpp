@@ -149,7 +149,9 @@ Term* UnnestThreeValuedTerms::visit(FuncTerm* t) {
 	} else {
 		_cpablefunction = false;
 	}
-	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary()) and not TermUtils::isTermWithIntFactor(t, _structure)
+	if (not FuncUtils::isIntSum(t->function(), _structure->vocabulary())
+			and not FuncUtils::isIntProduct(t->function(), _structure->vocabulary())
+			and not TermUtils::isTermWithIntFactor(t, _structure)
 			and not is(t->function(), STDFUNC::UNARYMINUS)) {
 		//Note: Leave cpable flag as is when the current functerm is a sum or a term with a factor!
 		// They get a special treatment for CP.

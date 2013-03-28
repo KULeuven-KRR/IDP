@@ -287,7 +287,7 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 
 Sort* deriveSmallerSort(const Term* term, const AbstractStructure* structure) {
 	auto sort = term->sort();
-	if (structure == NULL or not SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary()) or structure->inter(sort)->empty()) {
+	if (term->type()==TermType::VAR or structure == NULL or not SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary()) or structure->inter(sort)->empty()) {
 		return sort;
 	}
 	auto bounds = TermUtils::deriveTermBounds(term, structure);
