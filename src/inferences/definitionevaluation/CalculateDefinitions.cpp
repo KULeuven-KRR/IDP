@@ -31,7 +31,13 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure, bool withxsb) {
 	// TODO duplicate code with modelexpansion
 
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		clog << "Calculating definition: " <<  toString(definition) << "\n";
+	}
 	if (withxsb) {
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+			clog << "Calculating the above definition using XSB\n";
+		}
 		auto xsb_interface = XSBInterface::instance();
 		xsb_interface->setStructure(structure);
 
@@ -135,7 +141,6 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 				if(getOption(XSB) && hasrecursion) {
 					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 				}
-
 				auto satisfiable = calculateDefinition(definition, structure, getOption(XSB) && not hasrecursion);
 				if (not satisfiable) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
@@ -152,6 +157,12 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 	}
 	if (not structure->isConsistent()) {
 		return std::vector<AbstractStructure*> { };
+	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+		clog << "Done calculating known definitions\n";
+	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "Resulting structure:\n" << toString(structure) << "\n";
 	}
 	return {structure};
 }

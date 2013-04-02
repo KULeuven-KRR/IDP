@@ -119,6 +119,9 @@ void XSBInterface::loadDefinition(Definition* d) {
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
 	auto str2 = _pp->getFacts();
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+		clog << "The transformation to XSB resulted in the following code\n\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3 << "\n";
+	}
 	sendToXSB(str3, false);
 	sendToXSB(str2, true);
 	sendToXSB(str, false);
