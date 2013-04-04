@@ -98,6 +98,7 @@ public:
 						threevalWarningIssued = true;
 					}
 					_currentSymbol = toString(pred);
+					visit(predinter->ct());
 				}
 			}
 		}
