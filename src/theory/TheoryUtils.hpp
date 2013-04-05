@@ -113,6 +113,10 @@ bool containsFuncTermsOutsideOfSets(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
+int countQuantVars(const Theory* t);
+int countQuantVars(const Rule* t);
+int countQuantVars(const Formula* t);
+
 /** Modifies the theory by transforming cardinality constraints bounded by a value smaller than maxbound to its FO-counterpart. **/
 AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound);
 

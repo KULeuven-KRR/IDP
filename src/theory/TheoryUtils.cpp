@@ -31,6 +31,7 @@
 #include "information/HasRecursionOverNegation.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
+#include "information/CountQuantVars.hpp"
 #include "transformations/CardConstrToFO.hpp"
 #include "transformations/PushNegations.hpp"
 #include "transformations/Flatten.hpp"
@@ -385,6 +386,16 @@ bool containsAggTerms(Formula* f) {
 
 bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
+}
+
+int countQuantVars(const Theory* t){
+	return transform<CountQuantVars, int>(t);
+}
+int countQuantVars(const Rule* t){
+	return transform<CountQuantVars, int>(t);
+}
+int countQuantVars(const Formula* t){
+	return transform<CountQuantVars, int>(t);
 }
 
 std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager) {

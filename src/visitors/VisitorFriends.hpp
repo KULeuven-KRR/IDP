@@ -40,6 +40,7 @@ class TheorySymmetryAnalyzer;
 template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
+class CountQuantVars;
 class SplitIntoMonotoneAgg;
 class ReplaceNestedWithTseitinTerm;
 class ConstructNewReducedForm;
@@ -85,6 +86,7 @@ class ReplacePredByPred;
 		template<typename Stream> friend class TPTPPrinter; \
 		template<typename Stream> friend class IDPPrinter; \
 		template<typename Stream> friend class EcnfPrinter; \
+		friend class CountQuantVars; \
 		friend class TheorySupportedChecker; \
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
