@@ -46,6 +46,7 @@ SetExpr::~SetExpr() {
 }
 
 void SetExpr::setFreeVars() {
+	_freevars.clear();
 	if (getSubTerm() != NULL) {
 		_freevars.insert(getSubTerm()->freeVars().cbegin(), getSubTerm()->freeVars().cend());
 	}
