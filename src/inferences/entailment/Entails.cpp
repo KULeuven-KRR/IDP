@@ -265,7 +265,10 @@ State Entails::checkEntailment() {
 	tptpResult.close();
 
 	if (pos == std::string::npos) {
-		throw IdpException("The automated theorem prover gave up or stopped in an irregular state.");
+		state = State::UNKNOWN;
+		if (getOption(VERBOSE_ENTAILMENT) > 0) {
+			Warning::warning("The automated theorem prover gave up or stopped in an irregular state.");
+		}
 	}
 
 	return state;
