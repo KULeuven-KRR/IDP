@@ -251,27 +251,29 @@ public:
 class AggGroundRule: public GroundRule {
 ACCEPTBOTH(GroundRule)
 private:
+	double _bound; // The bound on the aggregate
+	bool _lower; // If true, then bound=<agg(set), otherwise bound>=agg(set)
 	SetId _setnr; // The id of the set of the aggregate
 	AggFunction _aggtype; // The aggregate type (cardinality, sum, product, min, or max)
-	bool _lower; // True iff the bound is a lower bound
-	double _bound; // The bound on the aggregate
 
 public:
 	// Constructors
-	AggGroundRule(Lit head, SetId setnr, AggFunction at, bool lower, double bound, bool rec)
+	AggGroundRule(Lit head, double bound, bool lower, SetId setnr, AggFunction at, bool rec)
 			: 	GroundRule(head, RuleType::AGG, rec),
+			  	_bound(bound),
+			  	_lower(lower),
 				_setnr(setnr),
-				_aggtype(at),
-				_lower(lower),
-				_bound(bound) {
+				_aggtype(at)
+				 {
 	}
 	AggGroundRule(Lit head, AggTsBody* body, bool rec);
 	AggGroundRule(const AggGroundRule& grb)
 			: 	GroundRule(grb.head(), RuleType::AGG, grb.recursive()),
+			  	_bound(grb._bound),
+			  	_lower(grb._lower),
 				_setnr(grb._setnr),
-				_aggtype(grb._aggtype),
-				_lower(grb._lower),
-				_bound(grb._bound) {
+				_aggtype(grb._aggtype)
+				 {
 	}
 
 	~AggGroundRule() {
@@ -515,8 +517,8 @@ private:
 	AggFunction _aggtype;
 	bool _lower; //comptype == CompType::LT
 	double _bound; //The other side of the equation.
-	//If _lower is true this means CARD{_setnr}=<_bound
-	//If _lower is false this means CARD{_setnr}>=_bound
+	//If _lower is true this means bound=<agg{_setnr}
+	//If _lower is false this means bound>=agg{_setnr}
 public:
 	AggTsBody(TsType type, double bound, bool lower, AggFunction at, SetId setnr)
 			: 	TsBody(type),

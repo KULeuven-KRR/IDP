@@ -611,12 +611,13 @@ void GrounderFactory::visit(const AggForm* af) {
 	auto newaf = dynamic_cast<AggForm*>(transaf);
 	Assert(not recursive(newaf) or FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
 
+	auto comp = newaf->comp();
 	auto bound = newaf->getBound();
 	auto aggterm = newaf->getAggTerm();
 	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(aggterm, getConcreteStructure()) and CPSupport::eligibleForCP(bound, getConcreteStructure())) {
-		groundAggWithCP(newaf->sign(), bound, newaf->comp(), aggterm);
+		groundAggWithCP(newaf->sign(), bound, comp, aggterm);
 	}else{
-		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, newaf->comp(), aggterm);
+		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, comp, aggterm);
 	}
 
 	deleteDeep(newaf);
@@ -627,10 +628,10 @@ void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, Agg
 		comp = negateComp(comp); // TODO tseitin?
 	}
 	descend(agg);
-	auto boundgrounder = getTermGrounder();
+	auto aggrounder = getTermGrounder();
 	descend(bound);
-	auto termgrounder = getTermGrounder();
-	_formgrounder = new ComparisonGrounder(getGrounding(), termgrounder, comp, boundgrounder, _context);
+	auto boundgrounder = getTermGrounder();
+	_formgrounder = new ComparisonGrounder(getGrounding(), boundgrounder, comp, aggrounder, _context);
 	if (_context._component == CompContext::SENTENCE) {
 		_topgrounder = getFormGrounder();
 	}
@@ -654,7 +655,7 @@ void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sig
 	if (recursive) {
 		_context._tseitin = TsType::RULE;
 	}
-	_formgrounder = new AggGrounder(getGrounding(), _context, agg->function(), setgrounder, boundgrounder, comp, sign);
+	_formgrounder = new AggGrounder(getGrounding(), _context, boundgrounder, comp, agg->function(), setgrounder, sign);
 
 	RestoreContext();
 	if (_context._component == CompContext::SENTENCE) {

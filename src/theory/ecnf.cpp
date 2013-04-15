@@ -39,10 +39,10 @@ PCGroundRule::PCGroundRule(Lit head, PCTsBody* body, bool rec)
 }
 AggGroundRule::AggGroundRule(Lit head, AggTsBody* body, bool rec)
 		: 	GroundRule(head, RuleType::AGG, rec),
-			_setnr(body->setnr()),
-			_aggtype(body->aggtype()),
+		  	_bound(body->bound()),
 			_lower(body->lower()),
-			_bound(body->bound()) {
+			_setnr(body->setnr()),
+			_aggtype(body->aggtype()) {
 }
 
 GroundDefinition* GroundDefinition::clone() const {
@@ -138,10 +138,10 @@ void GroundDefinition::addAggRule(Lit head, SetId setnr, AggFunction aggtype, bo
 	map<int, GroundRule*>::iterator it = _rules.find(head);
 
 	if (it == _rules.cend()) {
-		_rules[head] = new AggGroundRule(head, setnr, aggtype, lower, bound, recursive);
+		_rules[head] = new AggGroundRule(head, bound, lower, setnr, aggtype, recursive);
 	} else if ((it->second)->isFalse()) {
 		delete (it->second);
-		it->second = new AggGroundRule(head, setnr, aggtype, lower, bound, recursive);
+		it->second = new AggGroundRule(head, bound, lower, setnr, aggtype, recursive);
 	} else if (not (it->second->isTrue())) {
 		switch (it->second->type()) {
 		case RuleType::DISJ: {

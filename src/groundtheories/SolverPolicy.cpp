@@ -72,19 +72,19 @@ void SolverPolicy<Solver>::polAdd(DefId defnr, PCGroundRule* rule) {
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(DefId defnr, AggGroundRule* rule) {
-	polAddAggregate(defnr.id, rule->head(), rule->lower(), rule->setnr(), rule->aggtype(), TsType::RULE, rule->bound());
+	polAddAggregate(defnr.id, rule->head(), rule->bound(), rule->lower(), rule->setnr(), rule->aggtype(), TsType::RULE);
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(DefId defnr, Lit head, AggGroundRule* body, bool) {
-	polAddAggregate(defnr.id, head, body->lower(), body->setnr(), body->aggtype(), TsType::RULE, body->bound());
+	polAddAggregate(defnr.id, head, body->bound(), body->lower(), body->setnr(), body->aggtype(), TsType::RULE);
 }
 
 template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 	Assert(body->type() != TsType::RULE);
 	//FIXME getIDForUndefined() should be replaced by the number the SOLVER takes as undefined
-	polAddAggregate(getIDForUndefined(), head, body->lower(), body->setnr(), body->aggtype(), body->type(), body->bound());
+	polAddAggregate(getIDForUndefined(), head, body->bound(), body->lower(), body->setnr(), body->aggtype(), body->type());
 }
 
 template<typename Solver>
@@ -335,7 +335,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& 
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound) {
+void SolverPolicy<Solver>::polAddAggregate(DefId definitionID, Lit head, double bound, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem) {
 	auto sign = lowerbound ? MinisatID::AggSign::LB : MinisatID::AggSign::UB;
 	auto msem = MinisatID::AggSem::COMP;
 	switch (sem) {

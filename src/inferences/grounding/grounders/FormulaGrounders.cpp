@@ -233,10 +233,10 @@ void ComparisonGrounder::run(ConjOrDisj& formula) const {
 }
 
 // TODO incorrect groundsize
-AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign)
+AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, SetGrounder* sg, SIGN sign)
 		: 	FormulaGrounder(grounding, gc),
 			_setgrounder(sg),
-			_boundgrounder(bg),
+			_boundgrounder(bound),
 			_type(tp),
 			_comp(comp),
 			_sign(sign) {

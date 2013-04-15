@@ -87,7 +87,7 @@ protected:
 	}
 
 private:
-	void polAddAggregate(DefId definitionID, Lit head, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem, double bound);
+	void polAddAggregate(DefId definitionID, Lit head, double bound, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem);
 	void polAddCPVariables(const varidlist& varids, GroundTranslator* mtranslator);
 	void polAddCPVariable(const VarId& varid, GroundTranslator* translator);
 	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive);

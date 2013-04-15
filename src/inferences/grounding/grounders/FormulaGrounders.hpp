@@ -96,6 +96,7 @@ public:
 	void run(ConjOrDisj& formula) const;
 };
 
+// Expresses bound comp aggterm!
 class AggGrounder: public FormulaGrounder {
 private:
 	SetGrounder* _setgrounder;
@@ -116,7 +117,7 @@ private:
 	Lit run() const;
 
 public:
-	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, AggFunction tp, SetGrounder* sg, TermGrounder* bg, CompType comp, SIGN sign);
+	AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, SetGrounder* sg, SIGN sign);
 	~AggGrounder();
 	void run(ConjOrDisj& formula) const;
 };
