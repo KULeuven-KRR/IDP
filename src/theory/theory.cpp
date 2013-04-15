@@ -20,6 +20,8 @@
 #include "visitors/TheoryVisitor.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
+#include "printers/print.hpp"
+
 #include "TheoryUtils.hpp"
 
 using namespace std;
@@ -641,23 +643,7 @@ void Theory::remove(Definition* d) {
 }
 
 std::ostream& Theory::put(std::ostream& output) const {
-	output << "theory " << name();
-	if (_vocabulary) {
-		output << " : " << vocabulary()->name();
-	}
-	pushtab();
-	output << " {";
-	for (auto it = _sentences.cbegin(); it != _sentences.cend(); ++it) {
-		output << nt() << print(*it);
-	}
-	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {
-		output << nt() << print(*it);
-	}
-	for (auto it = _fixpdefs.cbegin(); it != _fixpdefs.cend(); ++it) {
-		output << nt() << print(*it);
-	}
-	poptab();
-	output << nt() << "}";
+	Printer::create(output)->print(this);
 	return output;
 }
 
