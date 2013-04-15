@@ -1,0 +1,20 @@
+vocabulary V{
+	type someIntegers isa int 	//someIntegers is a subtype of int
+	one : someIntegers //one is a constant of type someIntegers
+	two : someIntegers //two is a constant of type someIntegers
+}
+
+structure S:V{
+	someIntegers = {1..5} //Define the type someIntegers as the range 1..5
+}
+
+theory T: V{
+	! x[someIntegers]: one =< x. //In every model of this theory, one should be smaller than any other someInteger
+	one + one = two. //one + one should be two
+}
+
+
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

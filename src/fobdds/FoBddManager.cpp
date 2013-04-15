@@ -341,17 +341,29 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 	// Simplification
 	if (bdd == _truebdd) {
 		return _truekernel;
-	} else if (bdd == _falsebdd) {
+	}
+	if (bdd == _falsebdd) {
 		return _falsekernel;
-	} else if (longestbranch(bdd) == 2) {
-		const FOBDDDeBruijnIndex* qvar = getDeBruijnIndex(sort, 0);
-		const FOBDDTerm* arg = solve(bdd->kernel(), qvar);
-		if (arg != NULL && not containsPartialFunctions(arg)) {
-			if ((bdd->truebranch() == _truebdd && SortUtils::isSubsort(arg->sort(), sort)) || sort->builtin()) {
-				return _truekernel;
+	}
+	if (longestbranch(bdd) == 2) {
+		//First, we try to do some arithmetic simplifications: in case of a short branch, only one subcondition.
+		//If this is of the form ? y: F(x) = y, and F consists only of total functions,
+		//then we know that this kernel will always be true.
+		auto kernel = bdd->kernel();
+		if (isa<FOBDDAtomKernel>(*kernel)) {
+			auto atomKernel = dynamic_cast<const FOBDDAtomKernel*>(kernel);
+			auto symbol = atomKernel->symbol();
+			if (is(symbol, STDPRED::EQ)) { //Only simplifie for equalities
+				const FOBDDDeBruijnIndex* qvar = getDeBruijnIndex(sort, 0);
+				const FOBDDTerm* arg = solve(bdd->kernel(), qvar); //Try to rewrite in terms of as F(x) = y
+				if (arg != NULL && not containsPartialFunctions(arg)) {
+					//If something is found, i.e.~we can rewrite as F(x) = y, then simplify (at least if F maps to the sort of y)
+					if (bdd->truebranch() == _truebdd && SortUtils::isSubsort(arg->sort(), sort)) {
+						return _truekernel;
+					}
+
+				}
 			}
-			// NOTE: sort->builtin() is used here as an approximate test to see if the sort contains more than
-			// one domain element. If that is the case, (? y : F(x) ~= y) is indeed true.
 		}
 	}
 
