@@ -70,7 +70,6 @@ void Error::error(const std::string& message) {
 	stringstream ss;
 	ss << "Error: " << message << "\n";
 	GlobalData::instance()->notifyOfError(ss.str());
-	clog << ss.str();
 }
 
 void Error::error(const std::string& message, const ParseInfo& p) {
@@ -84,7 +83,6 @@ void Warning::warning(const std::string& message) {
 		stringstream ss;
 		ss << "Warning: " << message << "\n";
 		GlobalData::instance()->notifyOfWarning(ss.str());
-		clog << ss.str();
 	}
 }
 
