@@ -1,0 +1,17 @@
+procedure getExpectedNbOfModels(){
+	return 3
+}
+
+vocabulary V{
+	type 	Vertex 
+	type  Num isa int
+	Child : Vertex
+}
+
+theory T : V { 
+	?y: y = Child.
+}
+
+structure S : V{ 
+	Vertex = {A..C}
+}

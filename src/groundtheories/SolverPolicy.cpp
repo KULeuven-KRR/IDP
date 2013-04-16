@@ -636,7 +636,7 @@ public:
 			}
 		}
 		for (uint i = 0; i < varvalues.size(); ++i) {
-			if(args[i].isVariable){
+			if(args[var2arg[i]].isVariable){
 				auto varterm = new CPVarTerm(args[var2arg.at(i)]._varid);
 				CPBound bound(varvalues[i]);
 				auto varlit = theory->translator()->reify(varterm, CompType::EQ, bound, TsType::EQ);
