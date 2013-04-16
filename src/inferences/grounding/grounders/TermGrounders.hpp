@@ -163,6 +163,7 @@ private:
 	AggFunction _type;
 	SetGrounder* _setgrounder;
 	AbstractGroundTheory* grounding;
+	mutable std::map<std::pair<uint,AggFunction>, VarId> aggterm2cpterm; // TODO memory management and move to translator!
 
 public:
 	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr);

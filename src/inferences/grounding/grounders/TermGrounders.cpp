@@ -538,17 +538,27 @@ GroundTerm AggTermGrounder::run() const {
 	auto trueweight = applyAgg(_type, tsset.trueweights());
 
 	if (not tsset.cpvars().empty()) {
-		auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
-		if (trueweight!=getNeutralElement(_type)) {
-			varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
+		VarId id;
+		if(contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
+			id = aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)];
+		}else{
+			auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
+			if (trueweight!=getNeutralElement(_type)) {
+				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
+			}
+			auto aggterm = createCPAggTerm(_type, varids);
+			id = _translator->translateTerm(aggterm, getDomain());
+			aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)]=id;
+			if(not contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
+				throw IdpException("Invalid code path");
+			}
 		}
-		auto cpaggterm = createCPAggTerm(_type, varids);
-		auto varid = _translator->translateTerm(cpaggterm, getDomain());
+
 		if (verbosity() > 2) {
 			poptab();
-			clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
+			clog << tabs() << "Result = " << _translator->printTerm(id) << "\n";
 		}
-		return GroundTerm(varid);
+		return GroundTerm(id);
 	} else {
 		if (verbosity() > 2) {
 			poptab();
