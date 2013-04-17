@@ -125,7 +125,16 @@ public:
 		traverse(qf);
 	}
 
-	void visit(const PredForm*) {
+	void visit(const PredForm* pf) {
+		if(not data->_baseformulas_already_added) {
+			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
+			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
+			if(pf->sign() == SIGN::NEG) {
+				std::swap(ctformula,cfformula);
+			}
+			add(topdownrules, data->formula2ct[pf], ctformula, data);
+			add(topdownrules, data->formula2cf[pf], cfformula, data);
+		}
 	}
 	void visit(const AggForm*) {
 		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
@@ -265,7 +274,14 @@ public:
 		traverse(qf);
 	}
 
-	void visit(const PredForm*) {
+	void visit(const PredForm* pf) {
+		PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
+		PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
+		if(pf->sign() == SIGN::NEG) {
+			std::swap(ctformula,cfformula);
+		}
+		add(bottomuprules, data->formula2ct[pf], ctformula, data);
+		add(bottomuprules, data->formula2cf[pf], cfformula, data);
 	}
 	void visit(const AggForm*) {
 		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
@@ -343,6 +359,7 @@ Definition* GenerateApproximatingDefinition::getallRules(Direction dir) {
 	auto d = new Definition();
 	if (dir != Direction::DOWN) {
 		d->add(getallUpRules());
+		data->_baseformulas_already_added=true;
 	}
 	if (dir != Direction::UP) {
 		d->add(getallDownRules());

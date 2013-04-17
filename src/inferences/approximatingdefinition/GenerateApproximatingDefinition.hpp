@@ -21,9 +21,11 @@ struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2ct;
 	std::map<const Formula*, PredForm*> formula2cf;
 	std::set<PFSymbol*> actions;
+	bool _baseformulas_already_added;
 
 	ApproxData(const std::set<PFSymbol*>& actions)
-			: actions(actions) {
+			: actions(actions),
+			  _baseformulas_already_added(false){
 	}
 };
 
