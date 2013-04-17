@@ -124,7 +124,7 @@ Lit AtomGrounder::run() const {
 		lit = translator()->addLazyElement(_symbol, terms, _recursive);
 		}
 		auto temphead = translator()->createNewUninterpretedNumber();
-		getGrounding()->addLazyElement(temphead, _symbol, terms, _recursive);
+		getGrounding()->addLazyElement(temphead, _symbol, ids);
 		lit = temphead;
 	}else{
 		// Run instance checkers
@@ -132,7 +132,7 @@ Lit AtomGrounder::run() const {
 		for (size_t n = 0; n < terms.size(); ++n) {
 			_args[n] = terms[n]._domelement;
 			*(_checkargs[n]) = _args[n];
-
+		}
 		lit = translator()->translateReduced(_symboloffset, _args, _recursive);
 	}
 	lit = isPos(_sign) ? lit : -lit;
@@ -1011,10 +1011,10 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 
 	formula.setType(connective());
 
-	cerr <<"Lazy grounding request contains " <<print(request.instantiation) <<"\n";
+//	cerr <<"Lazy grounding request contains " <<print(request.instantiation) <<"\n";
 
-	if(replacementaftersplit==NULL){
-		bool handledcheap = false;
+	bool handledcheap = false;
+	if(replacementaftersplit==NULL && getOption(SATISFIABILITYDELAY)){
 		uint nbfound = 0; // Checker whether already instantiated by lazy grounding
 		set<const DomElemContainer*> instantiatedvars;
 		for (auto container : request.instantiation) {
@@ -1044,28 +1044,28 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 			#warning why is dropping the grounders when done incorrect?
 			//request.groundersdone = false;
 		}
-
-		if (not handledcheap) {
-			cerr <<"Could not handle " <<print(getFormula()) <<" with containers " <<print(_generatescontainers) <<" cheaply\n";
-			for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
-				CHECKTERMINATION;
-				if(groundAfterGeneration(formula, request)) {
-					if (verbosity() > 2) {
-						poptab();
-					}
-					return;
-				}
-			}
-		}
-		if(getContext()._conjunctivePathFromRoot && conjunctiveWithSign()){
-			for(auto lit: formula.literals){
-				getGrounding()->add(GroundClause{lit});
-			}
-			formula.literals.clear();
-		}
 	}
 
-	if(replacementaftersplit!=NULL){
+	if (not handledcheap) {
+//		cerr <<"Could not handle " <<print(getFormula()) <<" with containers " <<print(_generatescontainers) <<" cheaply\n";
+		for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
+			CHECKTERMINATION;
+			if(groundAfterGeneration(formula, request)) {
+				if (verbosity() > 2) {
+					poptab();
+				}
+				return;
+			}
+		}
+	}
+	if(getContext()._conjunctivePathFromRoot && conjunctiveWithSign()){
+		for(auto lit: formula.literals){
+			getGrounding()->add(GroundClause{lit});
+		}
+		formula.literals.clear();
+	}
+
+	if(replacementaftersplit!=NULL && getOption(SATISFIABILITYDELAY)){
 		replacementaftersplit->Grounder::run(formula, request);
 	}
 
