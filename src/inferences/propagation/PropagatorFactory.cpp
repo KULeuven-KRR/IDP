@@ -55,7 +55,7 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* 
 			if(getOption(SATISFIABILITYDELAY)){
 				propagator->applyPropagationToStructure(structure, new Vocabulary("Temp"));
 			}else{
-				propagator->applyPropagationToStructure(structure, outputvoc);
+				propagator->applyPropagationToStructure(structure, outputvoc!=NULL?outputvoc:structure->vocabulary());
 			}
 		}
 	}
@@ -64,15 +64,16 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* 
 	//  * We did not yet propagate ALL information
 	//  * BUT, we are sure that we propagated ENOUGH information to the structure to be sure that the outputvoc is correct.
 	Vocabulary* symbolsThatShouldNotBeReplacedByBDDs = NULL;
-	if(LUP){
+/*	if(LUP){
 		if(not getOption(SATISFIABILITYDELAY)){
 			if(outputvoc==NULL){
 				symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
 			}else{
-				symbolsThatShouldNotBeReplacedByBDDs = outputvoc;
+				symbolsThatShouldNotBeReplacedByBDDs = new Vocabulary("Temp");
 			}
 		}
-	}else{
+	}else{*/
+	if(not LUP) {
 		 // FIXME Otherwise, allowed to replace every symbol by a bdd => BUGGED
 		symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
 	}
