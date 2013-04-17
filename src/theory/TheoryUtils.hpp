@@ -120,7 +120,7 @@ double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,con
 Formula* flatten(Formula*);
 
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas */
-Formula* graphFuncsAndAggs(Formula* f, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
@@ -195,8 +195,8 @@ void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
-Theory* graphFuncsAndAggs(Theory*, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
-AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);

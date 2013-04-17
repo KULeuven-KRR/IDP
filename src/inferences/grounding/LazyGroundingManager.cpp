@@ -351,7 +351,6 @@ public:
 		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
 		structure->clean();
 
-		std::vector<AbstractStructure*> solutions;
 		if (getOption(VERBOSE_GROUNDING) > 1) {
 			clog << "Structure used:\n" << toString(structure) << "\n";
 		}
@@ -387,7 +386,7 @@ public:
 		}
 
 		try {
-			solutions = ModelExpansion::doMinimization(theory, structure, minimterm, NULL, NULL);
+			auto solutions = ModelExpansion::doMinimization(theory, structure, minimterm, NULL, NULL)._models;
 			if (solutions.size() == 0) {
 				clog << "Problematic structure: " << print(structure) << "\n";
 			}
@@ -1227,6 +1226,16 @@ bool LazyGroundingManager::canBeDelayedOn(Formula* head, Formula* body) const {
 
 void LazyGroundingManager::put(ostream&) const {
 // TODO print delay information
+}
+
+Grounder* LazyGroundingManager::getFirstSubGrounder() const {
+	if(not toGround.empty()){
+		return toGround.front();
+	}
+	if(not tobeinitialized.empty()){
+		return tobeinitialized.front();
+	}
+	return NULL;
 }
 
 // FIXME can be used to get a complete extension of the structure

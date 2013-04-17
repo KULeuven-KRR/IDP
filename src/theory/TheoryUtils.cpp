@@ -51,8 +51,6 @@
 #include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
-#include "information/FindUnknBoundLiteral.hpp"
-#include "information/FindDoubleDelayLiteral.hpp"
 #include "information/CollectSymbols.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
@@ -237,8 +235,8 @@ Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f, const Structure* str, bool unnestall, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, Formula*>(f, str, unnestall, cpsupport, con);
+Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Formula*>(f, str, definedsymbols, unnestall, cpsupport, con);
 }
 
 Formula* pushNegations(Formula* f) {
@@ -338,11 +336,11 @@ void flatten(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-Theory* graphFuncsAndAggs(Theory* t, const Structure* str, bool unnestall, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, Theory*>(t, str, unnestall, cpsupport, con);
+Theory* graphFuncsAndAggs(Theory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, Theory*>(t, str, definedsymbols, unnestall, cpsupport, con);
 }
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, bool unnestall, bool cpsupport, Context con) {
-	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, unnestall, cpsupport, con);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, definedsymbols, unnestall, cpsupport, con);
 }
 
 void pushNegations(AbstractTheory* t) {

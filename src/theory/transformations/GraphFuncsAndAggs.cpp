@@ -14,6 +14,7 @@
 #include "theory/TheoryUtils.hpp"
 #include "structure/information/IsTwoValued.hpp"
 #include "IncludeComponents.hpp"
+#include "utils/ListUtils.hpp"
 
 using namespace std;
 using namespace CPSupport;
@@ -70,8 +71,8 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		return traverse(pf);
 	}
 
-	auto threevalleft = _all3valued || not isTwoValued(left, _structure);
-	auto threevalright = _all3valued || not isTwoValued(right, _structure);
+	auto threevalleft = _all3valued || not isTwoValued(left, _structure) || (isFunc(left) && contains(_definedsymbols,dynamic_cast<FuncTerm*>(left)->function()));
+	auto threevalright = _all3valued || not isTwoValued(right, _structure) || (isFunc(right) && contains(_definedsymbols,dynamic_cast<FuncTerm*>(right)->function()));;
 
 	if (not threevalleft && not threevalright) {
 		return pf;

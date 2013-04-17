@@ -97,7 +97,7 @@ protected:
 
 	void visit(const Theory* theory) {
 		auto temp = theory->clone();
-		auto cloned = dynamic_cast<Theory*>(FormulaUtils::graphFuncsAndAggs(temp, NULL, true, false /*TODO check*/, Context::POSITIVE));
+		auto cloned = dynamic_cast<Theory*>(FormulaUtils::graphFuncsAndAggs(temp, NULL,  {}, true, false /*TODO check*/, Context::POSITIVE));
 		if (cloned == NULL) { // TODO ugly hack
 			Assert(false);
 		}

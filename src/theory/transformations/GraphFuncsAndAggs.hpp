@@ -31,17 +31,20 @@ private:
 	Vocabulary* _vocabulary;
 	Context _context;
 	bool _cpsupport;
+	std::set<PFSymbol*> _definedsymbols;
 public:
 	template<typename T>
-	T execute(T t, const Structure* str = NULL, bool unnestAll = true, bool cpsupport = false, Context c = Context::POSITIVE) {
+	T execute(T t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestAll = true, bool cpsupport = false, Context c = Context::POSITIVE) {
 		_all3valued = unnestAll;
 		_structure = str;
+		_definedsymbols = definedsymbols;
 		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
 		_context = c;
 		_cpsupport = cpsupport;
 		return t->accept(this);
 	}
 
+private:
 	static PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&, const Structure* structure);
 	static AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&, const Structure* structure);
 

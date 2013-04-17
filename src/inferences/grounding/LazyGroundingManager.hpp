@@ -154,9 +154,7 @@ public:
 
 	void extendStructure(AbstractStructure* structure) const;
 
-	const std::queue<Grounder*>& getNonDelayedSubGrounders() const {
-		return toGround;
-	}
+	Grounder* getFirstSubGrounder() const;
 
 	AbstractStructure const * getStructure() const {
 		return _structures.concrstructure;

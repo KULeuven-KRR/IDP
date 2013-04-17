@@ -37,11 +37,12 @@ Grounder* getGrounder(Theory& t, Structure* s) {
 		cerr <<"NULL topgrounder\n";
 		throw IdpException("Error");
 	}
-	if(topgrounder->getNonDelayedSubGrounders().empty()){
+	auto grounder = topgrounder->getFirstSubGrounder();
+	if(grounder==NULL){
 		cerr <<"Empty topgrounder\n";
 		throw IdpException("Error");
 	}
-	return topgrounder->getNonDelayedSubGrounders().front();
+	return grounder;
 }
 
 TEST(Grounderfactory, DisjContext) {

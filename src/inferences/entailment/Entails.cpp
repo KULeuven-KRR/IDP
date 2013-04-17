@@ -123,10 +123,10 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 
 	// Turn functions into predicates (for partial function support)
 	FormulaUtils::unnestTerms(axioms);
-	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, true, false);
+	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, {}, true, false);
 
 	FormulaUtils::unnestTerms(conjectures);
-	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, true, false);
+	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, {}, true, false);
 
 	if (not conjecturesSupported.arithmeticFound() && not axiomsSupported.arithmeticFound()) {
 		hasArithmetic = false;

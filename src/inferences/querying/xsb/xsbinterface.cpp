@@ -110,7 +110,7 @@ void XSBInterface::loadDefinition(Definition* d) {
 	Theory theory("", _structure->vocabulary(), ParseInfo());
 	theory.add(d);
 	FormulaUtils::unnestFuncsAndAggs(&theory, _structure);
-	FormulaUtils::graphFuncsAndAggs(&theory, _structure, true, false /*TODO check*/);
+	FormulaUtils::graphFuncsAndAggs(&theory, _structure, {}, true, false /*TODO check*/);
 	FormulaUtils::removeEquivalences(&theory);
 	FormulaUtils::splitComparisonChains(&theory, theory.vocabulary());
 	FormulaUtils::pushNegations(&theory);

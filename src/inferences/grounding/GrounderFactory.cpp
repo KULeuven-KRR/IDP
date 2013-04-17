@@ -524,6 +524,8 @@ const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) 
 }
 
 void GrounderFactory::visit(const PredForm* pf) {
+	context._conjPathUntilNode = _context._conjunctivePathFromRoot;
+
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 
@@ -975,7 +977,8 @@ void GrounderFactory::visit(const EqChainForm* ef) {
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot;
 	Formula* f = ef->cloneKeepVars();
 	f = FormulaUtils::splitComparisonChains(f, getGrounding()->vocabulary());
-	descend(f);
+	f->accept(this);
+	checkAndAddAsTopGrounder();
 	deleteDeep(f);
 }
 
@@ -1355,7 +1358,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
-	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, true, false, data.funccontext);
+	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, definedsymbols, true, false, data.funccontext);
 	auto bdd = symstructure->evaluate(tempsubformula, type, structure); // !x phi(x) => generate all x possibly false
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "For formula " << print(tempsubformula) << ", I found the following BDD (might be improved)" << nt() << print(bdd) << nt();
