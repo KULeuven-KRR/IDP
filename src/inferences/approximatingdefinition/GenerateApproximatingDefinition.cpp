@@ -245,16 +245,17 @@ public:
 	 * !x: P(x) <=> ?y: L(x, y)
 	 *
 	 * EXISTS:
-	 * 		Pct(x, y) <- ?y: Lct(x, y)
-	 * 		Pcf(x, y) <- !y: Lcf(x, y)
+	 * 		Pct(x) <- ?y: Lct(x, y)
+	 * 		Pcf(x) <- !y: Lcf(x, y)
 	 *
 	 * UNIV:
-	 * 		Pct(x, y) <- !y: Lct(x, y)
-	 * 		Pcf(x, y) <- ?y: Lcf(x, y)
+	 * 		Pct(x) <- !y: Lct(x, y)
+	 * 		Pcf(x) <- ?y: Lcf(x, y)
 	 */
 	void visit(const QuantForm* qf) {
 		Assert(qf->sign()==SIGN::POS);
 		auto exists = &data->formula2ct, univ = &data->formula2cf;
+
 		if (qf->isUniv()) {
 			exists = &data->formula2cf;
 			univ = &data->formula2ct;
@@ -369,4 +370,47 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 		insertAtEnd(result, rules);
 	}
 	return result;
+}
+
+void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
+	auto sign = f->sign();
+	auto formulaID = getGlobal()->getNewID();
+	std::vector<Sort*> sorts;
+	std::string ctname;
+	std::string cfname;
+
+	if(f->subformulas().empty()) {
+		auto fPredForm = dynamic_cast<PredForm*>(f);
+		sorts = fPredForm->symbol()->sorts();
+		std::string name = fPredForm->symbol()->nameNoArity();
+		std::string name2 = fPredForm->symbol()->nameNoArity();
+		ctname = name.append("_ct");
+		cfname = name2.append("_cf");
+
+	} else {
+		for(auto var : f->freeVars()) {
+			sorts.push_back(var->sort());
+		}
+		ctname = std::string("T").append(toString(formulaID).append("_ct"));
+		cfname = std::string("T").append(toString(formulaID).append("_cf"));
+	}
+
+	auto subterms = std::vector<Term*>();
+	for(auto fv : f->freeVars()) {
+		subterms.push_back(new VarTerm(fv, TermParseInfo()));
+	}
+	PredForm* newct;
+	PredForm* newcf;
+	if(sign == SIGN::NEG) {
+		std::swap(ctname,cfname);
+	}
+	newct = new PredForm(SIGN::POS, new Predicate(ctname,sorts), subterms, FormulaParseInfo());
+	newcf = new PredForm(SIGN::POS, new Predicate(cfname,sorts), subterms, FormulaParseInfo());
+
+	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,newct) );
+	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,newcf) );
+
+	for (auto subf : f->subformulas()) {
+		setFormula2PredFormMap(subf);
+	}
 }

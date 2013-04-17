@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef APPROXIMATINGDEFINITIONGENERATION_HPP_
-#define APPROXIMATINGDEFINITIONGENERATION_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "visitors/TheoryVisitor.hpp"
@@ -30,7 +29,6 @@ struct ApproxData {
 
 class GenerateApproximatingDefinition {
 private:
-	std::map<Formula*, Predicate*> formula2tseitin;
 	ApproxData* data;
 	std::vector<Formula*> _sentences;
 
@@ -47,10 +45,14 @@ public:
 
 private:
 	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions)
-			: 	data(new ApproxData(actions)) {
+			: 	data(new ApproxData(actions)),
+			  	_sentences(sentences) {
 		// TODO do transformations on the sentences
 		// TODO do tseitin introduction + generate new vocabulary
-		_sentences = sentences;
+		for(auto sentence : sentences) {
+			setFormula2PredFormMap(sentence);
+		}
+
 	}
 	~GenerateApproximatingDefinition() {
 		delete (data);
@@ -60,6 +62,6 @@ private:
 
 	std::vector<Rule*> getallDownRules();
 	std::vector<Rule*> getallUpRules();
-};
 
-#endif /* APPROXIMATINGDEFINITIONGENERATION_HPP_ */
+	void setFormula2PredFormMap(Formula*);
+};
