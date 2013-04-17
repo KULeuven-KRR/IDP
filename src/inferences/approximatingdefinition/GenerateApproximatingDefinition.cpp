@@ -121,7 +121,7 @@ public:
 		forms.push_back((*first)[qf->subformula()]);
 		auto& quant = Gen::forall(vars, Gen::disj(forms));
 
-		add(topdownrules, (*second)[qf->subformula()], &Gen::conj({&quant, (*first)[qf]}), data);
+		add(topdownrules, (*second)[qf->subformula()], &Gen::conj({&quant, (*second)[qf]}), data);
 		traverse(qf);
 	}
 
