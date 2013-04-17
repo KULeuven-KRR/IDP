@@ -12,6 +12,7 @@
 #include "TheoryUtils.hpp"
 
 #include "IncludeComponents.hpp"
+#include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 #include "information/ApproxCheckTwoValued.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddFactory.hpp"
@@ -327,6 +328,12 @@ Formula* unnestTerms(Formula* f, const Structure* str, Vocabulary* voc) {
 
 Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, definedsymbols, cpsupport);
+}
+
+Definition* getApproximatingDefinition(Theory* t, Structure* s) {
+	std::cout << "Getting approximating definition of theory:\n" << toString(t) << "\n";
+	auto ret = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(t->sentences(), s,std::set<PFSymbol*>(),GenerateApproximatingDefinition::Direction::BOTH);
+	return ret;
 }
 
 void addCompletion(AbstractTheory* t, const Structure* s) {

@@ -13,6 +13,11 @@
 
 #include "common.hpp"
 #include "visitors/TheoryVisitor.hpp"
+#include "vocabulary/vocabulary.hpp"
+#include "structure/Structure.hpp"
+#include "structure/MainStructureComponents.hpp"
+#include "inferences/definitionevaluation/CalculateDefinitions.hpp"
+#include "theory/theory.hpp"
 
 class PFSymbol;
 class Predicate;
@@ -22,6 +27,8 @@ struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2cf;
 	std::set<PFSymbol*> actions;
 	bool _baseformulas_already_added;
+	std::map<Predicate*, const PredForm*> _basePredsCT2InputPreds;
+	std::map<Predicate*, const PredForm*> _basePredsCF2InputPreds;
 
 	ApproxData(const std::set<PFSymbol*>& actions)
 			: actions(actions),
@@ -39,10 +46,44 @@ public:
 		UP, DOWN, BOTH
 	};
 
-	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& freesymbols, Direction dir){
+	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
+			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir){
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		// FIXME what with new vocabulary?
-		return g.getallRules(dir);
+		auto ret = g.getallRules(dir);
+		Theory* testt = new Theory("testtheory", ParseInfo());
+		testt->add(ret->clone());
+		std::cout << "THEORY: " << toString(testt) << "\n";
+		Vocabulary* testv = new Vocabulary("testvoc");
+		for(Rule* rule : ret->rules()) {
+			testv->add(rule->head()->symbol());
+		}
+		for(auto ctf : g.data->_basePredsCT2InputPreds) {
+			testv->add(ctf.first);
+		}
+		for(auto cff : g.data->_basePredsCF2InputPreds) {
+			testv->add(cff.first);
+		}
+		std::cout << "VOCABULARY: " << toString(testv) << "\n";
+
+		Structure* tests = new Structure("teststruct", testv, ParseInfo());
+
+		for(auto ctf : g.data->_basePredsCT2InputPreds) {
+			PredInter* newinter = new PredInter(s->inter(ctf.second->symbol())->ct(),true);
+			tests->changeInter(ctf.first,newinter);
+		}
+		for(auto cff : g.data->_basePredsCF2InputPreds) {
+			PredInter* newinter = new PredInter(s->inter(cff.second->symbol())->cf(),true);
+			tests->changeInter(cff.first,newinter);
+		}
+		for(auto sortinter : s->getSortInters()) {
+			tests->changeInter(sortinter.first,sortinter.second);
+		}
+		std::cout << "STRUCTURE: " << toString(tests) << "\n";
+		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
+		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(out.at(0)) << "END\n";
+
+		return ret;
 	}
 
 private:

@@ -127,8 +127,12 @@ public:
 
 	void visit(const PredForm* pf) {
 		if(not data->_baseformulas_already_added) {
-			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
-			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
+			auto name1 = pf->symbol()->nameNoArity();
+			auto name2 = pf->symbol()->nameNoArity();
+			PredForm* ctformula = new PredForm(SIGN::POS, new Predicate(name1.append("_input_ct"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
+			PredForm* cfformula = new PredForm(SIGN::POS, new Predicate(name2.append("_input_cf"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
+//			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
+//			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
 			if(pf->sign() == SIGN::NEG) {
 				std::swap(ctformula,cfformula);
 			}
@@ -275,8 +279,18 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
-		PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
+		auto name1 = pf->symbol()->nameNoArity();
+		auto name2 = pf->symbol()->nameNoArity();
+		auto ctpred = new Predicate(name1.append("_input_ct"),pf->symbol()->sorts());
+		auto cfpred = new Predicate(name2.append("_input_cf"),pf->symbol()->sorts());
+
+		data->_basePredsCT2InputPreds.insert( std::pair<Predicate*,const PredForm*>(ctpred,pf) );
+		data->_basePredsCF2InputPreds.insert( std::pair<Predicate*,const PredForm*>(cfpred,pf) );
+
+		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
+		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
+
+
 		if(pf->sign() == SIGN::NEG) {
 			std::swap(ctformula,cfformula);
 		}

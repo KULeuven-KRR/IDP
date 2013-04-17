@@ -545,8 +545,9 @@ const string& PFSymbol::name() const {
 	return _name;
 }
 string PFSymbol::nameNoArity() const {
+//	std::cout << "\t\tSPLITTING" << name() << "\n";
 	auto list = split(name(), "/");
-	Assert(list.size()==2);
+//	Assert(list.size()==2);
 	return list.front();
 }
 
