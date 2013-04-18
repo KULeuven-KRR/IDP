@@ -24,3 +24,6 @@ structure S:V{
 procedure getExpectedNbOfModels(){
 	return 2
 }
+procedure shouldNotCheck(){
+	return true;
+}

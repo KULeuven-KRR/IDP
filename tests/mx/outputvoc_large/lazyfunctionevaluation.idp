@@ -21,13 +21,24 @@ procedure checkSquare(x,y){
 }
 
 structure S:V{
-	x is int
+	x = {-10000000..10000000}
 	isSquare = procedure checkSquare
 }
 
-#include <mx>
+procedure specialOptions(){
+	print("not autocompleting");
+	stdoptions.autocomplete=false
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+// TODO autocompletion should be turned off!
+
+/*#include <mx>
 procedure main(){
 	stdoptions.nbmodels=0
 	stdoptions.satdelay=true
 	printmodels(modelexpand(T,S, Vout))
-}
+}*/

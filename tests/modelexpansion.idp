@@ -133,13 +133,16 @@ procedure mxwithsymm(){
 }
 
 procedure run() {
+	if(allowed~=nil) then
+		if (not allowed()) then return 1; end
+	end
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.transformations=0
 	stdoptions.verbosity.creategrounders=0
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
-	io.stderr:write("MX done")
+	io.stderr:write("MX done\n")
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.groundwithbounds=true
@@ -165,6 +168,10 @@ procedure run() {
 }
 
 procedure check(solutions){
+	if(shouldNotCheck~=nil) then
+		print("NOTE: solutions unchecked because too expensive!")
+		return 1;
+	end
 	for i,v in ipairs(solutions) do
 		structure = v
 		if(Vout~=nil and Vout~=V)then
