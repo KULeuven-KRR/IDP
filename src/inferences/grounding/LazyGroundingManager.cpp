@@ -72,7 +72,7 @@ LazyGroundingManager::LazyGroundingManager(AbstractGroundTheory* grounding, cons
 			_structures(structures),
 			resolvingqueues(false) {
 	getTranslator()->addMonitor(this); // NOTE: request notifications of literal additions
-	notifyForOutputVoc(NULL, { });
+	notifyForOutputVoc(NULL, { }); // NOTE: ugly hack to notify the solver there will be an output vocabulary (otherwise everything is default outputvoc)
 	setMaxGroundSize(tablesize(TST_EXACT, 1));
 }
 
@@ -839,7 +839,7 @@ void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstr
 	}
 
 	if (not getOption(EXPANDIMMEDIATELY)) {
-		if (not expensiveConstruction) {
+		if (not expensiveConstruction && not _nbModelsEquivalent) {
 			return;
 		}
 		if (_outputvocabulary != NULL && not _outputvocabulary->contains(symbol)) {
