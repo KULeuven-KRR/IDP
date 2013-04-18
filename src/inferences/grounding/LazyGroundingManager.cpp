@@ -228,10 +228,13 @@ public:
 			: 	manager(manager),
 				maxid(1) {
 		if (not getGlobal()->instance()->alreadyParsed("delay_optimization")) {
-			auto warnings = getOption(BoolType::SHOWWARNINGS);
+			auto warnings = getOption(SHOWWARNINGS);
+			auto autocomplete = getOption(AUTOCOMPLETE);
 			setOption(BoolType::SHOWWARNINGS, false);
+			setOption(BoolType::AUTOCOMPLETE, true);
 			parsefile("delay_optimization");
-			setOption(BoolType::SHOWWARNINGS, warnings);
+			setOption(SHOWWARNINGS, warnings);
+			setOption(AUTOCOMPLETE, autocomplete);
 		}
 
 		auto ns = getGlobal()->getGlobalNamespace();
@@ -339,21 +342,6 @@ public:
 			logActionAndTime("Finding delays");
 			clog << "Solving optimization problem to find delays.\n";
 		}
-		structure->inter(groundsizeFunc)->graphInter(groundsize);
-		structure->inter(symbolFunc)->graphInter(symbol);
-		structure->checkAndAutocomplete();
-		structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrue({createDomElem(getOption(LAZYSIZETHRESHOLD))});
-		makeUnknownsFalse(symbol);
-		makeUnknownsFalse(candelayon);
-		makeUnknownsFalse(groundsize);
-		makeUnknownsFalse(isdefdelay);
-		makeUnknownsFalse(isequivalence);
-		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
-		structure->clean();
-
-		if (getOption(VERBOSE_GROUNDING) > 1) {
-			clog << "Structure used:\n" << toString(structure) << "\n";
-		}
 
 #warning delay_optimization currently only works if useIFCompletion is FALSE!!! (has extra constraint)
 		auto savedoptions = getGlobal()->getOptions();
@@ -372,7 +360,24 @@ public:
 		setOption(TSEITINDELAY, false);
 		setOption(SATISFIABILITYDELAY, false);
 		setOption(NBMODELS, 1);
+		setOption(AUTOCOMPLETE, true);
 //		setOption(TIMEOUT, 10);
+
+		structure->inter(groundsizeFunc)->graphInter(groundsize);
+		structure->inter(symbolFunc)->graphInter(symbol);
+		structure->checkAndAutocomplete();
+		structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrue({createDomElem(getOption(LAZYSIZETHRESHOLD))});
+		makeUnknownsFalse(symbol);
+		makeUnknownsFalse(candelayon);
+		makeUnknownsFalse(groundsize);
+		makeUnknownsFalse(isdefdelay);
+		makeUnknownsFalse(isequivalence);
+		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
+		structure->clean();
+
+		if (getOption(VERBOSE_GROUNDING) > 1) {
+			clog << "Structure used:\n" << toString(structure) << "\n";
+		}
 
 		map<FormulaGrounder*, shared_ptr<Delay> > grounder2delay;
 		for (auto g : grounders) {
