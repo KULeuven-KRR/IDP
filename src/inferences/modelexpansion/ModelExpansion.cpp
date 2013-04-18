@@ -94,6 +94,16 @@ public:
 	}
 };
 
+#define cleanup \
+		grounding->recursiveDelete();\
+		clonetheory->recursiveDelete();\
+		getGlobal()->removeTerminationMonitor(terminator);\
+		delete (extender);\
+		delete (terminator);\
+		delete (newstructure);\
+		delete (data);\
+		delete (mx);
+
 MXResult ModelExpansion::expand() const {
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
@@ -141,6 +151,7 @@ MXResult ModelExpansion::expand() const {
 
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
+		cleanup;
 		throw IdpException(ss.str());
 	} catch(UnsatException& ex){
 		unsat = true;
@@ -199,14 +210,7 @@ MXResult ModelExpansion::expand() const {
 	}
 
 	// Clean up: remove all objects that are only used here.
-	grounding->recursiveDelete();
-	clonetheory->recursiveDelete();
-	getGlobal()->removeTerminationMonitor(terminator);
-	delete (extender);
-	delete (terminator);
-	delete (newstructure);
-	delete (data);
-	delete (mx);
+	cleanup;
 	result._models = solutions;
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
