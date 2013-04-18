@@ -107,6 +107,9 @@ protected:
 			// If two-valued, we expect the bound to derive all useful stuff to generate
 			return;
 		}
+		if(_manager->getFiredLits(pf->symbol(), not watchtrue).size()>=toDouble(_manager->getStructure()->inter(pf->symbol())->universe().size())/2){
+			return;
+		}
 
 		_allquantvars = true;
 		for (auto arg : args) {

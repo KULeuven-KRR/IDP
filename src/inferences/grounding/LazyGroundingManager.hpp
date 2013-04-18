@@ -5,8 +5,7 @@
  *      Author: Broes
  */
 
-#ifndef LAZYGROUNDINGMANAGER_HPP_
-#define LAZYGROUNDINGMANAGER_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "utils/ListUtils.hpp"
@@ -195,7 +194,7 @@ private:
 	std::vector<std::pair<Atom, ElementTuple> > emptylist;// Slight hack ;-) to allow to return const ref even for the empty list without having it as keys
 
 	friend class DelayedSentence;
-
+	friend class FindDelayPredForms;
 	const std::vector<std::pair<Atom, ElementTuple> >& getFiredLits(PFSymbol* symbol, bool v) const {
 		if (not contains(symbol2knownlits, symbol)) {
 			return emptylist;
@@ -207,5 +206,3 @@ private:
 		return value2lits.at(v);
 	}
 };
-
-#endif /* LAZYGROUNDINGMANAGER_HPP_ */
