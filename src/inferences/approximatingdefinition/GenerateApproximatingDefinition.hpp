@@ -46,16 +46,17 @@ public:
 	enum class Direction {
 		UP, DOWN, BOTH
 	};
-
-	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
-			Structure* s2, const std::set<PFSymbol*>& freesymbols, Direction dir){
-		auto s = s2->clone();
+	static void doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
+			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir){
+		if(sentences.empty()) {
+			return;
+		}
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		// FIXME what with new vocabulary?
 		auto ret = g.getallRules(dir);
 		Theory* testt = new Theory("testtheory", ParseInfo());
 		testt->add(ret->clone());
-		std::cout << "THEORY: " << toString(testt) << "\n";
+//		std::cout << "THEORY: " << toString(testt) << "\n";
 		Vocabulary* testv = new Vocabulary("testvoc");
 		for(Rule* rule : ret->rules()) {
 			testv->add(rule->head()->symbol());
@@ -66,7 +67,7 @@ public:
 		for(auto cff : g.data->_basePredsCF2InputPreds) {
 			testv->add(cff.first);
 		}
-		std::cout << "VOCABULARY: " << toString(testv) << "\n";
+//		std::cout << "VOCABULARY: " << toString(testv) << "\n";
 
 		Structure* tests = new Structure("teststruct", testv, ParseInfo());
 
@@ -81,60 +82,44 @@ public:
 		for(auto sortinter : s->getSortInters()) {
 			tests->changeInter(sortinter.first,sortinter.second);
 		}
-		std::cout << "STRUCTURE: " << toString(tests) << "\n";
+//		std::cout << "STRUCTURE: " << toString(tests) << "\n";
 		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
 
-		std::cout << "------------------------done calculating definitions\n";
+//		std::cout << "------------------------done calculating definitions\n";
 
 		for(auto ctf : g.data->_basePredsCT2InputPreds) {
 			auto intertochange = s->inter(ctf.second->symbol());
-//			std::cout << "to change CT: " << toString(ctf.second->symbol()) << "\n";
-//			std::cout << "\twith: " << toString((*g.data->formula2ct[ctf.second]).symbol()) << "\n";
-//			std::cout << "to change from: " << toString(intertochange) << "\n";
-//			std::cout << "to change to: " << toString(tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct()) << "\n";
 			auto univ = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->universe();
 			auto interpredtable = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct();
 			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
 				auto mlkjsdf = (*it);
-//				std::cout << "\tchange: " << toString(mlkjsdf) << "\n";
 				if(ctf.second->sign() == SIGN::NEG) {
 					intertochange->makeFalse(mlkjsdf,true);
 				} else {
 					intertochange->makeTrue(mlkjsdf,true);
 				}
 			}
-			std::cout << "after: " << toString(intertochange) << "\n";
 		}
 		for(auto cff : g.data->_basePredsCF2InputPreds) {
 			auto intertochange = s->inter(cff.second->symbol());
-//			std::cout << "to change CF: " << toString(cff.second->symbol()) << "\n";
-//			std::cout << "\twith: " << toString((*g.data->formula2cf[cff.second]).symbol()) << "\n";
-//			std::cout << "to change from: " << toString(intertochange->cf()) << "\n";
-//			std::cout << "to change to: " << toString(tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct()) << "\n";
 			auto univ = tests->inter((*g.data->formula2cf[cff.second]).symbol())->universe();
 			auto interpredtable = tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct();
 			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
 				auto mlkjsdf = (*it);
-//				std::cout << "\tchange: " << toString(mlkjsdf) << "\n";
 				if(cff.second->sign() == SIGN::NEG) {
 					intertochange->makeTrue(mlkjsdf,true);
 				} else {
 					intertochange->makeFalse(mlkjsdf,true);
 				}
 			}
-//			std::cout << "after: " << toString(intertochange) << "\n";
 		}
-		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
-
-		return ret;
+//		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
 	}
 
 private:
 	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions)
 			: 	data(new ApproxData(actions)),
 			  	_sentences(sentences) {
-		// TODO do transformations on the sentences
-		// TODO do tseitin introduction + generate new vocabulary
 		for(auto sentence : sentences) {
 			setFormula2PredFormMap(sentence);
 		}

@@ -330,10 +330,8 @@ Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const st
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, definedsymbols, cpsupport);
 }
 
-Definition* getApproximatingDefinition(Theory* t, Structure* s) {
-	std::cout << "Getting approximating definition of theory:\n" << toString(t) << "\n";
-	auto ret = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(t->sentences(), s,std::set<PFSymbol*>(),GenerateApproximatingDefinition::Direction::BOTH);
-	return ret;
+void calculateApproximatingDefinition(const std::vector<Formula*>& sentences, Structure* s) {
+	GenerateApproximatingDefinition::doGenerateApproximatingDefinition(sentences, s,std::set<PFSymbol*>(),GenerateApproximatingDefinition::Direction::BOTH);
 }
 
 void addCompletion(AbstractTheory* t, const Structure* s) {

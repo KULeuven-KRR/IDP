@@ -48,7 +48,11 @@ shared_ptr<GenerateBDDAccordingToBounds> generateBounds(AbstractTheory* theory, 
 	auto propagator = createPropagator(theory, structure, mpi);
 	if (doSymbolicPropagation) { // Strange, this should be called LUP
 		propagator->doPropagation();
-		if (LUP) { // Strange to call this LUP
+		if (getOption(BoolType::APPROXDEF) && getOption(BoolType::XSB) && isa<Theory>(*theory)) {
+			Theory* nonabstracttheory = dynamic_cast<Theory*>(theory);
+			FormulaUtils::calculateApproximatingDefinition(nonabstracttheory->sentences(),structure);
+
+		} else if (LUP) { // Strange to call this LUP
 			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 				clog <<"Applying propagation to structure\n";
 			}
