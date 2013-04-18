@@ -85,33 +85,14 @@ public:
 //		std::cout << "STRUCTURE: " << toString(tests) << "\n";
 		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
 
-//		std::cout << "------------------------done calculating definitions\n";
-
 		for(auto ctf : g.data->_basePredsCT2InputPreds) {
 			auto intertochange = s->inter(ctf.second->symbol());
-			auto univ = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->universe();
-			auto interpredtable = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct();
-			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
-				auto mlkjsdf = (*it);
-				if(ctf.second->sign() == SIGN::NEG) {
-					intertochange->makeFalse(mlkjsdf,true);
-				} else {
-					intertochange->makeTrue(mlkjsdf,true);
-				}
-			}
+			intertochange->ct(tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct());
 		}
 		for(auto cff : g.data->_basePredsCF2InputPreds) {
+
 			auto intertochange = s->inter(cff.second->symbol());
-			auto univ = tests->inter((*g.data->formula2cf[cff.second]).symbol())->universe();
-			auto interpredtable = tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct();
-			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
-				auto mlkjsdf = (*it);
-				if(cff.second->sign() == SIGN::NEG) {
-					intertochange->makeTrue(mlkjsdf,true);
-				} else {
-					intertochange->makeFalse(mlkjsdf,true);
-				}
-			}
+			intertochange->cf(tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct());
 		}
 //		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
 	}
