@@ -16,6 +16,7 @@
 #include "vocabulary/vocabulary.hpp"
 #include "structure/Structure.hpp"
 #include "structure/MainStructureComponents.hpp"
+#include "structure/StructureComponents.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "theory/theory.hpp"
 
@@ -47,7 +48,8 @@ public:
 	};
 
 	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
-			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir){
+			Structure* s2, const std::set<PFSymbol*>& freesymbols, Direction dir){
+		auto s = s2->clone();
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		// FIXME what with new vocabulary?
 		auto ret = g.getallRules(dir);
@@ -81,7 +83,48 @@ public:
 		}
 		std::cout << "STRUCTURE: " << toString(tests) << "\n";
 		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
-		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(out.at(0)) << "END\n";
+
+		std::cout << "------------------------done calculating definitions\n";
+
+		for(auto ctf : g.data->_basePredsCT2InputPreds) {
+			auto intertochange = s->inter(ctf.second->symbol());
+//			std::cout << "to change CT: " << toString(ctf.second->symbol()) << "\n";
+//			std::cout << "\twith: " << toString((*g.data->formula2ct[ctf.second]).symbol()) << "\n";
+//			std::cout << "to change from: " << toString(intertochange) << "\n";
+//			std::cout << "to change to: " << toString(tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct()) << "\n";
+			auto univ = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->universe();
+			auto interpredtable = tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct();
+			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
+				auto mlkjsdf = (*it);
+//				std::cout << "\tchange: " << toString(mlkjsdf) << "\n";
+				if(ctf.second->sign() == SIGN::NEG) {
+					intertochange->makeFalse(mlkjsdf,true);
+				} else {
+					intertochange->makeTrue(mlkjsdf,true);
+				}
+			}
+			std::cout << "after: " << toString(intertochange) << "\n";
+		}
+		for(auto cff : g.data->_basePredsCF2InputPreds) {
+			auto intertochange = s->inter(cff.second->symbol());
+//			std::cout << "to change CF: " << toString(cff.second->symbol()) << "\n";
+//			std::cout << "\twith: " << toString((*g.data->formula2cf[cff.second]).symbol()) << "\n";
+//			std::cout << "to change from: " << toString(intertochange->cf()) << "\n";
+//			std::cout << "to change to: " << toString(tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct()) << "\n";
+			auto univ = tests->inter((*g.data->formula2cf[cff.second]).symbol())->universe();
+			auto interpredtable = tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct();
+			for( auto it = interpredtable->begin(); not it.isAtEnd(); ++it) {
+				auto mlkjsdf = (*it);
+//				std::cout << "\tchange: " << toString(mlkjsdf) << "\n";
+				if(cff.second->sign() == SIGN::NEG) {
+					intertochange->makeTrue(mlkjsdf,true);
+				} else {
+					intertochange->makeFalse(mlkjsdf,true);
+				}
+			}
+//			std::cout << "after: " << toString(intertochange) << "\n";
+		}
+		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
 
 		return ret;
 	}

@@ -126,19 +126,20 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		if(not data->_baseformulas_already_added) {
-			auto name1 = pf->symbol()->nameNoArity();
-			auto name2 = pf->symbol()->nameNoArity();
-			PredForm* ctformula = new PredForm(SIGN::POS, new Predicate(name1.append("_input_ct"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
-			PredForm* cfformula = new PredForm(SIGN::POS, new Predicate(name2.append("_input_cf"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
-//			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
-//			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
-			if(pf->sign() == SIGN::NEG) {
-				std::swap(ctformula,cfformula);
-			}
-			add(topdownrules, data->formula2ct[pf], ctformula, data);
-			add(topdownrules, data->formula2cf[pf], cfformula, data);
-		}
+		// TODO: sync with other predform visit (refactor into separate method)
+//		if(not data->_baseformulas_already_added) {
+//			auto name1 = pf->symbol()->nameNoArity();
+//			auto name2 = pf->symbol()->nameNoArity();
+//			PredForm* ctformula = new PredForm(SIGN::POS, new Predicate(name1.append("_input_ct"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
+//			PredForm* cfformula = new PredForm(SIGN::POS, new Predicate(name2.append("_input_cf"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
+////			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
+////			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
+//			if(pf->sign() == SIGN::NEG) {
+//				std::swap(ctformula,cfformula);
+//			}
+//			add(topdownrules, data->formula2ct[pf], ctformula, data);
+//			add(topdownrules, data->formula2cf[pf], cfformula, data);
+//		}
 	}
 	void visit(const AggForm*) {
 		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
