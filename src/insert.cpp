@@ -2657,9 +2657,14 @@ void Insert::finalizePendingAssignments() {
 		} else {
 			auto value2table = *tables.cbegin();
 			switch (value2table.first) {
-			case UTF::TWOVAL:
-				inter->ctpt(value2table.second);
-				break;
+			case UTF::TWOVAL:{
+				auto funcintern = dynamic_cast<FuncInternalPredTable*>(value2table.second->internTable());
+				if(funcintern!=NULL){
+					 _currstructure->inter(dynamic_cast<Function*>(symbol2valuetables.first))->funcTable(funcintern->table());
+				}else{
+					inter->ctpt(value2table.second);
+				}
+				break;}
 			case UTF::CT:
 				inter->ct(value2table.second);
 				break;
