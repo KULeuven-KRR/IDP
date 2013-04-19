@@ -2694,21 +2694,9 @@ tablesize ProcInternalPredTable::size(const Universe& univ) const {
 }
 
 tablesize ProcInternalFuncTable::size(const Universe& univ) const {
-	tablesize univsize = univ.size();
-	TableSizeType tst = univsize._type;
-	tablesize outsize = univ.tables().back()->size();
-	if (outsize._size != 0) {
-		if (tst == TST_EXACT) {
-			tst = TST_APPROXIMATED;
-		}
-		return tablesize(tst, univsize._size / outsize._size);
-	} else {
-		if (outsize._type == TST_EXACT) {
-			return tablesize(TST_EXACT, 0);
-		} else {
-			return tablesize(TST_APPROXIMATED, 0);
-		}
-	}
+	auto temptables = univ.tables();
+	temptables.pop_back();
+	return toDouble(univ.tables().back()->size())>0?Universe(temptables).size():tablesize(TableSizeType::TST_EXACT,0);
 }
 
 bool ProcInternalFuncTable::finite(const Universe& univ) const {
@@ -4168,8 +4156,6 @@ bool approxTotalityCheck(const FuncInter* funcinter) {
 	vst.pop_back();
 	tablesize nroftuples = Universe(vst).size();
 	tablesize nrofvalues = funcinter->graphInter()->ct()->size();
-//clog << "Checking totality of " << *function << " -- nroftuples=" << nroftuples.second << " and nrofvalues=" << nrofvalues.second;
-//clog << " (trust=" << (nroftuples.first && nrofvalues.first) << ")" << "\n";
 	if (nroftuples._type == TST_EXACT && nrofvalues._type == TST_EXACT) {
 		return nroftuples._size == nrofvalues._size;
 	} else {
