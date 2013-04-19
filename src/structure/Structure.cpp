@@ -363,7 +363,7 @@ void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 }
 
 void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, Structure* structure) {
-	if (not pt->approxFinite()) {
+	if (not pt->approxFinite() || (getOption(ASSUMECONSISTENTINPUT) && not getOption(AUTOCOMPLETE))) {
 		return;
 	}
 	for (auto jt = pt->begin(); not jt.isAtEnd(); ++jt) {
@@ -373,7 +373,7 @@ void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, Structure*
 			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
 			if (not sort->builtin() && not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort) && getOption(AUTOCOMPLETE)) {
 				pt->universe().tables()[col]->add(tuple[col]);
-			} else if (!pt->universe().tables()[col]->contains(tuple[col])) {
+			} else if (!pt->universe().tables()[col]->contains(tuple[col]) && not getOption(ASSUMECONSISTENTINPUT)) {
 				if (typeid(*symbol) == typeid(Predicate)) {
 					Error::predelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
 				} else {
@@ -405,7 +405,7 @@ void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter) {
 
 void Structure::checkAndAutocomplete() {
 	if (getOption(SHOWWARNINGS)) {
-		Warning::warning("Autocompleting structure");
+		Warning::warning("Verifying and/or autocompleting input structures.");
 	}
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
