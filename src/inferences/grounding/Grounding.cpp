@@ -35,7 +35,7 @@ void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, A
 		break;
 	}
 	case SymmetryBreaking::DYNAMIC: {
-		// Add symmetry breakers
+		// Add symmetry propagators
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Adding symmetry propagators");
 		}
