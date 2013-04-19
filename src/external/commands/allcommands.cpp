@@ -46,6 +46,8 @@
 #include "parse.hpp"
 #include "theoryquery.hpp"
 
+#include "answer.hpp" //easter egg
+
 #include <vector>
 
 using namespace std;
@@ -121,5 +123,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<GetOptionsInference>());
 	inferences.push_back(make_shared<ParseInference>());
 	inferences.push_back(make_shared<TheoryQueryInference>());
+
+	inferences.push_back(make_shared<AnswerInference>());
 	return inferences;
 }
