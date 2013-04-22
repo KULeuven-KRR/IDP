@@ -20,8 +20,13 @@
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "theory/theory.hpp"
 
+#include "options.hpp"
+#include <iostream>
+
 class PFSymbol;
 class Predicate;
+
+using namespace std;
 
 struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2ct;
@@ -49,19 +54,20 @@ public:
 		UP, DOWN, BOTH
 	};
 	static void doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
-			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir){
+			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir) {
 		if(sentences.empty()) {
 			return;
+		}
+		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+			clog << "Calculating the approximating definitions with XSB...\n";
 		}
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		// FIXME what with new vocabulary?
 		auto ret = g.getallRules(dir);
-		Theory* testt = new Theory("testtheory", ParseInfo());
-		testt->add(ret->clone());
-		std::cout << "THEORY: " << toString(testt) << "\n";
+		Theory* approxdef_theory = new Theory("approxdef_theory", ParseInfo());
+		approxdef_theory->add(ret->clone());
 		Vocabulary* testv = new Vocabulary(s->vocabulary()->name());
 		for(Rule* rule : ret->rules()) {
-			std::cout << "adding: " << rule->head()->symbol() << "\t or: " << toString(rule->head()->symbol()) << " to voc.\n";
 			testv->add(rule->head()->symbol());
 		}
 		for(auto ctf : g.data->_predCt2InputPredCt) {
@@ -71,39 +77,41 @@ public:
 			testv->add(cff.second);
 		}
 
-		// TODO: is this vocabulary complete for all cases?
-		std::cout << "VOCABULARY: " << toString(testv) << "\n";
-
-		Structure* tests = new Structure("teststruct", testv, ParseInfo());
+		Structure* approxdef_struct = new Structure("approxdef_struct", testv, ParseInfo());
 
 		for(auto ctf : g.data->_pred2predCt) {
 			PredInter* newinter = new PredInter(s->inter(ctf.first)->ct(),true);
-			auto interToChange = tests->inter(g.data->_predCt2InputPredCt[ctf.second->symbol()]);
+			auto interToChange = approxdef_struct->inter(g.data->_predCt2InputPredCt[ctf.second->symbol()]);
 			interToChange->ctpt(newinter->ct());
 		}
 		for(auto cff : g.data->_pred2predCf) {
 			PredInter* newinter = new PredInter(s->inter(cff.first)->cf(),true);
-			auto interToChange = tests->inter(g.data->_predCf2InputPredCf[cff.second->symbol()]);
+			auto interToChange = approxdef_struct->inter(g.data->_predCf2InputPredCf[cff.second->symbol()]);
 			interToChange->ctpt(newinter->ct());
 		}
 		for(auto sortinter : s->getSortInters()) {
-			tests->changeInter(sortinter.first,sortinter.second);
+			approxdef_struct->changeInter(sortinter.first,sortinter.second);
 		}
 
-		std::cout << "STRUCTURE: " << toString(tests) << "\n";
-		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
-		std::cout << "...done: " << toString(tests) << "\n";
+		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+			clog << "Calculating the following definitions with XSB:\n" << toString(approxdef_theory) << "\n";
+			clog << "With the following input structure:\n" << toString(approxdef_struct) << "\n";
+		}
+		auto out = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
 
 		for(auto ctf : g.data->_pred2predCt) {
-			std::cout << "changing: " << toString(ctf.first) << " and: \STRUCTURE: " << toString(s) << "\n";
 			auto intertochange = s->inter(ctf.first);
-			intertochange->ct(tests->inter(ctf.second->symbol())->ct());
+			intertochange->ct(approxdef_struct->inter(ctf.second->symbol())->ct());
 		}
 		for(auto cff : g.data->_pred2predCf) {
 			auto intertochange = s->inter(cff.first);
-			intertochange->cf(tests->inter(cff.second->symbol())->ct());
+			intertochange->cf(approxdef_struct->inter(cff.second->symbol())->ct());
 		}
-		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
+
+		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
+					toString(s) << "\n";
+		}
 	}
 
 private:

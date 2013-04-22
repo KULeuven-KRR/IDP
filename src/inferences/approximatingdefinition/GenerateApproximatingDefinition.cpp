@@ -407,9 +407,6 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 
 void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	auto sign = f->sign();
-	auto formulaID = getGlobal()->getNewID();
-	Predicate* ctpred;
-	Predicate* cfpred;
 	PredForm* newct;
 	PredForm* newcf;
 
@@ -421,8 +418,8 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
 		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
-			ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
-			cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
+			Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
+			Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
 			newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
 			newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
 
@@ -436,15 +433,19 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 
 
 	} else {
+		auto formulaID = getGlobal()->getNewID();
 		std::vector<Sort*> sorts;
 		for(auto var : f->freeVars()) {
 			sorts.push_back(var->sort());
 		}
-		ctpred = new Predicate(("T" + toString(formulaID) + "_ct"),sorts);
-		cfpred = new Predicate(("T" + toString(formulaID) + "_cf"),sorts);
+		Predicate* ctpred = new Predicate(("T" + toString(formulaID) + "_ct"),sorts);
+		Predicate* cfpred = new Predicate(("T" + toString(formulaID) + "_cf"),sorts);
 
 		newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
 		newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
+		if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
+			clog << "In the approximating definitions, T" << toString(formulaID) << " represents formula " << toString(f) << "\n";
+		}
 	}
 
 	if(sign == SIGN::NEG) { // If the formula is negative, the _ct and _cf maps need to be swapped
@@ -453,6 +454,7 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 
 	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,newct) );
 	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,newcf) );
+
 	for (auto subf : f->subformulas()) {
 		setFormula2PredFormMap(subf);
 	}

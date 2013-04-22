@@ -18,6 +18,7 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{groundverbosity = [0..max(int)]}] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
 	\item[{satverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
 	\item[{propagateverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of the propagation.
+	\item[{approximatingdefinition = [0..5]}] Verbosity of the module that uses an approximating definition to perform approximation prior to grounding and solving. 
 	\item[{calculatedefinitions = [0..5]}] Verbosity of the module that calculates definitions prior to grounding and solving. 
 		\begin{itemize}
 		\item 1 or greater: print when calculating the definition starts and ends.
@@ -80,6 +81,7 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{mxtimeout = [0..max(int)]}] Set the time after which an execution of model expansion times out (in seconds, 0 indicates \emph{no} timeout).
 		If any models have been found, they are returned properly.
 		In case of model optimization, the best model(s) found to date are returned, not guaranteeing optimality has been proven. 
+	\item[{approximatingdefinition = [false, true]}] Enable/disable approximation using the approximating definition.
 	\item[{seed = [0..max(int)]}] Set the seed for the random generator (used in the estimators for BDDs and in the SAT-solver).
 	\item[{randomvaluechoice = [false, true]}] Controls the solver: if set to true, the assignment to choice literals is random, if set to false, the solver default assigns false to choice literals.
 \end{description}

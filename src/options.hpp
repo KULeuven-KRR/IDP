@@ -60,6 +60,7 @@ enum IntType {
 	VERBOSE_QUERY,
 	VERBOSE_ENTAILMENT,
 	VERBOSE_DEFINITIONS,
+	VERBOSE_APPROXDEF,
 	VERBOSE_SYMMETRY,
 	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
 	LAST_VERBOSE = VERBOSE_SYMMETRY //IMPORTANT: this has to be the last of the verbosity options
