@@ -26,10 +26,12 @@ class Predicate;
 struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2ct;
 	std::map<const Formula*, PredForm*> formula2cf;
+	std::map<PFSymbol*, PredForm*> _pred2predCt;
+	std::map<PFSymbol*, PredForm*> _pred2predCf;
+	std::map<PFSymbol*, PFSymbol*> _predCt2InputPredCt;
+	std::map<PFSymbol*, PFSymbol*> _predCf2InputPredCf;
 	std::set<PFSymbol*> actions;
 	bool _baseformulas_already_added;
-	std::map<Predicate*, const PredForm*> _basePredsCT2InputPreds;
-	std::map<Predicate*, const PredForm*> _basePredsCF2InputPreds;
 
 	ApproxData(const std::set<PFSymbol*>& actions)
 			: actions(actions),
@@ -56,45 +58,52 @@ public:
 		auto ret = g.getallRules(dir);
 		Theory* testt = new Theory("testtheory", ParseInfo());
 		testt->add(ret->clone());
-//		std::cout << "THEORY: " << toString(testt) << "\n";
-		Vocabulary* testv = new Vocabulary("testvoc");
+		std::cout << "THEORY: " << toString(testt) << "\n";
+		Vocabulary* testv = new Vocabulary(s->vocabulary()->name());
 		for(Rule* rule : ret->rules()) {
+			std::cout << "adding: " << rule->head()->symbol() << "\t or: " << toString(rule->head()->symbol()) << " to voc.\n";
 			testv->add(rule->head()->symbol());
 		}
-		for(auto ctf : g.data->_basePredsCT2InputPreds) {
-			testv->add(ctf.first);
+		for(auto ctf : g.data->_predCt2InputPredCt) {
+			testv->add(ctf.second);
 		}
-		for(auto cff : g.data->_basePredsCF2InputPreds) {
-			testv->add(cff.first);
+		for(auto cff : g.data->_predCf2InputPredCf) {
+			testv->add(cff.second);
 		}
-//		std::cout << "VOCABULARY: " << toString(testv) << "\n";
+
+		// TODO: is this vocabulary complete for all cases?
+		std::cout << "VOCABULARY: " << toString(testv) << "\n";
 
 		Structure* tests = new Structure("teststruct", testv, ParseInfo());
 
-		for(auto ctf : g.data->_basePredsCT2InputPreds) {
-			PredInter* newinter = new PredInter(s->inter(ctf.second->symbol())->ct(),true);
-			tests->changeInter(ctf.first,newinter);
+		for(auto ctf : g.data->_pred2predCt) {
+			PredInter* newinter = new PredInter(s->inter(ctf.first)->ct(),true);
+			auto interToChange = tests->inter(g.data->_predCt2InputPredCt[ctf.second->symbol()]);
+			interToChange->ctpt(newinter->ct());
 		}
-		for(auto cff : g.data->_basePredsCF2InputPreds) {
-			PredInter* newinter = new PredInter(s->inter(cff.second->symbol())->cf(),true);
-			tests->changeInter(cff.first,newinter);
+		for(auto cff : g.data->_pred2predCf) {
+			PredInter* newinter = new PredInter(s->inter(cff.first)->cf(),true);
+			auto interToChange = tests->inter(g.data->_predCf2InputPredCf[cff.second->symbol()]);
+			interToChange->ctpt(newinter->ct());
 		}
 		for(auto sortinter : s->getSortInters()) {
 			tests->changeInter(sortinter.first,sortinter.second);
 		}
-//		std::cout << "STRUCTURE: " << toString(tests) << "\n";
+
+		std::cout << "STRUCTURE: " << toString(tests) << "\n";
 		auto out = CalculateDefinitions::doCalculateDefinitions(testt,tests);
+		std::cout << "...done: " << toString(tests) << "\n";
 
-		for(auto ctf : g.data->_basePredsCT2InputPreds) {
-			auto intertochange = s->inter(ctf.second->symbol());
-			intertochange->ct(tests->inter((*g.data->formula2ct[ctf.second]).symbol())->ct());
+		for(auto ctf : g.data->_pred2predCt) {
+			std::cout << "changing: " << toString(ctf.first) << " and: \STRUCTURE: " << toString(s) << "\n";
+			auto intertochange = s->inter(ctf.first);
+			intertochange->ct(tests->inter(ctf.second->symbol())->ct());
 		}
-		for(auto cff : g.data->_basePredsCF2InputPreds) {
-
-			auto intertochange = s->inter(cff.second->symbol());
-			intertochange->cf(tests->inter((*g.data->formula2cf[cff.second]).symbol())->ct());
+		for(auto cff : g.data->_pred2predCf) {
+			auto intertochange = s->inter(cff.first);
+			intertochange->cf(tests->inter(cff.second->symbol())->ct());
 		}
-//		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
+		std::cout << "RESULT AFTER APPLYING APPROXIMATING DEFINITIONS:\n" << toString(s) << "END\n";
 	}
 
 private:

@@ -18,6 +18,7 @@
 #include "creation/cppinterface.hpp"
 #include "theory/term.hpp"
 #include "utils/ListUtils.hpp"
+#include <string>
 
 using namespace std;
 
@@ -142,10 +143,10 @@ public:
 //		}
 	}
 	void visit(const AggForm*) {
-		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
+//		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
 	}
 	void visit(const EqChainForm*) {
-		throw IdpException("Generating an approximating definition does not work for comparison chains.");
+//		throw IdpException("Generating an approximating definition does not work for comparison chains.");
 	}
 	virtual void visit(const Theory* t) {
 		traverse(t);
@@ -280,29 +281,29 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		auto name1 = pf->symbol()->nameNoArity();
-		auto name2 = pf->symbol()->nameNoArity();
-		auto ctpred = new Predicate(name1.append("_input_ct"),pf->symbol()->sorts());
-		auto cfpred = new Predicate(name2.append("_input_cf"),pf->symbol()->sorts());
+		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]->symbol()) == data->_predCt2InputPredCt.cend()) {
+			// predform symbol hasn't already been handled before
+			auto ctpred = new Predicate((pf->symbol()->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
+			auto cfpred = new Predicate((pf->symbol()->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
 
-		data->_basePredsCT2InputPreds.insert( std::pair<Predicate*,const PredForm*>(ctpred,pf) );
-		data->_basePredsCF2InputPreds.insert( std::pair<Predicate*,const PredForm*>(cfpred,pf) );
+			data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()]->symbol(),ctpred) );
+			data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()]->symbol(),cfpred) );
 
-		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
-		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
+			if(pf->sign() == SIGN::NEG) {
+				std::swap(ctpred,cfpred);
+			}
+			PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
+			PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
 
-
-		if(pf->sign() == SIGN::NEG) {
-			std::swap(ctformula,cfformula);
+			add(bottomuprules, data->formula2ct[pf], ctformula, data);
+			add(bottomuprules, data->formula2cf[pf], cfformula, data);
 		}
-		add(bottomuprules, data->formula2ct[pf], ctformula, data);
-		add(bottomuprules, data->formula2cf[pf], cfformula, data);
 	}
 	void visit(const AggForm*) {
-		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
+//		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
 	}
 	void visit(const EqChainForm*) {
-		throw IdpException("Generating an approximating definition does not work for comparison chains.");
+//		throw IdpException("Generating an approximating definition does not work for comparison chains.");
 	}
 	virtual void visit(const Theory* t) {
 		traverse(t);
@@ -407,41 +408,51 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	auto sign = f->sign();
 	auto formulaID = getGlobal()->getNewID();
-	std::vector<Sort*> sorts;
-	std::string ctname;
-	std::string cfname;
-
-	if(f->subformulas().empty()) {
-		auto fPredForm = dynamic_cast<PredForm*>(f);
-		sorts = fPredForm->symbol()->sorts();
-		std::string name = fPredForm->symbol()->nameNoArity();
-		std::string name2 = fPredForm->symbol()->nameNoArity();
-		ctname = name.append("_ct");
-		cfname = name2.append("_cf");
-
-	} else {
-		for(auto var : f->freeVars()) {
-			sorts.push_back(var->sort());
-		}
-		ctname = std::string("T").append(toString(formulaID).append("_ct"));
-		cfname = std::string("T").append(toString(formulaID).append("_cf"));
-	}
+	Predicate* ctpred;
+	Predicate* cfpred;
+	PredForm* newct;
+	PredForm* newcf;
 
 	auto subterms = std::vector<Term*>();
 	for(auto fv : f->freeVars()) {
 		subterms.push_back(new VarTerm(fv, TermParseInfo()));
 	}
-	PredForm* newct;
-	PredForm* newcf;
-	if(sign == SIGN::NEG) {
-		std::swap(ctname,cfname);
+
+	if(isa<PredForm>(*f)) {
+		auto fPredForm = dynamic_cast<PredForm*>(f);
+		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
+			ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
+			cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
+			newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
+			newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
+
+			data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),newct));
+			data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),newcf));
+
+		} else {
+			newct = data->_pred2predCt[fPredForm->symbol()];
+			newcf = data->_pred2predCf[fPredForm->symbol()];
+		}
+
+
+	} else {
+		std::vector<Sort*> sorts;
+		for(auto var : f->freeVars()) {
+			sorts.push_back(var->sort());
+		}
+		ctpred = new Predicate(("T" + toString(formulaID) + "_ct"),sorts);
+		cfpred = new Predicate(("T" + toString(formulaID) + "_cf"),sorts);
+
+		newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
+		newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
 	}
-	newct = new PredForm(SIGN::POS, new Predicate(ctname,sorts), subterms, FormulaParseInfo());
-	newcf = new PredForm(SIGN::POS, new Predicate(cfname,sorts), subterms, FormulaParseInfo());
+
+	if(sign == SIGN::NEG) { // If the formula is negative, the _ct and _cf maps need to be swapped
+		std::swap(newct,newcf);
+	}
 
 	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,newct) );
 	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,newcf) );
-
 	for (auto subf : f->subformulas()) {
 		setFormula2PredFormMap(subf);
 	}
