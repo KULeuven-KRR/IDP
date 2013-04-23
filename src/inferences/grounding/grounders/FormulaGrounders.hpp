@@ -179,7 +179,7 @@ protected:
 		return isNeg(_sign);
 	}
 
-	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request) const;
+	FormStat runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request, bool lastsub = false) const;
 };
 
 class BoolGrounder: public ClauseGrounder {

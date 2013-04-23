@@ -729,7 +729,7 @@ void ClauseGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& requ
 	}
 }
 
-FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request) const {
+FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot, bool considerAsConjunctiveWithSign, ConjOrDisj& formula, LazyGroundingRequest& request, bool lastsub) const {
 	auto origvalue = subgrounder->getContext()._conjunctivePathFromRoot;
 	if(conjFromRoot && considerAsConjunctiveWithSign){
 		subgrounder->setConjUntilRoot(true);
@@ -774,6 +774,9 @@ FormStat ClauseGrounder::runSubGrounder(Grounder* subgrounder, bool conjFromRoot
 				formula.literals.push_back(l);
 			}
 		} else {
+			if(lastsub && formula.literals.size()==0){
+				formula.setType(_subformula.getType());
+			}
 			if (_subformula.getType() == formula.getType()) {
 				insertAtEnd(formula.literals, lits);
 			} else {
@@ -824,7 +827,7 @@ void BoolGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest& 
 		if(grounder==_subgrounders.back() && formula.literals.size()==0 && isPositive()){
 			considerAsConjunctiveWithSign = true;
 		}
-		if (runSubGrounder(grounder, getContext()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula, request) == FormStat::DECIDED) {
+		if (runSubGrounder(grounder, getContext()._conjunctivePathFromRoot, considerAsConjunctiveWithSign, formula, request, grounder==_subgrounders.back()) == FormStat::DECIDED) {
 			if (verbosity() > 2) {
 				poptab();
 			}

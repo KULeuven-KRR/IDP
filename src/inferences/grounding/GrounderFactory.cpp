@@ -1126,7 +1126,7 @@ void GrounderFactory::visit(const Rule* rule) {
 
 	//TODO: if negations are already pushed, this is too much work. But on the other hand, checking if they are pushed is as expensive as pushing them
 	//However, pushing negations here is important to avoid errors such as {p <- ~~p} turning into {p <- ~q; q<- ~p}
-	newrule->body(FormulaUtils::pushNegations(newrule->body()));
+	newrule->body(FormulaUtils::pushQuantifiers(FormulaUtils::pushNegations(newrule->body())));
 	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
 
 	if (getOption(SATISFIABILITYDELAY)) { // NOTE: lazy grounding cannot handle head terms containing nested variables
@@ -1360,6 +1360,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, definedsymbols, true, false, data.funccontext);
+	tempsubformula = FormulaUtils::pushQuantifiers(tempsubformula);
 	auto bdd = symstructure->evaluate(tempsubformula, type, structure); // !x phi(x) => generate all x possibly false
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "For formula " << print(tempsubformula) << ", I found the following BDD (might be improved)" << nt() << print(bdd) << nt();
