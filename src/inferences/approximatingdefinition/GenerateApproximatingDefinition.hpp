@@ -68,7 +68,6 @@ public:
 			FormulaUtils::pushNegations(sentence);
 		}
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
-		// FIXME what with new vocabulary?
 		auto ret = g.getallRules(dir);
 		Theory* approxdef_theory = new Theory("approxdef_theory", ParseInfo());
 		approxdef_theory->add(ret->clone());
