@@ -19,6 +19,7 @@
 #include "structure/StructureComponents.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "theory/theory.hpp"
+#include "theory/TheoryUtils.hpp"
 
 #include "options.hpp"
 #include <iostream>
@@ -60,6 +61,11 @@ public:
 		}
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB...\n";
+		}
+
+		for(auto sentence : sentences) {
+			FormulaUtils::removeEquivalences(sentence);
+			FormulaUtils::pushNegations(sentence);
 		}
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		// FIXME what with new vocabulary?
