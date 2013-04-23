@@ -27,12 +27,6 @@ public:
 	}
 
 private:
-
-	bool calculateDefinition(Definition* definition, AbstractStructure* structure) const;
-	bool calculateAllDefinitions(std::set<Definition*> definitions, AbstractStructure* structure) const;
-	std::set<Definition*> getAllCalculatableDefinitions(Theory* theory, AbstractStructure* structure) const;
-
-	std::vector<AbstractStructure*> calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) const;
-
-
+	std::vector<AbstractStructure*> calculateKnownDefinitions(Theory* theory, AbstractStructure* structure);
+	bool calculateDefinition(Definition* definition, AbstractStructure* structure, bool withxsb);
 };

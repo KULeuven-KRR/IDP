@@ -67,7 +67,7 @@ string transformIntoTermName(string str) {
 		}
 	}
 	stringstream ss;
-	if (str == "card" | str == "prod" | str == "min" | str == "max" | str == "abs") {
+	if (str == "card" | str == "prod" | str == "min" | str == "max" | str == "abs" | str=="sum") {
 		ss << IDPXSB_PREFIX << "_";
 	} else if (!numeric && str != "findall") {
 		ss << IDPXSB_PREFIX << identifier++ << "_";
@@ -189,6 +189,14 @@ std::string compType2string(CompType c) {
 	return str;
 }
 
+std::string getStripped(const std::string& name){
+	return term_name(sort_name(strip(name)));
+}
+
+std::string getStrippedAppendedName(const std::string& name, int arity){
+	return getStripped(name).append("/").append(toString(arity));
+}
+
 void PrologProgram::addDefinition(Definition* d) {
 	_definition = d;
 
@@ -204,13 +212,14 @@ void PrologProgram::addDefinition(Definition* d) {
 }
 
 string PrologProgram::getCode() {
-	for (auto it = _clauses.begin(); it != _clauses.end(); ++it) {
-		auto plterm = (*it)->head();
+	for (auto clause : _clauses) {
+		auto plterm = clause->head();
 		auto name = plterm->name();
-		auto predname = name.append("/").append(toString(plterm->arguments().size()));
+		auto predname = term_name(name).append("/").append(toString(plterm->arguments().size()));
 		_all_predicates.insert(predname);
 	}
 	stringstream s;
+	s <<":- set_prolog_flag(unknown, fail).\n";
 	s << *this;
 	return s.str();
 }
@@ -315,7 +324,7 @@ string PrologProgram::getRanges() {
 			}
 			if (st->isRange()) {
 				_loaded.insert((*it)->name());
-				_all_predicates.insert(term_name(sort_name(strip((*it)->name()))).append("/").append(toString((*it)->pred()->sorts().size())));
+				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
 				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- var(X), between(" << domainelement_prolog(toString(st->first())) << ","
 						<< domainelement_prolog(toString(st->last())) << ",X)." << endl;
 				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- nonvar(X), X >= " << domainelement_prolog(toString(st->first())) << ", X =< "
@@ -341,9 +350,9 @@ string PrologProgram::getFacts() {
 			}
 			if (not st->isRange() && st->finite()) {
 				_loaded.insert((*it)->name());
-				_all_predicates.insert(term_name(sort_name(strip((*it)->name()))).append("/").append(toString((*it)->pred()->sorts().size())));
+				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
 				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-					output << term_name(sort_name(strip((*it)->name()))) << "(" << domainelement_prolog(toString((*tuple).front())) << ")." << endl;
+					output << getStripped((*it)->name()) << "(" << domainelement_prolog(toString((*tuple).front())) << ")." << endl;
 				}
 			}
 		}
@@ -354,18 +363,17 @@ string PrologProgram::getFacts() {
 	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
 		if (!(*it)->builtin() && _loaded.find((*it)->nameNoArity()) == _loaded.end()) {
 			_loaded.insert((*it)->nameNoArity());
-			_all_predicates.insert(term_name(sort_name(strip((*it)->name()))).append("/").append(toString((*it)->sorts().size())));
-			PredTable* st = _structure->inter(*it)->ct();
+			_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->sorts().size()));
+			auto st = _structure->inter(*it)->ct();
 			for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-				output << term_name(strip((*it)->name())) << "(";
-				const ElementTuple& tmp = *tuple;
-				for (auto el = tmp.begin(); el != tmp.end();) {
-					output << domainelement_prolog(toString(*el));
-					if (++el != tmp.end()) {
-						output << ",";
-					}
+				output << term_name(strip((*it)->name()));
+				const auto& tmp = *tuple;
+				if(tmp.size()>0){
+					output << "(";
+					printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(toString(domelem)); }, true);
+					output <<")";
 				}
-				output << ")." << endl;
+				output << ".\n";
 			}
 		}
 	}
@@ -633,7 +641,7 @@ void FormulaClauseBuilder::visit(const Definition* d) {
 void FormulaClauseBuilder::visit(const Rule* r) {
 	ExistsClause* ec = new ExistsClause();
 	ec->quantifiedVariables(prologVars(r->head()->freeVars()));
-	ec->name(r->head()->symbol()->name());
+	ec->name(r->head()->symbol()->nameNoArity());
 	enter(ec);
 	r->body()->accept(this);
 	leave();
@@ -695,8 +703,8 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 	auto term = new AggregateClause();
 	term->type(compType2string(a->comp()));
 	enter(term);
-	a->getAggTerm()->accept(this);
 	a->getBound()->accept(this);
+	a->getAggTerm()->accept(this);
 	leave();
 	term->arguments(vars2terms(term->variables()));
 	_parent->addVariables(term->variables());
@@ -847,7 +855,9 @@ PrologTerm* SymbolClause::asTerm() {
 
 PrologTerm* FormulaClause::asTerm() {
 	if (_name.length() == 0) {
-		_name = address(this);
+		stringstream ss;
+		ss <<"temp" <<getGlobal()->getNewID();
+		_name = ss.str();
 	}
 	auto tmp = new PrologTerm(_name, _arguments);
 	tmp->variables(variables());

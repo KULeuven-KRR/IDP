@@ -34,7 +34,6 @@ bool AtomQuerying::queryAtom(Query* p, Theory* theory, AbstractStructure* struct
 
 	auto tuple = atom2tuple(q,structure);
 	auto symbol = q->symbol();
-	auto interpr = structure->inter(symbol);
 	// check if we can solve it using XSB
 	Definition* d = NULL;
 	for(auto def = theory->definitions().begin(); def != theory->definitions().end(); ++def){

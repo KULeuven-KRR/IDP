@@ -30,6 +30,14 @@ procedure mxwithbounds(){
 	return run()
 }
 
+procedure mxwithxsb(){
+	stdoptions.xsb=true
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 5
+	return run()
+}
+
 procedure mxwithboundswithoutLUP(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = false

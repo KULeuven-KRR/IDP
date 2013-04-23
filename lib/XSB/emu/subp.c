@@ -631,32 +631,32 @@ void cancel_proc(int sig)
 
 void init_interrupt(void)
 {
-#if (defined(LINUX))
-  int_act.sa_handler = keyint_proc;
-  sigemptyset(&int_act.sa_mask); 
-  int_act.sa_flags = 0;
-  sigaction(SIGINT, &int_act, &int_oact);
-
-  abrt_act.sa_handler = cancel_proc;
-  sigemptyset(&abrt_act.sa_mask); 
-  abrt_act.sa_flags = 0;
-  sigaction(SIGABRT, &abrt_act, &abrt_oact);
-#else
-  signal(SIGINT, keyint_proc); 
-  signal(SIGABRT, cancel_proc); 
-#endif
-
-#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS) || defined(DEBUG))
-  /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
-  xsb_default_segfault_handler = SIG_DFL;
-#else 
-  xsb_default_segfault_handler = xsb_segfault_quitter;
-#endif
-
-#ifdef SIGBUS
-  signal(SIGBUS, xsb_default_segfault_handler);
-#endif
-  signal(SIGSEGV, xsb_default_segfault_handler);
+//#if (defined(LINUX))
+//  int_act.sa_handler = keyint_proc;
+//  sigemptyset(&int_act.sa_mask);
+//  int_act.sa_flags = 0;
+//  sigaction(SIGINT, &int_act, &int_oact);
+//
+//  abrt_act.sa_handler = cancel_proc;
+//  sigemptyset(&abrt_act.sa_mask);
+//  abrt_act.sa_flags = 0;
+//  sigaction(SIGABRT, &abrt_act, &abrt_oact);
+//#else
+//  signal(SIGINT, keyint_proc);
+//  signal(SIGABRT, cancel_proc);
+//#endif
+//
+//#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS) || defined(DEBUG))
+//  /* Don't handle SIGSEGV/SIGBUS if configured with DEBUG */
+//  xsb_default_segfault_handler = SIG_DFL;
+//#else
+//  xsb_default_segfault_handler = xsb_segfault_quitter;
+//#endif
+//
+//#ifdef SIGBUS
+//  signal(SIGBUS, xsb_default_segfault_handler);
+//#endif
+//  signal(SIGSEGV, xsb_default_segfault_handler);
 }
 
 

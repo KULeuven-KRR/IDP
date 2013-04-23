@@ -1833,4 +1833,9 @@ public:
 	InvSuccInterGenerator* get(const std::vector<Sort*>&);
 };
 
+// Table utils:
+
+bool intersectionEmpty(PredTable* left, PredTable* right);
+bool isConsistentWith(PredTable* table, PredInter* inter);
+
 #endif
