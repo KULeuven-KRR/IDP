@@ -112,15 +112,21 @@ public:
 
 		add(topdownrules, (*first)[qf->subformula()], (*first)[qf], data);
 
-		std::vector<Formula*> forms;
+		std::vector<Formula*> vareq_forms;
 		varset vars;
+		std::vector<Term*> terms;
 		for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
 			auto newvar = new Variable((*i)->sort());
+			auto newterm = new VarTerm(newvar, TermParseInfo());
 			vars.insert(newvar);
-			forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {new VarTerm(newvar, TermParseInfo()), new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
+			terms.push_back(newterm);
+			vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
 		}
-		forms.push_back((*first)[qf->subformula()]);
-		auto& quant = Gen::forall(vars, Gen::disj(forms));
+		auto vareqs = &Gen::conj(vareq_forms);
+		std::vector<Formula*> disj_forms;
+		disj_forms.push_back(vareqs);
+		disj_forms.push_back(new PredForm(SIGN::POS, (((*first)[qf->subformula()])->symbol()),terms,FormulaParseInfo()));
+		auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
 
 		add(topdownrules, (*second)[qf->subformula()], &Gen::conj({&quant, (*second)[qf]}), data);
 		traverse(qf);
