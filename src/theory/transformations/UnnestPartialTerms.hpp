@@ -17,8 +17,8 @@
 class UnnestPartialTerms: public UnnestTerms {
 	VISITORFRIENDS()
 protected:
-	bool shouldMove(Term* t) {
-		return (isAllowedToUnnest() && TermUtils::isPartial(t));
+	bool wouldMove(Term* t) {
+		return (TermUtils::isPartial(t));
 	}
 };
 

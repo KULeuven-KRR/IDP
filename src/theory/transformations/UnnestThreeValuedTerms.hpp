@@ -75,7 +75,7 @@ public:
 	}
 
 protected:
-	bool shouldMove(Term*);
+	bool wouldMove(Term*);
 	Formula* visit(PredForm*);
 	Formula* visit(AggForm*);
 	Term* visit(AggTerm*);

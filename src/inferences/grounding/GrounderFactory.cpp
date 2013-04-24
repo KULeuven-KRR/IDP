@@ -1011,7 +1011,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 }
 
 void GrounderFactory::visit(const AggTerm* t) {
-	if(not getOption(BoolType::CPSUPPORT) || recursive(t)){
+	if(getOption(BoolType::CPSUPPORT) && recursive(t)){
 		throw IdpException("Invalid code path");
 	}
 

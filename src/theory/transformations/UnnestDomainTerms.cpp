@@ -11,8 +11,8 @@
 
 #include "UnnestDomainTerms.hpp"
 
-bool UnnestDomainTerms::shouldMove(Term* t) {
-	return isAllowedToUnnest() && t->type() == TermType::DOM;
+bool UnnestDomainTerms::wouldMove(Term* t) {
+	return t->type() == TermType::DOM;
 }
 
 Formula* UnnestDomainTermsFromNonBuiltins::visit(PredForm* pf){

@@ -41,7 +41,10 @@ private:
 	varset _variables; 					// newly introduced variables
 
 protected:
-	virtual bool shouldMove(Term* t);
+	virtual bool wouldMove(Term* t);
+	bool shouldMove(Term* t){
+		return isAllowedToUnnest() && wouldMove(t);
+	}
 
 	bool isAllowedToUnnest() const {
 		return _allowedToUnnest;

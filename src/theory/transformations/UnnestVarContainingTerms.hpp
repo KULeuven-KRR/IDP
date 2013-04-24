@@ -56,8 +56,8 @@ protected:
 		return rule;
 	}
 
-	bool shouldMove(Term* t){
-		return isAllowedToUnnest() && inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR && t->freeVars().size()>0;
+	bool wouldMove(Term* t){
+		return inhead && t->type()!=TermType::DOM && t->type()!=TermType::VAR && t->freeVars().size()>0;
 	}
 };
 

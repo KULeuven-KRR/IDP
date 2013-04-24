@@ -28,7 +28,7 @@ public:
 	}
 
 protected:
-	virtual bool shouldMove(Term* t);
+	virtual bool wouldMove(Term* t);
 };
 
 class UnnestDomainTermsFromNonBuiltins: public UnnestDomainTerms {

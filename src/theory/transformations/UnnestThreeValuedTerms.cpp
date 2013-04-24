@@ -19,11 +19,7 @@
 using namespace std;
 using namespace CPSupport;
 
-bool UnnestThreeValuedTerms::shouldMove(Term* t) {
-	if (not isAllowedToUnnest()) {
-		return false;
-	}
-
+bool UnnestThreeValuedTerms::wouldMove(Term* t) {
 	switch (t->type()) {
 	case TermType::FUNC: {
 		auto ft = dynamic_cast<FuncTerm*>(t);
@@ -39,8 +35,17 @@ bool UnnestThreeValuedTerms::shouldMove(Term* t) {
 		return true;
 	}
 	case TermType::AGG: {
-		// TODO check on two-valuedness?
 		auto at = dynamic_cast<AggTerm*>(t);
+		bool alltwovalued = true;
+		for(auto qset: at->set()->getSets()){
+			if(not SetUtils::approxTwoValued(qset, _structure)){ // TODO: should approxTwoValued only go to atom level here? Or will the remainder already have been moved?
+				alltwovalued = false;
+				break;
+			}
+		}
+		if(alltwovalued){
+			return false;
+		}
 		if (_cpsupport and _cpablefunction and eligibleForCP(at, _structure)) {
 			return false;
 		}

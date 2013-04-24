@@ -28,8 +28,8 @@ public:
 	}
 
 protected:
-	bool shouldMove(Term* t) {
-		return isAllowedToUnnest() and (t->type() == TermType::FUNC or t->type() == TermType::AGG);
+	bool wouldMove(Term* t) {
+		return (t->type() == TermType::FUNC or t->type() == TermType::AGG);
 	}
 };
 

@@ -35,8 +35,8 @@ UnnestTerms::UnnestTerms()
  * Returns true is the term should be moved
  * (this is the most important method to overwrite in subclasses)
  */
-bool UnnestTerms::shouldMove(Term* t) {
-	return isAllowedToUnnest() && t->type() != TermType::VAR && (_onlyrulehead || t->type() != TermType::DOM);
+bool UnnestTerms::wouldMove(Term* t) {
+	return t->type() != TermType::VAR && (_onlyrulehead || t->type() != TermType::DOM);
 }
 /**
  * Tries to derive a sort for the term given a structure.
@@ -276,7 +276,13 @@ Formula* UnnestTerms::unnest(PredForm* predform) {
 	if (VocabularyUtils::isComparisonPredicate(predform->symbol())) {
 		auto leftterm = predform->subterms()[0];
 		auto rightterm = predform->subterms()[1];
-		if (leftterm->type() == TermType::AGG) {
+		if(leftterm->type() == TermType::AGG && rightterm->type() == TermType::AGG){
+			if(not wouldMove(rightterm)){
+				moveonlyright = true;
+			}else{
+				moveonlyleft = true;
+			}
+		}else if (leftterm->type() == TermType::AGG) {
 			moveonlyright = true;
 		} else if (rightterm->type() == TermType::AGG) {
 			moveonlyleft = true;
