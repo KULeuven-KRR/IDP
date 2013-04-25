@@ -171,6 +171,7 @@ struct StrictWeakNTupleOrdering {
 	bool operator()(const ElementTuple&, const ElementTuple&) const;
 };
 
+// Important: builds upon the fact that identical compounds always have identical pointers
 bool operator<(const Compound&, const Compound&);
 bool operator>(const Compound&, const Compound&);
 bool operator==(const Compound&, const Compound&);
