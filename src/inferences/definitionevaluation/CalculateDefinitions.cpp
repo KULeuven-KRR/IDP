@@ -50,17 +50,16 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		xsb_interface->setStructure(structure);
 
 		xsb_interface->loadDefinition(definition);
-		auto symbols = definition->defsymbols();
-		for (auto it = symbols.begin(); it != symbols.end(); ++it) {
-			auto sorted = xsb_interface->queryDefinition(*it);
-			auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
-			auto predtable1 = new PredTable(internpredtable1, structure->universe(*it));
-			if(not isConsistentWith(predtable1, structure->inter(*it))) {
-				xsb_interface->reset();
-				return false;
-			}
-			structure->inter(*it)->ctpt(predtable1);
-			if(not structure->inter(*it)->isConsistent()) { // E.g. for functions
+		for (auto symbol : definition->defsymbols()) {
+			auto sorted = xsb_interface->queryDefinition(symbol);
+            auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
+            auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
+            if(not isConsistentWith(predtable1, structure->inter(symbol))){
+            	xsb_interface->reset();
+            	return false;
+            }
+            structure->inter(symbol)->ctpt(predtable1);
+			if(not structure->inter(symbol)->isConsistent()){ // E.g. for functions
 				xsb_interface->reset();
 				return false;
 			}
