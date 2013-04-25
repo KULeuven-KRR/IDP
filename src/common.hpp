@@ -387,9 +387,6 @@ std::ostream& operator<<(std::ostream& out, const VarId& id);
 std::ostream& operator<<(std::ostream& out, const DefId& id);
 std::ostream& operator<<(std::ostream& out, const SetId& id);
 
-std::string* StringPointer(const char* str); //!< Returns a shared pointer to the given string
-std::string* StringPointer(const std::string& str); //!< Returns a shared pointer to the given string
-
 template<class T2, class T>
 bool isa(const T& object) {
 	LOKI_STATIC_CHECK(not Loki::TypeTraits<T>::isPointer, CannotCompareTypeIDofPointers);

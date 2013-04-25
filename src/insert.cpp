@@ -524,7 +524,7 @@ string* Insert::currfile() const {
 }
 
 void Insert::currfile(const string& s) {
-	_currfile = StringPointer(s);
+	_currfile = new std::string(s);
 }
 
 void Insert::currfile(string* s) {
@@ -1796,7 +1796,7 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(int i, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(i);
+	auto d = createDomElem(i);
 	Sort* s = (i >= 0 ? get(STDSORT::NATSORT) : get(STDSORT::INTSORT));
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1814,7 +1814,7 @@ DomainTerm* Insert::domterm(double f, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(std::string* e, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(e);
+	const DomainElement* d = createDomElem(*e);
 	Sort* s = get(STDSORT::STRINGSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1823,7 +1823,7 @@ DomainTerm* Insert::domterm(std::string* e, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(char c, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(StringPointer(string(1, c)));
+	const DomainElement* d = createDomElem(string(1, c));
 	Sort* s = get(STDSORT::CHARSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1832,7 +1832,7 @@ DomainTerm* Insert::domterm(char c, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(e);
+	const DomainElement* d = createDomElem(*e);
 	Assert(s != NULL);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1953,9 +1953,8 @@ void Insert::addElement(SortTable* s, double f) const {
 	s->add(d);
 }
 
-void Insert::addElement(SortTable* s, std::string* e) const {
-	const DomainElement* d = createDomElem(e);
-	s->add(d);
+void Insert::addElement(SortTable* s, const std::string& e) const {
+	s->add(createDomElem(e));
 }
 
 void Insert::addElement(SortTable* s, const Compound* c) const {
@@ -1968,8 +1967,9 @@ void Insert::addElement(SortTable* s, int i1, int i2) const {
 }
 
 void Insert::addElement(SortTable* s, char c1, char c2) const {
-	for (char c = c1; c <= c2; ++c)
-		addElement(s, StringPointer(string(1, c)));
+	for (char c = c1; c <= c2; ++c){
+		addElement(s, string(1, c));
+	}
 }
 
 SortTable* Insert::createSortTable() const {
@@ -2003,11 +2003,11 @@ const DomainElement* Insert::element(double d) const {
 }
 
 const DomainElement* Insert::element(char c) const {
-	return createDomElem(StringPointer(string(1, c)));
+	return createDomElem(string(1, c));
 }
 
 const DomainElement* Insert::element(std::string* s) const {
-	return createDomElem(s);
+	return createDomElem(*s);
 }
 
 const DomainElement* Insert::element(const Compound* c) const {
@@ -2132,7 +2132,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 			break;
 		case ERE_CHAR:
 			for (char c = args[0]._value._charrange->first; c != args[0]._value._charrange->second; ++c) {
-				st->add(createDomElem(StringPointer(string(1, c))));
+				st->add(createDomElem(string(1, c)));
 			}
 			break;
 		}
@@ -2147,7 +2147,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 				tuple[n] = createDomElem(args[n]._value._intrange->first);
 				break;
 			case ERE_CHAR:
-				tuple[n] = createDomElem(StringPointer(string(1, args[n]._value._charrange->first)));
+				tuple[n] = createDomElem(string(1, args[n]._value._charrange->first));
 				break;
 			}
 		}
@@ -2183,7 +2183,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 						++current;
 						end = true;
 					}
-					tuple[n] = createDomElem(StringPointer(string(1, current)));
+					tuple[n] = createDomElem(string(1, current));
 					break;
 				}
 				}
@@ -2532,7 +2532,7 @@ void Insert::interByProcedure(NSPair* nsp, const longname& procedure, YYLTYPE l)
 	auto up = procedureInScope(procedure, pi);
 	string* proc = NULL;
 	if (up) {
-		proc = StringPointer(up->registryindex());
+		proc = new std::string(up->registryindex());
 	} else {
 		proc = LuaConnection::getProcedure(procedure, pi);
 	}

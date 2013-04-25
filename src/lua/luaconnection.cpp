@@ -100,7 +100,7 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 	case LUA_TNIL:
 		return NULL;
 	case LUA_TSTRING:
-		return createDomElem(StringPointer(lua_tostring(L,arg)));
+		return createDomElem(lua_tostring(L,arg));
 	case LUA_TNUMBER:
 		return createDomElem(lua_tonumber(L, arg));
 	case LUA_TUSERDATA: {
@@ -419,7 +419,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		break;
 	case LUA_TSTRING:
 		ia._type = AT_STRING;
-		ia._value._string = StringPointer(lua_tostring(L,arg));
+		ia._value._string = new std::string(lua_tostring(L,arg));
 		break;
 	case LUA_TTABLE:
 		if (arg < 0) {
@@ -436,7 +436,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		break;
 	case LUA_TFUNCTION: {
 		ia._type = AT_PROCEDURE;
-		std::string* registryindex = StringPointer(std::string("idp_argument_procedure_" + convertToString(argProcNumber())));
+		auto registryindex = new std::string("idp_argument_procedure_" + convertToString(argProcNumber()));
 		++argProcNumber();
 		lua_pushvalue(L, arg);
 		lua_setfield(L, LUA_REGISTRYINDEX, registryindex->c_str());
@@ -642,7 +642,7 @@ void errorNoSuchProcedure(const vector<vector<ArgType> >& passedtypes, map<vecto
  if h then
  return h(func, ...)
  else
- error(···)
+ error(...)
  end
  end
  end
@@ -1320,7 +1320,7 @@ SortTable* toDomain(vector<InternalArgument>* table, lua_State* L) {
 			st->add(createDomElem(it->_value._double));
 			break;
 		case AT_STRING:
-			st->add(createDomElem(it->_value._string));
+			st->add(createDomElem(*it->_value._string));
 			break;
 		case AT_COMPOUND:
 			st->add(createDomElem(it->_value._compound));
@@ -1349,7 +1349,7 @@ PredTable* toPredTable(vector<InternalArgument>* table, lua_State* L, const Univ
 					tuple.push_back(createDomElem(jt->_value._double));
 					break;
 				case AT_STRING:
-					tuple.push_back(createDomElem(jt->_value._string));
+					tuple.push_back(createDomElem(*jt->_value._string));
 					break;
 				case AT_COMPOUND:
 					tuple.push_back(createDomElem(jt->_value._compound));
@@ -1574,7 +1574,7 @@ int predtableCall(lua_State* L) {
 			tuple.push_back(createDomElem(currarg._value._double));
 			break;
 		case AT_STRING:
-			tuple.push_back(createDomElem(currarg._value._string));
+			tuple.push_back(createDomElem(*currarg._value._string));
 			break;
 		case AT_COMPOUND:
 			tuple.push_back(createDomElem(currarg._value._compound));
@@ -1629,7 +1629,7 @@ int funcinterCall(lua_State* L) {
 				tuple.push_back(createDomElem(arg._value._double));
 				break;
 			case AT_STRING:
-				tuple.push_back(createDomElem(arg._value._string));
+				tuple.push_back(createDomElem(*arg._value._string));
 				break;
 			case AT_COMPOUND:
 				tuple.push_back(createDomElem(arg._value._compound));
@@ -2197,7 +2197,7 @@ template<>
 void addGlobal(UserProcedure* p) {
 	InternalArgument ia;
 	ia._type = AT_PROCEDURE;
-	ia._value._string = StringPointer(p->registryindex());
+	ia._value._string = new std::string(p->registryindex());
 	convertToLua(getState(), ia);
 	lua_setglobal(getState(), p->name().c_str());
 }

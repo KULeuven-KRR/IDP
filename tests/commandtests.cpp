@@ -63,9 +63,9 @@ TEST(IteratorInferenceTest, DoubleDomain) {
 
 TEST(IteratorInferenceTest, StringDomain) {
 	auto dom = TableUtils::createSortTable();
-	dom->add(createDomElem(StringPointer("A")));
-	dom->add(createDomElem(StringPointer("B")));
-	dom->add(createDomElem(StringPointer("C")));
+	dom->add(createDomElem("A"));
+	dom->add(createDomElem("B"));
+	dom->add(createDomElem("C"));
 	auto itInf = DomainIteratorInference();
 	auto itRes = itInf.execute({ InternalArgument(dom) });
 
@@ -76,12 +76,12 @@ TEST(IteratorInferenceTest, StringDomain) {
 	auto daiRes1 = daiInf.execute({ itRes, InternalArgument(0) });
 
 	ASSERT_TRUE(daiRes1._type == AT_STRING);
-	ASSERT_EQ(StringPointer("A"),daiRes1._value._string);
+	ASSERT_EQ("A",*daiRes1._value._string);
 
 	auto daiRes2 = daiInf.execute({ itRes, InternalArgument(0) });
 
 	ASSERT_TRUE(daiRes2._type == AT_STRING);
-	ASSERT_EQ(StringPointer("B"),daiRes2._value._string);
+	ASSERT_EQ("B",*daiRes2._value._string);
 }
 
 //TEST(IteratorInferenceTest, CompoundDomain) {

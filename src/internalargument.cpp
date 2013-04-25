@@ -29,7 +29,7 @@ InternalArgument::InternalArgument(const DomainElement* el) {
 		break;
 	case DET_STRING:
 		_type = AT_STRING;
-		_value._string = StringPointer(*(el->value()._string));
+		_value._string = new std::string(*(el->value()._string));
 		break;
 	case DET_COMPOUND:
 		_type = AT_COMPOUND;

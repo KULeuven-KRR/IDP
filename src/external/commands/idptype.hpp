@@ -24,7 +24,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto tp = (ArgType) get<0>(args);
-		return InternalArgument(StringPointer(toCString(tp)));
+		return InternalArgument(new std::string(toCString(tp)));
 	}
 };
 

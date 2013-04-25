@@ -404,7 +404,7 @@ public:
 	SortTable* createSortTable() const;
 	void addElement(SortTable*, int) const;
 	void addElement(SortTable*, double) const;
-	void addElement(SortTable*, std::string*) const;
+	void addElement(SortTable*, const std::string&) const;
 	void addElement(SortTable*, const Compound*) const;
 	void addElement(SortTable*, int, int) const;
 	void addElement(SortTable*, char, char) const;

@@ -54,9 +54,7 @@ ElementTuple atom2tuple(PredForm* pf, Structure* s) {
 	for (auto it = pf->args().begin(); it != pf->args().end(); ++it) {
 
 		auto el = s->inter(dynamic_cast<FuncTerm*>(*it)->function())->funcTable()->operator [](ElementTuple());
-		auto string = StringPointer(domainelement_idp(toString(el)));
-		//			cout << toString(createDomElem(&string)) << endl;
-		tuple.push_back(createDomElem(string));
+		tuple.push_back(createDomElem(domainelement_idp(toString(el))));
 	}
 	return tuple;
 }
@@ -176,8 +174,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 		std::list<string> answer = split(buff.string);
 		ElementTuple tuple;
 		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			auto string = StringPointer(domainelement_idp(*it));
-			tuple.push_back(createDomElem(string));
+			tuple.push_back(createDomElem(domainelement_idp(*it)));
 		}
 		result.insert(tuple);
 

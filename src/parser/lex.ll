@@ -518,11 +518,11 @@ COMMENTLINE2	"--".*
 							  yylval.chr = *yytext;
 							  return CHARACTER;			}
 <*>{ID}						{ parser.advancecol();
-							  yylval.str = StringPointer(yytext);
+							  yylval.str = new std::string(yytext);
 							  return IDENTIFIER;		}
 <*>{STR}					{ parser.advancecol();
 							  char* temp = yytext; ++temp;
-							  yylval.str = StringPointer(string(temp,yyleng-2));
+							  yylval.str = new std::string(temp,yyleng-2);
 							  return STRINGCONS;		}
 <*>{INT}					{ parser.advancecol();
 							  auto val = strtol(yytext, NULL, 10);

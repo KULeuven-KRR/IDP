@@ -73,7 +73,7 @@ public:
 				tup.push_back(createDomElem(it->_value._double));
 				break;
 			case AT_STRING:
-				tup.push_back(createDomElem(it->_value._string));
+				tup.push_back(createDomElem(*it->_value._string));
 				break;
 			case AT_COMPOUND:
 				tup.push_back(createDomElem(it->_value._compound));

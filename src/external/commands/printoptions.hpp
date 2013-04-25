@@ -25,7 +25,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto opts = get<0>(args);
-		return InternalArgument(StringPointer(toString(opts)));
+		return InternalArgument(new std::string(toString(opts)));
 	}
 };
 

@@ -853,7 +853,7 @@ void StringInternalSortIterator::operator++() {
 }
 
 const DomainElement* StringInternalSortIterator::operator*() const {
-	return createDomElem(StringPointer(_iter));
+	return createDomElem(_iter);
 }
 
 const DomainElement* CharInternalSortIterator::operator*() const {
@@ -861,8 +861,7 @@ const DomainElement* CharInternalSortIterator::operator*() const {
 		int i = _iter - '0';
 		return createDomElem(i);
 	} else {
-		string* s = StringPointer(string(1, _iter));
-		return createDomElem(s);
+		return createDomElem(string(1, _iter));
 	}
 }
 
@@ -2516,7 +2515,7 @@ InternalSortIterator* AllStrings::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllStrings::first() const {
-	return createDomElem(StringPointer(""));
+	return createDomElem(string(""));
 }
 
 const DomainElement* AllStrings::last() const {
@@ -2555,8 +2554,7 @@ InternalSortTable* AllChars::add(const DomainElement* d) {
 				int i = c - '0';
 				ist->add(createDomElem(i));
 			} else {
-				string* s = StringPointer(string(1, c));
-				ist->add(createDomElem(s));
+				ist->add(createDomElem(string(1, c)));
 			}
 		}
 		ist->add(d);
@@ -2574,8 +2572,7 @@ InternalSortTable* AllChars::remove(const DomainElement* d) {
 				int i = c - '0';
 				ist->add(createDomElem(i));
 			} else {
-				string* s = StringPointer(string(1, c));
-				ist->add(createDomElem(s));
+				ist->add(createDomElem(string(1, c)));
 			}
 		}
 		ist->remove(d);
@@ -2598,11 +2595,11 @@ InternalSortIterator* AllChars::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllChars::first() const {
-	return createDomElem(StringPointer(string(1, getMinElem<char>())));
+	return createDomElem(string(1, getMinElem<char>()));
 }
 
 const DomainElement* AllChars::last() const {
-	return createDomElem(StringPointer(string(1, getMaxElem<char>())));
+	return createDomElem(string(1, getMaxElem<char>()));
 }
 
 tablesize AllChars::size() const {
