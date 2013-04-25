@@ -59,7 +59,15 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
             	return false;
             }
             structure->inter(symbol)->ctpt(predtable1);
-			if(not structure->inter(symbol)->isConsistent()){ // E.g. for functions
+            structure->clean();
+            if(isa<Function>(*symbol)) {
+            	auto fun = dynamic_cast<Function*>(symbol);
+            	if(not structure->inter(fun)->approxTwoValued()){ // E.g. for functions
+    				xsb_interface->reset();
+    				return false;
+    			}
+            }
+			if(not structure->inter(symbol)->isConsistent()){
 				xsb_interface->reset();
 				return false;
 			}
