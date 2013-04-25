@@ -17,32 +17,28 @@
 using namespace std;
 
 void CheckSorts::visit(const PredForm* pf) {
-	PFSymbol* s = pf->symbol();
-	vector<Sort*>::const_iterator it = s->sorts().cbegin();
-	vector<Term*>::const_iterator jt = pf->subterms().cbegin();
+	auto s = pf->symbol();
+	auto it = s->sorts().cbegin();
+	auto jt = pf->subterms().cbegin();
 	for (; it != s->sorts().cend(); ++it, ++jt) {
-		Sort* s1 = *it;
-		Sort* s2 = (*jt)->sort();
-		if (s1 && s2) {
-			if (!SortUtils::resolve(s1, s2, _vocab)) {
-				Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
-			}
+		auto s1 = *it;
+		auto s2 = (*jt)->sort();
+		if (s1 && s2 && not SortUtils::resolve(s1, s2, _vocab)) {
+			Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
 		}
 	}
 	traverse(pf);
 }
 
 void CheckSorts::visit(const FuncTerm* ft) {
-	Function* f = ft->function();
-	vector<Sort*>::const_iterator it = f->insorts().cbegin();
-	vector<Term*>::const_iterator jt = ft->subterms().cbegin();
+	auto f = ft->function();
+	auto it = f->insorts().cbegin();
+	auto jt = ft->subterms().cbegin();
 	for (; it != f->insorts().cend(); ++it, ++jt) {
-		Sort* s1 = *it;
-		Sort* s2 = (*jt)->sort();
-		if (s1 && s2) {
-			if (!SortUtils::resolve(s1, s2, _vocab)) {
-				Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
-			}
+		auto s1 = *it;
+		auto s2 = (*jt)->sort();
+		if (s1 && s2 && not SortUtils::resolve(s1, s2, _vocab)) {
+			Error::wrongsort(toString(*jt), s2->name(), s1->name(), (*jt)->pi());
 		}
 	}
 	traverse(ft);
@@ -50,17 +46,15 @@ void CheckSorts::visit(const FuncTerm* ft) {
 
 void CheckSorts::visit(const EqChainForm* ef) {
 	Sort* s = 0;
-	vector<Term*>::const_iterator it = ef->subterms().cbegin();
+	auto it = ef->subterms().cbegin();
 	while (!s && it != ef->subterms().cend()) {
 		s = (*it)->sort();
 		++it;
 	}
 	for (; it != ef->subterms().cend(); ++it) {
-		Sort* t = (*it)->sort();
-		if (t) {
-			if (!SortUtils::resolve(s, t, _vocab)) {
-				Error::wrongsort(toString(*it), t->name(), s->name(), (*it)->pi());
-			}
+		auto t = (*it)->sort();
+		if (t && not SortUtils::resolve(s, t, _vocab)) {
+			Error::wrongsort(toString(*it), t->name(), s->name(), (*it)->pi());
 		}
 	}
 	traverse(ef);

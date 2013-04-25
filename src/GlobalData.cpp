@@ -117,3 +117,16 @@ size_t GlobalData::getTabSize() const {
 GlobalData* getGlobal() {
 	return GlobalData::instance();
 }
+
+void GlobalData::notifyOfError(const std::string& errormessage) {
+	auto res = _errors.insert(errormessage);
+	if(res.second){
+		clog <<errormessage;
+	}
+}
+void GlobalData::notifyOfWarning(const std::string& errormessage) {
+	auto res = _warnings.insert(errormessage);
+	if(res.second){
+		clog <<errormessage;
+	}
+}

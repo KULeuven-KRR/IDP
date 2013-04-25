@@ -42,7 +42,7 @@ private:
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
 
-	std::vector<std::string> _errors, _warnings;
+	std::set<std::string> _errors, _warnings;
 	std::set<std::string> _parsedfiles;
 	std::set<FILE*> _openfiles;
 
@@ -110,19 +110,15 @@ public:
 	void setOptions(Options* options);
 
 
-	void notifyOfError(const std::string& errormessage) {
-		_errors.push_back(errormessage);
-	}
-	const std::vector<std::string>& getErrors() const {
+	void notifyOfError(const std::string& errormessage);
+	const std::set<std::string>& getErrors() const {
 		return _errors;
 	}
 	unsigned int getErrorCount() const {
 		return _errors.size();
 	}
-	void notifyOfWarning(const std::string& errormessage) {
-		_warnings.push_back(errormessage);
-	}
-	const std::vector<std::string>& getWarnings() const {
+	void notifyOfWarning(const std::string& errormessage);
+	const std::set<std::string>& getWarnings() const {
 		return _warnings;
 	}
 	unsigned int getWarningCount() const {
