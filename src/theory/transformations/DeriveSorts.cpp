@@ -50,7 +50,6 @@ QuantSetExpr* DeriveSorts::visit(QuantSetExpr* qs) {
 }
 
 Term* DeriveSorts::visit(VarTerm* vt) {
-	//cerr <<"Visiting varterm " <<print(vt) <<"\n";
 	if (_underivable) {
 		_underivableVariables.insert(vt->var());
 		return vt;
@@ -62,11 +61,18 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 		} else {
 			newsort = SortUtils::resolve(vt->sort(), _assertsort);
 		}
-		//cerr <<"\tnewsort = " <<print(newsort) <<"\n";
 		if (newsort == NULL) {
 			_underivableVariables.insert(vt->var());
 		} else if (vt->sort() != newsort) {
 			_changed = true;
+			if(vt->var()->sort()!=newsort){
+				if(_assertsort!=NULL){
+					derivations[vt->var()].insert(_assertsort);
+				}
+				if(vt->sort()!=NULL){
+					derivations[vt->var()].insert(vt->sort());
+				}
+			}
 			vt->sort(newsort);
 		}
 	}
@@ -96,7 +102,6 @@ Term* DeriveSorts::visit(AggTerm* t) {
 }
 
 Term* DeriveSorts::visit(FuncTerm* term) {
-	//cerr << "Visiting " << print(term) << "\n";
 	auto f = term->function();
 	if (not _useBuiltIns && f->builtin()) {
 		return term;
@@ -138,7 +143,6 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 }
 
 Formula* DeriveSorts::visit(PredForm* f) {
-	//cerr << "Visiting " << print(f) << "\n";
 	auto p = f->symbol();
 	if (not _useBuiltIns && p->builtin()) {
 		return f;
@@ -184,7 +188,6 @@ Formula* DeriveSorts::visit(PredForm* f) {
 }
 
 Formula* DeriveSorts::visit(EqChainForm* formula) {
-	//cerr << "Visiting " << print(formula) << "\n";
 	if (_useBuiltIns) {
 		Sort* temp = NULL;
 		if (not _firstvisit) {
@@ -218,8 +221,6 @@ void DeriveSorts::derivefuncs() {
 				vs.push_back((*kt)->sort());
 			}
 			vs.push_back(NULL);
-
-			//clog <<"Disambiguating for " <<f->name() <<" with " <<print(vs) <<"\n";
 
 			auto rf = f->disambiguate(vs, _vocab);
 			if (rf != NULL) {
@@ -313,6 +314,14 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 }
 
 void DeriveSorts::check() {
+	for(auto var2sort: derivations){
+		stringstream ss;
+		ss <<"Derived sort " <<var2sort.first->sort()->name() <<" for variable " <<var2sort.first->name() <<" as nearest parent of ";
+		printList(ss, var2sort.second, ", ", false);
+		ss <<" and " <<(*var2sort.second.rbegin())->name();
+		Warning::warning(ss.str());
+	}
+	derivations.clear();
 	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
 		Error::novarsort((*i)->name(), (*i)->pi());
 	}
