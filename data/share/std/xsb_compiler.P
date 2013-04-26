@@ -1,6 +1,8 @@
-idpxsb_abs(0,0).
-idpxsb_abs(X,Y) :- Y is X, Y > 0.
-idpxsb_abs(X,Z) :- Y is X, Y < 0, Z is -Y.
+idpxsb_abs(0,0) :- !.
+idpxsb_abs(X,Y) :- nonvar(X), X > 0, Y is X.
+idpxsb_abs(X,Y) :- nonvar(X), X < 0, Y is -X.
+idpxsb_abs(X,Y) :- nonvar(Y), X is Y.
+idpxsb_abs(X,Y) :- nonvar(Y), X is -Y.
 
 idpxsb_sum(List,Sum) :- idpxsb_sum(List,Sum,0).
 idpxsb_sum([],X,X).
