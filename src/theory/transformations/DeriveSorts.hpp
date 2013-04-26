@@ -45,6 +45,7 @@ private:
 	Sort* _assertsort;
 	const Vocabulary* _vocab;
 	bool _useBuiltIns;
+	std::map<Variable*,std::set<Sort*>> derivations;
 
 public:
 	template<typename T>
