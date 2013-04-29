@@ -275,7 +275,12 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 			auto first = counter++;
 			auto second = counter++;
 			auto solution = counter;
-			output << toString(**solution) << " is " << toString(**first) << " " << pt._name << " " << toString(**second);
+			auto name = pt._name;
+			if(pt._name == "%") {
+				name = "mod";
+			}
+			output << toString(**solution) << " is " << toString(**first) << " " << name << " " << toString(**second);
+
 		}
 	} else if (pt._infix) {
 		if (!pt._sign) {
