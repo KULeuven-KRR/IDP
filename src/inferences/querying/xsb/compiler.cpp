@@ -260,6 +260,10 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 		if (!pt._sign) {
 			output << "\\+ ";
 		}
+		if (pt.name() == "abs") {
+			output << IDPXSB_PREFIX << "_abs(" << toString(*pt._arguments.front()) << ", " << toString(*pt._arguments.back()) << ")";
+			return output;
+		}
 		if (pt._arguments.size() == 2) {
 			if (pt._arguments.back()->numeric()) {
 				output << toString(*pt._arguments.front()) << " is " << toString(*pt._arguments.back());
@@ -277,9 +281,7 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 		if (!pt._sign) {
 			output << "\\+ ";
 		}
-		output << toString(*pt._arguments.front());
-		output << " " << pt._name << " ";
-		output << toString(*pt._arguments.back());
+		output << toString(*pt._arguments.front()) << " " << pt._name << " " << toString(*pt._arguments.back());
 	} else {
 		if (!pt._sign) {
 			for (auto it = (pt._variables).begin(); it != (pt._variables).end(); ++it) {
@@ -764,10 +766,9 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 	for (auto it = p->subterms().begin(); it != p->subterms().end(); ++it) {
 		(*it)->accept(this);
 	}
-	if (p->symbol()->name() == "abs") {
+	if (p->symbol()->nameNoArity() == "abs" && p->args().size() == 2) {
 		term->numeric(true);
-	}
-	if (isoperator(p->symbol()->name().at(0))) {
+	} else if (isoperator(p->symbol()->name().at(0))) {
 		if (p->args().size() == 3) {
 			term->numeric(true);
 			term->infix(true);
