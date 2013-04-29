@@ -159,17 +159,18 @@ void XSBInterface::exit() {
 
 SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	auto term = symbol2term(s);
-
 	SortedElementTable result;
-
 	XSB_StrDefine (buff);
-
 	stringstream ss;
 	ss << *term << ".";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "Quering XSB with: " <<  query << "\n";
+	}
 	auto rc = xsb_query_string_string(query, &buff, " ");
 	handleResult(rc);
+
 	while (rc == XSB_SUCCESS) {
 		std::list<string> answer = split(buff.string);
 		ElementTuple tuple;
@@ -184,6 +185,18 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	XSB_StrDestroy(&buff);
 
 	delete (term);
+
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "Resulted in the following answer tuples:\n";
+		if (result.empty()) {
+			clog << "<none>\n\n";
+		} else {
+			for(auto elem : result) {
+				clog << toString(elem) << "\n";
+			}
+			clog << "\n";
+		}
+	}
 	return result;
 }
 

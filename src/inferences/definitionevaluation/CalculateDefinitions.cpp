@@ -34,7 +34,6 @@ using namespace std;
 
 bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
 	// TODO duplicate code with modelexpansion
-
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
@@ -220,7 +219,7 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";
 	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 		clog << "Resulting structure:\n" << toString(structure) << "\n";
 	}
 	return {structure};
