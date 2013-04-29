@@ -33,7 +33,8 @@ set<T,C> difference(const set<T,C>& v1, const set<T,C>& v2) {
 
 template<class RuleList>
 void add(RuleList& list, PredForm* head, Formula* body, ApproxData* data) {
-	if (data->actions.find(head->symbol()) == data->actions.cend()) {
+	if (not head->symbol()->builtin() && // don't define built-in symbols
+			data->actions.find(head->symbol()) == data->actions.cend()) {
 		list.push_back(new Rule(head->freeVars(), head, body, ParseInfo()));
 	}
 }
@@ -287,10 +288,13 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
+		if(pf->symbol()->builtin()) {
+			return; // builtins don't need to be handled
+		}
 		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]->symbol()) == data->_predCt2InputPredCt.cend()) {
 			// predform symbol hasn't already been handled before
-			auto ctpred = new Predicate((pf->symbol()->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
-			auto cfpred = new Predicate((pf->symbol()->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
+			auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->symbol()->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
+			auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->symbol()->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
 
 			data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()]->symbol(),ctpred) );
 			data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()]->symbol(),cfpred) );
@@ -413,8 +417,7 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 
 void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	auto sign = f->sign();
-	PredForm* newct;
-	PredForm* newcf;
+	auto ctcfpair = std::pair<PredForm*,PredForm*>();
 
 	auto subterms = std::vector<Term*>();
 	for(auto fv : f->freeVars()) {
@@ -424,44 +427,54 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
 		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
-			Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
-			Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
-			newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
-			newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
+			if (not fPredForm->symbol()->builtin()) {
+				Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
+				Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
+				ctcfpair.first = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
+				ctcfpair.second = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
 
-			data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),newct));
-			data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),newcf));
-
+				data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.first) );
+				data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.second) );
+			} else {
+				ctcfpair.first = fPredForm;
+				auto tmp = fPredForm->clone();
+				tmp->negate();
+				ctcfpair.second = tmp;
+			}
 		} else {
-			newct = data->_pred2predCt[fPredForm->symbol()];
-			newcf = data->_pred2predCf[fPredForm->symbol()];
+			ctcfpair.first = data->_pred2predCt[fPredForm->symbol()];
+			ctcfpair.second = data->_pred2predCf[fPredForm->symbol()];
 		}
-
-
 	} else {
-		auto formulaID = getGlobal()->getNewID();
-		std::vector<Sort*> sorts;
-		for(auto var : f->freeVars()) {
-			sorts.push_back(var->sort());
-		}
-		Predicate* ctpred = new Predicate(("T" + toString(formulaID) + "_ct"),sorts);
-		Predicate* cfpred = new Predicate(("T" + toString(formulaID) + "_cf"),sorts);
-
-		newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
-		newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
-		if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
-			clog << "In the approximating definitions, T" << toString(formulaID) << " represents formula " << toString(f) << "\n";
-		}
+		ctcfpair = createGeneralPredForm(f,subterms);
 	}
 
 	if(sign == SIGN::NEG) { // If the formula is negative, the _ct and _cf maps need to be swapped
-		std::swap(newct,newcf);
+		std::swap(ctcfpair.first,ctcfpair.second);
 	}
 
-	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,newct) );
-	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,newcf) );
+	if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
+		clog << "In the approximating definitions, " << toString(ctcfpair.first) << " represents formula " << toString(f) << " being true\n";
+		clog << "In the approximating definitions, " << toString(ctcfpair.second) << " represents formula " << toString(f) << " being false\n";
+	}
+	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.first) );
+	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.second) );
 
 	for (auto subf : f->subformulas()) {
 		setFormula2PredFormMap(subf);
 	}
+}
+
+std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPredForm(Formula* f, std::vector<Term*> subterms) {
+	auto formulaID = getGlobal()->getNewID();
+	std::vector<Sort*> sorts;
+	for(auto var : f->freeVars()) {
+		sorts.push_back(var->sort());
+	}
+	auto ctpred = new Predicate(("T" + toString(formulaID) + "_ct"),sorts);
+	auto cfpred = new Predicate(("T" + toString(formulaID) + "_cf"),sorts);
+
+	auto newct = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
+	auto newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
+	return std::pair<PredForm*,PredForm*>(newct, newcf);
 }

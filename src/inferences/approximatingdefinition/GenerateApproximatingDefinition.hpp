@@ -64,14 +64,20 @@ public:
 		}
 
 		for(auto sentence : sentences) {
+			auto context = Context::POSITIVE;
+			if (sentence->sign() == SIGN::NEG) {
+				context = Context::NEGATIVE;
+			}
+			FormulaUtils::unnestFuncsAndAggs(sentence,s,context);
+			FormulaUtils::graphFuncsAndAggs(sentence,s,true,false,context);
 			FormulaUtils::removeEquivalences(sentence);
 			FormulaUtils::pushNegations(sentence);
 		}
 		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
 		auto ret = g.getallRules(dir);
-		Theory* approxdef_theory = new Theory("approxdef_theory", ParseInfo());
+		auto approxdef_theory = new Theory("approxdef_theory", ParseInfo());
 		approxdef_theory->add(ret->clone());
-		Vocabulary* testv = new Vocabulary(s->vocabulary()->name());
+		auto testv = new Vocabulary(s->vocabulary()->name());
 		for(Rule* rule : ret->rules()) {
 			testv->add(rule->head()->symbol());
 		}
@@ -82,15 +88,16 @@ public:
 			testv->add(cff.second);
 		}
 
-		Structure* approxdef_struct = new Structure("approxdef_struct", testv, ParseInfo());
+		auto approxdef_struct = new Structure("approxdef_struct", testv, ParseInfo());
+		std::cout << "constructing structure...\n";
 
 		for(auto ctf : g.data->_pred2predCt) {
-			PredInter* newinter = new PredInter(s->inter(ctf.first)->ct(),true);
+			auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
 			auto interToChange = approxdef_struct->inter(g.data->_predCt2InputPredCt[ctf.second->symbol()]);
 			interToChange->ctpt(newinter->ct());
 		}
 		for(auto cff : g.data->_pred2predCf) {
-			PredInter* newinter = new PredInter(s->inter(cff.first)->cf(),true);
+			auto newinter = new PredInter(s->inter(cff.first)->cf(),true);
 			auto interToChange = approxdef_struct->inter(g.data->_predCf2InputPredCf[cff.second->symbol()]);
 			interToChange->ctpt(newinter->ct());
 		}
@@ -138,4 +145,5 @@ private:
 	std::vector<Rule*> getallUpRules();
 
 	void setFormula2PredFormMap(Formula*);
+	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*, std::vector<Term*>);
 };
