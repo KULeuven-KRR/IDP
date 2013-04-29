@@ -53,6 +53,7 @@ class ReplaceLTCSymbols;
 class RemoveQuantificationsOverSort;
 class ContainedVariables;
 class SubstituteVarWithDom;
+class CombineAggregates;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -113,6 +114,7 @@ class SubstituteVarWithDom;
 		friend class ConstructNewReducedForm;\
 		friend class TopDownApproximatingDefinition;\
 		friend class ContainedVariables;\
+		friend class CombineAggregates;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
 		friend class CollectQuantifiedVariables;\

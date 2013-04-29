@@ -96,6 +96,9 @@ bool approxTwoValued(const Formula*, Structure*);
 /** Check sorts in the given formula */
 void checkSorts(Vocabulary* v, Formula* f);
 
+Formula* combineAggregates(Formula* f);
+void combineAggregates(Theory* t);
+
 /** Returns true iff at least one FuncTerm/AggTerm occurs in the given formula */
 bool containsFuncTerms(Formula* f);
 bool containsDomainTerms(Formula* f);

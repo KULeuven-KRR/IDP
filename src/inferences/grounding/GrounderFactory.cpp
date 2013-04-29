@@ -449,7 +449,8 @@ void GrounderFactory::visit(const Theory* theory) {
 	// TODO Order the components to optimize the grounding process
 
 	// Create grounders for all components
-	auto newtheory = theory;
+	auto newtheory = const_cast<Theory*>(theory);
+	FormulaUtils::combineAggregates(newtheory);
 
 	/*	SKOLEM  TODO fix and add
 	 auto newtheory = new Theory("", _vocabulary, theory->pi());
@@ -740,6 +741,15 @@ AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
 		}
 		if (not newagg) {
 			aggterm = aggterm->clone();
+					aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
+				if (aggterm->function() == AggFunction::SUM && bound->type() != TermType::VAR) { // TODO or anything else known at ground time
+					auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+					auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
+					newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+					bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
+					aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
+					temppf = new PredForm(pf->sign(), pf->symbol(), { aggterm, bound }, pf->pi());
+					temppf = new PredForm(pf->sign(), pf->symbol(), { bound, aggterm }, pf->pi());
 		}
 		if (not newbound) {
 			bound = bound->clone();

@@ -80,10 +80,7 @@ public:
 	virtual void sort(Sort*) {
 	} //!< Set the sort of the term (only does something for VarTerm and DomainTerm)
 
-	void addSet(EnumSetExpr* s) {
-		_subsets.push_back(s);
-		setFreeVars();
-	}
+	void addSet(EnumSetExpr* s);
 	void subterm(size_t n, Term* t) {
 		_subterms[n] = t;
 		setFreeVars();

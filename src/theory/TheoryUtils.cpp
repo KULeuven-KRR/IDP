@@ -44,6 +44,7 @@
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
+#include "transformations/CombineAggregates.hpp"
 #include "transformations/UnnestTerms.hpp"
 #include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
@@ -199,6 +200,13 @@ bool approxTwoValued(const Formula* f, Structure* str) {
 
 void checkSorts(Vocabulary* v, Formula* f) {
 	transform<CheckSorts>(f, v);
+}
+
+Formula* combineAggregates(Formula* f){
+	return transform<CombineAggregates, Formula*>(f);
+}
+void combineAggregates(Theory* f){
+	return transform<CombineAggregates>(f);
 }
 
 bool containsFuncTerms(Formula* f) {

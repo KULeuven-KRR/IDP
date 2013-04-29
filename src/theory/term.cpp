@@ -88,6 +88,17 @@ bool Term::contains(const Variable* v) const {
 	return false;
 }
 
+void Term::addSet(EnumSetExpr* s) {
+	if(_subsets.size()==0){
+		_subsets.push_back(s);
+	}else{
+		for(auto qs:s->getSets()){
+			_subsets.front()->addSet(qs);
+		}
+	}
+	setFreeVars();
+}
+
 ostream& operator<<(ostream& output, const Term& t) {
 	return t.put(output);
 }
