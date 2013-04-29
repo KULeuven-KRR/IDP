@@ -512,7 +512,7 @@ void FormulaClauseToPrologClauseConverter::visit(ExistsClause* ec) {
 }
 
 void FormulaClauseToPrologClauseConverter::visit(ForallClause* fc) {
-	PrologTerm* forall = new PrologTerm("forall");
+	PrologTerm* forall = new PrologTerm("idpxsb_forall");
 	forall->prefix(false);
 	std::list<PrologTerm*> list;
 //	Create generator clause
