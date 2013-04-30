@@ -478,3 +478,73 @@ std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPre
 	auto newcf = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
 	return std::pair<PredForm*,PredForm*>(newct, newcf);
 }
+
+std::vector<Formula*>* GenerateApproximatingDefinition::performTransformations(const std::vector<Formula*>& sentences, AbstractStructure* s) {
+	std::vector<Formula*>* ret = new vector<Formula*>();
+	for(auto sentence : sentences) {
+		auto copyToWorkOn = sentence->clone();
+		auto context = Context::POSITIVE;
+		if (copyToWorkOn->sign() == SIGN::NEG) {
+			context = Context::NEGATIVE;
+		}
+		auto sentence2 = FormulaUtils::graphFuncsAndAggs(copyToWorkOn,s,true,false,context);
+		auto sentence3 = FormulaUtils::unnestFuncsAndAggs(sentence2,s,context);
+		auto sentence4 = FormulaUtils::removeEquivalences(sentence3);
+		auto sentence5 = FormulaUtils::pushNegations(sentence4);
+		ret->push_back(sentence5);
+	}
+	return ret;
+}
+
+Theory* GenerateApproximatingDefinition::constructTheory(Definition* def) {
+	auto ret = new Theory("approxdef_theory", ParseInfo());
+	ret->add(def->clone());
+	return ret;
+}
+Vocabulary* GenerateApproximatingDefinition::constructVocabulary(AbstractStructure* s, Definition* d) {
+	auto ret = new Vocabulary(s->vocabulary()->name());
+	for(Rule* rule : d->rules()) {
+	ret->add(rule->head()->symbol());
+	}
+	for(auto ctf : data->_predCt2InputPredCt) {
+	ret->add(ctf.second);
+	}
+	for(auto cff : data->_predCf2InputPredCf) {
+	ret->add(cff.second);
+	}
+	for (auto sort : s->vocabulary()->getSorts()) {
+		ret->add(sort.second);
+	}
+
+	return ret;
+}
+
+AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractStructure* s, Vocabulary* v) {
+	auto ret = new Structure("approxdef_struct", v, ParseInfo());
+
+	for(auto sortinter : s->getSortInters()) {
+		auto interToChange = ret->inter(sortinter.first);
+		ret->inter(sortinter.first)->internTable(sortinter.second->internTable());
+	}
+	for(auto ctf : data->_pred2predCt) {
+		auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
+		auto interToChange = ret->inter(data->_predCt2InputPredCt[ctf.second->symbol()]);
+		interToChange->ctpt(newinter->ct());
+	}
+	for(auto cff : data->_pred2predCf) {
+		auto newinter = new PredInter(s->inter(cff.first)->cf(),true);
+		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second->symbol()]);
+		interToChange->ctpt(newinter->ct());
+	}
+
+	return ret;
+}
+
+void GenerateApproximatingDefinition::updateStructure(AbstractStructure* s, AbstractStructure* approxdef_struct) {
+	for(auto ctf : data->_pred2predCt) {
+		s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second->symbol())->ct());
+	}
+	for(auto cff : data->_pred2predCf) {
+		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second->symbol())->ct());
+	}
+}

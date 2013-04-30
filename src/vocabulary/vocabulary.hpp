@@ -548,6 +548,9 @@ public:
 	const std::map<std::string, Function*>& getFuncs() const {
 		return _name2func;
 	}
+	const std::map<std::string, Sort*>& getSorts() const{
+		return _name2sort;
+	}
 
 	std::map<std::string, Sort*>::iterator firstSort() {
 		return _name2sort.begin();

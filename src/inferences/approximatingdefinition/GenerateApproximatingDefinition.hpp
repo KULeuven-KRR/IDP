@@ -62,64 +62,21 @@ public:
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB...\n";
 		}
-
-		for(auto sentence : sentences) {
-			auto context = Context::POSITIVE;
-			if (sentence->sign() == SIGN::NEG) {
-				context = Context::NEGATIVE;
-			}
-			FormulaUtils::unnestFuncsAndAggs(sentence,s,context);
-			FormulaUtils::graphFuncsAndAggs(sentence,s,true,false,context);
-			FormulaUtils::removeEquivalences(sentence);
-			FormulaUtils::pushNegations(sentence);
-		}
-		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
-		auto ret = g.getallRules(dir);
-		auto approxdef_theory = new Theory("approxdef_theory", ParseInfo());
-		approxdef_theory->add(ret->clone());
-		auto testv = new Vocabulary(s->vocabulary()->name());
-		for(Rule* rule : ret->rules()) {
-			testv->add(rule->head()->symbol());
-		}
-		for(auto ctf : g.data->_predCt2InputPredCt) {
-			testv->add(ctf.second);
-		}
-		for(auto cff : g.data->_predCf2InputPredCf) {
-			testv->add(cff.second);
-		}
-
-		auto approxdef_struct = new Structure("approxdef_struct", testv, ParseInfo());
-		std::cout << "constructing structure...\n";
-
-		for(auto ctf : g.data->_pred2predCt) {
-			auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
-			auto interToChange = approxdef_struct->inter(g.data->_predCt2InputPredCt[ctf.second->symbol()]);
-			interToChange->ctpt(newinter->ct());
-		}
-		for(auto cff : g.data->_pred2predCf) {
-			auto newinter = new PredInter(s->inter(cff.first)->cf(),true);
-			auto interToChange = approxdef_struct->inter(g.data->_predCf2InputPredCf[cff.second->symbol()]);
-			interToChange->ctpt(newinter->ct());
-		}
-		for(auto sortinter : s->getSortInters()) {
-			approxdef_struct->changeInter(sortinter.first,sortinter.second);
-		}
-
+		std::vector<Formula*>* transformedSentences = performTransformations(sentences,s);
+		auto g = GenerateApproximatingDefinition(*transformedSentences, freesymbols);
+		auto approxing_def = g.getallRules(dir);
+		auto approxdef_theory = g.constructTheory(approxing_def);
+		auto approxdef_voc = g.constructVocabulary(s,approxing_def);
+		auto approxdef_struct = g.constructStructure(s, approxdef_voc);
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the following definitions with XSB:\n" << toString(approxdef_theory) << "\n";
 			clog << "With the following input structure:\n" << toString(approxdef_struct) << "\n";
 		}
-		auto out = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
 
-		for(auto ctf : g.data->_pred2predCt) {
-			auto intertochange = s->inter(ctf.first);
-			intertochange->ct(approxdef_struct->inter(ctf.second->symbol())->ct());
-		}
-		for(auto cff : g.data->_pred2predCf) {
-			auto intertochange = s->inter(cff.first);
-			intertochange->cf(approxdef_struct->inter(cff.second->symbol())->ct());
-		}
+		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
 
+		Assert(not output_structure.empty());
+		g.updateStructure(s,output_structure.at(0));
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
 					toString(s) << "\n";
@@ -146,4 +103,10 @@ private:
 
 	void setFormula2PredFormMap(Formula*);
 	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*, std::vector<Term*>);
+
+	static std::vector<Formula*>* performTransformations(const std::vector<Formula*>&, AbstractStructure*);
+	Theory* constructTheory(Definition*);
+	Vocabulary* constructVocabulary(AbstractStructure*, Definition*);
+	AbstractStructure* constructStructure(AbstractStructure*, Vocabulary*);
+	void updateStructure(AbstractStructure*, AbstractStructure*);
 };
