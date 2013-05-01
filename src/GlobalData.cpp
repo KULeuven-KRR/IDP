@@ -42,6 +42,9 @@ GlobalData::~GlobalData() {
 	for (auto m = _monitors.begin(); m != _monitors.end(); ++m) {
 		delete (*m);
 	}
+	for (auto dm: _deleteMes){
+		delete dm;
+	}
 	garbageCollectInternalArgumentVectors();
 	DomElemContainer::deleteAllContainers();
 	// Note: Options are handled by Lua's garbage collection.

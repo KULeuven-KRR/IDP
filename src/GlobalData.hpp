@@ -32,6 +32,12 @@ public:
 	virtual void notifyTerminateRequested() = 0;
 };
 
+class DeleteMe { //All objects that should be deleted on exit should be DeleteMe's and should register with GlobalData
+public:
+	virtual ~DeleteMe(){
+	}
+};
+
 class GlobalData {
 private:
 	Namespace *_globalNamespace, *_stdNamespace;
@@ -47,6 +53,7 @@ private:
 	std::set<FILE*> _openfiles;
 
 	std::vector<TerminateMonitor*> _monitors;
+	std::vector<DeleteMe*> _deleteMes;
 
 	GlobalData();
 
@@ -75,6 +82,10 @@ public:
 		for (auto i = _monitors.cbegin(); i < _monitors.cend(); ++i) {
 			(*i)->notifyTerminateRequested();
 		}
+	}
+
+	void registerForDeletion(DeleteMe* dm){
+		_deleteMes.push_back(dm);
 	}
 
 	void addTerminationMonitor(TerminateMonitor* m) {
