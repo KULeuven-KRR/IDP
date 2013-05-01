@@ -315,11 +315,13 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 
 void DeriveSorts::check() {
 	for(auto var2sort: derivations){
-		stringstream ss;
-		ss <<"Derived sort " <<var2sort.first->sort()->name() <<" for variable " <<var2sort.first->name() <<" as nearest parent of ";
-		printList(ss, var2sort.second, ", ", false);
-		ss <<" and " <<(*var2sort.second.rbegin())->name();
-		Warning::warning(ss.str());
+		if (var2sort.second.size() > 1) {
+			stringstream ss;
+			ss << "Derived sort " << var2sort.first->sort()->name() << " for variable " << var2sort.first->name() << " as nearest parent of ";
+			printList(ss, var2sort.second, ", ", false);
+			ss << " and " << (*var2sort.second.rbegin())->name();
+			Warning::warning(ss.str());
+		}
 	}
 	derivations.clear();
 	for (auto i = _underivableVariables.cbegin(); i != _underivableVariables.cend(); ++i) {
