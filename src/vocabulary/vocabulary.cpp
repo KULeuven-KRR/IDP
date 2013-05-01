@@ -13,6 +13,7 @@
 #include "errorhandling/error.hpp"
 #include "structure/StructureComponents.hpp"
 #include "utils/StringUtils.hpp"
+#include "printers/print.hpp"
 
 using namespace std;
 
@@ -2036,32 +2037,10 @@ ostream& Vocabulary::putName(ostream& output) const {
 }
 
 ostream& Vocabulary::put(ostream& output) const {
-	pushtab();
-	output << "Vocabulary " << _name << ":" << nt();
-	output << "Sorts:";
-	pushtab();
-	for (auto it = _name2sort.cbegin(); it != _name2sort.cend(); ++it) {
-		output << nt();
-		(*it).second->put(output);
-	}
-	poptab();
-	output << nt();
-	output << "Predicates:";
-	pushtab();
-	for (auto it = _name2pred.cbegin(); it != _name2pred.cend(); ++it) {
-		output << nt();
-		it->second->put(output);
-	}
-	poptab();
-	output << nt();
-	output << "Functions:";
-	pushtab();
-	for (auto it = _name2func.cbegin(); it != _name2func.cend(); ++it) {
-		output << nt();
-		it->second->put(output);
-	}
-	poptab();
-	poptab();
+	auto printer = Printer::create(output);
+	printer->startTheory();
+	printer->print(this);
+	printer->endTheory();
 	return output;
 }
 
