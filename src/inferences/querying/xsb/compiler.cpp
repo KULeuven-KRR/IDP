@@ -30,7 +30,17 @@ map<string, string> termnames;
 unsigned int identifier;
 
 bool isoperator(int c) {
-	return c == '*' || c == '(' || c == ')' || c == '/' || c == '-' || c == '+' || c == '=' || c == '%' || c == '<' || c == '>';
+	return c == '*' ||
+			c == '(' ||
+			c == ')' ||
+			c == '/' ||
+			c == '-' ||
+			c == '+' ||
+			c == '=' ||
+			c == '%' ||
+			c == '<' ||
+			c == '>' ||
+			c == '.';		// Dot for floating point numbers
 }
 
 string var_name(string str) {
