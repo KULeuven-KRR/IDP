@@ -424,6 +424,7 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 		subterms.push_back(new VarTerm(fv, TermParseInfo()));
 	}
 
+	auto swapIfNegated = true;
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
 		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
@@ -440,6 +441,7 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 				auto tmp = fPredForm->clone();
 				tmp->negate();
 				ctcfpair.second = tmp;
+				swapIfNegated = false;
 			}
 		} else {
 			ctcfpair.first = data->_pred2predCt[fPredForm->symbol()];
@@ -449,7 +451,7 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 		ctcfpair = createGeneralPredForm(f,subterms);
 	}
 
-	if(sign == SIGN::NEG) { // If the formula is negative, the _ct and _cf maps need to be swapped
+	if(sign == SIGN::NEG  && swapIfNegated) { // If the formula is negative, the _ct and _cf maps need to be swapped
 		std::swap(ctcfpair.first,ctcfpair.second);
 	}
 
