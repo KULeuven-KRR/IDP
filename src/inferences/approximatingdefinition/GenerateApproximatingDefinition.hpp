@@ -67,7 +67,7 @@ public:
 		auto approxing_def = g.getallRules(dir);
 		auto approxdef_theory = g.constructTheory(approxing_def);
 		auto approxdef_voc = g.constructVocabulary(s,approxing_def);
-		auto approxdef_struct = g.constructStructure(s, approxdef_voc);
+		auto approxdef_struct = g.constructStructure(s, approxdef_theory, approxdef_voc);
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the following definitions with XSB:\n" << toString(approxdef_theory) << "\n";
 			clog << "With the following input structure:\n" << toString(approxdef_struct) << "\n";
@@ -76,10 +76,12 @@ public:
 		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
 
 		Assert(not output_structure.empty());
-		g.updateStructure(s,output_structure.at(0));
-		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
-					toString(s) << "\n";
+		if(g.isConsistent(output_structure.at(0))) {
+			g.updateStructure(s,output_structure.at(0));
+			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+				clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
+						toString(s) << "\n";
+			}
 		}
 	}
 
@@ -107,6 +109,7 @@ private:
 	static std::vector<Formula*>* performTransformations(const std::vector<Formula*>&, AbstractStructure*);
 	Theory* constructTheory(Definition*);
 	Vocabulary* constructVocabulary(AbstractStructure*, Definition*);
-	AbstractStructure* constructStructure(AbstractStructure*, Vocabulary*);
+	AbstractStructure* constructStructure(AbstractStructure*, Theory*, Vocabulary*);
 	void updateStructure(AbstractStructure*, AbstractStructure*);
+	bool isConsistent(AbstractStructure*);
 };

@@ -517,11 +517,14 @@ Vocabulary* GenerateApproximatingDefinition::constructVocabulary(AbstractStructu
 	for (auto sort : s->vocabulary()->getSorts()) {
 		ret->add(sort.second);
 	}
+	for (auto opensymbol: DefinitionUtils::opens(d)) {
+		ret->add(opensymbol);
+	}
 
 	return ret;
 }
 
-AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractStructure* s, Vocabulary* v) {
+AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractStructure* s, Theory* t, Vocabulary* v) {
 	auto ret = new Structure("approxdef_struct", v, ParseInfo());
 
 	for(auto sortinter : s->getSortInters()) {
@@ -538,6 +541,16 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second->symbol()]);
 		interToChange->ctpt(newinter->ct());
 	}
+	std::set<PFSymbol*> opens;
+	for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
+		opens = DefinitionUtils::opens(*it);
+	}
+	for(auto opensymbol : opens) { // set remaining opens TODO: actually necessary?
+		auto interToChange = ret->inter(opensymbol);
+		if(not interToChange->approxTwoValued()) {
+			interToChange->ctpt(s->inter(opensymbol)->ct());
+		}
+	}
 
 	return ret;
 }
@@ -549,4 +562,19 @@ void GenerateApproximatingDefinition::updateStructure(AbstractStructure* s, Abst
 	for(auto cff : data->_pred2predCf) {
 		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second->symbol())->ct());
 	}
+}
+
+bool GenerateApproximatingDefinition::isConsistent(AbstractStructure* s) {
+	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
+		auto sentence_cf = data->formula2cf[*i];
+		// The sentences cannot be calculated to be certainly false
+
+		if(s->vocabulary()->contains(sentence_cf->symbol()) && not s->inter(sentence_cf->symbol())->ct()->empty()){
+			stringstream ss;
+			ss << "The approximating definition detected formula " << toString(*i) << " to be certainly false.\n";
+			Warning::warning(ss.str());
+			return false;
+		}
+	}
+	return true;
 }
