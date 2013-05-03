@@ -489,8 +489,8 @@ std::vector<Formula*>* GenerateApproximatingDefinition::performTransformations(c
 		if (copyToWorkOn->sign() == SIGN::NEG) {
 			context = Context::NEGATIVE;
 		}
-		auto sentence2 = FormulaUtils::graphFuncsAndAggs(copyToWorkOn,s,true,false,context);
-		auto sentence3 = FormulaUtils::unnestFuncsAndAggs(sentence2,s,context);
+		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,s,context);
+		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,s,true,false,context);
 		auto sentence4 = FormulaUtils::removeEquivalences(sentence3);
 		auto sentence5 = FormulaUtils::pushNegations(sentence4);
 		ret->push_back(sentence5);
@@ -544,12 +544,6 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 	std::set<PFSymbol*> opens;
 	for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
 		opens = DefinitionUtils::opens(*it);
-	}
-	for(auto opensymbol : opens) { // set remaining opens TODO: actually necessary?
-		auto interToChange = ret->inter(opensymbol);
-		if(not interToChange->approxTwoValued()) {
-			interToChange->ctpt(s->inter(opensymbol)->ct());
-		}
 	}
 
 	return ret;
