@@ -288,8 +288,8 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		if(pf->symbol()->builtin()) {
-			return; // builtins don't need to be handled
+		if(data->_pred2predCt.find(pf->symbol()) == data->_pred2predCt.end()) {
+			return;
 		}
 		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]->symbol()) == data->_predCt2InputPredCt.cend()) {
 			// predform symbol hasn't already been handled before
@@ -415,7 +415,7 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 	return result;
 }
 
-void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
+void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const AbstractStructure* s) {
 	auto sign = f->sign();
 	auto ctcfpair = std::pair<PredForm*,PredForm*>();
 
@@ -428,7 +428,20 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
 		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
-			if (not fPredForm->symbol()->builtin()) {
+			if (fPredForm->symbol()->builtin()) {
+				ctcfpair.first = fPredForm;
+				auto clone = fPredForm->clone();
+				clone->negate();
+				ctcfpair.second = clone;
+				swapIfNegated = false;
+			}else if (s->inter(fPredForm->symbol())->approxTwoValued()) {
+				ctcfpair.first = fPredForm;
+				auto clone = fPredForm->clone();
+				clone->negate();
+				ctcfpair.second = clone;
+				swapIfNegated = false;
+				data->actions.insert(fPredForm->symbol());
+			} else {
 				Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
 				Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
 				ctcfpair.first = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
@@ -436,12 +449,6 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 
 				data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.first) );
 				data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.second) );
-			} else {
-				ctcfpair.first = fPredForm;
-				auto tmp = fPredForm->clone();
-				tmp->negate();
-				ctcfpair.second = tmp;
-				swapIfNegated = false;
 			}
 		} else {
 			ctcfpair.first = data->_pred2predCt[fPredForm->symbol()];
@@ -463,7 +470,7 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.second) );
 
 	for (auto subf : f->subformulas()) {
-		setFormula2PredFormMap(subf);
+		setFormula2PredFormMap(subf,s);
 	}
 }
 
@@ -531,6 +538,7 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 		auto interToChange = ret->inter(sortinter.first);
 		ret->inter(sortinter.first)->internTable(sortinter.second->internTable());
 	}
+
 	for(auto ctf : data->_pred2predCt) {
 		auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
 		auto interToChange = ret->inter(data->_predCt2InputPredCt[ctf.second->symbol()]);

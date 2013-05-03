@@ -63,7 +63,7 @@ public:
 			clog << "Calculating the approximating definitions with XSB...\n";
 		}
 		std::vector<Formula*>* transformedSentences = performTransformations(sentences,s);
-		auto g = GenerateApproximatingDefinition(*transformedSentences, freesymbols);
+		auto g = GenerateApproximatingDefinition(*transformedSentences, freesymbols, s);
 		auto approxing_def = g.getallRules(dir);
 		auto approxdef_theory = g.constructTheory(approxing_def);
 		auto approxdef_voc = g.constructVocabulary(s,approxing_def);
@@ -86,11 +86,11 @@ public:
 	}
 
 private:
-	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions)
+	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions, const AbstractStructure* s)
 			: 	data(new ApproxData(actions)),
 			  	_sentences(sentences) {
 		for(auto sentence : sentences) {
-			setFormula2PredFormMap(sentence);
+			setFormula2PredFormMap(sentence, s);
 		}
 
 	}
@@ -103,7 +103,7 @@ private:
 	std::vector<Rule*> getallDownRules();
 	std::vector<Rule*> getallUpRules();
 
-	void setFormula2PredFormMap(Formula*);
+	void setFormula2PredFormMap(Formula*, const AbstractStructure*);
 	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*, std::vector<Term*>);
 
 	static std::vector<Formula*>* performTransformations(const std::vector<Formula*>&, AbstractStructure*);
