@@ -80,7 +80,7 @@ string transformIntoTermName(string str) {
 	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum") {
 		ss << IDPXSB_PREFIX << "_";
 	} else if (!numeric && str != "findall") {
-		ss << IDPXSB_PREFIX << identifier++ << "_";
+		ss << IDPXSB_PREFIX << "_";
 	}
 	ss << str;
 	return ss.str();
