@@ -72,11 +72,16 @@ public:
 			clog << "Calculating the following definitions with XSB:\n" << toString(approxdef_theory) << "\n";
 			clog << "With the following input structure:\n" << toString(approxdef_struct) << "\n";
 		}
-
+		if (DefinitionUtils::hasRecursionOverNegation(approxing_def)) {
+			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+				//TODO: either go back to normal method or FIX XSB to support recneg!
+				clog << "Approximating definition had recursion over negation, not calculating it\n";
+			}
+			return;
+		}
 		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
 
-		Assert(not output_structure.empty());
-		if(g.isConsistent(output_structure.at(0))) {
+		if(not output_structure.empty() && g.isConsistent(output_structure.at(0))) {
 			g.updateStructure(s,output_structure.at(0));
 			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 				clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
