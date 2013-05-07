@@ -35,5 +35,3 @@ idpxsb_max([X|Rest],Max,TmpMax) :-
 
 idpxsb_forall(CallA, CallB) :-
      tables:not_exists((call(CallA), tables:not_exists(CallB))).
-
-	

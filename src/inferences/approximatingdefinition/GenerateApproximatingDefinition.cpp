@@ -393,7 +393,9 @@ Definition* GenerateApproximatingDefinition::getallRules(Direction dir) {
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto tr = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
 		auto ts = data->formula2ct[*i];
-		d->add(new Rule(ts->freeVars(), ts, tr, ParseInfo()));
+		if(not ts->symbol()->builtin()) {
+			d->add(new Rule(ts->freeVars(), ts, tr, ParseInfo()));
+		}
 	}
 	return d;
 }
@@ -547,9 +549,14 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second->symbol()]);
 		interToChange->ctpt(newinter->ct());
 	}
-	std::set<PFSymbol*> opens;
-	for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
-		opens = DefinitionUtils::opens(*it);
+	// Only one definition in the theory
+	auto definition = *(t->definitions().begin());
+	auto opens = DefinitionUtils::opens(definition);
+	for (auto opensymbol : opens) {
+		if (s->vocabulary()->contains(opensymbol) &&
+				s->inter(opensymbol)->approxTwoValued()) {
+			ret->inter(opensymbol)->ctpt(s->inter(opensymbol)->ct());
+		}
 	}
 
 	return ret;
