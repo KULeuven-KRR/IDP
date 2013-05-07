@@ -2911,6 +2911,11 @@ void SortTable::put(std::ostream& stream) const {
 	}
 }
 
+SortTable* SortTable::clone() const{
+	return new SortTable(_table);
+}
+
+
 /****************
  PredTable
  ****************/
@@ -3602,7 +3607,6 @@ void PredInter::moveTupleFromTo(const ElementTuple& tuple, PredTable* from, Pred
 			}
 		}
 	}
-
 	if (isa<InverseInternalPredTable>(*(from->internTable()))) {
 		auto internfrom = dynamic_cast<InverseInternalPredTable*>(from->internTable());
 		Assert(internfrom->table() == to->internTable());
@@ -3698,6 +3702,9 @@ void PredInter::materialize() {
 			getCF ? cf(newf) : pt(newf);
 		}
 	}
+}
+PredInter* PredInter::clone() const {
+	return clone(universe());
 }
 
 PredInter* PredInter::clone(const Universe& univ) const {
@@ -3874,6 +3881,9 @@ const std::set<ElementTuple>& FuncInter::getInconsistentAtoms() const{
 		return emptyset;
 	}
 	return _graphinter->getInconsistentAtoms();
+}
+FuncInter* FuncInter::clone() const {
+	return clone(universe());
 }
 
 FuncInter* FuncInter::clone(const Universe& univ) const {
