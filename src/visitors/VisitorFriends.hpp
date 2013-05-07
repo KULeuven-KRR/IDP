@@ -121,6 +121,7 @@ class AddMarkers;
 		friend class CollectQuantifiedVariables;\
 		friend class CollectSymbols;\
 		friend class AddMarkers;\
+		friend class ReplaceLTCSymbols;\
 		friend class RemoveQuantificationsOverSort;
 
 
