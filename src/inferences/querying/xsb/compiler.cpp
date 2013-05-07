@@ -278,7 +278,11 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 			if (pt._arguments.back()->numeric()) {
 				output << toString(*pt._arguments.front()) << " is " << toString(*pt._arguments.back());
 			} else {
-				output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
+				if (pt._name == "<" or pt._name == ">" or pt._name == "=<" or pt._name == ">=") {
+					output << toString(*pt._arguments.front()) << "@" << pt._name << toString(*pt._arguments.back());
+				} else {
+					output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
+				}
 			}
 		} else {
 			auto counter = pt._arguments.begin();
