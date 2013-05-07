@@ -416,14 +416,7 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 }
 
 void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const AbstractStructure* s) {
-	auto sign = f->sign();
 	auto ctcfpair = std::pair<PredForm*,PredForm*>();
-
-	auto subterms = std::vector<Term*>();
-	for(auto fv : f->freeVars()) {
-		subterms.push_back(new VarTerm(fv, TermParseInfo()));
-	}
-
 	auto swapIfNegated = true;
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
@@ -444,8 +437,8 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 			} else {
 				Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
 				Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
-				ctcfpair.first = new PredForm(SIGN::POS, ctpred, subterms, FormulaParseInfo());
-				ctcfpair.second = new PredForm(SIGN::POS, cfpred, subterms, FormulaParseInfo());
+				ctcfpair.first = new PredForm(SIGN::POS, ctpred, fPredForm->subterms(), FormulaParseInfo());
+				ctcfpair.second = new PredForm(SIGN::POS, cfpred, fPredForm->subterms(), FormulaParseInfo());
 
 				data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.first) );
 				data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.second) );
@@ -455,10 +448,10 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 			ctcfpair.second = data->_pred2predCf[fPredForm->symbol()];
 		}
 	} else {
-		ctcfpair = createGeneralPredForm(f,subterms);
+		ctcfpair = createGeneralPredForm(f);
 	}
 
-	if(sign == SIGN::NEG  && swapIfNegated) { // If the formula is negative, the _ct and _cf maps need to be swapped
+	if(f->sign() == SIGN::NEG  && swapIfNegated) { // If the formula is negative, the _ct and _cf maps need to be swapped
 		std::swap(ctcfpair.first,ctcfpair.second);
 	}
 
@@ -474,7 +467,12 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 	}
 }
 
-std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPredForm(Formula* f, std::vector<Term*> subterms) {
+std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPredForm(Formula* f) {
+
+	auto subterms = std::vector<Term*>();
+	for(auto fv : f->freeVars()) {
+		subterms.push_back(new VarTerm(fv, TermParseInfo()));
+	}
 	auto formulaID = getGlobal()->getNewID();
 	std::vector<Sort*> sorts;
 	for(auto var : f->freeVars()) {

@@ -109,7 +109,7 @@ private:
 	std::vector<Rule*> getallUpRules();
 
 	void setFormula2PredFormMap(Formula*, const AbstractStructure*);
-	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*, std::vector<Term*>);
+	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*);
 
 	static std::vector<Formula*>* performTransformations(const std::vector<Formula*>&, AbstractStructure*);
 	Theory* constructTheory(Definition*);
