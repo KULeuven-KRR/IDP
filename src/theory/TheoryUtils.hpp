@@ -18,6 +18,7 @@
 #include <typeinfo>
 #include <iostream>
 #include "vocabulary/VarCompare.hpp"
+#include "information/GetQuantifiedVariables.hpp"
 
 class Definition;
 class SetExpr;
@@ -37,6 +38,7 @@ class Rule;
 class Function;
 class Theory;
 class TheoryComponent;
+class Sort;
 
 // TODO what does it mean to pass NULL as vocabulary?
 
@@ -223,6 +225,18 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 /** Rewrite the theory so that there are no nested terms */
 void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+
+std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive);
+std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursive);
+std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, bool recursive);
+
+std::set<PFSymbol* > collectSymbols(Formula* f);
+std::set<PFSymbol* > collectSymbols(Rule* f);
+std::set<PFSymbol* > collectSymbols(AbstractTheory* f);
+
+Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
+Rule* removeQuantificationsOverSort(Rule* f, const Sort* s);
+AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s);
 } /* namespace FormulaUtils */
 
 
