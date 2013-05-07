@@ -134,7 +134,9 @@ void GrounderFactory::setTopGrounder(Grounder* grounder) {
 	Assert(_topgrounder==NULL || _topgrounder->getContext()._conjunctivePathFromRoot);
 }
 Grounder* GrounderFactory::getTopGrounder() const {
-	Assert(_topgrounder!=NULL);
+	if(_topgrounder==NULL){
+		throw IdpException("Invalid code path");
+	}
 	return _topgrounder;
 }
 FormulaGrounder* GrounderFactory::getFormGrounder() const {
@@ -427,8 +429,6 @@ void GrounderFactory::descend(T child) {
 	}
 	_context._conjPathUntilNode = false; // NOTE: overwrite at start of visit if necessary!
 
-	//cerr <<(_context._conjunctivePathFromRoot?"Parent conj":"Parent disj") <<" for " <<toString(child) <<"\n";
-
 	child->accept(this);
 
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 3) {
@@ -525,10 +525,12 @@ const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) 
 
 void GrounderFactory::visit(const PredForm* pf) {
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 
-	if (not isa<PredForm>(*transpf)) {
+	if (not isa<PredForm>(*transpf)) { // NOTE: the rewriting changed the atom
+		Assert(_context._component != CompContext::HEAD);
 		transpf->accept(this);
+#warning some other descends should probably also become accepts, to prevent changing the conjunctive meaning!
 		deleteDeep(transpf);
 		return;
 	}
@@ -656,39 +658,13 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 	RestoreContext();
 
 	if (_context._component == CompContext::HEAD) {
-		_headgrounder = new HeadGrounder(getGrounding(), symbol, subtermgrounders, argsorttables, _context);
+		auto inter = getConcreteStructure()->inter(newpf->symbol());
+		_headgrounder = new HeadGrounder(getGrounding(), newpf->symbol(), subtermgrounders, argsorttables, _context);
 	} else {
-		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context);
+		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, argsorttables, _context);
 	}
-}
-
-void GrounderFactory::visit(const AggForm* af) {
-	auto clonedaf = rewriteSumOrCardIntoSum(af, getConcreteStructure())->clone();
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
-	if (recursive(transaf)) {
-		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
-	}
-
-	if(not isa<AggForm>(*transaf)){
-		descend(transaf);
-		deleteDeep(transaf);
-		return;
-	}
-
-	auto newaf = dynamic_cast<AggForm*>(transaf);
-	Assert(not recursive(newaf) or FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
-
-	auto bound = newaf->getBound();
-	auto aggterm = newaf->getAggTerm();
-	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(aggterm, getConcreteStructure()) and CPSupport::eligibleForCP(bound, getConcreteStructure())) {
-		groundAggWithCP(newaf->sign(), bound, newaf->comp(), aggterm);
-	}else{
-		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf),  newaf->sign(), bound, newaf->comp(), aggterm);
-	}
-
 	checkAndAddAsTopGrounder();
-
-	deleteDeep(newaf);
+	deleteDeep(newpf);
 }
 
 void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, AggTerm* agg){
@@ -997,7 +973,6 @@ void GrounderFactory::visit(const EquivForm* ef) {
 
 void GrounderFactory::visit(const EqChainForm* ef) {
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot;
-
 	Formula* f = ef->cloneKeepVars();
 	f = FormulaUtils::splitComparisonChains(f, getGrounding()->vocabulary());
 	descend(f);

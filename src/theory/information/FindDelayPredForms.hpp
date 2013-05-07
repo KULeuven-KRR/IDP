@@ -233,7 +233,10 @@ protected:
 	virtual void visit(const CPVarTerm*) {
 		_rootquant = false;
 	}
-	virtual void visit(const CPSetTerm*) {
+	virtual void visit(const CPWProdTerm*) {
+		_rootquant = false;
+	}
+	virtual void visit(const CPWSumTerm*) {
 		_rootquant = false;
 	}
 	virtual void visit(const EnumSetExpr*) {

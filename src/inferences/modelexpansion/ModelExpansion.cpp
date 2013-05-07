@@ -102,10 +102,7 @@ MXResult ModelExpansion::expand() const {
 	DefinitionUtils::splitDefinitions(clonetheory);
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
-		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor,
-	}
-
-			getOption(IntType::NBMODELS) != 1, data);
+		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);
 	}catch(...){
 		if(getOption(VERBOSE_GROUNDSTATS) > 0){
 			logActionAndValue("effective-size", Grounder::groundedAtoms());

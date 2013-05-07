@@ -100,9 +100,7 @@ Formula* UnnestThreeValuedTerms::visit(PredForm* predform) {
 		}
 	}
 
-	if(result==NULL){
-		result = UnnestTerms::visit(predform);
-	}
+	auto result = UnnestTerms::visit(predform);
 	_cpablerelation = savedrel;
 
 	return result;
