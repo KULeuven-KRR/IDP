@@ -45,12 +45,12 @@ class Sort;
 template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
 ReturnType transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
 		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << print(object) << "\n";
 		pushtab();
 	}
 	auto result = t.execute(object, parameters...);
-	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
 		poptab();
 		std::clog << tabs() << "Resulted in: " << nt() << print(result) << "\n\n";
 	}
@@ -60,12 +60,12 @@ ReturnType transform(Construct* object, Values ... parameters) {
 template<typename Transformer, typename Construct, typename ... Values>
 void transform(Construct* object, Values ... parameters) {
 	Transformer t;
-	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
 		std::clog << tabs() << "Executing " << typeid(Transformer).name() << " on: " << nt() << print(object) << "\n";
 		pushtab();
 	}
 	t.execute(object, parameters...);
-	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
 		poptab();
 		std::clog << tabs() << "Resulted in: " << nt() << print(object) << "\n\n";
 	}
