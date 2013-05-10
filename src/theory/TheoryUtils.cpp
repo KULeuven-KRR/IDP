@@ -129,6 +129,12 @@ Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, Context con
 Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context){
 	return transform<UnnestTerms, Rule*, Rule, Context, const Structure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
 }
+Rule* falseRule(PFSymbol* s) {
+	auto terms = TermUtils::makeNewVarTerms(s->sorts());
+	auto head = new PredForm(SIGN::POS, s, terms, FormulaParseInfo());
+	auto rule = new Rule(head->freeVars(), head, FormulaUtils::falseFormula(), ParseInfo());
+	return rule;
+}
 }
 
 /* FormulaUtils */

@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef IDP_THEORYUTILS_HPP_
-#define IDP_THEORYUTILS_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "GlobalData.hpp"
@@ -293,6 +292,9 @@ void splitDefinitions(Theory* t);
 Rule* unnestThreeValuedTerms(Rule*, const Structure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context);
+
+/** Create the rule P(\bar x) \lrule false*/
+Rule* falseRule(PFSymbol*);
+
 } /* namespace DefinitionUtils */
 
-#endif /* IDP_THEORYUTILS_HPP_ */
