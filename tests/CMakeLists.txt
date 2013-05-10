@@ -84,6 +84,7 @@ if(${BUILDTESTS})
 		commandtests.cpp
 		internalmxtests.cpp
 		querytests.cpp
+		progressiontests.cpp
 		definitiontests.cpp
 		propagationtests.cpp
 		vocabularycommandtests.cpp

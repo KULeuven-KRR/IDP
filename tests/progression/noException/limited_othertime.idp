@@ -1,0 +1,32 @@
+vocabulary V{
+	type anonymous
+	myfun:anonymous
+	otherfun(anonymous):anonymous
+	type Something isa int
+	F(anonymous): Something
+}
+
+theory T:V{
+	{
+		F(otherfun(t)) = y <- F(t)  = y - 1.
+		F(myfun) = 0.
+	}
+}
+
+procedure init(){
+	return initialise(T,S,V::anonymous,V::myfun,V::otherfun)
+}
+
+procedure nbOfProgressions(){
+	return 4
+}
+
+procedure strict(){
+	return true
+}
+
+structure S:V{
+	anonymous={1..3}
+	Something={0..4}
+	myfun=1
+}

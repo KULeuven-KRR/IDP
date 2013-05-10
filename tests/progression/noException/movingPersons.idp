@@ -1,0 +1,56 @@
+vocabulary V{
+	type Time
+	Start:Time
+	partial Next(Time):Time
+	
+	type Location
+	StartLoc: Location
+	type Person
+	
+	At(Person,Location,Time)
+	Link(Location,Location)
+	MoveTo(Person,Location,Time)
+	TeleportTo(Person,Location,Time)
+	
+	Moves(Person,Time)
+}
+
+theory T:V{
+	{
+		! p: At(p,StartLoc,Start).
+		! p l t: At(p,l,Next(t)) <- MoveTo(p,l,t).
+		! p l t: At(p,l,Next(t)) <- TeleportTo(p,l,t).
+		! p l t: At(p,l,Next(t)) <- At(p,l,t) & ~Moves(p,t).
+	}
+	{
+		! p t: Moves(p,t) <- ?l: MoveTo(p,l,t).
+		! p t: Moves(p,t) <- ?l: TeleportTo(p,l,t).
+	}
+	
+	//Only move to supported locations
+	! p l t: MoveTo(p,l,t)  => ? currLoc: At(p,currLoc,t) & Link(currLoc,l).
+	
+	//Teleport and move to at most one location:
+	!p t:	#{l: TeleportTo(p,l,t)} + #{l: MoveTo(p,l,t)} =< 1.
+}
+
+structure S:V{
+	Time={0..4}
+	Start=0
+	Next={0->1;1->2;2->3;3->4}
+	
+	Location={A;B;C;D}
+	StartLoc=A
+	Person={Bob;Alice}
+	Link={A,B;B,C;C,D;D,A}
+	At<ct> = {Bob,A,0;Alice,C,4}
+	At<cf> = {}
+}
+
+procedure nbOfProgressions(){
+	return 4
+}
+
+procedure strict(){
+	return false
+}
