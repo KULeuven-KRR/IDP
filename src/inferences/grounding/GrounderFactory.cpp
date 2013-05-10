@@ -72,14 +72,6 @@ GenType operator not(GenType orig) {
 	return result;
 }
 
-Formula* trueFormula() {
-	return new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
-}
-
-Formula* falseFormula() {
-	return new BoolForm(SIGN::POS, false, { }, FormulaParseInfo());
-}
-
 DefId getIDForUndefined() {
 	return DefId(-1);
 }
@@ -457,7 +449,7 @@ const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) 
 			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
 			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
 			auto newset = af->getAggTerm()->set()->clone();
-			newset->addSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+			newset->addSet(new QuantSetExpr( { }, FormulaUtils::trueFormula(), newft, SetParseInfo()));
 			af = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),
 					new AggTerm(newset, af->getAggTerm()->function(), af->getAggTerm()->pi()), af->pi());
 		}
@@ -695,7 +687,7 @@ AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
 			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
 			auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
 			auto newset = aggterm->set()->clone();
-			newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
+			newset->addSubSet(new QuantSetExpr( { }, FormulaUtils::trueFormula(), newft, SetParseInfo()));
 			bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
 			aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
 			newagg = true;
