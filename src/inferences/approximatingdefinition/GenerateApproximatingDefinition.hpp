@@ -32,8 +32,8 @@ using namespace std;
 struct ApproxData {
 	std::map<const Formula*, PredForm*> formula2ct;
 	std::map<const Formula*, PredForm*> formula2cf;
-	std::map<PFSymbol*, PredForm*> _pred2predCt;
-	std::map<PFSymbol*, PredForm*> _pred2predCf;
+	std::map<PFSymbol*, PFSymbol*> _pred2predCt;
+	std::map<PFSymbol*, PFSymbol*> _pred2predCf;
 	std::map<PFSymbol*, PFSymbol*> _predCt2InputPredCt;
 	std::map<PFSymbol*, PFSymbol*> _predCf2InputPredCf;
 	std::set<PFSymbol*> actions;

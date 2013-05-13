@@ -291,13 +291,13 @@ public:
 		if(data->_pred2predCt.find(pf->symbol()) == data->_pred2predCt.end()) {
 			return;
 		}
-		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]->symbol()) == data->_predCt2InputPredCt.cend()) {
+		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]) == data->_predCt2InputPredCt.cend()) {
 			// predform symbol hasn't already been handled before
-			auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->symbol()->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
-			auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->symbol()->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
+			auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
+			auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
 
-			data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()]->symbol(),ctpred) );
-			data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()]->symbol(),cfpred) );
+			data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()],ctpred) );
+			data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()],cfpred) );
 
 			if(pf->sign() == SIGN::NEG) {
 				std::swap(ctpred,cfpred);
@@ -442,12 +442,12 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 				ctcfpair.first = new PredForm(SIGN::POS, ctpred, fPredForm->subterms(), FormulaParseInfo());
 				ctcfpair.second = new PredForm(SIGN::POS, cfpred, fPredForm->subterms(), FormulaParseInfo());
 
-				data->_pred2predCt.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.first) );
-				data->_pred2predCf.insert( std::pair<PFSymbol*,PredForm*>(fPredForm->symbol(),ctcfpair.second) );
+				data->_pred2predCt.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.first->symbol()) );
+				data->_pred2predCf.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.second->symbol()) );
 			}
 		} else {
-			ctcfpair.first = data->_pred2predCt[fPredForm->symbol()];
-			ctcfpair.second = data->_pred2predCf[fPredForm->symbol()];
+			ctcfpair.first = new PredForm(SIGN::POS, data->_pred2predCt[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
+			ctcfpair.second = new PredForm(SIGN::POS, data->_pred2predCf[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
 		}
 	} else {
 		ctcfpair = createGeneralPredForm(f);
@@ -541,12 +541,12 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 
 	for(auto ctf : data->_pred2predCt) {
 		auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
-		auto interToChange = ret->inter(data->_predCt2InputPredCt[ctf.second->symbol()]);
+		auto interToChange = ret->inter(data->_predCt2InputPredCt[ctf.second]);
 		interToChange->ctpt(newinter->ct());
 	}
 	for(auto cff : data->_pred2predCf) {
 		auto newinter = new PredInter(s->inter(cff.first)->cf(),true);
-		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second->symbol()]);
+		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second]);
 		interToChange->ctpt(newinter->ct());
 	}
 	// Only one definition in the theory
@@ -564,10 +564,10 @@ AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractS
 
 void GenerateApproximatingDefinition::updateStructure(AbstractStructure* s, AbstractStructure* approxdef_struct) {
 	for(auto ctf : data->_pred2predCt) {
-		s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second->symbol())->ct());
+		s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second)->ct());
 	}
 	for(auto cff : data->_pred2predCf) {
-		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second->symbol())->ct());
+		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second)->ct());
 	}
 }
 
