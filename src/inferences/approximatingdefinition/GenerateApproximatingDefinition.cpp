@@ -39,6 +39,30 @@ void add(RuleList& list, PredForm* head, Formula* body, ApproxData* data) {
 	}
 }
 
+void handlePredForm(const PredForm* pf, ApproxData* data, vector<Rule*>* rules) {
+	if(data->_baseformulas_already_added ||
+					data->_pred2predCt.find(pf->symbol()) == data->_pred2predCt.end()) {
+		return;
+	}
+	if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]) == data->_predCt2InputPredCt.cend()) {
+		// predform symbol hasn't already been handled before
+		auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
+		auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
+
+		data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()],ctpred) );
+		data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()],cfpred) );
+
+		if(pf->sign() == SIGN::NEG) {
+			std::swap(ctpred,cfpred);
+		}
+		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
+		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
+
+		add(*rules, data->formula2ct[pf], ctformula, data);
+		add(*rules, data->formula2cf[pf], cfformula, data);
+	}
+}
+
 // TODO guarantee equivalences have been removed and negations have been pushed!
 // TODO handling negations! (pushing them is not the best solution
 class TopDownApproximatingDefinition: public TheoryVisitor {
@@ -134,20 +158,7 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		// TODO: sync with other predform visit (refactor into separate method)
-//		if(not data->_baseformulas_already_added) {
-//			auto name1 = pf->symbol()->nameNoArity();
-//			auto name2 = pf->symbol()->nameNoArity();
-//			PredForm* ctformula = new PredForm(SIGN::POS, new Predicate(name1.append("_input_ct"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
-//			PredForm* cfformula = new PredForm(SIGN::POS, new Predicate(name2.append("_input_cf"),pf->symbol()->sorts()), pf->subterms(), FormulaParseInfo());
-////			PredForm* ctformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CT), pf->subterms(), FormulaParseInfo());
-////			PredForm* cfformula = new PredForm(SIGN::POS, pf->symbol()->derivedSymbol(SymbolType::ST_CF), pf->subterms(), FormulaParseInfo());
-//			if(pf->sign() == SIGN::NEG) {
-//				std::swap(ctformula,cfformula);
-//			}
-//			add(topdownrules, data->formula2ct[pf], ctformula, data);
-//			add(topdownrules, data->formula2cf[pf], cfformula, data);
-//		}
+		handlePredForm(pf, data, &topdownrules);
 	}
 	void visit(const AggForm*) {
 //		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
@@ -288,26 +299,7 @@ public:
 	}
 
 	void visit(const PredForm* pf) {
-		if(data->_pred2predCt.find(pf->symbol()) == data->_pred2predCt.end()) {
-			return;
-		}
-		if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]) == data->_predCt2InputPredCt.cend()) {
-			// predform symbol hasn't already been handled before
-			auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
-			auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
-
-			data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()],ctpred) );
-			data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()],cfpred) );
-
-			if(pf->sign() == SIGN::NEG) {
-				std::swap(ctpred,cfpred);
-			}
-			PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
-			PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
-
-			add(bottomuprules, data->formula2ct[pf], ctformula, data);
-			add(bottomuprules, data->formula2cf[pf], cfformula, data);
-		}
+		handlePredForm(pf, data, &bottomuprules);
 	}
 	void visit(const AggForm*) {
 //		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
