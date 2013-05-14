@@ -512,15 +512,21 @@ Theory* GenerateApproximatingDefinition::constructTheory(Definition* def) {
 }
 Vocabulary* GenerateApproximatingDefinition::constructVocabulary(AbstractStructure* s, Definition* d) {
 	auto ret = new Vocabulary(s->vocabulary()->name());
-	for(Rule* rule : d->rules()) {
-	ret->add(rule->head()->symbol());
+
+	for(auto ctf : data->formula2ct) {
+		ret->add(ctf.second->symbol());
 	}
 	for(auto ctf : data->_predCt2InputPredCt) {
-	ret->add(ctf.second);
+		ret->add(ctf.second);
+	}
+
+	for(auto cff : data->formula2cf) {
+		ret->add(cff.second->symbol());
 	}
 	for(auto cff : data->_predCf2InputPredCf) {
-	ret->add(cff.second);
+		ret->add(cff.second);
 	}
+
 	for (auto sort : s->vocabulary()->getSorts()) {
 		ret->add(sort.second);
 	}
