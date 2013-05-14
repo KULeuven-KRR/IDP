@@ -31,9 +31,8 @@
 #include <iostream>
 
 using namespace std;
-
-bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
-	// TODO duplicate code with modelexpansion
+bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure,
+		bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
@@ -49,7 +48,16 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		xsb_interface->setStructure(structure);
 
 		xsb_interface->loadDefinition(definition);
-		for (auto symbol : definition->defsymbols()) {
+		auto symbols = definition->defsymbols();
+		if(not symbolsToQuery.empty()) {
+			for(auto it = symbols.begin(); it != symbols.end();) {
+				auto symbol = *(it++);
+				if(symbolsToQuery.find(symbol) == symbolsToQuery.end()) {
+					symbols.erase(symbol);
+				}
+			}
+		}
+		for (auto symbol : symbols) {
 			auto sorted = xsb_interface->queryDefinition(symbol);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
@@ -131,7 +139,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 	return not abstractsolutions.empty() && structure->isConsistent();
 }
 
-std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure, bool satdelay) const {
+std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure,
+		bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
@@ -195,7 +204,7 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
 				}
-				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion);
+				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
 				}

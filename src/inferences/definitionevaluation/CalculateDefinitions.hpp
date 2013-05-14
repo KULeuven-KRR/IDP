@@ -12,6 +12,7 @@
 #pragma once
 #include <vector>
 #include <set>
+#include "vocabulary/vocabulary.hpp"
 
 class Structure;
 class Theory;
@@ -21,12 +22,16 @@ class CalculateDefinitions {
 public:
 	//!Removes calculated definitions from the theory.
 	// Also modifies the structure. Clone your theory and structure before doing this!
-	static std::vector<Structure*> doCalculateDefinitions(Theory* theory, Structure* structure, bool satdelay = false) {
+	static std::vector<Structure*> doCalculateDefinitions(Theory* theory, Structure* structure,
+			bool satdelay = false, std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
 		CalculateDefinitions c;
-		return c.calculateKnownDefinitions(theory, structure, satdelay);
+		return c.calculateKnownDefinitions(theory, structure, satdelay, symbolsToQuery);
 	}
 
 private:
-	std::vector<Structure*> calculateKnownDefinitions(Theory* theory, Structure* structure, bool satdelay) const;
-	bool calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const;
+	std::vector<Structure*> calculateKnownDefinitions(Theory* theory, Structure* structure,
+			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
+	bool calculateDefinition(Definition* definition, Structure* structure,
+			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
+
 };
