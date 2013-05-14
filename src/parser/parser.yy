@@ -92,6 +92,7 @@ void yyerror(const char* s);
 
 /** Headers  **/
 %token VOCAB_HEADER
+%token DEF_HEADER
 %token THEORY_HEADER
 %token STRUCT_HEADER
 %token ASP_HEADER
@@ -420,6 +421,7 @@ def_forms	: /* empty */
 /** Definitions **/
 
 definition	: '{' rules '}'		{ $$ = data().definition(*$2); delete($2);	}
+			| DEF_HEADER '{' rules '}'		{ $$ = data().definition(*$3); delete($3);	}
 			| '{' '}' 			{ $$ = NULL;} //Ignore empty definitions (the inserter can handle NULL)	
 			;
 
