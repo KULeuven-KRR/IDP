@@ -79,7 +79,7 @@ public:
 			}
 			return;
 		}
-		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct);
+		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct, g.getSymbolsToQuery());
 
 		if(not output_structure.empty() && g.isConsistent(output_structure.at(0))) {
 			g.updateStructure(s,output_structure.at(0));
@@ -115,6 +115,7 @@ private:
 	Theory* constructTheory(Definition*);
 	Vocabulary* constructVocabulary(AbstractStructure*, Definition*);
 	AbstractStructure* constructStructure(AbstractStructure*, Theory*, Vocabulary*);
+	std::set<PFSymbol*> getSymbolsToQuery();
 	void updateStructure(AbstractStructure*, AbstractStructure*);
 	bool isConsistent(AbstractStructure*);
 };

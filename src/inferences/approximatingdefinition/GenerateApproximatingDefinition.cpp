@@ -570,6 +570,16 @@ void GenerateApproximatingDefinition::updateStructure(AbstractStructure* s, Abst
 	}
 }
 
+std::set<PFSymbol*> GenerateApproximatingDefinition::getSymbolsToQuery() {
+	auto ret = std::set<PFSymbol*>();
+	for(auto ctf : data->_pred2predCt) {
+		ret.insert(ctf.second);
+	}
+	for(auto cff : data->_pred2predCf) {
+		ret.insert(cff.second);
+	}
+	return ret;
+}
 bool GenerateApproximatingDefinition::isConsistent(AbstractStructure* s) {
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto sentence_cf = data->formula2cf[*i];
