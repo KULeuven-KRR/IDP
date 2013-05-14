@@ -383,19 +383,20 @@ public:
 
 Definition* GenerateApproximatingDefinition::getallRules(Direction dir) {
 	auto d = new Definition();
-	if (dir != Direction::DOWN) {
-		d->add(getallUpRules());
-		data->_baseformulas_already_added=true;
-	}
-	if (dir != Direction::UP) {
-		d->add(getallDownRules());
-	}
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto tr = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
 		auto ts = data->formula2ct[*i];
 		if(not ts->symbol()->builtin()) {
 			d->add(new Rule(ts->freeVars(), ts, tr, ParseInfo()));
 		}
+	}
+	if (dir != Direction::UP) {
+		d->add(getallDownRules());
+		data->_baseformulas_already_added=true;
+	}
+	if (dir != Direction::DOWN) {
+		d->add(getallUpRules());
+		data->_baseformulas_already_added=true;
 	}
 	return d;
 }
