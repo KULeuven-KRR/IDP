@@ -559,6 +559,13 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 			Domain* univdomain = addToForall(disjdomain, newvars);
 			deriveddomain = addToConjunction(deriveddomain, univdomain);
 			delete (univdomain);
+			for(auto v:qf->quantVars()){
+				//If subformula does not depend on one of those variables, it suffices that the derived domain is t
+				//true for one of them.
+				if(not contains(qf->subformula()->freeVars(),v)){
+					deriveddomain = addToExists(deriveddomain,v);
+				}
+			}
 		}
 		updateDomain(qf->subformula(), DOWN, (_ct == isPos(qf->sign())), deriveddomain);
 		break;
