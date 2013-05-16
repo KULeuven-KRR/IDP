@@ -91,31 +91,33 @@ public:
 	 */
 	void visit(const BoolForm* bf) {
 		Assert(bf->sign()==SIGN::POS);
-		auto first = &data->formula2ct, second = &data->formula2cf;
 		if (not bf->conj()) {
-			first = &data->formula2cf;
-			second = &data->formula2ct;
-		}
-		for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-			auto v = difference(bf->freeVars(), (*i)->freeVars());
-			Formula* f = (*first)[bf];
-			if (not v.empty() != 0) {
-				f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
-			}
-			add(topdownrules, (*first)[*i], f, data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
-
-			vector<Formula*> forms;
-			forms.push_back((*second)[bf]);
-			for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
-				if (i != j) {
-					forms.push_back((*first)[*j]);
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				auto v = difference(bf->freeVars(), (*i)->freeVars());
+				Formula* f = data->formula2cf[bf];
+				vector<Formula*> forms;
+				forms.push_back(data->formula2ct[bf]);
+				for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
+					if (i != j) {
+						forms.push_back(data->formula2cf[*j]);
+					}
 				}
+				f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
+				if (not v.empty()) {
+					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+				}
+				add(topdownrules, data->formula2ct[*i], f, data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
 			}
-			f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
-			if (not v.empty()) {
-				f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+		} else {
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				auto v = difference(bf->freeVars(), (*i)->freeVars());
+				Formula* f = data->formula2ct[bf];
+				if (not v.empty() != 0) {
+					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+				}
+				add(topdownrules, data->formula2ct[*i], f, data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
 			}
-			add(topdownrules, (*second)[*i], f, data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
+
 		}
 		traverse(bf);
 	}
@@ -129,31 +131,27 @@ public:
 	 */
 	void visit(const QuantForm* qf) {
 		Assert(qf->sign()==SIGN::POS);
-		auto first = &data->formula2cf, second = &data->formula2ct;
 		if (qf->isUniv()) {
-			first = &data->formula2ct;
-			second = &data->formula2cf;
+			add(topdownrules, data->formula2ct[qf->subformula()], data->formula2ct[qf], data);
+		} else {
+			std::vector<Formula*> vareq_forms;
+			varset vars;
+			std::vector<Term*> terms;
+			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
+				auto newvar = new Variable((*i)->sort());
+				auto newterm = new VarTerm(newvar, TermParseInfo());
+				vars.insert(newvar);
+				terms.push_back(newterm);
+				vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
+			}
+			auto vareqs = &Gen::conj(vareq_forms);
+			std::vector<Formula*> disj_forms;
+			disj_forms.push_back(vareqs);
+			disj_forms.push_back(new PredForm(SIGN::POS, ((data->formula2cf[qf->subformula()])->symbol()),terms,FormulaParseInfo()));
+			auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
+
+			add(topdownrules, data->formula2ct[qf->subformula()], &Gen::conj({&quant, data->formula2ct[qf]}), data);
 		}
-
-		add(topdownrules, (*first)[qf->subformula()], (*first)[qf], data);
-
-		std::vector<Formula*> vareq_forms;
-		varset vars;
-		std::vector<Term*> terms;
-		for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
-			auto newvar = new Variable((*i)->sort());
-			auto newterm = new VarTerm(newvar, TermParseInfo());
-			vars.insert(newvar);
-			terms.push_back(newterm);
-			vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
-		}
-		auto vareqs = &Gen::conj(vareq_forms);
-		std::vector<Formula*> disj_forms;
-		disj_forms.push_back(vareqs);
-		disj_forms.push_back(new PredForm(SIGN::POS, (((*first)[qf->subformula()])->symbol()),terms,FormulaParseInfo()));
-		auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
-
-		add(topdownrules, (*second)[qf->subformula()], &Gen::conj({&quant, (*second)[qf]}), data);
 		traverse(qf);
 	}
 
@@ -259,18 +257,19 @@ public:
 	 */
 	void visit(const BoolForm* bf) {
 		Assert(bf->sign()==SIGN::POS);
-		auto first = &data->formula2ct, second = &data->formula2cf;
 		if (bf->conj()) {
-			first = &data->formula2cf;
-			second = &data->formula2ct;
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				add(bottomuprules, data->formula2cf[bf], data->formula2cf[*i], data); // DISJ: Pct(x, y, z) <- Lict(x, y)
+			}
 		}
-		std::vector<Formula*> forms;
-		for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-			add(bottomuprules, (*first)[bf], (*first)[*i], data); // DISJ: Pct(x, y, z) <- Lict(x, y)
+		else {
+			std::vector<Formula*> forms;
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				forms.push_back(data->formula2cf[*i]);
+			}
+			add(bottomuprules, data->formula2cf[bf], &Gen::conj(forms), data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
 
-			forms.push_back((*second)[*i]);
 		}
-		add(bottomuprules, (*second)[bf], &Gen::conj(forms), data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
 		traverse(bf);
 	}
 
@@ -287,14 +286,11 @@ public:
 	 */
 	void visit(const QuantForm* qf) {
 		Assert(qf->sign()==SIGN::POS);
-		auto exists = &data->formula2ct, univ = &data->formula2cf;
-
 		if (qf->isUniv()) {
-			exists = &data->formula2cf;
-			univ = &data->formula2ct;
+			add(bottomuprules, data->formula2cf[qf], &Gen::exists(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
+		} else {
+			add(bottomuprules, data->formula2cf[qf], &Gen::forall(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
 		}
-		add(bottomuprules, (*exists)[qf], &Gen::exists(qf->quantVars(), *(*exists)[qf->subformula()]), data);
-		add(bottomuprules, (*univ)[qf], &Gen::forall(qf->quantVars(), *(*univ)[qf->subformula()]), data);
 		traverse(qf);
 	}
 
