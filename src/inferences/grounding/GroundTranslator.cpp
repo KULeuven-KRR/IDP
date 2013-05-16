@@ -408,7 +408,14 @@ Lit GroundTranslator::reify(double bound, CompType comp, AggFunction aggtype, Se
 }
 
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
-	auto tsbody = new CPTsBody(tstype, left, comp == CompType::NEQ ? CompType::EQ : comp, right);
+	auto leftvar = dynamic_cast<CPVarTerm*>(left);
+	auto newright = right;
+	if(leftvar!=NULL && newright._isvarid && leftvar->varid().id>newright._varid.id && (comp==CompType::EQ || comp==CompType::NEQ)){
+		auto rightvar = newright._varid;
+		newright = CPBound(leftvar->varid());
+		left = new CPVarTerm(rightvar);
+	}
+	auto tsbody = new CPTsBody(tstype, left, comp == CompType::NEQ ? CompType::EQ : comp, newright);
 
 	auto it = cpset.find(tsbody);
 	if (it != cpset.cend()) {

@@ -714,9 +714,7 @@ public:
 	}
 	bool operator==(const CPTerm&) const;
 	bool operator<(const CPTerm&) const;
-	virtual void put(std::ostream&) const {
-		// TODO
-	}
+	virtual void put(std::ostream&) const;
 	virtual std::vector<VarId> getVarIds() const {
 		return varids();
 	}

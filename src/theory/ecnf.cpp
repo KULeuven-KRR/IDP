@@ -482,6 +482,15 @@ void CPBound::put(std::ostream& stream) const {
 	}
 }
 
+void CPSetTerm::put(std::ostream& stream) const {
+	if(type()==AggFunction::SUM){
+		stream <<print(type()) << " of ";
+		for(auto i=0; i<varids().size(); ++i){
+			stream <<weights()[i] <<"*var" <<varids()[i] <<", ";
+		}
+	}
+}
+
 // TODO eclipse indentation problems below this line...
 bool TsBody::operator>(const TsBody& rhs) const {
 	return not (operator ==(rhs) || operator <(rhs));
