@@ -126,6 +126,8 @@ PCSolver* createsolver(int nbmodels) {
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
+	modes.usegecode = getOption(GECODE);
+
 	modes.polarity = MinisatID::Polarity::STORED;
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;

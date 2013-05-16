@@ -55,6 +55,17 @@ procedure mxnonreduced(){
 
 procedure mxwithcp(){
 	stdoptions.cpsupport = true
+	stdoptions.gecode = false
+	stdoptions.cpgroundatoms = false
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 5
+	return run()
+}
+
+procedure mxwithcpgecode(){
+	stdoptions.cpsupport = true
+	stdoptions.gecode = true
 	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
