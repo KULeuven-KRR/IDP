@@ -220,6 +220,10 @@ Theory* calculateArithmetic(Theory*, const Structure* s) ;
 Formula* pushQuantifiersAndNegations(Formula*);
 AbstractTheory* pushQuantifiersAndNegations(AbstractTheory*);
 
+/** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
+Formula* eliminateUniversalQuantifications(Formula*);
+Theory* eliminateUniversalQuantifications(Theory*);
+
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);
 
@@ -310,6 +314,9 @@ bool hasRecursionOverNegation(Definition*);
 
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);
+
+/** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
+Definition* eliminateUniversalQuantifications(Definition*);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
 Rule* unnestThreeValuedTerms(Rule*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);

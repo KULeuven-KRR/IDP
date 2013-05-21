@@ -96,6 +96,7 @@ class AddMarkers;
 		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
+		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \
 		friend class SplitComparisonChains; \
 		friend class SplitDefinitions; \

@@ -38,6 +38,7 @@
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
+#include "transformations/EliminateUniversalQuantifications.hpp"
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/SplitDefinitions.hpp"
@@ -180,6 +181,15 @@ Rule* moveOnlyBodyQuantifiers(Rule* rule){
 	}
 	return new Rule(occursinhead, rule->head(), new QuantForm(SIGN::POS, QUANT::EXIST, notinhead, rule->body(), rule->body()->pi()), rule->pi());
 }
+
+Definition* eliminateUniversalQuantifications(Definition* d) {
+	ruleset new_rules = ruleset();
+	for (auto rule : d->rules()) {
+		rule->body(FormulaUtils::eliminateUniversalQuantifications(rule->body()));
+	}
+	return d;
+}
+
 }
 
 /* FormulaUtils */
@@ -374,6 +384,20 @@ AbstractTheory* pushQuantifiersAndNegations(AbstractTheory* t) {
 	FormulaUtils::pushNegations(t);
 	FormulaUtils::flatten(t);
 	return transform<PushQuantifications, AbstractTheory*>(t);
+}
+
+Formula* eliminateUniversalQuantifications(Formula* f) {
+	return transform<EliminateUniversalQuantifications, Formula*>(f);
+}
+
+Theory* eliminateUniversalQuantifications(Theory* t) {
+	for(unsigned int it = 0; it < t->sentences().size(); it++) {
+		t->sentence(it,transform<EliminateUniversalQuantifications, Formula*>(t->sentences().at(it)));
+	}
+	for(unsigned int it = 0; it < t->definitions().size(); it++) {
+		t->definition(it,DefinitionUtils::eliminateUniversalQuantifications(t->definitions().at(it)));
+	}
+	return t;
 }
 
 AbstractTheory* removeEquivalences(AbstractTheory* t) {
