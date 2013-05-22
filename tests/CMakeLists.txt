@@ -21,6 +21,9 @@ addToCXX("-std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)
 	addToCXX("-D USEINTERACTIVE")
 endif()
+if(WITHGECODE)
+	addToCXX("-D WITHGECODE")
+endif()
 
 include_directories ("
 	"${PROJECT_SOURCE_DIR}/lib/safeint"
