@@ -204,6 +204,11 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
 				}
+				auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
+				if(getOption(XSB) && has_recursive_aggregate) {
+					Warning::warning("Currently, no support for definitions that have recursive aggregates");
+				}
+				auto useXSB = getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
 				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
