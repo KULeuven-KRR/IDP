@@ -20,7 +20,7 @@ procedure OptimizeWithCP() {
 }
 
 procedure run() {
-	stdoptions.nbmodels = 0
+	stdoptions.nbmodels = getExpectedNbOfModels()+1
 	stdoptions.timeout = 20
 	stdoptions.verbosity.grounding = 0
 	stdoptions.verbosity.solving = 0
