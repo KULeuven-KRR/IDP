@@ -69,6 +69,7 @@ class AddMarkers;
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
 		friend class HasRecursionOverNegation; \
+		friend class HasRecursiveAggregate; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
 		friend class DeriveTermBounds; \

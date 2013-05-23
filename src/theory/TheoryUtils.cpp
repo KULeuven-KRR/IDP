@@ -28,6 +28,7 @@
 #include "information/CheckSorts.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/HasRecursionOverNegation.hpp"
+#include "information/HasRecursiveAggregate.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
 #include "transformations/PushNegations.hpp"
@@ -149,6 +150,10 @@ bool hasRecursionOverNegation(Definition* d) {
 
 void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
+}
+
+bool hasRecursiveAggregate(Definition* d) {
+	return transform<HasRecursiveAggregate, bool>(d);
 }
 
 Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {

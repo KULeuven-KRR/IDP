@@ -315,6 +315,9 @@ bool hasRecursionOverNegation(Definition*);
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);
 
+/** Check whether the definition has a recursive aggregate */
+bool hasRecursiveAggregate(Definition*);
+
 /** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
 Definition* eliminateUniversalQuantifications(Definition*);
 
