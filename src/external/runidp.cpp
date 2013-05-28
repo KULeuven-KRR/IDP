@@ -273,6 +273,8 @@ const DomainElement* executeProcedure(const string& proc) {
 	signal(SIGINT, SIGINT_handler);
 #if defined(__linux__)
 	signal(SIGHUP, SIGABRT_handler);
+	signal(SIGXCPU, SIGABRT_handler);
+	signal(SIGXFSZ, SIGABRT_handler);
 #endif
 
 	//IMPORTANT: because signals are handled asynchronously, a special mechanism is needed to recover from them (exception throwing does not work)
