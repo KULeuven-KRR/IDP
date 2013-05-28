@@ -418,14 +418,16 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 				clone->negate();
 				ctcfpair.second = clone;
 				swapIfNegated = false;
-			}else if (s->inter(fPredForm->symbol())->approxTwoValued()) {
-				ctcfpair.first = fPredForm;
-				auto clone = fPredForm->clone();
-				clone->negate();
-				ctcfpair.second = clone;
-				swapIfNegated = false;
-				data->actions.insert(fPredForm->symbol());
-			} else {
+			}
+//			else if (s->inter(fPredForm->symbol())->approxTwoValued()) {
+//				ctcfpair.first = fPredForm;
+//				auto clone = fPredForm->clone();
+//				clone->negate();
+//				ctcfpair.second = clone;
+//				swapIfNegated = false;
+//				data->actions.insert(fPredForm->symbol());
+//			}
+			else {
 				Predicate* ctpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_ct"),fPredForm->symbol()->sorts());
 				Predicate* cfpred = new Predicate((fPredForm->symbol()->nameNoArity() + "_cf"),fPredForm->symbol()->sorts());
 				ctcfpair.first = new PredForm(SIGN::POS, ctpred, fPredForm->subterms(), FormulaParseInfo());
