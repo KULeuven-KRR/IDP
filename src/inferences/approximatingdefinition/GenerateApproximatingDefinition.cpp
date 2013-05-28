@@ -91,6 +91,7 @@ public:
 	 */
 	void visit(const BoolForm* bf) {
 		Assert(bf->sign()==SIGN::POS);
+		traverse(bf);
 		if (not bf->conj()) {
 			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
 				auto v = difference(bf->freeVars(), (*i)->freeVars());
@@ -119,7 +120,6 @@ public:
 			}
 
 		}
-		traverse(bf);
 	}
 
 	/**
@@ -131,6 +131,7 @@ public:
 	 */
 	void visit(const QuantForm* qf) {
 		Assert(qf->sign()==SIGN::POS);
+		traverse(qf);
 		if (qf->isUniv()) {
 			add(topdownrules, data->formula2ct[qf->subformula()], data->formula2ct[qf], data);
 		} else {
@@ -152,7 +153,6 @@ public:
 
 			add(topdownrules, data->formula2ct[qf->subformula()], &Gen::conj({&quant, data->formula2ct[qf]}), data);
 		}
-		traverse(qf);
 	}
 
 	void visit(const PredForm* pf) {
@@ -256,6 +256,7 @@ public:
 	 * Pcf(x, y, z) <- Licf(x, y)
 	 */
 	void visit(const BoolForm* bf) {
+		traverse(bf);
 		Assert(bf->sign()==SIGN::POS);
 		if (bf->conj()) {
 			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
@@ -270,7 +271,6 @@ public:
 			add(bottomuprules, data->formula2cf[bf], &Gen::conj(forms), data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
 
 		}
-		traverse(bf);
 	}
 
 	/**
@@ -285,13 +285,13 @@ public:
 	 * 		Pcf(x) <- ?y: Lcf(x, y)
 	 */
 	void visit(const QuantForm* qf) {
+		traverse(qf);
 		Assert(qf->sign()==SIGN::POS);
 		if (qf->isUniv()) {
 			add(bottomuprules, data->formula2cf[qf], &Gen::exists(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
 		} else {
 			add(bottomuprules, data->formula2cf[qf], &Gen::forall(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
 		}
-		traverse(qf);
 	}
 
 	void visit(const PredForm* pf) {
