@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_mark.h,v 1.41 2011/05/19 16:39:06 tswift Exp $
+** $Id: gc_mark.h,v 1.42 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -112,6 +112,8 @@ inline static CPtr hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
   int t;
   CPtr retp;
 
+  // unlikely to be right....  don't know what to do here...
+  if (isinternstr(cell)) {return NULL;}
   t = cell_tag(cell) ;
 
   /* the use of if-tests rather than a switch is for efficiency ! */
@@ -161,6 +163,7 @@ static CPtr pointer_from_cell(CTXTdeclc Cell cell, int *tag, int *whereto)
      retp = clref_val(cell) ;
      break ;
    case XSB_STRUCT:
+     //if (isinternstr(cell)) ?? cant do default...
      retp = ((CPtr)(cs_val(cell))) ;
      break ;
    default:
@@ -262,31 +265,41 @@ static int mark_cell(CTXTdeclc CPtr cell_ptr)
   tag = cell_tag(cell_val);
 
 
-  if (tag == XSB_LIST || tag == XSB_ATTV)
-    { cell_ptr = clref_val(cell_val) ;
-    if (mark_overflow)
-      { m += mark_cell(CTXTc cell_ptr+1) ; }
-    else push_to_mark(cell_ptr+1) ;
-    goto safe_mark_more ;
+  if (tag == XSB_LIST || tag == XSB_ATTV) {
+    if (isinternstr(cell_val)) { // need to go in and mark strings if string gc
+      // printf("not gc interned list\n");
+      goto pop_more;  // ignore for now
+    } else {
+      cell_ptr = clref_val(cell_val) ;
+      if (mark_overflow)
+	{ m += mark_cell(CTXTc cell_ptr+1) ; }
+      else push_to_mark(cell_ptr+1) ;
+      goto safe_mark_more ;
     }
+  }
 
-  if (tag == XSB_STRUCT)
-    { p = (CPtr)cell_val ;
-    cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-    i = cell_ptr - heap_bot ;
-    if (h_marked(i)) goto pop_more ;
-    TO_BUFFER(cell_ptr);
-    h_mark(i) ; m++ ;
-    cell_val = *cell_ptr;
-    arity = get_arity((Psc)(cell_val)) ;
-    p = ++cell_ptr ;
-    if (mark_overflow)
-      { while (--arity)
-	{ m += mark_cell(CTXTc ++p) ; }
-      }
-    else while (--arity) push_to_mark(++p) ;
-    goto mark_more ;
+  if (tag == XSB_STRUCT) {
+    if (isinternstr(cell_val)) {
+      //printf("not gc interned str\n");
+      goto pop_more;  // ignore for now
+    } else {
+      p = (CPtr)cell_val ;
+      cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+      i = cell_ptr - heap_bot ;
+      if (h_marked(i)) goto pop_more ;
+      TO_BUFFER(cell_ptr);
+      h_mark(i) ; m++ ;
+      cell_val = *cell_ptr;
+      arity = get_arity((Psc)(cell_val)) ;
+      p = ++cell_ptr ;
+      if (mark_overflow)
+	{ while (--arity)
+	    { m += mark_cell(CTXTc ++p) ; }
+	}
+      else while (--arity) push_to_mark(++p) ;
+      goto mark_more ;
     }
+  }
 
   if ((tag == XSB_REF) || (tag == XSB_REF1))
     { p = (CPtr)cell_val ;
@@ -356,6 +369,9 @@ static int mark_root(CTXTdeclc Cell cell_val)
       return(mark_cell(CTXTc (CPtr)cell_val)) ;
 
     case XSB_STRUCT : 
+      if (isinternstr(cell_val)) {  // interned term ignore for now
+	return(0);
+      }
       cell_ptr = ((CPtr)(cs_val(cell_val))) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       i = cell_ptr - heap_bot ; 
@@ -382,6 +398,9 @@ static int mark_root(CTXTdeclc Cell cell_val)
     case XSB_LIST: 
     case XSB_ATTV:
       /* the 2 cells will be marked iff neither of them is a Psc */
+      if (isinternstr(cell_val)) {  // interned list ignore for now
+	return(0);
+      }
       cell_ptr = clref_val(cell_val) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
@@ -946,11 +965,14 @@ void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {
       case I: case T:	  
 	inst_addr ++;
 	break;
-      case C:
       case G:
+	printf("gc optype G\n");
+      case C:  /* also interned terms in code */
 	if (pflag) printf("    %s\n",*(char **)inst_addr);
-	mark_string(*(char **)inst_addr,"code");
-	inst_addr ++;
+	if (current_opcode != getinternstr && current_opcode != uniinternstr && current_opcode != bldinternstr) {
+	  mark_string(*(char **)inst_addr,"code");
+	  inst_addr ++;
+	}
 	break;
       default:
 	break;

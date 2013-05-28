@@ -20,7 +20,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: copysubdirs.sh,v 1.7 2010/08/19 15:03:35 spyrosh Exp $
+## $Id: copysubdirs.sh,v 1.8 2012/09/27 02:25:57 kifer Exp $
 ## 
 ##
 
@@ -69,6 +69,7 @@ for f in $files ; do
        /bin/rm -rf $2/*/*/*/CVS $2/*/*/*/.cvsignore
        /bin/rm -rf $2/*/*~ $2/*/*/*~ $2/*/#*# $2/*/*/#*#
        /bin/rm -rf $2/*/*/*/*~ $2/*/*/*/#*#
+       /bin/rm -rf $2/*/.#* $2/*/*/.#* $2/*/*/*/.#*
     fi
   fi
 done

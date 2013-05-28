@@ -28,7 +28,9 @@
 init_chr_d:- 
 	bootstrap_package([chr_d],'chr_d'),
 	[chr2attv],
-	[attv_aux].
+	[attv_aux],
+	[flatten_chr],
+	[print_chrd].
 
 :- init_chr_d.
 

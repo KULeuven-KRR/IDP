@@ -35,11 +35,24 @@
 #include <assert.h>
 #include "load_page.h"
 #include "error_term.h"
-#include "error.c"
 
 #ifndef WIN_NT
 #include <sys/stat.h>
 #endif
+
+#ifdef MULTI_THREAD
+#define xsb_get_main_thread_macro xsb_get_main_thread()
+#define  check_thread_context  th = xsb_get_main_thread();
+#else
+#define xsb_get_main_thread_macro
+#define check_thread_context
+#endif
+
+#ifdef MULTI_THREAD
+static th_context *th = NULL;
+#endif
+
+#include "error.c"
 
 extern char * load_page (char *source, curl_opt options, curl_ret *ret_vals);
 extern void * encode (char *url, char **dir, char **file, char **suffix);
@@ -53,8 +66,9 @@ extern curl_opt init_options();
 
 DllExport int call_conv curl_allocate_error_term()
 {
-  global_error_term = reg_term(1);
-  global_warning_term = reg_term(2);
+  check_thread_context
+  global_error_term = reg_term(CTXTc 1);
+  global_warning_term = reg_term(CTXTc 2);
   return TRUE;
 }
 
@@ -67,12 +81,13 @@ DllExport int call_conv curl_finalize_warn()
   /*Temporary prolog term to iterate over the warnings list*/
   prolog_term tmp;
 
-  tmp = reg_term(1);
+  check_thread_context
+  tmp = reg_term(CTXTc 1);
   while( is_list(tmp)){
     tmp = p2p_cdr(tmp);
   }
   if( is_var(tmp)){
-    c2p_nil(tmp);
+    c2p_nil(CTXTc tmp);
   }
   return TRUE;
 }
@@ -89,7 +104,8 @@ DllExport int call_conv pl_load_page()
   curl_ret ret_vals;
 
 	
-  tail = reg_term(1);
+  check_thread_context
+  tail = reg_term(CTXTc 1);
   
   if(!is_list(tail))
     return curl2pl_error(ERR_DOMAIN, "source", tail);
@@ -214,13 +230,14 @@ DllExport int call_conv pl_encode_url()
   char	*url;
   char *dir, *file_base, *suffix;
 
+  check_thread_context
   url = (char *) extern_ptoc_string(1);
  
   encode(url, &dir, &file_base, &suffix);
 
-  c2p_string(CTXTdeclc dir, p2p_car(reg_term(2)));
-  c2p_string(CTXTdeclc file_base, p2p_car(p2p_cdr(reg_term(2))));
-  c2p_string(CTXTdeclc suffix, p2p_car(p2p_cdr(p2p_cdr(reg_term(2)))));
+  c2p_string(CTXTc dir, p2p_car(reg_term(CTXTc 2)));
+  c2p_string(CTXTc file_base, p2p_car(p2p_cdr(reg_term(CTXTc 2))));
+  c2p_string(CTXTc suffix, p2p_car(p2p_cdr(p2p_cdr(reg_term(CTXTc 2)))));
 
   return TRUE;
 }

@@ -70,7 +70,7 @@
 	real/1,		repeat/0,
 	see/1,		seeing/1,	seen/0,
 	set_input/1,    set_output/1,  
-   demand_once/1, check_table_options/2,
+   demand_once/1, check_table_options/3,
 	set_tmp_file/3,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	time/1,	told/0,true/0,
@@ -151,7 +151,9 @@
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
 	  '$$clean_up_block'/1, xwam_state/2
      from machine. 
-:- import numbervars/1 from num_vars.
+
+%:- import numbervars/1 from num_vars.
+:- import numbervars/4 from num_vars.
 :- import calculate_singleton/3 from singlton.
 :- import concat_atom/2  from string.
 :- import file_read/2, file_read/3 from xsb_read.

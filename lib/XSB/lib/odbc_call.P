@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: odbc_call.P,v 1.45 2011/04/15 16:05:00 dwarren Exp $
+** $Id: odbc_call.P,v 1.46 2012/12/08 18:16:05 dwarren Exp $
 **
 */
 
@@ -1378,13 +1378,15 @@ odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
 	%%writeln(cursor(Cursor)),
 	(BindVals == []
 	 ->	true
-	 ;	length(BindVals,NumBindVals),
+	 ; is_list(BindVals)
+	 ->	length(BindVals,NumBindVals),
 		set_bind_table_size(Cursor,NumBindVals,SBRetVal),
 		(SBRetVal \== 0
 		 ->	odbc_error(SBRetVal)
 		 ;	true
 		),
 		set_def_bindvar_table(BindVals,Cursor)
+	 ;	domain_error(list,BindVals,odbc_sql_i/4,2)
 	),
 	parse(Cursor,RetVal0),
 	(RetVal0 == 0
@@ -2023,6 +2025,23 @@ odbc_data_sources(N,DataSourceName,Description) :-
 odbc_data_sources(_,DataSourceName,Description) :-
 	odbc_data_sources(2,DataSourceName,Description).
 
+
+odbc_drivers(Description,Attributes) :-
+	var(Description), !,
+	odbc_drivers(1,Description,Attributes).
+odbc_drivers(Description,Attributes) :-
+	findall((Descr,Attrs),odbc_drivers(Descr,Attrs),L),
+	memberchk((Description,Attributes),L).
+
+odbc_drivers(N,Description,Attributes) :-
+	odbc_drivers(N,Description,Attributes,RetVal),
+	(RetVal =:= 0
+	-> true
+	; !, fail
+	).
+odbc_drivers(_,Description,Attributes) :-
+	odbc_drivers(2,Description,Attributes).
+
 odbc_connection_exists(ConnectionName):-
         odbc_connection(ConnectionName,_).
 
@@ -2144,6 +2163,8 @@ odbc_data_sources(N,DSN,Descr,Ret) :- odbc_exec_query(17,N,DSN,Descr,Ret).
 odbc_get_info(ConnHandle,Info_type,Info,Ret) :- odbc_exec_query(18,ConnHandle,Info_type,Info,Ret).
 
 odbc_get_row_count(Cursor,Count,Ret) :- odbc_exec_query(19,Cursor,Count,Ret).
+
+odbc_drivers(N,Descr,Attributes,Ret) :- odbc_exec_query(20,N,Descr,Attributes,Ret).
 
 %%% parameters in SQLEXT.H;
 %%Attr: SQL_AUTOCOMMIT(102) Val: on(1), off(0);

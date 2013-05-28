@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: memory_xsb.c,v 1.79 2012/07/04 15:10:46 tswift Exp $
+** $Id: memory_xsb.c,v 1.80 2012/09/27 02:25:57 kifer Exp $
 ** 
 */
 
@@ -84,7 +84,11 @@ void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
 	if (enc[nibble] == -1) { /* be sure not changed since test */
 	  if (next_free_code >= 8) // We've done used all the bits there is... 
 	    //	    xsb_resource_error_nopred(CTXTc "memory","running out of tagged address space");
+#ifdef MULTI_THREAD
+            xsb_exit(NULL, "UNRECOVERABLE ERROR: Ran out of tagged address space!\n");
+#else
 	    xsb_exit("UNRECOVERABLE ERROR: Ran out of tagged address space!\n");
+#endif
 	  enc[nibble] = next_free_code << _SHIFT_VALUE;
 	  dec[next_free_code] = nibble << _SHIFT_VALUE;
 	  //	  printf("recoding %lx to %lx\n",nibble,next_free_code);

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: builtin.c,v 1.394 2012/08/06 13:40:02 dwarren Exp $
+** $Id: builtin.c,v 1.399 2013/04/17 22:02:34 tswift Exp $
 **
 */
 
@@ -91,6 +91,7 @@
 #include "table_status_defs.h"
 #include "rw_lock.h"
 #include "deadlock.h"
+#include "struct_intern.h"
 #ifdef ORACLE
 #include "oracle_xsb.h"
 #endif
@@ -150,6 +151,8 @@ extern int xsb_profiling_enabled;
 extern char *canonical_term(CTXTdeclc Cell, int);
 extern int prolog_call0(CTXTdeclc Cell);
 extern int prolog_code_call(CTXTdeclc Cell, int);
+
+extern void init_psc_ep_info(Psc psc);
 
 int is_cyclic(CTXTdeclc Cell);
 int ground_cyc(CTXTdeclc Cell, int);
@@ -494,6 +497,9 @@ DllExport prolog_float call_conv ptoc_number(CTXTdeclc int regnum)
 static VarString *LSBuff[MAXSBUFFS] = {NULL};
 #endif
 
+#define str_op1 (*tsgSBuff1)
+
+
 /* construct a long string from prolog... concatenates atoms,
 flattening lists and comma-lists, and treating small ints as ascii
 codes.  Puts result in a fixed buffer (if nec.) automatically extended */
@@ -512,13 +518,13 @@ void constructString(CTXTdeclc Cell addr, int ivstr)
     xsb_abort("[PTOC_LONGSTRING] Argument %d of illegal type: %s",ivstr,canonical_term(CTXTc addr, 0));
   case XSB_STRUCT:
     if (get_str_psc(addr) == comma_psc) {
-      constructString(CTXTc cell(clref_val(addr)+1),ivstr);
-      addr = cell(clref_val(addr)+2);  /* tail recursion opt */
+      constructString(CTXTc get_str_arg(addr,1),ivstr);
+      addr = get_str_arg(addr,2);  /* tail recursion opt */
       goto constructStringBegin;
     } else xsb_abort("[PTOC_LONGSTRING] Argument %d of illegal type: %s",ivstr,canonical_term(CTXTc addr, 0));
   case XSB_LIST:
-    constructString(CTXTc cell(clref_val(addr)),ivstr);
-    addr = cell(clref_val(addr)+1);  /* tail recursion opt */
+    constructString(CTXTc get_list_head(addr),ivstr);
+    addr = get_list_tail(addr);  /* tail recursion opt */
     goto constructStringBegin;
   case XSB_INT:
     val = (int)int_val(addr);
@@ -680,9 +686,9 @@ Cell  val_to_hash(Cell term)
       //the float bits, and XOR them together
       else if (isboxedfloat(term))
       {
-          value = int_val(cell(clref_val(term)+1)) ^
-                    int_val(cell(clref_val(term)+2)) ^
-                    int_val(cell(clref_val(term)+3));
+	value = int_val(get_str_arg(term,1)) ^
+	  int_val(get_str_arg(term,2)) ^
+	  int_val(get_str_arg(term,3));
           break;
       }
       //but if this structure isn't any special boxed representation, then we use its PSC as
@@ -728,9 +734,9 @@ Cell  det_val_to_hash(Cell term)
       //the float bits, and XOR them together
       else if (isboxedfloat(term))
       {
-          value = int_val(cell(clref_val(term)+1)) ^
-                    int_val(cell(clref_val(term)+2)) ^
-                    int_val(cell(clref_val(term)+3));
+	value = int_val(get_str_arg(term,1)) ^
+	  int_val(get_str_arg(term,2)) ^
+	  int_val(get_str_arg(term,3));
           break;
       }
       //but if this structure isn't any special boxed representation, then we hash its name for
@@ -750,11 +756,11 @@ Cell  det_val_to_hash(Cell term)
 
 /* -------------------------------------------------------------------- */
 
-int ground(CPtr temp)
+int ground(Cell temp)
 {
  int j, arity;
  groundBegin:
-  XSB_CptrDeref(temp);
+  XSB_Deref(temp);
   switch(cell_tag(temp)) {
   case XSB_FREE:
   case XSB_REF1:
@@ -767,18 +773,18 @@ int ground(CPtr temp)
     return TRUE;
 
   case XSB_LIST:
-    if (!ground(clref_val(temp)))
+    if (!ground(get_list_head(temp)))
       return FALSE;
-    temp = clref_val(temp)+1;
+    temp = get_list_tail(temp);
     goto groundBegin;
 
   case XSB_STRUCT:
     arity = (int) get_arity(get_str_psc(temp));
     if (arity == 0) return TRUE;
     for (j=1; j < arity ; j++)
-      if (!ground(clref_val(temp)+j))
+      if (!ground(get_str_arg(temp,j)))
 	return FALSE;
-    temp = clref_val(temp)+arity;
+	  temp = get_str_arg(temp,arity);
     goto groundBegin;
 
   default:
@@ -797,14 +803,15 @@ int is_proper_list(Cell term)	/* for standard preds */
   addr = term;
   XSB_Deref(addr);
   while (islist(addr)) {
-    addr = cell(clref_val(addr)+1);
+    addr = get_list_tail(addr);
     XSB_Deref(addr);
   }
   return isnil(addr);
 }
 
 /* --------------------------------------------------------------------	*/
-#define MAX_LOCAL_TRAIL_SIZE 2048
+//  Need to expand this.
+#define MAX_LOCAL_TRAIL_SIZE 32*K
 
 struct ltrail {
   CPtr *ltrail_top;
@@ -865,14 +872,14 @@ int is_most_general_term(Cell term)
 
       mini_trail.ltrail_top = mini_trail_base = ltrail_base(mini_trail);
       while (islist(term)) {
-	addr = cell(clref_val(term));
+	addr = get_list_head(term);
 	XSB_Deref(addr);
 	if (isnonvar(addr)) {
 	  undo_ltrail_bindings(&mini_trail,mini_trail_base);
 	  return FALSE;
 	} else {
 	  local_bind_var(addr,&mini_trail);
-	  term = cell(clref_val(term)+1);
+	  term = get_list_tail(term);
 	  XSB_Deref(term);
 	}
       }
@@ -898,14 +905,14 @@ int count_variable_occurrences(Cell term) {
     arity = (int) get_arity(get_str_psc(term));
     if (arity == 0) return count;
     for (i = 1; i < arity; i++) {
-      count += count_variable_occurrences(cell(clref_val(term)+i));
+      count += count_variable_occurrences(get_str_arg(term,i));
     }
-    term = cell(clref_val(term)+arity);
+    term = get_str_arg(term,arity);
   }
     goto begin_count_variable_occurrences;
   case XSB_LIST:
-    count += count_variable_occurrences(cell(clref_val(term)));
-    term = cell(clref_val(term)+1);
+    count += count_variable_occurrences(get_list_head(term));
+    term = get_list_tail(term);
     goto begin_count_variable_occurrences;
   case XSB_FLOAT:
   case XSB_STRING:
@@ -933,14 +940,14 @@ int make_ground(Cell term, struct ltrail *templ_trail) {
     int i, arity;
     arity = (int) get_arity(get_str_psc(term));
     for (i = 1; i < arity; i++) {
-      make_ground(cell(clref_val(term)+i), templ_trail);
+      make_ground(get_str_arg(term,i), templ_trail);
     }
-    term = cell(clref_val(term)+arity);
+    term = get_str_arg(term,arity);
   }
     goto begin_make_ground;
   case XSB_LIST:
-    make_ground(cell(clref_val(term)), templ_trail);
-    term = cell(clref_val(term)+1);
+    make_ground(get_list_head(term), templ_trail);
+    term = get_list_tail(term);
     goto begin_make_ground;
   case XSB_FLOAT:
   case XSB_STRING:
@@ -971,29 +978,29 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, struct ltrail *templ_trail, 
     if (psc == caret_psc) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
-      make_ground(cell(clref_val(term)+1), templ_trail);
-      varlist = excess_vars(CTXTc cell(clref_val(term)+2), varlist, templ_trail, var_trail);
+      make_ground(get_str_arg(term,1), templ_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,2), varlist, templ_trail, var_trail);
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
     if (psc == setof_psc || psc == bagof_psc) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
-      make_ground(cell(clref_val(term)+1), templ_trail);
-      varlist = excess_vars(CTXTc cell(clref_val(term)+2),varlist,templ_trail,var_trail);
-      varlist = excess_vars(CTXTc cell(clref_val(term)+3),varlist,templ_trail,var_trail);
+      make_ground(get_str_arg(term,1), templ_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,2),varlist,templ_trail,var_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,3),varlist,templ_trail,var_trail);
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
       for (i = 1; i < arity; i++) {
-	varlist = excess_vars(CTXTc cell(clref_val(term)+i), varlist, templ_trail, var_trail);
+	varlist = excess_vars(CTXTc get_str_arg(term,i), varlist, templ_trail, var_trail);
       }
-      term = cell(clref_val(term)+arity);
+      term = get_str_arg(term,arity);
   }
     goto begin_excess_vars;
   case XSB_LIST:
-    varlist = excess_vars(CTXTc cell(clref_val(term)), varlist, templ_trail, var_trail);
-    term = cell(clref_val(term)+1);
+    varlist = excess_vars(CTXTc get_list_head(term), varlist, templ_trail, var_trail);
+    term = get_list_tail(term);
     goto begin_excess_vars;
   case XSB_FLOAT:
   case XSB_STRING:
@@ -1150,12 +1157,14 @@ void init_builtin_table(void)
   set_builtin_table(EXISTING_FILE_EXTENSION, "existing_file_extension");
 
   set_builtin_table(DO_ONCE, "do_once");
+  set_builtin_table(INTERN_TERM, "intern_term");
 
   set_builtin_table(INCR_EVAL_BUILTIN, "incr_eval"); /* incremental evaluation */
 
   set_builtin_table(GET_DATE, "get_date");
   set_builtin_table(STAT_WALLTIME, "stat_walltime");
 
+  set_builtin_table(PSC_INIT_INFO, "psc_init_info");
   set_builtin_table(PSC_GET_SET_ENV_BYTE, "psc_get_set_env_byte");
   set_builtin_table(PSC_ENV, "psc_env");
   set_builtin_table(PSC_SPY, "psc_spy");
@@ -1484,11 +1493,14 @@ int builtin_call(CTXTdeclc byte number)
     return tmp;
   }
 
-  case TERM_PSC:		/* R1: +term; R2: -PSC */
+  case TERM_PSC: {		/* R1: +term; R2: -PSC */
     /* Assumes that `term' is a XSB_STRUCT-tagged Cell. */
     /*    ctop_addr(2, get_str_psc(ptoc_tag(CTXTc 1))); */
-    ctop_addr(2, term_psc((Cell)(ptoc_tag(CTXTc 1))));
+    Psc temp =  term_psc((Cell)(ptoc_tag(CTXTc 1)));
+    ctop_addr(2, temp);
+    //    ctop_addr(2, term_psc((Cell)(ptoc_tag(CTXTc 1))));
     break;
+  }
   case CONPSC:
     {int new;
       Cell term = ptoc_tag(CTXTc 1);
@@ -1526,7 +1538,7 @@ int builtin_call(CTXTdeclc byte number)
     int new, disp;
     Psc termpsc, modpsc, newtermpsc;
     Cell arg, term = ptoc_tag(CTXTc 2);
-    XSB_Deref(term);
+    /* XSB_Deref(term); not nec since ptoc_tag derefs */
     if (isref(term)) {
       xsb_instantiation_error(CTXTc "term_new_mod/3",2);
       break;
@@ -1535,7 +1547,7 @@ int builtin_call(CTXTdeclc byte number)
     modpsc = pair_psc(insert_module(0,ptoc_string(CTXTc 1)));
     /*    if (!colon_psc) colon_psc = pair_psc(insert(":",2,global_mod,&new));*/
     while (termpsc == colon_psc) {
-      term = cell(clref_val(term)+2);
+      term = get_str_arg(term,2);
       XSB_Deref(term);
       termpsc = term_psc(term);
     }
@@ -1547,7 +1559,7 @@ int builtin_call(CTXTdeclc byte number)
     ctop_constr(CTXTc 3, (Pair)hreg);
     new_heap_functor(hreg, newtermpsc);
     for (disp=1; disp <= get_arity(newtermpsc); disp++) {
-      arg = cell(clref_val(term)+disp);
+      arg = get_str_arg(term,disp);
       nbldval_safe(arg); /* but really isnt.  should change to nbldval and resolve issues. */
     }
   }
@@ -1567,7 +1579,7 @@ int builtin_call(CTXTdeclc byte number)
   case TERM_ARG: {	/* R1: +term; R2: index (+int); R3: arg (-term) */
     size_t  disp = ptoc_int(CTXTc 2);
     Cell term = ptoc_tag(CTXTc 1);
-    ctop_tag(CTXTc 3, cell(clref_val(term)+disp));
+    ctop_tag(CTXTc 3, get_str_arg(term,disp));
     break;
   }
 
@@ -1584,7 +1596,7 @@ int builtin_call(CTXTdeclc byte number)
     CPtr arg_loc = clref_val(term)+disp;
     Cell new_val = cell(reg+3);
     int perm_flag = (int)ptoc_int(CTXTc 4);
-    if (disp < 1) xsb_domain_error(CTXTc "positive_integer",ptoc_tag(CTXTc 2),"setarg/3",2);
+    if (disp < 1) xsb_domain_error(CTXTc "positive_integer",ptoc_tag(CTXTc 2),"set_arg/3",2);
     if (perm_flag == 0) {
       pushtrail(arg_loc,new_val);
     } else if (perm_flag < 0) {
@@ -1762,14 +1774,14 @@ int builtin_call(CTXTdeclc byte number)
       char *goalname;
       CPtr addr;
       if (psc == colon_psc) {
-	Cell modstring = cell(clref_val(goal)+1);
+	Cell modstring = get_str_arg(goal,1);
 	XSB_Deref(modstring);
 	if (!isstring(modstring)) {
 	  xsb_type_error(CTXTc "module",goal,"call/n",1);
 	  return FALSE;
 	}
 	modpsc = pair_psc(insert_module(0,string_val(modstring)));
-	goal = cell(clref_val(goal)+2);
+	goal = get_str_arg(goal,2);
 	XSB_Deref(goal);
 	if (!isstring(goal)) {
 	  psc = get_str_psc(goal);
@@ -2230,7 +2242,13 @@ int builtin_call(CTXTdeclc byte number)
     break;
   }
   case GROUND:
-    return ground((CPtr)ptoc_tag(CTXTc 1));
+    return ground(ptoc_tag(CTXTc 1));
+
+  case PSC_INIT_INFO: {
+    Psc psc = (Psc)ptoc_addr(1);
+    init_psc_ep_info(psc);
+    break;
+  }
 
   case PSC_GET_SET_ENV_BYTE: { /* reg 1: +PSC, reg 2: +And-bits, reg 3: +Or-bits, reg 4: -Result */
     Psc psc = (Psc)ptoc_addr(1);
@@ -2452,7 +2470,7 @@ case WRITE_OUT_PROFILE:
     XSB_Deref(startvlist);
     while (!isnil(startvlist)) {
       if (islist(startvlist)) {
-	ovar = cell(clref_val(startvlist));
+	ovar = get_list_head(startvlist);
 	XSB_Deref(ovar);
 	if (isref(ovar) || isattv(ovar)) {
 	  if (isattv(ovar)) ovar = dec_addr(ovar);
@@ -2460,7 +2478,7 @@ case WRITE_OUT_PROFILE:
 	  bld_ref(hreg++,ovar);
 	  local_bind_var(ovar, &var_trail);
 	  tanslist = hreg++;
-	  startvlist = (Cell) cell(clref_val(startvlist)+1);
+	  startvlist = get_list_tail(startvlist);
 	  XSB_Deref(startvlist);
 	} else {xsb_error("Excess_vars: arg 3 must be a list of variables"); break;}
       } else {xsb_error("Excess_vars: arg 3 must be a list"); break;}
@@ -2953,7 +2971,7 @@ case WRITE_OUT_PROFILE:
       Cell addr = ptoc_tag(CTXTc 5);
       if (isref(addr)) {
 	result = ((Float)(EXTRACT_FLOAT_FROM_16_24_24((ptoc_int(CTXTc 2)), (ptoc_int(CTXTc 3)), (ptoc_int(CTXTc 4)))));
-	XSB_Deref(addr);
+	/* XSB_Deref(addr); unnec since ptoc_tag derefs */
 	bind_boxedfloat(((CPtr)addr), result);
       } else {
 	result = ptoc_float(CTXTc 5);
@@ -2983,8 +3001,26 @@ case WRITE_OUT_PROFILE:
   case PRIVATE_BUILTIN:
   {
     //    private_builtin();
+    XSB_StrSet(&str_op1,"");
+    print_pterm(CTXTc ptoc_tag(CTXTc 1),FALSE,&str_op1);
+    printf("%s\n",str_op1.string);
     return TRUE;
   }
+
+  case INTERN_TERM:
+  {
+    prolog_term term;
+    //printf("i\n");
+    term = intern_term(CTXTc ptoc_tag(CTXTc 1));
+    if (term) {
+      //printf("o %p\n",term);
+      return unify(CTXTc term, ptoc_tag(CTXTc 2));
+    } else {    
+      //printf("of\n");
+      return FALSE;
+    }
+  }
+
   case SEGFAULT_HANDLER: { /* Set the desired segfault handler:
 			      +Arg1:  none  - don't catch segfaults;
 				      warn  - warn and exit;
@@ -3056,9 +3092,9 @@ case WRITE_OUT_PROFILE:
 
     case CHECK_CYCLIC: {
       if (is_cyclic(CTXTc (Cell) ptoc_tag(CTXTc 1))) {
-	char buffer[MAXTERMBUFSIZE]; 
-	sprintCyclicTerm(CTXTc buffer, (Cell) ptoc_tag(CTXTc 1));
-	xsb_abort("Illegal cyclic term in arg %d of %s: %s\n",ptoc_int(CTXTc 3),ptoc_string(CTXTc 2),buffer);
+	sprintCyclicTerm(CTXTc forest_log_buffer_1, (Cell) ptoc_tag(CTXTc 1));
+	xsb_abort("Illegal cyclic term in arg %d of %s: %s\n",ptoc_int(CTXTc 3),ptoc_string(CTXTc 2),
+		  forest_log_buffer_1->fl_buffer);
       }
       return TRUE;
       break;
@@ -3189,11 +3225,11 @@ case WRITE_OUT_PROFILE:
   }
   case UNWIND_STACK: {
     if (flags[CTRACE_CALLS])  { 
-      char buffera[MAXTERMBUFSIZE];
       if (ptcpreg) 
-	sprint_subgoal(CTXTc buffera, (VariantSF)ptcpreg); 
-      else sprintf(buffera,"null");
-      fprintf(fview_ptr,"err(%s,%d).\n",buffera,ctrace_ctr++);
+	sprint_subgoal(CTXTc forest_log_buffer_1,0, (VariantSF)ptcpreg); 
+      else sprintf(forest_log_buffer_1->fl_buffer,"null");
+      fprintf(fview_ptr,"err(%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	      ctrace_ctr++);
     }
 
     if (unwind_stack(CTXT)) return TRUE; else return FALSE;
@@ -3464,12 +3500,19 @@ int print_xsb_backtrace(CTXTdecl) {
   return TRUE;
 }
 
+#define MAX_BACKTRACE_LEN 25
 prolog_term build_xsb_backtrace(CTXTdecl) {
   Psc tmp_psc, called_psc;
   byte *tmp_cpreg;
   byte instruction;
   CPtr tmp_ereg, tmp_breg, forward, backward, threg;
   prolog_term backtrace;
+  int backtrace_cnt = 0;
+
+  if (heap_local_overflow(MAX_BACKTRACE_LEN*2*sizeof(Cell)) 
+      || !flags[BACKTRACE]) {
+    return makenil;
+  }
 
   backtrace = makelist(hreg);
   forward = hreg++;
@@ -3483,7 +3526,9 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     instruction = *(tmp_cpreg-2*sizeof(Cell));
-    while (tmp_cpreg && (instruction == call || instruction == trymeorelse)
+    while (backtrace_cnt++ < MAX_BACKTRACE_LEN 
+	   && tmp_cpreg 
+	   && (instruction == call || instruction == trymeorelse)
 	   && (pb)top_of_localstk > (pb)top_of_heap + 96) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);

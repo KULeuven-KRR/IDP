@@ -1855,26 +1855,18 @@ put_element_name(dtd_parser *p, prolog_term t, dtd_element *e)
 {
   const ichar *url, *local;
 
-  if ( p->dtd->dialect == DL_XMLNS)
-    {
+  if ( p->dtd->dialect == DL_XMLNS) {
       assert(p->environments->element == e);
       xmlns_resolve_element(p, &local, &url);
 
-      if(url)
-	{
-
+      if(url) {
 	  c2p_functor(CTXTc ":", 2, t);
 	  put_url(p, p2p_arg( t, 1), url);
 	  c2p_string(CTXTc (char*)local, p2p_arg( t, 2));
-
-	}
-      else
-	{
-	  c2p_string(CTXTc (char*)local, t);
-	}
-
-    }
-  else
+      } else {
+	c2p_string(CTXTc (char*)local, t);
+      }
+  } else
     c2p_string (CTXTc (char *) (e->name->name), t);
 
   return;
@@ -1897,11 +1889,10 @@ put_url(dtd_parser *p, prolog_term t, const ichar *url)
 {
   parser_data *pd = p->closure;
 
-  if ( !pd->on_urlns )
-    {
-      c2p_string(CTXTc (char*) url, t);
-      return;
-    }
+  if ( !pd->on_urlns ) {
+    c2p_string(CTXTc (char*) url, t);
+    return;
+  }
 }
 
 
@@ -1934,42 +1925,39 @@ do_quote(prolog_term in, prolog_term quoted, char **map)
   for(s = (unsigned char*)ins ; len-- > 0; s++ )
     { int c = *s;
 
-      if ( map[c] )
-	{ size_t l = strlen(map[c]);
-	  if ( o+l >= outlen )
-	    { outlen *= 2;
-
-	      if ( out == outbuf )
-		{ out = malloc(outlen);
-		  memcpy(out, outbuf, sizeof(outbuf));
-		} else
-		{ out = realloc(out, outlen);
-		}
-	    }
-	  memcpy(&out[o], map[c], l);
-	  o += l;
-	  changes++;
-	} else
-	{ if ( o >= outlen-1 )
-	    { outlen *= 2;
-
-	      if ( out == outbuf )
-		{ out = malloc(outlen);
-		  memcpy(out, outbuf, sizeof(outbuf));
-		} else
-		{ out = realloc(out, outlen);
-		}
-	    }
-	  out[o++] = c;
+      if ( map[c] ) {
+	size_t l = strlen(map[c]);
+	if ( o+l >= outlen ) {
+	  outlen *= 2;
+	  if ( out == outbuf ) {
+	    out = malloc(outlen);
+	    memcpy(out, outbuf, sizeof(outbuf));
+	  } else {
+	    out = realloc(out, outlen);
+	  }
 	}
+	memcpy(&out[o], map[c], l);
+	o += l;
+	changes++;
+      } else {
+	if ( o >= outlen-1 ) {
+	  outlen *= 2;
+	  if ( out == outbuf ) {
+	    out = malloc(outlen);
+	    memcpy(out, outbuf, sizeof(outbuf));
+	  } else {
+	    out = realloc(out, outlen);
+	  }
+	}
+	out[o++] = c;
+      }
     }
   out[o]= 0;
-
-  if ( changes > 0 )
-    {
-      c2p_string(CTXTc out, tmp);
-      return p2p_unify(CTXTc quoted, tmp);
-    }
+  
+  if ( changes > 0 ) {
+    c2p_string(CTXTc out, tmp);
+    return p2p_unify(CTXTc quoted, tmp);
+  }
   else
     return p2p_unify(CTXTc in, quoted);
 }

@@ -22,7 +22,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: gppMakefile.in,v 1.9 2010/08/19 15:03:35 spyrosh Exp $
+## $Id: gppMakefile.in,v 1.10 2012/09/27 02:25:57 kifer Exp $
 ##
 
 
@@ -36,7 +36,7 @@ WIN_NT_FLAG=@GPPWNTFLAG@
 
 all: prepare gpp install
 
-gpp: gpp.o
+gpp: gpp.o prepare
 	@echo -e "\t[$(CC)] -o gpp"
 	@$(CC) $(LDFLAGS) -o gpp $(OBJDIR)/gpp.o
 
@@ -48,7 +48,7 @@ gpp.o: gpp.c
 prepare:
 	@ln $(OBJDIR)/gpp.o . 2> /dev/null || echo ""
 
-install:
+install: gpp
 	@mv -f gpp $(BINDIR) 2> /dev/null || echo ""
 	@mv -f gpp.exe $(BINDIR) 2> /dev/null || echo ""
 	@rm -f gpp.o

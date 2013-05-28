@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: Makefile,v 1.38 2011/05/01 06:21:22 kifer Exp $
+## $Id: Makefile,v 1.39 2012/09/27 02:25:58 kifer Exp $
 ## 
 ##
 
@@ -27,6 +27,9 @@ OBJEXT=.xwam
 ALL = 	slx${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
 	xasp${OBJEXT} xsbdoc${OBJEXT} \
+	chr${OBJEXT} chr_d${OBJEXT} \
+	sgml${OBJEXT} \
+	wildmatch${OBJEXT} regmatch${OBJEXT} \
 	xmc${OBJEXT} justify${OBJEXT} clpr${OBJECT} curl${OBJECT} pcre${OBJECT}
 # Perlmatch, libwww - deprecated. Use PCRE, CURL
 #	perlmatch${OBJEXT} libwww${OBJEXT}
@@ -43,7 +46,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 XSB=../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
+Prolog = $(XSB) -i -m 2000 -c 2000
 #
 #-----------------------------------------------------------------------#
 

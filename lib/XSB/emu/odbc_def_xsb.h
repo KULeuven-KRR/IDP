@@ -46,5 +46,6 @@ struct NumberofCursors;
 #define ODBC_DATA_SOURCES       17
 #define ODBC_GET_INFO		18
 #define ODBC_ROW_COUNT		19
+#define ODBC_DRIVERS		20
 
 #endif

@@ -2,7 +2,7 @@
 ## Author(s): Yifei Dong
 ## Contact:   lmc@cs.sunysb.edu
 ##
-## $Id: Makefile,v 1.11 2010/08/19 15:03:39 spyrosh Exp $
+## $Id: Makefile,v 1.12 2012/09/27 02:25:58 kifer Exp $
 
 
 OBJEXT=.xwam
@@ -20,7 +20,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 XSB=../../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
+Prolog = $(XSB) -i -m 2000 -c 2000
 
 CC = gcc
 CFLAGS = -Wall

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tables.c,v 1.104 2012/07/18 21:26:53 tswift Exp $
+** $Id: tables.c,v 1.106 2013/04/17 22:02:35 tswift Exp $
 ** 
 */
 
@@ -911,6 +911,8 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    TIF_DelTF(pTIF) = NULL;						
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						
+   TIF_SubgoalDepth(pTIF) = 0;						
+   TIF_AnswerDepth(pTIF) = 0;						
 #ifdef MULTI_THREAD
    /* The call trie lock is also initialized for private TIFs,
       just in case they ever change to shared */
@@ -986,9 +988,9 @@ void perform_early_completion(CTXTdeclc VariantSF ProdSF,CPtr ProdCPF) {
     tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   	
   mark_as_completed(ProdSF);					
   if (flags[CTRACE_CALLS])  { 
-    char bufferb[MAXTERMBUFSIZE];
-    sprint_subgoal(CTXTc bufferb,ProdSF);     
-    fprintf(fview_ptr,"cmp(%s,ec,%d).\n",bufferb,ctrace_ctr++);
+    sprint_subgoal(CTXTc forest_log_buffer_1,0,ProdSF);     
+    fprintf(fview_ptr,"cmp(%s,ec,%d).\n",forest_log_buffer_1->fl_buffer,
+	    ctrace_ctr++);
   }
   if ( flags[EC_REMOVE_SCC] && is_leader(ProdSF)) { 
     remove_incomplete_tries(CTXTc subg_compl_stack_ptr(ProdSF));

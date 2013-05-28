@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: io_builtins_xsb_i.h,v 1.66 2011/06/27 15:52:24 dwarren Exp $
+** $Id: io_builtins_xsb_i.h,v 1.67 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -78,6 +78,14 @@ void strclose(int i)
     mem_dealloc((byte *)iostrs[i],sizeof(STRFILE),OTHER_SPACE);
     iostrs[i] = NULL;
   }
+}
+
+int unset_fileptr(FILE *stream) {
+  int i;
+  for (i = 0; i <= MAX_OPEN_FILES; i++) {
+    if (open_files[i].file_ptr == stream) return(i);
+  }
+  return(-1);
 }
 
 /* TLS: these are ports, rather than file descriptors, therefore using

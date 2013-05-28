@@ -116,33 +116,34 @@
 #define UNLOCK_CALL_TRIE()
 #endif
 
-#define  LOG_TABLE_CALL(state)			\
-  if (flags[CTRACE_CALLS])  {			\
-    char buffera[MAXTERMBUFSIZE];		\
-    char bufferb[MAXTERMBUFSIZE];				\
-    sprint_subgoal(CTXTc buffera,(VariantSF)producer_sf);	\
-    if (ptcpreg) {						\
-      sprint_subgoal(CTXTc bufferb,(VariantSF)ptcpreg);		\
-    }								\
-    else sprintf(bufferb,"null");					\
+#define  LOG_TABLE_CALL(state)						\
+  if (flags[CTRACE_CALLS])  {						\
+    sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF)producer_sf);	\
+    if (ptcpreg) {							\
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)ptcpreg);	\
+    }									\
+    else sprintf(forest_log_buffer_2->fl_buffer,"null");		\
     if (is_neg_call)							\
-      fprintf(fview_ptr,"nc(%s,%s,%s,%d).\n",buffera,bufferb,state,ctrace_ctr++); \
-    else								\
-      fprintf(fview_ptr,"tc(%s,%s,%s,%d).\n",buffera,bufferb,state,ctrace_ctr++); \
+      fprintf(fview_ptr,"nc(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, \
+	      forest_log_buffer_2->fl_buffer,state,ctrace_ctr++);	\
+    else {								\
+      fprintf(fview_ptr,"tc(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, 	\
+	      forest_log_buffer_2->fl_buffer,state,ctrace_ctr++); }	\
   }
 
 #define LOG_ANSWER_RETURN(answer,template_ptr)		\
   if (flags[CTRACE_CALLS])  {			\
-    char buffera[MAXTERMBUFSIZE];		\
-    char bufferb[MAXTERMBUFSIZE];		\
-    char bufferc[MAXTERMBUFSIZE];					\
-    sprintAnswerTemplate(CTXTc buffera, template_ptr, template_size);	\
-    sprint_subgoal(CTXTc bufferb,(VariantSF)consumer_sf);		\
-    sprint_subgoal(CTXTc bufferc,(VariantSF)ptcpreg);			\
+    sprintAnswerTemplate(CTXTc forest_log_buffer_1,template_ptr, template_size); \
+    sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)consumer_sf);	\
+    sprint_subgoal(CTXTc forest_log_buffer_3,0,(VariantSF)ptcpreg); \
     if (is_conditional_answer(answer))					\
-      fprintf(fview_ptr,"dar(%s,%s,%s,%d).\n",buffera,bufferb,bufferc,ctrace_ctr++); \
+      fprintf(fview_ptr,"dar(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, \
+	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer, \
+	      ctrace_ctr++);						\
     else								\
-      fprintf(fview_ptr,"ar(%s,%s,%s,%d).\n",buffera,bufferb,bufferc,ctrace_ctr++); \
+      fprintf(fview_ptr,"ar(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, \
+	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer, \
+	      ctrace_ctr++);						\
   }
 
 /*
@@ -482,6 +483,9 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
     SUBG_INCREMENT_CALLSTO_SUBGOAL(producer_sf);
   }
   else {
+
+    // Buglet -- tc instead of nc for subsumed calls.
+    LOG_TABLE_CALL("incmp");
     /* New Properly Subsumed Call
        -------------------------- */
     NewSubConsSF( consumer_sf, CallLUR_Leaf(lookupResults),
@@ -1026,24 +1030,25 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
 
   if (flags[CTRACE_CALLS])  { 
-    char buffera[MAXTERMBUFSIZE];
-    char bufferb[MAXTERMBUFSIZE]; 
-    char bufferc[MAXTERMBUFSIZE]; 
-    memset(bufferb,0,MAXTERMBUFSIZE);
-    memset(buffera,0,MAXTERMBUFSIZE);
-    memset(bufferc,0,MAXTERMBUFSIZE);
+    memset(forest_log_buffer_1->fl_buffer,0,MAXTERMBUFSIZE);
+    memset(forest_log_buffer_2->fl_buffer,0,MAXTERMBUFSIZE);
+    memset(forest_log_buffer_3->fl_buffer,0,MAXTERMBUFSIZE);
     //    sprint_registers(CTXTc  buffera,TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_DEPTH]);
     //    printAnswerTemplate(stddbg,answer_template ,(int) template_size);
-    sprintAnswerTemplate(CTXTc buffera, answer_template, template_size);
+    sprintAnswerTemplate(CTXTc forest_log_buffer_1, 
+			 answer_template, template_size);
     if (ptcpreg)
-      sprint_subgoal(CTXTc bufferb,(VariantSF)producer_sf);     
-    else sprintf(bufferb,"null");
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)producer_sf);     
+    else sprintf(forest_log_buffer_2->fl_buffer,"null");
     if (delayreg) {
-      sprint_delay_list(CTXTc bufferc, delayreg);
-      fprintf(fview_ptr,"nda(%s,%s,%s,%d).\n",buffera,bufferb,bufferc,ctrace_ctr++);
+      sprint_delay_list(CTXTc forest_log_buffer_3, delayreg);
+      fprintf(fview_ptr,"nda(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer,
+	      ctrace_ctr++);
     }
     else 
-      fprintf(fview_ptr,"na(%s,%s,%d).\n",buffera,bufferb,ctrace_ctr++);
+      fprintf(fview_ptr,"na(%s,%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	      forest_log_buffer_2->fl_buffer,ctrace_ctr++);
   }
 #ifdef DEBUG_ABSTRACTION
   printf("AT (na) %p size %d\n",answer_template,template_size);

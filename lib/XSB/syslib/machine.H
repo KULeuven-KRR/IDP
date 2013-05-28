@@ -44,7 +44,8 @@
 	psc_ep/2,
 	psc_set_ep/2,
 	psc_data/2,
-   mark_term_cyclic/1,
+	psc_init_info/1,
+	mark_term_cyclic/1,
 	term_new_mod/3,
 	term_psc/2, 
 	term_type/2, 
@@ -197,6 +198,8 @@
 :- export prompt/2, prompt/3.
 
 :- export breg_retskel/4.
+
+:- export intern_term/2.
 
 /* --------------------- end of file machine.H ------------------------ */
 

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_unify.c,v 1.27 2010/08/19 15:03:37 spyrosh Exp $
+** $Id: tst_unify.c,v 1.28 2012/11/29 18:08:11 tswift Exp $
 ** 
 */
 
@@ -60,7 +60,7 @@
  */
 #define Bind_and_Trail_Symbol(Symbol,Subterm) {	\
    if (IsUnboundTrieVar(Symbol)) {		\
-     Trail_Push(Symbol);			\
+     tstTrail_Push(Symbol);			\
      bld_ref((CPtr)Symbol,Subterm);		\
    }						\
    else						\
@@ -86,7 +86,7 @@
  */
 #define Bind_and_Trail_Vars(UnknownVar,PrologVar) {	\
    if (IsUnboundTrieVar(UnknownVar)) {			\
-     Trail_Push(UnknownVar)				\
+     tstTrail_Push(UnknownVar)				\
      bld_ref((CPtr)UnknownVar,PrologVar);		\
    }							\
    else							\

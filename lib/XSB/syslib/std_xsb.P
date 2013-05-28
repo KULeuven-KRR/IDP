@@ -30,6 +30,7 @@ standard_symbol(abolish, 2, assert).			 %????
 standard_metapredicate_template(abolish,2,(:)).
 
 standard_symbol(abolish_all_tables, 0, tables).		
+standard_symbol(abolish_all_private_tables, 0, thread).		
 
 standard_symbol(abolish_table_call, 1, tables).		
 standard_metapredicate(abolish_table_call,1,1).
@@ -255,6 +256,7 @@ standard_symbol(get_returns, 3, tables).
 standard_symbol(get_returns_for_call, 2, tables).
 
 standard_symbol(halt, 0, standard).
+standard_symbol(halt, 1, standard).
 standard_symbol((hilog), 1, standard).
 standard_symbol(hilog_arg, 3, standard).
 standard_symbol(hilog_functor, 3, standard).
@@ -395,6 +397,7 @@ standard_symbol(shell_to_list, 3, shell).
 standard_symbol(shell_to_list, 4, shell).
 
 standard_symbol(sk_not, 1, tables).
+standard_symbol(not_exists, 1, tables).
 standard_metapredicate_template(sk_not,1,(0)).
 
 standard_symbol(sleep, 1, shell).

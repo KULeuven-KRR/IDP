@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: pathname_xsb.c,v 1.43 2011/08/06 04:17:23 kifer Exp $
+** $Id: pathname_xsb.c,v 1.44 2012/10/12 16:42:57 tswift Exp $
 ** 
 */
 
@@ -136,7 +136,7 @@ char *tilde_expand_filename_norectify(char *filename, char *expanded) {
 			       become the prefix for the absolute filename. */
   char *path_suffix;        /* ptr to a (sub)string containing what will
 			       become the suffix for the absolute filename. */
-  char username[MAXNAME]; /* the username if filename has ~<name> */
+  char username[MAXFILENAME]; /* the username if filename has ~<name> */
   int username_len;
   struct passwd *pw_struct;     /* receives passwd structure from getpwnum() */
 
@@ -343,7 +343,7 @@ static char *get_file_extension(char *path) {
 ** the output path. Returns the second argument.
 */
 static char *rectify_pathname(char *inpath, char *outpath) {
-  char names[MAXPATHNAMES][MAXNAME];  /* array of filenames in inpath.
+  char names[MAXPATHNAMES][MAXFILENAME];  /* array of filenames in inpath.
 					 1st index: enumerates names in inpath;
 					 2nd index: scan file names */
   char expanded_inpath[MAXPATHLEN];
@@ -468,7 +468,7 @@ static char *rectify_pathname(char *inpath, char *outpath) {
 void parse_filename(char *filename, char **dir, char **base, char **extension)
 {
   char absolute_dirname[MAXPATHLEN]; /* abs dirname composed here */
-  char basename[MAXNAME];    	    /* the rest of the filename  */
+  char basename[MAXFILENAME];    	    /* the rest of the filename  */
 
   *base = strcpy(basename, get_file_basename(filename));
   *dir = get_file_dirname(filename, absolute_dirname);

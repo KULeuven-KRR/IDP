@@ -22,7 +22,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: unify_xsb.h,v 1.15 2011/11/11 18:21:39 dwarren Exp $
+** $Id: unify_xsb.h,v 1.16 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -154,6 +154,8 @@ static inline xsbBool not_occurs_in(Cell Var, Cell Term) {
                                                              \
  loc##_label_both_list:                                      \
   if (op1 == op2) {IFTHEN_SUCCEED;}                          \
+  if (isinternstr(op1) && isinternstr(op2) && (op1 != op2))  \
+    { IFTHEN_FAILED; }					     \
                                                              \
   op1 = (Cell)(clref_val(op1));                              \
   op2 = (Cell)(clref_val(op2));                              \
@@ -168,6 +170,8 @@ static inline xsbBool not_occurs_in(Cell Var, Cell Term) {
                                                              \
  loc##_label_both_struct:                                    \
   if (op1 == op2) {IFTHEN_SUCCEED;}                          \
+  if (isinternstr(op1) && isinternstr(op2) && (op1 != op2))  \
+    { IFTHEN_FAILED; }					     \
                                                              \
   /* a != b */                                               \
   op1 = (Cell)(clref_val(op1));                              \

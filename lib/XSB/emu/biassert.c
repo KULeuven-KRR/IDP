@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: biassert.c,v 1.197 2012/07/17 16:12:43 dwarren Exp $
+** $Id: biassert.c,v 1.202 2013/01/09 20:15:33 dwarren Exp $
 ** 
 */
 
@@ -228,6 +228,8 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"getnumcon - - R%d %d\n", Arg1, Arg2)); break;
   case getfloat:
     xsb_dbgmsg((LOG_ASSERT,"getfloat - - R%d %f\n", Arg1, ofloat_val(Arg2))); break;
+  case getinternstr:
+    xsb_dbgmsg((LOG_ASSERT,"getinternstr - - R%d %p\n", Arg1, Arg2)); break;
   case putstr:
     xsb_dbgmsg((LOG_ASSERT,"putstr - - R%d %s/%d\n", Arg1, get_name((Psc)Arg2), get_arity((Psc)Arg2))); break;
   case getstr:
@@ -248,6 +250,8 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
     xsb_dbgmsg((LOG_ASSERT,"uninumcon - - - %d\n", Arg1)); break;
   case unifloat:
     xsb_dbgmsg((LOG_ASSERT,"unifloat - - - %f\n", ofloat_val(Arg1))); break;
+  case uniinternstr:
+    xsb_dbgmsg((LOG_ASSERT,"uniinternstr - - - %p\n", Arg1)); break;
   case xsb_execute:
     xsb_dbgmsg((LOG_ASSERT,"execute - - - 0x%x\n", Arg1)); break;
   case bldnil:
@@ -642,7 +646,7 @@ static int is_frozen_var(CTXTdeclc prolog_term T0, int regster, RegStat Reg, int
       p2c_arity(T0) == 2) {
     if (isref(p2p_arg(T0,1))) {  /* first occurrence */
       if ((*occs = (int)int_val(p2p_arg(T0, 2)) - 1)) {
-	cell(clref_val(T0)+2) = makeint(*occs);
+	get_str_arg(T0,2) = makeint(*occs);
 	*occs = FIRST_OCC_OF_MORE;
 	if (regster < 0) {
 	  regster = reg_get(CTXTc Reg, regster); /* <0->get tempreg else use regster */
@@ -655,7 +659,7 @@ static int is_frozen_var(CTXTdeclc prolog_term T0, int regster, RegStat Reg, int
       c2p_int(CTXTc regster, p2p_arg(T0,1));
     } else {
       if ((*occs = (int)int_val(p2p_arg(T0, 2)) - 1)) {
-	cell(clref_val(T0)+2) = makeint(*occs);
+	get_str_arg(T0,2) = makeint(*occs);
 	*occs = SUBSEQUENT_OCC;
       } else {
 	*occs = LAST_OCC;
@@ -788,6 +792,9 @@ static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
     dbgen_instB_ppvw(getnumcon, Argno, oint_val(T0)); /* getnumcon */
   } else if (isstring(T0)) {
     dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
+  } else if (isinternstr(T0)) {
+    //printf("gen getinternstr: %s/%d\n", get_name(get_str_psc(T0)),get_arity(get_str_psc(T0)));
+    dbgen_instB_ppvw(getinternstr, Argno, (Cell)T0);  /* getinternstr */
   } else if (isfloat(T0)) {
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
   } else if (isref(T0)) {
@@ -880,6 +887,9 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, int isLast,
   } else if (isstring(Sub)) {
     if (unibld) {dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));}
     else {dbgen_instB_pppw(bldcon, (Cell)p2c_string(Sub));}
+    /*  } else if (isinternstr(Sub)) {
+    if (unibld) {dbgen_instB_pppw(uniinternstr, (Cell)Sub);}
+    else {dbgen_instB_pppw(bldinternstr, (Cell)Sub);} ***/
   } else if (isnil(Sub)) {
     if (unibld) {dbgen_instB_ppp(uninil);}
     else {dbgen_instB_ppp(bldnil);}
@@ -1514,7 +1524,7 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int ifSOB, 
 #define NUMHASHSIZES 16
 /* some primes for hash table sizes */
 static int hashsizes_table[NUMHASHSIZES] = {17,389,6151,49157,196613,393241,786433,1572869,
-        3145739,3145739,3145739,3145739,3145739,3145739,3145739,3145739}; 
+		     3145739,6291469,12582917,25165843,50331653,50331653,50331653,50331653}; 
 
 static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
 {
@@ -1604,9 +1614,9 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
 	      if (isboxedinteger(term)) {
 		term = (Cell)boxedint_val(term);
 	      } else if (isboxedfloat(term)) {
-		term = int_val(cell(clref_val(term)+1)) ^
-		  int_val(cell(clref_val(term)+2)) ^
-		  int_val(cell(clref_val(term)+3));
+		term = int_val(get_str_arg(term,1)) ^
+		  int_val(get_str_arg(term,2)) ^
+		  int_val(get_str_arg(term,3));
 	      } else {
 		depth++;
 		argsleft[depth] = get_arity(get_str_psc(term));
@@ -1623,6 +1633,7 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
 	}
       }
     }
+    if (Hashval < 0) Hashval = -Hashval;
     Hashval %= TabSize;
   }
   return Hashval ;
@@ -1657,7 +1668,7 @@ static SOBRef new_SOBblock(int ThisTabSize, int Ind, Psc psc )
    return NewSOB ;
 }
 
-static void addto_hashchain( int AZ, int Hashval, SOBRef SOBrec, CPtr NewInd,
+static void addto_hashchain( int AZ, Integer Hashval, SOBRef SOBrec, CPtr NewInd,
 			     int Arity )
 {
     CPtr *Bucketaddr = (CPtr *) (ClRefHashTable(SOBrec) + Hashval);
@@ -1730,7 +1741,7 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 			 int *Index, int NI, prolog_term Head, int HashTabSize)
 { SOBRef SOBbuff ;
   int Inum, Ind;
-  unsigned int ThisTabSize; int Hashval;
+  unsigned int ThisTabSize; Integer Hashval;
 
   SOBbuff = AZ == 0 ? Pred->FirstClRef : Pred->LastClRef ;
 
@@ -1741,7 +1752,7 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
     //    ThisTabSize = hash_resize(Pred, SOBbuff, HashTabSize); // ?? could move here from above, but more smaller sobs
     Ind = Index[Inum];
     Hashval = hash_val(Ind, Head, ThisTabSize) ;
-    if (Hashval < 0) {Hashval = 0; ThisTabSize = 1;}
+    if (Hashval == -1) {Hashval = 0; ThisTabSize = 1;}
     if (PredOpCode(Pred) == fail || ClRefType(SOBbuff) != SOB_RECORD
 	|| ClRefHashSize(SOBbuff) != ThisTabSize
 	|| ClRefSOBArg(SOBbuff,1) != (byte)(Ind>>16)  /* for byte-back */
@@ -3243,7 +3254,7 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
 /* TLS: changed mem_alloc to nocheck as xsb_throw() depends on this
    predicate.  So if we're out of memory here, we're sunk. */
 
-static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_ep) {
+static inline void allocate_prref_tab_and_tif(CTXTdeclc Psc psc, PrRef *prref, pb *new_ep) {
   int Loc;
 
   if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
@@ -3303,7 +3314,7 @@ PrRef build_prref( CTXTdeclc Psc psc )
   if (get_data(psc) == NULL) 
     set_data(psc,global_mod);
     
-  allocate_prref_tab(CTXTc psc,&p,&new_ep);
+  allocate_prref_tab_and_tif(CTXTc psc,&p,&new_ep);
   p->psc = psc;
   p-> mark = 0;
 
@@ -3365,7 +3376,7 @@ PrRef get_prref(CTXTdeclc Psc psc) {
     if (!prref) {
       pb new_ep;
       struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
-      allocate_prref_tab(CTXTc psc,&prref,&new_ep);
+      allocate_prref_tab_and_tif(CTXTc psc,&prref,&new_ep);
       (&(dispblk->Thread0))[xsb_thread_entry] = (CPtr) new_ep;
     }
 #endif

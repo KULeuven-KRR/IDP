@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: trie_internals.h,v 1.47 2011/06/06 20:20:29 dwarren Exp $
+** $Id: trie_internals.h,v 1.48 2012/11/16 21:50:18 tswift Exp $
 ** 
 */
 
@@ -403,14 +403,13 @@ extern CPtr *VarEnumerator_trail;
 #define IsNewTrieVar(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEVAR_TAG )
 #define IsNewTrieAttv(Symbol)	  ( trievar_val(Symbol) & NEW_TRIEATTV_TAG)
 
+extern int ctrace_ctr;
 #define expand_varenumerators	{					\
     UInteger i;								\
     size_t old_num_trievars = current_num_trievars;			\
     size_t offset = VarEnumerator_trail_top - VarEnumerator_trail;	\
-    current_num_trievars = current_num_trievars + DEFAULT_NUM_TRIEVARS;	\
-    VarEnumerator = (Cell *)mem_realloc(VarEnumerator,			\
-					old_num_trievars*sizeof(Cell),	\
-					current_num_trievars*sizeof(Cell),TABLE_SPACE); \
+    current_num_trievars = 2*current_num_trievars;			\
+    VarEnumerator = (Cell *)mem_alloc(current_num_trievars*sizeof(Cell),TABLE_SPACE); \
     VarEnumerator_trail = (CPtr *)mem_realloc(VarEnumerator_trail,	\
 				      old_num_trievars*sizeof(CPtr),	\
 				      current_num_trievars*sizeof(CPtr),TABLE_SPACE); \
@@ -422,8 +421,8 @@ extern CPtr *VarEnumerator_trail;
     for (i = 0; i < current_num_trievars; i++)				\
       VarEnumerator[i] = (Cell) & (VarEnumerator[i]);			\
     VarEnumerator_trail_top = VarEnumerator_trail + offset; \
-  }
-//    printf("resized %p %p %d %p\n",VarEnumerator,VarEnumerator_trail,offset,VarEnumerator_trail_top); 
+    /*        printf("resized %p %p %d %p %d\n",VarEnumerator,VarEnumerator_trail,offset,VarEnumerator_trail_top,ctrace_ctr); */ \
+  }									
 
 #define StandardizeVariable(dFreeVar,Index) {		\
     if ((signed)Index < (signed)current_num_trievars)	\

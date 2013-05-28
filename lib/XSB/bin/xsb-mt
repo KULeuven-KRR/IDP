@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# /Users/macuser/XSBtemp/XSB/bin/xsb-mt.  Generated from xsb.in by configure.
+# /Users/macuser/XSBtemp2/XSB/bin/xsb-mt.  Generated from xsb.in by configure.
 
 ## File:      xsb.in
 ## Author(s): kifer
@@ -22,7 +22,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: xsb.in,v 1.16 2011/09/09 10:18:44 kifer Exp $
+## $Id: xsb.in,v 1.18 2012/10/18 19:06:57 kifer Exp $
 ## 
 ##
 
@@ -45,8 +45,9 @@ suffix=-mt
 
 invocation_name=$0
 
-# if we've a symbolic link, then extract the full path of the target
+# if we have a symbolic link, then extract the full path of the target
 if test -h $invocation_name ; then
+    # NOT using readlink, for portability
     invocation_name=`dirname $invocation_name`"/"`stat -f %Y $invocation_name`
 fi
 
@@ -74,6 +75,8 @@ thisfile=`echo $thisfile | sed 's,//*\.//*,/,g'`
 scriptdir=`dirname $thisfile`
 topdir=`dirname $scriptdir`
 
+# NOT using i386-apple-darwin10.8.0-mt so that the same physical install
+# would work for different architectures
 config=`$topdir/build/config.guess`
 canonical=`$topdir/build/config.sub $config`
 exec_dir=$topdir/config/${canonical}${suffix}

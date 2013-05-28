@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: context.h,v 1.89 2011/11/28 01:17:39 tswift Exp $
+** $Id: context.h,v 1.92 2013/04/17 22:02:35 tswift Exp $
 **
 */
 
@@ -27,6 +27,7 @@
 
 #include "cell_def_xsb.h"
 #include "basictypes.h"
+#include "basicdefs.h"
 
 #include "setjmp_xsb.h"
 #include "flag_defs_xsb.h"
@@ -236,6 +237,9 @@ struct th_context
   Cell *_term_stack;
   size_t _term_stacksize;
 
+  int *_depth_stack;
+  int _depth_stacksize;
+
   int _global_trieinstr_vars_num;
 
   Cell _TrieVarBindings[DEFAULT_NUM_TRIEVARS];
@@ -278,7 +282,7 @@ DynamicStack  _tstTrail;
   int _gSizeTmplt;
 
   /* delay, simplification, etc. */
-  Cell _cell_array[500];
+  Cell _cell_array[MAXTERMBUFSIZE];
   CPtr *_copy_of_var_addr;
   int _copy_of_num_heap_term_vars;
 
@@ -336,6 +340,14 @@ int _funstk_size;
 struct funstktype *_funstk;
 struct opstktype *_opstk;
 struct vartype *_rc_vars;
+
+  forestLogBuffer _forest_log_buffer_1;
+  forestLogBuffer _forest_log_buffer_2;
+  forestLogBuffer _forest_log_buffer_3;
+
+  forest_log_buffer_struct _fl_buffer_1;
+  forest_log_buffer_struct _fl_buffer_2;
+  forest_log_buffer_struct _fl_buffer_3;
 
   /********** Global variables for tokenizing **********/
 struct xsb_token_t *_token;
@@ -578,6 +590,9 @@ typedef struct th_context th_context ;
 #define term_stack		(th->_term_stack)
 #define term_stacksize		(th->_term_stacksize)
 
+#define depth_stack		(th->_depth_stack)
+#define depth_stacksize		(th->_depth_stacksize)
+
 #define global_trieinstr_vars_num		(th->_global_trieinstr_vars_num)
 
 #define private_tif_list        (th-> _private_tif_list)
@@ -612,6 +627,14 @@ typedef struct th_context th_context ;
 #define cur_tr_chunk		(th->_cur_tr_chunk)
 #define cur_tr_top		(th->_cur_tr_top)
 #define cur_tr_limit		(th->_cur_tr_limit)
+
+#define fl_buffer_1             (th->_fl_buffer_1)
+#define fl_buffer_2             (th->_fl_buffer_2)
+#define fl_buffer_3             (th->_fl_buffer_3)
+
+#define forest_log_buffer_1     (th->_forest_log_buffer_1)
+#define forest_log_buffer_2     (th->_forest_log_buffer_2)
+#define forest_log_buffer_3     (th->_forest_log_buffer_3)
 
 #define LSBuff			(th->_LSBuff)
 

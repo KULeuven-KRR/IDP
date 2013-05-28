@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: error_xsb.c,v 1.102 2012/08/02 21:58:56 tswift Exp $
+** $Id: error_xsb.c,v 1.108 2013/04/19 13:48:14 tswift Exp $
 ** 
 */
 
@@ -54,6 +54,7 @@
 #include "emuloop.h"
 #include "orient_xsb.h"
 #include "wind2unix.h"
+#include "heap_xsb.h"
 
 extern void remove_incomplete_tries(CTXTdeclc CPtr);
 extern PrRef get_prref(CTXTdeclc Psc psc);
@@ -66,6 +67,8 @@ FILE *stdmsg;	     	     	  /* stream for XSB benign messages */
 FILE *stddbg;	     	     	  /* stream for XSB debug msgs */
 FILE *stdwarn;	     	     	  /* stream for XSB warnings */
 FILE *stdfdbk;	     	     	  /* stream for XSB feedback messages */
+FILE *logfile;			  /* stream for logging stuff... */
+int logfile_opened = 0;		  /* bit to say if logfile has been opened */
 
 /*----------------------------------------------------------------------*/
 
@@ -156,25 +159,33 @@ DllExport void call_conv exit_xsb(char *description)
 extern void print_cp_backtrace();
 #endif
 
-/* TLS: now frees Ball, which was assumed to be malloced.  Use
-   mem_alloc_nocheck to avoid problems when thowing a memory error. */
+
 DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, size_t Ball_len)
 {
   Psc exceptballpsc;
   PrRef Prref;
   int isnew;
   ClRef clause;
-  Cell *tptr;
+  Cell *hreg_start;
   prolog_term term_to_assert;
-  Cell *space_for_ball_assert;
 
   size_t space_for_ball_assert_len = 3*sizeof(Cell);
 
-  space_for_ball_assert = (Cell *) mem_alloc_nocheck(space_for_ball_assert_len,
-						     LEAK_SPACE);
-  if (!space_for_ball_assert) 
-    xsb_exit("[Resource] Out of memory");
+  if (flags[CTRACE_CALLS])  {			
+    sprintCyclicTerm(CTXTc forest_log_buffer_1, Ball);
+    if (ptcpreg) {						
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)ptcpreg);		
+    }								
+    else sprintf(forest_log_buffer_2->fl_buffer,"null");		       
+    fprintf(fview_ptr,"throw(%s,%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	    forest_log_buffer_2->fl_buffer,ctrace_ctr++); 
+  }
 
+  if (heap_local_overflow(space_for_ball_assert_len)) {
+    xsb_exit("no heap space in xsb_throw_internal");
+  }
+
+  /*    
   if (flags[CTRACE_CALLS])  { 
     char buffera[MAXTERMBUFSIZE];
     if (ptcpreg) 
@@ -182,23 +193,23 @@ DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, size_t B
     else sprintf(buffera,"null");
     fprintf(fview_ptr,"err(%s,%d).\n",buffera,ctrace_ctr++);
   }
+  */
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
 					&isnew));
-  tptr = space_for_ball_assert;
-  term_to_assert = makecs(tptr);
-  bld_functor(tptr, exceptballpsc); tptr++;
-  bld_int(tptr, xsb_thread_self()); tptr++;
-  cell(tptr) = Ball; 
+  hreg_start = hreg;
+  term_to_assert = makecs(hreg);
+  bld_functor(hreg, exceptballpsc); hreg++;
+  bld_int(hreg, xsb_thread_self()); hreg++;
+  cell(hreg) = Ball; hreg++;
 
   assert_code_to_buff_p(CTXTc term_to_assert);
   /* need arity of 3, for extra cut_to arg */
   Prref = get_prref(CTXTc exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
-  mem_dealloc(cs_val(Ball),Ball_len,LEAK_SPACE);
-  mem_dealloc(space_for_ball_assert,space_for_ball_assert_len,LEAK_SPACE);
   /* reset WAM emulator state to Prolog catcher */
+  hreg = hreg_start;  // reclaim heap space no longer needed.
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw_internal!");
   /* Resume main emulator instruction loop */
   pcreg = (pb)&fail_inst;
@@ -214,58 +225,58 @@ DllExport void call_conv xsb_throw_memory_error(int type)
 #endif
 
   if (flags[CTRACE_CALLS])  { 
-    char buffera[MAXTERMBUFSIZE];
     if (ptcpreg) 
-      sprint_subgoal(CTXTc buffera, (VariantSF)ptcpreg); 
-    else sprintf(buffera,"null");
-    fprintf(fview_ptr,"err(%s,%d).\n",buffera,ctrace_ctr++);
+      sprint_subgoal(CTXTc forest_log_buffer_1,0, (VariantSF)ptcpreg); 
+    else sprintf(forest_log_buffer_1->fl_buffer,"null");
+    fprintf(fview_ptr,"err(%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	    ctrace_ctr++);
   }
 
   flags[MEMORY_ERROR_FLAG] = type;
-  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw_internal!");
+  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw_memory_error!");
   /* Resume main emulator instruction loop */
   pcreg = (pb)&fail_inst;
   longjmp(xsb_abort_fallback_environment, XSB_ERROR);
 }
 
+/* this function seems never used??*/
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 {
   Psc exceptballpsc;
   PrRef Prref;
   int isnew;
   ClRef clause;
-  Cell *tptr;
+  Cell *hreg_start;
   prolog_term term_to_assert;
-  Cell *space_for_ball_assert = 0;
+  size_t ball_len = 3*sizeof(Cell);
 
-  if (!space_for_ball_assert) {
-    /* 3 cells needed for term */
-    space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell),LEAK_SPACE);
-    if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_throw");
   }
+  printf("in xsb_throw\n");
 
   if (flags[CTRACE_CALLS])  { 
-    char buffera[MAXTERMBUFSIZE];
     if (ptcpreg) 
-      sprint_subgoal(CTXTc buffera, (VariantSF)ptcpreg); 
-    else sprintf(buffera,"null");
-    fprintf(fview_ptr,"err(%s,%d).\n",buffera,ctrace_ctr++);
+      sprint_subgoal(CTXTc forest_log_buffer_1,0, (VariantSF)ptcpreg); 
+    else sprintf(forest_log_buffer_1->fl_buffer,"null");
+    fprintf(fview_ptr,"err(%s,%d).\n",forest_log_buffer_1->fl_buffer,
+	    ctrace_ctr++);
   }
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
 					&isnew));
-  tptr = space_for_ball_assert;
-  term_to_assert = makecs(tptr);
-  bld_functor(tptr, exceptballpsc); tptr++;
-  bld_int(tptr, xsb_thread_self()); tptr++;
-  cell(tptr) = Ball; 
+  hreg_start = hreg;
+  term_to_assert = makecs(hreg);
+  bld_functor(hreg, exceptballpsc); hreg++;
+  bld_int(hreg, xsb_thread_self()); hreg++;
+  cell(hreg) = Ball; hreg++;
 
   assert_code_to_buff_p(CTXTc term_to_assert);
   /* need arity of 3, for extra cut_to arg */
-  Prref = (PrRef)get_ep(exceptballpsc);
+  Prref = get_prref(CTXTc exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
-  mem_dealloc(space_for_ball_assert,3*sizeof(Cell),LEAK_SPACE);
+  hreg = hreg_start; // reclaim heap space no longer needed
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit( "Unwind_stack failed in xsb_throw!");
 
@@ -287,30 +298,32 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
   snprintf(message, ERRMSGLEN, "in arg %d of predicate %s)",arg,predicate);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_domain_error");
+  }
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("domain_error",2,
+  error_rec = hreg;
+  hreg += 4;  // length of error/3 rec
+  bld_string(error_rec+2,string_find(message,1)); // 2nd field
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT)); // 3rd field updates hreg
+  bld_cs(error_rec+1,(Cell)hreg);
+  bld_functor(hreg, pair_psc(insert("domain_error",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(valid_domain,1));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  bld_string(hreg,string_find(valid_domain,1));
+  hreg++;
+  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -323,7 +336,7 @@ void call_conv xsb_basic_evaluation_error(char *message,int type)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
+  Cell *error_rec;
   size_t ball_len = 10*sizeof(Cell);
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
@@ -332,53 +345,61 @@ void call_conv xsb_basic_evaluation_error(char *message,int type)
   th = find_context(tid);
 #endif
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(hreg, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg += 4;
 
   if (type == EVALUATION_INSTANTIATION_ERROR) {
-    bld_string(tptr,string_find("instantiation_error",1));
-    tptr++;
+    bld_string(error_rec+1,string_find("instantiation_error",1));
 #ifdef MULTI_THREAD
     snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-    bld_string(tptr,string_find(mtmessage,1));
+    bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-    bld_string(tptr,string_find(message,1));
+    bld_string(error_rec+2,string_find(message,1));
 #endif
-    tptr++;
-    bld_copy(tptr,build_xsb_backtrace(CTXT));
+    bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
   }
   else if (type == EVALUATION_DOMAIN_ERROR) {
-    bld_cs(tptr,(Cell) (tptr+3));
-    tptr++;
 #ifdef MULTI_THREAD
     snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-    bld_string(tptr,string_find(mtmessage,1));
+    bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-    bld_string(tptr,string_find(message,1));
+    bld_string(error_rec+2,string_find(message,1));
 #endif
-    tptr++;
-    bld_copy(tptr,build_xsb_backtrace(CTXT));
-    tptr++;
-    bld_functor(tptr, pair_psc(insert("evaluation_error",1,(Psc)flags[CURRENT_MODULE],&isnew)));
-    tptr++;
-    bld_string(tptr,string_find("undefined",1));
+    bld_copy(error_rec+3,build_xsb_backtrace(CTXT)); // updates hreg
+    bld_cs(error_rec+1,(Cell) (hreg));
+    bld_functor(hreg, pair_psc(insert("evaluation_error",1,(Psc)flags[CURRENT_MODULE],&isnew)));
+    hreg++;
+    bld_string(hreg,string_find("undefined",1));
+    hreg++;
   }
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }
 
-DllExport void call_conv xsb_evaluation_error(int type,char *description, ...)
+DllExport void call_conv xsb_evaluation_error(CTXTdeclc int type,char *description, ...)
 {
   char message[MAXBUFSIZE];
   va_list args;
 
-  va_start(args, description);
-  strcpy(message, "++Error[XSB]: [Runtime/C] ");
-  vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
-  if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
-  va_end(args);
-  xsb_basic_evaluation_error(message,type);
+  Pair undefPair;
+  struct Table_Info_Frame * Utip;		
+  int isNew;
+
+  if (flags[EXCEPTION_ACTION]) {
+    undefPair = insert("floundered_undefined",1,pair_psc(insert_module(0,"tables")),&isNew); 
+    //    printf("undefPair %p\n",undefPair);
+    Utip = get_tip(CTXTc pair_psc(undefPair));				
+    delay_negatively(TIF_Subgoals(Utip));					
+  }
+  else {
+    va_start(args, description);
+    strcpy(message, "++Error[XSB]: [Runtime/C] ");
+    vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
+    if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
+    va_end(args);
+    xsb_basic_evaluation_error(message,type);
+  }
 }
 
 /*****************/
@@ -388,30 +409,32 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
   snprintf(message,ERRMSGLEN,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_domain_error");
+  }
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("existence_error",2,
+  error_rec = hreg;
+  hreg += 4;  // length of error/3 rec
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
+  bld_functor(hreg, pair_psc(insert("existence_error",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(object,1));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  bld_string(hreg,string_find(object,1));
+  hreg++;
+  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
@@ -423,21 +446,22 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 void call_conv xsb_instantiation_error(CTXTdeclc const char *predicate,int arg) {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec; 
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_domain_error");
+  }
   snprintf(message,ERRMSGLEN," in arg %d of predicate %s",arg,predicate);
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;  
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find("instantiation_error",1));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  hreg += 4;
+  bld_string(error_rec+1,string_find("instantiation_error",1));
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -448,22 +472,24 @@ void call_conv xsb_misc_error(CTXTdeclc char *inmsg,const char *predicate,int ar
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;  
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  printf("in xsb_misc_error\n");
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_domain_error");
+  }
   snprintf(message,ERRMSGLEN," in predicate %s/%d: %s",predicate,arity,inmsg);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;  
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find("misc_error",1));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  hreg += 4;
+  bld_string(error_rec+1,string_find("misc_error",1));
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -485,33 +511,35 @@ void call_conv xsb_permission_error(CTXTdeclc
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_permission_error");
+  }
   snprintf(message,ERRMSGLEN,"in predicate %s/%d)",predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(hreg, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg += 4;
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  bld_functor(hreg, pair_psc(insert("permission_error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("permission_error",3,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(operation,1));
-  tptr++;
-  bld_string(tptr,string_find(object,1));
-  tptr++;
-  //  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  if (culprit == (Cell)NULL) bld_string(tptr,string_find("",1)); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  bld_string(hreg,string_find(operation,1));
+  hreg++;
+  bld_string(hreg,string_find(object,1));
+  hreg++;
+  //  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  if (culprit == (Cell)NULL) bld_string(hreg,string_find("",1)); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -522,30 +550,33 @@ void call_conv xsb_representation_error(CTXTdeclc char *inmsg,Cell culprit,const
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_representation_error");
+  }
   snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arity,predicate);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("representation_error",2,
+  hreg += 4;
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell)(hreg));
+
+  bld_functor(hreg, pair_psc(insert("representation_error",2,
                                     (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(inmsg,1));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  bld_string(hreg,string_find(inmsg,1));
+  hreg++;
+  printf("culprit string: %s\n",string_val(culprit));
+  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -559,48 +590,38 @@ void call_conv xsb_representation_error(CTXTdeclc char *inmsg,Cell culprit,const
 /* Memory errors are resource errors: therefore we have to be careful
    when handling the memory for throwing the error itself.
    Accordingly, varstrings are used rather than string finds to avoid
-   possible overflow of string table, and there is a malloc and
-   immediate free to make sure we'll have enough for messages to throw
-   the error.  Similarly, mem_alloc_nocheck() is used to avoid
-   problems in allocating memory for ball.*/
+   possible overflow of string table. */
 
 void call_conv xsb_resource_error(CTXTdeclc char *resource,
 					const char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
-  tptr = (Cell *) malloc(1000);
-  if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-  else free(tptr);
-
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_resource_error");
+  }
   snprintf(message,ERRMSGLEN,"in predicate %s/%d)",predicate,arity);
   XSB_StrSet(&MsgBuf,message);
   XSB_StrSet(&FlagBuf,resource);
 
-  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
-  if (!tptr) 
-    xsb_exit( "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  //  bld_string(tptr,string_find(message,1));
-  bld_string(tptr,MsgBuf.string);
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("resource_error",1,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
+  hreg += 4;
+  bld_string(error_rec+2,MsgBuf.string);
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  bld_string(tptr,FlagBuf.string);
+  bld_functor(hreg, pair_psc(insert("resource_error",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg++;
+  bld_string(hreg,FlagBuf.string);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
@@ -617,7 +638,7 @@ void call_conv xsb_resource_error_nopred(char *resource, char *description,...)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; 
+  CPtr error_rec;
   size_t ball_len = 10*sizeof(Cell);
   char message[MAXBUFSIZE];
   va_list args;
@@ -627,86 +648,39 @@ void call_conv xsb_resource_error_nopred(char *resource, char *description,...)
   th = find_context(tid);
 #endif
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+  }
+
+  printf("here resource error\n");
   va_start(args, description);
   strcpy(message, " ");
   vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
   if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
   va_end(args);
 
-  tptr = (Cell *) malloc(1000);
-  if (!tptr) 
-    xsb_exit( "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-  else free(tptr);
-
   XSB_StrSet(&MsgBuf,message);
   XSB_StrSet(&FlagBuf,resource);
 
-  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
-  if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  bld_functor(hreg, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  //  bld_string(tptr,string_find(message,1));
-  bld_string(tptr,MsgBuf.string);
-  tptr++;
-  bld_copy(tptr,makenil);
-  tptr++;
-  //  bld_functor(tptr, pair_psc(insert("resource_error",1,    (Psc)flags[CURRENT_MODULE],&isnew)));
-  bld_functor(tptr, pair_psc(insert("resource_error",1,    global_mod,&isnew)));
-  tptr++;
+  hreg += 4;
+  bld_string(error_rec+2,MsgBuf.string);
+  bld_copy(error_rec+3,makenil);
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  bld_string(tptr,FlagBuf.string);
+  bld_functor(hreg, pair_psc(insert("resource_error",1,global_mod,&isnew)));
+  hreg++;
+  bld_string(hreg,FlagBuf.string);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
 
-/*
-void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
-{
-  prolog_term ball_to_throw;
-  int isnew;
-  Cell *tptr; 
-  size_t ball_len = 10*sizeof(Cell);
-
-  tptr = (Cell *) malloc(1000);
-  if (!tptr) 
-    xsb_exit( "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-  else free(tptr);
-
-  XSB_StrSet(&MsgBuf,message);
-  XSB_StrSet(&FlagBuf,resource);
-
-  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
-  if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  //  bld_string(tptr,string_find(message,1));
-  bld_string(tptr,MsgBuf.string);
-  tptr++;
-  bld_copy(tptr,makenil);
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("resource_error",1,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-
-  bld_string(tptr,FlagBuf.string);
-
-  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
-
-}
-*/
 #undef MsgBuf
 #undef FlagBuf
 
@@ -717,29 +691,30 @@ void call_conv xsb_syntax_error(CTXTdeclc char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
+  CPtr error_rec;
   size_t ball_len = 10*sizeof(Cell);
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
   int tid = xsb_thread_self();
 #endif
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_syntax_error");
+  }
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
 
-  tptr++;
-  bld_string(tptr,string_find("syntax_error",1));
-  tptr++;
+  hreg += 4;
+  bld_string(error_rec+1,string_find("syntax_error",1));
 #ifdef MULTI_THREAD
   snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-  bld_string(tptr,string_find(mtmessage,1));
+  bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-  bld_string(tptr,string_find(message,1));
+  bld_string(error_rec+2,string_find(message,1));
 #endif
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }			       
 
@@ -752,28 +727,30 @@ void call_conv xsb_syntax_error_non_compile(CTXTdeclc Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_syntax_error_non_compile");
+  }
   snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arg,predicate);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg += 4;
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  bld_functor(hreg, pair_psc(insert("syntax_error_1",1,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("syntax_error_1",1,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
@@ -783,7 +760,7 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
+  CPtr error_rec;
   size_t ball_len = 10*sizeof(Cell);
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
@@ -792,22 +769,22 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
   //  th = find_context(xsb_thread_self());
 #endif
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_table_error");
+  }
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-
-  tptr++;
-  bld_string(tptr,string_find("table_error",1));
-  tptr++;
+  hreg += 4;
+  bld_string(error_rec+1,string_find("table_error",1));
 #ifdef MULTI_THREAD
   snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-  bld_string(tptr,string_find(mtmessage,1));
+  bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-  bld_string(tptr,string_find(message,1));
+  bld_string(error_rec+2,string_find(message,1));
 #endif
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }			       
 
@@ -821,41 +798,34 @@ void call_conv xsb_new_table_error(CTXTdeclc char *subtype, char *usr_msg,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
-  tptr = (Cell *) malloc(1000);
-  if (!tptr) 
-    xsb_exit( "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-  else free(tptr);
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+  }
 
   snprintf(message,ERRMSGLEN,"%s in predicate %s/%d)",usr_msg,predicate,arity);
   XSB_StrSet(&MsgBuf,message);
   XSB_StrSet(&FlagBuf,subtype);
 
-  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
-  if (!tptr) 
-    xsb_exit( "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  //  bld_string(tptr,string_find(message,1));
-  bld_string(tptr,MsgBuf.string);
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("typed_table_error",1,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
+  hreg += 4;
+  bld_string(error_rec+2,MsgBuf.string);
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  bld_string(tptr,string_find(FlagBuf.string,1));
+  bld_functor(hreg, pair_psc(insert("typed_table_error",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg++;
+  bld_string(hreg,string_find(FlagBuf.string,1));
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
-
 }
 
 #undef MsgBuf
@@ -868,33 +838,34 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[ERRMSGLEN];
+  CPtr error_rec;
+  char message[ERRMSGLEN];
   size_t ball_len = 10*sizeof(Cell);
 
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_type_error");
+  }
   snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arg,predicate);
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg += 4;
+  bld_string(error_rec+2,string_find(message,1));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
+  bld_cs(error_rec+1,(Cell) (hreg));
 
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  bld_functor(hreg, pair_psc(insert("type_error",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("type_error",2,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(valid_type,1));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
+  hreg++;
+  bld_string(hreg,string_find(valid_type,1));
+  hreg++;
+  if (culprit == (Cell)NULL) bld_int(hreg,0); 
+  else bld_ref(hreg,culprit);
+  hreg++;
 
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
-
 }
 
 /**************/
@@ -903,29 +874,30 @@ void call_conv xsb_unrecoverable_error(CTXTdeclc char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
+  CPtr error_rec;
   size_t ball_len = 10*sizeof(Cell);
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
   int tid = xsb_thread_self();
 #endif
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_unrecoverable_error");
+  }
+
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
 
-  tptr++;
-  bld_string(tptr,string_find("unrecoverable_error",1));
-  tptr++;
+  bld_string(error_rec+1,string_find("unrecoverable_error",1));
 #ifdef MULTI_THREAD
   snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-  bld_string(tptr,string_find(mtmessage,1));
+  bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-  bld_string(tptr,string_find(message,1));
+  bld_string(error_rec+2,string_find(message,1));
 #endif
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }			       
 
@@ -935,7 +907,7 @@ void call_conv xsb_basic_abort(char *message)
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr;
+  CPtr error_rec;
   size_t ball_len = 10*sizeof(Cell);
 #ifdef MULTI_THREAD
   char mtmessage[MAXBUFSIZE];
@@ -949,21 +921,22 @@ void call_conv xsb_basic_abort(char *message)
 	xsb_initialization_exit(message) ;
   }
 
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
+  if (heap_local_overflow(ball_len)) {
+    xsb_exit("no heap space in xsb_basic_abort");
+  }
 
-  tptr++;
-  bld_string(tptr,string_find("misc_error",1));
-  tptr++;
+  ball_to_throw = makecs(hreg);
+  error_rec = hreg;
+  bld_functor(error_rec, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
+  hreg += 4;
+  bld_string(error_rec+1,string_find("misc_error",1));
 #ifdef MULTI_THREAD
   snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
-  bld_string(tptr,string_find(mtmessage,1));
+  bld_string(error_rec+2,string_find(mtmessage,1));
 #else  
-  bld_string(tptr,string_find(message,1));
+  bld_string(error_rec+2,string_find(message,1));
 #endif
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  bld_copy(error_rec+3,build_xsb_backtrace(CTXT));
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }
 
@@ -1038,7 +1011,7 @@ void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
   print_pterm(CTXTc op1, TRUE, &str_op1);
   print_pterm(CTXTc op2, TRUE, &str_op2);
   if (isref(op1) || isref(op2)) {
-    xsb_evaluation_error(EVALUATION_INSTANTIATION_ERROR,
+    xsb_evaluation_error(CTXTc EVALUATION_INSTANTIATION_ERROR,
 			 "Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
 			 OP, "   Goal:",
 			 (isref(op1)? "_Var": str_op1.string),
@@ -1050,7 +1023,7 @@ void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
     //    xsb_abort("Wrong domain in evaluable function %s/2\n%s %s %s %s found",
     //	      OP, "         Arithmetic expression expected, but",
     //	      str_op1.string, OP, str_op2.string);
-    xsb_evaluation_error(EVALUATION_DOMAIN_ERROR,
+    xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,
 			 "Wrong domain in evaluable function %s/2\n%s %s %s %s found",
 			 OP, "         Arithmetic expression expected, but",
 			 str_op1.string, OP, str_op2.string);
@@ -1108,6 +1081,22 @@ DllExport void call_conv error_xsb (char *description)
 #if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
 #endif
+}
+
+DllExport void call_conv xsb_log(char *description, ...)
+{
+  va_list args;
+
+  if (flags[LOG_ALL_FILES_USED]) {
+    if (!logfile_opened) {
+      logfile = fopen("XSB_LOGFILE.txt","w");
+      logfile_opened = 1;
+    }
+    va_start(args, description);
+    vfprintf(logfile, description, args);
+    va_end(args);
+    fflush(logfile);
+  }
 }
 
 DllExport void call_conv xsb_warn(char *description, ...)
@@ -1309,7 +1298,7 @@ void print_incomplete_tables_on_abort(CTXTdecl) {
   char etcdir[MAXPATHLEN];
   char * tempnamptr;
 
-  if (openreg < COMPLSTACKBOTTOM && flags[ABORT_PRE_ACTION]  ) {
+  if (openreg < COMPLSTACKBOTTOM && flags[EXCEPTION_PRE_ACTION]  ) {
     snprintf(etcdir,MAXPATHLEN,"%s%cetc",install_dir_gl,SLASH);
     tempnamptr = tempnam(etcdir,"scc_dump_");
     strncpy(abort_file_gl,tempnamptr,2*MAXPATHLEN);

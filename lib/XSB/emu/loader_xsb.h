@@ -19,13 +19,16 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: loader_xsb.h,v 1.13 2011/05/18 19:21:40 dwarren Exp $
+** $Id: loader_xsb.h,v 1.14 2012/10/12 16:42:57 tswift Exp $
 ** 
 */
 
 #include "context.h"
+#include "basictypes.h"
 
-#define FOREIGN_NAMELEN   128
+//#define FOREIGN_NAMELEN   128
+#define FOREIGN_NAMELEN   MAXFILENAME
+
 #define SHORT_LDOPTIONLEN 254
 
 /* Data structures holding the compiled code */

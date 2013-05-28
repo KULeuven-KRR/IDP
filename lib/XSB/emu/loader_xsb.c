@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: loader_xsb.c,v 1.93 2011/09/14 18:24:26 dwarren Exp $
+** $Id: loader_xsb.c,v 1.95 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -716,7 +716,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   else {
     if ((t_env&0x7) == T_IMPORTED || t_definedas) {
       byte t_modlen;
-      char modname[MAXNAME+1];
+      char modname[MAXFILENAME+1];
 
       dummy = get_obj_byte(&t_modlen);
       dummy = get_obj_string(modname, t_modlen);
@@ -725,7 +725,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       mod = temp_pair->psc_ptr;
       if (t_definedas) {
 	byte t_defaslen;
-	char defasname[MAXNAME+1];
+	char defasname[MAXFILENAME+1];
 	dummy = get_obj_byte(&t_defaslen);
 	dummy = get_obj_string(defasname, t_defaslen);
 	defasname[t_defaslen] = '\0';
@@ -1110,6 +1110,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 /*									*/
 /************************************************************************/
 
+//extern FILE *logfile;
 static int warned_old_obj = 0;	/* warned the user about old object files ? */
 
 /* See description of magic numbers in foreign.P -- Is ...5 obsolete? */
@@ -1120,7 +1121,14 @@ byte *loader(CTXTdeclc char *file, int exp)
   byte *first_inst = NULL;
 
   fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
+  //  fprintf(logfile,"opening: %s (%s)\n",file,"rb");
   if (!fd) return NULL;
+  if (flags[LOG_ALL_FILES_USED]) {
+    char current_dir[MAX_CMD_LEN];
+    getcwd(current_dir, MAX_CMD_LEN-1);
+    xsb_log("%s: %s\n",current_dir,file);
+  }
+
   if (flags[HITRACE]) {
     if (file[0] == '.') {
       char dir[200]; char *res;

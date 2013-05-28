@@ -20,7 +20,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tries.c,v 1.169 2012/08/11 21:41:46 tswift Exp $
+** $Id: tries.c,v 1.182 2013/04/25 18:20:44 tswift Exp $
 ** 
 */
 
@@ -98,8 +98,8 @@ char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
 /*----------------------------------------------------------------------*/
 /* Safe assignment -- can be generalized by type.
    CPtr can be abstracted out */
-#define safe_assign(ArrayNam,Index,Value,ArraySz) {\
-   if (Index >= ArraySz) {\
+#define safe_assign(ArrayNam,Index,Value,ArraySz) {		\
+    if (Index >= ArraySz-1) {					\
      trie_expand_array(CPtr,ArrayNam,ArraySz,Index,"var_addr");\
    }\
    ArrayNam[Index] = Value;\
@@ -112,6 +112,16 @@ char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
  answer_return to copy information out of a trie and into a ret/n
  structure.  Its also used by table predicates to get delay lists.
  */
+
+#define BOUNDED_RATIONALITY 1
+
+#if defined(BOUNDED_RATIONALITY)
+
+#ifndef MULTI_THREAD
+static size_t depth_stacksize;
+static int *depth_stack;
+#endif
+#endif
 
 #ifndef MULTI_THREAD
 static size_t addr_stack_index = 0;
@@ -130,9 +140,9 @@ static int addr_stack_size    = DEFAULT_ARRAYSIZ;
 /*----------------------------------------------------------------------*/
 /*****************Term Stack*************/
 #ifndef MULTI_THREAD
-static int  term_stack_index = -1;
+static int  term_stack_index;
 static Cell *term_stack;
-static size_t term_stacksize = DEFAULT_ARRAYSIZ;
+static size_t term_stacksize;
 #endif
 
 #define pop_Term_Stack term_stack[term_stack_index--]
@@ -259,6 +269,11 @@ void init_trie_aux_areas(CTXTdecl)
   term_stacksize = 0;
   term_stack = NULL;
   term_stack_index = -1;
+
+#if defined(BOUNDED_RATIONALITY)
+  depth_stacksize = 0;
+  depth_stack = NULL;
+#endif
 
   var_addr_arraysz = 0;
   var_addr = NULL;
@@ -454,6 +469,7 @@ BTNptr newBasicTrie(CTXTdeclc Cell symbol, int trie_type) {
  *  that of the child pointer field of the node which contains the
  *  just-processed symbol.
  */
+extern int tracing_activated;
 
 #define one_btn_chk_ins(Found,item,TrieType) {				\
  									\
@@ -761,15 +777,15 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       break;								\
     case XSB_LIST:							\
       one_btn_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
-      pdlpush(cell(clref_val(xtemp1)+1));				\
-      pdlpush(cell(clref_val(xtemp1)));					\
+      pdlpush(get_list_tail(xtemp1));					\
+      pdlpush(get_list_head(xtemp1));					\
       break;								\
     case XSB_STRUCT:							\
-      psc = (Psc) follow(cs_val(xtemp1));				\
+      psc = get_str_psc(xtemp1);					\
       item = makecs(psc);						\
       one_btn_chk_ins(flag, item, TrieType);				\
       for (j = get_arity(psc); j>=1 ; j--) {				\
-	pdlpush(cell(clref_val(xtemp1)+j));				\
+	pdlpush(get_str_arg(xtemp1,j));					\
       }									\
       break;								\
     case XSB_ATTV:							\
@@ -812,24 +828,40 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  * 
  */
 
-/* Need to be able to expand */
-int depth_stack[100];
 
+/* Need to be able to expand */
+/*****************Term Stack*************/
 #if defined(BOUNDED_RATIONALITY)
-#define depth_stack_push(Num) {			\
-    depth_ctr++;				\
-    depth_stack[depth_ctr] = Num;	\
-  }
+
+#ifndef MULTI_THREAD
+static size_t depth_stacksize;
+static int *depth_stack;
+#endif
 
 #define depth_stack_pop {			\
     if (depth_ctr > 0) {					\
       depth_stack[depth_ctr]--;					\
-      while (depth_stack[depth_ctr] == 0 && depth_ctr > 0) {	\
+      while (depth_ctr > 0 && depth_stack[depth_ctr] == 0 ) {	\
 	depth_ctr--;					\
 	depth_stack[depth_ctr]--;			\
       }							\
     }							\
   }
+
+#define depth_stack_push(Num) {\
+    if (depth_ctr+1 >= depth_stacksize) {\
+      /*      printf("expanding depth stack from %d to %d\n",depth_stacksize,2*depth_stacksize); */ \
+       trie_expand_array(int,depth_stack,depth_stacksize,0,"depth_stack");\
+    }\
+    depth_stack[++depth_ctr] = Num;\
+}
+
+//int depth_stack[1000];
+//#define depth_stack_push(Num) {		
+//    depth_ctr++;				
+//    depth_stack[depth_ctr] = Num;		
+//  }
+
 #else
 #define depth_stack_push(Num)    depth_ctr++;				
 
@@ -869,16 +901,15 @@ int depth_stack[100];
 #define CHECK_ANSWER_TERM_DEPTH	{					\
     if (depth_ctr >= depth_limit) {					\
       if (flags[MAX_TABLE_ANSWER_ACTION] == XSB_WARNING) {		\
-	char buffer[2*MAXTERMBUFSIZE];					\
-	sprintCyclicRegisters(CTXTc buffer,TIF_PSC(subg_tif_ptr(subgoal_ptr)));	\
+	sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr)));	\
 	xsb_warn("Exceeded max answer term depth of %d in call %s\n",	\
-		 (int)flags[MAX_TABLE_ANSWER_DEPTH],buffer);		\
-	psc = (Psc) follow(cs_val(xtemp1));				\
+		 (int)depth_limit,forest_log_buffer_1->fl_buffer);	\
+	psc = get_str_psc(xtemp1);					\
 	depth_stack_push(get_arity(psc));				\
 	item = makecs(psc);						\
 	one_btn_chk_ins(found_flag, item, BASIC_ANSWER_TRIE_TT);	\
 	for (j = get_arity(psc); j>=1 ; j--) {				\
-	  pdlpush(cell(clref_val(xtemp1)+j));				\
+	  pdlpush(get_str_arg(xtemp1,j));				\
 	}								\
       }									\
       else if (flags[MAX_TABLE_ANSWER_ACTION] == XSB_FAILURE) {		\
@@ -891,24 +922,23 @@ int depth_stack[100];
 	apply_answer_depth_rationality(found_flag);			\
       }									\
       else {								\
-	char buffer[2*MAXTERMBUFSIZE];					\
-	sprintCyclicRegisters(CTXTc buffer,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
+	sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
 	safe_delete_branch(Paren);					\
 	if (is_cyclic(CTXTc (Cell) (cptr -i))) {			\
-	  xsb_abort("Cyclic term in arg %d of tabled subgoal %s\n",i+1,buffer); \
+	  xsb_abort("Cyclic term in arg %d of tabled subgoal %s\n",i+1,forest_log_buffer_1->fl_buffer); \
 	}								\
 	else								\
 	  xsb_abort("Exceeded max answer term depth of %d in call %s\n", \
-		    (int)flags[MAX_TABLE_ANSWER_DEPTH],buffer);		\
+		    (int)depth_limit,forest_log_buffer_1->fl_buffer);	\
       }									\
     }									\
     else 	{							\
-      psc = (Psc) follow(cs_val(xtemp1));				\
+      psc = get_str_psc(xtemp1);					\
       depth_stack_push(get_arity(psc));					\
       item = makecs(psc);						\
       one_btn_chk_ins(found_flag, item, BASIC_ANSWER_TRIE_TT);		\
       for (j = get_arity(psc); j>=1 ; j--) {				\
-	pdlpush(cell(clref_val(xtemp1)+j));				\
+	pdlpush(get_str_arg(xtemp1,j));					\
       }									\
     }									\
   }
@@ -917,10 +947,9 @@ int depth_stack[100];
 #define CHECK_ANSWER_LIST_DEPTH						\
   if (--list_depth_ctr <= 0)	{						\
     if (flags[MAX_TABLE_ANSWER_LIST_ACTION] == XSB_WARNING) {		\
-      char buffer[2*MAXTERMBUFSIZE];						\
-      sprintCyclicRegisters(CTXTc buffer,TIF_PSC(subg_tif_ptr(subgoal_ptr)));	\
+      sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr)));	\
       xsb_warn("Exceeded max answer list depth of %d in call %s\n",	\
-		flags[MAX_TABLE_ANSWER_LIST_DEPTH],buffer);			\
+	       flags[MAX_TABLE_ANSWER_LIST_DEPTH],forest_log_buffer_1->fl_buffer); \
     }									\
     else if (flags[MAX_TABLE_ANSWER_LIST_ACTION] == XSB_FAILURE) {		\
       safe_delete_branch(Paren);					\
@@ -929,10 +958,9 @@ int depth_stack[100];
       return NULL;							\
     }									\
     else {								\
-      char buffer[2*MAXTERMBUFSIZE];						\
-      sprintCyclicRegisters(CTXTc buffer,TIF_PSC(subg_tif_ptr(subgoal_ptr)));	\
+      sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
       xsb_abort("Exceeded max answer list depth of %d in call %s\n",	\
-		flags[MAX_TABLE_ANSWER_LIST_DEPTH],buffer);			\
+		flags[MAX_TABLE_ANSWER_LIST_DEPTH],forest_log_buffer_1->fl_buffer); \
     }									\
 }
 
@@ -943,8 +971,9 @@ int depth_stack[100];
     /*    printf("rv ");  pdlprint;				*/	\
     xtemp1 = (CPtr) pdlpop;						\
     XSB_CptrDeref(xtemp1);						\
-    /*    printf("rv depth c %d i %d",depth_ctr,depth_ctr);	
-	  printterm(stddbg,xtemp1,10);printf("\n");			*/ \
+    /*    if (ctrace_ctr >= 4191) {					\
+      printf("rv depth c %d i %d",depth_ctr,depth_ctr);			\
+      printterm(stddbg,xtemp1,10);printf("\n");	} */			\
     tag = cell_tag(xtemp1);						\
     switch (tag) {							\
     case XSB_FREE:							\
@@ -971,14 +1000,14 @@ int depth_stack[100];
     case XSB_STRING:							\
     case XSB_INT:							\
     case XSB_FLOAT:							\
-      depth_stack_pop;							\
+      depth_stack_pop;						\
       one_btn_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
       break;								\
     case XSB_LIST:							\
       CHECK_ANSWER_LIST_DEPTH;						\
       one_btn_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
-      pdlpush(cell(clref_val(xtemp1)+1));				\
-      pdlpush(cell(clref_val(xtemp1)));					\
+      pdlpush(get_list_tail(xtemp1));					\
+      pdlpush(get_list_head(xtemp1));					\
       break;								\
     case XSB_STRUCT:							\
       CHECK_ANSWER_TERM_DEPTH;						\
@@ -1089,7 +1118,11 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   Cell depth_ctr,list_depth_ctr;
   BTNptr Paren, *ChildPtrOfParen;
   int bratted = 0;
-  UInteger depth_limit = flags[MAX_TABLE_ANSWER_DEPTH];
+  UInteger depth_limit;
+
+  if (TIF_AnswerDepth(subg_tif_ptr(subgoal_ptr))) 
+    depth_limit = (UInteger) (TIF_AnswerDepth(subg_tif_ptr(subgoal_ptr)));
+  else depth_limit = (UInteger) flags[MAX_TABLE_ANSWER_DEPTH];  
   
 #if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
   ans_chk_ins++; /* Counter (answers checked & inserted) */
@@ -1216,17 +1249,17 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
     case XSB_LIST:
       //      printf("VAS List \n");
       one_btn_chk_ins(found_flag, EncodeTrieList(xtemp1), BASIC_ANSWER_TRIE_TT);
-      pdlpush(cell(clref_val(xtemp1)+1));
-      pdlpush(cell(clref_val(xtemp1)));
+      pdlpush(get_list_tail(xtemp1));
+      pdlpush(get_list_head(xtemp1));
       recvariant_trie_ans_subsf(found_flag, BASIC_ANSWER_TRIE_TT);
       break;
     case XSB_STRUCT:
-      psc = (Psc)follow(cs_val(xtemp1));
+      psc = get_str_psc(xtemp1);
       item = makecs(psc);
       depth_stack_push(get_arity(psc));;
       one_btn_chk_ins(found_flag, item, BASIC_ANSWER_TRIE_TT);
       for (j = get_arity(psc); j >= 1 ; j--) {
-	pdlpush(cell(clref_val(xtemp1)+j));
+	pdlpush(get_str_arg(xtemp1,j));
       }
       recvariant_trie_ans_subsf(found_flag, BASIC_ANSWER_TRIE_TT);
       break;
@@ -1393,14 +1426,14 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
         break;
       case XSB_LIST:
         one_btn_chk_ins(flag, EncodeTrieList(xtemp1), DELAY_TRIE_TT);
-        pdlpush(cell(clref_val(xtemp1)+1));
-        pdlpush(cell(clref_val(xtemp1)));
+        pdlpush(get_list_tail(xtemp1));
+        pdlpush(get_list_head(xtemp1));
         recvariant_trie(flag,DELAY_TRIE_TT);
         break;
       case XSB_STRUCT:
         one_btn_chk_ins(flag, makecs(follow(cs_val(xtemp1))),DELAY_TRIE_TT);
-        for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
-          pdlpush(cell(clref_val(xtemp1)+j));
+        for (j = get_arity(get_str_psc(xtemp1)); j >= 1 ; j--) {
+          pdlpush(get_str_arg(xtemp1,j));
         }
         recvariant_trie(flag,DELAY_TRIE_TT);
         break;
@@ -1670,29 +1703,36 @@ int vcs_tnot_call = 0;
       return XSB_FAILURE;                                               \
     }                                                                   \
     else /* if (flags[MAX_TABLE_SUBGOAL_ACTION] == XSB_ERROR) */ {	\
-      char buffer[2*MAXTERMBUFSIZE];					\
       safe_delete_branch(Paren);					\
+      resetpdl;								\
+      while (--tSubsFactReg > SubsFactReg) {				\
+	/*    printf("vc untrail %p/%p\n",tSubsFactReg,*tSubsFactReg);	*/ \
+	if (isref(*tSubsFactReg))	/* a regular variable */	\
+	  ResetStandardizedVariable(*tSubsFactReg);			\
+	else			/* an XSB_ATTV */			\
+	  ResetStandardizedVariable(clref_val(*tSubsFactReg));		\
+      }									\
       if (vcs_tnot_call) {						\
 	vcs_tnot_call = 0;						\
 	if (is_cyclic(CTXTc (Cell)call_arg)) {				\
-	  sprintCyclicRegisters(CTXTc buffer, TIF_PSC(CallInfo_TableInfo(*call_info))); \
-	  xsb_abort("Cyclic term in arg %d of tabled subgoal tnot(%s)\n",i+1,buffer); \
+	  sprintCyclicRegisters(CTXTc forest_log_buffer_1, TIF_PSC(CallInfo_TableInfo(*call_info))); \
+	  xsb_abort("Cyclic term in arg %d of tabled subgoal tnot(%s)\n",i+1,forest_log_buffer_1->fl_buffer); \
 	}                            					\
 	else {								\
-	  sprintNonCyclicRegisters(CTXTc buffer,TIF_PSC(CallInfo_TableInfo(*call_info))); \
+	  sprintNonCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(CallInfo_TableInfo(*call_info))); \
 	  xsb_abort("Exceeded max table subgoal depth of %d in arg %i in tnot(%s)\n", \
-		    (int) flags[MAX_TABLE_SUBGOAL_DEPTH],i+1,buffer);	\
+		    (int) flags[MAX_TABLE_SUBGOAL_DEPTH],i+1,forest_log_buffer_1->fl_buffer);	\
 	}								\
       }									\
       else {								\
 	if (is_cyclic(CTXTc (Cell) call_arg)) {				\
-	  sprintCyclicRegisters(CTXTc buffer, TIF_PSC(CallInfo_TableInfo(*call_info))); \
-	  xsb_abort("Cyclic term in arg %d of tabled subgoal %s\n",i+1,buffer);	\
+	  sprintCyclicRegisters(CTXTc forest_log_buffer_1, TIF_PSC(CallInfo_TableInfo(*call_info))); \
+	  xsb_abort("Cyclic term in arg %d of tabled subgoal %s\n",i+1,forest_log_buffer_1->fl_buffer);	\
 	}								\
 	else {								\
-	  sprintNonCyclicRegisters(CTXTc buffer,TIF_PSC(CallInfo_TableInfo(*call_info))); \
+	  sprintNonCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(CallInfo_TableInfo(*call_info))); \
 	  xsb_abort("Exceeded max table subgoal depth of %d in arg %i in %s\n",	\
-		  (int) flags[MAX_TABLE_SUBGOAL_DEPTH],i+1,buffer);	\
+		  (int) flags[MAX_TABLE_SUBGOAL_DEPTH],i+1,forest_log_buffer_1->fl_buffer);	\
 	}								\
       }									\
     }									\
@@ -1735,6 +1775,7 @@ int vcs_tnot_call = 0;
 		pdlpush( cell(clref_val(xtemp1)) );				*/ \
 	/*	printf("pushing L1 %p\n",clref_val(xtemp1)+1);		*/ \
 	/*	printf("pushing L2 %p\n",clref_val(xtemp1));			*/ \
+	/* note address of tail and head, not tail and head themselve! */ \
 	pdlpush( (Cell) (clref_val(xtemp1)+1) );			\
 	pdlpush( (Cell) clref_val(xtemp1) );				\
       } 								\
@@ -1827,7 +1868,7 @@ int vcs_tnot_call = 0;
  * function.  It actually points one Cell *before* the term vector!  Notice
  * the treatment of "cptr" as these terms are inspected.
  */
-
+extern int tracing_activated;
 #define ABSTRACTING_ATTVARS 1
 
 int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
@@ -1839,7 +1880,7 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   Cell tag = XSB_FREE, item;
   CPtr cptr, SubsFactReg, tSubsFactReg;
   int ctr, attv_ctr;
-  Cell  depth_ctr;
+  Cell  depth_ctr,pred_depth;
   BTNptr Paren, *ChildPtrOfParen;
 
 #if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
@@ -1853,9 +1894,14 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   tSubsFactReg = SubsFactReg = CallInfo_AnsTempl(*call_info);
   ctr = attv_ctr = 0;
 
+  if (TIF_SubgoalDepth(CallInfo_TableInfo(*call_info))) 
+    pred_depth = (Cell) TIF_SubgoalDepth(CallInfo_TableInfo(*call_info));
+  else pred_depth = flags[MAX_TABLE_SUBGOAL_DEPTH];  
+
   for (i = 0; i < arity; i++) {
     can_abstract = TRUE;
-    depth_ctr = flags[MAX_TABLE_SUBGOAL_DEPTH];  
+
+    depth_ctr = pred_depth;
     //    printf(">>>> (argument %d)",i+1);
     call_arg = (CPtr) (cptr + i);            /* Note! start with reg[1] */
     XSB_CptrDeref(call_arg);
@@ -1905,14 +1951,13 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
       break;
     case XSB_LIST:
       one_btn_chk_ins(flag, EncodeTrieList(call_arg), CALL_TRIE_TT);
-      /*      pdlpush(cell(clref_val(call_arg)+1));
-	      pdlpush(cell(clref_val(call_arg)));*/
+      /* must use addrs of cells, since depth-abstraction need addrs! */
 	pdlpush( (Cell) (clref_val(call_arg)+1) );			
 	pdlpush( (Cell) clref_val(call_arg) );				
       recvariant_call(flag,CALL_TRIE_TT,call_arg);
       break;
     case XSB_STRUCT:
-      psc = (Psc)follow(cs_val(call_arg));
+      psc = get_str_psc(call_arg);
       item = makecs(psc);
       one_btn_chk_ins(flag, item, CALL_TRIE_TT);
       for (j=get_arity(psc); j>=1 ; j--) {
@@ -1964,7 +2009,7 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
     }
   }
   resetpdl;
-    
+
   if (arity == 0) {
     one_btn_chk_ins(flag, ESCAPE_NODE_SYMBOL, CALL_TRIE_TT);
     Instr(Paren) = trie_proceed;
@@ -1982,9 +2027,8 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   }
 
   if (vcs_tnot_call && ctr > 0) {
-      char buffer[2*MAXTERMBUFSIZE];						
-      sprintCyclicRegisters(CTXTc buffer,TIF_PSC(CallInfo_TableInfo(*call_info))); 
-      xsb_abort("Floundering goal in tnot/1 %s\n",buffer);
+      sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(CallInfo_TableInfo(*call_info))); 
+      xsb_abort("Floundering goal in tnot/1 %s\n",forest_log_buffer_1->fl_buffer);
   }
     
   vcs_tnot_call = 0;
@@ -2097,16 +2141,16 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
     case XSB_LIST:							\
       CHECK_TRIE_INTERN_LIST_DEPTH;					\
       one_interned_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType); \
-      pdlpush(cell(clref_val(xtemp1)+1));				\
-      pdlpush(cell(clref_val(xtemp1)));					\
+      pdlpush(get_list_tail(xtemp1));					\
+      pdlpush(get_list_head(xtemp1));					\
       break;								\
     case XSB_STRUCT:							\
       CHECK_TRIE_INTERN_TERM_DEPTH;					\
-      psc = (Psc) follow(cs_val(xtemp1));				\
+      psc = get_str_psc(xtemp1);					\
       item = makecs(psc);						\
       one_interned_node_chk_ins(flag, item, TrieType);				\
       for (j = get_arity(psc); j>=1 ; j--) {				\
-	pdlpush(cell(clref_val(xtemp1)+j));				\
+	pdlpush(get_str_arg(xtemp1,j));					\
       }									\
       break;								\
     case XSB_ATTV:							\
@@ -2128,17 +2172,19 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   if (--depth_ctr <= 0)	{						\
     if (flags[MAX_TABLE_ANSWER_ACTION] == XSB_FAILURE) {		\
       safe_delete_branch(Paren);					\
+      resetpdl;								\
       return(NULL);							\
     }									\
     else {								\
-      char buffer[2*MAXTERMBUFSIZE];					\
-      sprintCyclicTerm(CTXTc buffer,term);				\
+      resetpdl;								\
+      sprintCyclicTerm(CTXTc forest_log_buffer_1,term);			\
+      /*      printf("string length %d\n",strlen(buffer));	*/	\
       safe_delete_branch(Paren);					\
       if (is_cyclic(CTXTc term))					\
-	xsb_abort("Cyclic term in term to be trie-interned %s\n",buffer); \
+	xsb_abort("Cyclic term in term to be trie-interned %s\n",forest_log_buffer_1->fl_buffer); \
       else								\
 	xsb_abort("Exceeded max trie_intern depth of %d for %s\n",	\
-		  (int)flags[MAX_TABLE_ANSWER_DEPTH],buffer);		\
+		  (int)flags[MAX_TABLE_ANSWER_DEPTH],forest_log_buffer_1->fl_buffer); \
     }									\
 }
 
@@ -2150,14 +2196,13 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
       return(NULL);							\
     }									\
     else {								\
-      char buffer[2*MAXTERMBUFSIZE];					\
-      sprintCyclicTerm(CTXTc buffer,term);				\
+      sprintCyclicTerm(CTXTc forest_log_buffer_1,term);			\
       safe_delete_branch(Paren);					\
       if (is_cyclic(CTXTc term))					\
-	xsb_abort("Cyclic term in term to be trie-interned %s\n",buffer); \
+	xsb_abort("Cyclic term in term to be trie-interned %s\n",forest_log_buffer_1->fl_buffer); \
       else								\
 	xsb_abort("Exceeded max trie_intern depth of %d for %s\n",	\
-		  (int)flags[MAX_TABLE_ANSWER_DEPTH],buffer);		\
+		  (int)flags[MAX_TABLE_ANSWER_DEPTH],forest_log_buffer_1->fl_buffer); \
     }									\
 }
 
@@ -2207,14 +2252,14 @@ BTNptr trie_intern_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr, int 
       break;
     case XSB_LIST:
       one_interned_node_chk_ins(flag, EncodeTrieList(xtemp1), INTERN_TRIE_TT);
-      pdlpush(cell(clref_val(xtemp1)+1));
-      pdlpush(cell(clref_val(xtemp1)));
+      pdlpush(get_list_tail(xtemp1));
+      pdlpush(get_list_head(xtemp1));
       recvariant_trie_intern(flag,INTERN_TRIE_TT);
       break;
     case XSB_STRUCT:
       one_interned_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),INTERN_TRIE_TT);
-      for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
-	pdlpush(cell(clref_val(xtemp1)+j));
+      for (j = get_arity(get_str_psc(xtemp1)); j >= 1 ; j--) {
+	pdlpush(get_str_arg(xtemp1,j));
       }
       recvariant_trie_intern(flag,INTERN_TRIE_TT);
       break;
@@ -2327,15 +2372,15 @@ BTNptr trie_assert_chk_ins(CTXTdeclc CPtr termptr, BTNptr root, int *flagptr)
       break;
     case XSB_LIST:
       one_btn_chk_ins(flag, EncodeTrieList(xtemp1), ASSERT_TRIE_TT);
-      pdlpush(cell(clref_val(xtemp1)+1));
-      pdlpush(cell(clref_val(xtemp1)));
+      pdlpush(get_list_tail(xtemp1));
+      pdlpush(get_list_head(xtemp1));
       recvariant_trie(flag,ASSERT_TRIE_TT);
       break;
     case XSB_STRUCT:
-      psc = (Psc) follow(cs_val(xtemp1));
+      psc = get_str_psc(xtemp1);
       one_btn_chk_ins(flag, makecs(psc),ASSERT_TRIE_TT);
       for (j = get_arity(psc); j >= 1 ; j--) {
-	pdlpush(cell(clref_val(xtemp1)+j));
+	pdlpush(get_str_arg(xtemp1,j));
       }
       recvariant_trie(flag,ASSERT_TRIE_TT);
       break;
@@ -2553,7 +2598,8 @@ Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
   arity = global_trieinstr_vars_num + 1;
   if (arity > MAX_ARITY)
     xsb_representation_error(CTXTc "less than MAX_ARITY",
-			     makestring(string_find("Arity of skel",1)),"trie_intern/4",4);
+			     makestring(string_find("Arity needed for return template",1)),
+			     "trie_intern/4 or other tabling routine",4); 
   vectr = (Cell *)trieinstr_vars;
   if ( IsInCallTrie(Last_Nod_Sav) ) {
     VariantSF sf = CallTrieLeaf_GetSF(Last_Nod_Sav);

@@ -72,6 +72,8 @@
 #include "heap_xsb.h"
 #include "residual.h"
 #include "basictypes.h"
+#include "hashtable.h"
+#include "hashtable_itr.h"
 
 counter abol_subg_ctr,abol_pred_ctr,abol_all_ctr; /* statistics */
 
@@ -394,12 +396,10 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 }
 
 /*======================================================================*/
-
 /*
  *                     D E L E T I N G   T R I E S
  *                     ===========================
  */
-
 
 /*----------------------------------------------------------------------*/
 /* delete_predicate_table(), reclaim_deleted_predicate_table() 
@@ -430,11 +430,9 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
   node = freeing_stack[node_stk_top];\
 }
 
-
 /* TLS: since this deallocates from smBTHT, make sure
    trie_allocation_type is set to private/shared before using this
    function. */
-
 static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 #ifdef MULTI_THREAD
   if (BTHT_NumBuckets(ht) == TrieHT_INIT_SIZE 
@@ -609,13 +607,13 @@ void release_conditional_answer_info(CTXTdeclc BTNptr node) {
   }
 }
 
-/* delete_variant_sf_and_answers deletes and reclaims space for
-   answers and their subgoal frame in a variant table, and is used by
-   abolish_table_call (which does not work on subsumptive table).  It
-   copies code from delete_variant_table, but uses its own stack.
-   (Not easy to integrate due to macro usage.) */
-
 /* 
+ * delete_variant_sf_and_answers deletes and reclaims space for
+ *  answers and their subgoal frame in a variant table, and is used by
+ *  abolish_table_call (which does not work on subsumptive table).  It
+ *  copies code from delete_variant_table, but uses its own stack.
+ *  (Not easy to integrate due to macro usage.) 
+ * 
  * TLS: since this deallocates from SMs, make sure
  * trie_allocation_type is set before using.
  */
@@ -682,11 +680,9 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn)
   //  printf("leaving delete_variant\n");
   }
 
-
+/* Code to abolish tables for a variant predicate */
 /* Incremental recomputation seems to be implemented only for
    abolishing predicates, but not subgoals */
-
-extern void hashtable1_destroy(void *, int);
 
 static void delete_variant_table(CTXTdeclc BTNptr x, int incr, xsbBool should_warn) {
 
@@ -1900,6 +1896,8 @@ void trie_drop(CTXTdecl) {
 #endif
 }
 
+/* * * * * * * * * * * * * * * * * * */
+
 void first_trie_property(CTXTdecl) {
   int index,type;
   Integer Trie_id;
@@ -2103,9 +2101,7 @@ void reclaim_uninterned_nr(CTXTdeclc Integer rootidx)
     switch_from_trie_assert;
     l = p;
   }
-
 }
-
 
 /*----------------------------------------------------------------------*/
 /*
@@ -2721,7 +2717,6 @@ visited subgoals, while the answer_stack contains all conditional
 answers for all visited subgoals.
 
 -----------------------------------------------------------------*/
-
 // Answer stack utilities -------------------------------------
 
 #ifndef MULTI_THREAD
@@ -2734,7 +2729,6 @@ int answer_stack_size = 0;
 
 void reset_answer_stack(CTXTdecl) {
   answer_stack_top = 0;
-  //  answer_stack_current_pos = 0;
 }
 
 #define push_answer_node(as_leaf) {				                  \
@@ -3000,9 +2994,9 @@ void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
     } else action = CANT_RECLAIM;
 
       if (flags[CTRACE_CALLS])  { 
-	char buffera[MAXTERMBUFSIZE];
-	sprint_subgoal(CTXTc buffera,(VariantSF)subgoal);     
-	fprintf(fview_ptr,"ta(subg(%s),%d).\n",buffera,ctrace_ctr++);
+	sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF)subgoal);     
+	fprintf(fview_ptr,"ta(subg(%s),%d).\n",forest_log_buffer_1->fl_buffer,
+		ctrace_ctr++);
       }
 
     SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
@@ -3061,9 +3055,9 @@ void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
       tif = subg_tif_ptr(subgoal);
 
       if (flags[CTRACE_CALLS])  { 
-	char buffera[MAXTERMBUFSIZE];
-	sprint_subgoal(CTXTc buffera,(VariantSF)subgoal);     
-	fprintf(fview_ptr,"ta(subg(%s),%d).\n",buffera,ctrace_ctr++);
+	sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF)subgoal);     
+	fprintf(fview_ptr,"ta(subg(%s),%d).\n",forest_log_buffer_1->fl_buffer,
+		ctrace_ctr++);
       }
 
       if (action == CAN_RECLAIM && !GC_MARKED_SUBGOAL(subgoal) ) {
@@ -4085,7 +4079,6 @@ void abolish_all_tables_cps_check(CTXTdecl)
   BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
-
   cp_top1 = breg ;				 
   while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
@@ -4099,10 +4092,17 @@ void abolish_all_tables_cps_check(CTXTdecl)
       }
     }
     /* Now check delaylist */
-    if ( cp_pdreg(cp_top1) != (CPtr) NULL) 
-      xsb_abort("[abolish_all_tables/0] Illegal table operation"
-		"\n\t tables to be abolished are in delay list.");
-      cp_top1 = cp_prevtop(cp_top1);
+    if ( cp_pdreg(cp_top1) != (CPtr) NULL)  {
+      //      int ctr = 0;
+      memset(forest_log_buffer_2,0,MAXTERMBUFSIZE);
+      sprint_delay_list(CTXTc forest_log_buffer_1, cp_pdreg(cp_top1));
+      sprintf(forest_log_buffer_2->fl_buffer,
+	      "[abolish_all_tables/0] Illegal table operation"
+	      "\n\t tables to be abolished are in delay list, e.g.: %s",
+	      forest_log_buffer_1->fl_buffer);
+      xsb_abort(forest_log_buffer_2->fl_buffer);
+    }
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
@@ -4220,11 +4220,14 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 	//	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
-      //      printf("---- ");print_subgoal(CTXTc stdout, CallStrPtr) ; printf("\n");
-      if (IsVariantSF(CallStrPtr)) {
-	SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr); // set smBTN to private/shared
-	tif = subg_tif_ptr(CallStrPtr);
-	delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
+      //     printf("---- ");print_subgoal(CTXTc stdout, CallStrPtr) ; printf("\n");
+     if(IsIncrSF(CallStrPtr)){
+      	abolish_incr_call(CTXTc subg_callnode_ptr(CallStrPtr));
+     }
+     else if (IsVariantSF(CallStrPtr)) {
+       SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr); // set smBTN to private/shared
+       tif = subg_tif_ptr(CallStrPtr);
+       delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
 	delete_variant_sf_and_answers(CTXTc CallStrPtr,FALSE); // delete answers + subgoal
       } else remove_calls_and_returns(CTXTc CallStrPtr);
     }
@@ -4770,19 +4773,228 @@ void answer_completion(CTXTdeclc CPtr cs_ptr) {
   }
 
 }
-
 #endif
+
+/*****************************************************************************/
+static unsigned int hashid(void *ky)
+{
+    return (long int)ky;
+}
+
+static int equalkeys(void *k1, void *k2)
+{
+    return (0 == memcmp(k1,k2,sizeof(KEY)));
+}
+
+static Cell cell_array1[500];
+
+int return_ans_depends_scc_list(CTXTdeclc SCCNode * nodes, int num_nodes){
+ 
+  VariantSF subgoal;
+  TIFptr tif;
+  BTNptr ansLeaf;
+  int cur_node = 0,arity, j;
+  Psc psc;
+  CPtr oldhreg = NULL;
+
+  reg[4] = makelist(hreg);
+  new_heap_free(hreg);  new_heap_free(hreg);
+  do {
+    subgoal = asi_subgoal((ASI)Child((BTNptr) nodes[cur_node].node));
+    ansLeaf = (BTNptr) nodes[cur_node].node;
+    tif = (TIFptr) subgoal->tif_ptr;
+    psc = TIF_PSC(tif);
+    arity = get_arity(psc);
+    //    printf("subgoal %p, %s/%d\n",subgoal,get_name(psc),arity);
+    check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args..
+    oldhreg=hreg-2;                          // ptr to car
+    sreg = hreg;
+    follow(oldhreg++) = makecs(sreg);      
+    new_heap_functor(sreg,get_ret_psc(3)); //  car pts to ret/2  psc
+    hreg += 4;                             //  hreg pts past ret/2
+    sreg = hreg;
+    follow(hreg-1) = makeint(nodes[cur_node].component);  // arg 3 of ret/2 pts to component
+    follow(hreg-2) = makeint(ansLeaf);  // arg 2 of ret/2 pts to answer leaf
+    if(arity>0){
+      follow(hreg-3) = makecs(sreg);         
+      new_heap_functor(sreg, psc);           //  arg 1 of ret/2 pts to goal psc
+      hreg += arity + 1;
+      for (j = 1; j <= arity; j++) {
+	new_heap_free(sreg);
+	cell_array1[arity-j] = cell(sreg-1);
+      }
+      build_subgoal_args(subgoal);		
+    }
+    else {
+      follow(hreg-3) = makestring(get_name(psc));
+      //      follow(hreg-2) = makeint(0);
+    }
+    follow(oldhreg) = makelist(hreg);        // cdr points to next car
+    new_heap_free(hreg); new_heap_free(hreg);
+    cur_node++;
+  } while (cur_node  < num_nodes);
+  follow(oldhreg) = makenil;                // cdr points to next car
+  return unify(CTXTc reg_term(CTXTc 3),reg_term(CTXTc 4));
+}
+
+extern void *  search_some(struct hashtable*, void *);
+extern int insert_some(struct hashtable*, void *, void *);
+
+void xsb_compute_ans_depends_scc(SCCNode * nodes,int * dfn_stack,int node_from, 
+				 int * dfn_top,struct hashtable* hasht,int * dfn,
+				 int * component ) {
+  int node_to; int j;
+  ASI asi; BTNptr ansLeaf;
+  DL current_dl;     DE current_de;
+
+  //  printf("xsb_compute_scc for %d %p", node_from,nodes[node_from].node);
+  //  printf(" %s/%d dfn %d dfn_top %d \n",
+  //	 get_name(TIF_PSC(subg_tif_ptr(asi_subgoal((ASI)Child((BTNptr)(nodes[node_from].node)))))),
+  //	 get_arity(TIF_PSC(subg_tif_ptr(asi_subgoal((ASI)Child((BTNptr)(nodes[node_from].node)))))),
+  //	 *dfn,*dfn_top);
+  nodes[node_from].low = nodes[node_from].dfn = (*dfn)++;
+  dfn_stack[*dfn_top] = node_from;
+  nodes[node_from].stack = *dfn_top;
+  (*dfn_top)++;
+  asi = (ASI) Child( (BTNptr) nodes[node_from].node);
+  current_dl = asi_dl_list(asi);
+  while (current_dl != NULL) {
+    //    printf("DL: %p\n",current_dl);
+    current_de = dl_de_list(current_dl);
+    while (current_de != NULL) {
+      if (de_ans_subst(current_de)) {
+	//	printf("  DE: %p SF %p Ans %p %ld\n",current_de,de_subgoal(current_de),
+	//               de_ans_subst(current_de),(long) de_ans_subst(current_de));
+	ansLeaf = de_ans_subst(current_de);
+      }
+      else {
+	//	printf("  DE: %p SF %p Ans %p %ld\n",current_de,de_subgoal(current_de),
+	//	       Child(subg_ans_root_ptr(de_subgoal(current_de))),
+	//     (long) Child(subg_ans_root_ptr(de_subgoal(current_de))));
+	ansLeaf = Child(subg_ans_root_ptr(de_subgoal(current_de)));
+      }
+      node_to = (int) search_some(hasht, (void *)ansLeaf);
+      //      printf("edge from %p to %p (%d)\n",(void *)nodes[node_from].node,sf,node_to);
+      if (nodes[node_to].dfn == 0) {
+	xsb_compute_ans_depends_scc(nodes,dfn_stack,node_to, dfn_top,hasht,dfn,component );
+	if (nodes[node_to].low < nodes[node_from].low) 
+	  nodes[node_from].low = nodes[node_to].low;
+	}	  
+	else if (nodes[node_to].dfn < nodes[node_from].dfn  && nodes[node_to].component == 0) {
+	  if (nodes[node_to].low < nodes[node_from].low) { nodes[node_from].low = nodes[node_to].low; }
+	}
+      current_de = de_next(current_de);
+    }
+    //    printf("nodes[%d] low %d dfn %d\n",node_from,nodes[node_from].low, nodes[node_from].dfn);
+    if (nodes[node_from].low == nodes[node_from].dfn) {
+      for (j = (*dfn_top)-1 ; j >= nodes[node_from].stack ; j--) {
+	//	printf(" pop %d and assign %d\n",j,*component);
+	nodes[dfn_stack[j]].component = *component;
+      }
+      (*component)++;       *dfn_top = j+1;
+    }
+    current_dl = dl_next(current_dl);
+  }
+}
+
+int  get_residual_sccs(CTXTdeclc Cell listterm) {
+  Cell orig_listterm, node, intterm;
+    long int node_num=0;
+    int i = 0, dfn, component = 1;     int * dfn_stack; int dfn_top = 0, ret;
+    SCCNode * nodes;
+    struct hashtable* hasht; 
+
+    XSB_Deref(listterm);
+    orig_listterm = listterm;
+    hasht = create_hashtable1(HASH_TABLE_SIZE, hashid, equalkeys);
+    //    printf("listptr %p @%p\n",listptr,(CPtr) int_val(*listptr));
+    intterm = get_list_head(listterm);
+    XSB_Deref(intterm);
+    insert_some(hasht,(void *) oint_val(intterm),(void *) node_num);
+    node_num++; 
+
+    listterm = get_list_tail(listterm);
+    XSB_Deref(listterm);
+    while (!isnil(listterm)) {
+      intterm = get_list_head(listterm);
+      XSB_Deref(intterm);
+      node = oint_val(intterm);
+      if (NULL == search_some(hasht, (void *)node)) {
+	insert_some(hasht,(void *)node,(void *)node_num);
+	node_num++;
+      }
+      listterm = get_list_tail(listterm);
+      XSB_Deref(listterm);
+    }
+    nodes = (SCCNode *) mem_calloc(node_num, sizeof(SCCNode),OTHER_SPACE); 
+    dfn_stack = (int *) mem_alloc(node_num*sizeof(int),OTHER_SPACE); 
+    listterm = orig_listterm;; 
+    //    printf("listptr %p @%p\n",listptr,(void *)int_val(*(listptr)));
+    intterm = get_list_head(listterm);
+    XSB_Deref(intterm);
+    nodes[0].node = (CPtr) oint_val(intterm);
+    listterm = get_list_tail(listterm);
+    XSB_Deref(listterm);
+    i = 1;
+    while (!isnil(listterm)) {
+      intterm = get_list_head(listterm);
+      XSB_Deref(intterm);
+      node = oint_val(intterm);
+      nodes[i].node = (CPtr) node;
+      listterm = get_list_tail(listterm);
+      XSB_Deref(listterm);
+      i++;
+    }
+    //     struct hashtable_itr *itr = hashtable1_iterator(hasht);       
+    //       do {
+	 //         printf("k %p val %p\n",hashtable1_iterator_key(itr),
+         //     hashtable1_iterator_value(itr));
+    //        } while (hashtable1_iterator_advance(itr));
+
+    listterm = orig_listterm;
+    //       printf("2: k %p v %p\n",(void *) int_val(*listptr),
+    //       search_some(hasht,(void *) int_val(*listptr)));
+        while (!isnil(listterm)) {
+	  intterm = get_list_head(listterm);
+	  node = oint_val(intterm);
+	 //         printf("2: k %p v %p\n",(CPtr) node,search_some(hasht,(void *) node));
+	  listterm = get_list_tail(listterm);
+	  XSB_Deref(listterm);
+       }
+    dfn = 1;
+    for (i = 0; i < node_num; i++) {
+      if (nodes[i].dfn == 0) 
+	xsb_compute_ans_depends_scc(nodes,dfn_stack,i,&dfn_top,hasht,&dfn,&component);
+      //      printf("++component for node %d is %d (high %d)\n",i,nodes[i].component,component);
+    }
+    ret = return_ans_depends_scc_list(CTXTc  nodes, node_num);
+    hashtable1_destroy(hasht,0);
+    mem_dealloc(nodes,node_num*sizeof(SCCNode),OTHER_SPACE); 
+    mem_dealloc(dfn_stack,node_num*sizeof(int),OTHER_SPACE); 
+    return ret;
+}
 
 extern void ctop_tag(CTXTdeclc int, Cell);
 
-        int pred_type, goal_type, answer_set_status;
-    VariantSF goalSF = NULL, subsumerSF;
-    Cell goalTerm;
+ int pred_type, goal_type, answer_set_status;
+ VariantSF goalSF = NULL, subsumerSF;
+ Cell goalTerm;
 
 FILE * fview_ptr;
+
 //----------------------------------------------------------------------
 extern CPtr trie_asserted_clref(CPtr);
 extern PrRef get_prref(CTXTdeclc Psc psc);
+
+#ifndef MULTI_THREAD
+forest_log_buffer_struct fl_buffer_1;
+forest_log_buffer_struct fl_buffer_2;
+forest_log_buffer_struct fl_buffer_3;
+
+forestLogBuffer forest_log_buffer_1;
+forestLogBuffer forest_log_buffer_2;
+forestLogBuffer forest_log_buffer_3;
+#endif
 
 int table_inspection_function( CTXTdecl ) {
   switch (ptoc_int(CTXTc 1)) {
@@ -4941,7 +5153,7 @@ a return has been found, and handle our cases separately.
 A separate case is that we may not have a consumer subgoal frame if
 Subgoal is subsumed by Producer and Producer is completed (the call
 subsumption algorithm does not create a subgoal frame in this case).
-So we have to handle that situation also.  For now, if we don't have a
+So we have to handle that situation also.  For now, if we dont have a
 consumer SF, I add tnot(Producer) to the delay list -- although
 creating a new consumer SF so that we can add tnot(Consumer) might be
 better.
@@ -5024,9 +5236,8 @@ case CALL_SUBS_SLG_NOT: {
     table_status(CTXTc goalTerm, &TSF);
 
     if (TableStatusFrame_pred_type(TSF) < 0) {
-      char buffer[2*MAXTERMBUFSIZE];						
-      sprintCyclicTerm(CTXTc buffer, ptoc_tag(CTXTc 2));
-      xsb_abort("Illegal (non-tabled?) subgoal in tnot/1: %s\n", buffer);		
+      sprintCyclicTerm(CTXTc forest_log_buffer_1, ptoc_tag(CTXTc 2));
+      xsb_abort("Illegal (non-tabled?) subgoal in tnot/1: %s\n", forest_log_buffer_1->fl_buffer);   
     }	
 
     if (TableStatusFrame_pred_type(TSF) == VARIANT_EVAL_METHOD 
@@ -5123,6 +5334,120 @@ case CALL_SUBS_SLG_NOT: {
       ctop_int(CTXTc 3,TRUE);
     else ctop_int(CTXTc 3,FALSE);
     break;
+  }
+
+  case SET_TIF_PROPERTY: { 
+      /* reg 2=psc, reg 3 = property to set, reg 4 = val */
+    Psc psc;
+    TIFptr tip;
+
+    Cell term = ptoc_tag(CTXTc 2);
+    int property = (int)ptoc_int(CTXTc 3);
+    int val = (int)ptoc_int(CTXTc 4);
+
+    if ( isref(term) ) {
+      xsb_instantiation_error(CTXTc "set_tif_property/3",1);
+      break;
+    }
+    psc = term_psc(term);
+    if ( IsNULL(psc) ) {
+      xsb_type_error(CTXTc "predicate_indicator",term,"set_tabled_eval/2",1);
+      break;
+    }
+    if ((tip = get_tip(CTXTc psc)) ) {
+      if (property == SUBGOAL_DEPTH) 
+	TIF_SubgoalDepth(tip) = val;
+      else if (property == ANSWER_DEPTH) 
+	TIF_AnswerDepth(tip) = val;
+    }
+    else  /* cant find tip */
+      xsb_permission_error(CTXTc "set peroperty","tif",term,
+			   "set_tif_property",3);
+    break;
+  }
+
+  case GET_TIF_PROPERTY: { 
+      /* reg 2=psc, reg 3 = property to set, reg 4 = val */
+    Psc psc;
+    TIFptr tip;
+
+    Cell term = ptoc_tag(CTXTc 2);
+    int property = (int)ptoc_int(CTXTc 3);
+
+    if ( isref(term) ) {
+      xsb_instantiation_error(CTXTc "set_tif_property/3",1);
+      break;
+    }
+    psc = term_psc(term);
+    if ( IsNULL(psc) ) {
+      xsb_type_error(CTXTc "predicate_indicator",term,"set_tabled_eval/2",1);
+      break;
+    }
+    if ((tip = get_tip(CTXTc psc)) ) {
+      if (property == SUBGOAL_DEPTH) 
+	ctop_int(CTXTc 4,TIF_SubgoalDepth(tip));
+      else if (property == ANSWER_DEPTH) 
+	ctop_int(CTXTc 4,TIF_AnswerDepth(tip));
+    }
+    else  /* cant find tip */
+      return FALSE;
+
+    break;
+  }
+
+  case IMMED_ANS_DEPENDS_PTRLIST: {
+    ASI asi;
+    DL current_dl;
+    DE current_de;
+    CPtr oldhreg = NULL;
+    int  count = 0;
+
+    reg[4] = makelist(hreg);
+    new_heap_free(hreg);  new_heap_free(hreg);
+    asi = (ASI) Child( (BTNptr) ptoc_int(CTXTc 2));
+    current_dl = asi_dl_list(asi);
+    while (current_dl != NULL) {
+      //      printf("DL: %p\n",current_dl);
+      current_de = dl_de_list(current_dl);
+      while (current_de != NULL) {
+	//	print_subgoal(stddbg, de_subgoal(current_de));
+	count++;
+	check_glstack_overflow(4,pcreg,2); 
+	oldhreg = hreg-2;
+	sreg = hreg;
+	follow(oldhreg++) = makecs(sreg);      
+	new_heap_functor(sreg,get_ret_psc(2)); //  car pts to ret/2  psc
+	hreg += 3;
+	if (de_ans_subst(current_de)) {
+	  //	  printf("  DE: %p SF %p Ans %p %ld\n",current_de,de_subgoal(current_de),
+	  //   de_ans_subst(current_de),(long) de_ans_subst(current_de));
+	  follow(hreg-2) = makeint(de_ans_subst(current_de));
+	  follow(hreg-1) = makeint(IS_ASI);
+	}
+	else {
+	  //	  printf("  DE: %p SF %p Ans %p %ld\n",current_de,de_subgoal(current_de),
+	  //		 Child(subg_ans_root_ptr(de_subgoal(current_de))),
+	  // (long) Child(subg_ans_root_ptr(de_subgoal(current_de))));
+	  follow(hreg-2) = makeint(Child(subg_ans_root_ptr(de_subgoal(current_de))));
+	  follow(hreg-1) = makeint(IS_SUBGOAL_FRAME);
+	}
+	follow(oldhreg) = makelist(hreg);
+	new_heap_free(hreg);	new_heap_free(hreg);
+	current_de = de_next(current_de);
+      }
+      current_dl = dl_next(current_dl);
+    }
+    if (count>0)
+      follow(oldhreg) = makenil;
+    else
+      reg[3] = makenil;
+  return unify(CTXTc reg_term(CTXTc 3),reg_term(CTXTc 4));
+  break;
+  }
+  
+  case GET_RESIDUAL_SCCS: {
+
+    return get_residual_sccs(CTXTc ptoc_tag(CTXTc 2));
   }
 
   } /* switch */

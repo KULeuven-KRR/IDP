@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cell_xsb.h,v 1.46 2012/02/18 04:46:54 kifer Exp $
+** $Id: cell_xsb.h,v 1.48 2013/01/09 20:15:33 dwarren Exp $
 ** 
 */
 
@@ -171,7 +171,7 @@ extern unsigned long enc[], dec[];
 /* pointer manipulation */
 #define cs_val(dcell) (Pair)dec_addr(dcell)
 #define makecs(str) (Cell)(enc_addr(str) | XSB_STRUCT)
-#define clref_val(dcell) (CPtr)dec_addr(dcell)
+#define clref_val(dcell) ((CPtr)dec_addr(dcell))
 #define makelist(list) (Cell)(enc_addr(list) | XSB_LIST)
 #define makeattv(attv) (Cell)(enc_addr(attv) | XSB_ATTV)
 #define trievar_val(dcell) (Integer)dec_int(dcell)
@@ -179,6 +179,9 @@ extern unsigned long enc[], dec[];
 
 /**#define get_str_psc(dcell) ((cs_val(dcell))->psc_ptr)**/
 #define get_str_psc(dcell) (*((Psc *)dec_addr(dcell)))
+#define get_str_arg(dcell, argind) (cell(clref_val(dcell)+(argind)))
+#define get_list_head(dcell) (cell(clref_val(dcell)))
+#define get_list_tail(dcell) (cell(clref_val(dcell)+1))
 
 #define addr_val(dcell) string_val(dcell)
 #define makeaddr(val) makestring(val)
@@ -215,6 +218,9 @@ extern unsigned long enc[], dec[];
 #define isfloat(dcell) (cell_tag(dcell)==XSB_FLOAT)	/* dcell -> xsbBool */
 #define isconstr(dcell) (cell_tag(dcell)==XSB_STRUCT)	/* dcell -> xsbBool */
 #define islist(dcell) (cell_tag(dcell)==XSB_LIST)	/* dcell -> xsbBool */
+#define isstr(dcell) (isconstr(dcell) || islist(dcell))
+#define isinternstr(dcell) (isstr(dcell) &&				\
+			    (clref_val(dcell)<(CPtr)glstack.low || clref_val(dcell)>(CPtr)glstack.high))
 #define isattv(dcell) (cell_tag(dcell)==XSB_ATTV)	/* dcell -> xsbBool */
 
 #define is_attv_or_ref(cell) (isref(cell) || isattv(cell))
@@ -242,7 +248,7 @@ extern unsigned long enc[], dec[];
 
 #define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_string)
 #define isboxed(term) (isconstr(term) && get_str_psc(term) == box_psc )
-#define box_has_id(dcell, box_identifier) (int_val(cell(clref_val(dcell)+1))>>16 == box_identifier)
+#define box_has_id(dcell, box_identifier) (int_val(get_str_arg(dcell,1))>>16 == box_identifier)
 
 #define isboxedTrieSym(term) ((Psc)cs_val(term) == box_psc)
 /*======================================================================*/
@@ -271,8 +277,8 @@ extern unsigned long enc[], dec[];
 #endif
 
 #define boxedint_val(dcell) \
-       ((Integer)((((UInteger)int_val(cell(clref_val(dcell)+2))<<24)   \
-                  | int_val(cell(clref_val(dcell)+3))))) 
+       ((Integer)((((UInteger)int_val(get_str_arg(dcell,2))<<24)   \
+		   | int_val(get_str_arg(dcell,3))))) 
        
 #ifndef FAST_FLOATS
 //make_float_from_ints, defined in emuloop.c, is used by EXTRACT_FLOAT_FROM_16_24_24 to combine
@@ -307,9 +313,9 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
 #define boxedfloat_val(dcell)                           \
     (                                                   \
      (Float)(    EXTRACT_FLOAT_FROM_16_24_24(           \
-                   (int_val(cell(clref_val(dcell)+1))), \
-                   (int_val(cell(clref_val(dcell)+2))), \
-                   (int_val(cell(clref_val(dcell)+3)))  \
+		   (int_val(get_str_arg(dcell,1))),     \
+                   (int_val(get_str_arg(dcell,2))),	\
+                   (int_val(get_str_arg(dcell,3)))	\
                  )                                      \
             )                                           \
     )

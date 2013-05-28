@@ -31,7 +31,7 @@
 	    maplist/4,			% :Pred, ?List, ?List, ?List
 	    maplist/5			% :Pred, ?List, ?List, ?List, ?List
 	  ]).
-:- include(library('dialect/commons')).
+%:- include(library('dialect/commons')).
 
 :- meta_predicate
 	include(1, +, -),

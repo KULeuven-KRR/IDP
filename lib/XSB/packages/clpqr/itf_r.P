@@ -73,11 +73,13 @@ do_checks(Y,Ty,St,Li,Or,Cl,No,Later) :-
 	verify_lin(Or,Cl,Li,Y),
 	maplist(call,Later).
 
+:- import type_error/4 from error_handler.
 numbers_only(Y) :-
 	(   var(Y)
 	;   integer(Y)
 	;   float(Y)
-	;   throw(type_error(_X = Y,2,'a real number',Y))
+%	;   throw(type_error(_X = Y,2,'a real number',Y))
+	;   type_error('variable or number',Y,'=/2 (unifying with CLP(R) constraint)',2)
 	),
 	!.
 

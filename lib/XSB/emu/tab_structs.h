@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tab_structs.h,v 1.27 2012/07/25 23:17:37 tswift Exp $
+** $Id: tab_structs.h,v 1.28 2012/10/10 19:18:39 tswift Exp $
 ** 
 */
 
@@ -295,7 +295,9 @@ typedef struct Table_Info_Frame {
   DelTFptr del_tf_ptr;          /* pointer to first deletion frame for pred */
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
-  TIFptr next_tif;		/* pointer to next table info frame */
+  TIFptr next_tif;		/* pointer to next table info frame */ 
+  unsigned int  subgoal_depth:16;
+  unsigned int  answer_depth:16;
 #ifdef MULTI_THREAD
   pthread_mutex_t call_trie_lock;
 #endif
@@ -318,6 +320,8 @@ typedef struct Table_Info_Frame {
 #ifdef SHARED_COMPL_TABLES
 #define TIF_ComplCond(pTIF)   	   ( (pTIF)->compl_cond )
 #endif
+#define	TIF_SubgoalDepth(pTIF)      ( (pTIF)->subgoal_depth )
+#define TIF_AnswerDepth(pTIF)       ( (pTIF)->answer_depth )
 
 #define	gc_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
 #define	gc_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0

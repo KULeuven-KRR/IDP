@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: function.c,v 1.40 2011/12/14 22:40:26 dwarren Exp $
+** $Id: function.c,v 1.41 2013/01/09 20:15:34 dwarren Exp $
 ** 
 */
 
@@ -342,8 +342,8 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
     if (arity == 2) {
       Cell op1, op2;
       FltInt fiop1, fiop2;
-      op1 = cell(clref_val(expr)+1);
-      op2 = cell(clref_val(expr)+2);
+      op1 = get_str_arg(expr,1);
+      op2 = get_str_arg(expr,2);
       /* this evaluates recursively even before it checks whether the operator 
 	 is valid.  May be a problem. */
       if (xsb_eval(CTXTc op1, &fiop1) && xsb_eval(CTXTc op2, &fiop2)) {
@@ -542,7 +542,7 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
     } else if (arity == 1) {
       Cell op1;
       FltInt fiop1;
-      op1 = cell(clref_val(expr)+1);
+      op1 = get_str_arg(expr,1);
       if (xsb_eval(CTXTc op1, &fiop1)) {
       /***
 	  builtin_function(sin, 1, 9).

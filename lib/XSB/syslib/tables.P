@@ -27,7 +27,7 @@
 /* NOTE: This file HAS TO be compiled with the "sysmod" option.         */
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod,optimize,xpp_on]).
+:- compiler_options([sysmod,optimize,xpp_on,spec_off]).
 
 #include "builtin.h"
 #include "table_status_defs.h"
@@ -273,6 +273,18 @@ writeit(0).
 mywriteln(Term):- writeit(If),(If =:= 1 -> writeln(Term); true).
 */
 
+u_not(Goal) :-
+	(ground_and_acyclic(Goal) ->
+	   tnot(Goal)
+	 ; check_cyclic(Goal,'u_not/1',1),
+	   floundered(Goal)).
+
+:- table floundered/1 as variant, opaque.
+floundered(_Goal):- floundered_undefined(a).
+
+:- table tunnumcall/1.
+:- use_variant_tabling tunnumcall(_).
+
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
 %% calls.  That is
@@ -282,13 +294,15 @@ mywriteln(Term):- writeit(If),(If =:= 1 -> writeln(Term); true).
 %%	pp :- p(X).
 %% where pp is a new proposition.
 
-:- table tunnumcall/1.
-:- use_variant_tabling tunnumcall(_).
+:- export not_exists(Goal).
+
+not_exists(Goal):- sk_not(Goal).
 
 sk_not(Goal) :-
 	check_cyclic(Goal,'sk_not/1',1),
 	copy_term(Goal,Goal1),
-	numbervars(Goal1,0,_),  % is now ground, so no check necessary
+	numbervars(Goal1,0,_,[attvar(bind)]), 
+	%% is now ground, so no check necessary
 	tnot(tunnumcall(Goal1)).
 
 tunnumcall(GGoal) :-
@@ -299,6 +313,13 @@ tunnumcall(GGoal) :-
 :- table undefined/0.
 undefined:- tnot(undefined).
 
+:- table floundered_undefined/1.
+floundered_undefined(a) :- tnot(floundered_undefined(a)).
+
+%:- table floundered_undefined/0.
+%floundered_undefined :- tnot(floundered_undefined).
+
+?- floundered_undefined(a).
 /*----------------------------------------------------------------------*/
 /* Predicates to retrieve information out of tables.                    */
 /*----------------------------------------------------------------------*/
@@ -567,7 +588,13 @@ is_conditional_answer(Leaf,IsCond):-
 /* Predicates to remove information from tables.			*/
 /*----------------------------------------------------------------------*/
 
-abolish_all_tables :- abolish_table_info.
+:- import brat_undefined/0 from xsbbrat.
+:- import current_prolog_flag/2 from curr_sym.
+abolish_all_tables :- 
+	   abolish_table_info,
+	   (current_prolog_flag(max_table_answer_action,bounded_rationality) -> 
+   		   (brat_undefined,fail ; true)
+		    ; true).		   
 
 abolish_table_pred(Spec,Options) :-
 	check_nonvar(Spec,abolish_table_pred/1,1),
@@ -761,6 +788,19 @@ check_variant(Term):-
 check_variant(Term,DontCares):- 
 	table_inspection_function(CHECK_VARIANT,Term,DontCares,_,_).
 
+:- export set_tif_property/3, get_tif_property/3.
+
+get_tif_property(Term,Property,Value):- 
+	tif_translate(Property,Prop),
+	table_inspection_function(GET_TIF_PROPERTY,Term,Prop,Value,_).
+
+set_tif_property(Term,Property,Value):- 
+	tif_translate(Property,Prop),
+	table_inspection_function(SET_TIF_PROPERTY,Term,Prop,Value,_).
+
+tif_translate(subgoal_depth,SUBGOAL_DEPTH).
+tif_translate(answer_depth,ANSWER_DEPTH).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Forest Logging
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -803,11 +843,13 @@ check_log_forest_options(Culprit,_File):-
 
 start_forest_view(File):-
 	table_inspection_function(START_FOREST_VIEW,File,_,_,_),
+	set_prolog_flag(backtrace_on_error,off),
 	set_prolog_flag(ctrace,on).
 
 stop_forest_view:-
 	table_inspection_function(STOP_FOREST_VIEW,_,_,_,_),
-	set_prolog_flag(ctrace,off).
+	set_prolog_flag(ctrace,off),
+	set_prolog_flag(backtrace_on_error,on).
 
 load_forest_log(File):- 
 	ensure_loaded(term_abstract),
@@ -868,7 +910,6 @@ forest_log_overview_1(CondLen):-
 three_valued_sccs(L):-
 	setof(Scc,B^S^S1^Ct^(unsimplified(B,S),cmp(S1,Scc,Ct),variant(S,S1)),L).
 
-:- import variant/2 from subsumes.
 unsimplified(_Binding,Subgoal):- 
 	del(Subgoald,_caller,_DelCtr),
 	nda([],Subgoal,_Delays,Ctr),
@@ -1116,9 +1157,192 @@ get_functor(T,F/Outarg):-
 get_functor(T,F/Arg):-
         functor(T,F,Arg).
 
-%----------------
+%--------------------------------------------------------------------------------
+:- export get_residual_sccs/3.
+get_residual_sccs(Call,Answer,Scc):-
+	get_answer_leaf(Call,Answer,AnsLeaf),
+	get_residual_sccs_1(AnsLeaf,Scc_1),
+	process_sccs(Scc_1,Scc).
 
+:- export get_residual_sccs/5.
+get_residual_sccs(Call,Answer,Scc,Deps,Signs):-
+	get_answer_leaf(Call,Answer,AnsLeaf),
+	get_residual_sccs_1(AnsLeaf,Scc_1),
+	process_sccs(Scc_1,Scc),
+	get_scc_dependency_structure(Scc_1,Deps,Signs).
+
+%---------------
+
+get_residual_sccs_1(AnsLeaf,Scc):-
+	abolish_table_pred(trans_ans_depends_ptr(_,_)),
+%	setof(P,(trans_ans_depends_ptr(AnsLeaf,P) ; P = AnsLeaf),Ptrs),
+	setof(P,trans_ans_depends_ptr(AnsLeaf,P),Ptrs),
+%	writeln(ptrs(Ptrs)),
+	table_inspection_function(GET_RESIDUAL_SCCS, Ptrs, Scc,_,_).
+
+/*
+process_sccs([],[]).
+process_sccs([ret(Subgoal,Ptr,Comp)|T],[ret(Subgoal,Ans,Comp)|T1]):- 
+        (Ptr == 0 -> 
+	    Ans = Ptr
+	 ; process_scc_node(Subgoal,Ptr,Ans)),
+	 process_sccs(T,T1).
+*/
+
+process_sccs([],[]).
+process_sccs([ret(Subgoal,Ptr,Comp)|T],[ret(Subgoal,Ans,Comp)|T1]):- 
+        (Ptr == 0 -> 
+	    Ans = Ptr
+%	 ; true),
+	 ; process_scc_node(Subgoal,Ptr,Ans)),
+	 process_sccs(T,T1).
+
+%------
+
+get_scc_dependency_structure(List,Depends,Signs):- 
+%	writeln(list(List)),
+	partition_list(List,PartList),
+%	writeln(pl(PartList)),
+	scc_depends(PartList,Depends,[],Signs).
+
+partition_list(List,PartList):- 
+%	setof(ret(Index,Ans),Subgoal^member(ret(Subgoal,Ans,Index),List),Parts),
+	reverse_partition(List,Parts_dup),
+	sort(Parts_dup,Parts),
+	partition_list_1(Parts,PartList).
+
+reverse_partition([],[]).
+reverse_partition([ret(_S,A,I)|T],[ret(I,A)|T1]):- 
+	reverse_partition(T,T1).
+
+partition_list_1([],[]).
+partition_list_1([ret(N,S)|IRest],[List|ORest]):-
+	partition_list_2([ret(N,S)|IRest],N,List,IRest1),
+	partition_list_1(IRest1,ORest).
+	
+partition_list_2([],_N,[],[]).
+partition_list_2([ret(N,S)|R],N,[ret(N,S)|NR],RestOut):- !,
+	partition_list_2(R,N,NR,RestOut).
+partition_list_2([ret(M,S)|R],_N,[],[ret(M,S)|R]).
+
+scc_depends([Scc],In,In,[sign(Comp,Sign)]):- 
+	scc_self_depends(Scc,Comp,Sign),!.
+scc_depends([SCC|Rest],In,Out,[Sign|R]):- 
+	scc_depends_1(Rest,SCC,In,Mid,Sign),
+%	writeln(scc_depends(Rest,Mid,Out)),
+	scc_depends(Rest,Mid,Out,R).
+
+scc_depends_1([],Scc,In,In,sign(Comp,Sign)):- 
+	scc_self_depends(Scc,Comp,Sign),!.
+scc_depends_1([Scc1|R],Scc2,In,Out,Sign):-
+	(scc_depends_2(Scc1,Scc2,Depends) -> 
+	    In = [Depends|Mid1] 
+	  ; (scc_depends_2(Scc2,Scc1,Depends1) -> In = [Depends1|Mid1] ; In = Mid1) ),
+	scc_depends_1(R,Scc2,Mid1,Out,Sign).
+
+scc_depends_2(SCC1,SCC2,depends(Comp1,Comp2)):-
+	member(ret(Comp1,AnsPtr),SCC1),
+%	writeln(ret(Comp1,AnsPtr)),
+	AnsPtr \== 0,  % TLS: fix
+	table_inspection_function(IMMED_ANS_DEPENDS_PTRLIST, AnsPtr, PtrList,_,_),
+	member(ret(AnsPtr1,_),PtrList),
+	member(ret(Comp2,AnsPtr1),SCC2).
+
+scc_self_depends(SCC,Comp,neg):- 
+	member(ret(Comp,AnsPtr),SCC),
+%	writeln(ret(Comp,AnsPtr)),
+	AnsPtr \== 0,  % TLS: fix
+	table_inspection_function(IMMED_ANS_DEPENDS_PTRLIST, AnsPtr, PtrList,_,_),
+	member(ret(AnsPtr1,IS_SUBGOAL_FRAME),PtrList),
+	member(ret(_Comp,AnsPtr1),SCC),
+	!.
+scc_self_depends(SCC,Comp,no_neg):-
+	member(ret(Comp,_AnsPtr),SCC),!.
+
+%---------------
+
+process_scc_node(Goal,Leaf,G):-
+	copy_term(Goal,G),
+	get_call(G,SF,Template),
+	get_returns(SF,Template,L),
+	L = Leaf.
+
+:- export get_answer_dependencies/3.
+get_answer_dependencies(Call,Answer,Ptr):-
+	get_answer_leaf(Call,Answer,AnsLeaf),
+%	immed_ans_depends_ptr(AnsLeaf,Ptr).
+	trans_ans_depends_ptr(AnsLeaf,Ptr).
+
+:- export trans_ans_depends_ptr/2.
+:- import (table)/1 from standard.
+:- table trans_ans_depends_ptr/2 as variant.
+trans_ans_depends_ptr(CallPtr1,CallPtr2):-
+	immed_ans_depends_ptr(CallPtr1,CallPtr2).
+trans_ans_depends_ptr(CallPtr1,CallPtr2):-
+	trans_ans_depends_ptr(CallPtr1,CallPtr3),
+	immed_ans_depends_ptr(CallPtr3,CallPtr2).
+
+:- export immed_ans_depends_ptr/2.	
+immed_ans_depends_ptr(Ptr,Ptr2):-
+	table_inspection_function(IMMED_ANS_DEPENDS_PTRLIST, Ptr, PtrList,_,_),
+	member(ret(Ptr2,_),PtrList).		
+
+get_answer_leaf(Call,Answer,AnsLeaf):-
+	copy_term(Call,Call1),
+	get_call(Call1,SF,Return),	
+	get_returns(SF,Return,AnsLeaf),
+%	writeln((Call,Call1)),
+	Answer = Call1.
+
+%--------------------------
+
+:- export explain_u_val/3,explain_u_val/7.
+:- import brat_undefined/0 from xsbbrat.
+
+explain_u_val(Subgoal,Ans,Type):-
+	get_residual_sccs(Subgoal,Ans,Sccs,Deps,Signs),
+%	writeln(scc(Subgoal,Ans,Sccs,Deps,Signs)),
+	subgoal_scc_member(Sccs,Subgoal,Index),
+	explain_u_val(Subgoal,Ans,Sccs,Deps,Signs,Index,Type).
+
+explain_u_val(_Subgoal,_Ans,Sccs,_Deps,_Signs,_Index,unsafe_negation):-
+	memberchk(ret(floundered_undefined(_),_,_),Sccs).
+explain_u_val(_Subgoal,_Ans,Sccs,_Deps,_Signs,_Index,radial_restraint):-
+	memberchk(ret(brat_undefined,_,_),Sccs).
+explain_u_val(_Subgoal,_Ans,_Sccs,_Deps,Signs,Index,negative_loops(cycle)):-
+	memberchk(sign(Index,neg),Signs).
+explain_u_val(_Subgoal,_Ans,_Sccs,_Deps,Signs,Index,negative_loops(dependent)):-
+	memberchk(sign(I,neg),Signs),I \== Index.
+
+:- import variant/2 from subsumes.
+subgoal_scc_member([],_Subgoal,-1). % -- want to succeed with non-matching index.
+subgoal_scc_member([ret(S,_,Index)|_],Subgoal,Index):- 
+	variant(S,Subgoal),!.
+subgoal_scc_member([_|R],Subgoal,Index):- 
+	subgoal_scc_member(R,Subgoal,Index).
+
+%------------------------------------------------------------------------------
 end_of_file.
+
+:- export explain_u_val/4.
+:- import brat_undefined/0 from xsbbrat.
+explain_u_val(Call,Answer,Reason,Type):-
+	get_answer_leaf(Call,Answer,AnswerLeaf),
+%	brat_undefined,
+	get_answer_leaf(brat_undefined,brat_undefined,BratLeaf),
+	writeln(bl(BratLeaf)),
+	floundered_undefined(a),
+	get_answer_leaf(floundered_undefined(a),floundered_undefined(a),FlounderedLeaf),
+	writeln(fl(FlounderedLeaf)),
+	(trans_ans_depends_ptr(AnswerLeaf,_),fail ; true),
+	get_call(trans_ans_depends_ptr(AnswerLeaf,_),SF,_Return),	
+	explain_u_val_1(SF,BratLeaf,FlounderedLeaf,AnswerLeaf,Reason,Type).
+
+explain_u_val_1(SF,BratLeaf,_FlounderedLeaf,_AnswerLeaf,bounded_rationality,_Type):- 
+	get_returns(SF,ret(BratLeaf),_AnsLeaf).
+explain_u_val_1(SF,_BratLeaf,FlounderedLeaf,_AnswerLeaf,floundered,_Type):- 
+	get_returns(SF,ret(FlounderedLeaf),_AnsLeaf).
+%explain_u_val_1(SF,BratLeaf,FlounderedLeaf,AnswerLeaf,negative_loops,Type):- 
 
 /* ---------------------- end of file tables.P ------------------------ */
 /* 07/05/01  -- work area for functions under development */
@@ -1158,7 +1382,6 @@ get_unifiable_returns_1(TableEntry, Skel, ReturnsList):-
 	findall('_$get_returns'(TableEntry,RetLeaf),
 		'_$$get_returns'(TableEntry,Skel,RetLeaf),
 		ReturnsList).
-
 
 
 /*

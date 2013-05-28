@@ -591,7 +591,7 @@ debug_display_call(Call) :- (debug_display_call_hook(Hook)
 				(call(Invocation) -> true; true)
 			    ; debug_logging_queriable_trace(on)
 			    -> ll_writeq(Call)
-			    ; ll_write(Call)
+			    ; ll_writeq(Call)
 			    ).
 
 leashable('Call').

@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: configure.in,v 1.7 2010/08/19 15:03:39 spyrosh Exp $
+## $Id: configure.in,v 1.8 2012/09/29 02:08:28 kifer Exp $
 ## 
 ##
 
@@ -108,7 +108,7 @@ fi
 # If the MySQL Embedded Server library is missing, set mysqlembedded_error
 # If libmysqld.a is not in a standard place, we must use --with-mysqlembedded-libdir
 if test -n "$libdir" ; then
-   LDFLAGS="-L${libdir} -s -lmysqld -lz -lm -lcrypt -lpthread ${LDFLAGS}"
+   LDFLAGS="-L${libdir} -s -lz -lm -lcrypt -lpthread ${LDFLAGS}"
 fi
 
 AC_CHECK_LIB(mysqld, main, , mysqlembedded_error=yes)
@@ -118,10 +118,12 @@ AC_CHECK_LIB(mysqld, main, , mysqlembedded_error=yes)
 # If any of the headers is not in a standard place, use --with-mysqlembedded-incdir
 if test -n "${incdir}"; then
    CPPFLAGS="-I${incdir} -D_THREAD_SAFE -D_REENTRANT ${CPPFLAGS}"
-   CFLAGS="-g -W -Wall -I${incdir} ${CPFLAGS}"
+   CFLAGS="-g -W -Wall -I${incdir} ${CFLAGS}"
 fi
 
-AC_CHECK_HEADERS(mysql.h , with_mysqlembedded=yes, mysqlembedded_error=yes)
+if test -z "$mysqlembedded_error" ; then
+    AC_CHECK_HEADERS(mysql.h , with_mysqlembedded=yes, mysqlembedded_error=yes)
+fi
 
 if test "$mysqlembedded_error" = "yes"; then
 echo ""

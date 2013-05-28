@@ -876,10 +876,15 @@ xsb_flag(max_tab_usage, Mode) :-
 xsb_flag(max_memory, Max) :-
 	stat_flag(MAX_MEMORY, Max).
 xsb_flag(exception_pre_action, Mode) :-
-	stat_flag(ABORT_PRE_ACTION, Flag),
+	stat_flag(EXCEPTION_PRE_ACTION, Flag),
 	( Flag =:= PRINT_INCOMPLETE_ON_ABORT -> 
 	  Mode = print_incomplete_tables 
 	; Mode = none ).
+xsb_flag(exception_action, Mode) :-
+	stat_flag(EXCEPTION_ACTION, Flag),
+	( Flag =:= UNDEFINED_TRUTH_VALUE -> 
+	  Mode = undefined_truth_value
+	; Mode = iso ).
 
 
 set_xsb_flag(Type,Val):- 
@@ -1059,11 +1064,19 @@ set_xsb_flag_1(max_memory,Max):-!,
 	 ;  domain_error(positive_integer,Max,set_prolog_flag/2,2,max_memory_clause) ).
 set_xsb_flag_1(exception_pre_action, Mode) :- !,
          (Mode = print_incomplete_tables-> 
-	  stat_set_flag(ABORT_PRE_ACTION, PRINT_INCOMPLETE_ON_ABORT)
+	  stat_set_flag(EXCEPTION_PRE_ACTION, PRINT_INCOMPLETE_ON_ABORT)
 	; (Mode = none ->
-    	      stat_set_flag(ABORT_PRE_ACTION, 0)
+    	      stat_set_flag(EXCEPTION_PRE_ACTION, 0)
 	    ; domain_error([print_incomplete_tables,none],
                         Mode,set_prolog_flag/2,2,'exception_pre_action clause') ) ).
+set_xsb_flag_1(exception_action, Mode) :- !,
+         (Mode = undefined_truth_value-> 
+	  stat_set_flag(EXCEPTION_ACTION, UNDEFINED_TRUTH_VALUE),
+          ensure_loaded(tables)
+	; (Mode = iso ->
+    	      stat_set_flag(EXCEPTION_ACTION, 0)
+	    ; domain_error([iso,undefined_truth_value],
+                        Mode,set_prolog_flag/2,2,'exception_action clause') ) ).
 set_xsb_flag_1(max_tab_usage, OnOff) :-!,
 	(OnOff == on -> 
 	    stat_set_flag(MAX_USAGE, 1)

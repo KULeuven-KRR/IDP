@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: io_builtins_xsb.h,v 1.22 2011/06/26 21:02:10 tswift Exp $
+** $Id: io_builtins_xsb.h,v 1.23 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -91,3 +91,5 @@ extern int get_more_chunk(CTXTdecl);
 extern void findall_copy_to_heap(CTXTdeclc Cell, CPtr, CPtr *);
 extern int findall_init_c(CTXTdecl);
 extern void findall_free(CTXTdeclc int);
+
+int unset_fileptr(FILE *stream);

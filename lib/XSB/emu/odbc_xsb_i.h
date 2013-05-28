@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: odbc_xsb_i.h,v 1.14 2011/05/18 19:21:40 dwarren Exp $
+** $Id: odbc_xsb_i.h,v 1.15 2012/12/08 18:21:37 dwarren Exp $
 **
 */
 
@@ -79,6 +79,9 @@ switch (ptoc_int(CTXTc 1)) {
    break;
  case ODBC_DATA_SOURCES:
    ODBCDataSources(CTXT);
+   break;
+ case ODBC_DRIVERS:
+   ODBCDrivers(CTXT);
    break;
  case ODBC_GET_INFO:
    ODBCGetInfo(CTXT);

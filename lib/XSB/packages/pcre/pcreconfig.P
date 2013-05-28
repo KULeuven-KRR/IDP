@@ -93,7 +93,7 @@
     ; '_$_pcrematch_running_under'(darwin)
     ->
 	fmt_write_string(ConfigSharedMod,
-			 '%s%s%s.dylib', f(ConfigBinDir, Slash, Basename))
+			 '%s%s%s.dylib', f(ConfigLibDir, Slash, Basename))
     ;
 	fmt_write_string(ConfigSharedMod,
 			 '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))

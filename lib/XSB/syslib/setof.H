@@ -29,7 +29,7 @@
 	  sort/2, keysort/2, '^'/2, pick/3,
 	  excess_vars/4.
 :- export old_excess_vars/4.  %% for awhile till we're sure we're happy with new on
-:- export find_n/4, n_times/2.
+:- export find_n/4, n_times/2, find_n_m/5, n_m_times/3.
 
 :- import tfindall/3 from tables.
 :- import functor/3, (=..)/2, arg/3, 
