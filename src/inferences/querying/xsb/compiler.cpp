@@ -337,17 +337,25 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 	output << *(pc._head);
 	if (!pc._body.empty()) {
 		output << " :- ";
+		auto instantiatedVars = new std::set<PrologVariable*>();
 		for (std::list<PrologTerm*>::const_iterator it = (pc._body).begin(); it != (pc._body).end(); ++it) {
 			if (it != (pc._body).begin()) {
 				output << ", ";
 			}
 			for (auto var = (*it)->numericVars().begin(); var != (*it)->numericVars().end(); ++var) {
-				output << *(*var)->instantiation() << ", ";
+				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
+					output << *(*var)->instantiation() << ", ";
+				}
 			}
 			output << (**it);
+			for (auto var = (*it)->variables().begin(); var != (*it)->variables().end(); ++var) {
+				instantiatedVars->insert(*var);
+			}
 		}
 		for (auto it = (pc._head)->numericVars().begin(); it != (pc._head)->numericVars().end(); ++it) {
-			output << ", " << *(*it)->instantiation();
+			if(instantiatedVars->find(*it) == instantiatedVars->end()) {
+				output << ", " << *(*it)->instantiation();
+			}
 		}
 	}
 	output << ".";
