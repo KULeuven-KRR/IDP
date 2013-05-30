@@ -136,19 +136,24 @@ public:
 			add(topdownrules, data->formula2ct[qf->subformula()], data->formula2ct[qf], data);
 		} else {
 			std::vector<Formula*> vareq_forms;
+			std::vector<Term*> newSubTerms = data->formula2ct[qf->subformula()]->subterms(); // subterms for the call to QF's subformula - some of these will be newly created varterms
 			varset vars;
-			std::vector<Term*> terms;
 			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
 				auto newvar = new Variable((*i)->sort());
 				auto newterm = new VarTerm(newvar, TermParseInfo());
 				vars.insert(newvar);
-				terms.push_back(newterm);
+				// Replace the old term with the new varterm that should be used in the call to QF's subformula
+				for (auto it = 0; it <data->formula2ct[qf->subformula()]->subterms().size(); it++) {
+					if (data->formula2ct[qf->subformula()]->subterms()[it]->contains(*i)) {
+						newSubTerms[it] = newterm;
+					}
+				}
 				vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
 			}
 			auto vareqs = &Gen::conj(vareq_forms);
 			std::vector<Formula*> disj_forms;
 			disj_forms.push_back(vareqs);
-			disj_forms.push_back(new PredForm(SIGN::POS, ((data->formula2cf[qf->subformula()])->symbol()),terms,FormulaParseInfo()));
+			disj_forms.push_back(new PredForm(SIGN::POS, ((data->formula2cf[qf->subformula()])->symbol()),newSubTerms,FormulaParseInfo()));
 			auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
 
 			add(topdownrules, data->formula2ct[qf->subformula()], &Gen::conj({&quant, data->formula2ct[qf]}), data);
