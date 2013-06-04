@@ -22,6 +22,7 @@
 #include "runidp.hpp"
 #include "insert.hpp"
 #include "GlobalData.hpp"
+#include "utils/Timer.hpp"
 
 #include "utils/StringUtils.hpp"
 
@@ -166,49 +167,27 @@ void handleAndRun(void* d) {
 	clog.flush();
 }
 
-void monitorShutdown(void *);
-
+void monitorShutdown() {
+	int monitoringtime = 0;
+	while (not hasStopped && monitoringtime < 10) { // Wait max 10 seconds
 #ifdef __MINGW32__
-#include <windows.h>
-#define sleep(n) Sleep(1000*n)
-#endif
-//#include <thread>
-#include <tinythread.h>
-using namespace tthread;
-
-thread::native_handle_type executionhandle;
-
-void timeout(void*) {
-	int time = 0;
-	int sleep = 10;
-	while (not shouldStop()) {
-		time += sleep;
-#ifdef __MINGW32__
-		Sleep(sleep);
+		Sleep(1000);
 #else
-		usleep(sleep * 1000);
+		usleep(1000000);
 #endif
-
-		if (sleep < 1000) {
-			if (sleep < 100) {
-				sleep += 10;
-			} else {
-				sleep += 100;
-			}
-		}
-		if (getOption(IntType::TIMEOUT) < time / 1000) {
-			clog << "Timed-out\n";
-			getGlobal()->notifyTerminateRequested();
-		//	cerr <<"Shutting down\n";
-			thread shutdown(&monitorShutdown, NULL);
-			shutdown.join();
-			//cerr <<"Shut down\n";
-			break;
-		}
-		if (getOption(IntType::TIMEOUT) == 0) {
-			return;
-		}
+		monitoringtime += 1;
 	}
+	if (not hasStopped) {
+		clog << "Shutdown failed, aborting.\n";
+		abort();
+	}
+}
+
+void timeout() {
+	clog << "Timed-out\n";
+	getGlobal()->notifyTerminateRequested();
+	thread shutdown(&monitorShutdown);
+	shutdown.join();
 }
 
 jmp_buf main_loop;
@@ -224,26 +203,6 @@ void handleSignals();
 template<typename Handler, typename SIGNAL>
 void registerHandler(Handler f, SIGNAL s) {
 	signal(s, f); // Note: sigaction objects are cleaner but are not in the ISO standard and poorly portable
-}
-
-void monitorShutdown(void*) {
-	int monitoringtime = 0;
-	while (not hasStopped && monitoringtime < 10) { // Wait max 10 seconds
-#ifdef __MINGW32__
-		Sleep(1000);
-#else
-		usleep(1000000);
-#endif
-		monitoringtime += 1;
-	}
-	if (not hasStopped) {
-		// TODO does not work in windows
-//#if defined(DEBUGTHREADS) // For debugging, we notify the other thread to sleep indefinitely, so we can debug properly
-//		pthread_kill(executionhandle, SIGUSR1);
-//#endif
-		clog << "Shutdown failed, aborting.\n";
-		abort();
-	}
 }
 
 /**
@@ -287,18 +246,19 @@ const DomainElement* executeProcedure(const string& proc) {
 	if (!stoprunning) {
 		jumpback = 0;
 
-		thread signalhandling(&timeout, NULL);
+		auto t = Timer<std::function<void (void)>>(getOption(TIMEOUT),[](){timeout();});
+		thread signalhandling(&Timer<std::function<void (void)>>::time, &t);
 
 		RunData d;
 		d.proc = temp;
 		d.result = &result;
 		thread execution(&handleAndRun, &d);
-		executionhandle = execution.native_handle();
 		execution.join();
 
 		hasStopped = true;
 		running = false;
 		setStop(true);
+		t.requestStop();
 		signalhandling.join();
 
 		jumpback = 1;
@@ -312,12 +272,14 @@ const DomainElement* executeProcedure(const string& proc) {
 	signal(SIGINT, SIG_DFL);
 #if defined(__linux__)
 	signal(SIGHUP, SIG_DFL);
+	signal(SIGXCPU, SIG_DFL);
+	signal(SIGXFSZ, SIG_DFL);
 #endif
 
 
 	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
-		cerr << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
-		cerr << *getGlobal()->getErrors().cbegin();
+		clog << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
+		clog << *getGlobal()->getErrors().cbegin();
 	}
 
 	return result;
