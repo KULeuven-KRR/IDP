@@ -55,11 +55,20 @@ void handlePredForm(const PredForm* pf, ApproxData* data, vector<Rule*>* rules) 
 		if(pf->sign() == SIGN::NEG) {
 			std::swap(ctpred,cfpred);
 		}
-		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, pf->subterms(), FormulaParseInfo());
-		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, pf->subterms(), FormulaParseInfo());
+		std::vector<Term*> newSubTerms = pf->args();
+		for(auto it = 0; it < pf->args().size(); it++) {
+			auto newvar = new Variable(pf->args()[it]->sort());
+			auto newterm = new VarTerm(newvar, TermParseInfo());
+			newSubTerms[it] = newterm;
+		}
 
-		add(*rules, data->formula2ct[pf], ctformula, data);
-		add(*rules, data->formula2cf[pf], cfformula, data);
+		PredForm* ct_head = new PredForm(SIGN::POS, data->formula2ct[pf]->symbol(), newSubTerms, FormulaParseInfo());
+		PredForm* cf_head= new PredForm(SIGN::POS, data->formula2cf[pf]->symbol(), newSubTerms, FormulaParseInfo());
+		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, newSubTerms, FormulaParseInfo());
+		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, newSubTerms, FormulaParseInfo());
+
+		add(*rules, ct_head, ctformula, data);
+		add(*rules, cf_head, cfformula, data);
 	}
 }
 
