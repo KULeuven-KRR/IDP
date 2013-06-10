@@ -228,13 +228,13 @@ protected:
 		 *    replace P(x,y,z) with P(x,y,z) | (x=x2 & y=y2 & z=z2 & P(x2, y2, z2))
 		 *    where any equality is dropped if it is still a var or a domain element
 		 */
-		for (auto i = d->rules().cbegin(); i < d->rules().cend(); ++i) {
-			(*i)->head()->accept(this);
+		for (auto rule : d->rules()) {
+			rule->head()->accept(this);
 		}
 
 		_indefbody = true;
-		for (auto j = d->rules().cbegin(); j < d->rules().cend(); ++j) {
-			(*j)->body()->accept(this);
+		for (auto rule : d->rules()) {
+			rule->body()->accept(this);
 		}
 		_indefbody = false;
 

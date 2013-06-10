@@ -77,9 +77,11 @@ Rule* TheoryMutatingVisitor::visit(Rule* r) {
 }
 
 Definition* TheoryMutatingVisitor::visit(Definition* d) {
-	for (size_t n = 0; n < d->rules().size(); ++n) {
-		d->rule(n, d->rules()[n]->accept(this));
+	ruleset newset;
+	for (auto rule : d->rules()) {
+		newset.insert(rule->accept(this));
 	}
+	d->rules(newset);
 	return d;
 }
 

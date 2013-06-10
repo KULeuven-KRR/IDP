@@ -102,8 +102,8 @@ void DefaultTraversingTheoryVisitor::visit(const Rule* r) {
 }
 
 void DefaultTraversingTheoryVisitor::visit(const Definition* d) {
-	for (size_t n = 0; n < d->rules().size(); ++n) {
-		d->rules()[n]->accept(this);
+	for (auto rule : d->rules()) {
+		rule->accept(this);
 	}
 }
 

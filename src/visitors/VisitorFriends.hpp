@@ -90,6 +90,7 @@ class FormulaClauseBuilder;
 		friend class PushQuantifications; \
 		friend class RemoveEquivalences; \
 		friend class SplitComparisonChains; \
+		friend class SplitDefinitions; \
 		friend class SubstituteTerm; \
 		friend class UnnestTerms; \
 		friend class UnnestFuncsAndAggs; \

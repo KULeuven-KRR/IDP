@@ -15,6 +15,8 @@
 #include <set>
 #include <vector>
 #include "common.hpp"
+#include "GlobalData.hpp"
+#include "RuleCompare.hpp"
 #include "vocabulary/VarCompare.hpp"
 #include "parseinfo.hpp"
 #include "visitors/VisitorFriends.hpp"
@@ -496,10 +498,15 @@ private:
 	Formula* _body; //!< the body of the rule
 	varset _quantvars; //!< the universally quantified variables of the rule
 	ParseInfo _pi; //!< the place where the rule was parsed
+	int id;
 
 public:
 	Rule(const varset& vv, PredForm* h, Formula* b, const ParseInfo& pi)
-			: _head(h), _body(b), _quantvars(vv), _pi(pi) {
+			: _head(h), _body(b), _quantvars(vv), _pi(pi), id(getGlobal()->getNewID()) {
+	}
+
+	int getID() const {
+		return id;
 	}
 
 	Rule* clone() const; //!< Make a deep copy of the rule
@@ -557,9 +564,10 @@ public:
 class Definition: public AbstractDefinition {
 ACCEPTBOTH(Definition)
 private:
-	std::vector<Rule*> _rules; //!< The rules in the definition
+	ruleset _rules; //!< The rules in the definition
 	std::set<PFSymbol*> _defsyms; //!< Symbols defined by the definition
 	int id;
+	void updateDefinedSymbols();
 
 public:
 	Definition();
@@ -575,16 +583,19 @@ public:
 	void recursiveDelete();
 
 	void add(Rule*); //!< add a rule to the definition
+	void remove(Rule*); //!< remove a rule of the definition
 	template<typename List>
 	void add(const List& list){
 		for(auto i=list.cbegin(); i!=list.cend(); ++i){
 			add(*i);
 		}
 	}
-	void rule(unsigned int n, Rule* r); //!< Replace the n'th rule of the definition
 
-	const std::vector<Rule*>& rules() const {
+	const ruleset& rules() const {
 		return _rules;
+	}
+	void rules(ruleset& r) {
+		_rules = r;
 	}
 	const std::set<PFSymbol*>& defsymbols() const {
 		return _defsyms;
