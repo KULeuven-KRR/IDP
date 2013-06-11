@@ -196,8 +196,15 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 			if (currentdefinition->second.empty()) {
 				auto definition = currentdefinition->first;
 				auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-				if (getOption(XSB) && hasrecursion) {
+
+				auto useXSB = getOption(XSB);
+				if(getOption(XSB) && getOption(STABLESEMANTICS)) {
+					Warning::warning("Cannot calculate definitions using XSB for the Stable Model Semantics");
+					useXSB = false;
+				}
+				if(getOption(XSB) && hasrecursion) {
 					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
+					useXSB = false;
 				}
 
 				bool tooexpensive = false;
@@ -207,13 +214,13 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 				auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
 				if(getOption(XSB) && has_recursive_aggregate) {
 					Warning::warning("Currently, no support for definitions that have recursive aggregates");
+					useXSB = false;
 				}
-				auto useXSB = getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+
 				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
 				}
-
 				if (not satisfiable) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
