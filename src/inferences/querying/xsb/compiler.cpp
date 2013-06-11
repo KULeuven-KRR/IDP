@@ -77,7 +77,6 @@ string transformIntoTermName(string str) {
 }
 
 string domainelement_prolog(const DomainElement* domelem) {
-	Assert(domelem->type() != DomainElementType::DET_COMPOUND);
 	auto str = toString(domelem);
 	string ret;
 	if(domelem->type() == DomainElementType::DET_INT ||
@@ -92,7 +91,9 @@ string domainelement_prolog(const DomainElement* domelem) {
 			if (isalnum(*i)) {
 				s << *i;
 			} else {
-				unsigned int tmp = *i;
+				// Replace the non-conventional character (such as "_", "/", "." etc)
+				// with their unsigned int value, padded with the character "x"
+				unsigned int tmp = (unsigned int) *i;
 				s << "x" << tmp << "x";
 			}
 		}
@@ -342,18 +343,15 @@ string PrologProgram::getRanges() {
 			} else {
 				st = _structure->inter((*it));
 			}
-			if (st->isRange()) {
-				if(not st->size().isInfinite()) {
-					_loaded.insert((*it)->name());
-					_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
-					output << term_name(sort_name(strip((*it)->name()))) << "(X) :- var(X), between(" << domainelement_prolog(st->first()) << ","
-							<< domainelement_prolog(st->last()) << ",X).\n";
-					output << term_name(sort_name(strip((*it)->name()))) << "(X) :- nonvar(X), X >= " << domainelement_prolog(st->first()) << ", X =< "
-							<< domainelement_prolog(st->last()) << ".\n";
-				}
+			if (st->isRange() && not st->size().isInfinite()) {
+				_loaded.insert((*it)->name());
+				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
+				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- var(X), between(" << domainelement_prolog(st->first()) << ","
+						<< domainelement_prolog(st->last()) << ",X).\n";
+				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- nonvar(X), X >= " << domainelement_prolog(st->first()) << ", X =< "
+						<< domainelement_prolog(st->last()) << ".\n";
 			}
 		}
-
 	}
 	return output.str();
 }
