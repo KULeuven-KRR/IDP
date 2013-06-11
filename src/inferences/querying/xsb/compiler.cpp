@@ -76,10 +76,30 @@ string transformIntoTermName(string str) {
 	return ss.str();
 }
 
-string domainelement_prolog(string str) {
-	auto str2 = term_name(strip(str));
-	domainels[str2] = str;
-	return str2;
+string domainelement_prolog(const DomainElement* domelem) {
+	Assert(domelem->type() != DomainElementType::DET_COMPOUND);
+	auto str = toString(domelem);
+	string ret;
+	if(domelem->type() == DomainElementType::DET_INT ||
+			domelem->type() == DomainElementType::DET_DOUBLE) {
+		domainels[str] = str;
+		ret = str;
+	} else {
+		// filter the string
+		stringstream s;
+		s << IDPXSB_PREFIX << "_";
+		for (auto i = str.begin(); i != str.end(); ++i) {
+			if (isalnum(*i)) {
+				s << *i;
+			} else {
+				unsigned int tmp = *i;
+				s << "x" << tmp << "x";
+			}
+		}
+		ret = s.str();
+		domainels[ret] = str;
+	}
+	return ret;
 }
 
 string domainelement_idp(string str) {
@@ -323,13 +343,14 @@ string PrologProgram::getRanges() {
 				st = _structure->inter((*it));
 			}
 			if (st->isRange()) {
-				_loaded.insert((*it)->name());
-				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
-				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- var(X), between(" << domainelement_prolog(toString(st->first())) << ","
-						<< domainelement_prolog(toString(st->last())) << ",X)." << endl;
-				output << term_name(sort_name(strip((*it)->name()))) << "(X) :- nonvar(X), X >= " << domainelement_prolog(toString(st->first())) << ", X =< "
-						<< domainelement_prolog(toString(st->last())) << "." << endl;
-
+				if(not st->size().isInfinite()) {
+					_loaded.insert((*it)->name());
+					_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
+					output << term_name(sort_name(strip((*it)->name()))) << "(X) :- var(X), between(" << domainelement_prolog(st->first()) << ","
+							<< domainelement_prolog(st->last()) << ",X).\n";
+					output << term_name(sort_name(strip((*it)->name()))) << "(X) :- nonvar(X), X >= " << domainelement_prolog(st->first()) << ", X =< "
+							<< domainelement_prolog(st->last()) << ".\n";
+				}
 			}
 		}
 
@@ -352,7 +373,7 @@ string PrologProgram::getFacts() {
 				_loaded.insert((*it)->name());
 				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
 				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-					output << getStripped((*it)->name()) << "(" << domainelement_prolog(toString((*tuple).front())) << ")." << endl;
+					output << getStripped((*it)->name()) << "(" << domainelement_prolog((*tuple).front()) << ").\n";
 				}
 			}
 		}
@@ -370,7 +391,7 @@ string PrologProgram::getFacts() {
 				const auto& tmp = *tuple;
 				if(tmp.size()>0){
 					output << "(";
-					printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(toString(domelem)); }, true);
+					printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(domelem); }, true);
 					output <<")";
 				}
 				output << ".\n";

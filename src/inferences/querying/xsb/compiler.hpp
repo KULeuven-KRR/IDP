@@ -24,7 +24,7 @@ std::string term_name(std::string);
 std::string transformIntoTermName(std::string);
 std::string filter(std::string);
 std::string domainelement_idp(std::string);
-std::string domainelement_prolog(std::string);
+std::string domainelement_prolog(const DomainElement*);
 
 class PrologVariable;
 class SymbolClause;
