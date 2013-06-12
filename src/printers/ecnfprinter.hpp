@@ -230,14 +230,17 @@ public:
 			}
 		} else if (isa<CPSetTerm>(*left)) {
 			auto term = dynamic_cast<CPSetTerm*>(left);
+			printCPVariables(term->varids());
 
 			switch(term->type()){
 			case AggFunction::SUM:{
 				std::vector<MinisatID::VarID> varids;
 				std::vector<MinisatID::Weight> weights;
+				std::vector<MinisatID::Lit> conditions;
 				for(uint i=0; i<term->varids().size(); ++i){
 					varids.push_back(convert(term->varids()[i]));
 					weights.push_back(createWeight(term->weights()[i]));
+					conditions.push_back(createLiteral(term->conditions()[i]));
 				}
 				auto bound = 0;
 				if (not right._isvarid) {
@@ -245,8 +248,9 @@ public:
 				} else {
 					varids.push_back(convert(right._varid));
 					weights.push_back(createWeight(-1));
+					conditions.push_back(createLiteral(_true));
 				}
-				printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, weights, convert(comp), createWeight(bound)));
+				printer->add(MinisatID::CPSumWeighted(getDefConstrID(), createLiteral(cpr->_head), conditions, varids, weights, convert(comp), createWeight(bound)));
 				break;
 			}
 			case AggFunction::PROD:{
@@ -260,11 +264,13 @@ public:
 
 				std::vector<MinisatID::VarID> varids;
 				std::vector<MinisatID::Weight> weights;
+				std::vector<MinisatID::Lit> conditions;
 				for(uint i=0; i<term->varids().size(); ++i){
 					varids.push_back(convert(term->varids()[i]));
+					conditions.push_back(createLiteral(term->conditions()[i]));
 				}
 
-				printer->add(MinisatID::CPProdWeighted(getDefConstrID(), createLiteral(cpr->_head), varids, createWeight(term->weights().back()), convert(comp), var));
+				printer->add(MinisatID::CPProdWeighted(getDefConstrID(), createLiteral(cpr->_head), conditions, varids, createWeight(term->weights().back()), convert(comp), var));
 				break;
 			}
 			default: // TODO handle min and max

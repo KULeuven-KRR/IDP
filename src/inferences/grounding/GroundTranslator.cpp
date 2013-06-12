@@ -559,7 +559,12 @@ VarId GroundTranslator::nextVarNumber(SortTable* domain) {
 	return id;
 }
 
-string GroundTranslator::printTerm(const VarId& varid) const {
+string GroundTranslator::printTerm(const GroundTerm& gt) const {
+	if(not gt.isVariable){
+		return toString(gt._domelement);
+	}
+
+	auto varid = gt._varid;
 	if (varid.id >= var2Tuple.size()) {
 		return "error";
 	}

@@ -105,7 +105,7 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundDefinition& def) {
-	for (auto head2rule : def) {
+	for (auto head2rule : def.rules()) {
 		addTseitinInterpretations({head2rule.first}, def.id());
 		auto rule = head2rule.second;
 		if (isa<PCGroundRule>(*rule)) {
@@ -150,12 +150,13 @@ void GroundTheory<Policy>::addFoldedVarEquiv(VarId id) {
 
 template<class Policy>
 void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
-	if (_addedvarinterpretation.find(id) != _addedvarinterpretation.cend()) {
+	if (contains(_addedvarinterpretation,id)) {
 		return;
 	}
+
 	_addedvarinterpretation.insert(id);
 
-	// It is already partially known:
+	// It might be already partially known
 	translator()->addKnown(id);
 }
 
@@ -197,8 +198,8 @@ template<class Policy>
 void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, DefId defnr) {
 	if (type == TsType::IMPL || type == TsType::EQ) {
 		if (conj) {
-			for (auto i = body.cbegin(); i < body.cend(); ++i) {
-				add( { -head, *i }, true);
+			for (auto lit : body) {
+				add( { -head, lit }, true);
 			}
 		} else {
 			litlist cl(body.size() + 1, -head);
@@ -216,8 +217,8 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 			}
 			add(cl, true);
 		} else {
-			for (auto i = body.cbegin(); i < body.cend(); ++i) {
-				add( { head, -*i }, true);
+			for (auto lit : body) {
+				add( { head, -lit }, true);
 			}
 		}
 	}

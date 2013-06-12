@@ -68,7 +68,7 @@ public:
 		return false;
 	}
 
-	std::ostream& put(std::ostream& s) const{
+	std::ostream& put(std::ostream&) const{
 		throw notyetimplemented("Printing of ground theories");
 	}
 

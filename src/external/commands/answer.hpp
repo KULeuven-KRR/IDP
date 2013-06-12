@@ -21,7 +21,7 @@ public:
 		setNameSpace(getInternalNamespaceName());
 	}
 
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+	InternalArgument execute(const std::vector<InternalArgument>&) const {
 		return InternalArgument(42);
 	}
 };

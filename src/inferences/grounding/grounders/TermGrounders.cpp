@@ -129,8 +129,8 @@ GroundTerm FuncTermGrounder::run() const {
 	return GroundTerm(varid);
 }
 
-CPTerm* createCPSumTerm(const varidlist& ids, const intweightlist& costs) {
-	return new CPSetTerm(AggFunction::SUM, ids, costs);
+CPTerm* createCPSumTerm(const litlist& conditions, const varidlist& ids, const intweightlist& costs) {
+	return new CPSetTerm(AggFunction::SUM, conditions, ids, costs);
 }
 
 void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -232,7 +232,7 @@ GroundTerm SumTermGrounder::run() const {
 		rightid = _translator->translateTerm(right._domelement);
 	}
 	// Create addition of both terms
-	auto sumterm = createCPSumTerm({leftid, rightid}, { 1, (_type == SumType::ST_MINUS?-1:1) });
+	auto sumterm = createCPSumTerm({ _true, _true}, {leftid, rightid}, { 1, (_type == SumType::ST_MINUS?-1:1) });
 	auto varid = _translator->translateTerm(sumterm, getDomain());
 
 	// Return result
@@ -244,8 +244,8 @@ GroundTerm SumTermGrounder::run() const {
 }
 
 
-CPTerm* createCPProdTerm(const VarId& left, const VarId& right) {
-	return new CPSetTerm(AggFunction::PROD, { left, right }, {1});
+CPTerm* createCPProdTerm(const litlist& conditions, const VarId& left, const VarId& right) {
+	return new CPSetTerm(AggFunction::PROD, conditions, { left, right }, {1});
 }
 
 void ProdTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
@@ -332,7 +332,7 @@ GroundTerm ProdTermGrounder::run() const {
 		rightid = _translator->translateTerm(right._domelement);
 	}
 	// Create addition of both terms
-	auto prodterm = createCPProdTerm(leftid, rightid);
+	auto prodterm = createCPProdTerm({ _true, _true }, leftid, rightid);
 	auto varid = _translator->translateTerm(prodterm, getDomain());
 
 	// Return result
@@ -344,9 +344,9 @@ GroundTerm ProdTermGrounder::run() const {
 }
 
 
-CPTerm* createCPSumTerm(const DomainElement* factor, const VarId& varid) {
+CPTerm* createCPSumTerm(Lit condition, const DomainElement* factor, const VarId& varid) {
 	Assert(factor->type() == DomainElementType::DET_INT);
-	return createCPSumTerm({ varid }, { factor->value()._int });
+	return createCPSumTerm({condition}, { varid }, { factor->value()._int });
 }
 
 void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const GroundTerm& groundsubterm) const {
@@ -396,7 +396,7 @@ GroundTerm TermWithFactorGrounder::run() const {
 
 	VarId varid;
 	if (groundterm.isVariable) {
-		auto sumterm = createCPSumTerm(factor._domelement, groundterm._varid);
+		auto sumterm = createCPSumTerm(_true, factor._domelement, groundterm._varid);
 		varid = _translator->translateTerm(sumterm, getDomain());
 	} else {
 		Assert(not groundterm.isVariable and (_functable != NULL));
@@ -420,17 +420,17 @@ GroundTerm TermWithFactorGrounder::run() const {
 	return GroundTerm(varid);
 }
 
-CPTerm* createCPAggTerm(const AggFunction& f, const varidlist& varids) {
+CPTerm* createCPAggTerm(const AggFunction& f, const litlist& conditions, const varidlist& varids) {
 	Assert(CPSupport::eligibleForCP(f));
 	switch (f) {
 	case SUM:
-		return createCPSumTerm(varids, intweightlist(varids.size(),1));
+		return createCPSumTerm(conditions, varids, intweightlist(varids.size(),1));
 	case PROD:
-		return new CPSetTerm(AggFunction::PROD, varids, {1});
+		return new CPSetTerm(AggFunction::PROD, conditions, varids, {1});
 	case MIN:
-		return new CPSetTerm(AggFunction::MIN, varids, {});
+		return new CPSetTerm(AggFunction::MIN, conditions, varids, {});
 	case MAX:
-		return new CPSetTerm(AggFunction::MAX, varids, {});
+		return new CPSetTerm(AggFunction::MAX, conditions, varids, {});
 	default:
 		throw IdpException("Invalid code path.");
 	}
@@ -453,74 +453,6 @@ Weight getNeutralElement(AggFunction type){
 	throw IdpException("Invalid code path.");
 }
 
-varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms){
-	// Rewrite (l,t) :
-	//  - Introduce new constant t'.
-	//  - Add two formulas: l => t' = t and -l => t' = 0
-	//  - return (true,t')
-	varidlist varids;
-
-	auto translator = grounding->translator();
-
-	Assert(conditions.size()==cpterms.size());
-
-	for(uint i=0; i<conditions.size(); ++i){
-		if(conditions[i]==_true){
-			auto term = cpterms[i];
-			Assert(term.isVariable);
-			varids.push_back(term._varid);
-			continue;
-		}else if(conditions[i]==_false){
-			continue;
-		}
-		const auto& cpterm = cpterms[i];
-		// Compute domain for term t' = dom(t) U {0}
-		SortTable* domain = NULL;
-		if(cpterm.isVariable){
-			auto vardom = translator->domain(cpterm._varid);
-			Assert(vardom->approxFinite());
-			if (vardom->isRange()) {
-				Assert(vardom->first()->type() == DomainElementType::DET_INT);
-				Assert(vardom->last()->type() == DomainElementType::DET_INT);
-				int min = vardom->first()->value()._int;
-				int max = vardom->last()->value()._int;
-				domain = TableUtils::createSortTable(min, max);
-			} else {
-				domain = TableUtils::createSortTable();
-				for (auto it = vardom->sortBegin(); not it.isAtEnd(); ++it) {
-					Assert((*it)->type() == DomainElementType::DET_INT);
-					domain->add(*it);
-				}
-			}
-		}else{
-			domain = TableUtils::createSortTable();
-			if(cpterm._domelement==NULL){
-				throw notyetimplemented("Undefined term in cp-expression");
-			}
-			domain->add(cpterm._domelement);
-		}
-		domain->add(createDomElem(getNeutralElement(type)));
-
-		VarId varid(translator->createNewVarIdNumber(domain));
-
-		// Add formulas to the grounding
-		CPBound b(0);
-		if(cpterm.isVariable){
-			b = CPBound(cpterm._varid);
-		}else{
-			b = CPBound(cpterm._domelement->value()._int);
-		}
-		auto bl1 = translator->reify(new CPVarTerm(varid), CompType::EQ, b, TsType::EQ);
-		auto bl2 = translator->reify(new CPVarTerm(varid), CompType::EQ, getNeutralElement(type), TsType::EQ);
-		grounding->add({-conditions[i], bl1});
-		grounding->add({conditions[i], bl2});
-
-		varids.push_back(varid);
-	}
-
-	return varids;
-}
-
 AggTermGrounder::AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, SetGrounder* gr)
 		: TermGrounder(dom, gt), _type(tp), _setgrounder(gr), grounding(grounding) {
 	Assert(CPSupport::eligibleForCP(tp));
@@ -537,33 +469,47 @@ GroundTerm AggTermGrounder::run() const {
 
 	auto trueweight = applyAgg(_type, tsset.trueweights());
 
-	if (not tsset.cpvars().empty()) {
+	GroundTerm result(0);
+	if(tsset.cpvars().empty()){
+		result = GroundTerm(createDomElem(trueweight));
+	}else{
 		VarId id;
 		if(contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
 			id = aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)];
 		}else{
-			auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
+			varidlist varids;
+			auto conditions = tsset.literals();
+
+			for(auto term: tsset.cpvars()){
+				if(term.isVariable){
+					varids.push_back(term._varid);
+				}else{
+					auto domain = TableUtils::createSortTable();
+					if(term._domelement==NULL){
+						throw notyetimplemented("Undefined term in cp-expression");
+					}
+					domain->add(term._domelement);
+					varids.push_back(_translator->createNewVarIdNumber(domain));
+				}
+			}
 			if (trueweight!=getNeutralElement(_type)) {
+				conditions.push_back(_true);
 				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
 			}
-			auto aggterm = createCPAggTerm(_type, varids);
+
+			auto aggterm = createCPAggTerm(_type, conditions, varids);
 			id = _translator->translateTerm(aggterm, getDomain());
 			aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)]=id;
 			if(not contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
 				throw IdpException("Invalid code path");
 			}
 		}
-
-		if (verbosity() > 2) {
-			poptab();
-			clog << tabs() << "Result = " << _translator->printTerm(id) << "\n";
-		}
-		return GroundTerm(id);
-	} else {
-		if (verbosity() > 2) {
-			poptab();
-			clog << tabs() << "Result = " << print(trueweight) << "\n";
-		}
-		return GroundTerm(createDomElem(trueweight));
+		result = GroundTerm(id);
 	}
+
+	if (verbosity() > 2) {
+		poptab();
+		clog << tabs() << "Result = " << _translator->printTerm(result) << "\n";
+	}
+	return result;
 }

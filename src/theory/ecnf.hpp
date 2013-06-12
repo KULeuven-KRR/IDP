@@ -674,12 +674,16 @@ class CPSetTerm: public CPTerm {
 ACCEPTNONMUTATING()
 private:
 	AggFunction _type;
+	litlist _conditions;
 	varidlist _varids;
 	intweightlist _weights;
 public:
-	CPSetTerm(AggFunction type, const varidlist& varids, const intweightlist& weights)
-			: 	_type(type), _varids(varids),
+	CPSetTerm(AggFunction type, const litlist& conditions, const varidlist& varids, const intweightlist& weights)
+			: 	_type(type),
+			  	_conditions(conditions),
+			  	_varids(varids),
 				_weights(weights) {
+		Assert(conditions.size()==varids.size());
 		switch(type){
 		case AggFunction::CARD:
 			throw IdpException("Invalid code path");
@@ -700,11 +704,17 @@ public:
 	AggFunction type() const {
 		return _type;
 	}
+	const litlist& conditions() const {
+		return _conditions;
+	}
 	const varidlist& varids() const {
 		return _varids;
 	}
 	const intweightlist& weights() const {
 		return _weights;
+	}
+	void conditions(const litlist& conditions) {
+		_conditions = conditions;
 	}
 	void varids(const varidlist& newids) {
 		_varids = newids;

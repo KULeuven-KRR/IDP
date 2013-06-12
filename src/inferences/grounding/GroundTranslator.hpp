@@ -268,7 +268,7 @@ public:
 
 	std::string printL(Lit atom);
 	std::string printLit(const Lit& atom) const;
-	std::string printTerm(const VarId&) const;
+	std::string printTerm(const GroundTerm&) const;
 };
 
 #endif /* GROUNDTRANSLATOR_HPP_ */

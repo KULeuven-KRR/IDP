@@ -153,11 +153,6 @@ private:
 
 class SetGrounder;
 
-CPTerm* createCPAggTerm(const AggFunction&, const varidlist&);
-
-Weight getNeutralElement(AggFunction type);
-varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms);
-
 class AggTermGrounder: public TermGrounder {
 private:
 	AggFunction _type;

@@ -35,6 +35,9 @@ void SolverPolicy<Solver>::initialize(Solver* solver, int verbosity, GroundTrans
 	_solver = solver;
 	_verbosity = verbosity;
 	_translator = translator;
+	_origTrueLit = _translator->createNewUninterpretedNumber();
+	_trueLit = createLiteral(_origTrueLit);
+	extAdd(getSolver(), MinisatID::Disjunction(getDefConstrID(), {_trueLit}));
 }
 
 template<typename Solver>
@@ -88,7 +91,7 @@ void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const varidlist& varids, const intweightlist& weights, const int& bound,
+void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const litlist& conditions, const varidlist& varids, const intweightlist& weights, const int& bound,
 		MinisatID::EqType rel) {
 
 	polAddCPVariables(varids, _translator);
@@ -101,13 +104,17 @@ void SolverPolicy<Solver>::polAddWeightedSum(const MinisatID::Atom& head, const 
 	for (auto var : varids) {
 		vars.push_back(convert(var));
 	}
-	MinisatID::CPSumWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, bound);
+	vector<MinisatID::Lit> lits;
+	for(auto lit:conditions){
+		lits.push_back(lit==_true?_trueLit:createLiteral(lit));
+	}
+	MinisatID::CPSumWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), lits, vars, w, rel, bound);
 	extAdd(getSolver(), sentence);
 	CHECKUNSAT;
 }
 
 template<typename Solver>
-void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel) {
+void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const litlist& conditions, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel) {
 	polAddCPVariables(varids, _translator);
 	polAddCPVariables( { bound }, _translator);
 
@@ -116,19 +123,29 @@ void SolverPolicy<Solver>::polAddWeightedProd(const MinisatID::Atom& head, const
 	for (auto var : varids) {
 		vars.push_back(convert(var));
 	}
-	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), vars, w, rel, convert(bound));
+	vector<MinisatID::Lit> lits;
+	for(auto lit:conditions){
+		lits.push_back(lit==_true?_trueLit:createLiteral(lit));
+	}
+	MinisatID::CPProdWeighted sentence(getDefConstrID(), MinisatID::mkPosLit(head), lits, vars, w, rel, convert(bound));
 	extAdd(getSolver(), sentence);
 	CHECKUNSAT;
 }
 
+/**
+ * Generates a list of literals which enforce some comparison whenever the associated condition is true
+ */
 template<typename Solver>
-litlist SolverPolicy<Solver>::addList(const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid){
+litlist SolverPolicy<Solver>::getConditionalComparisonList(const litlist& conditions, const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid){
 	litlist tseitins;
-	for(auto var: varids){
-		auto newtseitin = _translator->createNewUninterpretedNumber();
-		tseitins.push_back(newtseitin);
-		MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createLiteral(newtseitin), convert(var), comp, convert(rhsvarid));
+	for(uint i=0; i<varids.size(); ++i){
+		auto impltseitin = _translator->createNewUninterpretedNumber();
+		auto comptseitin = _translator->createNewUninterpretedNumber();
+		tseitins.push_back(impltseitin);
+		MinisatID::CPBinaryRelVar sentence(getDefConstrID(), createLiteral(comptseitin), convert(varids[i]), comp, convert(rhsvarid));
 		extAdd(getSolver(), sentence);
+		auto cond = conditions[i];
+		polAdd(impltseitin, TsType::EQ, {~(cond==_true?_origTrueLit:cond), comptseitin}, false);
 		CHECKUNSAT;
 	}
 	return tseitins;
@@ -179,19 +196,19 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 		case AggFunction::SUM:{
 			polAddCPVariables(term->varids(), _translator);
 
+			auto varids = term->varids();
+			auto weights = term->weights();
+			auto conditions = term->conditions();
 			auto bound = 0;
 			if (right._isvarid) {
-				auto varids = term->varids();
-				auto weights = term->weights();
-
-				int bound = 0;
+				bound = 0;
 				varids.push_back(right._varid);
 				weights.push_back(-1);
-
-				polAddWeightedSum(createAtom(tseitin), varids, weights, bound, comp);
-			} else {
-				polAddWeightedSum(createAtom(tseitin), term->varids(), term->weights(), right._bound, comp);
+				conditions.push_back(_true);
+			}else{
+				bound = right._bound;
 			}
+			polAddWeightedSum(createAtom(tseitin), conditions, varids, weights, bound, comp);
 			break;
 		}
 		case AggFunction::PROD:{
@@ -202,7 +219,7 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 				rhsvarid = _translator->translateTerm(createDomElem(right._bound));
 			}
 
-			polAddWeightedProd(createAtom(tseitin), term->varids(), term->weights().back(), rhsvarid, comp);
+			polAddWeightedProd(createAtom(tseitin), term->conditions(), term->varids(), term->weights().back(), rhsvarid, comp);
 			break;
 		}
 		case AggFunction::MIN:{
@@ -235,27 +252,27 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			switch (body->comp()) {
 			case CompType::EQ:{
 				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
-				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
-				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+				polAdd(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
+				polAdd(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
 				polAdd(tseitin, TsType::EQ, {ts1,ts2}, true);
 				break;}
 			case CompType::NEQ:{
 				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
-				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), false);
-				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), true);
+				polAdd(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), false);
+				polAdd(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), true);
 				polAdd(tseitin, TsType::EQ, {ts1,ts2}, false);
 				break;}
 			case CompType::LEQ:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
 				break;
 			case CompType::GEQ:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
 				break;
 			case CompType::LT:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), false);
 				break;
 			case CompType::GT:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), true);
 				break;
 			}
 			break;
@@ -274,27 +291,27 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 			switch (body->comp()) {
 			case CompType::EQ:{
 				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
-				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
-				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+				polAdd(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
+				polAdd(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
 				polAdd(tseitin, TsType::EQ, {ts1,ts2}, true);
 				break;}
 			case CompType::NEQ:{
 				auto ts1 = _translator->createNewUninterpretedNumber(), ts2 = _translator->createNewUninterpretedNumber();
-				polAdd(ts1, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), false);
-				polAdd(ts2, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), true);
+				polAdd(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), false);
+				polAdd(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), true);
 				polAdd(tseitin, TsType::EQ, {ts1,ts2}, false);
 				break;}
 			case CompType::LEQ:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
 				break;
 			case CompType::GEQ:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
 				break;
 			case CompType::LT:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::L, rhsvarid), true);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), true);
 				break;
 			case CompType::GT:
-				polAdd(tseitin, TsType::EQ, addList(term->varids(), MinisatID::EqType::G, rhsvarid), false);
+				polAdd(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), false);
 				break;
 			}
 			break;

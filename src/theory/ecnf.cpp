@@ -410,7 +410,7 @@ bool CPSetTerm::operator==(const CPTerm& body) const {
 		return false;
 	}
 	const auto& rhs = dynamic_cast<const CPSetTerm&>(body);
-	return _type==rhs._type && _varids == rhs._varids && _weights==rhs._weights;
+	return _type==rhs._type && _conditions == rhs._conditions && _varids == rhs._varids && _weights==rhs._weights;
 }
 
 bool CPSetTerm::operator<(const CPTerm& body) const {
@@ -423,6 +423,11 @@ bool CPSetTerm::operator<(const CPTerm& body) const {
 	if(_type<rhs._type){
 		return true;
 	}else if(_type>rhs._type){
+		return false;
+	}
+	if (_conditions < rhs._conditions) {
+		return true;
+	} else if (_conditions > rhs._conditions) {
 		return false;
 	}
 	if (_varids < rhs._varids) {
