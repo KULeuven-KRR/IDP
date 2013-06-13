@@ -31,7 +31,7 @@ Conn negateConn(Conn c) {
 
 void ConjOrDisj::put(std::ostream& stream) const {
 	bool begin = true;
-	for (auto i = literals.cbegin(); i < literals.cend(); ++i) {
+	for (auto lit : literals) {
 		if (not begin) {
 			switch (getType()) {
 			case Conn::DISJ:
@@ -43,7 +43,7 @@ void ConjOrDisj::put(std::ostream& stream) const {
 			}
 		}
 		begin = false;
-		stream << print(*i);
+		stream << print(lit);
 	}
 }
 void ConjOrDisj::negate() {
@@ -51,10 +51,6 @@ void ConjOrDisj::negate() {
 	for (size_t i = 0; i < literals.size(); ++i) {
 		literals[i] = -literals.at(i);
 	}
-}
-
-GroundTranslator* Grounder::getTranslator() const {
-	return _grounding->translator();
 }
 
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
@@ -65,8 +61,9 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 		}
 	} else if (formula.literals.size() == 1) {
 		auto l = formula.literals.back();
-		if (l == _true or l == _false) {
-			if (formula.getType() == Conn::CONJ and l == _false) { // UNSAT
+		auto falselit = gt->translator()->falseLit();
+		if (l == gt->translator()->trueLit() or l == falselit) {
+			if (formula.getType() == Conn::CONJ and l == falselit) { // UNSAT
 				gt->add(GroundClause{}); // TODO Remove when unsatexception is handled everywhere
 				throw UnsatException();
 			} // else SAT or irrelevant
@@ -75,8 +72,8 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 		}
 	} else {
 		if (formula.getType() == Conn::CONJ) {
-			for (auto i = formula.literals.cbegin(); i < formula.literals.cend(); ++i) {
-				gt->addUnitClause(*i);
+			for (auto lit : formula.literals) {
+				gt->addUnitClause(lit);
 			}
 		} else {
 			gt->add(formula.literals);
@@ -92,6 +89,10 @@ Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
 		: 	_grounding(gt),
 			_context(context),
 			_maxsize(tablesize(TableSizeType::TST_INFINITE, 0)) {
+}
+
+GroundTranslator* Grounder::translator() const {
+	return getGrounding()->translator();
 }
 
 bool Grounder::toplevelRun() const {

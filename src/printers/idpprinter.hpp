@@ -696,8 +696,8 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		for (auto it = d->begin(); it != d->end(); ++it) {
-			(*it).second->accept(this);
+		for (auto rule : d->rules()) {
+			rule.second->accept(this);
 		}
 		_printTermsAsBlock = backup;
 	}

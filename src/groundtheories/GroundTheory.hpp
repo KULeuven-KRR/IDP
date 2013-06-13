@@ -91,7 +91,7 @@ protected:
 	void addVarIdInterpretation(VarId id);
 
 	void addFoldedVarEquiv(VarId id);
-	CPTerm* foldCPTerm(CPTerm* cpterm);
+	CPTerm* foldCPTerm(CPTerm* cpterm, DefId defnr);
 
 private:
 	void addRangeConstraint(Function* f, const litlist& set, SortTable* outSortTable);

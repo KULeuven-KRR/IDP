@@ -143,8 +143,8 @@ QuantSetExpr* TheoryMutatingVisitor::visit(QuantSetExpr* qs) {
 }
 
 GroundDefinition* TheoryMutatingVisitor::visit(GroundDefinition* d) {
-	for (auto it = d->begin(); it != d->end(); ++it) {
-		(*it).second = (*it).second->accept(this);
+	for (auto rule : d->rules()) {
+		rule.second = rule.second->accept(this);
 	}
 	return d;
 }

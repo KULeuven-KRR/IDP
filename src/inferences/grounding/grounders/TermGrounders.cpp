@@ -41,10 +41,10 @@ TermGrounder::~TermGrounder() {
 
 void TermGrounder::setOrig(const Term* t, const var2dommap& mvd) {
 	map<Variable*, Variable*> mvv;
-	for (auto it = t->freeVars().cbegin(); it != t->freeVars().cend(); ++it) {
-		Variable* v = new Variable((*it)->name(), (*it)->sort(), ParseInfo());
-		mvv[*it] = v;
-		_varmap[v] = mvd.find(*it)->second;
+	for (auto freevar : t->freeVars()) {
+		Variable* v = new Variable(freevar->name(), freevar->sort(), ParseInfo());
+		mvv[freevar] = v;
+		_varmap[v] = mvd.find(freevar)->second;
 	}
 	_origterm = t->clone(mvv);
 }
@@ -54,9 +54,9 @@ void TermGrounder::printOrig() const {
 	if (not _origterm->freeVars().empty()) {
 		pushtab();
 		clog << tabs() << "with instance ";
-		for (auto it = _origterm->freeVars().cbegin(); it != _origterm->freeVars().cend(); ++it) {
-			clog << print(*it) << " = ";
-			const DomainElement* e = _varmap.find(*it)->second->get();
+		for (auto freevar : _origterm->freeVars()) {
+			clog << print(freevar) << " = ";
+			const DomainElement* e = _varmap.find(freevar)->second->get();
 			clog << print(e) << ' ';
 		}
 		clog << "\n";

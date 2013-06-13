@@ -226,11 +226,13 @@ Grounder* GrounderFactory::createGrounder(const GroundInfo& data, GroundTheory g
  */
 Grounder* GrounderFactory::create(const GroundInfo& data) {
 	auto groundtheory = new GroundTheory<GroundPolicy>(data.theory->vocabulary(), data.structure, data.nbModelsEquivalent);
+	groundtheory->initializeTheory();
 	return createGrounder(data, groundtheory);
 }
 Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonitor* monitor) {
 	auto groundtheory = new GroundTheory<PrintGroundPolicy>(data.structure, data.nbModelsEquivalent);
 	groundtheory->initialize(monitor, groundtheory->structure(), groundtheory->translator());
+	groundtheory->initializeTheory();
 	return createGrounder(data, groundtheory);
 }
 
@@ -252,8 +254,9 @@ Grounder* GrounderFactory::create(const GroundInfo& data, InteractivePrintMonito
 Grounder* GrounderFactory::create(const GroundInfo& data, PCSolver* solver) {
 	auto groundtheory = new SolverTheory(data.theory->vocabulary(), data.structure, data.nbModelsEquivalent);
 	groundtheory->initialize(solver, getOption(IntType::VERBOSE_GROUNDING), groundtheory->translator());
+	groundtheory->initializeTheory();
 	auto grounder = createGrounder(data, groundtheory);
-	SolverConnection::setTranslator(solver, grounder->getTranslator());
+	SolverConnection::setTranslator(solver, grounder->translator());
 	return grounder;
 }
 /*

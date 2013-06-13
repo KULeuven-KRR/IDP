@@ -82,6 +82,8 @@ public:
 		return _context;
 	}
 
+	GroundTranslator* translator() const;
+
 public:
 	RuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* big, GroundingContext& ct);
 	virtual ~RuleGrounder();
@@ -138,6 +140,8 @@ public:
 			const std::vector<SortTable*>&, GroundingContext& context);
 	~HeadGrounder();
 	Lit run() const;
+
+	GroundTranslator* translator() const;
 
 	const std::vector<TermGrounder*>& subtermgrounders() const {
 		return _subtermgrounders;

@@ -315,10 +315,6 @@ public:
 	GroundDefinition* clone() const;
 	void recursiveDelete();
 
-	bool hasRule(Atom head) const {
-		return _rules.find(head) != _rules.cend();
-	}
-
 	// Mutators
 	void addPCRule(Lit head, const litlist& body, bool conj, bool recursive);
 	void addAggRule(Lit head, SetId setnr, AggFunction aggtype, bool lower, double bound, bool recursive);
@@ -331,24 +327,12 @@ public:
 		return _rules.size();
 	}
 
-	typedef std::map<int, GroundRule*>::iterator ruleiterator;
-	ruleiterator begin() {
-		return _rules.begin();
-	}
-	ruleiterator end() {
-		return _rules.end();
-	}
+	std::map<int, GroundRule*>& rules() { return _rules; }
+	const std::map<int, GroundRule*>& rules() const { return _rules; }
+	bool hasRule(Atom head) const;
 
 	GroundTranslator* translator() const {
 		return _translator;
-	}
-
-	typedef std::map<int, GroundRule*>::const_iterator const_ruleiterator;
-	const_ruleiterator begin() const {
-		return _rules.cbegin();
-	}
-	const_ruleiterator end() const {
-		return _rules.cend();
 	}
 
 	// Debugging

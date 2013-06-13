@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef INFERENCE_SOLVERCONN_HPP_
-#define INFERENCE_SOLVERCONN_HPP_
+#pragma once
 
 #include "SolverInclude.hpp"
 #include "commontypes.hpp"
@@ -24,9 +23,6 @@ namespace SolverConnection {
 	MinisatID::VarID convert(VarId varid);
 	MinisatID::AggType convert(AggFunction agg);
 	MinisatID::EqType convert(CompType rel);
-	MinisatID::Atom createAtom(const int lit);
-	MinisatID::Lit createLiteral(const int lit);
-	MinisatID::literallist createList(const litlist& origlist);
 	MinisatID::Weight createWeight(double weight);
 
 	// Note: default find all models
@@ -43,5 +39,3 @@ namespace SolverConnection {
 
 	bool useUFSAndOnlyIfSem();
 }
-
-#endif //INFERENCE_SOLVERCONN_HPP_

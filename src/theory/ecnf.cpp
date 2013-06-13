@@ -45,6 +45,10 @@ AggGroundRule::AggGroundRule(Lit head, AggTsBody* body, bool rec)
 			_aggtype(body->aggtype()) {
 }
 
+bool GroundDefinition::hasRule(Atom head) const {
+	return contains(rules(), head);
+}
+
 GroundDefinition* GroundDefinition::clone() const {
 	throw notyetimplemented("Cloning grounddefinitions");
 	auto newdef = new GroundDefinition(_id, _translator);
@@ -54,8 +58,8 @@ GroundDefinition* GroundDefinition::clone() const {
 }
 
 void GroundDefinition::recursiveDelete() {
-	for (auto it = begin(); it != end(); ++it) {
-		delete ((*it).second);
+	for (auto rule : rules()) {
+		delete (rule.second);
 	}
 	delete (this);
 }

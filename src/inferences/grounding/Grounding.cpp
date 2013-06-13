@@ -17,7 +17,7 @@
 
 template<>
 void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) {
-	t->setTranslator(grounder->getTranslator());
+	t->setTranslator(grounder->translator());
 	t->setSolver(solver);
 }
 
@@ -40,8 +40,8 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 			logActionAndTime("Adding symmetry propagators");
 		}
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
-		for (auto ivsets_it = ivsets.cbegin(); ivsets_it != ivsets.cend(); ++ivsets_it) {
-			grounding->addSymmetries((*ivsets_it)->getBreakingSymmetries(grounding));
+		for (auto ivset : ivsets) {
+			grounding->addSymmetries(ivset->getBreakingSymmetries(grounding));
 		}
 		break;
 	}

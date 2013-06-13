@@ -69,22 +69,6 @@ MinisatID::EqType convert(CompType rel) {
 	return MinisatID::EqType::EQ;
 }
 
-MinisatID::Atom createAtom(const int lit) {
-	return MinisatID::Atom(abs(lit));
-}
-
-MinisatID::Lit createLiteral(const int lit) {
-	return lit>0?MinisatID::mkPosLit(abs(lit)):MinisatID::mkNegLit(abs(lit));
-}
-
-MinisatID::literallist createList(const litlist& origlist) {
-	MinisatID::literallist list;
-	for (auto i = origlist.cbegin(); i < origlist.cend(); i++) {
-		list.push_back(createLiteral(*i));
-	}
-	return list;
-}
-
 MinisatID::Weight createWeight(double weight) {
 	double test;
 	if (modf(weight, &test) != 0) {

@@ -29,6 +29,10 @@ AbstractGroundTheory::AbstractGroundTheory(Vocabulary* voc, StructureInfo struct
 	_translator = new GroundTranslator(structure, this);
 }
 
+void AbstractGroundTheory::initializeTheory(){
+	_translator->initialize();
+}
+
 AbstractGroundTheory::~AbstractGroundTheory() {
 	delete (_structure);
 	delete (_translator);

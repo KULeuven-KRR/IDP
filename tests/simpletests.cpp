@@ -22,14 +22,6 @@
 
 using namespace std;
 
-namespace Tests {
-
-TEST(SimpleTest, NegationOfTrueIsFalse) {
-	ASSERT_EQ(_false, -_true);
-}
-
-}
-
 TEST(SimpleTest, TestTableSizeEquality) {
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);

@@ -109,12 +109,12 @@ private:
 		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0 || getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			clog << "Unsat detected during grounding\n";
 		}
-		if(receiver==NULL){
-			_grounder = GrounderFactory::create(info);
-		}else{
-			_grounder = GrounderFactory::create(info, receiver);
-		}
 		try {
+			if(receiver==NULL){
+				_grounder = GrounderFactory::create(info);
+			}else{
+				_grounder = GrounderFactory::create(info, receiver);
+			}
 			_grounder->getGrounding()->addEmptyClause();
 		} catch (UnsatException&) {
 

@@ -140,8 +140,8 @@ void DefaultTraversingTheoryVisitor::visit(const QuantSetExpr* qs) {
 }
 
 void DefaultTraversingTheoryVisitor::visit(const GroundDefinition* d) {
-	for (auto it = d->begin(); it != d->end(); ++it) {
-		(*it).second->accept(this);
+	for (auto rule : d->rules()) {
+		rule.second->accept(this);
 	}
 }
 

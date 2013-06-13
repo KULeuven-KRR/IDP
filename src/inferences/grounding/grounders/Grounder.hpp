@@ -73,7 +73,7 @@ public:
 		return _grounding;
 	}
 
-	GroundTranslator* getTranslator() const;
+	GroundTranslator* translator() const;
 
 	void setConjUntilRoot(bool value){
 		_context._conjunctivePathFromRoot = value;

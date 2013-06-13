@@ -29,8 +29,8 @@ DefinitionGrounder::DefinitionGrounder(AbstractGroundTheory* gt, std::vector<Rul
 		: Grounder(gt, context), _subgrounders(subgr) {
 	Assert(context.getCurrentDefID()!=getIDForUndefined());
 	auto t = tablesize(TableSizeType::TST_EXACT, 0);
-	for (auto i = subgr.cbegin(); i < subgr.cend(); ++i) {
-		t = t + (*i)->getMaxGroundSize();
+	for (auto grounder : subgr) {
+		t = t + grounder->getMaxGroundSize();
 	}
 	setMaxGroundSize(t);
 }
@@ -44,12 +44,13 @@ void DefinitionGrounder::run(ConjOrDisj& formula) const {
 		clog <<"Grounding definition " <<print(this) <<"\n";
 	}
 
-	auto grounddefinition = new GroundDefinition(id(), getTranslator());
+	auto grounddefinition = new GroundDefinition(id(), translator());
 
 	std::vector<PFSymbol*> headsymbols;
-	for (auto grounder = _subgrounders.cbegin(); grounder < _subgrounders.cend(); ++grounder) {
-		CHECKTERMINATION(*grounder)->run(id(), grounddefinition);
-		headsymbols.push_back((*grounder)->getHead()->symbol());
+	for (auto grounder : _subgrounders) {
+		CHECKTERMINATION;
+		grounder->run(id(), grounddefinition);
+		headsymbols.push_back(grounder->getHead()->symbol());
 	}
 	getGrounding()->add(*grounddefinition); // FIXME check how it is handled in the lazy part
 
@@ -100,6 +101,10 @@ RuleGrounder::~RuleGrounder() {
 	delete (_bodygrounder);
 	delete (_bodygenerator);
 	_origrule->recursiveDelete();
+}
+
+GroundTranslator* RuleGrounder::translator() const{
+	return _bodygrounder->translator();
 }
 
 FullRuleGrounder::FullRuleGrounder(const Rule* rule, HeadGrounder* hgr, FormulaGrounder* bgr, InstGenerator* hig, InstGenerator* big, GroundingContext& ct)
@@ -165,6 +170,10 @@ HeadGrounder::HeadGrounder(AbstractGroundTheory* gt, const PredTable* ct, const 
 
 HeadGrounder::~HeadGrounder() {
 	deleteList(_subtermgrounders);
+}
+
+GroundTranslator* HeadGrounder::translator() const {
+	return _grounding->translator();
 }
 
 Lit HeadGrounder::run() const {

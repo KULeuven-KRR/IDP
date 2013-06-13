@@ -35,11 +35,11 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
-		l = _true;
+		l = sublitgrounder.translator()->trueLit();
 	} else {
 		l = sublitgrounder.groundAndReturnLit();
 	}
-	if (l == _false) {
+	if (l == sublitgrounder.translator()->falseLit()) {
 		return;
 	}
 
@@ -52,7 +52,7 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 	Assert(d != NULL);
 	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 
-	if (l == _true) {
+	if (l == sublitgrounder.translator()->trueLit()) {
 		trueweights.push_back(w);
 	} else {
 		weights.push_back(w);
@@ -65,17 +65,17 @@ void groundSetLiteral(const LitGrounder& sublitgrounder, const TermGrounder& sub
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
-		l = _true;
+		l = sublitgrounder.translator()->trueLit();
 	} else {
 		l = sublitgrounder.groundAndReturnLit();
 	}
-	if (l == _false) {
+	if (l == sublitgrounder.translator()->falseLit()) {
 		return;
 	}
 
 	const auto& groundweight = subtermgrounder.run();
 
-	if (l == _true && not groundweight.isVariable) {
+	if (l == sublitgrounder.translator()->trueLit() && not groundweight.isVariable) {
 		const auto& d = groundweight._domelement;
 		if(d==NULL){
 			throw notyetimplemented("Invalid term in set expression");
@@ -104,8 +104,8 @@ SetId EnumSetGrounder::run() const {
 	litlist literals;
 	weightlist weights;
 	weightlist trueweights;
-	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
-		(*i)->run(literals, weights, trueweights);
+	for (auto grounder : _subgrounders) {
+		grounder->run(literals, weights, trueweights);
 	}
 	return _translator->translateSet(id, tuple, literals, weights, trueweights, { });
 }
@@ -122,8 +122,8 @@ SetId EnumSetGrounder::runAndRewriteUnknowns() const {
 	weightlist trueweights;
 	termlist cpterms;
 	litlist conditions;
-	for (auto i = _subgrounders.cbegin(); i < _subgrounders.cend(); ++i) {
-		(*i)->run(trueweights, conditions, cpterms);
+	for (auto grounder : _subgrounders) {
+		grounder->run(trueweights, conditions, cpterms);
 	}
 	return _translator->translateSet(id, tuple, conditions, { }, trueweights, cpterms);
 }

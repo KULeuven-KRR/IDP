@@ -162,7 +162,7 @@ void GroundTheory<Policy>::addVarIdInterpretation(VarId id){
 
 template<class Policy>
 void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
-	body->left(foldCPTerm(body->left()));
+	body->left(foldCPTerm(body->left(), getIDForUndefined()));
 
 	for(auto var: body->left()->getVarIds()){
 		addVarIdInterpretation(var);
@@ -266,7 +266,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto atroot = elem.rootlevel;
 		tseitinqueue.pop();
 
-		if (not translator()->isTseitinWithSubformula(tseitin) || _printedtseitins.find(tseitin) != _printedtseitins.end()) {
+		if (not translator()->isTseitinWithSubformula(tseitin) || contains(_printedtseitins, tseitin)) {
 			if(atroot){
 				Policy::polAdd(GroundClause{elem.lit});
 			}
@@ -351,7 +351,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 }
 
 template<class Policy>
-CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
+CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 	if (_foldedterms.find(cpterm) != _foldedterms.end()) {
 		return cpterm;
 	}
@@ -363,7 +363,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 			return cpterm;
 		}
 		auto cprelation = translator()->cprelation(varterm->varid());
-		auto replacement = foldCPTerm(cprelation->left());
+		auto replacement = foldCPTerm(cprelation->left(), defnr);
 		auto replacementvar = dynamic_cast<CPVarTerm*>(replacement);
 		if (replacementvar==NULL) {
 			if(cprelation->comp() != CompType::EQ || not cprelation->right()._isvarid || cprelation->right()._varid != varterm->varid()){
@@ -375,6 +375,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 	}
 
 	auto term = dynamic_cast<CPSetTerm*>(cpterm);
+	addTseitinInterpretations(term->conditions(), defnr);
 	Assert(term!=NULL);
 	switch(term->type()){
 	case AggFunction::SUM:{
@@ -385,7 +386,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		for (; vit != term->varids().end(); ++vit, ++wit) {
 			if (translator()->cprelation(*vit) != NULL) {
 				auto cprelation = translator()->cprelation(*vit);
-				auto left = foldCPTerm(cprelation->left());
+				auto left = foldCPTerm(cprelation->left(), defnr);
 				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
 				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::SUM and cprelation->comp() == CompType::EQ) {
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
@@ -409,7 +410,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm) {
 		for (auto vit = term->varids().begin(); vit != term->varids().end(); ++vit) {
 			if (translator()->cprelation(*vit) != NULL) {
 				auto cprelation = translator()->cprelation(*vit);
-				auto left = foldCPTerm(cprelation->left());
+				auto left = foldCPTerm(cprelation->left(), defnr);
 				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
 				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::PROD and cprelation->comp() == CompType::EQ) {
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);

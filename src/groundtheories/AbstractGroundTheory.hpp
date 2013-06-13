@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ABSTRACTGROUNDTHEORY_HPP_
-#define ABSTRACTGROUNDTHEORY_HPP_
+#pragma once
 
 #include "commontypes.hpp"
 
@@ -47,6 +46,7 @@ private:
 public:
 	AbstractGroundTheory(StructureInfo structure);
 	AbstractGroundTheory(Vocabulary* voc, StructureInfo structure);
+	void initializeTheory();
 
 	~AbstractGroundTheory();
 
@@ -76,7 +76,6 @@ public:
 	virtual void closeTheory() = 0;
 
 	GroundTranslator* translator() const {
-		Assert(_translator!=NULL);
 		return _translator;
 	}
 	Structure* structure() const {
@@ -84,5 +83,3 @@ public:
 	}
 	AbstractGroundTheory* clone() const;
 };
-
-#endif /* ABSTRACTGROUNDTHEORY_HPP_ */

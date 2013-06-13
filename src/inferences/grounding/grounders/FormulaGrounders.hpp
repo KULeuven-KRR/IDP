@@ -40,7 +40,6 @@ protected:
 		return _varmap;
 	}
 	Formula* _origform;
-	GroundTranslator* translator() const;
 public:
 	// FIXME verbosity should be passed in (or perhaps full option block?)
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);

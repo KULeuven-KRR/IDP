@@ -47,10 +47,6 @@ FormulaGrounder::~FormulaGrounder() {
 	}
 }
 
-GroundTranslator* FormulaGrounder::translator() const {
-	return getGrounding()->translator();
-}
-
 void FormulaGrounder::setOrig(const Formula* f, const map<Variable*, const DomElemContainer*>& mvd) {
 	map<Variable*, Variable*> mvv;
 	for (auto it = f->freeVars().cbegin(); it != f->freeVars().cend(); ++it) {

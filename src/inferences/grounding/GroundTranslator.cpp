@@ -96,12 +96,20 @@ FunctionInfo::~FunctionInfo() {
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
 		: 	_structure(structure),
 			_grounding(grounding),
+			_trueLit(0), // IMPORTANT: _trueLit set on initialize!
 			maxquantsetid(1){
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);
 	atom2Tuple.push_back(NULL);
 	atom2TsBody.push_back((TsBody*) NULL);
+
+
+}
+
+void GroundTranslator::initialize(){
+	_trueLit = createNewUninterpretedNumber();
+	_grounding->addUnitClause(_trueLit);
 }
 
 GroundTranslator::~GroundTranslator() {
@@ -146,7 +154,7 @@ void GroundTranslator::addKnown(VarId id) {
 		// NOTE: change if we can handle more then ints!
 		CPBound bound(containers.back()->get()->value()._int);
 		auto lit = reify(new CPVarTerm(id), CompType::EQ, bound, TsType::IMPL);
-		Assert(lit!=_true && lit!=_false);
+		Assert(lit!=trueLit() && lit!=falseLit());
 		_grounding->addUnitClause(lit);
 	}
 	for (funcinfo.falserangegenerator->begin(); not funcinfo.falserangegenerator->isAtEnd(); funcinfo.falserangegenerator->operator ++()) {
@@ -154,7 +162,7 @@ void GroundTranslator::addKnown(VarId id) {
 		// NOTE: change if we can handle more then ints!
 		CPBound bound(containers.back()->get()->value()._int);
 		auto lit = reify(new CPVarTerm(id), CompType::EQ, bound, TsType::RIMPL);
-		Assert(lit!=_true && lit!=_false);
+		Assert(lit!=trueLit() && lit!=falseLit());
 		_grounding->addUnitClause(-lit);
 	}
 }
@@ -234,14 +242,14 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 
 	if (getOption(REDUCEDGROUNDING) && not recursivecontext) {
 		if (littrue) {
-			return _true;
+			return trueLit();
 		} else if (litfalse) {
-			return _false;
+			return falseLit();
 		}
 	}
 
 	auto lit = getLiteral(offset, args);
-	Assert(lit!=_true && lit!=_false);
+	Assert(lit!=trueLit() && lit!=falseLit());
 	if (littrue) {
 		_grounding->addUnitClause(lit);
 	} else if (litfalse) {
@@ -250,7 +258,7 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 	return lit;
 }
 
-// TODO this can probably be optimized by storing _true/_false wherever applicable instead of lit
+// TODO this can probably be optimized by storing trueLit()/falseLit() wherever applicable instead of lit
 Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& args) {
 	if (symboloffset.functionlist) {
 		std::vector<GroundTerm> terms;
@@ -578,14 +586,16 @@ string GroundTranslator::printTerm(const GroundTerm& gt) const {
 	s << print(func);
 	if (not getArgs(varid).empty()) {
 		s << "(";
-		for (auto gtit = getArgs(varid).cbegin(); gtit != getArgs(varid).cend(); ++gtit) {
-			if ((*gtit).isVariable) {
-				s << printTerm((*gtit)._varid);
-			} else {
-				s << print((*gtit)._domelement);
+		bool begin = true;
+		for(auto arg : getArgs(varid)){
+			if(not begin){
+				s <<",";
 			}
-			if (gtit != getArgs(varid).cend() - 1) {
-				s << ",";
+			begin = false;
+			if (arg.isVariable) {
+				s << printTerm(arg._varid);
+			} else {
+				s << print(arg._domelement);
 			}
 		}
 		s << ")";
@@ -599,10 +609,10 @@ string GroundTranslator::printL(Lit lit) {
 string GroundTranslator::printLit(const Lit& lit) const {
 	stringstream s;
 	Lit nr = lit;
-	if (nr == _true) {
+	if (nr == trueLit()) {
 		return "true";
 	}
-	if (nr == _false) {
+	if (nr == falseLit()) {
 		return "false";
 	}
 	if (nr < 0) {
@@ -621,14 +631,7 @@ string GroundTranslator::printLit(const Lit& lit) const {
 		auto tuples = getArgs(nr);
 		if (not tuples.empty()) {
 			s << "(";
-			bool begin = true;
-			for (auto i = tuples.cbegin(); i != tuples.cend(); ++i) {
-				if (not begin) {
-					s << ", ";
-				}
-				begin = false;
-				s << print(*i);
-			}
+			printList(s, tuples, ", ");
 			s << ")";
 		}
 		break;

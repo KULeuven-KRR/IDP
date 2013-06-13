@@ -34,6 +34,7 @@ private:
 	var2dommap _varmap;
 protected:
 	GroundTranslator* _translator;
+	GroundTranslator* translator() const{return _translator;}
 
 public:
 	// @parameter dom: the sort of the position the term occurs in

@@ -13,6 +13,7 @@
 
 #include "IncludeComponents.hpp"
 #include "inferences/SolverInclude.hpp"
+#include "groundtheories/IDP2ECNF.hpp"
 
 class SymbolOffset;
 class AbstractGroundTheory;
@@ -35,12 +36,8 @@ private:
 	GroundTranslator* _translator;
 	Solver* _solver; // The SAT solver
 
-	Lit _origTrueLit;
-	MinisatID::Lit _trueLit;
 	std::map<PFSymbol*, std::set<Atom> > _defined; // Symbols that are defined in the theory. This set is used to
 												  // communicate to the solver which ground atoms should be considered defined.
-	std::set<VarId> _addedvarids; // Variable ids that have already been added, together with their domain.
-
 	int _verbosity;
 
 	const Solver& getSolver() const {
@@ -72,8 +69,6 @@ protected:
 	void polAdd(DefId defnr, AggGroundRule* rule);
 	void polAdd(DefId defnr, Lit head, AggGroundRule* body, bool);
 	void polAdd(Lit head, AggTsBody* body);
-	void polAddWeightedSum(const MinisatID::Atom& head, const litlist& conditions, const varidlist& varids, const intweightlist& weights, const int& bound, MinisatID::EqType rel);
-	void polAddWeightedProd(const MinisatID::Atom& head, const litlist& conditions, const varidlist& varids, const int& weight, VarId bound, MinisatID::EqType rel);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 	void polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, AbstractGroundTheory* theory, bool recursive);
@@ -91,9 +86,19 @@ protected:
 
 private:
 	void polAddAggregate(DefId definitionID, Lit head, double bound, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem);
-	void polAddCPVariables(const varidlist& varids, GroundTranslator* mtranslator);
-	void polAddCPVariable(const VarId& varid, GroundTranslator* translator);
-	void polAddPCRule(DefId defnr, Lit head, litlist body, bool conjunctive);
 
-	litlist getConditionalComparisonList(const litlist& conditions, const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid);
+	class AddToSolver{
+	private:
+		Solver* solver;
+		Solver& getSolver() { return *solver; }
+	public:
+		AddToSolver(): solver(NULL){}
+		AddToSolver(Solver* s): solver(s){
+
+		}
+		template<class Obj>
+		void operator() (Obj o);
+	};
+
+	IDP2ECNF<AddToSolver> adder;
 };

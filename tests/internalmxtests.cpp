@@ -83,6 +83,7 @@ TEST(MXTest, GroundTheory) {
 	auto v = Vocabulary("one");
 	auto s = Structure("s", &v, ParseInfo());
 	auto t = GroundTheory<GroundPolicy>(&v, {NULL, NULL}, true);
+	t.initializeTheory();
 	ASSERT_THROW(ModelExpansion::doModelExpansion(&t, &s), IdpException);
 }
 
@@ -90,6 +91,7 @@ TEST(OptimTest, GroundTheory) {
 	auto v = Vocabulary("one");
 	auto s = Structure("s", &v, ParseInfo());
 	auto t = GroundTheory<GroundPolicy>(&v, {NULL, NULL}, true);
+	t.initializeTheory();
 	auto sort = Sort("s");
 	auto o = DomainTerm(&sort, createDomElem(1), TermParseInfo());
 	ASSERT_THROW(ModelExpansion::doMinimization(&t, &s, &o), IdpException);

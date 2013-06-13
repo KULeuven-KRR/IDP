@@ -122,6 +122,7 @@ private:
 	std::vector<stpair*> atom2Tuple; // Owns pointers!
 	std::vector<TsBody*> atom2TsBody; // Owns pointers! // Important: gets deleted the moment it is added to the ground theory!!! (except for cp, where it is needed later for sharing detection)
 
+	Lit _trueLit;
 	Lit nextNumber(AtomType type);
 	SymbolOffset getSymbol(PFSymbol* pfs) const;
 
@@ -149,6 +150,8 @@ private:
 
 public:
 	GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding);
+	void initialize();
+
 	~GroundTranslator();
 
 	Vocabulary* vocabulary() const;
@@ -180,6 +183,13 @@ public:
 	 * 			or first search for the literal, and run the checkers if it was not yet grounded.
 	 */
 	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
+
+	Lit trueLit() const{
+		return _trueLit;
+	}
+	Lit falseLit() const{
+		return -trueLit();
+	}
 
 	// PROPOSITIONAL ATOMS
 	bool isStored(Lit atom) const {
