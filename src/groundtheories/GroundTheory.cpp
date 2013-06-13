@@ -89,12 +89,6 @@ void GroundTheory<Policy>::closeTheory() {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
-#ifdef DEBUG
-	for (auto lit : cl) {
-		Assert(lit!=_true);
-		Assert(lit!=_false);
-	}
-#endif
 	bool propagates = cl.size()==1;
 	// If propagates is true, it will have been added to the grounding if necessary by addTseitinInterpretations
 	if(not propagates){
