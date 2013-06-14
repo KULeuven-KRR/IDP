@@ -1,0 +1,17 @@
+vocabulary V {
+ 	type X
+	P(X)
+	Q(X)
+}
+ 
+structure S:V{
+	X = {1..2}
+}
+ 
+ theory T:V{
+	prod{X:P(X):2}*prod{X:Q(X):2}=4.
+ }
+ 
+procedure getExpectedNbOfModels(){
+	return 6;
+}

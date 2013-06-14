@@ -374,50 +374,61 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 	switch(term->type()){
 	case AggFunction::SUM:{
 		varidlist newvarids;
+		litlist newconditions;
 		intweightlist newweights;
-		auto vit = term->varids().begin();
-		auto wit = term->weights().begin();
-		for (; vit != term->varids().end(); ++vit, ++wit) {
-			if (translator()->cprelation(*vit) != NULL) {
-				auto cprelation = translator()->cprelation(*vit);
+		for (uint i=0; i != term->varids().size(); ++i) {
+			auto varid = term->varids()[i];
+			auto weight1 = term->weights()[i];
+			auto cprelation = translator()->cprelation(varid);
+			if (cprelation != NULL) {
 				auto left = foldCPTerm(cprelation->left(), defnr);
 				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
 				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::SUM and cprelation->comp() == CompType::EQ) {
-					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
+					Assert(cprelation->right()._isvarid and cprelation->right()._varid == varid);
 					insertAtEnd(newvarids, leftassetterm->varids());
-					for (auto it = leftassetterm->weights().begin(); it != leftassetterm->weights().end(); ++it) {
-						newweights.push_back((*it) * (*wit));
+					insertAtEnd(newconditions, leftassetterm->conditions());
+					for (auto weight2 : leftassetterm->weights()) {
+						newweights.push_back(weight1 * weight2);
 					}
 					continue;
 				}
 			}
-			newvarids.push_back(*vit);
-			newweights.push_back(*wit);
+			newvarids.push_back(varid);
+			newweights.push_back(weight1);
+			newconditions.push_back(term->conditions()[i]);
 		}
 		term->varids(newvarids);
 		term->weights(newweights);
+		term->conditions(newconditions);
+		addTseitinInterpretations(newconditions, defnr);
 		return term;
 	}
 	case AggFunction::PROD:{
 		varidlist newvarids;
+		litlist newconditions;
 		int newweight = term->weights().back();
-		for (auto vit = term->varids().begin(); vit != term->varids().end(); ++vit) {
-			if (translator()->cprelation(*vit) != NULL) {
-				auto cprelation = translator()->cprelation(*vit);
+		for (uint i=0; i != term->varids().size(); ++i) {
+			auto varid = term->varids()[i];
+			auto cprelation = translator()->cprelation(varid);
+			if (cprelation != NULL) {
 				auto left = foldCPTerm(cprelation->left(), defnr);
 				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
 				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::PROD and cprelation->comp() == CompType::EQ) {
-					Assert(cprelation->right()._isvarid and cprelation->right()._varid == *vit);
+					Assert(cprelation->right()._isvarid and cprelation->right()._varid == varid);
 					insertAtEnd(newvarids, leftassetterm->varids());
+					insertAtEnd(newconditions, leftassetterm->conditions());
 					newweight *= leftassetterm->weights().back();
 					continue;
 				}
 			}
-			newvarids.push_back(*vit);
+			newvarids.push_back(varid);
+			newconditions.push_back(term->conditions()[i]);
 			//Note: weight doesn't change
 		}
 		term->varids(newvarids);
 		term->weights({newweight});
+		term->conditions(newconditions);
+		addTseitinInterpretations(newconditions, defnr);
 		return term;
 	}
 	default: // TODO better solution for min and max?
