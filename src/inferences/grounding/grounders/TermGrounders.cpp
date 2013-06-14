@@ -484,12 +484,10 @@ GroundTerm AggTermGrounder::run() const {
 				if(term.isVariable){
 					varids.push_back(term._varid);
 				}else{
-					auto domain = TableUtils::createSortTable();
 					if(term._domelement==NULL){
 						throw notyetimplemented("Undefined term in cp-expression");
 					}
-					domain->add(term._domelement);
-					varids.push_back(_translator->createNewVarIdNumber(domain));
+					varids.push_back(_translator->translateTerm(term._domelement));
 				}
 			}
 			if (trueweight!=getNeutralElement(_type)) {

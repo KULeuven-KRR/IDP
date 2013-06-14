@@ -464,6 +464,14 @@ SetId GroundTranslator::translateSet(int id, const ElementTuple& freevar_inst, c
 	auto setnr = _sets.size() + 1;
 	_sets.push_back(tsset);
 	_freevar2set[id][freevar_inst] = setnr;
+/*	cerr <<"Set " <<setnr <<":{";
+	for(auto i=0; i<lits.size(); ++i){
+		cerr <<"(" <<printLit(lits[i]) <<", " <<printTerm(cpvars[i]) <<")\n"; // TODO weights
+	}
+	for(auto i=0; i<trueweights.size(); ++i){
+		cerr <<"(" <<printLit(trueLit()) <<", " <<trueweights[i] <<")\n";
+	}
+	cerr <<"}\n";*/
 	return setnr;
 }
 

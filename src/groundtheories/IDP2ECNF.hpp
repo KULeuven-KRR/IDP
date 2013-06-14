@@ -233,6 +233,8 @@ public:
 				addFDVariable(rhsvarid);
 				addFDVariables(term->varids());
 
+#define condlist(tseitin, comp,conj) add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), comp, rhsvarid, conj), conj);
+
 				/**
 				 * ==
 				 * 		forall setelem: elem >= rightvar
@@ -252,29 +254,29 @@ public:
 				switch (body->comp()) {
 				case CompType::EQ: {
 					auto ts1 = translator->createNewUninterpretedNumber(), ts2 = translator->createNewUninterpretedNumber();
-					add(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
-					add(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+					condlist(ts1, MinisatID::EqType::GEQ, true);
+					condlist(ts2, MinisatID::EqType::LEQ, false);
 					add(tseitin, TsType::EQ, { ts1, ts2 }, true);
 					break;
 				}
 				case CompType::NEQ: {
 					auto ts1 = translator->createNewUninterpretedNumber(), ts2 = translator->createNewUninterpretedNumber();
-					add(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), false);
-					add(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), true);
+					condlist(ts1, MinisatID::EqType::G, false);
+					condlist(ts2, MinisatID::EqType::L, true);
 					add(tseitin, TsType::EQ, { ts1, ts2 }, false);
 					break;
 				}
 				case CompType::LEQ:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), false);
+					condlist(tseitin, MinisatID::EqType::LEQ, false);
 					break;
 				case CompType::GEQ:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), true);
+					condlist(tseitin, MinisatID::EqType::GEQ, true);
 					break;
 				case CompType::LT:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), false);
+					condlist(tseitin, MinisatID::EqType::L, false);
 					break;
 				case CompType::GT:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), true);
+					condlist(tseitin, MinisatID::EqType::G, true);
 					break;
 				}
 				break;
@@ -293,29 +295,29 @@ public:
 				switch (body->comp()) {
 				case CompType::EQ: {
 					auto ts1 = translator->createNewUninterpretedNumber(), ts2 = translator->createNewUninterpretedNumber();
-					add(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
-					add(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+					condlist(ts1, MinisatID::EqType::LEQ, true);
+					condlist(ts2, MinisatID::EqType::GEQ, false);
 					add(tseitin, TsType::EQ, { ts1, ts2 }, true);
 					break;
 				}
 				case CompType::NEQ: {
 					auto ts1 = translator->createNewUninterpretedNumber(), ts2 = translator->createNewUninterpretedNumber();
-					add(ts1, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), false);
-					add(ts2, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), true);
+					condlist(ts1, MinisatID::EqType::L, false);
+					condlist(ts2, MinisatID::EqType::G, true);
 					add(tseitin, TsType::EQ, { ts1, ts2 }, false);
 					break;
 				}
 				case CompType::LEQ:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::LEQ, rhsvarid), true);
+					condlist(tseitin, MinisatID::EqType::LEQ, true);
 					break;
 				case CompType::GEQ:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::GEQ, rhsvarid), false);
+					condlist(tseitin, MinisatID::EqType::GEQ, false);
 					break;
 				case CompType::LT:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::L, rhsvarid), true);
+					condlist(tseitin, MinisatID::EqType::L, true);
 					break;
 				case CompType::GT:
-					add(tseitin, TsType::EQ, getConditionalComparisonList(term->conditions(), term->varids(), MinisatID::EqType::G, rhsvarid), false);
+					condlist(tseitin, MinisatID::EqType::G, false);
 					break;
 				}
 				break;
@@ -357,7 +359,7 @@ public:
 	/**
 	 * Generates a list of literals which enforce some comparison whenever the associated condition is true
 	 */
-	litlist getConditionalComparisonList(const litlist& conditions, const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid) {
+	litlist getConditionalComparisonList(const litlist& conditions, const varidlist& varids, MinisatID::EqType comp, VarId rhsvarid, bool forall) {
 		litlist tseitins;
 		for (uint i = 0; i < varids.size(); ++i) {
 			auto impltseitin = translator->createNewUninterpretedNumber();
@@ -365,7 +367,11 @@ public:
 			tseitins.push_back(impltseitin);
 			execute(MinisatID::CPBinaryRelVar(getDefConstrID(), createLiteral(comptseitin), convert(varids[i]), comp, convert(rhsvarid)));
 			auto cond = conditions[i];
-			add(impltseitin, TsType::EQ, { ~cond, comptseitin }, false);
+			if(forall){
+				add(impltseitin, TsType::EQ, { -cond, comptseitin }, false);
+			}else{
+				add(impltseitin, TsType::EQ, { cond, comptseitin }, true);
+			}
 		}
 		return tseitins;
 	}
