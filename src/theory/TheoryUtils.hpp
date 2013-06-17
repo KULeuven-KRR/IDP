@@ -246,10 +246,6 @@ std::vector<const DomainElement*> deriveTermBounds(const Term*, const Structure*
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
-
-/** Check whether a function term is a term multiplied by a factor */
-bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure);
-bool isFactor(const Term* term, const Structure* structure);
 } /* namespace TermUtils */
 
 

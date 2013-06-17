@@ -187,7 +187,9 @@ Lit ComparisonGrounder::run() const {
 	auto left = _lefttermgrounder->run();
 	auto right = _righttermgrounder->run();
 
-	//TODO out-of-bounds check?
+	if((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL)){
+		return _false;
+	}
 
 	Lit result;
 	if (left.isVariable) {

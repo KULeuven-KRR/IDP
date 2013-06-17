@@ -1012,24 +1012,16 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	_termgrounder = NULL;
 	if(getOption(BoolType::CPSUPPORT) && not recursive(t)){
 		if (FuncUtils::isIntSum(function, getConcreteStructure()->vocabulary())) {
-			_termgrounder = new SumTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1],
-					is(function, STDFUNC::ADDITION) ? ST_PLUS : ST_MINUS);
-		} else if (TermUtils::isTermWithIntFactor(t, getConcreteStructure())) {
-			if (TermUtils::isFactor(t->subterms()[0], getConcreteStructure())) { //TODO move switch to constructor?
-				_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
-			} else {
-				Assert(TermUtils::isFactor(t->subterms()[1], getConcreteStructure()));
-				_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[1], subtermgrounders[0]);
-			}
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), is(function, STDFUNC::ADDITION) ? TwinTT::PLUS : TwinTT::MIN, ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		} else if (is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
 			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
 			auto producttable = getConcreteStructure()->inter(product)->funcTable();
 			auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
 			descend(factorterm);
 			auto factorgrounder = getTermGrounder();
-			_termgrounder = new TermWithFactorGrounder(getGrounding()->translator(), producttable, domain, factorgrounder, subtermgrounders[0]);
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), TwinTT::PROD, producttable, domain, factorgrounder, subtermgrounders[0]);
 		} else if (FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {
-			_termgrounder = new ProdTermGrounder(getGrounding()->translator(), ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), TwinTT::PROD, ftable, domain, subtermgrounders[0], subtermgrounders[1]);
 		}
 	}
 	if(_termgrounder==NULL){

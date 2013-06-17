@@ -346,6 +346,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 
 template<class Policy>
 CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
+#warning folding is probably no longer correct if partial variables are involved
 	if (_foldedterms.find(cpterm) != _foldedterms.end()) {
 		return cpterm;
 	}
@@ -391,6 +392,21 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 						newweights.push_back(weight1 * weight2);
 					}
 					continue;
+				}else if(leftassetterm!=NULL
+						and leftassetterm->type()==AggFunction::PROD
+						and cprelation->comp() == CompType::EQ
+						and leftassetterm->varids().size()==2){
+					auto varone = leftassetterm->varids()[0];
+					auto vartwo = leftassetterm->varids()[0];
+					if(translator()->domain(varone)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[0]==_true){
+						newvarids.push_back(vartwo);
+						newconditions.push_back(leftassetterm->conditions()[1]);
+						newweights.push_back((*translator()->domain(varone)->begin()).front()->value()._int);
+					}else if(translator()->domain(vartwo)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[1]==_true){
+						newvarids.push_back(varone);
+						newconditions.push_back(leftassetterm->conditions()[0]);
+						newweights.push_back((*translator()->domain(vartwo)->begin()).front()->value()._int);
+					}
 				}
 			}
 			newvarids.push_back(varid);

@@ -133,114 +133,94 @@ CPTerm* createCPSumTerm(const litlist& conditions, const varidlist& ids, const i
 	return new CPSetTerm(AggFunction::SUM, conditions, ids, costs);
 }
 
-void SumTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
+SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
+	if ((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL) ){
+		throw IdpException("Invalid code path");
+	}
+
 	auto leftdomain = _lefttermgrounder->getDomain();
 	auto rightdomain = _righttermgrounder->getDomain();
-	if (getDomain() == NULL or not getDomain()->approxFinite()) {
-		if (not left.isVariable) {
-			leftdomain = TableUtils::createSortTable();
-			leftdomain->add(left._domelement);
+
+	if (getDomain() != NULL && getDomain()->approxFinite()) { // TODO In fact should be: if the basic interpretation is small enough
+		return getDomain();
+	}
+
+	bool cansave = true;
+	if (not left.isVariable) {
+		leftdomain = TableUtils::createSortTable();
+		leftdomain->add(left._domelement);
+		cansave = false;
+	}
+	if (not right.isVariable) {
+		rightdomain = TableUtils::createSortTable();
+		rightdomain->add(right._domelement);
+		cansave = false;
+	}
+
+	SortTable* newdomain = NULL;
+	if (leftdomain and rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
+		Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
+		Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
+		int leftmin = leftdomain->first()->value()._int;
+		int rightmin = rightdomain->first()->value()._int;
+		int leftmax = leftdomain->last()->value()._int;
+		int rightmax = rightdomain->last()->value()._int;
+		int min = 0;
+		int max = 0;
+		switch(_type){
+		case TwinTT::PLUS:
+			min = leftmin + rightmin;
+			max = leftmax + rightmax;
+			break;
+		case TwinTT::MIN:
+			min = leftmin - rightmax;
+			max = leftmax - rightmin;
+			break;
+		case TwinTT::PROD:
+			auto allposs = { (leftmin * rightmin), (leftmin * rightmax), (leftmax * rightmin), (leftmax * rightmax) };
+			min = *(std::min_element(allposs.begin(),allposs.end()));
+			max = *(std::max_element(allposs.begin(),allposs.end()));
+			break;
 		}
-		if (not right.isVariable) {
-			rightdomain = TableUtils::createSortTable();
-			rightdomain->add(right._domelement);
-		}
-		if (leftdomain and rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
-			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
-			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			int leftmin = leftdomain->first()->value()._int;
-			int rightmin = rightdomain->first()->value()._int;
-			int leftmax = leftdomain->last()->value()._int;
-			int rightmax = rightdomain->last()->value()._int;
-			int min = 0;
-			int max = 0;
-			switch(_type){
-			case SumType::ST_PLUS:
-				min = leftmin + rightmin;
-				max = leftmax + rightmax;
-				break;
-			case SumType::ST_MINUS:
-				min = leftmin - rightmax;
-				max = leftmax - rightmin;
-				break;
-			}
-			if (max < min) { swap(min, max); }
-			setDomain(TableUtils::createSortTable(min, max));
-		} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
-			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
-			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			auto newdomain = TableUtils::createSortTable();
-			for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
-				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
-					int leftvalue = (*leftit)->value()._int;
-					int rightvalue = (*rightit)->value()._int;
-					int newvalue = 0;
-					switch(_type){
-					case SumType::ST_PLUS:
-						newvalue = leftvalue + rightvalue;
-						break;
-					case SumType::ST_MINUS:
-						newvalue = leftvalue - rightvalue;
-						break;
-					}
-					newdomain->add(createDomElem(newvalue));
+		if (max < min) { swap(min, max); }
+		newdomain = TableUtils::createSortTable(min, max);
+	} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
+		Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
+		Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
+		newdomain = TableUtils::createSortTable();
+		for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
+			for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
+				int leftvalue = (*leftit)->value()._int;
+				int rightvalue = (*rightit)->value()._int;
+				int newvalue = 0;
+				switch(_type){
+				case TwinTT::PLUS:
+					newvalue = leftvalue + rightvalue;
+					break;
+				case TwinTT::MIN:
+					newvalue = leftvalue - rightvalue;
+					break;
+				case TwinTT::PROD:
+					newvalue = leftvalue * rightvalue;
+					break;
 				}
+				newdomain->add(createDomElem(newvalue));
 			}
-			setDomain(newdomain);
-		} else {
-			if (leftdomain && not leftdomain->approxFinite()) {
-				Warning::warning("Left domain is infinite...");
-			}
-			if (rightdomain && not rightdomain->approxFinite()) {
-				Warning::warning("Right domain is infinite...");
-			}
-			//TODO one of the domains is unknown or infinite...
-			//setDomain(new SortTable(new AllIntegers()));
-			throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
 		}
-	}
-}
-
-GroundTerm SumTermGrounder::run() const {
-	if (verbosity() > 2) {
-		printOrig();
-		pushtab();
-	}
-	// Run subtermgrounders
-	auto left = _lefttermgrounder->run();
-	auto right = _righttermgrounder->run();
-
-	// Compute domain for the sum term
-	computeDomain(left, right);
-
-	auto leftid = left._varid, rightid = right._varid; // NOTE: only correct if it is indeed a variable, otherwise we overwrite it now:
-	if(not left.isVariable){
-		if(not right.isVariable){ // Both subterms are domain elements, so lookup the result in the function table.
-			Assert(not right.isVariable and (_functable != NULL));
-			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
-			Assert(domelem);
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result = " << print(domelem) << "\n";
-			}
-			return GroundTerm(domelem);
+	} else {
+		if (leftdomain && not leftdomain->approxFinite()) {
+			Warning::warning("Left domain is infinite...");
 		}
-		leftid = _translator->translateTerm(left._domelement);
+		if (rightdomain && not rightdomain->approxFinite()) {
+			Warning::warning("Right domain is infinite...");
+		}
+		throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
+	}
 
+	if(cansave){
+		setDomain(newdomain);
 	}
-	if(not right.isVariable){
-		rightid = _translator->translateTerm(right._domelement);
-	}
-	// Create addition of both terms
-	auto sumterm = createCPSumTerm({ _true, _true}, {leftid, rightid}, { 1, (_type == SumType::ST_MINUS?-1:1) });
-	auto varid = _translator->translateTerm(sumterm, getDomain());
-
-	// Return result
-	if (verbosity() > 2) {
-		poptab();
-		clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
-	}
-	return GroundTerm(varid);
+	return newdomain;
 }
 
 
@@ -248,60 +228,12 @@ CPTerm* createCPProdTerm(const litlist& conditions, const VarId& left, const Var
 	return new CPSetTerm(AggFunction::PROD, conditions, { left, right }, {1});
 }
 
-void ProdTermGrounder::computeDomain(const GroundTerm& left, const GroundTerm& right) const {
-	auto leftdomain = _lefttermgrounder->getDomain();
-	auto rightdomain = _righttermgrounder->getDomain();
-	if (getDomain() == NULL or not getDomain()->approxFinite()) {
-		if (not left.isVariable) {
-			leftdomain = TableUtils::createSortTable();
-			leftdomain->add(left._domelement);
-		}
-		if (not right.isVariable) {
-			rightdomain = TableUtils::createSortTable();
-			rightdomain->add(right._domelement);
-		}
-		if (leftdomain and rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
-			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
-			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			int leftmin = leftdomain->first()->value()._int;
-			int rightmin = rightdomain->first()->value()._int;
-			int leftmax = leftdomain->last()->value()._int;
-			int rightmax = rightdomain->last()->value()._int;
-
-			auto allposs = { (leftmin * rightmin), (leftmin * rightmax), (leftmax * rightmin), (leftmax * rightmax) };
-			// FIXME incorrect (pointer comparison)
-			int min = *(std::min_element(allposs.begin(),allposs.end()));
-			int max = *(std::max_element(allposs.begin(),allposs.end()));
-
-			setDomain(TableUtils::createSortTable(min, max));
-		} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
-			Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
-			Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
-			auto newdomain = TableUtils::createSortTable();
-			for (auto leftit = leftdomain->sortBegin(); not leftit.isAtEnd(); ++leftit) {
-				for (auto rightit = rightdomain->sortBegin(); not rightit.isAtEnd(); ++rightit) {
-					int leftvalue = (*leftit)->value()._int;
-					int rightvalue = (*rightit)->value()._int;
-					int newvalue = leftvalue * rightvalue;
-					newdomain->add(createDomElem(newvalue));
-				}
-			}
-			setDomain(newdomain);
-		} else {
-			if (leftdomain && not leftdomain->approxFinite()) {
-				Warning::warning("Left domain is infinite...");
-			}
-			if (rightdomain && not rightdomain->approxFinite()) {
-				Warning::warning("Right domain is infinite...");
-			}
-			//TODO one of the domains is unknown or infinite...
-			//setDomain(new SortTable(new AllIntegers()));
-			throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
-		}
-	}
+CPTerm* createCPSumTerm(Lit condition, const DomainElement* factor, const VarId& varid) {
+	Assert(factor->type() == DomainElementType::DET_INT);
+	return createCPSumTerm({condition}, { varid }, { factor->value()._int });
 }
 
-GroundTerm ProdTermGrounder::run() const {
+GroundTerm TwinTermGrounder::run() const {
 	if (verbosity() > 2) {
 		printOrig();
 		pushtab();
@@ -310,114 +242,53 @@ GroundTerm ProdTermGrounder::run() const {
 	auto left = _lefttermgrounder->run();
 	auto right = _righttermgrounder->run();
 
-	// Compute domain for the sum term
-	computeDomain(left, right);
+	if((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL)){
+		return GroundTerm(NULL);
+	}
 
-	auto leftid = left._varid, rightid = right._varid; // NOTE: only correct if it is indeed a variable, otherwise we overwrite it now:
+	// Compute domain for the sum term
+	auto domain = computeDomain(left, right);
+
+	GroundTerm result(NULL);
+	bool done = false;
+	auto leftid = left._varid, rightid = right._varid;
 	if (not left.isVariable) {
 		if (not right.isVariable) { // Both subterms are domain elements, so lookup the result in the function table.
 			Assert(not right.isVariable and (_functable != NULL));
-			auto domelem = _functable->operator[]( { left._domelement, right._domelement });
-			Assert(domelem);
-			if (verbosity() > 2) {
-				poptab();
-				clog << tabs() << "Result = " << print(domelem) << "\n";
+			if(left._domelement!=NULL && right._domelement!=NULL){
+				auto domelem = _functable->operator[]( { left._domelement, right._domelement });
+				result = GroundTerm(domelem);
 			}
-			return GroundTerm(domelem);
+			done = true;
+		}else{
+			leftid = _translator->translateTerm(left._domelement);
 		}
-		leftid = _translator->translateTerm(left._domelement);
-
 	}
 	if (not right.isVariable) {
 		rightid = _translator->translateTerm(right._domelement);
 	}
-	// Create addition of both terms
-	auto prodterm = createCPProdTerm({ _true, _true }, leftid, rightid);
-	auto varid = _translator->translateTerm(prodterm, getDomain());
+	if(not done){
+		CPTerm* computedterm = NULL;
+		switch(_type){
+		case TwinTT::PLUS:
+			computedterm = createCPSumTerm({ _true, _true}, {leftid, rightid}, { 1, 1 });
+			break;
+		case TwinTT::MIN:
+			computedterm = createCPSumTerm({ _true, _true}, {leftid, rightid}, { 1, -1 });
+			break;
+		case TwinTT::PROD:
+			computedterm = createCPProdTerm({ _true, _true }, leftid, rightid);
+			break;
+		}
+		auto varid = _translator->translateTerm(computedterm, domain);
+		result = GroundTerm(varid);
+	}
 
-	// Return result
 	if (verbosity() > 2) {
 		poptab();
-		clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
+		clog << tabs() << "Result = " << _translator->printTerm(result) << "\n";
 	}
-	return GroundTerm(varid);
-}
-
-
-CPTerm* createCPSumTerm(Lit condition, const DomainElement* factor, const VarId& varid) {
-	Assert(factor->type() == DomainElementType::DET_INT);
-	return createCPSumTerm({condition}, { varid }, { factor->value()._int });
-}
-
-void TermWithFactorGrounder::computeDomain(const DomainElement* factor, const GroundTerm& groundsubterm) const {
-	Assert(factor->type() == DomainElementType::DET_INT);
-	auto subtermdomain = _subtermgrounder->getDomain();
-
-	if (getDomain() == NULL or not getDomain()->approxFinite()) {
-		if (not groundsubterm.isVariable) {
-			subtermdomain = TableUtils::createSortTable();
-			subtermdomain->add(groundsubterm._domelement);
-		}
-		if (subtermdomain != NULL and subtermdomain->isRange() and subtermdomain->approxFinite()) {
-			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
-			int min = factor->value()._int * subtermdomain->first()->value()._int;
-			int max = factor->value()._int * subtermdomain->last()->value()._int;
-			if (max < min) { swap(min, max); }
-			setDomain(TableUtils::createSortTable(min, max));
-		} else if (subtermdomain != NULL and subtermdomain->approxFinite()) {
-			Assert(subtermdomain->first()->type() == DomainElementType::DET_INT);
-			auto newdomain = TableUtils::createSortTable();
-			for (auto it = subtermdomain->sortBegin(); not it.isAtEnd(); ++it) {
-				int value = factor->value()._int * (*it)->value()._int;
-				newdomain->add(createDomElem(value));
-			}
-			setDomain(newdomain);
-		} else {
-			//TODO
-			throw notyetimplemented("Domain of the termgrounder is infinite.");
-		}
-	}
-}
-
-GroundTerm TermWithFactorGrounder::run() const {
-	if (verbosity() > 2) {
-		printOrig();
-		pushtab();
-	}
-	// Run subtermgrounders
-	auto factor = _factortermgrounder->run();
-	auto groundterm = _subtermgrounder->run();
-
-	Assert(not factor.isVariable);
-	Assert(factor._domelement->type() == DomainElementType::DET_INT);
-
-	// Compute domain for the sum term
-	computeDomain(factor._domelement, groundterm);
-
-	VarId varid;
-	if (groundterm.isVariable) {
-		auto sumterm = createCPSumTerm(_true, factor._domelement, groundterm._varid);
-		varid = _translator->translateTerm(sumterm, getDomain());
-	} else {
-		Assert(not groundterm.isVariable and (_functable != NULL));
-		auto domelem = _functable->operator[]( { factor._domelement, groundterm._domelement });
-		if (verbosity() > 2) {
-			poptab();
-			if(domelem==NULL){ // For example after overflow of +
-				clog << tabs() << "Result = **invalid_term** \n";
-			}else{
-				clog << tabs() << "Result = " << print(domelem) << "\n";
-			}
-		}
-		return GroundTerm(domelem);
-	}
-
-	// Return result
-	if (verbosity() > 2) {
-		poptab();
-		clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
-	}
-	return GroundTerm(varid);
+	return result;
 }
 
 CPTerm* createCPAggTerm(const AggFunction& f, const litlist& conditions, const varidlist& varids) {

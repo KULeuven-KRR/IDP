@@ -104,53 +104,24 @@ public:
 	//			table lookup
 };
 
-enum SumType {
-	ST_PLUS, ST_MINUS
+enum class TwinTT{
+	PLUS, MIN, PROD
 };
 
-class SumTermGrounder: public TermGrounder {
+class TwinTermGrounder: public TermGrounder {
 protected:
-	FuncTable* _functable;
-	TermGrounder* _lefttermgrounder;
-	TermGrounder* _righttermgrounder;
-	SumType _type;
-public:
-	SumTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg, SumType type)
-			: TermGrounder(dom, tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _type(type) {
-	}
-	GroundTerm run() const;
-private:
-	void computeDomain(const GroundTerm& left, const GroundTerm& right) const;
-};
-
-class ProdTermGrounder: public TermGrounder {
-protected:
+	TwinTT _type;
 	FuncTable* _functable;
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
 public:
-	ProdTermGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(dom, tt), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) {
+	TwinTermGrounder(GroundTranslator* tt, TwinTT type, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
+			: TermGrounder(dom, tt), _type(type), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) {
 	}
 	GroundTerm run() const;
 private:
-	void computeDomain(const GroundTerm& left, const GroundTerm& right) const;
+	SortTable* computeDomain(const GroundTerm& left, const GroundTerm& right) const;
 };
-
-class TermWithFactorGrounder: public TermGrounder {
-protected:
-	FuncTable* _functable;
-	TermGrounder* _factortermgrounder;
-	TermGrounder* _subtermgrounder;
-public:
-	TermWithFactorGrounder(GroundTranslator* tt, FuncTable* ftable, SortTable* dom, TermGrounder* fg, TermGrounder* tg)
-			: TermGrounder(dom, tt), _functable(ftable), _factortermgrounder(fg), _subtermgrounder(tg) {
-	}
-	GroundTerm run() const;
-private:
-	void computeDomain(const DomainElement* factor, const GroundTerm& term) const;
-};
-
 
 class SetGrounder;
 

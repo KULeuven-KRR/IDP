@@ -86,21 +86,6 @@ bool isPartial(Term* term) {
 	return transform<CheckPartialTerm, bool>(term);
 }
 
-bool isFactor(const Term* term, const Structure* structure) {
-	return approxTwoValued(term, structure);
-}
-
-bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure) {
-	if (term->subterms().size() == 2 and FuncUtils::isIntProduct(term->function(), structure->vocabulary())) {
-		for (auto it = term->subterms().cbegin(); it != term->subterms().cend(); ++it) {
-			if (isFactor(*it, structure)) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 }
 
 /* SetUtils */
