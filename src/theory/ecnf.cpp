@@ -492,10 +492,15 @@ void CPBound::put(std::ostream& stream) const {
 }
 
 void CPSetTerm::put(std::ostream& stream) const {
-	if(type()==AggFunction::SUM){
-		stream <<print(type()) << " of ";
-		for(auto i=0; i<varids().size(); ++i){
-			stream <<weights()[i] <<"*var" <<varids()[i] <<", ";
+	stream << print(type()) << " of ";
+	if (type() == AggFunction::PROD) {
+		stream <<weights()[0] <<"*";
+	}
+	for (auto i = 0; i < varids().size(); ++i) {
+		if (type() == AggFunction::SUM) {
+			stream << "(" <<conditions()[i] <<", " << weights()[i] << " * var" << varids()[i] << ") + ";
+		}else if (type() == AggFunction::PROD) {
+			stream << "(" <<conditions()[i] <<", var" << varids()[i] << ") * ";
 		}
 	}
 }
