@@ -824,12 +824,11 @@ public:
 		}
 		output() <<"[ ";
 		for (uint i=0; i < cpt->varids().size(); ++i) {
-			if(printweightinset){
-				output() << '(';
-			}
+			printAtom(cpt->conditions()[i]);
+			output() << " ? ";
 			printTerm(cpt->varids()[i]);
 			if(printweightinset){
-				output() << ',' << cpt->weights()[i] << ')';
+				output() << "*" << cpt->weights()[i];
 			}
 			output() << "; ";
 		}
