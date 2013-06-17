@@ -1,0 +1,28 @@
+vocabulary V{
+	type leaf isa nat
+	type cardi isa int
+	type possibleCost isa int
+
+	previous(leaf) : leaf
+	costOf(leaf) : possibleCost
+
+	cardOf(leaf):cardi
+}
+
+theory T : V{
+	!l : costOf(l) =< costOf(previous(l)) + cardOf(l).
+	!l: l=MIN[:leaf] => previous(l)=l.
+	!l: l~=MIN[:leaf] => previous(l)=l-1.
+}
+
+structure S : V {
+	cardi = { 10; 47; 100 }
+	leaf = { 1..3 }
+ 	possibleCost = { 25;68;72 }
+
+	cardOf<ct> = { 1->47; 2->10; }
+}
+
+procedure getExpectedNbOfModels(){
+	return 57;
+}
