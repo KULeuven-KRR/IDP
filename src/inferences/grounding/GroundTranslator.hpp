@@ -62,6 +62,8 @@ struct SymbolInfo {
 	std::vector<DelayGrounder*> assocGrounders;
 	CheckerInfo* checkers;
 
+	std::map<std::vector<GroundTerm>, Lit > lazyatoms2lit;
+
 	SymbolInfo(PFSymbol* symbol, StructureInfo structure);
 };
 
@@ -70,6 +72,8 @@ struct FunctionInfo {
 	std::map<std::vector<GroundTerm>, VarId> term2var;
 	InstGenerator *truerangegenerator, *falserangegenerator;
 	CheckerInfo* checkers;
+
+	std::map<std::vector<GroundTerm>, Lit > lazyatoms2lit;
 
 	FunctionInfo(Function* symbol, StructureInfo structure);
 	~FunctionInfo();
@@ -148,6 +152,9 @@ private:
 	std::vector<TsSet> _sets;
 	std::map<int, std::map<ElementTuple, SetId, Compare<ElementTuple> > > _freevar2set;
 
+	std::map<std::vector<GroundTerm>, Lit >& getTerm2Lits(PFSymbol* symbol);
+	void createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool recursive);
+
 public:
 	GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding);
 	void initialize();
@@ -190,6 +197,8 @@ public:
 	Lit falseLit() const{
 		return -trueLit();
 	}
+
+	Lit addLazyElement(PFSymbol* symbol, const std::vector<GroundTerm>& terms, bool recursive);
 
 	// PROPOSITIONAL ATOMS
 	bool isStored(Lit atom) const {

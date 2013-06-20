@@ -145,9 +145,7 @@ Lit AtomGrounder::run() const {
 
 	Lit lit = 0;
 	if (not alldomelts) {
-		auto temphead = translator()->createNewUninterpretedNumber();
-		getGrounding()->addLazyElement(temphead, _symbol, terms, _recursive);
-		lit = temphead;
+		lit = translator()->addLazyElement(_symbol, terms, _recursive);
 	}else{
 		// Run instance checkers
 		// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)

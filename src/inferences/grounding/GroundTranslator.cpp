@@ -258,6 +258,60 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 	return lit;
 }
 
+void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool recursive){
+	for(auto terms2lit: term2lits){
+		litlist equalities;
+		for(uint i=0; i< terms.size(); ++i){
+			auto termleft = terms[i];
+			auto varleft = termleft._varid;
+			if(not termleft.isVariable){
+				varleft = translateTerm(termleft._domelement);
+			}
+			auto termright = terms2lit.first[i];
+			auto varright = termright._varid;
+			if(not termright.isVariable){
+				varleft = translateTerm(termright._domelement);
+			}
+			equalities.push_back(reify(new CPVarTerm(varleft), CompType::EQ, CPBound(varright), TsType::EQ));
+		}
+		_grounding->add(newhead, TsType::RIMPL, equalities, true, -1);
+		equalities[equalities.size()-1]=newhead;
+		_grounding->add(terms2lit.second, TsType::RIMPL, equalities, true, -1);
+	}
+}
+
+std::map<std::vector<GroundTerm>, Lit >& GroundTranslator::getTerm2Lits(PFSymbol* symbol){
+	auto symboloffset = getSymbol(symbol);
+	if(symboloffset.functionlist){
+		return functions[symboloffset.offset]->lazyatoms2lit;
+	}else{
+		return symbols[symboloffset.offset]->lazyatoms2lit;
+	}
+}
+
+/**
+ * Takes care of writing out the same tseitin for the same set of terms.
+ * TODO: eventually, this should go to the solver, which will allow it to also reason on equality of P(c) and P(d)
+ * 		without having to add implications between their tseitins here (T_Pc & c=d => T_Pd)
+ */
+Lit GroundTranslator::addLazyElement(PFSymbol* symbol, const std::vector<GroundTerm>& terms, bool recursive){
+	if(recursive){
+		throw notyetimplemented("Recursive lazy element");
+	}
+
+	Lit result;
+	auto& lazyatoms2lit = getTerm2Lits(symbol);
+	if(contains(lazyatoms2lit,terms)){
+		result = lazyatoms2lit.at(terms);
+	} else {
+		result = createNewUninterpretedNumber();
+		createImplications(result, lazyatoms2lit, terms, recursive);
+		lazyatoms2lit[terms] = result;
+		_grounding->addLazyElement(result, symbol, terms, recursive);
+	}
+	return result;
+}
+
 // TODO this can probably be optimized by storing trueLit()/falseLit() wherever applicable instead of lit
 Lit GroundTranslator::getLiteral(SymbolOffset symboloffset, const ElementTuple& args) {
 	if (symboloffset.functionlist) {
