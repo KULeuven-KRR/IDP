@@ -40,7 +40,8 @@ protected:
 	std::string _name;
 	Formula* _formula;
 	bool _numeric;
-	std::set<PrologVariable*> _numericVars;
+	std::set<PrologVariable*> _inputvars_to_check;
+	std::set<PrologVariable*> _outputvars_to_check;
 public:
 	FormulaClause(FormulaClause* parent)
 			: 	_parent(parent),
@@ -131,17 +132,31 @@ public:
 		_numeric = b;
 	}
 
-	std::set<PrologVariable*>& numericVars() {
-		return _numericVars;
+	std::set<PrologVariable*>& inputvarsToCheck() {
+		return _inputvars_to_check;
 	}
 
-	void addNumericVar(PrologVariable* v) {
-		_numericVars.insert(v);
+	std::set<PrologVariable*>& outputvarsToCheck() {
+		return _outputvars_to_check;
 	}
 
-	void addNumericVars(std::set<PrologVariable*> vs) {
+	void addInputvarToCheck(PrologVariable* v) {
+		_inputvars_to_check.insert(v);
+	}
+
+	void addInputvarsToCheck(std::set<PrologVariable*> vs) {
 		for (auto v = vs.begin(); v != vs.end(); ++v) {
-			addNumericVar(*v);
+			addInputvarToCheck(*v);
+		}
+	}
+
+	void addOutputvarToCheck(PrologVariable* v) {
+		_outputvars_to_check.insert(v);
+	}
+
+	void addOutputvarsToCheck(std::set<PrologVariable*> vs) {
+		for (auto v = vs.begin(); v != vs.end(); ++v) {
+			addOutputvarToCheck(*v);
 		}
 	}
 	virtual void close() {

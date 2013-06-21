@@ -342,17 +342,22 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 			if (it != (pc._body).begin()) {
 				output << ", ";
 			}
-			for (auto var = (*it)->numericVars().begin(); var != (*it)->numericVars().end(); ++var) {
+			for (auto var = (*it)->inputvarsToCheck().begin(); var != (*it)->inputvarsToCheck().end(); ++var) {
 				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
 					output << *(*var)->instantiation() << ", ";
 				}
 			}
 			output << (**it);
+			for (auto var = (*it)->outputvarsToCheck().begin(); var != (*it)->outputvarsToCheck().end(); ++var) {
+				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
+					output << ", " << *(*var)->instantiation();
+				}
+			}
 			for (auto var = (*it)->variables().begin(); var != (*it)->variables().end(); ++var) {
 				instantiatedVars->insert(*var);
 			}
 		}
-		for (auto it = (pc._head)->numericVars().begin(); it != (pc._head)->numericVars().end(); ++it) {
+		for (auto it = (pc._head)->inputvarsToCheck().begin(); it != (pc._head)->inputvarsToCheck().end(); ++it) {
 			if(instantiatedVars->find(*it) == instantiatedVars->end()) {
 				output << ", " << *(*it)->instantiation();
 			}
@@ -531,7 +536,7 @@ void FormulaClauseToPrologClauseConverter::visit(ExistsClause* ec) {
 		body.push_back((*it)->instantiation()->asTerm());
 	}
 	auto head = ec->asTerm();
-	head->addNumericVars(ec->quantifiedVariables());
+	head->addInputvarsToCheck(ec->quantifiedVariables());
 	auto clause = new PrologClause(head, body);
 	_pp->addClause(clause);
 
@@ -558,7 +563,7 @@ void FormulaClauseToPrologClauseConverter::visit(ForallClause* fc) {
 	tmp2->addArgument(fc->child()->asTerm());
 	tmp2->prefix(false);
 	forall->addArgument(tmp2);
-	forall->addNumericVars(set<PrologVariable*>(fc->variables().begin(), fc->variables().end()));
+	forall->addInputvarsToCheck(set<PrologVariable*>(fc->variables().begin(), fc->variables().end()));
 	_pp->addClause(new PrologClause(fc->asTerm(), forall));
 	fc->child()->accept(this);
 
@@ -583,7 +588,7 @@ void FormulaClauseToPrologClauseConverter::visit(OrClause* oc) {
 		for (auto var = childvars.begin(); var != childvars.end(); ++var) {
 			headvars.remove(*var);
 		}
-		head->addNumericVars(set<PrologVariable*>(headvars.begin(), headvars.end()));
+		head->addInputvarsToCheck(set<PrologVariable*>(headvars.begin(), headvars.end()));
 		_pp->addClause(new PrologClause(oc->asTerm(), body));
 		(*it)->accept(this);
 	}
@@ -780,7 +785,7 @@ void FormulaClauseBuilder::visit(const FuncTerm* f) {
 	leave();
 	_parent->addVariables(term->variables());
 	auto tmp = set<PrologVariable*>(term->variables().begin(), term->variables().end());
-	_parent->addNumericVars(tmp);
+	_parent->addInputvarsToCheck(tmp);
 	}
 }
 
@@ -799,16 +804,20 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 		if (p->args().size() == 3) {
 			term->numeric(true);
 			term->infix(true);
-			auto nvars = set<PrologVariable*>(term->variables().begin(), term->variables().end());
+			auto inputvars = set<PrologVariable*>(term->variables().begin(), term->variables().end());
 			try {
-				nvars.erase((PrologVariable*) term->arguments().back());
+				auto tmp = (PrologVariable*) term->arguments().back();
+				if (not isa<DomainTerm>(*(p->subterms()[2]))) {
+					term->addOutputvarToCheck(tmp);
+				}
+				inputvars.erase(tmp);
 			} catch (char *str) {
 				cout << str << endl;
 			}
-			term->addNumericVars(nvars);
+			term->addInputvarsToCheck(inputvars);
 		} else {
 			term->numeric(true);
-			term->addNumericVars(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
+			term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
 		}
 	} else {
 		term->numeric(false);
@@ -911,7 +920,7 @@ std::set<PrologVariable*> QuantifiedFormulaClause::variablesRequiringInstantiati
 }
 
 std::set<PrologVariable*> PrologTerm::variablesRequiringInstantiation() {
-	return _numericVars;
+	return _inputvars_to_check;
 }
 
 PrologVariable* PrologVariable::create(std::string name, std::string type) {
