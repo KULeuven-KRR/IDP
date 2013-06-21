@@ -755,8 +755,14 @@ public:
 	void sentence(unsigned int n, Formula* f) {
 		_sentences[n] = f;
 	}
+	void sentences(std::vector<Formula*> v) {
+		_sentences = v;
+	}
 	void definition(unsigned int n, Definition* d) {
 		_definitions[n] = d;
+	}
+	void definitions(std::vector<Definition*> v) {
+		_definitions = v;
 	}
 	void fixpdef(unsigned int n, FixpDef* d) {
 		_fixpdefs[n] = d;

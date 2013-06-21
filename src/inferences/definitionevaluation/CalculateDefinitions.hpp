@@ -27,6 +27,12 @@ public:
 		CalculateDefinitions c;
 		return c.calculateKnownDefinitions(theory, structure, satdelay, symbolsToQuery);
 	}
+	static std::vector<Structure*> doCalculateDefinitions(
+			Definition* definition, Structure* structure,
+			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
+		CalculateDefinitions c;
+		return c.calculateKnownDefinition(definition, structure, symbolsToQuery);
+	}
 
 private:
 	std::vector<Structure*> calculateKnownDefinitions(Theory* theory, Structure* structure,
@@ -34,4 +40,5 @@ private:
 	bool calculateDefinition(Definition* definition, Structure* structure,
 			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
 
+	std::vector<Structure*> calculateKnownDefinition(Definition* definition, Structure* structure, std::set<PFSymbol*> symbolsToQuery);
 };

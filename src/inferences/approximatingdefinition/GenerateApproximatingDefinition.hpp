@@ -12,6 +12,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "ApproximatingDefinition.hpp"
 #include "visitors/TheoryVisitor.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "structure/Structure.hpp"
@@ -29,93 +30,58 @@ class Predicate;
 
 using namespace std;
 
-struct ApproxData {
-	std::map<const Formula*, PredForm*> formula2ct;
-	std::map<const Formula*, PredForm*> formula2cf;
-	std::map<PFSymbol*, PFSymbol*> _pred2predCt;
-	std::map<PFSymbol*, PFSymbol*> _pred2predCf;
-	std::map<PFSymbol*, PFSymbol*> _predCt2InputPredCt;
-	std::map<PFSymbol*, PFSymbol*> _predCf2InputPredCf;
-	std::set<PFSymbol*> actions;
+struct ApproxDefGeneratorData {
+	set<PFSymbol*> _freesymbols;
 	bool _baseformulas_already_added;
+	mappings* _mappings;
+	ApproximatingDefinition::DerivationTypes* _derivations;
 
-	ApproxData(const std::set<PFSymbol*>& actions)
-			: actions(actions),
-			  _baseformulas_already_added(false){
+	ApproxDefGeneratorData(const set<PFSymbol*>& freesymbols,
+			ApproximatingDefinition::DerivationTypes* derivations) :
+		_freesymbols(freesymbols),
+		_baseformulas_already_added(false),
+		_mappings(new mappings()),
+		_derivations(derivations){
+
+	}
+
+	ApproxDefGeneratorData(const ApproxDefGeneratorData* other) :
+		_freesymbols(other->_freesymbols),
+		_baseformulas_already_added(other->_baseformulas_already_added),
+		_mappings(other->_mappings),
+		_derivations(other->_derivations){
+
 	}
 };
 
 class GenerateApproximatingDefinition {
 private:
-	ApproxData* data;
-	std::vector<Formula*> _sentences;
+	// Actions are the symbols that need not be replaced
+	ApproxDefGeneratorData* _approxdefgeneratordata;
+	const vector<Formula*> _sentences;
 
 public:
-	enum class Direction {
-		UP, DOWN, BOTH
-	};
-	static void doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences,
-			Structure* s, const std::set<PFSymbol*>& freesymbols, Direction dir) {
-		if(sentences.empty()) {
-			return;
-		}
-		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-			clog << "Calculating the approximating definitions with XSB...\n";
-		}
-		std::vector<Formula*>* transformedSentences = performTransformations(sentences,s);
-		auto g = GenerateApproximatingDefinition(*transformedSentences, freesymbols, s);
-		auto approxing_def = g.getallRules(dir);
-		auto approxdef_theory = g.constructTheory(approxing_def);
-		auto approxdef_voc = g.constructVocabulary(s,approxing_def);
-		auto approxdef_struct = g.constructStructure(s, approxdef_theory, approxdef_voc);
-		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-			clog << "Calculating the following definitions with XSB:\n" << toString(approxdef_theory) << "\n";
-			clog << "With the following input structure:\n" << toString(approxdef_struct) << "\n";
-		}
-		if (DefinitionUtils::hasRecursionOverNegation(approxing_def)) {
-			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-				//TODO: either go back to normal method or FIX XSB to support recneg!
-				clog << "Approximating definition had recursion over negation, not calculating it\n";
-			}
-			return;
-		}
-		auto output_structure = CalculateDefinitions::doCalculateDefinitions(approxdef_theory,approxdef_struct, g.getSymbolsToQuery());
 
-		if(not output_structure.empty() && g.isConsistent(output_structure.at(0))) {
-			g.updateStructure(s,output_structure.at(0));
-			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-				clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
-						toString(s) << "\n";
-			}
-		}
-	}
+	static ApproximatingDefinition* doGenerateApproximatingDefinition(
+			const AbstractTheory* orig_theory,
+			ApproximatingDefinition::DerivationTypes* derivations,
+			const set<PFSymbol*>& freesymbols = set<PFSymbol*>());
 
 private:
-	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions, const AbstractStructure* s)
-			: 	data(new ApproxData(actions)),
-			  	_sentences(sentences) {
-		for(auto sentence : sentences) {
-			setFormula2PredFormMap(sentence, s);
-		}
 
-	}
-	~GenerateApproximatingDefinition() {
-		delete (data);
-	}
+	GenerateApproximatingDefinition(const vector<Formula*>& sentences,
+			const set<PFSymbol*>& actions,
+			ApproximatingDefinition::DerivationTypes* derivations);
+	~GenerateApproximatingDefinition() {}
 
-	Definition* getallRules(Direction dir);
+	Definition* getDefinition();
+	vector<Rule*> getallDownRules();
+	vector<Rule*> getallUpRules();
 
-	std::vector<Rule*> getallDownRules();
-	std::vector<Rule*> getallUpRules();
+	void setFormula2PredFormMap(Formula*);
+	pair<PredForm*,PredForm*> createGeneralPredForm(Formula*);
 
-	void setFormula2PredFormMap(Formula*, const AbstractStructure*);
-	std::pair<PredForm*,PredForm*> createGeneralPredForm(Formula*);
+	static const vector<Formula*> performTransformations(const vector<Formula*>&);
+	Vocabulary* constructVocabulary(Vocabulary*,Definition*);
 
-	static std::vector<Formula*>* performTransformations(const std::vector<Formula*>&, AbstractStructure*);
-	Theory* constructTheory(Definition*);
-	Vocabulary* constructVocabulary(AbstractStructure*, Definition*);
-	AbstractStructure* constructStructure(AbstractStructure*, Theory*, Vocabulary*);
-	std::set<PFSymbol*> getSymbolsToQuery();
-	void updateStructure(AbstractStructure*, AbstractStructure*);
-	bool isConsistent(AbstractStructure*);
 };

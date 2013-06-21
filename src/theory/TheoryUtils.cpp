@@ -345,10 +345,6 @@ Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const st
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, definedsymbols, cpsupport);
 }
 
-void calculateApproximatingDefinition(const std::vector<Formula*>& sentences, Structure* s) {
-	GenerateApproximatingDefinition::doGenerateApproximatingDefinition(sentences, s,std::set<PFSymbol*>(),GenerateApproximatingDefinition::Direction::BOTH);
-}
-
 void addCompletion(AbstractTheory* t, const Structure* s) {
 	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);

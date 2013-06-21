@@ -32,38 +32,38 @@ set<T,C> difference(const set<T,C>& v1, const set<T,C>& v2) {
 }
 
 template<class RuleList>
-void add(RuleList& list, PredForm* head, Formula* body, ApproxData* data) {
+void add(RuleList& list, PredForm* head, Formula* body, ApproxDefGeneratorData* data) {
 	if (not head->symbol()->builtin() && // don't define built-in symbols
-			data->actions.find(head->symbol()) == data->actions.cend()) {
+			data->_freesymbols.find(head->symbol()) == data->_freesymbols.cend()) {
 		list.push_back(new Rule(head->freeVars(), head, body, ParseInfo()));
 	}
 }
 
-void handlePredForm(const PredForm* pf, ApproxData* data, vector<Rule*>* rules) {
+void handlePredForm(const PredForm* pf, ApproxDefGeneratorData* data, vector<Rule*>* rules) {
 	if(data->_baseformulas_already_added ||
-					data->_pred2predCt.find(pf->symbol()) == data->_pred2predCt.end()) {
+			data->_mappings->_pred2predCt.find(pf->symbol()) == data->_mappings->_pred2predCt.end()) {
 		return;
 	}
-	if (data->_predCt2InputPredCt.find(data->_pred2predCt[pf->symbol()]) == data->_predCt2InputPredCt.cend()) {
+	if (data->_mappings->_predCt2InputPredCt.find(data->_mappings->_pred2predCt[pf->symbol()]) == data->_mappings->_predCt2InputPredCt.cend()) {
 		// predform symbol hasn't already been handled before
-		auto ctpred = new Predicate((data->_pred2predCt[pf->symbol()]->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
-		auto cfpred = new Predicate((data->_pred2predCf[pf->symbol()]->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
+		auto ctpred = new Predicate((data->_mappings->_pred2predCt[pf->symbol()]->nameNoArity() + "_input_ct"),pf->symbol()->sorts());
+		auto cfpred = new Predicate((data->_mappings->_pred2predCf[pf->symbol()]->nameNoArity() + "_input_cf"),pf->symbol()->sorts());
 
-		data->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCt[pf->symbol()],ctpred) );
-		data->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_pred2predCf[pf->symbol()],cfpred) );
+		data->_mappings->_predCt2InputPredCt.insert( std::pair<PFSymbol*,PFSymbol*>(data->_mappings->_pred2predCt[pf->symbol()],ctpred) );
+		data->_mappings->_predCf2InputPredCf.insert( std::pair<PFSymbol*,PFSymbol*>(data->_mappings->_pred2predCf[pf->symbol()],cfpred) );
 
 		if(pf->sign() == SIGN::NEG) {
 			std::swap(ctpred,cfpred);
 		}
 		std::vector<Term*> newSubTerms = pf->args();
-		for(auto it = 0; it < pf->args().size(); it++) {
+		for(unsigned int it = 0; it < pf->args().size(); it++) {
 			auto newvar = new Variable(pf->args()[it]->sort());
 			auto newterm = new VarTerm(newvar, TermParseInfo());
 			newSubTerms[it] = newterm;
 		}
 
-		PredForm* ct_head = new PredForm(SIGN::POS, data->formula2ct[pf]->symbol(), newSubTerms, FormulaParseInfo());
-		PredForm* cf_head= new PredForm(SIGN::POS, data->formula2cf[pf]->symbol(), newSubTerms, FormulaParseInfo());
+		PredForm* ct_head = new PredForm(SIGN::POS, data->_mappings->_formula2ct[pf]->symbol(), newSubTerms, FormulaParseInfo());
+		PredForm* cf_head= new PredForm(SIGN::POS, data->_mappings->_formula2cf[pf]->symbol(), newSubTerms, FormulaParseInfo());
 		PredForm* ctformula = new PredForm(SIGN::POS, ctpred, newSubTerms, FormulaParseInfo());
 		PredForm* cfformula = new PredForm(SIGN::POS, cfpred, newSubTerms, FormulaParseInfo());
 
@@ -76,15 +76,15 @@ void handlePredForm(const PredForm* pf, ApproxData* data, vector<Rule*>* rules) 
 // TODO handling negations! (pushing them is not the best solution
 class TopDownApproximatingDefinition: public TheoryVisitor {
 private:
-	ApproxData* data;
-	vector<Rule*> topdownrules;
+	ApproxDefGeneratorData* _data;
+	vector<Rule*> _topdownrules;
 public:
 	template<typename T>
-	const std::vector<Rule*>& execute(T f, ApproxData * approxdata) {
-		topdownrules.clear();
-		data = approxdata;
+	const std::vector<Rule*>& execute(T f, ApproxDefGeneratorData* data) {
+		_data = data;
+		_topdownrules.clear();
 		f->accept(this);
-		return topdownrules;
+		return _topdownrules;
 	}
 
 	/**
@@ -101,33 +101,42 @@ public:
 	void visit(const BoolForm* bf) {
 		Assert(bf->sign()==SIGN::POS);
 		traverse(bf);
-		if (not bf->conj()) {
-			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-				auto v = difference(bf->freeVars(), (*i)->freeVars());
-				Formula* f = data->formula2cf[bf];
-				vector<Formula*> forms;
-				forms.push_back(data->formula2ct[bf]);
-				for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
-					if (i != j) {
-						forms.push_back(data->formula2cf[*j]);
-					}
-				}
-				f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
-				if (not v.empty()) {
-					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
-				}
-				add(topdownrules, data->formula2ct[*i], f, data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
-			}
-		} else {
-			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-				auto v = difference(bf->freeVars(), (*i)->freeVars());
-				Formula* f = data->formula2ct[bf];
-				if (not v.empty() != 0) {
-					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
-				}
-				add(topdownrules, data->formula2ct[*i], f, data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
-			}
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::FALSE,
+				ApproximatingDefinition::Direction::DOWN)) {
 
+		}
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::TRUE,
+				ApproximatingDefinition::Direction::DOWN)) {
+			if (not bf->conj()) {
+				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+					auto v = difference(bf->freeVars(), (*i)->freeVars());
+					Formula* f = _data->_mappings->_formula2cf[bf];
+					vector<Formula*> forms;
+					forms.push_back(_data->_mappings->_formula2ct[bf]);
+					for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
+						if (i != j) {
+							forms.push_back(_data->_mappings->_formula2cf[*j]);
+						}
+					}
+					f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
+					if (not v.empty()) {
+						f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+					}
+					add(_topdownrules, _data->_mappings->_formula2ct[*i], f, _data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
+				}
+			} else {
+				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+					auto v = difference(bf->freeVars(), (*i)->freeVars());
+					Formula* f = _data->_mappings->_formula2ct[bf];
+					if (not v.empty() != 0) {
+						f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+					}
+					add(_topdownrules, _data->_mappings->_formula2ct[*i], f, _data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
+				}
+
+			}
 		}
 	}
 
@@ -141,36 +150,47 @@ public:
 	void visit(const QuantForm* qf) {
 		Assert(qf->sign()==SIGN::POS);
 		traverse(qf);
-		if (qf->isUniv()) {
-			add(topdownrules, data->formula2ct[qf->subformula()], data->formula2ct[qf], data);
-		} else {
-			std::vector<Formula*> vareq_forms;
-			std::vector<Term*> newSubTerms = data->formula2ct[qf->subformula()]->subterms(); // subterms for the call to QF's subformula - some of these will be newly created varterms
-			varset vars;
-			for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
-				auto newvar = new Variable((*i)->sort());
-				auto newterm = new VarTerm(newvar, TermParseInfo());
-				vars.insert(newvar);
-				// Replace the old term with the new varterm that should be used in the call to QF's subformula
-				for (auto it = 0; it <data->formula2ct[qf->subformula()]->subterms().size(); it++) {
-					if (data->formula2ct[qf->subformula()]->subterms()[it]->contains(*i)) {
-						newSubTerms[it] = newterm;
-					}
-				}
-				vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
-			}
-			auto vareqs = &Gen::conj(vareq_forms);
-			std::vector<Formula*> disj_forms;
-			disj_forms.push_back(vareqs);
-			disj_forms.push_back(new PredForm(SIGN::POS, ((data->formula2cf[qf->subformula()])->symbol()),newSubTerms,FormulaParseInfo()));
-			auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::FALSE,
+				ApproximatingDefinition::Direction::DOWN)) {
 
-			add(topdownrules, data->formula2ct[qf->subformula()], &Gen::conj({&quant, data->formula2ct[qf]}), data);
 		}
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::TRUE,
+				ApproximatingDefinition::Direction::DOWN)) {
+			if (qf->isUniv()) {
+				add(_topdownrules, _data->_mappings->_formula2ct[qf->subformula()], _data->_mappings->_formula2ct[qf], _data);
+			} else {
+				std::vector<Formula*> vareq_forms;
+				// subterms for the call to QF's subformula - some of these will be newly created varterms
+				std::vector<Term*> newSubTerms = _data->_mappings->_formula2ct[qf->subformula()]->subterms();
+				varset vars;
+				for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
+					auto newvar = new Variable((*i)->sort());
+					auto newterm = new VarTerm(newvar, TermParseInfo());
+					vars.insert(newvar);
+					// Replace the old term with the new varterm that should be used in the call to QF's subformula
+					for (unsigned int it = 0; it <_data->_mappings->_formula2ct[qf->subformula()]->subterms().size(); it++) {
+						if (_data->_mappings->_formula2ct[qf->subformula()]->subterms()[it]->contains(*i)) {
+							newSubTerms[it] = newterm;
+						}
+					}
+					vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
+				}
+				auto vareqs = &Gen::conj(vareq_forms);
+				std::vector<Formula*> disj_forms;
+				disj_forms.push_back(vareqs);
+				disj_forms.push_back(new PredForm(SIGN::POS, ((_data->_mappings->_formula2cf[qf->subformula()])->symbol()),newSubTerms,FormulaParseInfo()));
+				auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
+
+				add(_topdownrules, _data->_mappings->_formula2ct[qf->subformula()], &Gen::conj({&quant, _data->_mappings->_formula2ct[qf]}), _data);
+			}
+		}
+
 	}
 
 	void visit(const PredForm* pf) {
-		handlePredForm(pf, data, &topdownrules);
+		handlePredForm(pf, _data, &_topdownrules);
 	}
 	void visit(const AggForm*) {
 //		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
@@ -247,15 +267,15 @@ public:
 
 class BottomUpApproximatingDefinition: public TheoryVisitor {
 private:
-	ApproxData* data;
-	vector<Rule*> bottomuprules;
+	ApproxDefGeneratorData* _data;
+	vector<Rule*> _bottomuprules;
 public:
 	template<class T>
-	const std::vector<Rule*>& execute(T* f, ApproxData * approxdata) {
-		bottomuprules.clear();
-		data = approxdata;
+	const std::vector<Rule*>& execute(T* f, ApproxDefGeneratorData* data) {
+		_data = data;
+		_bottomuprules.clear();
 		f->accept(this);
-		return bottomuprules;
+		return _bottomuprules;
 	}
 
 	/**
@@ -270,20 +290,28 @@ public:
 	 * Pcf(x, y, z) <- Licf(x, y)
 	 */
 	void visit(const BoolForm* bf) {
-		traverse(bf);
 		Assert(bf->sign()==SIGN::POS);
-		if (bf->conj()) {
-			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-				add(bottomuprules, data->formula2cf[bf], data->formula2cf[*i], data); // DISJ: Pct(x, y, z) <- Lict(x, y)
+		traverse(bf);
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::FALSE,
+				ApproximatingDefinition::Direction::UP)) {
+			if (bf->conj()) {
+				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+					add(_bottomuprules, _data->_mappings->_formula2cf[bf], _data->_mappings->_formula2cf[*i], _data); // DISJ: Pct(x, y, z) <- Lict(x, y)
+				}
 			}
-		}
-		else {
-			std::vector<Formula*> forms;
-			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-				forms.push_back(data->formula2cf[*i]);
+			else {
+				std::vector<Formula*> forms;
+				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+					forms.push_back(_data->_mappings->_formula2cf[*i]);
+				}
+				add(_bottomuprules, _data->_mappings->_formula2cf[bf], &Gen::conj(forms), _data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
 			}
-			add(bottomuprules, data->formula2cf[bf], &Gen::conj(forms), data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
 
+		}
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::TRUE,
+				ApproximatingDefinition::Direction::UP)) {
 		}
 	}
 
@@ -299,17 +327,26 @@ public:
 	 * 		Pcf(x) <- ?y: Lcf(x, y)
 	 */
 	void visit(const QuantForm* qf) {
-		traverse(qf);
 		Assert(qf->sign()==SIGN::POS);
-		if (qf->isUniv()) {
-			add(bottomuprules, data->formula2cf[qf], &Gen::exists(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
-		} else {
-			add(bottomuprules, data->formula2cf[qf], &Gen::forall(qf->quantVars(), *data->formula2cf[qf->subformula()]), data);
+		traverse(qf);
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::FALSE,
+				ApproximatingDefinition::Direction::UP)) {
+
+			if (qf->isUniv()) {
+				add(_bottomuprules, _data->_mappings->_formula2cf[qf], &Gen::exists(qf->quantVars(), *_data->_mappings->_formula2cf[qf->subformula()]), _data);
+			} else {
+				add(_bottomuprules, _data->_mappings->_formula2cf[qf], &Gen::forall(qf->quantVars(), *_data->_mappings->_formula2cf[qf->subformula()]), _data);
+			}
+		}
+		if(_data->_derivations->hasDerivation(
+				ApproximatingDefinition::TruthPropagation::TRUE,
+				ApproximatingDefinition::Direction::UP)) {
 		}
 	}
 
 	void visit(const PredForm* pf) {
-		handlePredForm(pf, data, &bottomuprules);
+		handlePredForm(pf, _data, &_bottomuprules);
 	}
 	void visit(const AggForm*) {
 //		throw IdpException("Generating an approximating definition does not work for aggregate formulas.");
@@ -383,29 +420,78 @@ public:
 	}
 };
 
-Definition* GenerateApproximatingDefinition::getallRules(Direction dir) {
+
+
+ApproximatingDefinition* GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+		const AbstractTheory* orig_theory,
+		ApproximatingDefinition::DerivationTypes* derivations,
+		const set<PFSymbol*>& freesymbols) {
+	if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+		clog << "Generating the approximating definition...\n";
+	}
+
+	if (not isa<Theory>(*orig_theory)) {
+		throw notyetimplemented("Generate approximating definition for something other than a normal theory");
+	}
+	auto normal_orig_theory = dynamic_cast<const Theory*>(orig_theory);
+	if(normal_orig_theory->sentences().empty()) {
+		Warning::warning("Trying to generate an approximating definition of a theory with no sentences");
+//		return new ApproximatingDefinition(derivations, normal_orig_theory);
+	}
+
+	const vector<Formula*>& transformedSentences = performTransformations(normal_orig_theory->sentences());
+	auto transformed_theory = normal_orig_theory->clone();
+	transformed_theory->sentences(transformedSentences);
+	ApproximatingDefinition* ret = new ApproximatingDefinition(derivations,transformed_theory);
+	auto generator = new GenerateApproximatingDefinition(transformedSentences, freesymbols, derivations);
+	auto approxing_def = generator->getDefinition();
+	auto approxdef_voc = generator->constructVocabulary(normal_orig_theory->vocabulary(), approxing_def);
+	if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
+		clog << "Generated the following approximating definition:\n" << toString(approxing_def) << "\n";
+	}
+	ret->setApproximatingDefinition(approxing_def);
+	ret->setVocabulary(approxdef_voc);
+	ret->setMappings(generator->_approxdefgeneratordata->_mappings);
+	return ret;
+}
+
+GenerateApproximatingDefinition::GenerateApproximatingDefinition(
+		const std::vector<Formula*>& sentences,
+		const std::set<PFSymbol*>& actions,
+		ApproximatingDefinition::DerivationTypes* derivations)
+			: _approxdefgeneratordata(new ApproxDefGeneratorData(actions, derivations)), _sentences(sentences) {
+	for(auto sentence : sentences) {
+		setFormula2PredFormMap(sentence);
+	}
+
+}
+
+Definition* GenerateApproximatingDefinition::getDefinition() {
 	auto d = new Definition();
-	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
-		auto tr = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
-		auto ts = data->formula2ct[*i];
-		if(not ts->symbol()->builtin()) {
-			d->add(new Rule(ts->freeVars(), ts, tr, ParseInfo()));
-		}
-	}
-	if (dir != Direction::UP) {
+
+	if (_approxdefgeneratordata->_derivations->hasDerivation(ApproximatingDefinition::Direction::DOWN)) {
 		d->add(getallDownRules());
-		data->_baseformulas_already_added=true;
+		_approxdefgeneratordata->_baseformulas_already_added=true;
 	}
-	if (dir != Direction::DOWN) {
+	if (_approxdefgeneratordata->_derivations->hasDerivation(ApproximatingDefinition::Direction::UP)) {
 		d->add(getallUpRules());
-		data->_baseformulas_already_added=true;
+		_approxdefgeneratordata->_baseformulas_already_added=true;
 	}
 	return d;
 }
 std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
 	std::vector<Rule*> result;
+
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
-		auto rules = TopDownApproximatingDefinition().execute(*i, data);
+		auto true_formula = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
+		auto sentence_ct = _approxdefgeneratordata->_mappings->_formula2ct[*i];
+		if(not sentence_ct->symbol()->builtin()) {
+			result.push_back(new Rule(sentence_ct->freeVars(), sentence_ct, true_formula, ParseInfo()));
+		}
+	}
+
+	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
+		auto rules = TopDownApproximatingDefinition().execute(*i, _approxdefgeneratordata);
 		insertAtEnd(result, rules);
 	}
 	return result;
@@ -414,18 +500,18 @@ std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
 std::vector<Rule*> GenerateApproximatingDefinition::getallUpRules() {
 	std::vector<Rule*> result;
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
-		auto rules = BottomUpApproximatingDefinition().execute(*i, data);
+		auto rules = BottomUpApproximatingDefinition().execute(*i, _approxdefgeneratordata);
 		insertAtEnd(result, rules);
 	}
 	return result;
 }
 
-void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const AbstractStructure* s) {
+void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 	auto ctcfpair = std::pair<PredForm*,PredForm*>();
 	auto swapIfNegated = true;
 	if(isa<PredForm>(*f)) {
 		auto fPredForm = dynamic_cast<PredForm*>(f);
-		if (data->_pred2predCt.find(fPredForm->symbol()) == data->_pred2predCt.cend()) {
+		if (_approxdefgeneratordata->_mappings->_pred2predCt.find(fPredForm->symbol()) == _approxdefgeneratordata->_mappings->_pred2predCt.cend()) {
 			if (fPredForm->symbol()->builtin()) {
 				ctcfpair.first = fPredForm;
 				auto clone = fPredForm->clone();
@@ -447,12 +533,12 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 				ctcfpair.first = new PredForm(SIGN::POS, ctpred, fPredForm->subterms(), FormulaParseInfo());
 				ctcfpair.second = new PredForm(SIGN::POS, cfpred, fPredForm->subterms(), FormulaParseInfo());
 
-				data->_pred2predCt.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.first->symbol()) );
-				data->_pred2predCf.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.second->symbol()) );
+				_approxdefgeneratordata->_mappings->_pred2predCt.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.first->symbol()) );
+				_approxdefgeneratordata->_mappings->_pred2predCf.insert( std::pair<PFSymbol*,PFSymbol*>(fPredForm->symbol(),ctcfpair.second->symbol()) );
 			}
 		} else {
-			ctcfpair.first = new PredForm(SIGN::POS, data->_pred2predCt[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
-			ctcfpair.second = new PredForm(SIGN::POS, data->_pred2predCf[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
+			ctcfpair.first = new PredForm(SIGN::POS, _approxdefgeneratordata->_mappings->_pred2predCt[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
+			ctcfpair.second = new PredForm(SIGN::POS, _approxdefgeneratordata->_mappings->_pred2predCf[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
 		}
 	} else {
 		ctcfpair = createGeneralPredForm(f);
@@ -466,11 +552,11 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f, const A
 		clog << "In the approximating definitions, " << toString(ctcfpair.first) << " represents formula " << toString(f) << " being true\n";
 		clog << "In the approximating definitions, " << toString(ctcfpair.second) << " represents formula " << toString(f) << " being false\n";
 	}
-	data->formula2ct.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.first) );
-	data->formula2cf.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.second) );
+	_approxdefgeneratordata->_mappings->_formula2ct.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.first) );
+	_approxdefgeneratordata->_mappings->_formula2cf.insert( std::pair<Formula*,PredForm*>(f,ctcfpair.second) );
 
 	for (auto subf : f->subformulas()) {
-		setFormula2PredFormMap(subf,s);
+		setFormula2PredFormMap(subf);
 	}
 }
 
@@ -493,46 +579,41 @@ std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPre
 	return std::pair<PredForm*,PredForm*>(newct, newcf);
 }
 
-std::vector<Formula*>* GenerateApproximatingDefinition::performTransformations(const std::vector<Formula*>& sentences, AbstractStructure* s) {
-	std::vector<Formula*>* ret = new vector<Formula*>();
+const std::vector<Formula*> GenerateApproximatingDefinition::performTransformations(const std::vector<Formula*>& sentences) {
+	std::vector<Formula*> ret;
 	for(auto sentence : sentences) {
 		auto copyToWorkOn = sentence->clone();
 		auto context = Context::POSITIVE;
 		if (copyToWorkOn->sign() == SIGN::NEG) {
 			context = Context::NEGATIVE;
 		}
-		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,s,context);
-		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,s,true,false,context);
+		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,NULL,context);
+		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,NULL,true,false,context);
 		auto sentence4 = FormulaUtils::removeEquivalences(sentence3);
 		auto sentence5 = FormulaUtils::pushNegations(sentence4);
-		ret->push_back(sentence5);
+		ret.push_back(sentence5);
 	}
 	return ret;
 }
 
-Theory* GenerateApproximatingDefinition::constructTheory(Definition* def) {
-	auto ret = new Theory("approxdef_theory", ParseInfo());
-	ret->add(def->clone());
-	return ret;
-}
-Vocabulary* GenerateApproximatingDefinition::constructVocabulary(AbstractStructure* s, Definition* d) {
-	auto ret = new Vocabulary(s->vocabulary()->name());
+Vocabulary* GenerateApproximatingDefinition::constructVocabulary(Vocabulary* orig_voc, Definition* d) {
+	auto ret = new Vocabulary(orig_voc->name());
 
-	for(auto ctf : data->formula2ct) {
+	for(auto ctf : _approxdefgeneratordata->_mappings->_formula2ct) {
 		ret->add(ctf.second->symbol());
 	}
-	for(auto ctf : data->_predCt2InputPredCt) {
+	for(auto ctf : _approxdefgeneratordata->_mappings->_predCt2InputPredCt) {
 		ret->add(ctf.second);
 	}
 
-	for(auto cff : data->formula2cf) {
+	for(auto cff : _approxdefgeneratordata->_mappings->_formula2cf) {
 		ret->add(cff.second->symbol());
 	}
-	for(auto cff : data->_predCf2InputPredCf) {
+	for(auto cff : _approxdefgeneratordata->_mappings->_predCf2InputPredCf) {
 		ret->add(cff.second);
 	}
 
-	for (auto sort : s->vocabulary()->getSorts()) {
+	for (auto sort : orig_voc->getSorts()) {
 		ret->add(sort.second);
 	}
 	for (auto opensymbol: DefinitionUtils::opens(d)) {
@@ -540,69 +621,4 @@ Vocabulary* GenerateApproximatingDefinition::constructVocabulary(AbstractStructu
 	}
 
 	return ret;
-}
-
-AbstractStructure* GenerateApproximatingDefinition::constructStructure(AbstractStructure* s, Theory* t, Vocabulary* v) {
-	auto ret = new Structure("approxdef_struct", v, ParseInfo());
-
-	for(auto sortinter : s->getSortInters()) {
-		auto interToChange = ret->inter(sortinter.first);
-		ret->inter(sortinter.first)->internTable(sortinter.second->internTable());
-	}
-
-	for(auto ctf : data->_pred2predCt) {
-		auto newinter = new PredInter(s->inter(ctf.first)->ct(),true);
-		auto interToChange = ret->inter(data->_predCt2InputPredCt[ctf.second]);
-		interToChange->ctpt(newinter->ct());
-	}
-	for(auto cff : data->_pred2predCf) {
-		auto newinter = new PredInter(s->inter(cff.first)->cf(),true);
-		auto interToChange = ret->inter(data->_predCf2InputPredCf[cff.second]);
-		interToChange->ctpt(newinter->ct());
-	}
-	// Only one definition in the theory
-	auto definition = *(t->definitions().begin());
-	auto opens = DefinitionUtils::opens(definition);
-	for (auto opensymbol : opens) {
-		if (s->vocabulary()->contains(opensymbol) &&
-				s->inter(opensymbol)->approxTwoValued()) {
-			ret->inter(opensymbol)->ctpt(s->inter(opensymbol)->ct());
-		}
-	}
-
-	return ret;
-}
-
-void GenerateApproximatingDefinition::updateStructure(AbstractStructure* s, AbstractStructure* approxdef_struct) {
-	for(auto ctf : data->_pred2predCt) {
-		s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second)->ct());
-	}
-	for(auto cff : data->_pred2predCf) {
-		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second)->ct());
-	}
-}
-
-std::set<PFSymbol*> GenerateApproximatingDefinition::getSymbolsToQuery() {
-	auto ret = std::set<PFSymbol*>();
-	for(auto ctf : data->_pred2predCt) {
-		ret.insert(ctf.second);
-	}
-	for(auto cff : data->_pred2predCf) {
-		ret.insert(cff.second);
-	}
-	return ret;
-}
-bool GenerateApproximatingDefinition::isConsistent(AbstractStructure* s) {
-	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
-		auto sentence_cf = data->formula2cf[*i];
-		// The sentences cannot be calculated to be certainly false
-
-		if(s->vocabulary()->contains(sentence_cf->symbol()) && not s->inter(sentence_cf->symbol())->ct()->empty()){
-			stringstream ss;
-			ss << "The approximating definition detected formula " << toString(*i) << " to be certainly false.\n";
-			Warning::warning(ss.str());
-			return false;
-		}
-	}
-	return true;
 }

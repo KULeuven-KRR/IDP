@@ -105,15 +105,16 @@ XSBInterface::XSBInterface() {
 }
 
 void XSBInterface::loadDefinition(Definition* d) {
+	auto cloned_definition = d->clone();
 	Theory theory("", _structure->vocabulary(), ParseInfo());
-	theory.add(d);
+	theory.add(cloned_definition);
 	FormulaUtils::unnestFuncsAndAggs(&theory, _structure);
 	FormulaUtils::graphFuncsAndAggs(&theory, _structure, {}, true, false /*TODO check*/);
 	FormulaUtils::removeEquivalences(&theory);
 	FormulaUtils::splitComparisonChains(&theory, theory.vocabulary());
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
-	_pp->addDefinition(d);
+	_pp->addDefinition(cloned_definition);
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
 	auto str2 = _pp->getFacts();

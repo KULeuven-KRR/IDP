@@ -227,8 +227,6 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 					}
 					return std::vector<Structure*> { };
 				}
-				theory->remove(definition);
-				definition->recursiveDelete();
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}
@@ -246,3 +244,10 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	return {structure};
 }
 
+std::vector<Structure*> CalculateDefinitions::calculateKnownDefinition(
+		Definition* definition, Structure* structure,
+		std::set<PFSymbol*> symbolsToQuery) {
+	Theory* theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	theory->add(definition);
+	return calculateKnownDefinitions(theory,structure,symbolsToQuery);
+}

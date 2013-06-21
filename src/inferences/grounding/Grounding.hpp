@@ -24,6 +24,7 @@
 #include "theory/TheoryUtils.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/propagation/PropagationUsingApproxDef.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "grounders/Grounder.hpp"
@@ -163,6 +164,20 @@ private:
 		// Approximation
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Starting approximation at ");
+		}
+
+		if (getOption(BoolType::APPROXDEF) && getOption(BoolType::XSB)) {
+			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
+			auto propagated_structures = propagator->propagate(_theory, _structure);
+			if (propagated_structures.size() == 0 || not propagated_structures[0]->isConsistent()) {
+				bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
+				bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
+				auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvoc);
+				auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
+				delete(symstructure);
+				return grounding;
+			}
+			_structure = propagated_structures[0];
 		}
 		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);

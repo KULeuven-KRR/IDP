@@ -177,9 +177,6 @@ Formula* unnestTerms(Formula*, const Structure* str = NULL, Vocabulary* voc = NU
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
 Formula* unnestThreeValuedTerms(Formula*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
-/** Compose the approximating definition of the given theory and calculate it with the given structure */
-void calculateApproximatingDefinition(const std::vector<Formula*>& sentences, AbstractStructure* s);
-
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*, const Structure* s);
 
