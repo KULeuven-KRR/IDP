@@ -91,9 +91,15 @@ bool ApproximatingDefinition::isConsistent(AbstractStructure* s) {
 
 void ApproximatingDefinition::updateStructure(AbstractStructure* s, AbstractStructure* approxdef_struct) {
 	for(auto ctf : _mappings->_pred2predCt) {
-		s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second)->ct());
-	}
-	for(auto cff : _mappings->_pred2predCf) {
-		s->inter(cff.first)->cf(approxdef_struct->inter(cff.second)->ct());
+		if(isa<Function>(*(ctf.first))) {
+			auto symbAsFunction = dynamic_cast<Function*>(ctf.first);
+			auto newPI = new PredInter(approxdef_struct->inter(ctf.second)->ct(),true);
+			newPI->cf(approxdef_struct->inter(_mappings->_pred2predCf[ctf.first])->ct());
+			auto newfi = new FuncInter(newPI);
+			s->changeInter(symbAsFunction,newfi);
+		} else {
+			s->inter(ctf.first)->ct(approxdef_struct->inter(ctf.second)->ct());
+			s->inter(ctf.first)->cf(approxdef_struct->inter(_mappings->_pred2predCf[ctf.first])->ct());
+		}
 	}
 }
