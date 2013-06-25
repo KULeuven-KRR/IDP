@@ -36,6 +36,10 @@ bool ApproximatingDefinition::DerivationTypes::hasDerivation(Direction dir) {
 
 std::set<PFSymbol*> ApproximatingDefinition::getSymbolsToQuery() {
 	auto ret = std::set<PFSymbol*>();
+
+	ret.insert(_mappings->_true_predform->symbol());
+	ret.insert(_mappings->_false_predform->symbol());
+
 	for(auto ctf : _mappings->_pred2predCt) {
 		ret.insert(ctf.second);
 	}

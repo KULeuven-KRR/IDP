@@ -444,13 +444,13 @@ ApproximatingDefinition* GenerateApproximatingDefinition::doGenerateApproximatin
 	transformed_theory->sentences(transformedSentences);
 	ApproximatingDefinition* ret = new ApproximatingDefinition(derivations,transformed_theory);
 	auto generator = new GenerateApproximatingDefinition(transformedSentences, freesymbols, derivations);
-	auto approxing_def = generator->getDefinition();
-	auto approxdef_voc = generator->constructVocabulary(normal_orig_theory->vocabulary(), approxing_def);
+	auto approx_def = generator->getDefinition();
+	auto approx_voc = generator->constructVocabulary(normal_orig_theory->vocabulary(), approx_def);
 	if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-		clog << "Generated the following approximating definition:\n" << toString(approxing_def) << "\n";
+		clog << "Generated the following approximating definition:\n" << toString(approx_def) << "\n";
 	}
-	ret->setApproximatingDefinition(approxing_def);
-	ret->setVocabulary(approxdef_voc);
+	ret->setApproximatingDefinition(approx_def);
+	ret->setVocabulary(approx_voc);
 	ret->setMappings(generator->_approxdefgeneratordata->_mappings);
 	return ret;
 }
@@ -467,7 +467,7 @@ GenerateApproximatingDefinition::GenerateApproximatingDefinition(
 }
 
 Definition* GenerateApproximatingDefinition::getDefinition() {
-	auto d = new Definition();
+	auto d = getBasicDefinition();
 
 	if (_approxdefgeneratordata->_derivations->hasDerivation(ApproximatingDefinition::Direction::DOWN)) {
 		d->add(getallDownRules());
@@ -479,17 +479,28 @@ Definition* GenerateApproximatingDefinition::getDefinition() {
 	}
 	return d;
 }
-std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
-	std::vector<Rule*> result;
+
+// Get the definition that is the basis for all approximating definitions.
+// This includes definitions for the TRUE and FALSE predforms, and the definition
+// for the top-level formulas saying they are true.
+Definition* GenerateApproximatingDefinition::getBasicDefinition() {
+	auto d = new Definition();
+
+	d->add(new Rule({},_approxdefgeneratordata->_mappings->_true_predform, FormulaUtils::trueFormula(), ParseInfo()));
+	d->add(new Rule({},_approxdefgeneratordata->_mappings->_false_predform, FormulaUtils::falseFormula(), ParseInfo()));
 
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto true_formula = new BoolForm(SIGN::POS, true, { }, FormulaParseInfo());
 		auto sentence_ct = _approxdefgeneratordata->_mappings->_formula2ct[*i];
 		if(not sentence_ct->symbol()->builtin()) {
-			result.push_back(new Rule(sentence_ct->freeVars(), sentence_ct, true_formula, ParseInfo()));
+			d->add(new Rule(sentence_ct->freeVars(), sentence_ct, true_formula, ParseInfo()));
 		}
 	}
+	return d;
+}
 
+std::vector<Rule*> GenerateApproximatingDefinition::getallDownRules() {
+	std::vector<Rule*> result;
 	for (auto i = _sentences.cbegin(); i < _sentences.cend(); ++i) {
 		auto rules = TopDownApproximatingDefinition().execute(*i, _approxdefgeneratordata);
 		insertAtEnd(result, rules);
@@ -540,6 +551,12 @@ void GenerateApproximatingDefinition::setFormula2PredFormMap(Formula* f) {
 			ctcfpair.first = new PredForm(SIGN::POS, _approxdefgeneratordata->_mappings->_pred2predCt[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
 			ctcfpair.second = new PredForm(SIGN::POS, _approxdefgeneratordata->_mappings->_pred2predCf[fPredForm->symbol()], fPredForm->subterms(), FormulaParseInfo());
 		}
+	} else if (f->trueFormula()){
+		ctcfpair.first = _approxdefgeneratordata->_mappings->_true_predform;
+		ctcfpair.second = _approxdefgeneratordata->_mappings->_false_predform;
+	} else if (f->falseFormula()){
+		ctcfpair.first = _approxdefgeneratordata->_mappings->_false_predform;
+		ctcfpair.second = _approxdefgeneratordata->_mappings->_true_predform;
 	} else {
 		ctcfpair = createGeneralPredForm(f);
 	}
@@ -598,6 +615,9 @@ const std::vector<Formula*> GenerateApproximatingDefinition::performTransformati
 
 Vocabulary* GenerateApproximatingDefinition::constructVocabulary(Vocabulary* orig_voc, Definition* d) {
 	auto ret = new Vocabulary(orig_voc->name());
+
+	ret->add(_approxdefgeneratordata->_mappings->_true_predform->symbol());
+	ret->add(_approxdefgeneratordata->_mappings->_false_predform->symbol());
 
 	for(auto ctf : _approxdefgeneratordata->_mappings->_formula2ct) {
 		ret->add(ctf.second->symbol());

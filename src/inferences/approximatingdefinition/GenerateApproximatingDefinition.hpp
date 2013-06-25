@@ -41,8 +41,7 @@ struct ApproxDefGeneratorData {
 		_freesymbols(freesymbols),
 		_baseformulas_already_added(false),
 		_mappings(new mappings()),
-		_derivations(derivations){
-
+		_derivations(derivations) {
 	}
 
 	ApproxDefGeneratorData(const ApproxDefGeneratorData* other) :
@@ -75,6 +74,7 @@ private:
 	~GenerateApproximatingDefinition() {}
 
 	Definition* getDefinition();
+	Definition* getBasicDefinition(); // Get the definition that forms the basis for all approximating definitions
 	vector<Rule*> getallDownRules();
 	vector<Rule*> getallUpRules();
 
