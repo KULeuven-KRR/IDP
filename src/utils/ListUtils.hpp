@@ -115,3 +115,32 @@ void insertAtEnd(List& list, const List2& addition){
 		i++;
 	}
 }
+
+template<class Elem, class Comparator>
+std::set<Elem, Comparator> getComplement(const std::set<Elem, Comparator>& total, const std::set<Elem, Comparator>& partition){
+	std::set<Elem, Comparator> complement;
+	for(auto elem:total){
+		if(not contains(partition, elem)){
+			complement.insert(elem);
+		}
+	}
+	return complement;
+}
+
+template<class Elem>
+std::set<Elem> getSet(const std::vector<Elem>& list){
+	std::set<Elem> setoflist;
+	for(auto elem: list){
+		setoflist.insert(elem);
+	}
+	return setoflist;
+}
+
+template<class Elem, class Comparator>
+std::set<Elem, Comparator> getSet(const std::vector<Elem>& list){
+	std::set<Elem, Comparator> setoflist;
+	for(auto elem: list){
+		setoflist.insert(elem);
+	}
+	return setoflist;
+}
