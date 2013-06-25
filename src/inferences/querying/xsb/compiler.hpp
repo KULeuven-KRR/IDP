@@ -172,6 +172,7 @@ protected:
 	bool _tabled;
 	bool _prefix;
 	bool _fact;
+	bool _numerical_operation;
 public:
 	PrologTerm(std::string functor, std::list<PrologTerm*> args)
 			: 	FormulaClause(functor),
@@ -179,7 +180,8 @@ public:
 				_sign(true),
 				_tabled(false),
 				_prefix(true),
-				_fact(false) {
+				_fact(false) ,
+				_numerical_operation(false) {
 		_arguments = args;
 	}
 	PrologTerm(std::string functor)
@@ -188,7 +190,8 @@ public:
 				_sign(true),
 				_tabled(false),
 				_prefix(true),
-				_fact(false) {
+				_fact(false),
+				_numerical_operation(false) {
 	}
 	void infix(bool b) {
 		_infix = b;
@@ -201,6 +204,12 @@ public:
 	}
 	bool fact() {
 		return _fact;
+	}
+	void numericalOperation(bool b) {
+		_numerical_operation = b;
+	}
+	bool numericalOperation() {
+		return _numerical_operation;
 	}
 	void prefix(bool b) {
 		_prefix = b;

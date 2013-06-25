@@ -279,7 +279,11 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 				output << toString(*pt._arguments.front()) << " is " << toString(*pt._arguments.back());
 			} else {
 				if (pt._name == "<" or pt._name == ">" or pt._name == "=<" or pt._name == ">=") {
-					output << toString(*pt._arguments.front()) << "@" << pt._name << toString(*pt._arguments.back());
+					if (pt._numerical_operation) {
+						output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
+					} else {
+						output << toString(*pt._arguments.front()) << "@" << pt._name << toString(*pt._arguments.back());
+					}
 				} else {
 					output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
 				}
@@ -816,7 +820,16 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 			}
 			term->addInputvarsToCheck(inputvars);
 		} else {
+			auto toNumericalOperation = true;
+			for(auto arg : p->args()) {
+				if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
+						SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
+						SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
+					toNumericalOperation = false;
+				}
+			}
 			term->numeric(true);
+			term->numericalOperation(toNumericalOperation);
 			term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
 		}
 	} else {
