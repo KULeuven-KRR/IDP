@@ -41,10 +41,10 @@ public:
 		}
 
 		auto approxdef_structure = approxdef->inputStructure(structure);
+		auto def_to_calculate = DefinitionUtils::makeDefinitionCalculable(approxdef->approximatingDefinition(),approxdef_structure);
 
 		auto output_structure = CalculateDefinitions::doCalculateDefinitions(
-				approxdef->approximatingDefinition(),
-				approxdef_structure, approxdef->getSymbolsToQuery());
+				def_to_calculate, approxdef_structure, approxdef->getSymbolsToQuery());
 
 		if(not output_structure.empty() && approxdef->isConsistent(output_structure.at(0))) {
 			approxdef->updateStructure(structure,output_structure.at(0));

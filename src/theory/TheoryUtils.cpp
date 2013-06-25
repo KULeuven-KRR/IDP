@@ -156,6 +156,27 @@ bool hasRecursiveAggregate(Definition* d) {
 	return transform<HasRecursiveAggregate, bool>(d);
 }
 
+/** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
+Definition* makeDefinitionCalculable(Definition* d, Structure* s) {
+	auto ret = new Definition();
+	for (auto rule : d->rules()) {
+		ret->add(rule);
+	}
+	for(auto open : DefinitionUtils::opens(d)) {
+		if (not s->inter(open)->approxTwoValued()) {
+			std::vector<Term*> subterms = {};
+			for (auto sort : open->sorts()) {
+				auto new_var_term = new VarTerm(new Variable(sort),TermParseInfo());
+				subterms.push_back(new_var_term);
+			}
+			auto rule_head = new PredForm(SIGN::POS, open, subterms, FormulaParseInfo());
+			auto rule_body = FormulaUtils::falseFormula();
+			ret->add(new Rule({},rule_head,rule_body, ParseInfo()));
+		}
+	}
+	return ret;
+}
+
 Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, definedsymbols, cpsupport);
 }

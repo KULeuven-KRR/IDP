@@ -315,6 +315,9 @@ void splitDefinitions(Theory* t);
 /** Check whether the definition has a recursive aggregate */
 bool hasRecursiveAggregate(Definition*);
 
+/** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
+Definition* makeDefinitionCalculable(Definition*, AbstractStructure*);
+
 /** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
 Definition* eliminateUniversalQuantifications(Definition*);
 
