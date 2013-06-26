@@ -216,7 +216,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, FOBDDManager* manager) {
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch);
+	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,this);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -1696,8 +1696,8 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	_truekernel = new TrueFOBDDKernel(ktrue);
 	_falsekernel = new FalseFOBDDKernel(kfalse);
-	_truebdd = new TrueFOBDD(_truekernel);
-	_falsebdd = new FalseFOBDD(_falsekernel);
+	_truebdd = new TrueFOBDD(_truekernel,this);
+	_falsebdd = new FalseFOBDD(_falsekernel,this);
 }
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;
