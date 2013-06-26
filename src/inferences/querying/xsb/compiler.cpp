@@ -346,22 +346,27 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 			if (it != (pc._body).begin()) {
 				output << ", ";
 			}
+			// Add type generators for the necessary variables
 			for (auto var = (*it)->inputvarsToCheck().begin(); var != (*it)->inputvarsToCheck().end(); ++var) {
 				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
 					output << *(*var)->instantiation() << ", ";
+					instantiatedVars->insert(*var);
 				}
 			}
 			output << (**it);
+			// Add type check to the necessary variables
 			for (auto var = (*it)->outputvarsToCheck().begin(); var != (*it)->outputvarsToCheck().end(); ++var) {
 				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
 					output << ", " << *(*var)->instantiation();
+					instantiatedVars->insert(*var);
 				}
 			}
+			// All variables of the printed call have been instantiated
 			for (auto var = (*it)->variables().begin(); var != (*it)->variables().end(); ++var) {
 				instantiatedVars->insert(*var);
 			}
 		}
-		for (auto it = (pc._head)->inputvarsToCheck().begin(); it != (pc._head)->inputvarsToCheck().end(); ++it) {
+		for (auto it = (pc._head)->variables().begin(); it != (pc._head)->variables().end(); ++it) {
 			if(instantiatedVars->find(*it) == instantiatedVars->end()) {
 				output << ", " << *(*it)->instantiation();
 			}
