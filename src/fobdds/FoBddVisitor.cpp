@@ -29,7 +29,14 @@ using namespace std;
 
 void FOBDDVisitor::visit(const FOBDD* bdd) {
 	if (bdd != _manager->truebdd() && bdd != _manager->falsebdd()) {
+		cout << "bdd=Null" << (bdd==NULL) << "\n";
+		cout << "kernel=Null" << (bdd->kernel()==NULL) << "\n";
 		bdd->kernel()->accept(this);
+		cout << "bddzelf \n";
+		bdd->put(cout);
+		cout << "truebranch \n";
+		bdd->truebranch()->put(cout);
+		cout << "\n";
 		visit(bdd->truebranch());
 		visit(bdd->falsebranch());
 	}

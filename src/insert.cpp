@@ -1062,6 +1062,7 @@ NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*
 
 NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
+	cout << "interpointer"<< *(name.begin());
 	return new NSPair(name, false, pi);
 }
 
@@ -1783,10 +1784,10 @@ Variable* Insert::getVar(const string& name) const {
 }
 
 Term* Insert::term(NSPair* nst) {
-	if (nst->_sortsincluded || (nst->_name).size() != 1) {
+	/*if (nst->_sortsincluded || (nst->_name).size() != 1) {
 		vector<Term*> vt = vector<Term*>(0);
 		return functerm(nst, vt);
-	} else {
+	} else {*/
 		Term* t = NULL;
 		string name = (nst->_name)[0];
 		Variable* v = getVar(name);
@@ -1806,17 +1807,21 @@ Term* Insert::term(NSPair* nst) {
 			nst->_arityincluded = false;
 			t = functerm(nst, vt);
 		} else {
+			cout << nst->_name << "\n";
 			YYLTYPE l;
 			l.first_line = (nst->_pi).linenumber();
 			l.first_column = (nst->_pi).columnnumber();
 			v = quantifiedvar(name, l);
 			auto temp = new VarTerm(v, TermParseInfo());
 			t = new VarTerm(v, termparseinfo(temp, nst->_pi));
+			if(nst->_sortsincluded && nst->_sorts.size()==1){
+				t->sort(*(nst->_sorts.begin())); //it's a variable with a declared sort, so include sort in var
+			}
 			temp->recursiveDelete();
 			delete (nst);
 		}
 		return t;
-	}
+	//}
 }
 
 FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
@@ -1942,6 +1947,10 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const{
 		auto symbol = f->symbol();
 		vector<const FOBDDTerm*> newargs;
 		for(auto subterm:p->subterms()){
+			cout<< "subterm:";
+			subterm->put(cout);
+			cout<< "   " ;
+			cout << (subterm->sort()==NULL) << "\n";
 			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
 		}
 		const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED,newargs));

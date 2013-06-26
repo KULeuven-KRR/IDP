@@ -33,7 +33,7 @@ public:
 		Querying c;
 		return c.solveQuery(q, s, symbolicstructure);
 	}
-	static PredTable* doSolveBDDQuery(FOBDD* b, Structure const * const s) {
+	static PredTable* doSolveBDDQuery(const FOBDD* b, FOBDDManager* m, Structure const * const s) {
 		Querying c;
 		return c.solveBDDQuery(b, s);
 	}
