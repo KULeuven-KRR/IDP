@@ -61,7 +61,8 @@ private:
 		}
 	};
 
-	IDP2ECNF<PrintThroughMinisatID> printer;
+	PrintThroughMinisatID* subprinter;
+	IDP2ECNF<PrintThroughMinisatID&> printer;
 
 	bool writeTranlation() const {
 		return writeTranslation_;
@@ -87,8 +88,13 @@ public:
 				_structure(NULL),
 				_translator(NULL),
 				writeTranslation_(writetranslation),
-				printer(PrintThroughMinisatID(stream), _translator) {
+				subprinter(new PrintThroughMinisatID(stream)),
+				printer(*subprinter, _translator) {
 
+	}
+
+	~EcnfPrinter(){
+		delete(subprinter);
 	}
 
 	virtual void startTheory() {
