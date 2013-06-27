@@ -79,9 +79,19 @@ Structure* ApproximatingDefinition::inputStructure(AbstractStructure* structure)
 }
 
 bool ApproximatingDefinition::isConsistent(AbstractStructure* s) {
+	// If the built-in "false" formula is made true, the theory has to be inconsistent
+	if (not s->inter(_mappings->_false_predform->symbol())->ct()->empty()) {
+		std::stringstream ss;
+		ss << "The approximating definition detected that built-in FALSE "
+			  "had to be true in order for the theory to be consistent.\n"
+			  "Hence, the theory is inconsistent.";
+		Warning::warning(ss.str());
+		return false;
+	}
 	for (auto i : _original_theory->sentences()) {
 		auto sentence_cf = _mappings->_formula2cf[i];
-		// The sentences cannot be calculated to be certainly false
+		// If one of the top-level sentences is detected to be certainly false,
+		// the theory has to be inconsistent
 		if(s->vocabulary()->contains(sentence_cf->symbol()) &&
 				not s->inter(sentence_cf->symbol())->ct()->empty()){
 			std::stringstream ss;
