@@ -1,8 +1,4 @@
-idpxsb_abs(0,0) :- !.
-idpxsb_abs(X,Y) :- nonvar(X), X > 0, Y is X.
-idpxsb_abs(X,Y) :- nonvar(X), X < 0, Y is -X.
-idpxsb_abs(X,Y) :- nonvar(Y), X is Y.
-idpxsb_abs(X,Y) :- nonvar(Y), X is -Y.
+idpxsb_abs(X,Y) :- Y is abs(X).
 
 idpxsb_sum(List,Sum) :- idpxsb_sum(List,Sum,0).
 idpxsb_sum([],X,X).
@@ -34,4 +30,33 @@ idpxsb_max([X|Rest],Max,TmpMax) :-
 	idpxsb_max(Rest,Max,TmpMax).
 
 idpxsb_forall(CallA, CallB) :-
-     call_tv(tables:not_exists((call(CallA), tables:not_exists(CallB))),true).
+    call_tv(tables:not_exists((call(CallA), tables:not_exists(CallB))),true).
+     
+idpxsb_int(X) :- 
+    nonvar(X),
+    ROUNDEDNUMBER is round(X),
+    0 is ROUNDEDNUMBER - X.
+     
+idpxsb_float(X) :- 
+    nonvar(X),
+    ROUNDEDNUMBER is round(X),
+    ROUNDEDNUMBER \= X.
+     
+idpxsb_nat(X) :- 
+    nonvar(X),
+    X >= 0,
+    idpxsb_int(X).
+     
+idpxsb_same_number(X,Y) :-
+    idpxsb_convert_to_int(X,X1),
+    X1 = Y.
+
+idpxsb_convert_to_int(Num,Int) :-
+	nonvar(Num),
+    idpxsb_int(Num), 
+    Int is round(Num).
+
+idpxsb_convert_to_int(Num,Int) :-
+	nonvar(Num),
+    idpxsb_float(Num), 
+    Int = Num.

@@ -297,7 +297,13 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 			if(pt._name == "%") {
 				name = "mod";
 			}
-			output << toString(**solution) << " is " << toString(**first) << " " << name << " " << toString(**second);
+			if(pt._name == "/") {
+				auto tmpvar = ("IDPXSB_TMPVAR" + toString(getGlobal()->getNewID()));
+				output << tmpvar << " is " << toString(**first) << " / " << toString(**second) << ", idpxsb_same_number("
+						<< tmpvar << ", " << toString(**solution) << ")";
+			} else {
+				output << toString(**solution) << " is " << toString(**first) << " " << name << " " << toString(**second);
+			}
 
 		}
 	} else if (pt._infix) {
