@@ -31,6 +31,7 @@ template<class Policy>
 GroundTheory<Policy>::GroundTheory(StructureInfo info, bool nbModelsEquivalent)
 		: AbstractGroundTheory(info),
 		  _nbModelsEquivalent(nbModelsEquivalent),
+		  _nbofatoms(0),
 		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
 }
@@ -39,6 +40,7 @@ template<class Policy>
 GroundTheory<Policy>::GroundTheory(Vocabulary* voc, StructureInfo info, bool nbModelsEquivalent)
 		: AbstractGroundTheory(voc, info),
 		  _nbModelsEquivalent(nbModelsEquivalent),
+		  _nbofatoms(0),
 		  addingTseitins(false) {
 	Policy::polStartTheory(translator());
 }
@@ -51,6 +53,7 @@ void GroundTheory<Policy>::notifyUnknBound(Context context, const Lit& boundlit,
 template<class Policy>
 void GroundTheory<Policy>::notifyLazyAddition(const litlist& glist, int ID) {
 	addTseitinInterpretations(glist, getIDForUndefined());
+	notifyAtomsAdded(glist.size());
 	Policy::polAddLazyAddition(glist, ID);
 }
 
@@ -71,6 +74,7 @@ void GroundTheory<Policy>::addLazyElement(Lit head, PFSymbol* symbol, const std:
 			addFoldedVarEquiv(arg._varid);
 		}
 	}
+	notifyAtomsAdded(2);
 	Policy::polAddLazyElement(head, symbol, args, this, recursive);
 }
 
@@ -92,6 +96,7 @@ void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 	bool propagates = cl.size()==1;
 	// If propagates is true, it will have been added to the grounding if necessary by addTseitinInterpretations
 	if(not propagates){
+		notifyAtomsAdded(cl.size());
 		Policy::polAdd(cl);
 	}
 	addTseitinInterpretations(cl, getIDForUndefined(), skipfirst, propagates);
@@ -108,6 +113,7 @@ void GroundTheory<Policy>::add(const GroundDefinition& def) {
 			Assert(isa<AggGroundRule>(*rule));
 			auto aggrule = dynamic_cast<AggGroundRule*>(rule);
 			add(aggrule->setnr(), def.id(), (aggrule->aggtype() != AggFunction::CARD));
+			notifyAtomsAdded(2);
 			Policy::polAdd(def.id(), aggrule);
 		}
 	}
@@ -118,6 +124,7 @@ void GroundTheory<Policy>::add(DefId defid, PCGroundRule* rule) {
 	Assert(defid!=getIDForUndefined());
 	addTseitinInterpretations({rule->head()}, defid);
 	addTseitinInterpretations(rule->body(), defid);
+	notifyAtomsAdded(rule->body().size()+1);
 	Policy::polAdd(defid, rule);
 }
 
@@ -168,6 +175,7 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 		addFoldedVarEquiv(id);
 	}
 
+	notifyAtomsAdded(2);
 	Policy::polAdd(tseitin, body);
 }
 
@@ -179,12 +187,14 @@ void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	_printedsets.insert(setnr);
 	auto tsset = translator()->groundset(setnr);
 	addTseitinInterpretations(tsset.literals(), defnr);
+	notifyAtomsAdded(tsset.literals().size());
 	Policy::polAdd(tsset, setnr, weighted);
 }
 
 template<class Policy>
 void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 	add(body->setnr(), getIDForUndefined(), (body->aggtype() != AggFunction::CARD));
+	notifyAtomsAdded(2);
 	Policy::polAdd(head, body);
 }
 
@@ -238,6 +248,9 @@ void GroundTheory<Policy>::addOptimization(VarId varid) {
 
 template<class Policy>
 void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) {
+	for(auto symm: symmetry){
+		notifyAtomsAdded(symm.size());
+	}
 	Policy::polAdd(symmetry);
 }
 
@@ -262,6 +275,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 
 		if (not translator()->isTseitinWithSubformula(tseitin) || contains(_printedtseitins, tseitin)) {
 			if(atroot){
+				notifyAtomsAdded(1);
 				Policy::polAdd(GroundClause{elem.lit});
 			}
 			continue;
@@ -313,6 +327,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			auto body = dynamic_cast<AggTsBody*>(tsbody);
 			if (body->type() == TsType::RULE) {
 				Assert(tseitindefnr != getIDForUndefined());
+				notifyAtomsAdded(2);
 				add(body->setnr(), tseitindefnr, (body->aggtype() != AggFunction::CARD));
 				Policy::polAdd(tseitindefnr, new AggGroundRule(tseitin, body, true)); //TODO true (recursive) might not always be the case?
 				if(useUFSAndOnlyIfSem() && _nbModelsEquivalent){
@@ -333,6 +348,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		}
 
 		if(atroot && not eliminated){
+			notifyAtomsAdded(1);
 			Policy::polAdd(GroundClause{elem.lit});
 		}
 

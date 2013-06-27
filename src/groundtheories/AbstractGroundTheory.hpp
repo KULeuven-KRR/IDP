@@ -50,6 +50,9 @@ public:
 
 	~AbstractGroundTheory();
 
+	// Returns the size in number of atoms the theory contains
+	virtual long getSize() = 0;
+
 	void addEmptyClause();
 	void addUnitClause(Lit l);
 	virtual void add(const GroundClause& cl, bool skipfirst = false) = 0;

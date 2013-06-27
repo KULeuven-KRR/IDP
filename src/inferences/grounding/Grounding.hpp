@@ -191,6 +191,10 @@ private:
 
 		addSymmetryBreaking(_theory, _structure, _grounder->getGrounding(), _minimizeterm, _nbmodelsequivalent);
 
+		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+			std::clog <<"groundsize&&" <<_grounder->getGrounding()->getSize() <<"\n";
+		}
+
 		// Print grounding statistics
 		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			auto maxsize = _grounder->getFullGroundSize();

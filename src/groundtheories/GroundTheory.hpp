@@ -27,11 +27,20 @@ class GroundTheory: public AbstractGroundTheory, public Policy {
 	std::set<VarId> _printedvarids, _addedvarinterpretation;
 	bool _nbModelsEquivalent;
 
+	long _nbofatoms;
+	void notifyAtomsAdded(long number){
+		_nbofatoms += number; // TODO check overflow
+	}
+
 public:
 	GroundTheory(StructureInfo structure, bool nbModelsEquivalent);
 	GroundTheory(Vocabulary* voc, StructureInfo structure, bool nbModelsEquivalent);
 
 	virtual ~GroundTheory() {
+	}
+
+	virtual long getSize(){
+		return _nbofatoms;
 	}
 
 	void add(TheoryComponent*) {
