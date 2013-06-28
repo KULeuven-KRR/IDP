@@ -1062,7 +1062,6 @@ NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*
 
 NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
-	cout << "interpointer"<< *(name.begin());
 	return new NSPair(name, false, pi);
 }
 
@@ -1807,7 +1806,6 @@ Term* Insert::term(NSPair* nst) {
 			nst->_arityincluded = false;
 			t = functerm(nst, vt);
 		} else {
-			cout << nst->_name << "\n";
 			YYLTYPE l;
 			l.first_line = (nst->_pi).linenumber();
 			l.first_column = (nst->_pi).columnnumber();
@@ -1947,10 +1945,6 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const{
 		auto symbol = f->symbol();
 		vector<const FOBDDTerm*> newargs;
 		for(auto subterm:p->subterms()){
-			cout<< "subterm:";
-			subterm->put(cout);
-			cout<< "   " ;
-			cout << (subterm->sort()==NULL) << "\n";
 			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
 		}
 		const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED,newargs));

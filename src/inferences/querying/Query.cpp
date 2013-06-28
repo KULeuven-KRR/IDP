@@ -117,7 +117,8 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 
 PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const structure) const {
 	// translate the formula to a bdd
-	auto manager=make_shared<FOBDDManager>();
+	auto manager= bdd->manager();
+
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "FOBDD-Query-BDD:" << "\n" << print(bdd) << "\n";
@@ -148,7 +149,6 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 		} else {
 			data.vars.push_back(dec->second);
 		}
-		cerr << "Varsort" << print(var->sort());
 		data.bddvars.push_back(manager->getVariable(var));
 		data.universe.addTable(structure->inter((var)->sort()));
 	}

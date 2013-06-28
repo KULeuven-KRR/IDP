@@ -70,7 +70,7 @@ public:
 
 	void accept(FOBDDVisitor* visitor) const;
 
-	FOBDDManager* manager(){
+	FOBDDManager* manager() const{
 		return _manager;
 	}
 
