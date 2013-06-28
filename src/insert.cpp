@@ -1998,7 +1998,7 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 		auto f = dynamic_cast<PredForm*>(p);
 		auto symbol = f->symbol();
 		vector<const FOBDDTerm*> newargs;
-		for (auto subterm : p->subterms()) {
+		for(auto subterm:p->subterms()){
 			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
 		}
 		const FOBDDKernel* returnvalue(
