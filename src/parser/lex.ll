@@ -1,3 +1,7 @@
+/**
+*	The lexer tokenizes an IDP input string to make the parser's life is easier ;)
+*/
+
 %{
 
 #include "parser/yyltype.hpp"

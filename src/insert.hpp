@@ -127,6 +127,11 @@ struct VarName {
 	std::ostream& put(std::ostream& os) const;
 };
 
+/**
+ * The Insert class performs the actual construction of IDP-objects such as vocabularies, functions, structures, domain elements etc.
+ * Methods from this class are called from the parser (parser.yy).
+ */
+
 class Insert {
 private:
 	lua_State* _state; //!< the lua state objects are added to

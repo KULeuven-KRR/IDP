@@ -50,6 +50,16 @@ public:
 	}
 };
 
+/**
+ * InstGenerators are used to generate instantiations of variables, given some fixed instantiations
+ * for some variables and some predicate or function to constrain the possibilities.
+ *
+ * One situation where generators are needed is during grounding, in conjunction with BDD's.
+ *
+ * E.g.: instantiating F(x,3)=y generates the possible values for x and y such that F(x,3)=y.
+ * The encoding of F(x,3)=y is done by a pattern, where "true false true" would mean "output input output"
+ * which in turn means "find instantiations for the first and the third (variable) given a value for the second".
+ */
 class InstGenerator: public InstChecker {
 private:
 	bool end;

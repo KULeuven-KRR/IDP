@@ -1,3 +1,11 @@
+/**
+* This file contains the bison parser, which is in essence a context free grammar
+* embedded in C++ iterating over a lexed input. The lexer's code is in lex.ll
+* 
+* The data object of which the parser calls methods is of the Insert type, described
+* in insert.cpp.
+*/
+
 %{
 
 #include <sstream>
