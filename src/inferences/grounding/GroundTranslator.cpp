@@ -258,21 +258,34 @@ Lit GroundTranslator::translateReduced(const SymbolOffset& offset, const Element
 	return lit;
 }
 
+// ERROR if a domain element is not an int, as no var can be constructed for it!!!
 void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool recursive){
 	for(auto terms2lit: term2lits){
 		litlist equalities;
+		bool equalitycertainlyfalse = false;
 		for(uint i=0; i< terms.size(); ++i){
 			auto termleft = terms[i];
+			auto termright = terms2lit.first[i];
+
+			// This also handles the case where the domain element are not integers, in which case no var can be created at the moment
+			if(not termleft.isVariable and not termright.isVariable and termleft._domelement!=termright._domelement){
+				equalitycertainlyfalse = true;
+				break;
+			}
+
 			auto varleft = termleft._varid;
 			if(not termleft.isVariable){
 				varleft = translateTerm(termleft._domelement);
 			}
-			auto termright = terms2lit.first[i];
+
 			auto varright = termright._varid;
 			if(not termright.isVariable){
-				varleft = translateTerm(termright._domelement);
+				varright = translateTerm(termright._domelement);
 			}
 			equalities.push_back(reify(new CPVarTerm(varleft), CompType::EQ, CPBound(varright), TsType::EQ));
+		}
+		if(equalitycertainlyfalse){
+			continue;
 		}
 		_grounding->add(newhead, TsType::RIMPL, equalities, true, -1);
 		equalities[equalities.size()-1]=newhead;
@@ -305,7 +318,9 @@ Lit GroundTranslator::addLazyElement(PFSymbol* symbol, const std::vector<GroundT
 		result = lazyatoms2lit.at(terms);
 	} else {
 		result = createNewUninterpretedNumber();
-		createImplications(result, lazyatoms2lit, terms, recursive);
+		if(getOption(ADDEQUALITYTHEORY)){
+			createImplications(result, lazyatoms2lit, terms, recursive);
+		}
 		lazyatoms2lit[terms] = result;
 		_grounding->addLazyElement(result, symbol, terms, recursive);
 	}
