@@ -18,12 +18,13 @@ bool isTwoValued(const Term* t, const Structure* structure) {
 	}
 	switch (t->type()) {
 	case TermType::FUNC: {
+		// TODO check if the specific instance is twovalued
 		auto ft = dynamic_cast<const FuncTerm*>(t);
 		auto inter = ft->function()->interpretation(structure);
 		if (inter==NULL || not inter->approxTwoValued()) {
 			return false;
 		}
-		auto twoval = true && ft->subterms().size() > 0;
+		auto twoval = true;
 		for (auto st : ft->subterms()) {
 			twoval &= isTwoValued(st, structure);
 		}
