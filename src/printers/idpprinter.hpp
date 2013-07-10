@@ -132,12 +132,23 @@ public:
 					}
 				} else {
 					printTab();
-					output() << printFullyQualified(p) << "<ct> = ";
-					visit(pi->ct());
+					if(pi->ct()->size()<=pi->pf()->size()){
+						output() << printFullyQualified(p) << "<ct> = ";
+						visit(pi->ct());
+					}else{
+						output() << printFullyQualified(p) << "<pf> = ";
+						visit(pi->pf());
+					}
 					output() << '\n';
+
 					printTab();
-					output() << printFullyQualified(p) << "<cf> = ";
-					visit(pi->cf());
+					if(pi->cf()->size()<=pi->pt()->size()){
+						output() << printFullyQualified(p) << "<cf> = ";
+						visit(pi->cf());
+					}else{
+						output() << printFullyQualified(p) << "<pt> = ";
+						visit(pi->pt());
+					}
 					output() << '\n';
 				}
 			}
