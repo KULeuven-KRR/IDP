@@ -78,6 +78,70 @@ class TopDownApproximatingDefinition: public TheoryVisitor {
 private:
 	ApproxDefGeneratorData* _data;
 	vector<Rule*> _topdownrules;
+
+	void generateTopDownApproximation(const BoolForm* bf,
+			std::map<const Formula*, PredForm*> map1,
+			std::map<const Formula*, PredForm*> map2) {
+		if (!bf->conj()) {
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				auto v = difference(bf->freeVars(), (*i)->freeVars());
+				Formula* f = map1[bf];
+				vector<Formula*> forms;
+				forms.push_back(map2[bf]);
+				for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
+					if (i != j) {
+						forms.push_back(map1[*j]);
+					}
+				}
+				f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
+				if (!v.empty()) {
+					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+				}
+				add(_topdownrules, map2[*i], f, _data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
+			}
+		} else {
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				auto v = difference(bf->freeVars(), (*i)->freeVars());
+				Formula* f = map2[bf];
+				if (!v.empty() != 0) {
+					f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
+				}
+				add(_topdownrules, map2[*i], f, _data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
+			}
+		}
+	}
+
+	void generateTopDownApproximation(const QuantForm* qf,
+			std::map<const Formula*, PredForm*> map1,
+			std::map<const Formula*, PredForm*> map2) {
+		if (qf->isUniv()) {
+			add(_topdownrules, map2[qf->subformula()], map2[qf], _data);
+		} else {
+			std::vector<Formula*> vareq_forms;
+			// subterms for the call to QF's subformula - some of these will be newly created varterms
+			std::vector<Term*> newSubTerms = map2[qf->subformula()]->subterms();
+			varset vars;
+			for (auto i = qf->quantVars().cbegin(); i != qf->quantVars().cend(); ++i) {
+				auto newvar = new Variable((*i)->sort());
+				auto newterm = new VarTerm(newvar, TermParseInfo());
+				vars.insert(newvar);
+				// Replace the old term with the new varterm that should be used in the call to QF's subformula
+				for (unsigned int it = 0; it < map2[qf->subformula()]->subterms().size(); it++) {
+					if (map2[qf->subformula()]->subterms()[it]->contains(*i)) {
+						newSubTerms[it] = newterm;
+					}
+				}
+				vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()),{ newterm, new VarTerm(*i, TermParseInfo()) },FormulaParseInfo()));
+			}
+			auto vareqs = &Gen::conj(vareq_forms);
+			std::vector<Formula*> disj_forms;
+			disj_forms.push_back(vareqs);
+			disj_forms.push_back(new PredForm(SIGN::POS,((map1[qf->subformula()])->symbol()), newSubTerms,FormulaParseInfo()));
+			auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
+			add(_topdownrules, map2[qf->subformula()], &Gen::conj( { &quant,map2[qf] }), _data);
+		}
+	}
+
 public:
 	template<typename T>
 	const std::vector<Rule*>& execute(T f, ApproxDefGeneratorData* data) {
@@ -104,39 +168,12 @@ public:
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::FALSE,
 				ApproximatingDefinition::Direction::DOWN)) {
-
+			generateTopDownApproximation(bf,_data->_mappings->_formula2ct,_data->_mappings->_formula2cf);
 		}
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::TRUE,
 				ApproximatingDefinition::Direction::DOWN)) {
-			if (not bf->conj()) {
-				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-					auto v = difference(bf->freeVars(), (*i)->freeVars());
-					Formula* f = _data->_mappings->_formula2cf[bf];
-					vector<Formula*> forms;
-					forms.push_back(_data->_mappings->_formula2ct[bf]);
-					for (auto j = bf->subformulas().cbegin(); j < bf->subformulas().cend(); ++j) {
-						if (i != j) {
-							forms.push_back(_data->_mappings->_formula2cf[*j]);
-						}
-					}
-					f = new BoolForm(SIGN::POS, true, forms, FormulaParseInfo());
-					if (not v.empty()) {
-						f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
-					}
-					add(_topdownrules, _data->_mappings->_formula2ct[*i], f, _data); // DISJ: Lict(x, y) <- ?z: Pct(x, y, z) & Ljcf (!j: j~=i)
-				}
-			} else {
-				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-					auto v = difference(bf->freeVars(), (*i)->freeVars());
-					Formula* f = _data->_mappings->_formula2ct[bf];
-					if (not v.empty() != 0) {
-						f = new QuantForm(SIGN::POS, QUANT::EXIST, v, f, FormulaParseInfo());
-					}
-					add(_topdownrules, _data->_mappings->_formula2ct[*i], f, _data); // DISJ: Licf(x, y) <- !z: Pcf(x, y, z)
-				}
-
-			}
+			generateTopDownApproximation(bf,_data->_mappings->_formula2cf,_data->_mappings->_formula2ct);
 		}
 	}
 
@@ -153,38 +190,12 @@ public:
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::FALSE,
 				ApproximatingDefinition::Direction::DOWN)) {
-
+			generateTopDownApproximation(qf,_data->_mappings->_formula2ct,_data->_mappings->_formula2cf);
 		}
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::TRUE,
 				ApproximatingDefinition::Direction::DOWN)) {
-			if (qf->isUniv()) {
-				add(_topdownrules, _data->_mappings->_formula2ct[qf->subformula()], _data->_mappings->_formula2ct[qf], _data);
-			} else {
-				std::vector<Formula*> vareq_forms;
-				// subterms for the call to QF's subformula - some of these will be newly created varterms
-				std::vector<Term*> newSubTerms = _data->_mappings->_formula2ct[qf->subformula()]->subterms();
-				varset vars;
-				for(auto i=qf->quantVars().cbegin(); i!=qf->quantVars().cend(); ++i){
-					auto newvar = new Variable((*i)->sort());
-					auto newterm = new VarTerm(newvar, TermParseInfo());
-					vars.insert(newvar);
-					// Replace the old term with the new varterm that should be used in the call to QF's subformula
-					for (unsigned int it = 0; it <_data->_mappings->_formula2ct[qf->subformula()]->subterms().size(); it++) {
-						if (_data->_mappings->_formula2ct[qf->subformula()]->subterms()[it]->contains(*i)) {
-							newSubTerms[it] = newterm;
-						}
-					}
-					vareq_forms.push_back(new PredForm(SIGN::POS, get(STDPRED::EQ, (*i)->sort()), {newterm, new VarTerm(*i, TermParseInfo())}, FormulaParseInfo()));
-				}
-				auto vareqs = &Gen::conj(vareq_forms);
-				std::vector<Formula*> disj_forms;
-				disj_forms.push_back(vareqs);
-				disj_forms.push_back(new PredForm(SIGN::POS, ((_data->_mappings->_formula2cf[qf->subformula()])->symbol()),newSubTerms,FormulaParseInfo()));
-				auto& quant = Gen::forall(vars, Gen::disj(disj_forms));
-
-				add(_topdownrules, _data->_mappings->_formula2ct[qf->subformula()], &Gen::conj({&quant, _data->_mappings->_formula2ct[qf]}), _data);
-			}
+			generateTopDownApproximation(qf,_data->_mappings->_formula2cf,_data->_mappings->_formula2ct);
 		}
 
 	}
@@ -269,6 +280,31 @@ class BottomUpApproximatingDefinition: public TheoryVisitor {
 private:
 	ApproxDefGeneratorData* _data;
 	vector<Rule*> _bottomuprules;
+
+	void generateBottomUpApproximation(const BoolForm* bf,
+			std::map<const Formula*, PredForm*> map) {
+		if (bf->conj()) {
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				add(_bottomuprules, map[bf], map[*i], _data); // DISJ: Pct(x, y, z) <- Lict(x, y)
+			}
+		}
+		else {
+			std::vector<Formula*> forms;
+			for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
+				forms.push_back(map[*i]);
+			}
+			add(_bottomuprules, map[bf], &Gen::conj(forms), _data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
+		}
+	}
+
+	void generateBottomUpApproximation(const QuantForm* qf,
+			std::map<const Formula*, PredForm*> map) {
+		if (qf->isUniv()) {
+			add(_bottomuprules, map[qf], &Gen::exists(qf->quantVars(), *map[qf->subformula()]), _data);
+		} else {
+			add(_bottomuprules, map[qf], &Gen::forall(qf->quantVars(), *map[qf->subformula()]), _data);
+		}
+	}
 public:
 	template<class T>
 	const std::vector<Rule*>& execute(T* f, ApproxDefGeneratorData* data) {
@@ -295,23 +331,13 @@ public:
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::FALSE,
 				ApproximatingDefinition::Direction::UP)) {
-			if (bf->conj()) {
-				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-					add(_bottomuprules, _data->_mappings->_formula2cf[bf], _data->_mappings->_formula2cf[*i], _data); // DISJ: Pct(x, y, z) <- Lict(x, y)
-				}
-			}
-			else {
-				std::vector<Formula*> forms;
-				for (auto i = bf->subformulas().cbegin(); i < bf->subformulas().cend(); ++i) {
-					forms.push_back(_data->_mappings->_formula2cf[*i]);
-				}
-				add(_bottomuprules, _data->_mappings->_formula2cf[bf], &Gen::conj(forms), _data); // DISj: Pcf(x, y, z) <- L1cf & ... & Lncf
-			}
+			generateBottomUpApproximation(bf, _data->_mappings->_formula2cf);
 
 		}
 		if(_data->_derivations->hasDerivation(
 				ApproximatingDefinition::TruthPropagation::TRUE,
 				ApproximatingDefinition::Direction::UP)) {
+			generateBottomUpApproximation(bf, _data->_mappings->_formula2ct);
 		}
 	}
 
