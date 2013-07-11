@@ -166,15 +166,24 @@ public:
 					output() << '\n';
 				} else {
 					auto pi = fi->graphInter();
-					auto ct = pi->ct();
 					printTab();
-					output() << printFullyQualified(f) << "<ct> = ";
-					printAsFunc(ct);
+					if(pi->ct()->size()<=pi->pf()->size()){
+						output() << printFullyQualified(f) << "<ct> = ";
+						printAsFunc(pi->ct());
+					}else{
+						output() << printFullyQualified(f) << "<pf> = ";
+						printAsFunc(pi->pf());
+					}
 					output() << '\n';
-					auto cf = pi->cf();
+
 					printTab();
-					output() << printFullyQualified(f) << "<cf> = ";
-					printAsFunc(cf);
+					if(pi->cf()->size()<=pi->pt()->size()){
+						output() << printFullyQualified(f) << "<cf> = ";
+						printAsFunc(pi->cf());
+					}else{
+						output() << printFullyQualified(f) << "<pt> = ";
+						printAsFunc(pi->pt());
+					}
 					output() << '\n';
 				}
 			}
