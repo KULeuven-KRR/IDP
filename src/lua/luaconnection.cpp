@@ -871,8 +871,9 @@ int predicateIndex(lua_State* L) {
 		for (auto it = sort->begin(); it != sort->end(); ++it) {
 			for (auto jt = pred->begin(); jt != pred->end(); ++jt) {
 				if ((*jt)->arity() == 1) {
-					if ((*jt)->resolve(vector<Sort*>(1, (*it)))) {
-						newpred->insert(*jt);
+					auto newp = (*jt)->resolve(vector<Sort*>(1, (*it)));
+					if (newp!=NULL) {
+						newpred->insert(newp);
 					}
 				}
 			}
@@ -899,8 +900,9 @@ int predicateIndex(lua_State* L) {
 			}
 			for (auto it = pred->begin(); it != pred->end(); ++it) {
 				if ((*it)->arity() == table->size()) {
-					if ((*it)->resolve(currsorts)) {
-						newpred->insert(*it);
+					auto newp = (*it)->resolve(currsorts);
+					if (newp!=NULL) {
+						newpred->insert(newp);
 					}
 				}
 			}
@@ -956,10 +958,11 @@ int functionIndex(lua_State* L) {
 			for (size_t n = 0; n < newtable.size(); ++n) {
 				currsorts[n] = *(carry[n]);
 			}
-			for (auto it = func->begin(); it != func->end(); ++it) {
-				if ((*it)->arity() == newtable.size()) {
-					if ((*it)->resolve(currsorts)) {
-						newfunc->insert(*it);
+			for (auto f : *func) {
+				if (f->arity() == newtable.size()-1) {
+					auto newf = f->resolve(currsorts);
+					if (newf!=NULL) {
+						newfunc->insert(newf);
 					}
 				}
 			}
