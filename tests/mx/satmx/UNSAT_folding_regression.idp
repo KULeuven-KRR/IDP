@@ -1,0 +1,33 @@
+// Was bugged with cp due to incorrect folding
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V {
+  type job
+  type integer isa int
+  type length isa int
+  type time isa int
+  type import isa int
+
+  job_len(job,length)
+  importance(job, import)
+  
+  start(job): time
+  deadline(job,time)
+  mm:integer
+}
+
+theory T : V {  
+   mm >= sum{j len dl i: job_len(j,len) & deadline(j,dl) & start(j) + len > dl & importance(j,i) : (start(j) + len-dl)*i}.
+   ?>1 j: start(j)>800.
+}
+
+structure S : V {
+  V::integer[V::integer] = { 0..1280 }
+  V::time[V::time] = { 0..1280 }
+  deadline[V::job,V::time] = { 3,39; 6,12; 9,30; }
+  importance[V::job,V::import] = { 3,2; 6,1; 9,3;  }
+  job_len[V::job,V::length] = { 3,12; 6,5; 9,18;  }
+  mm = 1032
+}

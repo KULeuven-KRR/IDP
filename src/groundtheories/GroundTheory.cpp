@@ -428,6 +428,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 				}
 			}
 			newvarids.push_back(varid);
+			addFoldedVarEquiv(varid);
 			newweights.push_back(weight1);
 			newconditions.push_back(term->conditions()[i]);
 		}
@@ -456,6 +457,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 				}
 			}
 			newvarids.push_back(varid);
+			addFoldedVarEquiv(varid);
 			newconditions.push_back(term->conditions()[i]);
 			//Note: weight doesn't change
 		}
