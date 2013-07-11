@@ -138,10 +138,11 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 		throw IdpException("Invalid code path");
 	}
 
-	auto leftdomain = _lefttermgrounder->getDomain();
-	auto rightdomain = _righttermgrounder->getDomain();
+	auto leftdomain = _lefttermgrounder->getLatestDomain();
+	auto rightdomain = _righttermgrounder->getLatestDomain();
 
 	if (getDomain() != NULL && getDomain()->approxFinite()) { // TODO In fact should be: if the basic interpretation is small enough
+		_latestdomain = getDomain();
 		return getDomain();
 	}
 
@@ -214,12 +215,13 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 		if (rightdomain && not rightdomain->approxFinite()) {
 			Warning::warning("Right domain is infinite...");
 		}
-		throw notyetimplemented("One of the domains in a sumtermgrounder is infinite.");
+		throw notyetimplemented("One of the domains in a twintermgrounder is infinite.");
 	}
 
 	if(cansave){
 		setDomain(newdomain);
 	}
+	_latestdomain = newdomain;
 	return newdomain;
 }
 

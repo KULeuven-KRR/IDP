@@ -51,6 +51,10 @@ public:
 		return _domain;
 	}
 
+	virtual SortTable* getLatestDomain() const {
+		return _domain;
+	}
+
 	int verbosity() const;
 protected:
 	void setDomain(SortTable* dom) const { // TODO ugly const setter!
@@ -114,11 +118,17 @@ protected:
 	FuncTable* _functable;
 	TermGrounder* _lefttermgrounder;
 	TermGrounder* _righttermgrounder;
+
+	mutable SortTable* _latestdomain;
 public:
 	TwinTermGrounder(GroundTranslator* tt, TwinTT type, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(dom, tt), _type(type), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg) {
+			: TermGrounder(dom, tt), _type(type), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _latestdomain(NULL) {
 	}
 	GroundTerm run() const;
+
+	virtual SortTable* getLatestDomain() const {
+		return _latestdomain;
+	}
 private:
 	SortTable* computeDomain(const GroundTerm& left, const GroundTerm& right) const;
 };
