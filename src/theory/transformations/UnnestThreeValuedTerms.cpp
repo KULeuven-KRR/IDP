@@ -38,7 +38,7 @@ bool UnnestThreeValuedTerms::wouldMove(Term* t) {
 		auto at = dynamic_cast<AggTerm*>(t);
 		bool alltwovalued = true;
 		for(auto qset: at->set()->getSets()){
-			if(not SetUtils::approxTwoValued(qset, _structure)){ // TODO: should approxTwoValued only go to atom level here? Or will the remainder already have been moved?
+			if(not SetUtils::approxTwoValued(qset, _structure) || not getOption(REDUCEDGROUNDING)){ // TODO: should approxTwoValued only go to atom level here? Or will the remainder already have been moved?
 				alltwovalued = false;
 				break;
 			}
