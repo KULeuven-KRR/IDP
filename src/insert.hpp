@@ -370,6 +370,7 @@ public:
 
 	const FOBDD* fobdd(const FOBDDKernel*, const FOBDD*, const FOBDD*, YYLTYPE) const;
 	const FOBDDKernel* atomkernel(Formula*) const;
+	const FOBDDKernel* quantkernel(Sort* sort, const FOBDD* bdd) const;
 	const FOBDD* truefobdd(YYLTYPE l) const;
 	const FOBDD* falsefobdd(YYLTYPE l) const;
 

@@ -1956,6 +1956,10 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const{
 	}
 	return NULL;
 }
+const FOBDDKernel* Insert::quantkernel(Sort* sort, const FOBDD* bdd) const{
+	//TODO
+	return NULL;
+}
 
 const FOBDD* Insert::truefobdd(YYLTYPE l) const{
 	return _currmanager->truebdd();
