@@ -717,15 +717,6 @@ void Insert::openvocab(const string& vname, YYLTYPE l) {
 	usevocabulary(_currvocabulary);
 }
 
-void Insert::assignvocab(InternalArgument* arg, YYLTYPE l) {
-	auto v = LuaConnection::vocabulary(arg);
-	if (v) {
-		_currvocabulary->add(v);
-	} else {
-		expected(ComponentType::Vocabulary, parseinfo(l));
-	}
-}
-
 void Insert::closevocab() {
 	Assert(_currvocabulary);
 	if (_currspace->isGlobal()) {
@@ -795,15 +786,6 @@ void Insert::opentheory(const string& tname, YYLTYPE l) {
 	}
 	_currtheory = new Theory(tname, pi);
 	_currspace->add(_currtheory);
-}
-
-void Insert::assigntheory(InternalArgument* arg, YYLTYPE l) {
-	AbstractTheory* t = LuaConnection::theory(arg);
-	if (t) {
-		_currtheory->addTheory(t);
-	} else {
-		expected(ComponentType::Theory, parseinfo(l));
-	}
 }
 
 void Insert::closetheory() {
@@ -878,15 +860,6 @@ void Insert::openstructure(const string& sname, YYLTYPE l) {
 	}
 	_currstructure = new Structure(sname, pi);
 	_currspace->add(_currstructure);
-}
-
-void Insert::assignstructure(InternalArgument* arg, YYLTYPE l) {
-	AbstractStructure* s = LuaConnection::structure(arg);
-	if (s)
-		_currstructure->addStructure(s);
-	else {
-		expected(ComponentType::Structure, parseinfo(l));
-	}
 }
 
 void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
@@ -1200,16 +1173,6 @@ Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, Y
 	Function* f = new Function(name, sorts, pi, binding);
 	_currvocabulary->add(f);
 	return f;
-}
-
-InternalArgument* Insert::call(const longname& proc, const vector<longname>& args, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	return LuaConnection::call(proc, args, pi);
-}
-
-InternalArgument* Insert::call(const longname& proc, YYLTYPE l) const {
-	vector<longname> vl(0);
-	return call(proc, vl, l);
 }
 
 // add a definition to the current theory

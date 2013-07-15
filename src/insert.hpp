@@ -230,10 +230,6 @@ public:
 	void usingvocab(const longname& vname, YYLTYPE); //!< use vocabulary 'vname' when parsing
 	void usingspace(const longname& sname, YYLTYPE); //!< use namespace 'sname' when parsing
 
-	void assignvocab(InternalArgument*, YYLTYPE); //!< set the current vocabulary to the given vocabulary
-	void assigntheory(InternalArgument*, YYLTYPE); //!< set the current theory to the given theory
-	void assignstructure(InternalArgument*, YYLTYPE); //!< set the current structure to the given structure
-
 	void setvocab(const longname& vname, YYLTYPE); //!< set the vocabulary of the current theory or structure
 	void externvocab(const longname& vname, YYLTYPE) const; //!< add all symbols of 'vname' to the current vocabulary
 
@@ -274,11 +270,6 @@ public:
 
 	void partial(Function* f) const;
 	//!< make a function partial
-
-	InternalArgument* call(const longname& proc, const std::vector<longname>& args, YYLTYPE) const;
-	//!< call a procedure
-	InternalArgument* call(const longname& proc, YYLTYPE) const;
-	//!< call a procedure
 
 	void definition(Definition* d) const; //!< add a definition to the current theory
 	void sentence(Formula* f); //!< add a sentence to the current theory

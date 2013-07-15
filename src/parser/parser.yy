@@ -188,7 +188,6 @@ void yyerror(const char* s);
 %type <est> form_list
 %type <est> form_term_list
 %type <cpo> compound
-%type <arg> function_call
 %type <pta>	ptuples
 %type <pta>	ptuples_es
 %type <fta> ftuples
@@ -214,8 +213,6 @@ void yyerror(const char* s);
 %type <vdom>	ptuple	
 %type <vdom>	ftuple	
 %type <vera>	domain_tuple
-
-%type <vvstr> pointer_names
 
 %%
 
@@ -252,9 +249,7 @@ using			: USINGNAMESPACE pointer_name					{ data().usingspace(*$2,@1); delete($2
 
 /** Structure of vocabulary declaration **/
 
-vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'		{ data().closevocab();	}	
-					| VOCAB_HEADER vocab_name '=' function_call			{ data().assignvocab($4,@2);
-																		  data().closevocab();	}
+vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'		{ data().closevocab();	}
 					;
 
 vocab_name			: identifier	{ data().openvocab(*$1,@1); }
@@ -393,22 +388,10 @@ term_name	: identifier	{ data().openterm(*$1,@1);	}
 *************/
 
 theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ data().closetheory();	}
-			| THEORY_HEADER theory_name '=' function_call						{ data().assigntheory($4,@2); 
-																				  data().closetheory();	}
 			;
 
 theory_name	: identifier	{ data().opentheory(*$1,@1);  }
 			;
-
-function_call	: pointer_name '(' pointer_names ')'	{ $$ = data().call(*$1,*$3,@1); delete($1); delete($3);	}
-				| pointer_name '(' ')'					{ $$ = data().call(*$1,@1); delete($1);					}
-				;
-
-pointer_names	: pointer_names ',' pointer_name	{ $$ = $1; $$->push_back(*$3);
-													  delete($3); }
-				| pointer_name						{ $$ = new std::vector<std::vector<std::string> >(1,*$1);
-													  delete($1); }
-				;
 
 def_forms	: /* empty */
 			| def_forms definition		{ data().definition($2);	}
@@ -576,8 +559,6 @@ form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; data().a
 **********************/
 
 structure		: STRUCT_HEADER struct_name ':' vocab_pointer '{' interpretations '}'	{ data().closestructure();	}
-				| STRUCT_HEADER struct_name '=' function_call							{ data().assignstructure($4,@2);
-																						  data().closestructure();	}
 				;
 
 struct_name		: identifier	{ data().openstructure(*$1,@1); }
