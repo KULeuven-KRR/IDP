@@ -63,9 +63,20 @@ public:
 		bool hasDerivation(Direction dir);
 	};
 
+	enum class RuleType {
+		CHEAP,
+		FORALL
+	};
+
+	bool hasRuleType(RuleType rt) {
+		return (_rule_types.find(rt) != _rule_types.end());
+	}
+
 	ApproximatingDefinition(DerivationTypes* represented_derivations,
+			std::set<RuleType> rule_types,
 			const Theory* original_theory) :
 		_represented_derivations(represented_derivations),
+		_rule_types(rule_types),
 		_original_theory(original_theory),
 		_approximating_vocabulary(new Vocabulary("approx_voc")),
 		_approximating_definition(),
@@ -114,6 +125,7 @@ public:
 
 private:
 	DerivationTypes* _represented_derivations;
+	std::set<RuleType> _rule_types;
 	const Theory* _original_theory;
 	Vocabulary* _approximating_vocabulary;
 	Definition* _approximating_definition;

@@ -23,37 +23,13 @@
  */
 class PropagationUsingApproxDef {
 
+private:
+	ApproximatingDefinition::DerivationTypes* getDerivationTypes();
+	void processApproxDef(AbstractStructure*, ApproximatingDefinition*);
+	std::vector<AbstractStructure*> propagateUsingAllRules(AbstractTheory*, AbstractStructure*);
+	std::vector<AbstractStructure*> propagateUsingCheapRules(AbstractTheory*, AbstractStructure*);
+	std::vector<AbstractStructure*> propagateUsingStratification(AbstractTheory*, AbstractStructure*);
+
 public:
-	std::vector<AbstractStructure*>  propagate(AbstractTheory* theory, AbstractStructure* structure) {
-
-		auto derivationtypes = new ApproximatingDefinition::DerivationTypes();
-		derivationtypes->addDerivationType(ApproximatingDefinition::TruthPropagation::TRUE, ApproximatingDefinition::Direction::DOWN);
-		derivationtypes->addDerivationType(ApproximatingDefinition::TruthPropagation::FALSE, ApproximatingDefinition::Direction::UP);
-
-		auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,derivationtypes);
-
-		if (DefinitionUtils::hasRecursionOverNegation(approxdef->approximatingDefinition())) {
-			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-				//TODO: either go back to normal method or FIX XSB to support recneg!
-				clog << "Approximating definition had recursion over negation, not calculating it\n";
-			}
-			return {structure};
-		}
-
-		auto approxdef_structure = approxdef->inputStructure(structure);
-		auto def_to_calculate = DefinitionUtils::makeDefinitionCalculable(approxdef->approximatingDefinition(),approxdef_structure);
-
-		auto output_structure = CalculateDefinitions::doCalculateDefinitions(
-				def_to_calculate, approxdef_structure, approxdef->getSymbolsToQuery());
-
-		if(not output_structure.empty() && approxdef->isConsistent(output_structure.at(0))) {
-			approxdef->updateStructure(structure,output_structure.at(0));
-			if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
-				clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
-						toString(structure) << "\n";
-			}
-		}
-
-		return {structure};
-	}
+	std::vector<AbstractStructure*>  propagate(AbstractTheory*, AbstractStructure*);
 };

@@ -35,13 +35,16 @@ struct ApproxDefGeneratorData {
 	bool _baseformulas_already_added;
 	mappings* _mappings;
 	ApproximatingDefinition::DerivationTypes* _derivations;
+	std::set<ApproximatingDefinition::RuleType> _rule_types;
 
 	ApproxDefGeneratorData(const set<PFSymbol*>& freesymbols,
-			ApproximatingDefinition::DerivationTypes* derivations) :
+			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types) :
 		_freesymbols(freesymbols),
 		_baseformulas_already_added(false),
 		_mappings(new mappings()),
-		_derivations(derivations) {
+		_derivations(derivations),
+		_rule_types(rule_types){
 	}
 
 	ApproxDefGeneratorData(const ApproxDefGeneratorData* other) :
@@ -64,13 +67,15 @@ public:
 	static ApproximatingDefinition* doGenerateApproximatingDefinition(
 			const AbstractTheory* orig_theory,
 			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types,
 			const set<PFSymbol*>& freesymbols = set<PFSymbol*>());
 
 private:
 
 	GenerateApproximatingDefinition(const vector<Formula*>& sentences,
 			const set<PFSymbol*>& actions,
-			ApproximatingDefinition::DerivationTypes* derivations);
+			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types);
 	~GenerateApproximatingDefinition() {}
 
 	Definition* getDefinition();

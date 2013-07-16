@@ -118,6 +118,7 @@ class AddMarkers;
 		friend class TopDownApproximatingDefinition;\
 		friend class ContainedVariables;\
 		friend class CombineAggregates;\
+		friend class TopDownApproximatingDefinitionForallRule;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
 		friend class CollectQuantifiedVariables;\

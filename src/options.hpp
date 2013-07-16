@@ -36,7 +36,8 @@ enum Format {
 enum StringType {
 	LANGUAGE,
 	SYMMETRYBREAKING,
-	PROVERCOMMAND
+	PROVERCOMMAND,
+	APPROXDEF
 };
 
 enum IntType {
@@ -92,7 +93,6 @@ enum BoolType {
 	STABLESEMANTICS,
 	REDUCEDGROUNDING,
 	PROVER_SUPPORTS_TFA,
-	APPROXDEF,
 	XSB
 };
 
@@ -111,6 +111,15 @@ enum class SymmetryBreaking {
 	DYNAMIC,
 	FIRST = NONE,
 	LAST = DYNAMIC
+};
+
+enum class ApproxDef {
+	NONE,
+	ALL_AT_ONCE,
+	CHEAP_RULES_ONLY,
+	STRATIFIED,
+	FIRST = NONE,
+	LAST = STRATIFIED
 };
 
 enum class PrintBehaviour {
@@ -416,6 +425,7 @@ public:
 
 	Language language() const;
 	SymmetryBreaking symmetryBreaking() const;
+	ApproxDef approxDef() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>

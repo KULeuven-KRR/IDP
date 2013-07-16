@@ -166,7 +166,7 @@ private:
 			logActionAndTime("Starting approximation at ");
 		}
 
-		if (getOption(BoolType::APPROXDEF) && getOption(BoolType::XSB)) {
+		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
 			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
 			auto propagated_structures = propagator->propagate(_theory, _structure);
 			if (propagated_structures.size() == 0 || not propagated_structures[0]->isConsistent()) {
