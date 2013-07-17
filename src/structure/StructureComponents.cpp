@@ -4154,6 +4154,9 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 		auto pf = inter->pf();
 		for (auto ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION;
+			if(not needMoreModels(extensions.size())){
+				break;
+			}
 			if(not pf->contains(*ptIterator)) {
 				continue;
 			}
