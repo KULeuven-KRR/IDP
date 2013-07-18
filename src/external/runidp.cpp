@@ -147,8 +147,6 @@ void setStop(bool value) {
 	stoptiming = value;
 }
 
-bool throwfromexecution = false;
-
 struct RunData {
 	string proc;
 	const DomainElement** result;
@@ -162,7 +160,8 @@ void handleAndRun(void* d) {
 		Error::error(ex.getMessage());
 	} catch (const std::exception& ex) {
 		Error::error(ex.what());
-		throwfromexecution = true;
+	} catch(...){
+		Error::error("Third-party, non-descript error thrown.");
 	}
 	clog.flush();
 }
@@ -263,7 +262,6 @@ const DomainElement* executeProcedure(const string& proc) {
 	setStop(false);
 	hasStopped = false;
 	running = true;
-	throwfromexecution = false;
 	getGlobal()->reset();
 
 	signal(SIGABRT, SIGABRT_handler);
@@ -320,10 +318,6 @@ const DomainElement* executeProcedure(const string& proc) {
 	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
 		cerr << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.
 		cerr << *getGlobal()->getErrors().cbegin();
-	}
-
-	if (throwfromexecution) {
-		throw std::exception();
 	}
 
 	return result;
@@ -480,7 +474,7 @@ int run(const std::vector<std::string>& inputfiles, bool interact, bool readstdi
 #endif
 	}
 
-	return -Error::nr_of_errors();
+	return Error::nr_of_errors()==0?0:1;
 }
 
 
