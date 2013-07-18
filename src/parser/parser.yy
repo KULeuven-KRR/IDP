@@ -75,6 +75,7 @@ void yyerror(const char* s);
 
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
+	std::vector<Function*>*			vfunc;
 	varset*				svar;
 	std::vector<Variable*>*				vvar;
 	std::vector<Term*>*					vter;
@@ -114,6 +115,7 @@ void yyerror(const char* s);
 %token TRUE
 %token ABS
 %token ISA
+%token CONSTRUCTED
 %token LFD
 %token GFD
 %token NEWLINE
@@ -171,6 +173,7 @@ void yyerror(const char* s);
 %type <fun> func_decl
 %type <fun> full_func_decl
 %type <fun> arit_func_decl
+%type <fun> constr_func_decl
 %type <ter> term domterm function arterm aggterm
 %type <fom> predicate
 %type <fom> head
@@ -208,6 +211,7 @@ void yyerror(const char* s);
 %type <vsor>	nonempty_spt
 %type <vsor>	binary_arit_func_sorts
 %type <vsor>	unary_arit_func_sorts
+%type <vfunc>	func_list
 %type <vdom>	compound_args
 %type <vdom>	ptuple	
 %type <vdom>	ftuple	
@@ -292,16 +296,21 @@ extern_function		: pointer_name '[' sort_pointer_tuple ':' sort_pointer ']'
 					;
 
 /** Symbol declarations **/
-
-sort_decl		: TYPE identifier											{ $$ = data().sort(*$2,@2);		}
-				| TYPE identifier ISA nonempty_spt							{ $$ = data().sort(*$2,*$4,true,@2);	
-																			  delete($4); }
-				| TYPE identifier EXTENDS nonempty_spt						{ $$ = data().sort(*$2,*$4,false,@2);	
-																			  delete($4); }
-				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt		{ $$ = data().sort(*$2,*$4,*$6,@2);		
-																			  delete($4); delete($6); }
-				| TYPE identifier EXTENDS nonempty_spt ISA nonempty_spt		{ $$ = data().sort(*$2,*$6,*$4,@2);		
-																			  delete($4); delete($6); }
+sort_decl		: TYPE identifier						{ $$ = data().sort(*$2,@2);		}
+				| TYPE identifier ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,true,@2); delete($4); }
+				| TYPE identifier EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,false,@2); delete($4); }
+				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,*$6,@2); delete($4); delete($6); }
+				| TYPE identifier EXTENDS nonempty_spt ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$6,*$4,@2); delete($4); delete($6); }
+				| TYPE identifier { data().sort(*$2,@2); } CONSTRUCTED '{' func_list '}'
+																				{ data().addConstructors($6); delete($6);}
+				| TYPE identifier ISA nonempty_spt CONSTRUCTED '{' elements_es '}'
+																				{ $$ = data().sort(*$2,*$4,true,@2,$7); delete($4); }
+				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt CONSTRUCTED '{' elements_es '}'
+																				{ $$ = data().sort(*$2,*$4,*$6,@2,$9); delete($4); delete($6); }
 				;
 
 pred_decl		: identifier '(' sort_pointer_tuple ')'	{ data().predicate(*$1,*$3,@1); delete($3); }
@@ -317,6 +326,10 @@ func_decl		: PARTIAL full_func_decl				{ $$ = $2; data().partial($$);	}
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = data().function(*$1,*$3,$6,@1);
 																			  delete($3); }
 				| identifier ':' sort_pointer								{ $$ = data().function(*$1,{},$3,@1); }	
+				;
+				
+constr_func_decl	: identifier '(' sort_pointer_tuple ')' { $$ = data().constructorfunction(*$1,*$3, @1); delete($3); }
+				| identifier								{ $$ = data().constructorfunction(*$1,{},@1); }	
 				; 														
 
 arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = data().aritfunction("-/2",*$2,@1); delete($2);	}
@@ -342,12 +355,12 @@ unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer
 sort_pointer		: pointer_name				{ $$ = data().sortpointer(*$1,@1); delete($1); }
 					;
 
-intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = data().internpredpointer(*$1,*$3,@1);
+intern_pointer : pointer_name '[' sort_pointer_tuple ']'	{ $$ = data().internpredpointer(*$1,*$3,@1);
 																  delete($1); delete($3); }
 					| pointer_name '[' sort_pointer_tuple ':' sort_pointer ']'	
 																{ $$ = data().internfuncpointer(*$1,*$3,$5,@1);
 																  delete($1); delete($3); }
-					| pointer_name								{ $$ = data().internpointer(*$1,@1);
+					| pointer_name				{ $$ = data().internpointer(*$1,@1);
 																  delete($1); }
 					;
 
@@ -613,6 +626,12 @@ elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$
 				| floatnr							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				| compound							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				;
+
+				
+func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
+				| constr_func_decl { $$ = new std::vector<Function*>(); $$->push_back($1); }
+				;
+
 
 strelement		: identifier	{ $$ = $1;									}
 				| STRINGCONS	{ $$ = $1;									}
