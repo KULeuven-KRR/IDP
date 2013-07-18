@@ -2421,7 +2421,7 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst) const {
 	return error;
 }
 
-std::string Insert::print(UTF utf) const {
+std::string Insert::printUTF(UTF utf) const {
 	switch (utf) {
 	case UTF::TWOVAL:
 		return "tv";
@@ -2441,14 +2441,14 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 		auto type = symbol->isFunction() ? ComponentType::Function : ComponentType::Predicate;
 		if (not error && contains(_pendingAssignments.at(symbol), utf)) {
 			stringstream ss;
-			ss << type << " " << symbol->name() << " was already interpreted for the truth value " << print(utf) << ".";
+			ss << type << " " << symbol->name() << " was already interpreted for the truth value " <<printUTF(utf) << ".";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
 		if (not error && (_pendingAssignments.at(symbol).size() > 2 || contains(_pendingAssignments.at(symbol), UTF::TWOVAL) || utf == UTF::TWOVAL)) {
 			stringstream ss;
 			ss << type << " " << symbol->name() << " was already " << (utf == UTF::TWOVAL ? "partially" : "fully")
-					<< " interpreted earlier by other truth values than " << print(utf) << ".";
+					<< " interpreted earlier by other truth values than " << printUTF(utf) << ".";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}

@@ -363,7 +363,7 @@ private:
 		CT,
 		CF
 	};
-	std::string print(UTF utf)const;
+	std::string printUTF(UTF utf)const;
 	mutable std::map<Structure*, std::set<Sort*>> sortsOccurringInUserDefinedStructure;
 	std::set<Structure*, std::set<PFSymbol*> > symbolsOccurringInUserDefinedStructure;
 	mutable std::map<PFSymbol*, std::map<UTF, PredTable*> > _pendingAssignments;
