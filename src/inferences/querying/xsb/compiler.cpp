@@ -9,6 +9,7 @@
 #include "theory/theory.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "commontypes.hpp"
+#include "utils/ListUtils.hpp"
 #include "theory/term.hpp"
 #include "theory/Sets.hpp"
 #include "theory/TheoryUtils.hpp"
@@ -66,7 +67,7 @@ string transformIntoTermName(string str) {
 		}
 	}
 	stringstream ss;
-	if (str == "card" | str == "prod" | str == "min" | str == "max" | str == "abs" | str=="sum") {
+	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum") {
 		ss << IDPXSB_PREFIX << "_";
 	} else if (!numeric && str != "findall") {
 		ss << IDPXSB_PREFIX << identifier++ << "_";
@@ -336,12 +337,7 @@ string PrologProgram::getRanges() {
 	stringstream output;
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
-			SortTable* st;
-			if ((*it)->builtin()) {
-				st = (*it)->interpretation();
-			} else {
-				st = _structure->inter((*it));
-			}
+			SortTable* st = _structure->inter((*it));
 			if (st->isRange() && not st->size().isInfinite()) {
 				_loaded.insert((*it)->name());
 				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
@@ -359,13 +355,7 @@ string PrologProgram::getFacts() {
 	stringstream output;
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
-			SortTable* st;
-
-			if ((*it)->builtin()) {
-				st = (*it)->interpretation();
-			} else {
-				st = _structure->inter((*it));
-			}
+			SortTable* st = _structure->inter((*it));
 			if (not st->isRange() && st->finite()) {
 				_loaded.insert((*it)->name());
 				_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->pred()->sorts().size()));
@@ -379,20 +369,21 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
-		if (!(*it)->builtin() && _loaded.find((*it)->nameNoArity()) == _loaded.end()) {
-			_loaded.insert((*it)->nameNoArity());
-			_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->sorts().size()));
-			auto st = _structure->inter(*it)->ct();
-			for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-				output << term_name(strip((*it)->name()));
-				const auto& tmp = *tuple;
-				if(tmp.size()>0){
-					output << "(";
-					printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(domelem); }, true);
-					output <<")";
-				}
-				output << ".\n";
+		if ((*it)->builtin() || contains(_loaded,(*it)->nameNoArity())) {
+			continue;
+		}
+		_loaded.insert((*it)->nameNoArity());
+		_all_predicates.insert(getStrippedAppendedName((*it)->name(), (*it)->sorts().size()));
+		auto st = _structure->inter(*it)->ct();
+		for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
+			output << term_name(strip((*it)->name()));
+			const auto& tmp = *tuple;
+			if(tmp.size()>0){
+				output << "(";
+				printList(output, tmp, ",", [](std::ostream& output, const DomainElement* domelem){output <<domainelement_prolog(domelem); }, true);
+				output <<")";
 			}
+			output << ".\n";
 		}
 	}
 	return output.str();
@@ -690,10 +681,9 @@ void FormulaClauseBuilder::visit(const DomainTerm* d) {
 }
 
 void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
-	auto p = (AggregateTerm*) _parent;
 	auto term = new EnumSetExpression();
 	enter(term);
-	for (int i = 0; i < e->getSubSets().size(); ++i) {
+	for (uint i = 0; i < e->getSubSets().size(); ++i) {
 		auto subf = e->getSets()[i]->getCondition();
 		auto subt = e->getSets()[i]->getTerm();
 		subf->accept(this);
@@ -703,9 +693,8 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 	leave();
 	_parent->addVariables(term->variables());
 }
-//
+
 void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
-	auto p = (AggregateTerm*) _parent;
 	auto term = new QuantSetExpression();
 	term->quantifiedVariables(prologVars(q->quantVars()));
 	enter(term);
@@ -714,7 +703,6 @@ void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
 	term->arguments(vars2terms(term->variables()));
 	leave();
 	_parent->addVariables(term->variables());
-//
 }
 
 void FormulaClauseBuilder::visit(const AggForm* a) {
