@@ -60,17 +60,25 @@ public:
 	void addChild(Sort* c); //!< Adds c as a child. Also add this as a parent of c.
 
 	// Inspectors
-	const std::string& name() const; //!< Returns the name of the sort
-	const ParseInfo& pi() const; //!< Returns the parse info of the sort
-	Predicate* pred() const; //!< Returns the corresponding predicate
-	const std::set<Sort*>& parents() const;
-	const std::set<Sort*>& children() const;
+	const std::string& name() const{
+		return _name;
+	}
+	const ParseInfo& pi() const{
+		return _pi;
+	}
+	Predicate* pred() const{
+		return _pred;
+	}
+	const std::set<Sort*>& parents() const{
+		return _parents;
+	}
+	const std::set<Sort*>& children() const{
+		return _children;
+	}
 	std::set<Sort*> ancestors(const Vocabulary* v = NULL) const; //!< Returns the ancestors of the sort
 	std::set<Sort*> descendents(const Vocabulary* v = NULL) const; //!< Returns the descendents of the sort
 	virtual bool builtin() const; //!< True iff the sort is built-in
 	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
-	std::set<const Vocabulary*>::const_iterator firstVocabulary() const;
-	std::set<const Vocabulary*>::const_iterator lastVocabulary() const;
 
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
@@ -173,14 +181,10 @@ private:
 	bool _infix; //!< True iff the symbol is infix
 
 	std::map<SymbolType, Predicate*> _derivedsymbols; //!< The symbols this<ct>, this<cf>, this<pt>, and this<pf>
-	bool _isTseitin; //!< Whether or not the symbol represents a Tseitin
 
 protected:
 	void setName(const std::string& name) {
 		_name = name;
-	}
-	void setIsTseitin(bool istseitin) {
-		_isTseitin = istseitin;
 	}
 	void addSort(Sort* s) {
 		_sorts.push_back(s);
@@ -208,6 +212,8 @@ public:
 	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
 
 	// IMPORTANT: for overloaded symbols, sorts can be NULL
+	// NOTE: for functions, this is only the input sorts (aka the domain).
+	// TODO: refactor: if functions already contain this sorts() information, why copy it to the parent class?
 	const std::vector<Sort*>& sorts() const {
 		return _sorts;
 	}
@@ -230,9 +236,6 @@ public:
 	virtual bool overloaded() const = 0; //!< Returns true iff the symbol is in fact a set of overloaded
 										 //!< symbols
 	virtual std::set<Sort*> allsorts() const = 0; //!< Return all sorts that occur in the (overloaded) symbol(s)
-	bool isTseitin() { //!< Returns true iff the symbol represents a Tseitin
-		return _isTseitin;
-	}
 
 // Disambiguate overloaded symbols
 	virtual PFSymbol* resolve(const std::vector<Sort*>&) = 0;
@@ -264,8 +267,8 @@ private:
 									   //!< Null-pointer if the predicate is not overloaded.
 
 public:
-	Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, bool infix = false);
+	Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix = false);
 	Predicate(const std::vector<Sort*>& sorts); //!< constructor for tseitin predicates
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix);
 	Predicate(PredGenerator* generator);
@@ -515,10 +518,10 @@ public:
 	bool contains(const Function* f) const; //!< True iff the vocabulary contains the function
 	bool contains(const PFSymbol* s) const; //!< True iff the vocabulary contains the symbol
 
-	const std::map<std::string, Predicate*>& getPreds() const{
+	const std::map<std::string, Predicate*>& getPreds() const {
 		return _name2pred;
 	}
-	const std::map<std::string, Function*>& getFuncs() const{
+	const std::map<std::string, Function*>& getFuncs() const {
 		return _name2func;
 	}
 

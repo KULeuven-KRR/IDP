@@ -111,7 +111,9 @@ public:
 	}
 
 	FuncGenerator(const std::string& name, unsigned int arity, unsigned int binding)
-			: _name(name), _arity(arity), _binding(binding) {
+			: 	_name(name),
+				_arity(arity),
+				_binding(binding) {
 	}
 
 	const std::string& name() const; //!< Returns the name of the generated functions
@@ -303,26 +305,6 @@ void Sort::addChild(Sort* c) {
 	}
 }
 
-const string& Sort::name() const {
-	return _name;
-}
-
-const ParseInfo& Sort::pi() const {
-	return _pi;
-}
-
-Predicate* Sort::pred() const {
-	return _pred;
-}
-
-const std::set<Sort*>& Sort::parents() const {
-	return _parents;
-}
-
-const std::set<Sort*>& Sort::children() const {
-	return _children;
-}
-
 /**
  * Compute all ancestors of the sort in the sort hierarchy
  *
@@ -367,13 +349,6 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
-std::set<const Vocabulary*>::const_iterator Sort::firstVocabulary() const {
-	return _vocabularies.cbegin();
-}
-std::set<const Vocabulary*>::const_iterator Sort::lastVocabulary() const {
-	return _vocabularies.cend();
-}
-
 ostream& Sort::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
@@ -389,7 +364,8 @@ ostream& Sort::put(ostream& output) const {
 }
 
 UnionSort::UnionSort(const std::vector<Sort*>& sorts)
-		: Sort("union"), sorts(sorts) {
+		: 	Sort("union"),
+			sorts(sorts) {
 	stringstream ss;
 	for (auto i = sorts.cbegin(); i < sorts.cend(); ++i) {
 		ss << (*i)->name() << "-";
@@ -473,7 +449,9 @@ Variable::~Variable() {
 }
 
 Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi)
-		: _name(name), _sort(sort), _pi(pi) {
+		: 	_name(name),
+			_sort(sort),
+			_pi(pi) {
 }
 
 Variable::Variable(Sort* s)
@@ -530,15 +508,22 @@ PFSymbol::~PFSymbol() {
 }
 
 PFSymbol::PFSymbol(const string& name, size_t nrsorts, bool infix)
-		: _name(name), _sorts(nrsorts, 0), _infix(infix), _isTseitin(false) {
+		: 	_name(name),
+			_sorts(nrsorts, 0),
+			_infix(infix) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, bool infix)
-		: _name(name), _sorts(sorts), _infix(infix), _isTseitin(false) {
+		: 	_name(name),
+			_sorts(sorts),
+			_infix(infix) {
 }
 
 PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
-		: _name(name), _pi(pi), _sorts(sorts), _infix(infix), _isTseitin(false) {
+		: 	_name(name),
+			_pi(pi),
+			_sorts(sorts),
+			_infix(infix) {
 }
 
 const string& PFSymbol::name() const {
@@ -636,26 +621,45 @@ void Predicate::addVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
-		: PFSymbol(name, sorts, pi, infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
+Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, bool infix)
+		: 	PFSymbol(name, sorts, ParseInfo(), infix),
+			_type(ST_NONE),
+			_parent(0),
+			_interpretation(0),
+			_overpredgenerator(0) {
 }
 
-Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, bool infix)
-		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
+Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
+		: 	PFSymbol(name, sorts, pi, infix),
+			_type(ST_NONE),
+			_parent(0),
+			_interpretation(0),
+			_overpredgenerator(0) {
 }
 
 Predicate::Predicate(const vector<Sort*>& sorts)
-		: PFSymbol("", sorts, ParseInfo()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(0) {
-	setIsTseitin(true);
+		: 	PFSymbol("", sorts, ParseInfo()),
+			_type(ST_NONE),
+			_parent(0),
+			_interpretation(0),
+			_overpredgenerator(0) {
 	setName("_Tseitin_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(sorts.size()));
 }
 
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix)
-		: PFSymbol(name, sorts, infix), _type(ST_NONE), _parent(0), _interpretation(inter), _overpredgenerator(0) {
+		: 	PFSymbol(name, sorts, infix),
+			_type(ST_NONE),
+			_parent(0),
+			_interpretation(inter),
+			_overpredgenerator(0) {
 }
 
 Predicate::Predicate(PredGenerator* generator)
-		: PFSymbol(generator->name(), generator->arity(), generator->infix()), _type(ST_NONE), _parent(0), _interpretation(0), _overpredgenerator(generator) {
+		: 	PFSymbol(generator->name(), generator->arity(), generator->infix()),
+			_type(ST_NONE),
+			_parent(0),
+			_interpretation(0),
+			_overpredgenerator(generator) {
 }
 
 unsigned int Predicate::arity() const {
@@ -832,7 +836,9 @@ ostream& operator<<(ostream& output, const Predicate& p) {
 }
 
 PredGenerator::PredGenerator(const string& name, unsigned int arity, bool infix)
-		: _name(name), _arity(arity), _infix(infix) {
+		: 	_name(name),
+			_arity(arity),
+			_infix(infix) {
 }
 
 const string& PredGenerator::name() const {
@@ -848,7 +854,8 @@ bool PredGenerator::infix() const {
 }
 
 EnumeratedPredGenerator::EnumeratedPredGenerator(const set<Predicate*>& overpreds)
-		: PredGenerator((*(overpreds.cbegin()))->name(), (*(overpreds.cbegin()))->arity(), (*(overpreds.cbegin()))->infix()), _overpreds(overpreds) {
+		: 	PredGenerator((*(overpreds.cbegin()))->name(), (*(overpreds.cbegin()))->arity(), (*(overpreds.cbegin()))->infix()),
+			_overpreds(overpreds) {
 }
 
 bool EnumeratedPredGenerator::contains(const Predicate* predicate) const {
@@ -930,7 +937,8 @@ set<Predicate*> EnumeratedPredGenerator::nonbuiltins() const {
 }
 
 ComparisonPredGenerator::ComparisonPredGenerator(const string& name, PredInterGeneratorGenerator* inter)
-		: PredGenerator(name, 2, true), _interpretation(inter) {
+		: 	PredGenerator(name, 2, true),
+			_interpretation(inter) {
 }
 
 ComparisonPredGenerator::~ComparisonPredGenerator() {
@@ -1181,9 +1189,9 @@ unsigned int Function::binding() const {
 FuncInter* Function::interpretation(const Structure* structure) const {
 	if (_interpretation) {
 		return _interpretation->get(structure);
-	} else if(structure!=NULL){
+	} else if (structure != NULL) {
 		return structure->inter(this);
-	} else{
+	} else {
 		return NULL;
 	}
 }
@@ -1288,7 +1296,8 @@ unsigned int FuncGenerator::binding() const {
 }
 
 EnumeratedFuncGenerator::EnumeratedFuncGenerator(const set<Function*>& overfuncs)
-		: FuncGenerator((*(overfuncs.cbegin()))->name(), (*(overfuncs.cbegin()))->arity(), (*(overfuncs.cbegin()))->binding()), _overfuncs(overfuncs) {
+		: 	FuncGenerator((*(overfuncs.cbegin()))->name(), (*(overfuncs.cbegin()))->arity(), (*(overfuncs.cbegin()))->binding()),
+			_overfuncs(overfuncs) {
 }
 
 bool EnumeratedFuncGenerator::contains(const Function* function) const {
@@ -1370,7 +1379,9 @@ set<Function*> EnumeratedFuncGenerator::nonbuiltins() const {
 }
 
 IntFloatFuncGenerator::IntFloatFuncGenerator(Function* intfunc, Function* floatfunc)
-		: FuncGenerator(intfunc->name(), intfunc->arity(), intfunc->binding()), _intfunction(intfunc), _floatfunction(floatfunc) {
+		: 	FuncGenerator(intfunc->name(), intfunc->arity(), intfunc->binding()),
+			_intfunction(intfunc),
+			_floatfunction(floatfunc) {
 }
 
 bool IntFloatFuncGenerator::contains(const Function* function) const {
@@ -1451,7 +1462,8 @@ set<Function*> IntFloatFuncGenerator::nonbuiltins() const {
 }
 
 OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, FuncInterGeneratorGenerator* inter)
-		: FuncGenerator(name, arity, 0), _interpretation(inter) {
+		: 	FuncGenerator(name, arity, 0),
+			_interpretation(inter) {
 }
 
 OrderFuncGenerator::~OrderFuncGenerator() {
@@ -1608,14 +1620,17 @@ bool isIntProduct(const Function* function, const Vocabulary* voc) {
  ***************/
 
 Vocabulary::Vocabulary(const string& name)
-		: _name(name), _namespace(0) {
+		: 	_name(name),
+			_namespace(0) {
 	if (_name != "std") {
 		add(Vocabulary::std());
 	}
 }
 
 Vocabulary::Vocabulary(const string& name, const ParseInfo& pi)
-		: _name(name), _pi(pi), _namespace(0) {
+		: 	_name(name),
+			_pi(pi),
+			_namespace(0) {
 	if (_name != "std") {
 		add(Vocabulary::std());
 	}
@@ -1933,19 +1948,19 @@ const ParseInfo& Vocabulary::pi() const {
 	return _pi;
 }
 
-bool Vocabulary::hasSortWithName(const std::string& name) const{
-	return _name2sort.find(name)!=_name2sort.cend();
+bool Vocabulary::hasSortWithName(const std::string& name) const {
+	return _name2sort.find(name) != _name2sort.cend();
 }
-bool Vocabulary::hasPredWithName(const std::string& name) const{
-	return _name2pred.find(name)!=_name2pred.cend();
+bool Vocabulary::hasPredWithName(const std::string& name) const {
+	return _name2pred.find(name) != _name2pred.cend();
 }
-bool Vocabulary::hasFuncWithName(const std::string& name) const{
-	return _name2func.find(name)!=_name2func.cend();
+bool Vocabulary::hasFuncWithName(const std::string& name) const {
+	return _name2func.find(name) != _name2func.cend();
 }
 
 bool Vocabulary::contains(const Sort* s) const {
 	auto it = _name2sort.find(s->name());
-	if(it == _name2sort.cend()){
+	if (it == _name2sort.cend()) {
 		return false;
 	}
 	return it->second == s;
@@ -2088,7 +2103,7 @@ bool isIntComparisonPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
 }
 
 bool isIntPredicate(const PFSymbol* symbol, const Vocabulary* voc) {
-	for(auto sort: symbol->sorts()){
+	for (auto sort : symbol->sorts()) {
 		if (not SortUtils::isSubsort(sort, get(STDSORT::INTSORT), voc)) {
 			return false;
 		}
@@ -2101,10 +2116,10 @@ bool isNumeric(Sort* s) {
 }
 
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
-	if(parent==child || child==NULL){
+	if (parent == child || child == NULL) {
 		return true;
 	}
-	if(parent==NULL){
+	if (parent == NULL) {
 		return false;
 	}
 	std::map<Sort*, Sort*> child2parentsort;
@@ -2135,13 +2150,13 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 			}
 		}
 	}
-	for(auto pred:child->getPreds()){
+	for (auto pred : child->getPreds()) {
 		auto generalchildpred = pred.second;
 		if (generalchildpred->builtin()) {
 			continue;
 		}
 		auto allpreds = generalchildpred->nonbuiltins();
-		for(auto childpred: allpreds){
+		for (auto childpred : allpreds) {
 			Assert(not childpred->overloaded());
 			auto parentpred = parent->pred(childpred->name());
 			if (parentpred == NULL) {

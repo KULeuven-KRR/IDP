@@ -65,11 +65,11 @@ Term* DeriveSorts::visit(VarTerm* vt) {
 			_underivableVariables.insert(vt->var());
 		} else if (vt->sort() != newsort) {
 			_changed = true;
-			if(vt->var()->sort()!=newsort){
-				if(_assertsort!=NULL){
+			if (vt->var()->sort() != newsort) {
+				if (_assertsort != NULL) {
 					derivations[vt->var()].insert(_assertsort);
 				}
-				if(vt->sort()!=NULL){
+				if (vt->sort() != NULL) {
 					derivations[vt->var()].insert(vt->sort());
 				}
 			}
@@ -93,7 +93,7 @@ Term* DeriveSorts::visit(DomainTerm* dt) {
 }
 
 Term* DeriveSorts::visit(AggTerm* t) {
-	if (_assertsort != NULL && SortUtils::resolve(_assertsort, get(STDSORT::INTSORT))==NULL){
+	if (_assertsort != NULL && SortUtils::resolve(_assertsort, get(STDSORT::INTSORT)) == NULL) {
 		_underivable = true;
 		return t;
 	}
@@ -106,7 +106,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 	if (not _useBuiltIns && f->builtin()) {
 		return term;
 	}
-	if (_assertsort != NULL && term->sort() != NULL && SortUtils::resolve(_assertsort, term->sort())==NULL) {
+	if (_assertsort != NULL && term->sort() != NULL && SortUtils::resolve(_assertsort, term->sort()) == NULL) {
 		_underivable = true;
 		return term;
 	}
@@ -314,7 +314,7 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 }
 
 void DeriveSorts::check() {
-	for(auto var2sort: derivations){
+	for (auto var2sort : derivations) {
 		if (var2sort.second.size() > 1) {
 			stringstream ss;
 			ss << "Derived sort " << var2sort.first->sort()->name() << " for variable " << var2sort.first->name() << " as nearest parent of ";
