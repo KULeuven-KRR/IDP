@@ -900,7 +900,6 @@ void Insert::closequery(Query* q) {
 void Insert::closefobdd(const FOBDD* b) {
 	freevars(b->pi(), false);
 	_curr_vars.clear();
-	//TODO error catching ???????
 	if (b) {
 		_currspace->add(_currfobdd, b);
 		if (_currspace->isGlobal()) {
@@ -2005,9 +2004,42 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 				_currmanager->getAtomKernel(symbol,
 						AtomKernelType::AKT_TWOVALUED, newargs));
 		return returnvalue;
-	} else {
-		//TODO: Echt goed controleren en foutmelding gooien
-		throw notyetimplemented("Parsing nonpredicates in FOBDD");
+	} else if (isa<EqChainForm>(*p)){
+		auto f = dynamic_cast<EqChainForm*>(p);
+		auto length = f->comps().size();
+		PFSymbol* symbol;
+		if(length==1){
+			for(auto comp:f->comps()){
+				switch(comp)
+				{
+				case CompType::EQ:
+					symbol = get(STDPRED::EQ);
+					break;
+				case CompType::LT:
+					symbol = get(STDPRED::LT);
+					break;
+				case CompType::GT:
+					symbol = get(STDPRED::GT);
+					break;
+				default:
+					throw notyetimplemented("Parsing eqchains that isn't >, < or =");
+					break;
+				}
+				vector<const FOBDDTerm*> newargs;
+				for(auto subterm:p->subterms()){
+					newargs.push_back(_currmanager->getFOBDDTerm(subterm));
+				}
+				const FOBDDKernel* returnvalue(
+						_currmanager->getAtomKernel(symbol,
+								AtomKernelType::AKT_TWOVALUED, newargs));
+				return returnvalue;
+			}
+
+		}else{
+			throw notyetimplemented("Chains of (in)equalities in a single atomkernel");
+		}
+	}else {
+		throw notyetimplemented("Parsing non(predicates/equalities) in FOBDD");
 	}
 	return NULL;
 }
