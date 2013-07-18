@@ -30,6 +30,7 @@ class InverseInternalPredTable;
 class UnionInternalSortTable;
 class EnumeratedInternalSortTable;
 class IntRangeInternalSortTable;
+class ConstructedInternalSortTable;
 
 class ProcInternalFuncTable;
 class UNAInternalFuncTable;
@@ -77,6 +78,7 @@ public:
 	virtual void visit(const AllStrings*) = 0;
 	virtual void visit(const EnumeratedInternalSortTable*) = 0;
 	virtual void visit(const IntRangeInternalSortTable*) = 0;
+	virtual void visit(const ConstructedInternalSortTable*) = 0;
 	virtual void visit(const ProcInternalFuncTable*) = 0;
 	virtual void visit(const UNAInternalFuncTable*) = 0;
 	virtual void visit(const EnumeratedInternalFuncTable*) = 0;

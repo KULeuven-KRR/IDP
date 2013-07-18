@@ -163,6 +163,9 @@ private:
 	virtual void visit(const IntRangeInternalSortTable*){
 
 	}
+	virtual void visit(const ConstructedInternalSortTable*){
+
+	}
 	virtual void visit(const UNAInternalFuncTable*){
 
 	}

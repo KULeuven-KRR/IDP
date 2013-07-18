@@ -250,47 +250,39 @@ void Sort::removeChild(Sort* child) {
 	_children.erase(child);
 }
 
-/**
- * Generate the predicate that corresponds to the sort
- */
-void Sort::generatePred(SortTable* inter) {
+void Sort::generatePred() {
+	// Generate the corresponding predicate
 	string predname(_name + "/1");
-	vector<Sort*> predsorts(1, this);
-	if (inter != NULL) {
-		Universe univ(vector<SortTable*>(1, inter));
-		PredTable* pt = new PredTable(new FullInternalPredTable(), univ);
-		PredInter* pinter = new PredInter(pt, true);
-		PredInterGenerator* pig = new SinglePredInterGenerator(pinter);
-		_pred = new Predicate(predname, predsorts, pig, false);
+	if (builtin()) {
+		auto pt = new PredTable(new FullInternalPredTable(), Universe( { interpretation() }));
+		auto pinter = new PredInter(pt, true);
+		auto pig = new SinglePredInterGenerator(pinter);
+		_pred = new Predicate(predname, { this }, pig, false);
 	} else {
-		_pred = new Predicate(predname, predsorts, _pi);
+		_pred = new Predicate(predname, { this }, _pi);
 	}
 }
 
-/**
- * Create an internal sort
- */
 Sort::Sort(SortTable* inter)
-		: _pi(), _interpretation(inter) {
+		: 	_pi(),
+			_interpretation(inter) {
 	_name = "sort" + convertToString(getGlobal()->getNewID());
-	generatePred(inter);
+	generatePred();
 }
 Sort::Sort(const string& name, SortTable* inter)
-		: _name(name), _pi(), _interpretation(inter) {
-	generatePred(inter);
+		: 	_name(name),
+			_pi(),
+			_interpretation(inter) {
+	generatePred();
 }
 
-/**
- * Create a user-declared sort
- */
 Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter)
-		: _name(name), _pi(pi), _interpretation(inter) {
-	generatePred(inter);
+		: 	_name(name),
+			_pi(pi),
+			_interpretation(inter) {
+	generatePred();
 }
 
-/**
- * Add p as a parent
- */
 void Sort::addParent(Sort* p) {
 	pair<set<Sort*>::iterator, bool> changed = _parents.insert(p);
 	if (changed.second) {
@@ -341,14 +333,27 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 	return descend;
 }
 
-bool Sort::builtin() const {
-	return (_interpretation != 0);
+bool Sort::isConstructed() const {
+	return _constructors.size()!=0;
+}
+
+bool Sort::builtin() const{
+	return _interpretation != NULL;
+}
+
+void Sort::addConstructor(Function* func){
+	_constructors.push_back(func);
 }
 
 SortTable* Sort::interpretation() const {
+	Assert(builtin());
 	return _interpretation;
 }
 
+SortTable* getConstructedInterpretation(Sort* s, const AbstractStructure* struc) {
+	Assert(s->isConstructed());
+	return new SortTable(new ConstructedInternalSortTable(struc,s->getConstructors()));
+}
 ostream& Sort::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
 		for (auto it = _vocabularies.cbegin(); it != _vocabularies.cend(); ++it) {
@@ -371,10 +376,6 @@ UnionSort::UnionSort(const std::vector<Sort*>& sorts)
 		ss << (*i)->name() << "-";
 	}
 	setPred(new Predicate(ss.str() + "/1", { this }, pi()));
-}
-
-bool UnionSort::builtin() const {
-	return false;
 }
 
 namespace SortUtils {
@@ -1070,42 +1071,53 @@ Predicate* overload(const set<Predicate*>& sp) {
 
 }
 
-Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
-		: PFSymbol(name, is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
+Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, bool isConstructor)
+		: 	PFSymbol(name, is, pi),
+			_partial(false),
+			_insorts(is),
+			_outsort(os),
+			_interpretation(NULL),
+			_overfuncgenerator(NULL),
+			_binding(0),
+			_isConstructor(isConstructor){
 	addSort(os);
+	if(isConstructor){
+		_interpretation= new ConstructorFuncInterGenerator(this);
+	}
 }
 
 Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, unsigned int binding)
-		: PFSymbol("", is, pi), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
+		: 	PFSymbol("", is, pi),
+			_partial(false),
+			_insorts(is),
+			_outsort(os),
+			_interpretation(NULL),
+			_overfuncgenerator(NULL),
+			_binding(binding),
+			_isConstructor(false){
 	addSort(os);
-	setName("_internal_function_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size() + 1));
-}
-
-Function::Function(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, unsigned int binding)
-		: PFSymbol(name, sorts, pi), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL),
-			_binding(binding) {
-	_insorts.pop_back();
-}
-
-Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, unsigned int binding)
-		: PFSymbol(name, is), _partial(false), _insorts(is), _outsort(os), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
-	addSort(os);
-}
-
-Function::Function(const std::string& name, const std::vector<Sort*>& sorts, unsigned int binding)
-		: PFSymbol(name, sorts), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(NULL), _overfuncgenerator(NULL), _binding(binding) {
-	_insorts.pop_back();
+	setName("_intern_func_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size() + 1));
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& sorts, FuncInterGenerator* inter, unsigned int binding)
-		: PFSymbol(name, sorts, binding != 0), _partial(false), _insorts(sorts), _outsort(sorts.back()), _interpretation(inter), _overfuncgenerator(NULL),
-			_binding(binding) {
+		: 	PFSymbol(name, sorts, binding != 0),
+			_partial(false),
+			_insorts(sorts),
+			_outsort(sorts.back()),
+			_interpretation(inter),
+			_overfuncgenerator(NULL),
+			_binding(binding),
+			_isConstructor(false) {
 	_insorts.pop_back();
 }
 
 Function::Function(FuncGenerator* generator)
-		: PFSymbol(generator->name(), generator->arity() + 1, generator->binding() != 0), _partial(true), _insorts(generator->arity(), NULL), _outsort(NULL),
-			_interpretation(NULL), _overfuncgenerator(generator) {
+		: 	PFSymbol(generator->name(), generator->arity() + 1, generator->binding() != 0),
+			_partial(true),
+			_insorts(generator->arity(), NULL),
+			_outsort(NULL),
+			_interpretation(NULL),
+			_overfuncgenerator(generator) {
 }
 
 Function::~Function() {
@@ -1177,6 +1189,10 @@ bool Function::builtin() const {
 
 bool Function::overloaded() const {
 	return (_overfuncgenerator != 0);
+}
+
+bool Function::hasDerivableSorts() const {
+	return not builtin() || _isConstructor;
 }
 
 unsigned int Function::binding() const {

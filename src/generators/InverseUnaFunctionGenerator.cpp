@@ -13,9 +13,12 @@
 #include "common.hpp"
 #include "structure/MainStructureComponents.hpp"
 
-InverseUNAFuncGenerator::InverseUNAFuncGenerator(const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
-		: _reset(true) {
+InverseUNAFuncGenerator::InverseUNAFuncGenerator(Function* function, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
+		: _function(function), _reset(true) {
 	_universe = univ;
+	if(pattern.back()==Pattern::OUTPUT){
+		throw IdpException("Invalid code path");
+	}
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == Pattern::OUTPUT) {
 			_outvars.push_back(vars[n]);
@@ -43,10 +46,18 @@ void InverseUNAFuncGenerator::next() {
 	if (_reset) {
 		_reset = false;
 		Assert(_resvar->get()->type() == DET_COMPOUND);
-		const Compound* c = _resvar->get()->value()._compound;
+		auto c = _resvar->get()->value()._compound;
+		if(c->function()!=_function){
+			notifyAtEnd();
+			return;
+		}
 #ifdef DEBUG
 		for (unsigned int n = 0; n < _inpos.size(); ++n) {
-			Assert(_invars[n]->get()==c->arg(_inpos[n]));
+			if(_inpos[n]<c->args().size()){
+				Assert(_invars[n]->get()==c->arg(_inpos[n]));
+			}else{
+				Assert(_invars[n]->get()->value()._compound==c);
+			}
 		}
 #endif
 		for (unsigned int n = 0; n < _outpos.size(); ++n) {

@@ -103,7 +103,7 @@ Term* DeriveSorts::visit(AggTerm* t) {
 
 Term* DeriveSorts::visit(FuncTerm* term) {
 	auto f = term->function();
-	if (not _useBuiltIns && f->builtin()) {
+	if (not _useBuiltIns && (f->builtin() && not f->isConstructorFunction())) {
 		return term;
 	}
 	if (_assertsort != NULL && term->sort() != NULL && SortUtils::resolve(_assertsort, term->sort()) == NULL) {
@@ -123,7 +123,7 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 
 	// Currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but the arguments of the builtins, eg +/2:, are set too broadly (int+int:int)
 	// TODO review if more builtins are added?
-	if (f->builtin() && _useBuiltIns) {
+	if (_useBuiltIns && (f->builtin() && not f->isConstructorFunction())) {
 		for (auto i = term->subterms().cbegin(); i != term->subterms().cend(); ++i) {
 			(*i)->accept(this);
 			_assertsort = NULL;

@@ -505,7 +505,7 @@ CartesianInternalTableIterator::CartesianInternalTableIterator(const vector<Sort
 }
 
 CartesianInternalTableIterator* CartesianInternalTableIterator::clone() const {
-	return new CartesianInternalTableIterator(_iterators, _lowest, _hasNext);
+	return new CartesianInternalTableIterator(_iterators, _lowest, hasNext());
 }
 
 bool CartesianInternalTableIterator::hasNext() const {
@@ -782,56 +782,23 @@ void InverseInternalIterator::operator++() {
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f)
-		: _curr(its), _lowest(its), _function(f), _end(false), _currtuple(its.size()) {
-	for (unsigned int n = 0; n < _curr.size(); ++n) {
-		if (_curr[n].isAtEnd()) {
-			_end = true;
-			break;
-		}
-		_currtuple[n] = *(_curr[n]);
-	}
+		: CartesianInternalTableIterator(its,its), _function(f) {
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end)
-		: _curr(curr), _lowest(low), _function(f), _end(end), _currtuple(curr.size()) {
-	for (size_t n = 0; n < _curr.size(); ++n) {
-		if (not _curr[n].isAtEnd()) {
-			_currtuple[n] = *(_curr[n]);
-		}
-	}
+		: CartesianInternalTableIterator(curr,low,end), _function(f) {
 }
 
 UNAInternalIterator* UNAInternalIterator::clone() const {
-	return new UNAInternalIterator(_curr, _lowest, _function, _end);
-}
-
-bool UNAInternalIterator::hasNext() const {
-	return not _end;
+	return new UNAInternalIterator(CartesianInternalTableIterator::getIterators(), CartesianInternalTableIterator::getLowest(), _function, hasNext());
 }
 
 const ElementTuple& UNAInternalIterator::operator*() const {
-	_deref.push_back(_currtuple);
-	_deref.back().push_back(createDomElem(_function, _deref.back()));
-	return _deref.back();
-}
+	auto tmp = CartesianInternalTableIterator::operator *();
+	tmp.push_back(createDomElem(_function, tmp));
+	_deref2.push_back(tmp);
+	return _deref2.back();
 
-void UNAInternalIterator::operator++() {
-	int pos = _curr.size() - 1;
-	for (auto it = _curr.rbegin(); it != _curr.rend(); ++it, --pos) {
-		Assert(not it->isAtEnd());
-		++(*it);
-		if (not it->isAtEnd()) {
-			_currtuple[pos] = *(*it);
-			break;
-		} else {
-			_curr[pos] = _lowest[pos];
-			Assert(not _curr[pos].isAtEnd());
-			_currtuple[pos] = *(_curr[pos]);
-		}
-	}
-	if (pos < 0) {
-		_end = true;
-	}
 }
 
 EqualInternalIterator::EqualInternalIterator(const SortIterator& iter)
@@ -1854,7 +1821,6 @@ void EnumeratedInternalSortTable::countNBNotIntElements(){
 	}
 }
 
-
 InternalSortTable* EnumeratedInternalSortTable::add(const DomainElement* d) {
 	if (contains(d)) {
 		return this;
@@ -1911,6 +1877,127 @@ const DomainElement* EnumeratedInternalSortTable::last() const {
 		return NULL;
 	}
 	return *(_table.rbegin());
+}
+
+bool recursivelyConstructed(Sort* sort, const std::set<Sort*>& seensorts) {
+	if(not sort->isConstructed()){
+		return false;
+	}
+	if(contains(seensorts, sort)){
+		return true;
+	}
+	for (auto f : sort->getConstructors()) {
+		auto seen2 = seensorts;
+		seen2.insert(f->outsort());
+		for(auto s: f->insorts()){
+			if(s==f->outsort()){
+				return true;
+			}else if(recursivelyConstructed(s, seen2)){
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool ConstructedInternalSortTable::isRecursive() const {
+	for (auto f : _constructors) {
+		for(auto s: f->insorts()){
+			if(recursivelyConstructed(s, {f->outsort()})){
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool ConstructedInternalSortTable::finite() const {
+	if(isRecursive()){
+		return false;
+	}
+	for(auto f:_constructors){
+		if(not getTable(f)->finite()){
+			return false;
+		}
+	}
+	return true;
+}
+bool ConstructedInternalSortTable::empty() const {
+	if(isRecursive()){
+		for(auto f:_constructors){
+			if(f->arity()==0){
+				return false;
+			}
+		}
+		return true;
+	}
+	for(auto f:_constructors){
+		if(not getTable(f)->empty()){
+			return false;
+		}
+	}
+	return true;
+}
+bool ConstructedInternalSortTable::approxFinite() const {
+	if(isRecursive()){
+		return false;
+	}
+	for(auto f:_constructors){
+		if(not getTable(f)->approxFinite()){
+			return false;
+		}
+	}
+	return true;
+}
+bool ConstructedInternalSortTable::approxEmpty() const {
+	if(isRecursive()){
+		for(auto f:_constructors){
+			if(f->arity()==0){
+				return false;
+			}
+		}
+		return true;
+	}
+	for(auto f:_constructors){
+		if(not getTable(f)->approxEmpty()){
+			return false;
+		}
+	}
+	return true;
+}
+tablesize ConstructedInternalSortTable::size() const{
+	if(isRecursive()){
+		return tablesize(TST_INFINITE, 0);
+	}
+	auto sum = tablesize(TST_EXACT, 0);
+	for (auto f : _constructors) {
+		sum = sum+getTable(f)->size();
+	}
+	return sum;
+}
+
+bool ConstructedInternalSortTable::contains(const DomainElement* d) const{
+	if(d->type()!=DET_COMPOUND){
+		return false;
+	}
+	for(auto f: _constructors){
+		if(f==d->value()._compound->function()){
+			auto tuple = d->value()._compound->args();
+			tuple.push_back(d);
+			return getTable(f)->internTable()->contains(tuple); // NOTE: HACK! Universe check is on the table itself, but which would be checking contains on the constructed type too, so infinite loop
+		}
+	}
+	return false;
+}
+
+InternalSortIterator* ConstructedInternalSortTable::sortBegin() const {
+	auto tableit = getTable(*_constructors.cbegin())->begin();
+	return new ConstructedInternalSortIterator(_constructors.cbegin(), _constructors.cend(), tableit, _struc);
+}
+
+InternalSortIterator* ConstructedInternalSortTable::sortIterator(const DomainElement* d) const {
+	auto tableit = getTable(*_constructors.cbegin())->begin();
+	return new ConstructedInternalSortIterator(_constructors.cbegin(), _constructors.cend(), tableit, _struc, d);
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {
@@ -2492,16 +2579,12 @@ inline void InternalFuncTable::decrementRef() {
 	}
 }
 
-bool InternalFuncTable::contains(const ElementTuple& tuple, const Universe& univ) const {
+bool InternalFuncTable::contains(const ElementTuple& tuple) const {
 	ElementTuple input = tuple;
-	const DomainElement* output = tuple.back();
+	auto output = tuple.back();
 	input.pop_back();
-	const DomainElement* computedoutput = operator[](input);
-	if (output == computedoutput) {
-		return univ.contains(tuple);
-	} else {
-		return false;
-	}
+	auto computedoutput = operator[](input);
+	return output == computedoutput;
 }
 
 ProcInternalFuncTable::~ProcInternalFuncTable() {
@@ -2583,12 +2666,10 @@ const DomainElement* ProcInternalFuncTable::operator[](const ElementTuple& tuple
 
 InternalFuncTable* ProcInternalFuncTable::add(const ElementTuple&) {
 	throw notyetimplemented("adding a tuple to a procedural function interpretation");
-	return this;
 }
 
 InternalFuncTable* ProcInternalFuncTable::remove(const ElementTuple&) {
 	throw notyetimplemented("removing a tuple from a procedural function interpretation");
-	return this;
 }
 
 InternalTableIterator* ProcInternalFuncTable::begin(const Universe& univ) const {
@@ -2613,7 +2694,6 @@ bool UNAInternalFuncTable::empty(const Universe& univ) const {
 			return true;
 		}
 	}
-	throw notyetimplemented("Exact emptyness test on constructor function tables");
 	return false;
 }
 
@@ -2639,10 +2719,9 @@ bool UNAInternalFuncTable::approxEmpty(const Universe& univ) const {
 }
 
 tablesize UNAInternalFuncTable::size(const Universe& univ) const {
-	vector<SortTable*> vst = univ.tables();
+	auto vst = univ.tables();
 	vst.pop_back();
-	Universe newuniv(vst);
-	return newuniv.size();
+	return Universe(vst).size();
 }
 
 const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple) const {
@@ -2651,12 +2730,10 @@ const DomainElement* UNAInternalFuncTable::operator[](const ElementTuple& tuple)
 
 InternalFuncTable* UNAInternalFuncTable::add(const ElementTuple&) {
 	throw notyetimplemented("adding a tuple to a generated function interpretation");
-	return this;
 }
 
 InternalFuncTable* UNAInternalFuncTable::remove(const ElementTuple&) {
 	throw notyetimplemented("removing a tuple from a generated function interpretation");
-	return this;
 }
 
 InternalTableIterator* UNAInternalFuncTable::begin(const Universe& univ) const {
@@ -3328,7 +3405,7 @@ FuncTable::~FuncTable() {
 }
 
 void FuncTable::add(const ElementTuple& tuple) {
-	if (_table->contains(tuple, _universe)) {
+	if (_table->contains(tuple) || not _universe.contains(tuple)) {
 		return;
 	}
 	InternalFuncTable* temp = _table;
@@ -3340,7 +3417,7 @@ void FuncTable::add(const ElementTuple& tuple) {
 }
 
 void FuncTable::remove(const ElementTuple& tuple) {
-	if (not _table->contains(tuple, _universe)) {
+	if (not _table->contains(tuple) || not _universe.contains(tuple)) {
 		return;
 	}
 	InternalFuncTable* temp = _table;
@@ -3904,9 +3981,8 @@ void FuncInter::put(std::ostream& stream) const {
 	}
 }
 
-FuncInter* InconsistentFuncInterGenerator::get(const Structure* structure) {
-	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
-	return new FuncInter(new PredInter(emptytable, emptytable, false, false));
+FuncInter* ConstructorFuncInterGenerator::get(const AbstractStructure* structure){
+	return new FuncInter(new FuncTable(new UNAInternalFuncTable(_function),structure->universe(_function)));
 }
 
 FuncInter* MinInterGenerator::get(const Structure* structure) {
@@ -4271,6 +4347,9 @@ void EnumeratedInternalSortTable::accept(StructureVisitor* v) const {
 	v->visit(this);
 }
 void IntRangeInternalSortTable::accept(StructureVisitor* v) const {
+	v->visit(this);
+}
+void ConstructedInternalSortTable::accept(StructureVisitor* v) const {
 	v->visit(this);
 }
 void ProcInternalFuncTable::accept(StructureVisitor* v) const {

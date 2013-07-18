@@ -101,7 +101,6 @@ void yyerror(const char* s);
 %token TERM_HEADER
 
 /** Keywords **/
-%token CONSTRUCTOR
 %token PROCEDURE
 %token PARTIAL
 %token EXTENDS
@@ -317,7 +316,7 @@ func_decl		: PARTIAL full_func_decl				{ $$ = $2; data().partial($$);	}
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = data().function(*$1,*$3,$6,@1);
 																			  delete($3); }
-				| identifier ':' sort_pointer								{ $$ = data().function(*$1,$3,@1); }	
+				| identifier ':' sort_pointer								{ $$ = data().function(*$1,{},$3,@1); }	
 				; 														
 
 arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = data().aritfunction("-/2",*$2,@1); delete($2);	}
@@ -661,7 +660,6 @@ func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ data().funcinter($1,$4); }
 			| intern_pointer '=' pelement			{ FuncTable* ft = data().createFuncTable(1);
 													  data().addTupleVal(ft,$3,@3);
 													  data().funcinter($1,ft); }
-			| intern_pointer '=' CONSTRUCTOR		{ data().constructor($1);	}
 			;
 
 ftuples_es		: ftuples ';'					{ $$ = $1;	}

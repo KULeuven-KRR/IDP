@@ -15,10 +15,12 @@
 #include "InstGenerator.hpp"
 #include "structure/Universe.hpp"
 
+class Function;
 class DomElemContainer;
 
 class InverseUNAFuncGenerator: public InstGenerator {
 private:
+	Function* _function;
 	std::vector<const DomElemContainer*> _outvars;
 	std::vector<unsigned int> _outpos;
 	Universe _universe;
@@ -31,7 +33,7 @@ private:
 #endif
 
 public:
-	InverseUNAFuncGenerator(const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ);
+	InverseUNAFuncGenerator(Function* function, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ);
 	InverseUNAFuncGenerator* clone() const;
 	void reset();
 	void next();

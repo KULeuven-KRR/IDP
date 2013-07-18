@@ -410,6 +410,13 @@ void GeneratorFactory::visit(const EnumeratedInternalSortTable* t) {
 		_generator = new SortGenerator(t, _vars[0]);
 	}
 }
+void GeneratorFactory::visit(const ConstructedInternalSortTable* t) {
+	if (_pattern[0] == Pattern::INPUT) {
+		_generator = new SortChecker(t, _vars[0]);
+	} else {
+		_generator = new SortGenerator(t, _vars[0]);
+	}
+}
 void GeneratorFactory::visit(const IntRangeInternalSortTable* t) {
 	if (_pattern[0] == Pattern::INPUT) {
 		_generator = new SortChecker(t, _vars[0]);
@@ -593,9 +600,8 @@ void GeneratorFactory::visit(const ProcInternalFuncTable*) {
 	_generator = new TableGenerator(_table, _pattern, _vars, _firstocc, _universe);
 }
 
-//
-void GeneratorFactory::visit(const UNAInternalFuncTable*) {
-	_generator = new InverseUNAFuncGenerator(_pattern, _vars, _universe);
+void GeneratorFactory::visit(const UNAInternalFuncTable* table) {
+	_generator = new InverseUNAFuncGenerator(table->getFunction(), _pattern, _vars, _universe);
 }
 
 void GeneratorFactory::visit(const EnumeratedInternalFuncTable*) {
@@ -870,8 +876,8 @@ void GeneratorFactory::visit(const ModInternalFuncTable* mift) {
 		auto qTimesY = new DomElemContainer();
 		auto qTimesYGenerator = new TimesGenerator(q, _vars[1], qTimesY, NumType::CERTAINLYINT, intSortTable);
 		auto finalGenerator = new PlusGenerator(qTimesY, _vars[2], _vars[0], NumType::CERTAINLYINT, _universe.tables()[0]);
-
 		_generator = new OneChildGenerator(allQGenerator, new OneChildGenerator(qTimesYGenerator, finalGenerator));
+
 
 	} else if (_firstocc[1] == 0) {
 		//x%x=z with x output, z input
