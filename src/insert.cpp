@@ -812,10 +812,10 @@ void Insert::openquery(const string& qname, YYLTYPE l) {
 	openblock();
 	ParseInfo pi = parseinfo(l);
 	Query* q = queryInScope(qname, pi);
+	_currquery = qname;
 	if (q) {
 		declaredEarlier(ComponentType::Query, qname, pi, q->pi());
 	}
-	_currquery = "";
 }
 void Insert::openfobdd(const string& bddname, YYLTYPE l) {
 	openblock();
