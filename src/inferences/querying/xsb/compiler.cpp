@@ -613,8 +613,12 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateClause* ac) {
 	list<PrologTerm*> body;
 	body.push_back(ac->aggterm()->asTerm());
 	auto term = new PrologTerm(ac->type());
-	term->addArgument(ac->aggterm()->result());
+	// Note: it is important to put the term first, because the unnest aggs transformation
+	// will rewrite any "AGG COMP TERM" into "TERM COMP* AGG" with COMP* the opposite comparison operator of COMP
+	// Thus making the term always the first argument of the comparison
 	term->addArgument(ac->term());
+	term->addArgument(ac->aggterm()->result());
+	term->addInputvarToCheck((PrologVariable*) ac->term());
 	body.push_back(term);
 	ac->aggterm()->accept(this);
 	_pp->addClause(new PrologClause(ac->asTerm(), body, false));
