@@ -109,6 +109,15 @@ void Structure::changeVocabulary(Vocabulary* v) {
             if (_vocabulary != NULL) {
                     _vocabulary->addStructure(this);
             }
+    }else{
+    	return;
+    }
+
+    if(_vocabulary==NULL){
+    	_sortinter.clear();
+    	_predinter.clear();
+    	_funcinter.clear();
+    	return;
     }
 
 	// Delete tables for symbols that do not occur anymore
@@ -121,7 +130,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		}
 	}
 	for (auto it = _predinter.begin(); it != _predinter.end();) {
-		if (not v->contains(it->first)) {
+		if (not _vocabulary->contains(it->first)) {
 			delete (it->second);
 			_predinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
 		} else {
@@ -129,7 +138,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		}
 	}
 	for (auto it = _funcinter.begin(); it != _funcinter.end();) {
-		if (not v->contains(it->first)) {
+		if (not _vocabulary->contains(it->first)) {
 			delete (it->second);
 			_funcinter.erase(it++); // NOTE: increment here is important for iterator consistency in map erasure
 		} else {
