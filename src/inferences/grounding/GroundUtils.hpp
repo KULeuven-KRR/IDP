@@ -52,12 +52,12 @@ void restoreOrigVars(DomElemList& originst, const DomInstList& freevarinst) {
 	}
 }
 
-class AbstractStructure;
+class Structure;
 class GenerateBDDAccordingToBounds;
 
 // Always non-owning, can always be NULL!
 struct StructureInfo{
-	AbstractStructure* concrstructure;
+	Structure* concrstructure;
 	GenerateBDDAccordingToBounds* symstructure;
 };
 

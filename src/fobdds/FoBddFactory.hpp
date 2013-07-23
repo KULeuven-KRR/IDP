@@ -32,7 +32,7 @@ class AggForm;
 class Vocabulary;
 class FOBDDManager;
 class FOBDDSetExpr;
-class AbstractStructure;
+class Structure;
 class FOBDDEnumSetExpr;
 class FOBDDQuantSetExpr;
 
@@ -72,7 +72,7 @@ public:
 	}
 
 	// if a structure is given, this can be used for efficiently unnesting terms (deriving term bounds)
-	const FOBDD* turnIntoBdd(const Formula* f, AbstractStructure* s = NULL);
+	const FOBDD* turnIntoBdd(const Formula* f, Structure* s = NULL);
 	const FOBDDTerm* turnIntoBdd(const Term* t);
 };
 

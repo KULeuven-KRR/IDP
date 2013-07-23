@@ -27,7 +27,7 @@
  */
 class OptimalPropagation {
 public:
-	 std::vector<AbstractStructure*>  propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	 std::vector<Structure*>  propagate(AbstractTheory* theory, Structure* structure) {
 		// TODO: make a clean version of the implementation (should call ModelExpansion)
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 		// Compute all models
@@ -39,7 +39,7 @@ public:
 		auto grounder = GrounderFactory::create(GroundInfo{theory, {structure, symstructure}, false /*TODO CHeck*/}, data);
 		bool unsat = grounder->toplevelRun();
 		if(unsat){
-			return std::vector<AbstractStructure*> { };
+			return std::vector<Structure*> { };
 		}
 		auto grounding = grounder->getGrounding();
 
@@ -50,7 +50,7 @@ public:
 
 		std::set<int> intersection;
 		if (abstractsolutions.empty()) {
-			return std::vector<AbstractStructure*> { };
+			return std::vector<Structure*> { };
 		}
 		// Take the intersection of all models
 		auto firstmodel = *(abstractsolutions.cbegin());
@@ -100,7 +100,7 @@ public:
 		delete(data);
 
 		if(not result->isConsistent()){
-			return std::vector<AbstractStructure*> { };
+			return std::vector<Structure*> { };
 		}
 		return {result};
 	}

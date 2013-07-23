@@ -27,7 +27,7 @@ private:
 	bool _start, _first;
 	bool _allquantvars;
 	const GroundTranslator* _translator;
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 
 	const PredForm *_resultingliteral, *_resultingliteral2;
 	varset _quantvars, _containingquantvars;
@@ -35,7 +35,7 @@ private:
 
 public:
 	template<typename T>
-	std::vector<const PredForm*> execute(T t, const AbstractStructure* structure, const GroundTranslator* trans, Context& context) {
+	std::vector<const PredForm*> execute(T t, const Structure* structure, const GroundTranslator* trans, Context& context) {
 		_start = true;
 		_first = true;
 		_resultingliteral = NULL;

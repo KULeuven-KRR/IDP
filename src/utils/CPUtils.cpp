@@ -64,7 +64,7 @@ bool eligibleForCP(const AggFunction& f) {
 	return (f == AggFunction::SUM) or (f == AggFunction::PROD) or (f==AggFunction::CARD);
 }
 
-bool eligibleForCP(const AggTerm* at, const AbstractStructure* str) {
+bool eligibleForCP(const AggTerm* at, const Structure* str) {
 	if (eligibleForCP(at->function()) and str != NULL) {
 		auto enumset = at->set();
 		for (auto i = enumset->getSets().cbegin(); i < enumset->getSets().cend(); ++i) {
@@ -80,7 +80,7 @@ bool eligibleForCP(const AggTerm* at, const AbstractStructure* str) {
 	return false;
 }
 
-bool eligibleForCP(const Term* t, const AbstractStructure* str) {
+bool eligibleForCP(const Term* t, const Structure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
 	case TermType::FUNC: {

@@ -17,7 +17,7 @@
 #include "errorhandling/error.hpp"
 #include <vector>
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> CalculateDefinitionInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*)> CalculateDefinitionInferenceBase;
 class CalculateDefinitionInference: public CalculateDefinitionInferenceBase {
 public:
 	CalculateDefinitionInference()

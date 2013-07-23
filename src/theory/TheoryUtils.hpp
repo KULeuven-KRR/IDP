@@ -26,7 +26,7 @@ class PredForm;
 class BoolForm;
 class FuncTerm;
 class Variable;
-class AbstractStructure;
+class Structure;
 class AbstractTheory;
 class Formula;
 class Vocabulary;
@@ -84,7 +84,7 @@ BoolForm* falseFormula();
 
 /** Returns false if the formula is not two-valued in the given structure.
  May return true if the formula is two-valued in the structure. */
-bool approxTwoValued(const Formula*, AbstractStructure*);
+bool approxTwoValued(const Formula*, Structure*);
 
 /** Check sorts in the given formula */
 void checkSorts(Vocabulary* v, Formula* f);
@@ -97,9 +97,9 @@ bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
-const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context);
+const PredForm* findUnknownBoundLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context);
 /** Returns an empty set if no such delay was possible **/
-std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context);
+std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context);
 
 /** Derive sorts in the given formula **/
 void deriveSorts(Vocabulary* v, Formula* f);
@@ -109,13 +109,13 @@ void deriveSorts(Vocabulary* v, Formula* f);
  *			- query does not contain any FuncTerm or AggTerm subterms
  *			- the query has a twovalue result in the given structure
  */
-double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,const  AbstractStructure* structure);
+double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,const  Structure* structure);
 
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);
 
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas */
-Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Formula* graphFuncsAndAggs(Formula* f, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
@@ -138,16 +138,16 @@ Formula* skolemize(Formula* t, Vocabulary* v);
 Theory* skolemize(Theory* t);
 AbstractTheory* skolemize(AbstractTheory* t);
 
-Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s = NULL);
+Theory* sharedTseitinTransform(Theory* t, Structure* s = NULL);
 
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
 
 /** Recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggs(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggsNonRecursive(Formula*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggsNonRecursive(Formula*, const Structure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 Formula* unnestDomainTerms(Formula*);
@@ -155,17 +155,17 @@ Formula* unnestDomainTermsFromNonBuiltins(Formula*);
 
 
 /** Recursively move all partial terms outside atoms */
-Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
-AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 /** Recursively remove all nested terms */
-Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
-Formula* unnestThreeValuedTerms(Formula*, const AbstractStructure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
+Formula* unnestThreeValuedTerms(Formula*, const Structure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
-void addCompletion(AbstractTheory*, const AbstractStructure* s);
+void addCompletion(AbstractTheory*, const Structure* s);
 
 /**
  * Add the If direction of the definition semantics. The old definition is not removed, but can be regarded as the remaining only if and ufs constraint.
@@ -185,8 +185,8 @@ void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
-Theory* graphFuncsAndAggs(Theory*, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
-AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggs(Theory*, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
@@ -211,10 +211,10 @@ AbstractTheory* removeEquivalences(AbstractTheory*);
 AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL, Context con = Context::POSITIVE);
 
 /** Non-recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const AbstractStructure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const Structure* str = NULL, Context con = Context::POSITIVE);
 
 /** Recursively move all domain terms */
 AbstractTheory* unnestDomainTerms(AbstractTheory*);
@@ -222,14 +222,14 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 
 /** Rewrite the theory so that there are no nested terms */
-void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL);
+void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
 } /* namespace FormulaUtils */
 
 
 namespace TermUtils {
 /** Returns false if the term is not two-valued in the given structure.
  *  May return true if the term is two-valued in the structure. */
-bool approxTwoValued(const Term*, const AbstractStructure*);
+bool approxTwoValued(const Term*, const Structure*);
 
 /** Check sorts in the given term */
 void checkSorts(Vocabulary*, Term*);
@@ -242,24 +242,24 @@ void deriveSorts(Vocabulary*, Term*);
 /** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
  * 	If no bounds can be derived, NULL is returned for both bounds
  */
-std::vector<const DomainElement*> deriveTermBounds(const Term*, const AbstractStructure*);
+std::vector<const DomainElement*> deriveTermBounds(const Term*, const Structure*);
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
 
 /** Check whether a function term is a term multiplied by a factor */
-bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure);
-bool isFactor(const Term* term, const AbstractStructure* structure);
+bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure);
+bool isFactor(const Term* term, const Structure* structure);
 } /* namespace TermUtils */
 
 
 namespace SetUtils {
 /** Returns false if the set expression is not two-valued in the given structure. 
  May return true if the set expression is two-valued in the structure. */
-bool approxTwoValued(const SetExpr*, const AbstractStructure*);
+bool approxTwoValued(const SetExpr*, const Structure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
 } /* namespace SetUtils */
 
 
@@ -280,9 +280,9 @@ bool hasRecursionOverNegation(Definition*);
 void splitDefinitions(Theory* t);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, const AbstractStructure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
+Rule* unnestThreeValuedTerms(Rule*, const Structure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
-Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context);
 } /* namespace DefinitionUtils */
 
 #endif /* IDP_THEORYUTILS_HPP_ */

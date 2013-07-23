@@ -22,7 +22,7 @@
 #include "theory/TheoryUtils.hpp" //TODO REMOVE
 //#include "external/FlatZincRewriter.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, bool)> GroundBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*, bool)> GroundBase;
 class GroundInference: public GroundBase {
 public:
 	GroundInference()
@@ -36,7 +36,7 @@ public:
 		return InternalArgument(grounding);
 	}
 private:
-	AbstractTheory* ground(AbstractTheory* theory, AbstractStructure* structure, bool modelcountequivalence) const {
+	AbstractTheory* ground(AbstractTheory* theory, Structure* structure, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
@@ -62,7 +62,7 @@ public:
 		return nilarg();
 	}
 private:
-	void ground(AbstractTheory* theory, AbstractStructure* structure, InteractivePrintMonitor* monitor, bool modelcountequivalence) const {
+	void ground(AbstractTheory* theory, Structure* structure, InteractivePrintMonitor* monitor, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, modelcountequivalence, monitor);

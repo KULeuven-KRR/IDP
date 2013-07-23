@@ -14,7 +14,7 @@
 #include "IncludeComponents.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-class AbstractStructure;
+class Structure;
 class Vocabulary;
 class Formula;
 class Variable;
@@ -27,7 +27,7 @@ class Term;
 class UnnestTerms: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 protected:
-	const AbstractStructure* _structure; 	// Used to find bounds on introduced variables
+	const Structure* _structure; 	// Used to find bounds on introduced variables
 	Vocabulary* _vocabulary; 				// Used to do type derivation during rewrites
 
 private:
@@ -60,7 +60,7 @@ public:
 	UnnestTerms();
 
 	template<typename T>
-	T execute(T t, Context con = Context::POSITIVE, const AbstractStructure* str = NULL, Vocabulary* voc = NULL, bool onlyrulehead = false) {
+	T execute(T t, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL, bool onlyrulehead = false) {
 		_context = con;
 		_structure = str;
 		_vocabulary = voc;

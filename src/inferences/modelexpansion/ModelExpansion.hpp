@@ -17,7 +17,7 @@
 #include <memory>
 
 
-class AbstractStructure;
+class Structure;
 class AbstractTheory;
 class Theory;
 class TraceMonitor;
@@ -25,7 +25,7 @@ class Term;
 class Vocabulary;
 
 struct MXResult{
-	std::vector<AbstractStructure*> _models;
+	std::vector<Structure*> _models;
 	int _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
 	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
 };
@@ -38,19 +38,19 @@ struct MXResult{
  */
 class ModelExpansion {
 public:
-	static MXResult doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
-	static MXResult doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
+	static MXResult doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
+	static MXResult doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL);
 
 private:
 	Theory* _theory;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	TraceMonitor* _tracemonitor;
 	Term* _minimizeterm; // if NULL, no optimization is done
 
 	Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
 
-	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor);
-	ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor);
+	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor);
+	ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor);
 
 	void setOutputVocabulary(Vocabulary* v);
 

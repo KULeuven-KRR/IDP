@@ -49,7 +49,7 @@ MAPPING(int, AT_INT)
 MAPPING(double, AT_DOUBLE)
 MAPPING(std::string*, AT_STRING)
 MAPPING(const Compound*, AT_COMPOUND)
-MAPPING(AbstractStructure*, AT_STRUCTURE)
+MAPPING(Structure*, AT_STRUCTURE)
 MAPPING(Vocabulary*, AT_VOCABULARY)
 MAPPING(SortIterator*, AT_DOMAINITERATOR)
 MAPPING(TableIterator*, AT_TABLEITERATOR)
@@ -169,11 +169,11 @@ struct AddTypes<Loki::NullType, FullList> {
 };
 
 typedef TypedInference<LIST()> EmptyBase;
-typedef TypedInference<LIST(AbstractStructure*)> StructureBase;
+typedef TypedInference<LIST(Structure*)> StructureBase;
 typedef TypedInference<LIST(Term*)> TermBase;
 typedef TypedInference<LIST(std::string*)> StringBase;
 typedef TypedInference<LIST(AbstractTheory*)> TheoryBase;
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> TheoryStructureBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*)> TheoryStructureBase;
 typedef TypedInference<LIST(SortTable*)> SortTableBase;
 typedef TypedInference<LIST(const PredTable*)> PredTableBase;
 typedef TypedInference<LIST(Query*)> QueryBase;

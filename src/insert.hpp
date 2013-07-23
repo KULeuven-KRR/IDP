@@ -33,7 +33,7 @@ class AbstractTable;
 class PredTable;
 class FuncTable;
 class Structure;
-class AbstractStructure;
+class Structure;
 class Term;
 class FuncTerm;
 class AggTerm;
@@ -188,8 +188,8 @@ private:
 	Term* termInScope(const std::string&, const ParseInfo&) const;
 	AbstractTheory* theoryInScope(const std::string&, const ParseInfo&) const;
 	AbstractTheory* theoryInScope(const longname&, const ParseInfo&) const;
-	AbstractStructure* structureInScope(const std::string&, const ParseInfo&) const;
-	AbstractStructure* structureInScope(const longname&, const ParseInfo&) const;
+	Structure* structureInScope(const std::string&, const ParseInfo&) const;
+	Structure* structureInScope(const longname&, const ParseInfo&) const;
 	UserProcedure* procedureInScope(const std::string&, const ParseInfo&) const;
 	UserProcedure* procedureInScope(const longname&, const ParseInfo&) const;
 
@@ -364,8 +364,8 @@ private:
 		CF
 	};
 	std::string print(UTF utf)const;
-	mutable std::map<AbstractStructure*, std::set<Sort*>> sortsOccurringInUserDefinedStructure;
-	std::set<AbstractStructure*, std::set<PFSymbol*> > symbolsOccurringInUserDefinedStructure;
+	mutable std::map<Structure*, std::set<Sort*>> sortsOccurringInUserDefinedStructure;
+	std::set<Structure*, std::set<PFSymbol*> > symbolsOccurringInUserDefinedStructure;
 	mutable std::map<PFSymbol*, std::map<UTF, PredTable*> > _pendingAssignments;
 	void finalizePendingAssignments();
 	bool basicSymbolCheck(PFSymbol* symbol, NSPair* nst)const;
@@ -380,7 +380,7 @@ public:
 	/**
 	 * Returns true if this sort occurred in the user provided theory.
 	 */
-	bool interpretationSpecifiedByUser(AbstractStructure* structure, Sort* sort) const;
+	bool interpretationSpecifiedByUser(Structure* structure, Sort* sort) const;
 	bool interpretationSpecifiedByUser(PFSymbol* symbol) const;
 	void sortinter(NSPair*, SortTable* t)const; //!< Assign a one dimensional table
 	void interByProcedure(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure

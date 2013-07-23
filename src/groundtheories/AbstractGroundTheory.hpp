@@ -40,7 +40,7 @@ class GenerateBDDAccordingToBounds;
 class AbstractGroundTheory: public AbstractTheory {
 	VISITORS()
 private:
-	AbstractStructure* _structure; // OWNER! The ground theory might be partially reduced with respect to this structure.
+	Structure* _structure; // OWNER! The ground theory might be partially reduced with respect to this structure.
 
 	GroundTranslator* _translator; //!< Link between ground atoms and SAT-solver literals.
 
@@ -79,7 +79,7 @@ public:
 		Assert(_translator!=NULL);
 		return _translator;
 	}
-	AbstractStructure* structure() const {
+	Structure* structure() const {
 		return _structure;
 	}
 	AbstractGroundTheory* clone() const;

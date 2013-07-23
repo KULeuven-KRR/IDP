@@ -13,18 +13,18 @@
 
 
 class Theory;
-class AbstractStructure;
+class Structure;
 class Query;
 
 class AtomQuerying {
 public:
-	static bool doSolveAtomQuery(Query* p, Theory* t, AbstractStructure* s) {
+	static bool doSolveAtomQuery(Query* p, Theory* t, Structure* s) {
 		AtomQuerying c;
 		return c.queryAtom(p,t, s);
 	}
 
 private:
-	bool queryAtom(Query* p, Theory* t, AbstractStructure* s) const;
+	bool queryAtom(Query* p, Theory* t, Structure* s) const;
 };
 
 #endif /* QUERY_HPP_ */

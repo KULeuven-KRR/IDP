@@ -398,8 +398,8 @@ Vocabulary* Insert::vocabularyInScope(const vector<string>& vs, const ParseInfo&
 	}
 }
 
-AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo& pi) const {
-	AbstractStructure* s = NULL;
+Structure* Insert::structureInScope(const string& name, const ParseInfo& pi) const {
+	Structure* s = NULL;
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
 		if (_usingspace[n]->isStructure(name)) {
 			if (s) {
@@ -412,7 +412,7 @@ AbstractStructure* Insert::structureInScope(const string& name, const ParseInfo&
 	return s;
 }
 
-AbstractStructure* Insert::structureInScope(const vector<string>& vs, const ParseInfo& pi) const {
+Structure* Insert::structureInScope(const vector<string>& vs, const ParseInfo& pi) const {
 	Assert(not vs.empty());
 	if (vs.size() == 1) {
 		return structureInScope(vs[0], pi);
@@ -854,7 +854,7 @@ void Insert::closeterm(Term* t) {
 void Insert::openstructure(const string& sname, YYLTYPE l) {
 	openblock();
 	ParseInfo pi = parseinfo(l);
-	AbstractStructure* s = structureInScope(sname, pi);
+	Structure* s = structureInScope(sname, pi);
 	if (s) {
 		declaredEarlier(ComponentType::Structure, sname, pi, s->pi());
 	}
@@ -2227,7 +2227,7 @@ void setOptionValue(Options* options, const string& opt, const OptionValue& val,
  * Interpretations
  *******************/
 
-bool Insert::interpretationSpecifiedByUser(AbstractStructure* structure, Sort *sort) const {
+bool Insert::interpretationSpecifiedByUser(Structure* structure, Sort *sort) const {
 	if (not contains(sortsOccurringInUserDefinedStructure, structure)) {
 		return false;
 	}

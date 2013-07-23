@@ -99,7 +99,7 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return gen;
 }
 
-InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const AbstractStructure* structure, bool inverse, const vector<Pattern>& pattern,
+InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const Structure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
 	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
 		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << print(symbol) << " on pattern " << print(pattern) << "\n";

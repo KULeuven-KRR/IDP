@@ -23,7 +23,7 @@
 #include "fobdds/FoBddVariable.hpp"
 #include "theory/TheoryUtils.hpp"
 
-PredTable* Querying::solveQuery(Query* q, AbstractStructure* structure) const {
+PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
 	// translate the formula to a bdd
 	FOBDDManager* manager;
 	const FOBDD* bdd;

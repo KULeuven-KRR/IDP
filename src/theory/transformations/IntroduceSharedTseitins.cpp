@@ -20,7 +20,7 @@ IntroduceSharedTseitins::IntroduceSharedTseitins()
 			_bddtofo(&_manager, &_counter) {
 }
 
-Theory* IntroduceSharedTseitins::execute(Theory* theo, AbstractStructure* s) {
+Theory* IntroduceSharedTseitins::execute(Theory* theo, Structure* s) {
 	if (not getOption(BoolType::GROUNDWITHBOUNDS)) {
 		Warning::warning(
 				"The introduce shared Tseitin transformation might result in an infinite grounding. "

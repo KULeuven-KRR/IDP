@@ -21,12 +21,12 @@
 
 using namespace std;
 
-MXResult ModelExpansion::doModelExpansion(AbstractTheory* theory, AbstractStructure* structure, Vocabulary* outputvoc,
+MXResult ModelExpansion::doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvoc,
 		TraceMonitor* tracemonitor) {
 	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor);
 	return m->expand();
 }
-MXResult ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
+MXResult ModelExpansion::doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
 		TraceMonitor* tracemonitor) {
 	if (term == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
@@ -38,7 +38,7 @@ MXResult ModelExpansion::doMinimization(AbstractTheory* theory, AbstractStructur
 	return m->expand();
 }
 
-shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, AbstractStructure* structure, Term* term, Vocabulary* outputvoc,
+shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
 		TraceMonitor* tracemonitor) {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
@@ -63,7 +63,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Abst
 	return m;
 }
 
-ModelExpansion::ModelExpansion(Theory* theory, AbstractStructure* structure, Term* minimize, TraceMonitor* tracemonitor)
+ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor)
 		: 	_theory(theory),
 			_structure(structure),
 			_tracemonitor(tracemonitor),
@@ -78,7 +78,7 @@ void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
 	_outputvoc = v;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc);
+Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc);
 
 class SolverTermination: public TerminateMonitor {
 private:
@@ -131,7 +131,7 @@ MXResult ModelExpansion::expand() const {
 	}
 
 	// Collect solutions
-	std::vector<AbstractStructure*> solutions;
+	std::vector<Structure*> solutions;
 	if (_minimizeterm != NULL) { // Optimizing
 		if (mx->getSolutions().size() > 0) {
 			Assert(mx->getBestSolutionsFound().size()>0);
@@ -172,7 +172,7 @@ MXResult ModelExpansion::expand() const {
 	return result;
 }
 
-AbstractStructure* handleSolution(AbstractStructure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
+Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, Vocabulary* inputvoc) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->translator(), newsolution);

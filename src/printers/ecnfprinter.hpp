@@ -32,7 +32,7 @@ class EcnfPrinter: public StreamPrinter<Stream> {
 private:
 	int _currenthead;
 	DefId _currentdefnr;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	const GroundTranslator* _translator;
 	std::set<VarId> _printedvarids;
 	bool writeTranslation_;
@@ -88,7 +88,7 @@ public:
 		_currentdefnr = defid;
 	}
 
-	virtual void setStructure(AbstractStructure* t) {
+	virtual void setStructure(Structure* t) {
 		_structure = t;
 	}
 	virtual void setTranslator(GroundTranslator* t) {
@@ -103,7 +103,7 @@ public:
 		throw notyetimplemented("Printing namespaces in ecnf format");
 	}
 
-	void visit(const AbstractStructure*) {
+	void visit(const Structure*) {
 		throw notyetimplemented("Printing structures in ecnf format");
 	}
 

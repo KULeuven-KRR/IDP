@@ -12,6 +12,6 @@
 #pragma once
 
 class Term;
-class AbstractStructure;
+class Structure;
 
-bool isTwoValued(const Term* t, const AbstractStructure* structure);
+bool isTwoValued(const Term* t, const Structure* structure);

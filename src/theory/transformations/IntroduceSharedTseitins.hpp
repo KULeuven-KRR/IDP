@@ -37,6 +37,6 @@ public:
 
 	//Introduces Tseitins for subformulas of the Theory that occur a lot. Modifies the theory's vocabulary (by adding tseitin symbols)
 	//WARNING: modifies the vocabulary of the theory! Does not modify a structure.
-	Theory* execute(Theory* t, AbstractStructure* s = NULL);
+	Theory* execute(Theory* t, Structure* s = NULL);
 };
 #endif /* SHAREDTSEITINS354654_HPP_ */

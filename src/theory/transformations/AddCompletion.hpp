@@ -17,19 +17,19 @@
 
 class Variable;
 class PFSymbol;
-class AbstractStructure;
+class Structure;
 
 class AddCompletion: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 	std::vector<Formula*> _sentences;
 	std::map<PFSymbol*, std::vector<Variable*> > _headvars;
 	std::map<PFSymbol*, std::vector<Formula*> > _symbol2sentences;
 
 public:
 	template<typename T>
-	T execute(T t, const AbstractStructure* structure) {
+	T execute(T t, const Structure* structure) {
 		_structure = structure;
 		return t->accept(this);
 	}

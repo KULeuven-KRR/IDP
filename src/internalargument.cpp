@@ -55,7 +55,7 @@ AbstractTheory* InternalArgument::get<AbstractTheory*>() {
 }
 
 template<>
-AbstractStructure* InternalArgument::get<AbstractStructure*>() {
+Structure* InternalArgument::get<Structure*>() {
 	return structure();
 }
 

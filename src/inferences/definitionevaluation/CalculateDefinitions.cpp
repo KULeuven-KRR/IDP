@@ -28,7 +28,7 @@
 
 using namespace std;
 
-bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractStructure* structure, bool withxsb) {
+bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool withxsb) {
 	// TODO duplicate code with modelexpansion
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
@@ -109,7 +109,7 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, AbstractS
 	}
 }
 
-std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, AbstractStructure* structure) {
+std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
@@ -146,7 +146,7 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
-					return std::vector<AbstractStructure*> { };
+					return std::vector<Structure*> { };
 				}
 				theory->remove(definition);
 				definition->recursiveDelete();
@@ -156,7 +156,7 @@ std::vector<AbstractStructure*> CalculateDefinitions::calculateKnownDefinitions(
 		}
 	}
 	if (not structure->isConsistent()) {
-		return std::vector<AbstractStructure*> { };
+		return std::vector<Structure*> { };
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";

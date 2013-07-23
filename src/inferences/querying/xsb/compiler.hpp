@@ -11,7 +11,7 @@
 #include "theory/Sets.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "visitors/TheoryVisitor.hpp"
-#include "structure/AbstractStructure.hpp"
+#include "structure/Structure.hpp"
 
 class PrologTerm;
 
@@ -301,12 +301,12 @@ private:
 	std::list<PrologClause*> _clauses;
 	std::set<PFSymbol*> _tabled;
 	std::set<Sort*> _sorts;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	Definition* _definition;
 	std::set<std::string> _loaded;
 	std::set<std::string> _all_predicates;
 public:
-	PrologProgram(AbstractStructure* structure)
+	PrologProgram(Structure* structure)
 			: 	_structure(structure),
 				_definition(NULL) {
 	}
@@ -330,7 +330,7 @@ public:
 	std::list<PrologClause*> clauses() {
 		return _clauses;
 	}
-	AbstractStructure* structure() {
+	Structure* structure() {
 		return _structure;
 	}
 	const std::set<std::string>& allPredicates() const {

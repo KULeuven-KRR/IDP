@@ -285,7 +285,7 @@ vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 	return terms;
 }
 
-Sort* deriveSmallerSort(const Term* term, const AbstractStructure* structure) {
+Sort* deriveSmallerSort(const Term* term, const Structure* structure) {
 	auto sort = term->sort();
 	if (term->type()==TermType::VAR or structure == NULL or not SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), structure->vocabulary()) or structure->inter(sort)->empty()) {
 		return sort;

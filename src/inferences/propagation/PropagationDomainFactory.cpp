@@ -154,7 +154,7 @@ bool FOPropTableDomainFactory::approxequals(FOPropTableDomain* left, FOPropTable
 	return left->table() == right->table();
 }
 
-PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain<FOPropBDDDomain>& dom, AbstractStructure* str) const {
+PredInter* FOPropBDDDomainFactory::inter(const vector<Variable*>& vars, const ThreeValuedDomain<FOPropBDDDomain>& dom, Structure* str) const {
 	// Construct the universe of the interpretation and two sets of new variables
 	vector<SortTable*> vst;
 	vector<Variable*> newctvars, newcfvars;

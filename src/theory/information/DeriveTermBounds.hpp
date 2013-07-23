@@ -17,7 +17,7 @@
 #include "theory/term.hpp"
 #include <vector>
 
-class AbstractStructure;
+class Structure;
 class DomainElement;
 
 /**
@@ -27,7 +27,7 @@ class DomainElement;
 class DeriveTermBounds: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 	size_t _level;
 	const DomainElement* _minimum;
 	const DomainElement* _maximum;
@@ -37,7 +37,7 @@ private:
 	bool _underivable;
 
 public:
-	std::vector<const DomainElement*> execute(const Term* t, const AbstractStructure* str) {
+	std::vector<const DomainElement*> execute(const Term* t, const Structure* str) {
 		Assert(str != NULL);
 		_structure = str;
 		_level = 0;

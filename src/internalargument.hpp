@@ -25,7 +25,7 @@ class LuaTraceMonitor;
 class Namespace;
 class Vocabulary;
 class AbstractTheory;
-class AbstractStructure;
+class Structure;
 class Options;
 class Formula;
 class Query;
@@ -173,7 +173,7 @@ private:
 	Namespace* _namespace;
 	Vocabulary* _vocabulary;
 	AbstractTheory* _theory;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	Options* _options;
 	UserProcedure* _procedure;
 	Formula* _formula;
@@ -199,7 +199,7 @@ public:
 	void insert(AbstractTheory* n) {
 		_theory = n;
 	}
-	void insert(AbstractStructure* n) {
+	void insert(Structure* n) {
 		_structure = n;
 	}
 	void insert(Options* n) {
@@ -218,7 +218,7 @@ public:
 		_term = t;
 	}
 
-	AbstractStructure* structure() const {
+	Structure* structure() const {
 		return _structure;
 	}
 	AbstractTheory* theory() const {
@@ -288,7 +288,7 @@ struct InternalArgument {
 		const PredTable* _predtable;
 		PredInter* _predinter;
 		FuncInter* _funcinter;
-		AbstractStructure* _structure;
+		Structure* _structure;
 		TableIterator* _tableiterator;
 		SortIterator* _sortiterator;
 
@@ -330,7 +330,7 @@ struct InternalArgument {
 			: _type(AT_FUNCINTER) {
 		_value._funcinter = f;
 	}
-	InternalArgument(AbstractStructure* s)
+	InternalArgument(Structure* s)
 			: _type(AT_STRUCTURE) {
 		_value._structure = s;
 	}
@@ -444,7 +444,7 @@ struct InternalArgument {
 		return NULL;
 	}
 
-	AbstractStructure* structure() const {
+	Structure* structure() const {
 		if (_type == AT_STRUCTURE) {
 			return _value._structure;
 		}

@@ -19,7 +19,7 @@
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "lua/luaconnection.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> ModelExpandInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*)> ModelExpandInferenceBase;
 class ModelExpandInference: public ModelExpandInferenceBase {
 public:
 	ModelExpandInference()

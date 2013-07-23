@@ -164,7 +164,7 @@ bool useUFSAndOnlyIfSem(){
 	return getOption(GROUNDLAZILY);
 }
 
-void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
+void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {
 	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
 		CHECKTERMINATION;
 		int atomnr = var(*literal);
@@ -193,7 +193,7 @@ VarId getVar(MinisatID::VarID id) {
 	return var;
 }
 
-void addTerms(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init) {
+void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {
 	// Convert vector of variableassignments to a map
 	map<VarId, int> variable2valuemap;
 	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {

@@ -91,7 +91,7 @@ void TypedFOPropagator<Factory, DomainType>::doPropagation() {
 }
 
 template<class Factory, class Domain>
-void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(AbstractStructure* structure, Vocabulary* outputvoc) const {
+void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* structure, Vocabulary* outputvoc) const {
 	for (auto it = _leafconnectors.cbegin(); it != _leafconnectors.cend(); ++it) {
 		auto connector = it->second;
 		auto symbol = connector->symbol();

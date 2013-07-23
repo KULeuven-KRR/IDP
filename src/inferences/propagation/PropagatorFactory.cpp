@@ -23,7 +23,7 @@ using namespace std;
 
 typedef std::map<PFSymbol*, const FOBDD*> Bound;
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStructure*& structure, bool doSymbolicPropagation, bool LUP,  Vocabulary* outputvoc) {
+GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure*& structure, bool doSymbolicPropagation, bool LUP,  Vocabulary* outputvoc) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
@@ -53,7 +53,7 @@ GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, AbstractStr
 	return result;
 }
 
-FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* structure, const std::map<PFSymbol*, InitBoundType> mpi) {
+FOPropagator* createPropagator(AbstractTheory* theory, Structure* structure, const std::map<PFSymbol*, InitBoundType> mpi) {
 //	if(getOption(BoolType::GROUNDWITHBOUNDS)){
 	auto domainfactory = new FOPropBDDDomainFactory();
 	auto scheduler = new FOPropScheduler();
@@ -70,7 +70,7 @@ FOPropagator* createPropagator(AbstractTheory* theory, AbstractStructure* struct
 }
 
 /** Collect symbolic propagation vocabulary **/
-std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, AbstractStructure* structure) {
+std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure* structure) {
 	std::map<PFSymbol*, InitBoundType> mpi;
 	Vocabulary* v = theory->vocabulary();
 	for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
@@ -169,7 +169,7 @@ void FOPropagatorFactory<Factory, Domain>::createleafconnector(PFSymbol* symbol)
 }
 
 template<class Factory, class Domain>
-TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory, const AbstractStructure* structure) {
+TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create(const AbstractTheory* theory, const Structure* structure) {
 	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 		clog << "=== initialize propagation datastructures\n";
 	}

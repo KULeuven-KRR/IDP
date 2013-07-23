@@ -15,7 +15,7 @@
 #include "SolverInclude.hpp"
 #include "commontypes.hpp"
 
-class AbstractStructure;
+class Structure;
 class GroundTranslator;
 class TraceMonitor;
 
@@ -36,10 +36,10 @@ namespace SolverConnection {
 	PCUnitPropagate* initpropsolution(PCSolver*);
 
 	// Parse model into structure
-	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, AbstractStructure* init);
+	void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init);
 
 	// Parse cp-model into structure
-	void addTerms(const MinisatID::Model& model, GroundTranslator* termtranslator, AbstractStructure* init);
+	void addTerms(const MinisatID::Model& model, GroundTranslator* termtranslator, Structure* init);
 
 	bool useUFSAndOnlyIfSem();
 }

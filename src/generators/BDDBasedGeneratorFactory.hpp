@@ -27,7 +27,7 @@ class PredForm;
 class Variable;
 class InstGenerator;
 class DomElemContainer;
-class AbstractStructure;
+class Structure;
 class Universe;
 
 struct BddGeneratorData {
@@ -35,7 +35,7 @@ struct BddGeneratorData {
 	std::vector<Pattern> pattern;
 	std::vector<const DomElemContainer*> vars;
 	std::vector<const FOBDDVariable*> bddvars;
-	const AbstractStructure* structure;
+	const Structure* structure;
 	Universe universe;
 
 	BddGeneratorData(): bdd(NULL), structure(NULL){
@@ -65,14 +65,14 @@ private:
 	/*
 	 * Help-method for creating from predform
 	 */
-	PredForm* smartGraphFunction(PredForm* atom, const std::vector<Pattern>& pattern, const std::vector<Variable*>& atomvars, const AbstractStructure* structure);
+	PredForm* smartGraphFunction(PredForm* atom, const std::vector<Pattern>& pattern, const std::vector<Variable*>& atomvars, const Structure* structure);
 
 	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
 	 * Can only be used on atoms that contain only var and domain terms (no functions and aggregates)
 	 */
 	InstGenerator *createFromSimplePredForm(PredForm *atom, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*> & vars,
-			const std::vector<Variable*> & atomvars, const AbstractStructure *structure, BRANCH branchToGenerate, const Universe & universe);
+			const std::vector<Variable*> & atomvars, const Structure *structure, BRANCH branchToGenerate, const Universe & universe);
 
 	/*
 	 * Creates an instance generator from a predform (i.e.~an atom kernel).
@@ -80,7 +80,7 @@ private:
 	 * or all instances for which the predform evaluates to false are generated
 	 */
 	InstGenerator* createFromPredForm(PredForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+			const Structure*, BRANCH branchToGenerate, const Universe&);
 
 	/*
 	 * Creates an instance generator from a aggform (i.e.~an aggkernel).
@@ -89,7 +89,7 @@ private:
 	 * PRECONDITION: the first argument is an aggform of which the left term is no aggregate nor functerm
 	 */
 	InstGenerator* createFromAggForm(AggForm*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+			const Structure*, BRANCH branchToGenerate, const Universe&);
 
 	/*
 	 * Creates an instance generator from a formula
@@ -97,22 +97,22 @@ private:
 	 * aggregate nor functerm (i.e.~is the direct translation of an atomkernel or an aggkernel)
 	 */
 	InstGenerator* createFromFormula(Formula* f, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&, const std::vector<Variable*>&,
-			const AbstractStructure*, BRANCH branchToGenerate, const Universe&);
+			const Structure*, BRANCH branchToGenerate, const Universe&);
 	/*
 	 * Creates an instance generator from a kernel.  branchToGenerate determines whether all instances for which the kernel evaluates to true
 	 * or all instances for which the kernel evaluates to false are generated
 	 */
 	InstGenerator* createFromKernel(const FOBDDKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe&);
+			const std::vector<const FOBDDVariable*>&, const Structure* structure, BRANCH branchToGenerate, const Universe&);
 
 	/*
 	 * Same as createfromKernel, but for aggkernels only.
 	 */
 	InstGenerator* createFromAggKernel(const FOBDDAggKernel*, const std::vector<Pattern>&, const std::vector<const DomElemContainer*>&,
-			const std::vector<const FOBDDVariable*>&, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe&);
+			const std::vector<const FOBDDVariable*>&, const Structure* structure, BRANCH branchToGenerate, const Universe&);
 
 	std::vector<InstGenerator*> turnConjunctionIntoGenerators(const std::vector<Pattern> & pattern, const std::vector<const DomElemContainer*> & vars,
-			const std::vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure,
+			const std::vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const Structure *structure,
 			std::vector<Formula*> conjunction, Formula *origatom, BRANCH branchToGenerate);
 
 	/**

@@ -19,7 +19,7 @@
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "lua/luaconnection.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, Term*)> OptimizeInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*, Term*)> OptimizeInferenceBase;
 class MinimizeInference: public OptimizeInferenceBase {
 public:
 	MinimizeInference() :

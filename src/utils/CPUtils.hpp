@@ -22,7 +22,7 @@ class FuncTerm;
 class AggTerm;
 class Term;
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 
 namespace CPSupport {
 
@@ -31,7 +31,7 @@ bool eligibleForCP(const PredForm*, const Vocabulary*);
 bool eligibleForCP(const FuncTerm*, const Vocabulary*);
 bool eligibleForCP(const AggFunction&);
 
-bool eligibleForCP(const Term*, const AbstractStructure*);
+bool eligibleForCP(const Term*, const Structure*);
 
 }
 

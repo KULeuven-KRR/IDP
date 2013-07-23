@@ -18,7 +18,7 @@
 #include "lua.hpp" // TODO should move to cpp, but then have to remove templated addGlobal
 
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 class AbstractTheory;
 class DomainElement;
 class InternalArgument;
@@ -50,7 +50,7 @@ void checkedAddToGlobal(Namespace* ns);
 
 Vocabulary* vocabulary(InternalArgument*);
 AbstractTheory* theory(InternalArgument*);
-AbstractStructure* structure(InternalArgument*);
+Structure* structure(InternalArgument*);
 
 InternalArgument* call(const std::vector<std::string>&, const std::vector<std::vector<std::string>>&, const ParseInfo&);
 const DomainElement* funccall(std::string*, const std::vector<const DomainElement*>& tuple);

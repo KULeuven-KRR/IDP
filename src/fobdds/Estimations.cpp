@@ -30,7 +30,7 @@ using namespace std;
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-tablesize univNrAnswers(const fobddvarset& vars, const indexset& ind, const AbstractStructure* structure) {
+tablesize univNrAnswers(const fobddvarset& vars, const indexset& ind, const Structure* structure) {
 	vector<SortTable*> vst;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		vst.push_back(structure->inter((*it)->variable()->sort()));

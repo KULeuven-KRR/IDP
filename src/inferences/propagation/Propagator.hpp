@@ -33,7 +33,7 @@ public:
 	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
 	// Inspectors
-	virtual void applyPropagationToStructure(AbstractStructure* str, Vocabulary* outputvoc) const = 0;
+	virtual void applyPropagationToStructure(Structure* str, Vocabulary* outputvoc) const = 0;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 
@@ -95,7 +95,7 @@ public:
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
-	void applyPropagationToStructure(AbstractStructure* str, Vocabulary* outputvoc) const;
+	void applyPropagationToStructure(Structure* str, Vocabulary* outputvoc) const;
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 	GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;

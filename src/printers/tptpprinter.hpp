@@ -66,8 +66,8 @@ public:
 	}
 
 protected:
-	void visit(const AbstractStructure*) {
-		throw notyetimplemented("Converting AbstractStructure to tptp format.");
+	void visit(const Structure*) {
+		throw notyetimplemented("Converting Structure to tptp format.");
 	}
 	void visit(const PredTable*){
 		throw notyetimplemented("Converting PredTable to tptp format.");

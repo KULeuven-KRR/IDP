@@ -22,7 +22,7 @@
 #include "visitors/TheoryVisitor.hpp"
 
 class DomainElement;
-class AbstractStructure;
+class Structure;
 class AbstractTheory;
 class AbstractGroundTheory;
 class Sort;
@@ -51,7 +51,7 @@ class IVSet {
 
 private:
 	// Attributes
-	const AbstractStructure* structure_; //!< The structure over which this symmetry ranges
+	const Structure* structure_; //!< The structure over which this symmetry ranges
 	const std::set<const DomainElement*> elements_; //!< Elements which are permuted by the symmetry's
 	const std::set<Sort*> sorts_; //!< Sorts considered for the elements 
 	const std::set<PFSymbol*> relations_; //!< Relations which are permuted by the symmetry's
@@ -60,7 +60,7 @@ private:
 	std::pair<std::list<int>, std::list<int> > getSymmetricLiterals(AbstractGroundTheory*, const DomainElement*, const DomainElement*) const;
 
 public:
-	IVSet(const AbstractStructure*, const std::set<const DomainElement*>, const std::set<Sort*>, const std::set<PFSymbol*>);
+	IVSet(const Structure*, const std::set<const DomainElement*>, const std::set<Sort*>, const std::set<PFSymbol*>);
 	~IVSet() {
 	}
 
@@ -68,7 +68,7 @@ public:
 	// none should come here, class is immutable :)
 
 	// Inspectors
-	const AbstractStructure* getStructure() const;
+	const Structure* getStructure() const;
 	const std::set<const DomainElement*>& getElements() const;
 	const std::set<Sort*>& getSorts() const;
 	const std::set<PFSymbol*>& getRelations() const;
@@ -92,7 +92,7 @@ public:
 	std::ostream& put(std::ostream& output) const;
 };
 
-std::vector<const IVSet*> findIVSets(const AbstractTheory*, const AbstractStructure*, const Term*);
+std::vector<const IVSet*> findIVSets(const AbstractTheory*, const Structure*, const Term*);
 
 void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>, bool nbModelsEquivalent);
 
@@ -106,7 +106,7 @@ void addSymBreakingPredicates(AbstractGroundTheory*, std::vector<const IVSet*>, 
 class TheorySymmetryAnalyzer: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	const AbstractStructure* structure_;
+	const Structure* structure_;
 	std::set<Sort*> forbiddenSorts_;
 	std::set<const DomainElement*> forbiddenElements_;
 	std::set<PFSymbol*> usedRelations_;
@@ -115,12 +115,12 @@ private:
 	void markAsUnfitForSymmetry(Sort*);
 	void markAsUnfitForSymmetry(const DomainElement*);
 
-	const AbstractStructure* getStructure() const {
+	const Structure* getStructure() const {
 		return structure_;
 	}
 
 public:
-	TheorySymmetryAnalyzer(const AbstractStructure* s)
+	TheorySymmetryAnalyzer(const Structure* s)
 			: structure_(s) {
 /*		markAsUnfitForSymmetry(VocabularyUtils::intsort());
 		markAsUnfitForSymmetry(VocabularyUtils::floatsort());

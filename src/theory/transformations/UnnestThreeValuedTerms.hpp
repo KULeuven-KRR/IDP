@@ -18,7 +18,7 @@
 
 class Vocabulary;
 class Variable;
-class AbstractStructure;
+class Structure;
 class PFSymbol;
 class Formula;
 class PredForm;
@@ -61,7 +61,7 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t,const AbstractStructure* str, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
+	T execute(T t,const Structure* str, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
 		Assert(str!=NULL);
 		_definedsymbols = definedsymbols;
 		_structure = str;

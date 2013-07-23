@@ -177,7 +177,7 @@ EnumSetExpr* EnumSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 	return new EnumSetExpr(newsets, pi());
 }
 
-tablesize EnumSetExpr::maxSize(const AbstractStructure*) const {
+tablesize EnumSetExpr::maxSize(const Structure*) const {
 	tablesize t(TST_EXACT, 0);
 	for (auto i = getSets().cbegin(); i < getSets().cend(); ++i) {
 		t = t + (*i)->maxSize();
@@ -229,7 +229,7 @@ QuantSetExpr* QuantSetExpr::clone(const map<Variable*, Variable*>& mvv) const {
 	return new QuantSetExpr(newvars, newform, newterm, pi());
 }
 
-tablesize QuantSetExpr::maxSize(const AbstractStructure* structure) const {
+tablesize QuantSetExpr::maxSize(const Structure* structure) const {
 	Assert(not (structure == NULL));
 	auto t = tablesize(TST_EXACT, 1);
 	for (auto it = quantVars().cbegin(); it != quantVars().cend(); ++it) {

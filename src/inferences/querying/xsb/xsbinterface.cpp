@@ -8,7 +8,7 @@
 #include "common.hpp"
 #include "GlobalData.hpp"
 #include "theory/TheoryUtils.hpp"
-#include "structure/AbstractStructure.hpp"
+#include "structure/Structure.hpp"
 #include "theory/term.hpp"
 
 #include <cinterf.h>
@@ -24,7 +24,7 @@ XSBInterface* XSBInterface::instance() {
 	return xsb_instance;
 }
 
-void XSBInterface::setStructure(AbstractStructure* structure){
+void XSBInterface::setStructure(Structure* structure){
 	_pp = new PrologProgram(structure);
 	_structure = structure;
 }
@@ -49,7 +49,7 @@ PrologTerm atom2term(PredForm* pf) {
 	return term;
 }
 
-ElementTuple atom2tuple(PredForm* pf, AbstractStructure* s) {
+ElementTuple atom2tuple(PredForm* pf, Structure* s) {
 	ElementTuple tuple;
 	for (auto it = pf->args().begin(); it != pf->args().end(); ++it) {
 

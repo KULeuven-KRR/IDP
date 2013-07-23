@@ -15,7 +15,7 @@
 #include "commontypes.hpp"
 
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 class AbstractTheory;
 class Options;
 class UserProcedure;
@@ -39,7 +39,7 @@ private:
 							//!< Null-pointer if top of the hierarchy
 	std::map<std::string, Namespace*> _subspaces; //!< Map a name to the corresponding subspace
 	std::map<std::string, Vocabulary*> _vocabularies; //!< Map a name to the corresponding vocabulary
-	std::map<std::string, AbstractStructure*> _structures; //!< Map a name to the corresponding structure
+	std::map<std::string, Structure*> _structures; //!< Map a name to the corresponding structure
 	std::map<std::string, AbstractTheory*> _theories; //!< Map a name to the corresponding theory
 	std::map<std::string, UserProcedure*> _procedures; //!< Map a name+arity to the corresponding procedure
 	std::map<std::string, Query*> _queries; //!< Map a name to the corresponding query
@@ -94,7 +94,7 @@ public:
 	Namespace* subspace(const std::string&) const;
 	Vocabulary* vocabulary(const std::string&) const;
 	AbstractTheory* theory(const std::string&) const;
-	AbstractStructure* structure(const std::string&) const;
+	Structure* structure(const std::string&) const;
 	UserProcedure* procedure(const std::string&) const;
 	Query* query(const std::string&) const;
 	Term* term(const std::string&) const;
@@ -108,7 +108,7 @@ public:
 	const std::map<std::string, Vocabulary*>& vocabularies() const {
 		return _vocabularies;
 	}
-	const std::map<std::string, AbstractStructure*>& structures() const {
+	const std::map<std::string, Structure*>& structures() const {
 		return _structures;
 	}
 	const std::map<std::string, AbstractTheory*>& theories() const {
@@ -167,7 +167,7 @@ public:
 	// Mutators
 	void add(Vocabulary* v);
 	void add(Namespace* n);
-	void add(AbstractStructure* s);
+	void add(Structure* s);
 	void add(AbstractTheory* t);
 	void add(UserProcedure* l);
 	void add(const std::string& name, Query*);

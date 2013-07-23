@@ -50,7 +50,7 @@ bool isAggOrFunc(Term* t) {
 /**
  * Given functerm = dom/varterm, construct graph
  */
-PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi, const AbstractStructure* structure) {
+PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valueterm, const FormulaParseInfo& pi, const Structure* structure) {
 	Assert(not isAgg(valueterm) || isTwoValued(valueterm, structure));
 
 	Assert(isFunc(functerm));
@@ -63,7 +63,7 @@ PredForm* GraphFuncsAndAggs::makeFuncGraph(SIGN sign, Term* functerm, Term* valu
 /**
  * Given aggterm ~ dom/varterm, construct aggform
  */
-AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi, const AbstractStructure* structure) {
+AggForm* GraphFuncsAndAggs::makeAggForm(Term* valueterm, CompType comp, AggTerm* aggterm, const FormulaParseInfo& pi, const Structure* structure) {
 	Assert((not isFunc(valueterm) && not isAgg(valueterm)) || isTwoValued(valueterm, structure));
 	return new AggForm(SIGN::POS, valueterm, comp, aggterm, pi);
 }

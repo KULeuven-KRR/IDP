@@ -15,7 +15,7 @@
 #include "commandinterface.hpp"
 #include "inferences/querying/Query.hpp"
 
-typedef TypedInference<LIST(Query*, AbstractStructure*)> QueryInferenceBase;
+typedef TypedInference<LIST(Query*, Structure*)> QueryInferenceBase;
 class QueryInference: public QueryInferenceBase {
 public:
 	QueryInference()

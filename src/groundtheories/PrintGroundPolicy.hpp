@@ -62,7 +62,7 @@ public:
 		return *printer_;
 	}
 
-	void initialize(InteractivePrintMonitor* monitor, AbstractStructure* str, GroundTranslator* translator) {
+	void initialize(InteractivePrintMonitor* monitor, Structure* str, GroundTranslator* translator) {
 		monitor_ = monitor;
 		printer_ = Printer::create(*monitor);
 		//TODO translation option as argument to constructor

@@ -26,7 +26,7 @@
 
 using namespace std;
 
-const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f, AbstractStructure* s) {
+const FOBDD* FOBDDFactory::turnIntoBdd(const Formula* f, Structure* s) {
 	auto cf = f->cloneKeepVars();
 	cf = FormulaUtils::unnestPartialTerms(cf, Context::POSITIVE, s, _vocabulary);
 	cf->accept(this);

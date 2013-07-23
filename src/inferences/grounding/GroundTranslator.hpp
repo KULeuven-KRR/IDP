@@ -25,7 +25,7 @@ class CPBound;
 class LazyInstantiation;
 class TsSet;
 class Function;
-class AbstractStructure;
+class Structure;
 class GroundTerm;
 class CPTsBody;
 class SortTable;

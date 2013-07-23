@@ -21,7 +21,7 @@ void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver) 
 	t->setSolver(solver);
 }
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent) {
+void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent) {
 	switch (getGlobal()->getOptions()->symmetryBreaking()) {
 	case SymmetryBreaking::NONE:
 		break;

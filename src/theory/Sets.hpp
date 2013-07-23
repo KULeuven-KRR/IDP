@@ -19,7 +19,7 @@
 class QuantSetExpr;
 class tablesize;
 class Sort;
-class AbstractStructure;
+class Structure;
 
 /**
  * Base class for first-order set expressions
@@ -109,7 +109,7 @@ public:
 
 	Sort* sort() const;
 
-	virtual tablesize maxSize(const AbstractStructure* str = NULL) const = 0;
+	virtual tablesize maxSize(const Structure* str = NULL) const = 0;
 
 	bool contains(const Variable*) const;
 
@@ -151,7 +151,7 @@ public:
 		setSubSet(index, set);
 	}
 
-	tablesize maxSize(const AbstractStructure* str = NULL) const;
+	tablesize maxSize(const Structure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
 };
@@ -188,7 +188,7 @@ public:
 		addSubQuantVar(v);
 	}
 
-	tablesize maxSize(const AbstractStructure* str = NULL) const;
+	tablesize maxSize(const Structure* str = NULL) const;
 
 	std::ostream& put(std::ostream&) const;
 };

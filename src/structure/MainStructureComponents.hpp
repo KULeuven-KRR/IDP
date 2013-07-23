@@ -482,7 +482,7 @@ PredInter* createSmallestPredInter(PredTable* ct, PredTable* cf, bool known_twov
 
 std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation);
 
-class AbstractStructure;
+class Structure;
 
 class Sort;
 class Predicate;
@@ -552,7 +552,7 @@ public:
 };
 
 // Contents ownership to receiver
-std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& s);
+std::vector<Structure*> generateEnoughTwoValuedExtensions(const std::vector<Structure*>& s);
 
 /*********************
  * Auxiliary methods

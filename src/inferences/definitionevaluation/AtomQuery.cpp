@@ -25,7 +25,7 @@
 #include "theory/Query.hpp"
 #include "theory/TheoryUtils.hpp"
 
-bool AtomQuerying::queryAtom(Query* p, Theory* theory, AbstractStructure* structure) const {
+bool AtomQuerying::queryAtom(Query* p, Theory* theory, Structure* structure) const {
 
 	auto q = dynamic_cast<PredForm*>(p->query());
 	if(p == NULL){

@@ -248,7 +248,7 @@ std::ostream& operator<<(std::ostream&, const PFSymbol&);
 class PredGenerator;
 class PredInter;
 class PredInterGenerator;
-class AbstractStructure;
+class Structure;
 
 /**
  * \brief	Class to represent predicate symbols
@@ -295,7 +295,7 @@ public:
 	std::set<Sort*> allsorts() const;
 
 	// Built-in symbols
-	PredInter* interpretation(const AbstractStructure*) const;
+	PredInter* interpretation(const Structure*) const;
 
 	// Overloaded symbols
 	bool contains(const Predicate* p) const;
@@ -373,7 +373,7 @@ public:
 	unsigned int binding() const; //!< Returns binding strength
 	std::set<Sort*> allsorts() const;
 
-	FuncInter* interpretation(const AbstractStructure*) const;
+	FuncInter* interpretation(const Structure*) const;
 
 	// Overloaded symbols
 	bool contains(const Function* f) const;
@@ -461,7 +461,7 @@ Function* get(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc);
 Predicate* get(STDPRED type); // NOTE might not have an interpretation yet, as it might be overloaded
 Predicate* get(STDPRED type, Sort* sort);
 
-class AbstractStructure;
+class Structure;
 
 class Vocabulary {
 private:
@@ -477,16 +477,16 @@ private:
 
 	static Vocabulary* _std; //!< The standard vocabulary
 
-	std::set<AbstractStructure*> structures;
+	std::set<Structure*> structures;
 
 public:
 	Vocabulary(const std::string& name);
 	Vocabulary(const std::string& name, const ParseInfo& pi);
 
-	void addStructure(AbstractStructure* s) {
+	void addStructure(Structure* s) {
 		structures.insert(s);
 	}
-	void removeStructure(AbstractStructure* s) {
+	void removeStructure(Structure* s) {
 		structures.erase(s);
 	}
 

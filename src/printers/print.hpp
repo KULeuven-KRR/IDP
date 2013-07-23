@@ -24,7 +24,7 @@
 
 class Options;
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 class Namespace;
 class Formula;
 class AbstractTheory;
@@ -78,7 +78,7 @@ protected:
 	void visit(const AbstractTheory*);
 
 	virtual void visit(const Vocabulary*) = 0;
-	virtual void visit(const AbstractStructure*) = 0;
+	virtual void visit(const Structure*) = 0;
 	virtual void visit(const Query*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const GroundClause&) = 0;
@@ -109,7 +109,7 @@ public:
 
 	virtual void setTranslator(GroundTranslator*) {
 	}
-	virtual void setStructure(AbstractStructure*) {
+	virtual void setStructure(Structure*) {
 	}
 
 	template<typename T>
@@ -125,7 +125,7 @@ public:
 };
 
 // FIXME: these should get normal accept methods (but NOT THEORYvisitors!)
-template<> void Printer::print(const AbstractStructure* b);
+template<> void Printer::print(const Structure* b);
 template<> void Printer::print(const Namespace* b);
 template<> void Printer::print(const Vocabulary* b);
 template<> void Printer::print(const Query* b);

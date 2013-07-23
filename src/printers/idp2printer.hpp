@@ -64,7 +64,7 @@ public:
 		return ss.str();
 	}
 
-	void visit(const AbstractStructure* structure) {
+	void visit(const Structure* structure) {
 		Assert(isTheoryOpen());
 
 		printTab();

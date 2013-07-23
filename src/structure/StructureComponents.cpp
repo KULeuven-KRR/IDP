@@ -1300,7 +1300,7 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 	return new UnionInternalIterator(vti, _outtables, univ);
 }
 
-BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const AbstractStructure* str)
+BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const Structure* str)
 		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str) {
 #ifdef DEBUG
 	for(auto fobddvar: variables(bdd,manager)){
@@ -3751,7 +3751,7 @@ std::ostream& operator<<(std::ostream& stream, const PredInter& interpretation) 
 	return stream;
 }
 
-PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structure) {
+PredInter* InconsistentPredInterGenerator::get(const Structure* structure) {
 	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_predicate));
 	return new PredInter(emptytable, emptytable, false, false);
 }
@@ -3760,7 +3760,7 @@ PredInter* InconsistentPredInterGenerator::get(const AbstractStructure* structur
 EqualInterGenerator::~EqualInterGenerator() {
 	deleteList(generatedInters);
 }
-PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
+PredInter* EqualInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	EqualInternalPredTable* eip = new EqualInternalPredTable();
@@ -3772,7 +3772,7 @@ PredInter* EqualInterGenerator::get(const AbstractStructure* structure) {
 StrLessThanInterGenerator::~StrLessThanInterGenerator() {
 	deleteList(generatedInters);
 }
-PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
+PredInter* StrLessThanInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrLessInternalPredTable* eip = new StrLessInternalPredTable();
@@ -3784,7 +3784,7 @@ PredInter* StrLessThanInterGenerator::get(const AbstractStructure* structure) {
 StrGreaterThanInterGenerator::~StrGreaterThanInterGenerator() {
 	deleteList(generatedInters);
 }
-PredInter* StrGreaterThanInterGenerator::get(const AbstractStructure* structure) {
+PredInter* StrGreaterThanInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	StrGreaterInternalPredTable* eip = new StrGreaterInternalPredTable();
@@ -3887,12 +3887,12 @@ void FuncInter::put(std::ostream& stream) const {
 	}
 }
 
-FuncInter* InconsistentFuncInterGenerator::get(const AbstractStructure* structure) {
+FuncInter* InconsistentFuncInterGenerator::get(const Structure* structure) {
 	auto emptytable = new PredTable(new EnumeratedInternalPredTable(), structure->universe(_function));
 	return new FuncInter(new PredInter(emptytable, emptytable, false, false));
 }
 
-FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
+FuncInter* MinInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1, st));
 	ElementTuple t;
@@ -3903,7 +3903,7 @@ FuncInter* MinInterGenerator::get(const AbstractStructure* structure) {
 	return new FuncInter(ft);
 }
 
-FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
+FuncInter* MaxInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(1, st));
 	ElementTuple t;
@@ -3914,13 +3914,13 @@ FuncInter* MaxInterGenerator::get(const AbstractStructure* structure) {
 	return new FuncInter(ft);
 }
 
-FuncInter* SuccInterGenerator::get(const AbstractStructure* structure) {
+FuncInter* SuccInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2, st);
 	throw notyetimplemented("successor function");
 }
 
-FuncInter* InvSuccInterGenerator::get(const AbstractStructure* structure) {
+FuncInter* InvSuccInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	vector<SortTable*> univ(2, st);
 	throw notyetimplemented("successor function");
@@ -4008,10 +4008,10 @@ bool needMoreModels(unsigned int found) {
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		vector<AbstractStructure*>& extensions) {
+		vector<Structure*>& extensions) {
 // go over all saved structures and generate a new structure for each possible value for it
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
-	vector<AbstractStructure*> partialfalsestructs;
+	vector<Structure*> partialfalsestructs;
 	if (function->partial()) {
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {
 			CHECKTERMINATION;
@@ -4019,7 +4019,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		}
 	}
 
-	vector<AbstractStructure*> newstructs;
+	vector<Structure*> newstructs;
 	for (; not imageIterator.isAtEnd(); ++imageIterator) {
 		CHECKTERMINATION;
 		ElementTuple tuple(domainElementWithoutValue);
@@ -4045,11 +4045,11 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	Assert(extensions.size()>0);
 }
 
-std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original);
+std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original);
 
 // Contents ownership to receiver
-std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vector<AbstractStructure*>& partialstructures) {
-	auto result = std::vector<AbstractStructure*>();
+std::vector<Structure*> generateEnoughTwoValuedExtensions(const std::vector<Structure*>& partialstructures) {
+	auto result = std::vector<Structure*>();
 	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
 		if (not (*i)->approxTwoValued()) {
 			auto extensions = generateEnoughTwoValuedExtensions(*i);
@@ -4072,8 +4072,8 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(const std::vec
  * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
  * TODO refactor into clean methods!
  */
-std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStructure* original) {
-	vector<AbstractStructure*> extensions;
+std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
+	vector<Structure*> extensions;
 
 	extensions.push_back(original->clone());
 
@@ -4161,7 +4161,7 @@ std::vector<AbstractStructure*> generateEnoughTwoValuedExtensions(AbstractStruct
 				continue;
 			}
 
-			vector<AbstractStructure*> newstructs;
+			vector<Structure*> newstructs;
 			for (auto ext : extensions) {
 				CHECKTERMINATION;
 				if(not needMoreModels(newstructs.size())){

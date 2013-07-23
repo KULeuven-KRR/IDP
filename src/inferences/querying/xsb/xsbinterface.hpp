@@ -10,7 +10,7 @@
 class XSBInterface {
 private:
 	PrologProgram* _pp;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	void loadOpenSymbols();
 	void loadInterpretation(PFSymbol*);
 	void sendToXSB(std::string, bool);
@@ -21,7 +21,7 @@ private:
 
 public:
 	static XSBInterface* instance();
-	void setStructure(AbstractStructure* structure);
+	void setStructure(Structure* structure);
 	void reset();
 	void exit();
 	void loadDefinition(Definition*);
@@ -29,4 +29,4 @@ public:
 	bool query(PFSymbol*, ElementTuple);
 };
 
-ElementTuple atom2tuple(PredForm* pf, AbstractStructure* s);
+ElementTuple atom2tuple(PredForm* pf, Structure* s);

@@ -70,7 +70,7 @@ public:
 		throw notyetimplemented("Printing queries in ASP format");
 	}
 
-	void visit(const AbstractStructure* structure) {
+	void visit(const Structure* structure) {
 		Assert(isTheoryOpen());
 		if (not structure->isConsistent()) {
 			output() << "INCONSISTENT STRUCTURE";

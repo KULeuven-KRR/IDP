@@ -124,7 +124,7 @@ lua_State* getState() {
 }
 
 // Reference counters
-map<AbstractStructure*, unsigned int> _luastructures;
+map<Structure*, unsigned int> _luastructures;
 map<AbstractTheory*, unsigned int> _luatheories;
 map<Options*, unsigned int> _luaoptions;
 
@@ -136,7 +136,7 @@ map<AbstractTheory*, unsigned int>& get<AbstractTheory*>() {
 	return _luatheories;
 }
 template<>
-map<AbstractStructure*, unsigned int>& get<AbstractStructure*>() {
+map<Structure*, unsigned int>& get<Structure*>() {
 	return _luastructures;
 }
 template<>
@@ -269,7 +269,7 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		break;
 	}
 	case AT_STRUCTURE: {
-		auto ptr = (AbstractStructure**) lua_newuserdata(L, sizeof(AbstractStructure*));
+		auto ptr = (Structure**) lua_newuserdata(L, sizeof(Structure*));
 		(*ptr) = arg._value._structure;
 		luaL_getmetatable(L, toCString(arg._type));
 		lua_setmetatable(L, -2);
@@ -501,7 +501,7 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._funcinter = *(FuncInter**) lua_touserdata(L, arg);
 			break;
 		case AT_STRUCTURE:
-			ia._value._structure = *(AbstractStructure**) lua_touserdata(L, arg);
+			ia._value._structure = *(Structure**) lua_touserdata(L, arg);
 			break;
 		case AT_TABLEITERATOR:
 			ia._value._tableiterator = *(TableIterator**) lua_touserdata(L, arg);
@@ -827,7 +827,7 @@ int gcDomain(lua_State*) {
 	return 0;
 }
 int gcStructure(lua_State* L) {
-	return garbageCollect<AbstractStructure*>(L);
+	return garbageCollect<Structure*>(L);
 }
 
 /**
@@ -1185,7 +1185,7 @@ int funcinterIndex(lua_State* L) {
  * Index function for structures
  */
 int structureIndex(lua_State* L) {
-	AbstractStructure* structure = *(AbstractStructure**) lua_touserdata(L, 1);
+	Structure* structure = *(Structure**) lua_touserdata(L, 1);
 	InternalArgument symbol = createArgument(2, L);
 	switch (symbol._type) {
 	case AT_SORT: {
@@ -1281,7 +1281,7 @@ int namespaceIndex(lua_State* L) {
 		theo = ns->theory(str);
 		++counter;
 	}
-	AbstractStructure* structure = NULL;
+	Structure* structure = NULL;
 	if (ns->isStructure(str)) {
 		structure = ns->structure(str);
 		++counter;
@@ -1482,7 +1482,7 @@ int funcinterNewIndex(lua_State* L) {
  * NewIndex function for structures
  */
 int structureNewIndex(lua_State* L) {
-	auto structure = *(AbstractStructure**) lua_touserdata(L, 1);
+	auto structure = *(Structure**) lua_touserdata(L, 1);
 	InternalArgument index = createArgument(2, L);
 	InternalArgument value = createArgument(3, L);
 	switch (index._type) {
@@ -2251,7 +2251,7 @@ void addGlobal(UserProcedure* p) {
 	lua_setglobal(getState(), p->name().c_str());
 }
 
-AbstractStructure* structure(InternalArgument* arg) {
+Structure* structure(InternalArgument* arg) {
 	return arg->_type == AT_STRUCTURE ? arg->_value._structure : NULL;
 }
 AbstractTheory* theory(InternalArgument* arg) {

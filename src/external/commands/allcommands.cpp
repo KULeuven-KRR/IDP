@@ -86,7 +86,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintInference<LIST(Formula*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Term*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Vocabulary*)>>());
-	inferences.push_back(make_shared<PrintInference<LIST(AbstractStructure*)>>());
+	inferences.push_back(make_shared<PrintInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<PrintAsBDDInference>());
 	inferences.push_back(make_shared<ModelExpandInference>());
 	inferences.push_back(make_shared<NewOptionsInference>());
@@ -104,7 +104,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<CompletionInference>());
 	inferences.push_back(make_shared<CleanInference>());
 	inferences.push_back(make_shared<ChangeVocabularyInference>());
-	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractStructure*)>>());
+	inferences.push_back(make_shared<GetVocabularyInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractTheory*)>>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(Term*)>>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(Query*)>>());

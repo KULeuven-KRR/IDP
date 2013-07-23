@@ -4,19 +4,34 @@
  * Use of this software is governed by the GNU LGPLv3.0 license
  *
  * Written by Broes De Cat, Bart Bogaerts, Stef De Pooter, Johan Wittocx,
- * Jo Devriendt, Joachim Jansen and Pieter Van Hertum 
+ * Jo Devriendt, Joachim Jansen and Pieter Van Hertum
  * K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
 #pragma once
 
-#include "AbstractStructure.hpp"
+#include "common.hpp"
+#include "parseinfo.hpp"
 
+#include "Universe.hpp"
+
+class Function;
+class FuncInter;
+class Predicate;
+class PredInter;
+class PFSymbol;
+class Sort;
+class SortTable;
+class Vocabulary;
 class TableIterator;
 
-class Structure: public AbstractStructure {
+class Structure {
 private:
+	std::string _name; // The name of the structure
+	ParseInfo _pi; // The place where this structure was parsed.
+	Vocabulary* _vocabulary; // The vocabulary of the structure.
+
 	std::map<Sort*, SortTable*> _sortinter; //!< The domains of the structure.
 	std::map<Predicate*, PredInter*> _predinter; //!< The interpretations of the predicate symbols.
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
@@ -26,20 +41,24 @@ private:
 
 public:
 	Structure(const std::string& name, const ParseInfo& pi)
-			: AbstractStructure(name, pi) {
+			: _name(name),
+				_pi(pi),
+				_vocabulary(NULL) {
 	}
 	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
-			: AbstractStructure(name, pi) {
+			: _name(name),
+				_pi(pi),
+				_vocabulary(NULL) {
 		changeVocabulary(v);
 	}
 	~Structure();
 
 	// Mutators
-	virtual void notifyAddedToVoc(Sort* sort);
-	virtual void notifyAddedToVoc(PFSymbol* symbol);
-	virtual void changeVocabulary(Vocabulary* v); //!< CHANGE the vocabulary of the structure
+	void notifyAddedToVoc(Sort* sort);
+	void notifyAddedToVoc(PFSymbol* symbol);
+	void changeVocabulary(Vocabulary* v); //!< CHANGE the vocabulary of the structure
 
-	void addStructure(AbstractStructure*);
+	void addStructure(Structure*);
 
 	void changeInter(Sort* f, SortTable* i); // CHANGES the interpretation of f to i
 	void changeInter(Predicate* p, PredInter* i); // CHANGES the interpretation of p to i
@@ -54,28 +73,40 @@ public:
 	void checkAndAutocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
-	virtual bool hasInter(const Sort* s) const;
-	virtual SortTable* inter(const Sort* s) const; // Return the domain of s.
-	virtual PredInter* inter(const Predicate* p) const; // Return the interpretation of p.
-	virtual FuncInter* inter(const Function* f) const; // Return the interpretation of f.
-	virtual PredInter* inter(const PFSymbol* s) const; // Return the interpretation of s.
+	bool hasInter(const Sort* s) const;
+	SortTable* inter(const Sort* s) const; // Return the domain of s.
+	PredInter* inter(const Predicate* p) const; // Return the interpretation of p.
+	FuncInter* inter(const Function* f) const; // Return the interpretation of f.
+	PredInter* inter(const PFSymbol* s) const; // Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
 	bool isConsistent() const;
 
-	virtual const std::map<Sort*, SortTable*>& getSortInters() const {
+	const std::map<Sort*, SortTable*>& getSortInters() const {
 		return _sortinter;
 	}
-	virtual const std::map<Predicate*, PredInter*>& getPredInters() const {
+	const std::map<Predicate*, PredInter*>& getPredInters() const {
 		return _predinter;
 	}
-	virtual const std::map<Function*, FuncInter*>& getFuncInters() const {
+	const std::map<Function*, FuncInter*>& getFuncInters() const {
 		return _funcinter;
 	}
 
 	void makeTwoValued();
 
 	Universe universe(const PFSymbol*) const;
+
+	const std::string& name() const {
+		return _name;
+	}
+	ParseInfo pi() const {
+		return _pi;
+	}
+	Vocabulary* vocabulary() const {
+		return _vocabulary;
+	}
+
+	void put(std::ostream& s) const;
 
 private:
 	void autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter);

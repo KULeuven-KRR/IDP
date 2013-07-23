@@ -15,14 +15,14 @@
 #include "UnnestTerms.hpp"
 #include "IncludeComponents.hpp"
 
-class AbstractStructure;
+class Structure;
 class Term;
 
 class UnnestFuncsAndAggs: public UnnestTerms {
 	VISITORFRIENDS()
 public:
 	template<typename T>
-	T execute(T t, const AbstractStructure* str, Context con) {
+	T execute(T t, const Structure* str, Context con) {
 		auto voc = (str != NULL) ? str->vocabulary() : NULL;
 		return UnnestTerms::execute(t, con, str, voc);
 	}

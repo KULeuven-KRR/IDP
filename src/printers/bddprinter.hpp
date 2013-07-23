@@ -110,7 +110,7 @@ public:
 	virtual void visit(const Vocabulary*) {
 		throw IdpException("Vocabularies cannot be printed as BDDs");
 	}
-	virtual void visit(const AbstractStructure*) {
+	virtual void visit(const Structure*) {
 		throw IdpException("Structures cannot be printed as BDDs");
 	}
 	void visit(const PredTable*){

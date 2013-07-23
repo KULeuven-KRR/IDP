@@ -46,7 +46,7 @@ void Namespace::add(Vocabulary* v) {
 void Namespace::add(Namespace* n) {
 	_subspaces[n->name()] = n;
 }
-void Namespace::add(AbstractStructure* s) {
+void Namespace::add(Structure* s) {
 	_structures[s->name()] = s;
 }
 void Namespace::add(AbstractTheory* t) {
@@ -131,7 +131,7 @@ Term* Namespace::term(const string& tn) const {
 	return ((_terms.find(tn))->second);
 }
 
-AbstractStructure* Namespace::structure(const string& sn) const {
+Structure* Namespace::structure(const string& sn) const {
 	if(not isStructure(sn)){
 		stringstream ss;
 		ss <<"The structure " <<sn <<" does not exist in namespace " <<name() <<"\n";

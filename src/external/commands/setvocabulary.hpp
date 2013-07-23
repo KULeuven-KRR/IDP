@@ -15,7 +15,7 @@
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
 
-typedef TypedInference<LIST(AbstractStructure*, Vocabulary*)> ChangeVocabularyInferenceBase;
+typedef TypedInference<LIST(Structure*, Vocabulary*)> ChangeVocabularyInferenceBase;
 class ChangeVocabularyInference: public ChangeVocabularyInferenceBase {
 public:
 	ChangeVocabularyInference()

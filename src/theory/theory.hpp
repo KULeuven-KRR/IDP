@@ -28,7 +28,7 @@
 class Function;
 class PFSymbol;
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 class VarTerm;
 class FuncTerm;
 class DomainTerm;

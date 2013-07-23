@@ -48,7 +48,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto table = get<0>(args);
-		std::vector<AbstractStructure*> structures;
+		std::vector<Structure*> structures;
 		for(auto i=table->cbegin(); i<table->cend(); ++i){
 			structures.push_back((*i).structure());
 		}

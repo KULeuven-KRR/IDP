@@ -426,7 +426,7 @@ void GrounderFactory::visit(const Theory* theory) {
 	_topgrounder = new BoolGrounder(getGrounding(), children, SIGN::POS, true, getContext());
 }
 
-std::vector<SortTable*> getArgTables(Function* function, AbstractStructure* structure) {
+std::vector<SortTable*> getArgTables(Function* function, Structure* structure) {
 	vector<SortTable*> tables;
 	for (auto i = function->sorts().cbegin(); i < function->sorts().cend() - 1; ++i) {
 		tables.push_back(structure->inter(*i));
@@ -842,7 +842,7 @@ void GrounderFactory::visit(const EquivForm* ef) {
 	}
 }
 
-AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure) {
+AggForm* GrounderFactory::rewriteSumOrCardIntoSum(AggForm* af, Structure* structure) {
 	// Rewrite card op func, card op var, sum op func, sum op var into sum op 0
 	if (af->getBound()->type() == TermType::FUNC or af->getBound()->type() == TermType::VAR) {
 		if (af->getAggTerm()->function() == AggFunction::CARD) {
@@ -1269,7 +1269,7 @@ DomElemContainer* GrounderFactory::createVarMapping(Variable* const var) {
 }
 
 InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern,
-		GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
+		GenerateBDDAccordingToBounds* symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating generator for truthtype " << print(generatortype) << " for subformula " << print(subformula);
 		pushtab();
@@ -1296,7 +1296,7 @@ InstGenerator* GrounderFactory::getGenerator(Formula* subformula, TruthType gene
 // * Either they are trivial (true or false) and the approximation is uselesss
 // * Or there is a reason why they are not trivial: they are used in the propagation, but no LUP has been done on them!!!
 InstChecker* GrounderFactory::getChecker(Formula* subformula, TruthType checkertype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure,
-		const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
+		const Structure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 0) {
 		clog << "Creating Checker for truthtype " << print(checkertype) << " for subformula " << print(subformula);
 		pushtab();
@@ -1331,7 +1331,7 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 }
 
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
-		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
+		const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	auto tempsubformula = subformula->clone();
 	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
@@ -1352,7 +1352,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 }
 
 const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
-		const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const AbstractStructure* structure) {
+		const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const Structure* structure) {
 	fobddvarset bddvars;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
 		bddvars.insert(manager->getVariable(*it));
@@ -1367,7 +1367,7 @@ const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, FOBDDMan
 	return bdd;
 }
 
-const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars, const AbstractStructure* structure,
+const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const vector<Variable*>& fovars, const Structure* structure,
 		GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols) {
 	if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 5) {
 		clog << tabs() << "improving the following " << (approxastrue ? "maketrue" : "makefalse") << " BDD:" << "\n";

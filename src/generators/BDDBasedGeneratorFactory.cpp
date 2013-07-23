@@ -327,7 +327,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
  * with x a variable with the right pattern
  * If it is not possible, the original atom is returned
  */
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const AbstractStructure* structure) {
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const Structure* structure) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
 		clog << "Trying to solve: " << print(atom) << "\n";
 	}
@@ -432,7 +432,7 @@ PredForm* graphOneFunction(PredForm* atom) {
  * In general, it tries to rewrite F(x,y) = z to ... = v with v some output variable.
  * If not such rewriting is possible, this method simply graphs the function.
  */
-PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, const AbstractStructure* structure) {
+PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, const Structure* structure) {
 	Assert((atom->subterms()[0] == lhs&& atom->subterms()[1] == rhs)||(atom->subterms()[1] == lhs&& atom->subterms()[0] == rhs));
 	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT, structure);
 	if (atom == newatom) {
@@ -460,7 +460,7 @@ PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Patt
 //  (B)		t = F(t1,...,tn),
 //  (C)		(t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m) = 0,
 //  (D)		0 = (t_1 * x_11 * ... * x_1n_1) + ... + (t_m * x_m1 * ... * x_mn_m).
-PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars, const AbstractStructure* structure) {
+PredForm *BDDToGenerator::smartGraphFunction(PredForm* atom, const vector<Pattern> & pattern, const vector<Variable*> & atomvars, const Structure* structure) {
 	Assert(is(atom->symbol(), STDPRED::EQ));
 	Assert(FormulaUtils::containsFuncTermsOutsideOfSets(atom));
 	if (isa<DomainTerm>(*(atom->subterms()[0]))) { // Case (B) or (D)
@@ -508,7 +508,7 @@ bool checkInput(const vector<Pattern>& pattern, const vector<const DomElemContai
 
 }
 InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+		const vector<Variable*>& atomvars, const Structure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, atomvars, universe));
 	//Check the precondition
 	Assert(not FormulaUtils::containsFuncTerms(atom) && not FormulaUtils::containsAggTerms(atom));
@@ -570,7 +570,7 @@ InstGenerator* BDDToGenerator::createFromSimplePredForm(PredForm* atom, const ve
 }
 
 vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origatom, BRANCH & branchToGenerate, varset free_vars,
-		const AbstractStructure *& structure) {
+		const Structure *& structure) {
 	vector<Formula*> orderedconjunction;
 	while (not atoms_to_order.empty()) {
 		Formula *bestatom = NULL;
@@ -612,7 +612,7 @@ vector<Formula*> orderSubformulas(set<Formula*> atoms_to_order, Formula *& origa
 }
 
 vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vector<Pattern> & pattern, const vector<const DomElemContainer*> & vars,
-		const vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const AbstractStructure *structure, vector<Formula*> conjunction,
+		const vector<Variable*> & atomvars, const Universe & universe, QuantForm *quantform, const Structure *structure, vector<Formula*> conjunction,
 		Formula *origatom, BRANCH branchToGenerate) {
 	vector<InstGenerator*> generators;
 	vector<Pattern> branchpattern = pattern;
@@ -664,7 +664,7 @@ vector<InstGenerator*> BDDToGenerator::turnConjunctionIntoGenerators(const vecto
  * TODO can only call on specific predforms
  */
 InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<Variable*>& atomvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+		const vector<Variable*>& atomvars, const Structure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, atomvars, universe));
 	auto newatom = atom->clone();
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 3) {
@@ -763,7 +763,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 }
 
 InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const vector<Pattern>& pattern, const vector<const DomElemContainer*>& vars,
-		const vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+		const vector<const FOBDDVariable*>& fobddvars, const Structure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fobddvars, universe));
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
 		clog << "Creating generator for kernel " << print(kernel) << "\n";
@@ -862,7 +862,7 @@ InstGenerator* BDDToGenerator::createFromKernel(const FOBDDKernel* kernel, const
 }
 
 InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
-		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+		const std::vector<Variable*>& fovars, const Structure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	//Now, make all variables input and turn the aggterm into bdd.
 	Assert(checkInput(pattern, vars, fovars, universe));
 	BddGeneratorData data;
@@ -883,7 +883,7 @@ InstGenerator* BDDToGenerator::createFromAggForm(AggForm* af, const std::vector<
 }
 
 InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars,
-		const std::vector<Variable*>& fovars, const AbstractStructure* structure, BRANCH branchToGenerate, const Universe& universe) {
+		const std::vector<Variable*>& fovars, const Structure* structure, BRANCH branchToGenerate, const Universe& universe) {
 	Assert(checkInput(pattern, vars, fovars, universe));
 
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
@@ -900,7 +900,7 @@ InstGenerator* BDDToGenerator::createFromFormula(Formula* f, const std::vector<P
 }
 
 InstGenerator* BDDToGenerator::createFromAggKernel(const FOBDDAggKernel* ak, const std::vector<Pattern>& pattern,
-		const std::vector<const DomElemContainer*>& vars, const std::vector<const FOBDDVariable*>& fobddvars, const AbstractStructure* structure,
+		const std::vector<const DomElemContainer*>& vars, const std::vector<const FOBDDVariable*>& fobddvars, const Structure* structure,
 		BRANCH branchToGenerate, const Universe& universe) {
 	//First, we create a generator for all the free variables (that are output), since the AggregateGenerator assumes everything input
 	//EXCEPTION: if left of the aggform is one of those variables

@@ -55,7 +55,7 @@ void Printer::visit(const Formula* f) {
 }
 
 template<>
-void Printer::print(const AbstractStructure* b) {
+void Printer::print(const Structure* b) {
 	visit(b);
 }
 template<>

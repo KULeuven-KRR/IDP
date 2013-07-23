@@ -4,7 +4,7 @@
  * Use of this software is governed by the GNU LGPLv3.0 license
  *
  * Written by Broes De Cat, Bart Bogaerts, Stef De Pooter, Johan Wittocx,
- * Jo Devriendt, Joachim Jansen and Pieter Van Hertum 
+ * Jo Devriendt, Joachim Jansen and Pieter Van Hertum
  * K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
@@ -15,6 +15,7 @@
 #include "utils/ListUtils.hpp"
 #include "insert.hpp"
 #include "structure/StructureComponents.hpp"
+#include "printers/idpprinter.hpp"
 
 using namespace std;
 
@@ -29,6 +30,14 @@ Structure::~Structure() {
 		delete (it->second);
 	}
 	deleteList(_intersToDelete);
+	changeVocabulary(NULL);
+}
+
+void Structure::put(std::ostream& s) const {
+	auto p = IDPPrinter<std::ostream>(s);
+	p.startTheory();
+	p.visit(this);
+	p.endTheory();
 }
 
 Structure* Structure::clone() const {
@@ -92,7 +101,15 @@ void Structure::notifyAddedToVoc(PFSymbol* symbol){
  * Empty tables are created for symbols that occur in the new vocabulary, but did not occur in the old one.
  */
 void Structure::changeVocabulary(Vocabulary* v) {
-	AbstractStructure::changeVocabulary(v);
+    if (v != _vocabulary) {
+            if (_vocabulary != NULL) {
+                    _vocabulary->removeStructure(this);
+            }
+            _vocabulary = v;
+            if (_vocabulary != NULL) {
+                    _vocabulary->addStructure(this);
+            }
+    }
 
 	// Delete tables for symbols that do not occur anymore
 	for (auto it = _sortinter.begin(); it != _sortinter.end();) {
@@ -314,7 +331,7 @@ void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 	scores[s] = sc;
 }
 
-void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, AbstractStructure* structure) {
+void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, Structure* structure) {
 	if (not pt->approxFinite()) {
 		return;
 	}
@@ -451,7 +468,7 @@ void Structure::checkAndAutocomplete() {
 	}
 }
 
-void Structure::addStructure(AbstractStructure*) {
+void Structure::addStructure(Structure*) {
 	throw notyetimplemented("Add a structure to another one.");
 }
 

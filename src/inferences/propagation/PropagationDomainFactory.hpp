@@ -24,7 +24,7 @@ class PredForm;
 class Variable;
 class PredInter;
 class FOPropBDDDomain;
-class AbstractStructure;
+class Structure;
 class FOPropTableDomain;
 
 template<class DomainType> struct ThreeValuedDomain;
@@ -49,7 +49,7 @@ public:
 	virtual PropagatorDomain* disjunction(PropagatorDomain*, PropagatorDomain*) const = 0;
 	virtual PropagatorDomain* substitute(PropagatorDomain*, const std::map<Variable*, Variable*>&) const = 0;
 	virtual bool approxequals(PropagatorDomain*, PropagatorDomain*) const = 0; //!< Checks if two domains are equal
-	virtual PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<PropagatorDomain>&, AbstractStructure*) const = 0;
+	virtual PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<PropagatorDomain>&, Structure*) const = 0;
 	virtual std::ostream& put(std::ostream&, PropagatorDomain*) const = 0;
 
 	// Checks whether domain is a possible domain for formula
@@ -78,7 +78,7 @@ public:
 	FOPropBDDDomain* substitute(FOPropBDDDomain*, const std::map<Variable*, Variable*>&) const;
 	bool approxequals(FOPropBDDDomain*, FOPropBDDDomain*) const;
 	//Returns the interpretation of a threevalueddomain in a given structure.
-	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, AbstractStructure*) const;
+	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropBDDDomain>&, Structure*) const;
 	std::ostream& put(std::ostream&, FOPropBDDDomain*) const;
 
 	// Valid iff the free variables of the domain are a subset of the free variables of the formula
@@ -87,9 +87,9 @@ public:
 
 class FOPropTableDomainFactory: public FOPropDomainFactory<FOPropTableDomain> {
 private:
-	AbstractStructure* _structure;
+	Structure* _structure;
 public:
-	FOPropTableDomainFactory(AbstractStructure*);
+	FOPropTableDomainFactory(Structure*);
 	FOPropTableDomain* trueDomain(const Formula*) const;
 	FOPropTableDomain* falseDomain(const Formula*) const;
 	FOPropTableDomain* formuladomain(const Formula*) const;
@@ -102,7 +102,7 @@ public:
 	FOPropTableDomain* substitute(FOPropTableDomain*, const std::map<Variable*, Variable*>&) const;
 	bool equals(FOPropTableDomain*, FOPropTableDomain*) const;
 	bool approxequals(FOPropTableDomain*, FOPropTableDomain*) const;
-	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, AbstractStructure*) const;
+	PredInter* inter(const std::vector<Variable*>&, const ThreeValuedDomain<FOPropTableDomain>&, Structure*) const;
 	std::ostream& put(std::ostream&, FOPropTableDomain*) const;
 
 	virtual bool isValidAsDomainFor(const FOPropTableDomain*, const Formula*) const {

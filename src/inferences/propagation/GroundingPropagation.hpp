@@ -30,7 +30,7 @@
  */
 class GroundingPropagation {
 public:
-	std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	std::vector<Structure*> propagate(AbstractTheory* theory, Structure* structure) {
 		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
 
 		//Set MinisatID solver options
@@ -62,7 +62,7 @@ public:
 		delete (mx);
 
 		if (not result->isConsistent()) {
-			return std::vector<AbstractStructure*> { };
+			return std::vector<Structure*> { };
 		}
 		return {result};
 	}

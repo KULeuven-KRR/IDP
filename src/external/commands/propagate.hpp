@@ -18,7 +18,7 @@
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/propagation/OptimalPropagation.hpp"
 
-InternalArgument postProcess(std::vector<AbstractStructure*> sols) {
+InternalArgument postProcess(std::vector<Structure*> sols) {
 	if (sols.size() == 0) {
 		return InternalArgument();
 	}

@@ -61,7 +61,7 @@ using namespace std;
 
 /* TermUtils */
 namespace TermUtils {
-bool approxTwoValued(const Term* t, const AbstractStructure* str) {
+bool approxTwoValued(const Term* t, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(t, str);
 }
 
@@ -78,7 +78,7 @@ void deriveSorts(Vocabulary* voc, Term* term) {
 	transform<DeriveSorts>(term, voc, true);
 }
 
-ElementTuple deriveTermBounds(const Term* term, const AbstractStructure* str) {
+ElementTuple deriveTermBounds(const Term* term, const Structure* str) {
 	return transform<DeriveTermBounds, ElementTuple>(term, str);
 }
 
@@ -86,11 +86,11 @@ bool isPartial(Term* term) {
 	return transform<CheckPartialTerm, bool>(term);
 }
 
-bool isFactor(const Term* term, const AbstractStructure* structure) {
+bool isFactor(const Term* term, const Structure* structure) {
 	return approxTwoValued(term, structure);
 }
 
-bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structure) {
+bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure) {
 	if (term->subterms().size() == 2 and FuncUtils::isIntProduct(term->function(), structure->vocabulary())) {
 		for (auto it = term->subterms().cbegin(); it != term->subterms().cend(); ++it) {
 			if (isFactor(*it, structure)) {
@@ -105,11 +105,11 @@ bool isTermWithIntFactor(const FuncTerm* term, const AbstractStructure* structur
 
 /* SetUtils */
 namespace SetUtils {
-bool approxTwoValued(const SetExpr* exp, const AbstractStructure* str) {
+bool approxTwoValued(const SetExpr* exp, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation) {
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation) {
 	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, definedsymbols, cpsupport, cpablerelation);
 }
 }
@@ -137,11 +137,11 @@ void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, const AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, definedsymbols, cpsupport);
 }
-Rule* unnestNonVarHeadTerms(Rule* rule, const AbstractStructure* structure, Context context){
-	return transform<UnnestTerms, Rule*, Rule, Context, const AbstractStructure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
+Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context){
+	return transform<UnnestTerms, Rule*, Rule, Context, const Structure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
 }
 }
 
@@ -158,7 +158,7 @@ void addFuncConstraints(Term* term, Vocabulary* voc, std::map<Function*, Formula
 	transform<AddFuncConstraints, Term, Vocabulary*, std::map<Function*, Formula*>&, bool>(term, voc, funcconstraints, alsoCPableFunctions);
 }
 
-bool approxTwoValued(const Formula* f, AbstractStructure* str) {
+bool approxTwoValued(const Formula* f, Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(f, str);
 }
 
@@ -186,15 +186,15 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
-const PredForm* findUnknownBoundLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator, Context& context) {
+const PredForm* findUnknownBoundLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator, Context& context) {
 	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f, structure,
+	return transform<FindUnknownBoundLiteral, const PredForm*, const Formula, const Structure*, const GroundTranslator*, Context&>(f, structure,
 			translator, context);
 }
-std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const AbstractStructure* structure, const GroundTranslator* translator,
+std::vector<const PredForm*> findDoubleDelayLiteral(const Formula* f, const Structure* structure, const GroundTranslator* translator,
 		Context& context) {
 	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
-	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const AbstractStructure*, const GroundTranslator*, Context&>(f,
+	return transform<FindDoubleDelayLiteral, std::vector<const PredForm*>, const Formula, const Structure*, const GroundTranslator*, Context&>(f,
 			structure, translator, context);
 }
 
@@ -207,7 +207,7 @@ Formula* flatten(Formula* f) {
 	return transform<Flatten, Formula*>(f);
 }
 
-Formula* graphFuncsAndAggs(Formula* f, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+Formula* graphFuncsAndAggs(Formula* f, const Structure* str, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Formula*>(f, str, unnestall, cpsupport, con);
 }
 
@@ -245,7 +245,7 @@ Theory* skolemize(Theory* t) {
 	return transform<Skolemize, Theory*>(t, t->vocabulary());
 }
 
-Theory* sharedTseitinTransform(Theory* t, AbstractStructure* s) {
+Theory* sharedTseitinTransform(Theory* t, Structure* s) {
 	return transform<IntroduceSharedTseitins, Theory*>(t, s);
 }
 
@@ -253,11 +253,11 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 	return transform<SubstituteTerm, Formula*>(f, t, v);
 }
 
-Formula* unnestFuncsAndAggs(Formula* f, const AbstractStructure* str, Context con) {
+Formula* unnestFuncsAndAggs(Formula* f, const Structure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
 }
 
-Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const AbstractStructure* str, Context con) {
+Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const Structure* str, Context con) {
 	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
 }
 
@@ -270,23 +270,23 @@ Formula* unnestDomainTermsFromNonBuiltins(Formula* f) {
 }
 
 
-Formula* unnestPartialTerms(Formula* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
+Formula* unnestPartialTerms(Formula* f, Context con, const Structure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
 }
 
-AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
+AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, const Structure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, AbstractTheory*>(f, con, str, voc);
 }
 
-Formula* unnestTerms(Formula* f, Context con, const AbstractStructure* str, Vocabulary* voc) {
+Formula* unnestTerms(Formula* f, Context con, const Structure* str, Vocabulary* voc) {
 	return transform<UnnestTerms, Formula*>(f, con, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, const AbstractStructure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, definedsymbols, cpsupport);
 }
 
-void addCompletion(AbstractTheory* t, const AbstractStructure* s) {
+void addCompletion(AbstractTheory* t, const Structure* s) {
 	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);
 }
@@ -301,10 +301,10 @@ void flatten(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-Theory* graphFuncsAndAggs(Theory* t, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+Theory* graphFuncsAndAggs(Theory* t, const Structure* str, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Theory*>(t, str, unnestall, cpsupport, con);
 }
-AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, bool unnestall, bool cpsupport, Context con) {
+AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, unnestall, cpsupport, con);
 }
 
@@ -336,11 +336,11 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const AbstractStructure* str, Context con) {
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str, Context con) {
 	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
 }
 
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const AbstractStructure* str, Context con) {
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const Structure* str, Context con) {
 	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
 }
 
@@ -355,7 +355,7 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory* t) {
  return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
  }*/
 
-void unnestTerms(AbstractTheory* t, Context con, const AbstractStructure* str, Vocabulary* voc) {
+void unnestTerms(AbstractTheory* t, Context con, const Structure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
 	Assert(newt==t);
 }
@@ -400,7 +400,7 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	return at;
 }
 
-double estimatedCostAll(Formula* query, const varset& freevars /*Shouldn't this be outvars?*/, bool inverse, const AbstractStructure* structure) {
+double estimatedCostAll(Formula* query, const varset& freevars /*Shouldn't this be outvars?*/, bool inverse, const Structure* structure) {
 	FOBDDManager manager;
 	FOBDDFactory factory(&manager);
 	auto bdd = factory.turnIntoBdd(query);

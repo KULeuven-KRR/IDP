@@ -39,7 +39,7 @@ class DomainAtomFactory;
 class PFSymbol;
 class Variable;
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 
 class DomainAtom {
 private:
@@ -590,16 +590,16 @@ public:
 
 class FOBDDManager;
 class FOBDD;
-class AbstractStructure;
+class Structure;
 
 class BDDInternalPredTable: public InternalPredTable {
 private:
 	FOBDDManager* _manager;
 	const FOBDD* _bdd;
 	std::vector<Variable*> _vars;
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 public:
-	BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, const AbstractStructure*);
+	BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, const Structure*);
 	~BDDInternalPredTable() {
 	}
 
@@ -612,7 +612,7 @@ public:
 	const std::vector<Variable*>& vars() const {
 		return _vars;
 	}
-	const AbstractStructure* structure() const {
+	const Structure* structure() const {
 		return _structure;
 	}
 
@@ -1638,11 +1638,11 @@ public:
  Interpretations
  *********************/
 
-class AbstractStructure;
+class Structure;
 
 class PredInterGenerator {
 public:
-	virtual PredInter* get(const AbstractStructure* structure) = 0;
+	virtual PredInter* get(const Structure* structure) = 0;
 	virtual ~PredInterGenerator() {
 	}
 };
@@ -1657,7 +1657,7 @@ public:
 	~SinglePredInterGenerator() {
 		delete (_inter);
 	}
-	PredInter* get(const AbstractStructure*) {
+	PredInter* get(const Structure*) {
 		return _inter;
 	}
 };
@@ -1672,7 +1672,7 @@ public:
 	InconsistentPredInterGenerator(Predicate* predicate) :
 			_predicate(predicate) {
 	}
-	PredInter* get(const AbstractStructure* structure);
+	PredInter* get(const Structure* structure);
 };
 
 class EqualInterGenerator: public PredInterGenerator {
@@ -1684,7 +1684,7 @@ public:
 			_sort(sort) {
 	}
 	~EqualInterGenerator();
-	PredInter* get(const AbstractStructure* structure);
+	PredInter* get(const Structure* structure);
 };
 
 class StrLessThanInterGenerator: public PredInterGenerator {
@@ -1696,7 +1696,7 @@ public:
 			_sort(sort) {
 	}
 	~StrLessThanInterGenerator();
-	PredInter* get(const AbstractStructure* structure);
+	PredInter* get(const Structure* structure);
 };
 
 class StrGreaterThanInterGenerator: public PredInterGenerator {
@@ -1708,7 +1708,7 @@ public:
 			_sort(sort) {
 	}
 	~StrGreaterThanInterGenerator();
-	PredInter* get(const AbstractStructure* structure);
+	PredInter* get(const Structure* structure);
 };
 
 class PredInterGeneratorGenerator {
@@ -1735,7 +1735,7 @@ public:
 
 class FuncInterGenerator {
 public:
-	virtual FuncInter* get(const AbstractStructure* structure) = 0;
+	virtual FuncInter* get(const Structure* structure) = 0;
 	virtual ~FuncInterGenerator() {
 	}
 };
@@ -1750,7 +1750,7 @@ public:
 	~SingleFuncInterGenerator() {
 		delete (_inter);
 	}
-	FuncInter* get(const AbstractStructure*) {
+	FuncInter* get(const Structure*) {
 		return _inter;
 	}
 };
@@ -1762,7 +1762,7 @@ public:
 	InconsistentFuncInterGenerator(Function* function) :
 			_function(function) {
 	}
-	FuncInter* get(const AbstractStructure* structure);
+	FuncInter* get(const Structure* structure);
 };
 
 class OneSortInterGenerator: public FuncInterGenerator {
@@ -1779,7 +1779,7 @@ public:
 	MinInterGenerator(Sort* sort) :
 			OneSortInterGenerator(sort) {
 	}
-	FuncInter* get(const AbstractStructure* structure);
+	FuncInter* get(const Structure* structure);
 };
 
 class MaxInterGenerator: public OneSortInterGenerator {
@@ -1787,7 +1787,7 @@ public:
 	MaxInterGenerator(Sort* sort) :
 			OneSortInterGenerator(sort) {
 	}
-	FuncInter* get(const AbstractStructure* structure);
+	FuncInter* get(const Structure* structure);
 };
 
 class SuccInterGenerator: public OneSortInterGenerator {
@@ -1795,7 +1795,7 @@ public:
 	SuccInterGenerator(Sort* sort) :
 			OneSortInterGenerator(sort) {
 	}
-	FuncInter* get(const AbstractStructure* structure);
+	FuncInter* get(const Structure* structure);
 };
 
 class InvSuccInterGenerator: public OneSortInterGenerator {
@@ -1803,7 +1803,7 @@ public:
 	InvSuccInterGenerator(Sort* sort) :
 			OneSortInterGenerator(sort) {
 	}
-	FuncInter* get(const AbstractStructure* structure);
+	FuncInter* get(const Structure* structure);
 };
 
 class FuncInterGeneratorGenerator {

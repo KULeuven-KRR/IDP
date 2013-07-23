@@ -16,7 +16,7 @@
 
 #include "IncludeComponents.hpp"
 
-class AbstractStructure;
+class Structure;
 class Term;
 
 class UnnestDomainTerms: public UnnestTerms {

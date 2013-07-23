@@ -27,7 +27,7 @@
 class SymbolicPropagation {
 public:
 	// TODO: free allocated memory
-	std::vector<AbstractStructure*> propagate(AbstractTheory* theory, AbstractStructure* structure) {
+	std::vector<Structure*> propagate(AbstractTheory* theory, Structure* structure) {
 		auto result = structure->clone();
 		auto mpi = propagateVocabulary(theory, result);
 		auto propagator = createPropagator(theory, result, mpi);

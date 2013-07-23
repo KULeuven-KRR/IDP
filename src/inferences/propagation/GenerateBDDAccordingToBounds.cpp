@@ -54,7 +54,7 @@ GenerateBDDAccordingToBounds::~GenerateBDDAccordingToBounds() {
 	}
 }
 
-const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type, const AbstractStructure* structure) {
+const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type, const Structure* structure) {
 	auto oldstructure = _structure;
 	_structure = structure;
 	_type = type;

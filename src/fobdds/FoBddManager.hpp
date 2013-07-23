@@ -41,7 +41,7 @@ class Variable;
 class Sort;
 class Formula;
 class Term;
-class AbstractStructure;
+class Structure;
 class DomainTerm;
 class DomainElement;
 class tablesize;
@@ -119,7 +119,7 @@ private:
 	std::map<const FOBDDKernel*, std::map<const FOBDD*, std::map<const FOBDD*, const FOBDD*> > > _ifthenelsetable;
 	std::map<Sort*, std::map<const FOBDD*, const FOBDD*> > _quanttable;
 	double getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
-			const AbstractStructure* structure, double weightPerAns);
+			const Structure* structure, double weightPerAns);
 	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
 	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
@@ -204,12 +204,12 @@ public:
 	 * However, if you want to make more true/false it's best to optimize first (to be sure not to throw away too much information)
 	 */
 	void optimizeQuery(const FOBDD*, const fobddvarset&, const fobddindexset&,
-			const AbstractStructure*);
+			const Structure*);
 
 	const FOBDD* makeMoreFalse(const FOBDD*, const fobddvarset&, const fobddindexset&,
-			const AbstractStructure*, double weight_per_ans);
+			const Structure*, double weight_per_ans);
 	const FOBDD* makeMoreTrue(const FOBDD*, const fobddvarset&, const fobddindexset&,
-			const AbstractStructure*, double weight_per_ans);
+			const Structure*, double weight_per_ans);
 
 	//Makes more parts of a bdd false. The resulting bdd will contain no symbols from the given list of symbols to remove
 	const FOBDD* makeMoreFalse(const FOBDD*, const std::set<PFSymbol*>& symbolsToRemove);
@@ -262,10 +262,10 @@ private:
 
 	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);
 
-	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const AbstractStructure* structure);
+	std::map<const FOBDDKernel*, tablesize> kernelUnivs(const FOBDD*, const Structure* structure);
 
 	const FOBDD* makeMore(bool goal, const FOBDD*, const fobddvarset&, const fobddindexset&,
-			const AbstractStructure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
+			const Structure*, double weight_per_ans); //Depending on goal, makes more pieces of the BDD true or false
 	const FOBDD* makeMore(bool goal, const FOBDD* bdd, const std::set<PFSymbol*>& symbolsToRemove); //Depending on goal, makes more pieces of the BDD true or false such that result contains no forbidden symbols
 
 	const FOBDDTerm* invert(const FOBDDTerm*);
@@ -288,6 +288,6 @@ std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* ma
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
 tablesize univNrAnswers(const fobddvarset& vars, const fobddindexset& indices,
-		const AbstractStructure* structure);
+		const Structure* structure);
 
 #endif

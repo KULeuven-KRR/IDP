@@ -34,7 +34,7 @@ private:
 
 	TruthType _type;
 	const FOBDD* _result;
-	const AbstractStructure* _structure; //Can be NULL. If different from NULL, structure can be used to improve BDDs, e.g.~not generate <ct> and <cf> symbols for known predicates
+	const Structure* _structure; //Can be NULL. If different from NULL, structure can be used to improve BDDs, e.g.~not generate <ct> and <cf> symbols for known predicates
 
 	//All symbols that were already propagated in earlier stages
 	// And hence, should never be replaced by their BDD
@@ -67,7 +67,7 @@ public:
 	 * Generate a bdd which contains exactly all instances for which the given formula has the requested truth type.
 	 * @pre: GRAPHED functions and aggregates!
 	 */
-	const FOBDD* evaluate(Formula* formula, TruthType truthvalue, const AbstractStructure*);
+	const FOBDD* evaluate(Formula* formula, TruthType truthvalue, const Structure*);
 
 	std::ostream& put(std::ostream&) const;
 };

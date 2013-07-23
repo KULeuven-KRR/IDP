@@ -33,7 +33,7 @@
 
 class Theory;
 class AbstractTheory;
-class AbstractStructure;
+class Structure;
 class TraceMonitor;
 class Term;
 class AbstractGroundTheory;
@@ -44,7 +44,7 @@ void connectTraceMonitor(TraceMonitor*, Grounder*, GroundingReceiver*) {
 //Do nothing unless GroundingReciever is PCSolver (see Grounding.cpp)
 template<> void connectTraceMonitor(TraceMonitor* t, Grounder* grounder, PCSolver* solver);
 
-void addSymmetryBreaking(AbstractTheory* theory, AbstractStructure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent);
+void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractGroundTheory* grounding, const Term* minimizeTerm, bool nbModelsEquivalent);
 
 
 //GroundingReciever can be a solver, a printmonitor, ...
@@ -52,7 +52,7 @@ template<typename GroundingReceiver>
 class GroundingInference {
 private:
 	Theory* _theory;
-	AbstractStructure* _structure;
+	Structure* _structure;
 	Vocabulary* _outputvoc; //If not NULL, symbols outside this vocabulary are not relevant
 	TraceMonitor* _tracemonitor;
 	Term* _minimizeterm; // if NULL, no optimization is done
@@ -63,7 +63,7 @@ private:
 
 public:
 	// NOTE: modifies the theory and the structure. Clone before passing them!
-	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, AbstractStructure* structure, Term* term, TraceMonitor* tracemonitor,
+	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, Structure* structure, Term* term, TraceMonitor* tracemonitor,
 			bool nbModelsEquivalent, GroundingReceiver* solver, Vocabulary* outputvoc = NULL) {
 		if (theory == NULL || structure == NULL) {
 			throw IdpException("Unexpected NULL-pointer.");
@@ -82,7 +82,7 @@ public:
 		return grounding;
 	}
 private:
-	GroundingInference(Theory* theory, AbstractStructure* structure, Term* minimize,  TraceMonitor* tracemonitor, bool nbModelsEquivalent,
+	GroundingInference(Theory* theory, Structure* structure, Term* minimize,  TraceMonitor* tracemonitor, bool nbModelsEquivalent,
 			GroundingReceiver* solver, Vocabulary* outputvoc = NULL)
 			: 	_theory(theory),
 				_structure(structure),

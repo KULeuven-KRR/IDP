@@ -23,7 +23,7 @@ class DomainElement;
 class DefaultTraversingTheoryVisitor;
 class TheoryMutatingVisitor;
 class Vocabulary;
-class AbstractStructure;
+class Structure;
 
 enum class TermType {
 	VAR,
@@ -240,7 +240,7 @@ namespace TermUtils {
 std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
 
 /** Attempts to derive a sort which is only a subset of the current sort. If not possible, the original sort is returned. */
-Sort* deriveSmallerSort(const Term*, const AbstractStructure*);
+Sort* deriveSmallerSort(const Term*, const Structure*);
 }
 
 #endif /* TERM_HPP_ */

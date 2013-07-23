@@ -1480,7 +1480,7 @@ fobddindexset indices(const FOBDDKernel* kernel, FOBDDManager* manager) {
 }
 
 void FOBDDManager::optimizeQuery(const FOBDD* query, const fobddvarset& vars, const fobddindexset& indices,
-		const AbstractStructure* structure) {
+		const Structure* structure) {
 	Assert(query != NULL);
 	if (query == _truebdd || query == _falsebdd) {
 		return;
@@ -1518,7 +1518,7 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const fobddvarset& vars, co
 }
 
 double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& vars,
-		const fobddindexset& indices, const AbstractStructure* structure, double weightPerAns) {
+		const fobddindexset& indices, const Structure* structure, double weightPerAns) {
 	// Recursive call
 	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
 	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, this);
@@ -1527,7 +1527,7 @@ double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& v
 }
 
 const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvarset& vars,
-		const fobddindexset& ind, const AbstractStructure* structure, double weightPerAns) {
+		const fobddindexset& ind, const Structure* structure, double weightPerAns) {
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	} else {
@@ -1637,7 +1637,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 }
 
 const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
-		const AbstractStructure* structure, double weightPerAns) {
+		const Structure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "Making the following bdd more false: \n" << print(bdd) << "\nResulted in :\n";
 	}
@@ -1649,7 +1649,7 @@ const FOBDD* FOBDDManager::makeMoreFalse(const FOBDD* bdd, const fobddvarset& va
 }
 
 const FOBDD* FOBDDManager::makeMoreTrue(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
-		const AbstractStructure* structure, double weightPerAns) {
+		const Structure* structure, double weightPerAns) {
 	if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 		clog << "Making the following bdd more true: \n" << print(bdd) << "\nResulted in :\n";
 	}

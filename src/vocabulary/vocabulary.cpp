@@ -689,7 +689,7 @@ void Predicate::type(SymbolType type, PFSymbol* parent) {
  *		 needed to generate the interpretation for =/2. The structure contains the interpretation of the 
  *		 relevant sorts.
  */
-PredInter* Predicate::interpretation(const AbstractStructure* structure) const {
+PredInter* Predicate::interpretation(const Structure* structure) const {
 	if (_interpretation) {
 		return _interpretation->get(structure);
 	} else {
@@ -1184,7 +1184,7 @@ unsigned int Function::binding() const {
 /**
  * \brief Returns the interpretation of a function in the given structure (if any)
  */
-FuncInter* Function::interpretation(const AbstractStructure* structure) const {
+FuncInter* Function::interpretation(const Structure* structure) const {
 	if (_interpretation) {
 		return _interpretation->get(structure);
 	} else if(structure!=NULL){

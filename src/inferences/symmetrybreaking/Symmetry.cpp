@@ -27,21 +27,21 @@ using namespace std;
 /**
  * 	returns true if a sort has a domain fit to detect meaningful invariant permutations.
  */
-bool isSortForSymmetry(Sort* sort, const AbstractStructure* s) {
+bool isSortForSymmetry(Sort* sort, const Structure* s) {
 	return s->inter(sort)->approxFinite() && not s->inter(sort)->approxEmpty();
 }
 
 /**
  *	returns true if an interpretation is trivial, which means either all ground elements are true or all are false for the given PFSymbol
  */
-bool hasTrivialInterpretation(const AbstractStructure* s, PFSymbol* relation) {
+bool hasTrivialInterpretation(const Structure* s, PFSymbol* relation) {
 	return s->inter(relation)->pt()->approxEmpty() || s->inter(relation)->pf()->approxEmpty();
 }
 
 /**
  *	returns true if a PFSymbol has an interpretation
  */
-bool hasInterpretation(const AbstractStructure* s, PFSymbol* relation) {
+bool hasInterpretation(const Structure* s, PFSymbol* relation) {
 	return not (s->inter(relation)->ct()->approxEmpty() && s->inter(relation)->cf()->approxEmpty());
 }
 
@@ -89,7 +89,7 @@ bool isBinarySymmetryInPredTable(const PredTable* table, const set<unsigned int>
 /**
  *	returns true iff a binary permutation of domain elements of a set of sorts is an invariant permutation for a certain PFSymbol
  */
-bool isBinarySymmetry(const AbstractStructure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation, const set<Sort*>& sorts) {
+bool isBinarySymmetry(const Structure* s, const DomainElement* first, const DomainElement* second, PFSymbol* relation, const set<Sort*>& sorts) {
 	if (not hasInterpretation(s, relation)) {
 		return true;
 	}
@@ -238,7 +238,7 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 class OccurrencesCounter {
 private:
 	// Attributes
-	const AbstractStructure* structure_;
+	const Structure* structure_;
 	map<pair<const PFSymbol*, const Sort*> ,map<const DomainElement*, pair<int, int> > > occurrences_; //<! a pair of ints for each domain element representing its occurrences in ct and cf for each relation-sort combination
 
 	// Static (should be static, is neither mutator nor inspector, counts stuff somewhere else)
@@ -246,12 +246,12 @@ private:
 
 public:
 	// Constructors
-	OccurrencesCounter(const AbstractStructure* s)
+	OccurrencesCounter(const Structure* s)
 			: structure_(s) {
 	}
 
 	// Inspectors
-	const AbstractStructure* getStructure() const;
+	const Structure* getStructure() const;
 	ostream& put(ostream& output) const;
 
 	//	Mutators
@@ -259,7 +259,7 @@ public:
 	map<const DomainElement*, vector<int> > getOccurrences(const set<const DomainElement*>&, const set<PFSymbol*>&, const set<Sort*>&);
 };
 
-const AbstractStructure* OccurrencesCounter::getStructure() const {
+const Structure* OccurrencesCounter::getStructure() const {
 	return structure_;
 }
 
@@ -379,7 +379,7 @@ const set<PFSymbol*>& IVSet::getRelations() const {
 	return relations_;
 }
 
-const AbstractStructure* IVSet::getStructure() const {
+const Structure* IVSet::getStructure() const {
 	return structure_;
 }
 
@@ -388,7 +388,7 @@ const AbstractStructure* IVSet::getStructure() const {
  * 	Since an IVSet is immutable, it is sufficient to check its invariants in the constructor to enforce those invariants.
  * 	The second invariant however, is not checked, and thus not enforced :(
  */
-IVSet::IVSet(const AbstractStructure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations)
+IVSet::IVSet(const Structure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations)
 		: structure_(s), elements_(elements), sorts_(sorts), relations_(relations) {
 	Assert(elements_.size()>1);
 }
@@ -820,7 +820,7 @@ void TheorySymmetryAnalyzer::visit(const AggTerm* at){
  * 		every allowed domain element for a sort is not a forbidden element
  * 		every allowed domain element for a sort is not a domain element of a child sort
  */
-map<Sort*, set<const DomainElement*> > findElementsForSorts(const AbstractStructure* s, set<Sort*>& sorts, const set<const DomainElement*>& forbiddenElements) {
+map<Sort*, set<const DomainElement*> > findElementsForSorts(const Structure* s, set<Sort*>& sorts, const set<const DomainElement*>& forbiddenElements) {
 	map<Sort*, set<const DomainElement*> > result;
 	for (auto sort_it = sorts.cbegin(); sort_it != sorts.cend(); ++sort_it) {
 		const SortTable* parent = s->inter(*sort_it);
@@ -848,7 +848,7 @@ map<Sort*, set<const DomainElement*> > findElementsForSorts(const AbstractStruct
 /**
  *	extract the set of non-trivial relations in which every relation ranges over at least one sort of a given set of sorts.
  */
-set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const set<Sort*>& sorts, const set<PFSymbol*>& relations) {
+set<PFSymbol*> findNonTrivialRelationsWithSort(const Structure* s, const set<Sort*>& sorts, const set<PFSymbol*>& relations) {
 	set<PFSymbol*> result;
 	for (auto relation_it = relations.cbegin(); relation_it != relations.cend(); ++relation_it) {
 		bool rangesOverSorts = hasTrivialInterpretation(s, *relation_it);
@@ -867,7 +867,7 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const AbstractStructure* s, const
  *
  *	@pre: t->vocabulary()==s->vocabulary()
  */
-set<const IVSet*> initializeIVSets(const AbstractStructure* s, const AbstractTheory* t, const Term* minimizeTerm) {
+set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
 	//cout << "token" << print(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
@@ -1051,7 +1051,7 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials) {
  * 	@pre: t->vocabulary()==s->vocabulary()
  */
 
-vector<const IVSet*> findIVSets(const AbstractTheory* t, const AbstractStructure* s, const Term* minimizeTerm) {
+vector<const IVSet*> findIVSets(const AbstractTheory* t, const Structure* s, const Term* minimizeTerm) {
 	Assert(t->vocabulary()==s->vocabulary());
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {

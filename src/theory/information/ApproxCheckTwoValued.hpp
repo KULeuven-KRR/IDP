@@ -15,16 +15,16 @@
 #include "common.hpp"
 #include "visitors/TheoryVisitor.hpp"
 
-class AbstractStructure;
+class Structure;
 
 class ApproxCheckTwoValued: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 	bool _returnvalue;
 public:
 	template<typename T>
-	bool execute(const T f, const AbstractStructure* str) {
+	bool execute(const T f, const Structure* str) {
 		_structure = str;
 		_returnvalue = true;
 		f->accept(this);

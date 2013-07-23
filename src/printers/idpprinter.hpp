@@ -80,7 +80,7 @@ public:
 		return ss.str();
 	}
 
-	void visit(const AbstractStructure* structure) {
+	void visit(const Structure* structure) {
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());

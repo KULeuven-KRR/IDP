@@ -27,7 +27,7 @@ private:
 	bool _start;
 	bool _allquantvars;
 	const GroundTranslator* _translator;
-	const AbstractStructure* _structure;
+	const Structure* _structure;
 
 	const PredForm* _resultingliteral;
 	varset _quantvars, _containingquantvars;
@@ -35,7 +35,7 @@ private:
 
 public:
 	template<typename T>
-	const PredForm* execute(T t, const AbstractStructure* structure, const GroundTranslator* trans, Context& context) {
+	const PredForm* execute(T t, const Structure* structure, const GroundTranslator* trans, Context& context) {
 		_start = true;
 		_resultingliteral = NULL;
 		_translator = trans;

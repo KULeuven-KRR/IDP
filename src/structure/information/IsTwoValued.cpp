@@ -12,7 +12,7 @@
 #include "IsTwoValued.hpp"
 #include "IncludeComponents.hpp"
 
-bool isTwoValued(const Term* t, const AbstractStructure* structure) {
+bool isTwoValued(const Term* t, const Structure* structure) {
 	if (t == NULL) {
 		return false;
 	}

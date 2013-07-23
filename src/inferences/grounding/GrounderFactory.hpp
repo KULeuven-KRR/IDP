@@ -23,7 +23,7 @@
 
 class PFSymbol;
 class Variable;
-class AbstractStructure;
+class Structure;
 class AbstractGroundTheory;
 class InstGenerator;
 class InstChecker;
@@ -75,7 +75,7 @@ struct GeneratorData { // NOTE: all have the same order!
 	std::vector<SortTable*> tables;
 	std::vector<Variable*> fovars, quantfovars;
 	std::vector<const DomElemContainer*> containers;
-	const AbstractStructure* structure;
+	const Structure* structure;
 	Context funccontext;
 };
 
@@ -118,7 +118,7 @@ private:
 	// Descend in the parse tree while taking care of the context
 	template<typename T> void descend(T child);
 
-	AbstractStructure* getConcreteStructure() const {
+	Structure* getConcreteStructure() const {
 		return _structure.concrstructure;
 	}
 
@@ -142,22 +142,22 @@ public:
 	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
 	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
 	 */
-	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+	static InstGenerator* getGenerator(Formula* subformula, TruthType generatortype, const GeneratorData& data, const std::vector<Pattern>& pattern, GenerateBDDAccordingToBounds* symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 	/**
 	 * Create checker for the formula based on the SYMBOLIC structure
 	 * Option "exact": for symbolic bounds, not allowed to simplify the bdd.
 	 * 		This is essential for the translator, where it is crucial that the bounds used for generating are the same as the bounds used for checking.
 	 */
-	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+	static InstChecker* getChecker(Formula* subformula, TruthType generatortype, const GeneratorData& data, GenerateBDDAccordingToBounds* symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 private:
 	static InstGenerator* createGen(const std::string& name, TruthType type, const GeneratorData& data, PredTable* table, Formula*,
 			const std::vector<Pattern>& pattern);
 	static PredTable* createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue, const GeneratorData& data,
-			GenerateBDDAccordingToBounds* symstructure, const AbstractStructure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
+			GenerateBDDAccordingToBounds* symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool exact = false);
 	template<typename OrigConstruct>
 	GenAndChecker createVarsAndGenerators(Formula* subformula, OrigConstruct* orig, TruthType generatortype, TruthType checkertype);
 
-	static const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars, const AbstractStructure* structure,
+	static const FOBDD* improve(bool approxastrue, const FOBDD* bdd, const std::vector<Variable*>& fovars, const Structure* structure,
 			GenerateBDDAccordingToBounds* symstructure, std::set<PFSymbol*> definedsymbols);
 
 	template<typename Grounding>
@@ -233,10 +233,10 @@ private:
 	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 
-	AggForm* rewriteSumOrCardIntoSum(AggForm* af, AbstractStructure* structure);
+	AggForm* rewriteSumOrCardIntoSum(AggForm* af, Structure* structure);
 	void internalVisit(const PredForm* newaf);
 	static const FOBDD* simplify(const std::vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
-			const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const AbstractStructure* structure);
+			const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const Structure* structure);
 };
 
 #endif /* GROUNDERFACTORY_HPP */

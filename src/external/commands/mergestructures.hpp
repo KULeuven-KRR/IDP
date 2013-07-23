@@ -16,7 +16,7 @@
 #include "theory/TheoryUtils.hpp"
 #include "errorhandling/error.hpp"
 
-typedef TypedInference<LIST(AbstractStructure*, AbstractStructure*)> MergeStructuresInferenceBase;
+typedef TypedInference<LIST(Structure*, Structure*)> MergeStructuresInferenceBase;
 class MergeStructuresInference: public MergeStructuresInferenceBase {
 public:
 	MergeStructuresInference()
@@ -39,8 +39,8 @@ public:
 		}
 	}
 
-	void warnIfNoLongerTwoValued(AbstractStructure const * const firstStructure, AbstractStructure const * const secondStructure,
-			AbstractStructure* result) const {
+	void warnIfNoLongerTwoValued(Structure const * const firstStructure, Structure const * const secondStructure,
+			Structure* result) const {
 		//In case some relation was originally two-valued, but no longer is two-valued now (due to the merging of the sorts), we want to warn the user
 
 		if (not result->isConsistent()) {
@@ -73,7 +73,7 @@ public:
 		}
 	}
 
-	AbstractStructure* merge(AbstractStructure const * const firstStructure, AbstractStructure const * const secondStructure) const {
+	Structure* merge(Structure const * const firstStructure, Structure const * const secondStructure) const {
 
 		auto result = firstStructure->clone();
 		if (firstStructure->vocabulary() != secondStructure->vocabulary()) {

@@ -14,17 +14,17 @@
 
 class PredTable;
 class Query;
-class AbstractStructure;
+class Structure;
 
 class Querying {
 public:
-	static PredTable* doSolveQuery(Query* q, AbstractStructure* s) {
+	static PredTable* doSolveQuery(Query* q, Structure* s) {
 		Querying c;
 		return c.solveQuery(q, s);
 	}
 
 private:
-	PredTable* solveQuery(Query* q, AbstractStructure* s) const;
+	PredTable* solveQuery(Query* q, Structure* s) const;
 };
 
 #endif /* QUERY_HPP_ */

@@ -14,7 +14,7 @@
 #include "commandinterface.hpp"
 #include "inferences/definitionevaluation/AtomQuery.hpp"
 
-typedef TypedInference<LIST(Query*, AbstractTheory* ,AbstractStructure*)> TheoryQueryInferenceBase;
+typedef TypedInference<LIST(Query*, AbstractTheory* ,Structure*)> TheoryQueryInferenceBase;
 class TheoryQueryInference: public TheoryQueryInferenceBase {
 public:
 	TheoryQueryInference()

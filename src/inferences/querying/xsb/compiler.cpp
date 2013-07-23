@@ -12,7 +12,6 @@
 #include "theory/term.hpp"
 #include "theory/Sets.hpp"
 #include "theory/TheoryUtils.hpp"
-#include "structure/AbstractStructure.hpp"
 #include "structure/StructureComponents.hpp"
 
 #ifndef IDPXSB_PREFIX
