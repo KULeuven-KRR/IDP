@@ -490,54 +490,72 @@ void Structure::sortCheck() const {
 }
 
 void Structure::functionCheck() {
-	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		Function* f = it->first;
-		FuncInter* ft = it->second;
-		if (it->second->universe().approxFinite()) {
-			PredInter* pt = ft->graphInter();
-			const PredTable* ct = pt->ct();
-			// Check if the interpretation is indeed a function
-			bool isfunc = true;
-			FirstNElementsEqual eq(f->arity());
-			TableIterator it = ct->begin();
-			if (not it.isAtEnd()) {
-				TableIterator jt = ct->begin();
-				++jt;
-				for (; not jt.isAtEnd(); ++it, ++jt) {
-					if (eq(*it, *jt)) {
-						const ElementTuple& tuple = *it;
-						vector<string> vstr;
-						for (size_t c = 0; c < f->arity(); ++c) {
-							vstr.push_back(toString(tuple[c]));
-						}
-						Error::notfunction(f->name(), name(), vstr);
-						do {
-							++it;
-							++jt;
-						} while (not jt.isAtEnd() && eq(*it, *jt));
-						isfunc = false;
+#warning check for partial interpretations!
+	for (auto func2inter : _funcinter) {
+		auto f = func2inter.first;
+		auto ft = func2inter.second;
+		if(f->builtin()){
+			continue;
+		}
+		if (not ft->universe().approxFinite()) {
+#warning Not checking function consistency for infinite domains might result in incorrect results
+			Warning::warning("Consistency cannot be checked for functions over an infinte domain.");
+			continue;
+		}
+		auto pt = ft->graphInter();
+		auto ct = pt->ct();
+		// Check if the interpretation is indeed a function
+		auto isfunc = true;
+		FirstNElementsEqual eq(f->arity());
+		auto ctit = ct->begin();
+		if (not ctit.isAtEnd()) {
+			TableIterator jt = ct->begin();
+			++jt;
+			for (; not jt.isAtEnd(); ++ctit, ++jt) {
+				if (eq(*ctit, *jt)) {
+					const auto& tuple = *ctit;
+					vector<string> vstr;
+					for (size_t c = 0; c < f->arity(); ++c) {
+						vstr.push_back(toString(tuple[c]));
 					}
+					Error::notfunction(f->name(), name(), vstr);
+					do {
+						++ctit;
+						++jt;
+					} while (not jt.isAtEnd() && eq(*ctit, *jt));
+					isfunc = false;
+					break;
 				}
 			}
-			// Check if the interpretation is total
-			if (isfunc && !(f->partial()) && ft->approxTwoValued() && ct->approxFinite()) {
-				vector<SortTable*> vst;
-				vector<bool> linked;
-				for (size_t c = 0; c < f->arity(); ++c) {
-					vst.push_back(inter(f->insort(c)));
-					linked.push_back(true);
-				}
-				PredTable spt(new FullInternalPredTable(), Universe(vst));
-				it = spt.begin();
-				TableIterator jt = ct->begin();
-				for (; not it.isAtEnd() && not jt.isAtEnd(); ++it, ++jt) {
-					if (not eq(*it, *jt)) {
-						break;
-					}
-				}
-				if (not it.isAtEnd() || not jt.isAtEnd()) {
-					Error::nottotal(f->name(), name());
-				}
+		}
+
+
+		// Check if the interpretation is total
+		if (not isfunc || f->partial()) {
+			continue;
+		}
+		auto cf = pt->cf();
+		auto maxnbimages = inter(f->outsort())->size();
+		if(not cf->approxFinite() || maxnbimages._type==TST_INFINITE){
+			//TODO
+			Warning::warning("Checking total function too expensive.");
+		}
+		map<ElementTuple, int> domain2numberofimages;
+		for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
+			auto domain = *cfit;
+			domain.pop_back();
+			auto domit = domain2numberofimages.find(domain);
+			int count = 0;
+			if(domit==domain2numberofimages.cend()){
+				domain2numberofimages[domain]=1;
+				count = 1;
+			}else{
+				domit->second++;
+				count = domit->second;
+			}
+			if (count==maxnbimages) {
+				Error::nottotal(f->name(), name());
+				break;
 			}
 		}
 	}
@@ -645,10 +663,14 @@ void Structure::materialize() {
 //TODO Shouldn't this be approxClean?
 void Structure::clean() {
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		if (it->second->approxTwoValued()) {
+		auto inter = it->second;
+		if (inter->approxTwoValued()) {
 			continue;
 		}
-		if (not TableUtils::approxIsInverse(it->second->ct(), it->second->cf())) {
+		if(not inter->isConsistent()){
+			continue;
+		}
+		if (not TableUtils::isInverse(inter->ct(), inter->cf())) {
 			continue;
 		}
 		auto npt = new PredTable(it->second->ct()->internTable(), it->second->ct()->universe());
@@ -656,6 +678,9 @@ void Structure::clean() {
 	}
 	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
 		if (it->second->approxTwoValued()) {
+			continue;
+		}
+		if(not it->second->isConsistent()){
 			continue;
 		}
 		if (it->first->partial()) {
@@ -674,9 +699,8 @@ void Structure::clean() {
 			}
 		}
 
-		// TODO this code should be reviewed!
 		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
-				|| TableUtils::approxIsInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
+				|| TableUtils::isInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
 			auto eift = new EnumeratedInternalFuncTable();
 			for (auto jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
 				eift->add(*jt);

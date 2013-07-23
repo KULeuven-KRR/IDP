@@ -2691,7 +2691,9 @@ EnumeratedInternalFuncTable* EnumeratedInternalFuncTable::add(const ElementTuple
 		}
 	}
 
-	Assert(computedvalue == mappedvalue);
+	if(computedvalue!=mappedvalue){
+		throw IdpException("Attempting to add a new image to an already existing tuple in an enumerated function table.");
+	}
 	return this;
 }
 
@@ -3969,10 +3971,11 @@ Universe fullUniverse(unsigned int arity) {
 	return Universe(vst);
 }
 
-bool approxIsInverse(const PredTable* pt1, const PredTable* pt2) {
-	tablesize univsize = pt1->universe().size();
-	tablesize pt1size = pt1->size();
-	tablesize pt2size = pt2->size();
+// Only if no shared tuples!
+bool isInverse(const PredTable* pt1, const PredTable* pt2) {
+	auto univsize = pt1->universe().size();
+	auto pt1size = pt1->size();
+	auto pt2size = pt2->size();
 	if (univsize._type == TST_EXACT && pt1size._type == TST_EXACT && pt2size._type == TST_EXACT) {
 		return pt1size._size + pt2size._size == univsize._size;
 	} else {

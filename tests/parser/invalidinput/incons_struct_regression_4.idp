@@ -1,0 +1,16 @@
+vocabulary V{
+	type x
+	a(x):x
+}
+
+theory T:V{
+}
+
+structure S:V{
+	x = {1..2}
+	a<ct> = {1->1;1->2}
+}
+
+procedure main(){
+	return 1;
+}

@@ -1995,6 +1995,13 @@ FuncTable* Insert::createFuncTable(unsigned int arity) const {
 
 void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {
 	if (ft->arity() == tuple.size() - 1) {
+		auto domain = tuple;
+		domain.pop_back();
+		auto value = ft->operator [](domain);
+		if(value!=NULL && value!=tuple.back()){
+			Error::error("Multiple images for the same function tuple.");
+			return;
+		}
 		ft->add(tuple);
 	} else if (ft->empty()) {
 		ft->add(tuple);

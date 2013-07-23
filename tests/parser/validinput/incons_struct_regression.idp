@@ -1,0 +1,21 @@
+vocabulary V{
+	type x
+	p(x)
+}
+
+theory T:V{
+}
+
+structure S:V{
+	x = {1..2}
+	p<cf> = {1;}
+	p<ct> = {1;}
+}
+
+procedure main(){
+	if(isconsistent(S)) then 
+		return 0;
+	else 
+		return 1;
+	end;
+}

@@ -568,7 +568,8 @@ Universe fullUniverse(unsigned int arity);
 bool approxTotalityCheck(const FuncInter*);
 //!< Check whether there is a value for every tuple in the given function interpretation.
 
-bool approxIsInverse(const PredTable* pt1, const PredTable* pt2);
+// NOTE: Precondition: pt1 and pt2 do NOT share tuples!!!
+bool isInverse(const PredTable* pt1, const PredTable* pt2);
 
 SortTable* createSortTable();
 SortTable* createSortTable(int start, int end);
