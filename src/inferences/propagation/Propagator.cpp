@@ -536,6 +536,11 @@ void TypedFOPropagator<Factory, Domain>::visit(const QuantForm* qf) {
 		const ThreeValuedDomain<Domain>& tvd = getDomain(qf);
 		Domain* deriveddomain = _ct ? tvd._ctdomain->clone() : tvd._cfdomain->clone();
 		if (_ct != qf->isUnivWithSign()) {
+			// if exists and ct: if !xxx: (PARENT(xxx) & (!xxx': xxx\neq xxx' => ~CHILD(xxx'))) => CHILD(xxx)
+			// Note: this turned out to be much to expensive, so disabled by default
+			if(not getOption(EXISTS_ONLYONELEFT_APPROX)){
+				break;
+			}
 			varset newvars;
 			map<Variable*, Variable*> mvv;
 			Domain* conjdomain = _factory->trueDomain(qf->subformula());

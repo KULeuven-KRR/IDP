@@ -145,6 +145,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::EXISTS_ONLYONELEFT_APPROX, "existsonlyoneleftapprox", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LIFTEDUNITPROPAGATION, "liftedunitpropagation", boolvalues, true, _option2name, PrintBehaviour::PRINT);
