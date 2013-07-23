@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef STRUCTPROPERTIES_HPP_
-#define STRUCTPROPERTIES_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
@@ -30,4 +29,78 @@ public:
 	}
 };
 
-#endif /* STRUCTPROPERTIES_HPP_ */
+template<class Table>
+bool checkEquality(Table one, Table two){
+	if(one->size()!=two->size()){ // TODO infinity?
+		return false;
+	}
+	for(auto i = one->begin(); not i.isAtEnd(); ++i){
+		if(not two->contains(*i)){
+			return false;
+		}
+	}
+	return true;
+}
+
+typedef TypedInference<LIST(Structure*,Structure*)> SSBase;
+class StructureEqualityInference: public SSBase {
+public:
+	StructureEqualityInference()
+			: SSBase("equal", "Check whether two structures are equal.") {
+		setNameSpace(getStructureNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Structure* s1 = get<0>(args);
+		Structure* s2 = get<1>(args);
+
+		auto equal = true;
+
+		if(equal){
+			equal &= s1!=NULL && s2!=NULL;
+		}
+		if(equal){
+			equal &= s1->vocabulary()==s2->vocabulary();
+		}
+		if(equal){
+			for(auto sort2inter : s1->getSortInters()){
+				auto sort = sort2inter.first;
+				auto inter = sort2inter.second;
+				if(sort->builtin()){
+					continue;
+				}
+				auto inter2 = s2->inter(sort);
+				equal &= checkEquality(inter, inter2);
+			}
+			for(auto pred2inter : s1->getPredInters()){
+				auto pred = pred2inter.first;
+				auto inter = pred2inter.second;
+				if(pred->builtin() || pred->overloaded()){
+					continue;
+				}
+				auto inter2 = s2->inter(pred);
+				equal &= checkEquality(inter->ct(), inter2->ct());
+				equal &= checkEquality(inter->pt(), inter2->pt());
+				equal &= checkEquality(inter->cf(), inter2->cf());
+				equal &= checkEquality(inter->pf(), inter2->pf());
+			}
+			for(auto func2inter : s1->getFuncInters()){
+				auto func = func2inter.first;
+				auto inter = func2inter.second->graphInter();
+				if(func->builtin() || func->overloaded()){
+					continue;
+				}
+				auto inter2 = s2->inter(func)->graphInter();
+				equal &= checkEquality(inter->ct(), inter2->ct());
+				equal &= checkEquality(inter->pt(), inter2->pt());
+				equal &= checkEquality(inter->cf(), inter2->cf());
+				equal &= checkEquality(inter->pf(), inter2->pf());
+			}
+		}
+
+		InternalArgument ia;
+		ia._type = AT_BOOLEAN;
+		ia._value._boolean = equal;
+		return ia;
+	}
+};
