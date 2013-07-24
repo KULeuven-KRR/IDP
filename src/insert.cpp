@@ -1999,7 +1999,9 @@ void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {
 		domain.pop_back();
 		auto value = ft->operator [](domain);
 		if(value!=NULL && value!=tuple.back()){
-			Error::error("Multiple images for the same function tuple.");
+			stringstream ss;
+			ss <<"Multiple images for the same function tuple " <<::print(domain) <<": " <<::print(value) <<" and " <<::print(tuple.back()) <<"\n";
+			Error::error(ss.str());
 			return;
 		}
 		ft->add(tuple);
