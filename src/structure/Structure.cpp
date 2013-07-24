@@ -55,7 +55,7 @@ Structure* Structure::clone() const {
 	return s;
 }
 
-void Structure::notifyAddedToVoc(Sort* sort){
+void Structure::notifyAddedToVoc(Sort* sort) {
 	if (sort->builtin()) {
 		return;
 	}
@@ -67,8 +67,8 @@ void Structure::notifyAddedToVoc(Sort* sort){
 		_predinter[sort->pred()] = new PredInter(pt, true);
 	}
 }
-void Structure::notifyAddedToVoc(PFSymbol* symbol){
-	if(symbol->isFunction()){
+void Structure::notifyAddedToVoc(PFSymbol* symbol) {
+	if (symbol->isFunction()) {
 		auto func = dynamic_cast<Function*>(symbol);
 		auto sf = func->nonbuiltins();
 		for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
@@ -80,7 +80,7 @@ void Structure::notifyAddedToVoc(PFSymbol* symbol){
 				_funcinter[(*jt)] = TableUtils::leastFuncInter(Universe(univ));
 			}
 		}
-	}else{
+	} else {
 		auto pred = dynamic_cast<Predicate*>(symbol);
 		auto sp = pred->nonbuiltins();
 		for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
@@ -145,7 +145,7 @@ void Structure::changeVocabulary(Vocabulary* v) {
 			++it;
 		}
 	}
-	// Create empty tables for new symbols
+	// Create empty tables for new sorts
 	for (auto it = _vocabulary->firstSort(); it != _vocabulary->lastSort(); ++it) {
 		auto sort = it->second;
 		if (not sort->builtin()) {
@@ -158,22 +158,36 @@ void Structure::changeVocabulary(Vocabulary* v) {
 			}
 		}
 	}
-	for (auto it = _vocabulary->firstPred(); it != _vocabulary->lastPred(); ++it) {
-		auto sp = it->second->nonbuiltins();
-		for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
-			if (_predinter.find(*jt) == _predinter.cend()) {
+
+	//... and for new predicates and functions
+	createPredAndFuncTables(false);
+
+}
+
+void Structure::reset() {
+	createPredAndFuncTables(true);
+}
+void Structure::createPredAndFuncTables(bool forced) {
+	for (auto nameAndPred = _vocabulary->firstPred(); nameAndPred != _vocabulary->lastPred(); ++nameAndPred) {
+		auto pred = nameAndPred->second;
+		for (auto nonOverloadedPred : pred->nonbuiltins()) {
+			auto sorts = nonOverloadedPred->sorts();
+			if (sorts.size() == 1 && sorts.at(0)->pred() == nameAndPred->second) {
+				continue;
+			}
+			if (forced || _predinter.find(nonOverloadedPred) == _predinter.cend()) {
 				vector<SortTable*> univ;
-				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
-					univ.push_back(inter(*kt));
+				for (auto kt : nonOverloadedPred->sorts()) {
+					univ.push_back(inter(kt));
 				}
-				_predinter[*jt] = TableUtils::leastPredInter(Universe(univ));
+				_predinter[nonOverloadedPred] = TableUtils::leastPredInter(Universe(univ));
 			}
 		}
 	}
 	for (auto it = _vocabulary->firstFunc(); it != _vocabulary->lastFunc(); ++it) {
 		auto sf = it->second->nonbuiltins();
 		for (auto jt = sf.cbegin(); jt != sf.cend(); ++jt) {
-			if (_funcinter.find(*jt) == _funcinter.cend()) {
+			if (forced || _funcinter.find(*jt) == _funcinter.cend()) {
 				vector<SortTable*> univ;
 				for (auto kt = (*jt)->sorts().cbegin(); kt != (*jt)->sorts().cend(); ++kt) {
 					univ.push_back(inter(*kt));
@@ -188,6 +202,9 @@ void Structure::changeInter(Sort* f, SortTable* i) {
 	Assert(_sortinter[f]!=NULL);
 	delete (_sortinter[f]);
 	_sortinter[f] = i;
+	vector<SortTable*> univ(1, i);
+	auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
+	changeInter(f->pred(), new PredInter(pt, true));
 }
 
 void Structure::changeInter(Predicate* p, PredInter* i) {
@@ -223,16 +240,16 @@ bool Structure::isConsistent() const {
 		auto inter = name2func.second;
 		if (not inter->isConsistent()) {
 			stringstream ss;
-			ss <<"Inconsistent interpretation for " <<print(name2func.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			ss << "Inconsistent interpretation for " << print(name2func.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
 			Warning::warning(ss.str());
 			return false;
 		}
 	}
-	for (auto name2pred :  _predinter) {
+	for (auto name2pred : _predinter) {
 		auto inter = name2pred.second;
 		if (not inter->isConsistent()) {
 			stringstream ss;
-			ss <<"Inconsistent interpretation for " <<print(name2pred.first) <<", namely the atoms " <<print(inter->getInconsistentAtoms()) <<"\n";
+			ss << "Inconsistent interpretation for " << print(name2pred.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
 			Warning::warning(ss.str());
 			return false;
 		}
@@ -240,7 +257,7 @@ bool Structure::isConsistent() const {
 	return true;
 }
 
-void makeUnknownsFalse(PredInter* inter){
+void makeUnknownsFalse(PredInter* inter) {
 	Assert(inter!=NULL);
 
 	if (inter->approxTwoValued()) {
@@ -327,13 +344,13 @@ void Structure::makeTwoValued() {
 }
 
 void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
-	if(contains(scores, s)){
+	if (contains(scores, s)) {
 		return;
 	}
 	unsigned int sc = 0;
 	for (auto it = s->parents().cbegin(); it != s->parents().cend(); ++it) {
 		computescore(*it, scores);
-		if (scores[*it] >= sc){
+		if (scores[*it] >= sc) {
 			sc = scores[*it] + 1;
 		}
 	}
@@ -366,7 +383,7 @@ void addUNAPattern(Function*) {
 	throw notyetimplemented("una pattern type");
 }
 
-void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter){
+void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter) {
 	auto pt1 = inter->ct();
 	if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
 		pt1 = inter->pf();
@@ -382,7 +399,7 @@ void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter){
 }
 
 void Structure::checkAndAutocomplete() {
-	if(getOption(SHOWWARNINGS)){
+	if (getOption(SHOWWARNINGS)) {
 		Warning::warning("Autocompleting structure");
 	}
 	// Adding elements from predicate interpretations to sorts
@@ -407,7 +424,7 @@ void Structure::checkAndAutocomplete() {
 		autocompleteFromSymbol(func, inter->graphInter());
 	}
 
-	if(getOption(AUTOCOMPLETE)){
+	if (getOption(AUTOCOMPLETE)) {
 		// Adding elements from subsorts to supersorts
 		map<Sort*, unsigned int> levels; // Maps a sort to a level such that all its parents are on lower levels and no 2 sorts in the same hierarchy have the same level.
 		for (auto it = _vocabulary->firstSort(); it != _vocabulary->lastSort(); ++it) {
@@ -442,7 +459,7 @@ void Structure::checkAndAutocomplete() {
 				auto st = inter(sort);
 				for (auto kt : toextend) {
 					auto kst = inter(kt);
-					if(not st->approxFinite()){
+					if (not st->approxFinite()) {
 						throw notyetimplemented("Completing non approx-finite tables");
 					}
 					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
@@ -467,7 +484,7 @@ void Structure::checkAndAutocomplete() {
 						continue;
 					}
 					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
-						if (not kst->contains(*lt)){
+						if (not kst->contains(*lt)) {
 							Error::sortelnotinsort(toString(*lt), sort->name(), kt->name(), _name);
 						}
 					}

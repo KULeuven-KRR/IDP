@@ -238,6 +238,7 @@ public:
 namespace TermUtils {
 /** Make a vector of fresh variable terms */
 std::vector<Term*> makeNewVarTerms(const std::vector<Variable*>&);
+std::vector<Term*> makeNewVarTerms(const std::vector<Sort*>&);
 
 /** Attempts to derive a sort which is only a subset of the current sort. If not possible, the original sort is returned. */
 Sort* deriveSmallerSort(const Term*, const Structure*);

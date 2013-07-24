@@ -525,6 +525,9 @@ public:
 	void addvar(Variable* v) {
 		_quantvars.insert(v);
 	}
+	void quantVars(const varset& vs) {
+		_quantvars = vs;
+	}
 
 	// Inspectors
 	PredForm* head() const {

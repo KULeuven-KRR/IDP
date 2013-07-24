@@ -348,6 +348,7 @@ public:
 	SortTable* materialize() const; // Returns NULL if no materialization is possible OR if it would result in the same table
 
 	virtual void put(std::ostream& stream) const;
+	virtual SortTable* clone() const;
 };
 
 class InternalFuncTable;
@@ -466,6 +467,7 @@ public:
 		return _ct->universe();
 	}
 	PredInter* clone(const Universe&) const;
+	PredInter* clone() const;
 	void put(std::ostream& stream) const;
 
 
@@ -548,6 +550,7 @@ public:
 		return _graphinter->universe();
 	}
 	FuncInter* clone(const Universe&) const;
+	FuncInter* clone() const;
 	void put(std::ostream& stream) const;
 };
 

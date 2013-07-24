@@ -66,6 +66,8 @@ public:
 
 	void clean(); //!< Try to represent two-valued interpretations by one table instead of two.
 	void materialize(); //!< Convert symbolic tables containing a finite number of tuples to enumerated tables.
+	void reset(); //<! resets pred- and func inters to a state where everyhing is unknown, and resets sorttables for all pred and func inters.
+	void createPredAndFuncTables(bool forced); //<! creates predicate and function tables. If forced is true, this is in fact a reset, otherwise, only tables for symbols without interpretation are created.
 
 	void sortCheck() const; // Checks whether any sorts are empty and throws a warning for those
 	// Check whether no term maps to multiple elements and whether non-partial functions are specified completely.

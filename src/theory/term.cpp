@@ -279,11 +279,19 @@ namespace TermUtils {
 
 vector<Term*> makeNewVarTerms(const vector<Variable*>& vars) {
 	vector<Term*> terms;
-	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
-		terms.push_back(new VarTerm(*it, TermParseInfo()));
+	for (auto v : vars) {
+		terms.push_back(new VarTerm(v, TermParseInfo()));
 	}
 	return terms;
 }
+vector<Term*> makeNewVarTerms(const vector<Sort*>& sorts) {
+	vector<Variable*> vars;
+	for (auto s : sorts) {
+		vars.push_back(new Variable(s));
+	}
+	return makeNewVarTerms(vars);
+}
+
 
 Sort* deriveSmallerSort(const Term* term, const Structure* structure) {
 	auto sort = term->sort();

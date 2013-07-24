@@ -68,7 +68,7 @@ Term* UnnestTerms::move(Term* origterm, Sort* newsort) {
 	auto var = new Variable(newsort);
 	_variables.insert(var);
 
-	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 2) {
 		Warning::introducedvar(var->name(), var->sort()->name(), toString(origterm));
 	}
 

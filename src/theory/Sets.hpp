@@ -184,6 +184,10 @@ public:
 	const varset& quantVars() const {
 		return getSubQuantVars();
 	}
+
+	void quantVars(const varset& vs) {
+		return setQuantVars(vs);
+	}
 	void addQuantVar(Variable* v) {
 		addSubQuantVar(v);
 	}

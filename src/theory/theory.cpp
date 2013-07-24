@@ -643,7 +643,10 @@ void Theory::remove(Definition* d) {
 }
 
 std::ostream& Theory::put(std::ostream& output) const {
-	Printer::create(output)->print(this);
+	auto printer = Printer::create(output);
+	printer->startTheory();
+	printer->print(this);
+	printer->endTheory();
 	return output;
 }
 

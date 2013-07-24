@@ -52,10 +52,11 @@
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "information/FindUnknBoundLiteral.hpp"
 #include "information/FindDoubleDelayLiteral.hpp"
-
+#include "information/CollectSymbols.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
+#include "transformations/RemoveQuantificationsOverSort.hpp"
 
 using namespace std;
 
@@ -127,6 +128,12 @@ Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, Context con
 }
 Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context){
 	return transform<UnnestTerms, Rule*, Rule, Context, const Structure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
+}
+Rule* falseRule(PFSymbol* s) {
+	auto terms = TermUtils::makeNewVarTerms(s->sorts());
+	auto head = new PredForm(SIGN::POS, s, terms, FormulaParseInfo());
+	auto rule = new Rule(head->freeVars(), head, FormulaUtils::falseFormula(), ParseInfo());
+	return rule;
 }
 }
 
@@ -254,7 +261,6 @@ Formula* unnestDomainTermsFromNonBuiltins(Formula* f) {
 	return transform<UnnestDomainTermsFromNonBuiltins, Formula*>(f);
 }
 
-
 Formula* unnestPartialTerms(Formula* f, Context con, const Structure* str, Vocabulary* voc) {
 	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
 }
@@ -355,11 +361,11 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 	}
 	auto voc = at1->vocabulary();
 	if (at1->vocabulary() != at2->vocabulary()) {
-		if (VocabularyUtils::isSubVocabulary(at1->vocabulary(),at2->vocabulary())) {
+		if (VocabularyUtils::isSubVocabulary(at1->vocabulary(), at2->vocabulary())) {
 			// We can safely add components from the first theory into the second theory.
-			std::swap(at1,at2);
+			std::swap(at1, at2);
 			voc = at1->vocabulary();
-		} else if (VocabularyUtils::isSubVocabulary(at2->vocabulary(),at1->vocabulary())) {
+		} else if (VocabularyUtils::isSubVocabulary(at2->vocabulary(), at1->vocabulary())) {
 			// We can safely add components from the second theory into the first theory.
 			voc = at1->vocabulary();
 		} else {
@@ -480,4 +486,44 @@ bool isAntimonotone(const AggForm* af) {
 	}
 	return false;
 }
+
+/*
+ * Note: following three methods are notcollectQuantifiedVariables implemented using the transformer because
+ * QuantType cannot be printed.
+ */
+std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive) {
+	CollectQuantifiedVariables t;
+	return t.execute(f, recursive);
+}
+std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursive) {
+	CollectQuantifiedVariables t;
+	return t.execute(f, recursive);
+}
+std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, bool recursive) {
+	CollectQuantifiedVariables t;
+	return t.execute(f, recursive);
+}
+
+std::set<PFSymbol*> collectSymbols(Formula* f) {
+	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+}
+std::set<PFSymbol*> collectSymbols(Rule* f) {
+	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+
+}
+std::set<PFSymbol*> collectSymbols(AbstractTheory* f) {
+	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+
+}
+
+Formula* removeQuantificationsOverSort(Formula* f, const Sort* s) {
+	return transform<RemoveQuantificationsOverSort, Formula*>(f, s);
+}
+Rule* removeQuantificationsOverSort(Rule* f, const Sort* s) {
+	return transform<RemoveQuantificationsOverSort, Rule*>(f, s);
+}
+AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s) {
+	return transform<RemoveQuantificationsOverSort, AbstractTheory*>(f, s);
+}
+
 }

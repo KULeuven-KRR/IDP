@@ -22,6 +22,7 @@ class CheckContainsAggTerms;
 class CheckContainsFuncTerms;
 class CheckPartialTerm;
 class CheckSorts;
+class CollectQuantifiedVariables;
 class CollectOpensOfDefinitions;
 class HasRecursionOverNegation;
 class CountNbOfSubFormulas;
@@ -47,6 +48,9 @@ class TopDownApproximatingDefinition;
 class BottomUpApproximatingDefinition;
 class AddIfCompletion;
 class FormulaClauseBuilder;
+class CollectSymbols;
+class ReplaceLTCSymbols;
+class RemoveQuantificationsOverSort;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -106,7 +110,11 @@ class FormulaClauseBuilder;
 		friend class ConstructNewReducedForm;\
 		friend class TopDownApproximatingDefinition;\
 		friend class BottomUpApproximatingDefinition;\
-		friend class Skolemize;
+		friend class Skolemize;\
+		friend class CollectQuantifiedVariables;\
+		friend class CollectSymbols;\
+		friend class RemoveQuantificationsOverSort;
+
 
 class AbstractTheory;
 class Theory;
