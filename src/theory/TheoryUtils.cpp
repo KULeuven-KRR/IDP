@@ -116,6 +116,46 @@ bool isPartial(Term* term) {
 	return transform<CheckPartialTerm, bool>(term);
 }
 
+bool isFactor(const Term* term, const Structure* structure) {
+	return approxTwoValued(term, structure);
+}
+
+bool isNumber(const Term* term) {
+	return isIntNumber(term) || isFloatNumber(term);
+}
+
+bool isIntNumber(const Term* term) {
+	return (SortUtils::isSubsort(term->sort(),get(STDSORT::INTSORT))||
+			SortUtils::isSubsort(term->sort(),get(STDSORT::NATSORT)));
+}
+
+bool isFloatNumber(const Term* term) {
+	return SortUtils::isSubsort(term->sort(),get(STDSORT::FLOATSORT));
+}
+
+int getInt(const Term* term) {
+	if (isa<DomainTerm>(*term)) {
+		auto domelem = dynamic_cast<const DomainTerm*>(term)->value();
+		return domelem->value()._int;
+	} else if (isa<FuncTerm>(*term)) {
+		throw notyetimplemented("Retrieving integers from functerms.");
+	} else {
+		throw IdpException("Retrieving integers from terms that are"
+				" not domain terms or interpreted function terms");
+	}
+}
+
+bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure) {
+	if (term->subterms().size() == 2 and FuncUtils::isIntProduct(term->function(), structure->vocabulary())) {
+		for (auto it = term->subterms().cbegin(); it != term->subterms().cend(); ++it) {
+			if (isFactor(*it, structure)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 }
 
 /* SetUtils */
@@ -452,6 +492,114 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory* t) {
 void unnestTerms(AbstractTheory* t, const Structure* str, Vocabulary* voc) {
 	auto newt = transform<UnnestTerms, AbstractTheory*>(t, str, voc);
 	Assert(newt==t);
+}
+
+/**
+ * Detect whether the EqChainForm is of the form:
+ * VALUE (=)< VAR (=)< VALUE or VALUE >(=) VAR >(=) VALUE
+ * using only types that are subtypes of INT (or NAT) */
+bool isRange(const EqChainForm* ecf) {
+	bool ret = false;
+	if(ecf->subterms().size() == 3) {
+		if (TermUtils::isIntNumber(ecf->subterms()[0]) &&
+			TermUtils::isIntNumber(ecf->subterms()[2])) {
+			if (ecf->subterms()[0]->freeVars().empty() &&
+					ecf->subterms()[1]->freeVars().size() == 1 &&
+					ecf->subterms()[2]->freeVars().empty()) {
+				if ((ecf->comps()[0] == CompType::LEQ || ecf->comps()[0] == CompType::LT)
+					&& (ecf->comps()[1] == CompType::LEQ || ecf->comps()[1] == CompType::LT)) {
+					ret = true;
+				}
+				if ((ecf->comps()[0] == CompType::GEQ || ecf->comps()[0] == CompType::GT)
+					&& (ecf->comps()[1] == CompType::GEQ || ecf->comps()[1] == CompType::GT)) {
+					ret = true;
+				}
+			}
+		}
+	} else if (ecf->subterms().size() == 2 && ecf->comps()[0] == CompType::EQ) {
+	} else if (ecf->subterms().size() == 2 && ecf->comps()[0] != CompType::NEQ) {
+	}
+	return ret;
+}
+
+/**
+ * Retrieve the lower bound for EqChainForms that are ranges
+ * It is very important to note that the implementation is very relient on
+ * what isRange(EqChainForm*) detects to be ranges.
+ * Every type of detected range has to be supported. */
+int getLowerBound(const EqChainForm* ecf) {
+	if (not isRange(ecf)) {
+		stringstream ss;
+		ss << "EqChainForm " << toString(ecf) << " not detected to be a range, but a lower bound was asked.\n";
+		throw IdpException(ss.str());
+	}
+	// Sort of the variable is assumed to be int or nat (domelem of last value has a value of _int)
+	if (ecf->subterms().size() == 3) {
+		if (ecf->comps()[0] == CompType::LEQ ) {
+			return TermUtils::getInt(ecf->subterms()[0]);
+		} else if (ecf->comps()[0] == CompType::LT) {
+			return TermUtils::getInt(ecf->subterms()[0])+1;
+		}
+		if (ecf->comps()[1] == CompType::GEQ) {
+			return TermUtils::getInt(ecf->subterms()[2]);
+		} else if (ecf->comps()[1] == CompType::GT) {
+			return TermUtils::getInt(ecf->subterms()[2])+1;
+		}
+	}
+	stringstream ss;
+	ss << "Unsupported retrieval of lower bound for range EqChainForm " << toString(ecf) << "\n";
+	throw IdpException(ss.str());
+	return 0;
+}
+
+/**
+ * Retrieve the upper bound for EqChainForms that are ranges
+ * It is very important to note that the implementation is very relient on
+ * what isRange(EqChainForm*) detects to be ranges.
+ * Every type of detected range has to be supported. */
+int getUpperBound(const EqChainForm* ecf) {
+	if (not isRange(ecf)) {
+		stringstream ss;
+		ss << "EqChainForm " << toString(ecf) << " not detected to be a range, but an upper bound was asked.\n";
+		throw IdpException(ss.str());
+	}
+	// Sort of the variable is assumed to be int or nat (domelem of last value has a value of _int)
+	if (ecf->subterms().size() == 3) {
+		if (ecf->comps()[0] == CompType::GEQ ) {
+			return TermUtils::getInt(ecf->subterms()[0]);
+		} else if (ecf->comps()[0] == CompType::GT) {
+			return TermUtils::getInt(ecf->subterms()[0])-1;
+		}
+		if (ecf->comps()[1] == CompType::LEQ) {
+			return TermUtils::getInt(ecf->subterms()[2]);
+		} else if (ecf->comps()[1] == CompType::LT) {
+			return TermUtils::getInt(ecf->subterms()[2])-1;
+		}
+	}
+	stringstream ss;
+	ss << "Unsupported retrieval of lower bound for range EqChainForm " << toString(ecf) << "\n";
+	throw IdpException(ss.str());
+	return 0;
+}
+
+/**
+ * Retrieve the variable from EqChainForms that are ranges
+ * It is very important to note that the implementation is very relient on
+ * what isRange(EqChainForm*) detects to be ranges.
+ * Every type of detected range has to be supported. */
+Variable* getVariable(const EqChainForm* ecf) {
+	if (not isRange(ecf)) {
+		stringstream ss;
+		ss << "EqChainForm " << toString(ecf) << " not detected to be a range, but the concerning variable was asked.\n";
+		throw IdpException(ss.str());
+	}
+	// Only one type of range, one where the variable is the second subterm.
+	if (not isa<VarTerm>(*ecf->subterms()[1])) {
+		stringstream ss;
+		ss << "Term " << toString(ecf->subterms()[1]) << " is not a VarTerm, but was expected.\n";
+		throw IdpException(ss.str());
+	}
+	return dynamic_cast<const VarTerm*>(ecf->subterms()[1])->var();
 }
 
 int nrSubformulas(AbstractTheory* t) {

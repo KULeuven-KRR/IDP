@@ -714,4 +714,5 @@ public:
 	void visit(const FuncTerm*);
 	void visit(const EnumSetExpr*);
 	void visit(const QuantSetExpr*);
+	void visit(const EqChainForm*);
 };

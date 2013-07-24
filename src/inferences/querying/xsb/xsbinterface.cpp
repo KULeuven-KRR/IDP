@@ -111,7 +111,6 @@ void XSBInterface::loadDefinition(Definition* d) {
 	FormulaUtils::unnestFuncsAndAggs(&theory, _structure);
 	FormulaUtils::graphFuncsAndAggs(&theory, _structure, {}, true, false /*TODO check*/);
 	FormulaUtils::removeEquivalences(&theory);
-	FormulaUtils::splitComparisonChains(&theory, theory.vocabulary());
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
 	_pp->addDefinition(cloned_definition);

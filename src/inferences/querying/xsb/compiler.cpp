@@ -79,7 +79,7 @@ string transformIntoTermName(string str) {
 	stringstream ss;
 	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum") {
 		ss << IDPXSB_PREFIX << "_";
-	} else if (!numeric && str != "findall") {
+	} else if (!numeric && str != "findall" &&  str != "between") {
 		ss << IDPXSB_PREFIX << "_";
 	}
 	ss << str;
@@ -758,6 +758,28 @@ void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
 	_parent->addVariables(term->variables());
 }
 
+//
+void FormulaClauseBuilder::visit(const EqChainForm* ecf) {
+	if(FormulaUtils::isRange(ecf)) {
+		// Use the builtin between(lowerBound,upperBound,VAR) to be more efficient
+		auto term = new PrologTerm("between");
+		enter(term);
+		term->addArgument(new PrologConstant(toString(FormulaUtils::getLowerBound(ecf))));
+		term->addArgument(new PrologConstant(toString(FormulaUtils::getUpperBound(ecf))));
+		auto idpvar = FormulaUtils::getVariable(ecf);
+		auto var2 = PrologVariable::create(idpvar->name(),idpvar->sort()->name());
+		term->addArgument(var2);
+		term->addVariable(var2);
+		term->addOutputvarToCheck(var2);
+		leave();
+		_parent->addVariables(term->variables());
+	} else {
+		// Standard case: treat as conjunction / disjunction of comparisons
+		auto boolform = FormulaUtils::splitComparisonChains(ecf->cloneKeepVars());
+		boolform->accept(this);
+	}
+}
+
 void FormulaClauseBuilder::visit(const AggForm* a) {
 	auto term = new AggregateClause();
 	term->type(compType2string(a->comp()));
@@ -767,7 +789,6 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 	leave();
 	term->arguments(vars2terms(term->variables()));
 	_parent->addVariables(term->variables());
-
 }
 
 void FormulaClauseBuilder::visit(const AggTerm* a) {

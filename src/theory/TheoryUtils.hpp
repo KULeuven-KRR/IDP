@@ -38,6 +38,7 @@ class Function;
 class Theory;
 class TheoryComponent;
 class Sort;
+class EqChainForm;
 class LazyGroundingManager;
 struct Delay;
 class Term;
@@ -239,6 +240,7 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 
 /** Rewrite the theory so that there are no nested terms */
+<<<<<<< HEAD
 void unnestTerms(AbstractTheory*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive);
@@ -252,6 +254,21 @@ std::set<PFSymbol* > collectSymbols(AbstractTheory* f);
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
 Rule* removeQuantificationsOverSort(Rule* f, const Sort* s);
 AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s);
+=======
+void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+
+/** Detect whether the EqChainForm is a range */
+bool isRange(const EqChainForm*);
+
+/** Retrieve the lower bound for EqChainForms that are ranges */
+int getLowerBound(const EqChainForm*);
+
+/** Retrieve the upper bound for EqChainForms that are ranges */
+int getUpperBound(const EqChainForm*);
+
+/** Retrieve the variable from EqChainForms that are ranges */
+Variable* getVariable(const EqChainForm*);
+>>>>>>> Added support for comparison chains in XSB.
 } /* namespace FormulaUtils */
 
 
@@ -283,6 +300,14 @@ std::vector<const DomainElement*> deriveTermBounds(const Term*, const Structure*
 
 /** Returns false if the value of the term is defined for all possible instantiations of its free variables */
 bool isPartial(Term*);
+
+/** Check whether a function term is a term multiplied by a factor */
+bool isTermWithIntFactor(const FuncTerm* term, const Structure* structure);
+bool isFactor(const Term* term, const Structure* structure);
+bool isNumber(const Term* term);
+bool isIntNumber(const Term* term);
+bool isFloatNumber(const Term* term);
+int getInt(const Term* term);
 } /* namespace TermUtils */
 
 
@@ -316,7 +341,7 @@ void splitDefinitions(Theory* t);
 bool hasRecursiveAggregate(Definition*);
 
 /** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
-Definition* makeDefinitionCalculable(Definition*, AbstractStructure*);
+Definition* makeDefinitionCalculable(Definition*, Structure*);
 
 /** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
 Definition* eliminateUniversalQuantifications(Definition*);
