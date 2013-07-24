@@ -22,7 +22,7 @@ ApproximatingDefinition::DerivationTypes* PropagationUsingApproxDef::getDerivati
 	return derivationtypes;
 }
 
-void PropagationUsingApproxDef::processApproxDef(AbstractStructure* structure, ApproximatingDefinition* approxdef) {
+void PropagationUsingApproxDef::processApproxDef(Structure* structure, ApproximatingDefinition* approxdef) {
 
 	if (DefinitionUtils::hasRecursionOverNegation(approxdef->approximatingDefinition())) {
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
@@ -47,7 +47,7 @@ void PropagationUsingApproxDef::processApproxDef(AbstractStructure* structure, A
 	}
 }
 
-std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingAllRules(AbstractTheory* theory, AbstractStructure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingAllRules(AbstractTheory* theory, Structure* structure) {
 	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
 	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
 	rule_types.insert(ApproximatingDefinition::RuleType::FORALL);
@@ -56,7 +56,7 @@ std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingAllRul
 	return {structure};
 }
 
-std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingCheapRules(AbstractTheory* theory, AbstractStructure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingCheapRules(AbstractTheory* theory, Structure* structure) {
 	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
 	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
 	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getDerivationTypes(),rule_types);
@@ -64,7 +64,7 @@ std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingCheapR
 	return {structure};
 }
 
-std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingStratification(AbstractTheory* theory, AbstractStructure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingStratification(AbstractTheory* theory, Structure* structure) {
 	auto rule_types_1 = std::set<ApproximatingDefinition::RuleType>();
 	rule_types_1.insert(ApproximatingDefinition::RuleType::CHEAP);
 	auto rule_types_2 = std::set<ApproximatingDefinition::RuleType>();
@@ -76,7 +76,7 @@ std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagateUsingStrati
 	return {structure};
 }
 
-std::vector<AbstractStructure*>  PropagationUsingApproxDef::propagate(AbstractTheory* theory, AbstractStructure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagate(AbstractTheory* theory, Structure* structure) {
 	auto option = getGlobal()->getOptions()->approxDef();
 		switch (option) {
 		case ApproxDef::NONE:

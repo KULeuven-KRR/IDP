@@ -119,9 +119,9 @@ public:
 
 	// High-level operations
 	std::set<PFSymbol*> getSymbolsToQuery();
-	Structure* inputStructure(AbstractStructure*);
-	bool isConsistent(AbstractStructure*);
-	void updateStructure(AbstractStructure*, AbstractStructure*);
+	Structure* inputStructure(Structure*);
+	bool isConsistent(Structure*);
+	void updateStructure(Structure*, Structure*);
 
 private:
 	DerivationTypes* _represented_derivations;

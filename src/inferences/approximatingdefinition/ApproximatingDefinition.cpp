@@ -49,7 +49,7 @@ std::set<PFSymbol*> ApproximatingDefinition::getSymbolsToQuery() {
 	return ret;
 }
 
-Structure* ApproximatingDefinition::inputStructure(AbstractStructure* structure) {
+Structure* ApproximatingDefinition::inputStructure(Structure* structure) {
 
 	auto ret = new Structure("approxdef_struct", _approximating_vocabulary, ParseInfo());
 
@@ -78,7 +78,7 @@ Structure* ApproximatingDefinition::inputStructure(AbstractStructure* structure)
 	return ret;
 }
 
-bool ApproximatingDefinition::isConsistent(AbstractStructure* s) {
+bool ApproximatingDefinition::isConsistent(Structure* s) {
 	// If the built-in "false" formula is made true, the theory has to be inconsistent
 	if (not s->inter(_mappings->_false_predform->symbol())->ct()->empty()) {
 		std::stringstream ss;
@@ -103,7 +103,7 @@ bool ApproximatingDefinition::isConsistent(AbstractStructure* s) {
 	return true;
 }
 
-void ApproximatingDefinition::updateStructure(AbstractStructure* s, AbstractStructure* approxdef_struct) {
+void ApproximatingDefinition::updateStructure(Structure* s, Structure* approxdef_struct) {
 	for(auto ctf : _mappings->_pred2predCt) {
 		if(isa<Function>(*(ctf.first))) {
 			auto symbAsFunction = dynamic_cast<Function*>(ctf.first);
