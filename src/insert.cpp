@@ -2366,7 +2366,14 @@ PFSymbol* Insert::retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arit
 			}
 		}
 	}
-	if (p && nst->_sortsincluded && (int) (nst->_sorts).size() == arity && arity != -1) {
+	if (p && nst->_sortsincluded &&  arity != -1) {
+#ifdef DEBUG
+		if (not expectsFunc) {
+			Assert((int) (nst->_sorts).size() == arity);
+		} else {
+			Assert((int) (nst->_sorts).size() == arity + 1);
+		}
+#endif
 		p = p->resolve(nst->_sorts);
 	}
 	return p;
