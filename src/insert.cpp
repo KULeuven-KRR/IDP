@@ -53,7 +53,7 @@ template<>
 std::ostream& print(std::ostream& output, const longname& vs) {
 	if (!vs.empty()) {
 		output << vs[0];
-		for (unsigned int n = 1; n < vs.size(); ++n){
+		for (unsigned int n = 1; n < vs.size(); ++n) {
 			output << "::" << vs[n];
 		}
 	}
@@ -868,11 +868,11 @@ void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
 	_currstructure->checkAndAutocomplete();
 	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
-	if(considerInterpretedSymbolsTwoValued){
-		for(auto pred: parsedpreds){
+	if (considerInterpretedSymbolsTwoValued) {
+		for (auto pred : parsedpreds) {
 			makeUnknownsFalse(_currstructure->inter(pred));
 		}
-		for(auto func: parsedfuncs){
+		for (auto func : parsedfuncs) {
 			makeUnknownsFalse(_currstructure->inter(func)->graphInter());
 		}
 	}
@@ -1998,9 +1998,9 @@ void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {
 		auto domain = tuple;
 		domain.pop_back();
 		auto value = ft->operator [](domain);
-		if(value!=NULL && value!=tuple.back()){
+		if (value != NULL && value != tuple.back()) {
 			stringstream ss;
-			ss <<"Multiple images for the same function tuple " <<::print(domain) <<": " <<::print(value) <<" and " <<::print(tuple.back()) <<"\n";
+			ss << "Multiple images for the same function tuple " << ::print(domain) << ": " << ::print(value) << " and " << ::print(tuple.back()) << "\n";
 			Error::error(ss.str());
 			return;
 		}
@@ -2366,7 +2366,7 @@ PFSymbol* Insert::retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arit
 			}
 		}
 	}
-	if (p && nst->_sortsincluded &&  arity != -1) {
+	if (p && nst->_sortsincluded && arity != -1) {
 #ifdef DEBUG
 		if (not expectsFunc) {
 			Assert((int) (nst->_sorts).size() == arity);
@@ -2406,6 +2406,18 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst) const {
 		notInVocabularyOf(comptype, ComponentType::Structure, toString(nst), _currstructure->name(), nst->_pi);
 		error = true;
 	}
+	if (not error && symbol->overloaded()) {
+		error = true;
+		if (symbol->isFunction()) {
+			auto func = dynamic_cast<Function*>(symbol);
+			Assert(func != NULL);
+			overloaded(ComponentType::Function, toString(nst), getLocations(func->nonbuiltins()), nst->_pi);
+		} else {
+			auto pred = dynamic_cast<Predicate*>(symbol);
+			Assert(pred != NULL);
+			overloaded(ComponentType::Predicate, toString(nst), getLocations(pred->nonbuiltins()), nst->_pi);
+		}
+	}
 	return error;
 }
 
@@ -2429,7 +2441,7 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 		auto type = symbol->isFunction() ? ComponentType::Function : ComponentType::Predicate;
 		if (not error && contains(_pendingAssignments.at(symbol), utf)) {
 			stringstream ss;
-			ss << type << " " << symbol->name() << " was already interpreted for the truth value " <<print(utf) << ".";
+			ss << type << " " << symbol->name() << " was already interpreted for the truth value " << print(utf) << ".";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
@@ -2580,7 +2592,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 		} else {
 			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
 		}
-		delete(nst);
+		delete (nst);
 	} else if (p) {
 		predinter(nst, t, "tv");
 	} else {
@@ -2598,7 +2610,7 @@ void Insert::finalizePendingAssignments() {
 			if (contains(tables, UTF::CT) && contains(tables, UTF::CF)) {
 				inter->ct(tables[UTF::CT]);
 				inter->cf(tables[UTF::CF]);
-			}else if (contains(tables, UTF::CT)) {
+			} else if (contains(tables, UTF::CT)) {
 				inter->ct(tables[UTF::CT]);
 				auto ctable = inter->ct();
 				auto pt = new PredTable(ctable->internTable(), ctable->universe());
@@ -2627,9 +2639,9 @@ void Insert::finalizePendingAssignments() {
 			case UTF::CF:
 				inter->cf(value2table.second);
 				break;
-			case UTF::U:{
+			case UTF::U: {
 				stringstream ss;
-				ss <<"Only specified unknown truthvalue for symbol " <<toString(symbol2valuetables.first) <<"\n";
+				ss << "Only specified unknown truthvalue for symbol " << toString(symbol2valuetables.first) << "\n";
 				Error::error(ss.str());
 				break;
 			}
