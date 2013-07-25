@@ -21,7 +21,7 @@
 #include "GlobalData.hpp"
 #include "utils/NumericLimits.hpp"
 #include "MainStructureComponents.hpp"
-#include "AbstractStructure.hpp"
+#include "Structure.hpp"
 
 /**
  * NAMING CONVENTION
@@ -494,7 +494,7 @@ private:
 	std::vector<Function*>::const_iterator _constructors_it;
 	std::vector<Function*>::const_iterator _constructors_end;
 	TableIterator _table_it;
-	const AbstractStructure* _struct;
+	const Structure* _struct;
 
 	bool hasNext() const {
 		return _constructors_it != _constructors_end;
@@ -519,14 +519,14 @@ private:
 		}
 	}
 public:
-	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const AbstractStructure* struc)
+	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const Structure* struc)
 			: 	_constructors_it(constr_begin),
 				_constructors_end(constr_end),
 				_table_it(currentElement),
 				_struct(struc) {
 		skipEmptyFuncTables();
 	}
-	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const AbstractStructure* struc, const DomainElement* domel)
+	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const Structure* struc, const DomainElement* domel)
 			: 	_constructors_it(constr_begin),
 				_constructors_end(constr_end),
 				_table_it(currentElement),
@@ -1396,7 +1396,7 @@ private:
 	// Note: implementing this as a list of FuncTables or InternalFuncTables will result in a bug,
 	// since the construction of such tables requires the outSort's interpretation (and hence this table) to be known.
 	const std::vector<Function*> _constructors;
-	const AbstractStructure* _struc;
+	const Structure* _struc;
 
 	FuncTable* getTable(const Function* f) const{
 		return _struc->inter(f)->funcTable();
@@ -1406,7 +1406,7 @@ protected:
 	~ConstructedInternalSortTable() {
 	}
 public:
-	ConstructedInternalSortTable(const AbstractStructure* s, const std::vector<Function*>& funcs) :
+	ConstructedInternalSortTable(const Structure* s, const std::vector<Function*>& funcs) :
 			_constructors(funcs),
 			_struc(s){
 	}

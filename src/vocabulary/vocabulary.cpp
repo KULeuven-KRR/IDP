@@ -350,7 +350,7 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 
-SortTable* getConstructedInterpretation(Sort* s, const AbstractStructure* struc) {
+SortTable* getConstructedInterpretation(Sort* s, const Structure* struc) {
 	Assert(s->isConstructed());
 	return new SortTable(new ConstructedInternalSortTable(struc,s->getConstructors()));
 }

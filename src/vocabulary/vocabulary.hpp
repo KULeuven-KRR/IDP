@@ -27,7 +27,7 @@ class Predicate;
 class Vocabulary;
 class SortTable;
 class Function;
-class AbstractStructure;
+class Structure;
 
 class Sort {
 private:
@@ -101,7 +101,7 @@ public:
 	std::ostream& put(std::ostream&) const;
 };
 
-SortTable* getConstructedInterpretation(Sort* sort, const AbstractStructure* struc);
+SortTable* getConstructedInterpretation(Sort* sort, const Structure* struc);
 
 class UnionSort: public Sort {
 private:
@@ -170,7 +170,7 @@ std::vector<Variable*> makeNewVariables(const std::vector<Sort*>&);
  * Predicate and function symbols
  *********************************/
 
-class AbstractStructure;
+class Structure;
 
 enum SymbolType {
 	ST_NONE,

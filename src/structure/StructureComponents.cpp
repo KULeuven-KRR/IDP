@@ -3981,7 +3981,7 @@ void FuncInter::put(std::ostream& stream) const {
 	}
 }
 
-FuncInter* ConstructorFuncInterGenerator::get(const AbstractStructure* structure){
+FuncInter* ConstructorFuncInterGenerator::get(const Structure* structure){
 	return new FuncInter(new FuncTable(new UNAInternalFuncTable(_function),structure->universe(_function)));
 }
 
