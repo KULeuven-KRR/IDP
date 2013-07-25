@@ -104,7 +104,7 @@ MXResult ModelExpansion::expand() const {
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
 	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
-		logActionAndTime("Solving");
+		logActionAndTime("Starting solving at ");
 	}
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);

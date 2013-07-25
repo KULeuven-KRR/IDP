@@ -133,7 +133,7 @@ private:
 		// Calculate known definitions
 		if (not getOption(BoolType::SATISFIABILITYDELAY)) {
 			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-				logActionAndTime("Evaluating definitions");
+				logActionAndTime("Starting definition evaluation at ");
 			}
 			auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure);
 			if (defCalculated.size() == 0) {
@@ -151,7 +151,7 @@ private:
 
 		// Approximation
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Approximation");
+			logActionAndTime("Starting approximation at ");
 		}
 		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
@@ -165,7 +165,7 @@ private:
 			return grounding;
 		}
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Creating grounders");
+			logActionAndTime("Creating grounders at ");
 		}
 		auto gi = GroundInfo(_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm);
 		if (_receiver == NULL) {
@@ -180,7 +180,7 @@ private:
 
 		// Run grounder
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Grounding");
+			logActionAndTime("Starting grounding at ");
 		}
 		bool unsat = _grounder->toplevelRun();
 		if(unsat){

@@ -28,7 +28,7 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 	case SymmetryBreaking::STATIC: {
 		// Add symmetry breakers
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Adding symmetry breakers");
+			logActionAndTime("Constructing symmetry breakers at ");
 		}
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		addSymBreakingPredicates(grounding, ivsets, nbModelsEquivalent);
@@ -37,7 +37,7 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 	case SymmetryBreaking::DYNAMIC: {
 		// Add symmetry propagators
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Adding symmetry propagators");
+			logActionAndTime("Constructing symmetry propagators at ");
 		}
 		auto ivsets = findIVSets(theory, structure, minimizeTerm);
 		for (auto ivset : ivsets) {
