@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef PROPAGATEMONITOR_HPP_
-#define PROPAGATEMONITOR_HPP_
+#pragma once
 
 #include <iostream>
 #include "TraceMonitor.hpp"
@@ -21,9 +20,8 @@ private:
 	SearchMonitor* _solvermonitor;
 public:
 	PropagateMonitor() {
-		cb::Callback2<void, MinisatID::Lit, int> callbackprop(this, &PropagateMonitor::propagate);
 		_solvermonitor = new SearchMonitor();
-		_solvermonitor->setPropagateCB(callbackprop);
+		_solvermonitor->setPropagateCB([this](MinisatID::Lit lit, int dl){this->propagate(lit,dl);});
 	}
 	virtual ~PropagateMonitor() {
 		delete (_solvermonitor);
@@ -46,5 +44,3 @@ public:
 		// Note: no-op as we return the original literals // TODO should we do this?
 	}
 };
-
-#endif /* PROPAGATEMONITOR_HPP_ */

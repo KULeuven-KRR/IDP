@@ -285,7 +285,6 @@ public:
 
 	// PRINTING
 
-	std::string printL(Lit atom);
 	std::string printLit(const Lit& atom) const;
 	std::string printTerm(const GroundTerm&) const;
 };

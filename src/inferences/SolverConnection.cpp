@@ -77,28 +77,39 @@ MinisatID::Weight createWeight(double weight) {
 	return int(weight);
 }
 
-typedef cb::Callback1<std::string, int> callbackprinting;
+typedef std::function<std::string(int)> callbackprintlit;
+typedef std::function<std::string(const GroundTerm&)> callbackprintterm;
 
 class CallBackTranslator: public PCPrinter {
 private:
-	callbackprinting cb;
+	callbackprintlit cblit;
+	callbackprintterm cbterm;
 public:
-	CallBackTranslator(callbackprinting cb)
-			: cb(cb) {
+	CallBackTranslator(callbackprintlit cblit, callbackprintterm cbterm)
+			: cblit(cblit), cbterm(cbterm) {
 
 	}
 
+	virtual bool hasTranslation(const MinisatID::VarID&) const {
+		return true;
+	}
 	virtual bool hasTranslation(const MinisatID::Lit&) const {
 		return true;
 	}
 
+	virtual std::string toString(MinisatID::VarID id) const{
+		std::stringstream ss;
+		ss << cbterm(GroundTerm(VarId{id.id}));
+		return ss.str();
+	}
+
 	virtual std::string toString(const MinisatID::Lit& lit) const {
 		std::stringstream ss;
-		auto l = var(lit);
+		Lit l = var(lit);
 		if (lit.hasSign()) {
 			l = -l;
 		}
-		ss << cb(l);
+		ss << cblit(l);
 		return ss.str();
 	}
 };
@@ -131,7 +142,7 @@ PCSolver* createsolver(int nbmodels) {
 }
 
 void setTranslator(PCSolver* solver, GroundTranslator* translator) {
-	auto trans = new CallBackTranslator(callbackprinting(translator, &GroundTranslator::printL));
+	auto trans = new CallBackTranslator([translator](const Lit& lit){return translator->printLit(lit);}, [translator](const GroundTerm& term){return translator->printTerm(term);});
 	solver->setTranslator(trans);
 	// FIXME trans is not deleted anywhere
 }

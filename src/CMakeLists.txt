@@ -33,7 +33,6 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/lua/src"
 	"${PROJECT_SOURCE_DIR}/src"
 	"${CMAKE_CURRENT_BINARY_DIR}"
-	"${PROJECT_SOURCE_DIR}/lib/pluscallback1.7/"
 	"${PROJECT_SOURCE_DIR}/lib/interactiveShell/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )

@@ -24,11 +24,9 @@ LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 }
 
 void LuaTraceMonitor::setSolver(PCSolver* solver) {
-	cb::Callback1<void, int> callbackback(this, &LuaTraceMonitor::backtrack);
-	cb::Callback2<void, MinisatID::Lit, int> callbackprop(this, &LuaTraceMonitor::propagate);
 	auto solvermonitor_ = new SearchMonitor();
-	solvermonitor_->setBacktrackCB(callbackback);
-	solvermonitor_->setPropagateCB(callbackprop);
+	solvermonitor_->setBacktrackCB([this](int dl){this->backtrack(dl);});
+	solvermonitor_->setPropagateCB([this](MinisatID::Lit lit, int dl){this->propagate(lit, dl);});
 	solver->addMonitor(solvermonitor_);
 }
 
