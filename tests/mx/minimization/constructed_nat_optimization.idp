@@ -3,7 +3,7 @@ include <mx>
 vocabulary V {
     type num isa nat
     lives(num,num)
-    type neighborAmount isa nat // constructed from {0..8}
+    type neighborAmount = {0..8} isa nat
     nbOfLiveNeighbors(num,num):neighborAmount
 }
 
@@ -20,7 +20,6 @@ theory T:V {
 
 structure S:V {
     num = {1..3}
-    neighborAmount = {0..8}
 }
 
 term t:V {

@@ -20,7 +20,7 @@ class DomElemContainer;
 class DomainElement;
 
 /**
- * Generator for a function when the range is output and there is an input/output pattern for the domain.
+ * Generator for a function when the co-domain is output and there is an input/output pattern for the domain.
  */
 class SimpleFuncGenerator: public InstGenerator {
 private:

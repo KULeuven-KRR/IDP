@@ -1018,19 +1018,25 @@ NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
 /**
  * \brief Create a new sort in the current vocabulary
  *
- * \param name	the name of the sort
+ * \param name			the name of the sort
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
  */
-Sort* Insert::sort(const string& name, YYLTYPE l) {
+Sort* Insert::sort(const string& name, YYLTYPE l, SortTable* fixedInter) {
 	vector<Sort*> vs(0);
-	return sort(name, vs, vs, l);
+	return sort(name, vs, vs, l, fixedInter);
 }
 
 /**
  * \brief Create a new sort in the current vocabulary
  *
- * \param name		the name of the sort
- * \param supbs		the super- or subsorts of the sort
- * \param super		true if supbs are the supersorts, false if supbs are the subsorts
+ * \param name			the name of the sort
+ * \param supbs			the super- or subsorts of the sort
+ * \param super			true if supbs are the supersorts, false if supbs are the subsorts
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
  */
 Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YYLTYPE l, SortTable* fixedInter) {
 	vector<Sort*> vs(0);
@@ -1044,9 +1050,12 @@ Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YY
 /**
  * \brief Create a new sort in the current vocabulary
  *
- * \param name		the name of the new sort
- * \param sups		the supersorts of the new sort
- * \param subs		the subsorts of the new sort
+ * \param name			the name of the new sort
+ * \param sups			the supersorts of the new sort
+ * \param subs			the subsorts of the new sort
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
  */
 Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l, SortTable* fixedInter) {
 	ParseInfo pi = parseinfo(l);
@@ -2570,6 +2579,19 @@ void Insert::interByProcedure(NSPair* nsp, const longname& procedure, YYLTYPE l)
 		predinter(nsp, pt);
 	}
 }
+
+void Insert::constructor(NSPair* nst) const {
+	auto pi = nst->_pi;
+	auto f = retrieveSymbolNoChecks(nst, true, -1);
+	auto error = basicSymbolCheck(f, nst);
+	if (not error) {
+		auto function = dynamic_cast<Function*>(f);
+		auto uift = new UNAInternalFuncTable(function);
+		auto ft = new FuncTable(uift, _currstructure->universe(f));
+		funcinter(nst, ft);
+	}
+}
+
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	ParseInfo pi = nst->_pi;

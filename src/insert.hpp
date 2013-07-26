@@ -259,7 +259,7 @@ public:
 	NSPair* internfuncpointer(const longname&, const std::vector<Sort*>&, Sort*, YYLTYPE) const;
 	NSPair* internpointer(const longname& name, YYLTYPE) const;
 
-	Sort* sort(const std::string& name, YYLTYPE);
+	Sort* sort(const std::string& name, YYLTYPE, SortTable* fixedInter = NULL);
 	Sort* sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE, SortTable* fixedInter = NULL);
 	Sort* sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE l, SortTable* fixedInter = NULL);
 	void addConstructors(const std::vector<Function*>* functionlist) const;
@@ -391,6 +391,7 @@ public:
 	 */
 	bool interpretationSpecifiedByUser(Structure* structure, Sort* sort) const;
 	bool interpretationSpecifiedByUser(PFSymbol* symbol) const;
+	void constructor(NSPair* nst) const; //!< allows for the declaration of constructor functions in structure. TODO: test + evaluate usefulness
 	void sortinter(NSPair*, SortTable* t)const; //!< Assign a one dimensional table
 	void interByProcedure(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure
 	void predinter(NSPair*, PredTable* t, const std::string& utf = "tv")const;

@@ -782,23 +782,30 @@ void InverseInternalIterator::operator++() {
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& its, Function* f)
-		: CartesianInternalTableIterator(its,its), _function(f) {
+		: cartIt(its,its), _function(f) {
 }
 
 UNAInternalIterator::UNAInternalIterator(const vector<SortIterator>& curr, const vector<SortIterator>& low, Function* f, bool end)
-		: CartesianInternalTableIterator(curr,low,end), _function(f) {
+		: cartIt(curr,low,end), _function(f) {
 }
 
 UNAInternalIterator* UNAInternalIterator::clone() const {
-	return new UNAInternalIterator(CartesianInternalTableIterator::getIterators(), CartesianInternalTableIterator::getLowest(), _function, hasNext());
+	return new UNAInternalIterator(cartIt.getIterators(), cartIt.getLowest(), _function, hasNext());
+}
+
+bool UNAInternalIterator::hasNext() const{
+	return cartIt.hasNext();
 }
 
 const ElementTuple& UNAInternalIterator::operator*() const {
-	auto tmp = CartesianInternalTableIterator::operator *();
+	auto tmp = *cartIt;
 	tmp.push_back(createDomElem(_function, tmp));
 	_deref2.push_back(tmp);
 	return _deref2.back();
+}
 
+void UNAInternalIterator::operator++(){
+	++cartIt;
 }
 
 EqualInternalIterator::EqualInternalIterator(const SortIterator& iter)
@@ -1974,6 +1981,20 @@ tablesize ConstructedInternalSortTable::size() const{
 		sum = sum+getTable(f)->size();
 	}
 	return sum;
+}
+
+const DomainElement* ConstructedInternalSortTable::first() const {
+	return *(*sortBegin());
+}
+
+const DomainElement* ConstructedInternalSortTable::last() const {
+	auto tmp = sortBegin();
+	auto result = **tmp;
+	while(tmp->hasNext()){
+		++(*tmp);
+		result = **tmp;
+	}
+	return result;
 }
 
 bool ConstructedInternalSortTable::contains(const DomainElement* d) const{

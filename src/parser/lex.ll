@@ -489,6 +489,8 @@ COMMENTLINE2	"--".*
 							  return FALSE;				}
 <structure>"procedure"		{ parser.advancecol();
 							  return PROCEDURE;			}
+<structure>"generate"		{ parser.advancecol();
+							  return CONSTRUCTOR;		}
 <aspstructure>"%".*			{							}
 <aspstructure>".."			{ parser.advancecol();
 							  return RANGE;				}

@@ -16,8 +16,12 @@
 InverseUNAFuncGenerator::InverseUNAFuncGenerator(Function* function, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
 		: _function(function), _reset(true) {
 	_universe = univ;
+	/*
+	 * Note: if pattern.back()!=Pattern::OUTPUT, then a SimpleFuncGenerator should have been constructed instead.
+	 * See the method "void GeneratorFactory::visit(const FuncTable* ft)" for more information.
+	 */
 	if(pattern.back()==Pattern::OUTPUT){
-		throw IdpException("Invalid code path");
+		throw IdpException("Invalid code path in InverseUNAFuncGenerator");
 	}
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == Pattern::OUTPUT) {

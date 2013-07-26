@@ -25,11 +25,13 @@ In the rest of this text, we will sometimes use ``parent type'' as direct supert
 Types can also be \emph{constructed} using the \code{constructed from} keywords. A constructed type has a fixed interpretation which is the union of the images of a set of \emph{constructor functions}. These constructor functions each have an interpretation which maps every tuple from their domain to a unique domain element in the interpretation of the constructed type. Constructor functions should not be explicitly declared by the vocabulary; a function occurring in the declaration is automatically declared as a constructor function. E.g., a constructed type \code{Square} with constructors \code{Index/2} and \code{SpecialSquare/0} is declared as by
 \begin{lstlisting}
 	type T1
-	type Square constructed from {Position(T1,T1);SpecialSquare}
+	type Square constructed from {Position(T1,T1),SpecialSquare}
 \end{lstlisting}
-Note that it is possible to use numerals as constructor functions, in which case the constructed type should be a subtype of a numeric type. For instance:
+Note that constructed types currently do not support any type inheritance.\\
+
+Also note that it is impossible to construct numerical types, since numerals simply are not constructor functions. However, sometimes it is useful to interpret a numerical type independent of any structure. This can be done in the vocabulary with a similar syntax as when the type would be interpreted in a structure. It is possible to make such a type inherit from a numerical supertype, or make it contain a numerical subtype.
 \begin{lstlisting}
-	type SmallPrimes isa nat constructed from {2;3;5;7}
+	type SmallPrimes = {2;3;5;7} isa nat 
 \end{lstlisting}
 
 A predicate with name \code{MyPred}, arity 3 and types \code{T1},\code{T2},\code{T3} is declared by

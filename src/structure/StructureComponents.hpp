@@ -273,8 +273,9 @@ public:
 	virtual void operator++();
 };
 
-class UNAInternalIterator: public CartesianInternalTableIterator {
+class UNAInternalIterator: public InternalTableIterator {
 private:
+	CartesianInternalTableIterator cartIt;
 	Function* _function;
 	mutable std::vector<ElementTuple> _deref2;
 
@@ -283,7 +284,9 @@ public:
 	UNAInternalIterator(const std::vector<SortIterator>& vsi, Function* f);
 	UNAInternalIterator* clone() const;
 
+	virtual bool hasNext() const;
 	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class InverseInternalIterator: public InternalTableIterator {
@@ -504,9 +507,9 @@ private:
 	}
 	void operator++() {
 		++_table_it;
-		skipEmptyFuncTables();
+		skipToNextElement();
 	}
-	void skipEmptyFuncTables() {
+	void skipToNextElement() {
 		if (_constructors_it == _constructors_end) {
 			return;
 		}
@@ -524,17 +527,17 @@ public:
 				_constructors_end(constr_end),
 				_table_it(currentElement),
 				_struct(struc) {
-		skipEmptyFuncTables();
+		skipToNextElement();
 	}
 	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const Structure* struc, const DomainElement* domel)
 			: 	_constructors_it(constr_begin),
 				_constructors_end(constr_end),
 				_table_it(currentElement),
 				_struct(struc) {
-		skipEmptyFuncTables();
+		skipToNextElement();
 		while (hasNext() && (*_table_it).back() != domel) {
 			++_table_it;
-			skipEmptyFuncTables();
+			skipToNextElement();
 		}
 	}
 	~ConstructedInternalSortIterator() {
@@ -610,6 +613,7 @@ public:
 	void incrementRef(); //!< Add one reference
 
 	// Iterators
+	// TODO: what object is responsible for the memory management of this iterator?
 	virtual InternalTableIterator* begin(const Universe&) const = 0;
 
 	InternalPredTable() :
@@ -1427,13 +1431,12 @@ public:
 	InternalSortTable* add(int, int){
 		throw notyetimplemented("Addition of domain elements to a constructed sort is not yet implemented.");
 	}
-	const DomainElement* first() const {
-		throw IdpException("Invalid code path");
-	}
 
-	const DomainElement* last() const {
-		throw IdpException("Invalid code path");
-	}
+	//NOTE: what happens when the sort is empty?
+	const DomainElement* first() const;
+
+	//NOTE: what happens when the sort is empty?
+	const DomainElement* last() const;
 
 	bool contains(const DomainElement*) const;
 	bool isRange() const {

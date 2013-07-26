@@ -110,6 +110,7 @@ void yyerror(const char* s);
 %token TERM_HEADER
 
 /** Keywords **/
+%token CONSTRUCTOR
 %token PROCEDURE
 %token PARTIAL
 %token EXTENDS
@@ -315,10 +316,16 @@ sort_decl		: TYPE identifier						{ $$ = data().sort(*$2,@2);		}
 																				{ $$ = data().sort(*$2,*$6,*$4,@2); delete($4); delete($6); }
 				| TYPE identifier { data().sort(*$2,@2); } CONSTRUCTED '{' func_list '}'
 																				{ data().addConstructors($6); delete($6);}
-				| TYPE identifier ISA nonempty_spt CONSTRUCTED '{' elements_es '}'
-																				{ $$ = data().sort(*$2,*$4,true,@2,$7); delete($4); }
-				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt CONSTRUCTED '{' elements_es '}'
-																				{ $$ = data().sort(*$2,*$4,*$6,@2,$9); delete($4); delete($6); }
+				| TYPE identifier '=' '{' elements_es '}'
+																				{ $$ = data().sort(*$2,@2,$5); }
+				| TYPE identifier '=' '{' elements_es '}' ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,true,@2,$5); delete($8); }
+				| TYPE identifier '=' '{' elements_es '}' EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,false,@2,$5); delete($8); }
+				| TYPE identifier '=' '{' elements_es '}' ISA nonempty_spt EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,*$10,@2,$5); delete($8); delete($10); }
+				| TYPE identifier '=' '{' elements_es '}' EXTENDS nonempty_spt ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$10,*$8,@2,$5); delete($10); delete($8); }
 				;
 
 pred_decl		: identifier '(' sort_pointer_tuple ')'	{ data().predicate(*$1,*$3,@1); delete($3); }
@@ -687,6 +694,7 @@ func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ data().funcinter($1,$4); }
 			| intern_pointer '=' pelement			{ FuncTable* ft = data().createFuncTable(1);
 													  data().addTupleVal(ft,$3,@3);
 													  data().funcinter($1,ft); }
+			| intern_pointer '=' CONSTRUCTOR		{ data().constructor($1);	}													  
 			;
 
 ftuples_es		: ftuples ';'					{ $$ = $1;	}
