@@ -162,7 +162,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	SortedElementTable result;
 	XSB_StrDefine (buff);
 	stringstream ss;
-	ss << *term << ".";
+	ss << "call_tv(" << *term << ",true).";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {

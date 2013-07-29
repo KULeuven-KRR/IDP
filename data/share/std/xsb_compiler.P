@@ -30,7 +30,7 @@ idpxsb_max([X|Rest],Max,TmpMax) :-
 	idpxsb_max(Rest,Max,TmpMax).
 
 idpxsb_forall(CallA, CallB) :-
-    call_tv(tables:not_exists((call(CallA), tables:not_exists(CallB))),true).
+    tables:not_exists((call(CallA), tables:not_exists(CallB))).
      
 idpxsb_int(X) :- 
     nonvar(X),
