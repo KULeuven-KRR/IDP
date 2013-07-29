@@ -95,7 +95,8 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[propagate(theory,structure)]
  		Returns a structure, made more precise than the input by doing symbolic propagation on the theory.
  		Returns nil when propagation results in an inconsistent structure.
- 	
+ 	\item[initialise(theory,structure)] can only be called with an LTC theory. Performs initialisation for the \href{http://dtai.cs.kuleuven.be/krr/files/progression.pdf}{progression inference} 
+ 	\item[progress(theory,structure)] can only be called with an LTC theory. Performs one progression step for the \href{http://dtai.cs.kuleuven.be/krr/files/progression.pdf}{progression inference} 
 	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
 	
 	\item[modelexpandpartial(theory,structure)]
