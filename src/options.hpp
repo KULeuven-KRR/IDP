@@ -45,6 +45,7 @@ enum IntType {
 	NRPROPSTEPS,
 	LONGESTBRANCH,
 	TIMEOUT,
+	MXTIMEOUT,
 	RANDOMSEED,
 	// DO NOT MIX verbosity and non-verbosity options!
 	VERBOSE_CREATE_GROUNDERS,

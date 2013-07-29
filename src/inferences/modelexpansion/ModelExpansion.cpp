@@ -18,6 +18,7 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "errorhandling/error.hpp"
+#include "utils/Timer.hpp"
 
 using namespace std;
 
@@ -108,26 +109,31 @@ MXResult ModelExpansion::expand() const {
 	}
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
+
+	auto t = Timer<std::function<void (void)>>(getOption(MXTIMEOUT),[terminator](){terminator->notifyTerminateRequested();});
+	thread time(&Timer<std::function<void (void)>>::time, &t);
+
 	try {
-		// TODO here, make all ground atoms in the output vocabulary decision vars. (and set the option that not everything has to be decided)
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
 	} catch (MinisatID::idpexception& error) {
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
 		throw IdpException(ss.str());
 	}
-	MXResult result;
-	result._optimumfound = true;
 
+	t.requestStop();
+	time.join();
 
 	if (getGlobal()->terminateRequested()) {
-		if (mx->getSpace()->isOptimizationProblem() && mx->getSolutions().size() > 0) {
-			result._optimumfound = false;
-			Warning::warning("Optimization inference interrupted: will continue with the (single!) best model found to date (if any).");
-			getGlobal()->reset();
-		}else{
-			throw IdpException("Solver was terminated");
-		}
+		throw IdpException("Solver was terminated");
+	}
+
+	MXResult result;
+	result._optimumfound = true;
+	if(t.hasTimedOut()){
+		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
+		result._optimumfound = false;
+		getGlobal()->reset();
 	}
 
 	// Collect solutions
