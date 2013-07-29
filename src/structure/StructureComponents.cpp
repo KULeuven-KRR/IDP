@@ -926,6 +926,81 @@ void CharInternalSortIterator::operator++() {
 	}
 }
 
+bool ConstructedInternalSortIterator::hasNext() const {
+	return _constructors_it != _constructors.cend();
+}
+
+const DomainElement* ConstructedInternalSortIterator::operator*() const {
+	return (*_table_it).back();
+}
+
+void ConstructedInternalSortIterator::operator++() {
+	++_table_it;
+	skipToNextElement();
+}
+
+void ConstructedInternalSortIterator::skipToNextElement() {
+	if (_constructors_it == _constructors.cend()) {
+		return;
+	}
+	while (_table_it.isAtEnd()) {
+		++_constructors_it;
+		if (_constructors_it == _constructors.cend()) {
+			return;
+		}
+		_table_it = _struct->inter(*_constructors_it)->funcTable()->begin();
+	}
+}
+
+void ConstructedInternalSortIterator::initialize(const std::vector<Function*>& constructors){
+	// make sure finite constructors are in front
+	_constructors=std::vector<Function*>();
+	for(unsigned int i=0; i<constructors.size(); ++i){
+		if(_struct->inter(constructors.at(i))->funcTable()->finite()){
+			_constructors.push_back(constructors.at(i));
+		}
+	}
+	for(unsigned int i=0; i<constructors.size(); ++i){
+		if(not _struct->inter(constructors.at(i))->funcTable()->finite()){
+			_constructors.push_back(constructors.at(i));
+		}
+	}
+	_constructors_it=_constructors.cbegin();
+	if(_constructors_it!=_constructors.cend()){
+		_table_it= _struct->inter(*_constructors_it)->funcTable()->begin();
+	}
+	skipToNextElement();
+}
+
+ConstructedInternalSortIterator::ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc)
+		: 	_constructors(std::vector<Function*>()),
+			_struct(struc) {
+	initialize(constructors);
+}
+
+ConstructedInternalSortIterator::ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc, const DomainElement* domel)
+		: 	_constructors(std::vector<Function*>()),
+			_struct(struc) {
+	initialize(constructors);
+	if(domel->type()!=DET_COMPOUND){
+		_constructors_it=_constructors.cend();
+	}else{
+		Function* func = domel->value()._compound->function();
+		for(; _constructors_it!=_constructors.cend(); ++_constructors_it){
+			if(*_constructors_it==func){
+				_table_it = _struct->inter(*_constructors_it)->funcTable()->begin();
+				while(not _table_it.isAtEnd() && not((*_table_it).back() == domel)){
+					++_table_it;
+				}
+				if(_table_it.isAtEnd()){ // element not present
+					_constructors_it=_constructors.cend();
+				}
+				break;
+			}
+		}
+	}
+}
+
 /*************************
  Internal predtable
  *************************/
@@ -2012,13 +2087,11 @@ bool ConstructedInternalSortTable::contains(const DomainElement* d) const{
 }
 
 InternalSortIterator* ConstructedInternalSortTable::sortBegin() const {
-	auto tableit = getTable(*_constructors.cbegin())->begin();
-	return new ConstructedInternalSortIterator(_constructors.cbegin(), _constructors.cend(), tableit, _struc);
+	return new ConstructedInternalSortIterator(_constructors, _struc);
 }
 
 InternalSortIterator* ConstructedInternalSortTable::sortIterator(const DomainElement* d) const {
-	auto tableit = getTable(*_constructors.cbegin())->begin();
-	return new ConstructedInternalSortIterator(_constructors.cbegin(), _constructors.cend(), tableit, _struc, d);
+	return new ConstructedInternalSortIterator(_constructors, _struc, d);
 }
 
 InternalSortTable* IntRangeInternalSortTable::add(const DomainElement* d) {

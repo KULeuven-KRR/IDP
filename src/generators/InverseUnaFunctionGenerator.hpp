@@ -27,10 +27,8 @@ private:
 	const DomElemContainer* _resvar;
 	bool _reset;
 
-#ifdef DEBUG
 	std::vector<const DomElemContainer*> _invars;
 	std::vector<unsigned int> _inpos;
-#endif
 
 public:
 	InverseUNAFuncGenerator(Function* function, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ);

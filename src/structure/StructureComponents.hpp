@@ -494,56 +494,25 @@ public:
 
 class ConstructedInternalSortIterator: public InternalSortIterator {
 private:
+	std::vector<Function*> _constructors;
 	std::vector<Function*>::const_iterator _constructors_it;
-	std::vector<Function*>::const_iterator _constructors_end;
 	TableIterator _table_it;
 	const Structure* _struct;
 
-	bool hasNext() const {
-		return _constructors_it != _constructors_end;
-	}
-	const DomainElement* operator*() const {
-		return (*_table_it).back();
-	}
-	void operator++() {
-		++_table_it;
-		skipToNextElement();
-	}
-	void skipToNextElement() {
-		if (_constructors_it == _constructors_end) {
-			return;
-		}
-		while (_table_it.isAtEnd()) {
-			++_constructors_it;
-			if (_constructors_it == _constructors_end) {
-				return;
-			}
-			_table_it = _struct->inter(*_constructors_it)->funcTable()->begin();
-		}
-	}
+	bool hasNext() const ;
+	const DomainElement* operator*() const ;
+	void operator++();
+	void skipToNextElement();
+
+	void initialize(const std::vector<Function*>& constructors);
+
 public:
-	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const Structure* struc)
-			: 	_constructors_it(constr_begin),
-				_constructors_end(constr_end),
-				_table_it(currentElement),
-				_struct(struc) {
-		skipToNextElement();
-	}
-	ConstructedInternalSortIterator(std::vector<Function*>::const_iterator constr_begin, std::vector<Function*>::const_iterator constr_end, TableIterator currentElement, const Structure* struc, const DomainElement* domel)
-			: 	_constructors_it(constr_begin),
-				_constructors_end(constr_end),
-				_table_it(currentElement),
-				_struct(struc) {
-		skipToNextElement();
-		while (hasNext() && (*_table_it).back() != domel) {
-			++_table_it;
-			skipToNextElement();
-		}
-	}
+	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc);
+	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc, const DomainElement* domel);
 	~ConstructedInternalSortIterator() {
 	}
 	ConstructedInternalSortIterator* clone() const {
-		return new ConstructedInternalSortIterator(_constructors_it,_constructors_end,_table_it,_struct);
+		return new ConstructedInternalSortIterator(_constructors, _struct, *(*this));
 	}
 
 };

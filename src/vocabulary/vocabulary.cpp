@@ -1117,7 +1117,8 @@ Function::Function(FuncGenerator* generator)
 			_insorts(generator->arity(), NULL),
 			_outsort(NULL),
 			_interpretation(NULL),
-			_overfuncgenerator(generator) {
+			_overfuncgenerator(generator),
+			_isConstructor(false) /* currently no generators for constructor functions exist */{
 }
 
 Function::~Function() {

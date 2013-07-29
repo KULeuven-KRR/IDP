@@ -28,12 +28,6 @@ InverseUNAFuncGenerator::InverseUNAFuncGenerator(Function* function, const std::
 			_outvars.push_back(vars[n]);
 			_outpos.push_back(n);
 		}
-#ifdef DEBUG
-		if (pattern[n] == Pattern::INPUT) {
-			_invars.push_back(vars[n]);
-			_inpos.push_back(n);
-		}
-#endif
 	}
 	_resvar = vars.back();
 }
@@ -55,21 +49,27 @@ void InverseUNAFuncGenerator::next() {
 			notifyAtEnd();
 			return;
 		}
-#ifdef DEBUG
+		// checking whether the input variables correspond to the arguments of the input compound constructor co-domain element
+		// if not, notifyAtEnd
 		for (unsigned int n = 0; n < _inpos.size(); ++n) {
 			if(_inpos[n]<c->args().size()){
-				Assert(_invars[n]->get()==c->arg(_inpos[n]));
+				if(_invars[n]->get()!=c->arg(_inpos[n])){
+					notifyAtEnd();
+					return;
+				}
 			}else{
-				Assert(_invars[n]->get()->value()._compound==c);
+				if(_invars[n]->get()->value()._compound!=c){
+					notifyAtEnd();
+					return;
+				}
 			}
 		}
-#endif
 		for (unsigned int n = 0; n < _outpos.size(); ++n) {
 			if (_universe.tables()[_outpos[n]]->contains(c->arg(_outpos[n]))) {
 				*(_outvars[n]) = c->arg(_outpos[n]);
 			} else {
 				notifyAtEnd();
-				break;
+				return;
 			}
 		}
 	} else {
