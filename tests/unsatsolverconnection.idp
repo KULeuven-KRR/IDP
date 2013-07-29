@@ -1,3 +1,4 @@
+// NOTE: tests that expects fast unsat, currently depends on the solver propagating during grounding.
 vocabulary V{
 	type large isa nat
 	q(large,large,large, large, large)
