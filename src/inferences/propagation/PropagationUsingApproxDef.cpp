@@ -45,6 +45,7 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 					toString(structure) << "\n";
 		}
 	}
+	structure->clean();
 }
 
 std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingAllRules(AbstractTheory* theory, Structure* structure) {
