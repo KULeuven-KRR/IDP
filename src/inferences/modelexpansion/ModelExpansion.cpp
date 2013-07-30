@@ -110,8 +110,8 @@ MXResult ModelExpansion::expand() const {
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
 
-	auto t = Timer<std::function<void (void)>>(getOption(MXTIMEOUT),[terminator](){terminator->notifyTerminateRequested();});
-	thread time(&Timer<std::function<void (void)>>::time, &t);
+	auto t = basicTimer([](){return getOption(MXTIMEOUT);},[terminator](){terminator->notifyTerminateRequested();});
+	thread time(&basicTimer::time, &t);
 
 	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch

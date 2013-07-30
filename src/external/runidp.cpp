@@ -246,8 +246,8 @@ const DomainElement* executeProcedure(const string& proc) {
 	if (!stoprunning) {
 		jumpback = 0;
 
-		auto t = Timer<std::function<void (void)>>(getOption(TIMEOUT),[](){timeout();});
-		thread signalhandling(&Timer<std::function<void (void)>>::time, &t);
+		auto t = basicTimer([](){return getOption(TIMEOUT); },[](){timeout();});
+		thread signalhandling(&basicTimer::time, &t);
 
 		RunData d;
 		d.proc = temp;

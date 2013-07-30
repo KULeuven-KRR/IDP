@@ -7,19 +7,23 @@
 
 #include <thread>
 #include "unistd.h"
+#include <iostream>
 
-template <class Exec>
-class Timer{
+template<class CallForTimeBound, class CallOnTimeout>
+class Timer {
 public:
-	long long timeout_in_sec;
-	Exec call_on_timeout;
+	CallForTimeBound call_for_timebound;
+	CallOnTimeout call_on_timeout;
 
 	bool stoptiming;
 	bool _hasTimedOut;
 
-	Timer(long timeout_in_seconds, Exec call_on_timeout): timeout_in_sec(timeout_in_seconds), call_on_timeout(call_on_timeout),
-			stoptiming(false), _hasTimedOut(false){
-
+	// NOTE: timer can take 1000 millisecs to join!
+	Timer(CallForTimeBound call_for_timebound, CallOnTimeout call_on_timeout)
+			: 	call_for_timebound(call_for_timebound),
+				call_on_timeout(call_on_timeout),
+				stoptiming(false),
+				_hasTimedOut(false) {
 	}
 
 	bool requestedToStop() const {
@@ -30,23 +34,20 @@ public:
 		stoptiming = true;
 	}
 
-	bool hasTimedOut() const{
+	bool hasTimedOut() const {
 		return _hasTimedOut;
 	}
 
 	void time() {
-		if (timeout_in_sec == 0) {
-			return;
-		}
 		long long time = 0;
 		int sleep = 10;
 		while (not requestedToStop()) {
 			time += sleep;
-			#ifdef __MINGW32__
-				Sleep(sleep);
-			#else
-				usleep(sleep * 1000);
-			#endif
+#ifdef __MINGW32__
+			Sleep(sleep);
+#else
+			usleep(sleep * 1000);
+#endif
 
 			if (sleep < 1000) {
 				if (sleep < 100) {
@@ -55,11 +56,17 @@ public:
 					sleep += 100;
 				}
 			}
-			if (timeout_in_sec < time / 1000) {
+
+			if (call_for_timebound() < time / 1000) {
 				_hasTimedOut = true;
 				call_on_timeout();
 				break;
 			}
+			if(call_for_timebound()==0){
+				return;
+			}
 		}
 	}
 };
+
+typedef Timer<std::function<long(void)>, std::function<void (void)>> basicTimer;

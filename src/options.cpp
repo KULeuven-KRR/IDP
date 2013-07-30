@@ -158,7 +158,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 		// Afterwards, setting them to 0 stops the timing
 		IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 
 		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", _option2name, PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
