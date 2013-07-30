@@ -56,10 +56,10 @@ public:
 				}
 			}
 			if (timeout_in_sec < time / 1000) {
+				_hasTimedOut = true;
 				call_on_timeout();
 				break;
 			}
 		}
-		_hasTimedOut = true;
 	}
 };
