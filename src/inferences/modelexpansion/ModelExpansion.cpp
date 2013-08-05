@@ -147,7 +147,7 @@ MXResult ModelExpansion::expand() const {
 			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 				stringstream ss;
 				ss <<"The best value found was " <<bestvalue <<"\n";
-				ss <<"Solver generated " << list.size() << " models";
+				ss <<"Solver generated " << list.size() << " model(s): ";
 				logActionAndTime(ss.str());
 			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
@@ -158,7 +158,7 @@ MXResult ModelExpansion::expand() const {
 		auto abstractsolutions = mx->getSolutions();
 		if (getOption(IntType::VERBOSE_SOLVING)  > 0) {
 			stringstream ss;
-			ss <<"Solver generated " << abstractsolutions.size() << " models";
+			ss <<"Solver generated " << abstractsolutions.size() << " model(s): ";
 			logActionAndTime(ss.str());
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
