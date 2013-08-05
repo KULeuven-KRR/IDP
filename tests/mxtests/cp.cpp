@@ -13,8 +13,8 @@
 
 namespace Tests {
 
-TEST_P(MXnbTest, DoesMXWithCP) {
-	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
+TEST_P(MXnbTest, DoesMXWithoutCP) {
+	runTests("modelexpansion.idp", GetParam(), "mxwithoutcp()");
 }
 
 #ifdef WITHGECODE

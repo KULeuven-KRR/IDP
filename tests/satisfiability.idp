@@ -44,11 +44,8 @@ procedure satwithboundslong(){
 	return run()
 }
 
-procedure satwithcp(){
-	stdoptions.cpsupport = true
-	stdoptions.cpgroundatoms = false
-	stdoptions.groundwithbounds = true
-	stdoptions.liftedunitpropagation = true
+procedure satwithoutcp(){
+	stdoptions.cpsupport = false
 	stdoptions.timeout = 5
 	return run()
 }

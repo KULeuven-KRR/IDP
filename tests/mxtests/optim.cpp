@@ -37,8 +37,8 @@ TEST_P(MXOptimTest, DoesMXWithSymBreaking) {
 	runTests("optimization.idp", GetParam(), "OptimizeWithSymBreaking()");
 }
 
-TEST_P(MXOptimTest, DoesMXWithCP) {
-	runTests("optimization.idp", GetParam(), "OptimizeWithCP()");
+TEST_P(MXOptimTest, DoesMXWithoutCP) {
+	runTests("optimization.idp", GetParam(), "OptimizeWithoutCP()");
 }
 
 INSTANTIATE_TEST_CASE_P(ModelOptimization, MXOptimTest, ::testing::ValuesIn(generateListOfMXOptimFiles()));
