@@ -516,7 +516,7 @@ void Structure::functionCheck() {
 		}
 		if (not ft->universe().approxFinite()) {
 #warning Not checking function consistency for infinite domains might result in incorrect results
-			Warning::warning("Consistency cannot be checked for functions over an infinte domain.");
+			Warning::warning("Consistency cannot be checked for functions over an infinite domain.");
 			continue;
 		}
 		auto pt = ft->graphInter();
@@ -635,6 +635,9 @@ PredInter* Structure::inter(const Predicate* p) const {
 }
 
 FuncInter* Structure::inter(const Function* f) const {
+	if(f->overloaded()){
+		throw IdpException("Cannot get the interpretation of a non-disambiguated function.");
+	}
 	if (f->builtin()) {
 		return f->interpretation(this);
 	} else {
