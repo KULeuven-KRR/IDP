@@ -198,7 +198,7 @@ FOPropTableDomain* FOPropTableDomainFactory::exists(FOPropTableDomain* domain, c
 	}
 
 	if (not domain->table()->approxFinite()) {
-		clog << "Probably entering an infinte loop when trying to project a possibly infinite table...\n";
+		clog << "Probably entering an infinite loop when trying to project a possibly infinite table...\n";
 	}
 	PredTable* npt = new PredTable(new EnumeratedInternalPredTable(), Universe(newunivcols));
 	for (TableIterator it = domain->table()->begin(); not it.isAtEnd(); ++it) {
