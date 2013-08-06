@@ -1,0 +1,21 @@
+vocabulary V{
+	type Truck
+	type Site
+	type Time isa int
+	type Trip isa int		
+	ArrivalTime(Truck,Trip):Time
+}
+
+theory T:V{
+	!trk[Truck] trip[Trip] cust[Site]: ?trk'[Truck] trip'[Trip]: ArrivalTime(trk',trip')=<ArrivalTime(trk,trip)+ArrivalTime(trk,trip).
+}
+structure S:V{
+	Truck={k0;k1;}
+	Site={1..15}
+	Time={0..5}
+	Trip={0..10}
+}
+
+procedure getExpectedAModel(){
+	return true
+}
