@@ -128,7 +128,7 @@ void Grounder::wrapRun(ConjOrDisj& formula) const {
 	if(verbosity()>0 && _level==3 && getMaxGroundSize()>10000){
 		clog <<"Formula " <<(isa<FormulaGrounder>(*this)?toString(this):(string)"unprintable grounder") <<"\n";
 		clog <<"\tResulted in " <<Grounder::groundedAtoms()-previousgroundsize <<" atoms.\n";
-		clog <<"\tTook " <<(clock() - start) / 1000 <<"sec.\n";
+		clog <<"\tTook " <<(clock() - start) / 1000 <<"ms.\n";
 	}
 	_level--;
 }
