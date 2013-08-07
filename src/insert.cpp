@@ -510,7 +510,8 @@ UserProcedure* Insert::procedureInScope(const vector<string>& vs, const ParseInf
 	}
 }
 
-Insert::Insert(Namespace * ns) {
+Insert::Insert(Namespace * ns)
+		: parsingType(NULL) {
 	Assert(ns!=NULL);
 	openblock();
 	_currfile = 0;
@@ -1017,15 +1018,50 @@ NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
 /**
  * \brief Create a new sort in the current vocabulary
  *
- * \param name		the name of the new sort	
- * \param sups		the supersorts of the new sort
- * \param subs		the subsorts of the new sort
+ * \param name			the name of the sort
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
  */
-Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l) const {
+Sort* Insert::sort(const string& name, YYLTYPE l, SortTable* fixedInter) {
+	vector<Sort*> vs(0);
+	return sort(name, vs, vs, l, fixedInter);
+}
+
+/**
+ * \brief Create a new sort in the current vocabulary
+ *
+ * \param name			the name of the sort
+ * \param supbs			the super- or subsorts of the sort
+ * \param super			true if supbs are the supersorts, false if supbs are the subsorts
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
+ */
+Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YYLTYPE l, SortTable* fixedInter) {
+	vector<Sort*> vs(0);
+	if (super) {
+		return sort(name, supbs, vs, l, fixedInter);
+	} else {
+		return sort(name, vs, supbs, l, fixedInter);
+	}
+}
+
+/**
+ * \brief Create a new sort in the current vocabulary
+ *
+ * \param name			the name of the new sort
+ * \param sups			the supersorts of the new sort
+ * \param subs			the subsorts of the new sort
+ * \param fixedInter	an interpretation for this sort,
+ * 						e.g. for a constructed sort or a fixed interpretation sort.
+ * 						if NULL, it has no fixed interpretation
+ */
+Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<Sort*> subs, YYLTYPE l, SortTable* fixedInter) {
 	ParseInfo pi = parseinfo(l);
 
 	// Create the sort
-	auto s = new Sort(name, pi);
+	auto s = new Sort(name, pi, fixedInter);
 
 	// Add the sort to the current vocabulary
 	if (_currvocabulary->hasSortWithName(s->name())) {
@@ -1077,32 +1113,16 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 			s->addChild(subs[n]);
 		}
 	}
+
+	parsingType = s;
+
 	return s;
 }
 
-/**
- * \brief Create a new sort in the current vocabulary
- *
- * \param name	the name of the sort
- */
-Sort* Insert::sort(const string& name, YYLTYPE l) const {
-	vector<Sort*> vs(0);
-	return sort(name, vs, vs, l);
-}
-
-/**
- * \brief Create a new sort in the current vocabulary
- *
- * \param name		the name of the sort
- * \param supbs		the super- or subsorts of the sort
- * \param super		true if supbs are the supersorts, false if supbs are the subsorts
- */
-Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super, YYLTYPE l) const {
-	vector<Sort*> vs(0);
-	if (super) {
-		return sort(name, supbs, vs, l);
-	} else {
-		return sort(name, vs, supbs, l);
+void Insert::addConstructors(const std::vector<Function*>* functionlist) const {
+	Assert(parsingType!=NULL);
+	for (auto f : (*functionlist)) {
+		parsingType->addConstructor(f);
 	}
 }
 
@@ -1131,7 +1151,7 @@ Predicate* Insert::predicate(const string& name, YYLTYPE l) const {
 	return predicate(name, vs, l);
 }
 
-Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
+Function* Insert::createfunction(const string& name, const vector<Sort*>& insorts, Sort* outsort, bool isConstructor, YYLTYPE l) const {
 	auto pi = parseinfo(l);
 	auto nar = string(name) + '/' + convertToString(insorts.size());
 	for (size_t n = 0; n < insorts.size(); ++n) {
@@ -1142,7 +1162,7 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	if (outsort == NULL) {
 		return NULL;
 	}
-	auto f = new Function(nar, insorts, outsort, pi);
+	auto f = new Function(nar, insorts, outsort, pi, isConstructor);
 	if (_currvocabulary->hasFuncWithName(f->name())) {
 		auto oldf = _currvocabulary->func(f->name());
 		auto v = insorts;
@@ -1156,21 +1176,27 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 	return f;
 }
 
-Function* Insert::function(const string& name, Sort* outsort, YYLTYPE l) const {
-	vector<Sort*> vs(0);
-	return function(name, vs, outsort, l);
+Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
+	return createfunction(name, insorts, outsort, false, l);
+}
+
+Function* Insert::constructorfunction(const string& name, const vector<Sort*>& insorts, YYLTYPE l) const {
+	Assert(parsingType!=NULL);
+	return createfunction(name,insorts,parsingType, true, l);
 }
 
 Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
+	auto pi = parseinfo(l);
 	for (size_t n = 0; n < sorts.size(); ++n) {
 		if (sorts[n] == NULL) {
 			return NULL;
 		}
 	}
-	Function* orig = _currvocabulary->func(name);
+	auto orig = _currvocabulary->func(name);
 	unsigned int binding = orig ? orig->binding() : 0;
-	Function* f = new Function(name, sorts, pi, binding);
+	auto insorts = sorts;
+	insorts.pop_back();
+	auto f = new Function(name, insorts, sorts.back(), pi, binding);
 	_currvocabulary->add(f);
 	return f;
 }
@@ -2421,7 +2447,7 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst) const {
 	return error;
 }
 
-std::string Insert::print(UTF utf) const {
+std::string Insert::printUTF(UTF utf) const {
 	switch (utf) {
 	case UTF::TWOVAL:
 		return "tv";
@@ -2441,14 +2467,14 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 		auto type = symbol->isFunction() ? ComponentType::Function : ComponentType::Predicate;
 		if (not error && contains(_pendingAssignments.at(symbol), utf)) {
 			stringstream ss;
-			ss << type << " " << symbol->name() << " was already interpreted for the truth value " << print(utf) << ".";
+			ss << type << " " << symbol->name() << " was already interpreted for the truth value " << printUTF(utf) << ".";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
 		if (not error && (_pendingAssignments.at(symbol).size() > 2 || contains(_pendingAssignments.at(symbol), UTF::TWOVAL) || utf == UTF::TWOVAL)) {
 			stringstream ss;
 			ss << type << " " << symbol->name() << " was already " << (utf == UTF::TWOVAL ? "partially" : "fully")
-					<< " interpreted earlier by other truth values than " << print(utf) << ".";
+					<< " interpreted earlier by other truth values than " << printUTF(utf) << ".";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
@@ -2565,6 +2591,7 @@ void Insert::constructor(NSPair* nst) const {
 		funcinter(nst, ft);
 	}
 }
+
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
 	ParseInfo pi = nst->_pi;

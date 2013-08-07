@@ -1,0 +1,36 @@
+include <mx>
+
+vocabulary V {
+    type num isa nat
+    lives(num,num)
+    type neighborAmount = {0..8} isa nat
+    nbOfLiveNeighbors(num,num):neighborAmount
+}
+
+theory T:V {
+    // Declare how many neighbors of a certain cell are alive
+    !x1 y1: nbOfLiveNeighbors(x1,y1) = #{ x2 y2 : (x1 ~= x2 | y1 ~= y2) & abs(y1-y2) < 2 & abs(x1-x2) < 2 & lives(x2,y2) }.
+    
+    // Cells with exactly three living neighbors must live.
+    !x y: nbOfLiveNeighbors(x,y)=3 => lives(x,y).
+    
+    // Each living cell must have two or three living neighbors.
+    !x y: lives(x,y) => 2=< nbOfLiveNeighbors(x,y) =< 3.
+}
+
+structure S:V {
+    num = {1..3}
+}
+
+term t:V {
+    // This term represents the amount of non-living cells
+    #{ x y : ~lives(x,y) }
+}
+
+theory T2:V{
+	#{ x y : ~lives(x,y) } = 3.
+}
+
+procedure getExpectedNbOfModels(){
+	return 2
+}

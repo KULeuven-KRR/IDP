@@ -21,6 +21,7 @@
 #include "GlobalData.hpp"
 #include "utils/NumericLimits.hpp"
 #include "MainStructureComponents.hpp"
+#include "Structure.hpp"
 
 /**
  * NAMING CONVENTION
@@ -82,15 +83,14 @@ public:
 // ITERATORS
 
 class InternalTableIterator {
-private:
-	virtual bool hasNext() const = 0;
-	virtual const ElementTuple& operator*() const = 0;
-	virtual void operator++() = 0;
 public:
 	virtual ~InternalTableIterator() {
 	}
 	virtual InternalTableIterator* clone() const = 0;
-	friend class TableIterator;
+
+	virtual bool hasNext() const = 0;
+	virtual const ElementTuple& operator*() const = 0;
+	virtual void operator++() = 0;
 };
 
 class CartesianInternalTableIterator: public InternalTableIterator {
@@ -99,12 +99,20 @@ private:
 	std::vector<SortIterator> _lowest;
 	mutable ElementTable _deref;
 	bool _hasNext;
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	CartesianInternalTableIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, bool h = true);
 	CartesianInternalTableIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
+
+	const std::vector<SortIterator>& getIterators() const {
+		return _iterators;
+	}
+	const std::vector<SortIterator>& getLowest() const {
+		return _lowest;
+	}
 };
 
 class InstGenerator;
@@ -115,46 +123,39 @@ private:
 	std::vector<const DomElemContainer*> _vars;
 	bool _hasNext;
 	mutable ElementTable _deref;
-	bool hasNext() const {
-		return _hasNext;
-	}
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	GeneratorInternalTableIterator(InstGenerator* generator, const std::vector<const DomElemContainer*>& vars, bool reset = true, bool h = true);
 	GeneratorInternalTableIterator* clone() const {
 		return new GeneratorInternalTableIterator(_generator, _vars, false, _hasNext);
 	}
+
+	virtual bool hasNext() const {
+		return _hasNext;
+	}
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class SortInternalTableIterator: public InternalTableIterator {
 private:
 	InternalSortIterator* _iter;
 	mutable ElementTable _deref;
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	SortInternalTableIterator(InternalSortIterator* isi) :
 			_iter(isi) {
 	}
 	~SortInternalTableIterator();
 	SortInternalTableIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class EnumInternalIterator: public InternalTableIterator {
 private:
 	SortedElementTable::const_iterator _iter;
 	SortedElementTable::const_iterator _end;
-	bool hasNext() const {
-		return _iter != _end;
-	}
-	const ElementTuple& operator*() const {
-		return *_iter;
-	}
-	void operator++() {
-		++_iter;
-	}
 public:
 	EnumInternalIterator(SortedElementTable::const_iterator it, SortedElementTable::const_iterator end) :
 			_iter(it), _end(end) {
@@ -162,6 +163,16 @@ public:
 	~EnumInternalIterator() {
 	}
 	EnumInternalIterator* clone() const;
+
+	virtual bool hasNext() const {
+		return _iter != _end;
+	}
+	virtual const ElementTuple& operator*() const {
+		return *_iter;
+	}
+	virtual void operator++() {
+		++_iter;
+	}
 };
 
 class EnumInternalFuncIterator: public InternalTableIterator {
@@ -169,13 +180,6 @@ private:
 	Tuple2Elem::const_iterator _iter;
 	Tuple2Elem::const_iterator _end;
 	mutable ElementTable _deref;
-	bool hasNext() const {
-		return _iter != _end;
-	}
-	const ElementTuple& operator*() const;
-	void operator++() {
-		++_iter;
-	}
 public:
 	EnumInternalFuncIterator(Tuple2Elem::const_iterator it, Tuple2Elem::const_iterator end) :
 			_iter(it), _end(end) {
@@ -183,6 +187,14 @@ public:
 	~EnumInternalFuncIterator() {
 	}
 	EnumInternalFuncIterator* clone() const;
+
+	virtual bool hasNext() const {
+		return _iter != _end;
+	}
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++() {
+		++_iter;
+	}
 };
 
 class SortTable;
@@ -196,11 +208,6 @@ private:
 	TableIterator _curr;
 	mutable ElementTable _deref;
 	const InternalFuncTable* _function;
-	bool hasNext() const {
-		return not _curr.isAtEnd();
-	}
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	InternalFuncIterator(const InternalFuncTable* f, const Universe& univ);
 	InternalFuncIterator(const InternalFuncTable* f, const TableIterator& c) :
@@ -211,6 +218,12 @@ public:
 	InternalFuncIterator* clone() const {
 		return new InternalFuncIterator(_function, _curr);
 	}
+
+	virtual bool hasNext() const {
+		return not _curr.isAtEnd();
+	}
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class InternalPredTable;
@@ -221,11 +234,6 @@ private:
 	Universe _univ;
 	mutable ElementTable _deref;
 	const InternalPredTable* _predicate;
-	bool hasNext() const {
-		return not _curr.isAtEnd();
-	}
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	ProcInternalTableIterator(const InternalPredTable* p, const Universe& univ);
 	ProcInternalTableIterator(const InternalPredTable* p, const TableIterator& c, const Universe& univ) :
@@ -236,6 +244,12 @@ public:
 	ProcInternalTableIterator* clone() const {
 		return new ProcInternalTableIterator(_predicate, _curr, _univ);
 	}
+
+	virtual bool hasNext() const {
+		return not _curr.isAtEnd();
+	}
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class UnionInternalIterator: public InternalTableIterator {
@@ -248,34 +262,31 @@ private:
 	bool contains(const ElementTuple&) const;
 	void setcurriterator();
 
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	UnionInternalIterator(const std::vector<TableIterator>&, const std::vector<InternalPredTable*>&, const Universe&);
 	~UnionInternalIterator() {
 	}
 	UnionInternalIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class UNAInternalIterator: public InternalTableIterator {
 private:
-	std::vector<SortIterator> _curr;
-	std::vector<SortIterator> _lowest;
+	CartesianInternalTableIterator cartIt;
 	Function* _function;
-	mutable bool _end;
-	mutable ElementTuple _currtuple;
-	mutable std::vector<ElementTuple> _deref;
+	mutable std::vector<ElementTuple> _deref2;
 
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
-	UNAInternalIterator(const std::vector<SortIterator>&, const std::vector<SortIterator>&, Function*, bool);
+	UNAInternalIterator(const std::vector<SortIterator>& vsi, const std::vector<SortIterator>& low, Function* f, bool h = true);
 public:
-	UNAInternalIterator(const std::vector<SortIterator>&, Function*);
-	~UNAInternalIterator() {
-	}
+	UNAInternalIterator(const std::vector<SortIterator>& vsi, Function* f);
 	UNAInternalIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class InverseInternalIterator: public InternalTableIterator {
@@ -288,29 +299,31 @@ private:
 	mutable ElementTuple _currtuple;
 	mutable ElementTuple _deref;
 
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
 	InverseInternalIterator(const std::vector<SortIterator>&, const std::vector<SortIterator>&, InternalPredTable*, const Universe&, bool);
 public:
 	InverseInternalIterator(const std::vector<SortIterator>&, InternalPredTable*, const Universe&);
 	~InverseInternalIterator() {
 	}
 	InverseInternalIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class EqualInternalIterator: public InternalTableIterator {
 private:
 	SortIterator _iterator;
 	mutable ElementTable _deref;
-	bool hasNext() const;
-	const ElementTuple& operator*() const;
-	void operator++();
 public:
 	EqualInternalIterator(const SortIterator& iter);
 	~EqualInternalIterator() {
 	}
 	EqualInternalIterator* clone() const;
+
+	virtual bool hasNext() const;
+	virtual const ElementTuple& operator*() const;
+	virtual void operator++();
 };
 
 class InternalSortIterator {
@@ -477,6 +490,33 @@ public:
 	}
 };
 
+
+
+class ConstructedInternalSortIterator: public InternalSortIterator {
+private:
+	std::vector<Function*> _constructors;
+	std::vector<Function*>::const_iterator _constructors_it;
+	TableIterator _table_it;
+	const Structure* _struct;
+
+	bool hasNext() const ;
+	const DomainElement* operator*() const ;
+	void operator++();
+	void skipToNextElement();
+
+	void initialize(const std::vector<Function*>& constructors);
+
+public:
+	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc);
+	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc, const DomainElement* domel);
+	~ConstructedInternalSortIterator() {
+	}
+	ConstructedInternalSortIterator* clone() const {
+		return new ConstructedInternalSortIterator(_constructors, _struct, *(*this));
+	}
+
+};
+
 class RangeInternalSortIterator: public InternalSortIterator {
 private:
 	int _current;
@@ -542,6 +582,7 @@ public:
 	void incrementRef(); //!< Add one reference
 
 	// Iterators
+	// TODO: what object is responsible for the memory management of this iterator?
 	virtual InternalTableIterator* begin(const Universe&) const = 0;
 
 	InternalPredTable() :
@@ -1320,6 +1361,68 @@ public:
 	void accept(StructureVisitor* v) const;
 };
 
+/**
+ *		A set of constructor functions generating the InternalSortTable
+ */
+class ConstructedInternalSortTable: public InternalSortTable {
+private:
+	// Note: implementing this as a list of FuncTables or InternalFuncTables will result in a bug,
+	// since the construction of such tables requires the outSort's interpretation (and hence this table) to be known.
+	const std::vector<Function*> _constructors;
+	const Structure* _struc;
+
+	FuncTable* getTable(const Function* f) const{
+		return _struc->inter(f)->funcTable();
+	}
+
+protected:
+	~ConstructedInternalSortTable() {
+	}
+public:
+	ConstructedInternalSortTable(const Structure* s, const std::vector<Function*>& funcs) :
+			_constructors(funcs),
+			_struc(s){
+	}
+	bool isRecursive() const;
+
+	bool finite() const;
+	bool empty() const;
+	bool approxFinite() const;
+	bool approxEmpty() const;
+	tablesize size() const;
+
+	InternalSortTable* add(const DomainElement*){
+		throw notyetimplemented("Addition of domain elements to a constructed sort is not yet implemented.");
+	}
+	InternalSortTable* remove(const DomainElement*){
+		throw notyetimplemented("Removal of domain elements to a constructed sort is not yet implemented.");
+	}
+	InternalSortTable* add(int, int){
+		throw notyetimplemented("Addition of domain elements to a constructed sort is not yet implemented.");
+	}
+
+	//NOTE: what happens when the sort is empty?
+	const DomainElement* first() const;
+
+	//NOTE: what happens when the sort is empty?
+	const DomainElement* last() const;
+
+	bool contains(const DomainElement*) const;
+	bool isRange() const {
+		return false;
+	}
+
+	int nrOfConstructors() const {
+		return _constructors.size();
+	}
+
+	InternalSortIterator* sortBegin() const;
+	InternalSortIterator* sortIterator(const DomainElement*) const;
+
+	// Visitor
+	void accept(StructureVisitor* v) const;
+};
+
 /************************************
  Internal tables for functions
  ************************************/
@@ -1349,9 +1452,11 @@ public:
 	//!< Returns false if the table is non-empty. May return true if the table is empty.
 	virtual tablesize size(const Universe&) const = 0;
 
-	bool contains(const ElementTuple& tuple, const Universe&) const;
+	bool contains(const ElementTuple& tuple) const;
+
+	// Returns the value of the function given the instantiation tuple.
+	// NOTE: type check has already been done externally
 	virtual const DomainElement* operator[](const ElementTuple& tuple) const = 0;
-	//!< Returns the value of the tuple according to the array.
 
 	virtual InternalFuncTable* add(const ElementTuple&) = 0; //!< Add a tuple to the table
 	virtual InternalFuncTable* remove(const ElementTuple&) = 0; //!< Remove a tuple from the table
@@ -1394,11 +1499,11 @@ class UNAInternalFuncTable: public InternalFuncTable {
 private:
 	Function* _function;
 public:
-	UNAInternalFuncTable(Function* f) :
-			InternalFuncTable(), _function(f) {
+	UNAInternalFuncTable(Function* f) : _function(f) {
 	}
 
-	~UNAInternalFuncTable() {
+	Function* getFunction() const {
+		return _function;
 	}
 
 	bool finite(const Universe&) const;
@@ -1413,7 +1518,6 @@ public:
 
 	InternalTableIterator* begin(const Universe&) const;
 
-	// Visitor
 	void accept(StructureVisitor* v) const;
 };
 
@@ -1755,11 +1859,11 @@ public:
 	}
 };
 
-class InconsistentFuncInterGenerator: public FuncInterGenerator {
+class ConstructorFuncInterGenerator: public FuncInterGenerator {
 private:
 	Function* _function;
 public:
-	InconsistentFuncInterGenerator(Function* function) :
+	ConstructorFuncInterGenerator(Function* function) :
 			_function(function) {
 	}
 	FuncInter* get(const Structure* structure);

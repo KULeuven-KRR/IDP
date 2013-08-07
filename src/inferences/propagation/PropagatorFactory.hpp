@@ -76,7 +76,7 @@ FOPropagator* createPropagator(AbstractTheory* theory, Structure* s, const std::
  */
 GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure*& structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
 
-//GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, AbstractStructure* structure);
+//GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, Structure* structure);
 
 /** Collect symbolic propagation vocabulary **/
 std::map<PFSymbol*, InitBoundType> propagateVocabulary(AbstractTheory* theory, Structure* structure);

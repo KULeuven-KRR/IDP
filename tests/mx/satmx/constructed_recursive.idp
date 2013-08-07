@@ -1,0 +1,15 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V {
+    type test constructed from {aa,bb,F(test)}
+	sol(test)
+}
+
+theory T: V {
+	sol(F(F(F(aa)))) | sol(F(bb)).
+}
+
+structure S: V {
+}

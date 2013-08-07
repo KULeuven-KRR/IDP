@@ -131,7 +131,7 @@ public:
 //		ComponentType _type;
 //		Namespace* _namespace;
 //		AbstractTheory* _theory;
-//		AbstractStructure* _structure;
+//		Structure* _structure;
 //		Vocabulary* _vocabulary;
 //		Query* _query;
 //		Term* _term;

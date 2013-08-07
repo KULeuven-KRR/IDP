@@ -127,6 +127,11 @@ struct VarName {
 	std::ostream& put(std::ostream& os) const;
 };
 
+/**
+ * The Insert class performs the actual construction of IDP-objects such as vocabularies, functions, structures, domain elements etc.
+ * Methods from this class are called from the parser (parser.yy).
+ */
+
 class Insert {
 private:
 	lua_State* _state; //!< the lua state objects are added to
@@ -141,6 +146,8 @@ private:
 
 	std::string _currquery; //!< the name of the named query that is currently being parsed
 	std::string _currterm; //!< the name of the named term that is currently being parsed
+
+	Sort* parsingType; // Type currently being parsed
 
 	std::list<VarName> _curr_vars;
 
@@ -252,21 +259,23 @@ public:
 	NSPair* internfuncpointer(const longname&, const std::vector<Sort*>&, Sort*, YYLTYPE) const;
 	NSPair* internpointer(const longname& name, YYLTYPE) const;
 
-	Sort* sort(const std::string& name, YYLTYPE) const;
-	Sort* sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE) const;
-	Sort* sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE) const;
+	Sort* sort(const std::string& name, YYLTYPE, SortTable* fixedInter = NULL);
+	Sort* sort(const std::string& name, const std::vector<Sort*> supbs, bool p, YYLTYPE, SortTable* fixedInter = NULL);
+	Sort* sort(const std::string& name, const std::vector<Sort*> sups, const std::vector<Sort*> subs, YYLTYPE l, SortTable* fixedInter = NULL);
+	void addConstructors(const std::vector<Function*>* functionlist) const;
 
 	Predicate* predicate(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE) const;
 	//!< create a new predicate with the given sorts in the current vocabulary
 	Predicate* predicate(const std::string& name, YYLTYPE) const;
 	//!< create a new 0-ary predicate in the current vocabulary
 
+	// Create new functions in the current voc
+private:
+	Function* createfunction(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, bool isConstructor, YYLTYPE) const;
+public:
 	Function* function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE) const;
-	//!< create a new function in the current vocabulary
-	Function* function(const std::string& name, Sort* outsort, YYLTYPE) const;
-	//!< create a new constant in the current vocabulary
+	Function* constructorfunction(const std::string& name, const std::vector<Sort*>& insorts, YYLTYPE) const;
 	Function* aritfunction(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE) const;
-	//!< create a new arithmetic function in the current vocabulary
 
 	void partial(Function* f) const;
 	//!< make a function partial
@@ -363,7 +372,7 @@ private:
 		CT,
 		CF
 	};
-	std::string print(UTF utf)const;
+	std::string printUTF(UTF utf)const;
 	mutable std::map<Structure*, std::set<Sort*>> sortsOccurringInUserDefinedStructure;
 	std::set<Structure*, std::set<PFSymbol*> > symbolsOccurringInUserDefinedStructure;
 	mutable std::map<PFSymbol*, std::map<UTF, PredTable*> > _pendingAssignments;
@@ -382,9 +391,9 @@ public:
 	 */
 	bool interpretationSpecifiedByUser(Structure* structure, Sort* sort) const;
 	bool interpretationSpecifiedByUser(PFSymbol* symbol) const;
+	void constructor(NSPair* nst) const; //!< allows for the declaration of constructor functions in structure. TODO: test + evaluate usefulness
 	void sortinter(NSPair*, SortTable* t)const; //!< Assign a one dimensional table
 	void interByProcedure(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure
-	void constructor(NSPair*) const; //!< Assign a constructor
 	void predinter(NSPair*, PredTable* t, const std::string& utf = "tv")const;
 	void predinter(NSPair*, SortTable* t, const std::string& utf = "tv")const;
 	void truepredinter(NSPair*, const std::string& utf = "tv") const;
@@ -392,7 +401,6 @@ public:
 	void funcinter(NSPair*, PredTable* t, const std::string& utf = "tv")const;
 	void funcinter(NSPair*, FuncTable* t, const std::string& utf = "tv")const;
 	void emptyinter(NSPair*, const std::string& utf = "tv")const; //!<Inserts an empty interpretation for three-valued symbols (e.g. P<ct> = {})
-
 
 	SortTable* createSortTable() const;
 	void addElement(SortTable*, int) const;

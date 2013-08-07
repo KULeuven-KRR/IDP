@@ -1008,6 +1008,11 @@ public:
 	}
 
 	void visit(const SortTable* table) {
+		if(not table->finite()){
+			// TODO this is an issue for user tables, but should not even be printed for constructed tables
+			std::clog << "Requested to print infinite table, did not do this.\n";
+			return;
+		}
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());

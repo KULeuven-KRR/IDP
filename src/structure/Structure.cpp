@@ -99,6 +99,7 @@ void Structure::notifyAddedToVoc(PFSymbol* symbol) {
  * This method changes the vocabulary of the structure
  * All tables of symbols that do not occur in the new vocabulary are deleted.
  * Empty tables are created for symbols that occur in the new vocabulary, but did not occur in the old one.
+ * Except for constructed type symbols, which are set to their interpretation in this structure.
  */
 void Structure::changeVocabulary(Vocabulary* v) {
     if (v != _vocabulary) {
@@ -150,10 +151,14 @@ void Structure::changeVocabulary(Vocabulary* v) {
 		auto sort = it->second;
 		if (not sort->builtin()) {
 			if (_sortinter.find(sort) == _sortinter.cend()) {
-				auto st = TableUtils::createSortTable();
+				SortTable* st;
+				if (sort->isConstructed()) {
+					st = getConstructedInterpretation(sort, this);
+				} else {
+					st = TableUtils::createSortTable();
+				}
 				_sortinter[sort] = st;
-				vector<SortTable*> univ(1, st);
-				auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
+				auto pt = new PredTable(new FullInternalPredTable(), Universe({st}));
 				_predinter[sort->pred()] = new PredInter(pt, true);
 			}
 		}
@@ -499,9 +504,10 @@ void Structure::addStructure(Structure*) {
 }
 
 void Structure::sortCheck() const {
-	for (auto i = _sortinter.cbegin(); i != _sortinter.cend(); ++i) {
-		if ((*i).second->empty()) {
-			Warning::emptySort(i->first->name(), name());
+	for (auto sort2inter : _sortinter) {
+		auto sort = sort2inter.first;
+		if (not sort->isConstructed() && sort2inter.second->empty()) {
+			Warning::emptySort(sort->name(), name());
 		}
 	}
 }
@@ -579,7 +585,7 @@ void Structure::functionCheck() {
 }
 
 bool Structure::hasInter(const Sort* s) const {
-	return s != NULL && (s->builtin() || _sortinter.find(const_cast<Sort*>(s)) != _sortinter.cend());
+	return s != NULL && (s->builtin() || s->isConstructed() || _sortinter.find(const_cast<Sort*>(s)) != _sortinter.cend());
 }
 
 SortTable* Structure::inter(const Sort* s) const {

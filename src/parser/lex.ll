@@ -1,3 +1,7 @@
+/**
+*	The lexer tokenizes an IDP input string to make the parser's life is easier ;)
+*/
+
 %{
 
 #include "parser/yyltype.hpp"
@@ -408,6 +412,10 @@ COMMENTLINE2	"--".*
 								  return EXTERNVOCABULARY;	}
 <vocabulary>\n                  { parser.advanceline(); 
 									return NEWLINE; 		}
+<vocabulary>"constructed from"	{ parser.advancecol();
+								  return CONSTRUCTED;	}
+<vocabulary>".."				{ parser.advancecol();
+							  return RANGE;				}
 
 	/*************
 		Theory

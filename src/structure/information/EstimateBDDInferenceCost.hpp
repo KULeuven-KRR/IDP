@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TABLECOSTESTIMATOR_HPP_
-#define TABLECOSTESTIMATOR_HPP_
+#pragma once
 
 #include <vector>
 #include <cmath>
@@ -109,7 +108,20 @@ public:
 			if(size==0){
 				_result=1;
 			}else{
-				_result = size / log(2);
+				_result = log(size) / log(2);
+			}
+		} else {
+			_result = toDouble(_table->size());
+		}
+	}
+
+	void visit(const ConstructedInternalSortTable* cist) {
+		if (_pattern[0]) {
+			auto size = toDouble(_table->size());
+			if(size==0){
+				_result = 1;
+			}else{
+				_result = cist->nrOfConstructors() + log(ceil(size/cist->nrOfConstructors())) / log(2);
 			}
 		} else {
 			_result = toDouble(_table->size());
@@ -283,5 +295,3 @@ public:
 		_result = InfCost;
 	}
 };
-
-#endif /* TABLECOSTESTIMATOR_HPP_ */

@@ -7,3 +7,6 @@
 [submodule "lib/interactiveShell"]
 	path = lib/interactiveShell
 	url = git://github.com/broesdecat/linenoise.git
+[submodule "docs/official/idp-latex"]
+	path = docs/official/idp-latex
+	url = git@bitbucket.org:krr/idp-latex.git

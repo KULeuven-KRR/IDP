@@ -64,10 +64,10 @@ ElementTuple atom2tuple(PredForm* pf, Structure* s) {
 PrologTerm* symbol2term(PFSymbol* symbol) {
 	auto term = new PrologTerm(symbol->name());
 	int idlength = symbol->nrSorts() / 10 + 1 + 1;
-	for (auto i = 0; i < symbol->nrSorts(); ++i) {
-		char varname[idlength];
-		sprintf(varname, "X%d", i);
-		term->addArgument(PrologVariable::create(varname));
+	for (uint i = 0; i < symbol->nrSorts(); ++i) {
+		std::stringstream ss;
+		ss <<"X" <<i;
+		term->addArgument(PrologVariable::create(ss.str()));
 	}
 	return term;
 }

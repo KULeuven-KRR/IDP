@@ -54,6 +54,10 @@ public:
 				_formula(NULL),
 				_numeric(false){
 	}
+	virtual ~FormulaClause(){
+		// TODO what should be deleted?
+	}
+
 	virtual void accept(FormulaClauseVisitor*) = 0;
 	virtual PrologTerm* asTerm();
 	std::list<PrologVariable*>& variables() {

@@ -1,3 +1,11 @@
+/**
+* This file contains the bison parser, which is in essence a context free grammar
+* embedded in C++ iterating over a lexed input. The lexer's code is in lex.ll
+* 
+* The data object of which the parser calls methods is of the Insert type, described
+* in insert.cpp.
+*/
+
 %{
 
 #include <sstream>
@@ -75,6 +83,7 @@ void yyerror(const char* s);
 
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
+	std::vector<Function*>*			vfunc;
 	varset*				svar;
 	std::vector<Variable*>*				vvar;
 	std::vector<Term*>*					vter;
@@ -115,6 +124,7 @@ void yyerror(const char* s);
 %token TRUE
 %token ABS
 %token ISA
+%token CONSTRUCTED
 %token LFD
 %token GFD
 %token NEWLINE
@@ -172,6 +182,7 @@ void yyerror(const char* s);
 %type <fun> func_decl
 %type <fun> full_func_decl
 %type <fun> arit_func_decl
+%type <fun> constr_func_decl
 %type <ter> term domterm function arterm aggterm
 %type <fom> predicate
 %type <fom> head
@@ -209,6 +220,7 @@ void yyerror(const char* s);
 %type <vsor>	nonempty_spt
 %type <vsor>	binary_arit_func_sorts
 %type <vsor>	unary_arit_func_sorts
+%type <vfunc>	func_list
 %type <vdom>	compound_args
 %type <vdom>	ptuple	
 %type <vdom>	ftuple	
@@ -293,16 +305,27 @@ extern_function		: pointer_name '[' sort_pointer_tuple ':' sort_pointer ']'
 					;
 
 /** Symbol declarations **/
-
-sort_decl		: TYPE identifier											{ $$ = data().sort(*$2,@2);		}
-				| TYPE identifier ISA nonempty_spt							{ $$ = data().sort(*$2,*$4,true,@2);	
-																			  delete($4); }
-				| TYPE identifier EXTENDS nonempty_spt						{ $$ = data().sort(*$2,*$4,false,@2);	
-																			  delete($4); }
-				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt		{ $$ = data().sort(*$2,*$4,*$6,@2);		
-																			  delete($4); delete($6); }
-				| TYPE identifier EXTENDS nonempty_spt ISA nonempty_spt		{ $$ = data().sort(*$2,*$6,*$4,@2);		
-																			  delete($4); delete($6); }
+sort_decl		: TYPE identifier						{ $$ = data().sort(*$2,@2);		}
+				| TYPE identifier ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,true,@2); delete($4); }
+				| TYPE identifier EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,false,@2); delete($4); }
+				| TYPE identifier ISA nonempty_spt EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$4,*$6,@2); delete($4); delete($6); }
+				| TYPE identifier EXTENDS nonempty_spt ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$6,*$4,@2); delete($4); delete($6); }
+				| TYPE identifier { data().sort(*$2,@2); } CONSTRUCTED '{' func_list '}'
+																				{ data().addConstructors($6); delete($6);}
+				| TYPE identifier '=' '{' elements_es '}'
+																				{ $$ = data().sort(*$2,@2,$5); }
+				| TYPE identifier '=' '{' elements_es '}' ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,true,@2,$5); delete($8); }
+				| TYPE identifier '=' '{' elements_es '}' EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,false,@2,$5); delete($8); }
+				| TYPE identifier '=' '{' elements_es '}' ISA nonempty_spt EXTENDS nonempty_spt
+																				{ $$ = data().sort(*$2,*$8,*$10,@2,$5); delete($8); delete($10); }
+				| TYPE identifier '=' '{' elements_es '}' EXTENDS nonempty_spt ISA nonempty_spt
+																				{ $$ = data().sort(*$2,*$10,*$8,@2,$5); delete($10); delete($8); }
 				;
 
 pred_decl		: identifier '(' sort_pointer_tuple ')'	{ data().predicate(*$1,*$3,@1); delete($3); }
@@ -317,7 +340,11 @@ func_decl		: PARTIAL full_func_decl				{ $$ = $2; data().partial($$);	}
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = data().function(*$1,*$3,$6,@1);
 																			  delete($3); }
-				| identifier ':' sort_pointer								{ $$ = data().function(*$1,$3,@1); }	
+				| identifier ':' sort_pointer								{ $$ = data().function(*$1,{},$3,@1); }	
+				;
+				
+constr_func_decl	: identifier '(' sort_pointer_tuple ')' { $$ = data().constructorfunction(*$1,*$3, @1); delete($3); }
+				| identifier								{ $$ = data().constructorfunction(*$1,{},@1); }	
 				; 														
 
 arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = data().aritfunction("-/2",*$2,@1); delete($2);	}
@@ -343,12 +370,12 @@ unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer
 sort_pointer		: pointer_name				{ $$ = data().sortpointer(*$1,@1); delete($1); }
 					;
 
-intern_pointer		: pointer_name '[' sort_pointer_tuple ']'	{ $$ = data().internpredpointer(*$1,*$3,@1);
+intern_pointer : pointer_name '[' sort_pointer_tuple ']'	{ $$ = data().internpredpointer(*$1,*$3,@1);
 																  delete($1); delete($3); }
 					| pointer_name '[' sort_pointer_tuple ':' sort_pointer ']'	
 																{ $$ = data().internfuncpointer(*$1,*$3,$5,@1);
 																  delete($1); delete($3); }
-					| pointer_name								{ $$ = data().internpointer(*$1,@1);
+					| pointer_name				{ $$ = data().internpointer(*$1,@1);
 																  delete($1); }
 					;
 
@@ -615,6 +642,12 @@ elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$
 				| compound							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				;
 
+				
+func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
+				| constr_func_decl { $$ = new std::vector<Function*>(); $$->push_back($1); }
+				;
+
+
 strelement		: identifier	{ $$ = $1;									}
 				| STRINGCONS	{ $$ = $1;									}
 				| CHARCONS		{ $$ = StringPointer(std::string(1,$1));	}
@@ -661,7 +694,7 @@ func_inter	: intern_pointer '=' '{' ftuples_es '}'	{ data().funcinter($1,$4); }
 			| intern_pointer '=' pelement			{ FuncTable* ft = data().createFuncTable(1);
 													  data().addTupleVal(ft,$3,@3);
 													  data().funcinter($1,ft); }
-			| intern_pointer '=' CONSTRUCTOR		{ data().constructor($1);	}
+			| intern_pointer '=' CONSTRUCTOR		{ data().constructor($1);	}													  
 			;
 
 ftuples_es		: ftuples ';'					{ $$ = $1;	}

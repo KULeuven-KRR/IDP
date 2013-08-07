@@ -1,0 +1,17 @@
+procedure getExpectedAModel(){
+	return true
+}
+
+vocabulary V {
+	type arg isa int
+    type list constructed from {nil, list(arg,list)}
+	P(list)
+}
+
+theory T: V {
+	?x y: P(list(x,list(y,nil))).
+}
+
+structure S: V {
+	arg = {1..100}
+}

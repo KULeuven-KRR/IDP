@@ -70,6 +70,7 @@ private:
 	void visit(const AllStrings*);
 	void visit(const EnumeratedInternalSortTable*);
 	void visit(const IntRangeInternalSortTable*);
+	void visit(const ConstructedInternalSortTable*);
 
 	InstGenerator* internalCreate(const PredTable*, std::vector<Pattern> pattern, const std::vector<const DomElemContainer*>&, const Universe&);
 

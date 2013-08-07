@@ -12,23 +12,24 @@ include(${PROJECT_SOURCE_DIR}/cmake/UseLATEX.cmake)
 
 set(TEXFILES "")
 set(IMAGEFILES "")
-file(GLOB_RECURSE TEXFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.tex")
-file(GLOB_RECURSE IMAGEFILES "${PROJECT_SOURCE_DIR}/docs/official" "*.png")
-
-set(TEXFILENAMES "")
+set(DOCSURL "${PROJECT_SOURCE_DIR}/docs/official/")
+file(GLOB_RECURSE TEXFILES ${DOCSURL} "*.tex" "*.sty" "*.cls")
+file(GLOB IMAGEFILES ${DOCSURL} "*.png")
+ 
+set(TEXFILESNAMES "")
 foreach(file ${TEXFILES})
-	GET_FILENAME_COMPONENT(filename ${file} NAME)
-	SET(TEXFILENAMES ${TEXFILENAMES} ${filename})
+	STRING(REGEX REPLACE ${DOCSURL} "" filepart ${file})
+	SET(TEXFILESNAMES ${TEXFILESNAMES} ${filepart})
 endforeach(file)
 set(IMAGEFILENAMES "")
 foreach(file ${IMAGEFILES})
-	GET_FILENAME_COMPONENT(filename ${file} NAME)
-	SET(IMAGEFILENAMES ${IMAGEFILENAMES} ${filename})
+	STRING(REGEX REPLACE ${DOCSURL} "" filepart ${file})
+	SET(IMAGEFILENAMES ${IMAGEFILENAMES} ${filepart})
 endforeach(file)
 
-add_latex_document(idp-manual.tex INPUTS ${TEXFILENAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
-add_latex_document(fo-idp.tex INPUTS ${TEXFILENAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
-
+add_latex_document(idp-manual.tex INPUTS ${TEXFILESNAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
+add_latex_document(fo-idp.tex INPUTS ${TEXFILESNAMES} IMAGES ${IMAGEFILENAMES} DEFAULT_PDF MANGLE_TARGET_NAMES)
+ 
 install(FILES
-	${PROJECT_BINARY_DIR}/docs/official/idp-manual.pdf
+ 	${PROJECT_BINARY_DIR}/docs/official/idp-manual.pdf
 	DESTINATION share/idp)
