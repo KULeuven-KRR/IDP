@@ -589,7 +589,7 @@ bool Structure::hasInter(const Sort* s) const {
 }
 
 SortTable* Structure::inter(const Sort* s) const {
-	if (s == NULL) { // TODO prevent error by introducing UnknownSort object (prevent nullpointers)
+	if (s == NULL) {
 		throw IdpException("Sort was NULL");
 	}
 
@@ -603,6 +603,10 @@ SortTable* Structure::inter(const Sort* s) const {
 }
 
 PredInter* Structure::inter(const Predicate* p) const {
+	if (p == NULL) {
+		throw IdpException("Predicate was NULL");
+	}
+
 	if (p->builtin()) {
 		return p->interpretation(this);
 	}
@@ -641,6 +645,9 @@ PredInter* Structure::inter(const Predicate* p) const {
 }
 
 FuncInter* Structure::inter(const Function* f) const {
+	if(f==NULL){
+		throw IdpException("Function was NULL");
+	}
 	if(f->overloaded()){
 		throw IdpException("Cannot get the interpretation of a non-disambiguated function.");
 	}

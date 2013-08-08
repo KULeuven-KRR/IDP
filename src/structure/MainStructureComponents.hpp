@@ -532,6 +532,8 @@ public:
 	 */
 	void funcTable(FuncTable* ft);
 
+	void add(const ElementTuple& tuple);
+
 	bool isConsistent() const;
 	const std::set<ElementTuple>& getInconsistentAtoms() const;
 	void materialize();

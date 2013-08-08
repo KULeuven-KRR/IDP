@@ -4025,6 +4025,14 @@ void FuncInter::materialize() {
 	}
 }
 
+void FuncInter::add(const ElementTuple& tuple){
+	if(_functable!=NULL){
+		_functable->add(tuple);
+	}else{
+		_graphinter->ct()->add(tuple);
+	}
+}
+
 bool FuncInter::isConsistent() const {
 	if (_functable != NULL) {
 		return true;
