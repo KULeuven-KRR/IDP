@@ -167,9 +167,6 @@ private:
 		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
 		auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvocabulary);
-		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			clog <<"Symbolic structure = " <<toString(symstructure) <<"\n";
-		}
 
 		if (not _structure->isConsistent()) {
 			if (getOption(IntType::VERBOSE_GROUNDING) > 0 || getOption(IntType::VERBOSE_PROPAGATING) > 0) {

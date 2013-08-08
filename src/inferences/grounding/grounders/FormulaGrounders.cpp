@@ -991,10 +991,10 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 		throw InternalIdpException("Splitting grounders");
 	}
 	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
-	cerr <<"Looking for delay in " <<toString(newf) <<"\n";
+	//cerr <<"Looking for delay in " <<toString(newf) <<"\n";
 	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager);
 	Assert(delay.get()!=NULL);
-	clog <<"Delaying after split on " <<toString(delay) <<"\n";
+	//clog <<"Delaying after split on " <<toString(delay) <<"\n";
 	manager->add(newgrounder, delay);
 #warning Probably bug in equivalence / definitional context as an implication is generated?
 
