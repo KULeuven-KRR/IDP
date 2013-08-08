@@ -165,15 +165,13 @@ void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 template<class Solver>
 void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
 	auto mon = new LazyClauseMon(inst);
-	auto lit = createLiteral(inst->residual);
+	auto lit = adder.createLiteral(inst->residual);
 	extAdd(getSolver(),
 			MinisatID::LazyGroundImpl(getDefConstrID(),
 					MinisatID::Implication(getDefConstrID(), lit, convert(type),
 							MinisatID::litlist { }, conjunction), mon));
 	CHECKUNSAT;
 }
-
-template<class Solver>
 
 class LazyLitMon: public MinisatID::LazyGroundingCommand {
 private:
@@ -278,7 +276,7 @@ template<class Solver>
 void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
 	MinisatID::TwoValuedRequirement req( { });
 	for (auto lit : lits) {
-		req.atoms.push_back(createAtom(lit));
+		req.atoms.push_back(adder.createAtom(lit));
 	}
 	extAdd(getSolver(), req);
 	CHECKUNSAT;

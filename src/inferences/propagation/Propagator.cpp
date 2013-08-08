@@ -165,7 +165,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* 
 }
 
 template<class Factory, class Domain>
-GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const {
+std::shared_ptr<GenerateBDDAccordingToBounds> TypedFOPropagator<Factory, Domain>::symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const {
 	map<PFSymbol*, vector<const FOBDDVariable*> > vars;
 	map<PFSymbol*, const FOBDD*> ctbounds;
 	map<PFSymbol*, const FOBDD*> cfbounds;
@@ -182,7 +182,7 @@ GenerateBDDAccordingToBounds* TypedFOPropagator<Factory, Domain>::symbolicstruct
 		}
 		vars[it->first] = bddvars;
 	}
-	return new GenerateBDDAccordingToBounds(manager, ctbounds, cfbounds, vars,symbolsThatCannotBeReplacedByBDDs);
+	return make_shared<GenerateBDDAccordingToBounds>(manager, ctbounds, cfbounds, vars,symbolsThatCannotBeReplacedByBDDs);
 }
 
 template<class Factory, class Domain>

@@ -53,7 +53,7 @@ InternalArgument executeMXCommand(AbstractTheory* theory, Structure* structure, 
 	return result;
 }
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*)> ModelExpandInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*)> ModelExpandInferenceBase;
 class ModelExpandInference: public ModelExpandInferenceBase {
 public:
 	ModelExpandInference()
@@ -67,7 +67,7 @@ public:
 	}
 };
 
-typedef TypedInference<LIST(AbstractTheory*, AbstractStructure*, Vocabulary*)> ModelExpandWithVocInferenceBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*, Vocabulary*)> ModelExpandWithVocInferenceBase;
 class ModelExpandWithOutputVocInference: public ModelExpandWithVocInferenceBase {
 public:
 	ModelExpandWithOutputVocInference()

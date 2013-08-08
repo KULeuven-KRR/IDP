@@ -72,6 +72,13 @@ FuncTermGrounder::FuncTermGrounder(GroundTranslator* tt, Function* func, FuncTab
 	setTerm(new FuncTerm(func, subterms, {}));
 }
 
+TwinTermGrounder::TwinTermGrounder(GroundTranslator* tt, Function* func, TwinTT type, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
+		: TermGrounder(dom, tt), _type(type), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _latestdomain(NULL) {
+	addAll(_varmap, _lefttermgrounder->getVarmapping());
+	addAll(_varmap, _righttermgrounder->getVarmapping());
+	setTerm(new FuncTerm(func, {_lefttermgrounder->getTerm()->cloneKeepVars(), _righttermgrounder->getTerm()->cloneKeepVars()}, {}));
+}
+
 // TODO code duplication with AtomGrounder
 GroundTerm FuncTermGrounder::run() const {
 	if (verbosity() > 2) {
@@ -232,8 +239,6 @@ CPTerm* createCPProdTerm(const litlist& conditions, const VarId& left, const Var
 }
 
 CPTerm* createCPSumTerm(Lit condition, const DomainElement* factor, const VarId& varid) {
-			int min = *(std::min_element(allposs.begin(), allposs.end()));
-			int max = *(std::max_element(allposs.begin(), allposs.end()));
 	Assert(factor->type() == DomainElementType::DET_INT);
 	return createCPSumTerm({condition}, { varid }, { factor->value()._int });
 }
@@ -244,8 +249,8 @@ GroundTerm TwinTermGrounder::run() const {
 		pushtab();
 	}
 	// Run subtermgrounders
-	auto left = _subtermgrounders[0]->run();
-	auto right = _subtermgrounders[1]->run();
+	auto left = _lefttermgrounder->run();
+	auto right = _righttermgrounder->run();
 
 	if((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL)){
 		return GroundTerm(NULL);
@@ -349,58 +354,36 @@ GroundTerm AggTermGrounder::run() const {
 
 	auto trueweight = applyAgg(_type, tsset.trueweights());
 
-	if (not tsset.cpvars().empty()) {
-		auto varids = rewriteCpTermsIntoVars(_type, grounding, tsset.literals(), tsset.cpvars());
-		if (trueweight != getNeutralElement(_type)) {
-			varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
-		}
-		auto cpaggterm = createCPAggTerm(_type, varids);
-		auto varid = _translator->translateTerm(cpaggterm, getDomain());
-		if (verbosity() > 2) {
-			poptab();
-			clog << tabs() << "Result = " << _translator->printTerm(varid) << "\n";
-		}
-		return GroundTerm(varid);
-	} else {
-		if (verbosity() > 2) {
-			poptab();
-			clog << tabs() << "Result = " << toString(trueweight) << "\n";
-		}
-		return GroundTerm(createDomElem(trueweight));
-	}
-}
-
-varidlist rewriteCpTermsIntoVars(AggFunction type, AbstractGroundTheory* grounding, const litlist& conditions, const termlist& cpterms) {
 	GroundTerm result(0);
-	if(tsset.cpvars().empty()){
+	if (tsset.cpvars().empty()) {
 		result = GroundTerm(createDomElem(trueweight));
-	}else{
+	} else {
 		VarId id;
-		if(contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
-			id = aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)];
-		}else{
+		if (contains(aggterm2cpterm, std::pair<uint, AggFunction>(setnr.id, _type))) {
+			id = aggterm2cpterm[std::pair<uint, AggFunction>(setnr.id, _type)];
+		} else {
 			varidlist varids;
 			auto conditions = tsset.literals();
 
-			for(auto term: tsset.cpvars()){
-				if(term.isVariable){
+			for (auto term : tsset.cpvars()) {
+				if (term.isVariable) {
 					varids.push_back(term._varid);
-				}else{
-					if(term._domelement==NULL){
+				} else {
+					if (term._domelement == NULL) {
 						throw notyetimplemented("Undefined term in cp-expression");
 					}
 					varids.push_back(_translator->translateTerm(term._domelement));
 				}
 			}
-			if (trueweight!=getNeutralElement(_type)) {
+			if (trueweight != getNeutralElement(_type)) {
 				conditions.push_back(_true);
 				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
 			}
 
 			auto aggterm = createCPAggTerm(_type, conditions, varids);
 			id = _translator->translateTerm(aggterm, getDomain());
-			aggterm2cpterm[std::pair<uint,AggFunction>(setnr.id,_type)]=id;
-			if(not contains(aggterm2cpterm, std::pair<uint,AggFunction>(setnr.id,_type))){
+			aggterm2cpterm[std::pair<uint, AggFunction>(setnr.id, _type)] = id;
+			if (not contains(aggterm2cpterm, std::pair<uint, AggFunction>(setnr.id, _type))) {
 				throw IdpException("Invalid code path");
 			}
 		}

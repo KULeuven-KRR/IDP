@@ -21,7 +21,7 @@ class CalculateDefinitions {
 public:
 	//!Removes calculated definitions from the theory.
 	// Also modifies the structure. Clone your theory and structure before doing this!
-	static std::vector<AbstractStructure*> doCalculateDefinitions(Theory* theory, Structure* structure, bool satdelay = false) {
+	static std::vector<Structure*> doCalculateDefinitions(Theory* theory, Structure* structure, bool satdelay = false) {
 		CalculateDefinitions c;
 		return c.calculateKnownDefinitions(theory, structure, satdelay);
 	}

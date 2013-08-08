@@ -19,7 +19,7 @@ vocabulary V {
 }
 
 theory T : V {  
-   mm >= sum{j len dl i: job_len(j,len) & deadline(j,dl) & start(j) + len > dl & importance(j,i) : (start(j) + len-dl)*i}.
+   mm >= sum{j len dl[time] i: job_len(j,len) & deadline(j,dl) & start(j) + len > dl & importance(j,i) : (start(j) + len-dl)*i}.
    ?>1 j: start(j)>80.
 }
 

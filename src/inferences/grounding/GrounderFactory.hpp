@@ -40,7 +40,7 @@ class Grounder;
 class Grounder;
 class FOBDD;
 
-typedef GenerateBDDAccordingToBounds* SymbolicStructure;
+typedef std::shared_ptr<GenerateBDDAccordingToBounds> SymbolicStructure;
 
 struct GenAndChecker {
 	const std::set<const DomElemContainer*> _generates;

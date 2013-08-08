@@ -144,7 +144,7 @@ private:
 			logActionAndTime("Starting definition evaluation at ");
 		}
 		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
-		if(getOption(VERBOSE_GROUNDSTATS) > 1){
+		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 1){
 			cout <<"\ndefs&&max:" <<toDouble(Grounder::getFullGroundingSize()) <<"&&grounded:" <<Grounder::groundedAtoms() <<"\n";
 		}
 		if (defCalculated.size() == 0) {
@@ -191,13 +191,12 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Starting grounding at ");
 		}
-		if (getOption(VERBOSE_GROUNDSTATS) >= 1) {
+		if (getOption(VERBOSE_GROUNDING_STATISTICS) >= 1) {
 			logActionAndTime("grounding-start");
 		}
 		bool unsat = _grounder->toplevelRun();
 		if(unsat){
 			auto grounding = returnUnsat(GroundInfo { _theory, { _structure, symstructure }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
-			delete (symstructure);
 			return grounding;
 		}
 

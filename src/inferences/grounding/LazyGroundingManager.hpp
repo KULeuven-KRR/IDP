@@ -91,7 +91,7 @@ class StructureExtender {
 public:
 	virtual ~StructureExtender() {
 	}
-	virtual void extendStructure(AbstractStructure* structure) const = 0;
+	virtual void extendStructure(Structure* structure) const = 0;
 };
 
 class LazyGroundingManager: public Grounder, public StructureExtender {
@@ -151,11 +151,11 @@ public:
 	bool canBeDelayedOn(PFSymbol* pfs, bool truewatch) const;
 	bool canBeDelayedOn(Formula* head, Formula* body) const;
 
-	void extendStructure(AbstractStructure* structure) const;
+	void extendStructure(Structure* structure) const;
 
 	Grounder* getFirstSubGrounder() const;
 
-	AbstractStructure const * getStructure() const {
+	Structure const * getStructure() const {
 		return _structures.concrstructure;
 	}
 

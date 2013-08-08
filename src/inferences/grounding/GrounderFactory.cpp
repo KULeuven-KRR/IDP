@@ -525,7 +525,7 @@ const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) 
 }
 
 void GrounderFactory::visit(const PredForm* pf) {
-	context._conjPathUntilNode = _context._conjunctivePathFromRoot;
+	_context._conjPathUntilNode = _context._conjunctivePathFromRoot;
 
 	auto temppf = pf->clone();
 	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
@@ -660,14 +660,42 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 	}
 	RestoreContext();
 
-	if (_context._component == CompContext::HEAD) {
-		auto inter = getConcreteStructure()->inter(newpf->symbol());
-		_headgrounder = new HeadGrounder(getGrounding(), newpf->symbol(), subtermgrounders, argsorttables, _context);
-	} else {
-		_formgrounder = new AtomGrounder(getGrounding(), newpf->sign(), newpf->symbol(), subtermgrounders, argsorttables, _context);
-	}
+    if (_context._component == CompContext::HEAD) {
+		auto inter = getConcreteStructure()->inter(symbol);
+		_headgrounder = new HeadGrounder(getGrounding(), symbol, subtermgrounders, argsorttables, _context);
+    } else {
+		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context);
+    }
+
 	checkAndAddAsTopGrounder();
-	deleteDeep(newpf);
+}
+
+void GrounderFactory::visit(const AggForm* af) {
+	auto clonedaf = rewriteSumOrCardIntoSum(af, getConcreteStructure())->clone();
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
+	if (recursive(transaf)) {
+		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
+	}
+
+	if (not isa<AggForm>(*transaf)) {
+		descend(transaf);
+		deleteDeep(transaf);
+		return;
+	}
+
+	auto newaf = dynamic_cast<AggForm*>(transaf);
+	Assert(not recursive(newaf) or FormulaUtils::isMonotone(newaf) or FormulaUtils::isAntimonotone(newaf));
+
+	auto comp = newaf->comp();
+	auto bound = newaf->getBound();
+	auto aggterm = newaf->getAggTerm();
+	if (getOption(CPSUPPORT) and not recursive(newaf) and CPSupport::eligibleForCP(aggterm, getConcreteStructure()) and CPSupport::eligibleForCP(bound, getConcreteStructure())) {
+		groundAggWithCP(newaf->sign(), bound, comp, aggterm);
+	} else {
+		groundAggWithoutCP(FormulaUtils::isAntimonotone(newaf), recursive(newaf), newaf->sign(), bound, comp, aggterm);
+	}
+
+	deleteDeep(newaf);
 }
 
 void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, AggTerm* agg){
@@ -679,6 +707,7 @@ void GrounderFactory::groundAggWithCP(SIGN sign, Term* bound, CompType comp, Agg
 	descend(bound);
 	auto termgrounder = getTermGrounder();
 	_formgrounder = new ComparisonGrounder(getGrounding(), termgrounder, comp, boundgrounder, _context, get(STDPRED::EQ, agg->sort()), sign);
+	checkAndAddAsTopGrounder();
 }
 
 void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sign, Term* bound, CompType comp, AggTerm* agg){
@@ -700,6 +729,8 @@ void GrounderFactory::groundAggWithoutCP(bool antimono, bool recursive, SIGN sig
 		_context._tseitin = TsType::RULE;
 	}
 	_formgrounder = new AggGrounder(getGrounding(), _context, boundgrounder, comp, agg->function(), setgrounder, sign);
+
+	checkAndAddAsTopGrounder();
 
 	RestoreContext();
 }
@@ -741,15 +772,6 @@ AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
 		}
 		if (not newagg) {
 			aggterm = aggterm->clone();
-					aggterm = new AggTerm(aggterm->set()->clone(), AggFunction::SUM, aggterm->pi());
-				if (aggterm->function() == AggFunction::SUM && bound->type() != TermType::VAR) { // TODO or anything else known at ground time
-					auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
-					auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
-					newset->addSubSet(new QuantSetExpr( { }, trueFormula(), newft, SetParseInfo()));
-					bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());
-					aggterm = new AggTerm(newset, aggterm->function(), aggterm->pi());
-					temppf = new PredForm(pf->sign(), pf->symbol(), { aggterm, bound }, pf->pi());
-					temppf = new PredForm(pf->sign(), pf->symbol(), { bound, aggterm }, pf->pi());
 		}
 		if (not newbound) {
 			bound = bound->clone();
@@ -1019,16 +1041,16 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	_termgrounder = NULL;
 	if(getOption(BoolType::CPSUPPORT) && not recursive(t)){
 		if (FuncUtils::isIntSum(function, getConcreteStructure()->vocabulary())) {
-			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), is(function, STDFUNC::ADDITION) ? TwinTT::PLUS : TwinTT::MIN, ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, is(function, STDFUNC::ADDITION) ? TwinTT::PLUS : TwinTT::MIN, ftable, domain, stg[0], stg[1]);
 		} else if (is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
 			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
 			auto producttable = getConcreteStructure()->inter(product)->funcTable();
 			auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
 			descend(factorterm);
 			auto factorgrounder = getTermGrounder();
-			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), TwinTT::PROD, producttable, domain, factorgrounder, subtermgrounders[0]);
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::PROD, producttable, domain, factorgrounder, stg[0]);
 		} else if (FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {
-			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), TwinTT::PROD, ftable, domain, subtermgrounders[0], subtermgrounders[1]);
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::PROD, ftable, domain, stg[0], stg[1]);
 		}
 	}
 	if(_termgrounder==NULL){

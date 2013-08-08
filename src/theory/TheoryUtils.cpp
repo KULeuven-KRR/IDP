@@ -162,7 +162,7 @@ Rule* falseRule(PFSymbol* s) {
 	return rule;
 }
 
-Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const AbstractStructure* structure, Context context) {
+Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure, Context context) {
 	return transform<UnnestHeadTermsNotVarsOrDomElems, Rule*>(rule, structure, context);
 }
 Rule* moveOnlyBodyQuantifiers(Rule* rule){

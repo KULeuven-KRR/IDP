@@ -34,7 +34,6 @@ bool recursive(const PFSymbol& symbol, const GroundingContext& context);
 class FormulaGrounder: public Grounder {
 protected:
 	var2dommap _varmap; // Maps the (cloned) variables in the original formula to their instantiation
-	GroundTranslator* translator() const;
 public:
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);
 	virtual ~FormulaGrounder();

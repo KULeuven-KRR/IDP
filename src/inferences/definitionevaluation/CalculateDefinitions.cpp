@@ -85,7 +85,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 			// Cleanup
 			delete (data);
 			delete (grounder);
-			delete (symstructure);
 			return false;
 		}
 
@@ -113,7 +112,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		delete (data);
 		delete (mx);
 		delete (grounder);
-		delete (symstructure);
 
 		return not abstractsolutions.empty() && structure->isConsistent();
 	}

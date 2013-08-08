@@ -32,12 +32,12 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
-		l = sublitgrounder.translator()->trueLit();
+		l = sublitgrounder->translator()->trueLit();
 	} else {
 		auto lgr = LazyGroundingRequest({});
 		l = sublitgrounder->groundAndReturnLit(lgr);
 	}
-	if (l == sublitgrounder.translator()->falseLit()) {
+	if (l == sublitgrounder->translator()->falseLit()) {
 		return;
 	}
 
@@ -49,7 +49,7 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 	}
 	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 
-	if (l == sublitgrounder.translator()->trueLit()) {
+	if (l == sublitgrounder->translator()->trueLit()) {
 		trueweights.push_back(w);
 	} else {
 		weights.push_back(w);
@@ -62,18 +62,18 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 		InstChecker& checker) {
 	Lit l;
 	if (checker.check()) {
-		l = sublitgrounder.translator()->trueLit();
+		l = sublitgrounder->translator()->trueLit();
 	} else {
 		auto lgr = LazyGroundingRequest({});
 		l = sublitgrounder->groundAndReturnLit(lgr);
 	}
-	if (l == sublitgrounder.translator()->falseLit()) {
+	if (l == sublitgrounder->translator()->falseLit()) {
 		return;
 	}
 
 	const auto& groundweight = subtermgrounder.run();
 
-	if (l == sublitgrounder.translator()->trueLit() && not groundweight.isVariable) {
+	if (l == sublitgrounder->translator()->trueLit() && not groundweight.isVariable) {
 		const auto& d = groundweight._domelement;
 		if(d==NULL){
 			throw notyetimplemented("Invalid term in set expression");

@@ -42,11 +42,12 @@ protected:
 		_term = t;
 	}
 
-public:
 	// @parameter dom: the sort of the position the term occurs in
 	TermGrounder(SortTable* dom = NULL, GroundTranslator* translator = NULL)
 			: _domain(dom), _term(NULL), _translator(translator) {
 	}
+
+public:
 	virtual ~TermGrounder();
 	virtual GroundTerm run() const = 0;
 
@@ -143,9 +144,7 @@ protected:
 
 	mutable SortTable* _latestdomain;
 public:
-	TwinTermGrounder(GroundTranslator* tt, TwinTT type, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg)
-			: TermGrounder(dom, tt), _type(type), _functable(ftable), _lefttermgrounder(ltg), _righttermgrounder(rtg), _latestdomain(NULL) {
-	}
+	TwinTermGrounder(GroundTranslator* tt, Function* func, TwinTT type, FuncTable* ftable, SortTable* dom, TermGrounder* ltg, TermGrounder* rtg);
 	GroundTerm run() const;
 
 	virtual SortTable* getLatestDomain() const {

@@ -64,7 +64,7 @@ public:
 
 // NOTE: structure can be NULL
 FOPropagator* createPropagator(const AbstractTheory* theory, const Structure* structure, const std::map<PFSymbol*, InitBoundType> mpi);
-GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure);
+std::shared_ptr<GenerateBDDAccordingToBounds> generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure);
 
 /** Generates bounds for the given theory-structure combination
  *
@@ -75,7 +75,7 @@ GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, St
  * NOTE: if applyPropagationToStructure == false, then outputvoc is useless and can savely be NULL
  * NOTE: if outputvoc == NULL, we will propagate for EVERY symbol in structure
  */
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
+std::shared_ptr<GenerateBDDAccordingToBounds> generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool applyPropagationToStructure, Vocabulary* outputvoc = NULL);
 
 //GenerateBDDAccordingToBounds* generateNaiveApproxBounds(AbstractTheory* theory, Structure* structure);
 

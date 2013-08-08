@@ -49,6 +49,10 @@ void splitOverSameQuant(const VarSet& quantset, const FormulaList& formulasToSpl
 }
 
 Formula* PushQuantifications::visit(QuantForm* qf) {
+	if(qf->quantVars().size()==0){
+		return qf->subformula()->accept(this);
+	}
+
 	bool conj = true;
 	vector<QuantForm*> quantforms;
 	quantforms.push_back(qf);

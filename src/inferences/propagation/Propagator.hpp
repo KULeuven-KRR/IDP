@@ -37,7 +37,7 @@ public:
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 
-	virtual GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* allreadyPropagatedSymbols) const = 0;
+	virtual std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure(Vocabulary* allreadyPropagatedSymbols) const = 0;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 };
 
@@ -99,7 +99,7 @@ public:
 	//!< Obtain the resulting structure
 	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
 	// a NULL vocabulary indicates that every symbol can be replaced
-	GenerateBDDAccordingToBounds* symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;
+	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 
 	void schedule(const Formula* par, FOPropDirection, bool, const Formula* child);

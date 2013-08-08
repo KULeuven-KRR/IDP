@@ -122,16 +122,11 @@ Lit AtomGrounder::run() const {
 	Lit lit = 0;
 	if (not alldomelts) {
 		lit = translator()->addLazyElement(_symbol, terms, _recursive);
-		}
-		auto temphead = translator()->createNewUninterpretedNumber();
-		getGrounding()->addLazyElement(temphead, _symbol, ids);
-		lit = temphead;
 	}else{
 		// Run instance checkers
 		// NOTE: set all the variables representing the subterms to their current value (these are used in the checkers)
 		for (size_t n = 0; n < terms.size(); ++n) {
 			_args[n] = terms[n]._domelement;
-			*(_checkargs[n]) = _args[n];
 		}
 		lit = translator()->translateReduced(_symboloffset, _args, _recursive);
 	}
@@ -222,10 +217,10 @@ void ComparisonGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& 
 }
 
 // TODO incorrect groundsize
-AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bound, CompType comp, AggFunction tp, EnumSetGrounder* sg, SIGN sign)
+AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bg, CompType comp, AggFunction tp, EnumSetGrounder* sg, SIGN sign)
 		: 	FormulaGrounder(grounding, gc),
 			_setgrounder(sg),
-			_boundgrounder(bound),
+			_boundgrounder(bg),
 			_type(tp),
 			_comp(comp),
 			_sign(sign) {

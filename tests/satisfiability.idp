@@ -64,17 +64,13 @@ procedure satwithboundslong(){
 procedure satwithcp(){
 	stdoptions.cpsupport = true
 	stdoptions.cpgroundatoms = false
-	stdoptions.groundwithbounds = true
-	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }
 procedure satwithfullcp(){
 	stdoptions.cpsupport = true
 	stdoptions.cpgroundatoms = true
-	stdoptions.groundwithbounds = true
-	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	return run()
 }
 
@@ -88,7 +84,6 @@ procedure satwithsymm(){
 }
 
 procedure run() {
-	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=0
 	start = os.clock()

@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef INFERENCES_OPTIMALPROPAGATE_HPP_
-#define INFERENCES_OPTIMALPROPAGATE_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 
@@ -28,8 +27,13 @@
 class OptimalPropagation {
 public:
 	 std::vector<Structure*>  propagate(AbstractTheory* theory, Structure* structure) {
+		 // TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
+		 Warning::warning("Optimal propagator does not work with non-propositional grounding yet, so disabling cpsupport.");
+		 auto storedcp = getOption(CPSUPPORT);
+		 setOption(CPSUPPORT, false);
+
 		// TODO: make a clean version of the implementation (should call ModelExpansion)
-		// TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
+
 		// Compute all models
 
 		auto data = SolverConnection::createsolver(0);
@@ -45,6 +49,8 @@ public:
 
 		auto mx = SolverConnection::initsolution(data, 0);
 		mx->execute();
+
+		setOption(CPSUPPORT, storedcp);
 
 		auto abstractsolutions = mx->getSolutions();
 
@@ -93,5 +99,3 @@ public:
 		return {result};
 	}
 };
-
-#endif /* INFERENCES_OPTIMALPROPAGATE_HPP_ */

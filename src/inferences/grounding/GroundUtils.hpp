@@ -56,7 +56,7 @@ class GenerateBDDAccordingToBounds;
 // Always non-owning, can always be NULL!
 struct StructureInfo{
 	Structure* concrstructure;
-	GenerateBDDAccordingToBounds* symstructure;
+	std::shared_ptr<GenerateBDDAccordingToBounds> symstructure;
 };
 
 bool useLazyGrounding();

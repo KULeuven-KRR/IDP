@@ -274,7 +274,7 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 		auto atroot = elem.rootlevel;
 		tseitinqueue.pop();
 
-		if (not translator()->isTseitinWithSubformula(tseitin) || contains(tseitin, _addedTseitins)) {
+		if (not translator()->isTseitinWithSubformula(tseitin) || contains(_addedTseitins, tseitin)) {
 			if(atroot){
 				notifyAtomsAdded(1);
 				Policy::polAdd(GroundClause{elem.lit});

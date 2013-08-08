@@ -70,12 +70,12 @@ public:
 		execute(MinisatID::LazyAddition(createList(glist), constraintID));
 	}
 
-	void add(DefId defnr, const PCGroundRule* rule) {
+	void add(DefId defnr, const PCGroundRule& rule) {
 		MinisatID::litlist list;
-		for (auto lit : rule->body()) {
+		for (auto lit : rule.body()) {
 			list.push_back(createLiteral(lit));
 		}
-		execute(MinisatID::Rule(getDefConstrID(), createAtom(rule->head()), list, rule->type() == RuleType::CONJ, defnr.id, useUFSAndOnlyIfSem()));
+		execute(MinisatID::Rule(getDefConstrID(), createAtom(rule.head()), list, rule.type() == RuleType::CONJ, defnr.id, useUFSAndOnlyIfSem()));
 	}
 
 	void add(DefId defID, Lit head, double bound, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem) {

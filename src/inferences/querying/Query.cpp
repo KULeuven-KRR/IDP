@@ -68,7 +68,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	return solveBdd(q->variables(), manager, bdd, structure);
 }
 
-PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, AbstractStructure const * const structure) const {
+PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, Structure const * const structure) const {
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";

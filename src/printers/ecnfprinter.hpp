@@ -216,7 +216,7 @@ public:
 	void visit(const PCGroundRule* b) {
 		Assert(isTheoryOpen());
 		Assert(isDefOpen(_currentdefnr));
-		printer.add(_currentdefnr, b);
+		printer.add(_currentdefnr, *b);
 	}
 
 	void visit(const AggGroundRule* a) {

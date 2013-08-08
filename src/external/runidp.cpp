@@ -186,7 +186,7 @@ void monitorShutdown() {
 
 void timeout() {
 	clog << "Timed-out\n";
-	getGlobal()->>notifyTimeout();
+	getGlobal()->notifyTimeout();
 	thread shutdown(&monitorShutdown);
 	shutdown.join();
 }

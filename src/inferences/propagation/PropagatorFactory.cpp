@@ -30,7 +30,7 @@ FOPropagator* createPropagator(const AbstractTheory* theory, const Structure* st
 	return propfactory.create(theory, structure);
 }
 
-GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure) {
+std::shared_ptr<GenerateBDDAccordingToBounds> generateNonLiftedBounds(AbstractTheory* theory, Structure const * const structure) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
@@ -40,7 +40,7 @@ GenerateBDDAccordingToBounds* generateNonLiftedBounds(AbstractTheory* theory, St
 	return result;
 }
 
-GenerateBDDAccordingToBounds* generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool LUP,
+shared_ptr<GenerateBDDAccordingToBounds> generateBounds(AbstractTheory* theory, Structure* structure, bool doSymbolicPropagation, bool LUP,
 		Vocabulary* outputvoc) {
 	Assert(theory != NULL);
 	Assert(structure != NULL);
@@ -193,8 +193,8 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, structure, newtheo->vocabulary());
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, {}, true, false);
-	FormulaUtils::flatten(newtheo);
 	newtheo = FormulaUtils::pushQuantifiersAndNegations(newtheo);
+	FormulaUtils::flatten(newtheo);
 	/* Since we will create "leafconnectors" for all (non-builtin) predicates, it is important that we unnest
 	 * all terms to achieve that predforms are always of the form P(\bar x)
 	 * All terms should have been unnested before, we only need to unnest domainterms now.

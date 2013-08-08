@@ -58,7 +58,7 @@ DelayedSentence::DelayedSentence(FormulaGrounder* sentence, std::shared_ptr<Dela
 		: 	done(false),
 			sentence(sentence),
 			delay(delay),
-			 singletuple({ { -1, {} } }){
+			singletuple({ { -1, {} } }){
 	for (auto conjunct : delay->condition) {
 		// TODO Create construction definition
 	}
@@ -71,7 +71,7 @@ LazyGroundingManager::LazyGroundingManager(AbstractGroundTheory* grounding, cons
 			_outputvocabulary(outputvocabulary),
 			_structures(structures),
 			resolvingqueues(false) {
-	getTranslator()->addMonitor(this); // NOTE: request notifications of literal additions
+	translator()->addMonitor(this); // NOTE: request notifications of literal additions
 	notifyForOutputVoc(NULL, { }); // NOTE: ugly hack to notify the solver there will be an output vocabulary (otherwise everything is default outputvoc)
 	setMaxGroundSize(tablesize(TST_EXACT, 1));
 }
@@ -350,7 +350,7 @@ public:
 		setOption(VERBOSE_GROUNDING, 0);
 		setOption(VERBOSE_CREATE_GROUNDERS, 0);
 		setOption(VERBOSE_SOLVING, 0);
-		setOption(VERBOSE_GROUNDSTATS, 0);
+		setOption(VERBOSE_GROUNDING_STATISTICS, 0);
 		setOption(VERBOSE_PROPAGATING, 0);
 		setOption(GROUNDWITHBOUNDS, true);
 		setOption(LIFTEDUNITPROPAGATION, true);
@@ -833,7 +833,7 @@ void LazyGroundingManager::addKnownToStructures(PredForm* pf, bool watchedvalue)
 	Query q("", vars, &formula, { });
 	auto table = Querying::doSolveQuery(&q, getStructure(), _structures.symstructure);
 	for (auto i = table->begin(); not i.isAtEnd(); ++i) {
-		auto atom = getTranslator()->translateNonReduced(pf->symbol(), *i);
+		auto atom = translator()->translateNonReduced(pf->symbol(), *i);
 		notifyBecameTrue(watchedvalue ? atom : -atom, true);
 	}
 }
@@ -875,7 +875,7 @@ void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstr
 	Query q("", vars, formula, { });
 	auto table = Querying::doSolveQuery(&q, getStructure(), _structures.symstructure);
 	for (auto i = table->begin(); not i.isAtEnd(); ++i) {
-		auto lit = getTranslator()->translateReduced(symbol, *i, false); // NOTE: also creates all those literals, so also notifyNewLiteral gets called!
+		auto lit = translator()->translateReduced(symbol, *i, false); // NOTE: also creates all those literals, so also notifyNewLiteral gets called!
 		if (lit != _true && lit != _false) {
 			lits.push_back(lit);
 		}
@@ -889,7 +889,7 @@ void LazyGroundingManager::checkAddedDelay(PredForm* pf, bool watchedvalue, bool
 
 	addKnownToStructures(pf, watchedvalue);
 	addToOutputVoc(pf->symbol(), expensiveConstruction);
-	for(auto tuple2lit: getTranslator()->getIntroducedLiteralsFor(pf->symbol())){
+	for(auto tuple2lit: translator()->getIntroducedLiteralsFor(pf->symbol())){
 		needWatch(watchedvalue, tuple2lit.second); // FIXME not if already known?
 	}
 }
@@ -920,7 +920,7 @@ void LazyGroundingManager::notifyForOutputVoc(PFSymbol* symbol, const litlist& l
 void LazyGroundingManager::notifyBecameTrue(const Lit& lit, bool onlyqueue) {
 	queuedforgrounding.push( { abs(lit), lit < 0 ? false : true });
 	if (verbosity() > 2) {
-		clog << "Queued firing of " << getTranslator()->printL(lit) << "\n";
+		clog << "Queued firing of " << translator()->printLit(lit) << "\n";
 	}
 	if (onlyqueue) {
 		return;
@@ -936,7 +936,7 @@ void LazyGroundingManager::notifyNewLiteral(PFSymbol* symbol, const ElementTuple
 	}
 	Assert(translatedliteral!=_true && translatedliteral!=_false);
 	if (verbosity() > 2) {
-		clog << "Notified of new literal " << getTranslator()->printL(translatedliteral) << "\n";
+		clog << "Notified of new literal " << translator()->printLit(translatedliteral) << "\n";
 	}
 
 	notifyForOutputVoc(symbol, { translatedliteral });
@@ -989,14 +989,14 @@ void LazyGroundingManager::notifyNewLiteral(PFSymbol* symbol, const ElementTuple
 // TODO remove watch if fully grounded
 void LazyGroundingManager::fired(Atom atom, bool value) {
 	if (verbosity() > 2) {
-		clog << "Fired " << getTranslator()->printL(atom) << " on " << value << "\n";
+		clog << "Fired " << translator()->printLit(atom) << " on " << value << "\n";
 	}
 
-	if (not getTranslator()->isInputAtom(atom)) {
+	if (not translator()->isInputAtom(atom)) {
 		return;
 	}
-	const auto& symbol = getTranslator()->getSymbol(atom);
-	const auto& args = getTranslator()->getArgs(atom);
+	const auto& symbol = translator()->getSymbol(atom);
+	const auto& args = translator()->getArgs(atom);
 
 // FIXME need some assertion or check that any true or false fired literal will also already have fired on decidable
 
@@ -1036,7 +1036,7 @@ void LazyGroundingManager::specificFire(DelayedRule* rule, Lit lit, const Elemen
 	}
 //	clog <<"Grounding " <<groundingcount++ <<"\n";
 	rule2alreadygroundedlits[rule].insert(lit);
-	rule->notifyHeadFired(lit, args, getTranslator(), tempdefs);
+	rule->notifyHeadFired(lit, args, translator(), tempdefs);
 }
 
 void LazyGroundingManager::specificFire(DelayedSentence* sentence, Lit lit, PFSymbol* symbol, const ElementTuple& args) {
@@ -1059,7 +1059,7 @@ void DelayedRule::notifyHeadFired(const Lit& head, const ElementTuple& tuple, Gr
 		return;
 	}
 	if (getOption(VERBOSE_GROUNDING) > 3) {
-		clog << "Head literal " << translator->printL(head) << " of rule " << toString(_rule->getRule()) << " fired \n";
+		clog << "Head literal " << translator->printLit(head) << " of rule " << toString(_rule->getRule()) << " fired \n";
 	}
 	for (uint i = 0; i < tuple.size(); ++i) {
 		*_rule->getHeadVarContainers()[i] = tuple[i];
@@ -1244,7 +1244,7 @@ Grounder* LazyGroundingManager::getFirstSubGrounder() const {
 }
 
 // FIXME can be used to get a complete extension of the structure
-void LazyGroundingManager::extendStructure(AbstractStructure* structure) const {
+void LazyGroundingManager::extendStructure(Structure* structure) const {
 // TODO handle functions
 // TODO future: handle sorts?
 // TODO handle definitions
