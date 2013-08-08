@@ -65,7 +65,12 @@ public:
 	//NOTE: modifies the theory and the structure. Clone before passing them!
 	static AbstractGroundTheory* doGrounding(AbstractTheory* theory, Structure* structure, Vocabulary* outputvocabulary, Term* term,
 			TraceMonitor* tracemonitor, bool nbModelsEquivalent, GroundingReceiver* solver) {
-		return createGroundingAndExtender(theory, structure, outputvocabulary, term, tracemonitor, nbModelsEquivalent, solver).first;
+		if(useLazyGrounding()){
+			throw notyetimplemented("Retrieving a ground theory when lazy grounding is enabled");
+		}
+		auto result = createGroundingAndExtender(theory, structure, outputvocabulary, term, tracemonitor, nbModelsEquivalent, solver);
+		delete(result.second);
+		return result.first;
 	}
 	static std::pair<AbstractGroundTheory*, StructureExtender*> createGroundingAndExtender(AbstractTheory* theory, Structure* structure,
 			Vocabulary* outputvocabulary, Term* term, TraceMonitor* tracemonitor, bool nbModelsEquivalent, GroundingReceiver* solver) {
@@ -80,10 +85,9 @@ public:
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
 		auto m = new GroundingInference(t, structure, outputvocabulary, term, tracemonitor, nbModelsEquivalent, solver);
-		auto grounding = m->ground();
-		Assert(grounding!=NULL);
-		// FIXME deleting lazy grounders here is a problem!!! delete(m);
-		return {grounding, m->getManager()};
+		auto result = std::pair<AbstractGroundTheory*, StructureExtender*>{m->ground(), m->getManager()};
+		delete(m);
+		return result;
 	}
 private:
 	GroundingInference(Theory* theory, Structure* structure, Vocabulary* outputvocabulary, Term* minimize, TraceMonitor* tracemonitor,
@@ -97,7 +101,7 @@ private:
 				_grounder(NULL),
 				_prepared(false),
 				_nbmodelsequivalent(nbModelsEquivalent) {
-		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness!
+		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness! + deletion
 		voc->add(_theory->vocabulary());
 		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
 		_theory->vocabulary(voc);
