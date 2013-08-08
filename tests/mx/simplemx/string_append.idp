@@ -1,3 +1,5 @@
+// TODO currently only works for liftedunitpropagation off
+
 procedure append(a,b){
 	return a..b
 }
@@ -16,7 +18,14 @@ structure S:V{
 vocabulary Vout{
 	extern V::P/1
 }
+
+procedure getExpectedNbOfModels(){
+	return 1;
+}
+
+
+include <mx>
 procedure main(){
 	stdoptions.liftedunitpropagation=false
-	print(modelexpand(T,S,Vout)[1])
+	printmodels(modelexpand(T,S,Vout))
 }
