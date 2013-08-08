@@ -144,10 +144,16 @@ MXResult ModelExpansion::expand() const {
 	} catch (MinisatID::idpexception& error) {
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
+		t.requestStop();
+		time.join();
 		cleanup;
 		throw IdpException(ss.str());
 	} catch(UnsatException& ex){
 		unsat = true;
+	}catch(...){
+		t.requestStop();
+		time.join();
+		throw;
 	}
 
 	t.requestStop();
