@@ -14,8 +14,8 @@ procedure OptimizeWithSymBreaking() {
 	return run()
 }
 
-procedure OptimizeWithoutCP() {
-  stdoptions.cpsupport = false
+procedure OptimizeWithCP() {
+  stdoptions.cpsupport = true
   return run()
 }
 
