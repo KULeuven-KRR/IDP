@@ -17,7 +17,7 @@
 
 extern void parsefile(const std::string&);
 
-#warning Test doubleimplicationconstant addtooutputvoc should be very small, but isn't
+#warning Test doubleimplicationconstant addtooutputvoc should be very small, but isnt
 #warning Test doubleimplicationconstant finddelaypredforms was not smart enough
 #warning remove twovaluedness constraint again except for definition and equivalence heads (and in future also not for those)
 #warning bug in equivalence.idp, where the initial delay query for P does NOT result in P(1,350), but the approximation DID find it out!
@@ -227,8 +227,7 @@ private:
 
 public:
 	DelayInitializer(LazyGroundingManager* manager)
-			: 	manager(manager),
-				maxid(1) {
+			: maxid(1), manager(manager) {
 		if (not getGlobal()->instance()->alreadyParsed("delay_optimization")) {
 			auto warnings = getOption(SHOWWARNINGS);
 			auto autocomplete = getOption(AUTOCOMPLETE);
