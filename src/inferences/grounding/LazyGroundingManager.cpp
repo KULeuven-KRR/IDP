@@ -17,6 +17,8 @@
 
 extern void parsefile(const std::string&);
 
+#warning Test doubleimplicationconstant addtooutputvoc should be very small, but isn't
+#warning Test doubleimplicationconstant finddelaypredforms was not smart enough
 #warning remove twovaluedness constraint again except for definition and equivalence heads (and in future also not for those)
 #warning bug in equivalence.idp, where the initial delay query for P does NOT result in P(1,350), but the approximation DID find it out!
 
@@ -217,11 +219,11 @@ private:
 	Term* minimterm;
 	Structure* structure;
 	const DomainElement *truedm, *falsedm;
-	PredInter *symbol, *candelayon, *groundsize, *isdefdelay, *isequivalence;
+	FuncInter *symbol, *groundsize;
+	PredInter *candelayon, *isdefdelay, *isequivalence;
+	SortTable *constraint, *noninfcost, *predform, *symbolsort;
 
 	LazyGroundingManager* manager;
-
-	Function *symbolFunc, *groundsizeFunc;
 
 public:
 	DelayInitializer(LazyGroundingManager* manager)
@@ -242,25 +244,17 @@ public:
 		theory = ns->theory("Delay_Theory");
 		minimterm = ns->term("Delay_Minimization_Term");
 		structure = dynamic_cast<Structure*>(ns->structure("Delay_Basic_Data"))->clone();
-		Assert(theory!=NULL && minimterm!=NULL && structure!=NULL);
 
-		symbolFunc = voc->func("symbol/1");
-		Assert(symbolFunc!=NULL);
-		auto candelayonPred = voc->pred("canDelayOn/3");
-		Assert(candelayonPred!=NULL);
-		groundsizeFunc = voc->func("groundSize/1");
-		Assert(groundsizeFunc!=NULL);
-		auto isdefdelayPred = voc->pred("isDefinitionDelay/3");
-		Assert(isdefdelayPred!=NULL);
-		auto isequivalencePred = voc->pred("isEquivalence/1");
-		Assert(isequivalencePred!=NULL);
-		symbol = structure->inter(symbolFunc)->graphInter();
-		symbol = symbol->clone(symbol->universe());
-		candelayon = structure->inter(candelayonPred);
-		groundsize = structure->inter(groundsizeFunc)->graphInter();
-		groundsize = groundsize->clone(groundsize->universe());
-		isdefdelay = structure->inter(isdefdelayPred);
-		isequivalence = structure->inter(isequivalencePred);
+		constraint = structure->inter(voc->sort("Constraint"));
+		noninfcost = structure->inter(voc->sort("noninfcost"));
+		predform = structure->inter(voc->sort("PredForm"));
+		symbolsort = structure->inter(voc->sort("Symbol"));
+
+		symbol = structure->inter(voc->func("symbol/1"));
+		candelayon = structure->inter(voc->pred("canDelayOn/3"));
+		groundsize = structure->inter(voc->func("groundSize/1"));
+		isdefdelay = structure->inter(voc->pred("isDefinitionDelay/3"));
+		isequivalence = structure->inter(voc->pred("isEquivalence/1"));
 		truedm = createDomElem(StringPointer("True"));
 		falsedm = createDomElem(StringPointer("False"));
 	}
@@ -363,13 +357,10 @@ public:
 		setOption(AUTOCOMPLETE, true);
 //		setOption(TIMEOUT, 10);
 
-		structure->inter(groundsizeFunc)->graphInter(groundsize);
-		structure->inter(symbolFunc)->graphInter(symbol);
-		structure->checkAndAutocomplete();
 		structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrue({createDomElem(getOption(LAZYSIZETHRESHOLD))});
-		makeUnknownsFalse(symbol);
+		makeUnknownsFalse(symbol->graphInter());
 		makeUnknownsFalse(candelayon);
-		makeUnknownsFalse(groundsize);
+		makeUnknownsFalse(groundsize->graphInter());
 		makeUnknownsFalse(isdefdelay);
 		makeUnknownsFalse(isequivalence);
 		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
@@ -491,22 +482,29 @@ private:
 			size = (int) min(dsize, (double) getMaxElem<int>());
 		}
 		size = size <= 0 ? 1 : size; // Handle log of 0
-		groundsize->makeTrue( { id, createDomElem(size) }, true);
+		constraint->add(id);
+		noninfcost->add(createDomElem(size));
+		groundsize->add({id, createDomElem(size)});
 	}
 
 	void add(const DomainElement* cid, shared_ptr<Delay> delay, int defid, bool equivalence = false) { // -1 is not defined
+		constraint->add(cid);
 		for (auto conjunct : delay->condition) {
 			containeratoms.push_back(conjunct);
 			auto pfid = createDomElem((int) containeratoms.size() - 1);
-			auto symbolid = getSymbolID(conjunct.symbol, maxid, symbol2id, id2symbol);
-			symbol->makeTrue( { pfid, createDomElem(symbolid) }, true);
-			candelayon->makeTrue( { cid, conjunct.watchedvalue ? truedm : falsedm, pfid }, true);
+			predform->add(pfid);
+			auto symbolid = createDomElem(getSymbolID(conjunct.symbol, maxid, symbol2id, id2symbol));
+			symbolsort->add(symbolid);
+			symbol->add({pfid, symbolid});
+			candelayon->ct()->add({ cid, conjunct.watchedvalue ? truedm : falsedm, pfid });
 			if (defid != -1) {
-				isdefdelay->makeTrue( { pfid, cid, createDomElem(defid) }, true);
+				auto defiddom = createDomElem(defid);
+				structure->inter(voc->sort("DefID"))->add(defiddom);
+				isdefdelay->ct()->add({ pfid, cid, defiddom});
 			}
 		}
 		if (equivalence) {
-			isequivalence->makeTrue( { cid }, true);
+			isequivalence->ct()->add({cid});
 		}
 	}
 };
