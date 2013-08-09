@@ -15,6 +15,7 @@
 #include "theory/TheoryUtils.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/grounding/LazyGroundingManager.hpp"
+#include "creation/cppinterface.hpp"
 
 /**
  *	Given a formula F, find a literal L such that,
@@ -26,7 +27,7 @@ class FindDelayPredForms: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
 	bool _invaliddelay;
-	bool _rootquant, _onlyexistsquant;
+	bool _rootquant, _onlyexistsquant, _somequant;
 	bool _allquantvars;
 	const LazyGroundingManager* _manager;
 	var2dommap _varmapping;
@@ -39,11 +40,14 @@ private:
 public:
 	template<typename T>
 	std::shared_ptr<Delay> execute(T t, const var2dommap& varmap, const LazyGroundingManager* manager) {
+		if (getOption(VERBOSE_GROUNDING) > 3) {
+			clog << "Searching for delays for " << print(t) << ".\n";
+		}
 		_rootquant = true;
 		_onlyexistsquant = true;
+		_somequant = false;
 		_invaliddelay = true;
 		_manager = manager;
-		_context = TruthValue::True;
 		_varmapping = varmap;
 
 		t->accept(this);
@@ -57,57 +61,68 @@ public:
 
 protected:
 	virtual void visit(const PredForm* pf) {
-		//std::cerr << "Testing " << toString(pf) << "\n";
-		if (_context == TruthValue::Unknown || _onlyexistsquant) {
-			//std::cerr << "Bad context\n";
+		if (_somequant && _onlyexistsquant) {
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << print(pf) << " not eligible for delays because only existential quantification.\n";
+			}
 			return;
 		}
 
 		auto newpf = pf;
-		/*		if (is(pf->symbol(), STDPRED::EQ) && TermUtils::isFunc(pf->args()[0])) { TODO to be enabled when functions can be used as delays
-		 auto ft = dynamic_cast<FuncTerm*>(pf->args()[0]);
-		 auto newargs = ft->args();
-		 newargs.push_back(pf->args()[1]);
-		 bool nested = false;
-		 for (auto arg : newargs) {
-		 if (not TermUtils::isVarOrDom(arg)) {
-		 nested = true;
-		 break;
-		 }
-		 }
-		 if (not nested) {
-		 newpf = new PredForm(pf->sign(), ft->function(), newargs, pf->pi());
-		 }
-		 }*/
+//		// TODO to be enabled when functions can be used as delays
+//		if (is(pf->symbol(), STDPRED::EQ) && TermUtils::isFunc(pf->args()[0])) {
+//			auto ft = dynamic_cast<FuncTerm*>(pf->args()[0]);
+//			auto newargs = ft->args();
+//			newargs.push_back(pf->args()[1]);
+//			bool nested = false;
+//			for (auto arg : newargs) {
+//				if (not TermUtils::isVarOrDom(arg)) {
+//					nested = true;
+//					break;
+//				}
+//			}
+//			if (not nested) {
+//				newpf = new PredForm(pf->sign(), ft->function(), newargs, pf->pi());
+//			}
+//		}
 
 		auto symbol = newpf->symbol();
 		const auto& args = newpf->args();
 		auto sign = newpf->sign();
 
-		auto watchtrue = _context == TruthValue::True;
+		auto watchtrue = true;
 		if (isNeg(sign)) {
 			watchtrue = not watchtrue;
 		}
 
 		if (not _manager->canBeDelayedOn(symbol, not watchtrue) || pf->symbol()->builtin() || pf->symbol()->overloaded()) {
-			//std::cerr << "Cannot be delayed\n";
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << print(pf) << " not eligible for delays because builtin, overloaded or negation already constructed.\n";
+			}
 			return;
 		}
 
 		if (not _invaliddelay) {
 			for (auto delelem : delay->condition) {
 				if (delelem.symbol == symbol && delelem.watchedvalue != not watchtrue) {
-					//std::cerr << "Cannot be delayed\n";
+					if (getOption(VERBOSE_GROUNDING) > 3) {
+						clog << print(pf) << " not eligible for delays because negation is already watched.\n";
+					}
 					return;
 				}
 			}
 		}
 
 		if (_manager->getStructure() != NULL && getOption(GROUNDWITHBOUNDS) && _manager->getStructure()->inter(symbol)->approxTwoValued()) {
-			// If two-valued, we expect the bound to derive all useful stuff to generate
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << print(pf) << " not eligible for delays because the structure is twovalued (and we expect the approximation to handle it then).\n";
+			}
 			return;
 		}
-		if(_manager->getFiredLits(pf->symbol(), not watchtrue).size()>=toDouble(_manager->getStructure()->inter(pf->symbol())->universe().size())/2){
+		if (_manager->getFiredLits(pf->symbol(), not watchtrue).size() >= toDouble(_manager->getStructure()->inter(pf->symbol())->universe().size()) / 2) {
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << print(pf) << " not eligible for delays because most than half of the lits already fired.\n";
+			}
 			return;
 		}
 
@@ -115,8 +130,10 @@ protected:
 		for (auto arg : args) {
 			arg->accept(this);
 		}
-		if (not _allquantvars) {
-			//std::cerr << "NOT ALL QUANTIFIED\n";
+		if (not _allquantvars) { // TODO is this necessary?
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << print(pf) << " not eligible for delays because it does not cover all quantified variables.\n";
+			}
 			return;
 		}
 
@@ -130,17 +147,22 @@ protected:
 		for (auto term : args) {
 			auto vt = dynamic_cast<VarTerm*>(term);
 			Assert(vt!=NULL);
-			Assert(_varmapping.find(vt->var())!=_varmapping.cend());
+			Assert(_varmapping.find(vt->var()) != _varmapping.cend());
 			containers.push_back(_varmapping.at(vt->var()));
 			tables.push_back(new SortTable(_manager->getStructure()->inter(vt->var()->sort())->internTable()));
 		}
 		delay->condition.push_back( { symbol, tables, containers, not watchtrue });
+		if (getOption(VERBOSE_GROUNDING) > 3) {
+			clog << print(pf) << " eligible as construction.\n";
+		}
 	}
 
 	virtual void visit(const BoolForm* formula) {
-		//std::cerr << "Testing " << toString(formula) << "\n";
 		_rootquant = false;
 		if (formula->conj()) {
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << "The formula " << print(formula) << " was not considered to find delays because it is conjunctive.\n";
+			}
 			return;
 		}
 
@@ -149,25 +171,31 @@ protected:
 		}
 	}
 	virtual void visit(const QuantForm* formula) {
-		//std::cerr << "Testing " << toString(formula) << "\n";
 		if (not _rootquant) { // The quantform was encountered nested in another formula which is a not quantification. (so both !x y: and !x: !y: are still handled)
-			//std::cerr <<"Not root quant\n";
+			if (getOption(VERBOSE_GROUNDING) > 3) {
+				clog << "The formula " << print(formula) << " was not considered to find delays because it is not a root quantification.\n";
+			}
 			return;
 		}
+		auto savedsome = _somequant;
+		_somequant = true;
 		auto savedonlyexists = _onlyexistsquant;
-		//std::cerr <<"Checking " <<toString(formula) <<"\n";
 		_onlyexistsquant &= not formula->isUnivWithSign();
 		for (auto var : formula->quantVars()) {
 			_quantvars.insert(var);
 		}
 		formula->subformula()->accept(this);
+		for (auto var : formula->quantVars()) {
+			Gen::atom(var->sort()->pred(), { var }).accept(this);
+		}
 		_onlyexistsquant = savedonlyexists;
+		_somequant = savedsome;
 		return;
 	}
 
 	virtual void visit(const VarTerm* vt) {
 		_rootquant = false;
-		if(not contains(_varmapping, vt->var())){
+		if (not contains(_varmapping, vt->var())) {
 			_allquantvars = false;
 		}
 		return;
