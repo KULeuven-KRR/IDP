@@ -6,7 +6,7 @@ vocabulary V{
 	Q
 }
 theory T:V{
-	{
+	define {
 		P <- ~(Q | ~P).
 		Q <- false.
 	}

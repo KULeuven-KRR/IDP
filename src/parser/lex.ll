@@ -473,6 +473,11 @@ COMMENTLINE2	"--".*
 
 <theory>".."				{ parser.advancecol();
 							  return RANGE;				}
+							  
+<theory>"define"			{parser.advancecol();
+						  		return DEF_HEADER;		}
+<theory>"Define"			{parser.advancecol();
+						  		return DEF_HEADER;		}
 
 
 	/****************
