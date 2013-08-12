@@ -420,9 +420,11 @@ def_forms	: /* empty */
 
 /** Definitions **/
 
-definition	: '{' rules '}'		{ $$ = data().definition(*$2); delete($2);	}
-			| DEF_HEADER '{' rules '}'		{ $$ = data().definition(*$3); delete($3);	}
-			| '{' '}' 			{ $$ = NULL;} //Ignore empty definitions (the inserter can handle NULL)	
+definition	: '{' rules '}'				{ $$ = data().definition(*$2); delete($2);	}
+			| DEF_HEADER '{' rules '}'	{ $$ = data().definition(*$3); delete($3);	}
+			//Ignore empty definitions, allows commenting all rules without commenting the brackets
+			| '{' '}' 					{ $$ = NULL;} 
+			| DEF_HEADER '{' '}' 		{ $$ = NULL;}
 			;
 
 rules		: rules rule	{ $$ = $1; $1->push_back($2);	}				
