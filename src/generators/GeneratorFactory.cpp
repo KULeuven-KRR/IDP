@@ -144,7 +144,7 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const Structure*
 		auto sort = symbol->sorts()[i];
 		if (universe.tables()[i]!=structure->inter(sort)) {
 			auto found = false;
-			for(auto child: sort->descendents(NULL)){
+			for(auto child: sort->descendents(structure->vocabulary())){
 				if(universe.tables()[i]==structure->inter(child)){
 					found = true;
 					break;
