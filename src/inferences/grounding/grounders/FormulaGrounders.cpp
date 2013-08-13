@@ -946,6 +946,7 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
 	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
 	auto newgrounder = GrounderFactory::createSentenceGrounder(manager, newqf);
+	newqf->recursiveDelete();
 
 	auto newquantgrounder = dynamic_cast<QuantGrounder*>(newgrounder);
 	bool foundquants = true;
@@ -965,7 +966,7 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	}
 
 	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
-	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager);
+	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager); // TODO deleting newf (clone in delay and also delete those)
 	manager->add(newgrounder, delay);
 #warning Probably bug in equivalence / definitional context as an implication is generated?
 

@@ -809,8 +809,9 @@ void LazyGroundingManager::delay(FormulaGrounder* grounder, shared_ptr<Delay> de
 			}
 			terms.push_back(new VarTerm(var, { }));
 		}
-		PredForm pf(SIGN::POS, conjunct.symbol, terms, { });
-		checkAddedDelay(&pf, conjunct.watchedvalue, false);
+		auto pf = new PredForm(SIGN::POS, conjunct.symbol, terms, { });
+		checkAddedDelay(pf, conjunct.watchedvalue, false);
+		pf->recursiveDelete();
 
 		Assert(resolvingqueues);
 		// Add watches for all that have already been introduced into the grounding
@@ -848,13 +849,14 @@ void LazyGroundingManager::addKnownToStructures(PredForm* pf, bool watchedvalue)
 		}
 		pattern.push_back(Pattern::INPUT);
 	}
-	auto formula = BoolForm(SIGN::POS, true, eqs, { });
-	Query q("", vars, &formula, { });
+	auto formula = new BoolForm(SIGN::POS, true, eqs, { });
+	Query q("", vars, formula, { });
 	auto table = Querying::doSolveQuery(&q, getStructure(), _structures.symstructure);
 	for (auto i = table->begin(); not i.isAtEnd(); ++i) {
 		auto atom = translator()->translateNonReduced(pf->symbol(), *i);
 		notifyBecameTrue(watchedvalue ? atom : -atom, true);
 	}
+	formula->recursiveDelete();
 }
 
 void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstruction) {
@@ -900,6 +902,7 @@ void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstr
 		}
 	}
 	notifyForOutputVoc(symbol, lits);
+	formula->recursiveDelete();
 }
 void LazyGroundingManager::checkAddedDelay(PredForm* pf, bool watchedvalue, bool expensiveConstruction) {
 	if (getOption(CPSUPPORT) && pf->symbol()->isFunction()) { // TODO combine cpsupport with lazy grounding
