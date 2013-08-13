@@ -924,7 +924,12 @@ void EnumeratedPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
 
 void EnumeratedPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
-		(*it)->removeVocabulary(vocabulary);
+		auto removed = (*it)->removeVocabulary(vocabulary);
+		if(removed){
+			it = _overpreds.erase(it);
+		}else{
+			++it;
+		}
 	}
 }
 
@@ -1381,8 +1386,13 @@ void EnumeratedFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
 }
 
 void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		(*it)->removeVocabulary(vocabulary);
+	for (auto it = _overfuncs.begin(); it != _overfuncs.end(); ) {
+		auto removed = (*it)->removeVocabulary(vocabulary);
+		if(removed){
+			it = _overfuncs.erase(it);
+		}else{
+			++it;
+		}
 	}
 }
 
@@ -1599,8 +1609,7 @@ Function* overload(const set<Function*>& sf) {
 	} else if (sf.size() == 1) {
 		return *(sf.cbegin());
 	} else {
-		EnumeratedFuncGenerator* efg = new EnumeratedFuncGenerator(sf);
-		return new Function(efg);
+		return new Function(new EnumeratedFuncGenerator(sf));
 	}
 }
 
@@ -1708,10 +1717,11 @@ void Vocabulary::add(Predicate* p) {
 	if (_name2pred.find(p->name()) == _name2pred.cend()) {
 		_name2pred[p->name()] = p;
 	} else {
-		Predicate* ovp = PredUtils::overload(p, _name2pred[p->name()]);
+		auto ovp = PredUtils::overload(p, _name2pred[p->name()]);
 		_name2pred[p->name()] = ovp;
+		ovp->addVocabulary(this);
 	}
-	set<Sort*> ss = p->allsorts();
+	auto ss = p->allsorts();
 	for (auto it = ss.cbegin(); it != ss.cend(); ++it) {
 		add(*it);
 	}
@@ -1727,10 +1737,11 @@ void Vocabulary::add(Function* f) {
 	if (_name2func.find(f->name()) == _name2func.cend()) {
 		_name2func[f->name()] = f;
 	} else {
-		Function* ovf = FuncUtils::overload(f, _name2func[f->name()]);
+		auto ovf = FuncUtils::overload(f, _name2func[f->name()]);
 		_name2func[f->name()] = ovf;
+		ovf->addVocabulary(this);
 	}
-	set<Sort*> ss = f->allsorts();
+	auto ss = f->allsorts();
 	for (auto it = ss.cbegin(); it != ss.cend(); ++it) {
 		add(*it);
 	}
