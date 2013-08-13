@@ -900,34 +900,13 @@ bool QuantGrounder::groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequ
 bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request, LazyGroundingManager* manager,
 		const var2dommap& varmapping, const containerset& instantiated, set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context,
 		bool alsoinstantiate) {
-	if (context._monotone == Context::BOTH) {
+	if (context._monotone == Context::BOTH
+			|| not getOption(SATISFIABILITYDELAY)
+			|| max((double)0,log(toDouble(getMaxGroundSize())))/log(2)<getOption(LAZYSIZETHRESHOLD)) {
 		return false;
 	}
-	if (not getOption(SATISFIABILITYDELAY)) {
-		return false;
-	}
-	auto size = log(toDouble(getMaxGroundSize()));
-	size = size<0?0:size;
-	if(size/log(2)<getOption(LAZYSIZETHRESHOLD)){
-	//	cerr <<"Not large enough\n";
-		return false;
-	}
-//	std::map<Variable*, Variable*> old2newvars;
-//	varset newvars;
+
 	auto qf = dynamic_cast<QuantForm*>(getFormula());
-	Assert(qf!=NULL);
-/*	for(auto var : qf->freeVars()){
-		auto table = new SortTable(new EnumeratedInternalSortTable());
-		auto domcontainer = getVarmapping().at(var);
-		table->add(domcontainer->get());
-		auto newsort = new Sort(table);
-		newsort->addParent(var->sort());
-		auto newvar = new Variable(newsort);
-		newvars.insert(newvar);
-		old2newvars[var] = newvar;
-	}*/
-//	auto newsub = qf->subformula()->clone(old2newvars); // Note: only replaces free variables!
-//	auto newqf = new QuantForm(qf->sign(), qf->quant(), newvars, newsub, qf->pi());
 
 	auto varmap = getVarmapping();
 	for(auto freevar: qf->freeVars()){
@@ -941,15 +920,10 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 		return true;
 	}
 
-//	clog <<"Could delay on " <<toString(delay) <<"\n";
-
-	auto grounding = manager->getGrounding();
-
 	vector<Sort*> sorts;
 	varset vars;
 	vector<TermGrounder*> origtermgrounders;
 	vector<Term*> terms;
-	vector<const DomElemContainer*> origcontainers;
 	vector<SortTable*> tables;
 	addAll(vars, qf->quantVars());
 	addAll(vars, qf->freeVars());
@@ -957,9 +931,8 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 		sorts.push_back(var->sort());
 		auto inter = manager->getStructure()->inter(var->sort());
 		tables.push_back(inter);
-		origtermgrounders.push_back(new VarTermGrounder(grounding->translator(), inter, var, getVarmapping().at(var)));
+		origtermgrounders.push_back(new VarTermGrounder(translator(), inter, var, getVarmapping().at(var)));
 		terms.push_back(new VarTerm(var, TermParseInfo()));
-		origcontainers.push_back(getVarmapping().at(var));
 	}
 
 	auto t = new Predicate(sorts);
@@ -990,11 +963,9 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	if(not foundquants){
 		throw InternalIdpException("Splitting grounders");
 	}
+
 	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
-	//cerr <<"Looking for delay in " <<toString(newf) <<"\n";
 	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager);
-	Assert(delay.get()!=NULL);
-	//clog <<"Delaying after split on " <<toString(delay) <<"\n";
 	manager->add(newgrounder, delay);
 #warning Probably bug in equivalence / definitional context as an implication is generated?
 
@@ -1008,8 +979,6 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 	}
 
 	formula.setType(connective());
-
-//	cerr <<"Lazy grounding request contains " <<print(request.instantiation) <<"\n";
 
 	bool handledcheap = replacementaftersplit!=NULL;
 	if(not handledcheap && getOption(SATISFIABILITYDELAY)){
@@ -1039,13 +1008,11 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 				handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), false);
 			}
 
-			#warning why is dropping the grounders when done incorrect?
-			//request.groundersdone = false;
+			request.groundersdone = false;
 		}
 	}
 
 	if (not handledcheap) {
-//		cerr <<"Could not handle " <<print(getFormula()) <<" with containers " <<print(_generatescontainers) <<" cheaply\n";
 		for (_generator->begin(); not _generator->isAtEnd(); _generator->operator ++()) {
 			CHECKTERMINATION;
 			if(groundAfterGeneration(formula, request)) {
