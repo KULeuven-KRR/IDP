@@ -1,27 +1,26 @@
 vocabulary V{
-	type x isa nat
-	p(x)
-	q(x,x)
-	r(x)
+	type t isa nat
+	p(t)
+	q(t,t)
+	r(t)
 	a
 }
 
 vocabulary Vout{
-	a
 }
 
 theory T:V{
-	!x: p(x) => !y: r(y) & a & !z: q(x,z).
+	!x: p(x) => (!y: r(y)) & a.
 	?x: p(x).
 	?x: r(x).
 }
 
 structure S:V{
-	x = {0..1000000000}
+	t = {0..1000000000}
 }
 
 procedure getExpectedNbOfModels(){
-	return 2
+	return 1
 }
 procedure shouldNotCheck(){
 	return true;

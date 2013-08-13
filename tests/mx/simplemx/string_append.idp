@@ -24,8 +24,8 @@ procedure getExpectedNbOfModels(){
 }
 
 
-include <mx>
-procedure main(){
-	stdoptions.liftedunitpropagation=false
-	printmodels(modelexpand(T,S,Vout))
-}
+//include <mx>
+//procedure main(){
+//	stdoptions.liftedunitpropagation=false
+//	printmodels(modelexpand(T,S,Vout))
+//}

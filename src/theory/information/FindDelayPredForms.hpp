@@ -130,7 +130,7 @@ protected:
 		for (auto arg : args) {
 			arg->accept(this);
 		}
-		if (not _allquantvars) { // TODO is this necessary?
+		if (not _allquantvars) { // TODO should remove this requirement?
 			if (getOption(VERBOSE_GROUNDING) > 3) {
 				clog << print(pf) << " not eligible for delays because it does not cover all quantified variables.\n";
 			}

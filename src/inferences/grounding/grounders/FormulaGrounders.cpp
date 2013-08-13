@@ -1011,8 +1011,8 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 
 //	cerr <<"Lazy grounding request contains " <<print(request.instantiation) <<"\n";
 
-	bool handledcheap = false;
-	if(replacementaftersplit==NULL && getOption(SATISFIABILITYDELAY)){
+	bool handledcheap = replacementaftersplit!=NULL;
+	if(not handledcheap && getOption(SATISFIABILITYDELAY)){
 		uint nbfound = 0; // Checker whether already instantiated by lazy grounding
 		set<const DomElemContainer*> instantiatedvars;
 		for (auto container : request.instantiation) {

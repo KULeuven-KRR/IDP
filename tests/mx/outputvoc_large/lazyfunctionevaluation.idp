@@ -1,5 +1,4 @@
 vocabulary V{
-	type x isa int
 	T
 	p(int,int)
 	isSquare(int,int)
@@ -11,7 +10,7 @@ vocabulary Vout{
 
 theory T:V{
 	{
-		p(x,y) <- isSquare(x,y).
+		!x y: p(x,y) <- isSquare(x,y).
 	}
 	T <=> p(5,24).
 }
@@ -22,6 +21,10 @@ procedure checkSquare(x,y){
 
 structure S:V{
 	isSquare = procedure checkSquare
+}
+
+procedure shouldNotCheck(){
+	return true;
 }
 
 procedure getExpectedNbOfModels(){
