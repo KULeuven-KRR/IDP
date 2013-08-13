@@ -90,6 +90,7 @@ public:
 		return result;
 	}
 private:
+	// Theory and structure can be changed, as can their vocabulary
 	GroundingInference(Theory* theory, Structure* structure, Vocabulary* outputvocabulary, Term* minimize, TraceMonitor* tracemonitor,
 			bool nbModelsEquivalent, GroundingReceiver* solver)
 			: 	_theory(theory),
@@ -101,10 +102,6 @@ private:
 				_grounder(NULL),
 				_prepared(false),
 				_nbmodelsequivalent(nbModelsEquivalent) {
-		auto voc = new Vocabulary("intern_voc"); // FIXME name uniqueness! + deletion
-		voc->add(_theory->vocabulary());
-		_structure->changeVocabulary(voc); // FIXME should move to the location where the clones are made!
-		_theory->vocabulary(voc);
 	}
 
 	~GroundingInference() {

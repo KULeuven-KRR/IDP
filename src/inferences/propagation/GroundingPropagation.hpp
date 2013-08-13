@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef INFERENCES_GROUNDINGPROPAGATE_HPP_
-#define INFERENCES_GROUNDINGPROPAGATE_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "inferences/modelexpansion/PropagateMonitor.hpp"
@@ -38,10 +37,17 @@ public:
 
 		auto clonetheory = theory->clone();
 		auto result = structure->clone();
+		auto voc = new Vocabulary("intern_voc");
+		voc->add(clonetheory->vocabulary());
+		result->changeVocabulary(voc);
+		clonetheory->vocabulary(voc);
+
 		auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, result, NULL, NULL, NULL, true, data);
 
 		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();
+
+		result->changeVocabulary(structure->vocabulary());
 
 		auto translator = grounding->translator();
 		auto entailed = mx->getEntailedLiterals();
@@ -58,6 +64,8 @@ public:
 			}
 		}
 		result->clean();
+		clonetheory->recursiveDelete();
+		delete (voc);
 		delete (data);
 		delete (mx);
 
@@ -67,5 +75,3 @@ public:
 		return {result};
 	}
 };
-
-#endif /* INFERENCES_GROUNDINGPROPAGATE_HPP_ */

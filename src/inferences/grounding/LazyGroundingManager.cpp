@@ -114,6 +114,7 @@ void LazyGroundingManager::add(Grounder* grounder) {
 }
 
 void LazyGroundingManager::add(FormulaGrounder* grounder, shared_ptr<Delay> d) {
+	Assert(d.get()!=NULL);
 	formwithdelaytobeinitialized.push_back( { grounder, d });
 	setMaxGroundSize(getMaxGroundSize() + grounder->getMaxGroundSize());
 }
@@ -239,10 +240,16 @@ public:
 		}
 
 		auto ns = getGlobal()->getGlobalNamespace();
-		voc = ns->vocabulary("Delay_Voc_Input");
-		theory = ns->theory("Delay_Theory");
-		minimterm = ns->term("Delay_Minimization_Term");
+		stringstream ss;
+		ss <<"delay_temp_voc" <<getGlobal()->getNewID();
+		voc = new Vocabulary(ss.str());
+		voc->add(ns->vocabulary("Delay_Voc_Input"));
+		theory = ns->theory("Delay_Theory")->clone();
+		minimterm = ns->term("Delay_Minimization_Term")->clone();
 		structure = dynamic_cast<Structure*>(ns->structure("Delay_Basic_Data"))->clone();
+		theory->vocabulary(voc);
+		minimterm->vocabulary(voc);
+		structure->changeVocabulary(voc);
 
 		constraint = structure->inter(voc->sort("Constraint"));
 		noninfcost = structure->inter(voc->sort("noninfcost"));
@@ -256,6 +263,13 @@ public:
 		isequivalence = structure->inter(voc->pred("isEquivalence/1"));
 		truedm = createDomElem(StringPointer("True"));
 		falsedm = createDomElem(StringPointer("False"));
+	}
+
+	~DelayInitializer(){
+		theory->recursiveDelete();
+		minimterm->recursiveDelete();
+		delete(structure);
+		delete(voc);
 	}
 
 	void addGrounder(Grounder* grounder) {
@@ -342,6 +356,8 @@ public:
 		getGlobal()->setOptions(newoptions);
 		setOption(VERBOSE_GROUNDING, 0);
 		setOption(VERBOSE_CREATE_GROUNDERS, 0);
+		setOption(VERBOSE_GEN_AND_CHECK, 0);
+		setOption(LONGNAMES, true);
 		setOption(VERBOSE_SOLVING, 0);
 		setOption(VERBOSE_GROUNDING_STATISTICS, 0);
 		setOption(VERBOSE_PROPAGATING, 0);
@@ -362,7 +378,13 @@ public:
 		makeUnknownsFalse(groundsize->graphInter());
 		makeUnknownsFalse(isdefdelay);
 		makeUnknownsFalse(isequivalence);
-		structure->changeVocabulary(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
+		auto newvoc = new Vocabulary("internelmore");
+		newvoc->add(getGlobal()->getGlobalNamespace()->vocabulary("Delay_Voc"));
+		theory->vocabulary(newvoc);
+		minimterm->vocabulary(newvoc);
+		structure->changeVocabulary(newvoc);
+		delete(voc);
+		voc = newvoc;
 		structure->clean();
 
 		if (getOption(VERBOSE_GROUNDING) > 1) {

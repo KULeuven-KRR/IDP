@@ -101,6 +101,7 @@ public:
 		delete (extender);\
 		delete (terminator);\
 		delete (newstructure);\
+		delete (voc); \
 		delete (data);\
 		delete (mx);
 
@@ -109,6 +110,14 @@ MXResult ModelExpansion::expand() const {
 	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
+	stringstream ss;
+	ss <<"intern_voc" <<getGlobal()->getNewID();
+	auto voc = new Vocabulary(ss.str());
+	voc->add(clonetheory->vocabulary());
+	voc->add(newstructure->vocabulary());
+	newstructure->changeVocabulary(voc);
+	clonetheory->vocabulary(voc);
+
 	DefinitionUtils::splitDefinitions(clonetheory);
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
@@ -164,6 +173,7 @@ MXResult ModelExpansion::expand() const {
 		logActionAndValue("decisions", stats.decisions);
 		logActionAndValue("first_decision", stats.time_of_first_decision);
 		logActionAndValue("effective-size", Grounder::groundedAtoms());
+		// TODO solving time
 	}
 
 	if (getGlobal()->terminateRequested()) {

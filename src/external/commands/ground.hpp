@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef GROUND_HPP_
-#define GROUND_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
@@ -39,6 +38,12 @@ private:
 	AbstractTheory* ground(AbstractTheory* theory, Structure* structure, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
+		auto voc = new Vocabulary("intern_voc");
+		voc->add(t->vocabulary());
+		voc->add(s->vocabulary());
+		s->changeVocabulary(voc);
+		t->vocabulary(voc);
+
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, NULL, modelcountequivalence, NULL);
 		if (grounding == NULL) {
@@ -47,6 +52,7 @@ private:
 		}
 		t->recursiveDelete();
 		delete (s);
+		delete (voc);
 		return grounding;
 	}
 };
@@ -69,12 +75,17 @@ private:
 	void ground(AbstractTheory* theory, Structure* structure, InteractivePrintMonitor* monitor, bool modelcountequivalence) const {
 		auto t = theory->clone();
 		auto s = structure->clone();
+		auto voc = new Vocabulary("intern_voc");
+		voc->add(t->vocabulary());
+		voc->add(s->vocabulary());
+		s->changeVocabulary(voc);
+		t->vocabulary(voc);
+
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, NULL, modelcountequivalence, monitor);
 		t->recursiveDelete();
 		delete (s);
+		delete (voc);
 		grounding->recursiveDelete();
 		monitor->flush();
 	}
 };
-
-#endif /* GROUND_HPP_ */
