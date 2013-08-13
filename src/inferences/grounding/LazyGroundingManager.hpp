@@ -92,6 +92,7 @@ public:
 	virtual ~StructureExtender() {
 	}
 	virtual void extendStructure(Structure* structure) const = 0;
+	virtual void put(std::ostream&) const = 0;
 };
 
 class LazyGroundingManager: public Grounder, public StructureExtender {

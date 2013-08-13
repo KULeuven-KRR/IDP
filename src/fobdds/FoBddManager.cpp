@@ -216,7 +216,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,shared_from_this());
+	auto newbdd = new FOBDD(kernel, truebranch, falsebranch);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -1687,6 +1687,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<
 }
 
 #warning TODO enable lifted unit propagation in lazy tests
+int created = 0, deleted = 0;
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 		: _maxid(1), _rewriteArithmetic(rewriteArithmetic) {
 	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
@@ -1697,9 +1698,8 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	_truekernel = new TrueFOBDDKernel(ktrue);
 	_falsekernel = new FalseFOBDDKernel(kfalse);
-#warning should be shared_from_this, problem is that it is in the constructor
-	_truebdd = new TrueFOBDD(_truekernel,NULL);
-	_falsebdd = new FalseFOBDD(_falsekernel,NULL);
+	_truebdd = new TrueFOBDD(_truekernel);
+	_falsebdd = new FalseFOBDD(_falsekernel);
 }
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;

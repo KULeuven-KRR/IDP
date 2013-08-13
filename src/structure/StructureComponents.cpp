@@ -1358,6 +1358,9 @@ BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, std::shared_ptr<FOB
 #endif
 }
 
+BDDInternalPredTable::~BDDInternalPredTable(){
+}
+
 bool BDDInternalPredTable::finite(const Universe& univ) const {
 	if (univ.finite()) {
 		return true;
@@ -1514,7 +1517,7 @@ InternalTableIterator* BDDInternalPredTable::begin(const Universe& univ) const {
 	for (auto it = _vars.cbegin(); it != _vars.cend(); ++it) {
 		doms.push_back(new const DomElemContainer());
 	}
-	BDDInternalPredTable* temporary = new BDDInternalPredTable(_bdd, _manager, _vars, _structure);
+	auto temporary = new BDDInternalPredTable(_bdd, _manager, _vars, _structure);
 	PredTable temptable(temporary, univ);
 	InstGenerator* generator = GeneratorFactory::create(&temptable, vector<Pattern>(univ.tables().size(), Pattern::OUTPUT), doms, univ);
 	return new GeneratorInternalTableIterator(generator, doms, true);
@@ -3079,6 +3082,7 @@ SortTable* SortTable::clone() const{
  PredTable
  ****************/
 
+int createdtables = 0, deletedtables = 0;
 PredTable::PredTable(InternalPredTable* table, const Universe& univ)
 		: _table(NULL), _universe(univ) {
 	setTable(table);
@@ -3536,7 +3540,7 @@ TableIterator FuncTable::begin() const {
  ********************************/
 
 
-PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf) {
+PredInter::PredInter(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf): _ct(NULL), _cf(NULL), _pt(NULL), _pf(NULL) {
 	setTables(ctpf,cfpt,ct,cf);
 }
 
@@ -3545,16 +3549,32 @@ void PredInter::setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf){
 	auto inverseCfpt = new PredTable(InverseInternalPredTable::getInverseTable(cfpt->internTable()), ctpf->universe());
 	_inconsistentElements = {};
 	if (ct) {
+		if(ctpf!=_ct){
+			delete(_ct);
+		}
+		delete(_pf);
 		_ct = ctpf;
 		_pf = inverseCtpf;
 	} else {
+		if(ctpf!=_pf){
+			delete(_pf);
+		}
+		delete(_ct);
 		_pf = ctpf;
 		_ct = inverseCtpf;
 	}
 	if (cf) {
+		if(cfpt!=_cf){
+			delete(_cf);
+		}
+		delete(_pt);
 		_cf = cfpt;
 		_pt = inverseCfpt;
 	} else {
+		if(cfpt!=_pt){
+			delete(_pt);
+		}
+		delete(_cf);
 		_pt = cfpt;
 		_cf = inverseCfpt;
 	}

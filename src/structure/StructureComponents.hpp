@@ -641,8 +641,7 @@ private:
 	const Structure* _structure;
 public:
 	BDDInternalPredTable(const FOBDD*, std::shared_ptr<FOBDDManager>, const std::vector<Variable*>&, const Structure*);
-	~BDDInternalPredTable() {
-	}
+	~BDDInternalPredTable();
 
 	std::shared_ptr<FOBDDManager> manager() const {
 		return _manager;

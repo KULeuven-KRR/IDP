@@ -856,7 +856,7 @@ void LazyGroundingManager::addKnownToStructures(PredForm* pf, bool watchedvalue)
 		auto atom = translator()->translateNonReduced(pf->symbol(), *i);
 		notifyBecameTrue(watchedvalue ? atom : -atom, true);
 	}
-	formula->recursiveDelete();
+	//formula->recursiveDelete();
 }
 
 void LazyGroundingManager::addToOutputVoc(PFSymbol* symbol, bool expensiveConstruction) {

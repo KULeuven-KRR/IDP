@@ -85,7 +85,8 @@ public:
 			throw IdpException("Grounding requires that the theory and structure range over the same vocabulary.");
 		}
 		auto m = new GroundingInference(t, structure, outputvocabulary, term, tracemonitor, nbModelsEquivalent, solver);
-		auto result = std::pair<AbstractGroundTheory*, StructureExtender*>{m->ground(), m->getManager()};
+		auto grounding = m->ground();
+		auto result = std::pair<AbstractGroundTheory*, StructureExtender*>{grounding, m->getManager()};
 		delete(m);
 		return result;
 	}
@@ -115,11 +116,16 @@ private:
 		if (getOption(IntType::VERBOSE_CREATE_GROUNDERS) > 0 || getOption(IntType::VERBOSE_GROUNDING) > 0) {
 			clog << "Unsat detected during grounding\n";
 		}
+		auto oldgrounder = _grounder;
 		try {
 			if (receiver == NULL) {
 				_grounder = GrounderFactory::create(info);
 			} else {
 				_grounder = GrounderFactory::create(info, receiver);
+			}
+			if(oldgrounder!=NULL){
+				delete(oldgrounder->getGrounding());
+				delete(oldgrounder);
 			}
 			_grounder->getGrounding()->addEmptyClause();
 		} catch (UnsatException&) {

@@ -27,7 +27,6 @@ private:
 	const FOBDDKernel* _kernel;
 	const FOBDD* _truebranch;
 	const FOBDD* _falsebranch;
-	std::weak_ptr<FOBDDManager> _manager;
 
 	void replacefalse(const FOBDD* f) {
 		_falsebranch = f;
@@ -39,8 +38,8 @@ private:
 		_kernel = k;
 	}
 
-	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch, std::shared_ptr<FOBDDManager> manager) :
-			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch), _manager(manager) {
+	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) :
+			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch) {
 	}
 
 public:
@@ -64,10 +63,6 @@ public:
 
 	void accept(FOBDDVisitor* visitor) const;
 
-	std::shared_ptr<FOBDDManager> manager() const {
-		return _manager;
-	}
-
 	bool operator<(const FOBDD& rhs) const;
 
 	virtual std::ostream& put(std::ostream& output) const;
@@ -76,8 +71,8 @@ public:
 class TrueFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	TrueFOBDD(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) :
-			FOBDD(kernel, 0, 0,manager) {
+	TrueFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
 	}
 public:
 	virtual std::ostream& put(std::ostream& output) const;
@@ -86,8 +81,8 @@ public:
 class FalseFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	FalseFOBDD(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) :
-			FOBDD(kernel, 0, 0, manager) {
+	FalseFOBDD(const FOBDDKernel* kernel) :
+			FOBDD(kernel, 0, 0) {
 	}
 public:
 	virtual std::ostream& put(std::ostream& output) const;

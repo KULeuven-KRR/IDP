@@ -148,6 +148,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* 
 				Assert(isa<Predicate>(*symbol));
 				structure->changeInter(dynamic_cast<Predicate*>(symbol), bddinter);
 			}
+			// both reuse the original bddinter, so should not delete it!
 		} else {
 			for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
 				newinter->makeTrue(*trueEl);
@@ -155,6 +156,7 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* 
 			for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
 				newinter->makeFalse(*falseEl);
 			}
+			delete(bddinter);
 		}
 		if (getOption(IntType::VERBOSE_PROPAGATING) > 1) {
 			clog << nt() << "Result: " << print(structure->inter(symbol));
