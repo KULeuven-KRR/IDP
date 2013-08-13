@@ -9,8 +9,9 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef FOBDDVISITOR_HPP_
-#define FOBDDVISITOR_HPP_
+#pragma once
+
+#include <memory>
 
 class FOBDDManager;
 class FOBDD;
@@ -30,9 +31,9 @@ class FOBDDSetExpr;
 
 class FOBDDVisitor {
 protected:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 public:
-	FOBDDVisitor(FOBDDManager* manager)
+	FOBDDVisitor(std::shared_ptr<FOBDDManager> manager)
 			: _manager(manager) {
 	}
 	virtual ~FOBDDVisitor() {
@@ -62,5 +63,3 @@ public:
 	virtual const FOBDDQuantSetExpr* change(const FOBDDQuantSetExpr*);
 	virtual const FOBDDEnumSetExpr* change(const FOBDDEnumSetExpr*);
 };
-
-#endif /* FOBDDVISITOR_HPP_ */

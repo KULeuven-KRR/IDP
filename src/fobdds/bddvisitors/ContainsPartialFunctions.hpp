@@ -39,7 +39,7 @@ private:
 	}
 
 public:
-	ContainsPartialFunctions(FOBDDManager* m)
+	ContainsPartialFunctions(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	bool check(const FOBDDTerm* arg) {

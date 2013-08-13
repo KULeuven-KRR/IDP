@@ -9,8 +9,9 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TESTINGTOOLS_HPP_
-#define TESTINGTOOLS_HPP_
+#pragma once
+
+#include <memory>
 
 class Vocabulary;
 class Predicate;
@@ -74,7 +75,7 @@ struct TestingSet1 {
 
 struct BDDTestingSet1{
 	TestingSet1 ts1;
-	FOBDDManager* manager;
+	std::shared_ptr<FOBDDManager> manager;
 	const FOBDD* truebdd;
 	const FOBDD* falsebdd;
 	const FOBDDVariable* x;
@@ -93,5 +94,3 @@ BDDTestingSet1 getBDDTestingSet1(int pxmin, int pxmax, int qxmin, int qxmax);
 void cleanTestingSet1();
 
 }
-
-#endif /* TESTINGTOOLS_HPP_ */

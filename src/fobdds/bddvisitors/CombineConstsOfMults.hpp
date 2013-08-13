@@ -29,7 +29,7 @@
  */
 class CombineConstsOfMults: public FOBDDVisitor {
 public:
-	CombineConstsOfMults(FOBDDManager* m)
+	CombineConstsOfMults(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

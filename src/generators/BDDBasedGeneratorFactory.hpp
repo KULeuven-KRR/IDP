@@ -60,7 +60,7 @@ PRINTTOSTREAM(BRANCH)
  */
 class BDDToGenerator {
 private:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 
 	/*
 	 * Help-method for creating from predform
@@ -122,7 +122,7 @@ private:
 	InstGenerator* createFromBDD(const BddGeneratorData& data, bool optimize = false);
 
 public:
-	BDDToGenerator(FOBDDManager* manager);
+	BDDToGenerator(std::shared_ptr<FOBDDManager> manager);
 
 	/**
 	 * Create a generator which generates all instances for which the formula is CERTAINLY TRUE in the given structure.

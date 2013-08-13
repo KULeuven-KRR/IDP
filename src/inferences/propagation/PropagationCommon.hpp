@@ -55,9 +55,9 @@ public:
 class LongestBranchChecker: public AdmissibleBoundChecker<FOPropBDDDomain> {
 private:
 	int _treshhold;
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 public:
-	LongestBranchChecker(FOBDDManager* m, int th)
+	LongestBranchChecker(std::shared_ptr<FOBDDManager> m, int th)
 			: _treshhold(th), _manager(m) {
 	}
 	bool check(FOPropBDDDomain*, FOPropBDDDomain*) const;

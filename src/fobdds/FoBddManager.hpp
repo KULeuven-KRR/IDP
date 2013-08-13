@@ -9,9 +9,9 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef FOBDD_HPP
-#define FOBDD_HPP
+#pragma once
 
+#include <memory>
 #include <vector>
 #include <map>
 #include <set>
@@ -81,7 +81,7 @@ typedef vector<Choice> Path;
 /**
  * Class to create and manage first-order BDDs
  */
-class FOBDDManager {
+class FOBDDManager : public std::enable_shared_from_this<FOBDDManager> {
 private:
 	uint _maxid;
 
@@ -218,7 +218,7 @@ public:
 
 	const FOBDD* simplify(const FOBDD*); //!< apply arithmetic simplifications to the given bdd
 
-	const FOBDD* getBDD(const FOBDD* bdd, FOBDDManager*); //!< Given a bdd and the manager that created the bdd,
+	const FOBDD* getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager>); //!< Given a bdd and the manager that created the bdd,
 														  //!< this function returns the same bdd, but created
 														  //!< by the manager 'this'
 
@@ -277,17 +277,14 @@ private:
 	FOBDDKernel* kernelBelow(const FOBDDKernel*); //!< Returns the kernel of the same category, directly below the given one. Returns NULL if none such exists
 };
 
-fobddvarset variables(const FOBDDKernel*, FOBDDManager* manager);
-fobddvarset variables(const FOBDD*, FOBDDManager* manager);
-fobddindexset indices(const FOBDDKernel*, FOBDDManager* manager);
-fobddindexset indices(const FOBDD*, FOBDDManager* manager);
-std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* manager);
-std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager);
+fobddvarset variables(const FOBDDKernel*, std::shared_ptr<FOBDDManager> manager);
+fobddvarset variables(const FOBDD*, std::shared_ptr<FOBDDManager> manager);
+fobddindexset indices(const FOBDDKernel*, std::shared_ptr<FOBDDManager> manager);
+fobddindexset indices(const FOBDD*, std::shared_ptr<FOBDDManager> manager);
+std::set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const std::shared_ptr<FOBDDManager> manager);
+std::set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const std::shared_ptr<FOBDDManager> manager);
 
 /**
  * Returns the product of the sizes of the interpretations of the sorts of the given variables and indices in the given structure
  */
-tablesize univNrAnswers(const fobddvarset& vars, const fobddindexset& indices,
-		const Structure* structure);
-
-#endif
+tablesize univNrAnswers(const fobddvarset& vars, const fobddindexset& indices, const Structure* structure);

@@ -63,7 +63,7 @@ private:
 	}
 
 public:
-	CollectSameOperationTerms(FOBDDManager* m)
+	CollectSameOperationTerms(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

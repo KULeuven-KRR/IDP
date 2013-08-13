@@ -444,13 +444,13 @@ AbstractTheory* merge(AbstractTheory* at1, AbstractTheory* at2) {
 }
 
 double estimatedCostAll(Formula* query, const varset& freevars /*Shouldn't this be outvars?*/, bool inverse, const Structure* structure) {
-	FOBDDManager manager;
-	FOBDDFactory factory(&manager);
+	auto manager = make_shared<FOBDDManager>();
+	FOBDDFactory factory(manager);
 	auto bdd = factory.turnIntoBdd(query);
 	if (inverse) {
-		bdd = manager.negation(bdd);
+		bdd = manager->negation(bdd);
 	}
-	return BddStatistics::estimateCostAll(bdd, manager.getVariables(freevars), { }, structure, &manager);
+	return BddStatistics::estimateCostAll(bdd, manager->getVariables(freevars), { }, structure, manager);
 }
 
 BoolForm* trueFormula() {

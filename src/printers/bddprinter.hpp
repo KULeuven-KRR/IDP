@@ -30,7 +30,7 @@ class BDDPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
 	const GroundTranslator* _translator;
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -48,7 +48,7 @@ public:
 	BDDPrinter(Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
 				_translator(NULL),
-				_manager(new FOBDDManager()) {
+				_manager(make_shared<FOBDDManager>()) {
 	}
 
 private:

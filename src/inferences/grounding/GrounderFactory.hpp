@@ -235,7 +235,7 @@ private:
 	void groundAggWithoutCP(bool antimono, bool recursive, SIGN sign, Term* bound, CompType comp, AggTerm* agg);
 	AggForm* tryToTurnIntoAggForm(const PredForm* pf);
 
-	static const FOBDD* simplify(const std::vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
+	static const FOBDD* simplify(const std::vector<Variable*>& fovars, std::shared_ptr<FOBDDManager> manager, bool approxastrue, const FOBDD* bdd,
 			const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const Structure* structure);
 
 	void checkAndAddAsTopGrounder();

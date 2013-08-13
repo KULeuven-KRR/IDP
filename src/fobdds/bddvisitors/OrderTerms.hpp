@@ -29,7 +29,7 @@
 template<typename Ordering>
 class OrderTerms: public FOBDDVisitor {
 public:
-	OrderTerms(FOBDDManager* m)
+	OrderTerms(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

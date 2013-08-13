@@ -43,7 +43,7 @@ const FOBDD* FOPropBDDDomain::bdd() const {
 }
 
 // Valid iff bddvars subset vars subset freevars(f)
-bool FOPropBDDDomain::isValidFor(const Formula* f, FOBDDManager* manager) const {
+bool FOPropBDDDomain::isValidFor(const Formula* f, std::shared_ptr<FOBDDManager> manager) const {
 	return isSubset(getFOVariables(variables(_bdd, manager)), _vars) && FOPropDomain::isValidFor(f);
 }
 

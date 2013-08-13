@@ -28,7 +28,7 @@
  */
 class AddMultSimplifier: public FOBDDVisitor {
 public:
-	AddMultSimplifier(FOBDDManager* m)
+	AddMultSimplifier(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

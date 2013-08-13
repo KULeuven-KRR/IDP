@@ -29,7 +29,7 @@ private:
 	const FOBDDVariable* _variable;
 
 public:
-	BumpIndices(FOBDDManager* manager, const FOBDDVariable* variable, unsigned int depth)
+	BumpIndices(std::shared_ptr<FOBDDManager> manager, const FOBDDVariable* variable, unsigned int depth)
 			: FOBDDVisitor(manager), _depth(depth), _variable(variable) {
 	}
 

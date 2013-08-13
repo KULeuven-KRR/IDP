@@ -635,16 +635,16 @@ class Structure;
 
 class BDDInternalPredTable: public InternalPredTable {
 private:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 	const FOBDD* _bdd;
 	std::vector<Variable*> _vars;
 	const Structure* _structure;
 public:
-	BDDInternalPredTable(const FOBDD*, FOBDDManager*, const std::vector<Variable*>&, const Structure*);
+	BDDInternalPredTable(const FOBDD*, std::shared_ptr<FOBDDManager>, const std::vector<Variable*>&, const Structure*);
 	~BDDInternalPredTable() {
 	}
 
-	FOBDDManager* manager() const {
+	std::shared_ptr<FOBDDManager> manager() const {
 		return _manager;
 	}
 	const FOBDD* bdd() const {

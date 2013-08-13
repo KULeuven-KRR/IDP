@@ -36,7 +36,7 @@ private:
 
 public:
 
-	BDDToFOWithTseitins(FOBDDManager* m, CountOccurences* counter, Vocabulary* voc = NULL)
+	BDDToFOWithTseitins(std::shared_ptr<FOBDDManager> m, CountOccurences* counter, Vocabulary* voc = NULL)
 			: 	BDDToFO(m),
 				_vocabulary(voc),
 				_counter(counter),

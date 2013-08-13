@@ -27,7 +27,7 @@ class BDDToFOWithTseitins;
 
 class IntroduceSharedTseitins{
 private:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 	FOBDDFactory _factory;
 	CountOccurences _counter;
 	BDDToFOWithTseitins _bddtofo;

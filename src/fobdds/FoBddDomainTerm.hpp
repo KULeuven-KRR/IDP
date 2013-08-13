@@ -46,6 +46,6 @@ public:
 
 };
 
-const FOBDDDomainTerm* add(FOBDDManager* manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2);
+const FOBDDDomainTerm* add(std::shared_ptr<FOBDDManager> manager, const FOBDDDomainTerm* d1, const FOBDDDomainTerm* d2);
 
 #endif /* FOBDDDOMAINTERM_HPP_ */

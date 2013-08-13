@@ -24,7 +24,7 @@
  */
 class UngraphFunctions: public FOBDDVisitor {
 public:
-	UngraphFunctions(FOBDDManager* m)
+	UngraphFunctions(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

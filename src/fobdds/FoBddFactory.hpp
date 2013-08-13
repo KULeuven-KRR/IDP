@@ -42,7 +42,7 @@ class FOBDDQuantSetExpr;
 class FOBDDFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 	Vocabulary* _vocabulary;
 
 	// Return values
@@ -67,7 +67,7 @@ private:
 	void visit(const EquivForm* af);
 
 public:
-	FOBDDFactory(FOBDDManager* m, Vocabulary* v = NULL)
+	FOBDDFactory(std::shared_ptr<FOBDDManager> m, Vocabulary* v = NULL)
 			: _manager(m), _vocabulary(v) {
 	}
 

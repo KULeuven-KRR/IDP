@@ -26,7 +26,7 @@
  */
 class ApplyDistributivity: public FOBDDVisitor {
 public:
-	ApplyDistributivity(FOBDDManager* m)
+	ApplyDistributivity(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

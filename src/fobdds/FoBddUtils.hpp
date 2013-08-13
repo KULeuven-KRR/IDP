@@ -122,7 +122,7 @@ struct Multiplication {
 };
 
 struct TermOrder {
-	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, FOBDDManager* manager);
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, std::shared_ptr<FOBDDManager> manager);
 };
 
 template<typename ReturnType, typename T1, typename T2, typename Something, typename ... MoreTypes>

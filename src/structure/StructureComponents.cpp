@@ -1349,7 +1349,7 @@ InternalTableIterator* UnionInternalPredTable::begin(const Universe& univ) const
 	return new UnionInternalIterator(vti, _outtables, univ);
 }
 
-BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, FOBDDManager* manager, const vector<Variable*>& vars, const Structure* str)
+BDDInternalPredTable::BDDInternalPredTable(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager, const vector<Variable*>& vars, const Structure* str)
 		: _manager(manager), _bdd(bdd), _vars(vars), _structure(str) {
 #ifdef DEBUG
 	for(auto fobddvar: variables(bdd,manager)){

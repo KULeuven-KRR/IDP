@@ -30,7 +30,7 @@ private:
 	std::vector<const FOBDDTerm*> _terms;
 	std::string _funcname;
 public:
-	TermCollector(FOBDDManager* m)
+	TermCollector(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m), _funcname("") {
 	}
 

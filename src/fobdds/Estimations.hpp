@@ -28,13 +28,13 @@ typedef fobddindexset indexset;
 class BddStatistics {
 private:
 	const Structure* structure;
-	FOBDDManager* manager;
+	std::shared_ptr<FOBDDManager> manager;
 
 	// Tabling support
 	std::map<const FOBDD*, std::map<fobddvarset, std::map<indexset, double> > > bddstorage;
 	std::map<bool, std::map<const FOBDDKernel*, std::map<fobddvarset, std::map<indexset, double> > > > kernelstorage;
 
-	BddStatistics(const Structure* structure, FOBDDManager* manager)
+	BddStatistics(const Structure* structure, std::shared_ptr<FOBDDManager> manager)
 			: 	structure(structure),
 				manager(manager) {
 
@@ -43,7 +43,7 @@ private:
 public:
 	// Takes a bddkernel or a bdd
 	template<class BDD>
-	static double estimateNrAnswers(const BDD* bdd, const fobddvarset& vars, const indexset& indices, const Structure* structure, FOBDDManager* manager) {
+	static double estimateNrAnswers(const BDD* bdd, const fobddvarset& vars, const indexset& indices, const Structure* structure, std::shared_ptr<FOBDDManager> manager) {
 		Assert(manager!=NULL);
 		Assert(structure!=NULL);
 		auto stats = BddStatistics(structure, manager);
@@ -56,7 +56,7 @@ public:
 	 * Returns an estimate of the cost of generating all answers to this bdd in the given structure.
 	 */
 	template<class BDD>
-	static double estimateCostAll(const BDD* bdd, const fobddvarset& vars, const indexset& indices, const Structure* structure, FOBDDManager* manager) {
+	static double estimateCostAll(const BDD* bdd, const fobddvarset& vars, const indexset& indices, const Structure* structure, std::shared_ptr<FOBDDManager> manager) {
 /*		std::cerr << "Estimating costs for " <<print(bdd) <<"\n";
 		for(auto i=vars.cbegin(); i!=vars.cend(); ++i) {
 			std::cerr <<print(*i) <<" ";
@@ -79,7 +79,7 @@ public:
 	 * Returns the probability [0,1] that this bdd evaluates to true in the given structure
 	 */
 	template<class BDD>
-	static double estimateChance(const BDD* bdd, const Structure* structure, FOBDDManager* manager) {
+	static double estimateChance(const BDD* bdd, const Structure* structure, std::shared_ptr<FOBDDManager> manager) {
 		Assert(manager!=NULL);
 		Assert(structure!=NULL);
 		auto stats = BddStatistics(structure, manager);

@@ -62,7 +62,7 @@ private:
 		}
 	}
 public:
-	TermOccursNested(FOBDDManager* m)
+	TermOccursNested(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	bool termHasSubterm(const FOBDDTerm* super, const FOBDDTerm* arg) {

@@ -51,7 +51,7 @@ protected:
 	}
 
 public:
-	BDDToFO(FOBDDManager* m)
+	BDDToFO(std::shared_ptr<FOBDDManager> m)
 			: 	FOBDDVisitor(m),
 				_currformula(NULL),
 				_currterm(NULL),

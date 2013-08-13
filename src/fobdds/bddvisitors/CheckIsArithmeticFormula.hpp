@@ -30,7 +30,7 @@ private:
 	bool _result;
 
 public:
-	CheckIsArithmeticFormula(FOBDDManager* m)
+	CheckIsArithmeticFormula(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

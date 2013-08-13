@@ -28,7 +28,7 @@ private:
 	unsigned int _minimaldepth;
 
 public:
-	IndexCollector(FOBDDManager* m)
+	IndexCollector(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m), _minimaldepth(0) {
 	}
 

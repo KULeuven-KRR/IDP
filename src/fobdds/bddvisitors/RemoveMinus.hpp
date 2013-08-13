@@ -24,7 +24,7 @@
  */
 class RewriteMinus: public FOBDDVisitor {
 public:
-	RewriteMinus(FOBDDManager* m)
+	RewriteMinus(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

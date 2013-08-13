@@ -1408,7 +1408,7 @@ PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, con
 	return table;
 }
 
-const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, FOBDDManager* manager, bool approxastrue, const FOBDD* bdd,
+const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, std::shared_ptr<FOBDDManager> manager, bool approxastrue, const FOBDD* bdd,
 		const std::set<PFSymbol*>& definedsymbols, double cost_per_answer, const Structure* structure) {
 	fobddvarset bddvars;
 	for (auto it = fovars.cbegin(); it != fovars.cend(); ++it) {
@@ -1438,7 +1438,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 
 	bdd = simplify(fovars, manager, approxastrue, bdd, definedsymbols, smaller_cost_per_answer, structure);
 	// Optimize the query
-	auto optimizemanager = new FOBDDManager();
+	auto optimizemanager = make_shared<FOBDDManager>();
 	auto copybdd = optimizemanager->getBDD(bdd, manager);
 
 	fobddvarset copyvars;

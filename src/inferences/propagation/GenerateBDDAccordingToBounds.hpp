@@ -26,8 +26,7 @@ typedef std::map<PFSymbol*, const FOBDD*> Bound;
 class GenerateBDDAccordingToBounds: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	mutable bool _ownsmanager;
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 
 	Bound _ctbounds, _cfbounds;
 	std::map<PFSymbol*, std::vector<const FOBDDVariable*> > _vars;
@@ -51,15 +50,14 @@ protected:
 	void visit(const EquivForm*);
 
 public:
-	GenerateBDDAccordingToBounds(FOBDDManager* m, const Bound& ctbounds, const Bound& cfbounds,
+	GenerateBDDAccordingToBounds(std::shared_ptr<FOBDDManager> m, const Bound& ctbounds, const Bound& cfbounds,
 			const std::map<PFSymbol*, std::vector<const FOBDDVariable*> >& v, Vocabulary* symbolsThatCannotBeReplacedByBDDs)
-			: _ownsmanager(true), _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL), _structure(NULL), _symbolsThatCannotBeReplacedByBDDs(symbolsThatCannotBeReplacedByBDDs) {
+			: _manager(m), _ctbounds(ctbounds), _cfbounds(cfbounds), _vars(v), _type(TruthType::CERTAIN_TRUE), _result(NULL), _structure(NULL), _symbolsThatCannotBeReplacedByBDDs(symbolsThatCannotBeReplacedByBDDs) {
 		Assert(m!=NULL);
 	}
 	~GenerateBDDAccordingToBounds();
 	// Transfers ownership!
-	FOBDDManager* obtainManager() const {
-		_ownsmanager = false;
+	std::shared_ptr<FOBDDManager> obtainManager() const {
 		return _manager;
 	}
 

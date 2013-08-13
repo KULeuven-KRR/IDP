@@ -22,7 +22,7 @@ private:
 	std::map<const FOBDDKernel*, int> _kernelcount;
 
 public:
-	CountOccurences(FOBDDManager* m)
+	CountOccurences(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	/*

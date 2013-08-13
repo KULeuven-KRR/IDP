@@ -36,5 +36,5 @@ public:
 private:
 	PredTable* solveQuery(Query* q, Structure const * const s) const;
 	PredTable* solveQuery(Query* q, Structure const * const s, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const;
-	PredTable* solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, Structure const * const structure) const;
+	PredTable* solveBdd(const std::vector<Variable*>& vars, std::shared_ptr<FOBDDManager> manager, const FOBDD* bdd, Structure const * const structure) const;
 };

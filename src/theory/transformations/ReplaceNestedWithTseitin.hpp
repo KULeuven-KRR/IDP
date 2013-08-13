@@ -87,7 +87,7 @@ private:
 			sorts.push_back((*i)->sort());
 		}
 		bool identicalfound = false;
-		auto manag = new FOBDDManager();
+		auto manag = make_shared<FOBDDManager>();
 		auto fact = FOBDDFactory(manag, vocabulary);
 		for (auto i = list.cbegin(); i != list.cend(); ++i) {
 			if ((*i)->_origpf->symbol() != _reduced->_origpf->symbol()) {

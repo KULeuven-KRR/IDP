@@ -27,7 +27,7 @@ class VariableCollector: public FOBDDVisitor {
 private:
 	std::set<const FOBDDVariable*, CompareBDDVars> _result;
 public:
-	VariableCollector(FOBDDManager* m)
+	VariableCollector(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	void visit(const FOBDDVariable* v) {

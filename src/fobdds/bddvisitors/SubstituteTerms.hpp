@@ -27,7 +27,7 @@ protected:
 		return _from2to;
 	}
 public:
-	SubstituteTerms(FOBDDManager* manager, const std::map<const From*, const To*> map)
+	SubstituteTerms(std::shared_ptr<FOBDDManager> manager, const std::map<const From*, const To*> map)
 			: FOBDDVisitor(manager), _from2to(map) {
 	}
 
@@ -46,7 +46,7 @@ private:
 	const FOBDDDeBruijnIndex* _index;
 	const FOBDDVariable* _variable;
 public:
-	SubstituteIndex(FOBDDManager* manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable)
+	SubstituteIndex(std::shared_ptr<FOBDDManager> manager, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable)
 			: FOBDDVisitor(manager), _index(index), _variable(variable) {
 	}
 	const FOBDDTerm* change(const FOBDDDeBruijnIndex* i) {

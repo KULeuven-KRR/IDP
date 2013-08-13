@@ -59,17 +59,17 @@ TEST(BddGenerator, PredForm){
 		predinter->makeFalse({createDomElem(2)});
 		predinter->makeTrue({createDomElem(-2)});
 
-		FOBDDManager manager;
-		FOBDDFactory bddfactory(&manager, NULL);
+		auto manager = make_shared<FOBDDManager>();
+		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
-		auto bddset = manager.getVariables({variable});
+		auto bddset = manager->getVariables({variable});
 		ASSERT_EQ(bddset.size(), (uint)1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
-		BDDToGenerator genfactory(&manager);
+		BDDToGenerator genfactory(manager);
 		auto var = new DomElemContainer();
 		Universe u({sorttable});
 		data.pattern = {Pattern::OUTPUT};
@@ -102,17 +102,17 @@ TEST(BddGenerator, PredForm){
 		auto structure = new Structure("S", ParseInfo());
 		structure->changeVocabulary(vocabulary);
 
-		FOBDDManager manager;
-		FOBDDFactory bddfactory(&manager, NULL);
+		auto manager = make_shared<FOBDDManager>();
+		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
-		auto bddset = manager.getVariables({variable});
+		auto bddset = manager->getVariables({variable});
 		ASSERT_EQ(bddset.size(), (uint)1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
-		BDDToGenerator genfactory(&manager);
+		BDDToGenerator genfactory(manager);
 		auto var = new DomElemContainer();
 		Universe u({sorttable});
 		data.pattern = {Pattern::OUTPUT};
@@ -154,17 +154,17 @@ TEST(BddGenerator, PredForm){
 		auto symbol = new Predicate("P", {sort}, false);
 		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
 		auto formula = new PredForm(SIGN::POS, derivedsymbol, {sortterm}, FormulaParseInfo());
-		FOBDDManager manager;
-		FOBDDFactory bddfactory(&manager, NULL);
+		auto manager = make_shared<FOBDDManager>();
+		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
 
 		data.bdd = bddfactory.turnIntoBdd(formula);
-		auto bddset = manager.getVariables({variable});
+		auto bddset = manager->getVariables({variable});
 		Assert(bddset.size()==1);
 		data.bddvars = vector<const FOBDDVariable*>(bddset.cbegin(), bddset.cend());
 
-		BDDToGenerator genfactory(&manager);
+		BDDToGenerator genfactory(manager);
 		auto var = new DomElemContainer();
 		Universe u({sorttable});
 
@@ -200,14 +200,14 @@ TEST(BddGenerator, PredForm){
 		auto symbol = new Predicate("P", {sort}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
 		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
-		FOBDDManager manager;
-		FOBDDFactory bddfactory(&manager, NULL);
+		auto manager = make_shared<FOBDDManager>();
+		FOBDDFactory bddfactory(manager, NULL);
 		auto bdd = bddfactory.turnIntoBdd(formula);
 
-		auto bddvar = manager.getVariable(variable);
-		auto predkernel = manager.getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDTerm*>{bddvar});
-		auto testbdd = manager.ifthenelse(predkernel, manager.truebdd(), manager.falsebdd());
-		testbdd = manager.existsquantify(bddvar, testbdd);
+		auto bddvar = manager->getVariable(variable);
+		auto predkernel = manager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, vector<const FOBDDTerm*>{bddvar});
+		auto testbdd = manager->ifthenelse(predkernel, manager->truebdd(), manager->falsebdd());
+		testbdd = manager->existsquantify(bddvar, testbdd);
 
 		ASSERT_EQ(testbdd, bdd);
 	}

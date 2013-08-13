@@ -20,11 +20,10 @@ using namespace std;
 
 
 FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
-	_manager = new FOBDDManager();
+	_manager = make_shared<FOBDDManager>();
 }
 
 FOPropBDDDomainFactory::~FOPropBDDDomainFactory() {
-	// NOTE: do not delete manager: is passed to symbolicstructure (GenerateBDDAccordingToBounds)
 }
 
 ostream& FOPropBDDDomainFactory::put(ostream& output, FOPropBDDDomain* domain) const {

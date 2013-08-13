@@ -30,7 +30,7 @@ class FirstConstMultTerm: public FOBDDVisitor {
 private:
 	const FOBDDDomainTerm* _result;
 public:
-	FirstConstMultTerm(FOBDDManager* m)
+	FirstConstMultTerm(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	const FOBDDDomainTerm* run(const FOBDDTerm* arg) {

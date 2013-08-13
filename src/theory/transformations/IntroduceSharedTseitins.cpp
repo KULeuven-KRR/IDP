@@ -14,7 +14,7 @@
 #include "IncludeComponents.hpp"
 
 IntroduceSharedTseitins::IntroduceSharedTseitins()
-		: 	_manager(new FOBDDManager()),
+		: 	_manager(make_shared<FOBDDManager>()),
 			_factory(_manager),
 			_counter(_manager),
 			_bddtofo(_manager, &_counter) {

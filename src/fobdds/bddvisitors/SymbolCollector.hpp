@@ -26,7 +26,7 @@ class SymbolCollector: public FOBDDVisitor {
 private:
 	std::set<const PFSymbol*> _result;
 public:
-	SymbolCollector(FOBDDManager* m)
+	SymbolCollector(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	void visit(const FOBDDAtomKernel* a) {

@@ -117,7 +117,7 @@ double BddStatistics::estimateNrAnswers(const FOBDDKernel* kernel, const fobddva
 }
 
 template<typename BddNode>
-bool isArithmetic(const BddNode* k, FOBDDManager* manager) {
+bool isArithmetic(const BddNode* k, std::shared_ptr<FOBDDManager> manager) {
 	CheckIsArithmeticFormula ac(manager);
 	return ac.isArithmeticFormula(k);
 }

@@ -209,14 +209,14 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel, const FOBDD* truebr
 
 }
 
-const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, FOBDDManager* manager) {
-	Copy copier(manager, this);
+const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager) {
+	Copy copier(manager, shared_from_this());
 	return copier.copy(bdd);
 }
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,this);
+	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,shared_from_this());
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -633,7 +633,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 							return getFuncTerm(plus2, newargs);
 						}
 					}
-					if (TermOrder::before(args[1], leftterm->args(1), this)) {
+					if (TermOrder::before(args[1], leftterm->args(1), shared_from_this())) {
 						Function* plus = get(STDFUNC::ADDITION);
 						Function* plus1 = plus->disambiguate(vector<Sort*>(3, SortUtils::resolve(args[1]->sort(), leftterm->args(0)->sort())), 0);
 						vector<const FOBDDTerm*> leftargs(2);
@@ -654,13 +654,13 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 					newargs[0] = args[1];
 					newargs[1] = args[0];
 					return getFuncTerm(func, newargs);
-				} else if (TermOrder::before(args[1], args[0], this)) {
+				} else if (TermOrder::before(args[1], args[0], shared_from_this())) {
 					vector<const FOBDDTerm*> newargs(2);
 					newargs[0] = args[1];
 					newargs[1] = args[0];
 					return getFuncTerm(func, newargs);
 				}
-			} else if (TermOrder::before(args[1], args[0], this)) {
+			} else if (TermOrder::before(args[1], args[0], shared_from_this())) {
 				vector<const FOBDDTerm*> newargs(2);
 				newargs[0] = args[1];
 				newargs[1] = args[0];
@@ -681,7 +681,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 			} else {
 				right = args[0];
 			}
-			CollectSameOperationTerms<Multiplication> collect(this);
+			CollectSameOperationTerms<Multiplication> collect(shared_from_this());
 			vector<const FOBDDTerm*> leftflat = collect.getTerms(right);
 			vector<const FOBDDTerm*> rightflat = collect.getTerms(args[1]);
 			if (leftflat.size() == rightflat.size()) {
@@ -965,7 +965,7 @@ const FOBDDQuantSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDD
 	const FOBDD* bumpedformula = formula;
 	const FOBDDTerm* bumpedterm = term;
 	for (auto it = vars.cbegin(); it != vars.cend(); it.operator ++(), i++) {
-		BumpIndices b(this, *it, 0);
+		BumpIndices b(shared_from_this(), *it, 0);
 		bumpedformula = b.FOBDDVisitor::change(bumpedformula);
 		bumpedterm = bumpedterm->acceptchange(&b);
 	}
@@ -989,7 +989,7 @@ const FOBDD* FOBDDManager::univquantify(const fobddvarset& qvars, const FOBDD* b
 }
 
 const FOBDD* FOBDDManager::existsquantify(const FOBDDVariable* var, const FOBDD* bdd) {
-	BumpIndices b(this, var, 0);
+	BumpIndices b(shared_from_this(), var, 0);
 	const FOBDD* bumped = b.FOBDDVisitor::change(bdd);
 	const FOBDD* q = quantify(var->variable()->sort(), bumped);
 	return q;
@@ -1006,7 +1006,7 @@ const FOBDD* FOBDDManager::existsquantify(const fobddvarset& qvars, const FOBDD*
 const FOBDD* FOBDDManager::replaceFreeVariablesByIndices(const fobddvarset& vars, const FOBDD* bdd) {
 	auto result = bdd;
 	for (auto it = vars.crbegin(); it != vars.crend(); ++it) {
-		BumpIndices b(this, *it, 0);
+		BumpIndices b(shared_from_this(), *it, 0);
 		result = b.FOBDDVisitor::change(result);
 		auto index = getDeBruijnIndex((*it)->sort(), 0);
 		result = substitute(result, *it, index);
@@ -1049,41 +1049,41 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDVariable*>& mvv) {
-	SubstituteTerms<FOBDDVariable, FOBDDVariable> s(this, mvv);
+	SubstituteTerms<FOBDDVariable, FOBDDVariable> s(shared_from_this(), mvv);
 	return s.FOBDDVisitor::change(bdd);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
-	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(this, miv);
+	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(shared_from_this(), miv);
 	return s.FOBDDVisitor::change(bdd);
 }
 
 const FOBDDTerm* FOBDDManager::substitute(const FOBDDTerm* bddt, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
-	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(this, miv);
+	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(shared_from_this(), miv);
 	return bddt->acceptchange(&s);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDTerm*>& mvv) {
-	SubstituteTerms<FOBDDVariable, FOBDDTerm> s(this, mvv);
+	SubstituteTerms<FOBDDVariable, FOBDDTerm> s(shared_from_this(), mvv);
 	return s.FOBDDVisitor::change(bdd);
 }
 
 const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOBDDDomainTerm* term, const FOBDDVariable* variable) {
 	map<const FOBDDDomainTerm*, const FOBDDVariable*> map;
 	map.insert(pair<const FOBDDDomainTerm*, const FOBDDVariable*> { term, variable });
-	SubstituteTerms<FOBDDDomainTerm, FOBDDVariable> s(this, map);
+	SubstituteTerms<FOBDDDomainTerm, FOBDDVariable> s(shared_from_this(), map);
 	return kernel->acceptchange(&s);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
-	SubstituteIndex s(this, index, variable);
+	SubstituteIndex s(shared_from_this(), index, variable);
 	return s.FOBDDVisitor::change(bdd);
 }
 
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* variable, const FOBDDDeBruijnIndex* index) {
 	std::map<const FOBDDVariable*, const FOBDDDeBruijnIndex*> m;
 	m[variable] = index;
-	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(this, m);
+	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(shared_from_this(), m);
 	return s.FOBDDVisitor::change(bdd);
 }
 
@@ -1124,30 +1124,30 @@ int FOBDDManager::longestbranch(const FOBDD* bdd) {
 }
 
 const FOBDD* FOBDDManager::simplify(const FOBDD* bdd) {
-	UngraphFunctions far(this);
+	UngraphFunctions far(shared_from_this());
 	bdd = far.FOBDDVisitor::change(bdd);
-	TermsToLeft ttl(this);
+	TermsToLeft ttl(shared_from_this());
 	bdd = ttl.FOBDDVisitor::change(bdd);
-	RewriteMinus rm(this);
+	RewriteMinus rm(shared_from_this());
 	bdd = rm.FOBDDVisitor::change(bdd);
-	ApplyDistributivity dsbtvt(this);
+	ApplyDistributivity dsbtvt(shared_from_this());
 	bdd = dsbtvt.FOBDDVisitor::change(bdd);
-	OrderTerms<Multiplication> mo(this);
+	OrderTerms<Multiplication> mo(shared_from_this());
 	bdd = mo.FOBDDVisitor::change(bdd);
-	AddMultSimplifier ms(this);
+	AddMultSimplifier ms(shared_from_this());
 	bdd = ms.FOBDDVisitor::change(bdd);
-	OrderTerms<Addition> ao(this);
+	OrderTerms<Addition> ao(shared_from_this());
 	bdd = ao.FOBDDVisitor::change(bdd);
 	bdd = ms.FOBDDVisitor::change(bdd);
-	CombineConstsOfMults ta(this);
+	CombineConstsOfMults ta(shared_from_this());
 	bdd = ta.FOBDDVisitor::change(bdd);
-	AddMultSimplifier neut(this);
+	AddMultSimplifier neut(shared_from_this());
 	bdd = neut.FOBDDVisitor::change(bdd);
 	return bdd;
 }
 
 bool FOBDDManager::contains(const FOBDDTerm* super, const FOBDDTerm* arg) {
-	ContainsTerm ac(this);
+	ContainsTerm ac(shared_from_this());
 	return ac.contains(super, arg);
 }
 
@@ -1184,7 +1184,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	Assert((domtermvalue->type() == DET_DOUBLE && domtermvalue->value()._double == 0) || (domtermvalue->type() == DET_INT && domtermvalue->value()._int == 0));
 	//The rewritings in getatomkernel should guarantee this.
 #endif
-	CollectSameOperationTerms<Addition> fa(this);
+	CollectSameOperationTerms<Addition> fa(shared_from_this());
 	//Collect all occurrences of the wanted argument in the lhs
 	vector<const FOBDDTerm*> terms = fa.getTerms(atom->args(0));
 	unsigned int occcounter = 0;
@@ -1207,7 +1207,7 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 	}
 	//Now we know that atom is of the form x_1 + x_2 + t[argument] + x_4 + ... op 0,
 	//where the x_i do not contain argument and op is either =, < or >
-	CollectSameOperationTerms<Multiplication> fm(this);
+	CollectSameOperationTerms<Multiplication> fm(shared_from_this());
 	vector<const FOBDDTerm*> factors;
 	if (occcounter == 1) {
 		factors = fm.getTerms(terms[occterm]);
@@ -1305,32 +1305,32 @@ const FOBDDTerm* FOBDDManager::solve(const FOBDDKernel* kernel, const FOBDDTerm*
 }
 
 Formula* FOBDDManager::toFormula(const FOBDD* bdd) {
-	BDDToFO btf(this);
+	BDDToFO btf(shared_from_this());
 	return btf.createFormula(bdd);
 }
 
 Formula* FOBDDManager::toFormula(const FOBDDKernel* kernel) {
-	BDDToFO btf(this);
+	BDDToFO btf(shared_from_this());
 	return btf.createFormula(kernel);
 }
 
 Term* FOBDDManager::toTerm(const FOBDDTerm* arg) {
-	BDDToFO btf(this);
+	BDDToFO btf(shared_from_this());
 	return btf.createTerm(arg);
 }
 
 bool FOBDDManager::containsFuncTerms(const FOBDDKernel* kernel) {
-	ContainsFuncTerms ft(this);
+	ContainsFuncTerms ft(shared_from_this());
 	return ft.check(kernel);
 }
 
 bool FOBDDManager::containsFuncTerms(const FOBDD* bdd) {
-	ContainsFuncTerms ft(this);
+	ContainsFuncTerms ft(shared_from_this());
 	return ft.check(bdd);
 }
 
 bool FOBDDManager::containsPartialFunctions(const FOBDDTerm* arg) {
-	ContainsPartialFunctions bpc(this);
+	ContainsPartialFunctions bpc(shared_from_this());
 	return bpc.check(arg);
 }
 
@@ -1338,7 +1338,7 @@ bool FOBDDManager::containsPartialFunctions(const FOBDDTerm* arg) {
  * Returns true iff the bdd contains the variable
  */
 bool FOBDDManager::contains(const FOBDD* bdd, const FOBDDVariable* v) {
-	ContainsTerm ct(this);
+	ContainsTerm ct(shared_from_this());
 	return ct.contains(bdd, v);
 }
 
@@ -1346,7 +1346,7 @@ bool FOBDDManager::contains(const FOBDD* bdd, const FOBDDVariable* v) {
  * Returns true iff the kernel contains the variable
  */
 bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
-	ContainsTerm ct(this);
+	ContainsTerm ct(shared_from_this());
 	return ct.contains(kernel, v);
 }
 
@@ -1354,7 +1354,7 @@ bool FOBDDManager::contains(const FOBDDKernel* kernel, const FOBDDVariable* v) {
  * Returns true iff the argument contains the variable
  */
 bool FOBDDManager::contains(const FOBDDTerm* arg, const FOBDDVariable* v) {
-	ContainsTerm ct(this);
+	ContainsTerm ct(shared_from_this());
 	return ct.contains(arg, v);
 }
 
@@ -1398,7 +1398,7 @@ vector<Path> FOBDDManager::pathsToFalse(const FOBDD* bdd) const {
 /**
  * Return all kernels of the given bdd
  */
-int countkernels(const FOBDD* bdd, const FOBDDManager* manager) {
+int countkernels(const FOBDD* bdd, const std::shared_ptr<FOBDDManager> manager) {
 	Assert(bdd != NULL);
 	int result = 0;
 	if (bdd != manager->truebdd() && bdd != manager->falsebdd()) {
@@ -1415,7 +1415,7 @@ int countkernels(const FOBDD* bdd, const FOBDDManager* manager) {
 /**
  * Return all kernels of the given bdd
  */
-set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager) {
+set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const std::shared_ptr<FOBDDManager> manager) {
 	Assert(bdd != NULL);
 	set<const FOBDDKernel*> result;
 	if (bdd != manager->truebdd() && bdd != manager->falsebdd()) {
@@ -1435,7 +1435,7 @@ set<const FOBDDKernel*> allkernels(const FOBDD* bdd, const FOBDDManager* manager
 /**
  * Return all kernels of the given bdd that occur outside the scope of quantifiers
  */
-set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* manager) {
+set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const std::shared_ptr<FOBDDManager> manager) {
 	set<const FOBDDKernel*> result;
 	if (bdd != manager->truebdd() && bdd != manager->falsebdd()) {
 		result.insert(bdd->kernel());
@@ -1450,7 +1450,7 @@ set<const FOBDDKernel*> nonnestedkernels(const FOBDD* bdd, const FOBDDManager* m
 /**
  * Returns all variables that occur in the given bdd
  */
-fobddvarset variables(const FOBDD* bdd, FOBDDManager* manager) {
+fobddvarset variables(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager) {
 	VariableCollector vc(manager);
 	return vc.getVariables(bdd);
 }
@@ -1458,7 +1458,7 @@ fobddvarset variables(const FOBDD* bdd, FOBDDManager* manager) {
 /**
  * Returns all variables that occur in the given kernel
  */
-fobddvarset variables(const FOBDDKernel* kernel, FOBDDManager* manager) {
+fobddvarset variables(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) {
 	VariableCollector vc(manager);
 	return vc.getVariables(kernel);
 }
@@ -1466,7 +1466,7 @@ fobddvarset variables(const FOBDDKernel* kernel, FOBDDManager* manager) {
 /**
  * Returns all De Bruijn indices that occur in the given bdd.
  */
-fobddindexset indices(const FOBDD* bdd, FOBDDManager* manager) {
+fobddindexset indices(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager) {
 	IndexCollector dbc(manager);
 	return dbc.getVariables(bdd);
 }
@@ -1474,7 +1474,7 @@ fobddindexset indices(const FOBDD* bdd, FOBDDManager* manager) {
 /**
  * Returns all De Bruijn indices that occur in the given kernel
  */
-fobddindexset indices(const FOBDDKernel* kernel, FOBDDManager* manager) {
+fobddindexset indices(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) {
 	IndexCollector dbc(manager);
 	return dbc.getVariables(kernel);
 }
@@ -1485,20 +1485,20 @@ void FOBDDManager::optimizeQuery(const FOBDD* query, const fobddvarset& vars, co
 	if (query == _truebdd || query == _falsebdd) {
 		return;
 	}
-	auto kernels = allkernels(query, this);
+	auto kernels = allkernels(query, shared_from_this());
 	for (auto it = kernels.cbegin(); it != kernels.cend(); ++it) {
 		CHECKTERMINATION;
 		// move kernel to the top
 		while (kernelAbove(*it) != NULL) {
 			moveUp(*it);
 		}
-		double bestscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
+		double bestscore = BddStatistics::estimateCostAll(query, vars, indices, structure, shared_from_this());
 		int bestposition = 0;
 		//AT THIS POINT: bestposition is the number of "movedowns" needed from the top to get to bestpositions
 		// move downward
 		while (kernelBelow(*it) != NULL) {
 			moveDown(*it);
-			double currscore = BddStatistics::estimateCostAll(query, vars, indices, structure, this);
+			double currscore = BddStatistics::estimateCostAll(query, vars, indices, structure, shared_from_this());
 			if (currscore < bestscore) {
 				bestscore = currscore;
 				bestposition = 0;
@@ -1521,8 +1521,8 @@ double FOBDDManager::getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& v
 		const fobddindexset& indices, const Structure* structure, double weightPerAns) {
 	// Recursive call
 	//TotalBddCost is the total cost of evaluating a bdd + the cost of all answers that are still present.
-	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, this);
-	double bddAnswers = BddStatistics::estimateNrAnswers(bdd, vars, indices, structure, this);
+	double bddCost = BddStatistics::estimateCostAll(bdd, vars, indices, structure, shared_from_this());
+	double bddAnswers = BddStatistics::estimateNrAnswers(bdd, vars, indices, structure, shared_from_this());
 	return bddCost + (bddAnswers * weightPerAns);
 }
 
@@ -1537,8 +1537,8 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 		// Split variables
 		// * kernelvars and kernelindices are all vars and indices that appear in the kernel.
 		// * branchvars and branchidices are the rest.
-		auto kernelvars = variables(bdd->kernel(), this);
-		auto kernelindices = indices(bdd->kernel(), this);
+		auto kernelvars = variables(bdd->kernel(), shared_from_this());
+		auto kernelindices = indices(bdd->kernel(), shared_from_this());
 		fobddvarset branchvars;
 		fobddindexset branchindices;
 		for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
@@ -1592,13 +1592,13 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const fobddvars
 		}
 
 		//Number of answers in the kernel.
-		double kernelAnswers = BddStatistics::estimateNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure, this);
+		double kernelAnswers = BddStatistics::estimateNrAnswers(bdd->kernel(), kernelvars, kernelindices, structure, shared_from_this());
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Number of kernel answers is " << kernelAnswers << "\n";
 		}
 
 		tablesize kernelUnivSize = univNrAnswers(kernelvars, kernelindices, structure);
-		double chance = BddStatistics::estimateChance(bdd->kernel(), structure, this);
+		double chance = BddStatistics::estimateChance(bdd->kernel(), structure, shared_from_this());
 		if (getOption(VERBOSE_GEN_AND_CHECK) > 3) {
 			clog << "Kernel chance is " << chance << "\n";
 		}
@@ -1673,7 +1673,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<
 	if (isTruebdd(bdd) || isFalsebdd(bdd)) {
 		return bdd;
 	}
-	SymbolCollector sc(this);
+	SymbolCollector sc(shared_from_this());
 	auto goalbdd = goal ? _truebdd : _falsebdd;
 	auto kernelsymbols = sc.collectSymbols(bdd->kernel());
 	for (auto sym : symbolsToRemove) {
@@ -1686,6 +1686,7 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<
 	return getBDD(bdd->kernel(), newtrue, newfalse);
 }
 
+#warning TODO enable lifted unit propagation in lazy tests
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 		: _maxid(1), _rewriteArithmetic(rewriteArithmetic) {
 	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
@@ -1696,8 +1697,9 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	_truekernel = new TrueFOBDDKernel(ktrue);
 	_falsekernel = new FalseFOBDDKernel(kfalse);
-	_truebdd = new TrueFOBDD(_truekernel,this);
-	_falsebdd = new FalseFOBDD(_falsekernel,this);
+#warning should be shared_from_this, problem is that it is in the constructor
+	_truebdd = new TrueFOBDD(_truekernel,NULL);
+	_falsebdd = new FalseFOBDD(_falsekernel,NULL);
 }
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;

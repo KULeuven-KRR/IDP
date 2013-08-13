@@ -25,7 +25,7 @@
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
 	// translate the formula to a bdd
-	FOBDDManager* manager;
+	std::shared_ptr<FOBDDManager> manager;
 	const FOBDD* bdd;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
@@ -35,7 +35,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure) con
 		manager = symbolicstructure->obtainManager();
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
-		manager = new FOBDDManager();
+		manager = make_shared<FOBDDManager>();
 		FOBDDFactory factory(manager);
 		bdd = factory.turnIntoBdd(newquery);
 	}
@@ -46,7 +46,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure) con
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const {
 	// translate the formula to a bdd
-	FOBDDManager* manager;
+	std::shared_ptr<FOBDDManager> manager;
 	const FOBDD* bdd;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
@@ -59,7 +59,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 		delete symbolicstructure;
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
-		manager = new FOBDDManager();
+		manager = make_shared<FOBDDManager>();
 		FOBDDFactory factory(manager);
 		bdd = factory.turnIntoBdd(newquery);
 	}
@@ -68,7 +68,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	return solveBdd(q->variables(), manager, bdd, structure);
 }
 
-PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, FOBDDManager* manager, const FOBDD* bdd, Structure const * const structure) const {
+PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_ptr<FOBDDManager> manager, const FOBDD* bdd, Structure const * const structure) const {
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";

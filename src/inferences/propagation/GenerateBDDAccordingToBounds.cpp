@@ -49,9 +49,6 @@ bool needPossible(TruthType value) {
 }
 
 GenerateBDDAccordingToBounds::~GenerateBDDAccordingToBounds() {
-	if (_ownsmanager) {
-		delete (_manager);
-	}
 }
 
 const FOBDD* GenerateBDDAccordingToBounds::evaluate(Formula* f, TruthType type, const Structure* structure) {

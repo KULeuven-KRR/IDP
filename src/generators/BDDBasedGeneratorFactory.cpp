@@ -62,11 +62,11 @@ PRINTTOSTREAMIMPL(BRANCH)
  * Tries to rewrite the given predform with var in the right hand side. Or -var in the righthandside (depending on bool invert)
  * If it is not possible to rewrite it this way, this returns NULL
  */
-Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var, bool invert) {
-	FOBDDFactory factory(&manager);
+Term* solve(shared_ptr<FOBDDManager> manager, PredForm* atom, Variable* var, bool invert) {
+	FOBDDFactory factory(manager);
 	auto bdd = factory.turnIntoBdd(atom);
-	Assert(not manager.isTruebdd(bdd));
-	Assert(not manager.isFalsebdd(bdd));
+	Assert(not manager->isTruebdd(bdd));
+	Assert(not manager->isFalsebdd(bdd));
 	auto kernel = bdd->kernel();
 	if(not isa<FOBDDAtomKernel>(*kernel)){
 		return NULL;
@@ -76,24 +76,24 @@ Term* solve(FOBDDManager& manager, PredForm* atom, Variable* var, bool invert) {
 	if(atomkernel->symbol() != atom->symbol()){
 		invert = not invert;
 	}
-	const FOBDDTerm* arg = manager.getVariable(var);
+	const FOBDDTerm* arg = manager->getVariable(var);
 	if (invert) {
 		if (not SortUtils::isSubsort(arg->sort(), get(STDSORT::FLOATSORT))) {
 			//We only do arithmetic on float and subsorts
 			return NULL;
 		}
 		const DomainElement* minus_one = createDomElem(-1);
-		const FOBDDTerm* minus_one_term = manager.getDomainTerm(get(STDSORT::INTSORT), minus_one);
+		const FOBDDTerm* minus_one_term = manager->getDomainTerm(get(STDSORT::INTSORT), minus_one);
 		Function* times = get(STDFUNC::PRODUCT);
 		times = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(get(STDSORT::INTSORT), arg->sort())), 0);
 		vector<const FOBDDTerm*> timesterms(2);
 		timesterms[0] = minus_one_term;
 		timesterms[1] = arg;
-		arg = manager.getFuncTerm(times, timesterms);
+		arg = manager->getFuncTerm(times, timesterms);
 	}
-	auto rewrittenarg = manager.solve(kernel, arg);
+	auto rewrittenarg = manager->solve(kernel, arg);
 	if (rewrittenarg != NULL) {
-		return manager.toTerm(rewrittenarg);
+		return manager->toTerm(rewrittenarg);
 	} else {
 		return NULL;
 	}
@@ -136,7 +136,7 @@ void extractFirstOccurringOutputs(const BddGeneratorData& data, const vector<uns
 	}
 }
 
-BDDToGenerator::BDDToGenerator(FOBDDManager* manager)
+BDDToGenerator::BDDToGenerator(std::shared_ptr<FOBDDManager> manager)
 		: _manager(manager) {
 }
 
@@ -174,7 +174,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 	BddGeneratorData newdata = data;
 
 	//Create a new manager (will only be used for optimization)
-	auto optimizemanager = new FOBDDManager();
+	auto optimizemanager = make_shared<FOBDDManager>();
 	//Back up the old manager
 	auto backupmanager = _manager;
 
@@ -253,7 +253,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 				Universe(kerntables));
 		auto truegenerator = createFromBDD(branchdata);
 
-		delete optimizemanager;
 		_manager=backupmanager;
 		return new OneChildGenerator(kernelgenerator, truegenerator);
 	}
@@ -268,7 +267,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 				Universe(kerntables));
 		auto falsegenerator = createFromBDD(branchdata);
 
-		delete optimizemanager;
 		_manager=backupmanager;
 		return new OneChildGenerator(kernelgenerator, falsegenerator);
 	}
@@ -296,7 +294,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 		branchdata.pattern = vector<Pattern>(branchdata.pattern.size(), Pattern::INPUT);
 		auto falsechecker = createFromBDD(branchdata);
 
-		delete optimizemanager;
 		_manager=backupmanager;
 		return new UnionGenerator({ kernelgenerator, falsegenerator }, { kernelchecker, falsechecker });
 	}
@@ -317,7 +314,6 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 	branchdata.bdd = newdata.bdd->truebranch();
 	auto truegenerator = createFromBDD(branchdata);
 
-	delete optimizemanager;
 	_manager=backupmanager;
 	return new TwoChildGenerator(kernelchecker, kernelgenerator, falsegenerator, truegenerator);
 }
@@ -327,14 +323,14 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
  * with x a variable with the right pattern
  * If it is not possible, the original atom is returned
  */
-PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, Pattern matchingPattern, const Structure* structure) {
+PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, std::shared_ptr<FOBDDManager> manager, Pattern matchingPattern, const Structure* structure) {
 	if (getOption(IntType::VERBOSE_GEN_AND_CHECK) > 4) {
 		clog << "Trying to solve: " << print(atom) << "\n";
 	}
 	PredForm* result = atom;
 	for (unsigned int n = 0; n < pattern.size(); ++n) {
 		if (pattern[n] == matchingPattern) {
-			auto solvedterm = solve(*manager, atom, atomvars[n], false);
+			auto solvedterm = solve(manager, atom, atomvars[n], false);
 			if (solvedterm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PredForm* newatom = NULL;
@@ -351,7 +347,7 @@ PredForm* solveAndReplace(PredForm* atom, const vector<Pattern>& pattern, const 
 				break;
 			}
 			//It's not possible to rewrite it as "... op x". Thus, try "... op -x" and reverse the op afterwards to get something of the form "... op' x"
-			auto invertedSolvedTerm = solve(*manager, atom, atomvars[n], true);
+			auto invertedSolvedTerm = solve(manager, atom, atomvars[n], true);
 			if (invertedSolvedTerm != NULL) {
 				auto varterm = new VarTerm(atomvars[n], TermParseInfo());
 				PFSymbol* newsymbol;
@@ -432,7 +428,7 @@ PredForm* graphOneFunction(PredForm* atom) {
  * In general, it tries to rewrite F(x,y) = z to ... = v with v some output variable.
  * If not such rewriting is possible, this method simply graphs the function.
  */
-PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, FOBDDManager* manager, const Structure* structure) {
+PredForm* rewriteSum(PredForm* atom, FuncTerm* lhs, Term* rhs, const vector<Pattern>& pattern, const vector<Variable*>& atomvars, std::shared_ptr<FOBDDManager> manager, const Structure* structure) {
 	Assert((atom->subterms()[0] == lhs&& atom->subterms()[1] == rhs)||(atom->subterms()[1] == lhs&& atom->subterms()[0] == rhs));
 	auto newatom = solveAndReplace(atom, pattern, atomvars, manager, Pattern::OUTPUT, structure);
 	if (atom == newatom) {

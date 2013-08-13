@@ -28,7 +28,7 @@ private:
 	const FOBDDTerm* _arg;
 
 public:
-	ContainsTerm(FOBDDManager* m)
+	ContainsTerm(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

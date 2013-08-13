@@ -58,11 +58,11 @@ public:
 
 class FOPropBDDDomainFactory: public FOPropDomainFactory<FOPropBDDDomain> {
 private:
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 public:
 	FOPropBDDDomainFactory();
 	~FOPropBDDDomainFactory();
-	FOBDDManager* manager() const {
+	std::shared_ptr<FOBDDManager> manager() const {
 		return _manager;
 	}
 	FOPropBDDDomain* trueDomain(const Formula*) const;

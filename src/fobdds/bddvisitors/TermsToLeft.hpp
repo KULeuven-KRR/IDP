@@ -25,7 +25,7 @@
  */
 class TermsToLeft: public FOBDDVisitor {
 public:
-	TermsToLeft(FOBDDManager* m)
+	TermsToLeft(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 

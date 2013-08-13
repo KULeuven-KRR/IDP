@@ -29,7 +29,7 @@ private:
 	}
 
 public:
-	ContainsAggTerms(FOBDDManager* m)
+	ContainsAggTerms(std::shared_ptr<FOBDDManager> m)
 			: FOBDDVisitor(m) {
 	}
 	template<typename Tree>

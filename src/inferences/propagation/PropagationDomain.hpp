@@ -56,10 +56,10 @@ public:
 	const FOBDD* bdd() const;
 
 	// Checks that the free vars of the bdd are contained in vars.
-	bool checkConsistency(FOBDDManager* ) const;
+	bool checkConsistency(std::shared_ptr<FOBDDManager> ) const;
 
 	// Additional check (wrt the same method in FOPropDomain): that also internal consistency is achieved.
-	bool isValidFor(const Formula* , FOBDDManager* ) const;
+	bool isValidFor(const Formula* , std::shared_ptr<FOBDDManager> ) const;
 
 	void put(std::ostream& stream) const;
 };

@@ -23,14 +23,14 @@
 
 class Copy: public FOBDDVisitor {
 private:
-	FOBDDManager* _originalmanager;
-	FOBDDManager* _copymanager;
+	std::shared_ptr<FOBDDManager> _originalmanager;
+	std::shared_ptr<FOBDDManager> _copymanager;
 	const FOBDDKernel* _kernel;
 	const FOBDDTerm* _argument;
 	const FOBDDEnumSetExpr* _enumset;
 	const FOBDDQuantSetExpr* _quantset;
 public:
-	Copy(FOBDDManager* orig, FOBDDManager* copy)
+	Copy(std::shared_ptr<FOBDDManager> orig, std::shared_ptr<FOBDDManager> copy)
 			: FOBDDVisitor(orig), _originalmanager(orig), _copymanager(copy) {
 	}
 
