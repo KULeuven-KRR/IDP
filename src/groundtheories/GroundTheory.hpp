@@ -15,8 +15,8 @@
 #include "IncludeComponents.hpp"
 #include "AbstractGroundTheory.hpp"
 
-class LazyInstantiation;
-class GroundTerm;
+struct LazyInstantiation;
+struct GroundTerm;
 
 template<class Policy>
 class GroundTheory: public AbstractGroundTheory, public Policy {

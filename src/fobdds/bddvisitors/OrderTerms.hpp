@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ORDERTERMS_HPP_
-#define ORDERTERMS_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
@@ -44,7 +43,7 @@ public:
 			*i = (*i)->acceptchange(this);
 		}
 
-		Ordering mtswo;
+		Ordering mtswo(_manager);
 		std::sort(terms.begin(), terms.end(), mtswo);
 
 		const FOBDDTerm* currarg = terms.back();
@@ -64,5 +63,3 @@ public:
 		return currarg;
 	}
 };
-
-#endif /* ORDERTERMS_HPP_ */

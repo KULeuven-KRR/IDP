@@ -107,14 +107,14 @@ GrounderFactory::GrounderFactory(LazyGroundingManager* manager)
 			_structure(manager->getStructureInfo()),
 			_grounding(manager->getGrounding()),
 			_nbmodelsequivalent(manager->getNbModelEquivalent()),
-			_groundingmanager(manager),
 			_formgrounder(NULL),
 			_termgrounder(NULL),
 			_setgrounder(NULL),
 			_quantsetgrounder(NULL),
 			_headgrounder(NULL),
 			_rulegrounder(NULL),
-			_topgrounder(NULL) {
+			_topgrounder(NULL),
+			_groundingmanager(manager) {
 	Assert(_structure.symstructure != NULL);
 
 	InitContext();
@@ -533,7 +533,6 @@ void GrounderFactory::visit(const PredForm* pf) {
 	if (not isa<PredForm>(*transpf)) { // NOTE: the rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
 		transpf->accept(this);
-#warning some other descends should probably also become accepts, to prevent changing the conjunctive meaning!
 		deleteDeep(transpf);
 		return;
 	}
@@ -661,7 +660,6 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 	RestoreContext();
 
     if (_context._component == CompContext::HEAD) {
-		auto inter = getConcreteStructure()->inter(symbol);
 		_headgrounder = new HeadGrounder(getGrounding(), symbol, subtermgrounders, argsorttables, _context);
     } else {
 		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context);
@@ -1032,7 +1030,6 @@ void GrounderFactory::visit(const FuncTerm* t) {
 	}
 
 	// Create term grounder
-	auto trans = getGrounding()->translator();
 	auto function = t->function();
 	auto agt = getArgTables(function, getConcreteStructure());
 	auto ftable = getConcreteStructure()->inter(function)->funcTable();
@@ -1081,7 +1078,7 @@ void GrounderFactory::visit(const AggTerm* t) {
 	}
 
 	// Create term grounder
-	_termgrounder = new AggTermGrounder(getGrounding(), getGrounding()->translator(), t->function(), domain, getSetGrounder());
+	_termgrounder = new AggTermGrounder(getGrounding()->translator(), t->function(), domain, getSetGrounder());
 }
 
 void GrounderFactory::visit(const EnumSetExpr* s) {

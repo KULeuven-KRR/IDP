@@ -34,7 +34,7 @@ class Variable;
 class Sort;
 class Function;
 class Predicate;
-class InternalArgument;
+struct InternalArgument;
 class UserProcedure;
 class SortTable;
 class PredTable;

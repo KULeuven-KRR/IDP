@@ -593,7 +593,7 @@ public:
 	virtual void put(std::ostream& stream) const;
 };
 
-class LazyInstantiation;
+struct LazyInstantiation;
 
 class LazyTsBody: public TsBody {
 public:

@@ -25,7 +25,7 @@ const DomainElement* Addition::getNeutralElement() {
 }
 
 bool Addition::operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
-	FirstNonConstMultTerm extractor;
+	FirstNonConstMultTerm extractor(manager);
 	auto arg1first = extractor.run(arg1);
 	auto arg2first = extractor.run(arg2);
 
@@ -75,9 +75,9 @@ bool TermOrder::before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, std::shared
 		return false;
 	} else {
 		for (size_t n = 1; n < flat1.size(); ++n) {
-			if (Multiplication::before(flat1[n], flat2[n])) {
+			if (Multiplication::before(flat1[n], flat2[n], manager)) {
 				return true;
-			} else if (Multiplication::before(flat2[n], flat1[n])) {
+			} else if (Multiplication::before(flat2[n], flat1[n], manager)) {
 				return false;
 			}
 		}

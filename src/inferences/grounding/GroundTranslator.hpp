@@ -21,12 +21,12 @@
 
 class DelayGrounder;
 class TsSet;
-class CPBound;
-class LazyInstantiation;
+struct CPBound;
+struct LazyInstantiation;
 class TsSet;
 class Function;
 class Structure;
-class GroundTerm;
+struct GroundTerm;
 class CPTsBody;
 class SortTable;
 

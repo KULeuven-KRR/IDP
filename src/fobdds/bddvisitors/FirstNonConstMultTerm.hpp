@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef NONCONSTTERMEXTRACTOR_HPP_
-#define NONCONSTTERMEXTRACTOR_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "fobdds/FoBddVisitor.hpp"
@@ -29,8 +28,8 @@ class FirstNonConstMultTerm: public FOBDDVisitor {
 private:
 	const FOBDDTerm* _result;
 public:
-	FirstNonConstMultTerm()
-			: FOBDDVisitor(NULL) {
+	FirstNonConstMultTerm(shared_ptr<FOBDDManager> manager)
+			: FOBDDVisitor(manager), _result(NULL) {
 	}
 
 	const FOBDDTerm* run(const FOBDDTerm* arg) {
@@ -58,7 +57,4 @@ public:
 			_result = ft;
 		}
 	}
-
 };
-
-#endif /* NONCONSTTERMEXTRACTOR_HPP_ */

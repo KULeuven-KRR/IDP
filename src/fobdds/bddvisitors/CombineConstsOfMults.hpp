@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TERMADDER_HPP_
-#define TERMADDER_HPP_
+#pragma once
 
 #include "common.hpp"
 #include "fobdds/FoBddVisitor.hpp"
@@ -38,7 +37,7 @@ public:
 			return FOBDDVisitor::change(functerm);
 		}
 
-		FirstNonConstMultTerm ncte;
+		FirstNonConstMultTerm ncte(_manager);
 		auto leftncte = ncte.run(functerm->args(0));
 
 		if (isBddFuncTerm(functerm->args(1))) {
@@ -82,5 +81,3 @@ public:
 		return FOBDDVisitor::change(functerm);
 	}
 };
-
-#endif /* TERMADDER_HPP_ */

@@ -96,9 +96,9 @@ FunctionInfo::~FunctionInfo() {
 GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding)
 		: 	_structure(structure),
 			_grounding(grounding),
+			_groundingmanager(NULL),
 			_trueLit(0), // IMPORTANT: _trueLit set on initialize!
-			maxquantsetid(1),
-			_groundingmanager(NULL) {
+			maxquantsetid(1) {
 
 	// Literal 0 is not allowed!
 	atomtype.push_back(AtomType::LONETSEITIN);

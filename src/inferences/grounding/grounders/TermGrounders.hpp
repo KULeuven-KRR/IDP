@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TERMGROUNDERS_HPP_
-#define TERMGROUNDERS_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp" // TODO too general
 #include "inferences/grounding/GroundUtils.hpp"
@@ -19,7 +18,7 @@ class AbstractGroundTheory;
 class SortTable;
 class Term;
 class Variable;
-class GroundTerm;
+struct GroundTerm;
 class DomainElement;
 class DomElemContainer;
 class FuncTable;
@@ -160,12 +159,9 @@ class AggTermGrounder: public TermGrounder {
 private:
 	AggFunction _type;
 	EnumSetGrounder* _setgrounder;
-	AbstractGroundTheory* grounding;
 	mutable std::map<std::pair<uint,AggFunction>, VarId> aggterm2cpterm; // TODO memory management and move to translator!
 
 public:
-	AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr);
+	AggTermGrounder(GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr);
 	GroundTerm run() const;
 };
-
-#endif /* TERMGROUNDERS_HPP_ */

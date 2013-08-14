@@ -19,8 +19,8 @@
 #include "inferences/grounding/GroundUtils.hpp" // TODO for structureinfo
 
 class GroundTranslator;
-class SymbolOffset;
-class GroundTerm;
+struct SymbolOffset;
+struct GroundTerm;
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
 
@@ -29,7 +29,7 @@ enum VIType {
 	VIT_DISJ, VIT_CONJ, VIT_SET
 };
 
-class LazyInstantiation;
+struct LazyInstantiation;
 class DelayGrounder;
 class GenerateBDDAccordingToBounds;
 class LazyGroundingManager;

@@ -53,9 +53,9 @@ class UserProcedure;
 class Namespace;
 
 struct YYLTYPE;
-class lua_State;
+struct lua_State;
 // TODO break lua connection
-class InternalArgument;
+struct InternalArgument;
 
 typedef std::vector<std::string> longname;
 

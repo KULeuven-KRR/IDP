@@ -19,7 +19,7 @@
 class LuaInteractivePrintMonitor: public InteractivePrintMonitor {
 private:
 	lua_State* state_;
-	int buffersize;
+	//int buffersize;
 	std::stringstream buffer_;
 
 	lua_State* state() const {
@@ -28,7 +28,7 @@ private:
 
 public:
 	LuaInteractivePrintMonitor(lua_State* state)
-			: state_(state), buffersize(0) {
+			: state_(state) /*, buffersize(0)*/ {
 	}
 
 	virtual void print(const std::string& text) {

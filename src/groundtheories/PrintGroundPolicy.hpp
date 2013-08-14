@@ -21,14 +21,14 @@
 #include "options.hpp"
 #include "errorhandling/error.hpp"
 
-class LazyInstantiation;
+struct LazyInstantiation;
 class DelayGrounder;
 class LazyGroundingManager;
 
 class TsSet;
 
 class PFSymbol;
-class GroundTerm;
+struct GroundTerm;
 class AbstractGroundTheory;
 
 /**

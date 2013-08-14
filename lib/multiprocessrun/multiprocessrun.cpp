@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
 			if (nb == 0 && execs.empty()) {
 				break;
 			}
-			sleep(0.25);
+			sleep(1);
 		}
 	}
 	for (auto i = threads.begin(); i<threads.end(); ++i) {

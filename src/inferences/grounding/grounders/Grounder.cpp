@@ -81,7 +81,6 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	}
 }
 
-int Grounder::_level = 0;
 int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
@@ -128,11 +127,7 @@ bool Grounder::toplevelRun(LazyGroundingRequest& request) {
 
 // TODO unfinished code for printing the timings of a grounder
 void Grounder::run(ConjOrDisj& formula, LazyGroundingRequest& request){
-	_level++;
-	auto start = clock();
-	auto previousgroundsize = Grounder::groundedAtoms();
 	internalRun(formula, request);
-	_level--;
 }
 
 Lit Grounder::groundAndReturnLit(LazyGroundingRequest& request) {

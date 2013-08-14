@@ -32,10 +32,11 @@ public:
 
 	virtual void doPropagation() = 0; //!< Apply propagations until the propagation queue is empty
 
-	// Inspectors
-	virtual void applyPropagationToStructure(Structure* str, Vocabulary* outputvoc) const = 0;
-	//!< Obtain the resulting structure
-	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
+	/*
+	 * Obtain the resulting structure
+	 * (the given structure is used to evaluate BDDs in case of symbolic propagation)
+	 */
+	virtual void applyPropagationToStructure(Structure* str,  const Vocabulary& outputvoc) const = 0;
 
 	virtual std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure(Vocabulary* allreadyPropagatedSymbols) const = 0;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
@@ -95,10 +96,12 @@ public:
 
 	void doPropagation(); //!< Apply propagations until the propagation queue is empty
 
-	void applyPropagationToStructure(Structure* str, Vocabulary* outputvoc) const;
-	//!< Obtain the resulting structure
-	//!< (the given structure is used to evaluate BDDs in case of symbolic propagation)
-	// a NULL vocabulary indicates that every symbol can be replaced
+	/**
+	 * Obtain the resulting structure
+	 * 	(the given structure is used to evaluate BDDs in case of symbolic propagation)
+	 */
+	void applyPropagationToStructure(Structure* str, const Vocabulary& outputvoc) const;
+
 	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure(Vocabulary* symbolsThatCannotBeReplacedByBDDs) const;
 	//!< Obtain the resulting structure (only works if the used domainfactory is a FOPropBDDDomainFactory)
 

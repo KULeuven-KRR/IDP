@@ -47,7 +47,7 @@ private:
 		//Giving InteractivePrintMonitor as template argument but in fact, nothing is needed...
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, NULL, modelcountequivalence, NULL);
 		if (grounding == NULL) {
-			grounding = new GroundTheory<GroundPolicy>(NULL, {NULL, NULL}, false);
+			grounding = new GroundTheory<GroundPolicy>(NULL, {NULL, shared_ptr<GenerateBDDAccordingToBounds>()}, false);
 			grounding->addEmptyClause();
 		}
 		t->recursiveDelete();

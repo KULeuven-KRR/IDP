@@ -15,7 +15,7 @@
 #include "inferences/SolverInclude.hpp"
 #include "groundtheories/IDP2ECNF.hpp"
 
-class SymbolOffset;
+struct SymbolOffset;
 class AbstractGroundTheory;
 
 class TsSet;
@@ -24,7 +24,7 @@ class LazyRuleGrounder;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
 
-class LazyInstantiation;
+struct LazyInstantiation;
 class DelayGrounder;
 class LazyGroundingManager;
 

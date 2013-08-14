@@ -39,7 +39,7 @@ class Theory;
 class TheoryComponent;
 class Sort;
 class LazyGroundingManager;
-class Delay;
+struct Delay;
 class Term;
 
 class DomElemContainer;

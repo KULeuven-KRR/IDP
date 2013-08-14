@@ -250,8 +250,10 @@ template<class Policy>
 void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) {
 	for(auto symm: symmetry){
 		notifyAtomsAdded(symm.size());
+		for(auto l2l: symm){
+			addTseitinInterpretations({l2l.first, l2l.second}, -1);
+		}
 	}
-#warning do we need addTseitins here?
 	Policy::polAdd(symmetry);
 }
 
@@ -363,7 +365,6 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 
 template<class Policy>
 CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
-#warning folding is probably no longer correct if partial variables are involved
 	if (_foldedterms.find(cpterm) != _foldedterms.end()) {
 		return cpterm;
 	}

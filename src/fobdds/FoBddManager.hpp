@@ -44,9 +44,9 @@ class Term;
 class Structure;
 class DomainTerm;
 class DomainElement;
-class tablesize;
+struct tablesize;
 class Function;
-class CompareBDDVars;
+struct CompareBDDVars;
 enum class CompType;
 
 typedef std::map<const FOBDD*, FOBDD*> MBDDBDD;

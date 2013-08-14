@@ -17,7 +17,7 @@
 #include "visitors/VisitorFriends.hpp"
 
 class QuantSetExpr;
-class tablesize;
+struct tablesize;
 class Sort;
 class Structure;
 

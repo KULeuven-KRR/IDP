@@ -32,10 +32,10 @@ class TsSet;
 class CPTsBody;
 class PCGroundRule;
 class AggGroundRule;
-class GroundTerm;
+struct GroundTerm;
 class LazyGroundingManager;
 
-class LazyInstantiation;
+struct LazyInstantiation;
 class DelayGrounder;
 
 class GroundPolicy {

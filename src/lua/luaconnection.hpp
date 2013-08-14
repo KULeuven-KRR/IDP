@@ -21,7 +21,7 @@ class Vocabulary;
 class Structure;
 class AbstractTheory;
 class DomainElement;
-class InternalArgument;
+struct InternalArgument;
 class Inference;
 
 namespace LuaConnection {

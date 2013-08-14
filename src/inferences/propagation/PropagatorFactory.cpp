@@ -46,17 +46,18 @@ shared_ptr<GenerateBDDAccordingToBounds> generateBounds(AbstractTheory* theory, 
 	Assert(structure != NULL);
 	auto mpi = propagateVocabulary(theory, structure);
 	auto propagator = createPropagator(theory, structure, mpi);
-	if (doSymbolicPropagation) {
+	if (doSymbolicPropagation) { // Strange, this should be called LUP
 		propagator->doPropagation();
-		if (LUP) {
+		if (LUP) { // Strange to call this LUP
 			if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 				clog <<"Applying propagation to structure\n";
 			}
-			if(getOption(SATISFIABILITYDELAY)){
-				propagator->applyPropagationToStructure(structure, new Vocabulary("Temp"));
-			}else{
-				propagator->applyPropagationToStructure(structure, outputvoc!=NULL?outputvoc:structure->vocabulary());
-			}
+			// FIXME not applying propagation after approximation is still bugged
+//			if(getOption(SATISFIABILITYDELAY)){
+//				propagator->applyPropagationToStructure(structure, new Vocabulary("Temp"));
+//			}else{
+				propagator->applyPropagationToStructure(structure, outputvoc!=NULL?*outputvoc:*structure->vocabulary());
+//			}
 		}
 	}
 
@@ -64,17 +65,15 @@ shared_ptr<GenerateBDDAccordingToBounds> generateBounds(AbstractTheory* theory, 
 	//  * We did not yet propagate ALL information
 	//  * BUT, we are sure that we propagated ENOUGH information to the structure to be sure that the outputvoc is correct.
 	Vocabulary* symbolsThatShouldNotBeReplacedByBDDs = NULL;
-/*	if(LUP){
-		if(not getOption(SATISFIABILITYDELAY)){
+	if(LUP){
+//		if(not getOption(SATISFIABILITYDELAY)){
 			if(outputvoc==NULL){
 				symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
 			}else{
 				symbolsThatShouldNotBeReplacedByBDDs = new Vocabulary("Temp");
 			}
-		}
-	}else{*/
-	if(not LUP) {
-		 // FIXME Otherwise, allowed to replace every symbol by a bdd => BUGGED
+//		}
+	}else{
 		symbolsThatShouldNotBeReplacedByBDDs = theory->vocabulary();
 	}
 	auto result = propagator->symbolicstructure(symbolsThatShouldNotBeReplacedByBDDs);

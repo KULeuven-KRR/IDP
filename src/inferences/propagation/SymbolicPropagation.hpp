@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef INFERENCES_SYMBOLICPROPAGATE_HPP_
-#define INFERENCES_SYMBOLICPROPAGATE_HPP_
+#pragma once
 
 #include "IncludeComponents.hpp"
 #include "PropagatorFactory.hpp"
@@ -32,9 +31,7 @@ public:
 		auto mpi = propagateVocabulary(theory, result);
 		auto propagator = createPropagator(theory, structure, mpi);
 		propagator->doPropagation();
-		propagator->applyPropagationToStructure(result, NULL);
+		propagator->applyPropagationToStructure(result, *result->vocabulary());
 		return {result};
 	}
 };
-
-#endif /* INFERENCES_SYMBOLICPROPAGATE_HPP_ */

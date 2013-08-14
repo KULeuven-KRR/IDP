@@ -303,7 +303,7 @@ const FOBDDKernel* FOBDDManager::getAtomKernel(PFSymbol* symbol, AtomKernelType 
 
 		// Comparison rewriting
 		if (VocabularyUtils::isComparisonPredicate(symbol)) {
-			if (Multiplication::before(args[0], args[1])) { //TODO: what does this do?
+			if (Multiplication::before(args[0], args[1], shared_from_this())) { //TODO: what does this do?
 				vector<const FOBDDTerm*> newargs(2);
 				newargs[0] = args[1];
 				newargs[1] = args[0];
@@ -561,7 +561,7 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 							return getFuncTerm(times2, newargs);
 						}
 					}
-					if (Multiplication::before(args[1], leftterm->args(1))) {
+					if (Multiplication::before(args[1], leftterm->args(1), shared_from_this())) {
 						Function* times = get(STDFUNC::PRODUCT);
 						Function* times1 = times->disambiguate(vector<Sort*>(3, SortUtils::resolve(args[1]->sort(), leftterm->args(0)->sort())), 0);
 						vector<const FOBDDTerm*> leftargs(2);
@@ -582,13 +582,13 @@ const FOBDDTerm* FOBDDManager::getFuncTerm(Function* func, const vector<const FO
 					newargs[0] = args[1];
 					newargs[1] = args[0];
 					return getFuncTerm(func, newargs);
-				} else if (Multiplication::before(args[1], args[0])) {
+				} else if (Multiplication::before(args[1], args[0], shared_from_this())) {
 					vector<const FOBDDTerm*> newargs(2);
 					newargs[0] = args[1];
 					newargs[1] = args[0];
 					return getFuncTerm(func, newargs);
 				}
-			} else if (Multiplication::before(args[1], args[0])) {
+			} else if (Multiplication::before(args[1], args[0], shared_from_this())) {
 				vector<const FOBDDTerm*> newargs(2);
 				newargs[0] = args[1];
 				newargs[1] = args[0];
@@ -1036,7 +1036,7 @@ const FOBDD* FOBDDManager::quantify(Sort* sort, const FOBDD* bdd) {
 		return result;
 	}
 	if (bdd->kernel()->category() == KernelOrderCategory::STANDARDCATEGORY) {
-#warning this code explodes the bdd for large longestbranch option
+		// NOTE: this code explodes the bdd for large longestbranch option
 		auto newfalse = quantify(sort, bdd->falsebranch());
 		auto newtrue = quantify(sort, bdd->truebranch());
 		result = ifthenelse(bdd->kernel(), newtrue, newfalse);

@@ -333,11 +333,10 @@ Weight getNeutralElement(AggFunction type){
 	}
 	throw IdpException("Invalid code path.");
 }
-AggTermGrounder::AggTermGrounder(AbstractGroundTheory* grounding, GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr)
+AggTermGrounder::AggTermGrounder(GroundTranslator* gt, AggFunction tp, SortTable* dom, EnumSetGrounder* gr)
 		: 	TermGrounder(dom, gt),
 			_type(tp),
-			_setgrounder(gr),
-			grounding(grounding) {
+			_setgrounder(gr) {
 	Assert(CPSupport::eligibleForCP(tp));
 	addAll(_varmap, gr->getVarmapping());
 	setTerm(new AggTerm(gr->getSet()->cloneKeepVars(), tp, { }));

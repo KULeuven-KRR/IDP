@@ -19,7 +19,7 @@ class DomainElement;
 class FOBDDManager;
 class FOBDDVariable;
 class Variable;
-class CompareBDDVars;
+struct CompareBDDVars;
 
 #include "common.hpp"
 #include "CommonBddTypes.hpp"
@@ -93,6 +93,12 @@ bool isMultiplication(FuncTerm term) {
 }
 
 struct Addition {
+	shared_ptr<FOBDDManager> manager;
+
+	Addition(shared_ptr<FOBDDManager> manager): manager(manager) {
+
+	}
+
 	static std::string getFuncName() {
 		return "+/2";
 	}
@@ -105,6 +111,10 @@ struct Addition {
 };
 
 struct Multiplication {
+	Multiplication(shared_ptr<FOBDDManager>) {
+
+	}
+
 	static std::string getFuncName() {
 		return "*/2";
 	}
@@ -114,9 +124,9 @@ struct Multiplication {
 	// Ordering method: true if ordered before
 	// TODO comment and check what they do! -> not understood yet!
 	bool operator()(const FOBDDTerm* arg1, const FOBDDTerm* arg2);
-	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2) {
+	static bool before(const FOBDDTerm* arg1, const FOBDDTerm* arg2, std::shared_ptr<FOBDDManager> manager) {
 		// TODO MAKE THIS INDEPENDENT OF POINTER ORDERING
-		Multiplication m;
+		Multiplication m(manager);
 		return m(arg1, arg2);
 	}
 };

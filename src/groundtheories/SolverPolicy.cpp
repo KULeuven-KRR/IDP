@@ -104,30 +104,6 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	adder.add(tseitin, body);
 }
 
-class LazyRuleMon: public MinisatID::LazyGroundingCommand{
-private:
-	Lit lit;
-	ElementTuple args;
-	std::vector<DelayGrounder*> grounders;
-
-public:
-	LazyRuleMon(const Lit& lit, const ElementTuple& args, const std::vector<DelayGrounder*>& grounders)
-			: 	lit(lit),
-				args(args),
-				grounders(grounders) {
-	}
-
-	virtual void requestGrounding(MinisatID::Value) {
-		if (not isAlreadyGround()) {
-			notifyGrounded();
-			for (auto i = grounders.begin(); i < grounders.end(); ++i) {
-				throw notyetimplemented("Further grounding delayed grounders.");
-				// FIXME (*i)->ground(lit, args);
-			}
-		}
-	}
-};
-
 class LazyClauseMon: public MinisatID::LazyGrounder {
 private:
 	LazyInstantiation* inst;

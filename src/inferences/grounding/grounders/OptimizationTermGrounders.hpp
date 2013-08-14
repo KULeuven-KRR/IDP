@@ -19,7 +19,7 @@ class AbstractGroundTheory;
 class SortTable;
 class Term;
 class Variable;
-class GroundTerm;
+struct GroundTerm;
 class DomainElement;
 class DomElemContainer;
 class FuncTable;

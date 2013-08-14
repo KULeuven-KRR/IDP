@@ -73,7 +73,7 @@ private:
 	std::string _description;
 	std::string _space;
 	std::vector<ArgType> _argtypes; //!< types of the input arguments
-	bool needprintmonitor_, needtracemonitor_;
+	bool needprintmonitor_;
 	InteractivePrintMonitor* printmonitor_;
 
 protected:
@@ -89,7 +89,7 @@ protected:
 
 public:
 	Inference(const std::string& name, const std::string& description, bool needprintmonitor = false)
-			: _name(name), _description(description), _space(getGlobalNamespaceName()), needprintmonitor_(needprintmonitor), needtracemonitor_(false), printmonitor_(NULL) {
+			: _name(name), _description(description), _space(getGlobalNamespaceName()), needprintmonitor_(needprintmonitor), printmonitor_(NULL) {
 	}
 	virtual ~Inference() {
 	}
@@ -146,7 +146,7 @@ public:
 	virtual ~TypedInference() {
 	}
 
-	template<typename RemainingList, typename FullList> friend class AddTypes;
+	template<typename RemainingList, typename FullList> friend struct AddTypes;
 
 	template<int index>
 	typename Loki::TL::TypeAt<T, index>::Result get(const std::vector<InternalArgument>& args) const {
