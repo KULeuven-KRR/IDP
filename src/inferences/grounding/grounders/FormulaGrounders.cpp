@@ -921,7 +921,8 @@ bool QuantGrounder::split() {
 	}
 
 	// Try to find a delay of the instantiated subformula by introducing a new tseitin symbol that implies the formula
-#warning Probably bug in equivalence / definitional context as an implication is generated?
+	// TODO when definition body delaying is possible, should create a real definition for the tseitin.
+#warning Expected bug: too many models the Tseitin is generated using an implication
 
 	vector<Sort*> sorts;
 	varset vars;
