@@ -30,6 +30,7 @@ PredTable* Querying::solveQuery(Query* q, Structure* structure) const {
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
+		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,true,false);
 		auto generateBDDaccToBounds = generateBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure, false, false);
 		bdd = generateBDDaccToBounds->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
 		manager = generateBDDaccToBounds->obtainManager();
