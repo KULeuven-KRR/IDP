@@ -52,11 +52,10 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
 		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
-		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,true,false); 
-		auto symbolicstructure = generateBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure, false, false);
+		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,{}, true,false);
+		auto symbolicstructure = generateNonLiftedBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure);
 		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
 		manager = symbolicstructure->obtainManager();
-		delete symbolicstructure;
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
 		manager = make_shared<FOBDDManager>();
