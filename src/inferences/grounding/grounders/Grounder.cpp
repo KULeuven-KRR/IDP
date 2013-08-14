@@ -56,7 +56,7 @@ void ConjOrDisj::negate() {
 void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 	if (formula.literals.size() == 0) {
 		if (formula.getType() == Conn::DISJ) { // UNSAT
-			gt->add(GroundClause{}); // TODO Remove when unsatexception is handled everywhere
+			gt->add(GroundClause{});
 			throw UnsatException();
 		}
 	} else if (formula.literals.size() == 1) {
@@ -64,7 +64,7 @@ void addToGrounding(AbstractGroundTheory* gt, ConjOrDisj& formula) {
 		auto falselit = gt->translator()->falseLit();
 		if (l == gt->translator()->trueLit() or l == falselit) {
 			if (formula.getType() == Conn::CONJ and l == falselit) { // UNSAT
-				gt->add(GroundClause{}); // TODO Remove when unsatexception is handled everywhere
+				gt->add(GroundClause{});
 				throw UnsatException();
 			} // else SAT or irrelevant
 		} else {

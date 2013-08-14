@@ -4242,6 +4242,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			(*j)->inter(function)->graphInter()->makeFalse(tuple);
 		}
 	}
+	deleteList(extensions);
 	extensions = newstructs;
 	insertAtEnd(extensions, partialfalsestructs);
 	Assert(extensions.size()>0);
@@ -4379,6 +4380,7 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
 				news->inter(pred)->makeFalse(*ptIterator);
 				newstructs.push_back(news);
 			}
+			deleteList(extensions);
 			extensions = newstructs;
 		}
 	}

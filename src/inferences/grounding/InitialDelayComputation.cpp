@@ -211,6 +211,8 @@ void DelayInitializer::findDelays() {
 		}
 	}
 
+	deleteList(solutions);
+
 	getGlobal()->setOptions(savedoptions);
 
 	for (auto g2del : grounder2delay) {

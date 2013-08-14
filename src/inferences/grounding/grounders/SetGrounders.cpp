@@ -98,6 +98,7 @@ EnumSetGrounder::EnumSetGrounder(std::vector<const DomElemContainer*> freevarcon
 
 EnumSetGrounder::~EnumSetGrounder() {
 	deleteList(_subgrounders);
+	_set->recursiveDelete();
 }
 
 SetId EnumSetGrounder::run() {
@@ -143,6 +144,7 @@ QuantSetGrounder::QuantSetGrounder(QuantSetExpr* expr, std::vector<const DomElem
 }
 
 QuantSetGrounder::~QuantSetGrounder() {
+	_set->recursiveDelete();
 	delete _subgrounder;
 	delete _generator;
 	delete _checker;

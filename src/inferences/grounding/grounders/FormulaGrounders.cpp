@@ -897,10 +897,8 @@ bool QuantGrounder::groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequ
 // TODO should prevent firing of the remaining sentence in several cases
 // FIXME should NOT use implication when modelequivalence is necessary! But might be solved by having the other solution to invalidate models based on the output voc?!
 // TODO the outputvoc is not really the solution either, as it can be infinite while most of it can be constructed (just not when it is a definition).
-bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request, LazyGroundingManager* manager,
-		const var2dommap& varmapping, const containerset& instantiated, set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context,
-		bool alsoinstantiate) {
-	if (context._monotone == Context::BOTH
+bool QuantGrounder::split() {
+	if (getContext()._monotone == Context::BOTH
 			|| not getOption(SATISFIABILITYDELAY)
 			|| max((double)0,log(toDouble(getMaxGroundSize())))/log(2)<getOption(LAZYSIZETHRESHOLD)) {
 		return false;
@@ -913,9 +911,12 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	for(auto freevar: qf->freeVars()){
 		varmap.erase(freevar);
 	}
-	auto delay = FormulaUtils::findDelay(qf, varmap, manager);
+	auto delay = FormulaUtils::findDelay(qf, varmap, _manager); // TODO take request into account to have more predforms that contain all quantified variables?
+	if(delay.get() == NULL){ // NOTE: prevents infinite Tseitin generation (quite subtle)
+		return false;
+	}
 	if(delay.get() != NULL && getContext()._conjPathUntilNode){
-		manager->add(this, delay);
+		_manager->add(this, delay);
 		return true;
 	}
 
@@ -931,23 +932,23 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	addAll(vars, qf->freeVars());
 	for(auto var: qf->freeVars()){
 		sorts.push_back(var->sort());
-		auto inter = manager->getStructure()->inter(var->sort());
+		auto inter = _manager->getStructure()->inter(var->sort());
 		tables.push_back(inter);
 		origtermgrounders.push_back(new VarTermGrounder(translator(), inter, var, getVarmapping().at(var)));
 		terms.push_back(new VarTerm(var, TermParseInfo()));
 	}
 
 	auto tseitinatom = new Predicate(sorts);
-	manager->getStructure()->vocabulary()->add(tseitinatom);
+	_manager->getStructure()->vocabulary()->add(tseitinatom);
 
 	splitallowed = false;
-	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, tseitinatom, origtermgrounders, tables, context);
+	replacementaftersplit = new AtomGrounder(_manager->getGrounding(), SIGN::POS, tseitinatom, origtermgrounders, tables, getContext());
 
 	auto tseitinlhs = new PredForm(SIGN::NEG, tseitinatom, terms, FormulaParseInfo());
 	auto subqf = qf->subformula()->cloneKeepVars();
 	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
 	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
-	auto newgrounder = GrounderFactory::createSentenceGrounder(manager, newqf);
+	auto newgrounder = GrounderFactory::createSentenceGrounder(_manager, newqf);
 	newqf->recursiveDelete();
 
 	auto newquantgrounder = dynamic_cast<QuantGrounder*>(newgrounder);
@@ -966,8 +967,8 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	}
 
 	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
-	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager); // TODO delete newf (clone in delay and also delete those)
-	manager->add(newgrounder, delay);
+	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), _manager);
+	_manager->add(newgrounder, delay);
 	return true;
 }
 
@@ -1001,10 +1002,10 @@ void QuantGrounder::internalClauseRun(ConjOrDisj& formula, LazyGroundingRequest&
 		if(splitallowed && not handledcheap){
 			if (nbfound == _generatescontainers.size()) {
 				if(conjunctiveWithSign()){ // TODO might handle this better with specific case for sentence T v !x: ...
-					handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), true);
+					handledcheap = split();
 				}
 			} else if (nbfound == 0){
-				handledcheap = split(formula, request, _manager, getVarmapping(), request.instantiation, instantiatedvars, getContext(), false);
+				handledcheap = split();
 			}
 
 			request.groundersdone = false;

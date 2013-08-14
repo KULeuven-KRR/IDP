@@ -45,6 +45,10 @@ const Rule& DelayedRule::getRule() const {
 	return _rule->getRule();
 }
 
+ContainerAtom::~ContainerAtom(){
+	// deleteList(tables); // FIXME deletion (not guaranteed to be unique)
+}
+
 DelayedSentence::DelayedSentence(FormulaGrounder* sentence, std::shared_ptr<Delay> delay)
 		: 	done(false),
 			sentence(sentence),
@@ -69,6 +73,7 @@ LazyGroundingManager::LazyGroundingManager(AbstractGroundTheory* grounding, cons
 
 LazyGroundingManager::~LazyGroundingManager() {
 	deleteList<Grounder>(groundersRegisteredForDeletion);
+	deleteList(tablesToDelete);
 }
 
 bool LazyGroundingManager::split(Grounder* grounder) {
@@ -132,7 +137,9 @@ void LazyGroundingManager::add(FormulaGrounder* grounder, PredForm* atom, bool w
 			auto mapping = grounder->getVarmapping().at(var);
 			if (contains(containers, mapping)) {
 				elem.args[elem.args.size() - 1] = mapping;
-				elem.tables[elem.args.size() - 1] = new SortTable(getStructure()->inter(var->sort())->internTable());
+				auto sorttable = new SortTable(getStructure()->inter(var->sort())->internTable());;
+				tablesToDelete.push_back(sorttable);
+				elem.tables[elem.args.size() - 1] = sorttable;
 			}
 		}
 	}
@@ -306,6 +313,7 @@ void LazyGroundingManager::resolveQueues() {
 				clog << "Grounding not-delayed " << toString(grounder) << ".\n";
 			}
 			if(grounder->toplevelRun()){
+				getGrounding()->addEmptyClause();
 				throw UnsatException();
 			}
 		}

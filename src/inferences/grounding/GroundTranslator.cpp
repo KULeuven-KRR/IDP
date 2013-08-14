@@ -250,8 +250,7 @@ Lit GroundTranslator::translate(const SymbolOffset& offset, const ElementTuple& 
 		litfalse = true;
 	}
 	if (littrue && litfalse) {
-		_grounding->addUnitClause(1);
-		_grounding->addUnitClause(-1); // TODO Remove when unsatexception is handled everywhere
+		_grounding->addEmptyClause();
 		throw UnsatException();
 	}
 

@@ -18,6 +18,8 @@ struct ContainerAtom {
 	std::vector<SortTable*> tables; // allowed instantiations to fire for
 	std::vector<const DomElemContainer*> args;
 	bool watchedvalue;
+
+	~ContainerAtom();
 };
 
 struct Delay {
@@ -95,6 +97,7 @@ private:
 	StructureInfo _structures;
 
 	std::vector<Grounder*> groundersRegisteredForDeletion;
+	std::vector<SortTable*> tablesToDelete;
 
 	sentlist sentences;
 	rulelist rules;

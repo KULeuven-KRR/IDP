@@ -19,9 +19,21 @@
 
 using namespace std;
 
+Structure::Structure(const std::string& name, const ParseInfo& pi)
+		: _name(name),
+			_pi(pi),
+			_vocabulary(NULL) {
+}
+Structure::Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
+		: _name(name),
+			_pi(pi),
+			_vocabulary(NULL) {
+	changeVocabulary(v);
+}
+
 Structure::~Structure() {
 	for (auto it = _sortinter.cbegin(); it != _sortinter.cend(); ++it) {
-		//delete (it->second);
+		delete (it->second);
 	}
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		delete (it->second);

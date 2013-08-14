@@ -40,17 +40,8 @@ private:
 	void canIncrement(TableIterator & domainIterator) const;
 
 public:
-	Structure(const std::string& name, const ParseInfo& pi)
-			: _name(name),
-				_pi(pi),
-				_vocabulary(NULL) {
-	}
-	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi)
-			: _name(name),
-				_pi(pi),
-				_vocabulary(NULL) {
-		changeVocabulary(v);
-	}
+	Structure(const std::string& name, const ParseInfo& pi);
+	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi);
 	~Structure();
 
 	// Mutators

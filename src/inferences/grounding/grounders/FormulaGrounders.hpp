@@ -224,8 +224,7 @@ public:
 private:
 	bool groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequest& request);
 
-	bool split(ConjOrDisj& formula, LazyGroundingRequest& request, LazyGroundingManager* manager, const var2dommap& varmapping, const containerset& instantiated,
-			std::set<const DomElemContainer*> locallyinstantiated, const GroundingContext& context, bool alsoinstantiate);
+	bool split();
 
 	LazyGroundingManager* getGroundingManager() const {
 		return _manager;

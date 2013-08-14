@@ -1128,7 +1128,7 @@ void GrounderFactory::visit(const QuantSetExpr* origqs) {
 		tuple.push_back(varmapping().at(freevar));
 	}
 	_quantsetgrounder = new QuantSetGrounder(newqs->clone(), tuple, getGrounding()->translator(), subgr, gc._generator, gc._checker, wgr);
-	delete newqs;
+	newqs->recursiveDelete();
 }
 
 void GrounderFactory::visit(const Definition* def) {
