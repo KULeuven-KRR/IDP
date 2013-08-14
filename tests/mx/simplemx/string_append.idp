@@ -1,4 +1,4 @@
-// TODO currently only works for liftedunitpropagation off
+// TODO Bad bdd querying if LUP is on
 
 procedure append(a,b){
 	return a..b
