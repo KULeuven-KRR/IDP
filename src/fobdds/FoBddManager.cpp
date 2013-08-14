@@ -1686,7 +1686,6 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<
 	return getBDD(bdd->kernel(), newtrue, newfalse);
 }
 
-#warning TODO enable lifted unit propagation in lazy tests
 int created = 0, deleted = 0;
 FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 		: _maxid(1), _rewriteArithmetic(rewriteArithmetic) {

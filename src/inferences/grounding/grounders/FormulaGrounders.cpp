@@ -908,17 +908,19 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 
 	auto qf = dynamic_cast<QuantForm*>(getFormula());
 
+	// Try to find simple new delay
 	auto varmap = getVarmapping();
 	for(auto freevar: qf->freeVars()){
 		varmap.erase(freevar);
 	}
 	auto delay = FormulaUtils::findDelay(qf, varmap, manager);
-	if (delay.get() == NULL) {
-		return false;
-	}else if(getContext()._conjPathUntilNode){
+	if(delay.get() != NULL && getContext()._conjPathUntilNode){
 		manager->add(this, delay);
 		return true;
 	}
+
+	// Try to find a delay of the instantiated subformula by introducing a new tseitin symbol that implies the formula
+#warning Probably bug in equivalence / definitional context as an implication is generated?
 
 	vector<Sort*> sorts;
 	varset vars;
@@ -935,13 +937,13 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 		terms.push_back(new VarTerm(var, TermParseInfo()));
 	}
 
-	auto t = new Predicate(sorts);
-	manager->getStructure()->vocabulary()->add(t);
+	auto tseitinatom = new Predicate(sorts);
+	manager->getStructure()->vocabulary()->add(tseitinatom);
 
 	splitallowed = false;
-	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, t, origtermgrounders, tables, context);
+	replacementaftersplit = new AtomGrounder(manager->getGrounding(), SIGN::POS, tseitinatom, origtermgrounders, tables, context);
 
-	auto tseitinlhs = new PredForm(SIGN::NEG, t, terms, FormulaParseInfo());
+	auto tseitinlhs = new PredForm(SIGN::NEG, tseitinatom, terms, FormulaParseInfo());
 	auto subqf = qf->subformula()->cloneKeepVars();
 	auto boolf = new BoolForm(SIGN::POS, false, tseitinlhs, subqf, FormulaParseInfo());
 	auto newqf = new QuantForm(SIGN::POS, QUANT::UNIV, vars, boolf, FormulaParseInfo());
@@ -949,27 +951,23 @@ bool QuantGrounder::split(ConjOrDisj& groundlits, LazyGroundingRequest& request,
 	newqf->recursiveDelete();
 
 	auto newquantgrounder = dynamic_cast<QuantGrounder*>(newgrounder);
-	bool foundquants = true;
-	if(newquantgrounder!=NULL){
-		newquantgrounder->splitallowed=false;
-		const auto& subg = dynamic_cast<BoolGrounder*>(newquantgrounder->getSubGrounder())->getSubGrounders();
-		for(auto sg:subg){
-			auto newquantgrounder2 = dynamic_cast<QuantGrounder*>(sg);
-			if(newquantgrounder2!=NULL){
-				foundquants = true;
-				newquantgrounder2->splitallowed = false;
-			}
-		}
+	if(newquantgrounder==NULL){ // create sentence grounder was not smart enough to produce the correct type of grounder
+		delete(newgrounder);
+		return false;
 	}
-	if(not foundquants){
-		throw InternalIdpException("Splitting grounders");
+
+	newquantgrounder->splitallowed=false;
+	const auto& subg = dynamic_cast<BoolGrounder*>(newquantgrounder->getSubGrounder())->getSubGrounders();
+	for(auto sg:subg){
+		auto newquantgrounder2 = dynamic_cast<QuantGrounder*>(sg);
+		if(newquantgrounder2!=NULL){
+			newquantgrounder2->splitallowed = false;
+		}
 	}
 
 	auto newf = FormulaUtils::flatten(newgrounder->getFormula());
-	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager); // TODO deleting newf (clone in delay and also delete those)
+	delay = FormulaUtils::findDelay(newf, newgrounder->getVarmapping(), manager); // TODO delete newf (clone in delay and also delete those)
 	manager->add(newgrounder, delay);
-#warning Probably bug in equivalence / definitional context as an implication is generated?
-
 	return true;
 }
 

@@ -100,6 +100,11 @@ procedure run() {
 			return 1
 		end
 	end
+	
+	if(shouldNotCheck~=nil) then
+		print("NOTE: solutions unchecked because too expensive!")
+		return 1;
+	end
 
 	structure = solution[1]
 	if(Vout~=nil and Vout~=V) then

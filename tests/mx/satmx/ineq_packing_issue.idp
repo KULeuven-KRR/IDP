@@ -1,3 +1,5 @@
+// REMAINING ISSUE WHEN LIFTED UNIT PROPAGATION IS ON => inefficient generator
+
 vocabulary V{
 	type Id
 	type S isa int

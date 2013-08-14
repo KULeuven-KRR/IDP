@@ -11,8 +11,6 @@ procedure mxnobounds(){
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxlazy(){
 	stdoptions.tseitindelay = true
-	stdoptions.groundwithbounds=true
-	stdoptions.liftedunitpropagation=true
 	stdoptions.timeout = 5
 	return run()
 }
@@ -20,8 +18,6 @@ procedure mxlazy(){
 procedure mxlazycp(){
 	stdoptions.cpsupport = true
 	stdoptions.tseitindelay = true
-	stdoptions.groundwithbounds = true
-	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
 }

@@ -7,7 +7,7 @@ vocabulary V{
 
 vocabulary Vout{
 	extern V::q/0
-//	extern V::p/1
+	extern V::p/1
 }
 
 theory T:V{

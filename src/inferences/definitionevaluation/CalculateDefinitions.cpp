@@ -31,11 +31,13 @@ using namespace std;
 
 bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
 	// TODO duplicate code with modelexpansion
-	#warning CALC DEF LAZY GROUNDING XSB SIZE CHECK
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " <<  toString(definition) << "\n";
 	}
 	if (withxsb) {
+		if(satdelay or getOption(SATISFIABILITYDELAY)){ // TODO implement checking threshold by size estimation
+			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
+		}
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Calculating the above definition using XSB\n";
 		}

@@ -78,13 +78,6 @@ public:
 typedef std::vector<DelayedSentence*> sentlist;
 typedef std::vector<DelayedRule*> rulelist;
 
-class Watch {
-private:
-	Lit atom; // Can be translated back by translator
-	sentlist sentences;
-	rulelist rules;
-};
-
 class DelayInitializer;
 
 class StructureExtender {

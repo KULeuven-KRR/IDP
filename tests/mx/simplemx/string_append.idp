@@ -23,6 +23,10 @@ procedure getExpectedNbOfModels(){
 	return 1;
 }
 
+procedure shouldNotCheck(){
+	return true;
+}
+
 
 //include <mx>
 //procedure main(){
