@@ -1,0 +1,9 @@
+vocabulary V {
+  type node
+  edge(node, node)
+}
+structure S : V {
+  node = { "A"; "B"; "C"; "D"; "E" }
+  edge = { "A","B"; "B","C"; "C","B"; "C","D" }
+}
+theory T : V { }

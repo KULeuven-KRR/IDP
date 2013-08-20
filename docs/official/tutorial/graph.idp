@@ -1,0 +1,20 @@
+vocabulary V {
+  node(char)
+  edge(char, char)
+}
+structure S : V { }
+theory T : V {
+  {
+    node("A").
+    node("B").
+    node("C").
+    node("D").
+    node("E").
+  }
+  {
+    edge("A", "B").
+    edge("B", "C").
+    edge("C", "B").
+    edge("C", "D").
+  }
+}

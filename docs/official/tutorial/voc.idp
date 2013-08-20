@@ -1,0 +1,5 @@
+vocabulary V {
+  A
+}
+structure S : V { }
+theory T : V { }

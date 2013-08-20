@@ -1,0 +1,9 @@
+vocabulary V {
+  P(char)
+}
+structure S : V { }
+theory T : V {
+  {
+    P("string").
+  }
+}

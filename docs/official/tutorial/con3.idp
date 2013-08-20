@@ -1,0 +1,8 @@
+vocabulary V {
+  A(char)
+}
+structure S : V { }
+theory T : V {
+  A("a").
+  !x[char], y[char] : A(x) & A(y) => x = y.
+}

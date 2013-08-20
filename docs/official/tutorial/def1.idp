@@ -1,0 +1,9 @@
+vocabulary V {
+  A(char)
+}
+structure S : V { }
+theory T : V {
+  {
+    A("a").
+  }
+}
