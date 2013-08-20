@@ -141,7 +141,7 @@ void SolverPolicy<Solver>::polAddLazyAddition(const litlist& glist, int ID) {
 template<class Solver>
 void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
 	auto mon = new LazyClauseMon(inst);
-	auto lit = adder.createLiteral(inst->residual);
+	auto lit = createLiteral(inst->residual);
 	extAdd(getSolver(),
 			MinisatID::LazyGroundImpl(getDefConstrID(),
 					MinisatID::Implication(getDefConstrID(), lit, convert(type),
@@ -174,7 +174,7 @@ void SolverPolicy<Solver>::polNotifyLazyResidual(LazyInstantiation* inst, TsType
 	if(not useUFSAndOnlyIfSem()){
 		watchboth |= type == TsType::RULE;
 	}
-	auto lit = adder.createLiteral(inst->residual);
+	auto lit = createLiteral(inst->residual);
 	if (type == TsType::RIMPL) {
 		lit = not lit;
 	}
@@ -241,7 +241,7 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 	for(auto symmap:symmetries){
 		std::map<MinisatID::Lit,MinisatID::Lit> symdata;
 		for(auto litpair:symmap){
-			symdata.insert({adder.createLiteral(litpair.first), adder.createLiteral(litpair.second)});
+			symdata.insert({createLiteral(litpair.first), createLiteral(litpair.second)});
 		}
 		extAdd(getSolver(), MinisatID::Symmetry(symdata));
 		CHECKUNSAT;
@@ -252,7 +252,7 @@ template<class Solver>
 void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
 	MinisatID::TwoValuedRequirement req( { });
 	for (auto lit : lits) {
-		req.atoms.push_back(adder.createAtom(lit));
+		req.atoms.push_back(createAtom(lit));
 	}
 	extAdd(getSolver(), req);
 	CHECKUNSAT;
@@ -397,7 +397,7 @@ void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const s
 			vars.push_back(convert(arg._varid));
 		}
 	}
-	auto le = MinisatID::LazyAtom(getDefConstrID(), adder.createLiteral(head), vars, gr);
+	auto le = MinisatID::LazyAtom(getDefConstrID(), createLiteral(head), vars, gr);
 	extAdd(getSolver(), le);
 	CHECKUNSAT;
 }

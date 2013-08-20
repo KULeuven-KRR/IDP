@@ -375,21 +375,4 @@ public:
 		}
 		return tseitins;
 	}
-
-	MinisatID::literallist createList(const litlist& origlist) {
-		MinisatID::literallist list;
-		for (auto lit : origlist) {
-			list.push_back(createLiteral(lit));
-		}
-		return list;
-	}
-
-	MinisatID::Atom createAtom(const int lit) {
-		return MinisatID::Atom(abs(lit));
-	}
-
-	MinisatID::Lit createLiteral(const int lit) {
-		auto atom = createAtom(lit); // ignores sign
-		return lit > 0 ? MinisatID::mkPosLit(atom) : MinisatID::mkNegLit(atom);
-	}
 };

@@ -54,6 +54,7 @@ class RemoveQuantificationsOverSort;
 class ContainedVariables;
 class SubstituteVarWithDom;
 class CombineAggregates;
+class AddMarkers;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -119,6 +120,7 @@ class CombineAggregates;
 		friend class Skolemize;\
 		friend class CollectQuantifiedVariables;\
 		friend class CollectSymbols;\
+		friend class AddMarkers;\
 		friend class RemoveQuantificationsOverSort;
 
 

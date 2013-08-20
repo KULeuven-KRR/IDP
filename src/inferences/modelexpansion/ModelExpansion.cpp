@@ -20,13 +20,14 @@
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "errorhandling/error.hpp"
+#include "creation/cppinterface.hpp"
 #include "utils/Timer.hpp"
 
 using namespace std;
 
 MXResult ModelExpansion::doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvoc,
-		TraceMonitor* tracemonitor) {
-	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor);
+		TraceMonitor* tracemonitor, const std::vector<Predicate*>& assumeFalse) {
+	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor, assumeFalse);
 	return m->expand();
 }
 MXResult ModelExpansion::doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
@@ -37,12 +38,12 @@ MXResult ModelExpansion::doMinimization(AbstractTheory* theory, Structure* struc
 	if (not term->freeVars().empty()) {
 		throw IdpException("Cannot minimized over term with free variables.");
 	}
-	auto m = createMX(theory, structure, term, outputvoc, tracemonitor);
+	auto m = createMX(theory, structure, term, outputvoc, tracemonitor, {});
 	return m->expand();
 }
 
 shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
-		TraceMonitor* tracemonitor) {
+		TraceMonitor* tracemonitor, const std::vector<Predicate*>& assumeFalse) {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
@@ -56,7 +57,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 	if(term!=NULL && structure->vocabulary()!=term->vocabulary()){
 		throw IdpException("Modelexpansion requires that the minimization term and the structure range over the same vocabulary.");
 	}
-	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor));
+	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor, assumeFalse));
 	m->setOutputVocabulary(outputvoc);
 	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
 		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.");
@@ -64,12 +65,13 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 	return m;
 }
 
-ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor)
+ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor,const std::vector<Predicate*>& assumeFalse)
 		: 	_theory(theory),
 			_structure(structure),
 			_tracemonitor(tracemonitor),
 			_minimizeterm(minimize),
-			_outputvoc(NULL) {
+			_outputvoc(NULL),
+			_assumeFalse(assumeFalse){
 }
 
 void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
@@ -131,12 +133,19 @@ MXResult ModelExpansion::expand() const {
 	auto grounding = groundingAndExtender.first;
 	auto extender = groundingAndExtender.second;
 
+	litlist assumptions;
+	for(auto p: _assumeFalse){
+		for(auto atom: grounding->translator()->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
+			assumptions.push_back(-abs(atom.second));
+		}
+	}
+
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
 		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
 	}
 
 	// Run solver
-	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS));
+	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS), assumptions);
 	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
 		logActionAndTime("Starting solving at ");
 	}
@@ -185,10 +194,25 @@ MXResult ModelExpansion::expand() const {
 
 	MXResult result;
 	result._optimumfound = true;
+	result.unsat = unsat;
 	if(t.hasTimedOut()){
 		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
 		result._optimumfound = false;
 		getGlobal()->reset();
+	}
+
+	if(not t.hasTimedOut() && unsat){
+		MXResult result;
+		result.unsat = true;
+		for(auto lit: mx->getUnsatExplanation()){
+			if(not grounding->translator()->isInputAtom(lit.getAtom())){
+				continue;
+			}
+			auto symbol = grounding->translator()->getSymbol(lit.getAtom());
+			auto args = grounding->translator()->getArgs(lit.getAtom());
+			result.unsat_in_function_of_ct_lits.push_back(&Gen::atom(symbol, args));
+		}
+		return result;
 	}
 
 	// Collect solutions
