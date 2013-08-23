@@ -622,14 +622,6 @@ void Predicate::addVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, bool infix)
-		: 	PFSymbol(name, sorts, ParseInfo(), infix),
-			_type(ST_NONE),
-			_parent(0),
-			_interpretation(0),
-			_overpredgenerator(0) {
-}
-
 Predicate::Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi, bool infix)
 		: 	PFSymbol(name, sorts, pi, infix),
 			_type(ST_NONE),
@@ -1123,6 +1115,7 @@ Function::Function(FuncGenerator* generator)
 			_outsort(NULL),
 			_interpretation(NULL),
 			_overfuncgenerator(generator),
+			_binding(generator->binding()),
 			_isConstructor(false) /* currently no generators for constructor functions exist */{
 }
 

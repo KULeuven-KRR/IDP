@@ -43,7 +43,7 @@ TEST(BddGenerator, PredForm){
 		auto sort = new Sort("x", sorttable);
 		auto variable = new Variable(sort);
 		auto sortterm = new VarTerm(variable, TermParseInfo()); //var x
-		auto symbol = new Predicate("P", {sort}, false);
+		auto symbol = new Predicate("P", {sort}, {}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo()); //P(x)
 		auto vocabulary = new Vocabulary("V");
 		vocabulary->add(sort);
@@ -137,7 +137,7 @@ TEST(BddGenerator, PredForm){
 	TEST(Vocabulary, CreatePTInter){
 		auto sorttable = new SortTable(new IntRangeInternalSortTable(-2, 2));
 		auto sort = new Sort("x", sorttable);
-		auto symbol = new Predicate("P", {sort}, false);
+		auto symbol = new Predicate("P", {sort}, {}, false);
 		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
 		auto vocabulary = new Vocabulary("V");
 		vocabulary->add(sort);
@@ -151,7 +151,7 @@ TEST(BddGenerator, PredForm){
 		auto sort = new Sort("x", sorttable);
 		auto variable = new Variable(sort);
 		auto sortterm = new VarTerm(variable, TermParseInfo());
-		auto symbol = new Predicate("P", {sort}, false);
+		auto symbol = new Predicate("P", {sort}, {}, false);
 		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
 		auto formula = new PredForm(SIGN::POS, derivedsymbol, {sortterm}, FormulaParseInfo());
 		auto manager = make_shared<FOBDDManager>();
@@ -197,7 +197,7 @@ TEST(BddGenerator, PredForm){
 		auto sort = new Sort("x", sorttable);
 		auto variable = new Variable(sort);
 		auto sortterm = new VarTerm(variable, TermParseInfo());
-		auto symbol = new Predicate("P", {sort}, false);
+		auto symbol = new Predicate("P", {sort}, {}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
 		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
 		auto manager = make_shared<FOBDDManager>();

@@ -27,10 +27,10 @@ TestingSet1 getTestingSet1() {
 	testingSet.sortterm = new VarTerm(testingSet.x, TermParseInfo()); //varterm of [-2,2]
 	testingSet.nul = DomainElementFactory::createGlobal()->create(0);
 	testingSet.nulterm = new DomainTerm(testingSet.sort, testingSet.nul, TermParseInfo());
-	testingSet.p = new Predicate("P", { testingSet.sort }, false); //predicate P of [-2,2]
-	testingSet.q = new Predicate("Q", { testingSet.sort }, false); //predicate Q of [-2,2]
-	testingSet.r = new Predicate("R", { testingSet.sort }, false);
-	testingSet.s = new Predicate("S", { testingSet.sort,testingSet.sort }, false);
+	testingSet.p = new Predicate("P", { testingSet.sort }, {}, false); //predicate P of [-2,2]
+	testingSet.q = new Predicate("Q", { testingSet.sort }, {}, false); //predicate Q of [-2,2]
+	testingSet.r = new Predicate("R", { testingSet.sort }, {}, false);
+	testingSet.s = new Predicate("S", { testingSet.sort,testingSet.sort }, {}, false);
 	testingSet.vocabulary = new Vocabulary("V");
 	testingSet.vocabulary->add(testingSet.sort);
 	testingSet.vocabulary->add(testingSet.p);
