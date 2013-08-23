@@ -386,7 +386,6 @@ Status test(const std::vector<std::string>& inputfileurls, const std::string& ex
 }
 
 int run(int argc, char* argv[]) {
-	logActionAndTime("program-start");
 	CLOptions cloptions;
 	vector<string> inputfiles = read_options(argc, argv, cloptions);
 
