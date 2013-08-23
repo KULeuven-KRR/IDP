@@ -113,10 +113,33 @@ Formula& forall(const varset& vars, Formula& formula) {
 	return quant(QUANT::UNIV, vars, formula);
 }
 
-PredForm& atom(Predicate* p, const std::vector<Variable*>& vars) {
+PredForm& atom(PFSymbol* p, const std::vector<Variable*>& vars) {
 	std::vector<Term*> terms;
 	for (auto i = vars.cbegin(); i < vars.cend(); ++i) {
 		terms.push_back(new VarTerm(*i, TermParseInfo()));
+	}
+	return *new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
+}
+
+PredForm& atom(PFSymbol* p, const ElementTuple& tuple) {
+	std::vector<Term*> terms;
+	for (auto elem : tuple) {
+		Sort* sort = NULL;
+		switch(elem->type()){
+		case DomainElementType::DET_INT:
+			sort = get(STDSORT::INTSORT);
+			break;
+		case DomainElementType::DET_DOUBLE:
+			sort = get(STDSORT::FLOATSORT);
+			break;
+		case DomainElementType::DET_STRING:
+			sort = get(STDSORT::STRINGSORT);
+			break;
+		case DomainElementType::DET_COMPOUND:
+			sort = elem->value()._compound->function()->outsort();
+			break;
+		}
+		terms.push_back(new DomainTerm(sort, elem, TermParseInfo()));
 	}
 	return *new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
 }

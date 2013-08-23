@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef CPPINTERFACE_HPP_
-#define CPPINTERFACE_HPP_
+#pragma once
 
 /**
  * Preliminary version of an interface to easily create vocs, theories and structures from c++
@@ -37,21 +36,14 @@
 #include <set>
 #include <vector>
 #include "vocabulary/VarCompare.hpp"
+#include "IncludeComponents.hpp"
 
-class Sort;
-class DomainElement;
 class DomainTerm;
 class Variable;
 class VarTerm;
 class EnumSetExpr;
 class Term;
 class AggTerm;
-class Function;
-class Formula;
-class Predicate;
-class Vocabulary;
-class PFSymbol;
-class PredForm;
 
 namespace Gen {
 
@@ -83,7 +75,8 @@ Formula& forall(Variable*, Formula&);
 Formula& exists(Variable*, Formula&);
 Formula& forall(const varset&, Formula&);
 Formula& exists(const varset& vars, Formula& formula);
-PredForm& atom(Predicate*, const std::vector<Variable*>&);
+PredForm& atom(PFSymbol*, const std::vector<Variable*>&);
+PredForm& atom(PFSymbol*, const ElementTuple&);
 
 void add(Vocabulary*, const std::vector<Sort*>);
 void add(Vocabulary*, const std::vector<PFSymbol*>);
@@ -121,5 +114,3 @@ PredWrapper pred(const std::string& name, const std::vector<Sort*>& sorts);
 FuncWrapper func(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort);
 
 } /* namespace Tests */
-
-#endif /* CPPINTERFACE_HPP_ */
