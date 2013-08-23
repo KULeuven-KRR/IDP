@@ -90,11 +90,6 @@ TableIterator* InternalArgument::get<TableIterator*>() {
 }
 
 template<>
-const DomainAtom* InternalArgument::get<const DomainAtom*>() {
-	return _value._domainatom;
-}
-
-template<>
 Options* InternalArgument::get<Options*>() {
 	return options();
 }

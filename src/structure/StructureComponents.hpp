@@ -36,49 +36,10 @@
  Domain atoms
  *******************/
 
-class DomainAtomFactory;
 class PFSymbol;
 class Variable;
 class Vocabulary;
 class Structure;
-
-class DomainAtom {
-private:
-	PFSymbol* _symbol;
-	ElementTuple _args;
-
-	DomainAtom(PFSymbol* symbol, const ElementTuple& args) :
-			_symbol(symbol), _args(args) {
-	}
-
-public:
-	~DomainAtom() {
-	}
-
-	PFSymbol* symbol() const {
-		return _symbol;
-	}
-	const ElementTuple& args() const {
-		return _args;
-	}
-
-	std::ostream& put(std::ostream&) const;
-
-	friend class DomainAtomFactory;
-};
-
-class DomainAtomFactory {
-private:
-	static DomainAtomFactory* _instance;
-	std::map<PFSymbol*, std::map<ElementTuple, DomainAtom*> > _atoms;
-	DomainAtomFactory() {
-	}
-
-public:
-	~DomainAtomFactory();
-	static DomainAtomFactory* instance();
-	const DomainAtom* create(PFSymbol*, const ElementTuple&);
-};
 
 // ITERATORS
 

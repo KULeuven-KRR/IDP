@@ -15,7 +15,6 @@
 #include "internalargument.hpp"
 #include "printblocks.hpp"
 #include "printasbdd.hpp"
-#include "printdomainatom.hpp"
 #include "printoptions.hpp"
 #include "newstructure.hpp"
 #include "modelexpand.hpp"
@@ -77,7 +76,6 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<OptimalPropagateInference>());
 	inferences.push_back(make_shared<GroundPropagateInference>());
 	inferences.push_back(make_shared<PropagateInference>());
-	inferences.push_back(make_shared<PrintDomainAtomInference>());
 	inferences.push_back(make_shared<PrintOptionInference>());
 	inferences.push_back(make_shared<PrintInference<LIST(const PredTable*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(AbstractTheory*)>>());

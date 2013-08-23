@@ -77,7 +77,7 @@ const char* toCString(ArgType type) {
 		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
 				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
 				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
-				AT_DOMAINITERATOR, "domain_iterator")(AT_DOMAINATOM, "domain_atom")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
+				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
 				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
 				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
 				AT_TRACEMONITOR, "tracemonitor");
@@ -242,10 +242,6 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 	}
 	case AT_COMPOUND: {
 		result = addUserData(L, arg._value._compound, arg._type);
-		break;
-	}
-	case AT_DOMAINATOM: {
-		result = addUserData(L, arg._value._domainatom, arg._type);
 		break;
 	}
 	case AT_TUPLE: {
@@ -481,9 +477,6 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			break;
 		case AT_COMPOUND:
 			ia._value._compound = *(Compound**) lua_touserdata(L, arg);
-			break;
-		case AT_DOMAINATOM:
-			ia._value._domainatom = *(DomainAtom**) lua_touserdata(L, arg);
 			break;
 		case AT_TUPLE:
 			ia._value._tuple = *(ElementTuple**) lua_touserdata(L, arg);
@@ -794,9 +787,6 @@ int gcVocabulary(lua_State*) {
 int gcCompound(lua_State*) {
 	return 0;
 }
-int gcDomainAtom(lua_State*) {
-	return 0;
-}
 int gcTuple(lua_State*) {
 	return 0;
 }
@@ -1073,40 +1063,6 @@ int vocabularyIndex(lua_State* L) {
 			os->insert(*it);
 		}
 		return convertToLua(L, InternalArgument(os));
-	}
-}
-
-/**
- * Index function for domain atoms
- */
-int domainatomIndex(lua_State* L) {
-	const DomainAtom* atom = *(const DomainAtom**) lua_touserdata(L, 1);
-	InternalArgument index = createArgument(2, L);
-	if (index._type != AT_STRING) {
-		lua_pushstring(L, "A domain atom can only be indexed by the strings \"symbol\" and \"args\"");
-		return lua_error(L);
-	}
-
-	auto str = *index._value._string;
-	if (str == "symbol") {
-		auto s = atom->symbol();
-		if (isa<Predicate>(*s)) {
-			auto sp = new set<Predicate*>({dynamic_cast<Predicate*>(s)});
-			return convertToLua(L, InternalArgument(sp));
-		} else {
-			Assert(isa<Function>(*s));
-			auto sp = new set<Function*>({dynamic_cast<Function*>(s)});
-			return convertToLua(L, InternalArgument(sp));
-		}
-	} else if (str == "args") {
-		auto tuple = new ElementTuple(atom->args());
-		InternalArgument ia;
-		ia._type = AT_TUPLE;
-		ia._value._tuple = tuple;
-		return convertToLua(L, ia);
-	} else {
-		lua_pushstring(L, "A domain atom can only be indexed by the strings \"symbol\" and \"args\"");
-		return lua_error(L);
 	}
 }
 
@@ -1839,13 +1795,6 @@ void compoundMetaTable(lua_State* L) {
 	createNewTable(L, AT_COMPOUND, elements);
 }
 
-void domainatomMetaTable(lua_State* L) {
-	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader { &gcDomainAtom, "__gc" });
-	elements.push_back(tablecolheader { &domainatomIndex, "__index" });
-	createNewTable(L, AT_DOMAINATOM, elements);
-}
-
 void tupleMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
 	elements.push_back(tablecolheader { &gcTuple, "__gc" });
@@ -1970,7 +1919,6 @@ void createMetaTables(lua_State* L) {
 	structureMetaTable(L);
 	tableiteratorMetaTable(L);
 	domainiteratorMetaTable(L);
-	domainatomMetaTable(L);
 
 	theoryMetaTable(L);
 	formulaMetaTable(L);

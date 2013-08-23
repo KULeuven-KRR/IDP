@@ -13,6 +13,7 @@
 #include "LuaTraceMonitor.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "lua/luaconnection.hpp"
+#include "creation/cppinterface.hpp"
 #include "structure/StructureComponents.hpp"
 
 LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
@@ -59,8 +60,7 @@ void LuaTraceMonitor::propagate(MinisatID::Lit lit, int dl) {
 	if (_translator->isInputAtom(atomnr)) {
 		auto s = _translator->getSymbol(atomnr);
 		auto args = _translator->getArgs(var(lit));
-		auto atom = DomainAtomFactory::instance()->create(s, args);
-		InternalArgument ia(atom);
+		InternalArgument ia(&Gen::atom(s, args));
 		LuaConnection::convertToLua(_state, ia);
 	} else {
 		lua_pushstring(_state, _translator->printLit(var(lit)).c_str());

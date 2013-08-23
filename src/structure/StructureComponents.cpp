@@ -372,62 +372,10 @@ bool operator>=(const Compound& c1, const Compound& c2) {
 	return (c1 == c2 || c2 < c1);
 }
 
-ostream& DomainAtom::put(ostream& output) const {
-	output << *_symbol;
-	if (typeid(*_symbol) == typeid(Predicate)) {
-		if (!_symbol->sorts().empty()) {
-			output << '(' << *_args[0];
-			for (size_t n = 1; n < _args.size(); ++n) {
-				output << ',' << *_args[n];
-			}
-			output << ')';
-		}
-	} else {
-		Function* f = dynamic_cast<Function*>(_symbol);
-		if (f->arity() > 0) {
-			output << '(' << *_args[0];
-			for (size_t n = 1; n < f->arity(); ++n) {
-				output << ',' << *_args[n];
-			}
-			output << ") = " << *(_args.back());
-		}
-	}
-	return output;
-}
-
 bool isFinite(const tablesize& tsize) {
 	return tsize._type == TST_EXACT || tsize._type == TST_APPROXIMATED;
 }
 
-DomainAtomFactory::~DomainAtomFactory() {
-	for (auto it = _atoms.cbegin(); it != _atoms.cend(); ++it) {
-		for (auto jt = it->second.cbegin(); jt != it->second.cend(); ++jt) {
-			delete (jt->second);
-		}
-	}
-}
-
-DomainAtomFactory* DomainAtomFactory::_instance = NULL;
-
-DomainAtomFactory* DomainAtomFactory::instance() {
-	if (not _instance) {
-		_instance = new DomainAtomFactory();
-	}
-	return _instance;
-}
-
-const DomainAtom* DomainAtomFactory::create(PFSymbol* s, const ElementTuple& tuple) {
-	auto it = _atoms.find(s);
-	if (it != _atoms.cend()) {
-		auto jt = it->second.find(tuple);
-		if (jt != it->second.cend()) {
-			return jt->second;
-		}
-	}
-	auto newatom = new DomainAtom(s, tuple);
-	_atoms[s][tuple] = newatom;
-	return newatom;
-}
 
 /****************
  Iterators

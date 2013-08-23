@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef ALLCOMMANDS_HPP_
-#define ALLCOMMANDS_HPP_
+#pragma once
 
 //TODO add support for easily using these inferences directly in lua, by also providing a help/usage text and replacing idp_intern. with something easier
 
@@ -20,5 +19,3 @@
 
 // Important: pointer owner is transferred to receiver!
 const std::vector<std::shared_ptr<Inference>>& getAllInferences();
-
-#endif /* ALLCOMMANDS_HPP_ */

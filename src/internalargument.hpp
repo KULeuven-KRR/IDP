@@ -42,7 +42,6 @@ class PredInter;
 class FuncInter;
 class TableIterator;
 class SortIterator;
-class DomainAtom;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -65,7 +64,6 @@ enum ArgType {
 	AT_STRUCTURE, //!< a structure
 	AT_TABLEITERATOR, //!< a predicate table iterator
 	AT_DOMAINITERATOR, //!< a domain iterator
-	AT_DOMAINATOM, //!< a domain atom
 
 	// Theory
 	AT_QUERY, //!< a query
@@ -282,7 +280,6 @@ struct InternalArgument {
 		Vocabulary* _vocabulary;
 
 		const Compound* _compound;
-		const DomainAtom* _domainatom;
 		ElementTuple* _tuple;
 		SortTable* _domain;
 		const PredTable* _predtable;
@@ -393,10 +390,6 @@ struct InternalArgument {
 	InternalArgument(const Compound* c)
 			: _type(AT_COMPOUND) {
 		_value._compound = c;
-	}
-	InternalArgument(const DomainAtom* a)
-			: _type(AT_DOMAINATOM) {
-		_value._domainatom = a;
 	}
 	InternalArgument(OverloadedObject* o)
 			: _type(AT_OVERLOADED) {
