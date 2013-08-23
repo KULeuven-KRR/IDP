@@ -278,7 +278,7 @@ private:
 									   //!< Null-pointer if the predicate is not overloaded.
 
 public:
-	Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi = {}, bool infix = false);
+	Predicate(const std::string& name, const std::vector<Sort*>& sorts, const ParseInfo& pi = ParseInfo{}, bool infix = false);
 	Predicate(const std::vector<Sort*>& sorts); //!< constructor for tseitin predicates
 	Predicate(const std::string& name, const std::vector<Sort*>& sorts, PredInterGenerator* inter, bool infix);
 	Predicate(PredGenerator* generator);
