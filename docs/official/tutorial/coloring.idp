@@ -1,0 +1,15 @@
+vocabulary V {
+  type node
+  type color
+  edge(node, node)
+  node_color(node) : color
+}
+structure S : V {
+  color = { "red"; "green"; "blue" }
+  node = { "A"; "B"; "C"; "D"; "E" }
+  edge = { "A","B"; "B","C"; "C","B"; "C","D" }
+}
+theory T : V {
+  !x[node], y[node] :
+    edge(x,y) => node_color(x) ~= node_color(y).
+}

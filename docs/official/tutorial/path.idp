@@ -1,0 +1,26 @@
+vocabulary V {
+  node(char)
+  edge(char, char)
+  path(char, char)
+}
+structure S : V { }
+theory T : V {
+  {
+    node("A").
+    node("B").
+    node("C").
+    node("D").
+    node("E").
+  }
+  {
+    edge("A", "B").
+    edge("B", "C").
+    edge("C", "B").
+    edge("C", "D").
+  }
+  {
+    !x[char], y[char] : path(x,y) <- edge(x,y).
+    !x[char], y[char] : path(x,y) <-
+		    ?z[char] : edge(x,z) & path(z,y).
+  }
+}
