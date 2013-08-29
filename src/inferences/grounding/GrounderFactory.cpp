@@ -337,7 +337,7 @@ LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* mini
 
 	if (minimizeterm != NULL) {
 		OptimizationGrounder* optimgrounder;
-		if (getOption(BoolType::CPSUPPORT) and CPSupport::eligibleForCP(minimizeterm, getConcreteStructure())) {
+		if (getOption(BoolType::CPSUPPORT) and CPSupport::allSymbolsEligible(minimizeterm, getConcreteStructure())) {
 			InitContext();
 			descend(minimizeterm);
 			optimgrounder = new VariableOptimizationGrounder(getGrounding(), getTermGrounder(), getContext(), minimizeterm);
@@ -364,7 +364,8 @@ LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* mini
 			case TermType::FUNC:
 			case TermType::VAR:
 			case TermType::DOM:
-				throw notyetimplemented("Optimization over non-aggregate terms without CP support.");
+				// TODO solution: add one new constant + equality to the theory
+				throw notyetimplemented("Optimization over non-aggregate terms for which CP support is not available.");
 			}
 		}
 	}

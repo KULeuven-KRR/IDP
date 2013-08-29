@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef IDP_CPUTILS_HPP_
-#define IDP_CPUTILS_HPP_
+#pragma once
 
 #include "common.hpp"
 #include <set>
@@ -31,8 +30,7 @@ bool eligibleForCP(const PredForm*, const Vocabulary*);
 bool eligibleForCP(const FuncTerm*, const Vocabulary*);
 bool eligibleForCP(const AggFunction&);
 
+bool allSymbolsEligible(const Term* t, const Structure* str);
 bool eligibleForCP(const Term*, const Structure*);
 
 }
-
-#endif /* IDP_CPUTILS_HPP_ */

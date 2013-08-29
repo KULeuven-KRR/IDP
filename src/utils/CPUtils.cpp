@@ -80,6 +80,18 @@ bool eligibleForCP(const AggTerm* at, const Structure* str) {
 	return false;
 }
 
+bool allSymbolsEligible(const Term* t, const Structure* str){
+	if(not eligibleForCP(t, str)){
+		return false;
+	}
+	for(auto term: t->subterms()){
+		if(not allSymbolsEligible(term,str)){
+			return false;
+		}
+	}
+	return true;
+}
+
 bool eligibleForCP(const Term* t, const Structure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
