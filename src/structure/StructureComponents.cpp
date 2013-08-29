@@ -2023,6 +2023,9 @@ const DomainElement* ConstructedInternalSortTable::last() const {
 }
 
 bool ConstructedInternalSortTable::contains(const DomainElement* d) const{
+	if (d == NULL) {
+		return false;
+	}
 	if(d->type()!=DET_COMPOUND){
 		return false;
 	}
@@ -4111,7 +4114,8 @@ FuncInter* leastFuncInter(const Universe& univ) {
 }
 
 Universe fullUniverse(unsigned int arity) {
-	vector<SortTable*> vst(arity, get(STDSORT::STRINGSORT)->interpretation());
+	SortTable* tmp = new SortTable(new FullInternalSortTable());
+	vector<SortTable*> vst(arity, tmp);
 	return Universe(vst);
 }
 
