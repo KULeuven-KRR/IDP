@@ -2269,13 +2269,6 @@ bool Insert::interpretationSpecifiedByUser(Structure* structure, Sort *sort) con
 	return contains(sortsOccurringInUserDefinedStructure.at(structure), sort);
 }
 
-bool Insert::interpretationSpecifiedByUser(PFSymbol *symbol) const {
-	if (contains(_pendingAssignments, symbol)) {
-		return true;
-	}
-	return false;
-}
-
 void Insert::predinter(NSPair* nst, SortTable* t, const string& utf) const {
 	auto pt = new PredTable(t->internTable(), TableUtils::fullUniverse(1));
 	delete (t);

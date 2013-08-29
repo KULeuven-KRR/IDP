@@ -374,7 +374,8 @@ void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 	scores[s] = sc;
 }
 
-void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, Structure* structure) {
+template<class Table>
+void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* symbol, Structure* structure) {
 	if (not pt->approxFinite() || (getOption(ASSUMECONSISTENTINPUT) && not getOption(AUTOCOMPLETE))) {
 		return;
 	}
@@ -383,14 +384,21 @@ void checkAndCompleteSortTable(const PredTable* pt, PFSymbol* symbol, Structure*
 		for (unsigned int col = 0; col < tuple.size(); ++col) {
 			auto sort = symbol->sorts()[col];
 			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
-			if (not sort->builtin() && not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort) && getOption(AUTOCOMPLETE)) {
-				pt->universe().tables()[col]->add(tuple[col]);
-			} else if (!pt->universe().tables()[col]->contains(tuple[col]) && not getOption(ASSUMECONSISTENTINPUT)) {
+			if (not sort->builtin()
+					&& not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort)
+					&& not sort->isConstructed()
+					&& getOption(AUTOCOMPLETE)) {
+				univ.tables()[col]->add(tuple[col]);
+			} else if (!univ.tables()[col]->contains(tuple[col]) && not getOption(ASSUMECONSISTENTINPUT)) {
 				if (typeid(*symbol) == typeid(Predicate)) {
 					Error::predelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
 				} else {
 					Error::funcelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
 				}
+			}
+			for(auto parent: sort->parents()){
+				auto sorttable = structure->inter(sort);
+				checkAndCompleteSortTable(sorttable, Universe({sorttable}), parent->pred(), structure);
 			}
 		}
 	}
@@ -405,13 +413,13 @@ void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter) {
 	if (isa<InverseInternalPredTable>(*(pt1->internTable()))) {
 		pt1 = inter->pf();
 	}
-	checkAndCompleteSortTable(pt1, symbol, this);
+	checkAndCompleteSortTable(pt1, pt1->universe(), symbol, this);
 	if (not inter->approxTwoValued()) {
 		auto pt2 = inter->cf();
 		if (isa<InverseInternalPredTable>(*(pt2->internTable()))) {
 			pt2 = inter->pt();
 		}
-		checkAndCompleteSortTable(pt2, symbol, this);
+		checkAndCompleteSortTable(pt2, pt2->universe(), symbol, this);
 	}
 }
 

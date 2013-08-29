@@ -390,7 +390,6 @@ public:
 	 * Returns true if this sort occurred in the user provided theory.
 	 */
 	bool interpretationSpecifiedByUser(Structure* structure, Sort* sort) const;
-	bool interpretationSpecifiedByUser(PFSymbol* symbol) const;
 	void constructor(NSPair* nst) const; //!< allows for the declaration of constructor functions in structure. TODO: test + evaluate usefulness
 	void sortinter(NSPair*, SortTable* t)const; //!< Assign a one dimensional table
 	void interByProcedure(NSPair*, const longname&, YYLTYPE) const; //!< Assign a procedure
