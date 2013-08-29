@@ -1944,22 +1944,19 @@ EnumSetExpr* Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 }
 
 void Insert::addElement(SortTable* s, int i) const {
-	const DomainElement* d = createDomElem(i);
-	s->add(d);
+	s->add(element(i));
 }
 
 void Insert::addElement(SortTable* s, double f) const {
-	const DomainElement* d = createDomElem(f);
-	s->add(d);
+	s->add(element(f));
 }
 
 void Insert::addElement(SortTable* s, const std::string& e) const {
-	s->add(createDomElem(e));
+	s->add(element(e));
 }
 
 void Insert::addElement(SortTable* s, const Compound* c) const {
-	const DomainElement* d = createDomElem(c);
-	s->add(d);
+	s->add(element(c));
 }
 
 void Insert::addElement(SortTable* s, int i1, int i2) const {
@@ -2006,8 +2003,21 @@ const DomainElement* Insert::element(char c) const {
 	return createDomElem(string(1, c));
 }
 
-const DomainElement* Insert::element(std::string* s) const {
-	return createDomElem(*s);
+const DomainElement* Insert::element(const std::string& s) const {
+	// The parser cannot parse strings without "()" at the end as constructor function images, so this warning should be issued:
+	string name = s+"/0"; // TODO fix arity in names
+	Function* f = funcInScope(name);
+	if(f!=NULL && (f->isConstructorFunction() || f->overloaded())){
+		Warning::constructorDisambiguationInStructure(s,name);
+		if(f->overloaded()){
+			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo>{f->pi()},{}); // TODO add locations
+			return createDomElem(s); // Om toch maar iets gelijkaardig terug te geven.
+		}
+		if(f->isConstructorFunction()){
+			return createDomElem(createCompound(f,vector<const DomainElement*>()));
+		}
+	}
+	return createDomElem(s);
 }
 
 const DomainElement* Insert::element(const Compound* c) const {

@@ -158,6 +158,9 @@ void emptySort(const std::string& sortname, const std::string& structurename);
 /** Warn that ASP queries do not have a specific handling */
 void aspQueriesAreParsedAsFacts();
 
+/** Domain element can be interpreted as constructor **/
+void constructorDisambiguationInStructure(const std::string& domelem, const std::string& constrfunc);
+
 }
 
 #endif
