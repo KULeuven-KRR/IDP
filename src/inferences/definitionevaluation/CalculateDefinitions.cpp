@@ -120,6 +120,13 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 }
 
 std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure, bool satdelay) const {
+	if (theory == NULL || structure == NULL) {
+		throw IdpException("Unexpected NULL-pointer.");
+	}
+	if (structure->vocabulary() != theory->vocabulary()) {
+		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
+	}
+
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}

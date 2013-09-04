@@ -185,6 +185,9 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	if (getOption(IntType::VERBOSE_CREATE_PROPAGATORS) > 1) {
 		clog << "=== initialize propagation datastructures\n";
 	}
+	if (structure->vocabulary() != theory->vocabulary()) {
+		throw IdpException("Approximation requires that the theory and structure range over the same vocabulary.");
+	}
 
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
