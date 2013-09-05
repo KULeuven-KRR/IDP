@@ -122,13 +122,18 @@ message(STATUS "Rpath for installation is \"${CMAKE_INSTALL_RPATH}\"")
 include(ExternalProject)
 
 #SPASS
-ExternalProject_Add(
-  spass
-  SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7
-  CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/spass
-  BUILD_IN_SOURCE 0
-)
-install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spass/bin/ DESTINATION bin FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+option(SPASS  "Compile and install the SPASS theorem prover" ON)
+if(SPASS)
+    ExternalProject_Add(
+      spass
+      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7
+      CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/spass
+      BUILD_IN_SOURCE 0
+    )
+    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spass/bin/ DESTINATION bin FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+else()
+    message(STATUS "SPASS will not be installed automatically. To be able to use it, install it manually and change the appropriate call in your config.idp file.")
+endif()
 
 #XSB
 execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
