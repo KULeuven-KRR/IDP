@@ -2046,16 +2046,16 @@ void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const
 
 pair<int, int>* Insert::range(int i1, int i2, YYLTYPE l) const {
 	if (i1 > i2) {
-		i2 = i1;
 		invalidrange(i1, i2, parseinfo(l));
+		i2 = i1;
 	}
 	return new pair<int, int>(i1, i2);
 }
 
 pair<char, char>* Insert::range(char c1, char c2, YYLTYPE l) const {
 	if (c1 > c2) {
-		c2 = c1;
 		invalidrange(c1, c2, parseinfo(l));
+		c2 = c1;
 	}
 	return new pair<char, char>(c1, c2);
 }
