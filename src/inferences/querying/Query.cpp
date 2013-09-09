@@ -24,36 +24,27 @@
 #include "theory/TheoryUtils.hpp"
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
-	// translate the formula to a bdd
-	std::shared_ptr<FOBDDManager> manager;
-	const FOBDD* bdd;
-	auto newquery = q->query()->clone();
-	newquery = FormulaUtils::calculateArithmetic(newquery);
-	if (not structure->approxTwoValued()) {
-		auto symbolicstructure = generateNonLiftedBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure);
-		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
-		manager = symbolicstructure->obtainManager();
-	} else {
-		//When working two-valued, we can simply turn formula to BDD
-		manager = make_shared<FOBDDManager>();
-		FOBDDFactory factory(manager);
-		bdd = factory.turnIntoBdd(newquery);
+	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure;
+	if(not structure->approxTwoValued()){
+		symbolicstructure = generateNonLiftedBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure);
 	}
-	newquery->recursiveDelete();
-
-	return solveBdd(q->variables(), manager, bdd, structure);
+	return solveQuery(q,structure,symbolicstructure);
 }
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const {
+	if(not VocabularyUtils::isSubVocabulary(q->vocabulary(), structure->vocabulary())){
+		cerr <<"Query voc = " <<print(q->vocabulary()) <<"\n";
+		cerr <<"Structure voc = " <<print(structure->vocabulary()) <<"\n";
+		throw IdpException("The structure of the query does not interpret all symbols in the query.");
+	}
 	// translate the formula to a bdd
 	std::shared_ptr<FOBDDManager> manager;
-	const FOBDD* bdd;
+	const FOBDD* bdd = NULL;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery);
 	if (not structure->approxTwoValued()) {
 		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
 		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,{}, true,false);
-		auto symbolicstructure = generateNonLiftedBounds(new Theory("", structure->vocabulary(), ParseInfo()), structure);
 		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
 		manager = symbolicstructure->obtainManager();
 	} else {
