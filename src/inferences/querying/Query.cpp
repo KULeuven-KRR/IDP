@@ -33,8 +33,6 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure) con
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const {
 	if(not VocabularyUtils::isSubVocabulary(q->vocabulary(), structure->vocabulary())){
-		cerr <<"Query voc = " <<print(q->vocabulary()) <<"\n";
-		cerr <<"Structure voc = " <<print(structure->vocabulary()) <<"\n";
 		throw IdpException("The structure of the query does not interpret all symbols in the query.");
 	}
 	// translate the formula to a bdd
