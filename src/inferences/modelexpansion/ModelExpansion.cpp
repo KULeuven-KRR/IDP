@@ -26,24 +26,24 @@
 using namespace std;
 
 MXResult ModelExpansion::doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvoc,
-		TraceMonitor* tracemonitor, const std::vector<Predicate*>& assumeFalse) {
+		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	auto m = createMX(theory, structure, NULL, outputvoc, tracemonitor, assumeFalse);
 	return m->expand();
 }
 MXResult ModelExpansion::doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
-		TraceMonitor* tracemonitor) {
+		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	if (term == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
 	if (not term->freeVars().empty()) {
 		throw IdpException("Cannot minimized over term with free variables.");
 	}
-	auto m = createMX(theory, structure, term, outputvoc, tracemonitor, {});
+	auto m = createMX(theory, structure, term, outputvoc, tracemonitor, assumeFalse);
 	return m->expand();
 }
 
 shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,
-		TraceMonitor* tracemonitor, const std::vector<Predicate*>& assumeFalse) {
+		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
@@ -65,7 +65,7 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 	return m;
 }
 
-ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor,const std::vector<Predicate*>& assumeFalse)
+ModelExpansion::ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse)
 		: 	_theory(theory),
 			_structure(structure),
 			_tracemonitor(tracemonitor),
@@ -134,10 +134,13 @@ MXResult ModelExpansion::expand() const {
 	auto extender = groundingAndExtender.second;
 
 	litlist assumptions;
-	for(auto p: _assumeFalse){
+	for(auto p: _assumeFalse.assumeAllFalse){
 		for(auto atom: grounding->translator()->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
 			assumptions.push_back(-abs(atom.second));
 		}
+	}
+	for(auto pf : _assumeFalse.assumeFalse){
+		assumptions.push_back(grounding->translator()->translateNonReduced(pf.symbol, pf.args));
 	}
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
@@ -210,7 +213,7 @@ MXResult ModelExpansion::expand() const {
 			}
 			auto symbol = grounding->translator()->getSymbol(lit.getAtom());
 			auto args = grounding->translator()->getArgs(lit.getAtom());
-			result.unsat_in_function_of_ct_lits.push_back(&Gen::atom(symbol, args));
+			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
 		}
 		return result;
 	}

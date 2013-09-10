@@ -14,15 +14,15 @@
 #include <iostream>
 #include "commandinterface.hpp"
 
-#include "inferences/modelexpansion/UnsatCoreExtraction.hpp"
+#include "inferences/debugging/UnsatCoreExtraction.hpp"
 
 typedef TypedInference<LIST(AbstractTheory*, Structure*)> ModelExpandInferenceBase;
 class UnsatCoreInference: public ModelExpandInferenceBase {
 public:
 	UnsatCoreInference()
 			: ModelExpandInferenceBase("unsatcore",
-					"Unsat core extraction on input level.", false) {
-		setNameSpace(getInternalNamespaceName());
+					"Returns a set of instances of sentences and rules, subset of the theory, that are unsatisfiable.", false) {
+		setNameSpace(getInferenceNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
