@@ -32,7 +32,6 @@ protected:
 
 private:
 	bool _onlyrulehead;
-	Context _context; 					// Keeps track of the current context where terms are moved
 	bool _allowedToUnnest; 				// Indicates whether in the current context, it is allowed to unnest terms
 
 	// Temporary information
@@ -52,19 +51,12 @@ protected:
 	void setAllowedToUnnest(bool allowed) {
 		_allowedToUnnest = allowed;
 	}
-	const Context& getContext() const {
-		return _context;
-	}
-	void setContext(const Context& context) {
-		_context = context;
-	}
 
 public:
 	UnnestTerms();
 
 	template<typename T>
-	T execute(T t, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL, bool onlyrulehead = false) {
-		_context = con;
+	T execute(T t, const Structure* str = NULL, Vocabulary* voc = NULL, bool onlyrulehead = false) {
 		_structure = str;
 		_vocabulary = voc;
 		_allowedToUnnest = false;

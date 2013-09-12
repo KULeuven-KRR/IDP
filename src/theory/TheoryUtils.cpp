@@ -121,8 +121,8 @@ bool approxTwoValued(const SetExpr* exp, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(exp, str);
 }
 
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation) {
-	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, context, definedsymbols, cpsupport, cpablerelation);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation) {
+	return transform<UnnestThreeValuedTerms, SetExpr*>(exp, structure, definedsymbols, cpsupport, cpablerelation);
 }
 }
 
@@ -149,11 +149,11 @@ void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
 
-Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
-	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, context, definedsymbols, cpsupport);
+Rule* unnestThreeValuedTerms(Rule* rule, const Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Rule*>(rule, structure, definedsymbols, cpsupport);
 }
-Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context){
-	return transform<UnnestTerms, Rule*, Rule, Context, const Structure*, Vocabulary*, bool>(rule, context, structure, NULL, true);
+Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure){
+	return transform<UnnestTerms, Rule*, Rule, const Structure*, Vocabulary*, bool>(rule, structure, NULL, true);
 }
 Rule* falseRule(PFSymbol* s) {
 	auto terms = TermUtils::makeNewVarTerms(s->sorts());
@@ -162,8 +162,8 @@ Rule* falseRule(PFSymbol* s) {
 	return rule;
 }
 
-Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure, Context context) {
-	return transform<UnnestHeadTermsNotVarsOrDomElems, Rule*>(rule, structure, context);
+Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure) {
+	return transform<UnnestHeadTermsNotVarsOrDomElems, Rule*>(rule, structure);
 }
 Rule* moveOnlyBodyQuantifiers(Rule* rule){
 	ContainedVariables v;
@@ -297,12 +297,12 @@ Formula* pushQuantifiers(Formula* t) {
 	return transform<PushQuantifications, Formula*>(t);
 }
 
-Formula* unnestFuncsAndAggs(Formula* f, const Structure* str, Context con) {
-	return transform<UnnestFuncsAndAggs, Formula*>(f, str, con);
+Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
+	return transform<UnnestFuncsAndAggs, Formula*>(f, str);
 }
 
-Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const Structure* str, Context con) {
-	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str, con);
+Formula* unnestFuncsAndAggsNonRecursive(Formula* f, const Structure* str) {
+	return transform<UnnestFuncsAndAggsNonRecursive, Formula*>(f, str);
 }
 
 Formula* unnestDomainTerms(Formula* f) {
@@ -313,20 +313,20 @@ Formula* unnestDomainTermsFromNonBuiltins(Formula* f) {
 	return transform<UnnestDomainTermsFromNonBuiltins, Formula*>(f);
 }
 
-Formula* unnestPartialTerms(Formula* f, Context con, const Structure* str, Vocabulary* voc) {
-	return transform<UnnestPartialTerms, Formula*>(f, con, str, voc);
+Formula* unnestPartialTerms(Formula* f, const Structure* str, Vocabulary* voc) {
+	return transform<UnnestPartialTerms, Formula*>(f, str, voc);
 }
 
-AbstractTheory* unnestPartialTerms(AbstractTheory* f, Context con, const Structure* str, Vocabulary* voc) {
-	return transform<UnnestPartialTerms, AbstractTheory*>(f, con, str, voc);
+AbstractTheory* unnestPartialTerms(AbstractTheory* f, const Structure* str, Vocabulary* voc) {
+	return transform<UnnestPartialTerms, AbstractTheory*>(f, str, voc);
 }
 
-Formula* unnestTerms(Formula* f, Context con, const Structure* str, Vocabulary* voc) {
-	return transform<UnnestTerms, Formula*>(f, con, str, voc);
+Formula* unnestTerms(Formula* f, const Structure* str, Vocabulary* voc) {
+	return transform<UnnestTerms, Formula*>(f, str, voc);
 }
 
-Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
-	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, context, definedsymbols, cpsupport);
+Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport) {
+	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, definedsymbols, cpsupport);
 }
 
 void addCompletion(AbstractTheory* t, const Structure* s) {
@@ -379,12 +379,12 @@ AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
 	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str, Context con) {
-	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str, con);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str) {
+	return transform<UnnestFuncsAndAggs, AbstractTheory*>(t, str);
 }
 
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const Structure* str, Context con) {
-	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str, con);
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory* t, const Structure* str) {
+	return transform<UnnestFuncsAndAggsNonRecursive, AbstractTheory*>(t, str);
 }
 
 AbstractTheory* unnestDomainTerms(AbstractTheory* t) {
@@ -398,8 +398,8 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory* t) {
  return transform<MergeRulesOnSameSymbol, AbstractTheory*>(t);
  }*/
 
-void unnestTerms(AbstractTheory* t, Context con, const Structure* str, Vocabulary* voc) {
-	auto newt = transform<UnnestTerms, AbstractTheory*>(t, con, str, voc);
+void unnestTerms(AbstractTheory* t, const Structure* str, Vocabulary* voc) {
+	auto newt = transform<UnnestTerms, AbstractTheory*>(t, str, voc);
 	Assert(newt==t);
 }
 

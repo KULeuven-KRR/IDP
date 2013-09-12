@@ -192,7 +192,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo, structure);
-	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, structure, newtheo->vocabulary());
+	FormulaUtils::unnestTerms(newtheo, structure, newtheo->vocabulary());
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, {}, true, false);
 	newtheo = FormulaUtils::pushQuantifiersAndNegations(newtheo);

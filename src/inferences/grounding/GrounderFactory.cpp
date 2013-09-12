@@ -529,7 +529,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 	_context._conjPathUntilNode = _context._conjunctivePathFromRoot;
 
 	auto temppf = pf->clone();
-	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
+	auto transpf = FormulaUtils::unnestThreeValuedTerms(temppf, getConcreteStructure(), _context._defined, getOption(BoolType::CPSUPPORT) and not recursive(pf));
 
 	if (not isa<PredForm>(*transpf)) { // NOTE: the rewriting changed the atom
 		Assert(_context._component != CompContext::HEAD);
@@ -671,7 +671,7 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 
 void GrounderFactory::visit(const AggForm* af) {
 	auto clonedaf = rewriteSumOrCardIntoSum(af, getConcreteStructure())->clone();
-	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
+	Formula* transaf = FormulaUtils::unnestThreeValuedTerms(clonedaf, getConcreteStructure(), _context._defined, getOption(CPSUPPORT));
 	if (recursive(transaf)) {
 		transaf = FormulaUtils::splitIntoMonotoneAgg(transaf);
 	}
@@ -1103,7 +1103,7 @@ void GrounderFactory::visit(const EnumSetExpr* s) {
 
 void GrounderFactory::visit(const QuantSetExpr* origqs) {
 	// Move three-valued terms in the set expression: from term to condition
-	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT), _context._cpablerelation);
+	auto transqs = SetUtils::unnestThreeValuedTerms(origqs->clone(), getConcreteStructure(), _context._defined, getOption(CPSUPPORT), _context._cpablerelation);
 	if (not isa<QuantSetExpr>(*transqs)) {
 		descend(transqs);
 		return;
@@ -1156,10 +1156,10 @@ void GrounderFactory::visit(const Rule* rule) {
 	//TODO: if negations are already pushed, this is too much work. But on the other hand, checking if they are pushed is as expensive as pushing them
 	//However, pushing negations here is important to avoid errors such as {p <- ~~p} turning into {p <- ~q; q<- ~p}
 	newrule->body(FormulaUtils::pushQuantifiers(FormulaUtils::pushNegations(newrule->body())));
-	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, getConcreteStructure(), _context._funccontext, _context._defined, getOption(CPSUPPORT));
+	newrule = DefinitionUtils::unnestThreeValuedTerms(newrule, getConcreteStructure(), _context._defined, getOption(CPSUPPORT));
 
 	if (getOption(SATISFIABILITYDELAY)) { // NOTE: lazy grounding cannot handle head terms containing nested variables
-		newrule = DefinitionUtils::unnestHeadTermsNotVarsOrDomElems(newrule, getConcreteStructure(), _context._funccontext);
+		newrule = DefinitionUtils::unnestHeadTermsNotVarsOrDomElems(newrule, getConcreteStructure());
 	}
 
 	newrule = DefinitionUtils::moveOnlyBodyQuantifiers(newrule);
@@ -1386,7 +1386,7 @@ InstGenerator* GrounderFactory::createGen(const std::string& name, TruthType typ
 PredTable* GrounderFactory::createTable(Formula* subformula, TruthType type, const std::vector<Variable*>& quantfovars, bool approxvalue,
 		const GeneratorData& data, SymbolicStructure symstructure, const Structure* structure, std::set<PFSymbol*> definedsymbols, bool forceexact) {
 	auto tempsubformula = subformula->clone();
-	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.funccontext, data.structure);
+	tempsubformula = FormulaUtils::unnestTerms(tempsubformula, data.structure);
 	tempsubformula = FormulaUtils::splitComparisonChains(tempsubformula);
 	tempsubformula = FormulaUtils::graphFuncsAndAggs(tempsubformula, data.structure, definedsymbols, true, false, data.funccontext);
 	tempsubformula = FormulaUtils::pushQuantifiers(tempsubformula);

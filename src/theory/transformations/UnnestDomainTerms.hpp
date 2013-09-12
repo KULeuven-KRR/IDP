@@ -24,7 +24,7 @@ class UnnestDomainTerms: public UnnestTerms {
 public:
 	template<typename T>
 	T execute(T t) {
-		return UnnestTerms::execute(t, Context::POSITIVE, NULL, NULL);
+		return UnnestTerms::execute(t, NULL, NULL);
 	}
 
 protected:

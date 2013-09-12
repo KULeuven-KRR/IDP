@@ -22,9 +22,9 @@ class UnnestFuncsAndAggs: public UnnestTerms {
 	VISITORFRIENDS()
 public:
 	template<typename T>
-	T execute(T t, const Structure* str, Context con) {
+	T execute(T t, const Structure* str) {
 		auto voc = (str != NULL) ? str->vocabulary() : NULL;
-		return UnnestTerms::execute(t, con, str, voc);
+		return UnnestTerms::execute(t, str, voc);
 	}
 
 protected:

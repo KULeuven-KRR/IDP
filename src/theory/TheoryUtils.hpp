@@ -157,10 +157,10 @@ Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const 
 Formula* pushQuantifiers(Formula* t);
 
 /** Recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL);
 
 /** Non-recursively move all function and aggregate terms */
-Formula* unnestFuncsAndAggsNonRecursive(Formula*, const Structure* str = NULL, Context con = Context::POSITIVE);
+Formula* unnestFuncsAndAggsNonRecursive(Formula*, const Structure* str = NULL);
 
 /** Recursively move all domain terms */
 Formula* unnestDomainTerms(Formula*);
@@ -168,14 +168,14 @@ Formula* unnestDomainTermsFromNonBuiltins(Formula*);
 
 
 /** Recursively move all partial terms outside atoms */
-Formula* unnestPartialTerms(Formula*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
-AbstractTheory* unnestPartialTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestPartialTerms(Formula*, const Structure* str = NULL, Vocabulary* voc = NULL);
+AbstractTheory* unnestPartialTerms(AbstractTheory*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 /** Recursively remove all nested terms */
-Formula* unnestTerms(Formula*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+Formula* unnestTerms(Formula*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 /** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
-Formula* unnestThreeValuedTerms(Formula*, const Structure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
+Formula* unnestThreeValuedTerms(Formula*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
 void addCompletion(AbstractTheory*, const Structure* s);
@@ -224,10 +224,10 @@ AbstractTheory* removeEquivalences(AbstractTheory*);
 AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL);
 
 /** Non-recursively move all function and aggregate terms */
-AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const Structure* str = NULL, Context con = Context::POSITIVE);
+AbstractTheory* unnestFuncsAndAggsNonRecursive(AbstractTheory*,const Structure* str = NULL);
 
 /** Recursively move all domain terms */
 AbstractTheory* unnestDomainTerms(AbstractTheory*);
@@ -235,7 +235,7 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 
 /** Rewrite the theory so that there are no nested terms */
-void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
+void unnestTerms(AbstractTheory*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive);
 std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursive);
@@ -288,7 +288,7 @@ namespace SetUtils {
 bool approxTwoValued(const SetExpr*, const Structure*);
 
 /** Rewrite set expressions by moving three-valued terms */
-SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
+SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
 } /* namespace SetUtils */
 
 
@@ -309,14 +309,14 @@ bool hasRecursionOverNegation(Definition*);
 void splitDefinitions(Theory* t);
 
 /** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
-Rule* unnestThreeValuedTerms(Rule*, const Structure*, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
+Rule* unnestThreeValuedTerms(Rule*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
-Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure, Context context);
+Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure);
 
 /** Create the rule P(\bar x) \lrule false*/
 Rule* falseRule(PFSymbol*);
 
-Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure, Context context);
+Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure);
 
 // Move head quantifiers of variables only occurring in the body to the body.
 Rule* moveOnlyBodyQuantifiers(Rule* rule);
