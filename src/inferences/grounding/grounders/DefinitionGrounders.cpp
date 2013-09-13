@@ -175,12 +175,12 @@ void FullRuleGrounder::run(DefId defid, GroundDefinition* grounddefinition, Lazy
 		for (headgenerator()->begin(); not headgenerator()->isAtEnd(); headgenerator()->operator++()) {
 			CHECKTERMINATION;
 			Lit head = headgrounder()->run();
-			if (verbosity() > 2) {
-				auto trans = headgrounder()->grounding()->translator();
-				clog <<"Generated head " <<print(trans->getSymbol(head)) <<print(trans->getArgs(head)) <<"\n";
-			}
 			Assert(head != _true);
 			if (head != _false) {
+				if (verbosity() > 2) {
+					auto trans = headgrounder()->grounding()->translator();
+					clog <<"Generated head " <<print(trans->getSymbol(head)) <<print(trans->getArgs(head)) <<"\n";
+				}
 				if (truebody) {
 					body.literals.clear();
 					conj = true;
