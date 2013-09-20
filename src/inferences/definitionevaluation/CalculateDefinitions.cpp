@@ -36,6 +36,10 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "based on structure: " << toString(structure) << "\n\n"
+						"and vocabulary: " << toString(structure->vocabulary()) << "\n";
+	}
 #ifdef WITHXSB
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
