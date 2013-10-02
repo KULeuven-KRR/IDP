@@ -50,9 +50,10 @@ private:
 			grounding = new GroundTheory<GroundPolicy>(NULL, {NULL, shared_ptr<GenerateBDDAccordingToBounds>()}, false);
 			grounding->addEmptyClause();
 		}
+		// FIXME probably not allowed to delete any of these in case of lazy grounding
 		t->recursiveDelete();
 		delete (s);
-		delete (voc);
+		// delete (voc); // Certainly not allowed to delete this one, as it is the voc of the ground theory itself and the voc of a cloned structure inside the ground theory
 		return grounding;
 	}
 };
@@ -84,8 +85,8 @@ private:
 		auto grounding = GroundingInference<InteractivePrintMonitor>::doGrounding(t, s, NULL, NULL, NULL, modelcountequivalence, monitor);
 		t->recursiveDelete();
 		delete (s);
-		delete (voc);
 		grounding->recursiveDelete();
+		delete (voc);
 		monitor->flush();
 	}
 };
