@@ -215,6 +215,7 @@ MXResult ModelExpansion::expand() const {
 			auto args = grounding->translator()->getArgs(lit.getAtom());
 			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
 		}
+		cleanup;
 		return result;
 	}
 
