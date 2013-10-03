@@ -150,6 +150,9 @@ MXResult ModelExpansion::expand() const {
 	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
 		unsat = mx->getSolutions().size()==0;
+		if(getGlobal()->terminateRequested()){
+			getGlobal()->reset();
+		}
 	} catch (MinisatID::idpexception& error) {
 		std::stringstream ss;
 		ss << "Solver was aborted with message \"" << error.what() << "\"";
