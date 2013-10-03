@@ -4040,7 +4040,10 @@ void FuncInter::put(std::ostream& stream) const {
 }
 
 FuncInter* ConstructorFuncInterGenerator::get(const Structure* structure){
-	return new FuncInter(new FuncTable(new UNAInternalFuncTable(_function),structure->universe(_function)));
+	if(s2int.find(structure)==s2int.cend()){
+		s2int[structure] = new FuncInter(new FuncTable(new UNAInternalFuncTable(_function),structure->universe(_function)));
+	}
+	return s2int[structure];
 }
 
 FuncInter* MinInterGenerator::get(const Structure* structure) {
