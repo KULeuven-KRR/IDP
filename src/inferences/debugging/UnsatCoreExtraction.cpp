@@ -32,6 +32,7 @@ class AddMarkers: public TheoryMutatingVisitor {
 	std::map<Predicate*, std::pair<std::vector<Variable*>, Formula*>> marker2formula;
 	std::map<Predicate*, std::pair<std::vector<Variable*>, Rule*>> marker2rule;
 	std::map<Rule*, DefId> rule2defid;
+	std::map<Predicate*, ParseInfo> marker2parseinfo;
 
 public:
 	Theory* execute(Theory* t) {
@@ -56,9 +57,7 @@ public:
 		return newpreds;
 	}
 	std::vector<TheoryComponent*> getComponentsFromMarkers(const std::vector<DomainAtom>& pfs) const {
-		std::vector<Formula*> forminstances;
 		std::map<DefId, std::vector<Rule*>> ruleinstances;
-
 		std::vector<TheoryComponent*> core;
 		for (auto pf : pfs) {
 			auto pred = dynamic_cast<Predicate*>(pf.symbol);
@@ -69,6 +68,7 @@ public:
 					var2elems[varAndForm.first[i]] = pf.args[i];
 				}
 				core.push_back(FormulaUtils::substituteVarWithDom(varAndForm.second->cloneKeepVars(), var2elems));
+				std::clog <<print(core.back()) <<"\n";
 			} else if (contains(marker2rule, pred)) {
 				auto varAndForm = marker2rule.at(pred);
 				std::map<Variable*, const DomainElement*> var2elems;
@@ -77,7 +77,9 @@ public:
 				}
 				auto head = FormulaUtils::substituteVarWithDom(varAndForm.second->head()->cloneKeepVars(), var2elems);
 				auto body = FormulaUtils::substituteVarWithDom(varAndForm.second->body()->cloneKeepVars(), var2elems);
-				ruleinstances[rule2defid.at(varAndForm.second)].push_back(new Rule( { }, dynamic_cast<PredForm*>(head), body, { }));
+				auto newrule = new Rule( { }, dynamic_cast<PredForm*>(head), body, varAndForm.second->pi());
+				ruleinstances[rule2defid.at(varAndForm.second)].push_back(newrule);
+				std::clog <<print(newrule) <<"\n";
 			} else {
 				core.push_back(&Gen::atom(pf.symbol, pf.args));
 			}
@@ -148,7 +150,7 @@ protected:
 			newpreds.push_back(conjp);
 			auto conjmarker = &Gen::operator !(Gen::atom(conjp, vars));
 			auto disjmarker = &Gen::atom(disjp, vars);
-			auto rc1 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), { }), rc2 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), { });
+			auto rc1 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi()), rc2 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi());
 			rule2defid[rc1] = d->getID();
 			rule2defid[rc2] = d->getID();
 			marker2rule[conjp]= {vars, rc1};
@@ -215,11 +217,14 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 	auto s = structure->clone();
 	s->changeVocabulary(newtheory->vocabulary()); // TODO theory voc?
 
-	std::map<Function*, Formula*> func2form;
-	FormulaUtils::addFuncConstraints(newtheory, newtheory->vocabulary(), func2form, getOption(CPSUPPORT));
-	for (auto f2f : func2form) {
-		newtheory->add(f2f.second);
-	}
+	//	TODO dropping function constraints is not possible as MX is not able to read a model back in that does not satisfy its functions
+	// would need to really replace all functions with new predicate symbols first!
+	// (and then also do not add them during mx itself)
+//	std::map<Function*, Formula*> func2form;
+//	FormulaUtils::addFuncConstraints(newtheory, newtheory->vocabulary(), func2form, getOption(CPSUPPORT));
+//	for (auto f2f : func2form) {
+//	newtheory->add(f2f.second);
+//	}
 
 	for (auto def : newtheory->definitions()) {
 		for (auto p : def->defsymbols()) {
@@ -237,7 +242,7 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 	AddMarkers am;
 	newtheory = am.execute(newtheory);
 
-	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {{},am.getMarkers()}); // TODO do not add function constraints
+	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {{},am.getMarkers()});
 	if (not mxresult.unsat) {
 		throw IdpException("The given theory has models that extend the structure, so there are no unsat cores.");
 	}
@@ -246,6 +251,10 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 	auto core = mxresult.unsat_in_function_of_ct_lits;
 	auto erased = true;
 	while(erased){
+		if(getGlobal()->terminateRequested()){
+			getGlobal()->reset();
+			break;
+		}
 		erased = false;
 		auto maxsize = core.size();
 		for(uint i=0; i<maxsize;){
