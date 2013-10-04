@@ -33,11 +33,13 @@ struct DomainAtom{
 };
 
 struct MXResult{
+	MXResult():_models({}), _optimalvalue(0), _optimumfound(false), unsat(false),_interrupted(false), unsat_in_function_of_ct_lits({}){
+	}
 	std::vector<Structure*> _models;
 	int _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
-	bool _optimumfound = false; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
-	bool unsat = false;
-	bool _interrupted = false;
+	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
+	bool unsat;
+	bool _interrupted;
 	std::vector<DomainAtom> unsat_in_function_of_ct_lits;
 };
 
@@ -45,7 +47,7 @@ struct MXAssumptions{
 	std::vector<DomainAtom> assumeFalse;
 	std::vector<Predicate*> assumeAllFalse;
 
-	MXAssumptions(const std::vector<DomainAtom>& assumeFalse = {}, const std::vector<Predicate*>& assumeAllFalse = {}): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse){
+	MXAssumptions(const std::vector<DomainAtom>& assumeFalse = std::vector<DomainAtom>(), const std::vector<Predicate*>& assumeAllFalse = std::vector<Predicate*>()): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse){
 
 	}
 };
@@ -59,8 +61,8 @@ struct MXAssumptions{
  */
 class ModelExpansion {
 public:
-	static MXResult doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL, const MXAssumptions& assumeFalse = {});
-	static MXResult doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL, const MXAssumptions& assumeFalse = {});
+	static MXResult doModelExpansion(AbstractTheory* theory, Structure* structure, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL, const MXAssumptions& assumeFalse = MXAssumptions());
+	static MXResult doMinimization(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvocabulary = NULL, TraceMonitor* tracemonitor = NULL, const MXAssumptions& assumeFalse = MXAssumptions());
 
 private:
 	Theory* _theory;
@@ -71,8 +73,8 @@ private:
 	Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
 	MXAssumptions _assumeFalse;
 
-	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse = {});
-	ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse = {});
+	static std::shared_ptr<ModelExpansion> createMX(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc,TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse = MXAssumptions());
+	ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse = MXAssumptions());
 
 	void setOutputVocabulary(Vocabulary* v);
 
