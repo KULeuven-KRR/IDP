@@ -710,6 +710,7 @@ void FormulaClauseBuilder::visit(const Rule* r) {
 	for (auto it1 = r->head()->subterms().begin(); it1 != r->head()->subterms().end(); ++it1) {
 		if ( (*it1)->type() == TermType::DOM) {
 			DomainTerm* domterm = (DomainTerm*) (*it1);
+			domainelement_prolog(domterm->value()); // insert into map (might need to retranslate)
 			ec->addArgument(new PrologConstant(toString(domterm->value())));
 		} else {
 			auto varterm = (VarTerm*) (*it1);
