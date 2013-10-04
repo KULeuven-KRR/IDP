@@ -4389,9 +4389,6 @@ void InverseInternalPredTable::accept(StructureVisitor* v) const {
 void UnionInternalSortTable::accept(StructureVisitor* v) const {
 	v->visit(this);
 }
-void FullInternalSortTable::accept(StructureVisitor* v) const {
-	// TODO no-op?
-}
 void AllNaturalNumbers::accept(StructureVisitor* v) const {
 	v->visit(this);
 }

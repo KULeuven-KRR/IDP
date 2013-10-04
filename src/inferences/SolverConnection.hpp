@@ -28,7 +28,7 @@ namespace SolverConnection {
 	// Note: default find all models
 	PCSolver* createsolver(int nbmodels = 0);
 	void setTranslator(PCSolver*, GroundTranslator* translator);
-	PCModelExpand* initsolution(PCSolver*, int nbmodels, const litlist& assumptions = {});
+	PCModelExpand* initsolution(PCSolver*, int nbmodels, const litlist& assumptions = litlist());
 	PCUnitPropagate* initpropsolution(PCSolver*);
 
 	// Parse model into structure
