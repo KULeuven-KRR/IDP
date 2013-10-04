@@ -35,8 +35,9 @@ struct DomainAtom{
 struct MXResult{
 	std::vector<Structure*> _models;
 	int _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
-	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
-	bool unsat;
+	bool _optimumfound = false; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
+	bool unsat = false;
+	bool _interrupted = false;
 	std::vector<DomainAtom> unsat_in_function_of_ct_lits;
 };
 

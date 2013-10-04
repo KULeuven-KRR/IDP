@@ -159,10 +159,12 @@ MXResult ModelExpansion::expand() const {
 	auto t = basicTimer([](){return getOption(MXTIMEOUT);},[terminator](){terminator->notifyTerminateRequested();});
 	thread time(&basicTimer::time, &t);
 
+	MXResult result;
 	try {
 		mx->execute(); // FIXME wrap other solver calls also in try-catch
 		unsat = mx->getSolutions().size()==0;
 		if(getGlobal()->terminateRequested()){
+			result._interrupted = true;
 			getGlobal()->reset();
 		}
 	} catch (MinisatID::idpexception& error) {
@@ -195,12 +197,12 @@ MXResult ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	MXResult result;
 	result._optimumfound = true;
 	result.unsat = unsat;
 	if(t.hasTimedOut()){
 		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
 		result._optimumfound = false;
+		result._interrupted = true;
 		getGlobal()->reset();
 	}
 
