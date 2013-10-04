@@ -59,6 +59,9 @@ public:
 	std::vector<TheoryComponent*> getComponentsFromMarkers(const std::vector<DomainAtom>& pfs) const {
 		std::map<DefId, std::vector<Rule*>> ruleinstances;
 		std::vector<TheoryComponent*> core;
+		std::stringstream outputwithparseinfo;
+		outputwithparseinfo <<"Unsat core with parse-info:\n";
+		outputwithparseinfo <<"NOTE: this is an unsat-core given all constraints present in the vocabulary (e.g. (partial) function constraints) and the structure (types and interpreted symbols).\n";
 		for (auto pf : pfs) {
 			auto pred = dynamic_cast<Predicate*>(pf.symbol);
 			if (contains(marker2formula, pred)) {
@@ -67,8 +70,9 @@ public:
 				for (uint i = 0; i < pf.args.size(); ++i) {
 					var2elems[varAndForm.first[i]] = pf.args[i];
 				}
-				core.push_back(FormulaUtils::substituteVarWithDom(varAndForm.second->cloneKeepVars(), var2elems));
-				std::clog <<print(core.back()) <<"\n";
+				auto newform = FormulaUtils::substituteVarWithDom(varAndForm.second->cloneKeepVars(), var2elems);
+				core.push_back(newform);
+				outputwithparseinfo <<print(newform)  <<" at " <<print(newform->pi()) <<"\n";
 			} else if (contains(marker2rule, pred)) {
 				auto varAndForm = marker2rule.at(pred);
 				std::map<Variable*, const DomainElement*> var2elems;
@@ -79,11 +83,13 @@ public:
 				auto body = FormulaUtils::substituteVarWithDom(varAndForm.second->body()->cloneKeepVars(), var2elems);
 				auto newrule = new Rule( { }, dynamic_cast<PredForm*>(head), body, varAndForm.second->pi());
 				ruleinstances[rule2defid.at(varAndForm.second)].push_back(newrule);
-				std::clog <<print(newrule) <<"\n";
+				outputwithparseinfo <<print(newrule) <<" at " <<print(newrule->pi()) <<"\n";
 			} else {
 				core.push_back(&Gen::atom(pf.symbol, pf.args));
 			}
 		}
+		outputwithparseinfo <<"End of unsat-core\n";
+		std::clog <<outputwithparseinfo.str();
 		for (auto id2rules : ruleinstances) {
 			auto def = new Definition();
 			def->add(id2rules.second);
@@ -235,7 +241,7 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 				vars.insert(var);
 				varlist.push_back(new VarTerm(var, { }));
 			}
-			def->add(new Rule(vars, new PredForm(SIGN::POS, p, varlist, { }), FormulaUtils::falseFormula(), { }));
+			def->add(new Rule(vars, new PredForm(SIGN::POS, p, varlist, { }), FormulaUtils::falseFormula(), (*def->rules().cbegin())->pi()));
 		}
 	}
 
@@ -250,19 +256,30 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 	// TODO should set remaining markers on true to allow more pruning
 	auto core = mxresult.unsat_in_function_of_ct_lits;
 	auto erased = true;
-	while(erased){
+	bool stop = false;
+	while(erased && not stop){
 		if(getGlobal()->terminateRequested()){
 			getGlobal()->reset();
+			stop = true;
 			break;
 		}
 		erased = false;
 		auto maxsize = core.size();
 		for(uint i=0; i<maxsize;){
+			if(getGlobal()->terminateRequested()){
+				getGlobal()->reset();
+				stop = true;
+				break;
+			}
 			auto elem = core[i];
 			std::swap(core[i], core[maxsize-1]);
 			core.pop_back();
 			maxsize--;
 			auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {core, {}}); // TODO do not add function constraints
+			if(mxresult._interrupted){
+				stop = true;
+				break;
+			}
 			if (not mxresult.unsat) {
 				core.push_back(elem);
 			}else{
