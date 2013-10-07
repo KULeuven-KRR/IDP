@@ -16,9 +16,6 @@ addToCXX("-std=c++0x")
 if(USEINTERACTIVE)
 	addToCXX("-D USEINTERACTIVE")
 endif()
-if(WITHXSB)
-	addToCXX("-D WITHXSB")
-endif()
 
 MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
 
