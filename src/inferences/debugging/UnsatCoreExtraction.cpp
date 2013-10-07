@@ -21,18 +21,19 @@
 #include "utils/ListUtils.hpp"
 #include "theory/TheoryUtils.hpp"
 
-// TODO add markers for structure information
-// TODO print out original formula
+using namespace std;
+
+// TODO add markers for structure information and for function constraints
 
 class AddMarkers: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 
-	std::vector<Variable*> vars;
-	std::vector<Predicate*> newpreds;
-	std::map<Predicate*, std::pair<std::vector<Variable*>, Formula*>> marker2formula;
-	std::map<Predicate*, std::pair<std::vector<Variable*>, Rule*>> marker2rule;
-	std::map<Rule*, DefId> rule2defid;
-	std::map<Predicate*, ParseInfo> marker2parseinfo;
+	vector<Variable*> vars;
+	vector<Predicate*> newpreds;
+	map<Predicate*, pair<vector<Variable*>, Formula*>> marker2formula;
+	map<Predicate*, pair<vector<Variable*>, Rule*>> marker2rule;
+	map<Rule*, DefId> rule2defid;
+	map<Predicate*, ParseInfo> marker2parseinfo;
 
 public:
 	Theory* execute(Theory* t) {
@@ -45,51 +46,46 @@ public:
 
 	~AddMarkers() {
 		for (auto m2form : marker2formula) {
-			//	m2form.second.second->recursiveDelete();
+			m2form.second.second->recursiveDelete();
 		}
 		for (auto m2rule : marker2rule) {
-			//	m2rule.second.second->recursiveDelete();
+			m2rule.second.second->recursiveDelete();
 		}
-		//deleteList(newpreds);
 	}
 
-	const std::vector<Predicate*>& getMarkers() const {
+	const vector<Predicate*>& getMarkers() const {
 		return newpreds;
 	}
-	std::vector<TheoryComponent*> getComponentsFromMarkers(const std::vector<DomainAtom>& pfs) const {
-		std::map<DefId, std::vector<Rule*>> ruleinstances;
-		std::vector<TheoryComponent*> core;
-		std::stringstream outputwithparseinfo;
-		outputwithparseinfo <<"Unsat core with parse-info:\n";
-		outputwithparseinfo <<"NOTE: this is an unsat-core given all constraints present in the vocabulary (e.g. (partial) function constraints) and the structure (types and interpreted symbols).\n";
+	vector<TheoryComponent*> getComponentsFromMarkers(const vector<DomainAtom>& pfs) const {
+		map<DefId, vector<Rule*>> ruleinstances;
+		vector<TheoryComponent*> core;
+		stringstream outputwithparseinfo;
+		outputwithparseinfo <<"The following is an unsatisfiable subset, "
+				"given that functions can map to at most one element (and exactly one if not partial) "
+				"and the interpretation of types and symbols in the structure:\n";
 		for (auto pf : pfs) {
 			auto pred = dynamic_cast<Predicate*>(pf.symbol);
 			if (contains(marker2formula, pred)) {
+				stringstream ss;
 				auto varAndForm = marker2formula.at(pred);
-				std::map<Variable*, const DomainElement*> var2elems;
-				for (uint i = 0; i < pf.args.size(); ++i) {
-					var2elems[varAndForm.first[i]] = pf.args[i];
-				}
+				auto var2elems = getVarInstantiation(varAndForm, pf, ss);
 				auto newform = FormulaUtils::substituteVarWithDom(varAndForm.second->cloneKeepVars(), var2elems);
 				core.push_back(newform);
-				outputwithparseinfo <<print(newform)  <<" at " <<print(newform->pi()) <<"\n";
+				outputwithparseinfo <<"\t" <<print(newform)  <<" instantiated from line " <<newform->pi().linenumber() <<ss.str() <<"\n";
 			} else if (contains(marker2rule, pred)) {
 				auto varAndForm = marker2rule.at(pred);
-				std::map<Variable*, const DomainElement*> var2elems;
-				for (uint i = 0; i < pf.args.size(); ++i) {
-					var2elems[varAndForm.first[i]] = pf.args[i];
-				}
+				stringstream ss;
+				auto var2elems = getVarInstantiation(varAndForm, pf, ss);
 				auto head = FormulaUtils::substituteVarWithDom(varAndForm.second->head()->cloneKeepVars(), var2elems);
 				auto body = FormulaUtils::substituteVarWithDom(varAndForm.second->body()->cloneKeepVars(), var2elems);
 				auto newrule = new Rule( { }, dynamic_cast<PredForm*>(head), body, varAndForm.second->pi());
 				ruleinstances[rule2defid.at(varAndForm.second)].push_back(newrule);
-				outputwithparseinfo <<print(newrule) <<" at " <<print(newrule->pi()) <<"\n";
+				outputwithparseinfo <<"\t" <<print(newrule)  <<" instantiated from line " <<newrule->pi().linenumber() <<ss.str() <<"\n";
 			} else {
 				core.push_back(&Gen::atom(pf.symbol, pf.args));
 			}
 		}
-		outputwithparseinfo <<"End of unsat-core\n";
-		std::clog <<outputwithparseinfo.str();
+		clog <<outputwithparseinfo.str();
 		for (auto id2rules : ruleinstances) {
 			auto def = new Definition();
 			def->add(id2rules.second);
@@ -99,15 +95,15 @@ public:
 	}
 protected:
 	Formula* addMarker(Formula* f) {
-		std::vector<Sort*> sorts;
+		vector<Sort*> sorts;
 		for (auto var : vars) {
 			sorts.push_back(var->sort());
 		}
 		auto p = new Predicate(sorts);
 		newpreds.push_back(p);
 		auto atom = &Gen::atom(p, vars);
-		marker2formula[p]= {vars, f};
-		return &Gen::disj( { f, atom });
+		marker2formula[p]= {vars, f->cloneKeepVars()};
+		return &Gen::disj( { f->cloneKeepVars(), atom });
 	}
 	Formula* visit(PredForm* pf) {
 		return addMarker(pf);
@@ -120,6 +116,26 @@ protected:
 	}
 	Formula* visit(EquivForm* f) {
 		return addMarker(f);
+	}
+
+	template<class Object>
+	map<Variable*, const DomainElement*> getVarInstantiation(const pair<vector<Variable*>, Object*>& varAndForm, const DomainAtom& pf, stringstream& ss) const{
+		map<Variable*, const DomainElement*> var2elems;
+		auto begin = true;
+		for (uint i = 0; i < pf.args.size(); ++i) {
+			if(begin){
+				ss<<" with ";
+			}
+			auto var = varAndForm.first[i];
+			auto value = pf.args[i];
+			var2elems[var] = value;
+			if(not begin){
+				ss <<", ";
+			}
+			begin = false;
+			ss <<print(var->name()) <<"=" <<print(value);
+		}
+		return var2elems;
 	}
 
 	Formula* visit(BoolForm* bf) {
@@ -144,8 +160,8 @@ protected:
 		auto rules = d->rules();
 		for (auto r : d->rules()) {
 			// H <- B ===> H <- ~M1 & (M2 | B)
-			std::vector<Sort*> sorts;
-			std::vector<Variable*> vars;
+			vector<Sort*> sorts;
+			vector<Variable*> vars;
 			for (auto var : r->quantVars()) {
 				sorts.push_back(var->sort());
 				vars.push_back(var);
@@ -156,7 +172,8 @@ protected:
 			newpreds.push_back(conjp);
 			auto conjmarker = &Gen::operator !(Gen::atom(conjp, vars));
 			auto disjmarker = &Gen::atom(disjp, vars);
-			auto rc1 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi()), rc2 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi());
+			auto rc1 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi());
+			auto rc2 = new Rule( { }, r->head()->cloneKeepVars(), r->body()->cloneKeepVars(), r->pi());
 			rule2defid[rc1] = d->getID();
 			rule2defid[rc2] = d->getID();
 			marker2rule[conjp]= {vars, rc1};
@@ -170,7 +187,6 @@ protected:
 	virtual AbstractGroundTheory* visit(AbstractGroundTheory*) {
 		throw IdpException("Invalid code path");
 	}
-
 	virtual GroundDefinition* visit(GroundDefinition*) {
 		throw IdpException("Invalid code path");
 	}
@@ -180,14 +196,12 @@ protected:
 	virtual GroundRule* visit(PCGroundRule*) {
 		throw IdpException("Invalid code path");
 	}
-
 	virtual Rule* visit(Rule*) {
 		throw IdpException("Invalid code path");
 	}
 	virtual FixpDef* visit(FixpDef*) {
 		throw IdpException("Invalid code path");
 	}
-
 	virtual Term* visit(VarTerm*) {
 		throw IdpException("Invalid code path");
 	}
@@ -200,7 +214,6 @@ protected:
 	virtual Term* visit(AggTerm*) {
 		throw IdpException("Invalid code path");
 	}
-
 	virtual EnumSetExpr* visit(EnumSetExpr*) {
 		throw IdpException("Invalid code path");
 	}
@@ -209,33 +222,35 @@ protected:
 	}
 };
 
-std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
-	auto theory = dynamic_cast<Theory*>(atheory);
-	if (theory == NULL) {
-		throw notyetimplemented("Can only handle theories");
+vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
+	auto intheory = dynamic_cast<Theory*>(atheory);
+	if (intheory == NULL) {
+		throw notyetimplemented("Unsatcore extraction for non first-order theories");
 	}
-	auto voc = new Vocabulary("test");
-	voc->add(theory->vocabulary());
 
-	auto newtheory = theory->clone();
+	clog <<">>> Generating an unsatisfiable subset of the given theory.\n";
+
+	stringstream ss;
+	ss <<"unsatcore_voc" <<getGlobal()->getNewID();
+	auto voc = new Vocabulary(ss.str());
+	voc->add(intheory->vocabulary());
+	auto newtheory = intheory->clone();
 	newtheory->vocabulary(voc);
-
 	auto s = structure->clone();
-	s->changeVocabulary(newtheory->vocabulary()); // TODO theory voc?
+	s->changeVocabulary(newtheory->vocabulary());
 
 	//	TODO dropping function constraints is not possible as MX is not able to read a model back in that does not satisfy its functions
-	// would need to really replace all functions with new predicate symbols first!
-	// (and then also do not add them during mx itself)
-//	std::map<Function*, Formula*> func2form;
+	//	solution: replace functions with predicate symbols, without adding function constraints!
+//	map<Function*, Formula*> func2form;
 //	FormulaUtils::addFuncConstraints(newtheory, newtheory->vocabulary(), func2form, getOption(CPSUPPORT));
 //	for (auto f2f : func2form) {
-//	newtheory->add(f2f.second);
+//		newtheory->add(f2f.second);
 //	}
 
 	for (auto def : newtheory->definitions()) {
 		for (auto p : def->defsymbols()) {
 			varset vars;
-			std::vector<Term*> varlist;
+			vector<Term*> varlist;
 			for (uint i = 0; i < p->sorts().size(); ++i) {
 				auto var = new Variable(p->sort(i));
 				vars.insert(var);
@@ -245,18 +260,20 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 		}
 	}
 
-	AddMarkers am;
-	newtheory = am.execute(newtheory);
+	auto am = new AddMarkers();
+	newtheory = am->execute(newtheory);
 
-	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {{},am.getMarkers()});
+	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {{},am->getMarkers()});
 	if (not mxresult.unsat) {
 		throw IdpException("The given theory has models that extend the structure, so there are no unsat cores.");
 	}
 
-	// TODO should set remaining markers on true to allow more pruning
+	clog <<">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
+
+	// TODO should set remaining markers on true to allow ealier pruning
 	auto core = mxresult.unsat_in_function_of_ct_lits;
 	auto erased = true;
-	bool stop = false;
+	auto stop = false;
 	while(erased && not stop){
 		if(getGlobal()->terminateRequested()){
 			getGlobal()->reset();
@@ -272,10 +289,10 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 				break;
 			}
 			auto elem = core[i];
-			std::swap(core[i], core[maxsize-1]);
+			swap(core[i], core[maxsize-1]);
 			core.pop_back();
 			maxsize--;
-			auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {core, {}}); // TODO do not add function constraints
+			auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, {core, {}});
 			if(mxresult._interrupted){
 				stop = true;
 				break;
@@ -292,7 +309,8 @@ std::vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* a
 		}
 	}
 
-	auto coreresult = am.getComponentsFromMarkers(mxresult.unsat_in_function_of_ct_lits);
+	auto coreresult = am->getComponentsFromMarkers(mxresult.unsat_in_function_of_ct_lits);
+	delete(am);
 	newtheory->recursiveDelete();
 	delete (s);
 	delete (voc);

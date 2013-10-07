@@ -21,8 +21,8 @@ class UnsatCoreInference: public ModelExpandInferenceBase {
 public:
 	UnsatCoreInference()
 			: ModelExpandInferenceBase("unsatcore",
-					"Returns a set of instances of sentences and rules, subset of the theory, that are unsatisfiable.", false) {
-		setNameSpace(getInferenceNamespaceName());
+					"Returns a theory, subset of the given theory, that is unsatisfiable in the given structure.", false) {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {

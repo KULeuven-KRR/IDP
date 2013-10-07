@@ -113,7 +113,7 @@ MXResult ModelExpansion::expand() const {
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
 	stringstream ss;
-	ss <<"intern_voc" <<getGlobal()->getNewID();
+	ss <<"mx_voc" <<getGlobal()->getNewID();
 	auto voc = new Vocabulary(ss.str());
 	voc->add(clonetheory->vocabulary());
 	voc->add(newstructure->vocabulary());
