@@ -340,7 +340,7 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 					<< "occurs in theory unexpectedly. Please report this bug to krr@cs.kuleuven.be";
 			throw IdpException(ss.str());
 		}
-		PredForm* leafconnector = *lc;
+		PredForm* leafconnector = lc->second;
 		_propagator->addToLeafUpward(leafconnector, pf);
 		LeafConnectData<Domain> lcd;
 		lcd._connector = leafconnector;
