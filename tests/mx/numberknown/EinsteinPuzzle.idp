@@ -1,0 +1,68 @@
+vocabulary V{
+	type House constructed from {Red,Green,Blue,Yellow,White}
+	type Owner constructed from {English, Swede, Dane, Norwegian,German}
+	type Beverage constructed from {Tea,Coffee,Milk,Beer,Water}
+	type Pet constructed from {Dog,Bird,Cat,Horse,Fish}
+	type Cigar constructed from {PallMall,Dunhill,Blend,Bluemaster,Prince}
+	type Nb isa int
+
+	OwnsHouse(Owner):House
+	OwnsPet(Owner):Pet
+	Drinks(Owner):Beverage
+	Smokes(Owner):Cigar
+	Order(House):Nb
+}
+theory T:V{
+	! h: ?1 o:OwnsHouse(o)=h.
+	! p: ?1 o:OwnsPet(o)=p.
+	! b: ?1 o:Drinks(o)=b.
+	! n: ?1 h:Order(h)=n.
+	! c: ?1 o:Smokes(o)=c.
+	
+	//The green house is on the left and next to the white house. 
+	Order(White)=Order(Green)+1.
+	
+	//The green homeowner drinks coffee.
+	!x:OwnsHouse(x)=Green => Drinks(x)=Coffee.
+	
+	//The person who smokes Pall Mall rears birds.
+	!x:Smokes(x)=PallMall => OwnsPet(x)=Bird.
+	
+	//The owner of the yellow house smokes Dunhill.
+	!x:OwnsHouse(x)=Yellow => Smokes(x)=Dunhill.
+	
+	//The man living in the center house drinks milk.
+	!h x:OwnsHouse(x)=h & Order(h)=3 => Drinks(x)=Milk.
+	
+	//The Norwegian lives in the first house.
+	!h: OwnsHouse(Norwegian)=h => Order(h)=1.
+	
+	//The man who smokes Blends lives next to the one who keeps cats.
+	!x1 x2 h1 h2: OwnsHouse(x1)=h1 & OwnsHouse(x2)=h2 & Smokes(x1)=Blend &OwnsPet(x2)=Cat => (Order(h1)=Order(h2)+1 | Order(h1)=Order(h2)-1).
+	
+	//The man who keeps the horse lives next to the man who smokes Dunhill.
+	!x1 x2 h1 h2: OwnsHouse(x1)=h1 & OwnsHouse(x2)=h2 & OwnsPet(x1)=Horse &Smokes(x2)=Dunhill => (Order(h1)=Order(h2)+1 | Order(h1)=Order(h2)-1).
+	
+	//The owner who smokes Bluemaster drinks beer.
+	!x : Smokes(x)=Bluemaster => Drinks(x)=Beer.
+	
+	//The German smokes Prince.
+	Smokes(German)=Prince.
+	
+	//The Norwegian lives next to the blue house.
+	!h: OwnsHouse(Norwegian)=h => (Order(h)=Order(Blue)+1 | Order(h)=Order(Blue)-1).
+	
+	//The man who smokes Blends has a neighbor who drinks water.
+	!x1 h1 : OwnsHouse(x1)=h1 & Smokes(x1)=Blend => ?x2 h2:( OwnsHouse(x2)=h2 &(Order(h1)=Order(h2)+1 | Order(h1)=Order(h2)-1) & Drinks(x2)=Water). 
+}
+structure S:V{
+	Nb={1..5}
+	
+	// Hints
+	OwnsHouse<ct>	= {English->Red; }		// The Englishman lives in the red house.
+	OwnsPet<ct>		= {Swede->Dog}	 		// The Swede keeps dogs as pets.
+	Drinks<ct>		= {Dane->Tea}			// The Dane drinks tea.
+}
+procedure getExpectedNbOfModels() {
+	return 1
+}
