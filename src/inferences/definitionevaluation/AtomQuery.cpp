@@ -15,7 +15,6 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
-#include "inferences/querying/xsb/xsbinterface.hpp"
 #include "generators/InstGenerator.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -25,55 +24,65 @@
 #include "theory/Query.hpp"
 #include "theory/TheoryUtils.hpp"
 
-bool AtomQuerying::queryAtom(Query* p, Theory* theory, Structure* structure) const {
+#ifdef WITHXSB
+#include "inferences/querying/xsb/xsbinterface.hpp"
+#endif
 
-	auto q = dynamic_cast<PredForm*>(p->query());
-	if(p == NULL){
-		throw new IdpException("Formula should be ground atom");
+bool AtomQuerying::queryAtom(Query* query, Theory* theory, Structure* structure) const {
+	auto pf = dynamic_cast<PredForm*>(query->query());
+
+	ElementTuple tuple;
+	for(auto term:pf->subterms()){
+		if(term->type()!=TermType::DOM){
+			throw notyetimplemented("Querying of formulas that are not a domain atom.");
+		}
+		tuple.push_back(dynamic_cast<DomainTerm*>(term)->value());
+	}
+	if (pf == NULL) {
+		throw notyetimplemented("Querying of formulas that are not a domain atom.");
 	}
 
-	auto tuple = atom2tuple(q,structure);
-	auto symbol = q->symbol();
+	auto symbol = pf->symbol();
+
+#ifdef USEXSB
 	// check if we can solve it using XSB
 	Definition* d = NULL;
-	for(auto def = theory->definitions().begin(); def != theory->definitions().end(); ++def){
-		if((*def)->defsymbols().find(symbol) != (*def)->defsymbols().end()){
-			bool calculatable = true;
-			auto opens = DefinitionUtils::opens(*def);
-			for(auto osym = opens.begin();osym != opens.end();++osym){
-				if(!structure->inter(*osym)->approxTwoValued()){
+	for (auto def : theory->definitions()) {
+		if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
+			auto calculatable = true;
+			auto opens = DefinitionUtils::opens(def);
+			for (auto osym = opens.begin(); osym != opens.end(); ++osym) {
+				if (!structure->inter(*osym)->approxTwoValued()) {
 					calculatable = false;
 				}
 			}
-			if(calculatable){
+			if (calculatable) {
 				d = *def;
 			}
 		}
 	}
-
-
-	// translate the formula to a bdd
-
-	bool result = false;
-
-	if( d!= NULL && getOption(XSB)){
+	if (d != NULL && getOption(XSB)) {
 		auto xsb = XSBInterface::instance();
 		xsb->setStructure(structure);
 		xsb->loadDefinition(d);
-		result = xsb->query(symbol,tuple);
+		auto result = xsb->query(symbol, atom2tuple(pf, structure));
 		xsb->exit();
-	} else {
-		auto old = getOption(IntType::NBMODELS);
-		setOption(IntType::NBMODELS,0);
-		// model expansion
-		auto models = ModelExpansion::doModelExpansion(theory,structure,NULL)._models;
-		for(auto model = models.begin(); model != models.end();++model ){
-			if((*model)->inter(symbol)->isTrue(tuple)){
-				result = true;
-			}
-		}
-
-		setOption(IntType::NBMODELS,old);
+		return result;
 	}
+#endif
+
+	// Default: evaluate using MX
+	auto result = false;
+	auto old = getOption(IntType::NBMODELS);
+	setOption(IntType::NBMODELS, 0);
+	// model expansion
+	auto models = ModelExpansion::doModelExpansion(theory, structure, NULL)._models;
+	for (auto model : models) {
+		if (model->inter(symbol)->isTrue(tuple)) {
+			result = true;
+		}
+	}
+
+	setOption(IntType::NBMODELS, old);
 	return result;
 }

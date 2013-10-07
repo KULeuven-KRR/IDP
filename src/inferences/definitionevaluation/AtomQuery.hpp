@@ -6,11 +6,9 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
-#ifndef ATOMQUERY_HPP_
-#define ATOMQUERY_HPP_
-
+#pragma once
 
 class Theory;
 class Structure;
@@ -20,11 +18,9 @@ class AtomQuerying {
 public:
 	static bool doSolveAtomQuery(Query* p, Theory* t, Structure* s) {
 		AtomQuerying c;
-		return c.queryAtom(p,t, s);
+		return c.queryAtom(p, t, s);
 	}
 
 private:
 	bool queryAtom(Query* p, Theory* t, Structure* s) const;
 };
-
-#endif /* QUERY_HPP_ */

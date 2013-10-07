@@ -142,7 +142,11 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, _option2name, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+#ifdef WITHXSB
 		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+#else
+		BoolPol::createOption(BoolType::XSB, "xsb", {false}, false, _option2name, PrintBehaviour::DONOTPRINT);
+#endif
 		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);

@@ -22,7 +22,10 @@
 #include "inferences/grounding/GrounderFactory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
+
+#ifdef WITHXSB
 #include "inferences/querying/xsb/xsbinterface.hpp"
+#endif
 
 #include "options.hpp"
 #include <iostream>
@@ -32,10 +35,11 @@ using namespace std;
 bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
 	// TODO duplicate code with modelexpansion
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
-		clog << "Calculating definition: " <<  toString(definition) << "\n";
+		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
+#ifdef WITHXSB
 	if (withxsb) {
-		if(satdelay or getOption(SATISFIABILITYDELAY)){ // TODO implement checking threshold by size estimation
+		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
 		}
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
@@ -48,75 +52,76 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		auto symbols = definition->defsymbols();
 		for (auto it = symbols.begin(); it != symbols.end(); ++it) {
 			auto sorted = xsb_interface->queryDefinition(*it);
-            auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
-            auto predtable1 = new PredTable(internpredtable1, structure->universe(*it));
-            if(not isConsistentWith(predtable1, structure->inter(*it))){
-            	xsb_interface->reset();
-            	return false;
-            }
-            structure->inter(*it)->ctpt(predtable1);
-			if(not structure->inter(*it)->isConsistent()){ // E.g. for functions
+			auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
+			auto predtable1 = new PredTable(internpredtable1, structure->universe(*it));
+			if(not isConsistentWith(predtable1, structure->inter(*it))) {
+				xsb_interface->reset();
+				return false;
+			}
+			structure->inter(*it)->ctpt(predtable1);
+			if(not structure->inter(*it)->isConsistent()) { // E.g. for functions
 				xsb_interface->reset();
 				return false;
 			}
 		}
 		xsb_interface->reset();
 		return structure->isConsistent();
-	} else {
-		auto data = SolverConnection::createsolver(1);
-		Theory theory("", structure->vocabulary(), ParseInfo());
-		theory.add(definition);
-		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
-		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
-		auto symstructure = generateBounds(&theory, structure, propagate, LUP);
-		auto grounder = GrounderFactory::create(GroundInfo(&theory, {structure, symstructure}, NULL, true), data);
-
-		auto size = toDouble(grounder->getMaxGroundSize());
-		size = size<1?1:size;
-		if((satdelay or getOption(SATISFIABILITYDELAY)) and log(size)/log(2)>2*getOption(LAZYSIZETHRESHOLD)){
-			tooExpensive = true;
-			delete(data);
-			delete(grounder);
-			return true;
-		}
-
-		bool unsat = grounder->toplevelRun();
-
-		//It's possible that unsat is found (for example when we have a conflict with function constraints)
-		if (unsat) {
-			// Cleanup
-			delete (data);
-			delete (grounder);
-			return false;
-		}
-
-		Assert(not unsat);
-		AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
-
-		// Run solver
-		auto mx = SolverConnection::initsolution(data, 1);
-		mx->execute();
-		if (getGlobal()->terminateRequested()) {
-			throw IdpException("Solver was terminated");
-		}
-
-		// Collect solutions
-		auto abstractsolutions = mx->getSolutions();
-		if(not abstractsolutions.empty()){
-				Assert(abstractsolutions.size() == 1);
-				auto model = *(abstractsolutions.cbegin());
-				SolverConnection::addLiterals(*model, grounding->translator(), structure);
-				SolverConnection::addTerms(*model, grounding->translator(), structure);
-				structure->clean();
-		}
-		// Cleanup
-		grounding->recursiveDelete();
-		delete (data);
-		delete (mx);
-		delete (grounder);
-
-		return not abstractsolutions.empty() && structure->isConsistent();
 	}
+#endif
+	// Default: Evaluation using ground-and-solve
+	auto data = SolverConnection::createsolver(1);
+	Theory theory("", structure->vocabulary(), ParseInfo());
+	theory.add(definition);
+	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
+	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
+	auto symstructure = generateBounds(&theory, structure, propagate, LUP);
+	auto grounder = GrounderFactory::create(GroundInfo(&theory, { structure, symstructure }, NULL, true), data);
+
+	auto size = toDouble(grounder->getMaxGroundSize());
+	size = size < 1 ? 1 : size;
+	if ((satdelay or getOption(SATISFIABILITYDELAY)) and log(size) / log(2) > 2 * getOption(LAZYSIZETHRESHOLD)) {
+		tooExpensive = true;
+		delete (data);
+		delete (grounder);
+		return true;
+	}
+
+	bool unsat = grounder->toplevelRun();
+
+	//It's possible that unsat is found (for example when we have a conflict with function constraints)
+	if (unsat) {
+		// Cleanup
+		delete (data);
+		delete (grounder);
+		return false;
+	}
+
+	Assert(not unsat);
+	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
+
+	// Run solver
+	auto mx = SolverConnection::initsolution(data, 1);
+	mx->execute();
+	if (getGlobal()->terminateRequested()) {
+		throw IdpException("Solver was terminated");
+	}
+
+	// Collect solutions
+	auto abstractsolutions = mx->getSolutions();
+	if (not abstractsolutions.empty()) {
+		Assert(abstractsolutions.size() == 1);
+		auto model = *(abstractsolutions.cbegin());
+		SolverConnection::addLiterals(*model, grounding->translator(), structure);
+		SolverConnection::addTerms(*model, grounding->translator(), structure);
+		structure->clean();
+	}
+	// Cleanup
+	grounding->recursiveDelete();
+	delete (data);
+	delete (mx);
+	delete (grounder);
+
+	return not abstractsolutions.empty() && structure->isConsistent();
 }
 
 std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure, bool satdelay) const {
@@ -155,16 +160,16 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 			if (currentdefinition->second.empty()) {
 				auto definition = currentdefinition->first;
 				auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-				if(getOption(XSB) && hasrecursion) {
+				if (getOption(XSB) && hasrecursion) {
 					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 				}
 
 				bool tooexpensive = false;
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-					clog <<"Evaluating " <<toString(currentdefinition->first) <<"\n";
+					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
 				}
 				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion);
-				if(tooexpensive){
+				if (tooexpensive) {
 					continue;
 				}
 
