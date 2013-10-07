@@ -111,6 +111,13 @@ The \code{inferences} namespace and all its procedures are included in the globa
  		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
 	\item[sat(theory,structure)]
 		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
+
+	\item[printcore(theory,structure)]
+		Finds a theory that is a minimal ``subset'' of the given theory that is unsat in the given structure, or, in other words, a ``core''; it then prints this theory with 
+		references to how it was obtained from the given theory.
+		A subset in this respect is a subset of all instantiated formulas in conjunctive context in the theory and instantiated rules 
+		(either all rules defining a specific domain atom/term or none of them).
+		Currently does not take constraints implied by the vocabulary (e.g., function constraints) or the structure (e.g., type interpretations) into account.  
 		
 \end{description}
 

@@ -248,6 +248,24 @@ procedure propagate(theory,structure){
 	return idpintern.propagate(clonetheo,structure)
 }
 
+
+/**
+* Prints a subsetminimal subset of the given theory (a core) that is still unsatisfiable given a structure.*/
+procedure printcore(theory,structure){
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	idpintern.unsatcore(theory,structure)
+	return;
+}
+
+
+
 /*/**
  * Check whether first theory entails the second */
 /*procedure entails(theory1, theory2) {
