@@ -210,9 +210,6 @@ MXResult ModelExpansion::expand() const {
 		MXResult result;
 		result.unsat = true;
 		for(auto lit: mx->getUnsatExplanation()){
-			if(not grounding->translator()->isInputAtom(lit.getAtom())){
-				continue;
-			}
 			auto symbol = grounding->translator()->getSymbol(lit.getAtom());
 			auto args = grounding->translator()->getArgs(lit.getAtom());
 			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
