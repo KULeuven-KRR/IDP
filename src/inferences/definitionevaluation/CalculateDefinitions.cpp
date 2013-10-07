@@ -232,6 +232,7 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 					return std::vector<Structure*> { };
 				}
 				opens.erase(currentdefinition);
+				theory->remove(currentdefinition->first);
 				fixpoint = false;
 			}
 		}
