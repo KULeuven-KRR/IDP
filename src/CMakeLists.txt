@@ -19,11 +19,14 @@ endif()
 
 MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
 
-include_directories (
-	"${XSB_BUILD_DIR}/emu"
-	"${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}"
-)
-addToCXX("-D WITHXSB")
+if(WITHXSB)
+    include_directories (
+    	"${XSB_BUILD_DIR}/emu"
+    	"${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}"
+    )
+    addToCXX("-D WITHXSB")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
+endif()
 
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
@@ -45,11 +48,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D IDPINSTALLDIR=\\\"\"${CMAKE_INSTALL_P
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYLUA=\\\"share/std/idp_intern.lua\\\" ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D INTERNALLIBARYIDP=\\\"share/std/idp_intern.idp\\\" ") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D CONFIGFILENAME=\\\"var/config.idp\\\" ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	addToCXX("-pthread") 
 endif()
 
+set(IDPFILES "")
  
 find_package(BISON)
 find_package(FLEX)
@@ -57,26 +60,34 @@ find_package(FLEX)
 BISON_TARGET(myparser parser/parser.yy ${CMAKE_CURRENT_BINARY_DIR}/parser.cc)
 FLEX_TARGET(myscanner parser/lex.ll  ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc)
 ADD_FLEX_BISON_DEPENDENCY(myscanner myparser)
+set(IDPFILES "${IDPFILES};${BISON_myparser_OUTPUTS};${FLEX_myscanner_OUTPUTS}")
 
 set(LIBGIDLCPPFILES "")
 file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.cpp")
 file(GLOB_RECURSE LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.hpp")
 LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
+if(NOT WITHXSB)
+    LIST(REMOVE_ITEM LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/xsbinterface.hpp")
+    LIST(REMOVE_ITEM LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/compiler.hpp")
+    LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/xsbinterface.cpp")
+    LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/compiler.cpp")
+endif()
+set(IDPFILES "${IDPFILES};${LIBGIDLHPPFILES};${LIBGIDLCPPFILES}")
 
-set_source_files_properties(
-    ${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
-    EXTERNAL_OBJECT TRUE  # Identifies this as an object file
-    GENERATED TRUE  # Avoids need for file to exist at configure-time
-)
+if(WITHXSB)
+    set_source_files_properties(
+        ${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
+        EXTERNAL_OBJECT TRUE  # Identifies this as an object file
+        GENERATED TRUE  # Avoids need for file to exist at configure-time
+    )
+    set(IDPFILES "${IDPFILES};${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+endif()
 
-add_library(idp
-	${LIBGIDLHPPFILES}
-	${LIBGIDLCPPFILES}
-	${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS} 
-	${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o
-)
+add_library(idp ${IDPFILES})
 
-add_dependencies(idp xsb)
+if(WITHXSB)
+    add_dependencies(idp xsb)
+endif()
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
 	target_link_libraries(idp dl)
@@ -95,7 +106,7 @@ if(BUILD_IDP_STATIC)
 endif()
 
 target_link_libraries(idp-bin idp minisatid lua linenoise tinythread)
-if(INCLUDE_XSB)
+if(WITHXSB)
 	target_link_libraries(idp-bin dl)
 endif()
 
