@@ -1,0 +1,79 @@
+vocabulary types {
+	type dataset
+
+	type post
+	type realpost isa post
+	type virtualpost isa post
+	type object
+	
+	type relevantobject isa object
+	
+	type abstractpieceofnetwork isa object
+	type linkend isa abstractpieceofnetwork
+	type generatorend isa abstractpieceofnetwork
+	type feeder isa abstractpieceofnetwork
+	type condensatorend isa abstractpieceofnetwork
+	type transfoend isa abstractpieceofnetwork
+	
+	type machine isa object
+	type busbar isa relevantobject //,machine //TODO: plugin does not accept multiple inheritance! (works with IDP)
+	type transformer isa relevantobject //,machine //TODO: plugin does not accept multiple inheritance! (works with IDP)
+	type generator isa machine
+	type condensator isa machine
+	
+	type connection isa object
+	type line isa connection
+	type busbarcoupling isa connection
+	type isolatedcoupling isa connection
+	type dipole isa connection
+	type breaker isa connection
+}
+
+vocabulary input{
+	extern vocabulary types
+	
+	Smallest:dataset //FIXME:set in input
+	Largest:dataset
+	
+	in(object, dataset)
+
+	connected(object,object)
+	name_match(object,object)
+	in_post(object,post)
+}
+	
+vocabulary actualTheoryVoc{
+	extern vocabulary types
+	extern vocabulary input
+	
+}
+
+vocabulary preprocessingVoc{
+	extern vocabulary types
+	extern vocabulary actualTheoryVoc
+	ReachableNoRels(relevantobject,object)
+}
+
+
+
+theory T: preprocessingVoc{
+	
+	
+	{
+		! x[types::relevantobject] y: ReachableNoRels(x,y) <- input::connected(x, y).
+		! x[types::relevantobject] y: ReachableNoRels(x,y) <- ? z[types::object]: input::connected(z,y) & ~ types::relevantobject(z) & ReachableNoRels(x,z) .
+	}
+	
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+
+structure S:preprocessingVoc{
+connected = {}
+}
+
+
+
