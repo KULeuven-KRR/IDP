@@ -17,6 +17,7 @@ class PushQuantifications: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 public:
 	// NOTE: requires pushed quantifications, which IS guaranteed when going through theoryUtils.
+	// NOTE: non-recursive
 	template<typename T>
 	T execute(T t) {
 		return t->accept(this);
