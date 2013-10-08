@@ -25,7 +25,7 @@
 
 using namespace std;
 
-map<string, string> domainels;
+unordered_map<string, string> domainels;
 map<string, string> termnames;
 unsigned int identifier;
 
