@@ -67,7 +67,9 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 		}
 
 		auto bsubf = dynamic_cast<BoolForm*>(currentquant->subformula());
-		if (bsubf == NULL) {
+		if (bsubf == NULL || (bsubf->isConjWithSign() != qf->isUniv())) {
+			//If the subformula is not a boolform, we cannot push the quantifications
+			//If we have a situation !x y: P(x) | Q(x,y), we don't want to push the y down either as this introduces extra Tseitins
 			return qf;
 		}
 		vector<vector<Formula*> > formulalevels(quantforms.size() + 1); // Level at which they should be added (index 0 is before the first quantifier, ...)
