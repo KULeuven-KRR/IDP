@@ -4384,6 +4384,9 @@ void StrLessInternalPredTable::accept(StructureVisitor* v) const {
 void StrGreaterInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
 }
+void FullInternalSortTable::accept(StructureVisitor*) const {
+	throw notyetimplemented("Visiting the universal table");
+}
 void InverseInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
 }

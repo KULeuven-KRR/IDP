@@ -1023,13 +1023,13 @@ public:
 	}
 
 	virtual InternalSortTable* add(const DomainElement*) {
-		throw notyetimplemented("Adding to a FullInternalSortTable.");
+		return this;
 	}
 	virtual InternalSortTable* remove(const DomainElement*){
-		throw notyetimplemented("Removing from a FullInternalSortTable.");
+		throw IdpException("Cannot remove from the universal table.");
 	}
-	virtual InternalSortTable* add(int i1, int i2){
-		throw notyetimplemented("Adding to a FullInternalSortTable.");
+	virtual InternalSortTable* add(int, int){
+		return this;
 	}
 
 	virtual InternalSortIterator* sortBegin() const{
@@ -1053,7 +1053,7 @@ public:
 	}
 
 	// Visitor
-	virtual void accept(StructureVisitor* v) const {}
+	virtual void accept(StructureVisitor* v) const;
 
 	virtual ~FullInternalSortTable() {
 	}
