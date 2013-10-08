@@ -16,5 +16,8 @@ namespace Tests {
 TEST_P(MXnbTest, DoesMXWithXSB) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithxsb()");
 }
+TEST_P(MXsatTest, DoesMXWithXSB) {
+	runTests("satisfiability.idp", GetParam(), "satwithxsb()");
+}
 
 }
