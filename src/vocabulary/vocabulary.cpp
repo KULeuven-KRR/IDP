@@ -337,6 +337,10 @@ bool Sort::isConstructed() const {
 	return _constructors.size()!=0;
 }
 
+bool Sort::hasFixedInterpretation() const{
+	return _interpretation != NULL || isConstructed();
+}
+
 bool Sort::builtin() const{
 	return _interpretation != NULL;
 }

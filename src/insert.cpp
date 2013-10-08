@@ -1103,6 +1103,9 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	// Add the subsorts
 	for (unsigned int n = 0; n < subs.size(); ++n) {
 		if (subs[n]) {
+			if(subs[n]->isConstructed()){
+				constructedTypeAsSubtype(ComponentType::Sort, subs[n]->name(), pi);
+			}
 			for (unsigned int m = 0; m < sups.size(); ++m) {
 				if (sups[m]) {
 					if (supsa[m].find(subs[n]) != supsa[m].cend()) {
@@ -2464,6 +2467,7 @@ std::string Insert::printUTF(UTF utf) const {
 	throw IdpException("invalid code path");
 }
 
+// Checks whether a certain symbol can be assigned an interpretation
 bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 	bool error = basicSymbolCheck(symbol, nst);
 	if (contains(_pendingAssignments, symbol)) {
@@ -2478,6 +2482,15 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 			stringstream ss;
 			ss << type << " " << symbol->name() << " was already " << (utf == UTF::TWOVAL ? "partially" : "fully")
 					<< " interpreted earlier by other truth values than " << printUTF(utf) << ".";
+			Error::error(ss.str(), nst->_pi);
+			error = true;
+		}
+	}
+	if (not error && symbol->isFunction()){
+		auto func = (Function*) symbol;
+		if(func->isConstructorFunction()){
+			stringstream ss;
+			ss << symbol->name() << " is a constructor function: its interpretation is fixed and cannot change.";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
@@ -2597,6 +2610,7 @@ void Insert::constructor(NSPair* nst) const {
 
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
+
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
 	Sort* s = sortInScope(name, pi);
@@ -2614,11 +2628,13 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 		p = p->resolve(nst->_sorts);
 	}
 	if (s) {
-		if (belongsToVoc(s)) {
+		if (belongsToVoc(s) && !s->hasFixedInterpretation()) {
 			auto st = _currstructure->inter(s);
 			st->internTable(t->internTable());
 			sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
 			delete (t);
+		} else if(s->hasFixedInterpretation()) {
+			fixedInterTypeReinterpretedInStructure(ComponentType::Sort, toString(name), pi);
 		} else {
 			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
 		}

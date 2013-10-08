@@ -384,9 +384,8 @@ void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* 
 		for (unsigned int col = 0; col < tuple.size(); ++col) {
 			auto sort = symbol->sorts()[col];
 			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
-			if (not sort->builtin()
+			if (not sort->hasFixedInterpretation()
 					&& not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort)
-					&& not sort->isConstructed()
 					&& getOption(AUTOCOMPLETE)) {
 				univ.tables()[col]->add(tuple[col]);
 			} else if (!univ.tables()[col]->contains(tuple[col]) && not getOption(ASSUMECONSISTENTINPUT)) {
@@ -605,7 +604,7 @@ void Structure::functionCheck() {
 }
 
 bool Structure::hasInter(const Sort* s) const {
-	return s != NULL && (s->builtin() || s->isConstructed() || _sortinter.find(const_cast<Sort*>(s)) != _sortinter.cend());
+	return s != NULL && (s->hasFixedInterpretation() || _sortinter.find(const_cast<Sort*>(s)) != _sortinter.cend());
 }
 
 SortTable* Structure::inter(const Sort* s) const {

@@ -438,3 +438,17 @@ void Warning::constructorDisambiguationInStructure(const string& domelem, const 
 	warning(ss.str());
 }
 
+/** Some types have a fixed interpretation that can not be changed in a structure **/
+void Error::fixedInterTypeReinterpretedInStructure(ComponentType type, const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type << " " << name << " is a type with a fixed interpretation.";
+	error(ss.str(), pi);
+}
+
+/** Constructed types can not be a supersort **/
+void Error::constructedTypeAsSubtype(ComponentType type, const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type << " " << name << " can not be used as a subtype.";
+	error(ss.str(), pi);
+}
+
