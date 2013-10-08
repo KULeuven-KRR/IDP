@@ -7,6 +7,7 @@
 
 #include "LogAction.hpp"
 #include <cstdio>
+#include <ctime>
 #include <iostream>
 using namespace std;
 
