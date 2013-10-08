@@ -120,7 +120,7 @@ MXResult ModelExpansion::expand() const {
 	newstructure->changeVocabulary(voc);
 	clonetheory->vocabulary(voc);
 
-	DefinitionUtils::splitDefinitions(clonetheory);
+	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory);
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
 		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);

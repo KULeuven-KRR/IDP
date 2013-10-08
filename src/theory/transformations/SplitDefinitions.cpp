@@ -28,6 +28,7 @@ Theory* SplitDefinitions::visit(Theory* theory) {
 }
 
 Definition* SplitDefinitions::visit(Definition* def) {
+	notyetimplemented("Splitting definitions");
 	std::map<PFSymbol*,Definition*> defsymbols2def;
 
 	// Split all defined symbols into separate definitions
