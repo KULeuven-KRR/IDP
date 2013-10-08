@@ -811,6 +811,7 @@ void FormulaClauseBuilder::visit(const AggTerm* a) {
 }
 
 void FormulaClauseBuilder::visit(const FuncTerm* f) {
+
 	_parent->numeric(true);
 	if (f->function()->arity() == 0) {
 		// The "function" is a constant and needs to be made into a PrologConstant instead of a PrologTerm
@@ -831,49 +832,63 @@ void FormulaClauseBuilder::visit(const FuncTerm* f) {
 }
 
 void FormulaClauseBuilder::visit(const PredForm* p) {
-	auto term = new PrologTerm(strip(p->symbol()->name()));
-	term->sign(p->sign() == SIGN::POS);
-	term->tabled(_pp->isTabling(p->symbol()));
-	term->fact(true);
-	enter(term);
-	for (auto it = p->subterms().begin(); it != p->subterms().end(); ++it) {
-		(*it)->accept(this);
-	}
-	if (p->symbol()->nameNoArity() == "abs" && p->args().size() == 2) {
-		term->numeric(true);
-	} else if (isoperator(p->symbol()->name().at(0))) {
-		if (p->args().size() == 3) {
-			term->numeric(true);
-			term->infix(true);
-			auto inputvars = set<PrologVariable*>(term->variables().begin(), term->variables().end());
-			try {
-				auto tmp = (PrologVariable*) term->arguments().back();
-				if (not isa<DomainTerm>(*(p->subterms()[2]))) {
-					term->addOutputvarToCheck(tmp);
-				}
-				inputvars.erase(tmp);
-			} catch (char *str) {
-				cout << str << endl;
-			}
-			term->addInputvarsToCheck(inputvars);
-		} else {
-			auto toNumericalOperation = true;
-			for(auto arg : p->args()) {
-				if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
-						SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
-						SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
-					toNumericalOperation = false;
-				}
-			}
-			term->numeric(true);
-			term->numericalOperation(toNumericalOperation);
-			term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
-		}
+	if (p->symbol()->nameNoArity() == "-" && p->args().size() == 2 &&
+		p->args().at(0)->type() == TermType::DOM && p->args().at(1)->type() == TermType::VAR) {
+
+		// Special case for the "-" predicate that can be filled in by its value (or a unification with this)
+		auto unification = new PrologTerm("=");
+		enter(unification);
+		p->subterms()[1]->accept(this);
+		std::string str = "-";
+		str.append(toString(((DomainTerm*) p->args().at(0))->value()));
+		unification->addArgument(new PrologConstant(str));
+		leave();
+		_parent->addVariables(unification->variables());
 	} else {
-		term->numeric(false);
+		auto term = new PrologTerm(strip(p->symbol()->name()));
+		term->sign(p->sign() == SIGN::POS);
+		term->tabled(_pp->isTabling(p->symbol()));
+		term->fact(true);
+		enter(term);
+		for (auto it = p->subterms().begin(); it != p->subterms().end(); ++it) {
+			(*it)->accept(this);
+		}
+		if (p->symbol()->nameNoArity() == "abs" && p->args().size() == 2) {
+			term->numeric(true);
+		} else if (isoperator(p->symbol()->name().at(0))) {
+			if (p->args().size() == 3) {
+				term->numeric(true);
+				term->infix(true);
+				auto inputvars = set<PrologVariable*>(term->variables().begin(), term->variables().end());
+				try {
+					auto tmp = (PrologVariable*) term->arguments().back();
+					if (not isa<DomainTerm>(*(p->subterms()[2]))) {
+						term->addOutputvarToCheck(tmp);
+					}
+					inputvars.erase(tmp);
+				} catch (char *str) {
+					cout << str << endl;
+				}
+				term->addInputvarsToCheck(inputvars);
+			} else {
+				auto toNumericalOperation = true;
+				for(auto arg : p->args()) {
+					if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
+							SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
+							SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
+						toNumericalOperation = false;
+					}
+				}
+				term->numeric(true);
+				term->numericalOperation(toNumericalOperation);
+				term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
+			}
+		} else {
+			term->numeric(false);
+		}
+		leave();
+		_parent->addVariables(term->variables());
 	}
-	leave();
-	_parent->addVariables(term->variables());
 }
 
 void FormulaClauseBuilder::visit(const BoolForm* p) {
