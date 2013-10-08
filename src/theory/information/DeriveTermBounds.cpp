@@ -74,7 +74,7 @@ void DeriveTermBounds::visit(const FuncTerm* t) {
 		}
 	}
 	auto function = t->function();
-	if (function->builtin() && cancalculate) {
+	if (Vocabulary::std()->contains(function) && cancalculate) {
 		Assert(function->interpretation(_structure) != NULL);
 		auto functable = function->interpretation(_structure)->funcTable();
 
