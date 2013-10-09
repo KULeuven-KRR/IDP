@@ -165,7 +165,7 @@ void emptySort(const std::string& sortname, const std::string& structurename);
 void aspQueriesAreParsedAsFacts();
 
 /** Domain element can be interpreted as constructor **/
-void constructorDisambiguationInStructure(const std::string& domelem, const std::string& constrfunc);
+void constructorDisambiguationInStructure(const std::string& name);
 
 }
 

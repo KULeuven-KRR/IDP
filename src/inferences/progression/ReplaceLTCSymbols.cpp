@@ -17,7 +17,7 @@ ReplaceLTCSymbols::~ReplaceLTCSymbols() {
 
 template<class T>
 PFSymbol* ReplaceLTCSymbols::getNewSymbolAndSubterms(T* pf, std::vector<Term*>& newsubterms, PFSymbol* symbol) {
-	PFSymbol* newSymbol;
+	PFSymbol* newSymbol = NULL;
 	auto subterms = pf->subterms();
 	for (auto subterm : subterms) {
 		if (subterm->sort() != _ltcVocInfo->time) {

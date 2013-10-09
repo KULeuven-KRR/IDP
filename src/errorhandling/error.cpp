@@ -432,7 +432,7 @@ void Warning::aspQueriesAreParsedAsFacts(){
 }
 
 /** Domain element can be interpreted as constructor **/
-void Warning::constructorDisambiguationInStructure(const string& domelem, const string& constrfunc){
+void Warning::constructorDisambiguationInStructure(const string& domelem){
 	stringstream ss;
 	ss << "'" << domelem << "' can be both a constructed constant symbol and a string domain element. It is interpreted as a symbol. Manual disambiguation is possible as either " <<domelem <<"(), to refer to the constructor function, or as \""<<domelem<<"\" to refer to the domain element.";
 	warning(ss.str());

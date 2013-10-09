@@ -2011,7 +2011,7 @@ const DomainElement* Insert::element(const std::string& s) const {
 	string name = s+"/0"; // TODO fix arity in names
 	Function* f = funcInScope(name);
 	if(f!=NULL && (f->isConstructorFunction() || f->overloaded())){
-		Warning::constructorDisambiguationInStructure(s,name);
+		Warning::constructorDisambiguationInStructure(s);
 		if(f->overloaded()){
 			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo>{f->pi()},{}); // TODO add locations
 			return createDomElem(s); // Om toch maar iets gelijkaardig terug te geven.

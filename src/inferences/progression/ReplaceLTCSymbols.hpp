@@ -21,9 +21,8 @@ class PredForm;
 class FuncTerm;
 class PFSymbol;
 
-
 class ReplaceLTCSymbols: public TheoryMutatingVisitor {
-	VISITORFRIENDS();
+	VISITORFRIENDS()
 
 public:
 	template<class T>
@@ -48,4 +47,3 @@ private:
 	template<class T>
 	PFSymbol* getNewSymbolAndSubterms(T* pf, std::vector<Term*>& newsubterms, PFSymbol* symbol);
 };
-

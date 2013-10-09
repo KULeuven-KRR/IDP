@@ -2158,7 +2158,7 @@ UnionInternalSortTable::~UnionInternalSortTable() {
 }
 
 tablesize UnionInternalSortTable::size() const {
-	size_t result = 0;
+	long long result = 0;
 	TableSizeType type = TST_APPROXIMATED;
 	for (auto it = _intables.cbegin(); it != _intables.cend(); ++it) {
 		tablesize tp = (*it)->size();
