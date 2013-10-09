@@ -671,7 +671,13 @@ FuncInter* Structure::inter(const Function* f) const {
 		throw IdpException("Cannot get the interpretation of a non-disambiguated function.");
 	}
 	if (f->builtin()) {
-		return f->interpretation(this);
+		auto it = _fixedfuncinter.find(f);
+		if(it==_fixedfuncinter.cend()){
+			auto inter = f->interpretation(this);
+			_fixedfuncinter[f]=inter;
+			return inter;
+		}
+		return it->second;
 	} else {
 		auto it = _funcinter.find(const_cast<Function*>(f));
 		Assert(it != _funcinter.cend());

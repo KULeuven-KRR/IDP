@@ -1887,7 +1887,6 @@ public:
 class ConstructorFuncInterGenerator: public FuncInterGenerator {
 private:
 	Function* _function;
-	mutable std::map<const Structure*,FuncInter*> s2int;
 public:
 	ConstructorFuncInterGenerator(Function* function) :
 			_function(function) {
