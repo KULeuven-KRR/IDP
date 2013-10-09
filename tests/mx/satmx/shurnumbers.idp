@@ -10,6 +10,6 @@ structure S:V{
 	Partition = {1..5}
 	Number = {1..70}
 }
-procedure expectsModel(){
+procedure getExpectedAModel(){
 	return true
 }
