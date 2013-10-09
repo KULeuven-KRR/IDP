@@ -153,6 +153,11 @@ public:
 	template<int index>
 	typename Loki::TL::TypeAt<T, index>::Result get(const std::vector<InternalArgument>& args) const {
 		auto arg = args[index];
+		if(arg._type!=getArgType(index)){
+			std::stringstream ss;
+			ss <<"The " <<index <<(index==1?"st":"nd") <<" argument of " <<getName() <<" should be a "<<toCString(getArgType(index)) <<", but is a " <<toCString(arg._type) <<".";
+			throw IdpException(ss.str());
+		}
 		Assert(arg._type==getArgType(index));
 		return arg.get<typename Loki::TL::TypeAt<T, index>::Result>();
 	}
