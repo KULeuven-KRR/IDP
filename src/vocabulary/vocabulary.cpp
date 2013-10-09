@@ -1932,6 +1932,7 @@ Vocabulary* Vocabulary::std() {
 	auto floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
 	//Function* intdiv = new Function("//2", threeints, intdivgen, 300);
 	auto floatdiv = new Function(getSymbolName(STDFUNC::DIVISION), threefloats, floatdivgen, 300);
+	floatdiv->partial(true);
 
 	auto intabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true), twoint)));
 	auto floatabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false), twofloat)));
