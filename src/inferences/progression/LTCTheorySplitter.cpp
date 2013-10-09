@@ -76,14 +76,14 @@ void LTCTheorySplitter::createTheories(const Theory* theo) {
 	 * For the initial theory:
 	 * * we remove all bistate formulas.
 	 * * We keep static formulas
-	 * * We remove formulas over two states
+	 * * We keep initial formulas
 	 * * We instantiate one-state formulas with the state-predicate
 	 *
 	 * For the bistate theory:
-	 * * we remove all bistate formulas.
+	 * * we keep all bistate formulas.
 	 * * We keep static formulas
-	 * * We remove formulas over two states
-	 * * We instantiate one-state formulas with the state-predicate
+	 * * We remove initial formulas
+	 * * We instantiate one-state formulas with the next-state-predicate
 	 */
 	for (auto sentence : workingTheo->sentences()) {
 		handleAndAddToConstruct(sentence, _initialTheory, _bistateTheory);
@@ -159,6 +159,9 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 	} else if (sentenceInfo.containsNext) {
 		Assert(not sentenceInfo.containsStart);
 		//Should be guaranteed by previous case
+		if(not sentenceInfo.hasTimeVariable){
+			throw IdpException("LTC sentences can only contain the following terms of type Time: Start, Next and variables.");
+		}
 		Assert(sentenceInfo.hasTimeVariable);
 		//Don't know what else could be filled in here.
 		newSentence = ReplaceLTCSymbols::replaceSymbols(newSentence, _ltcVoc, false);
