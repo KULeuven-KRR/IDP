@@ -26,7 +26,6 @@ UnnestTerms::UnnestTerms()
 		: 	_structure(NULL),
 			_vocabulary(NULL),
 			_onlyrulehead(false),
-			_context(Context::POSITIVE),
 			_allowedToUnnest(false),
 			_chosenVarSort(NULL) {
 }
@@ -57,9 +56,6 @@ Sort* UnnestTerms::deriveSort(Term* term) {
  */
 Term* UnnestTerms::move(Term* origterm, Sort* newsort) {
 	Assert(origterm->sort()!=NULL);
-	if (getContext() == Context::BOTH && origterm->pi().userDefined() && TermUtils::isPartial(origterm)) {
-		Warning::ambigpartialterm(toString(origterm->pi().originalobject()), origterm->pi());
-	}
 	if(newsort==NULL){
 		newsort = deriveSort(origterm);
 	}
@@ -88,24 +84,17 @@ Term* UnnestTerms::move(Term* origterm, Sort* newsort) {
  */
 Formula* UnnestTerms::rewrite(Formula* formula) {
 	const FormulaParseInfo& origpi = formula->pi();
-	bool univ_and_disj = false;
-	if (getContext() == Context::POSITIVE) {
-		univ_and_disj = true;
-		for (auto it = _equalities.cbegin(); it != _equalities.cend(); ++it) {
-			(*it)->negate();
-		}
-	}
 	if (not _equalities.empty()) {
 		_equalities.push_back(formula);
 		if (not _variables.empty()) {
-			formula = new BoolForm(SIGN::POS, !univ_and_disj, _equalities, origpi);
+			formula = new BoolForm(SIGN::POS, true, _equalities, origpi);
 		} else {
-			formula = new BoolForm(SIGN::POS, !univ_and_disj, _equalities, FormulaParseInfo());
+			formula = new BoolForm(SIGN::POS, true, _equalities, FormulaParseInfo());
 		}
 		_equalities.clear();
 	}
 	if (not _variables.empty()) {
-		formula = new QuantForm(SIGN::POS, (univ_and_disj ? QUANT::UNIV : QUANT::EXIST), _variables, formula, origpi);
+		formula = new QuantForm(SIGN::POS, QUANT::EXIST, _variables, formula, origpi);
 		_variables.clear();
 	}
 	return formula;
@@ -116,7 +105,6 @@ Formula* UnnestTerms::rewrite(Formula* formula) {
  */
 Theory* UnnestTerms::visit(Theory* theory) {
 	for (auto it = theory->sentences().begin(); it != theory->sentences().end(); ++it) {
-		setContext(Context::POSITIVE);
 		setAllowedToUnnest(false);
 		*it = (*it)->accept(this);
 	}
@@ -178,7 +166,6 @@ Rule* UnnestTerms::visit(Rule* rule) {
 
 // Visit body
 	if(not _onlyrulehead){
-		_context = Context::NEGATIVE;
 		setAllowedToUnnest(false);
 		rule->body(rule->body()->accept(this));
 	}
@@ -188,40 +175,27 @@ Rule* UnnestTerms::visit(Rule* rule) {
 }
 
 Formula* UnnestTerms::traverse(Formula* f) {
-	Context savecontext = _context;
 	bool savemovecontext = isAllowedToUnnest();
-	if (isNeg(f->sign())) {
-		setContext(not _context);
-	}
 	for (size_t n = 0; n < f->subterms().size(); ++n) {
 		f->subterm(n, f->subterms()[n]->accept(this));
 	}
 	for (size_t n = 0; n < f->subformulas().size(); ++n) {
 		f->subformula(n, f->subformulas()[n]->accept(this));
 	}
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return f;
 }
 
 Formula* UnnestTerms::visit(EquivForm* ef) {
-	Context savecontext = getContext();
-	setContext(Context::BOTH);
 	auto newef = traverse(ef);
-	setContext(savecontext);
 	return doRewrite(newef);
 }
 
 Formula* UnnestTerms::visit(AggForm* af) {
-	auto savecontext = _context;
 	auto savemovecontext = isAllowedToUnnest();
-	if (isNeg(af->sign())) {
-		setContext(not _context);
-	}
 	af->setAggTerm(dynamic_cast<AggTerm*>(af->getAggTerm()->accept(this)));
 	setAllowedToUnnest(true);
 	af->setBound(af->getBound()->accept(this));
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return doRewrite(af);
 }
@@ -332,7 +306,6 @@ Formula* UnnestTerms::visit(PredForm* predform) {
 Term* UnnestTerms::traverse(Term* term) {
 	auto saveChosenVarSort = _chosenVarSort;
 	_chosenVarSort = NULL;
-	Context savecontext = getContext();
 	bool savemovecontext = isAllowedToUnnest();
 	for (size_t n = 0; n < term->subterms().size(); ++n) {
 		term->subterm(n, term->subterms()[n]->accept(this));
@@ -341,7 +314,6 @@ Term* UnnestTerms::traverse(Term* term) {
 		term->subset(n, term->subsets()[n]->accept(this));
 	}
 	_chosenVarSort = saveChosenVarSort;
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	return term;
 }
@@ -388,7 +360,6 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 	_variables.clear();
 	bool savemovecontext = isAllowedToUnnest();
 	setAllowedToUnnest(true);
-	Context savecontext = getContext();
 
 	for (uint i = 0; i < s->getSets().size(); ++i) {
 		s->setSet(i, s->getSets()[i]->accept(this));
@@ -402,7 +373,6 @@ EnumSetExpr* UnnestTerms::visit(EnumSetExpr* s) {
 		}
 	}
 
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;
@@ -416,8 +386,6 @@ QuantSetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	_variables.clear();
 	bool savemovecontext = isAllowedToUnnest();
 	setAllowedToUnnest(true);
-	Context savecontext = getContext();
-	setContext(Context::POSITIVE);
 
 	s->setTerm(s->getTerm()->accept(this));
 	if (not _equalities.empty()) {
@@ -432,9 +400,7 @@ QuantSetExpr* UnnestTerms::visit(QuantSetExpr* s) {
 	}
 
 	setAllowedToUnnest(false);
-	setContext(Context::POSITIVE);
 	s->setCondition(s->getCondition()->accept(this));
-	setContext(savecontext);
 	setAllowedToUnnest(savemovecontext);
 	_variables = savevars;
 	_equalities = saveequalities;

@@ -1,0 +1,24 @@
+vocabulary V{
+
+	type Time
+	type Move
+	type Pos
+	
+	partial move(Time):Move
+	partial next(Pos,Move):Pos
+	pos(Time):Pos
+}
+
+theory T:V{
+	!t: ?x: next(pos(t),move(t))=x.
+}
+
+structure S:V{
+	Time={0}
+	Move={A}
+	Pos={p}
+}
+
+procedure getExpectedNbOfModels() {
+	return 1
+}

@@ -37,10 +37,9 @@ private:
 	bool inhead;
 public:
 	template<typename T>
-	T execute(T t, const Structure* str, Context context) {
+	T execute(T t, const Structure* str) {
 		_structure = str;
 		_vocabulary = (str != NULL) ? str->vocabulary() : NULL;
-		setContext(context);
 		setAllowedToUnnest(false);
 		auto result = t->accept(this);
 		return result;

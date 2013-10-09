@@ -79,7 +79,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 	}
 
 	if ((isAggOrFunc(left) and isAggOrFunc(right)) && threevalleft && threevalright) {
-		auto splitformula = FormulaUtils::unnestFuncsAndAggsNonRecursive(pf, _structure, _context);
+		auto splitformula = FormulaUtils::unnestFuncsAndAggsNonRecursive(pf, _structure);
 		return splitformula->accept(this);
 	}
 

@@ -68,7 +68,7 @@ Definition* AddCompletion::visit(Definition* def) {
 }
 
 Rule* AddCompletion::visit(Rule* rule) {
-	auto newrule = DefinitionUtils::unnestNonVarHeadTerms(rule->clone(), _structure, Context::BOTH);
+	auto newrule = DefinitionUtils::unnestNonVarHeadTerms(rule->clone(), _structure);
 
 	// Split quantified variables in head and body variables
 	varset hv, bv;
