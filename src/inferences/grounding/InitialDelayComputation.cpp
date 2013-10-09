@@ -142,7 +142,6 @@ void DelayInitializer::findDelays() {
 	setOption(VERBOSE_GROUNDING, 0);
 	setOption(VERBOSE_CREATE_GROUNDERS, 0);
 	setOption(VERBOSE_GEN_AND_CHECK, 0);
-	setOption(LONGNAMES, true);
 	setOption(VERBOSE_SOLVING, 0);
 	setOption(VERBOSE_GROUNDING_STATISTICS, 0);
 	setOption(VERBOSE_PROPAGATING, 0);

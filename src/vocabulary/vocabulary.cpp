@@ -794,8 +794,15 @@ ostream& Predicate::put(ostream& output) const {
 		}
 	}
 	output << name().substr(0, name().rfind('/'));
-	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
-		if (nrSorts() > 0) {
+	if (not overloaded()) { // It is a disambiguated symbol
+		auto confusionpossible = false;
+		for (auto voc : getVocabularies()){
+			if (voc->pred(name())->overloaded()) {
+				confusionpossible = true;
+				break;
+			}
+		}
+		if (nrSorts() > 0 && (confusionpossible || getOption(BoolType::LONGNAMES)) ) {
 			output << '[';
 			sort(0)->put(output);
 			for (size_t n = 1; n < nrSorts(); ++n) {
@@ -1278,18 +1285,27 @@ ostream& Function::put(ostream& output) const {
 		}
 	}
 	output << name().substr(0, name().rfind('/'));
-	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
-		output << '[';
-		if (not _insorts.empty()) {
-			_insorts[0]->put(output);
-			for (size_t n = 1; n < _insorts.size(); ++n) {
-				output << ',';
-				_insorts[n]->put(output);
+	if (not overloaded()) { // It is a disambiguated symbol
+		auto confusionpossible = false;
+		for (auto voc : getVocabularies()){
+			if (voc->func(name())->overloaded()) {
+				confusionpossible = true;
+				break;
 			}
 		}
-		output << " : ";
-		_outsort->put(output);
-		output << ']';
+		if (confusionpossible || getOption(BoolType::LONGNAMES)) {
+			output << '[';
+			if (not _insorts.empty()) {
+				_insorts[0]->put(output);
+				for (size_t n = 1; n < _insorts.size(); ++n) {
+					output << ',';
+					_insorts[n]->put(output);
+				}
+			}
+			output << " : ";
+			_outsort->put(output);
+			output << ']';
+		}
 	}
 	return output;
 }
