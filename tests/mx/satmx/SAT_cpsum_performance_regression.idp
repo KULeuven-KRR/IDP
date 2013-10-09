@@ -13,7 +13,7 @@ structure S:V{
 	Truck={k0;k1;}
 	Site={1..15}
 	Time={0..5}
-	Trip={0..10}
+	Trip={0..7}
 }
 
 procedure getExpectedAModel(){
