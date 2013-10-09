@@ -624,23 +624,23 @@ elements_es		: elements ';'						{ $$ = $1;	}
 
 elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$3->second); delete($3);	}
 				| elements ';' intrange				{ $$ = $1; data().addElement($$,$3->first,$3->second); delete($3);	}
-				| elements ';' '(' strelement ')'	{ $$ = $1; data().addElement($$,$4);						}
+				| elements ';' '(' strelement ')'	{ $$ = $1; data().addElement($$,*$4);						}
 				| elements ';' '(' integer ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' '(' compound ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' '(' floatnr ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' integer				{ $$ = $1; data().addElement($$,$3);						}
-				| elements ';' strelement			{ $$ = $1; data().addElement($$,$3);						}
+				| elements ';' strelement			{ $$ = $1; data().addElement($$,*$3);						}
 				| elements ';' floatnr				{ $$ = $1; data().addElement($$,$3);						}
 				| elements ';' compound				{ $$ = $1; data().addElement($$,$3);						}
 				| charrange							{ $$ = data().createSortTable(); 
 													  data().addElement($$,$1->first,$1->second); delete($1);	}
 				| intrange							{ $$ = data().createSortTable(); 
 													  data().addElement($$,$1->first,$1->second); delete($1);	}
-				| '(' strelement ')'				{ $$ = data().createSortTable(); data().addElement($$,$2);	}
+				| '(' strelement ')'				{ $$ = data().createSortTable(); data().addElement($$,*$2);	}
 				| '(' integer ')'					{ $$ = data().createSortTable(); data().addElement($$,$2);	}
 				| '(' floatnr ')'                   { $$ = data().createSortTable(); data().addElement($$,$2);	}
 				| '(' compound ')'					{ $$ = data().createSortTable(); data().addElement($$,$2);	}
-				| strelement						{ $$ = data().createSortTable(); data().addElement($$,$1);	}
+				| strelement						{ $$ = data().createSortTable(); data().addElement($$,*$1);	}
 				| integer							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				| floatnr							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				| compound							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
@@ -654,7 +654,7 @@ func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
 
 strelement		: identifier	{ $$ = $1;									}
 				| STRINGCONS	{ $$ = $1;									}
-				| CHARCONS		{ $$ = StringPointer(std::string(1,$1));	}
+				| CHARCONS		{ $$ = new std::string(1,$1);	}
 				;
 
 /** Interpretations with arity not 1 **/
@@ -786,7 +786,7 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 				;
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
-				| CHARACTER		{ $$ = StringPointer(std::string(1,$1)); } 
+				| CHARACTER		{ $$ = new std::string(1,$1); } 
 				;
 
 /********************

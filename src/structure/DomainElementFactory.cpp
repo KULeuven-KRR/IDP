@@ -134,6 +134,47 @@ const DomainElement* DomainElementFactory::create(double value, NumType type) {
 	return element;
 }
 
+/*********************
+ Shared strings
+ *********************/
+
+#include <unordered_map>
+typedef std::unordered_map<std::string, std::string*> MSSP;
+class StringPointers {
+private:
+	MSSP _sharedstrings; //!< map a string to its shared pointer
+public:
+	~StringPointers();
+	string* stringpointer(const std::string&); //!< get the shared pointer of a string
+};
+
+StringPointers::~StringPointers() {
+	for (auto it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
+		delete (it->second);
+	}
+}
+
+string* StringPointers::stringpointer(const string& s) {
+	MSSP::iterator it = _sharedstrings.find(s);
+	if (it != _sharedstrings.end()) {
+		return it->second;
+	} else {
+		string* sp = new string(s);
+		_sharedstrings[s] = sp;
+		return sp;
+	}
+}
+
+StringPointers sharedstrings;
+
+string* StringPointer(const char* str) {
+	return sharedstrings.stringpointer(string(str));
+}
+
+string* StringPointer(const string& str) {
+	return sharedstrings.stringpointer(str);
+}
+
 /**
  * \brief Returns the unique domain element that has a given string value
  *
@@ -141,18 +182,19 @@ const DomainElement* DomainElementFactory::create(double value, NumType type) {
  *		- value:			the given value
  *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
-const DomainElement* DomainElementFactory::create(const string* value, bool certnotdouble) {
-	if (not certnotdouble && isDouble(*value)) {
-		return create(toDouble(*value), NumType::POSSIBLYINT);
+const DomainElement* DomainElementFactory::create(const string& value, bool certnotdouble) {
+	if (not certnotdouble && isDouble(value)) {
+		return create(toDouble(value), NumType::POSSIBLYINT);
 	}
 
-	DomainElement* element;
-	map<const string*, DomainElement*>::const_iterator it = _stringelements.find(value);
-	if (it == _stringelements.cend()) {
-		element = new DomainElement(value);
-		_stringelements[value] = element;
-	} else {
-		element = it->second;
+	DomainElement* element = NULL;
+	auto sharedstring = StringPointer(value);
+	auto it2 = _stringelements.find(sharedstring);
+	if (it2 == _stringelements.cend()) {
+		element = new DomainElement(sharedstring);
+		_stringelements[sharedstring] = element;
+	}else{
+		element = (*it2).second;
 	}
 	return element;
 }

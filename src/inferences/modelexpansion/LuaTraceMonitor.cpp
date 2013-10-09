@@ -19,7 +19,7 @@
 LuaTraceMonitor::LuaTraceMonitor(lua_State* L)
 		: _translator(NULL), _state(L) {
 	++_tracenr;
-	_registryindex = StringPointer(std::string("sat_trace_") + convertToString(_tracenr));
+	_registryindex = new std::string(std::string("sat_trace_") + convertToString(_tracenr));
 	lua_newtable(L);
 	lua_setfield(L, LUA_REGISTRYINDEX, _registryindex->c_str());
 }
