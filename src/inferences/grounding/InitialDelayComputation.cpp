@@ -46,8 +46,8 @@ DelayInitializer::DelayInitializer(LazyGroundingManager* manager)
 	groundsize = structure->inter(voc->func("groundSize/1"));
 	isdefdelay = structure->inter(voc->pred("isDefinitionDelay/3"));
 	isequivalence = structure->inter(voc->pred("isEquivalence/1"));
-	truedm = createDomElem(StringPointer("True"));
-	falsedm = createDomElem(StringPointer("False"));
+	truedm = createDomElem("True");
+	falsedm = createDomElem("False");
 }
 
 DelayInitializer::~DelayInitializer() {
