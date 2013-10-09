@@ -183,7 +183,6 @@ class FuncInterGeneratorGenerator;
  */
 class OrderFuncGenerator: public FuncGenerator {
 private:
-	mutable std::map<Sort*, Function*> _overfuncs;
 	FuncInterGeneratorGenerator* _interpretation;
 public:
 	OrderFuncGenerator(const std::string& name, unsigned int arity, FuncInterGeneratorGenerator* inter);
@@ -1280,9 +1279,9 @@ set<Function*> Function::nonbuiltins() {
 
 ostream& Function::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
-		for (auto it = getVocabularies().cbegin(); it != getVocabularies().cend(); ++it) {
-			if (not (*it)->func(name())->overloaded()) {
-				(*it)->putName(output);
+		for (auto voc : getVocabularies()) {
+			if (not voc->func(name())->overloaded()) {
+				voc->putName(output);
 				output << "::";
 				break;
 			}
@@ -1508,11 +1507,6 @@ OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, F
 
 OrderFuncGenerator::~OrderFuncGenerator() {
 	delete (_interpretation);
-	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		if (not it->second->hasVocabularies()) {
-			delete (it->second);
-		}
-	}
 }
 
 /**
@@ -1541,12 +1535,7 @@ Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
 		}
 	}
 	Assert(not sorts.empty());
-	map<Sort*, Function*>::const_iterator it = _overfuncs.find(sorts[0]);
-	if (it == _overfuncs.cend()) {
-		return disambiguate(sorts);
-	} else {
-		return it->second;
-	}
+	return disambiguate(sorts);
 }
 
 /**
@@ -1569,14 +1558,8 @@ Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Voc
 
 	Function* func = NULL;
 	if (funcSort != NULL) {
-		map<Sort*, Function*>::const_iterator it = _overfuncs.find(funcSort);
-		if (it != _overfuncs.cend()) {
-			func = it->second;
-		} else {
 			vector<Sort*> funcSorts(_arity + 1, funcSort);
 			func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
-			_overfuncs[funcSort] = func;
-		}
 	}
 	return func;
 }
@@ -1586,17 +1569,10 @@ set<Sort*> OrderFuncGenerator::allsorts() const {
 	return ss;
 }
 
-void OrderFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		it->second->addVocabulary(vocabulary);
-	}
+void OrderFuncGenerator::addVocabulary(const Vocabulary*) {
 }
 
 void OrderFuncGenerator::removeVocabulary(const Vocabulary*) {
-	// TODO: check this...
-	//for(auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-	//	it->second->removeVocabulary(vocabulary);
-	//}
 }
 
 set<Function*> OrderFuncGenerator::nonbuiltins() const {
