@@ -148,3 +148,47 @@ template<>
 Term* InternalArgument::get<Term*>() {
 	return _value._term;
 }
+
+template<>
+Sort* InternalArgument::get<Sort*>() {
+	auto sorts = _value._sort;
+	if (sorts == NULL) {
+		return NULL;
+	}
+	if (sorts->size() == 0) {
+		throw IdpException("Empty set of sorts passed but sort was requested.");
+	} else if (sorts->size() > 1) {
+		throw IdpException("Internal error: ambiguous sort.");
+	} else {
+		return *(sorts->begin());
+	}
+}
+
+template<>
+Function* InternalArgument::get<Function*>() {
+	auto funcs = _value._function;
+	if (funcs == NULL) {
+		return NULL;
+	}
+	if (funcs->size() == 0) {
+		throw IdpException("Empty set of functions passed but function was requested.");
+	} else if (funcs->size() > 1) {
+		throw IdpException("Internal error: ambiguous function.");
+	} else {
+		return *(funcs->begin());
+	}
+}
+template<>
+Predicate* InternalArgument::get<Predicate*>() {
+	auto preds = _value._predicate;
+	if (preds == NULL) {
+		return NULL;
+	}
+	if (preds->size() == 0) {
+		throw IdpException("Empty set of predicates passed but function was requested.");
+	} else if (preds->size() > 1) {
+		throw IdpException("Internal error: ambiguous predicate.");
+	} else {
+		return *(preds->begin());
+	}
+}

@@ -1,0 +1,26 @@
+vocabulary V{
+	type Time
+	Start:Time
+	Next(Time):Time
+	type Something
+	P(Time,Something)
+}
+
+theory T:V{
+	!t: P(t,s) <=> P(Next(t),s).
+	!s: P(Start,s).
+}
+
+procedure nbOfProgressions(){
+	return 2
+}
+
+procedure strict(){
+	return false
+}
+
+structure S:V{
+	Time={1..3}
+	Something={0..3}
+	Start=1
+}

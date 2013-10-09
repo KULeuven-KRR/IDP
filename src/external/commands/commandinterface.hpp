@@ -65,6 +65,9 @@ MAPPING(ElementTuple*, AT_TUPLE)
 MAPPING(std::vector<InternalArgument>*, AT_TABLE)
 MAPPING(bool, AT_BOOLEAN)
 MAPPING(Term*, AT_TERM)
+MAPPING(Sort*, AT_SORT)
+MAPPING(Function*, AT_FUNCTION)
+MAPPING(Predicate*, AT_PREDICATE)
 
 class Inference {
 private:
