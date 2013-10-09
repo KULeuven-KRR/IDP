@@ -844,6 +844,26 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 		unification->addArgument(new PrologConstant(str));
 		leave();
 		_parent->addVariables(unification->variables());
+	} else if(p->args().size() == 1 && p->symbol()->nameNoArity() == "MIN") {
+		// Special case for the MIN function of types
+		auto unification = new PrologTerm("=");
+		enter(unification);
+		p->subterms()[0]->accept(this);
+		auto fst = _pp->structure()->inter(p->args().at(0)->sort())->first();
+		unification->addArgument(new PrologConstant(domainelement_prolog(fst)));
+		leave();
+		_parent->addVariables(unification->variables());
+
+	} else if(p->args().size() == 1 && p->symbol()->nameNoArity() == "MAX") {
+		// Special case for the MAX function of types
+		auto unification = new PrologTerm("=");
+		enter(unification);
+		p->subterms()[0]->accept(this);
+		auto last = _pp->structure()->inter(p->args().at(0)->sort())->last();
+		unification->addArgument(new PrologConstant(domainelement_prolog(last)));
+		leave();
+		_parent->addVariables(unification->variables());
+
 	} else {
 		auto term = new PrologTerm(strip(p->symbol()->name()));
 		term->sign(p->sign() == SIGN::POS);
