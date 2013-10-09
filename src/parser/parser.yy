@@ -685,9 +685,9 @@ ptuple			: ptuple ',' pelement			{ $$ = $1; $$->push_back($3);	}
 				;
 
 pelement		: integer		{ $$ = data().element($1);	}
-				| identifier	{ $$ = data().element($1);	}
+				| identifier	{ $$ = data().element(*$1);	}
 				| CHARCONS		{ $$ = data().element($1);	}
-				| STRINGCONS	{ $$ = data().element($1);	}
+				| STRINGCONS	{ $$ = data().element(*$1);	}
 				| floatnr		{ $$ = data().element($1);	}
 				| compound		{ $$ = data().element($1);	}
 				;
@@ -767,11 +767,11 @@ compound	: intern_pointer '(' compound_args ')'	{ $$ = data().compound($1,*$3); 
 
 compound_args	: compound_args ',' floatnr		{ $$ = $1; $$->push_back(data().element($3));	}
 				| compound_args ',' integer		{ $$ = $1; $$->push_back(data().element($3));	}
-				| compound_args ',' strelement	{ $$ = $1; $$->push_back(data().element($3));	}
+				| compound_args ',' strelement	{ $$ = $1; $$->push_back(data().element(*$3));	}
 				| compound_args ',' compound	{ $$ = $1; $$->push_back(data().element($3));	}
 				| floatnr						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
 				| integer						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
-				| strelement					{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
+				| strelement					{ $$ = new std::vector<const DomainElement*>(1,data().element(*$1));}
 				| compound						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
 				;
 	         
@@ -815,7 +815,7 @@ domain_tuple	: domain_tuple ',' domain_element	{ $$ = data().domaintuple($1,$3);
 				| charrange							{ $$ = data().domaintuple($1); delete($1);		}
 				;
 
-domain_element	: strelement	{ $$ = data().element($1); }
+domain_element	: strelement	{ $$ = data().element(*$1); }
 				| integer		{ $$ = data().element($1); }
 				| floatnr		{ $$ = data().element($1); }
 				| compound		{ $$ = data().element($1); }

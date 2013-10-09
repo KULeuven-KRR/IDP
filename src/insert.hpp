@@ -423,7 +423,7 @@ public:
 	const DomainElement* element(int) const;
 	const DomainElement* element(double) const;
 	const DomainElement* element(char) const;
-	const DomainElement* element(std::string*) const;
+	const DomainElement* element(const std::string&) const;
 	const DomainElement* element(const Compound*) const;
 
 	std::pair<int, int>* range(int, int, YYLTYPE) const;

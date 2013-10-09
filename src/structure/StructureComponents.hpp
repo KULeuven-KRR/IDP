@@ -994,6 +994,71 @@ protected:
 
 };
 
+class FullInternalSortTable: public InternalSortTable {
+public:
+	FullInternalSortTable() {
+	}
+
+	virtual bool contains(const DomainElement*) const{
+		return true;
+	}
+
+	virtual bool empty() const {
+		return false;
+	}
+	virtual bool finite() const {
+		return false;
+	}
+	virtual bool approxEmpty() const {
+		return false;
+	}
+	virtual bool approxFinite() const {
+		return false;
+	}
+	virtual tablesize size() const {
+		tablesize ts;
+		ts._size=0;
+		ts._type=TST_INFINITE;
+		return ts;
+	}
+
+	virtual InternalSortTable* add(const DomainElement*) {
+		return this;
+	}
+	virtual InternalSortTable* remove(const DomainElement*){
+		throw IdpException("Cannot remove from the universal table.");
+	}
+	virtual InternalSortTable* add(int, int){
+		return this;
+	}
+
+	virtual InternalSortIterator* sortBegin() const{
+		throw notyetimplemented("Iterating over a FullInternalSortTable.");
+	}
+	virtual InternalSortIterator* sortIterator(const DomainElement*) const{
+		throw notyetimplemented("Iterating over a FullInternalSortTable.");
+	}
+
+	// Returns true if non-empty and is a range
+	virtual bool isRange() const{
+		return false;
+	}
+	// Returns NULL if empty or not a range
+	virtual const DomainElement* first() const{
+		return NULL;
+	}
+	// Returns NULL if empty or not a range
+	virtual const DomainElement* last() const{
+		return NULL;
+	}
+
+	// Visitor
+	virtual void accept(StructureVisitor* v) const;
+
+	virtual ~FullInternalSortTable() {
+	}
+};
+
 class UnionInternalSortTable: public InternalSortTable {
 public:
 	std::vector<SortTable*> _intables;

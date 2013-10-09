@@ -430,3 +430,25 @@ void Warning::aspQueriesAreParsedAsFacts(){
 	ss << "ASP Queries are currently parsed as ASP facts.";
 	warning(ss.str());
 }
+
+/** Domain element can be interpreted as constructor **/
+void Warning::constructorDisambiguationInStructure(const string& domelem, const string& constrfunc){
+	stringstream ss;
+	ss << "'" << domelem << "' can be both a constructed constant symbol and a string domain element. It is interpreted as a symbol. Manual disambiguation is possible as either " <<domelem <<"(), to refer to the constructor function, or as \""<<domelem<<"\" to refer to the domain element.";
+	warning(ss.str());
+}
+
+/** Some types have a fixed interpretation that can not be changed in a structure **/
+void Error::fixedInterTypeReinterpretedInStructure(ComponentType type, const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type << " " << name << " is a type with a fixed interpretation.";
+	error(ss.str(), pi);
+}
+
+/** Constructed types can not be a supersort **/
+void Error::constructedTypeAsSubtype(ComponentType type, const string& name, const ParseInfo& pi) {
+	stringstream ss;
+	ss << type << " " << name << " can not be used as a subtype.";
+	error(ss.str(), pi);
+}
+
