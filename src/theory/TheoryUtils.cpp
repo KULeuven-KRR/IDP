@@ -356,8 +356,8 @@ void pushNegations(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-AbstractTheory* calculateArithmetic(AbstractTheory* t) {
-	return transform<CalculateKnownArithmetic, AbstractTheory*>(t);
+Theory* calculateArithmetic(Theory* t) {
+	return transform<CalculateKnownArithmetic, Theory*>(t);
 }
 
 Formula* pushQuantifiersAndNegations(Formula* t) {
