@@ -441,9 +441,9 @@ rules		: rules rule	{ $$ = $1; $1->push_back($2);	}
 			| rule			{ $$ = new std::vector<Rule*>(1,$1);	}			
 			;
 
-rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@1); delete($1);	}
-			| univquantvars head "<-"		  '.'	{ $$ = data().rule(*$1,$2,@1); delete($1);		}
-			| univquantvars head			  '.'	{ $$ = data().rule(*$1,$2,@1); delete($1);		}
+rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@2); delete($1);	}
+			| univquantvars head "<-"		  '.'	{ $$ = data().rule(*$1,$2,@2); delete($1);		}
+			| univquantvars head			  '.'	{ $$ = data().rule(*$1,$2,@2); delete($1);		}
 			;
 			
 univquantvars 
