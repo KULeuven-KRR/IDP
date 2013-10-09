@@ -618,7 +618,7 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateClause* ac) {
 	// Thus making the term always the first argument of the comparison
 	term->addArgument(ac->term());
 	term->addArgument(ac->aggterm()->result());
-	term->addInputvarToCheck((PrologVariable*) ac->term());
+	term->addOutputvarToCheck((PrologVariable*) ac->term());
 	body.push_back(term);
 	ac->aggterm()->accept(this);
 	_pp->addClause(new PrologClause(ac->asTerm(), body, false));
