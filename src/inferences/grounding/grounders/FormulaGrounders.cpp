@@ -880,15 +880,11 @@ bool QuantGrounder::groundAfterGeneration(ConjOrDisj& formula, LazyGroundingRequ
 	if (_checker->check()) {
 		formula.literals = litlist { getContext().gentype == GenType::CANMAKETRUE ? _true : _false };
 		if (verbosity() > 2) {
-			poptab();
 			clog << tabs() << "Checker checked, hence formula decided. Result is " << translator()->printLit(formula.literals.front()) << "\n";
 		}
 		return true;
 	}
 	if (runSubGrounder(_subgrounder, getContext()._conjunctivePathFromRoot, conjunctiveWithSign(), formula, request) == FormStat::DECIDED) {
-		if (verbosity() > 2) {
-			poptab();
-		}
 		return true;
 	}
 	return false;
