@@ -291,10 +291,15 @@ void DeriveSorts::execute(Rule* r, Vocabulary* v, bool useBuiltins) {
 			if (not useBuiltins) {
 				// Note: Everytime this method is called, a sort check will be added to the body!
 				// Typically it is called twice (with and without using builtins), so we do it in only one of these cases.
-				auto sortpred = (*jt)->pred();
-				auto pf = new PredForm(SIGN::POS, sortpred, { subterm->clone() }, FormulaParseInfo());
-				auto bf = new BoolForm(SIGN::POS, true, r->body(), pf, FormulaParseInfo());
-				r->body(bf);
+				// Note: there is a special case in which the type of the predicate is not yet derived. If this is the case, we throw an exception.
+				if (*jt == NULL) {
+					Error::nopredsort(head.symbol()->name(), head.pi());
+				} else {
+					auto sortpred = (*jt)->pred();
+					auto pf = new PredForm(SIGN::POS, sortpred, { subterm->clone() }, FormulaParseInfo());
+					auto bf = new BoolForm(SIGN::POS, true, r->body(), pf, FormulaParseInfo());
+					r->body(bf);
+				}
 			}
 		} else {
 			// For functions or aggregates, we expect the cost of duplication to be too high in general, so we add the variable instead.
