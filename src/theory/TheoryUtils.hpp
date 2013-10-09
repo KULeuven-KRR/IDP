@@ -211,7 +211,7 @@ int nrSubformulas(AbstractTheory*);
 void pushNegations(AbstractTheory*);
 
 /** Calculate all operations on domainelements */
-AbstractTheory* calculateArithmetic(AbstractTheory*) ;
+Theory* calculateArithmetic(Theory*) ;
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 Formula* pushQuantifiersAndNegations(Formula*);
