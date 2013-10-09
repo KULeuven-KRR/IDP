@@ -14,7 +14,7 @@ theory T:V{
 }
 
 procedure init(){
-	return initialise(T,S,V::anonymous,V::myfun,V::otherfun)
+	return initialise(T,S,V::anonymous.type,V::myfun,V::otherfun)
 }
 
 procedure nbOfProgressions(){

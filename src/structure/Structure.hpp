@@ -35,6 +35,7 @@ private:
 	std::map<Sort*, SortTable*> _sortinter; //!< The domains of the structure.
 	std::map<Predicate*, PredInter*> _predinter; //!< The interpretations of the predicate symbols.
 	std::map<Function*, FuncInter*> _funcinter; //!< The interpretations of the function symbols.
+	mutable std::map<const Function*, FuncInter*> _fixedfuncinter; //!< The interpretations of the function symbols.
 
 	mutable std::vector<PredInter*> _intersToDelete; // Interpretations which were created and not yet deleted // TODO do this in a cleaner way!
 	void canIncrement(TableIterator & domainIterator) const;

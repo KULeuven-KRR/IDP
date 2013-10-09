@@ -4,11 +4,11 @@ vocabulary V{
 	In(Number):Partition
 }
 theory T:V{
-	!x y: In(x)=In(y) => In(x)~=In(x+y).
+	!x y: In(x)=In(y) & Number(x+y) => In(x)~=In(x+y).
 }
 structure S:V{
 	Partition = {1..5}
-	Number = {1..70}
+	Number = {1..60}
 }
 procedure getExpectedAModel(){
 	return true
