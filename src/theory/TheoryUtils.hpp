@@ -129,7 +129,7 @@ Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSy
 Formula* pushNegations(Formula* f);
 
 /** Calculate all operations on domainelements */
-Formula* calculateArithmetic(Formula* f) ;
+Formula* calculateArithmetic(Formula* f, const Structure* s) ;
 
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
@@ -211,7 +211,7 @@ int nrSubformulas(AbstractTheory*);
 void pushNegations(AbstractTheory*);
 
 /** Calculate all operations on domainelements */
-Theory* calculateArithmetic(Theory*) ;
+Theory* calculateArithmetic(Theory*, const Structure* s) ;
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 Formula* pushQuantifiersAndNegations(Formula*);

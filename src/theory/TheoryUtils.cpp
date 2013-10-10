@@ -251,8 +251,8 @@ Formula* pushNegations(Formula* f) {
 	return transform<PushNegations, Formula*>(f);
 }
 
-Formula* calculateArithmetic(Formula* f) {
-	return transform<CalculateKnownArithmetic, Formula*>(f);
+Formula* calculateArithmetic(Formula* f, const Structure* s) {
+	return transform<CalculateKnownArithmetic, Formula*>(f,s);
 }
 
 Formula* removeEquivalences(Formula* f) {
@@ -356,8 +356,8 @@ void pushNegations(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-Theory* calculateArithmetic(Theory* t) {
-	return transform<CalculateKnownArithmetic, Theory*>(t);
+Theory* calculateArithmetic(Theory* t, const Structure* s) {
+	return transform<CalculateKnownArithmetic, Theory*>(t,s);
 }
 
 Formula* pushQuantifiersAndNegations(Formula* t) {
