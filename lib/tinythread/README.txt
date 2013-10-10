@@ -1,7 +1,7 @@
-TinyThread++ v1.0
+TinyThread++ v1.1
 =================
 
-http://tinythread.sourceforge.net
+http://tinythreadpp.bitsnbites.eu
 
 
 About
@@ -10,8 +10,8 @@ About
 TinyThread++ is a minimalist, portable, threading library for C++, intended to
 make it easy to create multi threaded C++ applications.
 
-The library is closesly modeled after the current C++0x standard (draft), but
-only a subset is implemented at the moment.
+The library is closesly modeled after the C++11 standard, but only a subset is
+implemented at the moment.
 
 See the documentation in the doc/html directory for more information.
 
@@ -47,6 +47,9 @@ Windows/MS Visual Studio:
 
 History
 -------
+
+v1.1 - 2012.05.07
+  - Added thread::detach().
 
 v1.0 - 2010.10.01
   - First non-beta release.
@@ -104,7 +107,7 @@ v0.1 - 2010.03.21
 License
 -------
 
-Copyright (c) 2010 Marcus Geelnard
+Copyright (c) 2010-2012 Marcus Geelnard
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -124,3 +127,4 @@ freely, subject to the following restrictions:
 
     3. This notice may not be removed or altered from any source
     distribution.
+

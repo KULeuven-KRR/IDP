@@ -1,5 +1,5 @@
-/*
-Copyright (c) 2010 Marcus Geelnard
+/* -*- mode: c++; tab-width: 2; indent-tabs-mode: nil; -*-
+Copyright (c) 2010-2012 Marcus Geelnard
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -109,6 +109,13 @@ void ThreadYield(void * aArg)
 {
   // Yield...
   this_thread::yield();
+}
+
+// Thread function: Detach
+void ThreadDetach(void * aArg)
+{
+  // We don't do anything much, just sleep a little...
+  this_thread::sleep_for(chrono::milliseconds(100));
 }
 
 
@@ -267,5 +274,13 @@ int main()
       cout << "." << flush;
     }
     cout << endl;
+  }
+
+  // Test 9: detach
+  cout << endl << "PART IX: Detach" << endl;
+  {
+    thread t(ThreadDetach, 0);
+    t.detach();
+    cout << " Detached from thread." << endl;
   }
 }

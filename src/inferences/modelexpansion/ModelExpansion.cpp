@@ -158,7 +158,7 @@ MXResult ModelExpansion::expand() const {
 	getGlobal()->addTerminationMonitor(terminator);
 
 	auto t = basicTimer([](){return getOption(MXTIMEOUT);},[terminator](){terminator->notifyTerminateRequested();});
-	thread time(&basicTimer::time, &t);
+	thread time(&timerLoop, &t);
 
 	MXResult result;
 	try {
