@@ -120,7 +120,7 @@ MXResult ModelExpansion::expand() const {
 	newstructure->changeVocabulary(voc);
 	clonetheory->vocabulary(voc);
 
-	clonetheory = FormulaUtils::calculateArithmetic(clonetheory);
+	clonetheory = FormulaUtils::calculateArithmetic(clonetheory,newstructure);
 	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory);
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{

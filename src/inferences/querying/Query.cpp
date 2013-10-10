@@ -39,7 +39,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	std::shared_ptr<FOBDDManager> manager;
 	const FOBDD* bdd = NULL;
 	auto newquery = q->query()->clone();
-	newquery = FormulaUtils::calculateArithmetic(newquery);
+	newquery = FormulaUtils::calculateArithmetic(newquery,structure);
 	if (not structure->approxTwoValued()) {
 		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
 		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,{}, true,false);

@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef CALCULATE_HPP_
-#define CALCULATE_HPP_
+#pragma once
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "common.hpp"
@@ -21,15 +20,18 @@ class CalculateKnownArithmetic: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 public:
 	template<typename T>
-	T execute(T t) {
+	T execute(T t, const Structure* s) {
+		_struc = s;
 		return t->accept(this);
 	}
+private:
+	const Structure* _struc;
 protected:
+	//TODO can still be improved: calculate more then only functerms
 	Term* visit(FuncTerm* ft) {
 		auto newFuncTerm = dynamic_cast<FuncTerm*>(traverse(ft));
 		auto f = newFuncTerm->function();
-		if (f->builtin()) {
-			//TODO: can be improved: it can be given a structure so that the calculations not only happen for builtins...
+		if (_struc->inter(f)->approxTwoValued()) {
 			std::vector<const DomainElement*> tuple(newFuncTerm->subterms().size());
 			int i = 0;
 			bool allDomainElements = true;
@@ -43,7 +45,7 @@ protected:
 				}
 			}
 			if (allDomainElements) {
-				auto result = f->interpretation(NULL)->funcTable()->operator [](tuple);
+				auto result = f->interpretation(_struc)->funcTable()->operator [](tuple);
 				if (result == NULL) {
 					//TODO: what should happen here?
 					//I think smarter things can be done (like passing on the NULL to the superformula)
@@ -57,5 +59,3 @@ protected:
 		return newFuncTerm;
 	}
 };
-
-#endif /* CALCULATE_HPP_ */
