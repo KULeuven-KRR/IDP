@@ -69,7 +69,9 @@ Furthermore: \code{stdspace} contains the following subnamespaces:
 \end{description}
 
 \subsubsection{idpintern}
-This namespace contains internal procedures of the \idp system. Using them is unsafe, since most procedures there are not tested well, or not documented. We recommend this only for advanced users. \code{idpinter} is not included in the global namespace; help for idpintern can be obtained by \code{help(stdspace.idpintern)}.
+This namespace contains procedures that are either only for internal use or still under development / testing. 
+Using them is at your own risk.  
+\code{idpintern} is not included in the global namespace; help for idpintern can be obtained by \code{help(stdspace.idpintern)}.
 
 \subsubsection{inferences}
 The \code{inferences} namespace and all its procedures are included in the global namespace. Hence \code{inferences.xxx} should never be used. This namespace contains several inference methods:

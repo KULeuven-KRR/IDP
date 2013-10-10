@@ -2074,7 +2074,7 @@ void makeLuaConnection() {
 	}
 
 	// Parse and run configuration file
-	auto errornb = run({getPathOfConfigFile()}, false, false, "configIDP()"); // TODO string also in config.idp
+	auto errornb = run({getPathOfConfigFile()}, false, false, "stdspace.configIDP()");
 	if(errornb!=0){
 		clog << lua_tostring(_state,-1) << "\n";
 		clog << "Error in " << getPathOfConfigFile() << ".\n";

@@ -4,6 +4,7 @@
 -- configIDP() is called initially, before any other method
 -- ================================================================== --
 
+namespace stdspace {
 procedure configIDP(){
 	// For example, set the default theorem prover command to use. Examples (working at the time of writing) below:
 	eprovercommand = "eprover -xAuto -tAuto --tptp3-format %i > %o"
@@ -13,4 +14,5 @@ procedure configIDP(){
 	meliacommand = "run-melia-jar -format tff-int %i > %o"  --java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar MELIA-0.1.2.jar
 
 	stdoptions.provercommand = spasscommand
+}
 }
