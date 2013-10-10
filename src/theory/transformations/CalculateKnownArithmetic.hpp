@@ -15,6 +15,7 @@
 #include "common.hpp"
 #include <vector>
 #include "structure/DomainElement.hpp"
+#include "utils/ListUtils.hpp"
 
 class CalculateKnownArithmetic: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
@@ -26,11 +27,15 @@ public:
 	}
 private:
 	const Structure* _struc;
+	std::set<PFSymbol*> _defsyms;
 protected:
 	//TODO can still be improved: calculate more then only functerms
 	Term* visit(FuncTerm* ft) {
 		auto newFuncTerm = dynamic_cast<FuncTerm*>(traverse(ft));
 		auto f = newFuncTerm->function();
+		if (contains(_defsyms, f)) {
+			return newFuncTerm;
+		}
 		if (_struc->inter(f)->approxTwoValued()) {
 			std::vector<const DomainElement*> tuple(newFuncTerm->subterms().size());
 			int i = 0;
@@ -57,5 +62,11 @@ protected:
 			}
 		}
 		return newFuncTerm;
+	}
+	Definition* visit(Definition* d) {
+		_defsyms = d->defsymbols();
+		auto result = TheoryMutatingVisitor::visit(d);
+		_defsyms = {};
+		return result;
 	}
 };
