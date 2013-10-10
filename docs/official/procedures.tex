@@ -241,9 +241,9 @@ The mx standard library file contains some useful commands for model expansion. 
 All commands in the mx standard library file are defined in a namespace with the same name (and hence should be called by \code{mx::command(...)}.
 The following commands are supported by mx:
 \begin{description}
-	\item[one(theory,structure)]
+	\item[onemodel(theory,structure)]
 		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
-	\item[all(theory,structure)] 
+	\item[allmodels(theory,structure)] 
 		Returns all models of the theory that extend the given structure.
 	\item[printmodels(list)]
 		Prints a given list of models or prints unsatisfiable if the list is empty.
