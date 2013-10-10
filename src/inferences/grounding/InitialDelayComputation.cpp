@@ -46,8 +46,8 @@ DelayInitializer::DelayInitializer(LazyGroundingManager* manager)
 	groundsize = structure->inter(voc->func("groundSize/1"));
 	isdefdelay = structure->inter(voc->pred("isDefinitionDelay/3"));
 	isequivalence = structure->inter(voc->pred("isEquivalence/1"));
-	truedm = createDomElem(StringPointer("True"));
-	falsedm = createDomElem(StringPointer("False"));
+	truedm = createDomElem("True");
+	falsedm = createDomElem("False");
 }
 
 DelayInitializer::~DelayInitializer() {
@@ -142,7 +142,6 @@ void DelayInitializer::findDelays() {
 	setOption(VERBOSE_GROUNDING, 0);
 	setOption(VERBOSE_CREATE_GROUNDERS, 0);
 	setOption(VERBOSE_GEN_AND_CHECK, 0);
-	setOption(LONGNAMES, true);
 	setOption(VERBOSE_SOLVING, 0);
 	setOption(VERBOSE_GROUNDING_STATISTICS, 0);
 	setOption(VERBOSE_PROPAGATING, 0);

@@ -76,6 +76,12 @@ void notDeclared(ComponentType type, const std::string& name, const ParseInfo& t
 /** Unavailable objects **/
 void notInVocabularyOf(ComponentType type, ComponentType parentType, const std::string& sname, const std::string& tname, const ParseInfo& thisplace);
 
+/** Some types have a fixed interpretation that can not be changed in a structure **/
+void fixedInterTypeReinterpretedInStructure(ComponentType type, const std::string& name, const ParseInfo& pi);
+
+/** Constructed types can not be a supersort **/
+void constructedTypeAsSubtype(ComponentType type, const std::string& name, const ParseInfo& pi);
+
 /** Using overlapping symbols **/
 template<class List>
 void overloaded(ComponentType type, const std::string& name, const List& possiblelocations, const ParseInfo& pi) {
@@ -157,6 +163,9 @@ void emptySort(const std::string& sortname, const std::string& structurename);
 
 /** Warn that ASP queries do not have a specific handling */
 void aspQueriesAreParsedAsFacts();
+
+/** Domain element can be interpreted as constructor **/
+void constructorDisambiguationInStructure(const std::string& name);
 
 }
 

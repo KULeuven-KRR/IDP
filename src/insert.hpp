@@ -404,7 +404,7 @@ public:
 	SortTable* createSortTable() const;
 	void addElement(SortTable*, int) const;
 	void addElement(SortTable*, double) const;
-	void addElement(SortTable*, std::string*) const;
+	void addElement(SortTable*, const std::string&) const;
 	void addElement(SortTable*, const Compound*) const;
 	void addElement(SortTable*, int, int) const;
 	void addElement(SortTable*, char, char) const;
@@ -423,7 +423,7 @@ public:
 	const DomainElement* element(int) const;
 	const DomainElement* element(double) const;
 	const DomainElement* element(char) const;
-	const DomainElement* element(std::string*) const;
+	const DomainElement* element(const std::string&) const;
 	const DomainElement* element(const Compound*) const;
 
 	std::pair<int, int>* range(int, int, YYLTYPE) const;

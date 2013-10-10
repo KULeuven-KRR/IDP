@@ -248,6 +248,58 @@ procedure propagate(theory,structure){
 	return idpintern.propagate(clonetheo,structure)
 }
 
+/**
+ * 	Initialise an LTC theory. 
+ * - Input: an LTC theory and (optionally the used Time type, Start and Next functions). 
+ * - Output: (depending on stdoptions.nbmodels) a number of models, and (arguments 2-5 respectively) the used bistate theory, initial theory, bistate vocabulary and initial vocabulary (for in case you want to modify the progression behaviour yourself) */
+procedure initialise(theory,structure,  timesym, startsym, nextsym) {
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	
+	local count = 0
+	if timesym ~= nil then 
+		count = count + 1
+	end
+	if startsym ~= nil then 
+		count = count + 1
+	end
+	if nextsym ~= nil then 
+		count = count + 1
+	end
+	local result
+	if(count == 0) then
+		result = idpintern.initialise(theory,structure)
+	elseif(count == 3) then
+		result = idpintern.initialise(theory,structure, timesym, startsym, nextsym)
+	else
+		print("Error: please either provide Time, Start and Next or provide none of them.")
+		return
+	end
+	
+	return result[1], result[2], result[3], result[4], result[5]
+}
+
+/**
+* Prints a subsetminimal subset of the given theory (a core) that is still unsatisfiable given a structure.*/
+procedure printcore(theory,structure){
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	idpintern.unsatcore(theory,structure)
+	return;
+}
+
 /*/**
  * Check whether first theory entails the second */
 /*procedure entails(theory1, theory2) {

@@ -13,8 +13,8 @@ project (idp)
 
 ### The version number
 set (idp_VERSION_MAJOR 3)
-set (idp_VERSION_MINOR 1)
-set (idp_VERSION_PATCH 4)
+set (idp_VERSION_MINOR 2)
+set (idp_VERSION_PATCH 0)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
 include(cmake/outofsourcecheck.cmake)
@@ -136,20 +136,23 @@ else()
 endif()
 
 #XSB
-execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
-				OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
-file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
-set(XSB_BUILD_DIR "${PROJECT_SOURCE_DIR}/lib/XSB")
-ExternalProject_Add(
-  xsb
-  SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/XSB/build
-  CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/ -with-optimization=fPIC
-  BUILD_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb
-  INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb install
-  BUILD_IN_SOURCE 1
-)
-install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/ DESTINATION bin/xsb FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-set(XSB_INSTALL_URL "/bin/xsb/3.3.7/")
+option(WITHXSB  "Compile with XSB support" ON)
+if(WITHXSB)
+    execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
+    				OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
+    file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
+    set(XSB_BUILD_DIR "${PROJECT_SOURCE_DIR}/lib/XSB")
+    ExternalProject_Add(
+      xsb
+      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/XSB/build
+      CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/ -with-optimization=fPIC
+      BUILD_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb
+      INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb install
+      BUILD_IN_SOURCE 1
+    )
+    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/ DESTINATION bin/xsb FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    set(XSB_INSTALL_URL "/bin/xsb/3.3.7/")
+endif()
 
 #REST
 add_subdirectory(lib/minisatid)

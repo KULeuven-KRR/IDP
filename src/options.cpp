@@ -139,10 +139,10 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::REDUCEDGROUNDING, "reducedgrounding", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
-		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, _option2name, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); // Request to compute definitions as much as with xsb
 		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);

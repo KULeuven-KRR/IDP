@@ -441,9 +441,9 @@ rules		: rules rule	{ $$ = $1; $1->push_back($2);	}
 			| rule			{ $$ = new std::vector<Rule*>(1,$1);	}			
 			;
 
-rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@1); delete($1);	}
-			| univquantvars head "<-"		  '.'	{ $$ = data().rule(*$1,$2,@1); delete($1);		}
-			| univquantvars head			  '.'	{ $$ = data().rule(*$1,$2,@1); delete($1);		}
+rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@2); delete($1);	}
+			| univquantvars head "<-"		  '.'	{ $$ = data().rule(*$1,$2,@2); delete($1);		}
+			| univquantvars head			  '.'	{ $$ = data().rule(*$1,$2,@2); delete($1);		}
 			;
 			
 univquantvars 
@@ -624,23 +624,23 @@ elements_es		: elements ';'						{ $$ = $1;	}
 
 elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$3->second); delete($3);	}
 				| elements ';' intrange				{ $$ = $1; data().addElement($$,$3->first,$3->second); delete($3);	}
-				| elements ';' '(' strelement ')'	{ $$ = $1; data().addElement($$,$4);						}
+				| elements ';' '(' strelement ')'	{ $$ = $1; data().addElement($$,*$4);						}
 				| elements ';' '(' integer ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' '(' compound ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' '(' floatnr ')'		{ $$ = $1; data().addElement($$,$4);						}
 				| elements ';' integer				{ $$ = $1; data().addElement($$,$3);						}
-				| elements ';' strelement			{ $$ = $1; data().addElement($$,$3);						}
+				| elements ';' strelement			{ $$ = $1; data().addElement($$,*$3);						}
 				| elements ';' floatnr				{ $$ = $1; data().addElement($$,$3);						}
 				| elements ';' compound				{ $$ = $1; data().addElement($$,$3);						}
 				| charrange							{ $$ = data().createSortTable(); 
 													  data().addElement($$,$1->first,$1->second); delete($1);	}
 				| intrange							{ $$ = data().createSortTable(); 
 													  data().addElement($$,$1->first,$1->second); delete($1);	}
-				| '(' strelement ')'				{ $$ = data().createSortTable(); data().addElement($$,$2);	}
+				| '(' strelement ')'				{ $$ = data().createSortTable(); data().addElement($$,*$2);	}
 				| '(' integer ')'					{ $$ = data().createSortTable(); data().addElement($$,$2);	}
 				| '(' floatnr ')'                   { $$ = data().createSortTable(); data().addElement($$,$2);	}
 				| '(' compound ')'					{ $$ = data().createSortTable(); data().addElement($$,$2);	}
-				| strelement						{ $$ = data().createSortTable(); data().addElement($$,$1);	}
+				| strelement						{ $$ = data().createSortTable(); data().addElement($$,*$1);	}
 				| integer							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				| floatnr							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
 				| compound							{ $$ = data().createSortTable(); data().addElement($$,$1);	}
@@ -654,7 +654,7 @@ func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
 
 strelement		: identifier	{ $$ = $1;									}
 				| STRINGCONS	{ $$ = $1;									}
-				| CHARCONS		{ $$ = StringPointer(std::string(1,$1));	}
+				| CHARCONS		{ $$ = new std::string(1,$1);	}
 				;
 
 /** Interpretations with arity not 1 **/
@@ -685,9 +685,9 @@ ptuple			: ptuple ',' pelement			{ $$ = $1; $$->push_back($3);	}
 				;
 
 pelement		: integer		{ $$ = data().element($1);	}
-				| identifier	{ $$ = data().element($1);	}
+				| identifier	{ $$ = data().element(*$1);	}
 				| CHARCONS		{ $$ = data().element($1);	}
-				| STRINGCONS	{ $$ = data().element($1);	}
+				| STRINGCONS	{ $$ = data().element(*$1);	}
 				| floatnr		{ $$ = data().element($1);	}
 				| compound		{ $$ = data().element($1);	}
 				;
@@ -767,11 +767,11 @@ compound	: intern_pointer '(' compound_args ')'	{ $$ = data().compound($1,*$3); 
 
 compound_args	: compound_args ',' floatnr		{ $$ = $1; $$->push_back(data().element($3));	}
 				| compound_args ',' integer		{ $$ = $1; $$->push_back(data().element($3));	}
-				| compound_args ',' strelement	{ $$ = $1; $$->push_back(data().element($3));	}
+				| compound_args ',' strelement	{ $$ = $1; $$->push_back(data().element(*$3));	}
 				| compound_args ',' compound	{ $$ = $1; $$->push_back(data().element($3));	}
 				| floatnr						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
 				| integer						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
-				| strelement					{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
+				| strelement					{ $$ = new std::vector<const DomainElement*>(1,data().element(*$1));}
 				| compound						{ $$ = new std::vector<const DomainElement*>(1,data().element($1));	}
 				;
 	         
@@ -786,7 +786,7 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 				;
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
-				| CHARACTER		{ $$ = StringPointer(std::string(1,$1)); } 
+				| CHARACTER		{ $$ = new std::string(1,$1); } 
 				;
 
 /********************
@@ -815,7 +815,7 @@ domain_tuple	: domain_tuple ',' domain_element	{ $$ = data().domaintuple($1,$3);
 				| charrange							{ $$ = data().domaintuple($1); delete($1);		}
 				;
 
-domain_element	: strelement	{ $$ = data().element($1); }
+domain_element	: strelement	{ $$ = data().element(*$1); }
 				| integer		{ $$ = data().element($1); }
 				| floatnr		{ $$ = data().element($1); }
 				| compound		{ $$ = data().element($1); }

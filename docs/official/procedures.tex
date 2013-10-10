@@ -69,7 +69,9 @@ Furthermore: \code{stdspace} contains the following subnamespaces:
 \end{description}
 
 \subsubsection{idpintern}
-This namespace contains internal procedures of the \idp system. Using them is unsafe, since most procedures there are not tested well, or not documented. We recommend this only for advanced users. \code{idpinter} is not included in the global namespace; help for idpintern can be obtained by \code{help(stdspace.idpintern)}.
+This namespace contains procedures that are either only for internal use or still under development / testing. 
+Using them is at your own risk.  
+\code{idpintern} is not included in the global namespace; help for idpintern can be obtained by \code{help(stdspace.idpintern)}.
 
 \subsubsection{inferences}
 The \code{inferences} namespace and all its procedures are included in the global namespace. Hence \code{inferences.xxx} should never be used. This namespace contains several inference methods:
@@ -95,7 +97,8 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[propagate(theory,structure)]
  		Returns a structure, made more precise than the input by doing symbolic propagation on the theory.
  		Returns nil when propagation results in an inconsistent structure.
- 	
+ 	\item[initialise(theory,structure)] can only be called with an LTC theory. Performs initialisation for the \href{http://dtai.cs.kuleuven.be/krr/files/progression.pdf}{progression inference} 
+ 	\item[progress(theory,structure)] can only be called with an LTC theory. Performs one progression step for the \href{http://dtai.cs.kuleuven.be/krr/files/progression.pdf}{progression inference} 
 	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
 	
 	\item[modelexpandpartial(theory,structure)]
@@ -111,6 +114,13 @@ The \code{inferences} namespace and all its procedures are included in the globa
  		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
 	\item[sat(theory,structure)]
 		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
+
+	\item[printcore(theory,structure)]
+		Finds a theory that is a minimal ``subset'' of the given theory that is unsat in the given structure, or, in other words, a ``core''; it then prints this theory with 
+		references to how it was obtained from the given theory.
+		A subset in this respect is a subset of all instantiated formulas in conjunctive context in the theory and instantiated rules 
+		(either all rules defining a specific domain atom/term or none of them).
+		Currently does not take constraints implied by the vocabulary (e.g., function constraints) or the structure (e.g., type interpretations) into account.  
 		
 \end{description}
 

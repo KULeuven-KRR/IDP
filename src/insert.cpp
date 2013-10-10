@@ -524,7 +524,7 @@ string* Insert::currfile() const {
 }
 
 void Insert::currfile(const string& s) {
-	_currfile = StringPointer(s);
+	_currfile = new std::string(s);
 }
 
 void Insert::currfile(string* s) {
@@ -1103,6 +1103,9 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	// Add the subsorts
 	for (unsigned int n = 0; n < subs.size(); ++n) {
 		if (subs[n]) {
+			if(subs[n]->isConstructed()){
+				constructedTypeAsSubtype(ComponentType::Sort, subs[n]->name(), pi);
+			}
 			for (unsigned int m = 0; m < sups.size(); ++m) {
 				if (sups[m]) {
 					if (supsa[m].find(subs[n]) != supsa[m].cend()) {
@@ -1796,7 +1799,7 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(int i, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(i);
+	auto d = createDomElem(i);
 	Sort* s = (i >= 0 ? get(STDSORT::NATSORT) : get(STDSORT::INTSORT));
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1814,7 +1817,7 @@ DomainTerm* Insert::domterm(double f, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(std::string* e, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(e);
+	const DomainElement* d = createDomElem(*e);
 	Sort* s = get(STDSORT::STRINGSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1823,7 +1826,7 @@ DomainTerm* Insert::domterm(std::string* e, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(char c, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(StringPointer(string(1, c)));
+	const DomainElement* d = createDomElem(string(1, c));
 	Sort* s = get(STDSORT::CHARSORT);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1832,7 +1835,7 @@ DomainTerm* Insert::domterm(char c, YYLTYPE l) const {
 }
 
 DomainTerm* Insert::domterm(std::string* e, Sort* s, YYLTYPE l) const {
-	const DomainElement* d = createDomElem(e);
+	const DomainElement* d = createDomElem(*e);
 	Assert(s != NULL);
 	auto temp = new DomainTerm(s, d, TermParseInfo());
 	TermParseInfo pi = termparseinfo(temp, l);
@@ -1944,23 +1947,19 @@ EnumSetExpr* Insert::addFormula(EnumSetExpr* s, Formula* f) const {
 }
 
 void Insert::addElement(SortTable* s, int i) const {
-	const DomainElement* d = createDomElem(i);
-	s->add(d);
+	s->add(element(i));
 }
 
 void Insert::addElement(SortTable* s, double f) const {
-	const DomainElement* d = createDomElem(f);
-	s->add(d);
+	s->add(element(f));
 }
 
-void Insert::addElement(SortTable* s, std::string* e) const {
-	const DomainElement* d = createDomElem(e);
-	s->add(d);
+void Insert::addElement(SortTable* s, const std::string& e) const {
+	s->add(element(e));
 }
 
 void Insert::addElement(SortTable* s, const Compound* c) const {
-	const DomainElement* d = createDomElem(c);
-	s->add(d);
+	s->add(element(c));
 }
 
 void Insert::addElement(SortTable* s, int i1, int i2) const {
@@ -1968,8 +1967,9 @@ void Insert::addElement(SortTable* s, int i1, int i2) const {
 }
 
 void Insert::addElement(SortTable* s, char c1, char c2) const {
-	for (char c = c1; c <= c2; ++c)
-		addElement(s, StringPointer(string(1, c)));
+	for (char c = c1; c <= c2; ++c){
+		addElement(s, string(1, c));
+	}
 }
 
 SortTable* Insert::createSortTable() const {
@@ -2003,10 +2003,23 @@ const DomainElement* Insert::element(double d) const {
 }
 
 const DomainElement* Insert::element(char c) const {
-	return createDomElem(StringPointer(string(1, c)));
+	return createDomElem(string(1, c));
 }
 
-const DomainElement* Insert::element(std::string* s) const {
+const DomainElement* Insert::element(const std::string& s) const {
+	// The parser cannot parse strings without "()" at the end as constructor function images, so this warning should be issued:
+	string name = s+"/0"; // TODO fix arity in names
+	Function* f = funcInScope(name);
+	if(f!=NULL && (f->isConstructorFunction() || f->overloaded())){
+		Warning::constructorDisambiguationInStructure(s);
+		if(f->overloaded()){
+			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo>{f->pi()},{}); // TODO add locations
+			return createDomElem(s); // Om toch maar iets gelijkaardig terug te geven.
+		}
+		if(f->isConstructorFunction()){
+			return createDomElem(createCompound(f,vector<const DomainElement*>()));
+		}
+	}
 	return createDomElem(s);
 }
 
@@ -2132,7 +2145,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 			break;
 		case ERE_CHAR:
 			for (char c = args[0]._value._charrange->first; c != args[0]._value._charrange->second; ++c) {
-				st->add(createDomElem(StringPointer(string(1, c))));
+				st->add(createDomElem(string(1, c)));
 			}
 			break;
 		}
@@ -2147,7 +2160,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 				tuple[n] = createDomElem(args[n]._value._intrange->first);
 				break;
 			case ERE_CHAR:
-				tuple[n] = createDomElem(StringPointer(string(1, args[n]._value._charrange->first)));
+				tuple[n] = createDomElem(string(1, args[n]._value._charrange->first));
 				break;
 			}
 		}
@@ -2183,7 +2196,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 						++current;
 						end = true;
 					}
-					tuple[n] = createDomElem(StringPointer(string(1, current)));
+					tuple[n] = createDomElem(string(1, current));
 					break;
 				}
 				}
@@ -2454,6 +2467,7 @@ std::string Insert::printUTF(UTF utf) const {
 	throw IdpException("invalid code path");
 }
 
+// Checks whether a certain symbol can be assigned an interpretation
 bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 	bool error = basicSymbolCheck(symbol, nst);
 	if (contains(_pendingAssignments, symbol)) {
@@ -2468,6 +2482,15 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 			stringstream ss;
 			ss << type << " " << symbol->name() << " was already " << (utf == UTF::TWOVAL ? "partially" : "fully")
 					<< " interpreted earlier by other truth values than " << printUTF(utf) << ".";
+			Error::error(ss.str(), nst->_pi);
+			error = true;
+		}
+	}
+	if (not error && symbol->isFunction()){
+		auto func = (Function*) symbol;
+		if(func->isConstructorFunction()){
+			stringstream ss;
+			ss << symbol->name() << " is a constructor function: its interpretation is fixed and cannot change.";
 			Error::error(ss.str(), nst->_pi);
 			error = true;
 		}
@@ -2532,7 +2555,7 @@ void Insert::interByProcedure(NSPair* nsp, const longname& procedure, YYLTYPE l)
 	auto up = procedureInScope(procedure, pi);
 	string* proc = NULL;
 	if (up) {
-		proc = StringPointer(up->registryindex());
+		proc = new std::string(up->registryindex());
 	} else {
 		proc = LuaConnection::getProcedure(procedure, pi);
 	}
@@ -2587,6 +2610,7 @@ void Insert::constructor(NSPair* nst) const {
 
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
+
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
 	Sort* s = sortInScope(name, pi);
@@ -2604,11 +2628,13 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 		p = p->resolve(nst->_sorts);
 	}
 	if (s) {
-		if (belongsToVoc(s)) {
+		if (belongsToVoc(s) && !s->hasFixedInterpretation()) {
 			auto st = _currstructure->inter(s);
 			st->internTable(t->internTable());
 			sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
 			delete (t);
+		} else if(s->hasFixedInterpretation()) {
+			fixedInterTypeReinterpretedInStructure(ComponentType::Sort, toString(name), pi);
 		} else {
 			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
 		}

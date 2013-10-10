@@ -1,0 +1,12 @@
+vocabulary V {
+	type name isa string
+	type time isa int
+	idpd_text_t(time,name,string)
+	idpd_text_t(time,name,int) // TODO impossible otherwise
+	score(time):int
+}
+theory pacmanvis : V{
+	{
+		idpd_text_t(T, "score2", X) <- score(T)=X.
+	}
+}

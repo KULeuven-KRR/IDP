@@ -386,47 +386,6 @@ std::ostream& operator<<(std::ostream& output, const AggFunction& type) {
 	return output;
 }
 
-/*********************
- Shared strings
- *********************/
-
-#include <unordered_map>
-typedef std::unordered_map<std::string, std::string*> MSSP;
-class StringPointers {
-private:
-	MSSP _sharedstrings; //!< map a string to its shared pointer
-public:
-	~StringPointers();
-	string* stringpointer(const std::string&); //!< get the shared pointer of a string
-};
-
-StringPointers::~StringPointers() {
-	for (auto it = _sharedstrings.begin(); it != _sharedstrings.end(); ++it) {
-		delete (it->second);
-	}
-}
-
-string* StringPointers::stringpointer(const string& s) {
-	MSSP::iterator it = _sharedstrings.find(s);
-	if (it != _sharedstrings.end()) {
-		return it->second;
-	} else {
-		string* sp = new string(s);
-		_sharedstrings[s] = sp;
-		return sp;
-	}
-}
-
-StringPointers sharedstrings;
-
-string* StringPointer(const char* str) {
-	return sharedstrings.stringpointer(string(str));
-}
-
-string* StringPointer(const string& str) {
-	return sharedstrings.stringpointer(str);
-}
-
 CompType invertComp(CompType comp) {
 	CompType result = CompType::EQ;
 	switch (comp) {

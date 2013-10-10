@@ -183,7 +183,6 @@ class FuncInterGeneratorGenerator;
  */
 class OrderFuncGenerator: public FuncGenerator {
 private:
-	mutable std::map<Sort*, Function*> _overfuncs;
 	FuncInterGeneratorGenerator* _interpretation;
 public:
 	OrderFuncGenerator(const std::string& name, unsigned int arity, FuncInterGeneratorGenerator* inter);
@@ -335,6 +334,10 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 
 bool Sort::isConstructed() const {
 	return _constructors.size()!=0;
+}
+
+bool Sort::hasFixedInterpretation() const{
+	return _interpretation != NULL || isConstructed();
 }
 
 bool Sort::builtin() const{
@@ -794,8 +797,15 @@ ostream& Predicate::put(ostream& output) const {
 		}
 	}
 	output << name().substr(0, name().rfind('/'));
-	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
-		if (nrSorts() > 0) {
+	if (not overloaded()) { // It is a disambiguated symbol
+		auto confusionpossible = false;
+		for (auto voc : getVocabularies()){
+			if (voc->pred(name())->overloaded()) {
+				confusionpossible = true;
+				break;
+			}
+		}
+		if (nrSorts() > 0 && (confusionpossible || getOption(BoolType::LONGNAMES)) ) {
 			output << '[';
 			sort(0)->put(output);
 			for (size_t n = 1; n < nrSorts(); ++n) {
@@ -1269,27 +1279,36 @@ set<Function*> Function::nonbuiltins() {
 
 ostream& Function::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
-		for (auto it = getVocabularies().cbegin(); it != getVocabularies().cend(); ++it) {
-			if (not (*it)->func(name())->overloaded()) {
-				(*it)->putName(output);
+		for (auto voc : getVocabularies()) {
+			if (not voc->func(name())->overloaded()) {
+				voc->putName(output);
 				output << "::";
 				break;
 			}
 		}
 	}
 	output << name().substr(0, name().rfind('/'));
-	if (getOption(BoolType::LONGNAMES) && not overloaded()) {
-		output << '[';
-		if (not _insorts.empty()) {
-			_insorts[0]->put(output);
-			for (size_t n = 1; n < _insorts.size(); ++n) {
-				output << ',';
-				_insorts[n]->put(output);
+	if (not overloaded()) { // It is a disambiguated symbol
+		auto confusionpossible = false;
+		for (auto voc : getVocabularies()){
+			if (voc->func(name())->overloaded()) {
+				confusionpossible = true;
+				break;
 			}
 		}
-		output << " : ";
-		_outsort->put(output);
-		output << ']';
+		if (confusionpossible || getOption(BoolType::LONGNAMES)) {
+			output << '[';
+			if (not _insorts.empty()) {
+				_insorts[0]->put(output);
+				for (size_t n = 1; n < _insorts.size(); ++n) {
+					output << ',';
+					_insorts[n]->put(output);
+				}
+			}
+			output << " : ";
+			_outsort->put(output);
+			output << ']';
+		}
 	}
 	return output;
 }
@@ -1488,11 +1507,6 @@ OrderFuncGenerator::OrderFuncGenerator(const string& name, unsigned int arity, F
 
 OrderFuncGenerator::~OrderFuncGenerator() {
 	delete (_interpretation);
-	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		if (not it->second->hasVocabularies()) {
-			delete (it->second);
-		}
-	}
 }
 
 /**
@@ -1521,12 +1535,7 @@ Function* OrderFuncGenerator::resolve(const vector<Sort*>& sorts) {
 		}
 	}
 	Assert(not sorts.empty());
-	map<Sort*, Function*>::const_iterator it = _overfuncs.find(sorts[0]);
-	if (it == _overfuncs.cend()) {
-		return disambiguate(sorts);
-	} else {
-		return it->second;
-	}
+	return disambiguate(sorts);
 }
 
 /**
@@ -1549,14 +1558,8 @@ Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Voc
 
 	Function* func = NULL;
 	if (funcSort != NULL) {
-		map<Sort*, Function*>::const_iterator it = _overfuncs.find(funcSort);
-		if (it != _overfuncs.cend()) {
-			func = it->second;
-		} else {
 			vector<Sort*> funcSorts(_arity + 1, funcSort);
 			func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
-			_overfuncs[funcSort] = func;
-		}
 	}
 	return func;
 }
@@ -1566,17 +1569,10 @@ set<Sort*> OrderFuncGenerator::allsorts() const {
 	return ss;
 }
 
-void OrderFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-		it->second->addVocabulary(vocabulary);
-	}
+void OrderFuncGenerator::addVocabulary(const Vocabulary*) {
 }
 
 void OrderFuncGenerator::removeVocabulary(const Vocabulary*) {
-	// TODO: check this...
-	//for(auto it = _overfuncs.cbegin(); it != _overfuncs.cend(); ++it) {
-	//	it->second->removeVocabulary(vocabulary);
-	//}
 }
 
 set<Function*> OrderFuncGenerator::nonbuiltins() const {
@@ -1912,6 +1908,7 @@ Vocabulary* Vocabulary::std() {
 	auto floatdivgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new DivInternalFuncTable(false), threefloat)));
 	//Function* intdiv = new Function("//2", threeints, intdivgen, 300);
 	auto floatdiv = new Function(getSymbolName(STDFUNC::DIVISION), threefloats, floatdivgen, 300);
+	floatdiv->partial(true);
 
 	auto intabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(true), twoint)));
 	auto floatabsgen = new SingleFuncInterGenerator(new FuncInter(new FuncTable(new AbsInternalFuncTable(false), twofloat)));

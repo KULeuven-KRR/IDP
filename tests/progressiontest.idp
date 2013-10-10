@@ -1,0 +1,31 @@
+procedure main(){
+	stdoptions.timeout = 25
+	local sol
+	if init ~= nil then
+		sol=init()[1]
+	else
+		sol = initialise(T,S)[1]
+	end
+	if sol == nil then
+		return 0
+	end
+	times = nbOfProgressions()
+	for x = 1, times, 1 do
+		sol = progress(T,sol)[1]
+		if sol == nil then
+			return 0
+		end
+	end
+	
+	if strict() then
+		sol = progress(T,sol)[1]
+		if sol == nil then
+			return 1
+		end
+		return 0
+	end
+	return 1
+		
+	
+}
+

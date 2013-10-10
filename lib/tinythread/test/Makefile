@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------------------
 # Makefile for GCC & gmake (Linux, Windows/MinGW, OpenSolaris, etc).
 #-----------------------------------------------------------------------------------------
-# Copyright (c) 2010 Marcus Geelnard
+# Copyright (c) 2010-2012 Marcus Geelnard
 #
 # This software is provided 'as-is', without any express or implied
 # warranty. In no event will the authors be held liable for any damages
@@ -75,7 +75,7 @@ TINYTHREAD_OBJS = tinythread.o
 all: hello$(EXE) test$(EXE) fractal$(EXE)
 
 clean:
-	$(RM) hello$(EXE) test$(EXE) fractal$(EXE) $(HELLO_OBJS) $(TEST_OBJS) $(FRACAL_OBJS) $(TINYTHREAD_OBJS)
+	$(RM) hello$(EXE) test$(EXE) fractal$(EXE) $(HELLO_OBJS) $(TEST_OBJS) $(FRACAL_OBJS) $(TINYTHREAD_OBJS) fractal.tga
 
 
 test$(EXE): $(TEST_OBJS) $(TINYTHREAD_OBJS)
@@ -98,3 +98,4 @@ hello.o: hello.cpp ../source/tinythread.h
 test.o: test.cpp ../source/tinythread.h ../source/fast_mutex.h
 fractal.o: fractal.cpp ../source/tinythread.h
 tinythread.o: ../source/tinythread.cpp ../source/tinythread.h
+

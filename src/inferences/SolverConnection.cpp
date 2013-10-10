@@ -123,7 +123,7 @@ PCSolver* createsolver(int nbmodels) {
 
 	modes.usegecode = getOption(GECODE);
 
-	modes.polarity = MinisatID::Polarity::STORED;
+	modes.polarity = MinisatID::Polarity::TRUE;
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;
@@ -151,10 +151,10 @@ void setTranslator(PCSolver* solver, GroundTranslator* translator) {
 	// FIXME trans is not deleted anywhere
 }
 
-PCModelExpand* initsolution(PCSolver* solver, int nbmodels) {
+PCModelExpand* initsolution(PCSolver* solver, int nbmodels, const litlist& assumptions) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
-	return new PCModelExpand(solver, opts, { });
+	return new PCModelExpand(solver, opts, createList(assumptions));
 }
 
 PCUnitPropagate* initpropsolution(PCSolver* solver) {
@@ -224,4 +224,22 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Struc
 		init->inter(function)->graphInter()->makeTrue(tuple);
 	}
 }
+
+MinisatID::literallist createList(const litlist& origlist) {
+	MinisatID::literallist list;
+	for (auto lit : origlist) {
+		list.push_back(createLiteral(lit));
+	}
+	return list;
+}
+
+MinisatID::Atom createAtom(const int lit) {
+	return MinisatID::Atom(abs(lit));
+}
+
+MinisatID::Lit createLiteral(const int lit) {
+	auto atom = createAtom(lit); // ignores sign
+	return lit > 0 ? MinisatID::mkPosLit(atom) : MinisatID::mkNegLit(atom);
+}
+
 }

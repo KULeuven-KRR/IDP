@@ -63,22 +63,6 @@ public:
 		closeTheory();
 	}
 
-	template<typename T>
-	std::string printFullyQualified(T o) const {
-		std::stringstream ss;
-		ss << o->nameNoArity();
-		if (o->sorts().size() > 0) {
-			ss << "[";
-			printList(ss, o->sorts(), ",", not o->isFunction());
-			if (o->isFunction()) {
-				ss << ":";
-				ss << print(*o->sorts().back());
-			}
-			ss << "]";
-		}
-		return ss.str();
-	}
-
 	void visit(const Structure* structure) {
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
@@ -95,13 +79,11 @@ public:
 		output() << "structure " << structure->name() << " : " << voc->name() << " {" << '\n';
 		indent();
 
-		auto origlongnameoption = getOption(BoolType::LONGNAMES);
-		setOption(BoolType::LONGNAMES, true);
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
 			auto s = it->second;
 			if (not s->builtin()) {
 				printTab();
-				output() << print(s) << "[" << print(s) << "]" << " = ";
+				output() << print(s) << " = ";
 				auto st = structure->inter(s);
 				visit(st);
 				output() << '\n';
@@ -120,33 +102,33 @@ public:
 					auto ctsize = pi->ct()->size();
 					auto cfsize = pi->cf()->size();
 					if (ctsize < 20 || toDouble(ctsize) < 10 * toDouble(cfsize)) {
-						output() << printFullyQualified(p) << " = ";
+						output() << print(p) << " = ";
 						visit(pi->ct());
 						output() << '\n';
 					} else {
-						output() << printFullyQualified(p) << "<cf> = ";
+						output() << print(p) << "<cf> = ";
 						visit(pi->cf());
 						output() << '\n';
 						printTab();
-						output() << printFullyQualified(p) << "<u> = { }\n";
+						output() << print(p) << "<u> = { }\n";
 					}
 				} else {
 					printTab();
 					if(pi->ct()->size()<=pi->pf()->size()){
-						output() << printFullyQualified(p) << "<ct> = ";
+						output() << print(p) << "<ct> = ";
 						visit(pi->ct());
 					}else{
-						output() << printFullyQualified(p) << "<pf> = ";
+						output() << print(p) << "<pf> = ";
 						visit(pi->pf());
 					}
 					output() << '\n';
 
 					printTab();
 					if(pi->cf()->size()<=pi->pt()->size()){
-						output() << printFullyQualified(p) << "<cf> = ";
+						output() << print(p) << "<cf> = ";
 						visit(pi->cf());
 					}else{
-						output() << printFullyQualified(p) << "<pt> = ";
+						output() << print(p) << "<pt> = ";
 						visit(pi->pt());
 					}
 					output() << '\n';
@@ -161,34 +143,33 @@ public:
 				if (fi->approxTwoValued()) {
 					auto ft = fi->funcTable();
 					printTab();
-					output() << printFullyQualified(f) << " = ";
+					output() << print(f) << " = ";
 					visit(ft);
 					output() << '\n';
 				} else {
 					auto pi = fi->graphInter();
 					printTab();
 					if(pi->ct()->size()<=pi->pf()->size()){
-						output() << printFullyQualified(f) << "<ct> = ";
+						output() << print(f) << "<ct> = ";
 						printAsFunc(pi->ct());
 					}else{
-						output() << printFullyQualified(f) << "<pf> = ";
+						output() << print(f) << "<pf> = ";
 						printAsFunc(pi->pf());
 					}
 					output() << '\n';
 
 					printTab();
 					if(pi->cf()->size()<=pi->pt()->size()){
-						output() << printFullyQualified(f) << "<cf> = ";
+						output() << print(f) << "<cf> = ";
 						printAsFunc(pi->cf());
 					}else{
-						output() << printFullyQualified(f) << "<pt> = ";
+						output() << print(f) << "<pt> = ";
 						printAsFunc(pi->pt());
 					}
 					output() << '\n';
 				}
 			}
 		}
-		setOption(BoolType::LONGNAMES, origlongnameoption);
 		unindent();
 		printTab();
 		output() << "}" << '\n';

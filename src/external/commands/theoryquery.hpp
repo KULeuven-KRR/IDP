@@ -8,8 +8,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
 ****************************************************************/
 
-#ifndef CMD_THEORYQUERY_HPP_
-#define CMD_THEORYQUERY_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "inferences/definitionevaluation/AtomQuery.hpp"
@@ -19,6 +18,7 @@ class TheoryQueryInference: public TheoryQueryInferenceBase {
 public:
 	TheoryQueryInference()
 			: TheoryQueryInferenceBase("theoryquery", "Generate all solutions to the given query for the given theory in the given structure.") {
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
@@ -32,5 +32,3 @@ public:
 		return InternalArgument(result);
 	}
 };
-
-#endif /* CMD_QUERY_HPP_ */

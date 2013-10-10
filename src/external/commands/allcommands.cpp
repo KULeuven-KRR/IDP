@@ -44,6 +44,8 @@
 #include "minimize.hpp"
 #include "parse.hpp"
 #include "theoryquery.hpp"
+#include "unsatcore.hpp"
+#include "progress.hpp"
 
 #include "answer.hpp" //easter egg
 
@@ -123,6 +125,10 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<GetOptionsInference>());
 	inferences.push_back(make_shared<ParseInference>());
 	inferences.push_back(make_shared<TheoryQueryInference>());
+	inferences.push_back(make_shared<UnsatCoreInference>());
+	inferences.push_back(make_shared<ProgressInference>());
+	inferences.push_back(make_shared<InitInference>());
+	inferences.push_back(make_shared<InitInferenceNoTime>());
 
 	inferences.push_back(make_shared<AnswerInference>());
 	return inferences;

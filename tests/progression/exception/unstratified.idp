@@ -1,0 +1,22 @@
+vocabulary V{
+	type Time
+	Start:Time
+	Next(Time):Time
+	P(Time)
+}
+
+theory T:V{
+	{ 
+		P(t) <- P(Next(t)).
+		P(Start).
+	}
+}
+
+procedure main(){
+	initialise(T,S)
+}
+
+
+structure S:V{
+	Time = {1..3}
+}

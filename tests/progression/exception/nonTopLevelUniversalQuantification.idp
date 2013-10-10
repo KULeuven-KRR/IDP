@@ -1,0 +1,26 @@
+vocabulary V{
+	type Time
+	Start:Time
+	Next(Time):Time
+	type Something
+	F(Time): Something
+	S
+}
+
+theory T:V{
+	S | ? x: !t: F(t) = x.
+	{
+		F(Next(t)) = y <- F(t)  ~= y.
+	}
+}
+
+procedure main(){
+	stdoptions.verbosity.transformations=1
+	initialise(T,S)
+}
+
+
+structure S:V{
+	Time = {1..3}
+Something = {1}
+}

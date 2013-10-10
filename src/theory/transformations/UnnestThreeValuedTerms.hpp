@@ -61,12 +61,11 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t,const Structure* str, Context context, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
+	T execute(T t,const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation = TruthValue::Unknown) {
 		Assert(str!=NULL);
 		_definedsymbols = definedsymbols;
 		_structure = str;
 		_vocabulary = str->vocabulary();
-		setContext(context);
 		setAllowedToUnnest(false);
 		_cpablerelation = cpablerelation;
 		_cpablefunction = false;

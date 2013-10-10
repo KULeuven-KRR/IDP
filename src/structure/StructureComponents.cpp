@@ -853,7 +853,7 @@ void StringInternalSortIterator::operator++() {
 }
 
 const DomainElement* StringInternalSortIterator::operator*() const {
-	return createDomElem(StringPointer(_iter));
+	return createDomElem(_iter);
 }
 
 const DomainElement* CharInternalSortIterator::operator*() const {
@@ -861,8 +861,7 @@ const DomainElement* CharInternalSortIterator::operator*() const {
 		int i = _iter - '0';
 		return createDomElem(i);
 	} else {
-		string* s = StringPointer(string(1, _iter));
-		return createDomElem(s);
+		return createDomElem(string(1, _iter));
 	}
 }
 
@@ -2024,6 +2023,9 @@ const DomainElement* ConstructedInternalSortTable::last() const {
 }
 
 bool ConstructedInternalSortTable::contains(const DomainElement* d) const{
+	if (d == NULL) {
+		return false;
+	}
 	if(d->type()!=DET_COMPOUND){
 		return false;
 	}
@@ -2156,7 +2158,7 @@ UnionInternalSortTable::~UnionInternalSortTable() {
 }
 
 tablesize UnionInternalSortTable::size() const {
-	size_t result = 0;
+	long long result = 0;
 	TableSizeType type = TST_APPROXIMATED;
 	for (auto it = _intables.cbegin(); it != _intables.cend(); ++it) {
 		tablesize tp = (*it)->size();
@@ -2516,7 +2518,7 @@ InternalSortIterator* AllStrings::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllStrings::first() const {
-	return createDomElem(StringPointer(""));
+	return createDomElem(string(""));
 }
 
 const DomainElement* AllStrings::last() const {
@@ -2555,8 +2557,7 @@ InternalSortTable* AllChars::add(const DomainElement* d) {
 				int i = c - '0';
 				ist->add(createDomElem(i));
 			} else {
-				string* s = StringPointer(string(1, c));
-				ist->add(createDomElem(s));
+				ist->add(createDomElem(string(1, c)));
 			}
 		}
 		ist->add(d);
@@ -2574,8 +2575,7 @@ InternalSortTable* AllChars::remove(const DomainElement* d) {
 				int i = c - '0';
 				ist->add(createDomElem(i));
 			} else {
-				string* s = StringPointer(string(1, c));
-				ist->add(createDomElem(s));
+				ist->add(createDomElem(string(1, c)));
 			}
 		}
 		ist->remove(d);
@@ -2598,11 +2598,11 @@ InternalSortIterator* AllChars::sortIterator(const DomainElement* d) const {
 }
 
 const DomainElement* AllChars::first() const {
-	return createDomElem(StringPointer(string(1, getMinElem<char>())));
+	return createDomElem(string(1, getMinElem<char>()));
 }
 
 const DomainElement* AllChars::last() const {
-	return createDomElem(StringPointer(string(1, getMaxElem<char>())));
+	return createDomElem(string(1, getMaxElem<char>()));
 }
 
 tablesize AllChars::size() const {
@@ -4111,7 +4111,8 @@ FuncInter* leastFuncInter(const Universe& univ) {
 }
 
 Universe fullUniverse(unsigned int arity) {
-	vector<SortTable*> vst(arity, get(STDSORT::STRINGSORT)->interpretation());
+	SortTable* tmp = new SortTable(new FullInternalSortTable());
+	vector<SortTable*> vst(arity, tmp);
 	return Universe(vst);
 }
 
@@ -4379,6 +4380,9 @@ void StrLessInternalPredTable::accept(StructureVisitor* v) const {
 }
 void StrGreaterInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);
+}
+void FullInternalSortTable::accept(StructureVisitor*) const {
+	throw notyetimplemented("Visiting the universal table");
 }
 void InverseInternalPredTable::accept(StructureVisitor* v) const {
 	v->visit(this);

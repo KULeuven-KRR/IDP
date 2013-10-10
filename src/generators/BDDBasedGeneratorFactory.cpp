@@ -709,7 +709,7 @@ InstGenerator* BDDToGenerator::createFromPredForm(PredForm* atom, const vector<P
 		return result;
 	}
 
-	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(newatom, structure, Context::NEGATIVE);
+	auto newform = FormulaUtils::unnestFuncsAndAggsNonRecursive(newatom, structure);
 	newform = FormulaUtils::splitComparisonChains(newform);
 	newform = FormulaUtils::graphFuncsAndAggs(newform, NULL, {}, true, false);
 	FormulaUtils::flatten(newform);

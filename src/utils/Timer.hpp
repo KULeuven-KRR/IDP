@@ -5,9 +5,17 @@
 #define sleep(n) Sleep(1000*n)
 #endif
 
-#include <thread>
+#include <functional>
 #include "unistd.h"
 #include <iostream>
+
+#ifdef __MINGW32__
+#include <windows.h>
+#define sleep(n) Sleep(1000*n)
+#endif
+//#include <thread>
+#include <tinythread.h>
+using namespace tthread;
 
 template<class CallForTimeBound, class CallOnTimeout>
 class Timer {
@@ -37,36 +45,8 @@ public:
 	bool hasTimedOut() const {
 		return _hasTimedOut;
 	}
-
-	void time() {
-		long long time = 0;
-		int sleep = 10;
-		while (not requestedToStop()) {
-			time += sleep;
-#ifdef __MINGW32__
-			Sleep(sleep);
-#else
-			usleep(sleep * 1000);
-#endif
-
-			if (sleep < 1000) {
-				if (sleep < 100) {
-					sleep += 10;
-				} else {
-					sleep += 100;
-				}
-			}
-
-			if (call_for_timebound() < time / 1000) {
-				_hasTimedOut = true;
-				call_on_timeout();
-				break;
-			}
-			if(call_for_timebound()==0){
-				return;
-			}
-		}
-	}
 };
 
 typedef Timer<std::function<long(void)>, std::function<void (void)>> basicTimer;
+
+void timerLoop(void* t);

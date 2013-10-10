@@ -168,7 +168,7 @@ void handleAndRun(void* d) {
 	clog.flush();
 }
 
-void monitorShutdown() {
+void monitorShutdown(void*) {
 	int monitoringtime = 0;
 	while (not hasStopped && monitoringtime < 10) { // Wait max 10 seconds
 #ifdef __MINGW32__
@@ -187,7 +187,7 @@ void monitorShutdown() {
 void timeout() {
 	clog << "Timed-out\n";
 	getGlobal()->notifyTimeout();
-	thread shutdown(&monitorShutdown);
+	tthread::thread shutdown(&monitorShutdown, NULL);
 	shutdown.join();
 }
 
@@ -248,12 +248,12 @@ const DomainElement* executeProcedure(const string& proc) {
 		jumpback = 0;
 
 		auto t = basicTimer([](){return getOption(TIMEOUT); },[](){timeout();});
-		thread signalhandling(&basicTimer::time, &t);
+		tthread::thread signalhandling(&timerLoop, &t);
 
 		RunData d;
 		d.proc = temp;
 		d.result = &result;
-		thread execution(&handleAndRun, &d);
+		tthread::thread execution(&handleAndRun, &d);
 		execution.join();
 
 		hasStopped = true;

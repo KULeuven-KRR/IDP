@@ -1,5 +1,5 @@
-/*
-Copyright (c) 2010 Marcus Geelnard
+/* -*- mode: c++; tab-width: 2; indent-tabs-mode: nil; -*-
+Copyright (c) 2010-2012 Marcus Geelnard
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -44,13 +44,13 @@ using namespace tthread;
 /// BGR pixel class.
 class Pixel {
   public:
-    Pixel() : r(0), g(0), b(0) {}
+    Pixel() : b(0), g(0), r(0) {}
 
     Pixel(unsigned char red, unsigned char green, unsigned char blue)
     {
-      r = red;
-      g = green;
       b = blue;
+      g = green;
+      r = red;
     }
 
     unsigned char b, g, r;

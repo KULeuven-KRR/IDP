@@ -11,6 +11,7 @@
 
 #include "IsTwoValued.hpp"
 #include "IncludeComponents.hpp"
+#include "theory/TheoryUtils.hpp"
 
 bool isTwoValued(const Term* t, const Structure* structure) {
 	if (t == NULL) {
@@ -31,8 +32,15 @@ bool isTwoValued(const Term* t, const Structure* structure) {
 		return twoval;
 	}
 	case TermType::AGG: {
-		// TODO check on two-valuedness?
-		return false;
+		bool alltwovalued = true;
+		auto at = dynamic_cast<const AggTerm*>(t);
+		for(auto qset: at->set()->getSets()){
+			if(not SetUtils::approxTwoValued(qset, structure)){
+				alltwovalued = false;
+				break;
+			}
+		}
+		return alltwovalued;
 	}
 	case TermType::VAR:
 		return true;

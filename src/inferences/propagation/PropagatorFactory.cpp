@@ -192,7 +192,7 @@ TypedFOPropagator<Factory, Domain>* FOPropagatorFactory<Factory, Domain>::create
 	// transform theory to a suitable normal form
 	AbstractTheory* newtheo = theory->clone();
 	FormulaUtils::addCompletion(newtheo, structure);
-	FormulaUtils::unnestTerms(newtheo, Context::POSITIVE, structure, newtheo->vocabulary());
+	FormulaUtils::unnestTerms(newtheo, structure, newtheo->vocabulary());
 	FormulaUtils::splitComparisonChains(newtheo);
 	FormulaUtils::graphFuncsAndAggs(newtheo, NULL, {}, true, false);
 	newtheo = FormulaUtils::pushQuantifiersAndNegations(newtheo);
@@ -333,13 +333,14 @@ void FOPropagatorFactory<Factory, Domain>::visit(const PredForm* pf) {
 			_propagator->schedule(it->second, UP, false, pf);
 		}
 	} else {
-#ifndef NDEBUG
-		if (_leafconnectors.find(symbol) == _leafconnectors.cend()) {
-			clog << print(symbol);
+		auto lc = _leafconnectors.find(symbol);
+		if (lc == _leafconnectors.cend()) {
+			stringstream ss;
+			ss << "Internal error in approximation: symbol " << toString(symbol)
+					<< "occurs in theory unexpectedly. Please report this bug to krr@cs.kuleuven.be";
+			throw IdpException(ss.str());
 		}
-		Assert(_leafconnectors.find(symbol) != _leafconnectors.cend());
-#endif
-		PredForm* leafconnector = _leafconnectors[symbol];
+		PredForm* leafconnector = lc->second;
 		_propagator->addToLeafUpward(leafconnector, pf);
 		LeafConnectData<Domain> lcd;
 		lcd._connector = leafconnector;

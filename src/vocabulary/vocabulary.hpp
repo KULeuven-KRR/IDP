@@ -88,7 +88,8 @@ public:
 		return _constructors;
 	}
 
-	bool builtin() const; //!< True iff the sort has a fixed interpretation independent of a given structure
+	bool hasFixedInterpretation() const; //!< True iff the sort has a fixed interpretation independent of a given structure
+	bool builtin() const; //!< True iff the sort has a fixed interpretation independent of a given structure TODO:DEPRECATED
 	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
 
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies

@@ -39,6 +39,6 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto a = this-> template get<0>(args);
-		return InternalArgument(StringPointer(printToString(a)));
+		return InternalArgument(new std::string(printToString(a)));
 	}
 };
