@@ -14,6 +14,8 @@
 
 #include "structure/StructureComponents.hpp"
 
+#include "theory/Query.hpp"
+#include "inferences/querying/Query.hpp"
 #include "inferences/grounding/Grounding.hpp"
 #include "inferences/SolverInclude.hpp"
 #include "groundtheories/GroundTheory.hpp"
@@ -135,9 +137,21 @@ MXResult ModelExpansion::expand() const {
 	auto extender = groundingAndExtender.second;
 
 	litlist assumptions;
+	auto trans = grounding->translator();
 	for(auto p: _assumeFalse.assumeAllFalse){
-		for(auto atom: grounding->translator()->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
+		for(auto atom: trans->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
 			assumptions.push_back(-abs(atom.second));
+		}
+		std::vector<Variable*> vars;
+		std::vector<Term*> varterms;
+		for(uint i=0; i<p->arity(); ++i){
+			vars.push_back(new Variable(p->sorts()[i]));
+			varterms.push_back(new VarTerm(vars.back(), {}));
+		}
+		auto table = Querying::doSolveQuery(new Query("", vars, new PredForm(SIGN::POS, p, varterms, {}), {}), trans->getConcreteStructure(), trans->getSymbolicStructure());
+		for(auto i=table->begin(); not i.isAtEnd(); ++i){
+			auto atom = grounding->translator()->translateNonReduced(p, *i);
+			assumptions.push_back(-abs(atom));
 		}
 	}
 	for(auto pf : _assumeFalse.assumeFalse){

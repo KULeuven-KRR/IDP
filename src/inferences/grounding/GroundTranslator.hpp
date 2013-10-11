@@ -161,6 +161,13 @@ public:
 	GroundTranslator(StructureInfo structure, AbstractGroundTheory* grounding);
 	void initialize();
 
+	Structure* getConcreteStructure() const {
+		return _structure.concrstructure;
+	}
+	std::shared_ptr<GenerateBDDAccordingToBounds> getSymbolicStructure() {
+		return _structure.symstructure;
+	}
+
 	~GroundTranslator();
 
 	void addMonitor(LazyGroundingManager* manager){
