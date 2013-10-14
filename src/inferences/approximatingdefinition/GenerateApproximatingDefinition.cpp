@@ -664,8 +664,9 @@ const std::vector<Formula*> GenerateApproximatingDefinition::performTransformati
 		if (copyToWorkOn->sign() == SIGN::NEG) {
 			context = Context::NEGATIVE;
 		}
-		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,NULL,context);
-		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,NULL,true,false,context);
+		const set<PFSymbol*>* emptySymbolsSet = new set<PFSymbol*>();
+		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,NULL);
+		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,NULL,(*emptySymbolsSet),true,false,context);
 		auto sentence4 = FormulaUtils::removeEquivalences(sentence3);
 		auto sentence5 = FormulaUtils::pushNegations(sentence4);
 		ret.push_back(sentence5);

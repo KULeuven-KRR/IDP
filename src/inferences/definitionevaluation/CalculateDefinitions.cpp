@@ -36,10 +36,6 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
-		clog << "based on structure: " << toString(structure) << "\n\n"
-						"and vocabulary: " << toString(structure->vocabulary()) << "\n";
-	}
 #ifdef WITHXSB
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
@@ -200,15 +196,8 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 			if (currentdefinition->second.empty()) {
 				auto definition = currentdefinition->first;
 				auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-
-				auto useXSB = getOption(XSB);
-				if(getOption(XSB) && getOption(STABLESEMANTICS)) {
-					Warning::warning("Cannot calculate definitions using XSB for the Stable Model Semantics");
-					useXSB = false;
-				}
-				if(getOption(XSB) && hasrecursion) {
+				if (getOption(XSB) && hasrecursion) {
 					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
-					useXSB = false;
 				}
 
 				bool tooexpensive = false;
@@ -218,21 +207,22 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 				auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
 				if(getOption(XSB) && has_recursive_aggregate) {
 					Warning::warning("Currently, no support for definitions that have recursive aggregates");
-					useXSB = false;
 				}
-
-				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, getOption(XSB) && not hasrecursion, symbolsToQuery);
+				auto useXSB = getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
 				}
+
 				if (not satisfiable) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition.\n";
 					}
 					return std::vector<Structure*> { };
 				}
+				theory->remove(definition);
+				definition->recursiveDelete();
 				opens.erase(currentdefinition);
-				theory->remove(currentdefinition->first);
 				fixpoint = false;
 			}
 		}
@@ -249,10 +239,11 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	return {structure};
 }
 
-std::vector<Structure*> CalculateDefinitions::calculateKnownDefinition(
-		Definition* definition, Structure* structure,
-		std::set<PFSymbol*> symbolsToQuery) {
-	Theory* theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-	theory->add(definition);
-	return calculateKnownDefinitions(theory,structure,symbolsToQuery);
+
+
+std::vector<Structure*> CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure,
+		bool satdelay, std::set<PFSymbol*> symbolsToQuery) {
+        Theory* theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+        theory->add(definition);
+        return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
 }

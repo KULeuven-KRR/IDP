@@ -172,9 +172,9 @@ private:
 			if (propagated_structures.size() == 0 || not propagated_structures[0]->isConsistent()) {
 				bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 				bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
-				auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvoc);
-				auto grounding = returnUnsat(GroundInfo{_theory, {_structure, symstructure}, _nbmodelsequivalent, _minimizeterm}, _receiver);
-				delete(symstructure);
+				auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvocabulary);
+				auto grounding = returnUnsat(GroundInfo { _theory, { _structure, symstructure }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
+				symstructure.reset();
 				return grounding;
 			}
 			_structure = propagated_structures[0];

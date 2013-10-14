@@ -123,7 +123,10 @@ double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,con
 /** Flatten all nested formulas */
 Formula* flatten(Formula*);
 
-/** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas */
+/** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas
+ *  definedsymbols parameter:
+ *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
+ *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Push negations inside */
@@ -175,7 +178,10 @@ AbstractTheory* unnestPartialTerms(AbstractTheory*, const Structure* str = NULL,
 /** Recursively remove all nested terms */
 Formula* unnestTerms(Formula*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
-/** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality */
+/** NON-RECURSIVELY move terms that are three-valued in a given structure outside of the given atom, EXCEPT for atoms over equality
+ *  definedsymbols parameter:
+ *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
+ *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Formula* unnestThreeValuedTerms(Formula*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
@@ -198,7 +204,10 @@ void addFuncConstraints(Term*, Vocabulary*, std::map<Function*, Formula*>& funcc
 void flatten(AbstractTheory*);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
- * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>') */
+ * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>')
+ *  definedsymbols parameter:
+ *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
+ *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
@@ -240,7 +249,6 @@ AbstractTheory* unnestDomainTermsFromNonBuiltins(AbstractTheory*);
 
 
 /** Rewrite the theory so that there are no nested terms */
-<<<<<<< HEAD
 void unnestTerms(AbstractTheory*, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive);
@@ -254,8 +262,6 @@ std::set<PFSymbol* > collectSymbols(AbstractTheory* f);
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
 Rule* removeQuantificationsOverSort(Rule* f, const Sort* s);
 AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s);
-=======
-void unnestTerms(AbstractTheory*, Context con = Context::POSITIVE, const Structure* str = NULL, Vocabulary* voc = NULL);
 
 /** Detect whether the EqChainForm is a range */
 bool isRange(const EqChainForm*);
@@ -268,7 +274,6 @@ int getUpperBound(const EqChainForm*);
 
 /** Retrieve the variable from EqChainForms that are ranges */
 Variable* getVariable(const EqChainForm*);
->>>>>>> Added support for comparison chains in XSB.
 } /* namespace FormulaUtils */
 
 
@@ -316,7 +321,10 @@ namespace SetUtils {
  May return true if the set expression is two-valued in the structure. */
 bool approxTwoValued(const SetExpr*, const Structure*);
 
-/** Rewrite set expressions by moving three-valued terms */
+/** Rewrite set expressions by moving three-valued terms
+ *  definedsymbols parameter:
+ *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
+ *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 SetExpr* unnestThreeValuedTerms(SetExpr* exp, Structure* structure, const std::set<PFSymbol*>& definedsymbols, bool cpsupport, TruthValue cpablerelation);
 } /* namespace SetUtils */
 
@@ -346,7 +354,10 @@ Definition* makeDefinitionCalculable(Definition*, Structure*);
 /** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
 Definition* eliminateUniversalQuantifications(Definition*);
 
-/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule */
+/** Non-recursively move terms that are three-valued in a given structure outside of the head of the rule
+ *  definedsymbols parameter:
+ *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
+ *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Rule* unnestThreeValuedTerms(Rule*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 Rule* unnestNonVarHeadTerms(Rule* rule, const Structure* structure);
