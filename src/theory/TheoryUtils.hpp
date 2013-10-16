@@ -313,6 +313,7 @@ bool approxTwoValued(const Term*, const Structure*);
 /** Check sorts in the given term */
 void checkSorts(Vocabulary*, Term*);
 
+bool contains(const Variable* v, const Term* f);
 bool containsSymbol(const PFSymbol* s, const Term* f);
 
 /** Derive sorts in the given term */

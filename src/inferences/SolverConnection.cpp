@@ -163,14 +163,14 @@ PCUnitPropagate* initpropsolution(PCSolver* solver) {
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {
-	for (auto literal = model.literalinterpretations.cbegin(); literal != model.literalinterpretations.cend(); ++literal) {
+	for (auto literal : model.literalinterpretations) {
 		CHECKTERMINATION;
-		int atomnr = var(*literal);
+		int atomnr = var(literal);
 
 		if (translator->isInputAtom(atomnr)) {
 			auto symbol = translator->getSymbol(atomnr);
 			const auto& args = translator->getArgs(atomnr);
-			if (literal->hasSign()) {
+			if (literal.hasSign()) {
 				init->inter(symbol)->makeFalseAtLeast(args);
 			} else {
 				init->inter(symbol)->makeTrueAtLeast(args);
@@ -193,13 +193,15 @@ VarId getVar(MinisatID::VarID id) {
 
 void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {
 	// Convert vector of variableassignments to a map
-	map<VarId, int> variable2valuemap;
+	map<VarId, int> variable2valuemap; // NOTE: only to int
 	for (auto cpvar : model.variableassignments) {
 		CHECKTERMINATION;
-		Assert(cpvar.hasValue()); // TODO as long as partial is not supported by the grounder
-		variable2valuemap[getVar(cpvar.getVariable())] = cpvar.getValue();
+		if(cpvar.hasValue()){
+			variable2valuemap[getVar(cpvar.getVariable())] = cpvar.getValue();
+	}
 	}
 	// Add terms to the output structure
+	std::set<Function*> hasnondenoting;
 	for (auto cpvar : model.variableassignments) {
 		CHECKTERMINATION;
 		auto var = getVar(cpvar.getVariable());
@@ -211,19 +213,39 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Struc
 			//Note: Only consider functions that are in the user's vocabulary, ignore internal ones.
 			continue;
 		}
-		const auto& gtuple = translator->getArgs(var);
 		ElementTuple tuple;
-		for (auto it = gtuple.cbegin(); it != gtuple.cend(); ++it) {
-			if (it->isVariable) {
-				int value = variable2valuemap.at(it->_varid);
+		for (auto elem: translator->getArgs(var)) {
+			if (elem.isVariable) {
+				auto valueit = variable2valuemap.find(elem._varid);
+				Assert(valueit!=variable2valuemap.cend()); // Otherwise, its application should not result in a value
+				auto value = valueit->second;
+				Assert(value<0 || not translator->hasVarIdMapping({(uint)value})); // NOTE: code works for one nesting of function terms, but not any deeper!!!
 				tuple.push_back(createDomElem(value));
 			} else {
-				tuple.push_back(it->_domelement);
+				tuple.push_back(elem._domelement);
 			}
 		}
-		tuple.push_back(createDomElem(cpvar.getValue()));
-		//	cerr <<"Adding tuple " <<print(tuple) <<" to " <<print(getFunction) <<"\n";
-		init->inter(function)->graphInter()->makeTrueAtLeast(tuple);
+		if(cpvar.hasValue()){
+			tuple.push_back(createDomElem(cpvar.getValue()));
+			init->inter(function)->graphInter()->makeTrueAtLeast(tuple);
+		}else{
+			if(getOption(NBMODELS)==1){
+				hasnondenoting.insert(function);
+			}else{
+				// TODO need a method to notify an function interpretation that it has no image for some value
+				//init->inter(function)->notifyUndefined(tuple);
+				tuple.push_back(NULL);
+				for(auto e = init->inter(function)->universe().tables().back()->sortBegin(); not e.isAtEnd(); ++e){
+					tuple.back() = *e;
+					init->inter(function)->graphInter()->makeFalseAtLeast(tuple);
+				}
+			}
+		}
+	}
+	if(getOption(NBMODELS)==1){
+		for(auto f: hasnondenoting){
+			makeUnknownsFalse(init->inter(f)->graphInter());
+		}
 	}
 }
 

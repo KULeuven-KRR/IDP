@@ -19,7 +19,8 @@ private:
 	varset _vars;
 
 public:
-	varset execute(const Formula* f) {
+	template<class T>
+	varset execute(const T* f) {
 		f->accept(this);
 		return _vars;
 	}

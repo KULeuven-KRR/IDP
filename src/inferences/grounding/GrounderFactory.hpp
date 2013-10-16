@@ -225,6 +225,8 @@ protected:
 private:
 	void createBoolGrounderConjPath(const BoolForm* bf);
 	void createBoolGrounderDisjPath(const BoolForm* bf);
+
+	FormulaGrounder* checkDenotationGrounder(const QuantForm* qf);
 	void createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 	void createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc);
 

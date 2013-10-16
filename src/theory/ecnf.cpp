@@ -315,6 +315,24 @@ bool PCTsBody::operator<(const TsBody& other) const {
 	return false;
 }
 
+bool DenotingTsBody::operator==(const TsBody& other) const {
+	if (not TsBody::operator==(other)) {
+		return false;
+	}
+	const auto& rhs = dynamic_cast<const DenotingTsBody&>(other);
+	return getVarId() == rhs.getVarId();
+}
+
+bool DenotingTsBody::operator<(const TsBody& other) const {
+	if (TsBody::operator<(other)) {
+		return true;
+	} else if (not TsBody::operator==(other)) {
+		return false;
+	}
+	const auto& rhs = dynamic_cast<const DenotingTsBody&>(other);
+	return getVarId() < rhs.getVarId();
+}
+
 bool compEqThroughNeg(CompType left, CompType right) {
 	switch (left) {
 	case CompType::EQ:

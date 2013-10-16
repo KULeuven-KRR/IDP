@@ -104,6 +104,11 @@ void SolverPolicy<Solver>::polAdd(Lit tseitin, CPTsBody* body) {
 	adder.add(tseitin, body);
 }
 
+template<typename Solver>
+void SolverPolicy<Solver>::polAdd(Lit tseitin, VarId varid){
+	adder.add(tseitin, varid);
+}
+
 class LazyClauseMon: public MinisatID::LazyGrounder {
 private:
 	LazyInstantiation* inst;

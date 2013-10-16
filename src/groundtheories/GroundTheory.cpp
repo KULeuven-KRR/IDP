@@ -180,6 +180,13 @@ void GroundTheory<Policy>::add(Lit tseitin, CPTsBody* body) {
 }
 
 template<class Policy>
+void GroundTheory<Policy>::add(Lit tseitin, VarId varid) {
+	addVarIdInterpretation(varid);
+	notifyAtomsAdded(1);
+	Policy::polAdd(tseitin, varid);
+}
+
+template<class Policy>
 void GroundTheory<Policy>::add(SetId setnr, DefId defnr, bool weighted) {
 	if (_addedSets.find(setnr) != _addedSets.end()) {
 		return;
@@ -344,6 +351,8 @@ void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi,
 			auto body = dynamic_cast<CPTsBody*>(tsbody);
 			Assert(body->type() != TsType::RULE);
 			add(tseitin, body);
+		} else if (isa<DenotingTsBody>(*tsbody)) {
+			add(tseitin, dynamic_cast<DenotingTsBody*>(tsbody)->getVarId());
 		} else {
 			Assert(isa<LazyTsBody>(*tsbody));
 			auto body = dynamic_cast<LazyTsBody*>(tsbody);

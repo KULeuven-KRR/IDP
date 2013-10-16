@@ -45,7 +45,12 @@ public:
 			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
 		}else if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
-			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+			auto nonden = translator->getNonDenoting(varid);
+			if(nonden==translator->falseLit()){
+				execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+			}else{
+				execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int, createLiteral(nonden)));
+			}
 		} else {
 			// the domain is not a complete range.
 			std::vector<MinisatID::Weight> w;
@@ -53,7 +58,12 @@ public:
 				CHECKTERMINATION;
 				w.push_back((MinisatID::Weight) (*it)->value()._int);
 			}
-			execute(MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
+			auto nonden = translator->getNonDenoting(varid);
+			if(nonden==translator->falseLit()){
+				execute(MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w, createLiteral(nonden)));
+			}else{
+				execute(MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
+			}
 		}
 	}
 	void addFDVariables(const varidlist& varids) {
@@ -113,6 +123,10 @@ public:
 	void addOptimization(VarId varid) {
 		addFDVariable(varid);
 		execute(MinisatID::OptimizeVar(1, convert(varid), true));
+	}
+
+	void add(Lit, VarId varid){
+		addFDVariable(varid);
 	}
 
 	void add(Lit tseitin, TsType type, const GroundClause rhs, bool conjunctive) {

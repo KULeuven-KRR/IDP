@@ -4078,7 +4078,7 @@ void FuncInter::add(const ElementTuple& tuple){
 	if(_functable!=NULL){
 		_functable->add(tuple);
 	}else{
-		_graphinter->ct()->add(tuple);
+		_graphinter->makeTrueAtLeast(tuple, true);
 	}
 }
 
