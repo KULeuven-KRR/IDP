@@ -155,6 +155,11 @@ procedure mxwithsymm(){
 	end
 }
 
+procedure mxCardFO(){
+	removecardinalities(T,0)
+	return run()
+}
+
 procedure run() {
 	if(allowed~=nil) then
 		if (not allowed()) then return 1; end

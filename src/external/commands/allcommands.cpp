@@ -119,6 +119,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintGroundingInference>());
 	inferences.push_back(make_shared<EntailsInference>());
 	inferences.push_back(make_shared<RemoveNestingInference>());
+	inferences.push_back(make_shared<RemoveCardinalitiesInference>());
 	// TODO issue #50 bdds inferences.push_back(new SimplifyInference());
 	inferences.push_back(make_shared<TwoValuedExtensionsOfTableInference>());
 	inferences.push_back(make_shared<TwoValuedExtensionsOfStructureInference>());

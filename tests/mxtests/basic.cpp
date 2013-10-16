@@ -31,14 +31,6 @@ TEST_P(SimpleMXnbTest, NbModelsOption) {
 	runTests("modelexpansion.idp", GetParam(), "nbmodelsOptionVerification()");
 }
 
-TEST(MXnbmodelsTest, DoesMX) {
-	string testfile(getTestDirectory() + "mx/nbmodels.idp");
-	cerr << "Testing " << testfile << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { testfile }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 /**
  * TODO
  */

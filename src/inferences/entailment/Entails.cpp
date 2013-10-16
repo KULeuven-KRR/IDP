@@ -129,10 +129,7 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 		Warning::warning("The input contains a definition. A (possibly) weaker form of entailment will be verified, based on its completion.");
 		FormulaUtils::addCompletion(axioms, NULL);
 	}
-	if(axiomsSupported.aggregateFound()){
-		Warning::warning("The input contains aggregates. These will be dropped, resulting in a weaker form of entailment.");
-		// TODO simplify aggregates, support cardinality
-	}
+
 
 	TheorySupportedChecker conjecturesSupported;
 	conjecturesSupported.runCheck(conjectures);
@@ -148,7 +145,13 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 
 	FormulaUtils::unnestTerms(conjectures);
 	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, {}, true, false);
-
+        
+	if(axiomsSupported.aggregateFound()){
+		Warning::warning("The input contains aggregates. Non-cardinality aggregates will be dropped, resulting in a weaker form of entailment.");
+                //card needs the graphFuncsandAggs first
+		FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
+		FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
+	}
 	if (not conjecturesSupported.arithmeticFound() && not axiomsSupported.arithmeticFound()) {
 		hasArithmetic = false;
 	}
