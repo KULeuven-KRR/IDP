@@ -590,7 +590,7 @@ void FormulaClauseToPrologClauseConverter::visit(AndClause* ac) {
 		body.push_back((*it)->asTerm());
 		(*it)->accept(this);
 	}
-	_pp->addClause(new PrologClause(ac->asTerm(), body));
+	_pp->addClause(new PrologClause(ac->asTerm(), body, false));
 }
 
 void FormulaClauseToPrologClauseConverter::visit(OrClause* oc) {
