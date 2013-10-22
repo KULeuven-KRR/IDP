@@ -59,7 +59,7 @@ namespace inferences{
 procedure modelexpand(theory, structure, vocabulary) {
 	local solutions
 	local trace
-	solutions, trace = modelexpandpartial(clonetheo,structure, vocabulary)
+	solutions, trace = modelexpandpartial(theory, structure, vocabulary)
 	if stdoptions.verbosity.grounding>0 then
 		io.stderr:write("Extending partial models to full models\n")
 	end
