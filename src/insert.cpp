@@ -85,6 +85,8 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 	return sstr.str();
 }
 
+
+
 /*************
  VARNAME
  *************/
@@ -159,6 +161,12 @@ ostream& NSPair::put(ostream& output) const {
 /**********
  * Insert
  **********/
+
+varset Insert::varVectorToSet(std::vector<Variable*>* v){
+	varset out = varset();
+	copy(v->begin(), v->end(), inserter(out, out.begin()));
+	return out;
+}
 
 bool Insert::belongsToVoc(Sort* s) const {
 	if (_currvocabulary->contains(s)) {
@@ -1321,6 +1329,14 @@ Formula* Insert::falseform(YYLTYPE l) const {
 	return new BoolForm(SIGN::POS, false, vf, pi);
 }
 
+Formula* Insert::predformVar(NSPair* nst, const vector<Variable*>& vt, YYLTYPE l) const {
+	std::vector<Term*> vs = vector<Term*>();
+	for(auto var : vt){
+		vs.push_back(new VarTerm(var,TermParseInfo()));
+	}
+	return predform(nst,vs,l);
+}
+
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size()) {
@@ -1330,6 +1346,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 			prednameexpected(nst->_pi);
 		}
 	}
+
 	nst->includeArity(vt.size());
 	Predicate* p = predInScope(nst->_name, nst->_pi);
 	if (p && nst->_sortsincluded && (nst->_sorts).size() == vt.size()) {

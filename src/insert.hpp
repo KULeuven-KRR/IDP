@@ -217,6 +217,7 @@ public:
 	std::string* currfile() const; //!< return the current filename
 	void currfile(const std::string& s); //!< set the current filename
 	void currfile(std::string* s); //!< set the current filename
+	varset varVectorToSet(std::vector<Variable*>* v);
 
 	void openNamespace(const std::string& name, YYLTYPE); //!< Open a new namespace
 	void openvocab(const std::string& name, YYLTYPE); //!< Open a new vocabulary
@@ -306,6 +307,8 @@ public:
 	//!< create a new formula of the form F(t1,...,tn) = t
 	Formula* funcgraphform(NSPair*, Term*, YYLTYPE) const;
 	//!< create a new formula of the form C = t
+	Formula* predformVar(NSPair*, const std::vector<Variable*>&, YYLTYPE) const;
+	//!< create a new formula of the form P(t1,...,tn) where ti is a var
 	Formula* predform(NSPair*, const std::vector<Term*>&, YYLTYPE) const;
 	//!< create a new formula of the form P(t1,...,tn)
 	Formula* predform(NSPair*, YYLTYPE) const;
