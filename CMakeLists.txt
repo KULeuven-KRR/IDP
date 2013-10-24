@@ -56,7 +56,7 @@ endif()
 
 if(CMAKE_COMPILER_IS_MINGW)
 	message(STATUS "Mingw compiler")
-	addToCXX("-static-libgcc ")
+	addToCXX("-static-libgcc -static-libstdc++ ")
 endif()
 
 set(WRONGBUILD ON)
