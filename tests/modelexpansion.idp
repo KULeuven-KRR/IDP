@@ -212,3 +212,15 @@ procedure checkmodelsandnonmodels() {
 	end
 	return 1
 }
+
+procedure nbmodelsOptionVerification() {
+	if getExpectedNbOfModels()<2 then return 1; end
+	stdoptions.nbmodels = getExpectedNbOfModels()-1
+	solutions = modelexpand(T, S, Vout)
+	print(#solutions..getExpectedNbOfModels()-1)
+	if(#solutions==getExpectedNbOfModels()-1) then
+		return 1
+	else 
+		return 0
+	end
+}

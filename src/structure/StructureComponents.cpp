@@ -4159,7 +4159,7 @@ bool needMoreModels(unsigned int found) {
 }
 
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
-		vector<Structure*>& extensions) {
+		vector<Structure*>& extensions, int prevcount) {
 // go over all saved structures and generate a new structure for each possible value for it
 	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
 	vector<Structure*> partialfalsestructs;
@@ -4179,7 +4179,7 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 			continue;
 		}
 
-		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(partialfalsestructs.size()+newstructs.size()); ++j) {
+		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(partialfalsestructs.size()+newstructs.size()+prevcount); ++j) {
 			CHECKTERMINATION;
 			auto news = (*j)->clone();
 			news->inter(function)->graphInter()->makeTrue(tuple);
@@ -4197,18 +4197,17 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 	Assert(extensions.size()>0);
 }
 
-std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original);
+std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original, int prevcount = 0);
 
 // Contents ownership to receiver
 std::vector<Structure*> generateEnoughTwoValuedExtensions(const std::vector<Structure*>& partialstructures) {
 	auto result = std::vector<Structure*>();
-	for (auto i = partialstructures.cbegin(); i != partialstructures.cend(); ++i) {
-		if (not (*i)->approxTwoValued()) {
-			auto extensions = generateEnoughTwoValuedExtensions(*i);
-			insertAtEnd(result, extensions);
-		} else {
-			result.push_back(*i);
+	for (auto structure : partialstructures) {
+		if(not needMoreModels(result.size())){
+			break;
 		}
+		auto extensions = generateEnoughTwoValuedExtensions(structure,result.size());
+		insertAtEnd(result, extensions);
 	}
 
 	if (getOption(IntType::VERBOSE_SOLVING) > 1 && getOption(IntType::NBMODELS) != 0 && needMoreModels(result.size())) {
@@ -4224,22 +4223,20 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(const std::vector<Stru
  * Can only be called if this structure is cleaned; calculates all more precise two-valued structures
  * TODO refactor into clean methods!
  */
-std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
-	vector<Structure*> extensions;
-
-	extensions.push_back(original->clone());
-
-	if (original->approxTwoValued()) {
-		return extensions;
+std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original, int prevcount) {
+	if(original->approxTwoValued()){
+		return {original};
 	}
 
 	if (not original->isConsistent()) {
 		throw IdpException("Cannot generate two-valued extensions of a four-valued (inconsistent) structure.");
 	}
 
+	vector<Structure*> extensions = {original->clone()};
+
 	for (auto f2inter : original->getFuncInters()) {
 		CHECKTERMINATION;
-		if(not needMoreModels(extensions.size())){
+		if(not needMoreModels(extensions.size()+prevcount)){
 			break;
 		}
 		auto function = f2inter.first;
@@ -4276,7 +4273,7 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
 			FirstNElementsEqual eq(function->arity());
 			StrictWeakNTupleOrdering so(function->arity());
 
-			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()); ++domainIterator) {
+			for (; not allempty && not domainIterator.isAtEnd() && needMoreModels(extensions.size()+prevcount); ++domainIterator) {
 				CHECKTERMINATION
 				// get unassigned domain element
 				domainElementWithoutValue = *domainIterator;
@@ -4286,15 +4283,15 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
 				if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
 					continue;
 				}
-				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+				generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions, prevcount);
 			}
 		} else {
-			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions);
+			generateMorePreciseStructures(cf, domainElementWithoutValue, sorts.back(), function, extensions, prevcount);
 		}
 	}
 
 //If some predicate is not two-valued, calculate all structures that are more precise in which this function is two-valued
-	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()); i++) {
+	for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end() && needMoreModels(extensions.size()+prevcount); i++) {
 		CHECKTERMINATION;
 		auto pred = (*i).first;
 		auto inter = (*i).second;
@@ -4306,7 +4303,7 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
 		auto pf = inter->pf();
 		for (auto ptIterator = inter->pt()->begin(); not ptIterator.isAtEnd(); ++ptIterator) {
 			CHECKTERMINATION;
-			if(not needMoreModels(extensions.size())){
+			if(not needMoreModels(extensions.size()+prevcount)){
 				break;
 			}
 			if(not pf->contains(*ptIterator)) {
@@ -4316,13 +4313,13 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original) {
 			vector<Structure*> newstructs;
 			for (auto ext : extensions) {
 				CHECKTERMINATION;
-				if(not needMoreModels(newstructs.size())){
+				if(not needMoreModels(newstructs.size()+prevcount)){
 					break;
 				}
 				auto news = ext->clone();
 				news->inter(pred)->makeTrue(*ptIterator);
 				newstructs.push_back(news);
-				if (not needMoreModels(newstructs.size())) {
+				if (not needMoreModels(newstructs.size()+prevcount)) {
 					break;
 				}
 				news = ext->clone();

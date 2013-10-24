@@ -27,6 +27,10 @@ TEST_P(SimpleMXnbTest, VerifyAllStructures) {
 	runTests("modelexpansion.idp", GetParam(), "checkmodelsandnonmodels()");
 }
 
+TEST_P(SimpleMXnbTest, NbModelsOption) {
+	runTests("modelexpansion.idp", GetParam(), "nbmodelsOptionVerification()");
+}
+
 TEST(MakeTrueTest, Correct) {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/maketrue.idp" }););
