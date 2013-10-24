@@ -99,11 +99,68 @@ InstGenerator* GeneratorFactory::create(const PredTable* pt, const vector<Patter
 	return gen;
 }
 
+bool isSort(const PFSymbol* symbol){
+	return symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol;
+}
+
+enum class Relation {
+	PARENT, // SymbolSort is parent of VarSort
+	EQUAL, 	// SymbolSort is equal to VarSort
+	CHILD,	// SymbolSort is child of VarSort
+	UNKNOWN // Did not detect relationship by comparing tables only. Should play safe here!
+};
+
+InstGenerator* generateSort(const PredTable* table, SortTable* symbolSortInter, SortTable* varSortInter, Relation rel, const DomElemContainer* var, Pattern pattern, bool inverse){
+	if (rel == Relation::EQUAL) {
+		//In case the symbols are equal just generate/check the table. This is the simple case
+		return GeneratorFactory::create(table, {pattern}, {var}, Universe({varSortInter}));
+	}
+
+	InstGenerator* firstgenerator = NULL;
+	auto internVarSortInter = varSortInter->internTable();
+	if (not inverse) { // We generate T(x[T2])
+		//Hence: intersection of T and T2 should be generated. This simply is the smallest of the two
+		auto internTableToGenerate = symbolSortInter->internTable();
+		if (rel == Relation::PARENT) {
+			internTableToGenerate = internVarSortInter;
+		}
+		if (pattern == Pattern::OUTPUT) {
+			firstgenerator = new SortGenerator(internTableToGenerate, var);
+		} else {
+			firstgenerator = new SortChecker(internTableToGenerate, var);
+		}
+		if (rel == Relation::UNKNOWN) {
+			// We are not sure the intersection is the smallest, approx-checks did not work well, so take intersection
+			firstgenerator = new OneChildGenerator(firstgenerator, new SortChecker(internVarSortInter, var));
+		}
+	}else{ // Inverse, we generate ~T(x[T2]), hence the intersection of ~T and T2
+		if (rel == Relation::PARENT) {
+			return new EmptyGenerator(); // We generate ~T(x[T2]) where T2 isa T, which is false.
+		}
+
+		InstGenerator* generateVar = NULL;
+		if (pattern == Pattern::OUTPUT) {
+			generateVar = new SortGenerator(internVarSortInter, var);
+		} else {
+			generateVar = new SortChecker(internVarSortInter, var);
+		}
+		auto checkSymbol = new SortChecker(symbolSortInter->internTable(), var);
+		firstgenerator = new TwoChildGenerator(checkSymbol, generateVar, new FullGenerator(), new EmptyGenerator());
+	}
+	return firstgenerator;
+}
+
+// TODO refactor create methods, define their exact semantics (and also of the generators) and specifically check whether the one taking a predtable should be public!
+// TODO change comments to use the typeless variant (as conjunctions) which is easier to understand
 InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const Structure* structure, bool inverse, const vector<Pattern>& pattern,
 		const vector<const DomElemContainer*>& vars, const Universe& universe) {
-	if(getOption(VERBOSE_GEN_AND_CHECK)>1){
-		clog  << "Creating " << (inverse ? "inverse" : "") << " generator for " << print(symbol) << " on pattern " << print(pattern) << "\n";
+	Assert(universe.tables().size() == vars.size());
+	Assert(symbol->nrSorts() == vars.size());
+
+	if (getOption(VERBOSE_GEN_AND_CHECK) > 1) {
+		clog << "Creating " << (inverse ? "inverse" : "") << " generator for " << print(symbol) << " on pattern " << print(pattern) << "\n";
 	}
+
 	bool inverted = inverse;
 	const PredTable* table = NULL;
 	if (symbol->isPredicate()) {
@@ -139,111 +196,113 @@ InstGenerator* GeneratorFactory::create(const PFSymbol* symbol, const Structure*
 		table = inverse ? inter->cf() : inter->ct();
 	}
 
-	auto alldescendants = true;
+	//NOTE: code below contains duplication for readability and guaranteeing correctness.
+	//This code has contained lots of bugs in the past!
+
+	std::vector<Relation> symbolSortVSVarSort(symbol->sorts().size(), Relation::UNKNOWN);
+
 	for (size_t i = 0; i < universe.tables().size(); ++i) {
-		auto sort = symbol->sorts()[i];
-		if (universe.tables()[i]!=structure->inter(sort)) {
-			auto found = false;
-			for(auto child: sort->descendents(structure->vocabulary())){
-				if(universe.tables()[i]==structure->inter(child)){
-					found = true;
-					break;
-				}
+		auto symbolSort = symbol->sorts()[i];
+		auto symbolSortInter = structure->inter(symbolSort);
+		auto varSortInter = universe.tables()[i];
+		if (varSortInter == symbolSortInter) {
+			symbolSortVSVarSort[i] = Relation::EQUAL;
+			continue;
+		}
+		for (auto child : symbolSort->descendents(structure->vocabulary())) {
+			if (varSortInter == structure->inter(child)) {
+				symbolSortVSVarSort[i] = Relation::PARENT;
+				break;
 			}
-			if(found){
-				continue;
+		}
+		if(symbolSortVSVarSort[i]!=Relation::UNKNOWN){
+			continue;
+		}
+		for (auto child : symbolSort->ancestors(structure->vocabulary())) {
+			if (varSortInter == structure->inter(child)) {
+				symbolSortVSVarSort[i] = Relation::CHILD;
+				break;
 			}
-			alldescendants = false;
-			break;
 		}
 	}
 
-	InstGenerator* finalgenerator;
-	//If symbol is a symbol to check for a sort, this will return a fullgenerator. However, in this case no outofboundschecks are done
-	//Therefor, we do the following:
-	if (not alldescendants && not inverted && symbol->sorts().size() == 1 && symbol->sorts()[0]->pred() == symbol) {
-		//if allequal, nothing needs to be done.
-		//if inverse, the outofboundschecks are performed below
-		auto ist = structure->inter(symbol->sorts()[0])->internTable();
-		InstGenerator* first;
-		InstGenerator* second;
+	// We will now handle some special cases for guaranteeing efficiency
 
-		//OPTIMIZATION: choosing the smallest size first ensures that we don't enter unnecessary infinite loops.
-		bool istIsBiggest = false;
-		auto size1 =ist->size();
-		auto size2 = universe.tables()[0]->size();
-		if(size1.isInfinite()){
-			istIsBiggest = true;
-		}else if(not (size2.isInfinite())){
-			if (size1._size > size2._size) {
-				istIsBiggest = true;
-			}
-		}
-		if (istIsBiggest) {
-			first = GeneratorFactory::create(table, pattern, vars, universe);
-			second = new SortChecker(ist, vars[0]);
-		} else {
-			if (pattern[0] == Pattern::OUTPUT) {
-				first = new SortGenerator(ist, vars[0]);
-			} else {
-				first = new SortChecker(ist, vars[0]);
-			}
-			vector<Pattern> newpattern(pattern);
-			newpattern[0] = Pattern::INPUT;
-			second = GeneratorFactory::create(table, newpattern, vars, universe);
-		}
-		finalgenerator = new OneChildGenerator(first, second);
-	} else if(not alldescendants && not inverted){
-		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
-		for (size_t i = 0; i < universe.tables().size(); ++i) {
-			if (universe.tables()[i] != structure->inter(symbol->sorts()[i])) {
-				auto sortchecker = new SortChecker(universe.tables()[i]->internTable(), vars[i]);
-				finalgenerator = new OneChildGenerator(finalgenerator, sortchecker);
-			}
-		}
-	} else {
-		finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
+	// SPECIAL CASE: Symbol is a sortcheck for type T.
+	//		generate: (~) T(x[T2])
+	if (isSort(symbol)) {
+		return generateSort(table, structure->inter(symbol->sorts()[0]), universe.tables()[0], symbolSortVSVarSort[0], vars[0], pattern[0], inverse);
 	}
 
-	//If there is no inversion, the out-of bounds checks are already added in the previous code.
-	//If all domains are equal there is no need for out-of-bounds checks
-	//Comparisongenerators allready generate the "outofbounds".
-	//Thus, in this case the checks are also not needed (and in many cases, will lead to infinite running stuff if you do include them)
-	if (not inverted || alldescendants || VocabularyUtils::isComparisonPredicate(symbol)) {
+	//REGULAR CASE:
+	auto finalgenerator = GeneratorFactory::create(table, pattern, vars, universe);
+
+	/* In principle, we could return finalgenerator.
+	 * However, a few more things need to be done. Suppose P is typed T and we are generating (~) P(x[T2]).
+	 * All generated x's SHOULD BE T2s. We consider 4 cases:
+	 * 1) Generate P(x[T2]) and T   isa T2   (CHILD)
+	 * 2) Generate P(x[T2]) and T2  isa T    (PARENT)
+	 * 3) Generate ~P(x[T2]) and T  isa T2   (CHILD)
+	 * 4) Generate ~P(x[T2]) and T2 isa T    (PARENT)
+	 *
+	 * For variables in the situation 1) we should do nothing.
+	 * For variables in situation 2), we should add the typechecks
+	 * For variables in situation 3), we generate the P<cf> table AND out of bounds generation.
+	 * For variables in situation 4), we generate the P<cf> table but should do no extra checks (~P holds outside of T2 anyway)
+	 */
+
+	//We start by handling variables in situation 2): where symbolsort is PARENT (or, for safety reasons, UNKNOWN) and not inverted holds
+	for (size_t i = 0; i < universe.tables().size(); ++i) {
+		if ((symbolSortVSVarSort[i] == Relation::PARENT || symbolSortVSVarSort[i] == Relation::UNKNOWN) && not inverted) {
+			auto sortchecker = new SortChecker(universe.tables()[i]->internTable(), vars[i]);
+			finalgenerator = new OneChildGenerator(finalgenerator, sortchecker);
+		}
+	}
+
+	//Now, we should still add the out-of-bounds checks. (situation 3)
+	if (not inverted) {
+		// situation 3) requires invertedness
 		return finalgenerator;
 	}
 
-	//If the universe does not match the universe of the predicate symbol,
-	//And if we are generating all false instances,
-	//we must also generate all out-of-bounds tuples.
+	// Optimization: Comparisongenerators themselves already generate the "outofbounds".
+	if (VocabularyUtils::isComparisonPredicate(symbol)) {
+		return finalgenerator;
+	}
 
-	InstGenerator* univgenerator = NULL;
+	// If the universe does not match the universe of the predicate symbol and if we are generating all false instances,
+	// we must also generate all out-of-bounds tuples.
 
+	// We know we are generating ~P(x1[T'1], ..., xn[T'n]) where P is typed T1 ... Tn
+	// We should (additionally to what we already had) generate all tuples (d1,...dn) (in (T'1, ..., T'n) ) such that
+	// at least one of the d_i is out of Ti.
+
+	// FullGenerator generates everything.
+	InstGenerator* univgenerator = new FullGenerator();
 	auto predsorts = symbol->sorts();
 	for (size_t i = 0; i < vars.size(); i++) {
 		if (pattern[i] == Pattern::OUTPUT) {
-			if (univgenerator != NULL) {
-				univgenerator = new OneChildGenerator(univgenerator, new SortGenerator(universe.tables()[i]->internTable(), vars[i]));
-			} else {
-				univgenerator = new SortGenerator(universe.tables()[i]->internTable(), vars[i]);
-			}
+			univgenerator = new OneChildGenerator(univgenerator, new SortGenerator(universe.tables()[i]->internTable(), vars[i]));
 		}
 	}
 
-	InstGenerator* outofboundsgenerator = univgenerator;
-	if (outofboundsgenerator == NULL) { //no output
-		Assert(vars.size()>0);
-		outofboundsgenerator = new FullGenerator(); //We know vars.size > 0, thus we will at least do one "sortchecker" and this fullgenerator is safe.
-	}
-
+	// Outofboundschecker succeeds if one of the vars is out of bounds
+	InstGenerator* outofboundschecker = new EmptyGenerator();
+	bool atLeastOneOutOfBounds = false;
 	for (size_t i = 0; i < vars.size(); i++) {
-		auto sortchecker = new SortChecker(structure->inter(predsorts[i])->internTable(), vars[i]);
-		outofboundsgenerator = new TwoChildGenerator(sortchecker, outofboundsgenerator, new FullGenerator(), new EmptyGenerator());
+		if (symbolSortVSVarSort[i] == Relation::CHILD || symbolSortVSVarSort[i] == Relation::UNKNOWN) {
+			atLeastOneOutOfBounds = true;
+			auto sortchecker = new SortChecker(structure->inter(predsorts[i])->internTable(), vars[i]);
+			//Succeed if sortchecker fails; call previous otherwise
+			outofboundschecker = new TwoChildGenerator(sortchecker, new FullGenerator(), new FullGenerator(), outofboundschecker);
+		}
 	}
-
+	if (not atLeastOneOutOfBounds) {
+		return finalgenerator;
+	}
+	auto outofboundsgenerator = new TwoChildGenerator(outofboundschecker, univgenerator, new EmptyGenerator(), new FullGenerator());
 	auto tablechecker = GeneratorFactory::create(table, std::vector<Pattern>(pattern.size(), Pattern::INPUT), vars, universe);
 	return new UnionGenerator({ finalgenerator, outofboundsgenerator } , { tablechecker, new FullGenerator() });
-
 }
 
 InstGenerator* GeneratorFactory::internalCreate(const PredTable* pt, vector<Pattern> pattern, const vector<const DomElemContainer*>& vars,

@@ -1,0 +1,27 @@
+vocabulary V{
+	type T
+	type X isa T
+	P(T)
+	Q
+}
+
+theory T:V{
+	{
+		Q <- ?x[X]: P(x).
+	
+	}
+}
+
+structure S:V{
+	T={1..3}
+	X={1}
+	P={2;3}
+
+}
+
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+

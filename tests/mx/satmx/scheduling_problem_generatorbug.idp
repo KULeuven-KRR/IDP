@@ -1,0 +1,71 @@
+/**
+ * Title: A new IDP source file
+ * Author: r0247427
+ */
+
+// Vocabulary of the solution has LargeRoom and MultimediaRoom as subtypes of room (same goes for PopularCourse and Course) which I did not
+// I named most of my predicates differently, but did not changed Schedule(Lecture, Timeslot) and RoomUsed(Room, Lecture, TimeSlot) into LectureInRoom(Lecture, Room), LectureOnTimeSlot(Lecture, TimeSlot)
+// I forgot Prec(Time, Time) as I just used an integer for that purpose, which has a natural ordening 
+// "Each course has a given nb of lectures" is implicit by the LectureBelongsToCourse/2 predicate an the structure
+// LectureWithMM is to be used equivalently with my predicate NeesMultimedia(Lecture, TimeSlot), but I did not notice the timeslot was redundant as the time was already mapped with Schedule(Lecture, TimeSlot) 
+vocabulary V {
+	type Room
+	type Time
+	type Course
+	type LargeRoom isa Room
+	type MultimediaRoom isa Room
+	type PopularCourse isa Course
+	type Lecture
+	
+	Prec(Time,Time)
+	DependsOn(Lecture,Lecture)
+	LectureWithMM(Lecture)
+	LectureBelongsToCourse(Lecture,Course)
+	LectureOnTimeSlot(Lecture,Time)
+	LectureInRoom(Lecture,Room)
+}
+
+theory T: V {
+	// There are a number of time slots available
+	#{t[Time]: Time(t)} > 0.
+	
+	// Each lecture has exactly one timeslot
+	! l[Lecture]: ?1 t[Time]: LectureOnTimeSlot(l, t).
+	// Each lecture is scheduled in exactly one room
+	! l[Lecture]: ?1 r[Room]: LectureInRoom(l, r). 
+	// Each lecture is scheduled, and exactly once
+//	! l[Lecture]: ?1 t[Time]: LectureOnTimeSlot(l, t).
+	
+	// If one course precedes another course, they are scheduled as such 
+	! l1, l2, t1, t2: DependsOn(l1, l2) & LectureOnTimeSlot(l1, t1) & LectureOnTimeSlot(l2, t2) => Prec(t1, t2).
+	
+	// PopularCourse s can only be taught in a Large Room
+	! r[Room]: !l[Lecture]:!c[PopularCourse]: LectureInRoom(l, r) & LectureBelongsToCourse(l, c) => LargeRoom(r).
+	
+	// Scheduled rooms must have multimedia if it is required
+	! l[Lecture]:!r[Room]: LectureInRoom(l, r) & LectureWithMM(l) => MultimediaRoom(r).
+	
+	// Only one Lecture can be scheduled in a Room on a given time
+	//!l1[Lecture]:!l2[Lecture]: !t[Time]: LectureInRoom(l1, r) & LectureInRoom(l2, r) & LectureOnTimeSlot(l1, t) & LectureOnTimeSlot(l2, t) => l1 = l2.
+	//!r[Room]:!t[Time]: #{l[Lecture]: LectureInRoom(l, r) & LectureOnTimeSlot(l, t)} =< 1.
+	!r[Room]: !t[Time]: ?=<1 l[Lecture]: LectureInRoom(l, r) & LectureOnTimeSlot(l, t).
+	
+}
+
+structure S : V{
+	Course = { C1;C2;C3;}
+	PopularCourse = { C1;}
+	Room = { R1;R2;R3;}
+	Lecture = { C11;C12;C13;C21;C22;C23;C31;C32;C33;}
+	Time = { T1;T2;T3;}
+	MultimediaRoom = { R1;}
+	LargeRoom = { R1;R2;}
+	DependsOn = { C12,C11;C13,C12;C22,C21;}
+	LectureBelongsToCourse = { C11,C1;C12,C1;C13,C1;C21,C2;C22,C2;C23,C2;C31,C3;C32,C3;C33,C3;}
+	Prec = { T1,T2;T1,T3;T2,T3;}
+	LectureWithMM = { C21;C13;C33;}
+}
+
+procedure getExpectedAModel(){
+	return true
+}

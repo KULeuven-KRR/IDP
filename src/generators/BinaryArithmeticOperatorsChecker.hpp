@@ -15,13 +15,10 @@ enum class ARITHRESULT {
 	VALID, INVALID
 };
 #endif //ARITHRESULTV
-#ifndef ARITHCH_HPP_
-#define ARITHCH_HPP_
+#pragma once
 
 #include "InstGenerator.hpp"
 #include "structure/Universe.hpp"
-
-class DomelemContainer;
 
 /**
  * Instance checker for the formula x op y = z
@@ -102,5 +99,3 @@ public:
 	ModChecker* clone() const;
 	virtual void put(std::ostream& stream)const;
 };
-
-#endif /* ARITHCH_HPP_ */
