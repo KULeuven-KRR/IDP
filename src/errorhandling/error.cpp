@@ -54,6 +54,9 @@ std::ostream& Error::operator<<(std::ostream& stream, ComponentType t) {
 	case ComponentType::Variable:
 		stream << "Variable";
 		break;
+	case ComponentType::FOBDD:
+		stream << "FOBDD";
+		break;
 	}
 	return stream;
 }

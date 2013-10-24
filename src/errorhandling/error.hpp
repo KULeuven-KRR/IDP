@@ -62,7 +62,8 @@ void nottotal(const std::string& f, const std::string& str);
 void threevalsort(const std::string& s, const ParseInfo& pi);
 
 enum class ComponentType {
-	Namespace, Vocabulary, Theory, Structure, Query, Term, Procedure, Predicate, Function, Symbol, Sort, Variable
+	Namespace, Vocabulary, Theory, Structure, Query, Term, Procedure, Predicate, Function, Symbol, Sort, Variable, FOBDD
+//TODO FOBDD toegevoegd?
 };
 
 std::ostream& operator<<(std::ostream& stream, ComponentType t);

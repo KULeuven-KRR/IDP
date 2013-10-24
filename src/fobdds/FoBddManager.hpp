@@ -151,6 +151,8 @@ public:
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDKernel* getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right);
 
+	const FOBDDTerm* getFOBDDTerm(Term*);
+
 	const FOBDDEnumSetExpr* getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
 	//If this is not the case, use setquantify!

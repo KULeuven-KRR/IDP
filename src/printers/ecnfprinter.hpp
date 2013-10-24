@@ -145,6 +145,9 @@ public:
 	void visit(const Query*) {
 		throw notyetimplemented("Printing queries in ecnf format");
 	}
+	void visit(const FOBDD*) {
+		throw notyetimplemented("Printing fobdds in ecnf format");
+	}
 
 	void visit(const GroundClause& g) {
 		Assert(isTheoryOpen());

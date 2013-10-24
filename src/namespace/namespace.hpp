@@ -21,6 +21,7 @@ class Options;
 class UserProcedure;
 class Query;
 class Term;
+class FOBDD;
 
 #include "parseinfo.hpp"
 #include "GlobalData.hpp"
@@ -44,6 +45,7 @@ private:
 	std::map<std::string, UserProcedure*> _procedures; //!< Map a name+arity to the corresponding procedure
 	std::map<std::string, Query*> _queries; //!< Map a name to the corresponding query
 	std::map<std::string, Term*> _terms; //!< Map a name to the corresponding term
+	std::map<std::string, const FOBDD*> _fobdds; //!< Map a name to the corresponding fobdd
 
 	ParseInfo _pi; //!< the place where the namespace was parsed
 
@@ -88,6 +90,7 @@ public:
 	bool isVocab(const std::string&) const;
 	bool isTheory(const std::string&) const;
 	bool isQuery(const std::string&) const;
+	bool isFOBDD(const std::string&) const;
 	bool isTerm(const std::string&) const;
 	bool isStructure(const std::string&) const;
 	bool isProc(const std::string&) const;
@@ -97,6 +100,7 @@ public:
 	Structure* structure(const std::string&) const;
 	UserProcedure* procedure(const std::string&) const;
 	Query* query(const std::string&) const;
+	const FOBDD* fobdd(const std::string&) const;
 	Term* term(const std::string&) const;
 
 	const std::map<std::string, UserProcedure*>& procedures() const {
@@ -116,6 +120,9 @@ public:
 	}
 	const std::map<std::string, Query*>& queries() const {
 		return _queries;
+	}
+	const std::map<std::string, const FOBDD*>& fobdds() const {
+		return _fobdds;
 	}
 	const std::map<std::string, Term*>& terms() const {
 		return _terms;
@@ -171,6 +178,7 @@ public:
 	void add(AbstractTheory* t);
 	void add(UserProcedure* l);
 	void add(const std::string& name, Query*);
+	void add(const std::string& name, const FOBDD*);
 	void add(const std::string& name, Term*);
 
 	// Output

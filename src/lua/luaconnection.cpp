@@ -77,7 +77,7 @@ const char* toCString(ArgType type) {
 		map_init(argType2Name)(AT_SORT, "type")(AT_PREDICATE, "predicate_symbol")(AT_FUNCTION, "function_symbol")(AT_SYMBOL, "symbol")(AT_VOCABULARY,
 				"vocabulary")(AT_COMPOUND, "compound")(AT_TUPLE, "tuple")(AT_DOMAIN, "domain")(AT_PREDTABLE, "predicate_table")(AT_PREDINTER,
 				"predicate_interpretation")(AT_FUNCINTER, "function_interpretation")(AT_STRUCTURE, "structure")(AT_TABLEITERATOR, "predicate_table_iterator")(
-				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FORMULA, "formula")(AT_THEORY,
+				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FOBDD, "fobdd")(AT_FORMULA, "formula")(AT_THEORY,
 				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
 				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
 				AT_TRACEMONITOR, "tracemonitor");
@@ -317,6 +317,10 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		result = addUserData(L, arg._value._term, arg._type);
 		break;
 	}
+	case AT_FOBDD: {
+		result = addUserData(L, arg._value._fobdd, arg._type);
+		break;
+	}
 	case AT_OPTIONS: {
 		auto ptr = (Options**) lua_newuserdata(L, sizeof(Options*));
 		(*ptr) = arg._value._options;
@@ -516,6 +520,9 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			break;
 		case AT_TERM:
 			ia._value._term = *(Term**) lua_touserdata(L, arg);
+			break;
+		case AT_FOBDD:
+			ia._value._fobdd = *(FOBDD**) lua_touserdata(L,arg);
 			break;
 		case AT_OPTIONS:
 			ia._value._options = *(Options**) lua_touserdata(L, arg);
@@ -841,6 +848,10 @@ int gcQuery(lua_State*) {
 }
 
 int gcTerm(lua_State*) {
+	// TODO
+	return 0;
+}
+int gcFobdd(lua_State*) {
 	// TODO
 	return 0;
 }
@@ -1879,6 +1890,11 @@ void termMetaTable(lua_State* L) {
 	elements.push_back(tablecolheader { &gcTerm, "__term" });
 	createNewTable(L, AT_TERM, elements);
 }
+void fobddMetaTable(lua_State* L) {
+	vector<tablecolheader> elements;
+	elements.push_back(tablecolheader { &gcFobdd, "__gc" }); //TODO: __gc????????
+	createNewTable(L, AT_FOBDD, elements);
+}
 
 void optionsMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
@@ -1929,6 +1945,7 @@ void createMetaTables(lua_State* L) {
 	termMetaTable(L);
 	optionsMetaTable(L);
 	namespaceMetaTable(L);
+	fobddMetaTable(L);
 
 	overloadedMetaTable(L);
 }
@@ -2211,6 +2228,10 @@ Structure* structure(InternalArgument* arg) {
 AbstractTheory* theory(InternalArgument* arg) {
 	return arg->_type == AT_THEORY ? arg->_value._theory : NULL;
 }
+const FOBDD* fobdd(InternalArgument* arg){
+	return arg->_type == AT_FOBDD ? arg->_value._fobdd : NULL;
+}
+
 Vocabulary* vocabulary(InternalArgument* arg) {
 	return arg->_type == AT_VOCABULARY ? arg->_value._vocabulary : NULL;
 }

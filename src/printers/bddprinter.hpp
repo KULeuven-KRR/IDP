@@ -119,6 +119,9 @@ public:
 	virtual void visit(const Query*) {
 		throw IdpException("Queries cannot be printed as BDDs");
 	}
+	virtual void visit(const FOBDD*) {
+		throw IdpException("FOBDDS cannot be printed as BDDs TODO"); //todo
+	}
 	virtual void visit(const Namespace*) {
 		throw IdpException("Namespaces cannot be printed as BDDs");
 	}

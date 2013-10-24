@@ -73,6 +73,9 @@ void yyerror(const char* s);
 	Definition*				def;
 	Formula*				fom;
 	Query*					que;
+	const FOBDD*			bdd;
+	const FOBDDKernel*		kernel;
+	
 	Variable*				var;
 	SetExpr*				set;
 	EnumSetExpr*			est;
@@ -81,6 +84,7 @@ void yyerror(const char* s);
 	PredTable*				pta;
 	FuncTable*				fta;
 	const DomainElement*	dom;
+	
 
 	std::vector<std::string>*			vstr;
 	std::vector<Sort*>*					vsor;
@@ -109,6 +113,7 @@ void yyerror(const char* s);
 %token NAMESPACE_HEADER
 %token PROCEDURE_HEADER
 %token QUERY_HEADER
+%token FOBDD_HEADER
 %token TERM_HEADER
 
 /** Keywords **/
@@ -133,6 +138,9 @@ void yyerror(const char* s);
 %token LUAVARARG
 %token IN
 %token SAT
+%token TRUEBRANCH
+%token FALSEBRANCH
+%token EXISTS
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -209,6 +217,8 @@ void yyerror(const char* s);
 %type <dom>	pelement
 %type <dom>	domain_element
 %type <que> query
+%type <bdd> fobdd
+%type <kernel> kernel
 
 %type <vint>	intrange
 %type <vcha>	charrange
@@ -241,6 +251,7 @@ idp		: /* empty */
 				| idp asp_structure
 				| idp instructions
 				| idp namedquery
+				| idp namedfobdd
 				| idp namedterm
 				| idp using
 		        ;
@@ -400,6 +411,24 @@ query		: '{' query_vars ':' formula '}'		{ $$ = data().query(*$2,$4,@1); delete(
 query_vars	: /* empty */			{ $$ = new std::vector<Variable*>(0);	}
 			| query_vars variable	{ $$ = $1; $$->push_back($2);		}
 			;
+
+/**************
+    FOBDDs
+**************/
+namedfobdd 	: FOBDD_HEADER fobdd_name ':' vocab_pointer '{' fobdd '}' {data().closefobdd($6);	}
+			;
+fobdd_name 	: identifier	{data().openfobdd(*$1,@1);	}
+			;
+fobdd 		: kernel FALSEBRANCH fobdd TRUEBRANCH fobdd { $$ = data().fobdd($1,$3,$5,@1);}
+			| TRUE { $$ = data().truefobdd(@1);}
+			| FALSE { $$ = data().falsefobdd(@1);}
+			; 		
+kernel		: predicate { $$ = data().atomkernel($1);}
+			//| 'EXISTS:' sort '{' fobdd '}' {data().addQuantKernel($2,$);} TODODOODO
+			;
+
+
+
 
 /******************
 	Named terms

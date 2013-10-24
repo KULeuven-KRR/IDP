@@ -25,7 +25,10 @@
 #include "internalargument.hpp"
 #include "lua/luaconnection.hpp"
 #include "theory/Query.hpp"
+#include "fobdds/FoBdd.hpp"
 #include "structure/StructureComponents.hpp"
+#include "fobdds/CommonBddTypes.hpp"
+#include "fobdds/FoBddManager.hpp"
 
 #include "GlobalData.hpp"
 
@@ -455,6 +458,20 @@ Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
 	return q;
 }
 
+const FOBDD* Insert::fobddInScope(const string& name, const ParseInfo& pi) const {
+	const FOBDD* b = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
+		if (_usingspace[n]->isFOBDD(name)) {
+			if (b) {
+				overloaded(ComponentType::FOBDD, name, plist { _usingspace[n]->fobdd(name)->pi(), b->pi() }, pi);
+			} else {
+				b = _usingspace[n]->fobdd(name);
+			}
+		}
+	}
+	return b;
+}
+
 Term* Insert::termInScope(const string& name, const ParseInfo& pi) const {
 	Term* t = NULL;
 	for (size_t n = 0; n < _usingspace.size(); ++n) {
@@ -770,10 +787,20 @@ void Insert::openquery(const string& qname, YYLTYPE l) {
 	openblock();
 	ParseInfo pi = parseinfo(l);
 	Query* q = queryInScope(qname, pi);
-	_currquery = qname;
 	if (q) {
 		declaredEarlier(ComponentType::Query, qname, pi, q->pi());
 	}
+	_currquery = "";
+}
+void Insert::openfobdd(const string& bddname, YYLTYPE l){
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	auto b = fobddInScope(bddname, pi);
+	if(b){
+		declaredEarlier(ComponentType::FOBDD, bddname, pi, b->pi());
+	}
+	_currfobdd = bddname;
+	_currmanager = new FOBDDManager(false);
 }
 
 void Insert::openterm(const string& tname, YYLTYPE l) {
@@ -843,6 +870,17 @@ void Insert::closequery(Query* q) {
 		}
 	}
 	closeblock();
+}
+void Insert::closefobdd(const FOBDD* b){
+	freevars(b->pi(), false);
+	_curr_vars.clear();
+	//TODO error catching ???????
+	if(b){
+		_currspace->add(_currfobdd, b);
+		if (_currspace->isGlobal()) {
+			LuaConnection::addGlobal(_currfobdd, b);
+		}
+	}
 }
 
 void Insert::closeterm(Term* t) {
@@ -1889,6 +1927,46 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		return NULL;
 	}
 }
+
+const FOBDD* Insert::fobdd(const FOBDDKernel* kernel , const FOBDD* truebranch, const FOBDD* falsebranch, YYLTYPE l) const{
+	//TODO what does remove_vars do?
+	//remove_vars(vv);
+	//TODO, de rest
+	auto returnvalue = _currmanager->ifthenelse(kernel,truebranch,falsebranch);
+	return returnvalue;
+}
+
+const FOBDDKernel* Insert::atomkernel(Formula* p) const{
+	if(isa<PredForm>(*p)){
+		auto f = dynamic_cast<PredForm*>(p);
+		auto symbol = f->symbol();
+		vector<const FOBDDTerm*> newargs;
+		for(auto subterm:p->subterms()){
+			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
+		}
+		const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED,newargs));
+		return returnvalue;
+	}
+	else{
+		//TODO: Echt goed controleren en foutmelding gooien
+		throw notyetimplemented("Parsing nonpredicates in FOBDD");
+	}
+	return NULL;
+}
+
+const FOBDD* Insert::truefobdd(YYLTYPE l) const{
+	return _currmanager->truebdd();
+}
+
+const FOBDD* Insert::falsefobdd(YYLTYPE l) const{
+	return _currmanager->falsebdd();
+}
+
+
+
+
+
+
 EnumSetExpr* Insert::set(Formula* f, Term* counter, YYLTYPE l,const varset& vv) {
 	remove_vars(vv);
 	checkForUnusedVariables(vv, f, counter);

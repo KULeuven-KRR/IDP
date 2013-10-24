@@ -216,7 +216,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	auto newbdd = new FOBDD(kernel, truebranch, falsebranch);
+	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,this);
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -397,6 +397,31 @@ const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType co
 		return resultingAK;
 	}
 	return addAggKernel(left, comp, newright);
+}
+
+const FOBDDTerm* FOBDDManager::getFOBDDTerm(Term* t){
+	if(isa<VarTerm>(*t)){
+		auto vt = dynamic_cast<VarTerm*>(t);
+		return getVariable(vt->var());
+	}else if(isa<FuncTerm>(*t)){
+		auto ft = dynamic_cast<FuncTerm*>(t);
+		auto symbol= ft->function();
+		vector<const FOBDDTerm*> newargs;
+		for(auto subterm:ft->subterms()){
+			newargs.push_back(getFOBDDTerm(subterm));
+		}
+		auto fobddfunc = getFuncTerm(symbol,newargs);
+		return fobddfunc;
+	}else if(isa<DomainTerm>(*t)){
+		auto dt = dynamic_cast<DomainTerm*>(t);
+		return getDomainTerm(dt);
+	}else if(isa<AggTerm>(*t)){
+		throw notyetimplemented("Parsing special FOBDDs");
+		return NULL;
+	}else{
+		throw notyetimplemented("Parsing special FOBDDs");
+		return NULL;
+	}
 }
 
 const FOBDDEnumSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort) {
@@ -1697,8 +1722,8 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	_truekernel = new TrueFOBDDKernel(ktrue);
 	_falsekernel = new FalseFOBDDKernel(kfalse);
-	_truebdd = new TrueFOBDD(_truekernel);
-	_falsebdd = new FalseFOBDD(_falsekernel);
+	_truebdd = new TrueFOBDD(_truekernel,this);
+	_falsebdd = new FalseFOBDD(_falsekernel,this);
 }
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;

@@ -43,6 +43,11 @@ class Query;
 class EnumSetExpr;
 class QuantSetExpr;
 class Formula;
+class FOBDD;
+class FOBDDKernel;
+class FOBDDAtomKernel;
+class FOBDDManager;
+
 class Rule;
 class Definition;
 class FixpDef;
@@ -143,8 +148,11 @@ private:
 	Theory* _currtheory; //!< the theory that is currently being parsed
 	Structure* _currstructure; //!< the structure that is currently being parsed
 	UserProcedure* _currprocedure; //!< the procedure that is currently being parsed
+	FOBDDManager* _currmanager; //!<the fobddmanager for the fobdd that is currently being parsed
 
 	std::string _currquery; //!< the name of the named query that is currently being parsed
+	std::string _currfobdd; //!< the name of the named fobdd that is currently being parsed
+
 	std::string _currterm; //!< the name of the named term that is currently being parsed
 
 	Sort* parsingType; // Type currently being parsed
@@ -192,6 +200,7 @@ private:
 	Namespace* namespaceInScope(const std::string&, const ParseInfo&) const;
 	Namespace* namespaceInScope(const longname&, const ParseInfo&) const;
 	Query* queryInScope(const std::string&, const ParseInfo&) const;
+	const FOBDD* fobddInScope(const std::string&, const ParseInfo&) const;
 	Term* termInScope(const std::string&, const ParseInfo&) const;
 	AbstractTheory* theoryInScope(const std::string&, const ParseInfo&) const;
 	AbstractTheory* theoryInScope(const longname&, const ParseInfo&) const;
@@ -223,6 +232,7 @@ public:
 	void openvocab(const std::string& name, YYLTYPE); //!< Open a new vocabulary
 	void opentheory(const std::string& tname, YYLTYPE); //!< Open a new theory
 	void openquery(const std::string& tname, YYLTYPE); //!< Open a new named query
+	void openfobdd(const std::string& tname, YYLTYPE); //!< Open a new named fobdd
 	void openterm(const std::string& tname, YYLTYPE); //!< Open a new named term
 	void openstructure(const std::string& name, YYLTYPE); //!< Open a new structure
 	void openprocedure(const std::string& name, YYLTYPE); //!< Open a procedure
@@ -231,6 +241,7 @@ public:
 	void closevocab(); //!< Close the current vocabulary
 	void closetheory(); //!< Close the current theory
 	void closequery(Query*); //!< Close the current named query
+	void closefobdd(const FOBDD*); //!< Close the current named query
 	void closeterm(Term*); //!< Close the current named term
 	void closestructure(bool considerInterpretedSymbolsTwoValued = false); //!< Close the current structure
 	void closeprocedure(std::stringstream*); //!< Close the current procedure
@@ -354,7 +365,14 @@ public:
 	DomainTerm* domterm(std::string*, Sort*, YYLTYPE) const; //!< create a new domain element term of a given sort
 	AggTerm* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
+
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
+
+	const FOBDD* fobdd(const FOBDDKernel*, const FOBDD*, const FOBDD*, YYLTYPE) const;
+	const FOBDDKernel* atomkernel(Formula*) const;
+	const FOBDD* truefobdd(YYLTYPE l) const;
+	const FOBDD* falsefobdd(YYLTYPE l) const;
+
 	EnumSetExpr* set(Formula*, YYLTYPE,const varset& vv=std::set<Variable*, VarCompare>());
 	//!< Create a new set of the form { x1 ... xn : phi }
 	EnumSetExpr* set(Formula*, Term*, YYLTYPE,const varset& vv=varset());

@@ -69,6 +69,7 @@ MAPPING(Term*, AT_TERM)
 MAPPING(Sort*, AT_SORT)
 MAPPING(Function*, AT_FUNCTION)
 MAPPING(Predicate*, AT_PREDICATE)
+MAPPING(const FOBDD*, AT_FOBDD)
 
 class Inference {
 private:
@@ -185,6 +186,7 @@ typedef TypedInference<LIST(AbstractTheory*, Structure*)> TheoryStructureBase;
 typedef TypedInference<LIST(SortTable*)> SortTableBase;
 typedef TypedInference<LIST(const PredTable*)> PredTableBase;
 typedef TypedInference<LIST(Query*)> QueryBase;
+typedef TypedInference<LIST(FOBDD*)> FOBDDBase;
 typedef TypedInference<LIST(Options*)> OptionsBase;
 
 #endif /* COMMANDINTERFACE_HPP_ */

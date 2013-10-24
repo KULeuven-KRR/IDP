@@ -58,6 +58,9 @@ void Namespace::add(UserProcedure* l) {
 void Namespace::add(const string& name, Query* q) {
 	_queries[name] = q;
 }
+void Namespace::add(const string& name, const FOBDD* b) {
+	_fobdds[name] = b;
+}
 void Namespace::add(const string& name, Term* t) {
 	_terms[name] = t;
 }
@@ -72,6 +75,9 @@ bool Namespace::isVocab(const string& vn) const {
 
 bool Namespace::isQuery(const string& fn) const {
 	return (_queries.find(fn) != _queries.cend());
+}
+bool Namespace::isFOBDD(const string& bn) const {
+	return (_fobdds.find(bn) != _fobdds.cend());
 }
 
 bool Namespace::isTerm(const string& tn) const {
@@ -120,6 +126,14 @@ Query* Namespace::query(const string& fn) const {
 		throw IdpException(ss.str());
 	}
 	return ((_queries.find(fn))->second);
+}
+const FOBDD* Namespace::fobdd(const string& fn) const {
+	if(not isQuery(fn)){
+		stringstream ss;
+		ss <<"The fobdd " <<fn <<" does not exist in namespace " <<name() <<"\n";
+		throw IdpException(ss.str());
+	}
+	return ((_fobdds.find(fn))->second);
 }
 
 Term* Namespace::term(const string& tn) const {

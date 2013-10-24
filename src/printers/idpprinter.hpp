@@ -13,6 +13,8 @@
 
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
+#include "printers/bddprinter.hpp"
+
 
 #include "groundtheories/GroundTheory.hpp"
 #include "theory/Query.hpp"
@@ -223,6 +225,20 @@ public:
 		output() << "}" << '\n';
 		_printTermsAsBlock = backup;
 	}
+	void visit(const FOBDD* b) {
+			auto backup = _printTermsAsBlock;
+			_printTermsAsBlock = false;
+			Assert(isTheoryOpen());
+			printTab();
+			output() << "fobdd " << " :  {\n";
+			indent();
+			output() << print(b);
+			unindent();
+			//TODO
+			printTab();
+			output() << '\n' << "}" << '\n';
+			_printTermsAsBlock = backup;
+		}
 
 	void visit(const Vocabulary* v) {
 		printTab();

@@ -26,6 +26,7 @@
 #include "settablevalue.hpp"
 #include "propagate.hpp"
 #include "query.hpp"
+#include "queryfobdd.hpp"
 #include "createrange.hpp"
 #include "ground.hpp"
 #include "transformations.hpp"
@@ -85,6 +86,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintInference<LIST(Query*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Formula*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Term*)>>());
+	inferences.push_back(make_shared<PrintInference<LIST(const FOBDD*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Vocabulary*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(UserProcedure*)>>());
@@ -101,6 +103,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<MergeStructuresInference>());
 	inferences.push_back(make_shared<PushNegationsInference>());
 	inferences.push_back(make_shared<QueryInference>());
+	inferences.push_back(make_shared<QueryFOBDDInference>());
 	inferences.push_back(make_shared<CreateRangeInference>());
 	inferences.push_back(make_shared<GroundInference>());
 	inferences.push_back(make_shared<CompletionInference>());
