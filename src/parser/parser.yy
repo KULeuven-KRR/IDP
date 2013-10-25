@@ -131,6 +131,7 @@ void yyerror(const char* s);
 %token NEWLINE
 %token LUAVARARG
 %token IN
+%token SAT
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -475,10 +476,10 @@ formula		: '!' variables IN formula ':' formula	{ $$ = data().implform($4 ,$6,@1
 														  $$ = data().univform(*$2,$$,@1); delete($2);}
 			| '?' variables IN formula ':' formula	{ $$ = data().conjform($4,$6,@1);
 														  $$ = data().existform(*$2,$$,@1); delete($2);}
-			| '!' '(' variables ')' IN formula ':' formula	{ $$ = data().implform($6 ,$8,@1);
-														  $$ = data().univform(*$3,$$,@1); delete($3);}
-			| '?' '(' variables ')' IN formula ':' formula	{ $$ = data().conjform($6,$8,@1);
-														  $$ = data().existform(*$3,$$,@1); delete($3);}
+			| '!' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().implform($6 ,$8,@1);
+														  $$ = data().univform(data().varVectorToSet($3),$$,@1); delete($3);}
+			| '?' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().conjform($6,$8,@1);
+														  $$ = data().existform(data().varVectorToSet($3),$$,@1); delete($3);}
 		  	| '!' '(' variablelist ')' IN intern_pointer ':' formula
 		  												{	 
 		  													$$ = data().predformVar($6,*$3,@1);

@@ -480,6 +480,9 @@ COMMENTLINE2	"--".*
 	/** Binary Quantifications **/
 <theory>"in"				{parser.advancecol();
 								return IN;				}
+<theory>"sat"				{parser.advancecol();
+								return SAT;				}
+
 
 	/****************
 		Structure 
