@@ -46,6 +46,7 @@ class Formula;
 class FOBDD;
 class FOBDDKernel;
 class FOBDDAtomKernel;
+class FOBDDQuantKernel;
 class FOBDDManager;
 
 class Rule;
@@ -370,7 +371,7 @@ public:
 
 	const FOBDD* fobdd(const FOBDDKernel*, const FOBDD*, const FOBDD*, YYLTYPE) const;
 	const FOBDDKernel* atomkernel(Formula*) const;
-	const FOBDDKernel* quantkernel(Sort* sort, const FOBDD* bdd) const;
+	const FOBDDKernel* quantkernel(Variable* var, const FOBDD* bdd) const;
 	const FOBDD* truefobdd(YYLTYPE l) const;
 	const FOBDD* falsefobdd(YYLTYPE l) const;
 

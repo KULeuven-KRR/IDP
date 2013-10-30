@@ -121,7 +121,6 @@ private:
 	double getTotalWeigthedCost(const FOBDD* bdd, const fobddvarset& vars, const fobddindexset& indices,
 			const Structure* structure, double weightPerAns);
 	//Private since this does no merging.  If you want to create a BDD, use IfThenElse
-	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
 public:
 	//NOTE: if rewriteArithmetic is false, a lot of operations on bdds are no longer as efficient (or even possible) (for example solve)
@@ -157,6 +156,7 @@ public:
 	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
 	//If this is not the case, use setquantify!
 	const FOBDDQuantSetExpr* getQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
+	const FOBDD* getBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch);
 
 	const FOBDDVariable* getVariable(Variable* var);
 	const FOBDDDeBruijnIndex* getDeBruijnIndex(Sort* sort, unsigned int index);

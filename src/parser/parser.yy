@@ -419,12 +419,13 @@ namedfobdd 	: FOBDD_HEADER fobdd_name ':' vocab_pointer '{' fobdd '}' {data().cl
 			;
 fobdd_name 	: identifier	{data().openfobdd(*$1,@1);	}
 			;
-fobdd 		: kernel FALSEBRANCH fobdd TRUEBRANCH fobdd { $$ = data().fobdd($1,$3,$5,@1);}
+fobdd 		: kernel FALSEBRANCH fobdd TRUEBRANCH fobdd { $$ = data().fobdd($1,$5,$3,@1);}
 			| TRUE { $$ = data().truefobdd(@1);}
 			| FALSE { $$ = data().falsefobdd(@1);}
 			; 		
 kernel		: predicate { $$ = data().atomkernel($1);}
-			//| 'EXISTS:' sort '{' fobdd '}' {data().addQuantKernel($2,$);} TODODOODO
+			| eq_chain { $$ = data().atomkernel($1);}
+			| EXISTS variable '{' fobdd '}' {$$=data().quantkernel($2,$4);}
 			;
 
 

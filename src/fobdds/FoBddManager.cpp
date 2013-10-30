@@ -203,9 +203,9 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel, const FOBDD* truebr
 	if (result != NULL) {
 		return result;
 	}
-
 	// Lookup failed, create a new bdd
-	return addBDD(kernel, truebranch, falsebranch);
+	auto returnvalue = addBDD(kernel, truebranch, falsebranch);
+	return returnvalue;
 
 }
 
@@ -373,7 +373,9 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 		return resultingQK;
 	}
 	// Lookup failed, create a new quantified kernel
+
 	return addQuantKernel(sort, bdd);
+
 }
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
@@ -940,11 +942,11 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
 	const FOBDDKernel* falsekernel = falsebranch->kernel();
-
 	if (*kernel < *truekernel) {
 		if (*kernel < *falsekernel) {
 			result = getBDD(kernel, truebranch, falsebranch);
 		} else if (kernel == falsekernel) {
+
 			result = getBDD(kernel, truebranch, falsebranch->falsebranch());
 		} else {
 			Assert(*kernel > *falsekernel);
