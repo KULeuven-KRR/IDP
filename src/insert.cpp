@@ -1213,35 +1213,7 @@ void Insert::addConstructors(const std::vector<Function*>* functionlist) const {
 	}
 }
 
-/**
- * \brief Create a new sort in the current vocabulary
- *
- * \param name	the name of the sort
- */
-Sort* Insert::sort(const string& name, YYLTYPE l) const {
-	vector<Sort*> vs(0);
-	return sort(name, vs, vs, l);
-}
-
-/**
- * \brief Create a new sort in the current vocabulary
- *
- * \param name		the name of the sort
- * \param supbs		the super- or subsorts of the sort
- * \param super		true if supbs are the supersorts, false if supbs are the subsorts
- */
-Sort* Insert::sort(const string& name, const vector<Sort*> supbs, bool super,
-		YYLTYPE l) const {
-	vector<Sort*> vs(0);
-	if (super) {
-		return sort(name, supbs, vs, l);
-	} else {
-		return sort(name, vs, supbs, l);
-	}
-}
-
-Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts,
-		YYLTYPE l) const {
+Predicate* Insert::predicate(const string& name, const vector<Sort*>& sorts,YYLTYPE l) const {
 	auto pi = parseinfo(l);
 	auto nar = string(name) + '/' + convertToString(sorts.size());
 	for (size_t n = 0; n < sorts.size(); ++n) {

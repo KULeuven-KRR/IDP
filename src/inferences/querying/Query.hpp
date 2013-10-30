@@ -33,7 +33,7 @@ public:
 		Querying c;
 		return c.solveQuery(q, s, symbolicstructure);
 	}
-	static PredTable* doSolveBDDQuery(const FOBDD* b, FOBDDManager* m, Structure const * const s) {
+	static PredTable* doSolveBDDQuery(const FOBDD* b, Structure const * const s) {
 		Querying c;
 		return c.solveBDDQuery(b, s);
 	}
@@ -43,5 +43,5 @@ private:
 	PredTable* solveQuery(Query* q, Structure const * const s) const;
 	PredTable* solveQuery(Query* q, Structure const * const s, std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure) const;
 	PredTable* solveBdd(const std::vector<Variable*>& vars, std::shared_ptr<FOBDDManager> manager, const FOBDD* bdd, Structure const * const structure) const;
-	PredTable* solveBDDQuery(FOBDD* b, Structure const * const s) const;
+	PredTable* solveBDDQuery(const FOBDD* b, Structure const * const s) const;
 };

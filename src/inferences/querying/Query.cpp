@@ -117,7 +117,7 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 
 PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const structure) const {
 	// translate the formula to a bdd
-	auto manager= bdd->manager();
+	auto manager= make_shared<FOBDDManager>(bdd->manager());
 
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {

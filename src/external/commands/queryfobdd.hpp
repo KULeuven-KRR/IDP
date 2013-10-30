@@ -15,7 +15,7 @@
 #include "commandinterface.hpp"
 #include "inferences/querying/Query.hpp"
 
-typedef TypedInference<LIST(const FOBDD*, AbstractStructure*)> FOBDDInferenceBase;
+typedef TypedInference<LIST(const FOBDD*, Structure*)> FOBDDInferenceBase;
 class QueryFOBDDInference: public FOBDDInferenceBase {
 public:
 	QueryFOBDDInference()
