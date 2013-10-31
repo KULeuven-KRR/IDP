@@ -1,0 +1,19 @@
+vocabulary V{
+	type persoon
+
+	leiding(persoon)
+	
+	type l isa string
+	record(persoon, l)
+}
+
+theory T:V{
+	{
+		record(p,l) <- l="l".
+	}
+}
+
+structure S : V{
+	l = {l; a}
+	leiding = {2;}
+}

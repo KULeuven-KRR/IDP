@@ -14,6 +14,7 @@
 #include "fobdds/FoBddManager.hpp"
 
 #include "theory/TheoryUtils.hpp"
+#include "structure/StructureComponents.hpp"
 
 #include "groundtheories/SolverTheory.hpp"
 
@@ -24,7 +25,7 @@
 #include "inferences/propagation/PropagatorFactory.hpp"
 
 #ifdef WITHXSB
-#include "inferences/querying/xsb/xsbinterface.hpp"
+#include "inferences/querying/xsb/XSBInterface.hpp"
 #endif
 
 #include "options.hpp"

@@ -1,0 +1,14 @@
+vocabulary V{
+	type T isa int
+	f(T):T
+}
+
+theory T:V{
+
+	{
+		f(1)=2.
+	}
+}
+structure S:V{
+	T={1..5}
+}

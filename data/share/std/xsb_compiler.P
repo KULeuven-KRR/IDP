@@ -1,62 +1,62 @@
-idpxsb_abs(X,Y) :- Y is abs(X).
+ix_abs(X,Y) :- Y is abs(X).
 
-idpxsb_sum(List,Sum) :- idpxsb_sum(List,Sum,0).
-idpxsb_sum([],X,X).
-idpxsb_sum([H|T],Sum,Agg) :- Agg2 is Agg + H, idpxsb_sum(T,Sum,Agg2).
+ix_sum(List,Sum) :- ix_sum(List,Sum,0).
+ix_sum([],X,X).
+ix_sum([H|T],Sum,Agg) :- Agg2 is Agg + H, ix_sum(T,Sum,Agg2).
 
-idpxsb_prod(List,Prod) :- idpxsb_prod(List,Prod,1).
-idpxsb_prod([],X,X).
-idpxsb_prod([H|T],Prod,Agg) :- Agg2 is Agg * H, idpxsb_prod(T,Prod,Agg2).
+ix_prod(List,Prod) :- ix_prod(List,Prod,1).
+ix_prod([],X,X).
+ix_prod([H|T],Prod,Agg) :- Agg2 is Agg * H, ix_prod(T,Prod,Agg2).
 
-idpxsb_card(List,Card) :- length(List,Card).
+ix_card(List,Card) :- length(List,Card).
 
-idpxsb_min([X|Rest],Min) :- idpxsb_min(Rest,Min,X).
+ix_min([X|Rest],Min) :- ix_min(Rest,Min,X).
 
-idpxsb_min([],Min,Min).
-idpxsb_min([X|Rest],Min,TmpMin) :-
+ix_min([],Min,Min).
+ix_min([X|Rest],Min,TmpMin) :-
 	X < TmpMin,
-	idpxsb_min(Rest,Min,X).
-idpxsb_min([X|Rest],Min,TmpMin) :-
+	ix_min(Rest,Min,X).
+ix_min([X|Rest],Min,TmpMin) :-
 	X >= TmpMin,
-	idpxsb_min(Rest,Min,TmpMin).
+	ix_min(Rest,Min,TmpMin).
 
-idpxsb_max([X|Rest],Max) :- idpxsb_max(Rest,Max,X).
-idpxsb_max([],Max,Max).
-idpxsb_max([X|Rest],Max,TmpMax) :-
+ix_max([X|Rest],Max) :- ix_max(Rest,Max,X).
+ix_max([],Max,Max).
+ix_max([X|Rest],Max,TmpMax) :-
 	X > TmpMax,
-	idpxsb_max(Rest,Max,X).
-idpxsb_max([X|Rest],Max,TmpMax) :-
+	ix_max(Rest,Max,X).
+ix_max([X|Rest],Max,TmpMax) :-
 	X =< TmpMax,
-	idpxsb_max(Rest,Max,TmpMax).
+	ix_max(Rest,Max,TmpMax).
 
-idpxsb_forall(CallA, CallB) :-
+ix_forall(CallA, CallB) :-
     tables:not_exists((call(CallA), tables:not_exists(CallB))).
      
-idpxsb_int(X) :- 
+ix_int(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     0 is ROUNDEDNUMBER - X.
      
-idpxsb_float(X) :- 
+ix_float(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     ROUNDEDNUMBER \= X.
      
-idpxsb_nat(X) :- 
+ix_nat(X) :- 
     nonvar(X),
     X >= 0,
-    idpxsb_int(X).
+    ix_int(X).
      
-idpxsb_same_number(X,Y) :-
-    idpxsb_convert_to_int(X,X1),
+ix_same_number(X,Y) :-
+    ix_convert_to_int(X,X1),
     X1 = Y.
 
-idpxsb_convert_to_int(Num,Int) :-
+ix_convert_to_int(Num,Int) :-
 	nonvar(Num),
-    idpxsb_int(Num), 
+    ix_int(Num), 
     Int is round(Num).
 
-idpxsb_convert_to_int(Num,Int) :-
+ix_convert_to_int(Num,Int) :-
 	nonvar(Num),
-    idpxsb_float(Num), 
+    ix_float(Num), 
     Int = Num.

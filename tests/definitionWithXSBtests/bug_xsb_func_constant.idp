@@ -1,0 +1,14 @@
+vocabulary V {
+  type num isa nat
+  q:num
+  p(num)
+}
+
+theory T : V {
+  { p(x) <- x < q - 1. }
+}
+
+structure S : V {
+  num = {1..4}
+  q = 4
+}

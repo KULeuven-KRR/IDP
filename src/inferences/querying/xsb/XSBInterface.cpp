@@ -3,34 +3,41 @@
 #include <sstream>
 #include <set>
 #include <cstring>
-#include "xsbinterface.hpp"
-#include "compiler.hpp"
+#include "XSBInterface.hpp"
+#include "PrologProgram.hpp"
+#include "FormulaClause.hpp"
+#include "XSBToIDPTranslator.hpp"
 #include "common.hpp"
 #include "GlobalData.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "structure/Structure.hpp"
+#include "vocabulary/vocabulary.hpp"
+#include "theory/theory.hpp"
 #include "theory/term.hpp"
 
 #include <cinterf.h>
 
-using namespace std;
+using std::stringstream;
+using std::ofstream;
+using std::clog;
 
-XSBInterface* xsb_instance = NULL;
+XSBInterface* interface_instance = NULL;
 
 XSBInterface* XSBInterface::instance() {
-	if (xsb_instance == NULL) {
-		xsb_instance = new XSBInterface();
+	if (interface_instance == NULL) {
+		interface_instance = new XSBInterface();
 	}
-	return xsb_instance;
+	return interface_instance;
 }
 
 void XSBInterface::setStructure(Structure* structure){
-	_pp = new PrologProgram(structure);
+	// TODO: delete possible previous PrologProgram?
+	_pp = new PrologProgram(structure,_translator);
 	_structure = structure;
 }
 
 std::list<string> split(std::string sentence) {
-	istringstream iss(sentence);
+	std::istringstream iss(sentence);
 	std::list<string> tokens;
 
 	stringstream ss(sentence); // Insert the string into a stream
@@ -40,40 +47,21 @@ std::list<string> split(std::string sentence) {
 	return tokens;
 }
 
-PrologTerm atom2term(PredForm* pf) {
-	PrologTerm term(pf->symbol()->name());
-	for (auto el = pf->args().begin(); el != pf->args().end(); ++el) {
-		auto cnst = toString(*el);
-		term.addArgument(new PrologConstant(cnst));
-	}
-	return term;
-}
+//ElementTuple XSBInterface::atom2tuple(PredForm* pf, Structure* s) {
+//	ElementTuple tuple;
+//	for (auto it = pf->args().begin(); it != pf->args().end(); ++it) {
+//		auto el = s->inter(dynamic_cast<FuncTerm*>(*it)->function())->funcTable()->operator [](ElementTuple());
+//		tuple.push_back(createDomElem(_translator->to_idp_domelem(toString(el))));
+//	}
+//	return tuple;
+//}
 
-ElementTuple atom2tuple(PredForm* pf, Structure* s) {
-	ElementTuple tuple;
-	for (auto it = pf->args().begin(); it != pf->args().end(); ++it) {
-
-		auto el = s->inter(dynamic_cast<FuncTerm*>(*it)->function())->funcTable()->operator [](ElementTuple());
-		tuple.push_back(createDomElem(domainelement_idp(toString(el))));
-	}
-	return tuple;
-}
-
-PrologTerm* symbol2term(PFSymbol* symbol) {
-	auto term = new PrologTerm(symbol->name());
-	int idlength = symbol->nrSorts() / 10 + 1 + 1;
+PrologTerm* XSBInterface::symbol2term(const PFSymbol* symbol) {
+	auto term = new PrologTerm(_translator->to_prolog_term(symbol));
 	for (uint i = 0; i < symbol->nrSorts(); ++i) {
 		std::stringstream ss;
 		ss <<"X" <<i;
 		term->addArgument(PrologVariable::create(ss.str()));
-	}
-	return term;
-}
-
-PrologTerm* atom2term(PFSymbol* symbol, ElementTuple el) {
-	auto term = new PrologTerm(symbol->name());
-	for (auto i = el.begin(); i != el.end(); ++i) {
-		term->addArgument(new PrologConstant(toString(*i)));
 	}
 	return term;
 }
@@ -94,6 +82,7 @@ void XSBInterface::handleResult(int xsb_status){
 XSBInterface::XSBInterface() {
 	_pp = NULL;
 	_structure = NULL;
+	_translator = new XSBToIDPTranslator();
 	stringstream ss;
 	ss << getInstallDirectoryPath() << XSB_INSTALL_URL << " -n --quietload";
 	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
@@ -109,11 +98,11 @@ void XSBInterface::loadDefinition(Definition* d) {
 	Theory theory("", _structure->vocabulary(), ParseInfo());
 	theory.add(cloned_definition);
 	FormulaUtils::unnestFuncsAndAggs(&theory, _structure);
-	FormulaUtils::graphFuncsAndAggs(&theory, _structure, {}, true, false /*TODO check*/);
+	FormulaUtils::graphFuncsAndAggs(&theory, _structure, cloned_definition->defsymbols(), true, false);
 	FormulaUtils::removeEquivalences(&theory);
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
-	_pp->addDefinition(cloned_definition);
+	_pp->setDefinition(cloned_definition);
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
 	auto str2 = _pp->getFacts();
@@ -125,7 +114,7 @@ void XSBInterface::loadDefinition(Definition* d) {
 	sendToXSB(str, false);
 }
 
-void XSBInterface::sendToXSB(string str, bool load) {
+void XSBInterface::sendToXSB(string str, bool isFacts) {
 	auto name = tmpnam(NULL);
 
 	ofstream tmp;
@@ -133,7 +122,7 @@ void XSBInterface::sendToXSB(string str, bool load) {
 	tmp << str;
 	tmp.close();
 	stringstream ss;
-	if (load) {
+	if (isFacts) {
 		ss << "load_dync('" << name << "').\n";
 	} else {
 		ss << "load_dyn('" << name << "').\n";
@@ -153,8 +142,8 @@ void XSBInterface::reset() {
 
 void XSBInterface::exit() {
 	xsb_close();
-	delete(xsb_instance);
-	xsb_instance = NULL;
+	delete(interface_instance);
+	interface_instance = NULL;
 }
 
 SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
@@ -175,7 +164,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 		std::list<string> answer = split(buff.string);
 		ElementTuple tuple;
 		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			tuple.push_back(createDomElem(domainelement_idp(*it)));
+			tuple.push_back(createDomElem(_translator->to_idp_domelem(*it)));
 		}
 		result.insert(tuple);
 
@@ -200,24 +189,41 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	return result;
 }
 
-bool XSBInterface::query(PFSymbol* s, ElementTuple t) {
-	auto term = atom2term(s, t);
-
-	XSB_StrDefine (buff);
-
-	stringstream ss;
-	ss << *term << ".";
-	auto query = new char[ss.str().size() + 1];
-	strcpy(query, ss.str().c_str());
-	auto rc = xsb_query_string_string(query, &buff, " ");
-	handleResult(rc);
-
-	bool result = false;
-	if (rc == XSB_SUCCESS) {
-		result = true;
-	}
-
-	XSB_StrDestroy(&buff);
-
-	return result;
-}
+//bool XSBInterface::query(PFSymbol* s, ElementTuple t) {
+//	auto term = atom2term(s, t);
+//
+//	XSB_StrDefine (buff);
+//
+//	stringstream ss;
+//	ss << *term << ".";
+//	auto query = new char[ss.str().size() + 1];
+//	strcpy(query, ss.str().c_str());
+//	auto rc = xsb_query_string_string(query, &buff, " ");
+//	handleResult(rc);
+//
+//	bool result = false;
+//	if (rc == XSB_SUCCESS) {
+//		result = true;
+//	}
+//
+//	XSB_StrDestroy(&buff);
+//
+//	return result;
+//}
+//
+//PrologTerm* XSBInterface::atom2term(PredForm* pf) {
+//	auto term = new PrologTerm(_translator->to_prolog_term(pf->symbol()));
+//	for (auto el = pf->args().begin(); el != pf->args().end(); ++el) {
+//		auto cnst = toString(*el);
+//		term->addArgument(new PrologConstant(cnst));
+//	}
+//	return term;
+//}
+//
+//PrologTerm* XSBInterface::atom2term(PFSymbol* symbol, ElementTuple el) {
+//	auto term = new PrologTerm(_translator->to_prolog_term(symbol));
+//	for (auto i = el.begin(); i != el.end(); ++i) {
+//		term->addArgument(new PrologConstant(toString(*i)));
+//	}
+//	return term;
+//}

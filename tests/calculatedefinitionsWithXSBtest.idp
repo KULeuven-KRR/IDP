@@ -1,0 +1,33 @@
+procedure main() {
+	stdoptions.timeout = 5
+	stdoptions.xsb=false
+	NOXSBMODEL=calculatedefinitions(T,S)
+	io.stderr:write("Calcdef without XSB done.\n")
+	stdoptions.xsb=true
+	XSBMODEL=calculatedefinitions(T,S)
+	io.stderr:write("Calcdef with XSB done.\n")
+	if (XSBMODEL == nil and NOXSBMODEL == nil) then
+		return 1
+	end
+	if (XSBMODEL == nil and NOXSBMODEL ~= nil) then
+		io.stderr:write("FAIL! Calculating the definition with XSB resulted in no model, while without XSB it did have a model.\n")
+		return 0
+	end
+	if (XSBMODEL ~= nil and NOXSBMODEL == nil) then
+		io.stderr:write("FAIL! Calculating the definition with XSB resulted in a model, while without XSB it did not have a model.\n")
+		return 0
+	end
+	if (XSBMODEL == nil or NOXSBMODEL == nil) then
+	end
+	if (equal(XSBMODEL,NOXSBMODEL)) then
+		return 1
+	else
+		io.stderr:write("FAIL! Calculating the definition with XSB resulted in a different model than calculating it without XSB.\n")
+		io.stderr:write("\n\nStructure resulting from XSB:\n")
+		io.stderr:write(tostring(XSBMODEL))
+		io.stderr:write("\n\nStructure resulting from NO XSB:\n")
+		io.stderr:write(tostring(NOXSBMODEL))
+		io.stderr:write("\n")
+		return 0
+	end
+}

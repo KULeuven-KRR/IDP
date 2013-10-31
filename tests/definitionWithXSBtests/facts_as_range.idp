@@ -1,0 +1,15 @@
+vocabulary V {
+  type T
+  A(T)
+  B(T)
+}
+theory T : V {
+  {
+    ! x : B(x) <- A(x).
+  }
+}
+
+structure S : V {
+  T = {1..10000}
+  A = {1..10000}
+}

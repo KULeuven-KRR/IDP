@@ -1,0 +1,44 @@
+vocabulary V {
+  type T
+  T2_cf
+  T2_ct
+  T3_ct(T)
+  T3_cf(T)
+  P_ct(T)
+  P_cf(T)
+  Q_ct(T)
+  Q_cf(T)
+  P1_ct(T)
+  P1_cf(T)
+  Q1_ct(T)
+  Q1_cf(T)
+}
+
+theory T : V {
+  {
+      T2_cf <- (? x : T3_cf(x)).
+      T2_ct <- (! x : T3_ct(x)).
+      ! x : T3_ct(x) <- P_cf(x).
+      ! x : T3_ct(x) <- Q_ct(x).
+      ! x : T3_cf(x) <- (P_ct(x) & Q_cf(x)).
+      ! x : T3_ct(x) <- T2_ct.
+      ! x : T3_cf(x) <- ((! var7 : var7=x | T3_ct(x)) & T2_cf).
+      ! x : P_ct(x) <- T3_cf(x).
+    ! x : P_ct(x) <- P1_ct(x).
+      ! x : P_cf(x) <- (T3_ct(x) & Q_cf(x)).
+    ! x : P_cf(x) <- P1_cf(x).
+    ! x : Q_cf(x) <- Q1_cf(x).
+      ! x : Q_cf(x) <- T3_cf(x).
+    ! x : Q_ct(x) <- Q1_ct(x).
+      ! x : Q_ct(x) <- (T3_ct(x) & P_ct(x)).
+      T2_ct <- true.
+  }
+}
+
+structure S : V {
+  T = {1..10}
+  P1_ct = {2}
+  P1_cf = {}
+  Q1_ct = {}
+  Q1_cf = {1}
+}

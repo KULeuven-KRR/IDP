@@ -127,7 +127,7 @@ if(${BUILDTESTS})
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
 		if(WITHXSB)
-		    addMXTest(xsbtest xsbmx.cpp)
+		    addMXTest(xsbtest definitionWithXSBtests.cpp)
 			addMXTest(approxdefs approxdefsmx.cpp)
 		endif()
 

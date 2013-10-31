@@ -1,0 +1,30 @@
+vocabulary V {
+  type num isa int
+  P(num)
+  P2(num)
+  P3(num)
+  P4(num)
+}
+
+structure S : V {
+  num = {-10..10}
+}
+
+theory T : V {
+  { 
+    P(x) <- P(y) & x = -1*y.
+    P(1) <-.
+  }
+  { 
+    P2(-1) <-.
+    P2(1) <-.
+  }
+  { 
+    P3(x) <- P3(y) & x = -y.
+    P3(1) <-.
+  }
+  { 
+    P4(x) <- P4(y) & y = -x.
+    P4(1) <-.
+  }
+}

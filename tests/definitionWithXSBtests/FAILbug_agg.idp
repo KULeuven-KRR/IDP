@@ -1,0 +1,12 @@
+vocabulary V{
+	type x isa int
+	P(x)
+	value:x
+}
+theory T:V{
+  { value = prod{x:P(x):x}. }
+}
+structure S:V{
+	x = {1..3}
+	P = {2}
+}

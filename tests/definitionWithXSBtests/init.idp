@@ -1,0 +1,22 @@
+vocabulary V {
+  type Type isa nat
+  P(Type)
+  Q(Type,Type)
+  R(Type):Type
+}
+
+theory T : V {
+  {
+    P(0).
+  }
+  {
+    ! x : Q(x,x).
+  }
+  {
+    ! x : R(x)=x.
+  }
+}
+
+structure S : V {
+  Type = {0..5}
+}
