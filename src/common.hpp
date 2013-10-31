@@ -281,6 +281,7 @@ bool isDouble(const std::string&); //!< true iff the given string is a double
 template<typename T>
 std::string convertToString(T element) {
 	std::stringstream ss;
+	ss.precision(15);
 	ss << element;
 	return ss.str();
 }

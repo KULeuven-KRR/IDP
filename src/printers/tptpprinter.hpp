@@ -445,6 +445,9 @@ protected:
 	void visit(const Namespace*) {
 		throw notyetimplemented("Converting Namespace to tptp format.");
 	}
+	void visit(const UserProcedure*) {
+		throw notyetimplemented("Converting Procedure to tptp format.");
+	}
 	void visit(const GroundFixpDef*) {
 		throw notyetimplemented("Converting GroundFixpDef to tptp format.");
 	}

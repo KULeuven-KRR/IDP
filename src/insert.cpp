@@ -1593,7 +1593,7 @@ Formula* Insert::bexform(CompType c, int bound, const varset& vv, Formula* f, YY
 	if (f == NULL) {
 		return f;
 	}
-	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(vv, f, l), l));
+	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(f, l,vv), l));
 	auto boundterm = domterm(bound, l);
 
 	// Create parseinfo (TODO UGLY!)
@@ -1885,8 +1885,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		return NULL;
 	}
 }
-
-EnumSetExpr* Insert::set(const varset& vv, Formula* f, Term* counter, YYLTYPE l) {
+EnumSetExpr* Insert::set(Formula* f, Term* counter, YYLTYPE l,const varset& vv) {
 	remove_vars(vv);
 	checkForUnusedVariables(vv, f, counter);
 	if (f && counter) {
@@ -1917,11 +1916,18 @@ EnumSetExpr* Insert::set(const varset& vv, Formula* f, Term* counter, YYLTYPE l)
 	}
 }
 
-EnumSetExpr* Insert::set(const varset& vv, Formula* f, YYLTYPE l) {
+EnumSetExpr* Insert::set(Formula* f, YYLTYPE l,const varset& vv) {
 	auto d = createDomElem(1);
 	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
-	return set(vv, f, counter, l);
+	return set(f, counter, l,vv);
 }
+
+void Insert::addToFirst(EnumSetExpr* s1, EnumSetExpr* s2) {
+	for(auto p : s2->getSets()){
+		s1->addSet(p);
+	}
+}
+
 
 EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 	EnumSetExpr* pis = new EnumSetExpr(SetParseInfo());

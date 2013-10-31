@@ -63,6 +63,9 @@ public:
 	void visit(const Namespace*) {
 		throw notyetimplemented("Printing namespaces in ASP format");
 	}
+	void visit(const UserProcedure*) {
+		throw notyetimplemented("Printing procedures in ASP format");
+	}
 	void visit(const Theory*) {
 		throw notyetimplemented("Printing theories in ASP format");
 	}

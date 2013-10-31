@@ -122,6 +122,9 @@ public:
 	virtual void visit(const Namespace*) {
 		throw IdpException("Namespaces cannot be printed as BDDs");
 	}
+	virtual void visit(const UserProcedure*) {
+		throw notyetimplemented("printing Procedure as BDD");
+	}
 	virtual void visit(const GroundClause&) {
 		throw IdpException("Ground clauses cannot be printed as BDDs");
 	}

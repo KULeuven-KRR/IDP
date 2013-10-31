@@ -352,6 +352,9 @@ SortTable* Sort::interpretation() const {
 	Assert(builtin());
 	return _interpretation;
 }
+std::set<const Vocabulary*> Sort::getVocabularies() const {
+        return _vocabularies;
+}
 
 SortTable* getConstructedInterpretation(Sort* s, const Structure* struc) {
 	Assert(s->isConstructed());
@@ -530,6 +533,14 @@ PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseIn
 			_infix(infix) {
 }
 
+bool PFSymbol::removeVocabulary(const Vocabulary* voc){
+	auto nb = _vocabularies.erase(voc);
+	return nb!=0;
+}
+void PFSymbol::addVocabulary(const Vocabulary* voc){
+	_vocabularies.insert(voc);
+}
+
 const string& PFSymbol::name() const {
 	return _name;
 }
@@ -607,7 +618,7 @@ Predicate::~Predicate() {
 }
 
 bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
-	getVocabularies().erase(vocabulary);
+	PFSymbol::removeVocabulary(vocabulary);
 	if (overloaded()) {
 		_overpredgenerator->removeVocabulary(vocabulary);
 	}
@@ -619,7 +630,7 @@ bool Predicate::removeVocabulary(const Vocabulary* vocabulary) {
 }
 
 void Predicate::addVocabulary(const Vocabulary* vocabulary) {
-	getVocabularies().insert(vocabulary);
+	PFSymbol::addVocabulary(vocabulary);
 	if (overloaded()) {
 		_overpredgenerator->addVocabulary(vocabulary);
 	}
@@ -663,7 +674,7 @@ unsigned int Predicate::arity() const {
 }
 
 bool Predicate::builtin() const {
-	return _interpretation != 0;
+	return _interpretation!= 0;
 }
 
 bool Predicate::overloaded() const {
@@ -690,6 +701,7 @@ PredInter* Predicate::interpretation(const Structure* structure) const {
 		return 0;
 	}
 }
+
 
 /**
  * \brief Returns true iff the predicate is equal to, or overloads a given predicate
@@ -788,9 +800,9 @@ set<Predicate*> Predicate::nonbuiltins() {
 
 ostream& Predicate::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
-		for (auto it = getVocabularies().cbegin(); it != getVocabularies().cend(); ++it) {
-			if (not (*it)->pred(name())->overloaded()) {
-				(*it)->putName(output);
+		for (auto voc : getVocabularies()) {
+			if (not voc->pred(name())->overloaded()) {
+				voc->putName(output);
 				output << "::";
 				break;
 			}
@@ -1143,7 +1155,7 @@ void Function::partial(bool b) {
 }
 
 bool Function::removeVocabulary(const Vocabulary* vocabulary) {
-	getVocabularies().erase(vocabulary);
+	PFSymbol::removeVocabulary(vocabulary);
 	if (overloaded()) {
 		_overfuncgenerator->removeVocabulary(vocabulary);
 	}
@@ -1155,7 +1167,7 @@ bool Function::removeVocabulary(const Vocabulary* vocabulary) {
 }
 
 void Function::addVocabulary(const Vocabulary* vocabulary) {
-	getVocabularies().insert(vocabulary);
+	PFSymbol::addVocabulary(vocabulary);
 	if (overloaded()) {
 		_overfuncgenerator->addVocabulary(vocabulary);
 	}
@@ -1195,6 +1207,11 @@ bool Function::partial() const {
 bool Function::builtin() const {
 	return _interpretation != NULL || Vocabulary::std()->contains(this);
 }
+
+FuncGenerator* Function::overfuncgenerator() const{
+	return _overfuncgenerator;
+}
+
 
 bool Function::overloaded() const {
 	return (_overfuncgenerator != 0);
@@ -1288,13 +1305,19 @@ ostream& Function::put(ostream& output) const {
 		}
 	}
 	output << name().substr(0, name().rfind('/'));
-	if (not overloaded()) { // It is a disambiguated symbol
+	// We don't want to print for every overloaded built in function (like +) all the sorts
+	// However, we do need this for constants like MAX and MIN
+	// TODO: Can be dangerous if the user overloads these built in functions
+	if (not overloaded() && (not builtin() or arity()==0)) { // It is a disambiguated symbol
 		auto confusionpossible = false;
 		for (auto voc : getVocabularies()){
 			if (voc->func(name())->overloaded()) {
 				confusionpossible = true;
 				break;
 			}
+		}
+		if(Vocabulary::std()->contains(this) &&  Vocabulary::std()->func(name())->overloaded()){
+			confusionpossible = true;
 		}
 		if (confusionpossible || getOption(BoolType::LONGNAMES)) {
 			output << '[';

@@ -306,6 +306,7 @@ struct InternalArgument {
 		OverloadedObject* _overloaded;
 
 		LuaTraceMonitor* _tracemonitor;
+		UserProcedure* _procedure;
 	} _value;
 
 	// Constructors

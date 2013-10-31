@@ -157,6 +157,8 @@ int InternalProcedure::operator()(lua_State* L) const {
 	return LuaConnection::convertToLua(L, result);
 }
 
+std::map<const void*, UserProcedure*> p2name;
+
 void compile(UserProcedure* procedure, lua_State* state) {
 	if (not procedure->iscompiled()) {
 		// Compose function header, body, and return statement
@@ -185,6 +187,7 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		}
 		procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
 		UserProcedure::increaseCompileNumber();
+		p2name[lua_topointer(state, -1)]=procedure;
 		lua_setfield(state, LUA_REGISTRYINDEX, procedure->registryindex().c_str());
 	}
 }
@@ -436,11 +439,11 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		break;
 	case LUA_TFUNCTION: {
 		ia._type = AT_PROCEDURE;
-		auto registryindex = new std::string("idp_argument_procedure_" + convertToString(argProcNumber()));
-		++argProcNumber();
-		lua_pushvalue(L, arg);
-		lua_setfield(L, LUA_REGISTRYINDEX, registryindex->c_str());
-		ia._value._string = registryindex;
+		auto proc = p2name[lua_topointer(L, -1)];
+		ia._value._procedure = NULL;
+		if(proc){
+			ia._value._procedure = proc;
+		}
 		break;
 	}
 	case LUA_TNUMBER: {

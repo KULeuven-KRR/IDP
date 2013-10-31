@@ -223,7 +223,7 @@ ostream& DomainElement::put(ostream& output) const {
 		output << convertToString(_value._double);
 		break;
 	case DET_STRING:
-		output << *(_value._string);
+		output << '\"'<< *(_value._string)<< '\"';
 		break;
 	case DET_COMPOUND:
 		_value._compound->put(output);
