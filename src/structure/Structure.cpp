@@ -256,18 +256,19 @@ bool Structure::isConsistent() const {
 	for (auto name2func : _funcinter) {
 		auto inter = name2func.second;
 		if (not inter->isConsistent()) {
-			stringstream ss;
-			ss << "Inconsistent interpretation for " << print(name2func.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
-			Warning::warning(ss.str());
+// TODO warning was here as it is the only way to get information on inconsistent structures to the user, but this was not the correct location or way to do it.
+//			stringstream ss;
+//			ss << "Inconsistent interpretation for " << print(name2func.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
+//			Warning::warning(ss.str());
 			return false;
 		}
 	}
 	for (auto name2pred : _predinter) {
 		auto inter = name2pred.second;
 		if (not inter->isConsistent()) {
-			stringstream ss;
-			ss << "Inconsistent interpretation for " << print(name2pred.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
-			Warning::warning(ss.str());
+//			stringstream ss;
+//			ss << "Inconsistent interpretation for " << print(name2pred.first) << ", namely the atoms " << print(inter->getInconsistentAtoms()) << "\n";
+//			Warning::warning(ss.str());
 			return false;
 		}
 	}
