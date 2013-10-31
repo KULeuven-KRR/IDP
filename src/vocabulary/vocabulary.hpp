@@ -92,7 +92,7 @@ public:
 	bool hasFixedInterpretation() const; //!< True iff the sort has a fixed interpretation independent of a given structure
 	bool builtin() const; //!< True iff the sort has a fixed interpretation independent of a given structure TODO:DEPRECATED
 	SortTable* interpretation() const; //!< Returns the interpretation for built-in sorts
-	std::set<const Vocabulary*> getVocabularies() const;
+	const std::set<const Vocabulary*>& getVocabularies() const;
 
 
 	void removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies

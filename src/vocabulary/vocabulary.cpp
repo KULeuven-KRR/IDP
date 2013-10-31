@@ -352,7 +352,7 @@ SortTable* Sort::interpretation() const {
 	Assert(builtin());
 	return _interpretation;
 }
-std::set<const Vocabulary*> Sort::getVocabularies() const {
+const std::set<const Vocabulary*>& Sort::getVocabularies() const {
         return _vocabularies;
 }
 
