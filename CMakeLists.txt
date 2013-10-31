@@ -40,6 +40,12 @@ include(cmake/rpathhandling.cmake)
 ### Target properties helper 
 include(cmake/settargetproperties.cmake)
 
+if(CMAKE_COMPILER_IS_MINGW)
+	message(STATUS "Mingw compiler")
+	addToCXX("-static-libgcc -static-libstdc++ ")
+	addToCXX("-Wl,--stack,4194304")
+endif()
+
 ### Gmp handling
 option(GMP  "Enable gmp support" OFF)
 if(GMP)
@@ -52,11 +58,6 @@ endif()
 option(WITHGECODE "Use gecode for cp support" OFF)
 if(WITHGECODE)
 	set(WITHGECODE ON CACHE BOOL "") # the minisatid option
-endif()
-
-if(CMAKE_COMPILER_IS_MINGW)
-	message(STATUS "Mingw compiler")
-	addToCXX("-static-libgcc -static-libstdc++ ")
 endif()
 
 set(WRONGBUILD ON)
