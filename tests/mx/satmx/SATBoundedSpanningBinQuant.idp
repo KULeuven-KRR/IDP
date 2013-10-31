@@ -30,7 +30,7 @@ theory T : V {
 	{ SpTree(p,y) <- ?n[Num]: y = Child(p,n) & n > 0 & n =< NrOfChildren(p). }
 
 	// Spanning tree rules:
-	! v_1 v_2 in SpTree: Edge(v_1,v_2).
+	! v_1 v_2 : SpTree(v_1,v_2) => Edge(v_1,v_2).
 	//! v : ~SpTree(v,Root).
 	//! v_1 v_2 y : SpTree(v_1,y) & SpTree(v_2,y) => v_1 = v_2.
 

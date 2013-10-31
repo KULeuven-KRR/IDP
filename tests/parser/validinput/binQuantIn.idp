@@ -1,0 +1,19 @@
+vocabulary V{
+	type x
+	P(x, x)
+}
+theory T:V{
+	! (x, y) in P : true.
+	? (x, y) in P : true.
+	{
+		!x, y[x]: P(x, y).
+	}
+	#{x, y: P(x, y)} = 3.
+}
+structure S:V{
+	
+}
+
+procedure main(){
+	return 1
+}

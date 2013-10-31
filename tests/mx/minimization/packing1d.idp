@@ -9,7 +9,7 @@ vocabulary V {
 }
 
 theory T : V {
-  ! d1 d2 : d1 ~= d2 => XPos(d1) ~= XPos(d2).
+  ! d1 d2 sat d1 ~= d2 : XPos(d1) ~= XPos(d2).
 }
 
 structure S : V {

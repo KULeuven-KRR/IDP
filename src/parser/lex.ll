@@ -15,7 +15,7 @@
 #include "parser.hh"
 #include "errorhandling/error.hpp"
 #include "common.hpp"
-#include "GlobalData.hpp"
+#include "GlobalData.hpp" 
 using namespace std;
 
 extern YYSTYPE yylval;
@@ -477,6 +477,11 @@ COMMENTLINE2	"--".*
 						  		return DEF_HEADER;		}
 <theory>"Define"			{parser.advancecol();
 						  		return DEF_HEADER;		}
+	/** Binary Quantifications **/
+<theory>"in"				{parser.advancecol();
+								return IN;				}
+<theory>"sat"				{parser.advancecol();
+								return SAT;				}
 
 
 	/****************

@@ -130,6 +130,8 @@ void yyerror(const char* s);
 %token GFD
 %token NEWLINE
 %token LUAVARARG
+%token IN
+%token SAT
 
 /** Other Terminals **/
 %token <nmr> INTEGER
@@ -226,7 +228,7 @@ void yyerror(const char* s);
 %type <vdom>	ptuple	
 %type <vdom>	ftuple	
 %type <vera>	domain_tuple
-
+%type <vvar>	variablelist
 %%
 
 /*********************
@@ -470,7 +472,27 @@ fd_rules	: fd_rules rule	'.'			{ $$ = $1; data().addRule($$,$2);					}
 
 /** Formulas **/
 
-formula		: '!' variables ':' formula					{ $$ = data().univform(*$2,$4,@1); delete($2);		}
+formula		: '!' variables IN formula ':' formula	{ $$ = data().implform($4 ,$6,@1);
+														  $$ = data().univform(*$2,$$,@1); delete($2);}
+			| '?' variables IN formula ':' formula	{ $$ = data().conjform($4,$6,@1);
+														  $$ = data().existform(*$2,$$,@1); delete($2);}
+			| '!' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().implform($6 ,$8,@1);
+														  $$ = data().univform(data().varVectorToSet($3),$$,@1); delete($3);}
+			| '?' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().conjform($6,$8,@1);
+														  $$ = data().existform(data().varVectorToSet($3),$$,@1); delete($3);}
+		  	| '!' '(' variablelist ')' IN intern_pointer ':' formula
+		  												{	 
+		  													$$ = data().predformVar($6,*$3,@1);
+		  													$$ = data().implform($$,$8,@1);
+		  													$$ = data().univform(data().varVectorToSet($3),$$,@1);
+		  												}
+		  	| '?' '(' variablelist ')' IN intern_pointer ':' formula
+		  			  												{	 
+		  			  													$$ = data().predformVar($6,*$3,@1);
+		  			  													$$ = data().conjform($$,$8,@1);
+		  			  													$$ = data().existform(data().varVectorToSet($3),$$,@1);
+		  			  												}
+			| '!' variables ':' formula					{ $$ = data().univform(*$2,$4,@1); delete($2);		}
             | '?' variables ':' formula					{ $$ = data().existform(*$2,$4,@1); delete($2);	}
 			| '?' INTEGER  variables ':' formula		{ $$ = data().bexform(CompType::EQ,$2,*$3,$5,@1);
 														  delete($3);										}
@@ -492,7 +514,7 @@ formula		: '!' variables ':' formula					{ $$ = data().univform(*$2,$4,@1); dele
             | formula "<=>" formula						{ $$ = data().equivform($1,$3,@1);					}
             | '(' formula ')'							{ $$ = $2;											}
 			| TRUE										{ $$ = data().trueform(@1);						}
-			| FALSE										{ $$ = data().falseform(@1);						}
+			| FALSE										{ $$ = data().falseform(@1);						} 
 			| eq_chain									{ $$ = $1;											}
             | predicate									{ $$ = $1;											}
             ;
@@ -515,7 +537,10 @@ eq_chain	: eq_chain '='  term	{ $$ = data().eqchain(CompType::EQ,$1,$3,@1);	}
             | term "=<" term		{ $$ = data().eqchain(CompType::LEQ,$1,$3,@1);	}
             | term ">=" term		{ $$ = data().eqchain(CompType::GEQ,$1,$3,@1);	}
 			;
-
+variablelist: variablelist variable {$$ = $1; $$->push_back($2);}
+			| variablelist ',' variable {$$ = $1; $$->push_back($3);}
+			| variable {$$ = new std::vector<Variable*>(); $$->push_back($1);}
+			;
 variables   : variables variable	{ $$ = $1; $$->insert($2);						}		
 			| variables ',' variable	{ $$ = $1; $$->insert($3);						}
             | variable				{ $$ = new varset; $$->insert($1);	}
