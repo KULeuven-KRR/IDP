@@ -825,7 +825,7 @@ void Insert::openfobdd(const string& bddname, YYLTYPE l) {
 		declaredEarlier(ComponentType::FOBDD, bddname, pi, b->pi());
 	}
 	_currfobdd = bddname;
-	_currmanager = new FOBDDManager(false);
+	_currmanager=FOBDDManager::createManager(false);
 }
 
 void Insert::openterm(const string& tname, YYLTYPE l) {
@@ -1992,7 +1992,6 @@ const FOBDD* Insert::fobdd(const FOBDDKernel* kernel , const FOBDD* truebranch, 
 }
 
 const FOBDDKernel* Insert::atomkernel(Formula* p) const {
-	cout << ::print(p);
 	if (isa<PredForm>(*p)) {
 		auto f = dynamic_cast<PredForm*>(p);
 		auto symbol = f->symbol();

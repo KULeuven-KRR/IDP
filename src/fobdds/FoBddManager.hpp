@@ -125,9 +125,8 @@ private:
 public:
 	//NOTE: if rewriteArithmetic is false, a lot of operations on bdds are no longer as efficient (or even possible) (for example solve)
 	//Only set this to false is you want to simplify a formula by formula->bdd->formula
-	FOBDDManager(bool rewriteArithmetic = true);
 	~FOBDDManager();
-
+	static std::shared_ptr<FOBDDManager> createManager(bool rewriteArithmetic= true);
 	const FOBDD* truebdd() const {
 		return _truebdd;
 	}
@@ -243,6 +242,7 @@ public:
 	std::vector<Path> pathsToFalse(const FOBDD* bdd) const;
 
 private:
+	FOBDDManager(bool rewriteArithmetic = true);
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
 	KernelOrder newOrderForQuantifiedBDD(const FOBDD* bdd);
@@ -260,6 +260,18 @@ private:
 	FOBDDEnumSetExpr* addEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	FOBDDQuantSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
+	void setTrueKernel(FOBDDKernel* k){
+		_truekernel=k;
+	}
+	void setFalseKernel(FOBDDKernel* k){
+		_falsekernel=k;
+	}
+	void setTrueBDD(FOBDD* bdd){
+		_truebdd=bdd;
+	}
+	void setFalseBDD(FOBDD* bdd){
+		_falsebdd=bdd;
+	}
 	void clearDynamicTables();
 
 	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);

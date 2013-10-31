@@ -1435,7 +1435,7 @@ const FOBDD* GrounderFactory::improve(bool approxastrue, const FOBDD* bdd, const
 
 	bdd = simplify(fovars, manager, approxastrue, bdd, definedsymbols, smaller_cost_per_answer, structure);
 	// Optimize the query
-	auto optimizemanager = make_shared<FOBDDManager>();
+	auto optimizemanager = FOBDDManager::createManager();
 	auto copybdd = optimizemanager->getBDD(bdd, manager);
 
 	fobddvarset copyvars;

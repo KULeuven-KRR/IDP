@@ -174,7 +174,7 @@ InstGenerator* BDDToGenerator::createFromBDD(const BddGeneratorData& data, bool 
 	BddGeneratorData newdata = data;
 
 	//Create a new manager (will only be used for optimization)
-	auto optimizemanager = make_shared<FOBDDManager>();
+	auto optimizemanager = FOBDDManager::createManager();
 	//Back up the old manager
 	auto backupmanager = _manager;
 

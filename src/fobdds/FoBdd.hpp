@@ -29,7 +29,7 @@ private:
 	const FOBDDKernel* _kernel;
 	const FOBDD* _truebranch;
 	const FOBDD* _falsebranch;
-	FOBDDManager* _manager;
+	std::shared_ptr<FOBDDManager> _manager;
 	ParseInfo _pi; //!< The place where the fobdd was parsed.
 
 	void replacefalse(const FOBDD* f) {
@@ -42,7 +42,7 @@ private:
 		_kernel = k;
 	}
 
-	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch, FOBDDManager* manager, const ParseInfo& pi = *new ParseInfo()) :
+	FOBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch, std::shared_ptr<FOBDDManager> manager, const ParseInfo& pi = *new ParseInfo()) :
 			_kernel(kernel), _truebranch(truebranch), _falsebranch(falsebranch), _manager(manager), _pi(pi) {
 	}
 
@@ -70,7 +70,7 @@ public:
 
 	void accept(FOBDDVisitor* visitor) const;
 
-	FOBDDManager* manager() const{
+	std::shared_ptr<FOBDDManager>manager() const{
 		return _manager;
 	}
 
@@ -82,7 +82,7 @@ public:
 class TrueFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	TrueFOBDD(const FOBDDKernel* kernel, FOBDDManager* manager) :
+	TrueFOBDD(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) :
 			FOBDD(kernel, 0, 0,manager) {
 	}
 public:
@@ -92,7 +92,7 @@ public:
 class FalseFOBDD: public FOBDD {
 private:
 	friend class FOBDDManager;
-	FalseFOBDD(const FOBDDKernel* kernel, FOBDDManager* manager) :
+	FalseFOBDD(const FOBDDKernel* kernel, std::shared_ptr<FOBDDManager> manager) :
 			FOBDD(kernel, 0, 0, manager) {
 	}
 public:

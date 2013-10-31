@@ -47,7 +47,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 		manager = symbolicstructure->obtainManager();
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
-		manager = make_shared<FOBDDManager>();
+		manager = FOBDDManager::createManager();
 		FOBDDFactory factory(manager);
 		bdd = factory.turnIntoBdd(newquery);
 	}
@@ -117,8 +117,7 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 
 PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const structure) const {
 	// translate the formula to a bdd
-	auto manager= make_shared<FOBDDManager>(bdd->manager());
-
+	auto manager= bdd->manager();
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "FOBDD-Query-BDD:" << "\n" << print(bdd) << "\n";

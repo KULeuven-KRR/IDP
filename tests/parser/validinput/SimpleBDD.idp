@@ -17,18 +17,13 @@ fobdd F : V{
 			FALSE BRANCH:
 				false
 			TRUE BRANCH:
-				x=y
-				FALSE BRANCH:
-					false
-				TRUE BRANCH:
-					x<y
-					FALSE BRANCH:
-						false
-					TRUE BRANCH:
-						true
+				true
 }
 
 structure S:V{
+t= {1..5}
+P={1..2}
+R={1..4}
 }
 
 procedure main(){

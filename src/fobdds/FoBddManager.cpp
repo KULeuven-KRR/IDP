@@ -216,7 +216,7 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,this);
+	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,shared_from_this());
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -1719,14 +1719,25 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
 	_nextorder[KernelOrderCategory::STANDARDCATEGORY] = 0;
 	_nextorder[KernelOrderCategory::DEBRUIJNCATEGORY] = 0;
-
-	KernelOrder ktrue = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	_truekernel = new TrueFOBDDKernel(ktrue);
-	_falsekernel = new FalseFOBDDKernel(kfalse);
-	_truebdd = new TrueFOBDD(_truekernel,this);
-	_falsebdd = new FalseFOBDD(_falsekernel,this);
+	_truekernel = NULL;
+	_falsekernel = NULL;
+	_truebdd = NULL;
+	_falsebdd = NULL;
 }
+shared_ptr<FOBDDManager> FOBDDManager::createManager(bool rewriteArithmetic){
+	auto returnmanager = shared_ptr<FOBDDManager>(new FOBDDManager(rewriteArithmetic));
+	KernelOrder ktrue = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	KernelOrder kfalse = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	auto truekernel = new TrueFOBDDKernel(ktrue);
+	auto falsekernel = new FalseFOBDDKernel(kfalse);
+	returnmanager->setTrueKernel(truekernel);
+	returnmanager->setFalseKernel(falsekernel);
+	returnmanager->setTrueBDD(new TrueFOBDD(truekernel,returnmanager));
+	returnmanager->setFalseBDD(new FalseFOBDD(falsekernel,returnmanager));
+	return returnmanager;
+
+}
+
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;
 	delete _falsebdd; //!< the BDD 'false'

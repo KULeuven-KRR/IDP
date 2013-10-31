@@ -48,7 +48,7 @@ public:
 	BDDPrinter(Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
 				_translator(NULL),
-				_manager(make_shared<FOBDDManager>()) {
+				_manager(FOBDDManager::createManager()) {
 	}
 
 private:
