@@ -14,7 +14,7 @@ theory T:V{
 	
 	// Symmbreker (zou nu een uniek model moeten geven):
 	!a b: ~PriemFactor(a,1,b).
-	!a b c: PriemFactor(a,b,c) => c=1 | PriemFactor(a,b,c-1).
+	! (a,b,c) in PriemFactor : c=1 | PriemFactor(a,b,c-1).
 }	
 structure S:V{
 	Getal = { 1..11 }
