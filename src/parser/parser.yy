@@ -14,6 +14,7 @@
 #include "errorhandling/error.hpp"
 #include "insert.hpp"
 #include "theory/term.hpp" // Necessary for inheritance tree
+#include "theory/Sets.hpp"
 #include "parser/yyltype.hpp"
 
 // Lexer
@@ -116,7 +117,7 @@ void yyerror(const char* s);
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
-%token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM
+%token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM UNION
 %token FALSE
 %token USINGVOCABULARY
 %token EXTERNVOCABULARY
@@ -197,10 +198,7 @@ void yyerror(const char* s);
 %type <fpd> fixpdef
 %type <fpd> fd_rules
 %type <def> definition
-%type <est> formulaset
-%type <est> termset
-%type <est> form_list
-%type <est> form_term_list
+%type <est> formset termset termsets formulasets
 %type <cpo> compound
 %type <pta>	ptuples
 %type <pta>	ptuples_es
@@ -555,10 +553,10 @@ theosort_pointer	:	pointer_name		{ $$ = data().theosortpointer(*$1,@1); delete($
 
 /** Terms **/                                            
 
-term		: function		{ $$ = $1;	}		
-			| arterm		{ $$ = $1;	}
+term		: //function		{ $$ = $1;	}		
+			 arterm		{ $$ = $1;	}
 			| domterm		{ $$ = $1;	}
-			| aggterm		{ $$ = $1;	}
+			//| aggterm		{ $$ = $1;	}
 			;
 
 function	: intern_pointer '(' term_tuple ')'		{ $$ = data().functerm($1,*$3); delete($3);	}
@@ -566,19 +564,29 @@ function	: intern_pointer '(' term_tuple ')'		{ $$ = data().functerm($1,*$3); de
 			| intern_pointer						{ $$ = data().term($1);					}
 			;
 
-arterm		: term '-' term				{ $$ = data().arterm('-',$1,$3,@1);	}				
-			| term '+' term				{ $$ = data().arterm('+',$1,$3,@1);	}
-			| term '*' term				{ $$ = data().arterm('*',$1,$3,@1);	}
-			| term '/' term				{ $$ = data().arterm('/',$1,$3,@1);	}
-			| term '%' term				{ $$ = data().arterm('%',$1,$3,@1);	}
-			| term '^' term				{ $$ = data().arterm('^',$1,$3,@1);	}
-			| '-' term %prec UMINUS		{ $$ = data().arterm("-",$2,@1);		}
-			| ABS '(' term ')'			{ $$ = data().arterm("abs",$3,@1);		}
-			| '(' arterm ')'			{ $$ = $2;								}
+arterm		: INTEGER					{ $$ = data().domterm($1,@1);		}
+			//| CHARCONS					{ $$ = data().arterm($1,@1);		}
+			| function						{ $$ = $1;	}
+			| aggterm						{ $$ = $1;	}
+			| arterm '-' arterm				{ $$ = data().arterm('-',$1,$3,@1);	}
+			| '-' '(' arterm ',' arterm ')'	{ $$ = data().arterm('-',$3,$5,@1);	}			
+			| arterm '+' arterm				{ $$ = data().arterm('+',$1,$3,@1);	}
+			| '+' '(' arterm ',' arterm ')'	{ $$ = data().arterm('+',$3,$5,@1);	}
+			| arterm '*' arterm				{ $$ = data().arterm('*',$1,$3,@1);	}
+			| '*' '(' arterm ',' arterm ')'	{ $$ = data().arterm('*',$3,$5,@1);	}
+			| arterm '/' arterm				{ $$ = data().arterm('/',$1,$3,@1);	}
+			| '/' '(' arterm ',' arterm ')'	{ $$ = data().arterm('/',$3,$5,@1);	}
+			| arterm '%' arterm				{ $$ = data().arterm('%',$1,$3,@1);	}
+			| '%' '(' arterm ',' arterm ')'	{ $$ = data().arterm('%',$3,$5,@1);	}
+			| arterm '^' arterm				{ $$ = data().arterm('^',$1,$3,@1);	}
+			| '^' '(' arterm ',' arterm ')'	{ $$ = data().arterm('^',$3,$5,@1);	}
+			| '-' arterm %prec UMINUS		{ $$ = data().arterm("-",$2,@1);	}
+			| ABS '(' arterm ')'			{ $$ = data().arterm("abs",$3,@1);	}
+			| '(' arterm ')'			{ $$ = $2;							}
 			;
 
-domterm		: INTEGER									{ $$ = data().domterm($1,@1);		}
-			| FLNUMBER									{ $$ = data().domterm($1,@1);		}
+domterm		: //INTEGER									{ $$ = data().domterm($1,@1);		}
+			 FLNUMBER									{ $$ = data().domterm($1,@1);		}
 			| STRINGCONS								{ $$ = data().domterm($1,@1);		}
 			| CHARCONS									{ $$ = data().domterm($1,@1);		}
 		/*	| '@' identifier '[' theosort_pointer ']'	{ $$ = data().domterm($2,$4,@1);	}
@@ -586,28 +594,33 @@ domterm		: INTEGER									{ $$ = data().domterm($1,@1);		}
 		The above lines are commented since writing @ is unsafe"*/
 			;
 
-aggterm		: P_CARD formulaset	{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
-			| P_SOM termset		{ $$ = data().aggregate(AggFunction::SUM,$2,@1);		}
-			| P_PROD termset	{ $$ = data().aggregate(AggFunction::PROD,$2,@1);	}
-			| P_MINAGG termset	{ $$ = data().aggregate(AggFunction::MIN,$2,@1);		}
-			| P_MAXAGG termset	{ $$ = data().aggregate(AggFunction::MAX,$2,@1);		}
+aggterm		: P_CARD 	'(' formulasets	')'	{ $$ = data().aggregate(AggFunction::CARD,$3,@1);	}
+			| P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
+			| P_SOM 	'(' termsets	')'	{ $$ = data().aggregate(AggFunction::SUM,$3,@1);	}
+			| P_SOM 	termset				{ $$ = data().aggregate(AggFunction::SUM,$2,@1);	}
+			| P_PROD 	'(' termsets 	')'	{ $$ = data().aggregate(AggFunction::PROD,$3,@1);	}
+			| P_PROD 	termset 			{ $$ = data().aggregate(AggFunction::PROD,$2,@1);	}
+			| P_MINAGG  '(' termsets 	')'	{ $$ = data().aggregate(AggFunction::MIN,$3,@1);	}
+			| P_MINAGG  termset 			{ $$ = data().aggregate(AggFunction::MIN,$2,@1);	}
+			| P_MAXAGG  '(' termsets 	')' { $$ = data().aggregate(AggFunction::MAX,$3,@1);	}
+			| P_MAXAGG   termset 			{ $$ = data().aggregate(AggFunction::MAX,$2,@1);	}
 			;
 
-formulaset		: '{' variables ':' formula '}'				{ $$ = data().set(*$2,$4,@1); delete($2);	}
-				| '[' form_list ']'							{ $$ = $2;											}
-				;
+formulasets	: formulasets UNION formset 		{ $$ = $1; if($3!=NULL){data().addToFirst($$,$3); delete($3);	}		}
+			| formset						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,$1);	delete($1); }}
+			;
+			
+formset		: '{' variables ':' formula '}'	{ $$ = data().set($4,@1,*$2); delete($2);	}
+			| '{' ':' formula '}'			{ $$ = data().set($3,@1); }
+			;
+			
+termsets	: termsets UNION termset 			{ $$ = $1; if($3!=NULL){data().addToFirst($$,$3); delete($3);	}		}
+			| termset						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,$1); delete($1);} }
+			;
 
-termset			: '{' variables ':' formula ':' term '}'	{ $$ = data().set(*$2,$4,$6,@1); delete($2);	}	
-				| '[' form_term_list ']'					{ $$ = $2;											}
-				;
-
-form_list		: form_list ';' formula						{ $$ = $1; data().addFormula($$,$3);						}
-				| formula									{ $$ = data().createEnum(@1); $$=data().addFormula($$,$1);	}		
-				;
-
-form_term_list	: form_term_list ';' '(' formula ',' term ')'	{ $$ = $1; data().addFT($$,$4,$6);						}
-				| '(' formula ',' term ')'						{ $$ = data().createEnum(@1); $$ = data().addFT($$,$2,$4);	}
-				;
+termset		: '{' variables ':' formula ':' term '}'	{ $$ = data().set($4,$6,@1,*$2); delete($2);	}	
+			| '{' ':' formula ':' term '}'				{ $$ = data().set($3,$5,@1);	}
+			;
 
 
 /**********************

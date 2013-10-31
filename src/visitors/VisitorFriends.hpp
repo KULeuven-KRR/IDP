@@ -158,6 +158,7 @@ class CPReification;
 class SetExpr;
 class EnumSetExpr;
 class QuantSetExpr;
+class UserProcedure;
 
 #define VISITORFRIENDS() \
 		friend class AbstractTheory; \
@@ -177,6 +178,7 @@ class QuantSetExpr;
 		friend class AggGroundRule; \
 		friend class GroundSet; \
 		friend class GroundAggregate; \
+		friend class UserProcedure; \
 		friend class Rule; \
 		friend class Definition; \
 		friend class FixpDef; \

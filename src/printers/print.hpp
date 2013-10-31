@@ -81,6 +81,7 @@ protected:
 	virtual void visit(const Structure*) = 0;
 	virtual void visit(const Query*) = 0;
 	virtual void visit(const Namespace*) = 0;
+	virtual void visit(const UserProcedure*) = 0;
 	virtual void visit(const GroundClause&) = 0;
 	virtual void visit(const PredTable*) = 0;
 	virtual void visit(const GroundFixpDef*) = 0;
@@ -129,6 +130,7 @@ template<> void Printer::print(const Structure* b);
 template<> void Printer::print(const Namespace* b);
 template<> void Printer::print(const Vocabulary* b);
 template<> void Printer::print(const Query* b);
+template<> void Printer::print(const UserProcedure* b);
 
 template<typename Stream>
 class StreamPrinter: public Printer {

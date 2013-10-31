@@ -86,19 +86,31 @@ if(${BUILDTESTS})
 		querytests.cpp
 		progressiontests.cpp
 		definitiontests.cpp
+
 		propagationtests.cpp
 		vocabularycommandtests.cpp
 		solverconnectiontests.cpp
 	)
+	set(PRINTERTESTS printertest.cpp)
+	
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		add_executable(idptests
 			${FASTTESTS}
 			${MXINCLUDES}
 		)
+		add_executable(printertests 
+			${PRINTERTESTS}
+			${MXINCLUDES}
+		)
+
 		addTest(idptests)
 		set(EXECS ${EXECS} idptests)
 		set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/idptests)
 		
+		addTest(printertests)
+		set(EXECS ${EXECS} printertests)
+		set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/printertests)
+
 		#PLEASE MAKE SURE THE TESTS ARE ORDERED FROM LONGRUNNING TO SHORTRUNNING!
 		#this improves the efficiency of running "make check"
 		#IF ADDING TESTS HERE, ALSO ADD THEM BELOW THE ELSE
@@ -136,6 +148,7 @@ if(${BUILDTESTS})
 		# ALSO ADD ABOVE ELSE!
 		set(LONGERTESTS
 			mxtests/basic.cpp
+
 			mxtests/bounds.cpp
 			mxtests/nobounds.cpp
 			mxtests/boundsNoLUP.cpp
@@ -153,6 +166,7 @@ if(${BUILDTESTS})
         endif()
 		add_executable(idptests
 			${FASTTESTS}
+			${PRINTERTESTS}
 			${LONGERTESTS}
 			${MXINCLUDES}
 		)

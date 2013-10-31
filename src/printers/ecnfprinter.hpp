@@ -130,6 +130,10 @@ public:
 		throw notyetimplemented("Printing namespaces in ecnf format");
 	}
 
+	void visit(const UserProcedure*) {
+		throw notyetimplemented("Printing procedures in ecnf format");
+	}
+
 	void visit(const Structure*) {
 		throw notyetimplemented("Printing structures in ecnf format");
 	}

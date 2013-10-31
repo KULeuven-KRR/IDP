@@ -1,0 +1,7 @@
+include <mx>
+
+procedure main(){
+//code to test if readed printed output is correct
+	return 1
+}
+

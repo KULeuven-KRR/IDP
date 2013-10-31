@@ -386,4 +386,7 @@ public:
 	virtual void visit(const CPReification*) {
 		throw notyetimplemented("Printing ground constraints in IDP2 format");
 	}
+	virtual void visit(const UserProcedure*) {
+		throw notyetimplemented("Printing procedures in IDP2 format");
+	}
 };

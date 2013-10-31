@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 query Q:V{
-	{x[x]: min[(true,3);(?y: p(x, y),2);(q(x),4)]=3 & x>2}
+	{x[x]: min({:true:3}U{:?y: p(x, y):2}U{:q(x):4})=3 & x>2}
 }
 
 structure S:V{

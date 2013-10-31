@@ -63,6 +63,11 @@ void Printer::print(const Namespace* b) {
 	visit(b);
 }
 template<>
+void Printer::print(const UserProcedure* p) {
+	visit(p);
+}
+
+template<>
 void Printer::print(const Vocabulary* b) {
 	visit(b);
 }

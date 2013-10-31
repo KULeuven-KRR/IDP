@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 query Q : V {
-	{y: y=sum[(!x: p(x),1);(q,2)] | y=sum[(!x: p(x),1);(~q,2)]}
+	{y: y=sum({:!x: p(x):1}U{:q:2}) | y=sum({:!x: p(x):1}U{:~q:2})}
 }
 
 structure S:V{

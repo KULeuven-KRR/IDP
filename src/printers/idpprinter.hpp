@@ -16,6 +16,7 @@
 
 #include "groundtheories/GroundTheory.hpp"
 #include "theory/Query.hpp"
+#include "internalargument.hpp" // Only for UserProcedure
 #include "groundtheories/GroundPolicy.hpp"
 
 #include "utils/StringUtils.hpp"
@@ -32,6 +33,7 @@ class IDPPrinter: public StreamPrinter<Stream> {
 private:
 	const GroundTranslator* _translator;
 	bool _printTermsAsBlock;
+	bool _printSetTerm;
 
 	using StreamPrinter<Stream>::output;
 	using StreamPrinter<Stream>::printTab;
@@ -46,10 +48,11 @@ private:
 	using StreamPrinter<Stream>::openTheory;
 
 public:
-	IDPPrinter(Stream& stream, bool printTermsAsBlock = true)
+	IDPPrinter(Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
 				_translator(NULL),
-				_printTermsAsBlock(printTermsAsBlock) {
+				_printTermsAsBlock(true),
+				_printSetTerm(true) {
 	}
 
 	virtual void setTranslator(GroundTranslator* t) {
@@ -62,6 +65,22 @@ public:
 	virtual void endTheory() {
 		closeTheory();
 	}
+
+	template<typename T>
+		std::string printFullyQualified(T o) const {
+	    	std::stringstream ss;
+	        ss << o->nameNoArity();
+	           	if (o->sorts().size() > 0) {
+	           		ss << "[";
+	                printList(ss, o->sorts(), ",", not o->isFunction());
+	                if (o->isFunction()) {
+	                  	ss << ":";
+	                    ss << print(*o->sorts().back());
+	                }
+	                ss << "]";
+	            }
+	        return ss.str();
+	    }
 
 	void visit(const Structure* structure) {
 		auto backup = _printTermsAsBlock;
@@ -81,7 +100,7 @@ public:
 
 		for (auto it = voc->firstSort(); it != voc->lastSort(); ++it) {
 			auto s = it->second;
-			if (not s->builtin()) {
+			if (not s->builtin() && not s->isConstructed()) {
 				printTab();
 				output() << print(s) << " = ";
 				auto st = structure->inter(s);
@@ -114,23 +133,23 @@ public:
 					}
 				} else {
 					printTab();
-					if(pi->ct()->size()<=pi->pf()->size()){
+					//if(pi->ct()->size()<=pi->pf()->size()){
 						output() << print(p) << "<ct> = ";
 						visit(pi->ct());
-					}else{
+					/*}else{
 						output() << print(p) << "<pf> = ";
 						visit(pi->pf());
-					}
+					}*/ //We cannot parse pt and pf at the moment
 					output() << '\n';
 
 					printTab();
-					if(pi->cf()->size()<=pi->pt()->size()){
+					//if(pi->cf()->size()<=pi->pt()->size()){
 						output() << print(p) << "<cf> = ";
 						visit(pi->cf());
-					}else{
+					/*}else{
 						output() << print(p) << "<pt> = ";
 						visit(pi->pt());
-					}
+					}*/ //We cannot parse pt and pf at the moment
 					output() << '\n';
 				}
 			}
@@ -212,18 +231,29 @@ public:
 
 		Assert(isTheoryOpen());
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			if (not it->second->builtin() || v == Vocabulary::std()) {
+			 if (not it->second->builtin() || v == Vocabulary::std()) {
+				printTab();
 				visit(it->second);
+				output() << "\n";
 			}
 		}
 		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
-			if (not it->second->builtin() || v == Vocabulary::std()) {
-				visit(it->second);
+			auto pred = it->second;
+			if (v != Vocabulary::std() and pred->builtin()) { // Only print builtins when printing the std voc
+				continue;
 			}
+			if(pred->nrSorts()==1 and pred==pred->sort(0)->pred()){ // Do not print sort-predicates
+				continue;
+			}
+			printTab();
+			visit(pred);
+			output() << "\n";
 		}
 		for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
 			if (not it->second->builtin() || v == Vocabulary::std()) { // FIXME apparently, </2 etc still get printed?
+				printTab();
 				visit(it->second);
+				output() << "\n";
 			}
 		}
 
@@ -253,7 +283,7 @@ public:
 			visit((*i).second);
 		}
 		for (auto i = s->procedures().cbegin(); i != s->procedures().cend(); ++i) {
-			// FIXME visit((*i).second); //see #200
+			visit((*i).second);
 		}
 		for (auto i = s->terms().cbegin(); i != s->terms().cend(); ++i) {
 			(*i).second->accept(this);
@@ -264,6 +294,22 @@ public:
 		unindent();
 		printTab();
 		output() << "}" << '\n';
+	}
+
+	void visit(const UserProcedure* p){
+		output() << "procedure "<< p->name()<<"(";
+		for(auto a:p->args()){
+			auto beginargs=true;
+			if(not beginargs){
+				output()<< ", ";
+			}else{
+				beginargs=false;
+			}
+			output()<<a;
+		}
+		output() << "){ \n";
+		output() << p->getProcedurecode() << "\n";
+		output() << "}\n";
 	}
 
 	void visit(const GroundFixpDef*) {
@@ -284,16 +330,16 @@ public:
 		printTab();
 
 		Assert(isTheoryOpen());
-		for (auto it = t->sentences().cbegin(); it != t->sentences().cend(); ++it) {
-			(*it)->accept(this);
+		for (auto sentence : t->sentences()) {
+			sentence->accept(this);
+			output() << "." << '\n';
+		}
+		for (auto definition : t->definitions()) {
+			definition->accept(this);
 			output() << "" << '\n';
 		}
-		for (auto it = t->definitions().cbegin(); it != t->definitions().cend(); ++it) {
-			(*it)->accept(this);
-			output() << "" << '\n';
-		}
-		for (auto it = t->fixpdefs().cbegin(); it != t->fixpdefs().cend(); ++it) {
-			(*it)->accept(this);
+		for (auto fixpdef : t->fixpdefs()) {
+			fixpdef->accept(this);
 			output() << "" << '\n';
 		}
 		unindent();
@@ -344,13 +390,28 @@ public:
 		}
 		output() << print(f->symbol());
 		if (not f->subterms().empty()) {
-			output() << "(";
-			f->subterms()[0]->accept(this);
-			for (size_t n = 1; n < f->subterms().size(); ++n) {
-				output() << ',';
-				f->subterms()[n]->accept(this);
+			if(f->isGraphedFunction()){ //f is a function, not a predicate, and should be printed as one
+				auto size = f->subterms().size();
+				if(size>1){
+					output() << "(";
+					f->subterms()[0]->accept(this);
+					for (size_t n = 1; n < f->subterms().size()-1; ++n) {
+					output() << ',';
+						f->subterms()[n]->accept(this);
+					}
+					output() << ")";
+				}
+				output() << "=";
+				f->subterms()[size-1]->accept(this);
+			}else{
+				output() << "(";
+				f->subterms()[0]->accept(this);
+				for (size_t n = 1; n < f->subterms().size(); ++n) {
+					output() << ',';
+					f->subterms()[n]->accept(this);
+				}
+				output() << ")";
 			}
-			output() << ')';
 		}
 		_printTermsAsBlock = backup;
 	}
@@ -558,15 +619,58 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		output() << print(t->function());
-		if (not t->subterms().empty()) {
-			output() << "(";
-			t->subterms()[0]->accept(this);
-			for (unsigned int n = 1; n < t->subterms().size(); ++n) {
-				output() << ",";
-				t->subterms()[n]->accept(this);
+		/*
+		 * If a function name is overloaded, the extra details should also be printed (sorts)
+		 *
+		 * It is the function name that is overloaded, not the function itself.
+		 * Therefore we should find the internal function associated to that name and check if that function is overloaded.
+		 */
+		bool overloaded = false;
+		for(auto i:t->function()->getVocabularies()){
+			auto functionlist = i->getFuncs();
+			if((*(functionlist.find(t->function()->name()))).second->overloaded()){
+				overloaded = true;
 			}
-			output() << ")";
+		}
+
+		// We don't want to print for every overloaded built in function (like +) all the sorts
+		// However, we do need this for constants like MAX and MIN
+		// TODO: Can be dangerous if the user overloads these built in functions
+		if(overloaded && (not t->function()->builtin() or t->function()->arity()==0)){
+			output() << t->function()->nameNoArity();
+			if (t->function()->sorts().size() > 0) {
+				output() << "[";
+				auto begin = true;
+				for(auto sort:t->function()->sorts()){
+					if(sort!=t->function()->sorts().back()){
+						if(not begin){
+							output() <<",";
+						}
+						begin = false;
+						auto voc = sort->getVocabularies().cbegin();
+						output() << (*voc)->name()<< "::" << sort->name();
+					}
+				}
+				output() << ":";
+				auto outvoc = t->function()->sorts().back()->getVocabularies().cbegin();
+				output() << (*outvoc)->name()<< "::" << print(t->function()->sorts().back());
+				}
+				output() << "]";
+		}else{
+			output() << print(t->function());
+		}
+		if (not t->subterms().empty()) {
+			if(t->function()->name()=="-/1" and t->subterms().size()==1 and t->subterms()[0]->type()==TermType::DOM){
+				t->subterms()[0]->accept(this);
+			}else{
+				output() << "(";
+				t->subterms()[0]->accept(this);
+				for (unsigned int n = 1; n < t->subterms().size(); ++n) {
+					output() << ",";
+					t->subterms()[n]->accept(this);
+				}
+				output() << ")";
+			}
 		}
 		_printTermsAsBlock = backup;
 		finishTermPrinting();
@@ -580,9 +684,9 @@ public:
 		std::string str = toString(t->value());
 		if (t->sort()) {
 			if (SortUtils::isSubsort(t->sort(), get(STDSORT::CHARSORT))) {
-				output() << '\'' << str << '\'';
+				output() << str;
 			} else if (SortUtils::isSubsort(t->sort(), get(STDSORT::STRINGSORT))) {
-				output() << '\"' << str << '\"';
+				output()  << str ;
 			} else {
 				output() << str;
 			}
@@ -597,11 +701,14 @@ public:
 	void visit(const AggTerm* t) {
 		printTermName(t);
 		auto backup = _printTermsAsBlock;
+		auto backupTermPrint = _printSetTerm;
 		_printTermsAsBlock = false;
+		_printSetTerm = true;
 		Assert(isTheoryOpen());
 		switch (t->function()) {
 			case AggFunction::CARD:
 			output() << '#';
+			_printSetTerm = false;
 			break;
 			case AggFunction::SUM:
 			output() << "sum";
@@ -616,26 +723,28 @@ public:
 			output() << "max";
 			break;
 		}
+		output() <<'(';
 		t->set()->accept(this);
+		output() <<')';
 		_printTermsAsBlock = backup;
+		_printSetTerm = backupTermPrint;
 		finishTermPrinting();
 	}
 
 	/** Set expressions **/
 
 	void visit(const EnumSetExpr* s) {
+		Assert(s->getSets().size()>0);
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
-		output() << "[ ";
 		bool begin = true;
 		for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
 			if (not begin) {
-				output() << ", ";
+				output() << " U ";
 			}
 			begin = false;
 			(*i)->accept(this);
 		}
-		output() << " ]";
 		_printTermsAsBlock = backup;
 	}
 
@@ -652,8 +761,10 @@ public:
 		}
 		output() << " : ";
 		s->getCondition()->accept(this);
-		output() << " : ";
-		s->getTerm()->accept(this);
+		if(_printSetTerm){
+			output() << " : ";
+			s->getTerm()->accept(this);
+		}
 		output() << " }";
 		_printTermsAsBlock = backup;
 	}
@@ -929,7 +1040,6 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		printTab();
 		output() << "type " << s->name();
 		if (not s->parents().empty()) {
 			output() << " isa " << (*(s->parents().cbegin()))->name();
@@ -939,7 +1049,17 @@ public:
 				output() << "," << (*it)->name();
 			}
 		}
-		output() << "\n";
+		if(s->isConstructed()){
+			output() << " constructed from {";
+			bool first = true;
+			for(auto cons: s->getConstructors()){
+				if(not first)
+					output() << ", ";
+				first=false;
+				printFuncWithoutOutsort(cons);
+			}
+			output() << "}";
+		}
 		_printTermsAsBlock = backup;
 	}
 
@@ -947,9 +1067,18 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		printTab();
-		if (p->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
-			output() << "overloaded predicate " << p->name() << '\n';
+		if (p->overloaded()) {
+			Predicate* p2 = const_cast<Predicate*>(p);
+			for(auto e: p2->nonbuiltins()) {
+				output() << e->name().substr(0, e->name().find('/'));
+				if (e->arity() > 0) {
+					output() << "(" << e->sort(0)->name();
+					for (unsigned int n = 1; n < e->arity(); ++n) {
+						output() << "," << e->sort(n)->name();
+					}
+					output() << ")";
+				}
+			}
 		} else {
 			output() << p->name().substr(0, p->name().find('/'));
 			if (p->arity() > 0) {
@@ -959,7 +1088,6 @@ public:
 				}
 				output() << ")";
 			}
-			output() << "\n";
 		}
 		_printTermsAsBlock = backup;
 	}
@@ -968,10 +1096,24 @@ public:
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
-		printTab();
-		if (f->overloaded()) { // FIXME what should happen in this case to get correct idpfiles?
-			output() << "overloaded function " << f->name() << '\n';
+		if (f->overloaded()) {
+			Function* f2 = const_cast<Function*>(f);
+			for(auto e: f2->nonbuiltins()) {
+				if (e->partial()) {
+					output() << "partial ";
+				}
+				output() << e->name().substr(0, e->name().find('/'));
+				if (e->arity() > 0) {
+					output() << "(" << e->insort(0)->name();
+					for (unsigned int n = 1; n < e->arity(); ++n) {
+						output() << "," << e->insort(n)->name();
+					}
+					output() << ")";
+				}
+				output() << " : " << e->outsort()->name() << "\n";
+			}
 		} else {
+			printTab();
 			if (f->partial()) {
 				output() << "partial ";
 			}
@@ -983,7 +1125,7 @@ public:
 				}
 				output() << ")";
 			}
-			output() << " : " << f->outsort()->name() << "\n";
+			output() << " : " << f->outsort()->name();
 		}
 		_printTermsAsBlock = backup;
 	}
@@ -1168,6 +1310,39 @@ private:
 		output() << "set_" << setnr << ")." << "\n";
 	}
 
+	void printFuncWithoutOutsort(const Function* f){
+		Assert(isTheoryOpen());
+		if (f->overloaded()) {
+			Function* f2 = const_cast<Function*>(f);
+			for(auto e: f2->nonbuiltins()) {
+				if (e->partial()) {
+					output() << "partial ";
+				}
+				output() << e->name().substr(0, e->name().find('/'));
+				if (e->arity() > 0) {
+					output() << "(" << e->insort(0)->name();
+					for (unsigned int n = 1; n < e->arity(); ++n) {
+						output() << "," << e->insort(n)->name();
+					}
+					output() << ")";
+				}
+				output() << " : " << e->outsort()->name();
+			}
+		} else {
+			printTab();
+			if (f->partial()) {
+				output() << "partial ";
+			}
+			output() << f->name().substr(0, f->name().find('/'));
+			if (f->arity() > 0) {
+				output() << "(" << f->insort(0)->name();
+				for (unsigned int n = 1; n < f->arity(); ++n) {
+					output() << "," << f->insort(n)->name();
+				}
+				output() << ")";
+			}
+		}
+	}
 	void printAsFunc(const PredTable* table) {
 		if (not table->finite()) {
 			std::clog << "Requested to print infinite predtable, did not print it.\n";

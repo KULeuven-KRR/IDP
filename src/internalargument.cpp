@@ -80,6 +80,11 @@ bool InternalArgument::get<bool>() {
 }
 
 template<>
+UserProcedure* InternalArgument::get<UserProcedure*>() {
+	return _value._procedure;
+}
+
+template<>
 SortIterator* InternalArgument::get<SortIterator*>() {
 	return _value._sortiterator;
 }

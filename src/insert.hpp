@@ -355,10 +355,13 @@ public:
 	AggTerm* aggregate(AggFunction, EnumSetExpr*, YYLTYPE) const; //!< create a new aggregate term
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
-	EnumSetExpr* set(const varset&, Formula*, YYLTYPE);
+	EnumSetExpr* set(Formula*, YYLTYPE,const varset& vv=std::set<Variable*, VarCompare>());
 	//!< Create a new set of the form { x1 ... xn : phi }
-	EnumSetExpr* set(const varset&, Formula*, Term*, YYLTYPE);
+	EnumSetExpr* set(Formula*, Term*, YYLTYPE,const varset& vv=varset());
 	//!< Create a new set of the form { x1 ... xn : phi : t }
+
+	//take the union of 2 EnumSets by adding everything in s2 to s1
+	void addToFirst(EnumSetExpr* s1, EnumSetExpr* s2);
 
 	EnumSetExpr* createEnum(YYLTYPE) const;
 	//!< Create a new EnumSetExpr
