@@ -11,10 +11,10 @@ theory T:V{
 	max {x[x]:false:1} < 100000.
 	sum {x[x]:false:1} = A.
 	prod{x[x]:false:1} = B.
-	min [(false,1)] > 100000.
-	max [(false,1)] < -100000.
-	sum [(false,1)] = C.
-	prod[(false,1)] = D.
+	min	{:false:1} > 100000.
+	max	{:false:1} < -100000.
+	sum {:false:1} = C.
+	prod{:false:1} = D.
 }
 
 structure S:V{

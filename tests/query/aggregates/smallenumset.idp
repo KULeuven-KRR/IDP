@@ -4,7 +4,7 @@ vocabulary V{
 }
 
 query Q : V {
-	{y[x] : y = #[?x:p(x)]	 }
+	{y[x] : y = #{:?x:p(x)}	 }
 }
 
 structure S:V{

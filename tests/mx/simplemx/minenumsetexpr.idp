@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 theory T:V{
-	!x: min[(true,3);(?y: p(y),2);(q(x),4)]=3.
+	!x: min({:true:3}U{:?y: p(y):2} U {:q(x):4})=3.
 }
 
 structure S:V{
