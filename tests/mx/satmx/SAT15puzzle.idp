@@ -40,7 +40,7 @@ theory T : V {
 	! t : /*Time(t) &*/ t < MaxTime => (? r c : Move(t,r,c)).
 	
 	// Do not move after the final step 
-	! t r c sat t >= MaxTime : ~Move(t,r,c).
+	! (t r c) sat t >= MaxTime : ~Move(t,r,c).
 
 	// Optimization: Don't move immediately back to the previous position 
 	! t r1 c1 r2 c2 : Move(t,r1,c1) & In(t,r2,c2,Empty) => ~Move(t+1,r2,c2).
@@ -60,7 +60,7 @@ theory T : V {
 	{ Goal(r,c,e) <- e = ((r - 1) * 4) + (c - 1). } 
 
 	// Goal must be reached at the final timepoint
-	! r c e in Goal: In(MaxTime,r,c,e).
+	! (r c e) in Goal: In(MaxTime,r,c,e).
 
 
 }
