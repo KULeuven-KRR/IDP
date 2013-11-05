@@ -169,7 +169,7 @@ void yyerror(const char* s);
 %left '-' '+'
 %left '/' '*'
 %left '%' 
-%left '^'
+%right '^'
 %left UMINUS
 
 /** Non-terminals with semantic value **/
