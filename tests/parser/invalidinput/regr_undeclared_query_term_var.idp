@@ -1,0 +1,18 @@
+// TODO used to crash because the term/query object was not constructed but still used later on
+
+vocabulary Sigma{
+	type X
+	Prerequ(X,X)
+}
+
+query O1Q1: Sigma{
+	{ : ?x : Prerequ(y, x)}
+}
+
+term t: Sigma{
+	sum({ : ?x : Prerequ(y, x) : 1})
+}
+
+procedure main(){
+	return 1;
+}

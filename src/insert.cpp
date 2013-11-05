@@ -825,7 +825,9 @@ void checkForUnusedVariables(const varset& vv, Args&... args) {
 }
 
 void Insert::closequery(Query* q) {
-	freevars(q->pi(), true);
+	if(q!=NULL){
+		freevars(q->pi(), true);
+	}
 
 	_curr_vars.clear();
 	if (q != NULL) { // Allows for better error catching
@@ -844,7 +846,9 @@ void Insert::closequery(Query* q) {
 }
 
 void Insert::closeterm(Term* t) {
-	freevars(t->pi(), true);
+	if(t!=NULL){
+		freevars(t->pi(), true);
+	}
 
 	_curr_vars.clear();
 	if (t != NULL) { // Allows for better error catching
