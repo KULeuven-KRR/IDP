@@ -1,0 +1,25 @@
+** For Linux **
+
+* make sure you have libc6-dev-i386 installed (otherwise you get "missing predefs.h" errors)
+* TODO DO SOMETHING MORE TO AVOID 
+/usr/bin/ld: cannot find -lstdc++
+* Create new build directory
+* Configure it to statically release: (disable XSB, disable SPASS)
+ cmake ~/software/idp/ -DCMAKE_INSTALL_PREFIX=/cw/dtailocal/bartb/local -DCMAKE_BUILD_TYPE="StaticRelease" -DWITHXSB=OFF -DSPASS=OFF
+* TODO: shouldn't we add the -lPIC flag in this case???
+* make
+* make install
+* make package
+* This last one creates the releasable files
+
+
+
+** For Windows **
+
+TODO
+
+
+
+** For Mac **
+
+TODO
