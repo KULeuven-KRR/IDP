@@ -1,0 +1,107 @@
+** This documents describes what you need to do to start developping IDP from a fresh Ubuntu install. **
+
+
+- Suppose you want the idp source in <sourcedir>/idp and want to build in <builddir>/release and <builddir>/debug (depending on whether you build in release or debug of course)
+- You will need some software (install it yourself or ask sysadmin)
+	>> sudo apt-get install git cmake ccache cmake-gui bison flex texlive-base texlive-latex-base imagemagick latex2html valgrind libgetopt-argvfile-perl libgetopt-long-descriptive-perl libregexp-common-perl g++ eclipse eclipse-cdt texinfo libc6-dev-i386 g++-multilib
+- Register a BitBucket account 
+	https://bitbucket.org/
+- Upload an ssh key to BitBucket 
+	https://bitbucket.org/account/user/<BitBucketUserName>/ssh-keys/
+- Ask an administrator to give you access to the IDP repository on BitBucket
+- Make a new directory where you will install IDP to (typically in your home folder to avoid having to type your password every time you install it)
+	>> cd ~
+	>> mkdir usr
+	>> cd usr
+	>> mkdir local
+- Add the just created directory and ccache to you PATH (in ~/.bashrc add the following): (NOTE: ccache should be first!)
+	PATH=/usr/lib/ccache:~/usr/local:~/usr/local/bin:$PATH
+- Get p4merge, to the best of our knowledge, the best merge tool for git
+	download from http://www.perforce.com/downloads/Perforce/Customer
+	throw everything from the tgz you downloaded in your /usr/local folder (or in any other folder installed in your path)
+- Configure your git: add the following to ~/.gitconfig (or create the file if nonexistent)
+	[user]
+		name = <YOUR NAME>
+		email = <YOUR.NAME>@cs.kuleuven.be
+	[merge]
+		tool = p4merge
+	[mergetool]
+		keepBackup = false
+	[core]
+		excludesfile = ~/.gitignore_global
+		autocrlf = input
+	[push]
+		default = current
+- Configure your global gitignore (types of files you will never want to commit to git): add the following to ~/.gitignore_global
+	*.aux
+	*.fdb_latexmk
+	*.idx
+	*.ilg
+	*.ind
+	*.log
+	*.out
+	*.rel
+	*.synctex.gz
+	*.maf
+	*.mtc
+	*.mtc0
+	*.nav
+	*.snm
+	*.tex.backup
+	*.tex~
+	*.toc
+	*.bbl
+	*.blg
+	*.kilepr
+	*.bib~
+	*.bib.backup
+	*.backup
+	*~
+	.history
+	*.kate-swp
+- Get gccfilter 
+	download from http://www.mixtion.org/gccfilter/gccfilter
+	put it somewhere in you path, for example in ~/usr/local/bin
+	make it executable
+- Add a useful make command to your ~/.bashrc (the following):
+	alias m='touch <sourcedir>/idp/CMakeLists.txt; make -j 4; gccfilter -c -a make -j 4 install'
+- Restart your terminal
+- Get the IDP source:
+	>> cd <sourcedir>
+	>> git clone git@bitbucket.org:krr/idp.git
+	>> cd idp
+	>> git submodule init
+	>> git submodule update
+- Configure your build directories
+	>> cd <builddir>
+	>> mkdir release
+	>> cd release
+	>> cmake <sourcedir>/idp/ -DCMAKE_INSTALL_PREFIX=~/usr/local -DCMAKE_BUILD_TYPE="Release" -DTESTINGTHREADS=3
+	>> m
+	>> make check
+	>> cd ..
+	>> mkdir debug
+	>> cd debug
+	>> cmake <sourcedir>/idp/ -DCMAKE_INSTALL_PREFIX=~/usr/local -DCMAKE_BUILD_TYPE="Debug" -DTESTINGTHREADS=3
+	>> m
+	>> make check
+- Test if IDP is working correctly
+	>> idp -i
+	>> print(stdoptions) 
+- If this all worked, you can compile IDP
+- Next, download an eclipse version, at least Kepler with ++ editing tools
+- Install the IDP-IDE as described on http://dtai.cs.kuleuven.be/krr/software/idp-ide
+- Restart eclipse
+- Create a c++ project with as location <sourcedir>/idp
+- In eclipse, got to the properties of your c++ project -> "paths and symbols" -> symbols -> set __GXX_EXPERIMENTAL_CXX0X__ to 1 (all configurations all languages to be safe)
+- In eclipse, import our code style (can be found in docs/code) such that autoformatting does not ruin our code ;-)
+
+
+
+
+	
+
+
+
+
+
