@@ -396,10 +396,12 @@ void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* 
 					Error::funcelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
 				}
 			}
-			for(auto parent: sort->parents()){
-				auto sorttable = structure->inter(sort);
-				checkAndCompleteSortTable(sorttable, Universe({sorttable}), parent->pred(), structure);
-			}
+		}
+	}
+	for(auto sort: symbol->sorts()){
+		for(auto parent: sort->parents()){
+			auto sorttable = structure->inter(sort);
+			checkAndCompleteSortTable(sorttable, Universe({sorttable}), parent->pred(), structure);
 		}
 	}
 }
@@ -425,7 +427,9 @@ void Structure::autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter) {
 
 void Structure::checkAndAutocomplete() {
 	if (getOption(SHOWWARNINGS)) {
-		Warning::warning("Verifying and/or autocompleting input structures.");
+		stringstream ss;
+		ss <<"Verifying and/or autocompleting structure " <<name();
+		Warning::warning(ss.str());
 	}
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
