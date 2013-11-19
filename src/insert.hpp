@@ -276,7 +276,6 @@ private:
 public:
 	Function* function(const std::string& name, const std::vector<Sort*>& insorts, Sort* outsort, YYLTYPE) const;
 	Function* constructorfunction(const std::string& name, const std::vector<Sort*>& insorts, YYLTYPE) const;
-	Function* aritfunction(const std::string& name, const std::vector<Sort*>& sorts, YYLTYPE) const;
 
 	void partial(Function* f) const;
 	//!< make a function partial

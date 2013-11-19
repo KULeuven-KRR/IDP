@@ -185,7 +185,7 @@ void yyerror(const char* s);
 %type <nsp>	intern_pointer
 %type <fun> func_decl
 %type <fun> full_func_decl
-%type <fun> arit_func_decl
+
 %type <fun> constr_func_decl
 %type <ter> term domterm function arterm aggterm
 %type <fom> predicate
@@ -219,8 +219,6 @@ void yyerror(const char* s);
 %type <vstr>	pointer_name
 %type <vsor>	sort_pointer_tuple
 %type <vsor>	nonempty_spt
-%type <vsor>	binary_arit_func_sorts
-%type <vsor>	unary_arit_func_sorts
 %type <vfunc>	func_list
 %type <vdom>	compound_args
 %type <vdom>	ptuple	
@@ -335,8 +333,6 @@ pred_decl		: identifier '(' sort_pointer_tuple ')'	{ data().predicate(*$1,*$3,@1
 
 func_decl		: PARTIAL full_func_decl				{ $$ = $2; data().partial($$);	}
 				| full_func_decl						{ $$ = $1;								}
-				| PARTIAL arit_func_decl				{ $$ = $2; data().partial($$);	}
-				| arit_func_decl						{ $$ = $1;								}
 				;
 
 full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = data().function(*$1,*$3,$6,@1);
@@ -348,23 +344,6 @@ constr_func_decl	: identifier '(' sort_pointer_tuple ')' { $$ = data().construct
 				| identifier								{ $$ = data().constructorfunction(*$1,{},@1); }	
 				; 														
 
-arit_func_decl	: '-' binary_arit_func_sorts				{ $$ = data().aritfunction("-/2",*$2,@1); delete($2);	}
-                | '+' binary_arit_func_sorts				{ $$ = data().aritfunction("+/2",*$2,@1); delete($2);	}
-                | '*' binary_arit_func_sorts				{ $$ = data().aritfunction("*/2",*$2,@1); delete($2);	}
-                | '/' binary_arit_func_sorts				{ $$ = data().aritfunction("//2",*$2,@1); delete($2);	}
-                | '%' binary_arit_func_sorts				{ $$ = data().aritfunction("%/2",*$2,@1); delete($2);	}
-                | '^' binary_arit_func_sorts				{ $$ = data().aritfunction("^/2",*$2,@1); delete($2);	}
-                | '-' unary_arit_func_sorts  %prec UMINUS	{ $$ = data().aritfunction("-/1",*$2,@1); delete($2);	}
-                | ABS unary_arit_func_sorts					{ $$ = data().aritfunction("abs/1",*$2,@1); delete($2);	}
-				;
-
-binary_arit_func_sorts	: '(' sort_pointer ',' sort_pointer ')' ':' sort_pointer	
-							{ $$ = new std::vector<Sort*>(3); (*$$)[0] = $2; (*$$)[1] = $4; (*$$)[2] = $7; }
-						;
-
-unary_arit_func_sorts	: '(' sort_pointer ')' ':' sort_pointer	
-							{ $$ = new std::vector<Sort*>(2); (*$$)[0] = $2; (*$$)[1] = $5; }
-						;
 
 /** Symbol pointers **/
 
@@ -825,6 +804,8 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
 				| CHARACTER		{ $$ = new std::string(1,$1); } 
+                                |IN {$$ = new std::string("in");}
+                                |SAT {$$ = new std::string("sat");}
 				;
 
 /********************
