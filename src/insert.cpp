@@ -1769,8 +1769,7 @@ Sort* Insert::theosortpointer(const vector<string>& vs, YYLTYPE l) const {
 FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) {
-			incompatiblearity(toString(nst), (nst->_sorts).size(),
-					vt.size() + 1, nst->_pi);
+			incompatiblearity(toString(nst), (nst->_sorts).size(),vt.size() + 1, nst->_pi);
 		}
 		if (not nst->_func) {
 			funcnameexpected(nst->_pi);
@@ -1778,8 +1777,7 @@ FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 	}
 	nst->includeArity(vt.size());
 	Function* f = funcInScope(nst->_name, nst->_pi);
-	if (f != NULL && nst->_sortsincluded
-			&& (nst->_sorts).size() == vt.size() + 1) {
+	if (f != NULL && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
 		f = f->resolve(nst->_sorts);
 	}
 
@@ -1886,6 +1884,10 @@ FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 		auto temp = new FuncTerm(f, pivt, TermParseInfo());
 		auto pi = termparseinfo(temp, l);
 		temp->recursiveDelete();
+		bool knowntype=(lt->sort()&&rt->sort());
+		if(knowntype){
+			f = f->disambiguate({lt->sort(),rt->sort(),NULL},_currvocabulary);
+		}
 		return new FuncTerm(f, vt, pi);
 	} else {
 		if (lt) {
@@ -1907,6 +1909,10 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 	Assert(f);
 	vector<Term*> vt(1, t);
 	vector<Term*> pivt(1, t->clone());
+	bool knowntype=t->sort();
+	if(knowntype){
+			f = f->disambiguate({t->sort(),NULL},_currvocabulary);
+	}
 	auto temp = new FuncTerm(f, pivt, TermParseInfo());
 	auto res = new FuncTerm(f, vt, termparseinfo(temp, l));
 	temp->recursiveDelete();
@@ -1999,9 +2005,7 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 		for(auto subterm:p->subterms()){
 			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
 		}
-		const FOBDDKernel* returnvalue(
-				_currmanager->getAtomKernel(symbol,
-						AtomKernelType::AKT_TWOVALUED, newargs));
+		const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol,AtomKernelType::AKT_TWOVALUED, newargs));
 		return returnvalue;
 	} else if (isa<EqChainForm>(*p)){
 		auto f = dynamic_cast<EqChainForm*>(p);
@@ -2012,13 +2016,13 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 				switch(comp)
 				{
 				case CompType::EQ:
-					symbol = get(STDPRED::EQ);
+					symbol = get(STDPRED::EQ,f->subterms()[0]->sort());
 					break;
 				case CompType::LT:
-					symbol = get(STDPRED::LT);
+					symbol = get(STDPRED::LT,f->subterms()[0]->sort());
 					break;
 				case CompType::GT:
-					symbol = get(STDPRED::GT);
+					symbol = get(STDPRED::GT,f->subterms()[0]->sort());
 					break;
 				default:
 					throw notyetimplemented("Parsing eqchains that isn't >, < or =");
@@ -2028,9 +2032,7 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 				for(auto subterm:p->subterms()){
 					newargs.push_back(_currmanager->getFOBDDTerm(subterm));
 				}
-				const FOBDDKernel* returnvalue(
-						_currmanager->getAtomKernel(symbol,
-								AtomKernelType::AKT_TWOVALUED, newargs));
+				const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol,AtomKernelType::AKT_TWOVALUED, newargs));
 				return returnvalue;
 			}
 
@@ -2043,9 +2045,7 @@ const FOBDDKernel* Insert::atomkernel(Formula* p) const {
 	return NULL;
 }
 const FOBDDKernel* Insert::quantkernel(Variable* var, const FOBDD* bdd) const {
-	auto debruijnbdd = _currmanager->substitute(bdd,
-			_currmanager->getVariable(var),
-			_currmanager->getDeBruijnIndex(var->sort(), 0));
+	auto debruijnbdd = _currmanager->substitute(bdd,_currmanager->getVariable(var),_currmanager->getDeBruijnIndex(var->sort(), 0));
 	auto qkernel = _currmanager->getQuantKernel(var->sort(), debruijnbdd);
 	return qkernel;
 }
