@@ -20,7 +20,7 @@ class QueryFOBDDInference: public FOBDDInferenceBase {
 public:
 	QueryFOBDDInference()
 			: FOBDDInferenceBase("queryfobdd", "Generate all solutions to the given fobdd in the given structure.") {
-		setNameSpace(getInferenceNamespaceName());
+		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
