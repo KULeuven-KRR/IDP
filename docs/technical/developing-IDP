@@ -95,6 +95,8 @@
 - Create a c++ project with as location <sourcedir>/idp
 - In eclipse, got to the properties of your c++ project -> "paths and symbols" -> symbols -> set __GXX_EXPERIMENTAL_CXX0X__ to 1 (all configurations all languages to be safe)
 - In eclipse, import our code style (can be found in docs/code) such that autoformatting does not ruin our code ;-)
+- Go in eclipse to Window->Preferences C++ - editor - content assist - advanced
+- Deselect everything you see except for "Parsing-based Proposals" (twice) and "Template Proposals" (twice)
 
 
 
