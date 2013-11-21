@@ -8,7 +8,7 @@
 	https://bitbucket.org/
 - Upload an ssh key to BitBucket 
 	https://bitbucket.org/account/user/<BitBucketUserName>/ssh-keys/
-- Ask an administrator to give you access to the IDP repository on BitBucket
+- Ask an administrator to give you access to the IDP, idp-latex and MinisatID repositories on BitBucket.
 - Make a new directory where you will install IDP to (typically in your home folder to avoid having to type your password every time you install it)
 	>> cd ~
 	>> mkdir usr
@@ -97,13 +97,3 @@
 - In eclipse, import our code style (can be found in docs/code) such that autoformatting does not ruin our code ;-)
 - Go in eclipse to Window->Preferences C++ - editor - content assist - advanced
 - Deselect everything you see except for "Parsing-based Proposals" (twice) and "Template Proposals" (twice)
-
-
-
-
-	
-
-
-
-
-
