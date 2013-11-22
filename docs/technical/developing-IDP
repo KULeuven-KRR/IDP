@@ -93,7 +93,9 @@
 - Install the IDP-IDE as described on http://dtai.cs.kuleuven.be/krr/software/idp-ide
 - Restart eclipse
 - Create a c++ project with as location <sourcedir>/idp
-- In eclipse, got to the properties of your c++ project -> "paths and symbols" -> symbols -> set __GXX_EXPERIMENTAL_CXX0X__ to 1 (all configurations all languages to be safe)
+- In eclipse, make sure he accepts C++11:
+-> Best solution is on: http://www.eclipse.org/forums/index.php/mv/msg/373462/909018/#msg_909018
+-> Easier solution, but not always working: got to the properties of your c++ project -> "paths and symbols" -> symbols -> set __GXX_EXPERIMENTAL_CXX0X__ to 1 (all configurations all languages to be safe)
 - In eclipse, import our code style (can be found in docs/code) such that autoformatting does not ruin our code ;-)
 - Go in eclipse to Window->Preferences C++ - editor - content assist - advanced
 - Deselect everything you see except for "Parsing-based Proposals" (twice) and "Template Proposals" (twice)
