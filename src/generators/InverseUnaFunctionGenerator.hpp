@@ -35,6 +35,7 @@ public:
 	InverseUNAFuncGenerator* clone() const;
 	void reset();
 	void next();
+	virtual void put(std::ostream& stream) const;
 };
 
 #endif /* INVUNAGENERATOR_HPP_ */

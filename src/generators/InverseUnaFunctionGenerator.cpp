@@ -11,6 +11,7 @@
 
 #include "InverseUnaFunctionGenerator.hpp"
 #include "common.hpp"
+#include "vocabulary/vocabulary.hpp"
 #include "structure/MainStructureComponents.hpp"
 
 InverseUNAFuncGenerator::InverseUNAFuncGenerator(Function* function, const std::vector<Pattern>& pattern, const std::vector<const DomElemContainer*>& vars, const Universe& univ)
@@ -27,9 +28,15 @@ InverseUNAFuncGenerator::InverseUNAFuncGenerator(Function* function, const std::
 		if (pattern[n] == Pattern::OUTPUT) {
 			_outvars.push_back(vars[n]);
 			_outpos.push_back(n);
+		}else{
+			_invars.push_back(vars[n]);
+			_inpos.push_back(n);
 		}
 	}
 	_resvar = vars.back();
+
+	Assert(_inpos.size()+_outpos.size()==pattern.size());
+	Assert(_invars.size()+_outvars.size()==pattern.size());
 }
 
 InverseUNAFuncGenerator* InverseUNAFuncGenerator::clone() const {
@@ -77,3 +84,6 @@ void InverseUNAFuncGenerator::next() {
 	}
 }
 
+void InverseUNAFuncGenerator::put(std::ostream& stream) const{
+	stream <<"inverse UNA generator for " <<print(_function) <<" indices_in = " <<print(_inpos) <<", indices_out = " <<print(_outpos) <<"\n";
+}
