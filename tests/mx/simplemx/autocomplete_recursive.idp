@@ -1,0 +1,25 @@
+vocabulary V{
+	type T
+	type S isa T
+	type Q isa S
+	
+	type A
+	type B isa A
+	type C isa B
+	P(C)
+}
+
+theory T:V{
+	?x: A(x).
+	
+	?x: T(x).
+}
+
+structure S:V{
+	P = {"A"}
+	Q = {1..3}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
