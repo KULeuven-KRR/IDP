@@ -398,12 +398,6 @@ void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* 
 			}
 		}
 	}
-	for(auto sort: symbol->sorts()){
-		for(auto parent: sort->parents()){
-			auto sorttable = structure->inter(sort);
-			checkAndCompleteSortTable(sorttable, Universe({sorttable}), parent->pred(), structure);
-		}
-	}
 }
 
 void addUNAPattern(Function*) {
