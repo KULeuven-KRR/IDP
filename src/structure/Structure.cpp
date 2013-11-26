@@ -398,12 +398,6 @@ void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* 
 			}
 		}
 	}
-	for(auto sort: symbol->sorts()){
-		for(auto parent: sort->parents()){
-			auto sorttable = structure->inter(sort);
-			checkAndCompleteSortTable(sorttable, Universe({sorttable}), parent->pred(), structure);
-		}
-	}
 }
 
 void addUNAPattern(Function*) {
@@ -466,8 +460,8 @@ void Structure::checkAndAutocomplete() {
 			}
 		}
 		// Go over the level from lowest to highest (so starting at the lowest sorts in the hierarchy) and at each level adding its elements to the parent sorts.
-		for (auto level2sorts : levels2sorts) {
-			for (auto sort : level2sorts.second) {
+		for (auto level2sorts = levels2sorts.rbegin(); level2sorts != levels2sorts.rend(); level2sorts++) {
+			for (auto sort : (*level2sorts).second) {
 				set<Sort*> notextend = { sort };
 				vector<Sort*> toextend, tocheck;
 				while (not notextend.empty()) {
