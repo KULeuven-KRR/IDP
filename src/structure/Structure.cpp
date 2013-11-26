@@ -468,7 +468,7 @@ void Structure::checkAndAutocomplete() {
 					auto e = *(notextend.cbegin());
 					for (auto sp : e->parents()) {
 						if (_vocabulary->contains(sp)) {
-							if (sp->builtin()) {
+							if (sp->builtin() || getGlobal()->getInserter().interpretationSpecifiedByUser(this, sp)) {
 								tocheck.push_back(sp);
 							} else {
 								toextend.push_back(sp);
