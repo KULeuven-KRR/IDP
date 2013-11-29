@@ -34,6 +34,9 @@ macro(addToCXX ARGUMENT)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARGUMENT}")
 endmacro()
 
+### Fix for newest ubuntu+gcc
+addToCXX("-Wl,--no-as-needed")
+
 ### Rpath handling
 include(cmake/rpathhandling.cmake)
 
