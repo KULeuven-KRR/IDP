@@ -117,6 +117,19 @@ void ambigcommand(const std::string& name);
 void wrongvalue(const std::string& option, const std::string& value, const ParseInfo&);
 
 void expected(ComponentType type, const ParseInfo&);
+
+/** Errors concerning progression and LTC **/
+namespace LTC {
+void defineStaticInTermsOfDynamic(const ParseInfo&);
+void timeStratificationViolated(const ParseInfo&);
+void containsStartAndNext(const ParseInfo&);
+void containsStartAndOther(const ParseInfo&);
+void invalidTimeTerm(const ParseInfo&);
+void multipleTimeVars(const std::string& var1, const std::string& var2, const ParseInfo&);
+void wrongTimeQuantification(const std::string& var, const ParseInfo&);
+void nonTopLevelTimeVar(const std::string& var, const ParseInfo&);
+void unexpectedTimeTerm(const std::string& term, const ParseInfo&);
+}
 }
 
 namespace Warning {

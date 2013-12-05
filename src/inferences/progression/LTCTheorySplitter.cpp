@@ -96,13 +96,13 @@ void LTCTheorySplitter::createTheories(const Theory* theo) {
 			auto body = rule->body();
 			auto headinfo = info(head);
 			auto bodyinfo = info(body);
-			if (bodyinfo.hasTimeVariable && not headinfo.hasTimeVariable) {
-				throw IdpException(
-						"In LTC theories, it is not allowed to define static predicates in terms of dynamic predicates. This occurs in rule " + toString(rule));
+			auto headstatic = not (headinfo.hasTimeVariable || headinfo.containsStart);
+			auto bodystatic = not (bodyinfo.hasTimeVariable || bodyinfo.containsStart);
+			if (headstatic && not bodystatic) {
+				Error::LTC::defineStaticInTermsOfDynamic(rule->pi());
 			}
 			if (bodyinfo.containsNext && not headinfo.containsNext) {
-				throw IdpException(
-						"In LTC theories, it is not allowed to define the state at time $t$ in terms of next(t). This occurs in rule " + toString(rule));
+				Error::LTC::timeStratificationViolated(rule->pi());
 			}
 			handleAndAddToConstruct(rule, initDef, biStateDef);
 		}
@@ -146,13 +146,14 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 	//We already checked quantifications. They are okay now. First, we remove all quantifications over time,
 	//later, we will check which type of formula we are dealing with and handle it appropriately.
 	newSentence = FormulaUtils::removeQuantificationsOverSort(newSentence, _time);
+	auto pi=sentence->pi();
 
 	if (sentenceInfo.containsStart) {
 		if (sentenceInfo.containsNext) {
-			throw IdpException("LTC sentences containing start cannot contain the next-function.");
+			Error::LTC::containsStartAndNext(pi);
 		}
 		if (sentenceInfo.hasTimeVariable) {
-			throw IdpException("LTC sentences containing start cannot also have a time variable.");
+			Error::LTC::containsStartAndOther(pi);
 		}
 		newSentence = ReplaceLTCSymbols::replaceSymbols(newSentence, _ltcVoc, false);
 		initConstruct->add(newSentence);
@@ -160,7 +161,7 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 		Assert(not sentenceInfo.containsStart);
 		//Should be guaranteed by previous case
 		if(not sentenceInfo.hasTimeVariable){
-			throw IdpException("LTC sentences can only contain the following terms of type Time: Start, Next and variables.");
+			Error::LTC::invalidTimeTerm(pi);
 		}
 		Assert(sentenceInfo.hasTimeVariable);
 		//Don't know what else could be filled in here.
@@ -219,27 +220,21 @@ void LTCTheorySplitter::checkQuantifications(T* t) {
 	auto topLevelVars = FormulaUtils::collectQuantifiedVariables(t, false);
 
 	bool timefound = false;
+	Variable* timevar = NULL;
 	for (auto tuple : vars) {
 		auto var = tuple.first;
 		if (var->sort() == _time) {
 			if (timefound) {
-				std::stringstream ss;
-				ss << "LTC theories can only contain one time variable in every sentence/formula.";
-				throw IdpException(ss.str());
+				Assert(timevar != NULL);
+				Error::LTC::multipleTimeVars(toString(timevar), toString(var), t->pi());
 			}
 			timefound = true;
+			timevar = var;
 			if (tuple.second != QuantType::UNIV) {
-				std::stringstream ss;
-				ss << "In LTC theories, every variable over type Time should be universally quantified" << " (given its context). This is violated by variable "
-						<< toString(var) << " in " << toString(t) << "\n" << " At " << print(t->pi());
-				throw IdpException(ss.str());
+				Error::LTC::wrongTimeQuantification(toString(var), t->pi());
 			}
 			if (not contains(topLevelVars, var)) {
-				std::stringstream ss;
-				ss << "In LTC theories, every variable over type Time should be universally quantified at the toplevel."
-						<< " E.g. quantifications such as ? x[type]: ! t[Time] ... are not allowed." << " This is violated by variable  " << toString(var)
-						<< " in " << toString(t) << "\n" << " At " << print(t->pi());
-				throw IdpException(ss.str());
+				Error::LTC::nonTopLevelTimeVar(toString(var), t-> pi());
 			}
 		}
 	}

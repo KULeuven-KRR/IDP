@@ -346,6 +346,57 @@ void Error::expected(ComponentType type, const ParseInfo& pi) {
 	error(ss.str(), pi);
 }
 
+void Error::LTC::defineStaticInTermsOfDynamic(const ParseInfo& pi) {
+	error("In LTC theories, it is not allowed to define static predicates in terms of dynamic predicates.", pi);
+}
+
+void Error::LTC::timeStratificationViolated(const ParseInfo& pi) {
+	error("In LTC theories, it is not allowed to define the state at time $t$ in terms of next(t). This violates the time-stratification assumption.", pi);
+}
+
+void Error::LTC::containsStartAndNext(const ParseInfo& pi){
+	error("Initial-state axioms (sentences/rules containing Start) cannot contain other terms of type Time (in particular no Next-terms).",pi);
+}
+
+void Error::LTC::containsStartAndOther(const ParseInfo& pi){
+	error("Initial-state axioms (sentences/rules containing Start) cannot contain other terms of type Time.",pi);
+}
+
+void Error::LTC::invalidTimeTerm(const ParseInfo& pi){
+	error("LTC sentences can only contain the following terms of type Time: Start, Next and variables.",pi);
+}
+
+void Error::LTC::multipleTimeVars(const std::string& var1, const std::string& var2, const ParseInfo&pi) {
+	stringstream ss;
+	ss << "LTC theories can only contain one time variable in every sentence/rule.\n";
+	ss << "This is violated by variables " << var1 << " and " << var2 << ".";
+	error(ss.str(), pi);
+}
+
+void Error::LTC::wrongTimeQuantification(const std::string& var, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "In LTC theories, every variable over type Time should be universally quantified" << " (given its context). This is violated by variable " << var;
+	error(ss.str(), pi);
+}
+
+void Error::LTC::nonTopLevelTimeVar(const std::string& var, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "In LTC theories, every variable over type Time should be universally quantified at the toplevel."
+			<< " E.g. quantifications such as ? x[type]: ! t[Time] ... are not allowed." << " This is violated by variable  " << var;
+	error(ss.str(), pi);
+}
+
+void Error::LTC::unexpectedTimeTerm(const std::string& term, const ParseInfo& pi) {
+	stringstream ss;
+	ss << "Term " << term << " is not expected at a position of type Time. ";
+	ss << "LTC theories can only contain specific constructs of type time (variables, Next(var), or Start). Constructs such as for example Next(Start), Next(Next(var)) are not allowed.";
+	error(ss.str(), pi);
+}
+
+
+
+
+
 void Warning::cumulchance(double c) {
 	stringstream ss;
 	ss << "Chance of " << c << " is impossible. Using chance 1 instead.";

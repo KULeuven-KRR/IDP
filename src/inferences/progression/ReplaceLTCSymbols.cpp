@@ -26,7 +26,16 @@ PFSymbol* ReplaceLTCSymbols::getNewSymbolAndSubterms(T* pf, std::vector<Term*>& 
 			if (isNextTime(subterm) || _replacyeByNext) {
 				newSymbol = _ltcVocInfo->LTC2NextState.at(symbol);
 			} else {
-				newSymbol = _ltcVocInfo->LTC2State.at(symbol);
+				if (isa<VarTerm>(*subterm)) {
+					//Variable over sort Time
+					newSymbol = _ltcVocInfo->LTC2State.at(symbol);
+				} else if (isa<FuncTerm>(*subterm) && dynamic_cast<FuncTerm*>(subterm)->function() == _ltcVocInfo->start) {
+					//Start symbol: initial state axiom
+					newSymbol = _ltcVocInfo->LTC2State.at(symbol);
+				} else {
+					Error::LTC::unexpectedTimeTerm(toString(subterm), pf->pi());
+				}
+
 			}
 			delete (subterm);
 		}
@@ -50,28 +59,25 @@ Formula* ReplaceLTCSymbols::visit(PredForm* pf) {
 		//Special case: explicit typechecking Time(Next(t)).
 		Assert(pf->subterms().size() == 1);
 		auto term = pf->subterms()[0];
-		std::stringstream ss;
 		VarTerm* vt;
 		FuncTerm* ft;
 		switch (term->type()) {
 		case TermType::VAR:
 			vt = dynamic_cast<VarTerm*>(term);
 			if (vt->var()->sort() != timesort) {
-				ss << "Variable " << toString(vt) << " is not of type " << toString(timesort) << "but occurs in an LTC theory in a position of that sort";
-				IdpException(ss.str());
+				Error::LTC::unexpectedTimeTerm(toString(vt), pf->pi());
 			}
 			break;
 		case TermType::FUNC:
 			ft = dynamic_cast<FuncTerm*>(term);
 			if (ft->function() != _ltcVocInfo->start && ft->function() != _ltcVocInfo->next) {
-				ss << "Functionterm " << toString(vt) << " is not allowed in LTC theories. Only use the following functions mapping to time: start and next";
-				IdpException(ss.str());
+				Error::LTC::unexpectedTimeTerm(toString(ft), pf->pi());
+
 			}
 			break;
 		case TermType::AGG:
 		case TermType::DOM:
-			ss << "Term " << toString(term) << "is not expected in an LTC theory in an argument of type Time.";
-			IdpException(ss.str());
+			Error::LTC::unexpectedTimeTerm(toString(term), pf->pi());
 			break;
 		}
 		return FormulaUtils::trueFormula();
@@ -107,12 +113,10 @@ bool ReplaceLTCSymbols::isNextTime(Term* t) {
 		Assert(ft->function() == _ltcVocInfo->next);
 		auto subterm = ft->subterms()[0];
 		if (not isa<VarTerm>(*subterm)) {
-			throw IdpException(
-					"LTC theories can only contain specific constructs of type time (variables, Next(var), or Start). Constructs such as for example Next(Start), Next(Next(var)) are not allowed.");
+			Error::LTC::unexpectedTimeTerm(toString(t), t->pi());
 		}
 		return true;
 	}
-	Assert(isa<VarTerm>(*t));
 	return false;
 }
 

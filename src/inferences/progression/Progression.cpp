@@ -44,7 +44,7 @@ std::vector<Structure*> ProgressionInference::progress() {
 
 	if (not data->hasBeenTransformed(_ltcTheo->vocabulary()) or not data->hasBeenSplit(_ltcTheo)) {
 		throw IdpException(
-				"The theory you are using the progression inference on, has not yet been initialised. Please first apply the setupprogression inference.");
+				"The theory you are using the progression inference on, has not yet been initialised. Please first apply the initialise inference.");
 	}
 	auto vocinfo = data->getStateVocInfo(_ltcTheo->vocabulary());
 	auto voc = vocinfo->stateVoc;
@@ -178,13 +178,13 @@ void InitialiseInference::prepareVocabulary() {
 
 void InitialiseInference::verify(const LTCInputData& data) const {
 	if (data.time == NULL) {
-		throw IdpException("Not find a valid Time symbol for progression");
+		throw IdpException("Did not find a valid Time symbol for progression");
 	}
 	if (data.start == NULL) {
-		throw IdpException("Not find a valid Start symbol for progression");
+		throw IdpException("Did not find a valid Start symbol for progression");
 	}
 	if (data.next == NULL) {
-		throw IdpException("Not find a valid Next symbol for progression");
+		throw IdpException("Did not find a valid Next symbol for progression");
 	}
 	if (data.start->arity() != 0 || data.start->outsort() != data.time) {
 		throw IdpException("In LTC theories, the function Start should be typed [:Time].");
