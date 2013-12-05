@@ -213,6 +213,11 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager
 	Copy copier(manager, shared_from_this());
 	return copier.copy(bdd);
 }
+const FOBDD* FOBDDManager::getBDDTryMaintainOrder(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager) {
+	Copy copier(manager, shared_from_this());
+	return copier.copyTryMaintainOrder(bdd);
+}
+
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
@@ -985,6 +990,15 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	_ifthenelsetable[kernel][truebranch][falsebranch] = result;
 	return result;
 
+}
+const FOBDD* FOBDDManager::ifthenelseTryMaintainOrder(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
+	auto ifthenelsebdd=ifthenelse(kernel,truebranch,falsebranch);
+	const FOBDDKernel* truekernel = truebranch->kernel();
+	const FOBDDKernel* falsekernel = falsebranch->kernel();
+	while((*kernel>*truekernel)||(*kernel>*falsekernel)){
+		moveUp(kernel);
+	}
+	return ifthenelsebdd;
 }
 const FOBDDQuantSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	std::vector<Sort*> sorts(vars.size());

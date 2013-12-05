@@ -120,7 +120,7 @@ public:
 		throw IdpException("Queries cannot be printed as BDDs");
 	}
 	virtual void visit(const FOBDD*) {
-		throw IdpException("FOBDDS cannot be printed as BDDs TODO"); //todo
+		throw IdpException("FOBDDS cannot by a printer that converts theories to BDDs, use print(..) instead"); //todo
 	}
 	virtual void visit(const Namespace*) {
 		throw IdpException("Namespaces cannot be printed as BDDs");

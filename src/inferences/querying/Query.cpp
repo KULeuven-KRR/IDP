@@ -116,7 +116,6 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 }
 
 PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const structure) const {
-	// translate the formula to a bdd
 	auto manager= bdd->manager();
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
@@ -125,7 +124,6 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 	Assert(manager != NULL);
 
 	auto bddvars = variables(bdd,manager);
-	//TODO: This does not work!
 
 	fobddindexset bddindices;
 
@@ -144,7 +142,6 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 			auto res = new const DomElemContainer();
 			varsToDomElemContainers[var] = res;
 			data.vars.push_back(res);
-
 		} else {
 			data.vars.push_back(dec->second);
 		}
@@ -168,7 +165,6 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 	auto result = TableUtils::createPredTable(univ);
 	// execute the query
 	ElementTuple currtuple(bddvars.size());
-	//cerr <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < bddvars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();

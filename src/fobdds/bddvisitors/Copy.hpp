@@ -114,6 +114,18 @@ public:
 			return _copymanager->ifthenelse(kernel, truebranch, falsebranch);
 		}
 	}
+	const FOBDD* copyTryMaintainOrder(const FOBDD* bdd) {
+			if (bdd == _originalmanager->truebdd()) {
+				return _copymanager->truebdd();
+			} else if (bdd == _originalmanager->falsebdd()) {
+				return _copymanager->falsebdd();
+			} else {
+				auto falsebranch = copyTryMaintainOrder(bdd->falsebranch());
+				auto truebranch = copyTryMaintainOrder(bdd->truebranch());
+				auto kernel = copy(bdd->kernel());
+				return _copymanager->ifthenelseTryMaintainOrder(kernel, truebranch, falsebranch);
+			}
+		}
 
 	const FOBDDEnumSetExpr* copy(const FOBDDEnumSetExpr* set) {
 		set->accept(this);

@@ -234,7 +234,6 @@ public:
 			indent();
 			output() << print(b);
 			unindent();
-			//TODO
 			printTab();
 			output() << '\n' << "}" << '\n';
 			_printTermsAsBlock = backup;

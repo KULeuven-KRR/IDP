@@ -87,12 +87,14 @@ std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	auto const v = new Variable(_sort);
 	output << "EXISTS(" << print(v) << ") {";
 	pushtab();
-	auto bddmanager = _bdd->manager();
-	auto nodebruijnbdd = bddmanager->substitute(_bdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
+	auto bddmanager = FOBDDManager::createManager(false);
+	auto newbdd=bddmanager->getBDD(_bdd,_bdd->manager());
+	auto nodebruijnbdd = bddmanager->substitute(newbdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
 	output << "" << nt() << print(nodebruijnbdd);
 	poptab();
 	output << "" << nt();
 	output << "}";
+	delete(v);
 	return output;
 }
 std::ostream& FOBDDAggKernel::put(std::ostream& output) const {
