@@ -54,7 +54,7 @@ R={1..4}
 S={(1,1);(2,2);(3,1);(4,1)}
 }
 procedure main(){
-	print(queryfobdd(F,S))
+	print(F)
 	return 1
 
 }
