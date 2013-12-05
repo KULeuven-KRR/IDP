@@ -778,7 +778,7 @@ Function* Function::disambiguate(const vector<Sort*>& ambigsorts, const Vocabula
 		return _overfuncgenerator->disambiguate(ambigsorts, vocabulary);
 	} else {
 		for (size_t n = 0; n < sorts().size(); ++n) {
-			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)) {
+			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)&& ambigsorts[n] != NULL) {
 				return NULL;
 			}
 		}

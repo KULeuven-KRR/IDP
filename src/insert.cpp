@@ -1830,9 +1830,12 @@ FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 		auto temp = new FuncTerm(f, pivt, TermParseInfo());
 		auto pi = termparseinfo(temp, l);
 		temp->recursiveDelete();
-		bool knowntype = (lt->sort()!=NULL && rt->sort()!=NULL);
+		bool knowntype = (lt->sort() && rt->sort());
 		if (knowntype) {
-			f = f->disambiguate( { lt->sort(), rt->sort(), NULL }, _currvocabulary);
+			auto fnew= f->disambiguate( { lt->sort(), rt->sort(), NULL }, _currvocabulary);
+			if(fnew!=NULL){
+				f=fnew;
+			}
 		}
 		return new FuncTerm(f, vt, pi);
 	} else {
