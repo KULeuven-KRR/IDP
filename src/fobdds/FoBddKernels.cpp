@@ -88,7 +88,7 @@ std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	output << "EXISTS(" << print(v) << ") {";
 	pushtab();
 	auto bddmanager = FOBDDManager::createManager(false);
-	auto newbdd=bddmanager->getBDD(_bdd,_bdd->manager());
+	auto newbdd=bddmanager->getBDDTryMaintainOrder(_bdd,_bdd->manager());
 	auto nodebruijnbdd = bddmanager->substitute(newbdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
 	output << "" << nt() << print(nodebruijnbdd);
 	poptab();
