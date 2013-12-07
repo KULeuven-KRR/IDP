@@ -1,0 +1,19 @@
+vocabulary V {
+	type Tijd isa int
+	Age:Tijd
+	x1:Tijd
+	x2:Tijd
+}
+
+theory T : V {
+	x1<x2.
+	2*Age = x2+x1.
+}
+
+structure S : V {
+	Tijd = {1..4}
+}
+
+procedure getExpectedNbOfModels(){
+	return 2
+}
