@@ -77,8 +77,7 @@ DefId getIDForUndefined() {
 
 template<typename Grounding>
 GrounderFactory::GrounderFactory(const Vocabulary* outputvocabulary, StructureInfo structures, Grounding* grounding, bool nbModelsEquivalent)
-		: 	allowskolemize(false),
-			_vocabulary(structures.concrstructure->vocabulary()),
+		: 	_vocabulary(structures.concrstructure->vocabulary()),
 			_structure(structures),
 			_grounding(grounding),
 			_nbmodelsequivalent(nbModelsEquivalent),
@@ -102,8 +101,7 @@ GrounderFactory::GrounderFactory(const Vocabulary* outputvocabulary, StructureIn
 }
 
 GrounderFactory::GrounderFactory(LazyGroundingManager* manager)
-		: 	allowskolemize(false),
-			_vocabulary(manager->getStructureInfo().concrstructure->vocabulary()),
+		: 	_vocabulary(manager->getStructureInfo().concrstructure->vocabulary()),
 			_structure(manager->getStructureInfo()),
 			_grounding(manager->getGrounding()),
 			_nbmodelsequivalent(manager->getNbModelEquivalent()),
@@ -312,7 +310,16 @@ LazyGroundingManager* GrounderFactory::create(const GroundInfo& data, PCSolver* 
 LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* minimizeterm) {
 	std::vector<Grounder*> grounders;
 
-	allowskolemize = true;
+	FormulaUtils::combineAggregates(theory);
+
+	// TODO: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+	if(getOption(SKOLEMIZE) && _nbmodelsequivalent){
+		Warning::warning("Skolemization does not preserve the number of models, so will not be applied as model-equivalence was also requested.");
+	}
+
+	if(getOption(SKOLEMIZE) && not _nbmodelsequivalent){
+		theory = FormulaUtils::skolemize(theory);
+	}
 
 	// NOTE: important that we only add funcconstraints for the theory at hand! e.g. for calculate definitions, we should not find values for the functions not occurring in it!
 	FormulaUtils::addFuncConstraints(theory, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
@@ -320,7 +327,6 @@ LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* mini
 		FormulaUtils::addFuncConstraints(minimizeterm, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));
 	}
 
-	allowskolemize = false;
 	for (auto func2constr : funcconstraints) {
 		if(getConcreteStructure()->inter(func2constr.first)->approxTwoValued()){
 			continue; // Do not add function constraints for two-valued functions
@@ -329,7 +335,6 @@ LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* mini
 		descend(func2constr.second);
 		grounders.push_back(getTopGrounder());
 	}
-	allowskolemize = true;
 
 	InitContext();
 	descend(theory);
@@ -449,42 +454,15 @@ void GrounderFactory::visit(const Theory* theory) {
 	// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
 	// TODO Order the components to optimize the grounding process
 
-	// Create grounders for all components
-	auto newtheory = const_cast<Theory*>(theory);
-	FormulaUtils::combineAggregates(newtheory);
-
-	/*	SKOLEM  TODO fix and add
-	 auto newtheory = new Theory("", _vocabulary, theory->pi());
-	 for (auto i = components.cbegin(); i < components.cend(); ++i) {
-	 auto component = *i;
-
-
-	 auto formula = dynamic_cast<Formula*>(*i);
-	 // Add definitions etc!
-	 // Can we handle subformula  directly if we store the parent quantifiers?
-	 if (formula!=NULL && allowskolemize && not _nbmodelsequivalent) { // NOTE: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
-	 formula = formula->clone();
-	 component = FormulaUtils::skolemize(formula, _vocabulary);
-	 FormulaUtils::addFuncConstraints(component, _vocabulary, funcconstraints, getOption(BoolType::CPSUPPORT));
-	 }
-
-	 newtheory->add(component);
-	 }
-
-	 // bugged:
-	 newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory);
-	 SKOLEM END
-	 */
+	// newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory); // FIXME bugged!
 
 	std::vector<Grounder*> children;
-	const auto components2 = newtheory->components(); // NOTE: primitive reorder present: definitions first
+	const auto components2 = theory->components(); // NOTE: primitive reorder present: definitions first
 	for (auto i = components2.cbegin(); i < components2.cend(); ++i) {
 		InitContext();
 		descend(*i);
 		children.push_back(getTopGrounder());
 	}
-
-	// deleteDeep(newtheory); SKOLEM
 
 	setTopGrounder(new TheoryGrounder(getGrounding(), getContext(), children));
 }

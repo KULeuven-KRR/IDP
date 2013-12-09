@@ -205,7 +205,7 @@ void checkSorts(Vocabulary* v, Formula* f) {
 Formula* combineAggregates(Formula* f){
 	return transform<CombineAggregates, Formula*>(f);
 }
-void combineAggregates(Theory* f){
+void combineAggregates(AbstractTheory* f){
 	return transform<CombineAggregates>(f);
 }
 

@@ -38,10 +38,12 @@ public:
 	}
 protected:
 	Theory* visit(Theory* t){
-		for(auto i=t->components().begin(); i!=t->components().end(); ++i){
+		auto components = t->sentences();
+		t->sentences().clear();
+		for(auto c:components){
 			quantified.clear();
 			replace.clear();
-			*i = (*i)->accept(this);
+			t->add(c->accept(this));
 		}
 		return t;
 	}
