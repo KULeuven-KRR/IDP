@@ -20,6 +20,12 @@ class Function;
 class AbstractTheory;
 class SplitLTCTheory;
 
+struct LTCInputData {
+	const Sort* time;
+	Function* start;
+	Function* next;
+};
+
 class LTCData: public DeleteMe {
 private:
 	std::map<const Vocabulary*, const LTCVocInfo*> _LTCVocData;
@@ -30,16 +36,17 @@ public:
 
 	bool hasBeenTransformed(const Vocabulary*);
 	const LTCVocInfo* getStateVocInfo(const Vocabulary*);
+	const LTCVocInfo* getStateVocInfo(const Vocabulary*, LTCInputData symbols);
 	void registerTransformation(const Vocabulary*, const LTCVocInfo*);
 
 	bool hasBeenSplit(const AbstractTheory*);
 	const SplitLTCTheory* getSplitTheory(const AbstractTheory*);
+private:
+	LTCInputData collectLTCSortAndFunctions(const Vocabulary* ltcVoc) const;
+	void verify(const LTCInputData& data) const;
+
 
 };
 
-struct LTCInputData {
-	const Sort* time;
-	Function* start;
-	Function* next;
-};
+
 

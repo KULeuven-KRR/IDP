@@ -21,6 +21,7 @@ class Function;
 class Vocabulary;
 class LTCInputData;
 class Theory;
+class LTCVocInfo;
 
 struct initData {
 	std::vector<Structure*> _models;
@@ -39,6 +40,8 @@ class InitialiseInference {
 	Function* _startInput;
 	Function* _nextInput;
 
+	const LTCVocInfo* _vocInfo;
+
 public:
 	static initData doInitialisation(const AbstractTheory* ltcTheo, const Structure* str, const Sort* Time, Function* Start, Function* Next);
 private:
@@ -46,9 +49,7 @@ private:
 	InitialiseInference(const AbstractTheory* ltcTheo, const Structure* str, const Sort* Time, Function* Start, Function* Next);
 	~InitialiseInference();
 	void prepareVocabulary();
-	LTCInputData collectLTCSortAndFunctions(Vocabulary*);
 	initData init();
-	void verify(const LTCInputData& data) const;
 
 	void prepareStructure();
 
