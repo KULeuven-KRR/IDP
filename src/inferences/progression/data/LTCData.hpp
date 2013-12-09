@@ -34,7 +34,6 @@ public:
 
 	bool hasBeenSplit(const AbstractTheory*);
 	const SplitLTCTheory* getSplitTheory(const AbstractTheory*);
-	void registerSplit(const AbstractTheory*, const SplitLTCTheory*);
 
 };
 

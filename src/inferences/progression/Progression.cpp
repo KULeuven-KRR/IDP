@@ -15,7 +15,6 @@
 #include "IncludeComponents.hpp"
 #include "data/LTCData.hpp"
 #include "data/SplitLTCTheory.hpp"
-#include "LTCTheorySplitter.hpp"
 #include "projectLTCStructure.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 
@@ -112,10 +111,6 @@ initData InitialiseInference::init() {
 		prepareVocabulary();
 		Assert(data->hasBeenTransformed(_ltcTheo->vocabulary()));
 	}
-	if (not data->hasBeenSplit(_ltcTheo)) {
-		prepareTheory();
-		Assert(data->hasBeenSplit(_ltcTheo));
-	}
 	initData output;
 	auto theos = data->getSplitTheory(_ltcTheo);
 	output._bistateTheo = theos->bistateTheory;
@@ -139,15 +134,6 @@ void InitialiseInference::prepareStructure() {
 	_projectedStructure = LTCStructureProjector::projectStructure(_inputStruc);
 }
 
-void InitialiseInference::prepareTheory() {
-	auto ltcdata = LTCData::instance();
-	if (ltcdata->hasBeenSplit(_ltcTheo)) {
-		//TODO: check if nothing has changed since then
-	} else {
-		auto splitTheory = LTCTheorySplitter::SplitTheory(_ltcTheo);
-		ltcdata->registerSplit(_ltcTheo, splitTheory);
-	}
-}
 
 void InitialiseInference::prepareVocabulary() {
 	auto ltcdata = LTCData::instance();

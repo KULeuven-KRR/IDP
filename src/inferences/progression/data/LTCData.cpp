@@ -14,6 +14,8 @@
 #include "utils/ListUtils.hpp"
 #include "StateVocInfo.hpp"
 #include "SplitLTCTheory.hpp"
+#include "../LTCTheorySplitter.hpp"
+
 
 LTCData* _LTCinstance = NULL;
 
@@ -51,14 +53,14 @@ void LTCData::registerTransformation(const Vocabulary* v, const LTCVocInfo* si) 
 
 bool LTCData::hasBeenSplit(const AbstractTheory* t) {
 	return contains(_LTCTheoData, t);
-
 }
+
 const SplitLTCTheory* LTCData::getSplitTheory(const AbstractTheory* t) {
-	Assert(hasBeenSplit(t));
-	return _LTCTheoData[t];
-}
-void LTCData::registerSplit(const AbstractTheory* t, const SplitLTCTheory* st) {
-	Assert(not hasBeenSplit(t));
-	_LTCTheoData[t] = st;
-
+	if(hasBeenSplit(t)){
+		return _LTCTheoData[t];
+	} else{
+		auto splitTheory = LTCTheorySplitter::SplitTheory(t);
+		_LTCTheoData[t] = splitTheory;
+		return splitTheory;
+	}
 }

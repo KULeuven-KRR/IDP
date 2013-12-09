@@ -46,7 +46,6 @@ private:
 	InitialiseInference(const AbstractTheory* ltcTheo, const Structure* str, const Sort* Time, Function* Start, Function* Next);
 	~InitialiseInference();
 	void prepareVocabulary();
-	void prepareTheory();
 	LTCInputData collectLTCSortAndFunctions(Vocabulary*);
 	initData init();
 	void verify(const LTCInputData& data) const;
