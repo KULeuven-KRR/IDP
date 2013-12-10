@@ -129,6 +129,10 @@ void multipleTimeVars(const std::string& var1, const std::string& var2, const Pa
 void wrongTimeQuantification(const std::string& var, const ParseInfo&);
 void nonTopLevelTimeVar(const std::string& var, const ParseInfo&);
 void unexpectedTimeTerm(const std::string& term, const ParseInfo&);
+void invarContainsStart(const ParseInfo&);
+void invarContainsNext(const ParseInfo&);
+void invarContainsDefinitions(const ParseInfo&);
+void invarIsStatic(const ParseInfo&);
 }
 }
 

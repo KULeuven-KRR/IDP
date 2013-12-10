@@ -393,6 +393,22 @@ void Error::LTC::unexpectedTimeTerm(const std::string& term, const ParseInfo& pi
 	error(ss.str(), pi);
 }
 
+void Error::LTC::invarContainsStart(const ParseInfo& pi){
+	error("LTC invariants cannot contain Start.",pi);
+}
+
+void Error::LTC::invarContainsNext(const ParseInfo& pi){
+	error("LTC invariants cannot contain Next.",pi);
+}
+void Error::LTC::invarContainsDefinitions(const ParseInfo& pi){
+	error("LTC invariants cannot contain definitions.",pi);
+}
+
+void Error::LTC::invarIsStatic(const ParseInfo& pi){
+	error("LTC invariants cannot be static.",pi);
+}
+
+
 
 
 
