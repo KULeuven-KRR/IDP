@@ -133,6 +133,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<ProgressInference>());
 	inferences.push_back(make_shared<InitInference>());
 	inferences.push_back(make_shared<InitInferenceNoTime>());
+	inferences.push_back(make_shared<InvariantInference>());
 
 	inferences.push_back(make_shared<AnswerInference>());
 	return inferences;
