@@ -33,19 +33,20 @@ private:
 	const Function* _start;
 	const Function* _next;
 
-	bool _interpretsStart;
+	bool _shouldUseStart;
 	const DomainElement* _startDomElem;
 
 	Structure* _result;
 
 public:
-	static Structure* projectStructure(const Structure* inputStructure) {
+	/**Projects the input structure. If ignoreStart holds: all info about Start will be ignored. Otherwise, info about start will be used for projecting onto initial state*/
+	static Structure* projectStructure(const Structure* inputStructure, bool ignoreStart = false) {
 		auto g = LTCStructureProjector();
-		g.init(inputStructure);
+		g.init(inputStructure, ignoreStart);
 		return g.run();
 	}
 private:
-	void init(const Structure* input);
+	void init(const Structure* input, bool ignoreStart);
 	Structure* run();
 
 	void setSorts();

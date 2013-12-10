@@ -16,7 +16,7 @@
 #include "data/LTCData.hpp"
 #include "data/StateVocInfo.hpp"
 
-void LTCStructureProjector::init(const Structure* input) {
+void LTCStructureProjector::init(const Structure* input, bool ignoreStart) {
 	_inputStruc = input;
 	_ltcVoc = input->vocabulary();
 	_vocInfo = LTCData::instance()->getStateVocInfo(_ltcVoc);
@@ -26,8 +26,8 @@ void LTCStructureProjector::init(const Structure* input) {
 	_next = _vocInfo->next;
 
 	//In case start is interpreted, we should incorporate this when projecting dynamic predicates and functions.
-	_interpretsStart = _inputStruc->inter(_start)->approxTwoValued();
-	if (_interpretsStart) {
+	_shouldUseStart = (_inputStruc->inter(_start)->approxTwoValued() ) && not ignoreStart;
+	if (_shouldUseStart) {
 		_startDomElem = _inputStruc->inter(_start)->funcTable()->operator []( { });
 	}
 
@@ -108,7 +108,7 @@ void LTCStructureProjector::projectAndSetInter(PFSymbol* symbol) {
 
 	bool warned = false;
 
-	if (not _interpretsStart && (not oldinter->ct()->empty() || not oldinter->cf()->empty())) {
+	if (not _shouldUseStart && (not oldinter->ct()->empty() || not oldinter->cf()->empty())) {
 		std::stringstream ss;
 		ss << "In structure " << _inputStruc->name() << " start is uninterpreted. Therefore, the initialise inference will ignore the interpretation of "
 				<< toString(symbol) << " even though it is not completely unknown.\n";
