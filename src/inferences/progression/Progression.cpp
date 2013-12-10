@@ -42,17 +42,14 @@ std::vector<Structure*> ProgressionInference::progress() {
 	auto data = LTCData::instance();
 
 	if (not data->hasBeenTransformed(_ltcTheo->vocabulary()) or not data->hasBeenSplit(_ltcTheo)) {
-		throw IdpException(
-				"The theory you are using the progression inference on, has not yet been initialised. Please first apply the initialise inference.");
+		Error::LTC::notInitialised();
 	}
 	auto vocinfo = data->getStateVocInfo(_ltcTheo->vocabulary());
 	auto voc = vocinfo->stateVoc;
 	auto bistatevoc = vocinfo->biStateVoc;
 	auto bistatetheo = data->getSplitTheory(_ltcTheo)->bistateTheory;
 	if (_stateBefore->vocabulary() != voc) {
-		throw IdpException(
-				"The structure given to the progression inference should range over vocabulary " + voc->name() + " but ranges over "
-						+ _stateBefore->vocabulary()->name());
+		Error::LTC::progressOverWrongVocabulary(voc->name(), _stateBefore->vocabulary()->name());
 	}
 	auto newstruc = _stateBefore->clone();
 	newstruc->changeVocabulary(bistatevoc);
@@ -108,6 +105,9 @@ InitialiseInference::~InitialiseInference() {
 }
 
 initData InitialiseInference::init() {
+	if (_ltcTheo->vocabulary() != _inputStruc->vocabulary()) {
+		Error::LTC::strucVocIsNotTheoVoc();
+	}
 	auto data = LTCData::instance();
 	initData output;
 	auto theos = data->getSplitTheory(_ltcTheo);
@@ -118,7 +118,6 @@ initData InitialiseInference::init() {
 
 	prepareStructure();
 	Assert(_projectedStructure != NULL);
-
 	auto models = ModelExpansion::doModelExpansion(output._initTheo, _projectedStructure, NULL)._models;
 	output._models = generateEnoughTwoValuedExtensions(models);
 	return output;

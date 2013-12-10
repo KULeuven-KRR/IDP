@@ -120,6 +120,9 @@ void expected(ComponentType type, const ParseInfo&);
 
 /** Errors concerning progression and LTC **/
 namespace LTC {
+/**All LTC errors have in common that they require the program to STOP after an error is encountered instead of simply notifying the global data*/
+void error(const std::string& message);
+void error(const std::string& message, const ParseInfo& p);
 void defineStaticInTermsOfDynamic(const ParseInfo&);
 void timeStratificationViolated(const ParseInfo&);
 void containsStartAndNext(const ParseInfo&);
@@ -133,6 +136,11 @@ void invarContainsStart(const ParseInfo&);
 void invarContainsNext(const ParseInfo&);
 void invarContainsDefinitions(const ParseInfo&);
 void invarIsStatic(const ParseInfo&);
+void invarVocIsNotTheoVoc();
+void strucVocIsNotTheoVoc();
+void notInitialised();
+void progressOverWrongVocabulary(const std::string& expectedVoc, const std::string& realVoc);
+
 }
 }
 

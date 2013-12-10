@@ -346,6 +346,18 @@ void Error::expected(ComponentType type, const ParseInfo& pi) {
 	error(ss.str(), pi);
 }
 
+
+void Error::LTC::error(const std::string& message){
+	Error::error(message);
+	throw IdpException("Error encountered; operation aborted.");
+}
+
+void Error::LTC::error(const std::string& message, const ParseInfo& p){
+	Error::error(message, p);
+	throw IdpException("Error encountered; operation aborted.");
+}
+
+
 void Error::LTC::defineStaticInTermsOfDynamic(const ParseInfo& pi) {
 	error("In LTC theories, it is not allowed to define static predicates in terms of dynamic predicates.", pi);
 }
@@ -408,10 +420,22 @@ void Error::LTC::invarIsStatic(const ParseInfo& pi){
 	error("LTC invariants cannot be static.",pi);
 }
 
+void Error::LTC::invarVocIsNotTheoVoc(){
+	error("Proving invariants requires that your LTC theory and invariant range over the same vocabulary.");
+}
 
+void Error::LTC::strucVocIsNotTheoVoc(){
+	error("LTC operations require that structure and theory range over the same vocabulary.");
+}
 
-
-
+void Error::LTC::notInitialised(){
+	error("The theory you are using the progression inference on, has not yet been initialised. Please first apply the initialise inference.");
+}
+void Error::LTC::progressOverWrongVocabulary(const std::string& expectedVoc, const std::string& realVoc) {
+	stringstream ss;
+	ss << "The structure given to the progression inference should range over vocabulary " << realVoc << " but ranges over " << expectedVoc;
+	error(ss.str());
+}
 
 void Warning::cumulchance(double c) {
 	stringstream ss;

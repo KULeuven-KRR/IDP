@@ -41,6 +41,12 @@ ProveInvariantInference::~ProveInvariantInference() {
 }
 
 bool ProveInvariantInference::run() {
+	if(_ltcTheo->vocabulary() != _invariant->vocabulary()){
+		Error::LTC::invarVocIsNotTheoVoc();
+	}
+	if((_structure != NULL) && _ltcTheo->vocabulary() != _structure->vocabulary()){
+		Error::LTC::strucVocIsNotTheoVoc();
+	}
 	auto data = LTCData::instance();
 	try{
 		//Try transforming the vocabulary without info on Time, Start Next

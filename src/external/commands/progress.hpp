@@ -102,7 +102,7 @@ class InvariantInference : public InvariantInferenceBase{
 public:
 	InvariantInference()
 			: InvariantInferenceBase("isinvariant",
-					"Returns true if the second theory is an invariant of the first LTC-theory in the context of the given finite structure ",
+					"Returns true if the second theory is (provable with the induction method) an invariant of the first LTC-theory in the context of the given finite structure ",
 					false) {
 		setNameSpace(getInferenceNamespaceName());
 	}
