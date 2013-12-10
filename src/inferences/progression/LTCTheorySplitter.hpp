@@ -16,6 +16,7 @@
 #include <map>
 
 class SplitLTCTheory;
+class SplitLTCInvariant;
 class Sort;
 class Variable;
 class AbstractTheory;
@@ -39,13 +40,19 @@ private:
 	const LTCVocInfo* _vocInfo;
 
 public:
+	/*
+	 *
+	 */
 	static SplitLTCTheory* SplitTheory(const AbstractTheory* ltcTheo);
+	static SplitLTCInvariant* SplitInvariant(const AbstractTheory* invar);
+
 private:
 
 	LTCTheorySplitter();
 	~LTCTheorySplitter();
 
 	SplitLTCTheory* split(const Theory*);
+	SplitLTCInvariant* splitInvar(const Theory*);
 
 	/**
 	 * Checks whether all time-variables
@@ -57,14 +64,15 @@ private:
 
 	template<class T>
 	void checkQuantifications(T* t);
-
-	void createTheories(const Theory* theo);
+	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an invariant and the invariant formulas are created*/
+	void createTheories(const Theory* theo, bool invar);
 	void initializeVariables(const Theory* theo);
 
 	template<class T>
 	LTCFormulaInfo info(T* t);
 
+	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an invariant and the invariant formulas are created*/
 	template<class Form, class Construct>
-	void handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct);
+	void handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar);
 };
 
