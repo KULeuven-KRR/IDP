@@ -33,7 +33,8 @@ private:
 	const Function* _start;
 	const Function* _next;
 
-	bool _shouldUseStart;
+	bool _shouldUseStart; //Whether or not the initialise inference will use the interpretation of structures at time point "Start"
+	bool _forceIgnoreStart; //Whether or not the user has explicitely asked to ignore info on time point Start
 	const DomainElement* _startDomElem;
 
 	Structure* _result;

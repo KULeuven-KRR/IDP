@@ -78,7 +78,7 @@ LTCVocInfo* LTCVocabularyTransformer::transform() {
 		}
 	}
 	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
-		std::clog << "Transformeding the LTC vocabulary\n" << toString(_ltcVoc) << "\nResulted in the following two vocabularies:\n"
+		std::clog << "Transforming the LTC vocabulary\n" << toString(_ltcVoc) << "\nResulted in the following two vocabularies:\n"
 				<< toString(_result->stateVoc) << "\n" << toString(_result->biStateVoc) << "\n";
 	}
 	return _result;
