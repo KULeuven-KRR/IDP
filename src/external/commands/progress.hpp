@@ -112,3 +112,19 @@ public:
 		return InternalArgument(result);
 	}
 };
+
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*)> ProverInvariantInferenceBase;
+class ProverInvariantInference : public ProverInvariantInferenceBase{
+public:
+	ProverInvariantInference()
+			: ProverInvariantInferenceBase("isinvariant",
+					"Returns true if the second theory is (provable with the induction method) an invariant of the first LTC-theory ",
+					false) {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto result = ProveInvariantInference::proveInvariant(get<0>(args), get<1>(args), NULL);
+		return InternalArgument(result);
+	}
+};
