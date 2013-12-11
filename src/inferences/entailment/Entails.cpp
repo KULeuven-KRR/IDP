@@ -93,6 +93,16 @@ protected:
 	}
 };
 
+State Entails::doCheckEntailment(const std::string& command, const Theory* axioms, const Theory* conjectures) {
+		auto axclone = axioms->clone();
+		auto conjclone = conjectures->clone();
+		Entails c(command, axclone, conjclone);
+		auto result = c.checkEntailment();
+		axclone->recursiveDelete();
+		conjclone->recursiveDelete();
+		return result;
+	}
+
 Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures)
 		: 	command(command),
 			axioms(axioms),
