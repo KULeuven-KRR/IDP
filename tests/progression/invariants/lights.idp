@@ -1,0 +1,32 @@
+vocabulary V{
+	type Time
+	Start: Time
+	Next(Time):Time
+	
+	On(Time)
+	Off(Time)
+}
+
+theory T:V{
+	On(Start).
+	On(Next(t)) <=> ~On(t).
+	
+	{
+		Off(Next(t)) <- ~Off(t).
+	}
+
+}
+
+theory invar:V{
+	!t : ~On(t) | ~Off(t).
+	!t : On(t) | Off(t).
+}
+
+
+procedure expectedInvariant(){
+	return true
+}
+
+structure S:V{
+	Time = {1..100000}
+}

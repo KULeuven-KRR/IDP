@@ -34,10 +34,16 @@ vector<string> generateListOfProgressionFailFiles() {
 	vector<string> testdirs { "exception/" };
 	return getAllFilesInDirs(getTestDirectory() + "progression/", testdirs);
 }
+vector<string> generateListOfInvariantFiles() {
+	vector<string> testdirs { "invariants/" };
+	return getAllFilesInDirs(getTestDirectory() + "progression/", testdirs);
+}
 
 class ProgressionTest: public ::testing::TestWithParam<string> {
 };
 class ProgressionTestException: public ::testing::TestWithParam<string> {
+};
+class InvarTest: public ::testing::TestWithParam<string> {
 };
 
 TEST_P(ProgressionTest, DoesProgression) {
@@ -47,9 +53,17 @@ TEST_P(ProgressionTestException, DoesProgression) {
 	cerr << "Testing " << GetParam() << "\n";
 	ASSERT_EQ(Status::FAIL, test({ GetParam()}));
 }
+TEST_P(InvarTest, FindsInvariantWithMX) {
+	runTests("invartest.idp", GetParam(),"main(false)");
+}
+TEST_P(InvarTest, FindsInvariantWithProver) {
+	runTests("invartest.idp", GetParam(),"main(true)");
+}
 
 INSTANTIATE_TEST_CASE_P(Progression, ProgressionTest, ::testing::ValuesIn(generateListOfProgressionOKFiles()));
 INSTANTIATE_TEST_CASE_P(ProgressionThrows, ProgressionTestException, ::testing::ValuesIn(generateListOfProgressionFailFiles()));
+INSTANTIATE_TEST_CASE_P(Invariant, InvarTest, ::testing::ValuesIn(generateListOfInvariantFiles()));
+
 }
 
 
