@@ -3,21 +3,27 @@ procedure main(prover){
 	stdoptions.timeout = 5
 	local answer
 	if prover then
-		print("Not yet implemented: invariants with the prover")
-		return 0
+		answer = isinvariant(T,invar)
 	else
 		answer = isinvariant(T,invar,S)
 	end
 	
+	local expectedAnswer
+	if (prover and (expectedProverInvariant ~= nil)) then
+		expectedAnswer = expectedProverInvariant()
+	else
+		expectedAnswer = expectedInvariant()
+	end
+
 	if answer then
-		if expectedInvariant() then
+		if expectedAnswer then
 			return 1
 		else
 			print("Found invariant while not expecting one ")
 			return 0
 		end
 	else
-		if expectedInvariant() then
+		if expectedAnswer then
 			print("Did not find invariant while expecting one ")
 			return 0
 		else
