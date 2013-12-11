@@ -104,8 +104,17 @@ bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* im
 	return result;
 }
 
+bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* conjecture, bool initial) {
+	auto conj = new Theory("conjectures", hypothesis->vocabulary(), ParseInfo());
+	conj->add(conjecture);
+	auto command = getOption(StringType::PROVERCOMMAND);
+	auto result = Entails::doCheckEntailment(command, hypothesis, conj);
+	conj->recursiveDelete();
 
-bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* conjecture, bool initial){
-	notyetimplemented("prover and invariants");
+	if(result == State::PROVEN){
+		return true;
+	} else if(result == State::UNKNOWN){
+		Warning::warning("Could not prove invariant, but could not disprove it either");
+	}
 	return false;
 }
