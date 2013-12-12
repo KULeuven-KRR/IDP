@@ -57,6 +57,7 @@ class AbstractTheory;
 class Options;
 class UserProcedure;
 class Namespace;
+class LTCVocInfo;
 
 struct YYLTYPE;
 struct lua_State;
@@ -240,6 +241,8 @@ public:
 	void openexec(); //!< Start parsing a command
 	void closeNamespace(); //!< Close the current namespace
 	void closevocab(); //!< Close the current vocabulary
+	void closeLTCvocab(); //!< Close the current LTC-vocabulary: close it and finish it by performing all needed LTC transformations
+	void closeLTCvocab(NSPair* time, NSPair* start, NSPair* next); //!< Close the current LTC-vocabulary: close it and finish it by performing all needed LTC transformations using the provided ltc info
 	void closetheory(); //!< Close the current theory
 	void closequery(Query*); //!< Close the current named query
 	void closefobdd(const FOBDD*); //!< Close the current named query
@@ -411,6 +414,8 @@ private:
 	template<class Table>
 	void setInter(NSPair* nst, bool expectsFunc, UTF truthvalue, Table* t, int arity) const;
 	PFSymbol* findUniqueMatch(NSPair* nst)const;
+	void finishLTCVocab(Vocabulary* voc, const LTCVocInfo* ltcVocInfo);
+
 public:
 	/**
 	 * Returns true if this sort occurred in the user provided theory.

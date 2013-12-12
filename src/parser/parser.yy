@@ -106,6 +106,7 @@ void yyerror(const char* s);
 
 /** Headers  **/
 %token VOCAB_HEADER
+%token LTC_VOCAB_HEADER
 %token DEF_HEADER
 %token THEORY_HEADER
 %token STRUCT_HEADER
@@ -274,6 +275,12 @@ using			: USINGNAMESPACE pointer_name					{ data().usingspace(*$2,@1); delete($2
 /** Structure of vocabulary declaration **/
 
 vocabulary			: VOCAB_HEADER vocab_name '{' vocab_content '}'		{ data().closevocab();	}
+					;
+vocabulary			: LTC_VOCAB_HEADER vocab_name '{' vocab_content '}'		{ data().closeLTCvocab();	}
+					;
+
+vocabulary			: LTC_VOCAB_HEADER vocab_name '(' intern_pointer ',' intern_pointer ',' intern_pointer ')' 
+							'{' vocab_content '}'		{ data().closeLTCvocab($4,$6,$8);	}
 					;
 
 vocab_name			: identifier	{ data().openvocab(*$1,@1); }
