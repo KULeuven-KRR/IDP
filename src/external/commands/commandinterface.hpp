@@ -20,6 +20,9 @@
 #include "common.hpp"
 
 #include "loki/Typelist.h"
+class Structure;
+class AbstractTheory;
+class Vocabulary;
 
 std::string getInferenceNamespaceName();
 std::string getVocabularyNamespaceName();
@@ -28,12 +31,24 @@ std::string getTermNamespaceName();
 std::string getQueryNamespaceName();
 std::string getOptionsNamespaceName();
 std::string getStructureNamespaceName();
+template<typename T>
+std::string getNamespaceName();
+
+template<>
+std::string getNamespaceName<Structure*>();
+
+template<>
+std::string getNamespaceName<AbstractTheory*>();
+
+template<>
+std::string getNamespaceName<Vocabulary*>();
+
 
 //TODO refactor the monitors as extra arguments
 
 template<typename T> struct Type2Value;
 
-#define LIST(...) Loki::TL::MakeTypelist<__VA_ARGS__>::Result
+#define LIST(...) typename Loki::TL::MakeTypelist<__VA_ARGS__>::Result
 
 #define MAPPING(object, enumvalue)\
 template<>\

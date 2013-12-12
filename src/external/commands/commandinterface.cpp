@@ -11,6 +11,9 @@
 
 #include "commandinterface.hpp"
 #include "namespace/namespace.hpp"
+class Theory;
+class Structure;
+class Vocabulary;
 
 std::string getInferenceNamespaceName(){
 	return "inferences";
@@ -38,6 +41,21 @@ std::string getOptionsNamespaceName(){
 
 std::string getStructureNamespaceName(){
 	return "structure";
+}
+
+template<>
+std::string getNamespaceName<Structure*>(){
+	return getStructureNamespaceName();
+}
+
+template<>
+std::string getNamespaceName<AbstractTheory*>(){
+	return getTheoryNamespaceName();
+}
+
+template<>
+std::string getNamespaceName<Vocabulary*>(){
+	return getVocabularyNamespaceName();
 }
 
 void Inference::setNameSpace(const std::string& namespacename) {
