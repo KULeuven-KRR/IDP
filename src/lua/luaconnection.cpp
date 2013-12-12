@@ -1749,6 +1749,10 @@ void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements)
 const char* getInternalProcedureMetaTableName() {
 	return "internalprocedure";
 }
+/*
+ * GC means garbage collect
+ * If lua calls procedure __gc, we need to call &gc... (such as for example &gcInternProc, &gcSort, ...)
+ */
 
 void internProcMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
@@ -1887,12 +1891,12 @@ void queryMetaTable(lua_State* L) {
 
 void termMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader { &gcTerm, "__term" });
+	elements.push_back(tablecolheader { &gcTerm, "__gc" });
 	createNewTable(L, AT_TERM, elements);
 }
 void fobddMetaTable(lua_State* L) {
 	vector<tablecolheader> elements;
-	elements.push_back(tablecolheader { &gcFobdd, "__gc" }); //TODO: __gc????????
+	elements.push_back(tablecolheader { &gcFobdd, "__gc" });
 	createNewTable(L, AT_FOBDD, elements);
 }
 
