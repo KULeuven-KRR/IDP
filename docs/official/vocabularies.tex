@@ -175,3 +175,38 @@ Every structure contains the following fixed interpretations:
 \end{center}
 
 In an IDP-file, you should disambiguate which \code{MAX} you want to use.  This is done by \code{MAX[:MyType]}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{LTC vocabularies}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+You can declare a vocabulary to be an LTC-vocabulary, as defined \href{http://dtai.cs.kuleuven.be/krr/files/progression.pdf}{here}. Thus, a vocabulary containing a type $Time$, a constant $Start$ typed $Time$ and a function $Next$, $Time\to Time$. 
+If these types and functions have the above name, you do this as follows
+\begin{lstlisting}
+	LTCvocabulary V {
+		type Time	
+		Start:Time
+		Next(Time):Time
+		...//Rest of your vocabulary
+	}
+\end{lstlisting} 
+
+Doing so automatically creates  vocabularies $V\_ss$ (singlestate vocabulary) and $V\_bs$ (bistate vocabulary). 
+
+In case your type $Time$ is called differently, you can inform IDP about this with:
+
+\begin{lstlisting}
+	LTCvocabulary V (MyTime, MyStart, MyNext) {
+		type MyTime	
+		MyStart:MyTime
+		MyNext(MyTime):MyTime
+		...//Rest of your vocabulary
+	}
+\end{lstlisting} 
+
+
+
+
+
