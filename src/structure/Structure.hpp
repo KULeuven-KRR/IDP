@@ -90,6 +90,10 @@ public:
 
 	Universe universe(const PFSymbol*) const;
 
+	void name(std::string& name){
+		_name = name;
+	}
+
 	const std::string& name() const {
 		return _name;
 	}
