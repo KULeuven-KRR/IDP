@@ -419,12 +419,12 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 					if(translator()->domain(varone)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[0]==_true){
 						newvarids.push_back(vartwo);
 						newconditions.push_back(leftassetterm->conditions()[1]);
-						newweights.push_back((*translator()->domain(varone)->begin()).front()->value()._int);
+						newweights.push_back(weight1 * (*translator()->domain(varone)->begin()).front()->value()._int);
 						continue;
 					}else if(translator()->domain(vartwo)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[1]==_true){
 						newvarids.push_back(varone);
 						newconditions.push_back(leftassetterm->conditions()[0]);
-						newweights.push_back((*translator()->domain(vartwo)->begin()).front()->value()._int);
+						newweights.push_back(weight1 * (*translator()->domain(vartwo)->begin()).front()->value()._int);
 						continue;
 					}
 				}

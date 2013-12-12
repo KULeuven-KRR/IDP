@@ -573,15 +573,19 @@ void GrounderFactory::visit(const PredForm* pf) {
 		// so it a sum aggregate (with fixed bound) will be created during grounding
 		auto left = newpf->subterms()[0];
 		auto right = newpf->subterms()[1];
-		auto leftfunc = dynamic_cast<FuncTerm*>(left);
-		auto rightfunc = dynamic_cast<FuncTerm*>(right);
-		auto ints = get(STDSORT::INTSORT);
-		if (leftfunc != NULL && (is(leftfunc->function(), STDFUNC::ADDITION) || is(leftfunc->function(), STDFUNC::SUBSTRACTION))) {
-			newpf->subterm(1, new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()));
-			newpf->subterm(0, new FuncTerm(get(STDFUNC::SUBSTRACTION)->disambiguate( { ints, ints, ints }, NULL), { left, right }, TermParseInfo()));
-		} else if (rightfunc != NULL && (is(rightfunc->function(), STDFUNC::ADDITION) || is(rightfunc->function(), STDFUNC::SUBSTRACTION))) {
-			newpf->subterm(0, new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()));
-			newpf->subterm(1, new FuncTerm(get(STDFUNC::SUBSTRACTION)->disambiguate( { ints, ints, ints }, NULL), { right, left }, TermParseInfo()));
+		auto leftdom = dynamic_cast<DomainTerm*>(left);
+		auto rightdom = dynamic_cast<DomainTerm*>(right);
+		if((leftdom==NULL || leftdom->value()!=createDomElem(0)) && (rightdom==NULL || rightdom->value()!=createDomElem(0))){
+			auto leftfunc = dynamic_cast<FuncTerm*>(left);
+			auto rightfunc = dynamic_cast<FuncTerm*>(right);
+			auto ints = get(STDSORT::INTSORT);
+			if (leftfunc != NULL && (is(leftfunc->function(), STDFUNC::ADDITION) || is(leftfunc->function(), STDFUNC::SUBSTRACTION))) {
+				newpf->subterm(1, new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()));
+				newpf->subterm(0, new FuncTerm(get(STDFUNC::SUBSTRACTION)->disambiguate( { ints, ints, ints }, NULL), { left, right }, TermParseInfo()));
+			} else if (rightfunc != NULL && (is(rightfunc->function(), STDFUNC::ADDITION) || is(rightfunc->function(), STDFUNC::SUBSTRACTION))) {
+				newpf->subterm(0, new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()));
+				newpf->subterm(1, new FuncTerm(get(STDFUNC::SUBSTRACTION)->disambiguate( { ints, ints, ints }, NULL), { right, left }, TermParseInfo()));
+			}
 		}
 
 		handleWithComparisonGenerator(newpf);
