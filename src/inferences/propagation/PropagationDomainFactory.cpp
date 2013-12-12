@@ -20,7 +20,7 @@ using namespace std;
 
 
 FOPropBDDDomainFactory::FOPropBDDDomainFactory() {
-	_manager = make_shared<FOBDDManager>();
+	_manager = FOBDDManager::createManager(true);
 }
 
 FOPropBDDDomainFactory::~FOPropBDDDomainFactory() {

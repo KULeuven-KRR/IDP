@@ -624,7 +624,6 @@ PredInter* Structure::inter(const Predicate* p) const {
 	if (p == NULL) {
 		throw IdpException("Predicate was NULL");
 	}
-
 	if (p->builtin()) {
 		return p->interpretation(this);
 	}

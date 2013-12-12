@@ -197,3 +197,7 @@ Predicate* InternalArgument::get<Predicate*>() {
 		return *(preds->begin());
 	}
 }
+template<>
+const FOBDD* InternalArgument::get<const FOBDD*>() {
+	return _value._fobdd;
+}

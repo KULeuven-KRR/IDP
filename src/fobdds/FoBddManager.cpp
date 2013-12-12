@@ -203,9 +203,9 @@ const FOBDD* FOBDDManager::getBDD(const FOBDDKernel* kernel, const FOBDD* truebr
 	if (result != NULL) {
 		return result;
 	}
-
 	// Lookup failed, create a new bdd
-	return addBDD(kernel, truebranch, falsebranch);
+	auto returnvalue = addBDD(kernel, truebranch, falsebranch);
+	return returnvalue;
 
 }
 
@@ -213,10 +213,15 @@ const FOBDD* FOBDDManager::getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager
 	Copy copier(manager, shared_from_this());
 	return copier.copy(bdd);
 }
+const FOBDD* FOBDDManager::getBDDTryMaintainOrder(const FOBDD* bdd, std::shared_ptr<FOBDDManager> manager) {
+	Copy copier(manager, shared_from_this());
+	return copier.copyTryMaintainOrder(bdd);
+}
+
 
 FOBDD* FOBDDManager::addBDD(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
 	Assert(lookup < FOBDD > (_bddtable, kernel, falsebranch, truebranch) == NULL);
-	auto newbdd = new FOBDD(kernel, truebranch, falsebranch);
+	FOBDD* newbdd = new FOBDD(kernel, truebranch, falsebranch,shared_from_this());
 	_bddtable[kernel][falsebranch][truebranch] = newbdd;
 	return newbdd;
 }
@@ -373,7 +378,9 @@ const FOBDDKernel* FOBDDManager::getQuantKernel(Sort* sort, const FOBDD* bdd) {
 		return resultingQK;
 	}
 	// Lookup failed, create a new quantified kernel
+
 	return addQuantKernel(sort, bdd);
+
 }
 
 FOBDDQuantKernel* FOBDDManager::addQuantKernel(Sort* sort, const FOBDD* bdd) {
@@ -397,6 +404,31 @@ const FOBDDKernel* FOBDDManager::getAggKernel(const FOBDDTerm* left, CompType co
 		return resultingAK;
 	}
 	return addAggKernel(left, comp, newright);
+}
+
+const FOBDDTerm* FOBDDManager::getFOBDDTerm(Term* t){
+	if(isa<VarTerm>(*t)){
+		auto vt = dynamic_cast<VarTerm*>(t);
+		return getVariable(vt->var());
+	}else if(isa<FuncTerm>(*t)){
+		auto ft = dynamic_cast<FuncTerm*>(t);
+		auto symbol= ft->function();
+		vector<const FOBDDTerm*> newargs;
+		for(auto subterm:ft->subterms()){
+			newargs.push_back(getFOBDDTerm(subterm));
+		}
+		auto fobddfunc = getFuncTerm(symbol,newargs);
+		return fobddfunc;
+	}else if(isa<DomainTerm>(*t)){
+		auto dt = dynamic_cast<DomainTerm*>(t);
+		return getDomainTerm(dt);
+	}else if(isa<AggTerm>(*t)){
+		throw notyetimplemented("Parsing special FOBDDs");
+		return NULL;
+	}else{
+		throw notyetimplemented("Parsing special FOBDDs");
+		return NULL;
+	}
 }
 
 const FOBDDEnumSetExpr* FOBDDManager::getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort) {
@@ -915,11 +947,11 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	}
 	const FOBDDKernel* truekernel = truebranch->kernel();
 	const FOBDDKernel* falsekernel = falsebranch->kernel();
-
 	if (*kernel < *truekernel) {
 		if (*kernel < *falsekernel) {
 			result = getBDD(kernel, truebranch, falsebranch);
 		} else if (kernel == falsekernel) {
+
 			result = getBDD(kernel, truebranch, falsebranch->falsebranch());
 		} else {
 			Assert(*kernel > *falsekernel);
@@ -958,6 +990,15 @@ const FOBDD* FOBDDManager::ifthenelse(const FOBDDKernel* kernel, const FOBDD* tr
 	_ifthenelsetable[kernel][truebranch][falsebranch] = result;
 	return result;
 
+}
+const FOBDD* FOBDDManager::ifthenelseTryMaintainOrder(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) {
+	auto ifthenelsebdd=ifthenelse(kernel,truebranch,falsebranch);
+	const FOBDDKernel* truekernel = truebranch->kernel();
+	const FOBDDKernel* falsekernel = falsebranch->kernel();
+	while((*kernel>*truekernel)||(*kernel>*falsekernel)){
+		moveUp(kernel);
+	}
+	return ifthenelsebdd;
 }
 const FOBDDQuantSetExpr* FOBDDManager::setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort) {
 	std::vector<Sort*> sorts(vars.size());
@@ -1692,14 +1733,25 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 	_nextorder[KernelOrderCategory::TRUEFALSECATEGORY] = 0;
 	_nextorder[KernelOrderCategory::STANDARDCATEGORY] = 0;
 	_nextorder[KernelOrderCategory::DEBRUIJNCATEGORY] = 0;
-
-	KernelOrder ktrue = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	KernelOrder kfalse = newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	_truekernel = new TrueFOBDDKernel(ktrue);
-	_falsekernel = new FalseFOBDDKernel(kfalse);
-	_truebdd = new TrueFOBDD(_truekernel);
-	_falsebdd = new FalseFOBDD(_falsekernel);
+	_truekernel = NULL;
+	_falsekernel = NULL;
+	_truebdd = NULL;
+	_falsebdd = NULL;
 }
+shared_ptr<FOBDDManager> FOBDDManager::createManager(bool rewriteArithmetic){
+	auto returnmanager = shared_ptr<FOBDDManager>(new FOBDDManager(rewriteArithmetic));
+	KernelOrder ktrue = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	KernelOrder kfalse = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	auto truekernel = new TrueFOBDDKernel(ktrue);
+	auto falsekernel = new FalseFOBDDKernel(kfalse);
+	returnmanager->setTrueKernel(truekernel);
+	returnmanager->setFalseKernel(falsekernel);
+	returnmanager->setTrueBDD(new TrueFOBDD(truekernel,returnmanager));
+	returnmanager->setFalseBDD(new FalseFOBDD(falsekernel,returnmanager));
+	return returnmanager;
+
+}
+
 FOBDDManager::~FOBDDManager() {
 	delete _truebdd;
 	delete _falsebdd; //!< the BDD 'false'

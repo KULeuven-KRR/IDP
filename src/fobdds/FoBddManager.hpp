@@ -126,9 +126,8 @@ private:
 public:
 	//NOTE: if rewriteArithmetic is false, a lot of operations on bdds are no longer as efficient (or even possible) (for example solve)
 	//Only set this to false is you want to simplify a formula by formula->bdd->formula
-	FOBDDManager(bool rewriteArithmetic = true);
 	~FOBDDManager();
-
+	static std::shared_ptr<FOBDDManager> createManager(bool rewriteArithmetic= true);
 	const FOBDD* truebdd() const {
 		return _truebdd;
 	}
@@ -150,6 +149,8 @@ public:
 	const FOBDDKernel* getAtomKernel(PFSymbol*, AtomKernelType, const std::vector<const FOBDDTerm*>&);
 	const FOBDDKernel* getQuantKernel(Sort* sort, const FOBDD* bdd);
 	const FOBDDKernel* getAggKernel(const FOBDDTerm* left, CompType comp, const FOBDDTerm* right);
+
+	const FOBDDTerm* getFOBDDTerm(Term*);
 
 	const FOBDDEnumSetExpr* getEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	//This method assumes that the formula is already bumped and that all quantified variables are already replaced by their debruynindices.
@@ -173,7 +174,8 @@ public:
 	const FOBDD* univquantify(const fobddvarset&, const FOBDD*);
 	const FOBDD* existsquantify(const fobddvarset&, const FOBDD*);
 	const FOBDD* ifthenelse(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
-
+	//Does the same as ifthenelse but puts kernel above true and falsebranch
+	const FOBDD* ifthenelseTryMaintainOrder(const FOBDDKernel*, const FOBDD* truebranch, const FOBDD* falsebranch);
 	const FOBDD* replaceFreeVariablesByIndices(const fobddvarset&, const FOBDD*);
 
 	const FOBDDQuantSetExpr* setquantify(const std::vector<const FOBDDVariable*>& vars, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
@@ -221,7 +223,9 @@ public:
 	const FOBDD* getBDD(const FOBDD* bdd, std::shared_ptr<FOBDDManager>); //!< Given a bdd and the manager that created the bdd,
 														  //!< this function returns the same bdd, but created
 														  //!< by the manager 'this'
-
+	const FOBDD* getBDDTryMaintainOrder(const FOBDD* bdd, std::shared_ptr<FOBDDManager>); //!< Given a bdd and the manager that created the bdd,
+														  //!< this function returns the same bdd, but created
+														  //!< by the manager 'this', and tries to maintain order
 	/**
 	 * Try to rewrite the given arithmetic kernel such that the right-hand side is the given argument,
 	 * and such that the given argument does not occur in the left-hand side.
@@ -241,6 +245,7 @@ public:
 	std::vector<Path> pathsToFalse(const FOBDD* bdd) const;
 
 private:
+	FOBDDManager(bool rewriteArithmetic = true);
 	KernelOrder newOrder(KernelOrderCategory category);
 	KernelOrder newOrder(const std::vector<const FOBDDTerm*>& args);
 	KernelOrder newOrderForQuantifiedBDD(const FOBDD* bdd);
@@ -258,6 +263,18 @@ private:
 	FOBDDEnumSetExpr* addEnumSetExpr(const std::vector<const FOBDDQuantSetExpr*>& subsets, Sort* sort);
 	FOBDDQuantSetExpr* addQuantSetExpr(const std::vector<Sort*>& varsorts, const FOBDD* formula, const FOBDDTerm* term, Sort* sort);
 
+	void setTrueKernel(FOBDDKernel* k){
+		_truekernel=k;
+	}
+	void setFalseKernel(FOBDDKernel* k){
+		_falsekernel=k;
+	}
+	void setTrueBDD(FOBDD* bdd){
+		_truebdd=bdd;
+	}
+	void setFalseBDD(FOBDD* bdd){
+		_falsebdd=bdd;
+	}
 	void clearDynamicTables();
 
 	const FOBDD* quantify(Sort* sort, const FOBDD* bdd);

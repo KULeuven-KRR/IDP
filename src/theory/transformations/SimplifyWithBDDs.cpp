@@ -29,7 +29,7 @@ Theory* SimplifyWithBdds::execute(Theory* theo) {
 }
 
 Formula* SimplifyWithBdds::execute(Formula* f) {
-	auto manager = make_shared<FOBDDManager>();
+	auto manager = FOBDDManager::createManager();
 	FOBDDFactory factory(manager);
 	auto bdd = factory.turnIntoBdd(f);
 	f->recursiveDelete();

@@ -47,7 +47,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 		manager = symbolicstructure->obtainManager();
 	} else {
 		//When working two-valued, we can simply turn formula to BDD
-		manager = make_shared<FOBDDManager>();
+		manager = FOBDDManager::createManager();
 		FOBDDFactory factory(manager);
 		bdd = factory.turnIntoBdd(newquery);
 	}
@@ -107,6 +107,66 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 	//cerr <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < vars.size(); ++n) {
+			currtuple[n] = data.vars[n]->get();
+		}
+		result->add(currtuple);
+	}
+	delete generator;
+	return result;
+}
+
+PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const structure) const {
+	auto manager= bdd->manager();
+	Assert(bdd != NULL);
+	if (getOption(IntType::VERBOSE_QUERY) > 0) {
+		clog << "FOBDD-Query-BDD:" << "\n" << print(bdd) << "\n";
+	}
+	Assert(manager != NULL);
+
+	auto bddvars = variables(bdd,manager);
+
+	fobddindexset bddindices;
+
+	Assert(bdd != NULL);
+
+	// create a generator
+	BddGeneratorData data;
+	data.bdd = bdd;
+	data.structure = structure;
+	std::map<Variable*,const DomElemContainer*> varsToDomElemContainers;
+	for (auto it: bddvars) {
+		auto var = it->variable();
+		data.pattern.push_back(Pattern::OUTPUT);
+		auto dec = varsToDomElemContainers.find(var);
+		if (dec == varsToDomElemContainers.cend()) {
+			auto res = new const DomElemContainer();
+			varsToDomElemContainers[var] = res;
+			data.vars.push_back(res);
+		} else {
+			data.vars.push_back(dec->second);
+		}
+		data.bddvars.push_back(manager->getVariable(var));
+		data.universe.addTable(structure->inter((var)->sort()));
+	}
+	BDDToGenerator btg(manager);
+
+	InstGenerator* generator = btg.create(data);
+	if (getOption(IntType::VERBOSE_QUERY) > 0) {
+		clog << "FOBDD-Query-Generator:" << "\n" << print(generator) << "\n";
+	}
+
+// Create an empty table
+	std::vector<SortTable*> vst;
+	for (auto it:bddvars) {
+		auto var = it->variable();
+		vst.push_back(structure->inter((var)->sort()));
+	}
+	Universe univ(vst);
+	auto result = TableUtils::createPredTable(univ);
+	// execute the query
+	ElementTuple currtuple(bddvars.size());
+	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
+		for (unsigned int n = 0; n < bddvars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();
 		}
 		result->add(currtuple);

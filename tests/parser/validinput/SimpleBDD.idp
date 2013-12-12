@@ -1,0 +1,31 @@
+vocabulary V{
+type t isa int
+P(t)
+R(t)
+}
+
+fobdd F : V{ 
+	P(x[t])
+	FALSE BRANCH:
+		false
+	TRUE BRANCH:
+		R(y[t])
+		FALSE BRANCH:
+			false
+		TRUE BRANCH:	
+			x>y
+			FALSE BRANCH:
+				false
+			TRUE BRANCH:
+				true
+}
+
+structure S:V{
+t= {1..5}
+P={1..2}
+R={1..4}
+}
+
+procedure main(){
+	return 1
+}

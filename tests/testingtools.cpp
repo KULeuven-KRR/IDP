@@ -62,7 +62,7 @@ TestingSet1 getTestingSet1() {
 
 BDDTestingSet1 getBDDTestingSet1(int pxmin, int pxmax, int qxmin, int qxmax) {
 	BDDTestingSet1 result;
-	auto manager = make_shared<FOBDDManager>();
+	auto manager = FOBDDManager::createManager();
 	auto ts1 = getTestingSet1();
 	result.ts1 = ts1;
 	result.manager = manager;

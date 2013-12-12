@@ -37,6 +37,7 @@ class GroundSet;
 class GroundAggregate;
 class GroundTranslator;
 class PredTable;
+class FOBDD;
 typedef std::vector<Lit> GroundClause;
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
@@ -80,6 +81,7 @@ protected:
 	virtual void visit(const Vocabulary*) = 0;
 	virtual void visit(const Structure*) = 0;
 	virtual void visit(const Query*) = 0;
+	virtual void visit(const FOBDD*) = 0;
 	virtual void visit(const Namespace*) = 0;
 	virtual void visit(const UserProcedure*) = 0;
 	virtual void visit(const GroundClause&) = 0;
@@ -131,6 +133,7 @@ template<> void Printer::print(const Namespace* b);
 template<> void Printer::print(const Vocabulary* b);
 template<> void Printer::print(const Query* b);
 template<> void Printer::print(const UserProcedure* b);
+template<> void Printer::print(const FOBDD* b);
 
 template<typename Stream>
 class StreamPrinter: public Printer {

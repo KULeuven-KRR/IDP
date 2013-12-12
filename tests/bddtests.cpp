@@ -59,7 +59,7 @@ TEST(BddGenerator, PredForm){
 		predinter->makeFalse({createDomElem(2)});
 		predinter->makeTrue({createDomElem(-2)});
 
-		auto manager = make_shared<FOBDDManager>();
+		auto manager = FOBDDManager::createManager();
 		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
@@ -102,7 +102,7 @@ TEST(BddGenerator, PredForm){
 		auto structure = new Structure("S", ParseInfo());
 		structure->changeVocabulary(vocabulary);
 
-		auto manager = make_shared<FOBDDManager>();
+		auto manager = FOBDDManager::createManager();
 		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
@@ -154,7 +154,7 @@ TEST(BddGenerator, PredForm){
 		auto symbol = new Predicate("P", {sort}, {}, false);
 		auto derivedsymbol = symbol->derivedSymbol(ST_PT);
 		auto formula = new PredForm(SIGN::POS, derivedsymbol, {sortterm}, FormulaParseInfo());
-		auto manager = make_shared<FOBDDManager>();
+		auto manager = FOBDDManager::createManager();
 		FOBDDFactory bddfactory(manager, NULL);
 
 		BddGeneratorData data;
@@ -200,7 +200,7 @@ TEST(BddGenerator, PredForm){
 		auto symbol = new Predicate("P", {sort}, {}, false);
 		Formula* formula = new PredForm(SIGN::POS, symbol, {sortterm}, FormulaParseInfo());
 		formula = new QuantForm(SIGN::POS, QUANT::EXIST, {variable}, formula, FormulaParseInfo());
-		auto manager = make_shared<FOBDDManager>();
+		auto manager = FOBDDManager::createManager();
 		FOBDDFactory bddfactory(manager, NULL);
 		auto bdd = bddfactory.turnIntoBdd(formula);
 

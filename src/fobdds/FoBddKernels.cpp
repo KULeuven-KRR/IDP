@@ -12,6 +12,7 @@
 #include "fobdds/FoBddAtomKernel.hpp"
 #include "fobdds/FoBddQuantKernel.hpp"
 #include "fobdds/FoBddAggKernel.hpp"
+#include "fobdds/FoBddManager.hpp"
 #include "fobdds/FoBddVisitor.hpp"
 #include "fobdds/FoBddKernel.hpp"
 #include "fobdds/FoBdd.hpp"
@@ -83,12 +84,17 @@ std::ostream& FOBDDAtomKernel::put(std::ostream& output) const {
 	return output;
 }
 std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
-	output << "EXISTS(" << print(_sort) << ") {";
+	auto const v = new Variable(_sort);
+	output << "EXISTS(" << print(v) << ") {";
 	pushtab();
-	output << "" << nt() << print(_bdd);
+	auto bddmanager = FOBDDManager::createManager(false);
+	auto newbdd=bddmanager->getBDDTryMaintainOrder(_bdd,_bdd->manager());
+	auto nodebruijnbdd = bddmanager->substitute(newbdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
+	output << "" << nt() << print(nodebruijnbdd);
 	poptab();
 	output << "" << nt();
 	output << "}";
+	delete(v);
 	return output;
 }
 std::ostream& FOBDDAggKernel::put(std::ostream& output) const {

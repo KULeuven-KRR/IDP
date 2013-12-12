@@ -365,6 +365,10 @@ COMMENTLINE2	"--".*
 						  parser.advancecol();
 						  return QUERY_HEADER;
 						}
+"fobdd"					{ BEGIN(theory);
+						  parser.advancecol();
+						  return FOBDD_HEADER;
+						}
 "Term"					{ BEGIN(theory);
 						  parser.advancecol();
 						  return TERM_HEADER;
@@ -484,6 +488,18 @@ COMMENTLINE2	"--".*
 								return IN;				}
 <theory>"sat"				{parser.advancecol();
 								return SAT;				}
+
+	/** Fobdds **/
+<theory>"FALSE BRANCH:"	{ parser.advancecol();
+							  return FALSEBRANCH;		}					
+
+<theory>"TRUE BRANCH:"		{ parser.advancecol();
+							  return TRUEBRANCH;		}
+							  
+<theory>"EXISTS:"			{ parser.advancecol();
+							  return EXISTS;		}						
+							  
+							  								
 
 
 	/****************

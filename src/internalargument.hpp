@@ -42,6 +42,7 @@ class PredInter;
 class FuncInter;
 class TableIterator;
 class SortIterator;
+class FOBDD;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -70,6 +71,7 @@ enum ArgType {
 	AT_FORMULA, //!< a formula
 	AT_THEORY, //!< a theory
 	AT_TERM, //!< a term
+	AT_FOBDD, //!< a fobdd
 
 	// Options
 	AT_OPTIONS, //!< an options block
@@ -177,6 +179,7 @@ private:
 	Formula* _formula;
 	Query* _query;
 	Term* _term;
+	const FOBDD* _fobdd;
 
 	std::set<Predicate*> _predicate;
 	std::set<Function*> _function;
@@ -185,7 +188,7 @@ private:
 public:
 	// Constructor
 	OverloadedObject()
-			: _namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL), _formula(NULL), _query(NULL), _term(NULL) {
+			: _namespace(NULL), _vocabulary(NULL), _theory(NULL), _structure(NULL), _options(NULL), _procedure(NULL), _formula(NULL), _query(NULL), _term(NULL), _fobdd(NULL) {
 	}
 
 	void insert(Namespace* n) {
@@ -215,6 +218,9 @@ public:
 	void insert(Term* t) {
 		_term = t;
 	}
+	void insert(const FOBDD* f){
+		_fobdd = f;
+	}
 
 	Structure* structure() const {
 		return _structure;
@@ -239,6 +245,9 @@ public:
 	}
 	Term* term() const {
 		return _term;
+	}
+	const FOBDD* fobdd() const{
+		return _fobdd;
 	}
 
 	std::vector<ArgType> types() {
@@ -267,6 +276,8 @@ public:
 			result.push_back(AT_QUERY);
 		if (_term)
 			result.push_back(AT_TERM);
+		if(_fobdd)
+			result.push_back(AT_FOBDD);
 		return result;
 	}
 };
@@ -295,6 +306,7 @@ struct InternalArgument {
 		Term* _term;
 		Options* _options;
 		Namespace* _namespace;
+		const FOBDD* _fobdd;
 
 		int _int;
 		double _double;
@@ -407,6 +419,10 @@ struct InternalArgument {
 	InternalArgument(Term* t)
 			: _type(AT_TERM) {
 		_value._term = t;
+	}
+	InternalArgument(const FOBDD* f)
+			: _type(AT_FOBDD) {
+		_value._fobdd = f;
 	}
 	InternalArgument(const DomainElement* el);
 	InternalArgument(LuaTraceMonitor* v)

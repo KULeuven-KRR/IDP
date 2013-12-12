@@ -25,9 +25,12 @@
 #include "internalargument.hpp"
 #include "lua/luaconnection.hpp"
 #include "theory/Query.hpp"
+#include "fobdds/FoBdd.hpp"
 #include "structure/StructureComponents.hpp"
-
+#include "fobdds/CommonBddTypes.hpp"
+#include "fobdds/FoBddManager.hpp"
 #include "GlobalData.hpp"
+#include "fobdds/FoBddQuantKernel.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -84,8 +87,6 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 	sstr << ':' << vs.back()->name() << ']';
 	return sstr.str();
 }
-
-
 
 /*************
  VARNAME
@@ -162,7 +163,7 @@ ostream& NSPair::put(ostream& output) const {
  * Insert
  **********/
 
-varset Insert::varVectorToSet(std::vector<Variable*>* v){
+varset Insert::varVectorToSet(std::vector<Variable*>* v) {
 	varset out = varset();
 	copy(v->begin(), v->end(), inserter(out, out.begin()));
 	return out;
@@ -453,6 +454,20 @@ Query* Insert::queryInScope(const string& name, const ParseInfo& pi) const {
 		}
 	}
 	return q;
+}
+
+const FOBDD* Insert::fobddInScope(const string& name, const ParseInfo& pi) const {
+	const FOBDD* b = NULL;
+	for (size_t n = 0; n < _usingspace.size(); ++n) {
+		if (_usingspace[n]->isFOBDD(name)) {
+			if (b) {
+				overloaded(ComponentType::FOBDD, name, plist { _usingspace[n]->fobdd(name)->pi(), b->pi() }, pi);
+			} else {
+				b = _usingspace[n]->fobdd(name);
+			}
+		}
+	}
+	return b;
 }
 
 Term* Insert::termInScope(const string& name, const ParseInfo& pi) const {
@@ -775,6 +790,16 @@ void Insert::openquery(const string& qname, YYLTYPE l) {
 		declaredEarlier(ComponentType::Query, qname, pi, q->pi());
 	}
 }
+void Insert::openfobdd(const string& bddname, YYLTYPE l) {
+	openblock();
+	ParseInfo pi = parseinfo(l);
+	auto b = fobddInScope(bddname, pi);
+	if (b) {
+		declaredEarlier(ComponentType::FOBDD, bddname, pi, b->pi());
+	}
+	_currfobdd = bddname;
+	_currmanager = FOBDDManager::createManager(false);
+}
 
 void Insert::openterm(const string& tname, YYLTYPE l) {
 	openblock();
@@ -825,7 +850,7 @@ void checkForUnusedVariables(const varset& vv, Args&... args) {
 }
 
 void Insert::closequery(Query* q) {
-	if(q!=NULL){
+	if (q != NULL) {
 		freevars(q->pi(), true);
 	}
 
@@ -844,9 +869,19 @@ void Insert::closequery(Query* q) {
 	}
 	closeblock();
 }
+void Insert::closefobdd(const FOBDD* b) {
+	freevars(b->pi(), false);
+	_curr_vars.clear();
+	if (b) {
+		_currspace->add(_currfobdd, b);
+		if (_currspace->isGlobal()) {
+			LuaConnection::addGlobal(_currfobdd, b);
+		}
+	}
+}
 
 void Insert::closeterm(Term* t) {
-	if(t!=NULL){
+	if (t != NULL) {
 		freevars(t->pi(), true);
 	}
 
@@ -973,7 +1008,8 @@ Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	return p;
 }
 
-Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) const {
+Predicate* Insert::predpointer(longname& vs, const vector<Sort*>& va,
+YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Predicate* p = predpointer(copyvs, va.size(), l);
@@ -996,7 +1032,8 @@ Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	return f;
 }
 
-Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va, YYLTYPE l) const {
+Function* Insert::funcpointer(longname& vs, const vector<Sort*>& va,
+YYLTYPE l) const {
 	ParseInfo pi = parseinfo(l);
 	longname copyvs = vs;
 	Function* f = funcpointer(copyvs, va.size() - 1, l);
@@ -1115,7 +1152,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 	// Add the subsorts
 	for (unsigned int n = 0; n < subs.size(); ++n) {
 		if (subs[n]) {
-			if(subs[n]->isConstructed()){
+			if (subs[n]->isConstructed()) {
 				constructedTypeAsSubtype(ComponentType::Sort, subs[n]->name(), pi);
 			}
 			for (unsigned int m = 0; m < sups.size(); ++m) {
@@ -1197,7 +1234,7 @@ Function* Insert::function(const string& name, const vector<Sort*>& insorts, Sor
 
 Function* Insert::constructorfunction(const string& name, const vector<Sort*>& insorts, YYLTYPE l) const {
 	Assert(parsingType!=NULL);
-	return createfunction(name,insorts,parsingType, true, l);
+	return createfunction(name, insorts, parsingType, true, l);
 }
 
 Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
@@ -1335,10 +1372,10 @@ Formula* Insert::falseform(YYLTYPE l) const {
 
 Formula* Insert::predformVar(NSPair* nst, const vector<Variable*>& vt, YYLTYPE l) const {
 	std::vector<Term*> vs = vector<Term*>();
-	for(auto var : vt){
-		vs.push_back(new VarTerm(var,TermParseInfo()));
+	for (auto var : vt) {
+		vs.push_back(new VarTerm(var, TermParseInfo()));
 	}
-	return predform(nst,vs,l);
+	return predform(nst, vs, l);
 }
 
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
@@ -1430,7 +1467,8 @@ Formula* Insert::equalityhead(Term* left, Term* right, YYLTYPE l) const {
 	return new PredForm(SIGN::POS, functerm->function(), vt2, pi);
 }
 
-Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t, YYLTYPE l) const {
+Formula* Insert::funcgraphform(NSPair* nst, const vector<Term*>& vt, Term* t,
+YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size() + 1) {
 			incompatiblearity(toString(nst), (nst->_sorts).size(), vt.size() + 1, nst->_pi);
@@ -1516,7 +1554,8 @@ Formula* Insert::equivform(Formula* lf, Formula* rf, YYLTYPE l) const {
 	}
 }
 
-Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf, YYLTYPE l) const {
+Formula* Insert::boolform(bool conj, Formula* lf, Formula* rf,
+YYLTYPE l) const {
 	if (lf && rf) {
 		vector<Formula*> vf(2);
 		vector<Formula*> pivf(2);
@@ -1593,11 +1632,12 @@ Formula* Insert::existform(const varset& vv, Formula* f, YYLTYPE l) {
 	return quantform(false, vv, f, l);
 }
 
-Formula* Insert::bexform(CompType c, int bound, const varset& vv, Formula* f, YYLTYPE l) {
+Formula* Insert::bexform(CompType c, int bound, const varset& vv, Formula* f,
+YYLTYPE l) {
 	if (f == NULL) {
 		return f;
 	}
-	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(f, l,vv), l));
+	auto aggterm = dynamic_cast<AggTerm*>(aggregate(AggFunction::CARD, set(f, l, vv), l));
 	auto boundterm = domterm(bound, l);
 
 	// Create parseinfo (TODO UGLY!)
@@ -1745,40 +1785,38 @@ Variable* Insert::getVar(const string& name) const {
 }
 
 Term* Insert::term(NSPair* nst) {
-	if (nst->_sortsincluded || (nst->_name).size() != 1) {
-		vector<Term*> vt = vector<Term*>(0);
-		return functerm(nst, vt);
-	} else {
-		Term* t = NULL;
-		string name = (nst->_name)[0];
-		Variable* v = getVar(name);
-		nst->includeArity(0);
-		Function* f = funcInScope(nst->_name, nst->_pi);
-		if (v != NULL) {
-			if (f != NULL) {
-				Warning::varcouldbeconst((nst->_name)[0], nst->_pi);
-			}
-			auto temp = new VarTerm(v, TermParseInfo());
-			t = new VarTerm(v, termparseinfo(temp, nst->_pi));
-			temp->recursiveDelete();
-			delete (nst);
-		} else if (f != NULL) {
-			vector<Term*> vt(0);
-			nst->_name = vector<string>(1, name);
-			nst->_arityincluded = false;
-			t = functerm(nst, vt);
-		} else {
-			YYLTYPE l;
-			l.first_line = (nst->_pi).linenumber();
-			l.first_column = (nst->_pi).columnnumber();
-			v = quantifiedvar(name, l);
-			auto temp = new VarTerm(v, TermParseInfo());
-			t = new VarTerm(v, termparseinfo(temp, nst->_pi));
-			temp->recursiveDelete();
-			delete (nst);
+	Term* t = NULL;
+	string name = (nst->_name)[0];
+	Variable* v = getVar(name);
+	nst->includeArity(0);
+	Function* f = funcInScope(nst->_name, nst->_pi);
+	if (v != NULL) {
+		if (f != NULL) {
+			Warning::varcouldbeconst((nst->_name)[0], nst->_pi);
 		}
-		return t;
+		auto temp = new VarTerm(v, TermParseInfo());
+		t = new VarTerm(v, termparseinfo(temp, nst->_pi));
+		temp->recursiveDelete();
+		delete (nst);
+	} else if (f != NULL) {
+		vector<Term*> vt(0);
+		nst->_name = vector<string>(1, name);
+		nst->_arityincluded = false;
+		t = functerm(nst, vt);
+	} else {
+		YYLTYPE l;
+		l.first_line = (nst->_pi).linenumber();
+		l.first_column = (nst->_pi).columnnumber();
+		v = quantifiedvar(name, l);
+		auto temp = new VarTerm(v, TermParseInfo());
+		t = new VarTerm(v, termparseinfo(temp, nst->_pi));
+		if (nst->_sortsincluded && nst->_sorts.size() == 1) {
+			t->sort(*(nst->_sorts.begin())); //it's a variable with a declared sort, so include sort in var
+		}
+		temp->recursiveDelete();
+		delete (nst);
 	}
+	return t;
 }
 
 FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
@@ -1792,6 +1830,13 @@ FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 		auto temp = new FuncTerm(f, pivt, TermParseInfo());
 		auto pi = termparseinfo(temp, l);
 		temp->recursiveDelete();
+		bool knowntype = (lt->sort() && rt->sort());
+		if (knowntype) {
+			auto fnew= f->disambiguate( { lt->sort(), rt->sort(), NULL }, _currvocabulary);
+			if(fnew!=NULL){
+				f=fnew;
+			}
+		}
 		return new FuncTerm(f, vt, pi);
 	} else {
 		if (lt) {
@@ -1813,6 +1858,10 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 	Assert(f);
 	vector<Term*> vt(1, t);
 	vector<Term*> pivt(1, t->clone());
+	bool knowntype = t->sort();
+	if (knowntype) {
+		f = f->disambiguate( { t->sort(), NULL }, _currvocabulary);
+	}
 	auto temp = new FuncTerm(f, pivt, TermParseInfo());
 	auto res = new FuncTerm(f, vt, termparseinfo(temp, l));
 	temp->recursiveDelete();
@@ -1889,7 +1938,73 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 		return NULL;
 	}
 }
-EnumSetExpr* Insert::set(Formula* f, Term* counter, YYLTYPE l,const varset& vv) {
+
+const FOBDD* Insert::fobdd(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch, YYLTYPE l) const {
+	auto returnvalue = _currmanager->ifthenelseTryMaintainOrder(kernel, truebranch, falsebranch);
+	return returnvalue;
+}
+
+const FOBDDKernel* Insert::atomkernel(Formula* p) const {
+	if (isa<PredForm>(*p)) {
+		auto f = dynamic_cast<PredForm*>(p);
+		auto symbol = f->symbol();
+		vector<const FOBDDTerm*> newargs;
+		for (auto subterm : p->subterms()) {
+			newargs.push_back(_currmanager->getFOBDDTerm(subterm));
+		}
+		const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, newargs));
+		return returnvalue;
+	} else if (isa<EqChainForm>(*p)) {
+		auto f = dynamic_cast<EqChainForm*>(p);
+		auto length = f->comps().size();
+		PFSymbol* symbol;
+		if (length == 1) {
+			for (auto comp : f->comps()) {
+				switch (comp) {
+				case CompType::EQ:
+					symbol = get(STDPRED::EQ, f->subterms()[0]->sort());
+					break;
+				case CompType::LT:
+					symbol = get(STDPRED::LT, f->subterms()[0]->sort());
+					break;
+				case CompType::GT:
+					symbol = get(STDPRED::GT, f->subterms()[0]->sort());
+					break;
+				default:
+					throw notyetimplemented("Parsing eqchains that isn't >, < or =");
+					break;
+				}
+				vector<const FOBDDTerm*> newargs;
+				for (auto subterm : p->subterms()) {
+					newargs.push_back(_currmanager->getFOBDDTerm(subterm));
+				}
+				const FOBDDKernel* returnvalue(_currmanager->getAtomKernel(symbol, AtomKernelType::AKT_TWOVALUED, newargs));
+				return returnvalue;
+			}
+
+		} else {
+			throw notyetimplemented("Chains of (in)equalities in a single atomkernel");
+		}
+	} else {
+		throw notyetimplemented("Parsing non(predicates/equalities) in FOBDD");
+	}
+	return NULL;
+}
+const FOBDDKernel* Insert::quantkernel(Variable* var, const FOBDD* bdd) const {
+	auto debruijnbdd = _currmanager->substitute(bdd, _currmanager->getVariable(var), _currmanager->getDeBruijnIndex(var->sort(), 0));
+	auto qkernel = _currmanager->getQuantKernel(var->sort(), debruijnbdd);
+	return qkernel;
+}
+
+const FOBDD* Insert::truefobdd(YYLTYPE l) const {
+	return _currmanager->truebdd();
+}
+
+const FOBDD* Insert::falsefobdd(YYLTYPE l) const {
+	return _currmanager->falsebdd();
+}
+
+EnumSetExpr* Insert::set(Formula* f, Term* counter, YYLTYPE l, const varset& vv) {
 	remove_vars(vv);
 	checkForUnusedVariables(vv, f, counter);
 	if (f && counter) {
@@ -1920,18 +2035,17 @@ EnumSetExpr* Insert::set(Formula* f, Term* counter, YYLTYPE l,const varset& vv) 
 	}
 }
 
-EnumSetExpr* Insert::set(Formula* f, YYLTYPE l,const varset& vv) {
+EnumSetExpr* Insert::set(Formula* f, YYLTYPE l, const varset& vv) {
 	auto d = createDomElem(1);
 	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
-	return set(f, counter, l,vv);
+	return set(f, counter, l, vv);
 }
 
 void Insert::addToFirst(EnumSetExpr* s1, EnumSetExpr* s2) {
-	for(auto p : s2->getSets()){
+	for (auto p : s2->getSets()) {
 		s1->addSet(p);
 	}
 }
-
 
 EnumSetExpr* Insert::createEnum(YYLTYPE l) const {
 	EnumSetExpr* pis = new EnumSetExpr(SetParseInfo());
@@ -1994,7 +2108,7 @@ void Insert::addElement(SortTable* s, int i1, int i2) const {
 }
 
 void Insert::addElement(SortTable* s, char c1, char c2) const {
-	for (char c = c1; c <= c2; ++c){
+	for (char c = c1; c <= c2; ++c) {
 		addElement(s, string(1, c));
 	}
 }
@@ -2035,16 +2149,16 @@ const DomainElement* Insert::element(char c) const {
 
 const DomainElement* Insert::element(const std::string& s) const {
 	// The parser cannot parse strings without "()" at the end as constructor function images, so this warning should be issued:
-	string name = s+"/0"; // TODO fix arity in names
+	string name = s + "/0"; // TODO fix arity in names
 	Function* f = funcInScope(name);
-	if(f!=NULL && (f->isConstructorFunction() || f->overloaded())){
+	if (f != NULL && (f->isConstructorFunction() || f->overloaded())) {
 		Warning::constructorDisambiguationInStructure(s);
-		if(f->overloaded()){
-			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo>{f->pi()},{}); // TODO add locations
+		if (f->overloaded()) {
+			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo> { f->pi() }, { }); // TODO add locations
 			return createDomElem(s); // Om toch maar iets gelijkaardig terug te geven.
 		}
-		if(f->isConstructorFunction()){
-			return createDomElem(createCompound(f,vector<const DomainElement*>()));
+		if (f->isConstructorFunction()) {
+			return createDomElem(createCompound(f, vector<const DomainElement*>()));
 		}
 	}
 	return createDomElem(s);
@@ -2079,7 +2193,8 @@ void Insert::addTupleVal(FuncTable* ft, ElementTuple& tuple, YYLTYPE l) const {
 	}
 }
 
-void Insert::addTupleVal(FuncTable* ft, const DomainElement* d, YYLTYPE l) const {
+void Insert::addTupleVal(FuncTable* ft, const DomainElement* d,
+YYLTYPE l) const {
 	ElementTuple et(1, d);
 	addTupleVal(ft, et, l);
 }
@@ -2513,9 +2628,9 @@ bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst, UTF utf) const {
 			error = true;
 		}
 	}
-	if (not error && symbol->isFunction()){
+	if (not error && symbol->isFunction()) {
 		auto func = (Function*) symbol;
-		if(func->isConstructorFunction()){
+		if (func->isConstructorFunction()) {
 			stringstream ss;
 			ss << symbol->name() << " is a constructor function: its interpretation is fixed and cannot change.";
 			Error::error(ss.str(), nst->_pi);
@@ -2577,7 +2692,8 @@ void Insert::emptyinter(NSPair* nst, const string& utf) const {
 	}
 }
 
-void Insert::interByProcedure(NSPair* nsp, const longname& procedure, YYLTYPE l) const {
+void Insert::interByProcedure(NSPair* nsp, const longname& procedure,
+YYLTYPE l) const {
 	auto pi = parseinfo(l);
 	auto up = procedureInScope(procedure, pi);
 	string* proc = NULL;
@@ -2635,7 +2751,6 @@ void Insert::constructor(NSPair* nst) const {
 	}
 }
 
-
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
 
 	ParseInfo pi = nst->_pi;
@@ -2660,7 +2775,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 			st->internTable(t->internTable());
 			sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
 			delete (t);
-		} else if(s->hasFixedInterpretation()) {
+		} else if (s->hasFixedInterpretation()) {
 			fixedInterTypeReinterpretedInStructure(ComponentType::Sort, toString(name), pi);
 		} else {
 			notInVocabularyOf(ComponentType::Sort, ComponentType::Structure, toString(name), _currstructure->name(), pi);
@@ -2677,7 +2792,7 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 void Insert::finalizePendingAssignments() {
 	for (auto symbol2valuetables : _pendingAssignments) {
 		auto& tables = symbol2valuetables.second;
-		Assert(tables.size()==1 || tables.size()==2);
+		Assert(tables.size() == 1 || tables.size() == 2);
 		auto inter = _currstructure->inter(symbol2valuetables.first);
 		if (tables.size() == 2) {
 			if (contains(tables, UTF::CT) && contains(tables, UTF::CF)) {
@@ -2703,14 +2818,15 @@ void Insert::finalizePendingAssignments() {
 		} else {
 			auto value2table = *tables.cbegin();
 			switch (value2table.first) {
-			case UTF::TWOVAL:{
+			case UTF::TWOVAL: {
 				auto funcintern = dynamic_cast<FuncInternalPredTable*>(value2table.second->internTable());
-				if(funcintern!=NULL){
-					 _currstructure->inter(dynamic_cast<Function*>(symbol2valuetables.first))->funcTable(funcintern->table());
-				}else{
+				if (funcintern != NULL) {
+					_currstructure->inter(dynamic_cast<Function*>(symbol2valuetables.first))->funcTable(funcintern->table());
+				} else {
 					inter->ctpt(value2table.second);
 				}
-				break;}
+				break;
+			}
 			case UTF::CT:
 				inter->ct(value2table.second);
 				break;

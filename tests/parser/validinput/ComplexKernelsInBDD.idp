@@ -1,0 +1,60 @@
+vocabulary V{
+type t isa int
+P(t)
+R(t)
+S(t,t)
+}
+fobdd F : V{ 
+R(x[t])
+FALSE BRANCH:
+	P(x[t])
+	FALSE BRANCH:
+		R(y[t])
+		FALSE BRANCH:
+			EXISTS: a[t]{
+				S(a[t],x[t])
+				FALSE BRANCH:
+					false
+				TRUE BRANCH:
+					true
+			}
+			FALSE BRANCH:
+				false
+			TRUE BRANCH:
+				true
+		TRUE BRANCH:
+			true
+	TRUE BRANCH:
+		false
+TRUE BRANCH:
+	P(x[t])
+	FALSE BRANCH:
+		R(y[t])
+		FALSE BRANCH:
+			EXISTS: b[t]{
+				S(b[t],x[t])
+				FALSE BRANCH:
+					false
+				TRUE BRANCH:
+					true
+			}
+			FALSE BRANCH:
+				false
+			TRUE BRANCH:
+				true
+		TRUE BRANCH:
+			true
+	TRUE BRANCH:
+		true
+}
+structure S:V{
+t= {1..5}
+P={1..2}
+R={1..4}
+S={(1,1);(2,2);(3,1);(4,1)}
+}
+procedure main(){
+	print(F)
+	return 1
+
+}

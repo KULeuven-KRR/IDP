@@ -48,7 +48,7 @@ public:
 	BDDPrinter(Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
 				_translator(NULL),
-				_manager(make_shared<FOBDDManager>()) {
+				_manager(FOBDDManager::createManager()) {
 	}
 
 private:
@@ -118,6 +118,9 @@ public:
 	}
 	virtual void visit(const Query*) {
 		throw IdpException("Queries cannot be printed as BDDs");
+	}
+	virtual void visit(const FOBDD*) {
+		throw IdpException("FOBDDS cannot by a printer that converts theories to BDDs, use print(..) instead"); //todo
 	}
 	virtual void visit(const Namespace*) {
 		throw IdpException("Namespaces cannot be printed as BDDs");

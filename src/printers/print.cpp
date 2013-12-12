@@ -76,3 +76,8 @@ template<>
 void Printer::print(const Query* b) {
 	visit(b);
 }
+
+template<>
+void Printer::print(const FOBDD* b) {
+	visit(b);
+}
