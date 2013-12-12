@@ -83,7 +83,7 @@ LTCInputData LTCData::collectLTCSortAndFunctions(const Vocabulary* ltcVoc) const
 
 //TIME
 	if (not ltcVoc->hasSortWithName("Time")) {
-		throw IdpException("LTC theories are required to have a sort named Time. (or, if the name of this sort is not Time, provide it yourself)");
+		throw IdpException("LTC Vocabularies are required to have a sort named Time. (or, if the name of this sort is not Time, provide it yourself)");
 	}
 	auto timeSort = ltcVoc->sort("Time");
 	Assert(timeSort != NULL);
@@ -92,9 +92,10 @@ LTCInputData LTCData::collectLTCSortAndFunctions(const Vocabulary* ltcVoc) const
 //START
 	if (not ltcVoc->hasFuncWithName("Start/0")) {
 		throw IdpException(
-				"LTC theories are required to have a constant of type Time named Start.  (or, if the name of this constant is not Start, provide it yourself)");
+				"LTC Vocabularies are required to have a constant of type Time named Start.  (or, if the name of this constant is not Start, provide it yourself)");
 	}
 	auto startFunc = ltcVoc->func("Start/0");
+
 	Assert(startFunc != NULL);
 	if (startFunc->overloaded()) {
 		throw IdpException("LTC theories can only have one function named Start.");
@@ -107,15 +108,15 @@ LTCInputData LTCData::collectLTCSortAndFunctions(const Vocabulary* ltcVoc) const
 //NEXT
 	if (not ltcVoc->hasFuncWithName("Next/1")) {
 		throw IdpException(
-				"LTC theories are required to have a function, typed [Time:Time] named Next.  (or, if the name of this function is not Next, provide it yourself)");
+				"LTC Vocabularies are required to have a function, typed [Time:Time] named Next.  (or, if the name of this function is not Next, provide it yourself)");
 	}
 	auto nextFunc = ltcVoc->func("Next/1");
 	Assert(nextFunc != NULL);
 	if (nextFunc->overloaded()) {
-		throw IdpException("LTC theories can only have one function named Next.");
+		throw IdpException("LTC Vocabularies can only have one function named Next.");
 	}
 	if (nextFunc->nrSorts() != 2 || nextFunc->sorts()[0] != timeSort || nextFunc->sorts()[1] != timeSort) {
-		throw IdpException("In LTC theories, the function Next should be typed [Time:Time] .");
+		throw IdpException("In LTC Vocabularies, the function Next should be typed [Time:Time] .");
 	}
 	result.next = nextFunc;
 	return result;
@@ -123,19 +124,19 @@ LTCInputData LTCData::collectLTCSortAndFunctions(const Vocabulary* ltcVoc) const
 
 void LTCData::verify(const LTCInputData& data) const {
 	if (data.time == NULL) {
-		throw IdpException("Did not find a valid Time symbol for progression");
+		throw IdpException("Did not find a valid Time symbol in LTC vocabulary");
 	}
 	if (data.start == NULL) {
-		throw IdpException("Did not find a valid Start symbol for progression");
+		throw IdpException("Did not find a valid Start symbol in LTC vocabulary");
 	}
 	if (data.next == NULL) {
-		throw IdpException("Did not find a valid Next symbol for progression");
+		throw IdpException("Did not find a valid Next symbol in LTC vocabulary");
 	}
 	if (data.start->arity() != 0 || data.start->outsort() != data.time) {
-		throw IdpException("In LTC theories, the function Start should be typed [:Time].");
+		throw IdpException("In LTC Vocabularies, the function Start should be typed [:Time].");
 	}
 	if (data.next->arity() != 1 || data.next->sort(0) != data.time || data.next->outsort() != data.time) {
-		throw IdpException("Start should be a unary function typed Time->Time");
+		throw IdpException("In LTC Vocabularies, Start should be a unary function typed Time->Time");
 	}
 }
 

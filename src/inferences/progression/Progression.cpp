@@ -41,9 +41,6 @@ ProgressionInference::~ProgressionInference() {
 std::vector<Structure*> ProgressionInference::progress() {
 	auto data = LTCData::instance();
 
-	if (not data->hasBeenTransformed(_ltcTheo->vocabulary()) or not data->hasBeenSplit(_ltcTheo)) {
-		Error::LTC::notInitialised();
-	}
 	auto vocinfo = data->getStateVocInfo(_ltcTheo->vocabulary());
 	auto voc = vocinfo->stateVoc;
 	auto bistatevoc = vocinfo->biStateVoc;

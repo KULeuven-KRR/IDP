@@ -428,12 +428,9 @@ void Error::LTC::strucVocIsNotTheoVoc(){
 	error("LTC operations require that structure and theory range over the same vocabulary.");
 }
 
-void Error::LTC::notInitialised(){
-	error("The theory you are using the progression inference on, has not yet been initialised. Please first apply the initialise inference.");
-}
 void Error::LTC::progressOverWrongVocabulary(const std::string& expectedVoc, const std::string& realVoc) {
 	stringstream ss;
-	ss << "The structure given to the progression inference should range over vocabulary " << realVoc << " but ranges over " << expectedVoc;
+	ss << "The structure given to the progression inference should range over vocabulary " << expectedVoc  << " but ranges over " << realVoc;
 	error(ss.str());
 }
 
