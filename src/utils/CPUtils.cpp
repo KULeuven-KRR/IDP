@@ -96,7 +96,11 @@ bool eligibleForCP(const Term* t, const Structure* str) {
 	auto voc = (str != NULL) ? str->vocabulary() : NULL;
 	switch (t->type()) {
 	case TermType::FUNC: {
-		return eligibleForCP(dynamic_cast<const FuncTerm*>(t), voc);
+		auto ft = dynamic_cast<const FuncTerm*>(t);
+		if(str->inter(ft->function())->approxTwoValued() && getOption(REDUCEDGROUNDING)){
+			return true;
+		}
+		return eligibleForCP(ft, voc);
 	}
 	case TermType::AGG: {
 		return eligibleForCP(dynamic_cast<const AggTerm*>(t), str);
