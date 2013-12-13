@@ -369,11 +369,11 @@ public:
 
 	Query* query(const std::vector<Variable*>&, Formula*, YYLTYPE);
 
-	const FOBDD* fobdd(const FOBDDKernel*, const FOBDD*, const FOBDD*, YYLTYPE) const;
+	const FOBDD* fobdd(const FOBDDKernel*, const FOBDD*, const FOBDD*) const;
 	const FOBDDKernel* atomkernel(Formula*) const;
 	const FOBDDKernel* quantkernel(Variable* var, const FOBDD* bdd) const;
-	const FOBDD* truefobdd(YYLTYPE l) const;
-	const FOBDD* falsefobdd(YYLTYPE l) const;
+	const FOBDD* truefobdd() const;
+	const FOBDD* falsefobdd() const;
 
 	EnumSetExpr* set(Formula*, YYLTYPE,const varset& vv=std::set<Variable*, VarCompare>());
 	//!< Create a new set of the form { x1 ... xn : phi }

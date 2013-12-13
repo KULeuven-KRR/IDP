@@ -1939,7 +1939,7 @@ Query* Insert::query(const std::vector<Variable*>& vv, Formula* f, YYLTYPE l) {
 	}
 }
 
-const FOBDD* Insert::fobdd(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch, YYLTYPE l) const {
+const FOBDD* Insert::fobdd(const FOBDDKernel* kernel, const FOBDD* truebranch, const FOBDD* falsebranch) const {
 	auto returnvalue = _currmanager->ifthenelseTryMaintainOrder(kernel, truebranch, falsebranch);
 	return returnvalue;
 }
@@ -1996,11 +1996,11 @@ const FOBDDKernel* Insert::quantkernel(Variable* var, const FOBDD* bdd) const {
 	return qkernel;
 }
 
-const FOBDD* Insert::truefobdd(YYLTYPE l) const {
+const FOBDD* Insert::truefobdd() const {
 	return _currmanager->truebdd();
 }
 
-const FOBDD* Insert::falsefobdd(YYLTYPE l) const {
+const FOBDD* Insert::falsefobdd() const {
 	return _currmanager->falsebdd();
 }
 

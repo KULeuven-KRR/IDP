@@ -419,9 +419,9 @@ namedfobdd 	: FOBDD_HEADER fobdd_name ':' vocab_pointer '{' fobdd '}' {data().cl
 			;
 fobdd_name 	: identifier	{data().openfobdd(*$1,@1);	}
 			;
-fobdd 		: kernel FALSEBRANCH fobdd TRUEBRANCH fobdd { $$ = data().fobdd($1,$5,$3,@1);}
-			| TRUE { $$ = data().truefobdd(@1);}
-			| FALSE { $$ = data().falsefobdd(@1);}
+fobdd 		: kernel FALSEBRANCH fobdd TRUEBRANCH fobdd { $$ = data().fobdd($1,$5,$3);}
+			| TRUE { $$ = data().truefobdd();}
+			| FALSE { $$ = data().falsefobdd();}
 			; 		
 kernel		: predicate { $$ = data().atomkernel($1);}
 			| eq_chain { $$ = data().atomkernel($1);}
