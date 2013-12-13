@@ -1,5 +1,8 @@
 procedure main(prover){
-
+	if ( prover and ignoreProver ~= nil and ignoreProver() ) then
+		print("Not running. Prover answer unknown")
+		return 1
+	end
 	stdoptions.timeout = 5
 	local answer
 	if prover then
