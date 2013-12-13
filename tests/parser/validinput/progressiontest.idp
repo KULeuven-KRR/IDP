@@ -33,5 +33,5 @@ structure S3:V2_ss{
 }
 
 procedure main(){
-
+	return 1
 }
