@@ -151,6 +151,7 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 	auto rightdomain = _righttermgrounder->getLatestDomain();
 
 	if (getDomain() != NULL && getDomain()->approxFinite()) { // TODO In fact should be: if the basic interpretation is small enough
+									// TODO why finite?
 		_latestdomain = getDomain();
 		return getDomain();
 	}
@@ -168,7 +169,10 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 	}
 
 	SortTable* newdomain = NULL;
-	if (leftdomain and rightdomain and leftdomain->isRange() and rightdomain->isRange() and leftdomain->approxFinite() and rightdomain->approxFinite()) {
+	auto exists = leftdomain and rightdomain;
+	auto finite = exists and leftdomain->approxFinite() and rightdomain->approxFinite();
+	if (exists and leftdomain->isRange() and rightdomain->isRange() and finite) {
+		// FIXME overflow possible
 		Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 		Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 		int leftmin = leftdomain->first()->value()._int;
@@ -194,7 +198,7 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 		}
 		if (max < min) { swap(min, max); }
 		newdomain = TableUtils::createSortTable(min, max);
-	} else if (leftdomain and rightdomain and leftdomain->approxFinite() and rightdomain->approxFinite()) {
+	} else if (exists and finite) {
 		Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
 		Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
 		newdomain = TableUtils::createSortTable();
@@ -217,13 +221,14 @@ SortTable* TwinTermGrounder::computeDomain(const GroundTerm& left, const GroundT
 				newdomain->add(createDomElem(newvalue));
 			}
 		}
-	} else {
-		if (leftdomain && not leftdomain->approxFinite()) {
-			Warning::warning("Left domain is infinite...");
-		}
-		if (rightdomain && not rightdomain->approxFinite()) {
-			Warning::warning("Right domain is infinite...");
-		}
+	} else if(exists and leftdomain->isRange() and rightdomain->isRange()) {
+		Warning::warning("Approximating int as all integers in -2^32..2^32, as the solver does not support true infinity at the moment. Models might be lost.");
+		Assert(leftdomain->first()->type() == DomainElementType::DET_INT);
+		Assert(rightdomain->first()->type() == DomainElementType::DET_INT);
+		Assert(leftdomain->last()->type() == DomainElementType::DET_INT);
+		Assert(rightdomain->last()->type() == DomainElementType::DET_INT);
+		newdomain = TableUtils::createSortTable(min(leftdomain->first(), rightdomain->first())->value()._int, max(leftdomain->last(), rightdomain->last())->value()._int);
+	} else{
 		throw notyetimplemented("One of the domains in a twintermgrounder is infinite.");
 	}
 
