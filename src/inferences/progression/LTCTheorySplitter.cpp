@@ -196,6 +196,10 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 		newNextSentence = ReplaceLTCSymbols::replaceSymbols(newNextSentence, _ltcVoc, true);
 		initConstruct->add(newSentence);
 		biStateConstruct->add(newNextSentence);
+		if(not invar){
+			auto newTSentence = newSentence->clone();
+			biStateConstruct->add(newTSentence);
+		}
 	} else {
 		if (invar) {
 			//Extra checks for invariants: they cannot contain START
