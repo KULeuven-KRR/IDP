@@ -122,36 +122,18 @@ public:
 					printTab();
 					auto ctsize = pi->ct()->size();
 					auto cfsize = pi->cf()->size();
-					if (ctsize < 20 || toDouble(ctsize) < 10 * toDouble(cfsize)) {
-						output() << print(p) << " = ";
-						visit(pi->ct());
-						output() << '\n';
-					} else {
-						output() << print(p) << "<cf> = ";
-						visit(pi->cf());
-						output() << '\n';
-						printTab();
-						output() << print(p) << "<u> = { }\n";
-					}
+					output() << print(p) << " = ";
+					visit(pi->ct());
+					output() << '\n';
 				} else {
 					printTab();
-					//if(pi->ct()->size()<=pi->pf()->size()){
-						output() << print(p) << "<ct> = ";
-						visit(pi->ct());
-					/*}else{
-						output() << print(p) << "<pf> = ";
-						visit(pi->pf());
-					}*/ //We cannot parse pt and pf at the moment
+					output() << print(p) << "<ct> = ";
+					visit(pi->ct());
 					output() << '\n';
 
 					printTab();
-					//if(pi->cf()->size()<=pi->pt()->size()){
-						output() << print(p) << "<cf> = ";
-						visit(pi->cf());
-					/*}else{
-						output() << print(p) << "<pt> = ";
-						visit(pi->pt());
-					}*/ //We cannot parse pt and pf at the moment
+					output() << print(p) << "<cf> = ";
+					visit(pi->cf());
 					output() << '\n';
 				}
 			}
@@ -170,23 +152,13 @@ public:
 				} else {
 					auto pi = fi->graphInter();
 					printTab();
-					if(pi->ct()->size()<=pi->pf()->size()){
-						output() << print(f) << "<ct> = ";
-						printAsFunc(pi->ct());
-					}else{
-						output() << print(f) << "<pf> = ";
-						printAsFunc(pi->pf());
-					}
+					output() << print(f) << "<ct> = ";
+					printAsFunc(pi->ct());
 					output() << '\n';
 
 					printTab();
-					if(pi->cf()->size()<=pi->pt()->size()){
-						output() << print(f) << "<cf> = ";
-						printAsFunc(pi->cf());
-					}else{
-						output() << print(f) << "<pt> = ";
-						printAsFunc(pi->pt());
-					}
+					output() << print(f) << "<cf> = ";
+					printAsFunc(pi->cf());
 					output() << '\n';
 				}
 			}
