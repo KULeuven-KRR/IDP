@@ -92,19 +92,19 @@ bool isInt(double d) {
 bool isInt(const string& s) {
 	stringstream i(s);
 	int n;
-	return (i >> n);
+	return (i >> n).eof();
 }
 
 bool isDouble(const string& s) {
 	stringstream i(s);
 	double d;
-	return (i >> d);
+	return (i >> d).eof();
 }
 
 int toInt(const string& s) {
 	stringstream i(s);
 	int n;
-	if (not (i >> n)) {
+	if (not (i >> n).eof()) {
 		return 0;
 	} else {
 		return n;
@@ -114,7 +114,7 @@ int toInt(const string& s) {
 double toDouble(const string& s) {
 	stringstream i(s);
 	double d;
-	if (not (i >> d)) {
+	if (not (i >> d).eof()) {
 		return 0;
 	} else {
 		return d;
