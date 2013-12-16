@@ -1,0 +1,20 @@
+vocabulary V{
+	type t
+	P(t)
+}
+
+structure S:V{
+	P = {"0LatWis";"1LatWis";"2LatWis";"3LatWis";"4LatWis";"5LatWis"}
+}
+
+include <table_utils>
+procedure main(){
+	local strings = {"0LatWis","1LatWis","2LatWis","3LatWis","4LatWis","5LatWis"}
+	for i = 1,#strings do
+		if totable(S[V::P].ct)[i][1] ~= strings[i] then
+			return 0
+		end
+	end
+	return 1
+
+}
