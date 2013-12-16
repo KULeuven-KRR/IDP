@@ -534,7 +534,7 @@ COMMENTLINE2	"--".*
 							  return USINGNAMESPACE;			
 							}
 <*>"using"					{
-								clog <<"Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n";
+								Error::error("Can only use the keyword \"using\" as \"using vocabulary\" or \"using namespace\".\n");
 								yyterminate();
 							}
 <*>{CH}						{ parser.advancecol();
