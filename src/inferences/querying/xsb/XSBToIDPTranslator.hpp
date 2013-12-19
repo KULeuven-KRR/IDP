@@ -40,6 +40,7 @@ public:
 	const DomainElement* to_idp_domelem(std::string);
 
 	std::string to_prolog_term(CompType);
+	std::string to_prolog_term(AggFunction);
 
 
 

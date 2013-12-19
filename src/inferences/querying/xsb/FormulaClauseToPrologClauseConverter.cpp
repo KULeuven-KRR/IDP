@@ -119,7 +119,7 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateTerm* at) {
 	findall->addArgument(listvar);
 	body.push_back(findall);
 	at->set()->accept(this);
-	PrologTerm* calculation = new PrologTerm(toString(at->agg_type()));
+	PrologTerm* calculation = new PrologTerm(at->agg_type());
 	calculation->addArgument(listvar);
 	calculation->addArgument(at->result());
 	body.push_back(calculation);

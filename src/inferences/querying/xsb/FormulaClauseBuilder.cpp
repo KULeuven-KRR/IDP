@@ -199,7 +199,7 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 
 void FormulaClauseBuilder::visit(const AggTerm* a) {
 	auto term = new AggregateTerm(generateNewAggregateTermName());
-	term->agg_type(a->function());
+	term->agg_type(_translator->to_prolog_term(a->function()));
 	enter(term);
 	a->set()->accept(this);
 	// TODO: what does this vars thing actually do? it's immediatly re-set as the variables of term (see 6 lines ahead)

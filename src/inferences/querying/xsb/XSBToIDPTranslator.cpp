@@ -151,6 +151,10 @@ string XSBToIDPTranslator::to_prolog_term(CompType c) {
 	return str;
 }
 
+string XSBToIDPTranslator::to_prolog_term(AggFunction af) {
+	return transform_into_term_name(toString(af));
+}
+
 string XSBToIDPTranslator::to_simple_chars(string str) {
 	stringstream s;
 	for (auto i = str.begin(); i != str.end(); ++i) {

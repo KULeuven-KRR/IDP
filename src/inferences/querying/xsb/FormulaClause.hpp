@@ -473,7 +473,7 @@ public:
 class AggregateTerm: public FormulaClause {
 private:
 	SetExpression* _set;
-	AggFunction _agg_type;
+	string _agg_type;
 	PrologVariable* _result;
 public:
 	AggregateTerm(string name)
@@ -481,10 +481,10 @@ public:
 		_result = PrologVariable::create("RESULT_VAR");
 	}
 	void accept(FormulaClauseVisitor*);
-	void agg_type(AggFunction type) {
+	void agg_type(string type) {
 		_agg_type = type;
 	}
-	AggFunction agg_type() {
+	string agg_type() {
 		return _agg_type;
 	}
 	SetExpression* set() {
