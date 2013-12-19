@@ -196,6 +196,8 @@ void yyerror(const char* s);
 %type <fun> arit_func_decl
 %type <fun> constr_func_decl
 %type <ter> term domterm function arterm aggterm
+%type <ter> atomarterm
+%type <ter> nonatomarterm
 %type <fom> predicate
 %type <fom> head
 %type <fom> formula
@@ -499,7 +501,6 @@ fd_rules	: fd_rules rule	'.'			{ $$ = $1; data().addRule($$,$2);					}
 			;	
 
 /** Formulas **/
-
 formula		: '!' variables IN formula ':' formula	{ $$ = data().implform($4 ,$6,@1);
 														  $$ = data().univform(*$2,$$,@1); delete($2);}
 			| '?' variables IN formula ':' formula	{ $$ = data().conjform($4,$6,@1);
@@ -583,10 +584,8 @@ theosort_pointer	:	pointer_name		{ $$ = data().theosortpointer(*$1,@1); delete($
 
 /** Terms **/                                            
 
-term		: //function		{ $$ = $1;	}		
-			 arterm		{ $$ = $1;	}
+term		: arterm		{ $$ = $1;	}
 			| domterm		{ $$ = $1;	}
-			//| aggterm		{ $$ = $1;	}
 			;
 
 function	: intern_pointer '(' term_tuple ')'		{ $$ = data().functerm($1,*$3); delete($3);	}
@@ -594,11 +593,10 @@ function	: intern_pointer '(' term_tuple ')'		{ $$ = data().functerm($1,*$3); de
 			| intern_pointer						{ $$ = data().term($1);					}
 			;
 
-arterm		: INTEGER					{ $$ = data().domterm($1,@1);		}
-			//| CHARCONS					{ $$ = data().arterm($1,@1);		}
-			| function						{ $$ = $1;	}
-			| aggterm						{ $$ = $1;	}
-			| arterm '-' arterm				{ $$ = data().arterm('-',$1,$3,@1);	}
+atomarterm  : function						{ $$ = $1;	}
+			;
+
+nonatomarterm		: arterm '-' arterm				{ $$ = data().arterm('-',$1,$3,@1);	}
 			| '-' '(' arterm ',' arterm ')'	{ $$ = data().arterm('-',$3,$5,@1);	}			
 			| arterm '+' arterm				{ $$ = data().arterm('+',$1,$3,@1);	}
 			| '+' '(' arterm ',' arterm ')'	{ $$ = data().arterm('+',$3,$5,@1);	}
@@ -612,11 +610,16 @@ arterm		: INTEGER					{ $$ = data().domterm($1,@1);		}
 			| '^' '(' arterm ',' arterm ')'	{ $$ = data().arterm('^',$3,$5,@1);	}
 			| '-' arterm %prec UMINUS		{ $$ = data().arterm("-",$2,@1);	}
 			| ABS '(' arterm ')'			{ $$ = data().arterm("abs",$3,@1);	}
-			| '(' arterm ')'			{ $$ = $2;							}
+			| '(' nonatomarterm ')'			{ $$ = $2;							}
+			| INTEGER					{ $$ = data().domterm($1,@1);		}
+			| aggterm						{ $$ = $1;	}
 			;
 
-domterm		: //INTEGER									{ $$ = data().domterm($1,@1);		}
-			 FLNUMBER									{ $$ = data().domterm($1,@1);		}
+arterm 		: atomarterm					{ $$=$1;							}
+			| nonatomarterm					{ $$=$1;							}
+			; 
+
+domterm		: FLNUMBER									{ $$ = data().domterm($1,@1);		}
 			| STRINGCONS								{ $$ = data().domterm($1,@1);		}
 			| CHARCONS									{ $$ = data().domterm($1,@1);		}
 		/*	| '@' identifier '[' theosort_pointer ']'	{ $$ = data().domterm($2,$4,@1);	}
