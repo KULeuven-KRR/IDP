@@ -1,62 +1,62 @@
-ix_abs(X,Y) :- Y is abs(X).
+ixabs(X,Y) :- Y is abs(X).
 
-ix_sum(List,Sum) :- ix_sum(List,Sum,0).
-ix_sum([],X,X).
-ix_sum([H|T],Sum,Agg) :- Agg2 is Agg + H, ix_sum(T,Sum,Agg2).
+ixsum(List,Sum) :- ixsum(List,Sum,0).
+ixsum([],X,X).
+ixsum([H|T],Sum,Agg) :- Agg2 is Agg + H, ixsum(T,Sum,Agg2).
 
-ix_prod(List,Prod) :- ix_prod(List,Prod,1).
-ix_prod([],X,X).
-ix_prod([H|T],Prod,Agg) :- Agg2 is Agg * H, ix_prod(T,Prod,Agg2).
+ixprod(List,Prod) :- ixprod(List,Prod,1).
+ixprod([],X,X).
+ixprod([H|T],Prod,Agg) :- Agg2 is Agg * H, ixprod(T,Prod,Agg2).
 
-ix_card(List,Card) :- length(List,Card).
+ixcard(List,Card) :- length(List,Card).
 
-ix_min([X|Rest],Min) :- ix_min(Rest,Min,X).
+ixmin([X|Rest],Min) :- ixmin(Rest,Min,X).
 
-ix_min([],Min,Min).
-ix_min([X|Rest],Min,TmpMin) :-
+ixmin([],Min,Min).
+ixmin([X|Rest],Min,TmpMin) :-
 	X < TmpMin,
-	ix_min(Rest,Min,X).
-ix_min([X|Rest],Min,TmpMin) :-
+	ixmin(Rest,Min,X).
+ixmin([X|Rest],Min,TmpMin) :-
 	X >= TmpMin,
-	ix_min(Rest,Min,TmpMin).
+	ixmin(Rest,Min,TmpMin).
 
-ix_max([X|Rest],Max) :- ix_max(Rest,Max,X).
-ix_max([],Max,Max).
-ix_max([X|Rest],Max,TmpMax) :-
+ixmax([X|Rest],Max) :- ixmax(Rest,Max,X).
+ixmax([],Max,Max).
+ixmax([X|Rest],Max,TmpMax) :-
 	X > TmpMax,
-	ix_max(Rest,Max,X).
-ix_max([X|Rest],Max,TmpMax) :-
+	ixmax(Rest,Max,X).
+ixmax([X|Rest],Max,TmpMax) :-
 	X =< TmpMax,
-	ix_max(Rest,Max,TmpMax).
+	ixmax(Rest,Max,TmpMax).
 
-ix_forall(CallA, CallB) :-
+ixforall(CallA, CallB) :-
     tables:not_exists((call(CallA), tables:not_exists(CallB))).
      
-ix_int(X) :- 
+ixint(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     0 is ROUNDEDNUMBER - X.
      
-ix_float(X) :- 
+ixfloat(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     ROUNDEDNUMBER \= X.
      
-ix_nat(X) :- 
+ixnat(X) :- 
     nonvar(X),
     X >= 0,
-    ix_int(X).
+    ixint(X).
      
-ix_same_number(X,Y) :-
-    ix_convert_to_int(X,X1),
+ixsame_number(X,Y) :-
+    ixconvert_to_int(X,X1),
     X1 = Y.
 
-ix_convert_to_int(Num,Int) :-
+ixconvert_to_int(Num,Int) :-
 	nonvar(Num),
-    ix_int(Num), 
+    ixint(Num), 
     Int is round(Num).
 
-ix_convert_to_int(Num,Int) :-
+ixconvert_to_int(Num,Int) :-
 	nonvar(Num),
-    ix_float(Num), 
+    ixfloat(Num), 
     Int = Num.

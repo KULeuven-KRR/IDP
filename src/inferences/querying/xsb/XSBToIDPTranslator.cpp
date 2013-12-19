@@ -21,6 +21,10 @@
 using std::string;
 using std::stringstream;
 
+
+// ATTENTION!
+// when changing this prefix, also adapt the XSB "built-in" predicates
+// that IDP provides in data/shared/std/xsb_compiler.P
 #ifndef IDPXSB_PREFIX
 #define IDPXSB_PREFIX "ix"
 #endif
@@ -67,9 +71,9 @@ string XSBToIDPTranslator::transform_into_term_name(string str) {
 
 	// For built-in predicates that are present in the "xsb_compiler", we add the prefix by default
 	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum") {
-		ss << IDPXSB_PREFIX << "_";
+		ss << IDPXSB_PREFIX;
 	} else if (!numOrOp && str != "findall" &&  str != "between") {
-		ss << IDPXSB_PREFIX << "_";
+		ss << IDPXSB_PREFIX;
 	}
 
 	ss << str;
@@ -104,7 +108,7 @@ string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
 	} else {
 		// filter the string
 		stringstream s;
-		s << IDPXSB_PREFIX << "_" << to_simple_chars(str);
+		s << IDPXSB_PREFIX << to_simple_chars(str);
 		ret = s.str();
 		_domainels[ret] = str;
 	}
