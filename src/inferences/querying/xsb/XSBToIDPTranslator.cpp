@@ -17,6 +17,7 @@
 #include "common.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "structure/DomainElement.hpp"
+#include "structure/DomainElementFactory.hpp"
 
 using std::string;
 using std::stringstream;
@@ -103,25 +104,24 @@ string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
 	string ret;
 	if(domelem->type() == DomainElementType::DET_INT ||
 			domelem->type() == DomainElementType::DET_DOUBLE) {
-		_domainels[str] = str;
+		_domainels[str] = domelem;
 		ret = str;
 	} else {
 		// filter the string
 		stringstream s;
 		s << IDPXSB_PREFIX << to_simple_chars(str);
 		ret = s.str();
-		_domainels[ret] = str;
+		_domainels[ret] = domelem;
 	}
 	return ret;
 }
 
-string XSBToIDPTranslator::to_idp_domelem(string str) {
+const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str) {
 	auto it = _domainels.find(str);
 	if (it == _domainels.end()) {
-		return str;
-	} else {
-		return it->second;
+		return createDomElem(str);
 	}
+	return it->second;
 }
 
 string XSBToIDPTranslator::to_prolog_term(CompType c) {

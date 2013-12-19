@@ -23,7 +23,7 @@ class Sort;
 class XSBToIDPTranslator {
 
 private:
-	std::unordered_map<std::string, std::string> _domainels;
+	std::unordered_map<std::string, const DomainElement*> _domainels;
 	std::unordered_map<std::string, std::string> _termnames;
 
 	std::string transform_into_term_name(std::string);
@@ -37,7 +37,7 @@ public:
 	std::string to_prolog_pred_and_arity(const Sort*);
 
 	std::string to_prolog_term(const DomainElement*);
-	std::string to_idp_domelem(std::string);
+	const DomainElement* to_idp_domelem(std::string);
 
 	std::string to_prolog_term(CompType);
 

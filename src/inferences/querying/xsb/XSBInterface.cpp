@@ -164,7 +164,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 		std::list<string> answer = split(buff.string);
 		ElementTuple tuple;
 		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			tuple.push_back(createDomElem(_translator->to_idp_domelem(*it)));
+			tuple.push_back(_translator->to_idp_domelem(*it));
 		}
 		result.insert(tuple);
 
