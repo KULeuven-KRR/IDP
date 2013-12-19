@@ -593,9 +593,7 @@ function	: intern_pointer '(' term_tuple ')'		{ $$ = data().functerm($1,*$3); de
 			| intern_pointer						{ $$ = data().term($1);					}
 			;
 
-atomarterm  : INTEGER					{ $$ = data().domterm($1,@1);		}
-			| function						{ $$ = $1;	}
-			| aggterm						{ $$ = $1;	}
+atomarterm  : function						{ $$ = $1;	}
 			;
 
 nonatomarterm		: arterm '-' arterm				{ $$ = data().arterm('-',$1,$3,@1);	}
@@ -613,6 +611,8 @@ nonatomarterm		: arterm '-' arterm				{ $$ = data().arterm('-',$1,$3,@1);	}
 			| '-' arterm %prec UMINUS		{ $$ = data().arterm("-",$2,@1);	}
 			| ABS '(' arterm ')'			{ $$ = data().arterm("abs",$3,@1);	}
 			| '(' nonatomarterm ')'			{ $$ = $2;							}
+			| INTEGER					{ $$ = data().domterm($1,@1);		}
+			| aggterm						{ $$ = $1;	}
 			;
 
 arterm 		: atomarterm					{ $$=$1;							}
