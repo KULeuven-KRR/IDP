@@ -14,5 +14,6 @@ procedure configIDP(){
 	meliacommand = "run-melia-jar -format tff-int %i > %o"  --java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar MELIA-0.1.2.jar
 
 	stdoptions.provercommand = spasscommand
+	stdoptions.proversupportsTFA = false
 }
 }
