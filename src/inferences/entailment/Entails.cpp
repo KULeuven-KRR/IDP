@@ -27,12 +27,14 @@ private:
 	bool _arithmeticFound;
 	bool _theorySupported;
 	bool _definitionFound;
+	bool _aggregateFound;
 public:
 	template<typename T>
 	void runCheck(T t) {
 		_arithmeticFound = false;
 		_theorySupported = true;
 		_definitionFound = false;
+		_aggregateFound = false;
 		t->accept(this);
 	}
 
@@ -45,6 +47,9 @@ public:
 	bool definitionFound() {
 		return _definitionFound;
 	}
+	bool aggregateFound() {
+		return _aggregateFound;
+	}
 
 protected:
 	void visit(const EnumSetExpr*) {
@@ -54,13 +59,19 @@ protected:
 		_theorySupported = false;
 	}
 	void visit(const AggTerm*) {
-		_theorySupported = false;
+		_aggregateFound = true;
+	}
+	void visit(const AggForm*) {
+		_aggregateFound = true;
 	}
 	void visit(const FixpDef*) {
 		_theorySupported = false;
 	}
-	void visit(const Definition*) {
+	void visit(const Definition* d) {
 		_definitionFound = true;
+		for(auto r: d->rules()){
+			r->accept(this);
+		}
 	}
 
 	void visit(const EqChainForm* f) {
@@ -72,9 +83,7 @@ protected:
 				}
 			}
 		}
-		if (not _arithmeticFound) {
-			traverse(f);
-		}
+		traverse(f);
 	}
 
 	void visit(const FuncTerm* f) {
@@ -87,9 +96,7 @@ protected:
 		if (toString(f->function()) == "%") {
 			_theorySupported = false;
 		}
-		if (not _arithmeticFound) {
-			traverse(f);
-		}
+		traverse(f);
 	}
 };
 
@@ -112,13 +119,17 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 		Warning::warning("The input contains a definition. A (possibly) weaker form of entailment will be verified, based on its completion.");
 		FormulaUtils::addCompletion(axioms, NULL);
 	}
+	if(axiomsSupported.aggregateFound()){
+		Warning::warning("The input contains aggregates. These will be dropped, resulting in a weaker form of entailment.");
+		// TODO simplify aggregates, support cardinality
+	}
 
 	TheorySupportedChecker conjecturesSupported;
 	conjecturesSupported.runCheck(conjectures);
-	if (not axiomsSupported.theorySupported() || not conjecturesSupported.theorySupported() || conjecturesSupported.definitionFound()) {
+	if (not axiomsSupported.theorySupported() || not conjecturesSupported.theorySupported() || conjecturesSupported.definitionFound() || conjecturesSupported.aggregateFound()) {
 		throw IdpException("Entailment checking is not supported for the provided theories. "
 				"Only first-order theories (with arithmetic) are supported, with the addition of "
-				"definitions in the axiom theory. (No aggregates, fixpoint definitions,...).");
+				"definitions and aggregates in the axiom theory. (No fixpoint definitions,...).");
 	}
 
 	// Turn functions into predicates (for partial function support)
@@ -129,6 +140,9 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, {}, true, false);
 
 	if (not conjecturesSupported.arithmeticFound() && not axiomsSupported.arithmeticFound()) {
+		hasArithmetic = false;
+	}
+	if(not getOption(PROVER_SUPPORTS_TFA)){
 		hasArithmetic = false;
 	}
 }
@@ -182,7 +196,10 @@ State Entails::checkEntailment() {
 	auto callresult = system(tempcommand.c_str());
 	// TODO call the prover with the prover timeout
 	if (callresult != 0) {
-		throw IdpException("The automated theorem prover ran out of time, gave up or stopped in an irregular state.");
+		stringstream ss;
+		ss <<"The automated theorem prover ran out of time, gave up or stopped in an irregular state.\n";
+		ss <<"\tThe call issued was \"" <<tempcommand <<"\"";
+		throw IdpException(ss.str());
 	}
 
 	// Retrieve the status from the result
