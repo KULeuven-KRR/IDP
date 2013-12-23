@@ -1,0 +1,17 @@
+vocabulary V{
+	type X isa int
+	P(X,X)
+	A(X,X,X)
+}
+theory T1:V{
+	{
+		! t bF: P(t,bF) <- ? bT: #{bS: A(t, bS, bT)} > t.
+	}
+	?x: X(x).
+}
+theory T2:V{
+	?x y: P(x,y).
+}
+procedure isEntailed(){
+	return true;
+}
