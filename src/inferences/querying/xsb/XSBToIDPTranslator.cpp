@@ -27,6 +27,8 @@ using std::stringstream;
 // ATTENTION!
 // when changing this prefix, also adapt the XSB "built-in" predicates
 // that IDP provides in data/shared/std/xsb_compiler.P
+// It is generally also a good idea to search the code for hard-coded use
+// of these predicates and adapt them.
 #ifndef IDPXSB_PREFIX
 #define IDPXSB_PREFIX "ix"
 #endif

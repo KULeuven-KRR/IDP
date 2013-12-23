@@ -58,8 +58,9 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 			}
 			if(pt._name == "/") {
 				auto tmpvar = ("IDPXSB_TMPVAR" + toString(getGlobal()->getNewID()));
-				output << tmpvar << " is " << toString(**first) << " / " << toString(**second) << ", idpxsb_same_number("
-						<< tmpvar << ", " << toString(**solution) << ")";
+				output << tmpvar << " is " << toString(**first) << " / " << toString(**second) << ", " <<
+						XSBToIDPTranslator::get_idp_prefix() << "same_number(" << tmpvar <<
+						", " << toString(**solution) << ")";
 			} else {
 				output << toString(**solution) << " is " << toString(**first) << " " << name << " " << toString(**second);
 			}
