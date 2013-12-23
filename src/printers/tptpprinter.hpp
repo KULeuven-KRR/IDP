@@ -9,9 +9,9 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef TPTPPRINTER_HPP_
-#define TPTPPRINTER_HPP_
+#pragma once
 
+#include <algorithm>
 #include "printers/print.hpp"
 #include "IncludeComponents.hpp"
 
@@ -63,6 +63,13 @@ public:
 	void startTheory() {
 	}
 	void endTheory() {
+	}
+
+	template<class NamedObject>
+	std::string getSupportedName(const NamedObject& object){
+		// TODO check if there are more unsupported characters
+		auto result = replaceAllIn(object->name(), "'", "__prime__");
+		return result;
 	}
 
 protected:
@@ -320,7 +327,7 @@ protected:
 		else
 			(*_os) << "? [";
 		auto it = f->quantVars().cbegin();
-		(*_os) << "V_" << (*it)->name();
+		(*_os) << "V_" << getSupportedName(*it);
 		if (_arithmetic && (*it)->sort()) {
 			(*_os) << ": ";
 			(*_os) << TFFTypeString((*it)->sort());
@@ -328,7 +335,7 @@ protected:
 		++it;
 		for (; it != f->quantVars().cend(); ++it) {
 			(*_os) << ",";
-			(*_os) << "V_" << (*it)->name();
+			(*_os) << "V_" << getSupportedName(*it);
 			if (_arithmetic && (*it)->sort()) {
 				(*_os) << ": ";
 				(*_os) << TFFTypeString((*it)->sort());
@@ -355,12 +362,12 @@ protected:
 			} else if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::FLOATSORT))) {
 				_floats = true;
 			}
-			(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
+			(*_os) << "t_" << getSupportedName((*it)->sort()) << "(V_" << getSupportedName(*it) << ")";
 			++it;
 			for (; it != f->quantVars().cend(); ++it) {
 				if ((*it)->sort()) {
 					(*_os) << " & ";
-					(*_os) << "t_" << (*it)->sort()->name() << "(V_" << (*it)->name() << ")";
+					(*_os) << "t_" << getSupportedName((*it)->sort()) << "(V_" << getSupportedName(*it) << ")";
 				}
 			}
 			(*_os) << ")";
@@ -379,12 +386,20 @@ protected:
 	/** Terms **/
 
 	void visit(const VarTerm* t) {
-		(*_os) << "V_" << t->var()->name();
+		(*_os) << "V_" << getSupportedName(t->var());
 	}
 
 	void visit(const FuncTerm*) {
-		// Functions have been replaced by predicates
-		Assert(false);
+		// Should have been transformed into predicates
+		throw IdpException("Invalid code path");
+	}
+
+	void visit(const AggForm*) {
+		(*_os) << "$true";
+	}
+
+	void visit(const AggTerm*) {
+		throw notyetimplemented("Converting AggTerm to tptp format.");
 	}
 
 	void visit(const DomainTerm* t) {
@@ -413,12 +428,12 @@ protected:
 				(*_os) << ": ";
 				(*_os) << TFFTypeString(s);
 			}
-			(*_os) << "] : (~" << "t_" << s->name() << "(X) | ";
+			(*_os) << "] : (~" << "t_" << getSupportedName(s) << "(X) | ";
 			auto it = s->parents().cbegin();
-			(*_os) << "(" << "t_" << (*it)->name() << "(X)";
+			(*_os) << "(" << "t_" << getSupportedName(*it) << "(X)";
 			++it;
 			for (; it != s->parents().cend(); ++it) {
-				(*_os) << " & " << "t_" << (*it)->name() << "(X)";
+				(*_os) << " & " << "t_" << getSupportedName(*it) << "(X)";
 			}
 			(*_os) << "))";
 			endAxiom();
@@ -524,9 +539,9 @@ private:
 				(*_os) << ") <=> (";
 			else
 				(*_os) << ") | (";
-			(*_os) << "t_" << pfs->sort(0)->name() << "(V0)";
+			(*_os) << "t_" << getSupportedName(pfs->sort(0)) << "(V0)";
 			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
-				(*_os) << " & " << "t_" << pfs->sort(n)->name() << "(V" << n << ")";
+				(*_os) << " & " << "t_" << getSupportedName(pfs->sort(n)) << "(V" << n << ")";
 			}
 			(*_os) << "))";
 			if (_arithmetic) {
@@ -566,7 +581,7 @@ private:
 		std::vector<DomainTerm*> strings;
 		for (auto it = _typedDomainTerms.cbegin(); it != _typedDomainTerms.cend(); ++it) {
 			startAxiom("dtta", &_typeAxiomStream);
-			std::string sortName = (*it)->sort()->name();
+			auto sortName = getSupportedName((*it)->sort());
 			(*_os) << "t_" << sortName << "(";
 			(*_os) << domainTermNameString(*it);
 			(*_os) << ")";
@@ -581,7 +596,7 @@ private:
 				_typeStream << "tff(";
 				_typeStream << "dtt";
 				_typeStream << _count << ",type,(";
-				_typeStream << "t_" << (*it)->name() << ": ";
+				_typeStream << "t_" << getSupportedName(*it) << ": ";
 				_typeStream << TFFTypeString(*it);
 				_typeStream << " > $o";
 				_typeStream << ")).\n";
@@ -679,9 +694,9 @@ private:
 			}
 			(*_os) << "] : (";
 			(*_os) << "~(";
-			(*_os) << "t_" << f->sort(0)->name() << "(V0)";
+			(*_os) << "t_" << getSupportedName(f->sort(0)) << "(V0)";
 			for (unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << " & " << "t_" << f->sort(n)->name() << "(V" << n << ")";
+				(*_os) << " & " << "t_" << getSupportedName(f->sort(n)) << "(V" << n << ")";
 			}
 			(*_os) << ") | ";
 		}
@@ -691,7 +706,7 @@ private:
 			(*_os) << TFFTypeString(f->outsort());
 		}
 		(*_os) << "] : (";
-		(*_os) << "t_" << f->outsort()->name() << "(X1) & ";
+		(*_os) << "t_" << getSupportedName(f->outsort()) << "(X1) & ";
 		(*_os) << "(! [X2";
 		if (_arithmetic) {
 			(*_os) << ": ";
@@ -743,5 +758,3 @@ private:
 		_conjectureStream.str(std::string());
 	}
 };
-
-#endif /* TPTPPRINTER_HPP_ */
