@@ -51,6 +51,10 @@ bool XSBToIDPTranslator::isoperator(int c) {
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 	auto str = symbol->nameNoArity();
+	return to_prolog_term(str);
+}
+
+string XSBToIDPTranslator::to_prolog_term(string str) {
 	for (auto it = _termnames.cbegin(); it != _termnames.cend(); ++it) {
 		if ((*it).first == str) {
 			return (*it).second;
@@ -176,16 +180,8 @@ string XSBToIDPTranslator::to_prolog_varname(string str) {
 }
 
 string XSBToIDPTranslator::to_prolog_sortname(string str) {
-	stringstream s;
-	s << IDPXSB_PREFIX << to_simple_chars(str);
-	return s.str();
+	return to_prolog_term(to_simple_chars(str));
 }
-
-//string XSBToIDPTranslator::to_prolog_varname(string str) {
-//	stringstream s;
-//	s << IDPXSB_PREFIX << to_simple_chars(str);
-//	return s.str();
-//}
 
 string XSBToIDPTranslator::get_idp_prefix() {
 	return IDPXSB_PREFIX;

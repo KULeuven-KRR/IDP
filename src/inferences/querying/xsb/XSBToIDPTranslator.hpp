@@ -34,6 +34,7 @@ public:
 	bool isoperator(int c);
 
 	std::string to_prolog_term(const PFSymbol*);
+	std::string to_prolog_term(const std::string);
 	std::string to_idp_pfsymbol(std::string);
 	std::string to_prolog_pred_and_arity(const PFSymbol*);
 	std::string to_prolog_pred_and_arity(const Sort*);
@@ -48,7 +49,6 @@ public:
 
 	std::string to_prolog_varname(std::string);
 	std::string to_prolog_sortname(std::string);
-//	std::string to_prolog_termname(std::string);
 	static std::string to_simple_chars(std::string);
 
 	static std::string get_idp_prefix();

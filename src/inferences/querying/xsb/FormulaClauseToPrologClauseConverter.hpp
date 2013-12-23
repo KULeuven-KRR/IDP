@@ -32,7 +32,7 @@ public:
 			  _translator(translator) {
 	}
 
-	string generateGeneratorClauseName();
+	std::string generateGeneratorClauseName();
 
 	void visit(FormulaClause* f) {
 		f->accept(this);

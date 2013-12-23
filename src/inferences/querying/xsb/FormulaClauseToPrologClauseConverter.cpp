@@ -16,8 +16,6 @@
 #include "PrologProgram.hpp"
 #include "XSBToIDPTranslator.hpp"
 
-using namespace std;
-
 
 string FormulaClauseToPrologClauseConverter::generateGeneratorClauseName() {
 	std::stringstream ss;
@@ -41,7 +39,7 @@ void FormulaClauseToPrologClauseConverter::visit(ExistsClause* ec) {
 }
 
 void FormulaClauseToPrologClauseConverter::visit(ForallClause* fc) {
-	PrologTerm* forall = new PrologTerm("idpxsb_forall");
+	PrologTerm* forall = new PrologTerm(_translator->to_prolog_term("forall"));
 	std::list<PrologTerm*> list;
 //	Create generator clause
 	AndClause* tmp = new AndClause(generateGeneratorClauseName());
@@ -61,7 +59,6 @@ void FormulaClauseToPrologClauseConverter::visit(ForallClause* fc) {
 	forall->addInputvarsToCheck(set<PrologVariable*>(fc->variables().begin(), fc->variables().end()));
 	_pp->addClause(new PrologClause(fc->asTerm(), forall));
 	fc->child()->accept(this);
-
 }
 
 void FormulaClauseToPrologClauseConverter::visit(AndClause* ac) {
