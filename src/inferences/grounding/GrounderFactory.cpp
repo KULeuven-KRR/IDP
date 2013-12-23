@@ -549,7 +549,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	bool cpable = getOption(BoolType::CPSUPPORT) and not recursive(pf) and _context._component != CompContext::HEAD;
 	// Ungraph if cp can be used
-	if(cpable && newpf->isGraphedFunction()){
+	if(cpable && newpf->isGraphedFunction()){ // TODO subtle issues if pf is the head of a rule and defines a function, related to aggregates in the head
 		auto func = dynamic_cast<Function*>(newpf->symbol());
 		if(not CPSupport::eligibleForCP(func, _vocabulary)){
 			cpable = false;
