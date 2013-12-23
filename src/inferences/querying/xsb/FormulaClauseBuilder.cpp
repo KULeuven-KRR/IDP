@@ -240,16 +240,12 @@ void FormulaClauseBuilder::visit(const FuncTerm* f) {
 }
 
 void FormulaClauseBuilder::visit(const PredForm* p) {
-	if (p->symbol()->nameNoArity() == "-" && p->args().size() == 2 &&
-		p->args().at(0)->type() == TermType::DOM && p->args().at(1)->type() == TermType::VAR) {
-
-		// Special case for the "-" predicate that can be filled in by its value (or a unification with this)
-		auto unification = new PrologTerm("=");
-		enter(unification);
-		p->subterms()[1]->accept(this);
-		unification->addArgument(createPrologConstant(((DomainTerm*) p->args().at(0))->value()));
-		leave();
-		_parent->addVariables(unification->variables());
+	if (p->symbol()->nameNoArity() == "-" && p->args().size() == 2) {
+		// Special case for the "-(x,y)" predicate, rewrite it to (x = -1*y)
+		DomainTerm domterm(get(STDSORT::INTSORT), GlobalData::getGlobalDomElemFactory()->create(-1), {});
+		FuncTerm fterm(get(STDFUNC::PRODUCT), {&domterm, p->subterms()[0]}, {});
+		PredForm eqPredForm(SIGN::POS, get(STDPRED::EQ, p->subterms()[1]->sort()), {p->subterms()[1], &fterm}, {});
+		eqPredForm.accept(this);
 	} else if(p->args().size() == 1 && p->symbol()->nameNoArity() == "MIN") {
 		// Special case for the MIN function of types
 		auto unification = new PrologTerm("=");
