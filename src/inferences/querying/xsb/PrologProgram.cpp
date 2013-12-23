@@ -91,10 +91,21 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
-		if ((*it)->builtin() || contains(_loaded,(*it)->nameNoArity())) {
+		if ((*it)->builtin()) {
 			continue;
 		}
-		_loaded.insert((*it)->nameNoArity());
+
+		auto isSort = false;
+		for (auto sort : _sorts) {
+			if (sort->pred() == *it)
+				isSort = true;
+				continue;
+		}
+
+		if ((*it)->builtin() || isSort) {
+			continue;
+		}
+
 		_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
 		auto st = _structure->inter(*it)->ct();
 		for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
