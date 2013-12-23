@@ -14,6 +14,7 @@
 #include "FormulaClauseToPrologClauseConverter.hpp"
 #include "FormulaClause.hpp"
 #include "PrologProgram.hpp"
+#include "XSBToIDPTranslator.hpp"
 
 using namespace std;
 
@@ -107,7 +108,7 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateTerm* at) {
 	list<PrologTerm*> body;
 	for(auto it = at->instantiatedVariables().cbegin(); it != at->instantiatedVariables().cend(); it++) {
 		PrologTerm* boundSort = new PrologTerm((*it)->type());
-		auto sortArg = PrologVariable::create((*it)->name());
+		auto sortArg = _translator->create((*it)->name());
 		boundSort->addArgument(sortArg);
 		body.push_back(boundSort);
 	}
@@ -115,7 +116,7 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateTerm* at) {
 	PrologTerm* findall = new PrologTerm("findall");
 	findall->addArgument(at->set()->var());
 	findall->addArgument(at->set()->asTerm());
-	auto listvar = PrologVariable::create("INTERNAL_LIST");
+	auto listvar = _translator->create("INTERNAL_LIST");
 	findall->addArgument(listvar);
 	body.push_back(findall);
 	at->set()->accept(this);

@@ -14,11 +14,13 @@
 #include <unordered_map>
 
 #include "commontypes.hpp"
+#include "vocabulary/VarCompare.hpp"
 
 class PrologTerm;
 class DomainElement;
 class PFSymbol;
 class Sort;
+class PrologVariable;
 
 class XSBToIDPTranslator {
 
@@ -51,4 +53,10 @@ public:
 
 	static std::string get_idp_prefix();
 	static std::string get_idp_caps_prefix();
+
+private:
+	std::map<std::string, PrologVariable*> vars;
+public:
+	PrologVariable* create(std::string name, std::string type = "");
+	std::set<PrologVariable*> prologVars(const varset&);
 };

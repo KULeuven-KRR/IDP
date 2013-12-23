@@ -18,6 +18,7 @@
 #include "vocabulary/vocabulary.hpp"
 #include "structure/DomainElement.hpp"
 #include "structure/DomainElementFactory.hpp"
+#include "FormulaClause.hpp"
 
 using std::string;
 using std::stringstream;
@@ -192,4 +193,26 @@ string XSBToIDPTranslator::get_idp_prefix() {
 
 string XSBToIDPTranslator::get_idp_caps_prefix() {
 	return IDPXSB_CAPS_PREFIX;
+}
+
+PrologVariable* XSBToIDPTranslator::create(std::string name, std::string type) {
+	std::stringstream ss;
+	ss << name << type;
+	std::string str = ss.str();
+
+	auto v = vars[str];
+	if (v == NULL) {
+		v = new PrologVariable(name, type);
+		vars[str] = v;
+	}
+	return v;
+
+}
+
+std::set<PrologVariable*> XSBToIDPTranslator::prologVars(const varset& vars) {
+	std::set<PrologVariable*> list;
+	for (auto var = vars.begin(); var != vars.end(); ++var) {
+		list.insert(create((*var)->name(), (*var)->sort()->name()));
+	}
+	return list;
 }

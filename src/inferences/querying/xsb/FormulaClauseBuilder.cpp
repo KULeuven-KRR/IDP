@@ -79,7 +79,7 @@ string FormulaClauseBuilder::generateNewQuantSetExprName() {
 PrologVariable* FormulaClauseBuilder::createPrologVar(const Variable* var) {
 	auto prologVarName = _translator->to_prolog_varname(var->name());
 	auto prologVarSortName = _translator->to_prolog_sortname(var->sort()->name());
-	return PrologVariable::create(prologVarName, prologVarSortName);
+	return _translator->create(prologVarName, prologVarSortName);
 }
 
 PrologConstant* FormulaClauseBuilder::createPrologConstant(const DomainElement* domelem) {
@@ -107,7 +107,7 @@ void FormulaClauseBuilder::visit(const Definition* d) {
 void FormulaClauseBuilder::visit(const Rule* r) {
 //	The rule of a definition results in a clause with an exists quantor
 	ExistsClause* ec = new ExistsClause(_translator->to_prolog_term(r->head()->symbol()));
-	ec->quantifiedVariables(PrologVariable::prologVars(r->head()->freeVars()));
+	ec->quantifiedVariables(_translator->prologVars(r->head()->freeVars()));
 	enter(ec);
 	r->body()->accept(this);
 	leave();
@@ -140,7 +140,7 @@ void FormulaClauseBuilder::visit(const DomainTerm* d) {
 }
 
 void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
-	auto term = new EnumSetExpression(generateNewEnumSetExprName());
+	auto term = new EnumSetExpression(generateNewEnumSetExprName(), _translator);
 	enter(term);
 	for (uint i = 0; i < e->getSubSets().size(); ++i) {
 		auto subf = e->getSets()[i]->getCondition();
@@ -154,8 +154,8 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 }
 
 void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
-	auto term = new QuantSetExpression(generateNewQuantSetExprName());
-	term->quantifiedVariables(PrologVariable::prologVars(q->quantVars()));
+	auto term = new QuantSetExpression(generateNewQuantSetExprName(), _translator);
+	term->quantifiedVariables(_translator->prologVars(q->quantVars()));
 	enter(term);
 	q->getSubFormula()->accept(this);
 	q->getSubTerm()->accept(this);
@@ -198,7 +198,7 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 }
 
 void FormulaClauseBuilder::visit(const AggTerm* a) {
-	auto term = new AggregateTerm(generateNewAggregateTermName());
+	auto term = new AggregateTerm(generateNewAggregateTermName(), _translator);
 	term->agg_type(_translator->to_prolog_term(a->function()));
 	enter(term);
 	a->set()->accept(this);

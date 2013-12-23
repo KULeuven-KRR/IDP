@@ -61,7 +61,7 @@ PrologTerm* XSBInterface::symbol2term(const PFSymbol* symbol) {
 	for (uint i = 0; i < symbol->nrSorts(); ++i) {
 		std::stringstream ss;
 		ss <<"X" <<i;
-		term->addArgument(PrologVariable::create(ss.str()));
+		term->addArgument(_translator->create(ss.str()));
 	}
 	return term;
 }
@@ -138,6 +138,11 @@ void XSBInterface::reset() {
 		commandCall(ss.str());
 	}
 	commandCall("abolish_all_tables.\n");
+	delete(_translator);
+	_translator = new XSBToIDPTranslator();
+	_structure = NULL;
+	delete(_pp);
+	_pp = NULL;
 }
 
 void XSBInterface::exit() {

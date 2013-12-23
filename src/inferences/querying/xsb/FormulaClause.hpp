@@ -252,7 +252,7 @@ public:
 class PrologVariable: public PrologTerm {
 	friend std::ostream& operator<<(std::ostream& output, const PrologVariable& pv);
 private:
-	static std::map<string, PrologVariable*> vars;
+
 	string _type;
 
 public:
@@ -260,14 +260,14 @@ public:
 			: 	PrologTerm(name),
 				_type(type) {
 	}
+
 	string type() {
 		return _type;
 	}
 	void type(string type) {
 		_type = type;
 	}
-	static PrologVariable* create(string name, string type = "");
-	static set<PrologVariable*> prologVars(const varset&);
+
 	PrologTerm* instantiation();
 	virtual std::ostream& put(std::ostream&) const;
 };
@@ -399,15 +399,14 @@ public:
 	void accept(FormulaClauseVisitor*);
 };
 
+class XSBToIDPTranslator;
+
 class SetExpression: public FormulaClause {
 private:
 	PrologVariable* _var;
 	set<PrologVariable*> _quantvars;
 public:
-	SetExpression(string name)
-			: FormulaClause(name) {
-		_var = PrologVariable::create("INTERNAL_VAR_NAME");
-	}
+	SetExpression(string name, XSBToIDPTranslator* translator);
 	PrologVariable* var() {
 		return _var;
 	}
@@ -428,8 +427,8 @@ private:
 	FormulaClause* _last;
 	std::map<FormulaClause*, PrologTerm*> _set;
 public:
-	EnumSetExpression(string name)
-			: SetExpression(name),
+	EnumSetExpression(string name, XSBToIDPTranslator* translator)
+			: SetExpression(name, translator),
 			  _last(NULL),
 			  _set() {}
 	void addChild(FormulaClause* f) {
@@ -449,8 +448,8 @@ private:
 	PrologTerm* _term;
 	FormulaClause* _clause;
 public:
-	QuantSetExpression(string name)
-			: SetExpression(name),
+	QuantSetExpression(string name, XSBToIDPTranslator* translator)
+			: SetExpression(name, translator),
 			  _term(NULL),
 			  _clause(NULL) {}
 	void addChild(FormulaClause* f) {
@@ -476,10 +475,7 @@ private:
 	string _agg_type;
 	PrologVariable* _result;
 public:
-	AggregateTerm(string name)
-			: FormulaClause(name) {
-		_result = PrologVariable::create("RESULT_VAR");
-	}
+	AggregateTerm(string name, XSBToIDPTranslator* translator);
 	void accept(FormulaClauseVisitor*);
 	void agg_type(string type) {
 		_agg_type = type;

@@ -18,8 +18,6 @@
 using std::string;
 using std::stringstream;
 
-std::map<std::string, PrologVariable*> PrologVariable::vars;
-
 std::ostream& operator<<(std::ostream& output, const PrologVariable& pv) {
 	output << pv._name;
 	return output;
@@ -148,6 +146,16 @@ void EnumSetExpression::accept(FormulaClauseVisitor* f) {
 	f->visit(this);
 }
 
+SetExpression::SetExpression(string name, XSBToIDPTranslator* translator)
+		: FormulaClause(name) {
+	_var = translator->create("INTERNAL_VAR_NAME");
+}
+
+AggregateTerm::AggregateTerm(string name, XSBToIDPTranslator* translator)
+		: FormulaClause(name) {
+	_result = translator->create("RESULT_VAR");
+}
+
 
 PrologTerm* PrologVariable::instantiation() {
 	auto sc = new PrologTerm(_type);
@@ -180,29 +188,6 @@ std::set<PrologVariable*> QuantifiedFormulaClause::variablesRequiringInstantiati
 
 std::set<PrologVariable*> PrologTerm::variablesRequiringInstantiation() {
 	return _inputvars_to_check;
-}
-
-PrologVariable* PrologVariable::create(std::string name, std::string type) {
-	std::stringstream ss;
-	ss << name << type;
-	std::string str = ss.str();
-
-	auto v = PrologVariable::vars[str];
-	if (v == NULL) {
-		v = new PrologVariable(name, type);
-
-		PrologVariable::vars[str] = v;
-	}
-	return v;
-
-}
-
-std::set<PrologVariable*> PrologVariable::prologVars(const varset& vars) {
-	std::set<PrologVariable*> list;
-	for (auto var = vars.begin(); var != vars.end(); ++var) {
-		list.insert(PrologVariable::create((*var)->name(), (*var)->sort()->name()));
-	}
-	return list;
 }
 
 //TODO: replace with operator< ?
