@@ -110,6 +110,7 @@ public:
 		delete (mx);
 
 MXResult ModelExpansion::expand() const {
+	auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_GROUNDING));
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
 	auto clonetheory = _theory->clone();
@@ -164,7 +165,7 @@ MXResult ModelExpansion::expand() const {
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS), assumptions);
-	if (getOption(IntType::VERBOSE_SOLVING) > 0) {
+	if (mxverbosity > 0) {
 		logActionAndTime("Starting solving at ");
 	}
 	bool unsat = false;
@@ -241,7 +242,7 @@ MXResult ModelExpansion::expand() const {
 			auto list = mx->getBestSolutionsFound();
 			auto bestvalue = mx->getBestValueFound();
 			result._optimalvalue = bestvalue;
-			if (getOption(IntType::VERBOSE_SOLVING) > 0) {
+			if (mxverbosity > 0) {
 				stringstream ss;
 				ss <<"The best value found was " <<bestvalue <<"\n";
 				ss <<"Solver generated " << list.size() << " model(s): ";
@@ -253,7 +254,7 @@ MXResult ModelExpansion::expand() const {
 		}
 	} else if(not unsat){
 		auto abstractsolutions = mx->getSolutions();
-		if (getOption(IntType::VERBOSE_SOLVING) > 0) {
+		if (mxverbosity > 0) {
 			stringstream ss;
 			ss <<"Solver generated " << abstractsolutions.size() << " model(s): ";
 			logActionAndTime(ss.str());
