@@ -279,9 +279,7 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 		for (auto it = p->subterms().begin(); it != p->subterms().end(); ++it) {
 			(*it)->accept(this);
 		}
-		if (p->symbol()->nameNoArity() == "abs" && p->args().size() == 2) {
-			term->numeric(true);
-		} else if (_translator->isoperator(p->symbol()->name().at(0))) {
+		if (_translator->isoperator(p->symbol()->name().at(0))) {
 			if (p->args().size() == 3) {
 				term->numeric(true);
 				term->infix(true);

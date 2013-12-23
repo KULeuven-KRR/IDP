@@ -33,11 +33,6 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 		if (!pt._sign) {
 			output << "\\+ ";
 		}
-		// TODO  can ix_abs be made not-numeric and treated as a normal predicate?
-		if (pt.name() == "ix_abs") {
-			output << XSBToIDPTranslator::get_idp_prefix() << "_abs(" << toString(*pt._arguments.front()) << ", " << toString(*pt._arguments.back()) << ")";
-			return output;
-		}
 		if (pt._arguments.size() == 2) {
 			if (pt._arguments.back()->numeric()) {
 				output << toString(*pt._arguments.front()) << " is " << toString(*pt._arguments.back());
