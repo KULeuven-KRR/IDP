@@ -545,10 +545,8 @@ const string& PFSymbol::name() const {
 	return _name;
 }
 string PFSymbol::nameNoArity() const {
-//	std::cout << "\t\tSPLITTING" << name() << "\n";
-	auto list = split(name(), "/");
-//	Assert(list.size()==2);
-	return list.front();
+	unsigned found = name().find_last_of("/");
+	return name().substr(0,found);
 }
 
 const ParseInfo& PFSymbol::pi() const {
