@@ -549,7 +549,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 
 	bool cpable = getOption(BoolType::CPSUPPORT) and not recursive(pf) and _context._component != CompContext::HEAD;
 	// Ungraph if cp can be used
-	if(newpf->isGraphedFunction()){
+	if(cpable && newpf->isGraphedFunction()){ // TODO subtle issues if pf is the head of a rule and defines a function, related to aggregates in the head
 		auto func = dynamic_cast<Function*>(newpf->symbol());
 		if(not CPSupport::eligibleForCP(func, _vocabulary)){
 			cpable = false;
@@ -561,7 +561,7 @@ void GrounderFactory::visit(const PredForm* pf) {
 		}
 	}
 	// But do not use a comparison generator if CP cannot be used for BOTH terms
-	if(VocabularyUtils::isComparisonPredicate(newpf->symbol()) && is(newpf->symbol(), STDPRED::EQ) &&
+	if(cpable && VocabularyUtils::isComparisonPredicate(newpf->symbol()) && is(newpf->symbol(), STDPRED::EQ) &&
 			((newpf->subterms()[0]->type()==TermType::FUNC && not CPSupport::eligibleForCP(dynamic_cast<FuncTerm*>(newpf->subterms()[0])->function(), _vocabulary))
 					||
 			 (newpf->subterms()[1]->type()==TermType::FUNC && not CPSupport::eligibleForCP(dynamic_cast<FuncTerm*>(newpf->subterms()[1])->function(), _vocabulary)))){
