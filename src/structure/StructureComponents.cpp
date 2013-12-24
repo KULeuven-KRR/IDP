@@ -891,6 +891,7 @@ void ConstructedInternalSortIterator::skipToNextElement() {
 		return;
 	}
 	while (_table_it.isAtEnd()) {
+		_constr_index++;
 		++_constructors_it;
 		if (_constructors_it == _constructors.cend()) {
 			return;
@@ -902,16 +903,25 @@ void ConstructedInternalSortIterator::skipToNextElement() {
 void ConstructedInternalSortIterator::initialize(const std::vector<Function*>& constructors){
 	// make sure finite constructors are in front
 	_constructors=std::vector<Function*>();
-	for(unsigned int i=0; i<constructors.size(); ++i){
-		if(_struct->inter(constructors.at(i))->funcTable()->finite()){
-			_constructors.push_back(constructors.at(i));
+	std::vector<Function*> rem;
+	for(auto c:constructors){
+		auto table = _struct->inter(c)->funcTable(); // TODO what if graph???
+		if(table->empty()){
+			continue;
+		}
+		if(table->approxFinite()){
+			_constructors.push_back(c);
+		}else{
+			rem.push_back(c);
 		}
 	}
-	for(unsigned int i=0; i<constructors.size(); ++i){
-		if(not _struct->inter(constructors.at(i))->funcTable()->finite()){
-			_constructors.push_back(constructors.at(i));
-		}
+	if(_constructors.empty()){
+		_constr_index=-1;
+		_constructors_it = _constructors.cend();
+		return;
 	}
+	insertAtEnd(_constructors, rem);
+	_constr_index = 0;
 	_constructors_it=_constructors.cbegin();
 	if(_constructors_it!=_constructors.cend()){
 		_table_it= _struct->inter(*_constructors_it)->funcTable()->begin();
@@ -919,6 +929,9 @@ void ConstructedInternalSortIterator::initialize(const std::vector<Function*>& c
 	skipToNextElement();
 }
 
+ConstructedInternalSortIterator::ConstructedInternalSortIterator(): _constr_index(-1), _struct(NULL){
+
+}
 ConstructedInternalSortIterator::ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc)
 		: 	_constructors(std::vector<Function*>()),
 			_struct(struc) {
@@ -930,6 +943,7 @@ ConstructedInternalSortIterator::ConstructedInternalSortIterator(const std::vect
 			_struct(struc) {
 	initialize(constructors);
 	if(domel->type()!=DET_COMPOUND){
+		_constr_index = -1;
 		_constructors_it=_constructors.cend();
 	}else{
 		Function* func = domel->value()._compound->function();
@@ -940,12 +954,27 @@ ConstructedInternalSortIterator::ConstructedInternalSortIterator(const std::vect
 					++_table_it;
 				}
 				if(_table_it.isAtEnd()){ // element not present
+					_constr_index = -1;
 					_constructors_it=_constructors.cend();
 				}
 				break;
 			}
 		}
 	}
+}
+
+ConstructedInternalSortIterator* ConstructedInternalSortIterator::clone() const {
+	auto newit = new ConstructedInternalSortIterator();
+	newit->_constructors = _constructors;
+	newit->_constr_index = _constr_index;
+	if (_constr_index != -1) {
+		newit->_constructors_it = newit->_constructors.cbegin() + _constr_index;
+		newit->_table_it = TableIterator(_table_it);
+	} else {
+		newit->_constructors_it = newit->_constructors.cend();
+	}
+	newit->_struct = _struct;
+	return newit;
 }
 
 /*************************
@@ -1957,7 +1986,14 @@ bool ConstructedInternalSortTable::finite() const {
 bool ConstructedInternalSortTable::empty() const {
 	if(isRecursive()){
 		for(auto f:_constructors){
-			if(f->arity()==0){
+			auto allnonrec = true;
+			for(auto i=0; i<f->arity(); ++i){
+				if(f->insorts()[i]==f->outsort()){
+					allnonrec = false;
+					break;
+				}
+			}
+			if(allnonrec){
 				return false;
 			}
 		}
@@ -1984,7 +2020,14 @@ bool ConstructedInternalSortTable::approxFinite() const {
 bool ConstructedInternalSortTable::approxEmpty() const {
 	if(isRecursive()){
 		for(auto f:_constructors){
-			if(f->arity()==0){
+			auto allnonrec = true;
+			for(auto i=0; i<f->arity(); ++i){
+				if(f->insorts()[i]==f->outsort()){
+					allnonrec = false;
+					break;
+				}
+			}
+			if(allnonrec){
 				return false;
 			}
 		}
@@ -4161,7 +4204,7 @@ bool needMoreModels(unsigned int found) {
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
 		vector<Structure*>& extensions, int prevcount) {
 // go over all saved structures and generate a new structure for each possible value for it
-	auto imageIterator = SortIterator(imageSort->internTable()->sortBegin());
+	auto imageIterator = imageSort->sortBegin();
 	vector<Structure*> partialfalsestructs;
 	if (function->partial()) {
 		for (auto j = extensions.begin(); j < extensions.end(); ++j) {

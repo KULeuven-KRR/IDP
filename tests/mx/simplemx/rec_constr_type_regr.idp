@@ -1,0 +1,15 @@
+vocabulary V {
+	type CTLProp constructed from {EX(CTLProp)}
+	negate(CTLProp):CTLProp
+}
+
+theory T : V {
+
+}
+
+structure S : V {
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
