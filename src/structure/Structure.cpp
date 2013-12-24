@@ -217,11 +217,7 @@ void Structure::createPredAndFuncTables(bool forced) {
 
 void Structure::changeInter(Sort* f, SortTable* i) {
 	Assert(_sortinter[f]!=NULL);
-	delete (_sortinter[f]);
-	_sortinter[f] = i;
-	vector<SortTable*> univ(1, i);
-	auto pt = new PredTable(new FullInternalPredTable(), Universe(univ));
-	changeInter(f->pred(), new PredInter(pt, true));
+	_sortinter[f]->internTable(i->internTable());
 }
 
 void Structure::changeInter(Predicate* p, PredInter* i) {
