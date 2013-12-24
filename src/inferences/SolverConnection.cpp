@@ -123,7 +123,7 @@ PCSolver* createsolver(int nbmodels) {
 
 	modes.usegecode = getOption(GECODE);
 
-	modes.polarity = MinisatID::Polarity::TRUE;
+	modes.polarity = MinisatID::Polarity::STORED;
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;

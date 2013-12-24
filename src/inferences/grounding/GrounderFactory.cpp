@@ -514,8 +514,10 @@ const AggForm* rewriteSumOrCardIntoSum(const AggForm* af, Structure* structure) 
 			}
 		}
 		if (af->getAggTerm()->function() == AggFunction::SUM && af->getBound()->type()!=TermType::VAR) { // FIXME also for anything else that will be known (better shared set detection)
-			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
-			auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
+			//auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
+			//auto newft = new FuncTerm(minus, { af->getBound()->clone() }, TermParseInfo());
+			auto prod = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, structure->vocabulary());
+			auto newft = new FuncTerm(prod, { new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()), af->getBound()->clone() }, TermParseInfo());
 			auto newset = af->getAggTerm()->set()->clone();
 			newset->addSet(new QuantSetExpr( { }, FormulaUtils::trueFormula(), newft, SetParseInfo()));
 			af = new AggForm(af->sign(), new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo()), af->comp(),
@@ -764,8 +766,10 @@ AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
 			newagg = true;
 		}
 		if (aggterm->function() == AggFunction::SUM && bound->type()!=TermType::VAR) { // TODO or anything else known at ground time
-			auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
-			auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
+			//auto minus = get(STDFUNC::UNARYMINUS, { get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+			//auto newft = new FuncTerm(minus, { bound->clone() }, TermParseInfo());
+			auto prod = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+			auto newft = new FuncTerm(prod, { new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo()), bound->clone() }, TermParseInfo());
 			auto newset = aggterm->set()->clone();
 			newset->addSubSet(new QuantSetExpr( { }, FormulaUtils::trueFormula(), newft, SetParseInfo()));
 			bound = new DomainTerm(get(STDSORT::NATSORT), createDomElem(0), TermParseInfo());

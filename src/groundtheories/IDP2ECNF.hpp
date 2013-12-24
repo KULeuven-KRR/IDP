@@ -40,10 +40,10 @@ public:
 		_addedvarids.insert(varid);
 		auto domain = translator->domain(varid);
 		Assert(domain != NULL);
-		if (not domain->approxFinite()) {
-			throw notyetimplemented("Derived a sort to range over an infinite domain, which cannot be handled by the solver.");
-		}
-		if (domain->isRange()) {
+		if (not domain->approxFinite() && domain->isRange()) {
+			Warning::warning("Approximating int as all integers in -2^32..2^32, as the solver does not support true infinity at the moment. Models might be lost.");
+			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+		}else if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
 			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
 		} else {
