@@ -305,7 +305,7 @@ void Structure::makeTwoValued() {
 		vector<SortIterator> domainIterators;
 		bool allempty = true;
 		for (auto sort : sorts) {
-			const auto& temp = sort->sortBegin();
+			const auto& temp = SortIterator(sort->internTable()->sortBegin());
 			domainIterators.push_back(temp);
 			if (not temp.isAtEnd()) {
 				allempty = false;
@@ -338,7 +338,7 @@ void Structure::makeTwoValued() {
 				continue;
 			}
 
-			auto imageIterator = sorts.back()->sortBegin();
+			auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
 			for (; not imageIterator.isAtEnd(); ++imageIterator) {
 				CHECKTERMINATION
 				ElementTuple tuple(domainElementWithoutValue);

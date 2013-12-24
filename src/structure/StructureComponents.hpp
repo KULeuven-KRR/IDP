@@ -456,7 +456,6 @@ public:
 class ConstructedInternalSortIterator: public InternalSortIterator {
 private:
 	std::vector<Function*> _constructors;
-	int _constr_index;
 	std::vector<Function*>::const_iterator _constructors_it;
 	TableIterator _table_it;
 	const Structure* _struct;
@@ -469,12 +468,14 @@ private:
 	void initialize(const std::vector<Function*>& constructors);
 
 public:
-	ConstructedInternalSortIterator();
 	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc);
 	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc, const DomainElement* domel);
 	~ConstructedInternalSortIterator() {
 	}
-	ConstructedInternalSortIterator* clone() const;
+	ConstructedInternalSortIterator* clone() const {
+		return new ConstructedInternalSortIterator(_constructors, _struct, *(*this));
+	}
+
 };
 
 class RangeInternalSortIterator: public InternalSortIterator {
