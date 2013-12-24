@@ -197,6 +197,9 @@ private:
 		}
 		bool unsat = _grounder->toplevelRun();
 		if(unsat){
+			if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+				std::clog <<"groundsize&&" <<_grounder->getGrounding()->getSize() <<"\n";
+			}
 			auto grounding = returnUnsat(GroundInfo { _theory, { _structure, symstructure }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
 			return grounding;
 		}
