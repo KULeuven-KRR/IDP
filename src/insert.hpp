@@ -72,21 +72,17 @@ struct NSPair {
 	longname _name; //!< the name
 	std::vector<Sort*> _sorts; //!< the sorts
 
-	bool _arityincluded; //!< true iff the name ends on /arity
 	bool _sortsincluded; //!< true iff the sorts are initialized
 	bool _func; //!< true if the name is a pointer to a function
 	ParseInfo _pi; //!< place where the pair was parsed
 
-	NSPair(const longname& n, const std::vector<Sort*>& s, bool ari, const ParseInfo& pi)
-			: _name(n), _sorts(s), _arityincluded(ari), _sortsincluded(true), _func(false), _pi(pi) {
+	NSPair(const longname& n, const std::vector<Sort*>& s, const ParseInfo& pi)
+			: _name(n), _sorts(s), _sortsincluded(true), _func(false), _pi(pi) {
 	}
-	NSPair(const longname& n, bool ari, const ParseInfo& pi)
-			: _name(n), _sorts(0), _arityincluded(ari), _sortsincluded(false), _func(false), _pi(pi) {
+	NSPair(const longname& n, const ParseInfo& pi)
+			: _name(n), _sorts(0), _sortsincluded(false), _func(false), _pi(pi) {
 	}
 
-	void includePredArity();
-	void includeFuncArity();
-	void includeArity(unsigned int n);
 	std::ostream& put(std::ostream& output) const;
 };
 
@@ -188,10 +184,10 @@ private:
 
 	Sort* sortInScope(const std::string&, const ParseInfo&) const;
 	Sort* sortInScope(const longname&, const ParseInfo&) const;
-	Predicate* predInScope(const std::string&) const;
-	Predicate* predInScope(const longname&, const ParseInfo&) const;
-	Function* funcInScope(const std::string&) const;
-	Function* funcInScope(const longname&, const ParseInfo&) const;
+	Predicate* predInScope(const std::string&, int arity) const;
+	Predicate* predInScope(const longname&, int arity, const ParseInfo&) const;
+	Function* funcInScope(const std::string&, int arity) const;
+	Function* funcInScope(const longname&, int arity, const ParseInfo&) const;
 	std::set<Predicate*> noArPredInScope(const std::string& name) const;
 	std::set<Predicate*> noArPredInScope(const longname& name, const ParseInfo&) const;
 	std::set<Function*> noArFuncInScope(const std::string& name) const;

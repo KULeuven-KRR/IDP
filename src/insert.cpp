@@ -101,24 +101,6 @@ std::ostream& VarName::put(std::ostream& os) const {
  NSPair
  *************/
 
-void NSPair::includePredArity() {
-	Assert(_sortsincluded && !_arityincluded);
-	_name.back() = _name.back() + '/' + convertToString(_sorts.size());
-	_arityincluded = true;
-}
-
-void NSPair::includeFuncArity() {
-	Assert(_sortsincluded && !_arityincluded);
-	_name.back() = _name.back() + '/' + convertToString(_sorts.size() - 1);
-	_arityincluded = true;
-}
-
-void NSPair::includeArity(unsigned int n) {
-	Assert(!_arityincluded);
-	_name.back() = _name.back() + '/' + convertToString(n);
-	_arityincluded = true;
-}
-
 ostream& NSPair::put(ostream& output) const {
 	Assert(not _name.empty());
 	string str = _name[0];
@@ -126,9 +108,6 @@ ostream& NSPair::put(ostream& output) const {
 		str = str + "::" + _name[n];
 	}
 	if (_sortsincluded) {
-		if (_arityincluded) {
-			str = str.substr(0, str.rfind('/'));
-		}
 		str = str + '[';
 		if (not _sorts.empty()) {
 			if (_func and _sorts.size() == 1) {
@@ -237,11 +216,13 @@ std::set<Function*> Insert::noArFuncInScope(const vector<string>& vs, const Pars
 	}
 }
 
-Function* Insert::funcInScope(const string& name) const {
+Function* Insert::funcInScope(const string& name, int arity) const {
 	std::set<Function*> vf;
+	stringstream ss;
+	ss <<name <<"/" <<arity;
 	for (size_t n = 0; n < _usingvocab.size(); ++n) {
-		Function* f = _usingvocab[n]->func(name);
-		if (f) {
+		auto f = _usingvocab[n]->func(ss.str());
+		if (f!=NULL) {
 			vf.insert(f);
 		}
 	}
@@ -252,29 +233,31 @@ Function* Insert::funcInScope(const string& name) const {
 	}
 }
 
-Function* Insert::funcInScope(const vector<string>& vs, const ParseInfo& pi) const {
+Function* Insert::funcInScope(const vector<string>& vs, int arity, const ParseInfo& pi) const {
 	Assert(not vs.empty());
 	if (vs.size() == 1) {
-		return funcInScope(vs[0]);
-	} else {
-		vector<string> vv(vs.size() - 1);
-		for (size_t n = 0; n < vv.size(); ++n) {
-			vv[n] = vs[n];
-		}
-		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v) {
-			return v->func(vs.back());
-		} else {
-			return NULL;
-		}
+		return funcInScope(vs[0], arity);
 	}
+	vector<string> vv(vs.size() - 1);
+	for (size_t n = 0; n < vv.size(); ++n) {
+		vv[n] = vs[n];
+	}
+	auto v = vocabularyInScope(vv, pi);
+	if(v==NULL){
+		return NULL;
+	}
+	stringstream ss;
+	ss <<vs.back() <<"/" <<arity;
+	return v->func(ss.str());
 }
 
-Predicate* Insert::predInScope(const string& name) const {
+Predicate* Insert::predInScope(const string& name, int arity) const {
 	std::set<Predicate*> vp;
+	stringstream ss;
+	ss <<name <<"/" <<arity;
 	for (size_t n = 0; n < _usingvocab.size(); ++n) {
-		Predicate* p = _usingvocab[n]->pred(name);
-		if (p) {
+		auto p = _usingvocab[n]->pred(ss.str());
+		if (p!=NULL) {
 			vp.insert(p);
 		}
 	}
@@ -285,21 +268,22 @@ Predicate* Insert::predInScope(const string& name) const {
 	}
 }
 
-Predicate* Insert::predInScope(const longname& vs, const ParseInfo& pi) const {
+Predicate* Insert::predInScope(const longname& vs, int arity, const ParseInfo& pi) const {
 	Assert(not vs.empty());
 	if (vs.size() == 1) {
-		return predInScope(vs[0]);
+		return predInScope(vs[0], arity);
 	} else {
 		vector<string> vv(vs.size() - 1);
 		for (size_t n = 0; n < vv.size(); ++n) {
 			vv[n] = vs[n];
 		}
-		Vocabulary* v = vocabularyInScope(vv, pi);
-		if (v) {
-			return v->pred(vs.back());
-		} else {
+		auto v = vocabularyInScope(vv, pi);
+		if (v==NULL) {
 			return NULL;
 		}
+		stringstream ss;
+		ss <<vs.back() <<"/"<<arity;
+		return v->pred(ss.str());
 	}
 }
 
@@ -999,10 +983,9 @@ Sort* Insert::sortpointer(const longname& vs, YYLTYPE l) const {
 }
 
 Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + convertToString(arity);
-	Predicate* p = predInScope(vs, pi);
-	if (!p) {
+	auto pi = parseinfo(l);
+	auto p = predInScope(vs,arity, pi);
+	if (p==NULL) {
 		notDeclared(ComponentType::Predicate, toString(vs), pi);
 	}
 	return p;
@@ -1023,10 +1006,9 @@ YYLTYPE l) const {
 }
 
 Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	vs.back() = vs.back() + '/' + convertToString(arity);
-	Function* f = funcInScope(vs, pi);
-	if (!f) {
+	auto pi = parseinfo(l);
+	auto f = funcInScope(vs, arity, pi);
+	if (f==NULL) {
 		notDeclared(ComponentType::Function, toString(vs), pi);
 	}
 	return f;
@@ -1047,21 +1029,18 @@ YYLTYPE l) const {
 }
 
 NSPair* Insert::internpredpointer(const vector<string>& name, const vector<Sort*>& sorts, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	return new NSPair(name, sorts, false, pi);
+	return new NSPair(name, sorts, parseinfo(l));
 }
 
 NSPair* Insert::internfuncpointer(const vector<string>& name, const vector<Sort*>& insorts, Sort* outsort, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	NSPair* nsp = new NSPair(name, insorts, false, pi);
+	auto nsp = new NSPair(name, insorts, parseinfo(l));
 	nsp->_sorts.push_back(outsort);
 	nsp->_func = true;
 	return nsp;
 }
 
 NSPair* Insert::internpointer(const vector<string>& name, YYLTYPE l) const {
-	ParseInfo pi = parseinfo(l);
-	return new NSPair(name, false, pi);
+	return new NSPair(name, parseinfo(l));
 }
 
 /**
@@ -1388,9 +1367,8 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 		}
 	}
 
-	nst->includeArity(vt.size());
-	Predicate* p = predInScope(nst->_name, nst->_pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == vt.size()) {
+	auto p = predInScope(nst->_name, vt.size(), nst->_pi);
+	if (p!=NULL && nst->_sortsincluded && (nst->_sorts).size() == vt.size()) {
 		p = p->resolve(nst->_sorts);
 	}
 
@@ -1477,9 +1455,8 @@ YYLTYPE l) const {
 			funcnameexpected(nst->_pi);
 		}
 	}
-	nst->includeArity(vt.size());
-	Function* f = funcInScope(nst->_name, nst->_pi);
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
+	auto f = funcInScope(nst->_name, vt.size(), nst->_pi);
+	if (f!=NULL && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
 		f = f->resolve(nst->_sorts);
 	}
 
@@ -1727,8 +1704,7 @@ FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 			funcnameexpected(nst->_pi);
 		}
 	}
-	nst->includeArity(vt.size());
-	Function* f = funcInScope(nst->_name, nst->_pi);
+	auto f = funcInScope(nst->_name, vt.size(), nst->_pi);
 	if (f != NULL && nst->_sortsincluded && (nst->_sorts).size() == vt.size() + 1) {
 		f = f->resolve(nst->_sorts);
 	}
@@ -1787,9 +1763,8 @@ Variable* Insert::getVar(const string& name) const {
 Term* Insert::term(NSPair* nst) {
 	Term* t = NULL;
 	string name = (nst->_name)[0];
-	Variable* v = getVar(name);
-	nst->includeArity(0);
-	Function* f = funcInScope(nst->_name, nst->_pi);
+	auto v = getVar(name);
+	auto f = funcInScope(nst->_name, 0, nst->_pi);
 	if (v != NULL) {
 		if (f != NULL) {
 			Warning::varcouldbeconst((nst->_name)[0], nst->_pi);
@@ -1801,7 +1776,6 @@ Term* Insert::term(NSPair* nst) {
 	} else if (f != NULL) {
 		vector<Term*> vt(0);
 		nst->_name = vector<string>(1, name);
-		nst->_arityincluded = false;
 		t = functerm(nst, vt);
 	} else {
 		YYLTYPE l;
@@ -2149,12 +2123,11 @@ const DomainElement* Insert::element(char c) const {
 
 const DomainElement* Insert::element(const std::string& s) const {
 	// The parser cannot parse strings without "()" at the end as constructor function images, so this warning should be issued:
-	string name = s + "/0"; // TODO fix arity in names
-	Function* f = funcInScope(name);
+	auto f = funcInScope(s,0);
 	if (f != NULL && (f->isConstructorFunction() || f->overloaded())) {
 		Warning::constructorDisambiguationInStructure(s);
 		if (f->overloaded()) {
-			Error::overloaded(ComponentType::Function, name, std::vector<ParseInfo> { f->pi() }, { }); // TODO add locations
+			Error::overloaded(ComponentType::Function, s, std::vector<ParseInfo> { f->pi() }, { }); // TODO add locations
 			return createDomElem(s); // Om toch maar iets gelijkaardig terug te geven.
 		}
 		if (f->isConstructorFunction()) {
@@ -2225,13 +2198,12 @@ const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>
 			funcnameexpected(pi);
 		}
 	}
-	nst->includeArity(vte.size());
-	Function* f = funcInScope(nst->_name, pi);
+	auto f = funcInScope(nst->_name, vte.size(), pi);
 	const Compound* c = NULL;
-	if (f && nst->_sortsincluded && (nst->_sorts).size() == vte.size() + 1) {
+	if (f!=NULL  && nst->_sortsincluded && (nst->_sorts).size() == vte.size() + 1) {
 		f = f->resolve(nst->_sorts);
 	}
-	if (f) {
+	if (f!=NULL) {
 		if (belongsToVoc(f)) {
 			return createCompound(f, vte);
 		} else {
@@ -2258,9 +2230,8 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 			prednameexpected(pi);
 		}
 	}
-	nst->includeArity(args.size());
-	Predicate* p = predInScope(nst->_name, pi);
-	if (p && nst->_sortsincluded && (nst->_sorts).size() == args.size()) {
+	auto p = predInScope(nst->_name, args.size(), pi);
+	if (p!=NULL && nst->_sortsincluded && (nst->_sorts).size() == args.size()) {
 		p = p->resolve(nst->_sorts);
 	}
 	if (p == NULL) {
@@ -2519,10 +2490,10 @@ PFSymbol* Insert::retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arit
 	}
 	PFSymbol* p = NULL;
 	if (arity != -1) {
-		if (not nst->_arityincluded) {
-			nst->includeArity(arity);
+		p = expectsFunc ? (PFSymbol*) funcInScope(nst->_name, arity, pi) : (PFSymbol*) predInScope(nst->_name, arity, pi);
+		if(not expectsFunc and p==NULL){
+			p = funcInScope(nst->_name, arity-1, pi);
 		}
-		p = expectsFunc ? (PFSymbol*) funcInScope(nst->_name, pi) : (PFSymbol*) predInScope(nst->_name, pi);
 	} else {
 		if (expectsFunc) {
 			auto funcs = noArFuncInScope(nst->_name, pi);
@@ -2572,7 +2543,7 @@ void Insert::setInter(NSPair* nst, bool expectsFunc, UTF truthvalue, Table* t, i
 bool Insert::basicSymbolCheck(PFSymbol* symbol, NSPair* nst) const {
 	bool error = false;
 	if (not error && symbol == NULL) {
-		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
+		notDeclared(ComponentType::Symbol, toString(nst), nst->_pi);
 		error = true;
 	}
 	if (not error && not belongsToVoc(symbol)) {
@@ -2752,7 +2723,6 @@ void Insert::constructor(NSPair* nst) const {
 }
 
 void Insert::sortinter(NSPair* nst, SortTable* t) const {
-
 	ParseInfo pi = nst->_pi;
 	longname name = nst->_name;
 	Sort* s = sortInScope(name, pi);
@@ -2764,9 +2734,8 @@ void Insert::sortinter(NSPair* nst, SortTable* t) const {
 			prednameexpected(pi);
 		}
 	}
-	nst->includeArity(1);
-	Predicate* p = predInScope(nst->_name, pi);
-	if (p and nst->_sortsincluded and (nst->_sorts).size() == 1) {
+	auto p = predInScope(nst->_name, 1, pi);
+	if (p!=NULL and nst->_sortsincluded and (nst->_sorts).size() == 1) {
 		p = p->resolve(nst->_sorts);
 	}
 	if (s) {
