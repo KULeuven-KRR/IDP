@@ -38,6 +38,7 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{skolemize = [false, true]}] If true, existential quantification in sentences is replaced by introducing new function symbols. Only advantageous with cpsupport on.
 	\item[{tseitindelay = [false, true]}] If true, grounding can be delayed by lazily expanding quantifications and disjunctions/conjunctions.
 	\item[{satdelay = [false,true]}] If true, grounding can be delayed by maintaining justifications for non-ground sentences and rules.
+	\item[{postprocessdefs = [false,true]}] If true, definitions that can be evaluated efficiently after search or forgotten entirely are removed from the theory and are applied to structures found.
 	%\item[{sharedtseitin = [false, true]}] Enable/disable a Tseitin transformation where subformulas are shared (hence some equivalent subformulas and certainly all syntactical equal subformulas have the same tseitin).
 \end{description}
 

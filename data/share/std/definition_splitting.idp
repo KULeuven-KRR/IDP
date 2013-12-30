@@ -1,0 +1,112 @@
+/* TOTAL DEFINITION STRATIFICATION
+ * Decide whether a definition 
+ * 	- Should be grounded and considered by search
+ *	- Can be evaluated in a postprocessing step
+ *	- Can be forgotten entirely (based on the output vocabulary)
+ */
+ 
+namespace stdspace{
+namespace definitionsplitting{ 
+vocabulary defs_split_voc{
+// INPUT
+	type def isa int
+	type symbol
+	defines(def,symbol)
+	open(def,symbol)
+	outsymbol(symbol)
+	insentence(symbol)
+
+// OUTPUT
+	type action constructed from { theory,forget,post }
+	do(def):action
+	partial forget(def):def // definition -> level
+	partial post(def):def 	// definition -> level
+
+// Helper
+	theorycontains(symbol)
+}
+theory defs_split_theory:defs_split_voc{
+	do(d)=forget <=> ?l: forget(d)=l.
+	do(d)=post <=> ?l: post(d)=l.
+	
+	{
+		theorycontains(s) <- insentence(s).
+		theorycontains(s) <- do(d)=theory & (open(d,s) | defines(d,s)).
+	}
+	
+	theorycontains(sym) & defines(def,sym) => do(def)=theory.
+	
+	#{def: defines(def, sym) } > 1 => !def: defines(def,sym) => do(def)=theory.
+		
+	outsymbol(sym) & defines(def,sym) => do(def)~=forget.
+	
+	#{def: post(def)=level}<2.
+	do(def)=post=do(def2) & post(def)<post(def2) 
+			=> ~?sym: defines(def2,sym) & open(def,sym).
+	
+	#{def: forget(def)=level}<2.
+	do(def)=forget=do(def2) & forget(def)<forget(def2) 
+			=> ~?sym: defines(def2,sym) & open(def,sym).
+	
+	do(def)=forget & defines(def,sym) & open(def2,sym) => do(def2)=forget.
+}
+term defs_split_term:defs_split_voc{
+	2*#{d: do(d)=theory}+#{d: do(d)=post}
+}
+structure defs_split_ex:defs_split_voc{
+	defines = {
+		1,A1;2,A2;
+		3,B1;4,B2;
+		5,S1;6,S2;
+		7,T1;8,T2;
+	}
+	open = {
+		1,A2;2,A1;
+		3,B0;4,B1;
+		5,S0;6,S1;
+		7,T0;8,T1;
+	}
+	insentence = {B0;S0;B2;T0}
+	outsymbol = {S2;T1}
+}
+procedure splitdefinitions(theorystruct){
+	return minimize(T,theorystruct,t)[1]
+}
+
+/*
+ * Split a definition into its strongly connected components
+ */
+vocabulary def_split_voc {
+// INPUT
+	type rule isa int
+	type symbol
+	
+	defines(rule):symbol
+	open(rule,symbol)
+	
+	edge(symbol,symbol)
+	reaches(symbol,symbol)
+	
+// OUTPUT
+	samedef(rule,rule)
+}
+theory def_split_theory : def_split_voc {
+	{
+		edge(defines(r),b) <- open(r,b).
+		reaches(x,y) <- edge(x,y).
+		reaches(x,y) <- reaches(x,z) & edge(z, y).
+	}
+	{
+		samedef(r1,r2) <- reaches(defines(r),defines(r2)) & reaches(defines(r2),defines(r)). 
+	}
+}
+structure def_split_ex : def_split_voc{
+	defines = {1->B;2->C;3->C;4->D}
+	open = {1,A;2,B;3,D;4,C}
+}
+procedure splitdefinition(defstruct){
+	return modelexpand(defsplit,defstruct)[1]
+}
+
+}
+}

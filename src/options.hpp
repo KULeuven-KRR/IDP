@@ -92,8 +92,9 @@ enum BoolType {
 	LIFTEDUNITPROPAGATION,
 	STABLESEMANTICS,
 	REDUCEDGROUNDING,
-	XSB,
-	PROVER_SUPPORTS_TFA
+	POSTPROCESS_DEFS,
+	PROVER_SUPPORTS_TFA,
+	XSB
 };
 
 enum OptionType {
@@ -304,7 +305,7 @@ public:
 		return values;
 	}
 
-	void copyValues(const Options& opts);
+	void copyValues(const OptionPolicy<EnumType, ValueType>& opts);
 };
 
 // Note: Makes sure users cannot set the XSB option when there is no XSB available.

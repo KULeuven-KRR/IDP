@@ -94,8 +94,8 @@ public:
 
 	const std::vector<const DomElemContainer*>& getHeadVarContainers() const;
 
-	const Rule& getRule() const{
-		return *_origrule;
+	Rule* getRule() const{
+		return _origrule;
 	}
 
 	HeadGrounder* headgrounder() const {

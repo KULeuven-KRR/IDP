@@ -115,8 +115,15 @@ private:
 	void autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter);
 };
 
+void clean(Predicate*, PredInter* inter);
+void clean(Function* function, FuncInter* inter);
+
 /**
  * Changes the interpretation to make all unknown atoms false by
  * setting pt to ct and then cf and pf to NOT ct.
+ * NOTE: might result in an inconsistent structure for function symbols!
  */
 void makeUnknownsFalse(PredInter* inter);
+
+void makeTwoValued(Function* function, FuncInter* inter);
+void makeTwoValued(Predicate* p, PredInter* inter);

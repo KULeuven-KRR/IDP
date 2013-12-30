@@ -524,6 +524,9 @@ public:
 	 */
 	void graphInter(PredInter* pt);
 
+	// NOTE: only implemented if functable is set!!!
+	const DomainElement* value(const ElementTuple& tuple) const;
+
 	/**
 	 * Deletes the old functable and graphinter.
 	 * Sets functable to be the given argument

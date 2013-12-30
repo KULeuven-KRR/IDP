@@ -4039,6 +4039,14 @@ void FuncInter::funcTable(FuncTable* ft) {
 	_graphinter = new PredInter(ct, true);
 }
 
+const DomainElement* FuncInter::value(const ElementTuple& tuple) const{
+	if(approxTwoValued()){
+		return funcTable()->operator [](tuple);
+	}else{
+		throw notyetimplemented("Getting value of graphed funcinter");
+	}
+}
+
 void FuncInter::materialize() {
 	if (approxTwoValued()) {
 		auto ft = _functable->materialize();

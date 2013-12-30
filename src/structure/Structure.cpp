@@ -115,13 +115,13 @@ void Structure::notifyAddedToVoc(PFSymbol* symbol) {
  */
 void Structure::changeVocabulary(Vocabulary* v) {
     if (v != _vocabulary) {
-            if (_vocabulary != NULL) {
-                    _vocabulary->removeStructure(this);
-            }
-            _vocabulary = v;
-            if (_vocabulary != NULL) {
-                    _vocabulary->addStructure(this);
-            }
+		if (_vocabulary != NULL) {
+				_vocabulary->removeStructure(this);
+		}
+		_vocabulary = v;
+		if (_vocabulary != NULL) {
+				_vocabulary->addStructure(this);
+		}
     }else{
     	return;
     }
@@ -281,6 +281,69 @@ void makeUnknownsFalse(PredInter* inter) {
 	inter->cfpf(new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe()));
 }
 
+void makeTwoValued(Function* function, FuncInter* inter){
+	if (inter->approxTwoValued()) {
+		return;
+	}
+	// create a generator for the interpretation
+	auto universe = inter->graphInter()->universe();
+	const auto& sorts = universe.tables();
+
+	vector<SortIterator> domainIterators;
+	bool allempty = true;
+	for (auto sort : sorts) {
+		const auto& temp = SortIterator(sort->internTable()->sortBegin());
+		domainIterators.push_back(temp);
+		if (not temp.isAtEnd()) {
+			allempty = false;
+		}
+	}
+	domainIterators.pop_back();
+	if(domainIterators.size()==0) {
+		allempty = false;
+	}
+
+	auto ct = inter->graphInter()->ct();
+	auto cf = inter->graphInter()->cf();
+
+	//Now, choose an image for this domainelement
+	auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
+	TableIterator domainIterator(internaliterator);
+
+	auto ctIterator = ct->begin();
+	FirstNElementsEqual eq(function->arity());
+	StrictWeakNTupleOrdering so(function->arity());
+
+	for (; not domainIterator.isAtEnd(); ++domainIterator) {
+		CHECKTERMINATION
+		// get unassigned domain element
+		auto domainElementWithoutValue = *domainIterator;
+		while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
+			++ctIterator;
+		}
+		if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
+			continue;
+		}
+
+		auto imageIterator = SortIterator(sorts.back()->internTable()->sortBegin());
+		for (; not imageIterator.isAtEnd(); ++imageIterator) {
+			CHECKTERMINATION
+			ElementTuple tuple(domainElementWithoutValue);
+			tuple.push_back(*imageIterator);
+			if (cf->contains(tuple)) {
+				continue;
+			}
+			inter->graphInter()->makeTrue(tuple);
+			break;
+		}
+	}
+	clean(function, inter);
+}
+
+void makeTwoValued(Predicate* p, PredInter* inter){
+	inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
+	clean(p,inter);
+}
 void Structure::makeTwoValued() {
 	if (not isConsistent()) {
 		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
@@ -290,68 +353,11 @@ void Structure::makeTwoValued() {
 	}
 	for (auto f2inter : _funcinter) {
 		CHECKTERMINATION;
-		auto inter = f2inter.second;
-		if (inter->approxTwoValued()) {
-			continue;
-		}
-		// create a generator for the interpretation
-		auto universe = inter->graphInter()->universe();
-		const auto& sorts = universe.tables();
-
-		vector<SortIterator> domainIterators;
-		bool allempty = true;
-		for (auto sort : sorts) {
-			const auto& temp = sort->sortBegin();
-			domainIterators.push_back(temp);
-			if (not temp.isAtEnd()) {
-				allempty = false;
-			}
-		}
-		domainIterators.pop_back();
-		if(domainIterators.size()==0) {
-			allempty = false;
-		}
-
-		auto ct = inter->graphInter()->ct();
-		auto cf = inter->graphInter()->cf();
-
-		//Now, choose an image for this domainelement
-		auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, not allempty);
-		TableIterator domainIterator(internaliterator);
-
-		auto ctIterator = ct->begin();
-		FirstNElementsEqual eq(f2inter.first->arity());
-		StrictWeakNTupleOrdering so(f2inter.first->arity());
-
-		for (; not domainIterator.isAtEnd(); ++domainIterator) {
-			CHECKTERMINATION
-			// get unassigned domain element
-			auto domainElementWithoutValue = *domainIterator;
-			while (not ctIterator.isAtEnd() && so(*ctIterator, domainElementWithoutValue)) {
-				++ctIterator;
-			}
-			if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
-				continue;
-			}
-
-			auto imageIterator = sorts.back()->sortBegin();
-			for (; not imageIterator.isAtEnd(); ++imageIterator) {
-				CHECKTERMINATION
-				ElementTuple tuple(domainElementWithoutValue);
-				tuple.push_back(*imageIterator);
-				if (cf->contains(tuple)) {
-					continue;
-				}
-				inter->graphInter()->makeTrue(tuple);
-				break;
-			}
-		}
+		::makeTwoValued(f2inter.first, f2inter.second);
 	}
 	for (auto i = _predinter.begin(); i != _predinter.end(); i++) {
 		CHECKTERMINATION;
-		auto inter = (*i).second;
-		Assert(inter!=NULL);
-		inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
+		::makeTwoValued((*i).first, (*i).second);
 	}
 	clean();
 	Assert(approxTwoValued());
@@ -717,55 +723,62 @@ void Structure::materialize() {
 	}
 }
 
-//TODO Shouldn't this be approxClean?
-void Structure::clean() {
-	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
-		auto inter = it->second;
-		if (inter->approxTwoValued()) {
-			continue;
-		}
-		if(not inter->isConsistent()){
-			continue;
-		}
-		if (not TableUtils::isInverse(inter->ct(), inter->cf())) {
-			continue;
-		}
-		auto npt = new PredTable(it->second->ct()->internTable(), it->second->ct()->universe());
-		it->second->pt(npt);
+void clean(Predicate*, PredInter* inter){
+	if (inter->approxTwoValued()) {
+		return;
 	}
-	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
-		if (it->second->approxTwoValued()) {
-			continue;
-		}
-		if(not it->second->isConsistent()){
-			continue;
-		}
-		if (it->first->partial()) {
-			auto lastsorttable = it->second->universe().tables().back();
-			for (auto ctit = it->second->graphInter()->ct()->begin(); not ctit.isAtEnd(); ++ctit) {
-				auto tuple = *ctit;
-				auto ctvalue = tuple.back();
-				for (auto sortit = lastsorttable->sortBegin(); not sortit.isAtEnd(); ++sortit) {
-					auto cfvalue = *sortit;
-					if (*cfvalue != *ctvalue) {
-						tuple.pop_back();
-						tuple.push_back(*sortit);
-						it->second->graphInter()->makeFalse(tuple);
-					}
+	if(not inter->isConsistent()){
+		return;
+	}
+	if (not TableUtils::isInverse(inter->ct(), inter->cf())) {
+		return;
+	}
+	auto npt = new PredTable(inter->ct()->internTable(), inter->ct()->universe());
+	inter->pt(npt);
+}
+
+void clean(Function* function, FuncInter* inter){
+	if (inter->approxTwoValued()) {
+		return;
+	}
+	if(not inter->isConsistent()){
+		return;
+	}
+	if (function->partial()) {
+		auto lastsorttable = inter->universe().tables().back();
+		for (auto ctit = inter->graphInter()->ct()->begin(); not ctit.isAtEnd(); ++ctit) {
+			auto tuple = *ctit;
+			auto ctvalue = tuple.back();
+			for (auto sortit = lastsorttable->sortBegin(); not sortit.isAtEnd(); ++sortit) {
+				auto cfvalue = *sortit;
+				if (*cfvalue != *ctvalue) {
+					tuple.pop_back();
+					tuple.push_back(*sortit);
+					inter->graphInter()->makeFalse(tuple);
 				}
 			}
 		}
+	}
 
-		if ((it->first->partial() && TableUtils::isInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) ||
-		 (TableUtils::approxTotalityCheck(it->second) && it->second->isConsistent())) {
-			auto eift = new EnumeratedInternalFuncTable();
-			for (auto jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
-				eift->add(*jt);
-			}
-			if (eift->size(it->second->graphInter()->ct()->universe()) == it->second->graphInter()->ct()->size()) {
-				//TODO: too expensive. We should be able to directly transform ct-table to functable!
-				it->second->funcTable(new FuncTable(eift, it->second->graphInter()->ct()->universe()));
-			}
+	if ((function->partial() && TableUtils::isInverse(inter->graphInter()->ct(), inter->graphInter()->cf())) ||
+	 (TableUtils::approxTotalityCheck(inter) && inter->isConsistent())) {
+		auto eift = new EnumeratedInternalFuncTable();
+		for (auto jt = inter->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
+			eift->add(*jt);
 		}
+		if (eift->size(inter->graphInter()->ct()->universe()) == inter->graphInter()->ct()->size()) {
+			//TODO: too expensive. We should be able to directly transform ct-table to functable!
+			inter->funcTable(new FuncTable(eift, inter->graphInter()->ct()->universe()));
+		}
+	}
+}
+
+//TODO Shouldn't this be approxClean?
+void Structure::clean() {
+	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
+		::clean(it->first, it->second);
+	}
+	for (auto it = _funcinter.cbegin(); it != _funcinter.cend(); ++it) {
+		::clean(it->first, it->second);
 	}
 }
