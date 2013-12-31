@@ -994,7 +994,7 @@ bool ComparisonPredGenerator::contains(const Predicate* predicate) const {
  */
 Predicate* ComparisonPredGenerator::resolve(const vector<Sort*>& sorts) {
 	if (sorts.size() == 2 && sorts[0] == sorts[1]) {
-		map<Sort*, Predicate*>::const_iterator it = _overpreds.find(sorts[0]);
+		auto it = _overpreds.find(sorts[0]);
 		if (it == _overpreds.cend()) {
 			return disambiguate(sorts);
 		} else {
@@ -2120,14 +2120,6 @@ ostream& operator<<(ostream& output, const Vocabulary& voc) {
 }
 
 namespace VocabularyUtils {
-Sort* intRangeSort(int min, int max) {
-	stringstream ss;
-	ss << "s" << min << ".." << max;
-	auto sort = new Sort(ss.str(), new SortTable(new IntRangeInternalSortTable(min, max)));
-	sort->addParent(get(STDSORT::INTSORT));
-	return sort;
-}
-
 bool isComparisonPredicate(const PFSymbol* symbol) {
 	return (isa<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
 }

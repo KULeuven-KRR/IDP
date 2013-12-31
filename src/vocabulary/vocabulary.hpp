@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef VOCABULARY_HPP
-#define VOCABULARY_HPP
+#pragma once
 
 #include <vector>
 #include <set>
@@ -615,8 +614,6 @@ public:
 std::ostream& operator<<(std::ostream&, const Vocabulary&);
 
 namespace VocabularyUtils {
-Sort* intRangeSort(int min, int max); //returns a range sort [min,max]
-
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
@@ -627,5 +624,3 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 bool containsSymbol(std::string name,int arity,Vocabulary::Symbol sym, const Vocabulary* voc);
 PFSymbol* getSymbol(const Vocabulary* voc, Vocabulary::Symbol sym,std::string name);
 }
-
-#endif
