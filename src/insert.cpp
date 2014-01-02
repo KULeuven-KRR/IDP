@@ -2490,9 +2490,17 @@ PFSymbol* Insert::retrieveSymbolNoChecks(NSPair* nst, bool expectsFunc, int arit
 	}
 	PFSymbol* p = NULL;
 	if (arity != -1) {
-		p = expectsFunc ? (PFSymbol*) funcInScope(nst->_name, arity, pi) : (PFSymbol*) predInScope(nst->_name, arity, pi);
-		if(not expectsFunc and p==NULL){
-			p = funcInScope(nst->_name, arity-1, pi);
+		if(expectsFunc){
+			p = funcInScope(nst->_name, arity, pi);
+		}else{
+			p = predInScope(nst->_name, arity, pi);
+			auto p2 = funcInScope(nst->_name, arity-1, pi);
+			if(p!=NULL && p2!=NULL){
+				Error::overloaded(ComponentType::Symbol, toString(nst), getLocations<std::vector<PFSymbol*>>({p,p2}), {});
+			}
+			if(p==NULL){
+				p = p2;
+			}
 		}
 	} else {
 		if (expectsFunc) {
