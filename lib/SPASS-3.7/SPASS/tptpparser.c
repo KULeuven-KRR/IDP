@@ -3367,7 +3367,7 @@ static SYMBOL tptp_GetSymbol(char * Name, int ArgNum, TPTP_SYMBOLKIND Kind)
         return s;
       }
 			
-      misc_UserWarning("defined_functor '%s' encountered near line %d - treated as normal one!\n", Name, tptp_lineno);			
+      // misc_UserWarning("defined_functor '%s' encountered near line %d - treated as normal one!\n", Name, tptp_lineno);
     } else if (Kind == TPTP_SYSTEM) {
       misc_UserWarning("system_functor '%s' encountered near line %d - treated as normal one!\n", Name, tptp_lineno);			
     }			
@@ -3376,7 +3376,7 @@ static SYMBOL tptp_GetSymbol(char * Name, int ArgNum, TPTP_SYMBOLKIND Kind)
   if (tptp_TranslateIdents)
     Name = tptp_Identifierify(Name);
 
-  if (Kind != TPTP_ORDINARY)
+  if (Kind != TPTP_ORDINARY && Kind != TPTP_DEFINED)
     misc_UserWarning("(translated to '%s')\n", Name);
 	
   s = symbol_Lookup(Name);

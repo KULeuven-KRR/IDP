@@ -23,7 +23,7 @@ class Entails {
 private:
 	std::string command;
 	Theory *axioms, *conjectures;
-	bool hasArithmetic; // Note: not writing out arithmetic format output if none is present allows to use more provers.
+	bool hasArithmetic; // If true, TFA syntax will be output, otherwise FOF (and arithmetic will be approximated).
 	std::vector<std::string> provenStrings, disprovenStrings;
 
 public:

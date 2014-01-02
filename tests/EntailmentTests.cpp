@@ -13,6 +13,8 @@
 
 #include "gtest/gtest.h"
 #include "external/runidp.hpp"
+#include "options.hpp"
+#include "GlobalData.hpp"
 #include "utils/FileManagement.hpp"
 #include "TestUtils.hpp"
 
@@ -31,6 +33,10 @@ vector<string> generateListOfEntailmentFiles() {
 }
 
 TEST_P(EntailmentTests, Entails) {
+	stringstream ss;
+	ss <<getInstallDirectoryPath() <<"/bin/SPASS";
+	setOption(PROVERCOMMAND, ss.str());
+	setOption(PROVER_SUPPORTS_TFA, false);
 	runTests("entailment.idp", GetParam(), "checkEntails()");
 }
 INSTANTIATE_TEST_CASE_P(Entailment, EntailmentTests, ::testing::ValuesIn(generateListOfEntailmentFiles()));

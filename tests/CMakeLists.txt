@@ -126,21 +126,18 @@ if(${BUILDTESTS})
 		addMXTest(nobounds nobounds.cpp) 
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
-		if(USEXSB)
+		if(WITHXSB)
 		    addMXTest(xsbtest xsbmx.cpp)
-		endif()		
+		endif()
 
-		add_executable(slow
-			${MXTESTS}/slow.cpp
-			${MXINCLUDES}
-		)
+		add_executable(slow ${MXTESTS}/slow.cpp ${MXINCLUDES})
 		addTest(slow)
 		
-		add_executable(entailment
-			EntailmentTests.cpp
-			${TESTINCLUDES}
-		)
-		addTest(entailment)
+		if(SPASS)
+			add_executable(entailment EntailmentTests.cpp ${TESTINCLUDES})
+		    addTest(entailment)
+		    set(TESTBINARIES ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/entailment)
+		endif()
 		
 		add_custom_target(check VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} | ${PROJECT_BINARY_DIR}/lib/gtestparser/gtestparser DEPENDS ${EXECS} multiprocessrun gtestparser)
 		add_custom_target(fullcheck VERBATIM COMMAND ${PROJECT_BINARY_DIR}/lib/multiprocessrun/multiprocessrun ${TESTINGTHREADS} ${TESTBINARIES} ${PROJECT_BINARY_DIR}/tests/slow DEPENDS ${EXECS} slow multiprocessrun)
@@ -161,9 +158,14 @@ if(${BUILDTESTS})
 			mxtests/satbounds.cpp
 			mxtests/satcp.cpp			
 		)
-		if(USEXSB)
+		if(WITHXSB)
 		    set(LONGERTESTS "${LONGERTESTS} mxtests/xsbmx.cpp")
         endif()
+        
+        if(SPASS)
+            set(LONGERTESTS "${LONGERTESTS} EntailmentTests.cpp")
+        endif()
+
 		add_executable(idptests
 			${FASTTESTS}
 			${PRINTERTESTS}
@@ -178,12 +180,6 @@ if(${BUILDTESTS})
 			${MXINCLUDES}
 		)
 		addTest(slow)
-		
-		add_executable(entailment
-			EntailmentTests.cpp
-			${TESTINCLUDES}
-		)
-		addTest(entailment)
 		
 		add_custom_target(check ${PROJECT_BINARY_DIR}/tests/idptests DEPENDS idptests)
 		add_custom_target(fullcheck ${PROJECT_BINARY_DIR}/tests/slow DEPENDS slow)

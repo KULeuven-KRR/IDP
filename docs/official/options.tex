@@ -40,7 +40,6 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{longestbranch = [0..2147483647]}] The longest branch allowed in BDDs during propagation. The higher, the more precise the propagation will be (but also, the more time it will take).
 	\item[{nrpropsteps = [0..2147483647]}] The number of propagation steps used in the propagate-inference. The higher, the more precise the propagation will be (but also, the more time it will take).
 	\item[{relativepropsteps =  [false, true]}] If true, the total number of propagation steps is nrpropsteps multiplied by the number of formulas.
-
 \end{description}
 
 \subsection{Printing options}
@@ -48,6 +47,12 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{language = [ecnf, idp, idp2 %latex, asp, txt
 				tptp]}] The language used when printing objects. Note, not all languages support all kinds of objects.
 	\item[{longnames = [false, true]}] If true, everything is printed with reference to their vocabulary.  For example, a predicate \code{P} from vocabulary \code{V} will be printed as \code{V::P} instead of \code{P}.
+\end{description}
+
+\subsection{Entailment options}
+\begin{description}
+	\item[{provercommand = string}] String is the command by which a theorem prover can be called (as on a command-line). It has to contain the placeholders \code{\%i} and \code{\%o} which will be replaced with the input and output file, respectively.
+	\item[{proversupportsTFA = [false, true]}] Should be set to true if the selected prover (using above command) supports to TFA syntax of the CASC competition (Typed Fo with Arithmetic). Otherwise FOF syntax (First-Order Formulas) will be used.
 \end{description}
 
 \subsection{General options}

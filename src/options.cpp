@@ -168,6 +168,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
 
 		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, _option2name, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic
 		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
 				_option2name, PrintBehaviour::PRINT);
