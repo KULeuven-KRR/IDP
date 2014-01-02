@@ -78,10 +78,11 @@ string XSBToIDPTranslator::transform_into_term_name(string str) {
 	stringstream ss;
 
 	// For built-in predicates that are present in the "xsb_compiler", we add the prefix by default
-	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum") {
+	// TODO: make this into a pretty list or something...
+	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum" || str == "forall" || str == "int" || str == "nat" || str == "float" ) {
 		ss << IDPXSB_PREFIX;
 	} else if (!numOrOp && str != "findall" &&  str != "between") {
-		ss << IDPXSB_PREFIX;
+		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_";
 	}
 
 	ss << str;
