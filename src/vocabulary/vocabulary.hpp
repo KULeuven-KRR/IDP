@@ -19,6 +19,7 @@
 #include "parseinfo.hpp"
 #include "commontypes.hpp"
 
+
 /*********
  * Sorts
  ********/
@@ -503,6 +504,8 @@ private:
 
 	std::set<Structure*> structures;
 
+
+
 public:
 	Vocabulary(const std::string& name);
 	Vocabulary(const std::string& name, const ParseInfo& pi);
@@ -600,6 +603,8 @@ public:
 	std::ostream& putName(std::ostream&) const;
 	std::ostream& put(std::ostream&) const;
 
+	enum class Symbol { PREDICATE, FUNCTION};
+
 	friend class Namespace;
 };
 
@@ -615,6 +620,8 @@ bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
 
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
+bool containsSymbol(std::string name,int arity,Vocabulary::Symbol sym, const Vocabulary* voc);
+PFSymbol* getSymbol(const Vocabulary* voc, Vocabulary::Symbol sym,std::string name);
 }
 
 #endif

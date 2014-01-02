@@ -816,6 +816,12 @@ ostream& Predicate::put(ostream& output) const {
 				confusionpossible = true;
 				break;
 			}
+
+			//Check if there is a function with the same name
+			if(VocabularyUtils::containsSymbol(name(),(arity()-1),Vocabulary::Symbol::FUNCTION,voc)){
+				confusionpossible = true;
+				break;
+			}
 		}
 		if (nrSorts() > 0 && (confusionpossible || getOption(BoolType::LONGNAMES)) ) {
 			output << '[';
@@ -1312,6 +1318,11 @@ ostream& Function::put(ostream& output) const {
 		auto confusionpossible = false;
 		for (auto voc : getVocabularies()){
 			if (voc->func(name())->overloaded()) {
+				confusionpossible = true;
+				break;
+			}
+			//Check if there is a predicate with the same name
+			if(VocabularyUtils::containsSymbol(name(),(arity()+1),Vocabulary::Symbol::PREDICATE,voc)){
 				confusionpossible = true;
 				break;
 			}
@@ -2247,6 +2258,21 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 		}
 	}
 	return true;
+}
+
+bool containsSymbol(string name,int arity,Vocabulary::Symbol sym, const Vocabulary* voc){
+	std::stringstream sstm;
+	sstm << name.substr(0, name.rfind('/'))<<"/" << arity;
+	auto newname= sstm.str();
+	return (VocabularyUtils::getSymbol(voc,sym,newname)!=NULL);
+}
+PFSymbol* getSymbol(const Vocabulary* voc, Vocabulary::Symbol sym,string name){
+	if(sym==Vocabulary::Symbol::PREDICATE){
+		return voc->pred(name);
+	}
+	else{
+		return voc->func(name);
+	}
 }
 
 } /* VocabularyUtils */
