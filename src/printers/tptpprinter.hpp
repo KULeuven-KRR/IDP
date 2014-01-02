@@ -65,11 +65,23 @@ public:
 	void endTheory() {
 	}
 
-	template<class NamedObject>
-	std::string getSupportedName(const NamedObject& object){
-		// TODO check if there are more unsupported characters
-		auto result = replaceAllIn(object->name(), "'", "__prime__");
+	// TODO future: separate code and resolve reuse with e.g. XSB interface.
+	//		solve by curl_easy_escape approach, recoding all special characters to a string of ASCII letters and digits.
+	std::string encodeToASCII(const std::string& in) const {
+		auto result = replaceAllIn(in, "a", "ab");
+		result = replaceAllIn(result, "'", "aa");
 		return result;
+	}
+
+	std::string decodeFromASCII(const std::string& in) const {
+		auto result = replaceAllIn(in, "aa", "'");
+		result = replaceAllIn(result, "ab", "a");
+		return result;
+	}
+
+	template<class NamedObject>
+	std::string getSupportedName(const NamedObject& object) const {
+		return encodeToASCII(object->name());
 	}
 
 protected:
