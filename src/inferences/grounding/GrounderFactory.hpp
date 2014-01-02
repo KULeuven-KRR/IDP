@@ -63,7 +63,7 @@ struct GroundInfo {
 	Vocabulary* outputvocabulary;
 	bool nbModelsEquivalent;
 
-	GroundInfo(AbstractTheory* theory, StructureInfo structure, Vocabulary* outputvocabulary, 
+	GroundInfo(AbstractTheory* theory, StructureInfo structure, Vocabulary* outputvocabulary,
 			bool nbModelsEquivalent, Term* minimizeterm = NULL)
 			: 	theory(theory),
 				minimizeterm(minimizeterm),
@@ -85,7 +85,6 @@ struct GeneratorData { // NOTE: all have the same order!
 class GrounderFactory: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	bool allowskolemize;
 	std::map<Function*, Formula*> funcconstraints;
 	Vocabulary* _vocabulary;
 	StructureInfo _structure;

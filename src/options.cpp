@@ -130,6 +130,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::SKOLEMIZE, "skolemize", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, _option2name, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);

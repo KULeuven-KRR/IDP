@@ -9,12 +9,8 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef REPLACENESTEDWITHTSEITIN_HPP_
-#define REPLACENESTEDWITHTSEITIN_HPP_
+#pragma once
 
-#ifdef __APPLE__
-#include <sys/types.h>
-#endif
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 /**
@@ -163,6 +159,7 @@ private:
 public:
 	// NOTE: changes vocabulary and structure
 	Theory* execute(Theory* theory) {
+		throw IdpException("Invalid code path"); // Code is bugged
 		_vocabulary = theory->vocabulary();
 		firstpass = true;
 		auto t = theory->accept(this);
@@ -242,7 +239,4 @@ protected:
 
 		return d;
 	}
-
 };
-
-#endif /* REPLACENESTEDWITHTSEITIN_HPP_ */

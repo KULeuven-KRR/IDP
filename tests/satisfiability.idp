@@ -73,7 +73,13 @@ procedure satwithfullcp(){
 	stdoptions.timeout = 10
 	return run()
 }
-
+procedure satwithskolems(){
+	stdoptions.cpsupport = true
+	stdoptions.cpgroundatoms = true
+	stdoptions.skolemize=true
+	stdoptions.timeout = 10
+	return run()
+}
 
 procedure satwithsymm(){
 	stdoptions.timeout = 5
