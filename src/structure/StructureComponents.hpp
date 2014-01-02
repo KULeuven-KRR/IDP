@@ -456,6 +456,7 @@ public:
 class ConstructedInternalSortIterator: public InternalSortIterator {
 private:
 	std::vector<Function*> _constructors;
+	int _constr_index; // Stores the index of the constructor currently in use for iteration, to allow cloning; -1 if we are at the end.
 	std::vector<Function*>::const_iterator _constructors_it;
 	TableIterator _table_it;
 	const Structure* _struct;
@@ -468,14 +469,12 @@ private:
 	void initialize(const std::vector<Function*>& constructors);
 
 public:
+	ConstructedInternalSortIterator();
 	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc);
 	ConstructedInternalSortIterator(const std::vector<Function*>& constructors, const Structure* struc, const DomainElement* domel);
 	~ConstructedInternalSortIterator() {
 	}
-	ConstructedInternalSortIterator* clone() const {
-		return new ConstructedInternalSortIterator(_constructors, _struct, *(*this));
-	}
-
+	ConstructedInternalSortIterator* clone() const;
 };
 
 class RangeInternalSortIterator: public InternalSortIterator {
@@ -1531,6 +1530,7 @@ public:
 		return _function;
 	}
 
+	// Correctness of constructed iterator code depends on the fact that "empty" and "approxFinite" of constructed functions do NOT work by requesting an iterator
 	bool finite(const Universe&) const;
 	bool empty(const Universe&) const;
 	bool approxFinite(const Universe&) const;
