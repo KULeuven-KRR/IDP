@@ -138,8 +138,8 @@ void FormulaClauseToPrologClauseConverter::visit(QuantSetExpression* set) {
 }
 
 void FormulaClauseToPrologClauseConverter::visit(EnumSetExpression* set) {
-	list<PrologTerm*> body;
 	for (auto it = set->set().begin(); it != set->set().end(); ++it) {
+		list<PrologTerm*> body;
 		(*it).first->accept(this);
 		(*it).second->accept(this);
 		auto f = (*it).first;
