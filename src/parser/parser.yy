@@ -501,11 +501,7 @@ fd_rules	: fd_rules rule	'.'			{ $$ = $1; data().addRule($$,$2);					}
 			;	
 
 /** Formulas **/
-formula		: '!' variables IN formula ':' formula	{ $$ = data().implform($4 ,$6,@1);
-														  $$ = data().univform(*$2,$$,@1); delete($2);}
-			| '?' variables IN formula ':' formula	{ $$ = data().conjform($4,$6,@1);
-														  $$ = data().existform(*$2,$$,@1); delete($2);}
-			| '!' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().implform($6 ,$8,@1);
+formula		:    '!' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().implform($6 ,$8,@1);
 														  $$ = data().univform(data().varVectorToSet($3),$$,@1); delete($3);}
 			| '?' '(' variablelist ')' SAT formula ':' formula	{ $$ = data().conjform($6,$8,@1);
 														  $$ = data().existform(data().varVectorToSet($3),$$,@1); delete($3);}
@@ -858,6 +854,8 @@ floatnr			: FLNUMBER			{ $$ = $1;		}
 
 identifier		: IDENTIFIER	{ $$ = $1;	}
 				| CHARACTER		{ $$ = new std::string(1,$1); } 
+                                |IN {$$ = new std::string("in");}
+                                |SAT {$$ = new std::string("sat");}
 				;
 
 /********************
