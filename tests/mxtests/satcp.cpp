@@ -20,4 +20,8 @@ TEST_P(MXsatTest, DoesMXWithFullCP) {
 	runTests("satisfiability.idp", GetParam(), "satwithfullcp()");
 }
 
+TEST_P(MXsatTest, DoesSatMXSkolemize) {
+	runTests("satisfiability.idp", GetParam(), "satwithskolems()");
+}
+
 }

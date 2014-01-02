@@ -1,5 +1,17 @@
 include <mx>
 
+procedure standardoptions(){
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.transformations=0
+	stdoptions.verbosity.creategrounders=0
+	stdoptions.groundwithbounds=true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.satdelay=false
+	stdoptions.tseitindelay=false
+	stdoptions.lazyheur=false
+}
+
 procedure mxnobounds(){
 	stdoptions.groundwithbounds = false	
 	stdoptions.liftedunitpropagation = false
@@ -116,36 +128,36 @@ procedure mxwithsymm(){
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.symmetrybreaking = "static"
+	
 	stdoptions.showwarnings = false // Do not print warnings that more models MIGHT exist
-	stdoptions.nbmodels = getExpectedNbOfModels()+1
+	
+	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
+	standardoptions()
+	
 	if(#solutions>getExpectedNbOfModels()) then
 		io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
 		return 0
 	else
 		io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n")
 		return check(solutions)
-	end 	
+	end
 }
 
 procedure run() {
 	if(allowed~=nil) then
 		if (not allowed()) then return 1; end
 	end
+	
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.transformations=0
 	stdoptions.verbosity.creategrounders=0
+	
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
 	io.stderr:write("MX done\n")
-	stdoptions.verbosity.solving=0
-	stdoptions.verbosity.grounding=0
-	stdoptions.groundwithbounds=true
-	stdoptions.liftedunitpropagation=true
-	stdoptions.satdelay=false
-	stdoptions.tseitindelay=false
-	stdoptions.lazyheur=false
+	standardoptions()
 	if(#solutions~=getExpectedNbOfModels()) then
 		if(#solutions>getExpectedNbOfModels()) then
 			io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
