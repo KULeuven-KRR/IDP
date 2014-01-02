@@ -52,8 +52,7 @@ bool XSBToIDPTranslator::isoperator(int c) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
-	auto str = symbol->nameNoArity();
-	return to_prolog_term(str);
+	return to_prolog_term(symbol->fqn_name());
 }
 
 string XSBToIDPTranslator::to_prolog_term(string str) {
@@ -82,7 +81,8 @@ string XSBToIDPTranslator::transform_into_term_name(string str) {
 	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum" || str == "forall" || str == "int" || str == "nat" || str == "float" ) {
 		ss << IDPXSB_PREFIX;
 	} else if (!numOrOp && str != "findall" &&  str != "between") {
-		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_";
+		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_" << to_simple_chars(str);
+		return ss.str();
 	}
 
 	ss << str;
