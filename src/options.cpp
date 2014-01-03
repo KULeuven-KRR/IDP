@@ -110,112 +110,105 @@ Options::Options():_isVerbosity(false) {
 }
 // TODO add descriptions to options
 Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
-
 	std::set<bool> boolvalues { true, false };
 	if (verboseOptions) {
-		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_GROUNDING_STATISTICS, "groundingstats", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_ENTAILMENT, "entails", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_CREATE_GROUNDERS, "creategrounders", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_GROUNDING_STATISTICS, "groundingstats", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_ENTAILMENT, "entails", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 	} else {
 		auto opt = new Options(true);
-		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::SKOLEMIZE, "skolemize", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::WATCHEDRELEVANCE, "relevancewatched", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::REDUCEDGROUNDING, "reducedgrounding", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, _option2name, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
-		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, _option2name, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
-		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT); // Request to compute definitions as much as with xsb
-		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, _option2name, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::EXISTS_ONLYONELEFT_APPROX, "existsonlyoneleftapprox", boolvalues, false, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::LIFTEDUNITPROPAGATION, "liftedunitpropagation", boolvalues, true, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 6, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 13, _option2name, PrintBehaviour::PRINT);
+		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::SKOLEMIZE, "skolemize", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::WATCHEDRELEVANCE, "relevancewatched", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::REDUCEDGROUNDING, "reducedgrounding", boolvalues, true, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::AUTOCOMPLETE, "autocomplete", boolvalues, true, PrintBehaviour::DONOTPRINT); // TODO is only used before any lua is executed (during parsing) so not useful for user atm!
+		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
+		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::DONOTPRINT); // Request to compute definitions as much as with xsb
+		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::EXISTS_ONLYONELEFT_APPROX, "existsonlyoneleftapprox", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::LIFTEDUNITPROPAGATION, "liftedunitpropagation", boolvalues, true, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::NRPROPSTEPS, "nrpropsteps", 0, getMaxElem<int>(), 6, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::LONGESTBRANCH, "longestbranch", 0, getMaxElem<int>(), 13, PrintBehaviour::PRINT);
 
-		BoolPol::createOption(BoolType::ASSUMECONSISTENTINPUT, "assumeconsistentinput", boolvalues, false, _option2name, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::ASSUMECONSISTENTINPUT, "assumeconsistentinput", boolvalues, false, PrintBehaviour::PRINT);
 
-		IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, _option2name, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
-		IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::RANDOMSEED, "seed", 1, getMaxElem<int>(), 91648253, PrintBehaviour::PRINT); // This is the default minisat random seed to (for consistency)
+		IntPol::createOption(IntType::NBMODELS, "nbmodels", 0, getMaxElem<int>(), 1, PrintBehaviour::PRINT);
 
-		IntPol::createOption(IntType::LAZYSIZETHRESHOLD, "lazysizelimit", 1, getMaxElem<int>(), 12, _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::EXISTSEXPANSIONSTEPS, "existsexpansion", 1, getMaxElem<int>(), 10, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::LAZYSIZETHRESHOLD, "lazysizelimit", 1, getMaxElem<int>(), 12, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::EXISTSEXPANSIONSTEPS, "existsexpansion", 1, getMaxElem<int>(), 10, PrintBehaviour::PRINT);
 
 		// NOTE: set this to infinity, so he always starts timing, even when the options have not been read in yet.
 		// Afterwards, setting them to 0 stops the timing
-		IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), _option2name, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), 0, _option2name, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::TIMEOUT, "timeout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 
-		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", _option2name, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, _option2name, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic
-		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), _option2name, PrintBehaviour::PRINT);
+		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic
+		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
-				_option2name, PrintBehaviour::PRINT);
+				PrintBehaviour::PRINT);
 	}
 }
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound,
-		const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible) {
+		const ValueType& defaultValue, PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new RangeOption<EnumType, ValueType>(type, name, lowerbound, upperbound, visible);
 	newoption->setValue(defaultValue);
 	if (_options.size() <= (unsigned int) type) {
 		_options.resize(type + 1, NULL);
-		option2name.resize(type + 1, "");
 	}
 	_options[type] = newoption;
-	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
-		std::vector<std::string>& option2name, PrintBehaviour visible) {
+		PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new EnumeratedOption<EnumType, ValueType>(type, name, values, visible);
 	newoption->setValue(defaultValue);
 	if (_options.size() <= (unsigned int) type) {
 		_options.resize(type + 1, NULL);
-		option2name.resize(type + 1, "");
 	}
 	_options[type] = newoption;
-	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>
 void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::string& name, const ValueType& defaultValue,
-		std::vector<std::string>& option2name, PrintBehaviour visible) {
+		PrintBehaviour visible) {
 	_name2type[name] = type;
 	auto newoption = new AnyOption<EnumType, ValueType>(type, name, visible);
 	newoption->setValue(defaultValue);
 	if (_options.size() <= (unsigned int) type) {
 		_options.resize(type + 1, NULL);
-		option2name.resize(type + 1, "");
 	}
 	_options[type] = newoption;
-	option2name[type] = name;
 }
 
 template<class EnumType, class ValueType>

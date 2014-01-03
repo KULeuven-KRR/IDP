@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef OPTIONS_HPP
-#define OPTIONS_HPP
+#pragma once
 
 #include "common.hpp"
 #include "errorhandling/error.hpp"
@@ -234,10 +233,10 @@ private:
 	std::map<std::string, EnumType> _name2type;
 protected:
 	void createOption(EnumType type, const std::string& name, const ValueType& lowerbound, const ValueType& upperbound, const ValueType& defaultValue,
-			std::vector<std::string>& option2name, PrintBehaviour visible);
+			PrintBehaviour visible);
 	void createOption(EnumType type, const std::string& name, const std::set<ValueType>& values, const ValueType& defaultValue,
-			std::vector<std::string>& option2name, PrintBehaviour visible);
-	void createOption(EnumType type, const std::string& name, const ValueType& defaultValue, std::vector<std::string>& option2name, PrintBehaviour visible);
+			PrintBehaviour visible);
+	void createOption(EnumType type, const std::string& name, const ValueType& defaultValue, PrintBehaviour visible);
 public:
 	~OptionPolicy() {
 		for (auto option : _options) {
@@ -377,7 +376,6 @@ struct OptionTypeTraits<StringType> {
  */
 class Options: public IntPol, public BoolPol, public DoublePol, public StringPol, public OptionPol {
 private:
-	std::vector<std::string> _option2name;
 	bool _isVerbosity;
 
 public:
@@ -432,5 +430,3 @@ public:
 		return OptionPol::getOptionValues();
 	}
 };
-
-#endif
