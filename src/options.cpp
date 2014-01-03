@@ -162,6 +162,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::WATCHEDRELEVANCE, "relevancewatched", boolvalues, false, PrintBehaviour::DONOTPRINT);
+		BoolPol::createOption(BoolType::FUNCDETECTRESULTS, "funcdetectresults", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, PrintBehaviour::PRINT);

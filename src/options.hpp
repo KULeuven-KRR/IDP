@@ -85,6 +85,7 @@ enum BoolType {
 	TSEITINDELAY,
 	SATISFIABILITYDELAY,
 	GROUNDWITHBOUNDS,
+	FUNCDETECTRESULTS, // Do not do mx-usable detection, but be able to count the variables.
 	CPSUPPORT,
 	SKOLEMIZE,
 	ADDEQUALITYTHEORY,
