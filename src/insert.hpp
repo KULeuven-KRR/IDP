@@ -376,6 +376,9 @@ public:
 	EnumSetExpr* set(Formula*, Term*, YYLTYPE,const varset& vv=varset());
 	//!< Create a new set of the form { x1 ... xn : phi : t }
 
+	EnumSetExpr* trueset(Term* t, YYLTYPE l);
+	//!< Create a new set of the form {:true:t}
+
 	//take the union of 2 EnumSets by adding everything in s2 to s1
 	void addToFirst(EnumSetExpr* s1, EnumSetExpr* s2);
 
