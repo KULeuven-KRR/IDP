@@ -15,10 +15,10 @@
 #include <set>
 #include <map>
 
-template<typename List>
-void addAll(List& to, const List& from){
-	for(const auto& elem: from){
-		to.insert(elem);
+template<typename C1, typename C2>
+void addAll(C1& list, const C2& toadd){
+	for(const auto& elem: toadd){
+		list.insert(elem);
 	}
 }
 
