@@ -55,6 +55,23 @@ public:
 	}
 };
 
+class RemoveValidQuantificationsInference: public TheoryStructureBase {
+public:
+	RemoveValidQuantificationsInference()
+			: TheoryStructureBase("removequantifications", "Removes quantifications which have no effect on model-equivalence given a structure possibly interpreting the sorts.") {
+		setNameSpace(getTheoryNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto theory = dynamic_cast<Theory*>(get<0>(args));
+		if(theory==NULL){
+			return nilarg();
+		}
+		FormulaUtils::removeValidQuantifications(theory, get<1>(args));
+		return nilarg();
+	}
+};
+
 class FlattenInference: public TheoryBase {
 public:
 	FlattenInference()

@@ -58,6 +58,10 @@
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "transformations/ReplacePredByPred.hpp"
+#include "transformations/ReplaceVariableByFuncTerm.hpp"
+#include "transformations/ReplacePredByFunctions.hpp"
+#include "transformations/RemoveValidTerms.hpp"
+#include "transformations/RemoveValidQuantifications.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
@@ -493,6 +497,37 @@ Formula* pushQuantifiers(Formula* t) {
 
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory){
 	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
+}
+
+Theory* removeValidAtoms(Theory* t) {
+	return transform<RemoveValidTerms, Theory*>(t);
+}
+Formula* removeValidAtoms(Formula* t) {
+	return transform<RemoveValidTerms, Formula*>(t);
+}
+
+Theory* removeValidQuantifications(Theory* theory, Structure* structure){
+	return transform<RemoveValidQuantifications, Theory*>(theory, structure);
+}
+Formula* removeValidQuantifications(Formula* formula, Structure* structure){
+	return transform<RemoveValidQuantifications, Formula*>(formula, structure);
+}
+Theory* removeValidQuantifications(Theory* theory, bool assumeTypesNotEmpty){
+	return transform<RemoveValidQuantifications, Theory*>(theory, assumeTypesNotEmpty);
+}
+Formula* removeValidQuantifications(Formula* formula, bool assumeTypesNotEmpty){
+	return transform<RemoveValidQuantifications, Formula*>(formula, assumeTypesNotEmpty);
+}
+
+Theory* replaceVariableByDefiningFunctionTerms(Theory* t) {
+	return transform<ReplaceVariableByFuncTerm, Theory*>(t);
+}
+Formula* replaceVariableByDefiningFunctionTerms(Formula* t) {
+	return transform<ReplaceVariableByFuncTerm, Formula*>(t);
+}
+
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
+	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, domainindices, codomainsindices, partialfunctions);
 }
 
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {

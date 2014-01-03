@@ -48,6 +48,8 @@ class Term;
 class DomElemContainer;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
 
+class Predicate;
+
 // TODO what does it mean to pass NULL as vocabulary?
 
 template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
@@ -161,6 +163,19 @@ Theory* replaceWithNestedTseitins(Theory* theory);
 
 Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory);
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory);
+
+Theory* removeValidQuantifications(Theory* theory, Structure* structure);
+Formula* removeValidQuantifications(Formula* formula, Structure* structure);
+Theory* removeValidQuantifications(Theory* theory, bool assumeTypesNotEmpty);
+Formula* removeValidQuantifications(Formula* formula, bool assumeTypesNotEmpty);
+
+Theory* removeValidAtoms(Theory* t);
+Formula* removeValidAtoms(Formula* t);
+
+Theory* replaceVariableByDefiningFunctionTerms(Theory* t);
+Formula* replaceVariableByDefiningFunctionTerms(Formula* t);
+
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions);
 
 /** Recursively rewrite all EqChainForms in the given formula to BoolForms */
 Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
