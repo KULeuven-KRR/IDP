@@ -215,14 +215,11 @@ public:
 		printTab();
 		output() << "vocabulary " << v->name() << " {" << '\n';
 		indent();
-
 		Assert(isTheoryOpen());
+		std::vector<Sort*> printedsorts;
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
-			 if (not it->second->builtin() || v == Vocabulary::std()) {
-				printTab();
-				visit(it->second);
-				output() << "\n";
-			}
+			printSortRecursively(it->second,printedsorts,v);
+			printedsorts.push_back(it->second);
 		}
 		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
 			auto pred = it->second;
@@ -1361,5 +1358,18 @@ private:
 			}
 		}
 		output() << " }";
+	}
+	void printSortRecursively(Sort* sort, std::vector<Sort*>& printedsorts,const Vocabulary* v){
+		for(auto it:sort->parents()){
+			printSortRecursively(it,printedsorts,v);
+			printedsorts.push_back(it);
+		}
+		if(not contains(printedsorts, sort)){
+			if (not sort->builtin() || v == Vocabulary::std()) {
+				printTab();
+				visit(sort);
+				output() << "\n";
+			}
+		}
 	}
 };
