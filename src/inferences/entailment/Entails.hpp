@@ -21,15 +21,14 @@ enum class State {
 
 class Entails {
 private:
-	std::string command;
 	Theory *axioms, *conjectures;
 	bool hasArithmetic; // If true, TFA syntax will be output, otherwise FOF (and arithmetic will be approximated).
 	std::vector<std::string> provenStrings, disprovenStrings;
 
 public:
-	static State doCheckEntailment(const std::string& command, const Theory* axioms, const Theory* conjectures);
+	static State doCheckEntailment(Theory* axioms, Theory* conjectures);
 
 private:
-	Entails(const std::string& command, Theory* axioms, Theory* conjectures);
+	Entails(Theory* axioms, Theory* conjectures);
 	State checkEntailment();
 };

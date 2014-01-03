@@ -203,6 +203,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::MEMORYOUT, "memoryout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::MXMEMORYOUT, "mxmemoryout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::TIMEOUT_ENTAILMENT, "timeout_entailment", 0, getMaxElem<int>(), 2, PrintBehaviour::PRINT);
 
 		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic

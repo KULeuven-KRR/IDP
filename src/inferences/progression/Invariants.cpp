@@ -127,9 +127,10 @@ bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* im
 bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* conjecture, bool initial) {
 	auto conj = new Theory("conjectures", hypothesis->vocabulary(), ParseInfo());
 	conj->add(conjecture);
-	auto command = getOption(StringType::PROVERCOMMAND);
-	auto result = Entails::doCheckEntailment(command, hypothesis, conj);
+	auto temphypo = hypothesis->clone();
+	auto result = Entails::doCheckEntailment(temphypo, conj);
 	conj->recursiveDelete();
+	temphypo->recursiveDelete();
 
 	if(result == State::PROVEN){
 		return true;
