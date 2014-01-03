@@ -630,6 +630,8 @@ std::ostream& operator<<(std::ostream&, const Vocabulary&);
 
 namespace VocabularyUtils {
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
+bool isPredicate(const PFSymbol*, STDPRED predtype); //!< returns true iff the given symbol is an instance of the given predicate type
+bool isFunction(const PFSymbol*, STDFUNC functype); //!< returns true iff the given symbol is an instance of the given function type
 CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);

@@ -353,7 +353,7 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 const std::set<const Vocabulary*>& Sort::getVocabularies() const {
-	return _vocabularies;
+        return _vocabularies;
 }
 
 SortTable* getConstructedInterpretation(Sort* s, const Structure* struc) {
@@ -1062,7 +1062,7 @@ void ComparisonPredGenerator::removeVocabulary(const Vocabulary*) {
 		if (jt->second->removeVocabulary(vocabulary)) {
 			_overpreds.erase(jt);
 		}
-	}*/
+		}*/
 }
 
 set<Predicate*> ComparisonPredGenerator::nonbuiltins() const {
@@ -1591,8 +1591,8 @@ Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Voc
 
 	Function* func = NULL;
 	if (funcSort != NULL) {
-		vector<Sort*> funcSorts(_arity + 1, funcSort);
-		func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
+			vector<Sort*> funcSorts(_arity + 1, funcSort);
+			func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
 	}
 	return func;
 }
@@ -2118,8 +2118,16 @@ ostream& operator<<(ostream& output, const Vocabulary& voc) {
 }
 
 namespace VocabularyUtils {
+bool isPredicate(const PFSymbol* symbol, STDPRED predtype){
+	return isa<Predicate>(*symbol) && is(symbol, predtype);
+}
+
+bool isFunction(const PFSymbol* symbol, STDFUNC functype){
+	return isa<Function>(*symbol) && is(symbol, functype);
+}
+
 bool isComparisonPredicate(const PFSymbol* symbol) {
-	return (isa<Predicate>(*symbol)) && (is(symbol, STDPRED::EQ) || is(symbol, STDPRED::LT) || is(symbol, STDPRED::GT));
+	return isPredicate(symbol, STDPRED::EQ) || isPredicate(symbol, STDPRED::LT) || isPredicate(symbol, STDPRED::GT);
 }
 
 CompType getComparisonType(const PFSymbol* symbol) {
