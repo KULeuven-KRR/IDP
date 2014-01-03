@@ -57,28 +57,6 @@ public:
 		closeTheory();
 	}
 
-	void visit(const Vocabulary*) {
-		throw notyetimplemented("Printing vocabularies in ASP format");
-	}
-	void visit(const Namespace*) {
-		throw notyetimplemented("Printing namespaces in ASP format");
-	}
-	void visit(const UserProcedure*) {
-		throw notyetimplemented("Printing procedures in ASP format");
-	}
-	void visit(const Theory*) {
-		throw notyetimplemented("Printing theories in ASP format");
-	}
-	void visit(const Query*) {
-		throw notyetimplemented("Printing queries in ASP format");
-	}
-	void visit(const FOBDD*) {
-		throw notyetimplemented("Printing fobdds in ASP format");
-	}
-	void visit(const Compound*) {
-		throw notyetimplemented("Printing compounds in ASP format");
-	}
-
 	void visit(const Structure* structure) {
 		Assert(isTheoryOpen());
 		if (not structure->isConsistent()) {
@@ -168,26 +146,107 @@ public:
 		output() << "\n";
 	}
 
-
-	virtual void visit(const GroundClause&) {
-		throw notyetimplemented("Printing ground clauses in ASP format");
+protected:
+	void visit(const Vocabulary*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
-	virtual void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Printing groud fixpoint definitions in ASP format");
+	void visit(const Namespace*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
-	virtual void visit(const GroundSet*) {
-		throw notyetimplemented("Printing ground sets in ASP format");
+	void visit(const Query*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	void visit(const GroundFixpDef*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const Theory*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const PredForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const EqChainForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const EquivForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const BoolForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const QuantForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const AggForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const VarTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const FuncTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const DomainTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const AbstractGroundTheory*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const Rule*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const Definition*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const FixpDef*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const AggTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const CPVarTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const CPSetTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const EnumSetExpr*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const QuantSetExpr*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const UserProcedure*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const FOBDD*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const GroundDefinition*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
 	virtual void visit(const PCGroundRule*) {
-		throw notyetimplemented("Printing ground rules in ASP format");
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
 	virtual void visit(const AggGroundRule*) {
-		throw notyetimplemented("Printing ground rules in ASP format");
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const GroundSet*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
 	virtual void visit(const GroundAggregate*) {
-		throw notyetimplemented("Printing ground aggregates in ASP format");
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
 	virtual void visit(const CPReification*) {
-		throw notyetimplemented("Printing ground constraints in ASP format");
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const GroundClause&) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	virtual void visit(const GroundTheory<GroundPolicy>*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ASP format.");
 	}
 };

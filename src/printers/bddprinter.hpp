@@ -92,32 +92,81 @@ public:
 		printFormula(f);
 	}
 
+	virtual void visit(const AbstractGroundTheory*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const GroundTheory<GroundPolicy>*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
 	virtual void visit(const GroundDefinition*) {
-		throw IdpException("Ground definitions cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const Rule*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const Definition*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const FixpDef*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const AggTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const CPVarTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const CPSetTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const EnumSetExpr*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const QuantSetExpr*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const PCGroundRule*) {
-		throw IdpException("Ground rules cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const AggGroundRule*) {
-		throw IdpException("Ground rules cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const GroundSet*) {
-		throw IdpException("Ground sets cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const GroundAggregate*) {
-		throw IdpException("Ground aggregates cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const Vocabulary*) {
-		throw IdpException("Vocabularies cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const Structure*) {
-		throw IdpException("Structures cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
-	void visit(const PredTable*){
-		throw IdpException("Tables cannot be printed as BDDs");
+	void visit(const PredTable*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const Query*) {
-		throw IdpException("Queries cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const FOBDD*) {
 		throw IdpException("FOBDDS cannot by a printer that converts theories to BDDs, use print(..) instead"); //todo
@@ -126,18 +175,34 @@ public:
 		throw notyetimplemented("Compounds cannot be printed as BDDs");
 	}
 	virtual void visit(const Namespace*) {
-		throw IdpException("Namespaces cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const UserProcedure*) {
 		throw notyetimplemented("printing Procedure as BDD");
 	}
 	virtual void visit(const GroundClause&) {
-		throw IdpException("Ground clauses cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const GroundFixpDef*) {
-		throw IdpException("Ground fixpoint definitions cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 	virtual void visit(const CPReification*) {
-		throw IdpException("CP reifications cannot be printed as BDDs");
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const VarTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const DomainTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
+	}
+	virtual void visit(const FuncTerm*) {
+		throw notyetimplemented(
+				"Trying to print out theory component which cannot be printed as a BDD.");
 	}
 };

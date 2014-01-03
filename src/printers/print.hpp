@@ -41,7 +41,7 @@ class FOBDD;
 typedef std::vector<Lit> GroundClause;
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
-class Printer: public DefaultTraversingTheoryVisitor {
+class Printer: public TheoryVisitor {
 	VISITORFRIENDS()
 private:
 	DefId opendef_; //the id of the currently open definition

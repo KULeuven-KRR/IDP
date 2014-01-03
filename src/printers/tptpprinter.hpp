@@ -18,11 +18,15 @@
 #include "groundtheories/GroundPolicy.hpp"
 #include "visitors/VisitorFriends.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "utils/ListUtils.hpp"
+
+bool isCard(AggTerm* term);
 
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
 private:
+	bool _ignore;
 	bool _conjecture;
 	bool _arithmetic;
 	bool _nats;
@@ -32,7 +36,7 @@ private:
 	std::set<DomainTerm*> _typedDomainTerms;
 	std::set<DomainElement*> _typedDomainElements;
 	std::set<Sort*> _types;
-	std::stringstream* _os;
+	std::stringstream _os;
 	std::stringstream _typeStream; // The types. (for TFF)
 	std::stringstream _typeAxiomStream; // The type predicates (defining what atomic symbols have what type,
 										// and which functions/predicates take which types)
@@ -44,6 +48,7 @@ private:
 public:
 	TPTPPrinter(bool arithmetic, Stream& stream)
 			: 	StreamPrinter<Stream>(stream),
+			  	_ignore(false),
 				_conjecture(false),
 				_arithmetic(arithmetic),
 				_nats(false),
@@ -85,12 +90,6 @@ public:
 	}
 
 protected:
-	void visit(const Structure*) {
-		throw notyetimplemented("Converting Structure to tptp format.");
-	}
-	void visit(const PredTable*){
-		throw notyetimplemented("Converting PredTable to tptp format.");
-	}
 
 	void visit(const Vocabulary* v) {
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
@@ -110,43 +109,34 @@ protected:
 		}
 	}
 
-	void visit(const Query*) {
-		throw notyetimplemented("Converting Query to tptp format.");
-	}
-	void visit(const FOBDD*) {
-		throw notyetimplemented("Converting FOBDD to tptp format.");
-	}
-	void visit(const Compound*) {
-		throw notyetimplemented("Converting Compounds to tptp format.");
-	}
-
 	void visit(const Theory* theory) {
-		auto temp = theory->clone();
-		auto cloned = dynamic_cast<Theory*>(FormulaUtils::graphFuncsAndAggs(temp, NULL,  {}, true, false /*TODO check*/, Context::POSITIVE));
-		if (cloned == NULL) { // TODO ugly hack
-			Assert(false);
-		}
+		auto newtheory = theory->clone();
+		newtheory = FormulaUtils::graphFuncsAndAggs(newtheory, NULL,  {}, true, false /*TODO check*/, Context::POSITIVE);
+
 		if (not _conjecture) {
-			for (auto it = cloned->sentences().cbegin(); it != cloned->sentences().cend(); ++it) {
+			for (auto c: newtheory->components()) {
 				startAxiom("a");
-				(*it)->accept(this);
-				endAxiom();
+				c->accept(this);
+				endAxiom(_axiomStream);
 				_count++;
 			}
-		} else if (not cloned->sentences().empty()) {
+		} else if (not newtheory->components().empty()) {
 			// Output a conjecture as a conjunction.
 			startAxiom("cnj");
-			auto it = cloned->sentences().cbegin();
-			while (it != cloned->sentences().cend()) {
-				_conjectureStream << "(";
-				(*it)->accept(this);
-				_conjectureStream << ")";
-				++it;
-				if (it != cloned->sentences().cend()) {
-					_conjectureStream << " & ";
+			bool begin = true;
+			for (auto sentence : newtheory->components()) {
+				if(not begin){
+					_os << " & ";
 				}
+				begin = false;
+				_os << "(";
+				sentence->accept(this);
+				_os << ")";
 			}
-			endAxiom();
+			if(_ignore){
+				throw IdpException("Could not transform the conjecture theory into FO, so nothing can be proven.");
+		}
+			endAxiom(_conjectureStream);
 		}
 		// Do nothing with definitions or fixpoint definitions
 		if (_conjecture) {
@@ -159,262 +149,327 @@ protected:
 
 	void visit(const PredForm* f) {
 		if (isNeg(f->sign())) {
-			(*_os) << "~";
+			_os << "~";
 		}
-		if (toString(f->symbol()) == "=") {
-			(*_os) << "(";
+		if (VocabularyUtils::isPredicate(f->symbol(), STDPRED::EQ)) {
+			_os << "(";
 			f->subterms()[0]->accept(this);
-			(*_os) << " = ";
+			_os << " = ";
 			f->subterms()[1]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == ">") {
-			(*_os) << "$greater(";
+			_os << ")";
+		} else if (VocabularyUtils::isPredicate(f->symbol(), STDPRED::GT)) {
+			_os << "$greater(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",";
 			f->subterms()[1]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "<") {
-			(*_os) << "$less(";
+			_os << ")";
+		} else if (VocabularyUtils::isPredicate(f->symbol(), STDPRED::LT)) {
+			_os << "$less(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",";
 			f->subterms()[1]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "+") {
-			(*_os) << "($sum(";
+			_os << ")";
+		} else if (VocabularyUtils::isFunction(f->symbol(), STDFUNC::ADDITION)) {
+			_os << "($sum(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",";
 			f->subterms()[1]->accept(this);
-			(*_os) << ") = ";
+			_os << ") = ";
 			f->subterms()[2]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "-" && f->subterms().size() == 3) {
-			(*_os) << "($difference(";
+			_os << ")";
+		} else if (VocabularyUtils::isFunction(f->symbol(), STDFUNC::SUBSTRACTION)) {
+			_os << "($difference(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",";
 			f->subterms()[1]->accept(this);
-			(*_os) << ") = ";
+			_os << ") = ";
 			f->subterms()[2]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "-" && f->subterms().size() == 2) {
-			(*_os) << "($uminus(";
+			_os << ")";
+		} else if (VocabularyUtils::isFunction(f->symbol(), STDFUNC::UNARYMINUS)) {
+			_os << "($uminus(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ") = ";
+			_os << ") = ";
 			f->subterms()[1]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "*") {
-			(*_os) << "($product(";
+			_os << ")";
+		} else if (VocabularyUtils::isFunction(f->symbol(), STDFUNC::PRODUCT)) {
+			_os << "($product(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",";
 			f->subterms()[1]->accept(this);
-			(*_os) << ") = ";
+			_os << ") = ";
 			f->subterms()[2]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "PRED") {
-			(*_os) << "($difference(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",1) = ";
-			f->subterms()[1]->accept(this);
-			(*_os) << ")";
+			_os << ")";
+		} /*else if (toString(f->symbol()) == "PRED") {
+			_ignore = true; // TODO
 		} else if (toString(f->symbol()) == "SUCC") {
-			(*_os) << "($sum(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",1) = ";
-			f->subterms()[1]->accept(this);
-			(*_os) << ")";
+			_ignore = true; // TODO
 		} else if (toString(f->symbol()) == "MAX") {
-			// NOTE: $itett is often unsupported
-			(*_os) << "($itett($greater(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",";
-			f->subterms()[1]->accept(this);
-			(*_os) << "),";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",";
-			f->subterms()[1]->accept(this);
-			(*_os) << ") = ";
-			f->subterms()[2]->accept(this);
-			(*_os) << ")";
+			_ignore = true; // TODO, not the function max/2
 		} else if (toString(f->symbol()) == "MIN") {
+			_ignore = true; // TODO, not the function min/2
+		} */ else if (VocabularyUtils::isFunction(f->symbol(), STDFUNC::ABS)) {
 			// NOTE: $itett is often unsupported
-			(*_os) << "($itett($less(";
+			_os << "($itett($greater(";
 			f->subterms()[0]->accept(this);
-			(*_os) << ",";
+			_os << ",$uminus(";
+			f->subterms()[0]->accept(this);
+			_os << ")),";
+			f->subterms()[0]->accept(this);
+			_os << ",$uminus(";
+			f->subterms()[0]->accept(this);
+			_os << ")) = ";
 			f->subterms()[1]->accept(this);
-			(*_os) << "),";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",";
-			f->subterms()[1]->accept(this);
-			(*_os) << ") = ";
-			f->subterms()[2]->accept(this);
-			(*_os) << ")";
-		} else if (toString(f->symbol()) == "abs") {
-			// NOTE: $itett is often unsupported
-			(*_os) << "($itett($greater(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",$uminus(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ")),";
-			f->subterms()[0]->accept(this);
-			(*_os) << ",$uminus(";
-			f->subterms()[0]->accept(this);
-			(*_os) << ")) = ";
-			f->subterms()[1]->accept(this);
-			(*_os) << ")";
+			_os << ")";
 		} else {
-			(*_os) << "p_" << rewriteLongname(toString(f->symbol()));
+			_os << "p_" << rewriteLongname(toString(f->symbol()));
 			if (!f->subterms().empty()) {
-				(*_os) << "(";
+				_os << "(";
 				f->subterms()[0]->accept(this);
 				for (unsigned int n = 1; n < f->subterms().size(); ++n) {
-					(*_os) << ",";
+					_os << ",";
 					f->subterms()[n]->accept(this);
 				}
-				(*_os) << ")";
+				_os << ")";
 			}
 		}
 	}
 
 	void visit(const EqChainForm* f) {
 		if (isNeg(f->sign())) {
-			(*_os) << "~";
+			_os << "~";
 		}
-		(*_os) << "(";
+		_os << "(";
 		f->subterms()[0]->accept(this);
 		for (unsigned int n = 0; n < f->comps().size(); ++n) {
 			if (f->comps()[n] == CompType::EQ)
-				(*_os) << " = ";
+				_os << " = ";
 			else if (f->comps()[n] == CompType::NEQ)
-				(*_os) << " != ";
+				_os << " != ";
 			f->subterms()[n + 1]->accept(this);
 			if (n + 1 < f->comps().size()) {
 				if (f->conj())
-					(*_os) << " & ";
+					_os << " & ";
 				else
-					(*_os) << " | ";
+					_os << " | ";
 				f->subterms()[n + 1]->accept(this);
 			}
 		}
-		(*_os) << ")";
+		_os << ")";
 	}
 
 	void visit(const EquivForm* f) {
 		if (isNeg(f->sign())) {
-			(*_os) << "~";
+			_os << "~";
 		}
-		(*_os) << "(";
+		_os << "(";
 		f->left()->accept(this);
-		(*_os) << " <=> ";
+		_os << " <=> ";
 		f->right()->accept(this);
-		(*_os) << ")";
+		_os << ")";
 	}
 
 	void visit(const BoolForm* f) {
 		if (f->subformulas().empty()) {
 			if (f->isConjWithSign()) {
-				(*_os) << "$true";
+				_os << "$true";
 			} else {
-				(*_os) << "$false";
+				_os << "$false";
 			}
 		} else {
 			if (isNeg(f->sign())) {
-				(*_os) << "~";
+				_os << "~";
 			}
-			(*_os) << "(";
+			_os << "(";
 			f->subformulas()[0]->accept(this);
 			for (unsigned int n = 1; n < f->subformulas().size(); ++n) {
 				if (f->conj())
-					(*_os) << " & ";
+					_os << " & ";
 				else
-					(*_os) << " | ";
+					_os << " | ";
 				f->subformulas()[n]->accept(this);
 			}
-			(*_os) << ")";
+			_os << ")";
 		}
 	}
 
 	void visit(const QuantForm* f) {
 		if (isNeg(f->sign())) {
-			(*_os) << "~";
+			_os << "~";
 		}
-		(*_os) << "(";
-		if (f->isUniv())
-			(*_os) << "! [";
-		else
-			(*_os) << "? [";
-		auto it = f->quantVars().cbegin();
-		(*_os) << "V_" << getSupportedName(*it);
-		if (_arithmetic && (*it)->sort()) {
-			(*_os) << ": ";
-			(*_os) << TFFTypeString((*it)->sort());
+		if(f->quantVars().empty()){
+			f->subformula()->accept(this);
+			return;
 		}
-		++it;
-		for (; it != f->quantVars().cend(); ++it) {
-			(*_os) << ",";
-			(*_os) << "V_" << getSupportedName(*it);
-			if (_arithmetic && (*it)->sort()) {
-				(*_os) << ": ";
-				(*_os) << TFFTypeString((*it)->sort());
+		_os << "(";
+		if (f->isUniv()) {
+			_os << "! [";
+		} else {
+			_os << "? [";
+			}
+
+		bool begin = true;
+		for (auto var : f->quantVars()) {
+			if(not begin){
+				_os << ",";
+		}
+			begin = false;
+			_os << "V_" << getSupportedName(var);
+			if (_arithmetic && var->sort()) {
+				_os << ": ";
+				_os << TFFTypeString(var->sort());
 			}
 		}
-		(*_os) << "] : (";
+		_os << "] : (";
 
 		// When quantifying over types, add these.
-		it = f->quantVars().cbegin();
-		while (it != f->quantVars().cend() && !(*it)->sort())
-			++it;
-		if (it != f->quantVars().cend()) {
 			if (f->isUniv()) {
-				(*_os) << "~";
+			_os << "~";
 			}
-			(*_os) << "(";
-			if (_types.find((*it)->sort()) == _types.cend()) {
-				_types.insert((*it)->sort());
+		_os << "(";
+		begin = true;
+		for (auto var: f->quantVars()) {
+			auto sort = var->sort();
+			if(not begin){
+				_os <<" & ";
 			}
-			if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::NATSORT))) {
+			begin = false;
+			_os << "t_" << getSupportedName(sort) << "(V_" << getSupportedName(var) << ")";
+
+			if (not contains(_types, sort)) {
+				_types.insert(var->sort());
+			}
+			if (SortUtils::isSubsort(sort, get(STDSORT::NATSORT))) {
 				_nats = true;
-			} else if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::INTSORT))) {
+			} else if (SortUtils::isSubsort(sort, get(STDSORT::INTSORT))) {
 				_ints = true;
-			} else if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::FLOATSORT))) {
+			} else if (SortUtils::isSubsort(sort, get(STDSORT::FLOATSORT))) {
 				_floats = true;
 			}
-			(*_os) << "t_" << getSupportedName((*it)->sort()) << "(V_" << getSupportedName(*it) << ")";
-			++it;
-			for (; it != f->quantVars().cend(); ++it) {
-				if ((*it)->sort()) {
-					(*_os) << " & ";
-					(*_os) << "t_" << getSupportedName((*it)->sort()) << "(V_" << getSupportedName(*it) << ")";
 				}
-			}
-			(*_os) << ")";
+		_os << ")";
 			if (f->isUniv()) {
-				(*_os) << " | ";
+			_os << " | ";
 			} else {
-				(*_os) << " & ";
+			_os << " & ";
+		}
+
+		_os << "(";
+		f->subformulas()[0]->accept(this);
+		_os << ")))";
+	}
+
+	void turnCardGeqBoundIntoFO(AggTerm* term, int bound){
+		if(bound>5){
+			_ignore = true;
+			return;
+			}
+
+		if(bound<=0){
+			_os << " $true ";
+			return;
+		}
+
+		auto origvars = term->set()->getSets().front()->quantVars();
+		auto formula = term->set()->getSets().front()->getCondition();
+		std::vector<std::vector<Variable*> > varsets;
+		std::vector<Formula*> conditions;
+		for(int i = 0; i<bound; ++i){
+			std::vector<Variable*> vars;
+			std::map<Variable*, Variable*> var2var;
+			for(auto var: origvars){
+				auto newvar = new Variable(var->sort());
+				vars.push_back(newvar);
+				var2var[var]=newvar;
+			}
+			conditions.push_back(formula->clone(var2var));
+			varsets.push_back(vars);
+	}
+
+		for(uint i=0; i<varsets.size(); ++i){
+			const auto& firstset = varsets[i];
+			for(uint j=0; j<i; ++j){
+				const auto& secondset = varsets[j];
+				std::vector<Formula*> formulas;
+				for(uint index = 0; index<firstset.size(); ++index){
+					auto firstvar = firstset[index];
+					auto secondvar = secondset[index];
+					formulas.push_back(new PredForm(SIGN::NEG, get(STDPRED::EQ, firstvar->sort()), {new VarTerm(firstvar, TermParseInfo()), new VarTerm(secondvar, TermParseInfo())}, FormulaParseInfo()));
+				}
+				conditions.push_back(new BoolForm(SIGN::POS, false, formulas, FormulaParseInfo()));
 			}
 		}
 
-		(*_os) << "(";
-		f->subformulas()[0]->accept(this);
-		(*_os) << ")))";
+		varset allvars;
+		for(auto varset: varsets){
+			for(auto var: varset){
+				allvars.insert(var);
+			}
+		}
+		auto constraint = new QuantForm(SIGN::POS, QUANT::EXIST, allvars, new BoolForm(SIGN::POS, true, conditions, FormulaParseInfo()), FormulaParseInfo());
+		constraint->accept(this);
+		constraint->recursiveDelete();
+	}
+
+	virtual void visit(const AggForm* af) {
+		if(af->getAggTerm()->set()->getSubSets().size()!=1){
+			_ignore = true;
+			return;
+		}
+		if(not isCard(af->getAggTerm())){
+			_ignore = true;
+			return;
+		}
+		auto bound = dynamic_cast<DomainTerm*>(af->getBound());
+		if (bound == NULL || bound->value()->type() != DomainElementType::DET_INT) {
+			_ignore = true;
+			return;
+	}
+		auto value = bound->value()->value()._int;
+
+		if(af->sign()==SIGN::NEG){
+			_os <<"~ (";
+		}
+		switch(af->comp()){ // NOTE term comp agg!
+		case CompType::EQ:
+			_os << " ( ~ ( ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value+1);
+			_os << " ) & ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value);
+			_os << " ) ";
+			break;
+		case CompType::NEQ:
+			_os << " ( ~ ( ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value);
+			_os << " ) | ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value+1);
+			_os << " ) ";
+			break;
+		case CompType::GEQ:
+			_os <<" ~ ( ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value+1);
+			_os <<" ) ";
+			break;
+		case CompType::LEQ:
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value);
+			break;
+		case CompType::GT:
+			_os <<" ~ ( ";
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value);
+			_os <<" ) ";
+			break;
+		case CompType::LT:
+			turnCardGeqBoundIntoFO(af->getAggTerm(), value+1);
+			break;
+		}
+		if(af->sign()==SIGN::NEG){
+			_os <<" ) ";
+		}
 	}
 
 	/** Terms **/
 
 	void visit(const VarTerm* t) {
-		(*_os) << "V_" << getSupportedName(t->var());
-	}
-
-	void visit(const FuncTerm*) {
-		// Should have been transformed into predicates
-		throw IdpException("Invalid code path");
-	}
-
-	void visit(const AggForm*) {
-		(*_os) << "$true";
-	}
-
-	void visit(const AggTerm*) {
-		throw notyetimplemented("Converting AggTerm to tptp format.");
+		_os << "V_" << getSupportedName(t->var());
 	}
 
 	void visit(const DomainTerm* t) {
@@ -429,29 +484,30 @@ protected:
 				_floats = true;
 			}
 		}
-		if (t->sort() && _types.find(t->sort()) == _types.cend()) {
+		if (t->sort() && not contains(_types, t->sort())) {
 			_types.insert(t->sort());
 		}
-		(*_os) << domainTermNameString(t);
+		_os << domainTermNameString(t);
 	}
 
 	void visit(const Sort* s) {
 		if (!(s->parents().empty())) {
-			startAxiom("ta", &_typeAxiomStream);
-			(*_os) << "! [X";
+			startAxiom("ta");
+			_os << "! [X";
 			if (_arithmetic) {
-				(*_os) << ": ";
-				(*_os) << TFFTypeString(s);
+				_os << ": " << TFFTypeString(s);
 			}
-			(*_os) << "] : (~" << "t_" << getSupportedName(s) << "(X) | ";
-			auto it = s->parents().cbegin();
-			(*_os) << "(" << "t_" << getSupportedName(*it) << "(X)";
-			++it;
-			for (; it != s->parents().cend(); ++it) {
-				(*_os) << " & " << "t_" << getSupportedName(*it) << "(X)";
+			_os << "] : (~" << "t_" << getSupportedName(s) << "(X) | (";
+			bool begin = true;
+			for (auto parent : s->parents()) {
+				if(not begin){
+					_os <<" & ";
 			}
-			(*_os) << "))";
-			endAxiom();
+				begin = false;
+				_os << "t_" << getSupportedName(parent) << "(X)";
+			}
+			_os << ") )";
+			endAxiom(_typeAxiomStream);
 			_count++;
 		}
 	}
@@ -471,185 +527,150 @@ protected:
 		}
 	}
 
-	// Unimplemented virtual methods
-	void visit(const GroundSet*) {
-		throw notyetimplemented("Converting GroundSet to tptp format.");
-	}
-	void visit(const Namespace*) {
-		throw notyetimplemented("Converting Namespace to tptp format.");
-	}
-	void visit(const UserProcedure*) {
-		throw notyetimplemented("Converting Procedure to tptp format.");
-	}
-	void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Converting GroundFixpDef to tptp format.");
-	}
-	void visit(const GroundClause&) {
-		throw notyetimplemented("Converting GroundClause to tptp format.");
-	}
-	void visit(const AggGroundRule*) {
-		throw notyetimplemented("Converting AggGroundRule to tptp format.");
-	}
-	void visit(const GroundAggregate*) {
-		throw notyetimplemented("Converting GroundAggregate to tptp format.");
-	}
-	void visit(const CPReification*) {
-		throw notyetimplemented("Converting CPReification to tptp format.");
-	}
-	void visit(const PCGroundRule*) {
-		throw notyetimplemented("Converting PCGroundRule to tptp format.");
-	}
-
 private:
 	void startAxiom(std::string prefix) {
-		if (_conjecture)
-			startAxiom(prefix, "conjecture", &_conjectureStream);
-		else
-			startAxiom(prefix, "axiom", &_axiomStream);
+		_os.str(std::string());
+		startAxiom(prefix, (_conjecture ? "conjecture" : "axiom"));
 	}
 
-	void startAxiom(std::string prefix, std::stringstream* output) {
-		startAxiom(prefix, "axiom", output);
+	void startAxiomSentence(std::string prefix) {
+		startAxiom(prefix, "axiom");
 	}
 
-	void startAxiom(std::string prefix, std::string type, std::stringstream* output) {
-		_os = output;
-		if (_arithmetic)
-			(*_os) << "tff";
-		else
-			(*_os) << "fof";
-		(*_os) << "(" << prefix << _count << "," << type << ",(";
+	void startAxiom(std::string prefix, std::string type) {
+		_ignore = false;
+		if (_arithmetic) {
+			_os << "tff";
+		} else {
+			_os << "fof";
+		}
+		_os << "(" << prefix << _count << "," << type << ",(";
 	}
 
-	void endAxiom() {
-		(*_os) << ")).\n";
-		output() << _os->str();
+	void endAxiom(std::ostream& stream) {
+		if (not _ignore) {
+			_os << ")).\n";
+			stream << _os.str();
+		}
+		_os.str(std::string());
 	}
 
 	void outputPFSymbolType(const PFSymbol* pfs) {
 		if (!pfs->overloaded() && pfs->nrSorts() > 0) {
-			startAxiom("ta", &_typeAxiomStream);
-			(*_os) << "! [";
-			(*_os) << "V0";
+			startAxiomSentence("ta");
+			_os << "! [" << "V0";
 			if (_arithmetic) {
-				(*_os) << ": ";
-				(*_os) << TFFTypeString(pfs->sort(0));
+				_os << ": " << TFFTypeString(pfs->sort(0));
 			}
 			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
-				(*_os) << ",V" << n;
+				_os << ",V" << n;
 				if (_arithmetic) {
-					(*_os) << ": ";
-					(*_os) << TFFTypeString(pfs->sort(n));
+					_os << ": " << TFFTypeString(pfs->sort(n));
 				}
 			}
-			(*_os) << "] : (";
-			if (pfs->nrSorts() != 1 || toString(pfs) != pfs->sort(0)->name())
-				(*_os) << "~";
-			(*_os) << "p_" << rewriteLongname(toString(pfs)) << "("; //TODO: because of the rewrite, the longname options cant be given here!
-			(*_os) << "V0";
-			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
-				(*_os) << ",V" << n;
+			_os << "] : (";
+			if (pfs->nrSorts() != 1 || toString(pfs) != pfs->sort(0)->name()) {
+				_os << "~";
 			}
-			if (pfs->nrSorts() == 1 && toString(pfs) == pfs->sort(0)->name())
-				(*_os) << ") <=> (";
-			else
-				(*_os) << ") | (";
-			(*_os) << "t_" << getSupportedName(pfs->sort(0)) << "(V0)";
+			_os << "p_" << rewriteLongname(toString(pfs)) << "("; //TODO: because of the rewrite, the longname options cant be given here!
+			_os << "V0";
 			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
-				(*_os) << " & " << "t_" << getSupportedName(pfs->sort(n)) << "(V" << n << ")";
+				_os << ",V" << n;
 			}
-			(*_os) << "))";
+			if (pfs->nrSorts() == 1 && toString(pfs) == pfs->sort(0)->name()) {
+				_os << ") <=> (";
+			} else {
+				_os << ") | (";
+			}
+			_os << "t_" << getSupportedName(pfs->sort(0)) << "(V0)";
+			for (unsigned int n = 1; n < pfs->nrSorts(); ++n) {
+				_os << " & " << "t_" << getSupportedName(pfs->sort(n)) << "(V" << n << ")";
+			}
+			_os << "))";
 			if (_arithmetic) {
 				outputTFFPFSymbolType(pfs);
 			}
-			endAxiom();
+			endAxiom(_typeAxiomStream);
 		}
 	}
 
 	void outputTFFPFSymbolType(const PFSymbol* pfs) {
-		//_typeStream << "tff(t" << _count;
-		//_typeStream << ",type,(";
-		startAxiom("t", "type", &_typeStream);
-		(*_os) << "p_" << rewriteLongname(toString(pfs));
-		(*_os) << ": ";
+		startAxiom("t", "type");
+		_os << "p_" << rewriteLongname(toString(pfs)) << ": ";
 		if (pfs->nrSorts() > 1) {
-			(*_os) << "(";
+			_os << "(";
 		}
 		for (unsigned int n = 0; n < pfs->nrSorts(); ++n) {
 			if (pfs->sort(n)) {
-				(*_os) << TFFTypeString(pfs->sort(n));
+				_os << TFFTypeString(pfs->sort(n));
 			} else {
-				(*_os) << "$i";
+				_os << "$i";
 			}
 			if (n + 1 < pfs->nrSorts()) {
-				(*_os) << " * ";
+				_os << " * ";
 			}
 		}
-		if (pfs->nrSorts() > 1)
-			(*_os) << ")";
-		(*_os) << " > $o";
-		//_typeStream << ")).\n";
-		endAxiom();
+		if (pfs->nrSorts() > 1) {
+			_os << ")";
+		}
+		_os << " > $o";
+		endAxiom(_typeStream);
 	}
 
 	void outputDomainTermTypeAxioms() {
 		std::vector<DomainTerm*> strings;
-		for (auto it = _typedDomainTerms.cbegin(); it != _typedDomainTerms.cend(); ++it) {
-			startAxiom("dtta", &_typeAxiomStream);
-			auto sortName = getSupportedName((*it)->sort());
-			(*_os) << "t_" << sortName << "(";
-			(*_os) << domainTermNameString(*it);
-			(*_os) << ")";
-			endAxiom();
-			if (SortUtils::isSubsort((*it)->sort(), get(STDSORT::STRINGSORT))) {
-				strings.push_back((*it));
+		for (auto domterm : _typedDomainTerms) {
+			startAxiomSentence("dtta");
+			auto sortName = getSupportedName(domterm->sort());
+			_os << "t_" << sortName << "(" << domainTermNameString(domterm) << ")";
+			endAxiom(_typeAxiomStream);
+			if (SortUtils::isSubsort(domterm->sort(), get(STDSORT::STRINGSORT))) {
+				strings.push_back(domterm);
 			}
 			_count++;
 		}
 		if (_arithmetic) {
-			for (auto it = _types.cbegin(); it != _types.cend(); ++it) {
-				_typeStream << "tff(";
-				_typeStream << "dtt";
-				_typeStream << _count << ",type,(";
-				_typeStream << "t_" << getSupportedName(*it) << ": ";
-				_typeStream << TFFTypeString(*it);
-				_typeStream << " > $o";
-				_typeStream << ")).\n";
+			for (auto type : _types) {
+				_typeStream << "tff(" << "dtt" << _count << ",type,(";
+				_typeStream << "t_" << getSupportedName(type) << ": ";
+				_typeStream << TFFTypeString(type) << " > $o" << ")).\n";
 				_count++;
 			}
 		}
 		if (strings.size() >= 2) {
-			startAxiom("stringineqa", &_typeAxiomStream);
+			startAxiomSentence("stringineqa");
 			for (unsigned int i = 0; i < strings.size() - 1; i++) {
 				for (unsigned int j = i + 1; j < strings.size(); j++) {
-					(*_os) << domainTermNameString(strings[i]) << " != " << domainTermNameString(strings[j]);
+					_os << domainTermNameString(strings[i]) << " != " << domainTermNameString(strings[j]);
 					if (!(i == strings.size() - 2 && j == strings.size() - 1)) {
-						(*_os) << " & ";
+						_os << " & ";
 					}
 				}
 			}
-			endAxiom();
+			endAxiom(_typeAxiomStream);
 		}
 		_typedDomainElements.clear();
 		_typedDomainTerms.clear();
 		_types.clear();
 	}
 
-	//FIXME: everywhere this method was called, the longname option was given.  However, this option disappeared!
+	// FIXME apply proper rewriting here, using getsupportedname
 	std::string rewriteLongname(const std::string& longname) {
 		// Fancy stuff here.
 		std::string result = longname;
 
 		// Remove types
 		auto pos = result.find("[");
-		if (pos != std::string::npos)
+		if (pos != std::string::npos) {
 			result.erase(pos);
+		}
 
 		// Append 1 more '_' to sequences of 3 or more '_'s
 		pos = result.find("___");
 		while (pos != std::string::npos) {
-			while (result[pos + 3] == '_')
+			while (result[pos + 3] == '_') {
 				++pos;
+			}
 			result.replace(pos, 3, "____");
 			pos = result.find("___", pos + 3);
 		}
@@ -660,6 +681,20 @@ private:
 			result.replace(pos, 2, "___");
 			pos = result.find("::", pos + 3);
 		}
+
+		if(result.length()>2){
+			pos = result.find("<");
+			while (pos != std::string::npos) {
+				result.replace(pos, 2, "__l__");
+				pos = result.find("<", pos + 3);
+			}
+			pos = result.find(">");
+			while (pos != std::string::npos) {
+				result.replace(pos, 2, "__g__");
+				pos = result.find(">", pos + 3);
+			}
+		}
+
 		return result;
 	}
 
@@ -687,67 +722,62 @@ private:
 			} else {
 				return "tt_" + str;
 			}
-		} else
+		} else {
 			return "utt_" + str;
+	}
 	}
 
 	void outputFuncAxiom(const Function* f) {
-		startAxiom("fa", &_typeAxiomStream);
+		startAxiomSentence("fa");
 		if (f->arity() > 0) {
-			(*_os) << "! [";
-			(*_os) << "V0";
+			_os << "! [" << "V0";
 			if (_arithmetic) {
-				(*_os) << ": ";
-				(*_os) << TFFTypeString(f->sort(0));
+				_os << ": " << TFFTypeString(f->sort(0));
 			}
 			for (unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << ",V" << n;
+				_os << ",V" << n;
 				if (_arithmetic) {
-					(*_os) << ": ";
-					(*_os) << TFFTypeString(f->sort(n));
+					_os << ": " << TFFTypeString(f->sort(n));
 				}
 			}
-			(*_os) << "] : (";
-			(*_os) << "~(";
-			(*_os) << "t_" << getSupportedName(f->sort(0)) << "(V0)";
+			_os << "] : (" << "~(" << "t_" << getSupportedName(f->sort(0)) << "(V0)";
 			for (unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << " & " << "t_" << getSupportedName(f->sort(n)) << "(V" << n << ")";
+				_os << " & " << "t_" << getSupportedName(f->sort(n)) << "(V" << n << ")";
 			}
-			(*_os) << ") | ";
+			_os << ") | ";
 		}
-		(*_os) << "(? [X1";
+		_os << "(? [X1";
 		if (_arithmetic) {
-			(*_os) << ": ";
-			(*_os) << TFFTypeString(f->outsort());
+			_os << ": " << TFFTypeString(f->outsort());
 		}
-		(*_os) << "] : (";
-		(*_os) << "t_" << getSupportedName(f->outsort()) << "(X1) & ";
-		(*_os) << "(! [X2";
+		_os << "] : (" << "t_" << getSupportedName(f->outsort()) << "(X1) & " << "(! [X2";
 		if (_arithmetic) {
-			(*_os) << ": ";
-			(*_os) << TFFTypeString(f->outsort());
+			_os << ": " << TFFTypeString(f->outsort());
 		}
-		(*_os) << "] : (";
-		if (f->partial())
-			(*_os) << "~";
-		(*_os) << "p_" << rewriteLongname(toString(f)) << "(";
+		_os << "] : (";
+		if (f->partial()) {
+			_os << "~";
+		}
+		_os << "p_" << rewriteLongname(toString(f)) << "(";
 		if (f->arity() > 0) {
-			(*_os) << "V0";
+			_os << "V0";
 			for (unsigned int n = 1; n < f->arity(); ++n) {
-				(*_os) << ",V" << n;
+				_os << ",V" << n;
 			}
-			(*_os) << ",";
+			_os << ",";
 		}
-		(*_os) << "X2)";
-		if (f->partial())
-			(*_os) << " | ";
-		else
-			(*_os) << " <=> ";
-		(*_os) << "X1 = X2";
-		(*_os) << "))))";
-		if (f->arity() > 0)
-			(*_os) << ")";
-		endAxiom();
+		_os << "X2)";
+		if (f->partial()) {
+			_os << " | ";
+		} else {
+			_os << " <=> ";
+	}
+		_os << "X1 = X2";
+		_os << "))))";
+		if (f->arity() > 0) {
+			_os << ")";
+		}
+		endAxiom(_typeAxiomStream);
 	}
 
 	void writeStreams() {
@@ -755,21 +785,106 @@ private:
 		// Add t_nat > t_int > t_float hierarchy
 		output() << _typeAxiomStream.str();
 		if (_arithmetic) {
-			if (_nats && _ints)
+			if (_nats && _ints) {
 				output() << "tff(nat_is_int,axiom,(! [X: $int] : (~t_nat(X) | t_int(X)))).\n";
-			if (_ints && _floats)
+			}
+			if (_ints && _floats) {
 				output() << "tff(int_is_float,axiom,(! [X: $int] : (~t_int(X) | t_float(X)))).\n";
-			if (_nats && _floats)
+			}
+			if (_nats && _floats) {
 				output() << "tff(nat_is_float,axiom,(! [X: $int] : (~t_nat(X) | t_float(X)))).\n";
 		}
-		startAxiom("char_is_string", &_axiomStream);
-		(*_os) << "! [X] : (~t_char(X) | t_string(X))";
-		endAxiom();
+		}
+		startAxiomSentence("char_is_string");
+		_os << "! [X] : (~t_char(X) | t_string(X))";
+		endAxiom(_axiomStream);
 		output() << _axiomStream.str();
 		output() << _conjectureStream.str();
 		_typeStream.str(std::string());
 		_typeAxiomStream.str(std::string());
 		_axiomStream.str(std::string());
 		_conjectureStream.str(std::string());
+	}
+
+protected:
+	void visit(const GroundSet*) {
+		_ignore = true;
+	}
+	void visit(const GroundClause&) {
+		_ignore = true;
+	}
+	void visit(const AggGroundRule*) {
+		_ignore = true;
+	}
+	void visit(const GroundAggregate*) {
+		_ignore = true;
+	}
+	void visit(const CPReification*) {
+		_ignore = true;
+	}
+	virtual void visit(const AggTerm*) {
+		_ignore = true;
+	}
+	virtual void visit(const CPVarTerm*) {
+		_ignore = true;
+	}
+	virtual void visit(const CPSetTerm*) {
+		_ignore = true;
+	}
+	virtual void visit(const EnumSetExpr*) {
+		_ignore = true;
+	}
+	virtual void visit(const QuantSetExpr*) {
+		_ignore = true;
+	}
+	void visit(const FuncTerm*) {
+		// Should have been transformed into predicates
+		throw IdpException("Invalid code path");
+	}
+	virtual void visit(const GroundDefinition*) {
+		_ignore = true;
+	}
+	virtual void visit(const Rule*) {
+		_ignore = true;
+	}
+	virtual void visit(const Definition*) {
+		_ignore = true;
+	}
+	virtual void visit(const FixpDef*) {
+		_ignore = true;
+	}
+	void visit(const GroundFixpDef*) {
+		_ignore = true;
+	}
+	void visit(const PCGroundRule*) {
+		_ignore = true;
+	}
+
+	void visit(const Namespace*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	virtual void visit(const AbstractGroundTheory*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	virtual void visit(const GroundTheory<GroundPolicy>*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	void visit(const Structure*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	void visit(const PredTable*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	void visit(const Query*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in TPTP format.");
+	}
+	void visit(const FOBDD*) {
+		throw notyetimplemented("Converting FOBDD to tptp format.");
+	}
+	void visit(const UserProcedure*) {
+		throw notyetimplemented("Converting FOBDD to tptp format.");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Converting Compounds to tptp format.");
 	}
 };

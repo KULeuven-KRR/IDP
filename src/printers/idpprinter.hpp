@@ -312,7 +312,7 @@ public:
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		/*TODO not implemented yet*/
-		throw notyetimplemented("(printing fixpoint definitions is not yet implemented)");
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in IDP format.");
 		_printTermsAsBlock = backup;
 	}
 
@@ -383,6 +383,11 @@ public:
 		if (isNeg(f->sign())) {
 			output() << "~";
 		}
+		if(f->symbol()->infix()){
+			f->subterms()[0]->accept(this);
+			output() << print(f->symbol());
+			f->subterms()[1]->accept(this);
+		}else{
 		output() << print(f->symbol());
 		if (not f->subterms().empty()) {
 			if(f->isGraphedFunction()){ //f is a function, not a predicate, and should be printed as one
@@ -407,6 +412,7 @@ public:
 				}
 				output() << ")";
 			}
+		}
 		}
 		_printTermsAsBlock = backup;
 	}
@@ -703,20 +709,20 @@ public:
 		switch (t->function()) {
 			case AggFunction::CARD:
 				output() << "sum";
-				_printSetTerm = false;
-				break;
+			_printSetTerm = false;
+			break;
 			case AggFunction::SUM:
-				output() << "sum";
-				break;
+			output() << "sum";
+			break;
 			case AggFunction::PROD:
-				output() << "prod";
-				break;
+			output() << "prod";
+			break;
 			case AggFunction::MIN:
-				output() << "min";
-				break;
+			output() << "min";
+			break;
 			case AggFunction::MAX:
-				output() << "max";
-				break;
+			output() << "max";
+			break;
 		}
 		output() <<'(';
 		printEnumSetExpr(t->set(),t->function());
@@ -1370,6 +1376,11 @@ private:
 		}
 		output() << " }";
 	}
+
+	virtual void visit(const AbstractGroundTheory*){
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in IDP format.");
+	}
+
 	void printSortRecursively(Sort* sort, std::vector<Sort*>& printedsorts,const Vocabulary* v){
 		for(auto it:sort->parents()){
 			printSortRecursively(it,printedsorts,v);

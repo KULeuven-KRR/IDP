@@ -290,6 +290,12 @@ private:
 	}
 
 public:
+	void visit(const AbstractGroundTheory*){
+		throw notyetimplemented("Printing theories in IDP2 format");
+	}
+	void visit(const GroundDefinition*){
+		throw notyetimplemented("Printing ground definitions in IDP2 format");
+	}
 	void visit(const Query*) {
 		throw notyetimplemented("Printing queries in IDP2 format");
 	}
