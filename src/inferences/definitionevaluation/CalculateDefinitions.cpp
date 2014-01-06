@@ -234,6 +234,9 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
 				}
+				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
+					clog << "Using structure " << toString(structure) << "\n";
+				}
 				auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
 				if(getOption(XSB) && has_recursive_aggregate) {
 					Warning::warning("Currently, no support for definitions that have recursive aggregates");
