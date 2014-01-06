@@ -1,0 +1,28 @@
+vocabulary V {
+	p
+	q
+	
+}
+
+theory T : V {
+	{
+		p <- ~q.
+		q <- ~p.
+	}
+}
+
+structure S : V {
+	
+}
+
+include<mx>
+procedure main(){
+	stdoptions.stablesemantics = true
+	local mods = #allmodels(T,S)
+	
+	if mods == 2 then
+		return 1
+	end
+	
+	return 0
+}
