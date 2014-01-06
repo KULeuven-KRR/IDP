@@ -35,11 +35,11 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 	auto approxdef_structure = approxdef->inputStructure(structure);
 	auto def_to_calculate = DefinitionUtils::makeDefinitionCalculable(approxdef->approximatingDefinition(),approxdef_structure);
 
-	auto output_structure = CalculateDefinitions::doCalculateDefinitions(
+	auto defCalculatedResult = CalculateDefinitions::doCalculateDefinitions(
 			def_to_calculate, approxdef_structure, false, approxdef->getSymbolsToQuery());
 
-	if(not output_structure.empty() && approxdef->isConsistent(output_structure.at(0))) {
-		approxdef->updateStructure(structure,output_structure.at(0));
+	if(not defCalculatedResult._hasModel and approxdef->isConsistent(defCalculatedResult._calculated_model)) {
+		approxdef->updateStructure(structure,defCalculatedResult._calculated_model);
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
 					toString(structure) << "\n";

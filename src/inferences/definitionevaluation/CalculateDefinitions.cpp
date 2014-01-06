@@ -32,11 +32,13 @@
 #include <iostream>
 
 using namespace std;
-bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure,
+DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure,
 		bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
+	DefinitionCalculationResult result;
+	result._calculated_model=structure;
 #ifdef WITHXSB
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
@@ -58,30 +60,46 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 				}
 			}
 		}
+
 		for (auto symbol : symbols) {
 			auto sorted = xsb_interface->queryDefinition(symbol);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
             if(not isConsistentWith(predtable1, structure->inter(symbol))){
             	xsb_interface->reset();
-            	return false;
+            	result._hasModel=false;
+            	result._calculated_model=structure;
+            	return result;
             }
             structure->inter(symbol)->ctpt(predtable1);
             structure->clean();
             if(isa<Function>(*symbol)) {
             	auto fun = dynamic_cast<Function*>(symbol);
             	if(not structure->inter(fun)->approxTwoValued()){ // E.g. for functions
-    				xsb_interface->reset();
-    				return false;
+                	xsb_interface->reset();
+                	result._hasModel=false;
+                	result._calculated_model=structure;
+                	return result;
     			}
             }
 			if(not structure->inter(symbol)->isConsistent()){
-				xsb_interface->reset();
-				return false;
+            	xsb_interface->reset();
+            	result._hasModel=false;
+            	result._calculated_model=structure;
+            	return result;
 			}
 		}
-		xsb_interface->reset();
-		return structure->isConsistent();
+
+    	xsb_interface->reset();
+    	result._calculated_model=structure;
+		if (not structure->isConsistent()) {
+        	result._hasModel=false;
+        	return result;
+		} else {
+	    	result._hasModel=true;
+	    	result._calculated_definitions.push_back(definition);
+		}
+    	return result;
 	}
 #endif
 	// Default: Evaluation using ground-and-solve
@@ -99,7 +117,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		tooExpensive = true;
 		delete (data);
 		delete (grounder);
-		return true;
+    	result._hasModel=true;
+		return result;
 	}
 
 	bool unsat = grounder->toplevelRun();
@@ -109,7 +128,8 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 		// Cleanup
 		delete (data);
 		delete (grounder);
-		return false;
+    	result._hasModel=false;
+		return result;
 	}
 
 	Assert(not unsat);
@@ -137,10 +157,14 @@ bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure
 	delete (mx);
 	delete (grounder);
 
-	return not abstractsolutions.empty() && structure->isConsistent();
+	result._hasModel=(not abstractsolutions.empty() && structure->isConsistent());
+	if(result._hasModel) {
+    	result._calculated_definitions.push_back(definition);
+	}
+	return result;
 }
 
-std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure,
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure,
 		bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
@@ -158,6 +182,7 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
 		opens[*it] = DefinitionUtils::opens(*it);
 	}
+
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		bool foundone = false;
 		auto def = opens.begin();
@@ -178,6 +203,10 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 			Warning::warning("Ignoring definitions for which we cannot detect totality because option stablesemantics is true.");
 		}
 	}
+
+	DefinitionCalculationResult result;
+	result._calculated_model = structure; // Set first intermediate result
+
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
@@ -210,26 +239,32 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 					Warning::warning("Currently, no support for definitions that have recursive aggregates");
 				}
 				auto useXSB = getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
-				bool satisfiable = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
+				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
 				}
+				result._calculated_model = defCalcResult._calculated_model; // Update current structure
 
-				if (not satisfiable) {
+				if (not defCalcResult._hasModel) {
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-						clog << "The given structure is not a model of the definition.\n";
+						clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
 					}
-					return std::vector<Structure*> { };
+					result._hasModel = false;
+					// When returning a result that has no model, the other arguments are as follows:
+					// _calculated_model:  the structure resulting from the last unsuccessful definition calculation
+					// _calculated_definitions: all definitions that have been successfully calculated
+					return result;
 				}
 				theory->remove(definition);
-				definition->recursiveDelete();
+				result._calculated_definitions.push_back(definition);
 				opens.erase(currentdefinition);
 				fixpoint = false;
 			}
 		}
 	}
 	if (not structure->isConsistent()) {
-		return std::vector<Structure*> { };
+		result._hasModel = false;
+		return result;
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";
@@ -237,12 +272,14 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 		clog << "Resulting structure:\n" << toString(structure) << "\n";
 	}
-	return {structure};
+	result._hasModel = true;
+	result._calculated_model = structure;
+	return result;
 }
 
 
 
-std::vector<Structure*> CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure,
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure,
 		bool satdelay, std::set<PFSymbol*> symbolsToQuery) {
         Theory* theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
         theory->add(definition);

@@ -86,6 +86,8 @@ public:
 	~ApproximatingDefinition() {
 		delete(_approximating_definition);
 		delete(_approximating_vocabulary);
+		delete(_mappings);
+		delete(_represented_derivations);
 	}
 
 	// Inspectors

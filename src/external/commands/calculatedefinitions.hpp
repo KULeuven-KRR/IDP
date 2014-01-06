@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef CALCULATEDEFINITIONSCOMMAND_HPP_
-#define CALCULATEDEFINITIONSCOMMAND_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
@@ -37,12 +36,13 @@ public:
 		}
 		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
 		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)->clone());
-		if(sols.size()==0 ){
+		if(not sols._hasModel ){
 			return InternalArgument();
 		}
-		Assert(sols.size() == 1 && sols[0] != NULL);
-		return InternalArgument(sols[0]);
+		Assert(sols._hasModel and sols._calculated_model != NULL);
+		for (auto def : sols._calculated_definitions) {
+			def->recursiveDelete();
+		}
+		return InternalArgument(sols._calculated_model);
 	}
 };
-
-#endif /* CALCULATEDEFINITIONSCOMMAND_HPP_ */
