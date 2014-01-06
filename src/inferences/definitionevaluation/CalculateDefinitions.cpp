@@ -34,6 +34,7 @@ using namespace std;
 
 bool CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure, bool satdelay, bool& tooExpensive, bool withxsb) const {
 	// TODO duplicate code with modelexpansion
+
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
@@ -140,6 +141,26 @@ std::vector<Structure*> CalculateDefinitions::calculateKnownDefinitions(Theory* 
 	std::map<Definition*, std::set<PFSymbol*> > opens;
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
 		opens[*it] = DefinitionUtils::opens(*it);
+	}
+	if (getOption(BoolType::STABLESEMANTICS)) {
+		bool foundone = false;
+		auto def = opens.begin();
+		while (def != opens.end()) {
+			auto hasrecursion = DefinitionUtils::hasRecursionOverNegation((*def).first);
+			//TODO in the future: put a smarter check here
+
+			auto currentdefinition = def++;
+			// REASON: set erasure does only invalidate iterators pointing to the erased elements
+			// Remove opens that have a two-valued interpretation
+
+			if (hasrecursion) {
+				foundone = true;
+				opens.erase(currentdefinition);
+			}
+		}
+		if (foundone) {
+			Warning::warning("Ignoring definitions for which we cannot detect totality because option stablesemantics is true.");
+		}
 	}
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
