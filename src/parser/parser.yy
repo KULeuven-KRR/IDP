@@ -208,7 +208,7 @@ void yyerror(const char* s);
 %type <fpd> fixpdef
 %type <fpd> fd_rules
 %type <def> definition
-%type <est> formset termset termsets formulasets
+%type <est> formset termset termlist
 %type <cpo> compound
 %type <pta>	ptuples
 %type <pta>	ptuples_es
@@ -623,28 +623,23 @@ domterm		: FLNUMBER									{ $$ = data().domterm($1,@1);		}
 		The above lines are commented since writing @ is unsafe"*/
 			;
 
-aggterm		: P_CARD 	'(' formulasets	')'	{ $$ = data().aggregate(AggFunction::CARD,$3,@1);	}
-			| P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
-			| P_SOM 	'(' termsets	')'	{ $$ = data().aggregate(AggFunction::SUM,$3,@1);	}
+aggterm		: P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
+			| P_SOM 	'(' termlist	')'	{ $$ = data().aggregate(AggFunction::SUM,$3,@1);	}
 			| P_SOM 	termset				{ $$ = data().aggregate(AggFunction::SUM,$2,@1);	}
-			| P_PROD 	'(' termsets 	')'	{ $$ = data().aggregate(AggFunction::PROD,$3,@1);	}
+			| P_PROD 	'(' termlist 	')'	{ $$ = data().aggregate(AggFunction::PROD,$3,@1);	}
 			| P_PROD 	termset 			{ $$ = data().aggregate(AggFunction::PROD,$2,@1);	}
-			| P_MINAGG  '(' termsets 	')'	{ $$ = data().aggregate(AggFunction::MIN,$3,@1);	}
+			| P_MINAGG  '(' termlist	')'	{ $$ = data().aggregate(AggFunction::MIN,$3,@1);	}
 			| P_MINAGG  termset 			{ $$ = data().aggregate(AggFunction::MIN,$2,@1);	}
-			| P_MAXAGG  '(' termsets 	')' { $$ = data().aggregate(AggFunction::MAX,$3,@1);	}
+			| P_MAXAGG  '(' termlist 	')' { $$ = data().aggregate(AggFunction::MAX,$3,@1);	}
 			| P_MAXAGG   termset 			{ $$ = data().aggregate(AggFunction::MAX,$2,@1);	}
 			;
 
-formulasets	: formulasets UNION formset 		{ $$ = $1; if($3!=NULL){data().addToFirst($$,$3); delete($3);	}		}
-			| formset						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,$1);	delete($1); }}
-			;
-			
 formset		: '{' variables ':' formula '}'	{ $$ = data().set($4,@1,*$2); delete($2);	}
 			| '{' ':' formula '}'			{ $$ = data().set($3,@1); }
 			;
 			
-termsets	: termsets UNION termset 			{ $$ = $1; if($3!=NULL){data().addToFirst($$,$3); delete($3);	}		}
-			| termset						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,$1); delete($1);} }
+termlist	: termlist ',' term 		{ $$ = $1; if($3!=NULL){data().addToFirst($$,data().trueset($3,@1)); 	}		}
+			| term						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,data().trueset($1,@1));} }
 			;
 
 termset		: '{' variables ':' formula ':' term '}'	{ $$ = data().set($4,$6,@1,*$2); delete($2);	}	

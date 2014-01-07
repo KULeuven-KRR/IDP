@@ -108,21 +108,19 @@ As in mathematics, one can write chains of (in)equalities in \idp. They can be u
 \subsection{Aggregates}
 Aggregates are functions that take a set as argument, instead of a simple variable. \idp supports some aggregates that map a set to an integer. As such, they can be seen as integer terms.
 
-Syntacticly, there are two kinds of sets in \idp. 
+Syntacticly, one writes sets in \idp in the following manner:
 \begin{itemize}
-	\item An expression of the form `{\tt [ (phi\_1,t\_1) ; (phi\_2,t\_2) ; ... ; (phi\_n,t\_n)]}', where each {\tt phi\_i} is a formula and each \code{t\_i} is a term.  %This set denotes the set of all the {\tt t\_i} for which {\tt phi\_i} that are true.
 	\item An expression of the form `{\tt \{ x\_1 x\_2 ... x\_n : phi : t\}}', where the {\tt x\_i} are variables, {\tt phi} is a formula and $t$ is a term. The variables \code{x\_i} can occur in both \code{phi} and \code{t}. %This denotes the set of all tuples  {\tt (a\_1,a\_2, ...,a\_n)} of objects such that {\tt phi} is true if each occurrence of an {\tt x\_i} in {\tt phi} is replaced by {\tt a\_i}. 
 \end{itemize} 
-The informal interpretation of sets of the different kinds is (respectively):
+The informal interpretation of sets is:
 \begin{itemize}
- \item The multiset of all \code{t\_i} for which \code{phi\_i} is true (multiple occurences of the same term are possible).
  \item The multiset consisting of: for every tuple of domain elements \code{(a\_1,a\_2, ...,a\_n)},  the term \code{t[a\_i/x\_i]} if \code{phi[a\_i/x\_i]} is true.
 \end{itemize}
 
 The current system has support for five aggregate functions:
 \begin{description}
-	\item[Cardinality:] The cardinality of a set is the number of elements in that set. The \idp syntax for the cardinality of a set $S$ is `{\tt card} $S$' or `{\tt \#} $S$'. For the first kind of sets, this denotes the number of formulas {\tt phi\_i} that are true.  For the second kind, this is interpreted as the number of tuples {\tt(a\_1,a\_2,..., a\_n)} such that {\tt phi} is true.
-	\item[Sum:] Let $S$ be a set of the second form, i.e., of the form `{\tt \{ x\_1 x\_2 ... x\_n : phi : t \}}'. Then the interpretation of `{\tt sum} $S$' denotes the number
+	\item[Cardinality:] The cardinality of a set is the number of elements in that set. The \idp syntax for the cardinality of a set $S$ is `{\tt card} $S$' or `{\tt \#} $S$' and this denotes the number of tuples {\tt(a\_1,a\_2,..., a\_n)} such that {\tt phi} is true.
+	\item[Sum:] Let $S$ be a set of the form, i.e., of the form `{\tt \{ x\_1 x\_2 ... x\_n : phi : t \}}'. Then the interpretation of `{\tt sum} $S$' denotes the number
 	\[ \sum_{{\tt(a\_1,a\_2,..., a\_n)} | I\vDash {\tt phi}} {\tt t }, \]
 	i.e., it is the sum of all the terms for which there exist {\tt a\_1,\ldots, a\_n} that make the formula {\tt phi} true. For sets of the first sort, this is interpreted as 
 \[ \sum_{i | I\vDash {\tt phi\_i}} {\tt t_i }. \]
@@ -133,6 +131,14 @@ The current system has support for five aggregate functions:
 \end{description}
 When using cardinality, the terms do not matter.  You can choose to write $1$ for every term, but are also allowed to leave out the terms.
 %{\color{Red}IMPORTANT NOTE}: At the moment, the solver cannot handle negative numbers in product aggregates.
+
+\subsubsection{Aggregates on lists of terms}
+
+Next to these aggregates that take a set as argument, \idp also supports lists of terms as a set. \idp supports four operations in this syntax: Sum, Max, Min and Prod.
+A sum operation would look like this:
+\[ sum(t_1,t_2,t_3,\ldots,t_n)\]
+and is interpreted as \[\sum_{i=1..n} t_i\]
+The three other operations are similar.
 
 \subsection{Partial functions}\label{ssec:partial}
 Normally, functions are total: they assign an output value to each of the input values. On the other hand, \emph{partial} functions do not necessarily have this property. In \idp, a partial function $F$ can arise in different situations. Either $F$ is explicitly declared as partial, or it is a built-in integer function (for example modulo).

@@ -2014,6 +2014,9 @@ EnumSetExpr* Insert::set(Formula* f, YYLTYPE l, const varset& vv) {
 	auto counter = new DomainTerm(get(STDSORT::NATSORT), d, TermParseInfo());
 	return set(f, counter, l, vv);
 }
+EnumSetExpr* Insert::trueset(Term* t, YYLTYPE l) {
+	return set(trueform(l) , t, l);
+}
 
 void Insert::addToFirst(EnumSetExpr* s1, EnumSetExpr* s2) {
 	for (auto p : s2->getSets()) {
