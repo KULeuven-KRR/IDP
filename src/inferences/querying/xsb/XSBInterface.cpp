@@ -162,7 +162,9 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
 		clog << "Quering XSB with: " <<  query << "\n";
 	}
-	auto rc = xsb_query_string_string(query, &buff, " ");
+    char* delimiter = new char [strlen(" ") + 1];
+    strcpy(delimiter," ");
+	auto rc = xsb_query_string_string(query, &buff, delimiter);
 	handleResult(rc);
 
 	while (rc == XSB_SUCCESS) {
@@ -173,7 +175,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
 		}
 		result.insert(tuple);
 
-		rc = xsb_next_string(&buff, " ");
+		rc = xsb_next_string(&buff, delimiter);
 		handleResult(rc);
 	}
 	XSB_StrDestroy(&buff);
