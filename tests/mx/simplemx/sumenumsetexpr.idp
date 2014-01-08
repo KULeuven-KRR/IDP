@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 theory T:V{
-	sum({:!x: p(x) : 1} U {:q:2})=1 | sum({:!x: p(x) : 1} U {:q:2})=2 .
+	sum(sum{:!x: p(x) : 1},sum{:q:2})=1 | sum(sum{:!x: p(x) : 1}, sum{:q:2})=2 .
 }
 
 structure S:V{

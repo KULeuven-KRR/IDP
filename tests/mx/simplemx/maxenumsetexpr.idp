@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 theory T:V{
-	!x: max({:true:3}U{:?y: p(y):2}U{:q(x):4})=3.
+	!x: max(max{:true:3},max{:?y: p(y):2},max{:q(x):4})=3.
 	q(1).
 }
 

@@ -6,7 +6,7 @@ vocabulary V {
 }
 
 theory T : V {
-	sum({:P:3} U {:Q:2})=1.
+	sum(sum{:P:3}, sum{:Q:2})=1.
 }
 
 structure S : V {

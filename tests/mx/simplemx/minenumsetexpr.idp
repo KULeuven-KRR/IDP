@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 theory T:V{
-	!x: min({:true:3}U{:?y: p(y):2} U {:q(x):4})=3.
+	!x: min(min{:true:3}, min{:?y: p(y):2}, min{:q(x):4})=3.
 }
 
 structure S:V{
@@ -14,4 +14,8 @@ structure S:V{
 
 procedure getExpectedNbOfModels(){
 	return 4
+}
+include<mx>
+procedure main(){
+	printmodels(allmodels(T,S))
 }

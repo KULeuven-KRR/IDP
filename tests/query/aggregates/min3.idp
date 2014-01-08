@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 query Q : V {
-	{y[x] : ! x[x] : min({:p(x):x}U{:true:0})=q & y~=q}
+	{y[x] : ! x[x] : min(min{:p(x):x},0)=q & y~=q}
 }
 
 structure S:V{
