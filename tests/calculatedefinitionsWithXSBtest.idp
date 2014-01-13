@@ -1,11 +1,30 @@
-procedure main() {
+include "modelexpansion.idp"
+
+procedure checkForRandomInputStructure(theory, structure, nrtimes) {
+	standardoptions()
+	stdoptions.nbmodels=nrtimes
+	NOXSBMODELS=modelexpand(theory,structure)
+	io.stderr:write("MX done, resulted in "..#NOXSBMODELS.." (max "..nrtimes..") models.\n")
+	stdoptions.xsb=true
+	for i,v in ipairs(NOXSBMODELS) do
+		io.stderr:write("Checking model nr. "..i.."\n")
+		if(checkDefinitionEvaluation(theory, v) ~= 1) then
+			io.stderr:write("Definition evaluation with XSB resulted in\nno model when it should have for these structure and theory:\n")
+			io.stderr:write(tostring(v))
+			io.stderr:write(tostring(theory))
+			return 0
+		end
+	end
+	io.stderr:write("All generated models had their definition evaluated correctly by XSB.\n")
+	return 1
+}
+
+procedure checkDefinitionEvaluation(theory, structure) {
 	stdoptions.timeout = 5
 	stdoptions.xsb=false
-	NOXSBMODEL=calculatedefinitions(T,S)
-	io.stderr:write("Calcdef without XSB done.\n")
+	NOXSBMODEL=calculatedefinitions(theory,structure)
 	stdoptions.xsb=true
-	XSBMODEL=calculatedefinitions(T,S)
-	io.stderr:write("Calcdef with XSB done.\n")
+	XSBMODEL=calculatedefinitions(theory,structure)
 	if (XSBMODEL == nil and NOXSBMODEL == nil) then
 		return 1
 	end
@@ -19,7 +38,9 @@ procedure main() {
 	end
 	if (XSBMODEL == nil or NOXSBMODEL == nil) then
 	end
-	if (equal(XSBMODEL,NOXSBMODEL)) then
+	stdoptions.timeout=0
+	io.stderr:write("Both definition evaluations resulted in a model. Comparing models...\n")
+	if (approxEqual(XSBMODEL,NOXSBMODEL)) then
 		return 1
 	else
 		io.stderr:write("FAIL! Calculating the definition with XSB resulted in a different model than calculating it without XSB.\n")

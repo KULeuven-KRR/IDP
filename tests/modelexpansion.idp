@@ -10,6 +10,8 @@ procedure standardoptions(){
 	stdoptions.satdelay=false
 	stdoptions.tseitindelay=false
 	stdoptions.lazyheur=false
+	stdoptions.xsb=false
+  	stdoptions.approxdef="none"
 }
 
 procedure mxnobounds(){
