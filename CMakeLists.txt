@@ -17,6 +17,8 @@ set (idp_VERSION_MINOR 2)
 set (idp_VERSION_PATCH 1)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
+
 include(cmake/outofsourcecheck.cmake)
 assureOutOfSourceBuilds()
 
@@ -50,17 +52,34 @@ if(CMAKE_COMPILER_IS_MINGW)
 endif()
 
 ### Gmp handling
-option(GMP  "Enable gmp support" OFF)
+OPTION(GMP "Enable gmp support" OFF)
 if(GMP)
 	addToCXX("-D GMP")
+	find_package(GMP)
+	if(GMP_FOUND)
+		include_directories(${GMP_INCLUDE_DIR})
+		set(LIBS ${LIBS} ${GMP_LIBRARIES})
+		set(LIBS ${LIBS} ${GMPXX_LIBRARIES})
+	else()
+		message(FATAL_ERROR "GMP library not found")
+	endif()
 else()
 	addToCXX("-D NO_GMP")
+	message("WARNING: this IntegerType may not be suitable for some input file. Consider using GMP")
 endif()
 
 ### Gecode option for minisatid
 option(WITHGECODE "Use gecode for cp support" OFF)
 if(WITHGECODE)
 	set(WITHGECODE ON CACHE BOOL "") # the minisatid option
+endif()
+
+### 32 bits
+option(32BITS "Compile for 32 bit architectures" OFF)
+if(32BITS)
+	addToCXX("-m32")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")
 endif()
 
 set(WRONGBUILD ON)
@@ -73,8 +92,8 @@ if(${CMAKE_BUILD_TYPE} MATCHES "^DebugProfile$")
 	set(WRONGBUILD OFF)
 endif()
 if(${CMAKE_BUILD_TYPE} MATCHES "^StaticRelease$")
-	addToCXX("-DNDEBUG -O3 -m32 ")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -DNDEBUG ")
+	addToCXX("-DNDEBUG -O3 ")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDEBUG ")
 	set(BUILD_SHARED_LIBS OFF)
 	set(BUILD_IDP_STATIC ON)
 	set(WRONGBUILD OFF)
