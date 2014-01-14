@@ -132,12 +132,12 @@ void XSBInterface::sendToXSB(string str, bool isFacts) {
 }
 
 void XSBInterface::reset() {
+	commandCall("abolish_all_tables.\n");
 	for(auto pred : _pp->allPredicates()) {
 		stringstream ss;
 		ss << "abolish(" << pred << ").\n";
 		commandCall(ss.str());
 	}
-	commandCall("abolish_all_tables.\n");
 	delete(_translator);
 	_translator = new XSBToIDPTranslator();
 	_structure = NULL;
