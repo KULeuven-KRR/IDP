@@ -15,7 +15,3 @@ structure S:V{
 procedure getExpectedNbOfModels(){
 	return 4
 }
-include<mx>
-procedure main(){
-	printmodels(allmodels(T,S))
-}
