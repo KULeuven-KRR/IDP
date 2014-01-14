@@ -1366,7 +1366,7 @@ private:
 			if (not sort->builtin() || v == Vocabulary::std()) {
 				printTab();
 				visit(sort);
-				printedsorts.push_back(it);
+				printedsorts.push_back(sort);
 				output() << "\n";
 			}
 		}
