@@ -42,8 +42,8 @@ CheckerInfo::CheckerInfo(PFSymbol* symbol, StructureInfo structure) {
 
 	auto pf = new PredForm(SIGN::POS, symbol, varterms, FormulaParseInfo());
 	data.funccontext = Context::POSITIVE;
-	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure, structure.concrstructure, { });
-	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, structure.concrstructure, { });
+	ptchecker = GrounderFactory::getChecker(pf, TruthType::POSS_TRUE, data, structure.symstructure, structure.concrstructure, { }, true);
+	ctchecker = GrounderFactory::getChecker(pf, TruthType::CERTAIN_TRUE, data, structure.symstructure, structure.concrstructure, { }, true);
 }
 
 CheckerInfo::~CheckerInfo() {
