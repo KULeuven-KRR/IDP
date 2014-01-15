@@ -9,4 +9,3 @@ procedure main(){
 	file:close()
 	return 1
 }
-
