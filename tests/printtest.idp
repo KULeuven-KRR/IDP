@@ -2,11 +2,10 @@ include <mx>
 
 procedure main(){
 	local file = io.open("tmp.idp", "w")
-	file:write(tostring(V))
+	file:write(tostring(getvocabulary(T)))
 	file:write(tostring(T))
 	file:write(tostring(S))
 	file:write(idpintern.tostring(getExpectedNbOfModels))
 	file:close()
 	return 1
 }
-

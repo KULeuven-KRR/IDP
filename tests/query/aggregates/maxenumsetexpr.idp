@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 query Q : V {
-	{x: max({:true:3}U{:?y: p(y):2}U{:q(x):4})=3}
+	{x: max(3,max{:?y: p(y):2},max{:q(x):4})=3}
 }
 
 structure S:V{

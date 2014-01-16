@@ -3,8 +3,6 @@ vocabulary V {
 P(t)
 	c:t
 d:t
-a:t
-b:t
 }
 
 theory T:V{	
@@ -15,6 +13,8 @@ structure S:V{
 t={1..20}
 P={3..9}
 }
+
+include<mx>
 procedure getExpectedNbOfModels(){
 	return 1
 }

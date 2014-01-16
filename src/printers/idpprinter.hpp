@@ -690,24 +690,24 @@ public:
 		Assert(isTheoryOpen());
 		switch (t->function()) {
 			case AggFunction::CARD:
-			output() << '#';
-			_printSetTerm = false;
-			break;
+				output() << "sum";
+				_printSetTerm = false;
+				break;
 			case AggFunction::SUM:
-			output() << "sum";
-			break;
+				output() << "sum";
+				break;
 			case AggFunction::PROD:
-			output() << "prod";
-			break;
+				output() << "prod";
+				break;
 			case AggFunction::MIN:
-			output() << "min";
-			break;
+				output() << "min";
+				break;
 			case AggFunction::MAX:
-			output() << "max";
-			break;
+				output() << "max";
+				break;
 		}
 		output() <<'(';
-		t->set()->accept(this);
+		printEnumSetExpr(t->set(),t->function());
 		output() <<')';
 		_printTermsAsBlock = backup;
 		_printSetTerm = backupTermPrint;
@@ -1370,5 +1370,58 @@ private:
 				output() << "\n";
 			}
 		}
+	}
+
+	void printEnumSetExpr(EnumSetExpr* s, AggFunction f) {
+		Assert(s->getSets().size() > 0);
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
+		bool begin = true;
+		for (auto i = s->getSets().cbegin(); i < s->getSets().cend(); ++i) {
+			if (not begin) {
+				output() << ", ";
+			}
+			begin = false;
+			printQuantSetExpr((*i), f);
+		}
+		_printTermsAsBlock = backup;
+	}
+
+	void printQuantSetExpr(QuantSetExpr* s, AggFunction f) {
+		auto backup = _printTermsAsBlock;
+		_printTermsAsBlock = false;
+		switch (f) {
+		case AggFunction::CARD:
+			output() << "#";
+			break;
+		case AggFunction::SUM:
+			output() << "sum";
+			break;
+		case AggFunction::PROD:
+			output() << "prod";
+			break;
+		case AggFunction::MIN:
+			output() << "min";
+			break;
+		case AggFunction::MAX:
+			output() << "max";
+			break;
+		}
+		output() << '{';
+		for (auto qv : s->quantVars()) {
+			output() << ' ';
+			output() << qv->name();
+			if (qv->sort()) {
+				output() << '[' << qv->sort()->name() << ']';
+			}
+		}
+		output() << " : ";
+		s->getCondition()->accept(this);
+		if (_printSetTerm) {
+			output() << " : ";
+			s->getTerm()->accept(this);
+		}
+		output() << " }";
+		_printTermsAsBlock = backup;
 	}
 };

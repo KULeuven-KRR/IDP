@@ -4,7 +4,7 @@ vocabulary V{
 }
 
 theory T:V{
-	#({:?x:p(x)} U {:!x: p(x)}) = 1.
+	sum(#{:?x:p(x)}, #{:!x: p(x)}) = 1.
 }
 
 structure S:V{

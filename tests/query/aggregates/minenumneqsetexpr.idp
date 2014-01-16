@@ -5,7 +5,7 @@ vocabulary V{
 }
 
 query Q:V{
-	{x: min({:true:3}U{:?y: p(x, y):2}U{:q(x):4})~=3}
+	{x: min(3,min{:?y: p(x, y):2},min{:q(x):4})~=3}
 }
 
 structure S:V{

@@ -26,10 +26,3 @@ procedure getExpectedNbOfModels(){
 procedure shouldNotCheck(){
 	return true;
 }
-
-
-//include <mx>
-//procedure main(){
-//	stdoptions.liftedunitpropagation=false
-//	printmodels(modelexpand(T,S,Vout))
-//}

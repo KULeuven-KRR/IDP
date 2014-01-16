@@ -4,7 +4,7 @@ vocabulary V{
 }
 
 theory T:V{
-	?y[x]: max{x: p(x): x}=y.
+	?y[x]: max{x: p(x):x}=y.
 }
 
 structure S:V{
