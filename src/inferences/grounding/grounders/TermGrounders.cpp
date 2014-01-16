@@ -332,9 +332,9 @@ Weight getNeutralElement(AggFunction type){
 	case AggFunction::PROD:
 		return 1;
 	case AggFunction::MIN:
-		return getMaxElem<int>();
+		return getMaxElem<int>(); // TODO should become infinity
 	case AggFunction::MAX:
-		return getMinElem<int>();
+		return getMinElem<int>(); // TODO should become infinity
 	}
 	throw IdpException("Invalid code path.");
 }
@@ -379,13 +379,25 @@ GroundTerm AggTermGrounder::run() const {
 					varids.push_back(_translator->translateTerm(term._domelement));
 				}
 			}
-			if (trueweight != getNeutralElement(_type)) {
+
+			auto neutral = getNeutralElement(_type);
+			auto dom = getDomain();
+			if (trueweight != neutral) {
 				conditions.push_back(_true);
 				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
+			}else{
+				#warning Hack because DeriveTermBounds (so ALSO in other parts of the system) does not derive complete bounds for MIN and MAX aggregates (forgetting infinity)
+				dom = getDomain()->clone();
+				auto neutraldom = createDomElem(neutral);
+				if(not dom->contains(neutraldom)){
+					dom->add(neutraldom);
+					conditions.push_back(_true);
+					varids.push_back(_translator->translateTerm(neutraldom));
+				}
 			}
 
 			auto aggterm = createCPAggTerm(_type, conditions, varids);
-			id = _translator->translateTerm(aggterm, getDomain());
+			id = _translator->translateTerm(aggterm, dom);
 			aggterm2cpterm[std::pair<uint, AggFunction>(setnr.id, _type)] = id;
 			if (not contains(aggterm2cpterm, std::pair<uint, AggFunction>(setnr.id, _type))) {
 				throw IdpException("Invalid code path");
