@@ -151,33 +151,36 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 	output << *(pc._head);
 	if (!pc._body.empty()) {
 		output << " :- ";
-		auto instantiatedVars = new std::set<PrologVariable*>();
+		auto instantiatedAndCheckedVars = new std::set<PrologVariable*>();
 		for (std::list<PrologTerm*>::const_iterator it = (pc._body).begin(); it != (pc._body).end(); ++it) {
 			if (it != (pc._body).begin()) {
 				output << ", ";
 			}
 			// Add type generators for the necessary variables
 			for (auto var = (*it)->inputvarsToCheck().begin(); var != (*it)->inputvarsToCheck().end(); ++var) {
-				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
+				if(instantiatedAndCheckedVars->find(*var) == instantiatedAndCheckedVars->end()) {
 					output << *(*var)->instantiation() << ", ";
-					instantiatedVars->insert(*var);
+					instantiatedAndCheckedVars->insert(*var);
 				}
 			}
 			output << (**it);
 			// Add type check to the necessary variables
 			for (auto var = (*it)->outputvarsToCheck().begin(); var != (*it)->outputvarsToCheck().end(); ++var) {
-				if(instantiatedVars->find(*var) == instantiatedVars->end()) {
+				if(instantiatedAndCheckedVars->find(*var) == instantiatedAndCheckedVars->end()) {
 					output << ", " << *(*var)->instantiation();
-					instantiatedVars->insert(*var);
+					instantiatedAndCheckedVars->insert(*var);
 				}
 			}
-			// All variables of the printed call have been instantiated
+			// All variables of the printed call have to be checked - they could be over a stricter type than the call
 			for (auto var = (*it)->variables().begin(); var != (*it)->variables().end(); ++var) {
-				instantiatedVars->insert(*var);
+				if(instantiatedAndCheckedVars->find(*var) == instantiatedAndCheckedVars->end()) {
+					output << ", " << *(*var)->instantiation();
+					instantiatedAndCheckedVars->insert(*var);
+				}
 			}
 		}
 		for (auto it = (pc._head)->variables().begin(); it != (pc._head)->variables().end(); ++it) {
-			if(instantiatedVars->find(*it) == instantiatedVars->end()) {
+			if(instantiatedAndCheckedVars->find(*it) == instantiatedAndCheckedVars->end()) {
 				output << ", " << *(*it)->instantiation();
 			}
 		}

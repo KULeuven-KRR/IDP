@@ -1,0 +1,22 @@
+vocabulary V{
+	type T isa int
+	type X isa T
+	P1(T)
+	P2(T)
+	Q
+	R
+	S
+}
+
+theory T:V{
+  { Q <- ?x[X]: P1(x). }
+  { S <- ?x[X]: P2(x). }
+  { R <- ?x[X]: (P1(x) & P2(x)). }
+}
+
+structure S:V{
+	T={1..3}
+	X={1}
+	P1={2;3}
+	P2={1;2;3}
+}
