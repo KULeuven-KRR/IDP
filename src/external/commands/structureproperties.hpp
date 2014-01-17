@@ -42,6 +42,16 @@ bool checkEquality(Table one, Table two){
 	return true;
 }
 
+template<class Table>
+bool checkApproxEquality(Table one, Table two){
+	if(not (one->approxFinite() && two->approxFinite())) {
+		return true; // Don't do the comparison for infinite tables
+	}
+	else {
+		return checkEquality(one,two);
+	}
+}
+
 typedef TypedInference<LIST(Structure*,Structure*)> SSBase;
 class StructureEqualityInference: public SSBase {
 public:
@@ -95,6 +105,69 @@ public:
 				equal &= checkEquality(inter->pt(), inter2->pt());
 				equal &= checkEquality(inter->cf(), inter2->cf());
 				equal &= checkEquality(inter->pf(), inter2->pf());
+			}
+		}
+
+		InternalArgument ia;
+		ia._type = AT_BOOLEAN;
+		ia._value._boolean = equal;
+		return ia;
+	}
+};
+
+typedef TypedInference<LIST(Structure*,Structure*)> SSBase;
+class StructureApproxEqualityInference: public SSBase {
+public:
+	StructureApproxEqualityInference()
+			: SSBase("approxEqual", "Check whether two structures are approximately equal.") {
+		setNameSpace(getStructureNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Structure* s1 = get<0>(args);
+		Structure* s2 = get<1>(args);
+
+		auto equal = true;
+
+		if(equal){
+			equal &= s1!=NULL && s2!=NULL;
+		}
+		if(equal){
+			equal &= s1->vocabulary()==s2->vocabulary();
+		}
+		if(equal){
+			for(auto sort2inter : s1->getSortInters()){
+				auto sort = sort2inter.first;
+				auto inter = sort2inter.second;
+				if(sort->builtin()){
+					continue;
+				}
+				auto inter2 = s2->inter(sort);
+				equal &= checkApproxEquality(inter, inter2);
+			}
+			for(auto pred2inter : s1->getPredInters()){
+				auto pred = pred2inter.first;
+				auto inter = pred2inter.second;
+				if(pred->builtin() || pred->overloaded()){
+					continue;
+				}
+				auto inter2 = s2->inter(pred);
+				equal &= checkApproxEquality(inter->ct(), inter2->ct());
+				equal &= checkApproxEquality(inter->pt(), inter2->pt());
+				equal &= checkApproxEquality(inter->cf(), inter2->cf());
+				equal &= checkApproxEquality(inter->pf(), inter2->pf());
+			}
+			for(auto func2inter : s1->getFuncInters()){
+				auto func = func2inter.first;
+				auto inter = func2inter.second->graphInter();
+				if(func->builtin() || func->overloaded()){
+					continue;
+				}
+				auto inter2 = s2->inter(func)->graphInter();
+				equal &= checkApproxEquality(inter->ct(), inter2->ct());
+				equal &= checkApproxEquality(inter->pt(), inter2->pt());
+				equal &= checkApproxEquality(inter->cf(), inter2->cf());
+				equal &= checkApproxEquality(inter->pf(), inter2->pf());
 			}
 		}
 
