@@ -147,7 +147,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
-		IntPol::createOption(IntType::VERBOSE_APPROXDEF, "approximatingdefinition", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_APPROXDEF, "approxdef", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 	} else {
 		auto opt = new Options(true);
