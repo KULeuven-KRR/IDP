@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: trie_lookup.c,v 1.32 2011/10/29 23:27:59 tswift Exp $
+** $Id: trie_lookup.c,v 1.33 2012/11/29 18:08:11 tswift Exp $
 ** 
 */
 
@@ -250,7 +250,7 @@ void *stl_restore_variant_cont(CTXTdecl) {
 
   Trail_ResetTOS;
   for (i = 0; i < (int) variant_cont.bindings.num; i++) {
-    Trail_Push(variant_cont.bindings.stack.ptr[i].var);
+    tstTrail_Push(variant_cont.bindings.stack.ptr[i].var);
     bld_ref(variant_cont.bindings.stack.ptr[i].var,
 	    variant_cont.bindings.stack.ptr[i].value);
   }
@@ -456,7 +456,7 @@ static void sub_trie_lookup_error(CTXTdeclc char *string) {
  */
 #define TrieVar_BindToSubterm(TrieVarNum,Subterm)	\
    TrieVarBindings[TrieVarNum] = Subterm;		\
-   Trail_Push(&TrieVarBindings[TrieVarNum])
+   tstTrail_Push(&TrieVarBindings[TrieVarNum])
 
 /*
  *  Given a TrieVar number and a marked PrologVar (bound to a
@@ -466,7 +466,7 @@ static void sub_trie_lookup_error(CTXTdeclc char *string) {
 #define TrieVar_BindToMarkedPrologVar(TrieVarNum,PrologVarMarker)	\
    TrieVarBindings[TrieVarNum] =					\
      TrieVarBindings[PrologVar_Index(PrologVarMarker)];			\
-   Trail_Push(&TrieVarBindings[TrieVarNum])
+   tstTrail_Push(&TrieVarBindings[TrieVarNum])
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -477,7 +477,7 @@ static void sub_trie_lookup_error(CTXTdeclc char *string) {
  */
 #define PrologVar_MarkIt(DerefedVar,Index)	\
    StandardizeVariable(DerefedVar,Index);	\
-   Trail_Push((CPtr)DerefedVar)
+   tstTrail_Push((CPtr)DerefedVar)
 
 /*
  *  Given a dereferenced Prolog variable, determine whether it has already
@@ -1253,10 +1253,10 @@ static BTNptr rec_sub_trie_lookup(CTXTdeclc BTNptr parent, TriePathType *pathTyp
 	  trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	  /*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
 	  TrieVarBindings[trievar_index] = subterm;
-	  Trail_Push(&TrieVarBindings[trievar_index]);
+	  tstTrail_Push(&TrieVarBindings[trievar_index]);
 	  /*** CallVar_MarkIt(subterm,trievar_index); ***/
 	  StandardizeVariable(subterm,trievar_index);
-	  Trail_Push(subterm);
+	  tstTrail_Push(subterm);
 	  leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    if ( *pathType == NO_PATH )
@@ -1326,7 +1326,7 @@ static BTNptr rec_sub_trie_lookup(CTXTdeclc BTNptr parent, TriePathType *pathTyp
 	  /*** TrieVar_BindToMarkedCallVar(trievar_index,subterm); ***/
 	  TrieVarBindings[trievar_index] =
 	    TrieVarBindings[IndexOfStdVar(subterm)];
-	  Trail_Push(&TrieVarBindings[trievar_index]);
+	  tstTrail_Push(&TrieVarBindings[trievar_index]);
 	  leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	  if ( IsNonNULL(leaf) ) {
 	    *pathType = SUBSUMPTIVE_PATH;
@@ -1452,7 +1452,7 @@ static BTNptr rec_sub_trie_lookup(CTXTdeclc BTNptr parent, TriePathType *pathTyp
 	trievar_index = DecodeTrieVar(BTN_Symbol(cur));
 	/*** TrieVar_BindToSubterm(trievar_index,subterm); ***/
 	TrieVarBindings[trievar_index] = subterm;
-	Trail_Push(&TrieVarBindings[trievar_index]);
+	tstTrail_Push(&TrieVarBindings[trievar_index]);
 	leaf = rec_sub_trie_lookup(CTXTc cur,pathType);
 	if ( IsNonNULL(leaf) ) {
 	  *pathType = SUBSUMPTIVE_PATH;

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: findall.c,v 1.58 2012/02/10 22:02:39 tswift Exp $
+** $Id: findall.c,v 1.59 2013/01/04 14:56:21 dwarren Exp $
 ** 
 */
 
@@ -743,7 +743,7 @@ int findall_get_solutions(CTXTdecl)
 
 /* adapted from findall_copy_template_to_chunck */
 /* returns the number of cells needed for the construction of term */
-static Integer term_size(CTXTdeclc Cell term)
+Integer term_size(CTXTdeclc Cell term)
 {
   Integer size = 0 ;
  recur:

@@ -9,57 +9,84 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef APPROXIMATINGDEFINITIONGENERATION_HPP_
-#define APPROXIMATINGDEFINITIONGENERATION_HPP_
+#pragma once
 
 #include "common.hpp"
+#include "ApproximatingDefinition.hpp"
 #include "visitors/TheoryVisitor.hpp"
+#include "vocabulary/vocabulary.hpp"
+#include "structure/Structure.hpp"
+#include "structure/MainStructureComponents.hpp"
+#include "structure/StructureComponents.hpp"
+#include "inferences/definitionevaluation/CalculateDefinitions.hpp"
+#include "theory/theory.hpp"
+#include "theory/TheoryUtils.hpp"
+
+#include "options.hpp"
+#include <iostream>
 
 class PFSymbol;
 class Predicate;
 
-struct ApproxData {
-	std::map<const Formula*, PredForm*> formula2ct;
-	std::map<const Formula*, PredForm*> formula2cf;
-	std::set<PFSymbol*> actions;
+using namespace std;
 
-	ApproxData(const std::set<PFSymbol*>& actions)
-			: actions(actions) {
+struct ApproxDefGeneratorData {
+	set<PFSymbol*> _freesymbols;
+	bool _baseformulas_already_added;
+	mappings* _mappings;
+	ApproximatingDefinition::DerivationTypes* _derivations;
+	std::set<ApproximatingDefinition::RuleType> _rule_types;
+
+	ApproxDefGeneratorData(const set<PFSymbol*>& freesymbols,
+			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types) :
+		_freesymbols(freesymbols),
+		_baseformulas_already_added(false),
+		_mappings(new mappings()),
+		_derivations(derivations),
+		_rule_types(rule_types){
+	}
+
+	ApproxDefGeneratorData(const ApproxDefGeneratorData* other) :
+		_freesymbols(other->_freesymbols),
+		_baseformulas_already_added(other->_baseformulas_already_added),
+		_mappings(other->_mappings),
+		_derivations(other->_derivations){
+
 	}
 };
 
 class GenerateApproximatingDefinition {
 private:
-	std::map<Formula*, Predicate*> formula2tseitin;
-	ApproxData* data;
-	std::vector<Formula*> _sentences;
+	// Actions are the symbols that need not be replaced
+	ApproxDefGeneratorData* _approxdefgeneratordata;
+	const vector<Formula*> _sentences;
 
 public:
-	enum class Direction {
-		UP, DOWN, BOTH
-	};
 
-	static Definition* doGenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& freesymbols, Direction dir){
-		auto g = GenerateApproximatingDefinition(sentences, freesymbols);
-		// FIXME what with new vocabulary?
-		return g.getallRules(dir);
-	}
+	static ApproximatingDefinition* doGenerateApproximatingDefinition(
+			const AbstractTheory* orig_theory,
+			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types,
+			const set<PFSymbol*>& freesymbols = set<PFSymbol*>());
 
 private:
-	GenerateApproximatingDefinition(const std::vector<Formula*>& sentences, const std::set<PFSymbol*>& actions)
-			: 	data(new ApproxData(actions)) {
-		// TODO do transformations on the sentences
-		// TODO do tseitin introduction + generate new vocabulary
-		_sentences = sentences;
-	}
-	~GenerateApproximatingDefinition() {
-		delete (data);
-	}
 
-	Definition* getallRules(Direction dir);
+	GenerateApproximatingDefinition(const vector<Formula*>& sentences,
+			const set<PFSymbol*>& actions,
+			ApproximatingDefinition::DerivationTypes* derivations,
+			std::set<ApproximatingDefinition::RuleType> rule_types);
+	~GenerateApproximatingDefinition() {}
 
-	std::vector<Rule*> getallDownRules();
-	std::vector<Rule*> getallUpRules();
+	Definition* getDefinition();
+	Definition* getBasicDefinition(); // Get the definition that forms the basis for all approximating definitions
+	vector<Rule*> getallDownRules();
+	vector<Rule*> getallUpRules();
+
+	void setFormula2PredFormMap(Formula*);
+	pair<PredForm*,PredForm*> createGeneralPredForm(Formula*);
+
+	static const vector<Formula*> performTransformations(const vector<Formula*>&);
+	Vocabulary* constructVocabulary(Vocabulary*,Definition*);
+
 };
-
-#endif /* APPROXIMATINGDEFINITIONGENERATION_HPP_ */

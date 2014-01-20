@@ -145,6 +145,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/scc_xsb.obj" \
 	"$(OBJDIR)/slgdelay.obj" \
 	"$(OBJDIR)/struct_manager.obj" \
+	"$(OBJDIR)/struct_intern.obj" \
 	"$(OBJDIR)/storage_xsb.obj" \
 	"$(OBJDIR)/sub_delete.obj" \
 	"$(OBJDIR)/subp.obj" \

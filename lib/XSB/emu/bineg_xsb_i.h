@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: bineg_xsb_i.h,v 1.51 2012/06/07 19:37:41 tswift Exp $
+** $Id: bineg_xsb_i.h,v 1.53 2013/04/17 22:02:34 tswift Exp $
 ** 
 */
 
@@ -55,11 +55,11 @@ case SLG_NOT: {
     return FALSE;
   else {
     if (flags[CTRACE_CALLS])  {				
-      char buffera[MAXTERMBUFSIZE];			
-      char bufferb[MAXTERMBUFSIZE];			
-      sprint_subgoal(CTXTc buffera,(VariantSF) sf);			
-      sprint_subgoal(CTXTc bufferb,(VariantSF)ptcpreg);			
-      fprintf(fview_ptr,"del(%s,%s,%d).\n",buffera,bufferb,ctrace_ctr++); 
+      sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF) sf);	      
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)ptcpreg);	 
+      fprintf(fview_ptr,"dly(%s,%s,%d).\n",
+	      forest_log_buffer_1->fl_buffer,forest_log_buffer_2->fl_buffer,
+	      ctrace_ctr++); 
     }
     delay_negatively(sf);
     return TRUE;

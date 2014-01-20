@@ -1,5 +1,5 @@
 /* File:      increval.P
-** Author(s): Diptikalyan Saha, C. R. Ramakrishnan, David S. Warren
+** Author(s): Diptikalyan Saha, C. R. Ramakrishnan, David S. Warren, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1993-1998
@@ -24,6 +24,7 @@
 :- compiler_options([xpp_on,sysmod]).
 #include "builtin.h"
 #include "incr_xsb_defs.h"
+#include "table_inspection_defs.h"
 
 %--------
 
@@ -260,6 +261,171 @@ incr_eval_builtin(_BuiltinNo, _A, _B, _C) :-
 incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
 
+get_subgoal_frame(Call,Ptr):- 
+	incr_eval_builtin(GET_SUBGOAL_FRAME, Call, Ptr).
+
+%:- export trans_connected_ptr/2.
+
+:- table trans_connected_ptr/2 as variant, incremental.
+trans_connected_ptr(CallPtr1,CallPtr2):-
+	immed_connected_ptrlist(CallPtr1,CallPtr2).
+trans_connected_ptr(CallPtr1,CallPtr2):-
+	trans_connected_ptr(CallPtr1,CallPtr3),
+	immed_connected_ptr(CallPtr3,CallPtr2).
+
+immed_connected_ptrlist(CallList,CallPtr):- 
+	immed_affects_ptrlist(CallList,CallPtr).
+immed_connected_ptrlist(CallList,CallPtr):- 
+	immed_depends_ptrlist(CallList,CallPtr).
+
+immed_connected_ptr(CallPtrIn,CallPtrOut):- 
+	immed_affects_ptr(CallPtrIn,CallPtrOut).
+immed_connected_ptr(CallPtrIn,CallPtrOut):- 
+	immed_depends_ptr(CallPtrIn,CallPtrOut).
+
+%----------
+%:- export trans_affects_ptr/2.
+:- table trans_affects_ptr/2 as variant, incremental.
+trans_affects_ptr(CallPtr1,CallPtr2):-
+	immed_affects_ptrlist(CallPtr1,CallPtr2).
+trans_affects_ptr(CallPtr1,CallPtr2):-
+	trans_affects_ptr(CallPtr1,CallPtr3),
+	immed_affects_ptr(CallPtr3,CallPtr2).
+
+immed_affects_ptr(CallPtr,CallPtr2):-
+	incr_eval_builtin(IMMED_AFFECTS_PTRLIST, CallPtr, CallPtrList),
+	member(CallPtr2,CallPtrList).		
+
+immed_affects_ptrlist(CallList,CallPtr2):-
+	member(CallPtr,CallList),
+	immed_affects_ptr(CallPtr,CallPtr2).
+
+%-----------
+
+:- export trans_depends_ptr/2.
+:- table trans_depends_ptr/2 as variant, incremental.
+trans_depends_ptr(CallPtr1,CallPtr2):-
+	immed_depends_ptrlist(CallPtr1,CallPtr2).
+trans_depends_ptr(CallPtr1,CallPtr2):-
+	trans_depends_ptr(CallPtr1,CallPtr3),
+	immed_depends_ptr(CallPtr3,CallPtr2).
+
+immed_depends_ptrlist(CallList,CallPtr2):-
+	member(CallPtr,CallList),
+	immed_depends_ptr(CallPtr,CallPtr2).
+
+immed_depends_ptr(CallPtr,CallPtr2):-
+	incr_eval_builtin(IMMED_DEPENDS_PTRLIST, CallPtr, CallPtrList),
+	member(CallPtr2,CallPtrList).		
+
+:- import setof/3,findall/4 from setof.
+:- import get_calls/3 from tables.
+:- import predicate_property/2 from curr_sym.
+
+:- export get_incr_sccs/1.
+:- export get_incr_sccs/2.
+:- export get_incr_sccs_with_deps/2.
+:- export get_incr_sccs_with_deps/3.
+:- import writeln/1 from standard.
+get_incr_sccs(Scc):-
+	setof(Skel,
+	      (predicate_property(Skel,tabled),predicate_property(Skel,incremental)),
+	     Skels),
+	get_sfs_for_skels(Skels,Ptrs,[]),
+	get_incr_sccs_1(Ptrs,Scc).
+
+get_incr_sccs(CallList,Scc):-
+	get_subgoal_frames(CallList,PtrList),
+	get_incr_sccs_1(PtrList,Scc).
+
+get_incr_sccs_with_deps(Scc,Depends):-
+	get_incr_sccs(Scc),
+	get_scc_dependency_structure(Scc,Depends).
+
+get_incr_sccs_with_deps(CallList,Scc,Depends):-
+	get_incr_sccs(CallList,Scc),
+	get_scc_dependency_structure(Scc,Depends).
+
+get_sfs_for_skels([],L,L).
+get_sfs_for_skels([Skel|Rs],In,Out):- 
+	findall(Ptr,get_calls(Skel,Ptr,_),In,Mid),
+	get_sfs_for_skels(Rs,Mid,Out).
+
+:- export get_subgoal_frame/2.
+get_subgoal_frames([],[]).
+get_subgoal_frames([Call|CR],[Ptr|PR]):- 
+	get_subgoal_frame(Call,Ptr),
+	get_subgoal_frames(CR,PR).
+
+:- import abolish_table_call/1 from tables.
+get_incr_sccs_1(PtrList,Scc):-
+	abolish_trans_connected_ptr_calls,
+	setof(P,P^(  member(P,PtrList)
+                 ; trans_connected_ptr(PtrList,P) ),Ptrs),
+	incr_eval_builtin(GET_INCR_SCCS, Ptrs,Scc),!.
+get_incr_sccs_1(_PtrList,[]).
+
+abolish_trans_connected_ptr_calls:- 
+	get_calls(trans_connected_ptr(A,B)),	
+	abolish_table_call(trans_connected_ptr(A,B)),
+%	writeln(abolish_table_call(trans_connected_ptr(A,B))),
+	fail.
+abolish_trans_connected_ptr_calls.
+
+:- export is_incremental_subgoal/1.
+is_incremental_subgoal(Subgoal):- 
+	(var(Subgoal) -> 
+  	   predicate_property(Subgoal,tabled),predicate_property(Subgoal,incremental)
+         ; true),
+        get_calls(Subgoal).
+
+%:-export get_scc_dependency_structure/2.
+get_scc_dependency_structure(List,Depends):- 
+	partition_list(List,PartList),
+	scc_depends(PartList,Depends,[]).
+
+:- import sort/2 from setof.
+%:- export partition_list/2.
+partition_list(List,PartList):- 
+%	setof(ret(Index,Goal),member(ret(Goal,Index),List),Parts),
+	reverse_partition(List,Parts_dup),
+	sort(Parts_dup,Parts),
+%	writeln(Parts),
+	partition_list_1(Parts,PartList),!.
+partition_list(_List,[]).
+
+reverse_partition([],[]).
+reverse_partition([ret(I,G)|T],[ret(G,I)|T1]):- 
+	reverse_partition(T,T1).
+
+partition_list_1([],[]).
+partition_list_1([ret(N,S)|IRest],[List|ORest]):-
+	partition_list_2([ret(N,S)|IRest],N,List,IRest1),
+	partition_list_1(IRest1,ORest).
+	
+partition_list_2([],_N,[],[]).
+partition_list_2([ret(N,S)|R],N,[ret(N,S)|NR],RestOut):- !,
+	partition_list_2(R,N,NR,RestOut).
+partition_list_2([ret(M,S)|R],_N,[],[ret(M,S)|R]).
+
+scc_depends([],In,In):- !.
+scc_depends([_SCC],In,In):- !.
+scc_depends([SCC|Rest],In,Out):- 
+	scc_depends_1(Rest,SCC,In,Mid),
+	scc_depends(Rest,Mid,Out).
+
+scc_depends_1([],_Scc,In,In).
+scc_depends_1([Scc1|R],Scc2,In,Out):-
+	(scc_depends_2(Scc1,Scc2,Depends) -> In = [Depends|Mid1] ; In = Mid1),
+%	(scc_depends_2(Scc2,Scc1,Depends1) -> Mid1 = [Depends1|Mid2] ; In = Mid2),
+	(scc_depends_2(Scc2,Scc1,Depends1) -> Mid1 = [Depends1|Mid2] ; Mid1 = Mid2),
+	scc_depends_1(R,Scc2,Mid2,Out).
+
+scc_depends_2(SCC1,SCC2,depends(Ind1,Ind2)):-
+	member(ret(Ind1,Subgoal),SCC1),
+	incr_eval_builtin(IMMED_DEPENDS_LIST, Subgoal, CallList),
+	member(Sd,CallList),member(ret(Ind2,Sd),SCC2).
+
 end_of_file.
 ==========================================================================================
 /*
@@ -276,11 +442,6 @@ incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D, _E) :-
 /***print_call(SF):-
 	incr_eval_builtin(PRINT_CALL, SF).***/
 
-/*** Not Used 
-get_call_graph:-
-	incr_eval_builtin(GET_CALL_GRAPH).
-***/
-
 The following were rewritten in C.
 /*
 call_if_affected(C) :-
@@ -293,7 +454,6 @@ call_if_affected(C) :-
 	 ;	
 	 true
 	).
-:- import writeln/1 from standard.
 call_if_affected(C) :- call_if_affected_internal(C),fail.
 */
 

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: dynaout_xsb_i.h,v 1.19 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: dynaout_xsb_i.h,v 1.20 2012/10/12 16:42:57 tswift Exp $
 ** 
 */
 
@@ -45,6 +45,7 @@
 #include "io_builtins_xsb.h"
 #include "string_xsb.h"
 #include "extensions_xsb.h"
+#include "basictypes.h"
 
 #define BUFFEXTRA 1024
 
@@ -97,6 +98,8 @@ static void dyn_link_all(char *symtab, Psc cur_mod)
 
 /*----------------------------------------------------------------------*/
 
+// TLS: changing 128 -> MAXFILENAME (= 256).  I think this will work
+// for Cygwin 1.7 and later.
 static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 {
   int buffsize, fd, loadsize;
@@ -107,13 +110,13 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   struct stat statbuff;
   char  *file_extension_ptr;
   
-  if (128 < snprintf(tfile, 128, "/tmp/xsb-dyn.%d", (int)getpid()))
+  if (MAXFILENAME < snprintf(tfile, MAXFILENAME, "/tmp/xsb-dyn.%d", (int)getpid()))
     xsb_abort("Cannot load foreign file: process id too long\n");
   
   /* first step: get the header entries of the *.o file, in order	*/
   /* to obtain the size of the object code and then allocate space	*/
   /* for it.							*/
-  if (strlen(pofilename) >= 127) return 0;
+  if (strlen(pofilename) >= MAXFILENAME-1) return 0;
 
   /* create filename.o */
   strcpy(subfile, pofilename);

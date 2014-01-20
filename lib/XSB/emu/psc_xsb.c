@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: psc_xsb.c,v 1.59 2012/02/18 04:46:54 kifer Exp $
+** $Id: psc_xsb.c,v 1.60 2013/01/04 21:34:45 dwarren Exp $
 ** 
 */
 
@@ -119,6 +119,15 @@ char *string_find_safe(char *str) {
 }
 
 /* === PSC and PSC-PAIR structure creation/initialization =============== */
+void init_psc_ep_info(Psc psc) {
+  set_type(psc, 0);
+  psc->env = 0;
+  psc->incr = 0;
+  set_data(psc, 0);
+  set_ep(psc,(byte *)&(psc->load_inst));
+  cell_opcode(&(psc->load_inst)) = load_pred;
+  psc->this_psc = psc;
+}
 
 /*
  *  Create a PSC record and initialize its fields.
@@ -127,19 +136,13 @@ static Psc make_psc_rec(char *name, char arity) {
   Psc temp;
   
   temp = (Psc)mem_alloc(sizeof(struct psc_rec),ATOM_SPACE);
-  set_type(temp, 0);
-  temp->env = 0;
   //  set_env(temp, 0);
   //  set_spy(temp, 0);
   //  set_shared(temp, 0);
   //  set_tabled(temp, 0);
-  temp->incr = 0;
-  set_arity(temp, arity);
-  set_data(temp, 0);
-  set_ep(temp,(byte *)&(temp->load_inst));
   set_name(temp, string_find(name, 1));
-  cell_opcode(&(temp->load_inst)) = load_pred;
-  temp->this_psc = temp;
+  set_arity(temp, arity);
+  init_psc_ep_info(temp);
   return temp;
 }
 

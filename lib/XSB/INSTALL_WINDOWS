@@ -53,9 +53,13 @@ In most cases you do not need to perform steps 1 and 2 below.
 To compile from the command line, you should set some environment
 variables. Visual C++ has a command file called vcvars32.bat or similar,
 which you should find and drag into the command window (and press Return).
-This will set all the necessary environment variables. On a 64 bit machine,
-this command file is called vcvarsx86_amd64.bat or vcvarsx86_ia64.bat -
-whichever is appropriate for your configuration.
+This will set all the necessary environment variables. On a 64 bit machine
+(BUT SEE THE XSB MANUAL FOR MORE DETAILS:
+  - For VC 9.0:
+    use the command file is called vcvarsx86_amd64.bat or
+    vcvarsx86_ia64.bat - whichever is appropriate for your configuration.
+  - For VC 10.0: 
+    use SetEnv.cmd
 
 The executable and the DLL will be in
 

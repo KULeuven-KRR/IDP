@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cinterf.c,v 1.111 2011/07/29 06:25:51 kifer Exp $
+** $Id: cinterf.c,v 1.115 2013/05/02 17:36:17 dwarren Exp $
 **
 */
 
@@ -307,7 +307,7 @@ DllExport prolog_term call_conv p2p_arg(prolog_term term, int argno)
 {
     Cell t = (Cell)term;
     XSB_Deref(t);
-    t = cell(clref_val(t)+argno);
+    t = get_str_arg(t,argno);
     XSB_Deref(t);
     return (prolog_term)t;
 }
@@ -316,7 +316,7 @@ DllExport prolog_term call_conv p2p_car(prolog_term term)
 {
     Cell t = (Cell)term;
     XSB_Deref(t);
-    t = cell(clref_val(t));
+    t = get_list_head(t);
     XSB_Deref(t);
     return (prolog_term)t;
 }
@@ -325,7 +325,7 @@ DllExport prolog_term call_conv p2p_cdr(prolog_term term)
 {
     Cell t = (Cell)term;
     XSB_Deref(t);
-    t = cell(clref_val(t)+1);
+    t = get_list_tail(t);
     XSB_Deref(t);
     return (prolog_term)t;
 }
@@ -484,7 +484,7 @@ DllExport void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 
 DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 {
-  int escape_mode=FALSE, head_char;
+  int escape_mode=FALSE, head_char, head_int;
   prolog_term list, head;
 
   list = term;
@@ -501,12 +501,13 @@ DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
     if (is_nil(list)) break;
 
     head = p2p_car(list);
-    if (!is_int(head))
-      return FALSE;
+    if (!is_int(head)) return FALSE;
 
     head_char = (char) int_val(head);
+    head_int = (int)int_val(head);
+
     /* ' ' is the lowest printable ascii and '~' is the highest */
-    if (! PRINTABLE_OR_ESCAPED_CHAR(head_char) )
+    if (! PRINTABLE_OR_ESCAPED_CHAR(head_int) )
       return FALSE;
 
     if (escape_mode)
@@ -1156,7 +1157,9 @@ DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel,
 				     VarString *straddr)
 {
   int i;
+  Integer close_paren_count = 0, cpi;
 
+ begin_print_pterm:
   if (is_var(term)) {
     xsb_sprint_variable(CTXTc tempstring, (CPtr) term);
     XSB_StrAppend(straddr,tempstring);
@@ -1191,16 +1194,20 @@ DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel,
     printpstring(p2c_functor(term),FALSE,straddr);
     if (p2c_arity(term) > 0) {
       XSB_StrAppend(straddr, "(");
-      print_pterm(CTXTc p2p_arg(term,1),FALSE,straddr);
-      for (i = 2; i <= p2c_arity(term); i++) {
-	XSB_StrAppend(straddr, ",");
+      for (i = 1; i < p2c_arity(term); i++) {
 	print_pterm(CTXTc p2p_arg(term,i),FALSE,straddr);
+	XSB_StrAppend(straddr, ",");
       }
-      XSB_StrAppend(straddr, ")");
+      close_paren_count++;
+      term = p2p_arg(term,i);
+      toplevel = FALSE;
+      goto begin_print_pterm;
     }
   } else xsb_warn("[PRINT_PTERM] Unrecognized prolog term type");
+  for (cpi=1; cpi<=close_paren_count; cpi++) {
+      XSB_StrAppend(straddr, ")");
+  }
 }
-
 /************************************************************************/
 /*                                                                      */
 /*	xsb_answer_string copies an answer from reg 2 into ans.		*/
@@ -1406,7 +1413,7 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 
 /************************************************************************/
 /*								        */
-/*  int xsb_init_string(char *cmdline, char **argv) takes a		*/
+/*  int xsb_init_string(char *cmdline) takes a				*/
 /*  command line string in cmdline, and parses it to return an argv	*/
 /*  vector in its second argument, and the argc count as the value of   */
 /*	the function.  (Will handle a max of 19 args.)			*/

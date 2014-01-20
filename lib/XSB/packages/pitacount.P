@@ -86,26 +86,7 @@ load(File):-
 
 sum(A,B,C):-myor(A,B,C).
 
-member_eq(Item, [Head|_Tail]) :-
-        Item==Head, !.
-
-member_eq(Item, [_Head|Tail]) :-
-	member_eq(Item, Tail).
-
-
-list2and([X], X) :-
-        X\= (_, _) , !.
-
-list2and([H|T], (H, Ta)) :- !,
-	list2and(T, Ta).
-
-
-
-list2or([X], X) :-
-	X \= ( _ ; _ ) , !.
-
-list2or([H|T], (H ; Ta)) :- !,
-	list2or(T, Ta).
+%----------------------------
 
 get_var_n(R,S,Probs,V):-
 	(v(R,S,V,Probs)->
@@ -262,6 +243,7 @@ last([H],H):-!.
 last([_H|T],L):-
 	last(T,L).
 
+/*
 builtin(_A is _B).
 builtin(_A > _B).
 builtin(_A < _B).
@@ -275,6 +257,8 @@ builtin(_A = _B).
 builtin(_A==_B).
 builtin(_A\=_B).
 builtin(_A\==_B).
+*/
+builtin(Pred):- predicate_property(Pred,built_in),\+ (Pred = \+(_)).
 builtin(length(_L, _N)).
 builtin(member(_El, _L)).
 builtin(average(_L, _Av)).

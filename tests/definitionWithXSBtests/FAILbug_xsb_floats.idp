@@ -1,0 +1,14 @@
+vocabulary V{
+	type t isa int
+	P(t,t)
+}
+
+theory T:V{
+  {
+    P(x,y) <- x/y=4.5. 
+  }
+}
+
+structure S:V{
+  t = {9;0;2}
+}

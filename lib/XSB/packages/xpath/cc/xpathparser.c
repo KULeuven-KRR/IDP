@@ -14,12 +14,11 @@
 #endif
 
 #include <assert.h>
-#include "cinterf.h"
 #include <libxml/xpathInternals.h>
+#include "cinterf.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include "fetch_file.c"
 
 
 #define MY_ENCODING "ISO-8859-1"
@@ -27,20 +26,35 @@
 #define MAXSTRLEN 256
 #define MAXSTRINGLEN 32000
 
-typedef enum
-  { ERR_ERRNO,				/* , int */
+
+#ifdef MULTI_THREAD
+#define xsb_get_main_thread_macro xsb_get_main_thread()
+#define  check_thread_context  th = xsb_get_main_thread();
+#else
+#define xsb_get_main_thread_macro
+#define check_thread_context
+#endif
+
+#ifdef MULTI_THREAD
+static th_context *th = NULL;
+#endif
+
+#include "fetch_file.c"
+
+typedef enum {
+  ERR_ERRNO,				/* , int */
 					/* ENOMEM */
 					/* EACCES --> file, action */
 					/* ENOENT --> file */
-    ERR_TYPE,				/* char *expected, term_t actual */
-    ERR_DOMAIN,				/* char *expected, term_t actual */
-    ERR_EXISTENCE,			/* char *expected, term_t actual */
-
-    ERR_FAIL,				/* term_t goal */
-
-    ERR_LIMIT,				/* char *limit, long max */
-    ERR_MISC				/* char *fmt, ... */
-  } plerrorid;
+  ERR_TYPE,				/* char *expected, term_t actual */
+  ERR_DOMAIN,				/* char *expected, term_t actual */
+  ERR_EXISTENCE,			/* char *expected, term_t actual */
+  
+  ERR_FAIL,				/* term_t goal */
+  
+  ERR_LIMIT,				/* char *limit, long max */
+  ERR_MISC				/* char *fmt, ... */
+} plerrorid;
 
 int	xpath_error(plerrorid, ...);
 
@@ -61,7 +75,8 @@ void print_xpath_nodes(xmlNodeSetPtr nodes, FILE* output);
  **/
 DllExport int call_conv allocate_xpath_error_term__()
 {
-  xpath_error_term = reg_term(1);
+  check_thread_context
+  xpath_error_term = reg_term(CTXTc 1);
   return TRUE;
 }
 
@@ -83,9 +98,9 @@ DllExport int call_conv parse_xpath__()
   /*Initialize the xpath parser*/  
   xmlInitParser();
   
-  output_term = reg_term(3);
-  source_term = reg_term(1);
-  ns_term = reg_term(4);
+  output_term = reg_term(CTXTc 3);
+  source_term = reg_term(CTXTc 1);
+  ns_term = reg_term(CTXTc 4);
   
   /*Parse the xml source term*/
   if (is_functor(source_term)){
@@ -134,7 +149,7 @@ DllExport int call_conv parse_xpath__()
   }
 
   /*Extract the xpath expression from prolog input*/
-  xpath_expr_term = reg_term(2);
+  xpath_expr_term = reg_term(CTXTc 2);
   if (is_nil(xpath_expr_term)){
     return xpath_error(ERR_DOMAIN, "xpath expression", xpath_expr_term);
   }
@@ -153,7 +168,7 @@ DllExport int call_conv parse_xpath__()
     }		     
 
   /*Extract the namespace prefix list from the prolog input*/
-  ns_term = reg_term(4);
+  ns_term = reg_term(CTXTc 4);
   if (is_string(ns_term)) {
     namespace = (xmlChar *)p2c_string(ns_term);
     }
@@ -248,7 +263,7 @@ execute_xpath_expression(const char * xmlsource, const xmlChar* xpathExpr, const
 
   /*Store the resultant xml in output term*/
   if (is_var(output_term)) {
-    c2p_string(output_buffer, output_term); 
+    c2p_string(CTXTc output_buffer, output_term); 
     }
   else
     {
@@ -328,10 +343,10 @@ register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
  **/ 
 int
 xpath_error(plerrorid id, ...)
-{ prolog_term except = p2p_new();
-  prolog_term formal = p2p_new();
-  prolog_term swi = p2p_new();
-  prolog_term tmp1 = p2p_new();
+{ prolog_term except = p2p_new(CTXT);
+  prolog_term formal = p2p_new(CTXT);
+  prolog_term swi = p2p_new(CTXT);
+  prolog_term tmp1 = p2p_new(CTXT);
   prolog_term tmp;
 
   va_list args;
@@ -351,12 +366,12 @@ xpath_error(plerrorid id, ...)
 	      /*Not enough memory*/
 	    case ENOMEM:
 	  
-	      c2p_functor("xpath", 1, tmp1); 	
+	      c2p_functor(CTXTc "xpath", 1, tmp1); 	
 	      tmp = p2p_arg(tmp1, 1);
-	      c2p_functor("resource_error", 1, tmp);
+	      c2p_functor(CTXTc "resource_error", 1, tmp);
 	      
-	      c2p_string("no_memory", p2p_arg(tmp, 1));
-	      p2p_unify(tmp1, formal); 
+	      c2p_string(CTXTc "no_memory", p2p_arg(tmp, 1));
+	      p2p_unify(CTXTc tmp1, formal); 
 	      break;
 	      /*Permission denied error*/
 	    case EACCES:
@@ -364,41 +379,41 @@ xpath_error(plerrorid id, ...)
 		const char *file = va_arg(args,   const char *);
 		const char *action = va_arg(args, const char *);
 
-		c2p_functor("xpath", 1, tmp1);
+		c2p_functor(CTXTc "xpath", 1, tmp1);
 		tmp = p2p_arg(tmp1, 1);
 
-		c2p_functor("permission_error", 3, tmp);
-		c2p_string((char*)action, p2p_arg(tmp, 1));
-		c2p_string("file", p2p_arg(tmp, 2));
-		c2p_string ((char*)file, p2p_arg(tmp, 3));
+		c2p_functor(CTXTc "permission_error", 3, tmp);
+		c2p_string(CTXTc (char*)action, p2p_arg(tmp, 1));
+		c2p_string(CTXTc "file", p2p_arg(tmp, 2));
+		c2p_string(CTXTc (char*)file, p2p_arg(tmp, 3));
 
-		p2p_unify(tmp1, formal);
+		p2p_unify(CTXTc tmp1, formal);
 		break;
 	      }
 	      /*Entity not found*/
 	    case ENOENT:
 	      { 
 		const char *file = va_arg(args, const char *);
-		c2p_functor("xpath", 1, tmp1);
+		c2p_functor(CTXTc "xpath", 1, tmp1);
 		tmp = p2p_arg(tmp1, 1);
 
-		c2p_functor("permission_error", 2, tmp);
+		c2p_functor(CTXTc "permission_error", 2, tmp);
 	  		  
-		c2p_string("file", p2p_arg(tmp, 1));
-		c2p_string ((char*)file, p2p_arg(tmp, 2));
+		c2p_string(CTXTc "file", p2p_arg(tmp, 1));
+		c2p_string(CTXTc (char*)file, p2p_arg(tmp, 2));
 
-		p2p_unify(tmp1, formal); 
+		p2p_unify(CTXTc tmp1, formal); 
 
 		break;
 	      }
 	      /*Defaults to system error*/
 	    default:
 	      {
-	        c2p_functor("xpath", 1, tmp1);
+	        c2p_functor(CTXTc "xpath", 1, tmp1);
 	        tmp = p2p_arg(tmp1, 1);
 
-		c2p_string("system_error", tmp);
-		p2p_unify(tmp1, formal);
+		c2p_string(CTXTc "system_error", tmp);
+		p2p_unify(CTXTc tmp1, formal);
 		break;
 	      }
 	    }
@@ -411,19 +426,19 @@ xpath_error(plerrorid id, ...)
 	prolog_term actual        = va_arg(args, prolog_term);
 
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 
 	if (is_attv(actual) && strcmp(expected, "variable") != 0 ) {
-	    c2p_string("instantiation_error", tmp);
-	    p2p_unify(tmp1, formal);
+	    c2p_string(CTXTc "instantiation_error", tmp);
+	    p2p_unify(CTXTc tmp1, formal);
 	} else {
 
-	    c2p_functor("type_error", 2, tmp);
-	    c2p_string((char*)expected, p2p_arg(tmp, 1));
-	    p2p_unify (actual, p2p_arg(tmp, 2));
+	    c2p_functor(CTXTc "type_error", 2, tmp);
+	    c2p_string(CTXTc (char*)expected, p2p_arg(tmp, 1));
+	    p2p_unify(CTXTc actual, p2p_arg(tmp, 2));
 	    
-	    p2p_unify(tmp1, formal);
+	    p2p_unify(CTXTc tmp1, formal);
 	  }
 	break;
       }	
@@ -433,20 +448,20 @@ xpath_error(plerrorid id, ...)
 	const char *expected = va_arg(args, const char*);
 	prolog_term actual        = va_arg(args, prolog_term);
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 	
 	if (is_attv(actual) && strcmp(expected, "variable") != 0 )
 	  {
-	    c2p_string("instantiation_error", tmp);
-	    p2p_unify(tmp1, formal);
+	    c2p_string(CTXTc "instantiation_error", tmp);
+	    p2p_unify(CTXTc tmp1, formal);
 	  }
 	else
 	  {
-	    c2p_functor("domain_error", 2, tmp);
-	    c2p_string((char*)expected, p2p_arg(tmp, 1));
-	    p2p_unify(actual, p2p_arg(tmp, 2));
-	    p2p_unify(tmp1, formal);
+	    c2p_functor(CTXTc "domain_error", 2, tmp);
+	    c2p_string(CTXTc (char*)expected, p2p_arg(tmp, 1));
+	    p2p_unify(CTXTc actual, p2p_arg(tmp, 2));
+	    p2p_unify(CTXTc tmp1, formal);
 	  }	
 	break;
       }
@@ -456,15 +471,15 @@ xpath_error(plerrorid id, ...)
 	const char *type = va_arg(args, const char *);
 	prolog_term obj  = va_arg(args, prolog_term);
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 
-	c2p_functor("existence_error", 2, tmp);
+	c2p_functor(CTXTc "existence_error", 2, tmp);
 	
-	c2p_string((char*)type, p2p_arg(tmp, 1));
-	p2p_unify (obj, p2p_arg(tmp, 2));
+	c2p_string(CTXTc (char*)type, p2p_arg(tmp, 1));
+	p2p_unify(CTXTc obj, p2p_arg(tmp, 2));
 	
-	p2p_unify(tmp1, formal);
+	p2p_unify(CTXTc tmp1, formal);
 	break;
       }
     case ERR_FAIL:
@@ -472,14 +487,14 @@ xpath_error(plerrorid id, ...)
 	/*Goal fail error*/ 
 	prolog_term goal  = va_arg(args, prolog_term);
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 
-	c2p_functor("goal_failed", 1, tmp);
+	c2p_functor(CTXTc "goal_failed", 1, tmp);
 
-	p2p_unify(p2p_arg(tmp,1), goal);	
+	p2p_unify(CTXTc p2p_arg(tmp,1), goal);	
       
-	p2p_unify(tmp1, formal);
+	p2p_unify(CTXTc tmp1, formal);
 	break;
       }
     case ERR_LIMIT:
@@ -488,15 +503,15 @@ xpath_error(plerrorid id, ...)
 	const char *limit = va_arg(args, const char *);
 	long maxval  = va_arg(args, long);
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 	
-	c2p_functor("limit_exceeded", 2, tmp);
-	c2p_string((char*)limit, p2p_arg(tmp,1));
-	c2p_int(maxval, p2p_arg(tmp, 2));
+	c2p_functor(CTXTc "limit_exceeded", 2, tmp);
+	c2p_string(CTXTc (char*)limit, p2p_arg(tmp,1));
+	c2p_int(CTXTc maxval, p2p_arg(tmp, 2));
 
 	
-	p2p_unify(tmp1, formal);
+	p2p_unify(CTXTc tmp1, formal);
 	break;
       }
     case ERR_MISC:
@@ -509,13 +524,13 @@ xpath_error(plerrorid id, ...)
 	vsprintf(msgbuf, fmt, args);
 	msg = msgbuf;
 
-	c2p_functor("xpath", 1, tmp1);
+	c2p_functor(CTXTc "xpath", 1, tmp1);
 	tmp = p2p_arg(tmp1, 1);
 
 	
-	c2p_functor("miscellaneous", 1, tmp);
-	c2p_string((char*)id, p2p_arg(tmp, 1));
-	p2p_unify(tmp1, formal);
+	c2p_functor(CTXTc "miscellaneous", 1, tmp);
+	c2p_string(CTXTc (char*)id, p2p_arg(tmp, 1));
+	p2p_unify(CTXTc tmp1, formal);
 	break; 
       }
     default:
@@ -526,27 +541,27 @@ xpath_error(plerrorid id, ...)
 
   if (msg)
     { 
-      prolog_term msgterm  = p2p_new();
+      prolog_term msgterm  = p2p_new(CTXT);
 
       if (msg)
 	{ 
-	  c2p_string(msg, msgterm);
+	  c2p_string(CTXTc msg, msgterm);
 	}
 
-      tmp = p2p_new();
+      tmp = p2p_new(CTXT);
 
-      c2p_functor("xpath_context", 1, tmp);
-      p2p_unify(p2p_arg(tmp, 1), msgterm);	
-      p2p_unify(tmp, swi);
+      c2p_functor(CTXTc "xpath_context", 1, tmp);
+      p2p_unify(CTXTc p2p_arg(tmp, 1), msgterm);	
+      p2p_unify(CTXTc tmp, swi);
     }
   /*Unify the created term with the error term*/
-  tmp = p2p_new();
-  c2p_functor("xpath_error", 2, tmp);
-  p2p_unify(p2p_arg(tmp, 1), formal);
-  p2p_unify(p2p_arg(tmp, 2), swi);
-  p2p_unify(tmp, except);
+  tmp = p2p_new(CTXT);
+  c2p_functor(CTXTc "xpath_error", 2, tmp);
+  p2p_unify(CTXTc p2p_arg(tmp, 1), formal);
+  p2p_unify(CTXTc p2p_arg(tmp, 2), swi);
+  p2p_unify(CTXTc tmp, except);
 
-  return  p2p_unify(xpath_error_term, except);
+  return  p2p_unify(CTXTc xpath_error_term, except);
 }
 
 

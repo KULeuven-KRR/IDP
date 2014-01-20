@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: configure.in,v 1.6 2010/08/19 15:03:39 spyrosh Exp $
+## $Id: configure.in,v 1.8 2012/09/29 02:08:28 kifer Exp $
 ## 
 ##
 
@@ -105,14 +105,14 @@ AC_CHECK_LIB(odbc, main, , odbc_error=yes)
 # If any of the headers is not in a standard place, use --with-odbc-incdir
 if test -n "${with_odbc_incdir}"; then
    CPPFLAGS="-I${with_odbc_incdir} ${CPPFLAGS}"
-   CFLAGS="-I${with_odbc_incdir} ${CPFLAGS}"
+   CFLAGS="-I${with_odbc_incdir} ${CFLAGS}"
 fi
 
 AC_CHECK_HEADERS(sql.h sqlext.h sqltypes.h, with_odbc=yes, odbc_error=yes)
 
 if test "$odbc_error" = "yes"; then
 echo ""
-AC_MSG_WARN([ ****Your system is missing sql.h, sqlext.h, or sqltypes.h, which are required for ODBC support
+AC_MSG_WARN([ ****Your system is missing libodbc, sql.h, sqlext.h, or sqltypes.h, which are required for ODBC support
 ****ODBC driver will be disabled])
 echo ""
 
@@ -121,6 +121,8 @@ else
 support=yes
 fi
 
+CFLAGS="`odbc_config --cflags 2> /dev/null`"
+LDFLAGS="`odbc_config --libs 2> /dev/null`"
 
 AC_SUBST(support)
 AC_SUBST(libdir)

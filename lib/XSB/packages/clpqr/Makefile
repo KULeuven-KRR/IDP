@@ -1,90 +1,112 @@
-## File:      packages/slx/Makefile
-## Author(s): kifer
-## Contact:   xsb-contact@cs.sunysb.edu
-## 
-## Copyright (C) The Research Foundation of SUNY, 2008
-## 
-## XSB is free software; you can redistribute it and/or modify it under the
-## terms of the GNU Library General Public License as published by the Free
-## Software Foundation; either version 2 of the License, or (at your option)
-## any later version.
-## 
-## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
-## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
-## more details.
-## 
-## You should have received a copy of the GNU Library General Public License
-## along with XSB; if not, write to the Free Software Foundation,
-## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-##
-## $Id: Makefile,v 1.10 2010/08/19 15:03:39 spyrosh Exp $
-## 
-##
+################################################################
+# SWI-Prolog CLPQR package
+# Author:    Jan Wielemaker. jan@swi.psy.uva.nl
+# Copyright: LGPL (see COPYING or www.gnu.org
+################################################################
 
-OBJEXT=.xwam
+.SUFFIXES: .tex .dvi .doc .pl
 
-XSBDIR=../..
+SHELL=/bin/sh
+PLBASE=@PLBASE@
+PLARCH=@PLARCH@
+srcdir=/Users/macuser/yap-6.2/packages/clpqr
+DESTDIR=
 
-#ALL = 	bv_r${OBJEXT} bv_q${OBJEXT} class${OBJEXT} \
-#	fourmotz_r${OBJEXT} geler${OBJEXT} \
-#	ineq_r${OBJEXT} itf${OBJEXT} itf_r${OBJEXT} nf_r${OBJEXT} \
-#	ordering${OBJEXT} project${OBJEXT} redund${OBJEXT} \
-#	store_r${OBJEXT} swi${OBJEXT} clpr${OBJEXT}
-ALL = clpr_make${OBJEXT}
+ifeq (yap,yap)
+PL=YAPSHAREDIR=$(DESTDIR)$(SHAREDIR) YAPLIBDIR=$(DESTDIR)$(YAPLIBDIR) $(DESTDIR)$(BINDIR)/yap $(DESTDIR)$(YAPLIBDIR)/startup.yss
+prefix = /usr/local
+exec_prefix = ${prefix}
+ROOTDIR = $(prefix)
+EROOTDIR = ${prefix}
+BINDIR = $(EROOTDIR)/bin
+LIBDIR=$(EROOTDIR)/lib
+YAPLIBDIR=$(EROOTDIR)/lib/Yap
+SHAREDIR=$(ROOTDIR)/share/Yap
+CLPDIR=$(SHAREDIR)
+else
+PL=@PL@
+XPCEBASE=$(PLBASE)/xpce
+PKGDOC=$(PLBASE)/doc/packages
+PCEHOME=../../xpce
+LIBDIR=$(PLBASE)/library
+CLPDIR=$(LIBDIR)/clp
+EXDIR=$(PKGDOC)/examples/clpqr
+endif	#YAP/SWI
 
-Option = [optimize]
+CLPRDIR=$(CLPDIR)/clpr
+CLPQDIR=$(CLPDIR)/clpq
+CLPQRDIR=$(CLPDIR)/clpqr
 
-#-----------------------------------------------------------------------#
-#
-# Self-make: Version 1.4.1
-#
-XSB=$(XSBDIR)/bin/xsb
-Prolog = $(XSB) -e 'segfault_handler(warn).'
-#
-#-----------------------------------------------------------------------#
+INSTALL=/usr/bin/install -c
+INSTALL_PROGRAM=${INSTALL}
+INSTALL_DATA=${INSTALL} -m 644
+LN_INSTALL_DATA=$(shell echo `pwd`/../ln-install)
+LN_INSTALL_PROGRAM=$(shell echo `pwd`/../ln-install)
 
-# Make sure warnings are saved in a file.
-SVFILE = '$(XSBDIR)/build/.clpqr_warn.tmp'
-STDWARN = 3
-STDERR = 2
-HDRMSG = "While compiling XSB/packages/clpqr:"
+CLPRPRIV=	bb_r.pl bv_r.pl \
+		fourmotz_r.pl ineq_r.pl \
+		itf_r.pl nf_r.pl \
+		store_r.pl
+CLPQPRIV=	bb_q.pl bv_q.pl \
+		fourmotz_q.pl ineq_q.pl \
+		itf_q.pl nf_q.pl \
+		store_q.pl
+CLPQRPRIV=	class.pl dump.pl \
+		geler.pl itf.pl \
+		ordering.pl \
+		project.pl redund.pl
+LIBPL=		$(srcdir)/clpr.pl $(srcdir)/clpq.pl
+EXAMPLES=
+
+all::
+		@echo "Nothing to be done for this package"
+
+install:	$(LIBPL)
+		mkdir -p $(DESTDIR)$(CLPDIR)
+		mkdir -p $(DESTDIR)$(CLPRDIR)
+		mkdir -p $(DESTDIR)$(CLPQDIR)
+		mkdir -p $(DESTDIR)$(CLPQRDIR)
+		$(INSTALL_DATA) $(LIBPL) $(DESTDIR)$(CLPDIR)
+		for f in $(CLPRPRIV); do $(INSTALL_DATA) $(srcdir)/clpr/$$f $(DESTDIR)$(CLPRDIR); done
+		for f in $(CLPQPRIV); do $(INSTALL_DATA) $(srcdir)/clpq/$$f $(DESTDIR)$(CLPQDIR); done
+		for f in $(CLPQRPRIV); do $(INSTALL_DATA) $(srcdir)/clpqr/$$f $(DESTDIR)$(CLPQRDIR); done
+		$(INSTALL_DATA) $(srcdir)/README $(DESTDIR)$(CLPQRDIR)
+
+ln-install::
+		@$(MAKE) INSTALL_DATA=$(LN_INSTALL_DATA) INSTALL_PROGRAM=$(LN_INSTALL_PROGRAM) install
+
+rpm-install:	install
+
+pdf-install:	install-examples
+
+html-install:	install-examples
+
+install-examples::
+#		mkdir -p $(DESTDIR)$(EXDIR)
+#		(cd Examples && $(INSTALL_DATA) $(EXAMPLES) $(DESTDIR)$(EXDIR))
+
+uninstall:
+		(cd $(CLPDIR) && rm -f $(LIBPL))
+		rm -rf $(CLPRDIR)
+		rm -rf $(CLPQDIR)
+		rm -rf $(CLPQRDIR)
+
+check::
+#		$(PL) -q -f $(srcdir)/clpr_test.pl -g test,halt -t 'halt(1)'
 
 
+doc:		html pdf
+html::
+pdf::
 
-# continue to the next when one error occurs
-.IGNORE:
-
-# suffix rules
-.SUFFIXES: .P .H ${OBJEXT}
-
-.P${OBJEXT}:
-	echo 'mc($*, $(Option)).' >> cmd...
-
-all: init $(ALL) finish
-	@$(XSBDIR)/build/touch.sh cmd...
-	echo 'import make_clpr/0 from clpr_make.' >> cmd...
-	echo 'make_clpr.' >> cmd...
-	$(Prolog) < cmd...
-	@rm cmd...
-
-
-init:
-	/bin/rm -f $(SVFILE)
-	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
-	@echo "file_clone($(STDWARN), $(STDERR),_)." >> cmd...
-	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_).' >> cmd...
-	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))).' >> cmd...
-	@echo "file_flush($(STDWARN), _)." >> cmd...
-
-finish:
-	@echo 'fmt_write($(STDWARN),"-------------------- End --------------------------\n",_).' >> cmd...
-
-.PHONY: clean
+################################################################
+# Clean
+################################################################
 
 clean:
-	/bin/rm -f *${OBJEXT} *.O *~ .*~ *.bak
+		rm -f *~ *% config.log
 
+distclean:	clean
+		rm -f config.h config.cache config.status Makefile
+		rm -rf autom4te.cache
 
-.DONE:
-	echo Done

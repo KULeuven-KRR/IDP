@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_profile.h,v 1.17 2011/05/22 16:02:21 tswift Exp $
+** $Id: gc_profile.h,v 1.18 2012/10/03 19:15:21 tswift Exp $
 ** 
 */
 
@@ -109,28 +109,33 @@ do { \
   count_chains=pflags[COUNT_CHAINS]
 
 #define DECL_GC_PROFILE \
-  UInteger begin_slidetime, begin_copy_time
+  double begin_slidetime, begin_copy_time
 
 #define GC_PROFILE_START_SUMMARY \
 do { \
     if (verbose_gc) { \
-      xsb_dbgmsg((LOG_GC,"{GC} Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n", \
-		 arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc)); \
+      fprintf(stddbg,"\n{GC} Heap gc - used = %d - left = %d - #gc = %d\n", \
+	      hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc);		\
     } \
 } while(0)
+
+/* Luis'
+  fprintf(stddbg,"{GC} Heap gc - arity = %d - used = %d - left = %d - #gc = %d\n", 
+	 arity,hreg+1-(CPtr)glstack.low,ereg-hreg,num_gc); 
+*/
 
 #define GC_PROFILE_MARK_SUMMARY \
 do { \
     if (verbose_gc) { \
-      xsb_dbgmsg((LOG_GC, "{GC} Heap gc - marking finished - #marked = %d - start compact\n", \
-		 marked)); \
+      fprintf(stddbg,"{GC} Heap gc - marking finished - #marked = %d - start compact\n", \
+		 marked); \
     }  \
 } while (0)
 
 #define GC_PROFILE_QUIT_MSG \
 do { \
 	if (verbose_gc) { \
-	  xsb_dbgmsg((LOG_GC, "{GC} Heap gc - marked too much - quitting gc\n")); \
+	  fprintf(stddbg,"{GC} Heap gc - marked too much - quitting gc\n"); \
 	} \
 } while (0)
 
@@ -139,10 +144,10 @@ do { \
 #define GC_PROFILE_SLIDE_FINAL_SUMMARY \
 do { \
 	if (verbose_gc) { \
-	  xsb_dbgmsg((LOG_GC, "{GC} Heap gc end - mark time = %f; slide time = %f; total = %f\n", \
-	  (double)(end_marktime - begin_marktime)*1000/CLOCKS_PER_SEC, \
-	  (double)(end_slidetime - begin_slidetime)*1000/CLOCKS_PER_SEC, \
-	  total_time_gc)) ; \
+	  fprintf(stddbg,"{GC} Heap gc end - mark time = %f; slide time = %f; total = %f\n", \
+	  (double)(end_marktime - begin_marktime), \
+	  (double)(end_slidetime - begin_slidetime), \
+	  total_time_gc) ; \
 	} \
 } while(0)
 

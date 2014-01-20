@@ -1,4 +1,4 @@
-/*  $Id: util.c,v 1.7 2011/08/07 08:47:36 kifer Exp $
+/*  $Id: util.c,v 1.8 2012/09/27 02:25:58 kifer Exp $
 
     Part of SWI-Prolog
 
@@ -441,11 +441,11 @@ load_sgml_file_to_charp(const char *file, int normalise_rsre, size_t *length)
       if ( r )
       { char *s = r;
 	
-	while(len>0)
-	{ int n;
+	while(len>0) {
+	  int n;
 
-	  if ( (n=read(fd, s, len)) < 0 )
-	  { close(fd);			/* I/O error */
+	  if ( (n=read(fd, s, len)) < 0 ) {
+	    close(fd);			/* I/O error */
 	    sgml_free(r);
 	    return NULL;
 	  } else if ( n == 0 )
@@ -474,12 +474,14 @@ load_sgml_file_to_charp(const char *file, int normalise_rsre, size_t *length)
 	    char *t;
 
 	    for(s=r, t=r2; *s; s++) {
-	      if ( *s == '\n' )
+	      if ( *s == '\n' ) {
 		if ( s>r && s[-1] != '\r' ) {
 		  *t++ = CR;
 		  *t++ = LF;
-		} else
+		} else {
 		  *t++ = *s;
+		}
+	      }
 	    }
             len = (int) (t-r2);
 	    *t = '\0';

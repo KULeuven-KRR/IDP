@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_utils.c,v 1.44 2012/06/07 19:37:42 tswift Exp $
+** $Id: tst_utils.c,v 1.46 2013/02/14 21:47:47 tswift Exp $
 ** 
 */
 
@@ -199,6 +199,7 @@ void printTrieSymbol(FILE *fp, Cell symbol) {
 }
 
 int sprintTrieSymbol(char * buffer, Cell symbol) {
+  int ctr;
 
   if ( symbol == ESCAPE_NODE_SYMBOL )
     return sprintf(buffer, "%lu [ESCAPE_NODE_SYMBOL]", ESCAPE_NODE_SYMBOL);
@@ -225,7 +226,8 @@ int sprintTrieSymbol(char * buffer, Cell symbol) {
               break;              
           }
 	psc = DecodeTrieFunctor(symbol);
-	return sprintf(buffer, "%s/%d", get_name(psc), get_arity(psc));
+	ctr = sprint_quotedname(buffer, 0, get_name(psc));
+	return sprintf(buffer+ctr, "/%d", get_arity(psc));
       }
       break;
     case XSB_LIST:
@@ -377,11 +379,16 @@ static int symstkSPrintNextTerm(CTXTdeclc char * buffer, xsbBool list_recursion)
       if ( list_recursion ) {
 	if ( string == nil_string )
 	  ctr = ctr + sprintf(buffer+ctr, "]");
-	else
-	  ctr = ctr + sprintf(buffer+ctr, "|%s]", string);
+	else {
+	  //	  ctr = ctr + sprintf(buffer+ctr, "|%s]", string);
+	  ctr = ctr + sprintf(buffer+ctr, "|");
+	  ctr = sprint_quotedname(buffer, ctr, string);
+	  ctr = ctr + sprintf(buffer+ctr, "]");
+	}
       }
       else
-	ctr = ctr + sprintf(buffer+ctr, "%s", string);
+	//	ctr = ctr + sprintf(buffer+ctr, "%s", string);
+	ctr = sprint_quotedname(buffer, ctr, string);
     }
     break;
   case XSB_TrieVar:
@@ -406,7 +413,9 @@ static int symstkSPrintNextTerm(CTXTdeclc char * buffer, xsbBool list_recursion)
       if ( list_recursion )
 	ctr = ctr + sprintf(buffer+ctr, "|");
       psc = DecodeTrieFunctor(symbol);
-      ctr = ctr + sprintf(buffer+ctr, "%s(", get_name(psc));
+      //      ctr = ctr + sprintf(buffer+ctr, "%s(", get_name(psc));
+      ctr = sprint_quotedname(buffer, ctr, get_name(psc));
+      ctr = ctr + sprintf(buffer+ctr, "(");
       for (i = 1; i < (int)get_arity(psc); i++) {
 	ctr = ctr + symstkSPrintNextTerm(CTXTc buffer+ctr,FALSE);
 	ctr = ctr + sprintf(buffer+ctr, ",");

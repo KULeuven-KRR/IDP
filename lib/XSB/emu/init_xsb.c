@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: init_xsb.c,v 1.188 2012/07/04 15:10:46 tswift Exp $
+** $Id: init_xsb.c,v 1.190 2013/04/17 22:02:35 tswift Exp $
 ** 
 */
 
@@ -185,7 +185,11 @@ static void display_file(char *infile_name)
     xsb_initialization_exit("Can't open `%s'; XSB installation might be corrupted\n",
 			     infile_name);
   }
-
+  if (flags[LOG_ALL_FILES_USED]) {
+    char current_dir[MAX_CMD_LEN];
+    getcwd(current_dir, MAX_CMD_LEN-1);
+    xsb_log("%s: %s\n",current_dir,infile_name);
+  }
   while (fgets(buffer, MAXBUFSIZE-1, infile) != NULL)
     fprintf(stdmsg, "%s", buffer);
 
@@ -949,6 +953,19 @@ static size_t get_memarea_size( char *s )
   init_system_threads(th) ;
 #endif
 
+  //#ifndef MULTI_THREAD
+  forest_log_buffer_1 = &fl_buffer_1;
+  forest_log_buffer_2 = &fl_buffer_2;
+  forest_log_buffer_3 = &fl_buffer_3;
+
+  forest_log_buffer_1->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  //  forest_log_buffer_1->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_1->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_2->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  forest_log_buffer_2->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_3->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  forest_log_buffer_3->fl_size = MAXTERMBUFSIZE;
+  //#endif
   return ( (char *) flags[BOOT_MODULE] );
 
 } /* init_para() */
@@ -1242,6 +1259,17 @@ void cleanup_thread_structures(CTXTdecl)
   pthread_mutex_destroy(&private_smALN->sm_lock);
   mem_dealloc(private_smALN,sizeof(struct Structure_Manager),
 	      MT_PRIVATE_SPACE); 
+  forest_log_buffer_1 = &fl_buffer_1;
+  forest_log_buffer_2 = &fl_buffer_2;
+  forest_log_buffer_3 = &fl_buffer_3;
+
+  forest_log_buffer_1->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  //  forest_log_buffer_1->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_1->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_2->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  forest_log_buffer_2->fl_size = MAXTERMBUFSIZE;
+  forest_log_buffer_3->fl_buffer = (char *) mem_alloc(MAXTERMBUFSIZE, BUFF_SPACE);
+  forest_log_buffer_3->fl_size = MAXTERMBUFSIZE;
 }
 #endif /* MULTI_THREAD */
 

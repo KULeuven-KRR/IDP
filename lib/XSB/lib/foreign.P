@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: foreign.P,v 1.64 2011/07/31 02:07:06 kifer Exp $
+** $Id: foreign.P,v 1.65 2012/09/27 02:25:58 kifer Exp $
 ** 
 */
 
@@ -112,6 +112,7 @@ foreign_module_library_extension(Configuration,Extension) :-
 compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	xsb_configuration(compiler_flags, XSB_CC_Opts),
+	xsb_configuration(loader_flags, LD_Opts),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Base)),
 	cc_name(Options, CC_Name),
@@ -123,8 +124,8 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	),
 	message(('[Compiling C file ', Base, Ext ,'using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
-	( var(TempFile) -> TempFile = ''; true ),
-	%% If not debugging, the strip the symbol table from the result
+	( var(TempFile) -> TempFile = '' ; true ),
+	%% If not debugging, then strip the symbol table from the result
 	(  str_sub(' -g', CC_Opts)
 	-> SymbolTableFlag = ' '
 	;  SymbolTableFlag = ' -s'
@@ -132,59 +133,59 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	(   var(CompComm)
 	->  (	str_sub('solaris', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('linux', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',Base, Ext, TempFile, 
-		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LdOption])
+		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',Base, Ext, TempFile, 
-		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LdOption))
+		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LD_Opts,' ',LdOption))
 #endif
 	    ; str_sub('freebsd', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ; str_sub('netbsd', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ; str_sub('bsd-', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('sgi', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 	    ;	str_sub('alpha', Configuration)
 	    ->	shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
 	    ; str_sub('apple-darwin', Configuration)
-	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LdOption])
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LdOption))
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
@@ -212,21 +213,20 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		),
 		message(shell(['mv out.def ', Base,'.def'])),
 		shell(['mv out.def ', Base,'.def']),
-		xsb_configuration(loader_flags,LD_Options),
 		xsb_configuration(config_bindir,BINDIR),
 		message(shell([CC_Name,' ',CC_Opts,
 			       ' -L',BINDIR,' ',
 			       ' -Wl,--out-implib=',Base,'.a ',
 			       ' -shared -s -o ',
 			       Base,'.dll ',Base,'.def ',
-			       Obj,' ', TempObj,' ',LdOption, ' ', LD_Options, ' -lxsb'])),
+			       Obj,' ', TempObj,' ',LdOption, ' ', LD_Opts, ' -lxsb'])),
 		shell([CC_Name,' ',CC_Opts,
 		       ' -L',BINDIR,
 		       ' -Wl,--out-implib=',Base,'.a ',
 		       ' -shared -s -o ',
 		       Base,'.dll ',Base,'.def ',
-		       %% NOTE: It is IMPORTANT that LdOption & LD_Options are at the end!
-		       Obj,' ',TempObj,' ',LdOption, ' ', LD_Options,' -lxsb'])
+		       %% NOTE: It is IMPORTANT that LdOption & LD_Opts are at the end!
+		       Obj,' ',TempObj,' ',LdOption, ' ', LD_Opts,' -lxsb'])
 	    ;	str_sub('windows', Configuration)
 	    ->  %% check if Module.dll exists in the bindir or current dir
 		%% If not - issue a warning

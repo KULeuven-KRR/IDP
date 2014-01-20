@@ -45,7 +45,7 @@ private:
 	//!< Maps an integer outside of the optimized range to its corresponding doman element address.
 	std::map<double, DomainElement*> _doubleelements;
 	//!< Maps a floating point number to its corresponding domain element address.
-	std::map<const std::string*, DomainElement*> _stringelements;
+	std::unordered_map<const std::string*, DomainElement*> _stringelements;
 	//!< Maps a string pointer to its corresponding domain element address.
 	std::map<const Compound*, DomainElement*> _compoundelements;
 	//!< Maps a compound pointer to its corresponding domain element address.

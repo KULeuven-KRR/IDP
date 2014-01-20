@@ -436,20 +436,26 @@ add_closure_facts_and_fail(Flag):-
 cdf_term_ext_arg_rep(isa_ext(X,A),X,isa_ext(Y,A),Y).
 cdf_term_ext_arg_rep(isa_ext(A,X),X,isa_ext(A,Y),Y).
 cdf_term_ext_arg_rep(hasAttr_ext(X,A,B),X,hasAttr_ext(Y,A,B),Y).
-cdf_term_ext_arg_rep(hasAttr_ext(A,X,B),X,hasAttr_ext(A,Y,B),Y).
+cdf_term_ext_arg_rep(hasAttr_ext(A,X,B),X,hasAttr_ext(A,Y,B),Y) :- X=rid(_,_),Y=rid(_,_).
 cdf_term_ext_arg_rep(hasAttr_ext(A,B,X),X,hasAttr_ext(A,B,Y),Y).
 cdf_term_ext_arg_rep(allAttr_ext(X,A,B),X,allAttr_ext(Y,A,B),Y).
-cdf_term_ext_arg_rep(allAttr_ext(A,X,B),X,allAttr_ext(A,Y,B),Y).
+cdf_term_ext_arg_rep(allAttr_ext(A,X,B),X,allAttr_ext(A,Y,B),Y) :- X=rid(_,_),Y=rid(_,_).
 cdf_term_ext_arg_rep(allAttr_ext(A,B,X),X,allAttr_ext(A,B,Y),Y).
 cdf_term_ext_arg_rep(classHasAttr_ext(X,A,B),X,classHasAttr_ext(Y,A,B),Y).
-cdf_term_ext_arg_rep(classHasAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y).
+cdf_term_ext_arg_rep(classHasAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=crid(_,_),Y=crid(_,_).
 cdf_term_ext_arg_rep(classHasAttr_ext(A,B,X),X,classHasAttr_ext(A,B,Y),Y).
 cdf_term_ext_arg_rep(minAttr_ext(X,A,B,C),X,minAttr_ext(Y,A,B,C),Y).
-cdf_term_ext_arg_rep(minAttr_ext(A,X,B,C),X,minAttr_ext(A,Y,B,C),Y).
+cdf_term_ext_arg_rep(minAttr_ext(A,X,B,C),X,minAttr_ext(A,Y,B,C),Y) :- X=rid(_,_),Y=rid(_,_).
 cdf_term_ext_arg_rep(minAttr_ext(A,B,X,C),X,minAttr_ext(A,B,Y,C),Y).
 cdf_term_ext_arg_rep(maxAttr_ext(X,A,B,C),X,maxAttr_ext(Y,A,B,C),Y).
-cdf_term_ext_arg_rep(maxAttr_ext(A,X,B,C),X,maxAttr_ext(A,Y,B,C),Y).
+cdf_term_ext_arg_rep(maxAttr_ext(A,X,B,C),X,maxAttr_ext(A,Y,B,C),Y) :- X=rid(_,_),Y=rid(_,_).
 cdf_term_ext_arg_rep(maxAttr_ext(A,B,X,C),X,maxAttr_ext(A,B,Y,C),Y).
+
+cdf_term_ext_arg_rep(hasAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,_), Y=crid(_,_).
+cdf_term_ext_arg_rep(classHasAttr_ext(A,X,B),X,hasAttr_ext(A,Y,B),Y) :- X=crid(_,_), Y=rid(_,_).
+cdf_term_ext_arg_rep(minAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,_), Y=crid(_,_).
+cdf_term_ext_arg_rep(maxAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,_), Y=crid(_,_).
+
 
 end_of_file.
 =======

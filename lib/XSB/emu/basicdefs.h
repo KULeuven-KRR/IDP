@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: basicdefs.h,v 1.12 2012/01/23 02:37:08 tswift Exp $
+** $Id: basicdefs.h,v 1.15 2013/04/18 22:55:43 tswift Exp $
 ** 
 */
 
@@ -50,8 +50,8 @@
 #define MAXPATHLEN   1024  /* SYSV */
 #endif
 
-#ifndef MAXNAME
-#define MAXNAME   255  /* SYSV */
+#ifndef MAXFILENAME
+#define MAXFILENAME   255  /* SYSV */
 #endif
 
 #ifndef MAXBUFSIZE
@@ -62,9 +62,8 @@
 
 #define K   1024  /* please make sure that K stays divisible by sizeof(Cell) */
 
-#define MAXTERMBUFSIZE   32*K  /* Terms may be big...*/
-
-
+//#define MAXTERMBUFSIZE   64*K  /* Terms may be big...*/
+#define MAXTERMBUFSIZE   256*K  /* Terms may be big...*/
 
 #define XSB_STYLE_DCG  0    /* use XSB style DCG grammars */
 #define STANDARD_DCG   1    /* use standard DCG grammars */

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tries.h,v 1.84 2012/07/25 23:17:37 tswift Exp $
+** $Id: tries.h,v 1.85 2013/04/20 19:33:51 tswift Exp $
 ** 
 */
 
@@ -548,7 +548,7 @@ extern int callAbsStk_size;
 #define pop_AbsStk callAbsStk[--callAbsStk_index]
 
 #define push_AbsStk(Orig,Abs) {                 \
-    if (callAbsStk_index == callAbsStk_size) {\
+    if (callAbsStk_index+1 >= callAbsStk_size) {\
       trie_expand_array(CPtr, callAbsStk ,callAbsStk_size,0,"callAbsStk");\
     }\
     callAbsStk[callAbsStk_index].originalTerm = ((CPtr) Orig);\

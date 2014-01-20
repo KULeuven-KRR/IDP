@@ -9,12 +9,19 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#include "FileEnumerator.hpp"
+#pragma once
 
-namespace Tests {
+#include "visitors/TheoryMutatingVisitor.hpp"
 
-TEST_P(MXnbTest, DoesMXWithXSB) {
-	runTests("modelexpansion.idp", GetParam(), "mxwithxsb()");
-}
+class EliminateUniversalQuantifications: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
+public:
+	// NOTE: requires pushed quantifications, which IS guaranteed when going through theoryUtils.
+	template<typename T>
+	T execute(T t) {
+		return t->accept(this);
+	}
 
-}
+protected:
+	Formula* visit(QuantForm*);
+};

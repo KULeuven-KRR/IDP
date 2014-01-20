@@ -1,0 +1,30 @@
+vocabulary V {
+  type job
+  type integer isa int
+  type import isa int
+  type time isa int
+
+  max_total_penalty(integer)
+  importance(job, import)
+  real_importance(job, import)
+  tpoveri(job,time)
+}
+
+theory T : V {
+  {
+  	real_importance(j,i) <- importance(j,i).
+  	real_importance(j,1) <- (~?i: importance(j,i)).
+  }
+  
+  {
+  	tpoveri(j,i) <- real_importance(j,i) & max_total_penalty(tp).
+  }
+}
+structure S : V {
+  import = { 1..2 }
+  integer = { 0..10 }
+  job = { 1..3 }
+  time = { 0..10 }
+  importance = { 1,1; 3,2 }
+  max_total_penalty = { 4 }
+}

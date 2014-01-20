@@ -126,6 +126,7 @@ trigger_disj(G1,G2,Goal) :-
 	trigger(G1,check_disj(Disj,Goal)),
 	trigger(G2,check_disj(Disj,Goal)).
 
+% bug, see below
 check_disj(Disj,Goal) :-
 	( var(Disj) ->
 		Disj = (-),
@@ -207,7 +208,7 @@ portray_trigger(trigger_ground(V,Constraint)):- !,
 call_list([]) :- !.
 call_list([G|Gs]) :-
 	call(G),
-	!,
+%	!,
 	call_list(Gs).
 
 %
@@ -449,4 +450,34 @@ lookup_variable_id(Var,_Id) :-
 	write(' Does not have an Id assigned to it. It has not been globalized. ###'),
 	nl,
 	fail.
+
+
+end_of_file.
+
+
+BUG SHOWN IN FOLLOWING PROGRAM:
+:- import when/2 from constraintLib.
+
+append(A,B,C) :-
+	when((nonvar(A);nonvar(C)),sappend(A,B,C)).
+
+sappend([],L,L).
+sappend([X|L1],L2,[X|L3]) :-
+	append(L1,L2,L3).
+	%mytrue(L1).
+
+mytrue(_).
+
+reverse(L,R) :-
+	when((nonvar(L);nonvar(R)),sreverse(L,R)).
+
+sreverse([],[]).
+sreverse([A|As],Bs) :-
+	append(Cs,[A],Bs), reverse(As,Cs).
+
+on call ?- reverse(X,[a,b,c]).
+
+but if put in mytrue call, it works.  Conjecture is that that
+disjuctive delay that suspends on a temporary variable, doesnt work?
+Maybe any suspension on a temporary variable?
 

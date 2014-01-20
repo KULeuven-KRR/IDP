@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: error_xsb.h,v 1.59 2012/02/24 17:37:21 tswift Exp $
+** $Id: error_xsb.h,v 1.61 2013/02/14 22:03:53 tswift Exp $
 ** 
 */
 
@@ -69,7 +69,7 @@ extern "C" {
   XSB_StrSet(&(*tsgSBuff2),"");					\
   print_pterm(CTXTc op1, TRUE, &(*tsgSBuff1));			\
   print_pterm(CTXTc op2, TRUE, &(*tsgSBuff2));			\
-  xsb_evaluation_error(EVALUATION_DOMAIN_ERROR,				\
+  xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,				\
 		       "Wrong domain in evaluable function **/2: %s is " \
 		       "negative and finite, while its exponent (%s) is not an integer", \
 		       (*tsgSBuff2).string, (*tsgSBuff1).string);	\
@@ -85,9 +85,11 @@ extern "C" {
 #define THROWPAD 12
 #endif 
 
+#define MAX_CMD_LEN 8192
+
 DllExport extern void call_conv xsb_exit(char *, ...);
 DllExport extern void call_conv xsb_initialization_exit(char *, ...);
-DllExport extern void call_conv exit_xsb(char *);
+  DllExport extern void call_conv exit_xsb(char *);
 
 DllExport extern void call_conv xsb_abort(char *, ...);
 DllExport extern void call_conv abort_xsb(char *);
@@ -138,7 +140,7 @@ extern void xsb_segfault_quitter(int);
 int unwind_stack(CTXTdecl);
 
 DllExport extern void call_conv xsb_domain_error(CTXTdeclc char *, Cell, const char *, int) ;
-  DllExport extern void call_conv xsb_evaluation_error(int,char * , ...);
+  DllExport extern void call_conv xsb_evaluation_error(CTXTdeclc int,char * , ...);
 DllExport extern void call_conv xsb_existence_error(CTXTdeclc char *,Cell, const char *,int, int) ;
 DllExport extern void call_conv xsb_instantiation_error(CTXTdeclc const char *, int) ;
 DllExport extern void call_conv xsb_misc_error(CTXTdeclc char*,const char*,int) ; 
@@ -160,6 +162,8 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term);
 
 extern prolog_term build_xsb_backtrace(CTXTdecl);
 extern char abort_file_gl[];
+
+DllExport extern void  call_conv xsb_log(char *description, ...);
 
 #ifdef __cplusplus
 }

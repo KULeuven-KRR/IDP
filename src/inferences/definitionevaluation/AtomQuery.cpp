@@ -25,7 +25,7 @@
 #include "theory/TheoryUtils.hpp"
 
 #ifdef WITHXSB
-#include "inferences/querying/xsb/xsbinterface.hpp"
+#include "inferences/querying/xsb/XSBInterface.hpp"
 #endif
 
 bool AtomQuerying::queryAtom(Query* query, Theory* theory, Structure* structure) const {
@@ -44,32 +44,32 @@ bool AtomQuerying::queryAtom(Query* query, Theory* theory, Structure* structure)
 
 	auto symbol = pf->symbol();
 
-#ifdef USEXSB
-	// check if we can solve it using XSB
-	Definition* d = NULL;
-	for (auto def : theory->definitions()) {
-		if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
-			auto calculatable = true;
-			auto opens = DefinitionUtils::opens(def);
-			for (auto osym = opens.begin(); osym != opens.end(); ++osym) {
-				if (!structure->inter(*osym)->approxTwoValued()) {
-					calculatable = false;
-				}
-			}
-			if (calculatable) {
-				d = *def;
-			}
-		}
-	}
-	if (d != NULL && getOption(XSB)) {
-		auto xsb = XSBInterface::instance();
-		xsb->setStructure(structure);
-		xsb->loadDefinition(d);
-		auto result = xsb->query(symbol, atom2tuple(pf, structure));
-		xsb->exit();
-		return result;
-	}
-#endif
+//#ifdef WITHXSB
+//	// check if we can solve it using XSB
+//	Definition* d = NULL;
+//	for (auto def : theory->definitions()) {
+//		if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
+//			auto calculatable = true;
+//			auto opens = DefinitionUtils::opens(def);
+//			for (auto osym = opens.begin(); osym != opens.end(); ++osym) {
+//				if (!structure->inter(*osym)->approxTwoValued()) {
+//					calculatable = false;
+//				}
+//			}
+//			if (calculatable) {
+//				d = def;
+//			}
+//		}
+//	}
+//	if (d != NULL && getOption(XSB)) {
+//		auto xsb = XSBInterface::instance();
+//		xsb->setStructure(structure);
+//		xsb->loadDefinition(d);
+//		auto result = xsb->query(symbol, atom2tuple(pf, structure));
+//		xsb->exit();
+//		return result;
+//	}
+//#endif
 
 	// Default: evaluate using MX
 	auto result = false;

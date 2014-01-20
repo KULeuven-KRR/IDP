@@ -67,6 +67,7 @@ psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
 psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
+psc_init_info(_PSC) :- '_$builtin'(PSC_INIT_INFO).
 
 psc_set_shared(PSC, Bool) :-
 	psc_get_env(PSC, Det, T_SHARED_DET),
@@ -312,6 +313,8 @@ ground_and_acyclic(Term):- ground_cycle_internal(Term,CYCLIC_FAIL).
 ground_cycle_internal(_Term,_Action):- '_$builtin'(GROUND_CYC).
 
 mark_term_cyclic(_Term):- '_$builtin'(MARK_TERM_CYCLIC).
+
+intern_term(_Term,_InternedTerm) :- '_$builtin'(INTERN_TERM).
 
 '$$set_scope_marker':- '$$set_scope_marker'.
 '$$unwind_stack':- '$$unwind_stack'.

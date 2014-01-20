@@ -17,7 +17,7 @@ struct hashtable_itr
     unsigned int index;
 };
 
-
+typedef struct hashtable_itr * hashtable_itr_ptr;
 /*****************************************************************************/
 /* hashtable_iterator
  */

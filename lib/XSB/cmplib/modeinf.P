@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: modeinf.P,v 1.14 2010/08/19 15:03:35 spyrosh Exp $
+** $Id: modeinf.P,v 1.15 2013/01/08 14:16:49 dwarren Exp $
 ** 
 */
 
@@ -295,6 +295,7 @@ flatten_arg(varocc(X), Y, true, Dict) :- !,
 	translate_varocc(X, Dict, Y).
 flatten_arg(constant(_SYM), g, true, _Dict) :- !.
 flatten_arg(integer(_INT), g, true, _Dict):- !.
+flatten_arg(real(_FLOAT), g, true, _Dict):- !.
 flatten_arg(structure(_SYM, ArgList), Head, Neck, Dict) :- !,
 	gen_varlist(ArgList, VarList),
 	gen_neck(VarList, Head, Neck, Dict).
@@ -311,6 +312,7 @@ gen_varlist1(varocc(X), VLin, VLout) :-
 	add_varocc(varocc(X), VLin, VLout).
 gen_varlist1(constant(_), VL, VL).
 gen_varlist1(integer(_), VL, VL).
+gen_varlist1(real(_), VL, VL).
 gen_varlist1(structure(_, Args), VL1, VL2) :-
 	gen_varlist(Args, VL1, VL2).
 
@@ -929,7 +931,6 @@ remove_asserted_stuff :-
 	trie_retract_all('_$exp_return'(_)),
 %%	trie_retract_all('_$predprop'(_,_)),
 	trie_retract_all('_$init_call'(_)),
-	retractall('_$call_user'(_)),
 	retractall('_$call_user'(_)).
 
 print_stats :-

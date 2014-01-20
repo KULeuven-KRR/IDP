@@ -1,0 +1,23 @@
+vocabulary V {
+  type T isa string
+  type T2 isa int
+  P(T,T2)
+  P2(T,T2)
+  Q(T)
+  Q2(T2)
+}
+
+theory T : V {
+  { P("x",15).}
+  { P2("x",15).}
+  { Q("x").}
+  {
+    P("x",s) <- Q2(s).
+    Q2(15).
+  }
+}
+
+structure S : V {
+  T = {"x"}
+  T2 = {15}
+}

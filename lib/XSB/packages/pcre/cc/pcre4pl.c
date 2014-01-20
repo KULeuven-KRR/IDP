@@ -44,6 +44,14 @@
 #include "auxlry.h"
 #include "heap_xsb.h"
 
+#ifdef MULTI_THREAD
+#define xsb_get_main_thread_macro xsb_get_main_thread()
+#define  check_thread_context th = xsb_get_main_thread();
+#else
+#define xsb_get_main_thread_macro
+#define check_thread_context
+#endif
+
 #ifndef SUCCESS
 #define SUCCESS 1
 #endif
@@ -65,6 +73,10 @@
 
 #define MAX_PATTERN_LENGTH 4000
 #define MAX_SUBJECT_LENGTH 4000
+
+#ifdef MULTI_THREAD
+static th_context *th = NULL;
+#endif
 
 
 /* 
@@ -99,6 +111,7 @@ DllExport int call_conv pl_trymatch()
 	prolog_term op_term;
 	prolog_term listHead, listTail;
 	
+	check_thread_context
 	regex = reg_term(CTXTc 1);
 	ip_str = reg_term(CTXTc 2);
 	result = reg_term(CTXTc 3);
@@ -110,13 +123,13 @@ DllExport int call_conv pl_trymatch()
 	
 	// Extract reg ex from Arg 1 passed from the Prolog 
 	if(is_string(regex))
-		pattern = ptoc_string(1);
+		pattern = ptoc_string(CTXTc 1);
 	else
 	    xsb_abort("[PCRE:MATCH] Arg 1 (the regular expression) must be an atom");
 	
 	// Extract subject string from Arg 2 passed from the Prolog 
 	if(is_string(ip_str))
-		subject = ptoc_string(2);
+		subject = ptoc_string(CTXTc 2);
 	else
 		xsb_abort("[PCRE:MATCH] Arg 2 (the subject string) must be an atom");
 	
@@ -160,7 +173,7 @@ DllExport int call_conv pl_trymatch()
 	start_offset = 0;
 	firstmatch = 1;
 	
-	op_term = p2p_new();
+	op_term = p2p_new(CTXT);
 	listTail = op_term;
 	
 	while(TRUE)
@@ -246,7 +259,7 @@ DllExport int call_conv pl_trymatch()
 			postmatch[strlen(subject)-ovector[0]-substring_length]='\0';
 		}
 		
-		substrList = p2p_new();
+		substrList = p2p_new(CTXT);
 		substrTail = substrList;
 		
 		for (i=1;i<rc;i++)
@@ -262,7 +275,7 @@ DllExport int call_conv pl_trymatch()
 			else
 			{			
 				c2p_list(CTXTc substrTail);
-				c2p_string(temp,p2p_car(substrTail));
+				c2p_string(CTXTc temp,p2p_car(substrTail));
 				substrTail = p2p_cdr(substrTail);
 	
 				pcre_free_substring(substr);
@@ -274,10 +287,10 @@ DllExport int call_conv pl_trymatch()
 		listHead = p2p_car(listTail);
 	
 		c2p_functor(CTXTc "match",4,listHead);
-		c2p_string(match, p2p_arg(listHead,1));
-		c2p_string(prematch, p2p_arg(listHead,2));
-		c2p_string(postmatch, p2p_arg(listHead,3));
-		p2p_unify(substrList,p2p_arg(listHead,4));
+		c2p_string(CTXTc match, p2p_arg(listHead,1));
+		c2p_string(CTXTc prematch, p2p_arg(listHead,2));
+		c2p_string(CTXTc postmatch, p2p_arg(listHead,3));
+		p2p_unify(CTXTc substrList,p2p_arg(listHead,4));
 		
 		listTail = p2p_cdr(listTail);
 		
@@ -326,6 +339,7 @@ DllExport int call_conv pl_substitute()
 	char op[1024];
 	char *temp;	
 	
+	check_thread_context
 	term_subject = reg_term(CTXTc 1);
 	term_regex = reg_term(CTXTc 2);
 	term_subst = reg_term(CTXTc 3);
@@ -336,17 +350,17 @@ DllExport int call_conv pl_substitute()
 	subst = (char*)malloc(MAX_SUBJECT_LENGTH*sizeof(char));
 	
 	if(is_string(term_regex))
-		pattern = ptoc_string(1);
+		pattern = ptoc_string(CTXTc 1);
 	else
 		xsb_abort("[PCRE:SUBSTITUTE] Arg 1 (the pattern) must be an atom");
 	
 	if(is_string(term_subject))
-		subject = ptoc_string(2);
+		subject = ptoc_string(CTXTc 2);
 	else
 		xsb_abort("[PCRE:SUBSTITUTE] Arg 2 (the subject) must be an atom");
 	
 	if(is_string(term_subst))
-		subst = ptoc_string(3);
+		subst = ptoc_string(CTXTc 3);
 	else
 		xsb_abort("[PCRE:SUBSTITUTE] Arg 3 (the substitution) must be an atom");
 	
@@ -402,7 +416,7 @@ DllExport int call_conv pl_substitute()
 			pcre_free(re);
 			strncpy(op,subject,strlen(subject));
 			op[strlen(subject)]='\0';
-			ctop_string(CTXTdeclc 4, op);
+			ctop_string(CTXTc 4, op);
 			return SUCCESS;
 		}
 		else if(rc==PCRE_ERROR_NOMATCH && !firstmatch)
@@ -450,7 +464,7 @@ DllExport int call_conv pl_substitute()
 	strncpy(op+copyIndex,subject,strlen(subject));
 	copyIndex+=strlen(subject);
 	op[copyIndex]='\0';
-	ctop_string(CTXTdeclc 4, op);
+	ctop_string(CTXTc 4, op);
 	
 	pcre_free(re);
 

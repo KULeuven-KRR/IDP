@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: token_xsb.c,v 1.47 2011/08/15 15:10:25 dwarren Exp $
+** $Id: token_xsb.c,v 1.48 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -40,6 +40,8 @@
 #include "register.h"
 #include "error_xsb.h"
 #include "memory_xsb.h"
+#include "io_builtins_xsb.h"
+#include "cinterf.h"
 
 #define exit_if_null(x) {\
   if(x == NULL){\
@@ -348,19 +350,30 @@ static int read_character(CTXTdeclc register FILE *card,
 			  register int q)
 {
         register int c;
+	char message[200];
  
         c = GetC(card,instr);
 BACK:   if (c < 0) {
           if (c == EOF) { /* to mostly handle cygwin stdio.h bug ... */
-READ_ERROR: if (!instr && ferror(card)) 
-	      xsb_warn("[TOKENIZER] I/O error: %s\n",strerror(errno));
+	    char *filename;
+	    int xsb_filedes;
+READ_ERROR: 
+	    if (instr) filename = "reading string";
+	    else {
+	      xsb_filedes = unset_fileptr(card);
+	      if (xsb_filedes < 0) filename = "unknown";
+	      else filename = open_files[xsb_filedes].file_name;
+	    }
+	    if (!instr && ferror(card)) {
+	      xsb_warn("[TOKENIZER] I/O error in file %s: %s\n",filename,strerror(errno));
+	    }
 	    if (q < 0) {
-                SyntaxError(CTXTc "end of file in character constant");
+	      snprintf(message,200,"end of file in character constant in file %s",filename);
+	      SyntaxError(CTXTc message);
 		//		return -2;		/* encounters EOF */
             } else {
-                char message[80];
-                sprintf(message, "end of file in %cquoted%c constant", q, q);
-                SyntaxError(CTXTc message);
+	      snprintf(message,200, "end of file in %cquoted%c constant in file %s", q, q, filename);
+	      SyntaxError(CTXTc message);
 		//		return -2;		/* encounters EOF */
             }
 	  }

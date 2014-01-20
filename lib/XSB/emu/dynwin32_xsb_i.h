@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: dynwin32_xsb_i.h,v 1.26 2011/08/05 09:10:52 kifer Exp $
+** $Id: dynwin32_xsb_i.h,v 1.27 2012/10/12 16:42:57 tswift Exp $
 ** 
 */
 
@@ -42,6 +42,7 @@
 #include "string_xsb.h"
 #include "extensions_xsb.h"
 #include "xsb_config.h"
+#include "basictypes.h"
 
 #define BUFFEXTRA 1024
 
@@ -80,12 +81,12 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   char	*name;
 #ifndef WIN64
 #ifdef XSB_DLL
-  char tempname[128];
+  char tempname[MAXFILENAME];
   size_t  tempsize;
 #endif
 #endif
   Pair	search_ptr;
-  char	sofilename[128];
+  char	sofilename[MAXFILENAME];
   HMODULE handle;
   void	*funcep;
   char  *file_extension_ptr;

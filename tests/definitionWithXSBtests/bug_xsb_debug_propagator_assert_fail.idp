@@ -1,0 +1,22 @@
+vocabulary V {
+  type index isa int
+  queen(index,index)
+  n: index
+  type diagtype isa int
+  diag1(index,index) : diagtype
+  diag2(index,index) : diagtype
+}
+theory T : V {
+  { diag1(x,y) = x-y+n. }
+  { diag2(x,y) = x+y-1. }
+  ! x : ?=1 y : queen(x,y).
+  ! y : ?=1 x : queen(x,y).
+  ! t : #{ x y : queen(x,y) & diag1(x,y) = t} < 2.
+  ! t : #{ x y : queen(x,y) & diag2(x,y) = t} < 2.
+}
+
+structure S : V {
+  index = {1..4}
+  diagtype = {1..7}
+  n = 4
+}

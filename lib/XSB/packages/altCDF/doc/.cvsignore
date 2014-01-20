@@ -1,5 +1,7 @@
-*.toc
 *.dvi
 *.idx
 *.log
 *.pdx
+*.toc
+manual.out
+manual.pdf

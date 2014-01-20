@@ -10,6 +10,8 @@ procedure standardoptions(){
 	stdoptions.satdelay=false
 	stdoptions.tseitindelay=false
 	stdoptions.lazyheur=false
+	stdoptions.xsb=false
+  	stdoptions.approxdef="none"
 }
 
 procedure mxnobounds(){
@@ -64,6 +66,15 @@ procedure mxwithbounds(){
 
 procedure mxwithxsb(){
 	stdoptions.xsb=true
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	stdoptions.timeout = 5
+	return run()
+}
+
+procedure mxwithapproxdefs(){
+	stdoptions.xsb=true
+  	stdoptions.approxdef="all"
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5

@@ -61,4 +61,10 @@ extern void abolish_incr_call(CTXTdeclc callnodeptr);
 extern void free_incr_hashtables(TIFptr);
 extern int  create_lazy_call_list(CTXTdeclc  callnodeptr);
 extern int  dfs_inedges(CTXTdeclc  callnodeptr, calllistptr *, int);
+
+extern int  get_outedges_num(CTXTdeclc  callnodeptr);
+extern int immediate_affects_ptrlist(CTXTdeclc callnodeptr);
+extern int immediate_depends_ptrlist(CTXTdeclc callnodeptr);
+extern int  get_incr_sccs(CTXTdeclc Cell);
+
 #endif

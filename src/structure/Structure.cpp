@@ -751,14 +751,16 @@ void Structure::clean() {
 			}
 		}
 
-		if (((not it->first->partial()) && TableUtils::approxTotalityCheck(it->second))
-				|| TableUtils::isInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) {
+		if ((it->first->partial() && TableUtils::isInverse(it->second->graphInter()->ct(), it->second->graphInter()->cf())) ||
+		 (TableUtils::approxTotalityCheck(it->second) && it->second->isConsistent())) {
 			auto eift = new EnumeratedInternalFuncTable();
 			for (auto jt = it->second->graphInter()->ct()->begin(); not jt.isAtEnd(); ++jt) {
 				eift->add(*jt);
 			}
-			//TODO: too expensive. We should be able to directly transform ct-table to functable!
-			it->second->funcTable(new FuncTable(eift, it->second->graphInter()->ct()->universe()));
+			if (eift->size(it->second->graphInter()->ct()->universe()) == it->second->graphInter()->ct()->size()) {
+				//TODO: too expensive. We should be able to directly transform ct-table to functable!
+				it->second->funcTable(new FuncTable(eift, it->second->graphInter()->ct()->universe()));
+			}
 		}
 	}
 }

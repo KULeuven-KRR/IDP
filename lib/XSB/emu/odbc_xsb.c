@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: odbc_xsb.c,v 1.79 2011/07/26 17:27:49 dwarren Exp $
+** $Id: odbc_xsb.c,v 1.81 2013/01/09 20:15:34 dwarren Exp $
 **
 */
 
@@ -75,6 +75,7 @@ static Psc     nullFctPsc = NULL;
 static SQLLEN      SQL_NTSval = SQL_NTS;
 static SQLLEN      SQL_NULL_DATAval = SQL_NULL_DATA;
 
+/* NOTE, THIS IS NOT THREAD-SAFE */
 static HENV henv = NULL;
 /*HDBC hdbc;*/
 
@@ -1352,7 +1353,7 @@ void ODBCDataSources(CTXTdecl)
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Environment allocation failed"));
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Call to SQLDataSources failed"));
       return;
     }
   } else {
@@ -1365,7 +1366,7 @@ void ODBCDataSources(CTXTdecl)
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Environment allocation failed"));
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Call to SQLDataSources failed"));
       return;
     }
   }
@@ -1387,6 +1388,139 @@ void ODBCDataSources(CTXTdecl)
   }
   else {
     unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("[ODBCDataSources] Param 3 should be a free variable."));
+    return;
+  }
+  ctop_int(CTXTc 5,0);
+  return;
+}
+
+// XXX TODO: Change implementation below
+/*-----------------------------------------------------------------------------*/
+/*  FUNCTION NAME:*/
+/*     ODBCDrivers()*/
+/*  PARAMETERS:*/
+/*     R1: 20 */
+/*     R2: 1 - first call; 2 - subsequent calls */
+/*     R3: var, returns Driver description */
+/*     R4: var, returns Driver attributes  */
+/*     R5: var, returns status */
+/*  NOTES:*/
+/*-----------------------------------------------------------------------------*/
+#define SQL_MAX_ATTR_LENGTH 1024
+#define SQL_MAX_DESC_LENGTH 1024
+void ODBCDrivers(CTXTdecl)
+{
+  SQLCHAR Description[SQL_MAX_DESC_LENGTH];
+  SQLCHAR Attributes[SQL_MAX_ATTR_LENGTH];
+  RETCODE rc;
+  int seq, new;
+  SWORD descr_size, attr_size;
+  Cell op2 = ptoc_tag(CTXTc 3);
+  Cell op3 = ptoc_tag(CTXTc 4);
+
+  if (!henv) {
+    //locked to prevent two threads from fighting over who creates the env
+    SYS_MUTEX_LOCK( MUTEX_ODBC) ;
+    /* allocate environment handler*/
+    rc = SQLAllocEnv(&henv);
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Environment allocation failed"));
+      return;
+    }
+    LCursor = FCursor = NULL;
+    FCurNum = NULL;
+    if (nullFctPsc == NULL)
+        nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
+    SYS_MUTEX_UNLOCK( MUTEX_ODBC) ;
+  }
+
+  seq = (int)ptoc_int(CTXTc 2);
+  if (seq == 1) {
+    rc = SQLDrivers(henv, SQL_FETCH_FIRST,
+		    Description, SQL_MAX_DESC_LENGTH, &descr_size,
+		    Attributes, SQL_MAX_ATTR_LENGTH, &attr_size);
+    if (rc == SQL_NO_DATA_FOUND) {
+      ctop_int(CTXTc 5,2);
+      return;
+    }
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Call to SQLDrivers failed (seq=1)"));
+      return;
+    }
+  } else {
+    rc = SQLDrivers(henv, SQL_FETCH_NEXT,
+		    Description, SQL_MAX_DESC_LENGTH, &descr_size,
+		    Attributes, SQL_MAX_ATTR_LENGTH, &attr_size);
+    if (rc == SQL_NO_DATA_FOUND) {
+      ctop_int(CTXTc 5,2);
+      return;
+    }
+    if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Call to SQLDrivers failed (seq != 1)"));
+      return;
+    }
+  }
+  XSB_Deref(op2);
+  if (isref(op2)) {
+    Cell cellStr = makestring(string_find(Description,1));
+    unify(CTXTc op2, cellStr);
+  } else {
+    unify(CTXTc reg_term(CTXTc 5),
+	  GenErrorMsgBall("[ODBCDrivers] Param 2 should be a free variable."));
+    return;
+  }
+  XSB_Deref(op3);
+  if (isref(op3)) {
+    char *current_attr = Attributes;
+    int num_attrs = 0, isnew;
+    CPtr prev_cons;
+    Cell attr_list = makenil;  // to quiet compiler
+    Psc eq_psc;
+
+    /* First count the number of attribute-value pairs in the list */
+    while (!(current_attr[0] == '\0' && current_attr[1] == '\0')) {
+      if (current_attr[0] == '=') { 
+	num_attrs++; 
+      }
+      current_attr++;
+    }
+
+    /* Make sure we have enough room */
+    if (heap_local_overflow(5*num_attrs*sizeof(Cell))) {
+      xsb_resource_error(CTXTc "No space for attributes", "odbc_drivers", 2);
+    }
+    
+    /* Now split the pairs to create the list */
+    current_attr = Attributes;
+    prev_cons = NULL;
+    eq_psc = pair_psc(insert("=",2,(Psc)flags[CURRENT_MODULE],&isnew));
+    while (current_attr[0] != '\0') {
+      char *attr;
+      char *val;
+      attr = current_attr;
+      val = strchr(current_attr, '=');
+      if (val) {
+	val[0] = '\0';
+	val++;
+	current_attr = val + strlen(val) + 1;
+	if (prev_cons) bld_list(prev_cons+1,hreg); else attr_list = makelist(hreg);
+
+	bld_cs(hreg,hreg+2);
+	bld_functor(hreg+2,eq_psc);
+	bld_string(hreg+3,string_find(attr,1));
+	bld_string(hreg+4,string_find(val,1));
+
+	prev_cons = hreg;
+	hreg += 5;
+      } else {
+	break;
+      }
+    }
+    if (prev_cons) bld_nil(prev_cons+1); else attr_list = makenil;
+    unify(CTXTc op3, attr_list);
+  } else {
+    unify(CTXTc reg_term(CTXTc 5),
+	  GenErrorMsgBall("[ODBCDrivers] Param 3 should be a free variable."));
     return;
   }
   ctop_int(CTXTc 5,0);
@@ -1622,7 +1756,7 @@ int GetColumn(CTXTdecl)
     new_heap_free(hreg);
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) 
       /* for "string" and "term"... */
-      return unify(CTXTc cell(clref_val(op)+1),nullterm);
+      return unify(CTXTc get_str_arg(op,1),nullterm);
     else return unify(CTXTc op,nullterm);
   }
 
@@ -1641,7 +1775,7 @@ int GetColumn(CTXTdecl)
       return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(CTXTc cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+	return unify(CTXTc get_str_arg(ptoc_tag(CTXTc 4),1),  /* op might have moved! */
 		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;
@@ -1669,7 +1803,7 @@ int GetColumn(CTXTdecl)
       return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
-	return unify(CTXTc cell(clref_val(ptoc_tag(CTXTc 4))+1),  /* op might have moved! */
+	return unify(CTXTc get_str_arg(ptoc_tag(CTXTc 4),1),  /* op might have moved! */
 		     build_codes_list(CTXTc cur->Data[ColCurNum]));
       } else {
 	STRFILE strfile;

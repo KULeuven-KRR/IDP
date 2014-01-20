@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: odbc_xsb.h,v 1.13 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: odbc_xsb.h,v 1.14 2012/12/08 18:21:36 dwarren Exp $
 **
 */
 
@@ -49,6 +49,7 @@ extern void ODBCUserTables(CTXTdecl);
 extern void ODBCDescribeSelect(CTXTdecl);
 extern void ODBCConnectOption(CTXTdecl);
 extern void ODBCDataSources(CTXTdecl);
+extern void ODBCDrivers(CTXTdecl);
 extern void ODBCGetInfo(CTXTdecl);
 extern void ODBCRowCount(CTXTdecl);
 

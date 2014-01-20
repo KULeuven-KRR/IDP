@@ -1,0 +1,10 @@
+vocabulary V{
+	p
+}
+
+theory T:V{
+  { p <- 4 = 4/1 & 3 = 3/1.}
+}
+
+structure S:V{
+}

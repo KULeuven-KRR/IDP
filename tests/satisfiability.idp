@@ -89,6 +89,14 @@ procedure satwithsymm(){
 	return run()
 }
 
+procedure satwithxsb(){
+	stdoptions.timeout = 5
+	stdoptions.groundwithbounds = false
+	stdoptions.liftedunitpropagation = false
+	stdoptions.xsb=true
+	return run()
+}
+
 procedure run() {
 	stdoptions.verbosity.grounding=0
 	stdoptions.verbosity.solving=0

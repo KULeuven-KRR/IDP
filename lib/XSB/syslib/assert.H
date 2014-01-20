@@ -60,13 +60,15 @@
 
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
 	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
-          psc_set_ep/2, unload_seg/1, code_call/3, db_retract0/3, term_set_arg/4, term_new_mod/3
+	  psc_set_ep/2, unload_seg/1, code_call/3, db_retract0/3, term_set_arg/4, term_new_mod/3,
+	  psc_init_info/1
      from machine.
 :- import db_get_last_clause/4 from machine.
 :- import dynamic_code_function/5 from machine.
 :- import psc_set_incr/2 from machine.
 :- import psc_get_incr/2 from machine.
 :- import buff_set_word/3, term_psc/2 from machine.
+:- import get_attributes/2 from machine.
 
 :- import obsolete/2 from obsolete.
 

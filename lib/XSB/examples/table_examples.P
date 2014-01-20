@@ -154,8 +154,8 @@ ppgte_t:- undefined.
 ppgte_u:- undefined.
 ppgte_v:- undefined.
 
-:- table undefined/0.
-undefined:- tnot(undefined).
+%:- table undefined/0.
+%undefined:- tnot(undefined).
 
 %--------------------------------------------------------------------
 

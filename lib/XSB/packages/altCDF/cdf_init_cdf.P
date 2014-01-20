@@ -11,6 +11,7 @@
     necessCond/2, immed_necessCond/2,
     explosive_isa/2,
     isa/2, immed_isa/2, implicit_isa/2,proper_isa/2,
+    isa_nocheck/2,		% for specialized tabling...
     hasAttr/3, immed_hasAttr/3,
     allAttr/3, immed_allAttr/3,
     minAttr/4, immed_minAttr/4,
@@ -422,8 +423,8 @@ implicit_isa_bf(SubCid,SupCid):-
     immed_isa(SubSkel,_),  % does an unindexed lookup, when SubCid is ground?? for parameterized types?
     term_isa(SubCid,SubSkel),
     SubCid \== SubSkel,
-    SupCid = SubSkel,
-    writeln(userout,'Logging: Implicit isa for parameterized types is used for '(SubCid)).
+    SupCid = SubSkel.
+%    writeln(userout,'Logging: Implicit isa for parameterized types is used for '(SubCid)).
 
 implicit_isa_bb(SubCid,SupCid) :-
     SubCid \== SupCid,
@@ -664,15 +665,17 @@ outer functor must be @tt{F/A}.  In either case, both Nids are broken
 into their constituent identifiers and @tt{explosive_isa/2} is
 recursively called on each of these.  ").
 
-explosive_isa(Id1,Id2):-
-      ( ((product_identifier(Id1) ; product_identifier(Id2)),
+/*explosive_isa(Id1,Id2):-
+      ( (\+cdf_flags(implicit_isa,off),
+	 (product_identifier(Id1) ; product_identifier(Id2)),
           cdf_id_fields(Id1,F,N1,S),
           cdf_id_fields(Id2,F,N2,S)) ->
                   make_terms_if_necess(N1,N2),
           N1 =.. [_|Args1],
           N2 =.. [_|Args2],
           explosive_isa_list(Args1,Args2)
-          ;       isa_nocheck(Id1,Id2) ).
+          ;       isa_nocheck(Id1,Id2) ).*/
+explosive_isa(Id1,Id2) :- isa_nocheck(Id1,Id2).      
 
 make_terms_if_necess(N1,N2):-
     (structure(N1) ->
@@ -736,6 +739,22 @@ atomic identifiers.").
 gens_good_isas(Term):-
     ground(Term),
     \+ product_identifier(Term).
+/*    (cdf_id_fields(Term,_,I,Comp) %optimize, avoiding cps
+     ->	    true
+     ;	    writeln(userout, error(Term)),fail
+    ),
+    (var(I)
+     ->	    true
+     ; atomic(I)
+     ->	    true
+     ; var(Comp)
+     ->	    true
+     ; Comp == cdfpt
+     ->	    true
+     ; Comp == cdftm
+     ->	    true
+     ;	    fail
+    ).*/
 
 /**********/
 
@@ -844,11 +863,15 @@ hasAttr_2fix(SCid,Rid,TCid) :-
     OutTerm = rln(SCid,Rid,TCid),
     copy_term(OutTerm,BindPat),
     hasAttr_2fix_sub(SCid,Rid,TCid),
-    (not_max_implicative_hasAttr_2fix(OutTerm,BindPat) -> fail ; true).
+    \+not_max_implicative_hasAttr_2fix(OutTerm,BindPat).
 
 :- table hasAttr_2fix_sub/3.
 hasAttr_2fix_sub(SCid,Rid,TCid) :-
     isa(RidC,Rid),
+    (ground(TCid)		%dsw, use for indexing...DSWDSWDSW check check!!!!!
+     ->	    isa(TCidC,TCid)
+     ;	    true
+    ),
     immed_hasAttr1(SCidP,RidC,TCidC),
     once(explosive_isa(SCid,SCidP)),
     once(explosive_isa(TCidC,TCid)).
@@ -1816,11 +1839,20 @@ newDLRule(Head,Body,Name):-
     (var(Cmpt) -> Cmpt = Name ; true),
     transform_intensional_rules(H,BlankBody,NewHead,Cmpt),
 %	transform_intensional_rules(H,NewHead,Name),
+    (\+ clause(BlankBody,_) % add index for lookup (This is what is needed now...)
+     ->	    (H = hasAttr_int(_,_,_)
+	     ->	    index(BlankBody,[*(2) + *(3), *(2)]) %,writeln(userout,added_index_for(BlankBody))
+	     ;	    true
+	    )
+     ;	    true
+    ),
     functor(H,T,A),
     functor(BlankHead,T,A),
     BlankHead =.. [_|Args],
     BlankBody =.. [_|Args],
     clause_assert(BlankHead,BlankBody),
+    %nl(userout),writeq(userout,(BlankHead:-BlankBody)),nl(userout),
+    %writeq(userout,(NewHead:-B)),writeln(userout,'.'),
     assert((:-(NewHead,B))),
     fail.
 newDLRule(_Head,_Body,_Name).

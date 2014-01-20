@@ -198,6 +198,26 @@ n_times(N,Goal) :-
 	 ;	!
 	).
 
+find_n_m(N,M,Template,Goal,List) :-
+	findall(Template,n_m_times(N,M,Goal),List).
+
+n_m_times(N,M,Goal) :-
+	integer(N),
+	N > 0,
+	integer(M),
+	M >= N,
+	gensym(n_m_times_cnt_,Sym),
+	conset(Sym,0),
+	call(Goal),
+	coninc(Sym,CCnt),
+	CCnt >= N,
+	(CCnt =< M
+	 ->	true
+	 ;	!
+	).
+
+
+
 /*
 TLS: would like to make findall catch errors gracefully, as in this code, 
 suggested by Bart.  The problem is that it breaks the ret_attv test?!?! and 

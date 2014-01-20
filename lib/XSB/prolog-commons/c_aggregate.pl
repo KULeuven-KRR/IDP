@@ -1,4 +1,4 @@
-/*  $Id: c_aggregate.pl,v 1.3 2010/08/19 15:03:40 spyrosh Exp $
+/*  $Id: c_aggregate.pl,v 1.4 2013/05/01 17:04:46 tswift Exp $
 
     Part of SWI-Prolog
 
@@ -62,8 +62,6 @@
 type_error(Valid_type,Culprit):- 
 	type_error(Valid_type,Culprit,'???','???').
 
-sumlist(A,B):- sum_list(A,B).
-
 :- elseif(true).
 
 :- endif.
@@ -118,7 +116,7 @@ r(min(X), max(X)) computes both the minimum and maximum binding for X.
 	Minimum of Expr for all solutions.
 	* min(Expr, Witness)
 	A term min(Min, Witness), where Min is the minimal version
-	of Expr over all Solution and Witness is any other template
+	Of Expr over all Solution and Witness is any other template
 	applied to Solution that produced Min.  If multiple
 	solutions provide the same minimum, Witness corresponds to
 	the first solution.
@@ -296,7 +294,7 @@ aggregate_list(bag, List0, List) :- !,
 aggregate_list(set, List, Set) :- !,
 	sort(List, Set).
 aggregate_list(sum, List, Sum) :-
-	sumlist(List, Sum).
+	sum_list(List, Sum).
 aggregate_list(count, List, Count) :-
 	length(List, Count).
 aggregate_list(max, List, Sum) :-

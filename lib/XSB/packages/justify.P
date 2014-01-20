@@ -11,7 +11,8 @@
 
 :- import bootstrap_package/2 from packaging.
 :- import slash/1 from machine.
-:- bootstrap_package('justify',justify).
+:- bootstrap_package('justify',justify),
+   [jxm].
 
 :- import jxm_/1, just_true_/2, just_false_/2 from jxm.
 

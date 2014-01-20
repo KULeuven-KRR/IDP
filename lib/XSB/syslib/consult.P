@@ -246,11 +246,13 @@ file_exists_here_or_configbin_or_configlib(C_Obj,CC_Obj) :-
 	    (
 	      xsb_configuration(config_bindir,ConfigBinDir),
 	      str_cat(ConfigBinDir,ObjFileTail,BindirObjfile),
-	      file_exists(BindirObjfile)
+	      file_exists(BindirObjfile),
+	      CC_Obj = BindirObjfile
 	    ;
 	      xsb_configuration(config_libdir,ConfigLibDir),
 	      str_cat(ConfigLibDir,ObjFileTail,LibdirObjfile),
-	      file_exists(LibdirObjfile)
+	      file_exists(LibdirObjfile),
+	      CC_Obj = LibdirObjfile
 	    )
 	).
 
@@ -836,6 +838,9 @@ proc_directive(mode(_X)) :- !,
 	warning('mode directive ignored.').
 proc_directive(parallel(_X)) :- !,
 	warning('parallel directive ignored.').
+proc_directive(table(as(Pred,TabOpts))) :- !,
+	proc_table(Pred),  % do first
+	proc_table_options(TabOpts,Pred).
 proc_directive(table(Pred)) :- !,
 	proc_table(Pred).
 proc_directive(table_all) :- !, 
@@ -857,6 +862,17 @@ proc_directive(Cmd) :-
 	 ->	true
 	 ;	warning('Command failed.')
 	).
+
+% Table options; only some handled.  Might try to do better.
+proc_table_options((TabOpt1,TabOpt2),Pred) :- !,
+	proc_table_options(TabOpt1,Pred),
+	proc_table_options(TabOpt2,Pred).
+proc_table_options(shared,Pred) :- !,
+	thread_shared(Pred).
+proc_table_options(private,Pred) :- !,
+	thread_private(Pred).
+proc_table_options(TabOpt,Pred) :- !,
+	warning(('table modifier ignored: ',TabOpt,' for ',Pred)).
 
 multifile_cvt(Ps,Skel) :-
 	mpa_to_skel(Ps,Skel0),

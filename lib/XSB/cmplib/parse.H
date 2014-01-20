@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: parse.H,v 1.53 2011/09/06 17:33:46 dwarren Exp $
+** $Id: parse.H,v 1.54 2012/10/10 22:29:02 tswift Exp $
 ** 
 */
 
@@ -98,7 +98,7 @@
 
 :- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1,
           op/3, (index)/3, (index)/2, real/1, see/1, expand_term/2, (=..)/2,
-	  '\='/2, check_table_options/2,
+	  '\='/2, check_table_options/3,
 	  arg/3,
 	  open/3,
 	  close/1,

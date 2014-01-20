@@ -2,7 +2,7 @@
 ## Author(s): Yifei Dong
 ## Contact:   lmc@cs.sunysb.edu
 ##
-## $Id: Makefile,v 1.3 2010/08/19 15:03:39 spyrosh Exp $
+## $Id: Makefile,v 1.4 2012/09/27 02:25:58 kifer Exp $
 
 
 OBJEXT=.xwam
@@ -17,7 +17,7 @@ Option = [optimize]
 # Self-make: Version 1.4.1
 #
 XSB=../../bin/xsb
-Prolog = $(XSB) -i -s -m 2000 -c 2000
+Prolog = $(XSB) -i -m 2000 -c 2000
 
 CC = gcc
 CFLAGS = -Wall
@@ -41,7 +41,7 @@ HDRMSG = "While compiling XSB/packages/justify:"
 .SUFFIXES: .P $(OBJEXT) .H
 
 %$(OBJEXT): %.P
-	echo 'mc($*, $(Option)),' >> cmd...
+	echo 'mc($*, $(Option)).' >> cmd...
 
 all:  init $(ALL)
 	@$(Prolog) < cmd... 2> /dev/null
@@ -56,7 +56,7 @@ init:
 	@echo "file_clone($(STDWARN), $(STDERR),_)," >> cmd...
 	@echo 'fmt_write($(STDWARN),"-------------- Warnings/Errors --------------------\n",_),' >> cmd...
 	@echo 'fmt_write($(STDWARN),"%s\n",arg($(HDRMSG))),' >> cmd...
-	@echo "file_flush($(STDWARN), _)," >> cmd...
+	@echo "file_flush($(STDWARN), _)." >> cmd...
 
 finish:
 	@echo 'fmt_write($(STDWARN),"---------------------------------------------------\n",_).' >> cmd...

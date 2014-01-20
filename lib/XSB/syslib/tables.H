@@ -69,10 +69,12 @@
    trie_assert/1,   trie_assert/2,
    trie_retract/1,   trie_retract_nr/1,
    trie_retract_all/1,
-   undefined/0,
+   u_not/1,
+   undefined/0, 
    (use_subsumptive_tabling)/1,
    (use_variant_tabling)/1,
    variant_get_residual/2.
+:- export floundered_undefined/0.
 
 /****** Experimental ********/
 :- export find_components/1,
@@ -96,9 +98,8 @@
 	t_assert_2/2
    from assert.
 
-:- import copy_term/2, member/2
+:- import copy_term/2,length/2, member/2, memberchk/2
      from basics.
-:- import  member/2, length/2 from basics.
 
 :- import set_prolog_flag/2 from curr_sym.
 :- import load_dync/2 from consult.
@@ -115,19 +116,17 @@
 :- import format/2 from format.
 
 :- import abolish_table_info/0, delete_attributes/1, 
+   ground_and_acyclic/1,
+   psc_set_incr/2, psc_set_tabled/2, psc_tabled/2, psc_type/2,
    table_inspection_function/5, table_inspection_function/7,
-   term_psc/2, term_new/2, psc_set_tabled/2, psc_tabled/2, psc_type/2
+   term_psc/2, term_new/2
    from machine.
-:- import psc_set_incr/2 from machine.
 :- import term_new_mod/3 from machine.
 :- import term_arg/3, parsort/4 from machine.
 
-:- import numbervars/3, unnumbervars/2
-     from num_vars.
+:- import numbervars/4, unnumbervars/2 from num_vars.
 
-:- import setof/3, bagof/3 from setof.
-:- import findall/3
-     from setof.
+:- import bagof/3, findall/3, setof/3, sort/2 from setof.
 
 :- import
 	(=..)/2, abort/1, call/1,
@@ -136,6 +135,7 @@
    from standard.
 :- import call_c/1,nl/0,write/1, tell/1, told/0, '\='/2, arg/3 from standard.
 
+:- import variant/2 from subsumes.
 :- import invalidate_table_for/2 from usermod.
 
 /* ------------------- end of file tables.H --------------------------- */

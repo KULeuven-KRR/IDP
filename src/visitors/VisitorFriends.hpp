@@ -69,6 +69,7 @@ class AddMarkers;
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
 		friend class HasRecursionOverNegation; \
+		friend class HasRecursiveAggregate; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
 		friend class DeriveTermBounds; \
@@ -96,6 +97,7 @@ class AddMarkers;
 		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
+		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \
 		friend class SplitComparisonChains; \
 		friend class SplitDefinitions; \
@@ -116,6 +118,7 @@ class AddMarkers;
 		friend class TopDownApproximatingDefinition;\
 		friend class ContainedVariables;\
 		friend class CombineAggregates;\
+		friend class TopDownApproximatingDefinitionForallRule;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
 		friend class CollectQuantifiedVariables;\

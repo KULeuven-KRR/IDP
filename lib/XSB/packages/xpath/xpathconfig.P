@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: xpathconfig.P,v 1.11 2011/05/01 06:00:06 kifer Exp $
+** $Id: xpathconfig.P,v 1.12 2012/10/23 21:09:33 kifer Exp $
 ** 
 */
 
@@ -108,7 +108,7 @@
     ; '_$_xpath_running_under'(darwin)
     ->
 	fmt_write_string(ConfigSharedMod,
-			 '%s%s%s.dylib', f(ConfigBinDir, Slash, Basename))
+			 '%s%s%s.dylib', f(ConfigLibDir, Slash, Basename))
     ;
 	fmt_write_string(ConfigSharedMod,
 			 '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))

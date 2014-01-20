@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: system_xsb.c,v 1.68 2012/03/19 15:19:59 dwarren Exp $
+** $Id: system_xsb.c,v 1.69 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -63,12 +63,11 @@
 #include "register.h"
 #include "psc_xsb.h"
 #include "memory_xsb.h"
+#include "flags_xsb.h"
 #include "thread_defs_xsb.h"
 #include "thread_xsb.h"
 
 extern void get_statistics(CTXTdecl);
-
-#define MAX_CMD_LEN 8192
 
 static int xsb_spawn (CTXTdeclc char *prog, char *arg[], int callno,
 		      int pipe1[], int pipe2[], int pipe3[],
@@ -1171,7 +1170,11 @@ static int file_copy(char *source, char *dest)
       xsb_warn("[file_copy] Unable to open source file: %s\n", source);
       return 0;
     }
-
+    if (flags[LOG_ALL_FILES_USED]) {
+      char current_dir[MAX_CMD_LEN];
+      getcwd(current_dir, MAX_CMD_LEN-1);
+      xsb_log("%s: %s\n",current_dir,source);
+    }
     if (dest_exists) {
       if ((dfp = fopen(dest, "w")) == NULL) {
 	if (unlink(dest) < 0) {

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: memory_xsb.h,v 1.53 2012/02/19 19:17:55 tswift Exp $
+** $Id: memory_xsb.h,v 1.54 2012/12/13 02:52:57 dwarren Exp $
 ** 
 */
 
@@ -193,6 +193,10 @@ extern byte *check_interrupts_restore_insts_addr;
      }									\
    }									\
  }
+
+#define heap_local_overflow(Margin)					\
+  ((unsigned)((top_of_localstk)-hreg)<(unsigned)(Margin))
+  //  ((ereg<ebreg)?((ereg-hreg)<(Margin)):((ebreg-hreg)<(Margin)))
 
 #define glstack_overflow(EXTRA)						\
   ((pb)top_of_localstk < (pb)top_of_heap + (OVERFLOW_MARGIN + EXTRA))	\

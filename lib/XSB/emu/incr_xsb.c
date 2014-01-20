@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: incr_xsb.c,v 1.26 2012/03/19 15:19:59 dwarren Exp $
+** $Id: incr_xsb.c,v 1.28 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -54,6 +54,8 @@
 #include "token_xsb.h"
 #include "binding.h"
 #include "tst_utils.h"
+#include "hashtable.h"
+#include "hashtable_itr.h"
 
 /* This is already defined in builtin.c; need to factor this out */
 #define ptoc_addr(regnum)	(void *)ptoc_int(CTXTc regnum)
@@ -265,6 +267,42 @@ xsbBool incr_eval_builtin(CTXTdecl)
       return TRUE;
     else xsb_type_error(CTXTc ptoc_string(CTXTc 3),ptoc_tag(CTXTc 2), 
 			ptoc_string(CTXTc 4), (int)ptoc_int(CTXTc 5));
+    break;
+  }
+
+  case IMMED_AFFECTS_PTRLIST: {
+    VariantSF sf;
+
+    sf  = (VariantSF) ptoc_int(CTXTc 2);
+    //    printf("sf2 %p\n",sf);
+    return immediate_affects_ptrlist(CTXTc sf->callnode);
+    break;
+  }
+
+  case GET_SUBGOAL_FRAME: {
+    VariantSF sf;
+
+    sf  = get_call(CTXTc ptoc_tag(CTXTc 2), NULL);
+    //    printf("sf1 %p\n",sf);
+    if (IsNonNULL(sf)) {
+      ctop_int(CTXTc 3, (long) sf);
+      return TRUE;
+    }
+    else return FALSE;
+    break;
+  }
+
+  case GET_INCR_SCCS: {
+
+    return get_incr_sccs(CTXTc ptoc_tag(CTXTc 2));
+  }
+
+  case IMMED_DEPENDS_PTRLIST: {
+    VariantSF sf;
+
+    sf  = (VariantSF) ptoc_int(CTXTc 2);
+    //    printf("sf2 %p\n",sf);
+    return immediate_depends_ptrlist(CTXTc sf->callnode);
     break;
   }
 

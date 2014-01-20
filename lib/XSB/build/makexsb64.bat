@@ -1,6 +1,6 @@
 @echo off
-REM   makexsb.bat
-REM   Script for compiling XSB under Windows using VC++
+REM   makexsb64.bat
+REM   Script for compiling XSB under Windows64 using VC++
 
 set XSBCONFIGdir=..\config\x64-pc-windows
 

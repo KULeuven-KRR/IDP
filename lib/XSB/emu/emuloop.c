@@ -2,7 +2,7 @@
 ** Author(s): Warren, Swift, Xu, Sagonas, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-2013
 ** Copyright (C) ECRC, Germany, 1990
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: emuloop.c,v 1.232 2012/08/11 21:41:46 tswift Exp $
+** $Id: emuloop.c,v 1.239 2013/05/02 17:36:53 dwarren Exp $
 ** 
 */
 
@@ -83,7 +83,6 @@
 #include "call_graph_xsb.h" /* incremental evaluation */
 #include "cinterf.h"
 
-// FILE *logfile;
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
@@ -381,10 +380,6 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
 	hbreg = cp_hreg(breg); \
       } 
 
-#define heap_local_overflow(Margin)					\
-  (((top_of_localstk)-hreg)<(Margin))
-  //  ((ereg<ebreg)?((ereg-hreg)<(Margin)):((ebreg-hreg)<(Margin)))
-
 /*----------------------------------------------------------------------*/
 
 extern int  builtin_call(CTXTdeclc byte), unifunc_call(CTXTdeclc int, CPtr);
@@ -394,11 +389,9 @@ extern Pair build_call(CTXTdeclc Psc);
 extern int is_proper_list(Cell term);
 extern int is_most_general_term(Cell term);
 extern int is_number_atom(Cell term);
-extern int ground(CPtr term);
+extern int ground(Cell term);
 
 extern void log_prog_ctr(byte *);
-
-extern int sprint_subgoal(CTXTdeclc char *,  VariantSF );
 
 #ifndef MULTI_THREAD
 xsbBool neg_delay;
@@ -462,8 +455,8 @@ static inline xsbBool occurs_in_list_or_struc(Cell Var, Cell Term) {
     return FALSE;
   case XSB_LIST: {
     if (Var == (Cell)clref_val(Term) || Var == (Cell)((CPtr)clref_val(Term)+1)) return TRUE;
-    if (occurs_in_list_or_struc(Var,(Cell)clref_val(Term))) return TRUE;
-    Term = (Cell)(clref_val(Term) + 1);
+    if (occurs_in_list_or_struc(Var,get_list_head(Term))) return TRUE;
+    Term = get_list_tail(Term);
     goto rec_occurs_in;
   }
   case XSB_STRUCT: {
@@ -472,9 +465,9 @@ static inline xsbBool occurs_in_list_or_struc(Cell Var, Cell Term) {
     if (arity == 0) return FALSE;
     if (Var > (Cell)clref_val(Term) && Var <= (Cell)((CPtr)clref_val(Term)+arity)) return TRUE;
     for (i = 1; i < arity; i++) {
-      if (occurs_in_list_or_struc(Var,(Cell) (clref_val(Term) +i))) return TRUE;
+      if (occurs_in_list_or_struc(Var,get_str_arg(Term,i))) return TRUE;
     }
-    Term = (Cell)(clref_val(Term)+arity);
+    Term = get_str_arg(Term,arity);
     goto rec_occurs_in;
   }
   }
@@ -520,7 +513,6 @@ char *xsb_segfault_message;
  *  instruction)
  */
 
-
 int emuloop(CTXTdeclc byte *startaddr)
 {
   register CPtr rreg;
@@ -536,6 +528,7 @@ int emuloop(CTXTdeclc byte *startaddr)
 #define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
 #endif
+  //  jmp_buf xsb_eval_environment; //unused
 
   wam_initialized = TRUE ;
 
@@ -649,6 +642,15 @@ contcase:     /* the main loop */
     Op2(get_xxxc);
     ADVANCE_PC(size_xxxX);
     nunify_with_con(op1,op2);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(getinternstr,_getinternstr) /* PPR-C */
+    Def2ops
+    Op1(Register(get_xxr));
+    Op2(get_xxxc);
+    ADVANCE_PC(size_xxxX);
+    /*printf("called getinternstr\n");*/
+    nunify_with_internstr(op1,op2);
   XSB_End_Instr()
 
   XSB_Start_Instr(getnil,_getnil) /* PPR */
@@ -819,6 +821,21 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_con(op1,op2);
     }
+  XSB_End_Instr()
+
+  XSB_Start_Instr(uniinternstr,_uniinternstr) /* PPP-C */
+    Def2ops
+    Op2(get_xxxc);
+    ADVANCE_PC(size_xxxX);
+    if (flag) {	/* if (flag == WRITE) */
+      new_heap_node(hreg, (Cell)op2);
+    }
+    else {  
+      /* op2 already set */
+      op1 = *(sreg++);
+      nunify_with_internstr(op1,op2);
+    }
+    printf("called uniinternstr\n");
   XSB_End_Instr()
 
   XSB_Start_Instr(uninil,_uninil) /* PPP */
@@ -1081,6 +1098,14 @@ contcase:     /* the main loop */
     Op1(get_xxxc);
     ADVANCE_PC(size_xxxX);
     new_heap_string(hreg, (char *)op1);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldinternstr,_bldinternstr) /* PPP-C */
+    Def1op
+    Op1(get_xxxc);
+    ADVANCE_PC(size_xxxX);
+    printf("called bldinternstr\n");
+    new_heap_node(hreg, (Cell)op1);
   XSB_End_Instr()
 
   XSB_Start_Instr(bldnil,_bldnil) /* PPP */
@@ -1443,7 +1468,7 @@ contcase:     /* the main loop */
 #define struct_hash_value(op1) \
    (isboxedinteger(op1)?boxedint_val(op1): \
     (isboxedfloat(op1)?  \
-     int_val(cell(clref_val(op1)+1)) ^ int_val(cell(clref_val(op1)+2)) ^ int_val(cell(clref_val(op1)+3)): \
+     int_val(get_str_arg(op1,1)) ^ int_val(get_str_arg(op1,2)) ^ int_val(get_str_arg(op1,3)): \
      (Cell)get_str_psc(op1)))
 
   XSB_Start_Instr(switchonbound,_switchonbound) /* PPR-L-L */
@@ -1515,7 +1540,8 @@ argument positions.
 
   XSB_Start_Instr(switchon3bound,_switchon3bound) /* RRR-L-L */
     Def3ops
-    int  i, j = 0;
+    int  i = 0;
+    Integer j = 0;
     int indexreg[3];
     Cell opa[3]; 
     int index_max;
@@ -1568,22 +1594,22 @@ argument positions.
 	    case XSB_STRUCT:
 	      if (isboxedinteger(op1)) op1 = (Cell)boxedint_val(op1);
 	      else if (isboxedfloat(op1)) 
-		op1 = int_val(cell(clref_val(op1)+1)) ^
-		  int_val(cell(clref_val(op1)+2)) ^
-		  int_val(cell(clref_val(op1)+3));
+		op1 = int_val(get_str_arg(op1,1)) ^
+		  int_val(get_str_arg(op1,2)) ^
+		  int_val(get_str_arg(op1,3));
 	      else {
 		depth++;
 		argsleft[depth] = get_arity(get_str_psc(op1));
 		stk[depth] = clref_val(op1)+1;
-		//op1 = (Cell)get_str_psc(op1);
-		op1 = struct_hash_value(op1);
+		op1 = (Cell)get_str_psc(op1);
+		//op1 = struct_hash_value(op1); // already handled boxes
 	      }
 	      break;
 	    case XSB_STRING:
 	      op1 = (Cell)string_val(op1);
 	      break;
             }
-	    j = (j<<1) + (int)ihash((Cell)op1, (Cell)op3);
+	    j += j + ihash(op1, (int)op3);
           }
       } else {
 	op1 = opa[i];
@@ -1612,11 +1638,12 @@ argument positions.
 	  xsb_error("Illegal operand in switchon3bound");
 	  break;
         }
-	j = (j<<1) + (int)ihash((Cell)op1, (Cell)op3);
-      }
+	j += j + (int)ihash(op1, (int)op3);
+	}
       }
     }
-    lpcreg = *(byte **)((byte *)op2 + ((j % (Cell)op3) * sizeof(Cell)));
+    if (j < 0) j = -j;
+    lpcreg = *(byte **)((byte *)op2 + ((j % (int)op3) * sizeof(Cell)));
   XSB_End_Instr()
 
   XSB_Start_Instr(switchonthread,_switchonthread) /* PPP-L */
@@ -1968,9 +1995,9 @@ argument positions.
 	}
       } else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
     }
-#ifdef NON_OPT_COMPILE
-    if (res == 2) xsb_abort("uninitialized use of res in cmpreg instruction");
-#endif
+    //#ifdef NON_OPT_COMPILE
+    //    if (res == 2) xsb_abort("uninitialized use of res in cmpreg instruction");
+    //#endif
     bld_oint(op3,res);
   XSB_End_Instr() 
 
@@ -2775,7 +2802,7 @@ argument positions.
       jump_cond_fail(is_number_atom(op2));
       break;
     case GROUND_TEST:
-      jump_cond_fail(ground((CPtr) op2));
+      jump_cond_fail(ground(op2));
       break;
     default: 
       xsb_error("Undefined jumpcof condition");

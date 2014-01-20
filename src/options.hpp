@@ -36,7 +36,8 @@ enum Format {
 enum StringType {
 	LANGUAGE,
 	SYMMETRYBREAKING,
-	PROVERCOMMAND
+	PROVERCOMMAND,
+	APPROXDEF
 };
 
 enum IntType {
@@ -60,6 +61,7 @@ enum IntType {
 	VERBOSE_QUERY,
 	VERBOSE_ENTAILMENT,
 	VERBOSE_DEFINITIONS,
+	VERBOSE_APPROXDEF,
 	VERBOSE_SYMMETRY,
 	FIRST_VERBOSE = VERBOSE_CREATE_GROUNDERS, //IMPORTANT: this has to be the first of the verbosity options
 	LAST_VERBOSE = VERBOSE_SYMMETRY //IMPORTANT: this has to be the last of the verbosity options
@@ -90,8 +92,8 @@ enum BoolType {
 	LIFTEDUNITPROPAGATION,
 	STABLESEMANTICS,
 	REDUCEDGROUNDING,
-	XSB,
-	PROVER_SUPPORTS_TFA
+	PROVER_SUPPORTS_TFA,
+	XSB
 };
 
 enum OptionType {
@@ -109,6 +111,15 @@ enum class SymmetryBreaking {
 	DYNAMIC,
 	FIRST = NONE,
 	LAST = DYNAMIC
+};
+
+enum class ApproxDef {
+	NONE,
+	ALL_AT_ONCE,
+	CHEAP_RULES_ONLY,
+	STRATIFIED,
+	FIRST = NONE,
+	LAST = STRATIFIED
 };
 
 enum class PrintBehaviour {
@@ -414,6 +425,7 @@ public:
 
 	Language language() const;
 	SymmetryBreaking symmetryBreaking() const;
+	ApproxDef approxDef() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>

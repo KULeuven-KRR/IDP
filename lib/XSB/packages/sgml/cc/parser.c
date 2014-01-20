@@ -52,6 +52,11 @@ static dtd_parser *current_parser;      /* For gripes */
     p->event_class = _oc;			\
   }
                                                                                
+
+#ifdef MULTI_THREAD
+static th_context *th = NULL;
+#endif
+
                                                                         
 typedef struct locbuf
 { dtd_srcloc start;                     /* p->startloc */
@@ -1782,24 +1787,24 @@ gripe(dtd_error_id e, ...)
       /*Temporary terms used to create the output error term*/
       prolog_term av0, av1, av2;
       
-      av0 = p2p_new();
+      av0 = p2p_new(CTXT);
       if(error.severity == ERS_ERROR)
 	{
-	  c2p_functor("error",1,av0);
+	  c2p_functor(CTXTc "error",1,av0);
 	}
       else if(error.severity == ERS_WARNING)
 	{
-	  c2p_functor("warning",1,av0);
+	  c2p_functor(CTXTc "warning",1,av0);
 	}
       else 	
 	{
 	  return FALSE;
 	}
       av1 = p2p_arg(av0, 1);
-      c2p_functor("sgml", 1, av1);
+      c2p_functor(CTXTc "sgml", 1, av1);
       av2 = p2p_arg( av1, 1);
-      c2p_functor( "miscellaneous", 1 , av2);
-      c2p_string( error.message, p2p_arg(av2,1));
+      c2p_functor(CTXTc "miscellaneous", 1 , av2);
+      c2p_string(CTXTc error.message, p2p_arg(av2,1));
 
       if(error.severity == ERS_WARNING)
 	{      
@@ -1809,13 +1814,13 @@ gripe(dtd_error_id e, ...)
 	      av2 = p2p_cdr(av1);
 	      av1 = av2;
 	    }
-	  c2p_list(av1);
-	  p2p_unify( p2p_car(av1), av0);
+	  c2p_list(CTXTc av1);
+	  p2p_unify(CTXTc p2p_car(av1), av0);
 	}
       else if(error.severity == ERS_ERROR)
 	{
 	  av1 = global_error_term;
-	  p2p_unify( av1, av0);
+	  p2p_unify(CTXTc av1, av0);
 	}
       else
 	{
@@ -5251,21 +5256,24 @@ DirName(const char *f, char *dir)
 { const char *base, *p;
 
   for (base = p = f; *p; p++)
-    { if (isDirSep(*p) && p[1] != EOS)
+    {
+      if (isDirSep(*p) && p[1] != (Integer) EOS)
 	base = p;
     }
   if (base == f)
-    { if (isDirSep(*f))
+    {
+      if (isDirSep(*f))
 	strcpy(dir, DIRSEPSTR);
       else
 	strcpy(dir, ".");
-    } else
-    { strncpy(dir, f, base - f);
-      dir[base - f] = EOS;
-    }
+    } else {
+    strncpy(dir, f, base - f);
+    dir[base - f] = (Integer) EOS;
+  }
 
   return dir;
 }
+
 
 static includetype
 in_or_excluded(sgml_environment *env, dtd_element *e)
@@ -5979,9 +5987,9 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
     NAM_LATER = 2,              /* any token have non-digit name char later? */
     ANY_OTHER = 1,              /* any token have illegal character? */
     YET_EMPTY = 0
-  }token;
+  } sgml_token;
 
-  token = YET_EMPTY;
+  sgml_token = YET_EMPTY;
   
   end = itake_string(dtd, decl, tmp, sizeof (tmp));
 
@@ -6051,7 +6059,7 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 	  d = buf;
 	  while (c != '\0')
 	    { 
-	      token |= HasClass(dtd, c, CH_DIGIT) ? DIG_FIRST : HasClass(dtd, c, CH_NAME) ? NAM_FIRST : /* oops! */ ANY_OTHER;
+	      sgml_token |= HasClass(dtd, c, CH_DIGIT) ? DIG_FIRST : HasClass(dtd, c, CH_NAME) ? NAM_FIRST : /* oops! */ ANY_OTHER;
 	      if (d != buf)
 		*d++ = ' ';
 
@@ -6060,7 +6068,7 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 		  *d++ = c;
 		  while ((c = *s++) != '\0' && !HasClass(dtd, c, CH_BLANK))
 		    { 
-		      token |= HasClass(dtd, c, CH_DIGIT) ? 0: HasClass(dtd, c, CH_NAME) ? NAM_LATER : /* oops! */ ANY_OTHER;
+		      sgml_token |= HasClass(dtd, c, CH_DIGIT) ? 0: HasClass(dtd, c, CH_NAME) ? NAM_LATER : /* oops! */ ANY_OTHER;
 		      *d++ = c;
 		    }
 		} 
@@ -6069,7 +6077,7 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 		  *d++ = tolower(c);
 		  while ((c = *s++) != '\0' && !HasClass(dtd, c, CH_BLANK))
 		    { 
-		      token |= HasClass(dtd, c, CH_DIGIT) ? 0
+		      sgml_token |= HasClass(dtd, c, CH_DIGIT) ? 0
 			: HasClass(dtd, c, CH_NAME) ? NAM_LATER : /* oops! */ ANY_OTHER;
 		      *d++ = tolower(c);
 		    }
@@ -6090,14 +6098,14 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
       c = *s++;
       if (c != '\0')
 	{ 
-	  token |= HasClass(dtd, c, CH_DIGIT) ? DIG_FIRST
+	  sgml_token |= HasClass(dtd, c, CH_DIGIT) ? DIG_FIRST
 	    : HasClass(dtd, c, CH_NAME) ? NAM_FIRST : /* oops! */ ANY_OTHER;
 	  while ((c = *s++) != 0)
 	    { 
-	      token |= HasClass(dtd, c, CH_DIGIT) ? 0 : HasClass(dtd, c, CH_NAME) ? NAM_LATER : /* oops! */ ANY_OTHER;
+	      sgml_token |= HasClass(dtd, c, CH_DIGIT) ? 0 : HasClass(dtd, c, CH_NAME) ? NAM_LATER : /* oops! */ ANY_OTHER;
 	    }
 	}
-      if ( token == YET_EMPTY || (token & ANY_OTHER) != 0)
+      if ( sgml_token == YET_EMPTY || (sgml_token & ANY_OTHER) != 0)
 	gripe(ERC_SYNTAX_WARNING, "Attribute value requires quotes", buf);
 
       if (!dtd->case_sensitive && att->definition->type != AT_CDATA)
@@ -6113,7 +6121,7 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
     {
 
     case AT_NUMBER:		/* number */
-      if (token != DIG_FIRST)
+      if (sgml_token != DIG_FIRST)
 	{ 
 	  gripe(ERC_SYNTAX_WARNING, "NUMBER expected", decl);
 	} 
@@ -6133,12 +6141,12 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
     case AT_IDREF:		/* identifier reference */
     case AT_NAME:		/* name token */
     case AT_NOTATION:		/* notation-name */
-      if (token == YET_EMPTY || (token & (DIG_FIRST | ANY_OTHER)) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & (DIG_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NAME expected", decl);
       break;
     case AT_NAMEOF:		/* one of these names */
     case AT_NMTOKEN:		/* name-token */
-      if (token == YET_EMPTY || (token & ANY_OTHER) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & ANY_OTHER) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NMTOKEN expected", decl);
       if ( att->definition->type == AT_NAMEOF )
 	{ 
@@ -6153,32 +6161,32 @@ get_attribute_value(dtd_parser *p, ichar const *decl, sgml_attribute *att)
 	}
       break;
     case AT_NUTOKEN:		/* number token */
-      if ((token & (NAM_FIRST | ANY_OTHER)) != 0)
+      if ((sgml_token & (NAM_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NUTOKEN expected", decl);
       break;
     case AT_ENTITY:		/* entity-name */
-      if (token == YET_EMPTY || (token & (DIG_FIRST | ANY_OTHER)) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & (DIG_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "entity NAME expected", decl);
       break;
     case AT_NAMES:		/* list of names */
     case AT_IDREFS:		/* list of identifier references */
-      if (token == YET_EMPTY || (token & (DIG_FIRST | ANY_OTHER)) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & (DIG_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NAMES expected", decl);
       break;
     case AT_ENTITIES:		/* entity-name list */
-      if (token == YET_EMPTY || (token & (DIG_FIRST | ANY_OTHER)) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & (DIG_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "entity NAMES expected", decl);
       break;
     case AT_NMTOKENS:		/* name-token list */
-      if (token == YET_EMPTY || (token & ANY_OTHER) != 0)
+      if (sgml_token == YET_EMPTY || (sgml_token & ANY_OTHER) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NMTOKENS expected", decl);
       break;
     case AT_NUMBERS:		/* number list */
-      if (token != DIG_FIRST)
+      if (sgml_token != DIG_FIRST)
 	gripe(ERC_SYNTAX_WARNING, "NUMBERS expected", decl);
       break;
     case AT_NUTOKENS:
-      if ((token & (NAM_FIRST | ANY_OTHER)) != 0)
+      if ((sgml_token & (NAM_FIRST | ANY_OTHER)) != 0)
 	gripe(ERC_SYNTAX_WARNING, "NUTOKENS expected", decl);
       break;
     default:

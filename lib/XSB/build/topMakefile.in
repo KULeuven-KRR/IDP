@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: topMakefile.in,v 1.63 2011/07/29 05:13:28 kifer Exp $
+## $Id: topMakefile.in,v 1.64 2012/09/27 02:25:57 kifer Exp $
 ##
 ##
 
@@ -72,7 +72,7 @@ xsb_obj_extension=@xsb_obj_extension@
 # Everything is placed in subdirectories of this directory.
 # The values for many of the variables below are expressed
 # in terms of this one, so you do not need to change them.
-prefix=@prefix@
+prefix=$(DESTDIR)@prefix@
 
 srcdir=@topdir@
 VPATH=$(srcdir)
@@ -91,7 +91,7 @@ install_prolog_includes=$(prefix)/prolog_includes
 # where packages are installed
 install_pkgdir=$(prefix)/packages
 # specific packages:
-install_pkgxmcdir=${prefix}/packages/xmc
+install_pkgxmcdir=$(prefix)/packages/xmc
 
 # where etc are installed
 install_etcdir=$(prefix)/etc
@@ -103,7 +103,7 @@ install_examples=$(prefix)/examples
 
 # Like `prefix', but used for architecture-specific files.
 src_config_prefix=@arch_config_prefix@
-install_config_prefix=@arch_install_config_prefix@
+install_config_prefix=$(DESTDIR)@arch_install_config_prefix@
 # we copy the xsb.o module here
 install_config_objlibdir=$(install_config_prefix)/saved.o
 
@@ -170,7 +170,7 @@ packages: start_packages finish_packages
 
 start_packages: xasp
 	@rm -f $(srcdir)/build/.*.tmp
-	@cd $(srcdir); make packages XSB=$(src_scriptdir)/xsb$(config_tag)
+	@cd $(srcdir); $(MAKE) packages XSB=$(src_scriptdir)/xsb$(config_tag)
 	@echo "" | tee -a Installation_summary
 	@./pkg_config.sh $(src_scriptdir)/xsb$(config_tag ) | \
 										tee -a Installation_summary
@@ -193,9 +193,9 @@ prepare:
 emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@echo ""; echo "Making emulator..." ; \
 		cd ${src_emudir} ; \
-		make depend 2>/dev/null || echo "*** Warning: The command 'makedepend' is not installed. Install it to speed up compilation of XSB." ; \
+		$(MAKE) depend 2>/dev/null || echo "*** Warning: The command 'makedepend' is not installed. Install it to speed up compilation of XSB." ; \
 		rm -f $(srcdir)/build/.xsb_build_failed; \
-		(make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
+		($(MAKE) EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
 			$(srcdir)/build/touch.sh $(srcdir)/build/.xsb_build_failed) \
 		2>&1 | tee -a ../build/Installation_summary; \
 		(test ! -f $(srcdir)/build/.xsb_build_failed || \
@@ -203,7 +203,7 @@ emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 
 gpp_exe:
 	@echo ""; echo "Making gpp"
-	@cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
+	@cd $(srcdir)/gpp; $(MAKE) 2>&1 | tee -a ../build/Installation_summary
 
 # Compiling the interface with SMODELS.
 xasp:
@@ -211,7 +211,7 @@ xasp:
 	  echo "Compiling xasp interface"; \
 	  rm -f *.o Makefile *.h *$(xsb_obj_extension) *.so 2>/dev/null || echo ""; \
 	  ${link_cmd} ${src_config_prefix}/smoMakefile ./Makefile; \
-	  make CROSS_SIMULATOR=@CROSS_SIMULATOR@ XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\
+	  $(MAKE) CROSS_SIMULATOR=@CROSS_SIMULATOR@ XSB=$(src_scriptdir)/xsb$(config_tag) @smodels_goal@ 2>&1\
 		 | tee -a ../../build/Installation_summary
 
 # Goal for making an XSB load module to be linked with external
@@ -227,18 +227,18 @@ cygdll: prepare loccygdll do_cleaning inform_module
 xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@echo ""; echo "Making XSB module..."
 	@cd ${src_emudir}; \
-		make $(emumake_goal)mod
+		$(MAKE) $(emumake_goal)mod
 
 xsbdynmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@cd ${src_emudir}; \
-		make $(emumake_goal)dynmod
+		$(MAKE) $(emumake_goal)dynmod
 
 xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@echo ""; echo "Making DLL... (if Cygwin)"
-	@cd ${src_emudir}; make dll
+	@cd ${src_emudir}; $(MAKE) dll
 
 loccygdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
-	@cd ${src_emudir}; make cygdll
+	@cd ${src_emudir}; $(MAKE) cygdll
 
 emu_clean: do_cleaning inform_executable
 	@chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)
@@ -353,7 +353,7 @@ make_directories::
 		|| echo "Verifying installation directories ... Done"
 	@test ! -f .missingdirs.tmp || exit 1
 
-copy_files::
+copy_files: make_directories
 	@( test "${prefix}" = "${srcdir}" && \
 	  echo "Installation dir = source dir: nothing to install" ) || \
 	  ( echo "Installing XSB in ${prefix} ..." ; \
@@ -422,11 +422,11 @@ configure_packages_install:
 	@./pkg_config.sh $(install_scriptdir)/xsb$(config_tag) ; \
 	  chmod 644  $(install_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
-remake_dot_O_files:
-	@cd $(srcdir); make XSB=$(src_scriptdir)/xsb$(config_tag)
+remake_dot_O_files: gpp_exe
+	@cd $(srcdir); $(MAKE) XSB=$(src_scriptdir)/xsb$(config_tag)
 
 remake_dot_O_files_force:
-	@cd $(srcdir); make force XSB=$(src_scriptdir)/xsb$(config_tag)
+	@cd $(srcdir); $(MAKE) force XSB=$(src_scriptdir)/xsb$(config_tag)
 
 # clean for this architecture only
 configclean::
@@ -450,11 +450,11 @@ clean:
 	@cd ../packages; ../build/clean_pkgs.sh
 	@-cd ${src_examples}; rm -f *$(xsb_obj_extension) *.o *~ */*$(xsb_obj_extension) */*.o */*~
 	@echo "Cleaning up ${src_libdir}"
-	@-(cd ${src_libdir}; make clean)
+	@-(cd ${src_libdir}; $(MAKE) clean)
 	@echo "Cleaning up ${src_syslibdir}"
-	@-(cd ${src_syslibdir}; make clean)
+	@-(cd ${src_syslibdir}; $(MAKE) clean)
 	@echo "Cleaning up ${src_cmplibdir}"
-	@-(cd ${src_cmplibdir}; make clean)
+	@-(cd ${src_cmplibdir}; $(MAKE) clean)
 	@rm -f *~ *.bak .#*
 
 # recreate the makefiles

@@ -24,6 +24,7 @@
 #include "theory/TheoryUtils.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
+#include "inferences/propagation/PropagationUsingApproxDef.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "grounders/Grounder.hpp"
@@ -147,22 +148,39 @@ private:
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Starting definition evaluation at ");
 		}
-		auto defCalculated = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
+		auto defCalculatedResult = CalculateDefinitions::doCalculateDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
 		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 1){
 			cout <<"\ndefs&&max:" <<toDouble(Grounder::getFullGroundingSize()) <<"&&grounded:" <<Grounder::groundedAtoms() <<"\n";
 		}
-		if (defCalculated.size() == 0) {
+		if (not defCalculatedResult._hasModel) {
 			// FIXME bugged: NULL as symstructure
 			return returnUnsat(GroundInfo { _theory, { _structure, generateBounds(_theory, _structure, false, false, _outputvocabulary) }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
 		}
-		Assert(defCalculated[0]->isConsistent());
-		_structure = defCalculated[0];
+		Assert(defCalculatedResult._calculated_model->isConsistent());
+		_structure = defCalculatedResult._calculated_model;
+		for (auto def : defCalculatedResult._calculated_definitions) {
+			def->recursiveDelete(); // These are no longer present in the theory
+		}
 		setOption(SATISFIABILITYDELAY, satdelay);
 		setOption(TSEITINDELAY, tseitindelay);
 
 		// Approximation
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Starting approximation at ");
+		}
+
+		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
+			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
+			auto propagated_structures = propagator->propagate(_theory, _structure);
+			if (propagated_structures.size() == 0 || not propagated_structures[0]->isConsistent()) {
+				bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
+				bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
+				auto symstructure = generateBounds(_theory, _structure, propagate, LUP, _outputvocabulary);
+				auto grounding = returnUnsat(GroundInfo { _theory, { _structure, symstructure }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
+				symstructure.reset();
+				return grounding;
+			}
+			_structure = propagated_structures[0];
 		}
 		bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 		bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);

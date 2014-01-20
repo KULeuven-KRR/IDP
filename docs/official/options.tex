@@ -18,12 +18,14 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{groundverbosity = [0..max(int)]}] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
 	\item[{satverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
 	\item[{propagateverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of the propagation.
+	\item[{approximatingdefinition = [0..5]}] Verbosity of the module that uses an approximating definition to perform approximation prior to grounding and solving. 
 	\item[{calculatedefinitions = [0..5]}] Verbosity of the module that calculates definitions prior to grounding and solving. 
 		\begin{itemize}
 		\item 1 or greater: print when calculating the definition starts and ends.
 		\item 2 or greater: print for each definition separately when it is being calculated and print when it is being calculated using \xsb.
 		\item 3 or greater: print \xsb code that will be used to calculate the definitions.
-		\item 5 or greater: print the structure that the calculatedefinitions operation returns.
+		\item 4 or greater: print the structures that the calculatedefinitions operation uses and the structure that it returns.
+		\item 5 or greater: print queries that are being sent to \xsb and the answer tuples they return.
 		\end{itemize}
 \end{description}
 
@@ -80,5 +82,12 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 		If any models have been found, they are returned properly.
 		In case of model optimization, the best model(s) found to date are returned, not guaranteeing optimality has been proven. 
 	\item[{seed = [0..max(int)]}] Set the seed for the random generator (used in the estimators for BDDs and in the SAT-solver).
+	\item[{approxdef = ["none", "all", "cheap", "stratified"]}]
+		\begin{description}
+		\item [none]: do not use any approximating definition
+		\item [all]: use the complete approximating definition
+		\item [cheap]: use the approximating definition without certain expensive rules
+		\item [stratified]: first calculate the cheap rules, then calculate the non-cheap
+		\end{itemize}
 	\item[{randomvaluechoice = [false, true]}] Controls the solver: if set to true, the assignment to choice literals is random, if set to false, the solver default assigns false to choice literals.
 \end{description}

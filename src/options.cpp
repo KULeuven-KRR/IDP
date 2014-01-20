@@ -52,11 +52,29 @@ std::string str(SymmetryBreaking choice) {
 	}
 }
 
+std::string str(ApproxDef choice) {
+	switch (choice) {
+	case ApproxDef::NONE:
+		return "none";
+	case ApproxDef::ALL_AT_ONCE:
+		return "all";
+	case ApproxDef::CHEAP_RULES_ONLY:
+		return "cheap";
+	case ApproxDef::STRATIFIED:
+		return "stratified";
+	default:
+		throw IdpException("Invalid code path.");
+	}
+}
+
 inline Language operator++(Language& x) {
 	return x = (Language) (((int) (x) + 1));
 }
 inline SymmetryBreaking operator++(SymmetryBreaking& x) {
 	return x = (SymmetryBreaking) (((int) (x) + 1));
+}
+inline ApproxDef operator++(ApproxDef& x) {
+	return x = (ApproxDef) (((int) (x) + 1));
 }
 inline Language operator*(Language& x) {
 	return x;
@@ -64,10 +82,16 @@ inline Language operator*(Language& x) {
 inline SymmetryBreaking operator*(SymmetryBreaking& x) {
 	return x;
 }
+inline ApproxDef operator*(ApproxDef& x) {
+	return x;
+}
 inline bool operator<(Language x, Language y) {
 	return (int)x < (int)y;
 }
 inline bool operator<(SymmetryBreaking x, SymmetryBreaking y) {
+	return (int)x < (int)y;
+}
+inline bool operator<(ApproxDef x, ApproxDef y) {
 	return (int)x < (int)y;
 }
 
@@ -123,6 +147,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_APPROXDEF, "approximatingdefinition", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 	} else {
 		auto opt = new Options(true);
@@ -142,7 +167,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
-		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::DONOTPRINT); // Request to compute definitions as much as with xsb
+		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
 		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, PrintBehaviour::PRINT);
@@ -171,6 +196,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic
 		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
+				PrintBehaviour::PRINT);
+		StringPol::createOption(StringType::APPROXDEF, "approxdef", possibleStringValues<ApproxDef>(), str(ApproxDef::NONE),
 				PrintBehaviour::PRINT);
 	}
 }
@@ -352,6 +379,18 @@ SymmetryBreaking Options::symmetryBreaking() const {
 	}
 	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
 	return SymmetryBreaking::NONE;
+}
+
+ApproxDef Options::approxDef() const {
+	auto values = possibleValues<ApproxDef>();
+	const std::string& value = StringPol::getValue(StringType::APPROXDEF);
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
+		if (value.compare(str(*i)) == 0) {
+			return *i;
+		}
+	}
+	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
+	return ApproxDef::NONE;
 }
 
 std::string Options::printAllowedValues(const std::string& name) const {

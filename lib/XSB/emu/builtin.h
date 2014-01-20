@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: builtin.h,v 1.114 2012/02/05 16:44:58 tswift Exp $
+** $Id: builtin.h,v 1.116 2013/01/04 21:34:45 dwarren Exp $
 ** 
 */
 
@@ -112,6 +112,7 @@
 #define ALMOST_SEARCH_MODULE     70
 #define EXISTING_FILE_EXTENSION  71
 #define DO_ONCE                  72
+#define INTERN_TERM		 73
 
 /* for efficiency, implemented these in C */
 #define CONGET_TERM	         75
@@ -125,6 +126,7 @@
 #define GET_DATE                 80
 #define STAT_WALLTIME            81
 
+#define PSC_INIT_INFO		 98
 #define PSC_GET_SET_ENV_BYTE	 99
 #define PSC_ENV		        100
 #define PSC_SPY		        101

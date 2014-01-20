@@ -21,9 +21,9 @@
 **
 */
 
-#ifdef WIN_NT
+//#ifdef WIN_NT
 #include <time.h>
-#endif
+//#endif
 
 typedef struct opt
 {

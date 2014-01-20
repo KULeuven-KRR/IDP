@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: auxlry.h,v 1.39 2011/10/16 19:20:34 tswift Exp $
+** $Id: auxlry.h,v 1.40 2013/05/01 17:04:46 tswift Exp $
 ** 
 */
 
@@ -97,3 +97,5 @@ extern void gdb_dummy(void);
 
 #define CALL_ABSTRACTION 1
 //#define DEBUG_ABSTRACTION 
+
+//#define GC_TEST 1

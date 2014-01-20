@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: incr_xsb_defs.h,v 1.14 2012/03/16 19:37:28 tswift Exp $
+** $Id: incr_xsb_defs.h,v 1.15 2012/10/30 23:16:01 tswift Exp $
 ** 
 */
 #define GET_AFFECTED_CALLS         1
@@ -38,6 +38,10 @@
 #define CREATE_LAZY_CALL_LIST     15
 #define CALL_IF_AFFECTED          16
 #define CHECK_INCREMENTAL         17
+#define IMMED_AFFECTS_PTRLIST     18
+#define GET_SUBGOAL_FRAME         19
+#define GET_INCR_SCCS             20
+#define IMMED_DEPENDS_PTRLIST     21
 
 // for psc hacking
 #define NONINCREMENTAL 0

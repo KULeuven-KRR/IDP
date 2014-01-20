@@ -25,7 +25,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: emuMakefile.in,v 1.74 2011/08/03 19:16:37 kifer Exp $
+## $Id: emuMakefile.in,v 1.76 2013/01/04 15:02:16 dwarren Exp $
 ##
 
 
@@ -42,6 +42,7 @@ CPPFLAGS=@CPPFLAGS@
 LDFLAGS=@LDFLAGS@
 ODBCSRC=@ODBCSRC@
 ODBCOBJ=@ODBCOBJ@
+ODBC_CFLAGS=@ODBC_CFLAGS@
 INTERPROLOGSRC=@INTERPROLOGSRC@
 INTERPROLOGOBJ=@INTERPROLOGOBJ@
 DLLTYPE=@DLLTYPE@
@@ -134,7 +135,7 @@ OBJS =	auxlry.o biassert.o builtin.o cinterf.o conc_compl.o \
 	pathname_xsb.o psc_xsb.o random_xsb.o \
 		remove_unf.o residual.o rw_lock.o \
 	scc_xsb.o slgdelay.o socket_xsb.o string_xsb.o \
-	storage_xsb.o struct_manager.o sub_delete.o subp.o \
+	storage_xsb.o struct_manager.o struct_intern.o sub_delete.o subp.o \
 	system_xsb.o table_stats.o tables.o \
 	thread_xsb.o timer_xsb.o token_xsb.o \
 	tr_utils.o trace_xsb.o trie_lookup.o trie_search.o tries.o \
@@ -259,6 +260,11 @@ loader_xsb.o: loader_xsb.c
 	@echo -e "\t[$(CC)] loader_xsb.c using $(loaderCFLAGS)"
 	@$(CC) -I$(arch_config_prefix)  -c $(loaderCFLAGS) loader_xsb.c
 	@cp loader_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+
+odbc_xsb.o: odbc_xsb.c
+	@echo -e "\t[$(CC)] odbc_xsb.c"
+	@$(CC) -I$(arch_config_prefix)  -c $(ODBC_CFLAGS) $(CFLAGS) odbc_xsb.c
+	@cp odbc_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
 	@echo -e "\t[$(CC)] $*.c"

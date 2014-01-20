@@ -1,0 +1,13 @@
+vocabulary V {
+  type Range isa int
+  c:Range
+  func(Range):Range
+}
+
+theory T : V {
+  { func(x) = x + c - 1.}
+}
+
+structure S : V {
+  c = 1
+}

@@ -1,0 +1,16 @@
+vocabulary V {
+  type T isa int
+  Q(T)
+  P
+}
+
+theory T : V {                                                                                                                                                                                                                          
+    {
+        P <- (! x : Q(x)).
+    }
+}
+
+structure S : V {
+  V::T[V::T] = { 1..4 }
+  Q[V::T] = { 1..4 }
+}

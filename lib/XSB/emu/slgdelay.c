@@ -63,8 +63,6 @@ void simplify_pos_unconditional(CTXTdeclc NODEptr);
 void print_pdes(PNDE);
 //void simplify_neg_succeeds_for_subsumed_subgoals(NODEptr);
 
-#define NUM_TRIEVARS 512
-
 Structure_Manager smASI      = SM_InitDecl(ASI_Node, ASIs_PER_BLOCK,
 					    "Answer Substitution Info Node");
 
@@ -1055,9 +1053,9 @@ void answerStack_copyTermPtr(CTXTdeclc CPtr symbolPtr) {
 void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
   Cell symbol = (Cell) NULL;
   int maxvar = -1;
-  CPtr aliasArray[NUM_TRIEVARS];
+  CPtr aliasArray[DEFAULT_NUM_TRIEVARS];
   int i;
-  for(i = 0; i < NUM_TRIEVARS; i++) aliasArray[i] = NULL;
+  for(i = 0; i < DEFAULT_NUM_TRIEVARS; i++) aliasArray[i] = NULL;
 
   DynStk_ResetTOS(simplAnsStack);
   SimplStack_PushPathRoot(simplAnsStack,as_leaf,subg_ans_root_ptr(subgoal));
@@ -1146,7 +1144,7 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
        variants done below) */
     if (IsSubProdSF(subgoal) && is_ground_answer(as_leaf)) {
       BTNptr leaf;
-      Cell callVars[NUM_TRIEVARS];
+      Cell callVars[DEFAULT_NUM_TRIEVARS];
       construct_ground_term(CTXTc as_leaf,subgoal);
       leaf = simpl_variant_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(subgoal)),
 				 get_arity(TIF_PSC(subg_tif_ptr(subgoal))),
@@ -1190,7 +1188,7 @@ void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
      done before delete_branch) from the simplification itself (which
      must be done after delete_branch). */
   if (IsSubProdSF(unsup_subgoal) && is_ground_answer(as_leaf)) {
-    Cell callVars[NUM_TRIEVARS];
+    Cell callVars[DEFAULT_NUM_TRIEVARS];
     construct_ground_term(CTXTc as_leaf,unsup_subgoal);
 
     subgoal_leaf = simpl_variant_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(unsup_subgoal)),
@@ -1314,19 +1312,20 @@ void simplify_pos_unconditional(CTXTdeclc NODEptr as_leaf)
 
     if (flags[CTRACE_CALLS])  {				
       char buffera[MAXTERMBUFSIZE];			
-      char bufferb[MAXTERMBUFSIZE];			
       char bufferc[MAXTERMBUFSIZE];			
-      char bufferd[MAXTERMBUFSIZE];			
-      memset(bufferb,0,MAXTERMBUFSIZE);
       memset(buffera,0,MAXTERMBUFSIZE);
       memset(bufferc,0,MAXTERMBUFSIZE);
-      memset(bufferd,0,MAXTERMBUFSIZE);
+      //      memset(bufferb,0,MAXTERMBUFSIZE);
+      //      memset(bufferd,0,MAXTERMBUFSIZE);
       sprintTriePath(CTXTc buffera, as_leaf);
-      sprint_subgoal(CTXTc bufferb, asi_subgoal(asi));
+      sprint_subgoal(CTXTc forest_log_buffer_1,0, asi_subgoal(asi));
       sprintTriePath(CTXTc bufferc, dl_asl(pnde_dl(pde)));
-      sprint_subgoal(CTXTc bufferd, asi_subgoal(Delay(dl_asl(pnde_dl(pde)))));
+      sprint_subgoal(CTXTc forest_log_buffer_2,0, 
+		     asi_subgoal(Delay(dl_asl(pnde_dl(pde)))));
       //      print_subgoal(stdout, asi_subgoal(Delay(dl_asl(pnde_dl(pde)))));printf("\n");
-      fprintf(fview_ptr,"puc_smpl(%s,%s,%s,%s,%d).\n",buffera,bufferb,bufferc,bufferd,ctrace_ctr++); 
+      fprintf(fview_ptr,"puc_smpl(%s,%s,%s,%s,%d).\n",buffera,
+	      forest_log_buffer_1->fl_buffer,bufferc,
+	      forest_log_buffer_2->fl_buffer,ctrace_ctr++); 
     }
 
     de = pnde_de(pde);
@@ -1370,7 +1369,7 @@ int dyn_simplify_neg_fails_stack_index = 0;
 int dyn_simplify_neg_fails_stack_size   = 0;
 
 #define push_neg_simpl(X) {\
-    if (dyn_simplify_neg_fails_stack_index == dyn_simplify_neg_fails_stack_size) {\
+    if (dyn_simplify_neg_fails_stack_index+1 >= dyn_simplify_neg_fails_stack_size) {\
       trie_expand_array(VariantSF, dyn_simplify_neg_fails_stack,	\
 			dyn_simplify_neg_fails_stack_size,0,"dyn_simplify_neg_fails_stack"); \
     }									\
@@ -1406,13 +1405,14 @@ void simplify_neg_fails(CTXTdeclc VariantSF subgoal)
       dl = pnde_dl(nde);
 
     if (flags[CTRACE_CALLS])  {				
-      char buffera[MAXTERMBUFSIZE];			
-      char bufferb[MAXTERMBUFSIZE];			
-      memset(bufferb,0,MAXTERMBUFSIZE);
-      memset(buffera,0,MAXTERMBUFSIZE);
-      sprint_subgoal(CTXTc buffera, subgoal);
-      sprint_subgoal(CTXTc bufferb, asi_subgoal(Delay(dl_asl(dl))));
-      fprintf(fview_ptr,"nf_smpl(tnot(%s),%s,%d).\n",buffera,bufferb,ctrace_ctr++); 
+      //      memset(bufferb,0,MAXTERMBUFSIZE);
+      //      memset(buffera,0,MAXTERMBUFSIZE);
+      sprint_subgoal(CTXTc forest_log_buffer_1,0, subgoal);
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,
+		     asi_subgoal(Delay(dl_asl(dl))));
+      fprintf(fview_ptr,"nf_smpl(tnot(%s),%s,%d).\n",
+	      forest_log_buffer_1->fl_buffer,
+	      forest_log_buffer_2->fl_buffer,ctrace_ctr++); 
     }
 
 #ifdef MULTI_THREAD
@@ -1453,13 +1453,14 @@ static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
   while ((nde = subg_nde_list(subgoal))) {
 
     if (flags[CTRACE_CALLS])  {				
-      char buffera[MAXTERMBUFSIZE];			
-      char bufferb[MAXTERMBUFSIZE];			
-      memset(bufferb,0,MAXTERMBUFSIZE);
-      memset(buffera,0,MAXTERMBUFSIZE);
-      sprint_subgoal(CTXTc buffera, subgoal);
-      sprint_subgoal(CTXTc bufferb, asi_subgoal(Delay(dl_asl(pnde_dl(nde)))));
-      fprintf(fview_ptr,"ns_smpl(tnot(%s),%s,%d).\n",buffera,bufferb,ctrace_ctr++); 
+      //      memset(bufferb,0,MAXTERMBUFSIZE);
+      //      memset(buffera,0,MAXTERMBUFSIZE);
+      sprint_subgoal(CTXTc forest_log_buffer_1,0, subgoal);
+      sprint_subgoal(CTXTc forest_log_buffer_2,0, 
+		     asi_subgoal(Delay(dl_asl(pnde_dl(nde)))));
+      fprintf(fview_ptr,"ns_smpl(tnot(%s),%s,%d).\n",
+	      forest_log_buffer_1->fl_buffer,
+	      forest_log_buffer_2->fl_buffer,ctrace_ctr++); 
     }
 
     dl = pnde_dl(nde); /* dl: to be removed */
@@ -1530,18 +1531,19 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 
     // TLS: seems to be a problem with printing out as_leaf in this case.
     if (flags[CTRACE_CALLS])  {				
-      char buffera[MAXTERMBUFSIZE];			
       char bufferb[MAXTERMBUFSIZE];			
-      char bufferc[MAXTERMBUFSIZE];			
       memset(bufferb,0,MAXTERMBUFSIZE);
-      memset(buffera,0,MAXTERMBUFSIZE);
-      memset(bufferc,0,MAXTERMBUFSIZE);
+      //      memset(bufferb,0,MAXTERMBUFSIZE);
+      //      memset(bufferc,0,MAXTERMBUFSIZE);
       //      printTriePath(CTXTc buffera, as_leaf);
       //      sprintTriePath(CTXTc buffera, as_leaf);
-      sprint_subgoal(CTXTc buffera, asi_subgoal(Delay(as_leaf)));
+      sprint_subgoal(CTXTc forest_log_buffer_1,0,asi_subgoal(Delay(as_leaf)));
       sprintTriePath(CTXTc bufferb, dl_asl(pnde_dl(pde)));
-      sprint_subgoal(CTXTc bufferc, asi_subgoal(Delay(dl_asl(pnde_dl(pde)))));
-      fprintf(fview_ptr,"pus_smpl(%s,%s,%s,%d).\n",buffera,bufferb,bufferc,ctrace_ctr++); 
+      sprint_subgoal(CTXTc forest_log_buffer_3,0, 
+		     asi_subgoal(Delay(dl_asl(pnde_dl(pde)))));
+      fprintf(fview_ptr,"pus_smpl(%s,%s,%s,%d).\n",
+	      forest_log_buffer_1->fl_buffer,bufferb,
+	      forest_log_buffer_3->fl_buffer,ctrace_ctr++); 
     }
 
     dl = pnde_dl(pde); /* dl: to be removed */

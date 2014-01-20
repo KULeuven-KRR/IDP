@@ -113,7 +113,6 @@ string_to_term(Atom,Goal) :-
 	file_close(Fp),
 	save_query_in_cache(Atom,Goal).
 
-
 string_to_term(Atom,Goal) :-
 	file_open(Atom,sr,Fp),
 	file_read(Fp,Goal,_),
@@ -136,6 +135,7 @@ save_query_in_cache(Atom,Goal) :-
 	; true
 	),
 	retract(last_cached_query_index(Idx)),
+	!,
 	assert(last_cached_query_index(NextIdx)).
 
 

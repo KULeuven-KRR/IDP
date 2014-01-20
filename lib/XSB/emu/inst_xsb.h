@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: inst_xsb.h,v 1.43 2012/06/04 15:59:24 dwarren Exp $
+** $Id: inst_xsb.h,v 1.44 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -217,6 +217,11 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define bldtval_putlist_bldnumcon 0x24  /* combined, same reg, 16-bit int */
 #define bldtvar_list_numcon 0x25  /* combined, same reg, 16-bit int */
 #define getkpvars	0x26 /* get k pvars, k>=2 */
+
+#define getinternstr    0x27 /* has ptr to interned str (or list) */
+#define uniinternstr	0x28
+#define bldinternstr	0x29
+
 #define cmpreg		0x2c /* numeric compare op1 to op2 and put -1,0,1 in op2, op2 cmp op1 */
 #define addintfastuni	0x2d /* add int to t/p var and unify with t/p var */
 #define addintfastasgn	0x2e /* add int to t/p var and assign to t/p var */

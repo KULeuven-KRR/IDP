@@ -120,15 +120,23 @@ assert0(Clause) :- assert(Clause,1,1).
 assert(Clause)  :-
 %	check_assert(Clause, 'assert/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,1,1,'assert/1').
+	assert(Clause,1,1,'assert/1'),
+	fail.
+assert(_).			% reclaim heap space
+
 asserta(Clause) :-
 %	check_assert(Clause,'asserta/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,0,1,'asserta/1').
+	assert(Clause,0,1,'asserta/1'),
+	fail.
+asserta(_).			% reclaim heap space
+
 assertz(Clause) :-
 %	check_assert(Clause,'assertz/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
-	assert(Clause,1,1,'assertz/1').
+	assert(Clause,1,1,'assertz/1'),
+	fail.
+assertz(_).
 
 
 /* Obsolete.
@@ -257,7 +265,8 @@ set_var_occurrences(Term) :-
 	 ->	true
 	 ; var(Term)
 	 ->	(is_attv(Term)
-		 ->	true
+		 ->	get_attributes(Term,Attributes),
+			set_var_occurrences(Attributes)
 		 ;	Term = '$assertVAR'(_,1)
 		)
 	 ; Term = '$assertVAR'(_,N)
@@ -376,7 +385,7 @@ dynamic_1(Preds) :-
 
 % At this point we know that preds are all ok.
 dynamic_2((P1,P2)) :- !, dynamic_2(P1), dynamic_2(P2).
-dynamic_2(Spec) :- 
+dynamic_2(Spec) :-
 	mpa_to_skel(Spec,Head), 
 	dynamic_code_function(CONVERT_TO_DYNA, Head,_Prref,'dynamic/1',1).
 
@@ -729,8 +738,11 @@ abolish1(Term) :-
 	 ; Type =:= T_PRED	    % normal compiled predicate
 	 ->	psc_ep(Psc,Ep),	    % get entry point
 		unload_seg(Ep),	    % free the space
+		psc_init_info(Psc)
+	 /**
 		psc_set_type(Psc, T_ORDI),
-		psc_set_ep(Psc, 0)
+		NewEP is Psc+4*8, %WORDSIZE,
+		psc_set_ep(Psc, NewEP) **/
 		/*,psc_set_env(Psc, T_UNLOADED)*/
 	 ;	Type =:= T_ORDI	 /* need to check imported !!!! */
 	).

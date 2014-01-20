@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: configure.in,v 1.239 2012/07/07 02:02:34 kifer Exp $
+## $Id: configure.in,v 1.242 2012/09/29 02:08:25 kifer Exp $
 ##
 ##
 
@@ -396,7 +396,7 @@ else
     dnl strip any trailing slashes in prefix
     prefix=`echo "${prefix}" | sed 's,\([[^/]]\)/*$,\1,'`
     orig_prefix=$prefix
-    prefix="$prefix"/"$xsb_version"
+    prefix="$prefix"/xsb-"$xsb_version"
 fi
 
 if test -n "$enable_debugging" && test -n "$enable_debug" ; then
@@ -1029,6 +1029,7 @@ if test "$have_readline" = yes ; then
     AC_DEFINE(HAVE_READLINE)
 fi
 
+AC_CHECK_FUNC(sched_get_priority_max, [true], [AC_CHECK_LIB(rt, sched_get_priority_max,[LDFLAGS="${LDFLAGS} -lrt"])])
 
 AC_CHECK_HEADERS(stdarg.h, , have_errors=yes)
 test "${have_errors}" = "yes" &&
@@ -1159,9 +1160,6 @@ EOT
 
     ODBCSRC="odbc_xsb.c"
     ODBCOBJ="odbc_xsb.o"
-fi
-
-if test "${with_odbc+set}" = "set"; then
     AC_DEFINE(XSB_ODBC)
     with_odbc=yes
 fi
@@ -1555,13 +1553,20 @@ if test "${with_odbc}" = yes ; then
    case "$canonical" in
     *-cygwin*)  LDFLAGS="-lodbc32 ${LDFLAGS}"
                 XSBMOD_LDFLAGS="-lodbc32 ${XSBMOD_LDFLAGS}"
+		ODBC_CFLAGS=
         ;;
     *)          if test -n "${with_iodbc}"; then
-                    LDFLAGS="-liodbc ${LDFLAGS}"
-                    XSBMOD_LDFLAGS="-liodbc ${XSBMOD_LDFLAGS}"
+		    ODBC_CFLAGS="$(iodbc-config --cflags)"
+		    LDFLAGS="$(iodbc-config --libs) ${LDFLAGS}" || \\
+			LDFLAGS="-L/usr/lib -liodbc ${LDFLAGS}"
+		    XSBMOD_LDFLAGS="$(iodbc-config --libs) ${XSBMOD_LDFLAGS}" || \
+			XSBMOD_LDFLAGS="-L/usr/lib -liodbc ${XSBMOD_LDFLAGS}"
                 else
-                    LDFLAGS="-lodbc ${LDFLAGS}"
-                    XSBMOD_LDFLAGS="-lodbc ${XSBMOD_LDFLAGS}"
+		    ODBC_CFLAGS="$(odbc_config --cflags)"
+                    LDFLAGS="$(odbc_config --libs) ${LDFLAGS}" || \
+			LDFLAGS="-L/usr/lib -lodbc ${LDFLAGS}"
+                    XSBMOD_LDFLAGS="$(odbc_config --libs) ${XSBMOD_LDFLAGS}" || \
+			XSBMOD_LDFLAGS="-L/usr/lib -lodbc ${XSBMOD_LDFLAGS}"
                 fi
     esac
 fi
@@ -1792,6 +1797,7 @@ AC_SUBST(word_size)
 
 AC_SUBST(ODBCSRC)
 AC_SUBST(ODBCOBJ)
+AC_SUBST(ODBC_CFLAGS)
 AC_SUBST(INTERPROLOGSRC)
 AC_SUBST(INTERPROLOGOBJ)
 AC_SUBST(mno_cyg_inclib)
@@ -1902,6 +1908,7 @@ case "$with_oracle" in
 esac
 case "$with_odbc" in
    "yes") echo "  Support for the old ODBC driver:		  yes"
+          echo "      ODBC_CFLAGS:                                $ODBC_CFLAGS"
     ;;
    *)     echo "  Support for the old ODBC driver:		  no"
     ;;

@@ -44,6 +44,10 @@
 #include "io_builtins_xsb.h"
 #include "driver_manager_defs.h"
 
+#ifdef MULTI_THREAD
+static th_context *th = NULL;
+#endif
+
 static struct xsb_connectionHandle* isConnectionHandle(char* handle);
 static struct xsb_queryHandle* isQueryHandle(char* handle);
 static char* buildSQLQuery(prolog_term sqlQueryList);
@@ -81,15 +85,15 @@ DllExport int call_conv openConnection(void)
   int val;
   
   cHandle = NULL; 
-  handle = ptoc_string(1);
-  driver = ptoc_string(2);
-  server = ptoc_string(3);
+  handle = ptoc_string(CTXTc 1);
+  driver = ptoc_string(CTXTc 2);
+  server = ptoc_string(CTXTc 3);
   if (strlen(server) == 0)
-    dsn = ptoc_string(4);
+    dsn = ptoc_string(CTXTc 4);
   else
-    database = ptoc_string(4);
-  user = ptoc_string(5);
-  password = ptoc_string(6);
+    database = ptoc_string(CTXTc 4);
+  user = ptoc_string(CTXTc 5);
+  password = ptoc_string(CTXTc 6);
 
   if (isConnectionHandle(handle) != NULL) {
     errorMesg = "XSB_DBI ERROR: Connection handle already exists";
@@ -149,7 +153,7 @@ DllExport int call_conv closeConnection(void)
   char* handle;
   int val, i, j;
 
-  handle = ptoc_string(1);
+  handle = ptoc_string(CTXTc 1);
 
   for (i = 0 ; i < numCHandles ; i++) {
     if (!strcmp(CHandles[i]->handle, handle)) {
@@ -206,10 +210,10 @@ DllExport int call_conv queryConnection(void)
   char *chandle, *qhandle, *sqlQuery;
   int val;
 
-  chandle = ptoc_string(1);
-  qhandle = ptoc_string(2);
-  sqlQueryList = reg_term(3);
-  returnList = reg_term(4);
+  chandle = ptoc_string(CTXTc 1);
+  qhandle = ptoc_string(CTXTc 2);
+  sqlQueryList = reg_term(CTXTc 3);
+  returnList = reg_term(CTXTc 4);
   result = NULL; 
   cHandle = NULL;
   qHandle = NULL;
@@ -320,9 +324,9 @@ DllExport int call_conv prepareStatement(void)
   struct xsb_connectionHandle* cHandle;
   int val;
   
-  chandle = ptoc_string(1);
-  qhandle = ptoc_string(2);
-  sqlQueryList = reg_term(3);
+  chandle = ptoc_string(CTXTc 1);
+  qhandle = ptoc_string(CTXTc 2);
+  sqlQueryList = reg_term(CTXTc 3);
   qHandle = NULL; 
   cHandle = NULL;
   
@@ -390,9 +394,9 @@ DllExport int call_conv executePreparedStatement(void)
   char *queryHandle, *chandle;
   int i, val;
 
-  queryHandle = ptoc_string(1);
-  bindList = reg_term(2);
-  returnList = reg_term(3);
+  queryHandle = ptoc_string(CTXTc 1);
+  bindList = reg_term(CTXTc 2);
+  returnList = reg_term(CTXTc 3);
   qHandle = NULL; 
   cHandle = NULL;
   bindValues = NULL;
@@ -514,7 +518,7 @@ DllExport int call_conv closeStatement(void)
 {
   char* queryHandle;
   
-  queryHandle = ptoc_string(1);
+  queryHandle = ptoc_string(CTXTc 1);
   return closeQueryHandle(queryHandle);
 }
 
@@ -524,11 +528,11 @@ DllExport int call_conv exception(void)
   prolog_term number;
   prolog_term message;
 	
-  number = reg_term(1);
-  message = reg_term(2);
+  number = reg_term(CTXTc 1);
+  message = reg_term(CTXTc 2);
   if (is_var(message) && errorMesg != NULL && errorNumber != NULL) {
-    c2p_string(errorMesg, message);
-    c2p_string(errorNumber, number);
+    c2p_string(CTXTc errorMesg, message);
+    c2p_string(CTXTc errorNumber, number);
     errorMesg = NULL;
     errorNumber = NULL;
     return TRUE;
@@ -542,7 +546,7 @@ DllExport int call_conv moreResults(void)
   char* handle;
   struct xsb_queryHandle* qHandle;
 
-  handle = ptoc_string(1);
+  handle = ptoc_string(CTXTc 1);
   if ((qHandle = isQueryHandle(handle)) != NULL && qHandle->state != QUERY_BEGIN) {
     return TRUE;
   }
@@ -635,7 +639,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
   else if (!is_nil(returnList) && result == NULL) {
     while (!is_nil(returnList)) {
       element = p2p_car(returnList);
-      c2p_nil(element);
+      c2p_nil(CTXTc element);
       returnList = p2p_cdr(returnList);
     }
     rFlag = RESULT_EMPTY_BUT_REQUESTED;
@@ -652,11 +656,11 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
       }
       element = p2p_car(returnList);
       if (result == NULL) {
-	c2p_nil(element);
+	c2p_nil(CTXTc element);
       }
       else if (is_var(element) && result[i]->type == STRING_TYPE) {
 	if (result[i]->val == NULL)
-	  c2p_nil(element);
+	  c2p_nil(CTXTc element);
 	else {
 	  c = result[i]->val->str_val[0];
 	  if (c == DB_INTERFACE_TERM_SYMBOL) {
@@ -665,22 +669,22 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	      temp[j-1] = result[i]->val->str_val[j];
 	    }
 	    temp[strlen(result[i]->val->str_val) - 1] = '\0';
-	    c2p_functor("term", 1, element);
-	    c2p_string(temp, p2p_arg(element, 1));    
+	    c2p_functor(CTXTc "term", 1, element);
+	    c2p_string(CTXTc temp, p2p_arg(element, 1));    
 	    if (temp != NULL) {
 	      free(temp);
 	      temp = NULL;
 	    }
 	  }
 	  else {
-	    c2p_string(result[i]->val->str_val, element);
+	    c2p_string(CTXTc result[i]->val->str_val, element);
 	  }
 	}
       }
       else if (is_var(element) && result[i]->type == INT_TYPE)
-	c2p_int(result[i]->val->i_val, element);
+	c2p_int(CTXTc result[i]->val->i_val, element);
       else if (is_var(element) && result[i]->type == FLOAT_TYPE)
-	c2p_float(result[i]->val->f_val, element);
+	c2p_float(CTXTc result[i]->val->f_val, element);
       returnList = p2p_cdr(returnList);
       i++;
     }

@@ -127,7 +127,8 @@ if(${BUILDTESTS})
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
 		if(WITHXSB)
-		    addMXTest(xsbtest xsbmx.cpp)
+		    addMXTest(xsbtest definitionWithXSBtests.cpp)
+			addMXTest(approxdefs approxdefsmx.cpp)
 		endif()
 
 		add_executable(slow ${MXTESTS}/slow.cpp ${MXINCLUDES})
@@ -147,6 +148,8 @@ if(${BUILDTESTS})
 			mxtests/basic.cpp
 
 			mxtests/bounds.cpp
+			mxtests/xsbmx.cpp
+			mxtests/approxdefsmx.cpp
 			mxtests/nobounds.cpp
 			mxtests/boundsNoLUP.cpp
 			mxtests/cp.cpp
@@ -156,7 +159,7 @@ if(${BUILDTESTS})
 			mxtests/optim.cpp
 			mxtests/satnobounds.cpp
 			mxtests/satbounds.cpp
-			mxtests/satcp.cpp			
+			mxtests/satcp.cpp
 		)
 		if(WITHXSB)
 		    set(LONGERTESTS "${LONGERTESTS} mxtests/xsbmx.cpp")

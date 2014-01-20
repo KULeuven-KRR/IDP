@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: compile.P,v 1.41 2012/01/11 19:27:58 dwarren Exp $
+** $Id: compile.P,v 1.42 2013/05/01 17:04:45 tswift Exp $
 ** 
 */
 
@@ -78,13 +78,16 @@ compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	abort_if_syntax_errors(Modname), !,
 	useinfer(Module_0, IsModule, ExportList), !,
 	( option(profile) -> 
-	    time_message(TimeParse, 'Useinfer finita') %, cputime(TimeUse) %why? unused
-	; true ),
+	    time_message(TimeParse, 'Useinfer finita') ,cputime(TimeUse) 
+	; TimeUse = TimeUse ),
 	modeinfer(Modname, Module_0, DFile),
 	specialise(Module_0, Module0, SpecFile),
 	table_process(Module0, Module, TableFile),
 	hack_self_compile,
 	get_symtab(Module, SymTab),
+	( option(profile) -> 
+	    time_message(TimeUse, 'Other finita')
+	; true ),
 	compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule),
 	check_possible_hilog_conflict(SymTab),
 	dispose_symtab( SymTab ),
@@ -241,9 +244,10 @@ compile_predicate(PredDef, GenAsm, AStr, OStr, TIFile, IsModule, SymTab) :-
 	(compile_check_ok(Sym)
 	 ->	preprocess(PredDef, PredBlks, SymTab),
 		!,		% needed to cut unnecessary choice points... (bmd & kostis)
-		ti_transform(PredBlks, TIPredBlks, TIFile, SymTab),
-		!,		% needed to cut unnecessary choice points... (bmd & kostis)
-		compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
+%		ti_transform(PredBlks, TIPredBlks, TIFile, SymTab),
+%		!,		% needed to cut unnecessary choice points... (bmd & kostis)
+%		compile_pred_block(TIPredBlks, PilCode-[], 0, NC),
+		compile_pred_block(PredBlks, PilCode-[], 0, NC),
 		!,		% needed to cut unnecessary choice points... (bmd & kostis)
 		compile_peephole_opt(PilCode, PilCode1),
 		( GenAsm =:= 0 -> true; write_asm_instructions(AStr,PilCode1) ),

@@ -1,0 +1,42 @@
+vocabulary V {
+  type node
+  type layer isa int
+  type nbnodes isa int
+  type nblayers isa int
+  type num isa int
+  layers(nblayers)
+  width(layer,nbnodes)
+  in_layer(layer,node)
+  edge(node,node)
+  in_layer_function(node):layer
+  next_to_layer(layer,layer)
+  type pos isa int
+  position(node):pos
+  impossibleposition(node,pos)
+  filledposition(layer,pos)
+  unusedNode(layer,node)
+  positionToBeGuessed(layer,pos)
+  positionsPrefilled(layer,pos)
+  nbUnusedNodes(layer):num
+}
+
+theory T : V {
+  
+  { unusedNode(l,n) <- in_layer(l,n) & (~?n2 : edge(n,n2) | edge(n2,n)). }
+  
+  { !nr[num] : nbUnusedNodes(l) = nr <- nr = #{x[node] : unusedNode(l,x)}. }
+  
+}
+
+structure S : V {
+  layer[layer] = { 0..1 }
+  nblayers[nblayers] = { 2..2 }
+  nbnodes[nbnodes] = { 3..3 }
+  node[node] = { n1; n11; n12; n13; n2; n3 }
+  pos[pos] = { 1..3 }
+  num = {0..3}
+  in_layer[layer,node] = { 0,n1; 0,n2; 0,n3; 1,n11; 1,n12; 1,n13 }
+  layers[nblayers] = { 2 }
+  unusedNode[layer,node] = { 0,n3; 1,n13 }
+  width[layer,nbnodes] = { 0,3; 1,3 }
+}

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: orient_xsb.c,v 1.28 2011/05/16 01:34:23 kifer Exp $
+** $Id: orient_xsb.c,v 1.29 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -130,7 +130,7 @@ static void check_create_dir(char *path) {
 }
 
 /* uses the global executable var */
-char *xsb_executable_full_path(char *myname)
+DllExport char *xsb_executable_full_path(char *myname)
 {
   struct stat fileinfo;
   char *path = getenv("PATH");

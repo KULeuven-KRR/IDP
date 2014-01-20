@@ -21,11 +21,13 @@
 ** 
 */
 
-
 % PITA for possibilistic logic
 
-:- import length/2,append/3,nth/3 from lists.
 :-dynamic '$p'/2,setting/2.
+
+:- import length/2,append/3,nth/3 from lists.
+:- import member_eq/2, list2and/2, list2or/2, get_var_n/4, builtin/1
+    from pitautils.
 
 :- set_prolog_flag(unknown,fail).
 
@@ -33,7 +35,7 @@ setting(compiling,false).
 /* compiling: true, failse */
 setting(tabling_output,video).
 /* video, call */
-
+setting(pretty_print,true).
 
 myor(A,B,C):-C is max(A,B).
 myequality(Probs,N,P):-N1 is N+1,nth(N1,Probs,P).
@@ -90,35 +92,7 @@ s(Goal,P,CPUTime1,0,WallTime1,0):-
 	walltime(WT1),
 	WallTime1 is WT1-WT0.
 
-
-member_eq(Item, [Head|_Tail]) :-
-        Item==Head, !.
-
-member_eq(Item, [_Head|Tail]) :-
-	member_eq(Item, Tail).
-
-
-list2and([X], X) :-
-        X\= (_, _) , !.
-
-list2and([H|T], (H, Ta)) :- !,
-	list2and(T, Ta).
-
-
-
-list2or([X], X) :-
-	X \= ( _ ; _ ) , !.
-
-list2or([H|T], (H ; Ta)) :- !,
-	list2or(T, Ta).
-
-get_var_n(R,S,Probs,V):-
-	(v(R,S,Probs,V)->
-		true
-	;	
-		V=0,
-		assert(v(R,S,Probs,V))
-	).
+%----------------------
 
 generate_clause(Head,Body,Probs,BDDAnd,N,Clause):-
 	add_bdd_arg(Head,BDD,Head1),
@@ -298,29 +272,6 @@ get_probs([_H:P|T], [P1|T1]) :-
 	P1 is P, 
 	get_probs(T, T1).
 
-builtin(_A is _B).
-builtin(_A > _B).
-builtin(_A < _B).
-builtin(_A >= _B).
-builtin(_A =< _B).
-builtin(_A =:= _B).
-builtin(_A =\= _B).
-builtin(true).
-builtin(false).
-builtin(_A = _B).
-builtin(_A==_B).
-builtin(_A\=_B).
-builtin(_A\==_B).
-builtin(length(_L, _N)).
-builtin(member(_El, _L)).
-builtin(average(_L, _Av)).
-builtin(max_list(_L, _Max)).
-builtin(min_list(_L, _Max)).
-builtin(nth0(_, _, _)).
-builtin(nth(_, _, _)).
-builtin(eraseall(_Id)).
-builtin(recordzifnot(_Id, _Item, _)).
-
 load(File):-
         atom_concat(File,'_poss.P',FileP),
         atom_concat(File,'.cpl',FileCpl),
@@ -371,18 +322,29 @@ write_tab_dir([],S):-
 write_tab_dir([p(P,A)|T],S):-
         table_dir(P,A,Atom),
         write(S,':-table '),
-        write(S,Atom),
+        writeq(S,Atom),
         write(S,'.'),
         nl(S),
         write_tab_dir(T,S).
 
-write_clauses([],_).
-
-write_clauses([H|T],S):-
-	write(S,H),
+write_clauses(List,Stream):-
+	(setting(pretty_print,true) ->
+	   write_clauses_pretty(List,Stream)
+ 	 ; write_clauses_plain(List,Stream) ).
+  
+write_clauses_plain([],_).
+write_clauses_plain([H|T],S):-
+	writeq(S,H),
 	write(S,'.'),
 	nl(S),
-	write_clauses(T,S).
+	write_clauses_plain(T,S).
+
+:- import pretty_print/2 from pretty_print.
+write_clauses_pretty([],_).
+write_clauses_pretty([H|T],S):-
+	pretty_print(S,H),
+	nl(S),
+	write_clauses_pretty(T,S).
 
 term_expansion((Head :- Body), Clauses) :- 
 % disjunctive clause with a single head atom

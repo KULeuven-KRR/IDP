@@ -545,11 +545,12 @@ const string& PFSymbol::name() const {
 	return _name;
 }
 string PFSymbol::nameNoArity() const {
-	auto list = split(name(), "/");
-	Assert(list.size()==2);
-	return list.front();
+	unsigned found = name().find_last_of("/");
+	return name().substr(0,found);
 }
-
+std::string PFSymbol::fqn_name() const {
+	return toString(this);
+}
 const ParseInfo& PFSymbol::pi() const {
 	return _pi;
 }

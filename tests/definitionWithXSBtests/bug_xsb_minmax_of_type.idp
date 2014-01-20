@@ -1,0 +1,14 @@
+vocabulary V {
+  type num isa nat
+  p(num)
+  q(num)
+}
+
+theory T : V {
+  { p(y) <- y = MAX[:num]. }
+  { q(y) <- y = MIN[:num]. }
+}
+
+structure S : V {
+  num = {1..3}
+}

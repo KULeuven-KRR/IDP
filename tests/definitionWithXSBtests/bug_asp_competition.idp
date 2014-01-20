@@ -1,0 +1,38 @@
+vocabulary V {
+  type num isa nat
+  size(num)
+  innerborder(num,num)
+  neighbor(num,num,num,num)
+  borderset(num,num,num,num)
+  square(num,num)
+  type count isa nat
+}
+
+theory T : V {
+  {// Inner border cells. 
+    innerborder(1,y) <- size(n) & 1 =< y =< n.
+    innerborder(n,y) <- size(n) & 1 =< y =< n.
+    innerborder(x,1) <- size(n) & 1 =< x =< n.
+    innerborder(x,n) <- size(n) & 1 =< x =< n.
+  }
+  
+  {// Neighborhood.
+    neighbor(x,y1,x,y2) <- abs(y1-y2) = 1.
+    neighbor(x1,y,x2,y) <- abs(x1-x2) = 1.
+    neighbor(x1,y1,x2,y2) <- abs(x1-x2) = 1 = abs(y1-y2). 
+  }
+  {// Border sets (for 3x1 squares not completely filled) - note that this relation works for borders along the x-axis as well as borders along the y-axis as it is symmatrical
+    borderset(x,y1,y2,y3) <- y1 < y2 < y3 & innerborder(x,y1) & innerborder(x,y2) & innerborder(x,y3)
+      & neighbor(x,y1,x,y2) & neighbor(x,y2,x,y3).
+//     borderset(1,y,y+1,y+2) <- size(n) & y+2 =< n.
+//     borderset(n,y,y+1,y+2) <- size(n) & y+2 =< n.
+  }
+  {// Upper-left corners of 2x2 squares that fit into the grid
+    square(x,y) <- size(n) & n > 2 & x < n & y < n. 
+  }
+}
+
+structure S : V {
+  size = {1..4}
+  count = {0..8}
+}

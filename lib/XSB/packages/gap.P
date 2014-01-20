@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gap.P,v 1.4 2010/08/19 15:03:38 spyrosh Exp $
+** $Id: gap.P,v 1.5 2012/09/27 02:25:58 kifer Exp $
 ** 
 */
 
@@ -33,5 +33,6 @@
 
 gap_meta(Call):- meta(Call).
 
-:- bootstrap_package('gap',gap).
+:- bootstrap_package('gap',gap),
+   [gapmeta].
 

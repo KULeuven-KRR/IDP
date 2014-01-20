@@ -1,0 +1,33 @@
+vocabulary V{
+  type Object isa string 
+  type File isa Object 
+  type Dir isa Object
+  type Ext isa string 
+  type Name isa string
+  Parent(Object):Dir 
+  Extension(File):Ext
+  NameF(Object):Name
+  
+  Run(File,File)
+  type IDP isa Ext
+  type compFolder isa Name
+}
+
+theory T:V {
+  {! f1 f2: Run(f1,f2) <- IDP(Extension(f1)) & Parent(f1)=Parent(Parent(f2)) & compFolder(NameF(Parent(Parent(f1)))).}
+}
+
+structure S : V {
+  Dir = { "./results"; "./results/XSB"; "./results/XSB/hamiltonian_path"; "./results/XSB/hamiltonian_path/instances" }
+  Ext = { "idp" }
+  File = { "./results/XSB/hamiltonian_path/hp.idp"; "./results/XSB/hamiltonian_path/instances/hampath150.idp" }
+  IDP = { "idp" }
+  Name = { "XSB"; "hamiltonian_path"; "hampath150.idp"; "hp.idp"; "instances"; "results" }
+  Object = { "./results"; "./results/XSB"; "./results/XSB/hamiltonian_path"; "./results/XSB/hamiltonian_path/hp.idp"; "./results/XSB/hamiltonian_path/instances"; "./results/XSB/hamiltonian_path/instances/hampath150.idp" }
+  compFolder = { "XSB" }
+  Run<ct> = {  }
+  Run<cf> = {  }
+  Extension = { "./results/XSB/hamiltonian_path/hp.idp"->"idp"; "./results/XSB/hamiltonian_path/instances/hampath150.idp"->"idp" }
+  NameF = { "./results"->"results"; "./results/XSB"->"XSB"; "./results/XSB/hamiltonian_path"->"hamiltonian_path"; "./results/XSB/hamiltonian_path/hp.idp"->"hp.idp"; "./results/XSB/hamiltonian_path/instances"->"instances"; "./results/XSB/hamiltonian_path/instances/hampath150.idp"->"hampath150.idp" }
+  Parent = { "./results"->"./results"; "./results/XSB"->"./results"; "./results/XSB/hamiltonian_path"->"./results/XSB"; "./results/XSB/hamiltonian_path/hp.idp"->"./results/XSB/hamiltonian_path"; "./results/XSB/hamiltonian_path/instances"->"./results/XSB/hamiltonian_path"; "./results/XSB/hamiltonian_path/instances/hampath150.idp"->"./results/XSB/hamiltonian_path/instances" }
+}

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: hash_xsb.c,v 1.27 2011/05/22 16:02:22 tswift Exp $
+** $Id: hash_xsb.c,v 1.29 2013/01/04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -330,10 +330,10 @@ void free_unused_strings() {
 	  ptr = *(void **)ptr;
 	} else {
 	  unused++;
-	  //	  printf("unused: '%s'\n",(char *)ptr+4);
+	  // printf("fs: %s\n",(((char *)ptr))+sizeof(void *));
 	  *(void **)prevptr = *(void **)ptr;
-	  mem_dealloc(ptr,strlen(((char *)ptr)+4)+sizeof(void *)+1,STRING_SPACE);
-	  //	  *(((char *)ptr)+4) = '?';
+	  mem_dealloc(ptr,strlen(((char *)ptr)+sizeof(void *))+sizeof(void *)+1,STRING_SPACE);
+	  //	  *(((char *)ptr)+sizeof(void *)) = '?';
 	  ptr = *(void **)prevptr;
 	  string_table.contains--;
 	  //	  ptr = *(void **)ptr;  // replace with above when have marked all
