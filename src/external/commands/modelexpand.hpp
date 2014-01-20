@@ -17,6 +17,7 @@
 
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
+#include "utils/LogAction.hpp"
 #include "lua/luaconnection.hpp"
 
 // TODO trace is returned as the SECOND return value of the lua call
@@ -48,6 +49,10 @@ InternalArgument executeMXCommand(AbstractTheory* theory, Structure* structure, 
 		randt._value._table->push_back(trace);
 		result = randt;
 		delete (tracer);
+	}
+
+	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+		logActionAndTime("total-mx-time");
 	}
 
 	return result;

@@ -133,7 +133,7 @@ MXResult ModelExpansion::expand() const {
 		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);
 	}catch(...){
 		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-			logActionAndValue("effective-size", Grounder::groundedAtoms());
+			logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
 		}
 		throw;
 	}
@@ -163,7 +163,7 @@ MXResult ModelExpansion::expand() const {
 	}
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
+		//logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
 	}
 
 	// Run solver
@@ -205,10 +205,17 @@ MXResult ModelExpansion::expand() const {
 	time.join();
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		auto stats = mx->getStats();
-		logActionAndValue("decisions", stats.decisions);
-		logActionAndValue("first_decision", stats.time_of_first_decision);
-		logActionAndValue("effective-size", Grounder::groundedAtoms());
+		//auto stats = mx->getStats();
+		//logActionAndValue("decisions", stats.decisions);
+		//logActionAndValue("first_decision", stats.time_of_first_decision);
+		logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
+		if(mx->getNbModelsFound()>0){
+			logActionAndValue("state", "satisfiable");
+		}
+		if (_minimizeterm != NULL && mx->getBestSolutionsFound().size()>0){
+			logActionAndValue("bestvalue", mx->getBestValueFound());
+		}
+		std::clog.flush();
 		// TODO solving time
 	}
 
@@ -216,7 +223,7 @@ MXResult ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	result._optimumfound = true;
+	result._optimumfound = not result._interrupted;
 	result.unsat = unsat;
 	if(t.hasTimedOut()){
 		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
@@ -234,6 +241,9 @@ MXResult ModelExpansion::expand() const {
 			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
 		}
 		cleanup;
+		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+			logActionAndValue("state", "unsat");
+		}
 		return result;
 	}
 
@@ -251,11 +261,21 @@ MXResult ModelExpansion::expand() const {
 				ss <<"Solver generated " << list.size() << " model(s): ";
 				logActionAndTime(ss.str());
 			}
+			if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+				logActionAndValue("bestvalue", bestvalue);
+				if(result._optimumfound){
+					logActionAndValue("state", "optimal");
+				}else{
+					logActionAndValue("state", "satisfiable");
+				}
+				std::clog.flush();
+			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
 				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc));
 			}
 		}
 	} else if(not unsat){
+		logActionAndValue("state", "satisfiable");
 		auto abstractsolutions = mx->getSolutions();
 		if (mxverbosity > 0) {
 			stringstream ss;
@@ -270,11 +290,6 @@ MXResult ModelExpansion::expand() const {
 	// Clean up: remove all objects that are only used here.
 	cleanup;
 	result._models = solutions;
-
-	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		logActionAndTime("total-mx-time");
-	}
-
 	return result;
 }
 
