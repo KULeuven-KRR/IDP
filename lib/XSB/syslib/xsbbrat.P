@@ -1,0 +1,7 @@
+
+:- export brat_undefined/0.
+
+:- table brat_undefined/0.
+brat_undefined :- tnot(brat_undefined).
+
+?- brat_undefined.
