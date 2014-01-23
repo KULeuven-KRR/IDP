@@ -8,7 +8,7 @@
 #  K.U.Leuven, Departement Computerwetenschappen,
 #  Celestijnenlaan 200A, B-3001 Leuven, Belgium
 #-------------------------------------------------------------------------------
-include(${PROJECT_SOURCE_DIR}/cmake/UseLATEX.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/UseLATEX/UseLATEX.cmake)
 
 set(TEXFILES "")
 set(IMAGEFILES "")

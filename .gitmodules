@@ -10,3 +10,6 @@
 [submodule "docs/official/idp-latex"]
 	path = docs/official/idp-latex
 	url = git@bitbucket.org:krr/idp-latex.git
+[submodule "cmake/UseLATEX"]
+	path = cmake/UseLATEX
+	url = https://github.com/kmorel/UseLATEX.git
