@@ -1,7 +1,7 @@
 # File: UseLATEX.cmake
 # CMAKE commands to actually use the LaTeX compiler
-# Version: 1.9.5
-# Author: Kenneth Moreland <kmorel@sandia.gov>
+# Version: 1.10.3
+# Author: Kenneth Moreland &lt;kmorel@sandia.gov&gt;
 #
 # Copyright 2004 Sandia Corporation.
 # Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -12,18 +12,18 @@
 #
 # The following function is defined:
 #
-# ADD_LATEX_DOCUMENT(<tex_file>
-#                    [BIBFILES <bib_files>]
-#                    [INPUTS <input_tex_files>]
-#                    [IMAGE_DIRS] <image_directories>
-#                    [IMAGES] <image_files>
-#                    [CONFIGURE] <tex_files>
-#                    [DEPENDS] <tex_files>
-#                    [MULTIBIB_NEWCITES] <suffix_list>
+# ADD_LATEX_DOCUMENT(&lt;tex_file&gt;
+#                    [BIBFILES &lt;bib_files&gt;]
+#                    [INPUTS &lt;input_tex_files&gt;]
+#                    [IMAGE_DIRS] &lt;image_directories&gt;
+#                    [IMAGES] &lt;image_files&gt;
+#                    [CONFIGURE] &lt;tex_files&gt;
+#                    [DEPENDS] &lt;tex_files&gt;
+#                    [MULTIBIB_NEWCITES] &lt;suffix_list&gt;
 #                    [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]
-#                    [DEFAULT_PDF] [DEFAULT_SAFEPDF]
+#                    [DEFAULT_PDF] [DEFAULT_SAFEPDF] [DEFAULT_PS] [NO_DEFAULT]
 #                    [MANGLE_TARGET_NAMES])
-#       Adds targets that compile <tex_file>.  The latex output is placed
+#       Adds targets that compile &lt;tex_file&gt;.  The latex output is placed
 #       in LATEX_OUTPUT_PATH or CMAKE_CURRENT_BINARY_DIR if the former is
 #       not set.  The latex program is picky about where files are located,
 #       so all input files are copied from the source directory to the
@@ -40,15 +40,15 @@
 #       that are needed to compile the latex target.
 #
 #       The following targets are made:
-#               dvi: Makes <name>.dvi
-#               pdf: Makes <name>.pdf using pdflatex.
-#               safepdf: Makes <name>.pdf using ps2pdf.  If using the default
+#               dvi: Makes &lt;name&gt;.dvi
+#               pdf: Makes &lt;name&gt;.pdf using pdflatex.
+#               safepdf: Makes &lt;name&gt;.pdf using ps2pdf.  If using the default
 #                       program arguments, this will ensure all fonts are
 #                       embedded and no lossy compression has been performed
 #                       on images.
-#               ps: Makes <name>.ps
-#               html: Makes <name>.html
-#               auxclean: Deletes <name>.aux and other auxiliary files.
+#               ps: Makes &lt;name&gt;.ps
+#               html: Makes &lt;name&gt;.html
+#               auxclean: Deletes &lt;name&gt;.aux and other auxiliary files.
 #                       This is sometimes necessary if a LaTeX error occurs
 #                       and writes a bad aux file.  Unlike the regular clean
 #                       target, it does not delete other input files, such as
@@ -56,10 +56,13 @@
 #
 #       The dvi target is added to the ALL.  That is, it will be the target
 #       built by default.  If the DEFAULT_PDF argument is given, then the
-#       pdf target will be the default instead of dvi.
+#       pdf target will be the default instead of dvi.  Likewise,
+#       DEFAULT_SAFEPDF sets the default target to safepdf.  If NO_DEFAULT
+#       is specified, then no target will be added to ALL, which is
+#       convenient when including LaTeX documentation with something else.
 #
 #       If the argument MANGLE_TARGET_NAMES is given, then each of the
-#       target names above will be mangled with the <tex_file> name.  This
+#       target names above will be mangled with the &lt;tex_file&gt; name.  This
 #       is to make the targets unique if ADD_LATEX_DOCUMENT is called for
 #       multiple documents.  If the argument USE_INDEX is given, then
 #       commands to build an index are made.  If the argument USE_GLOSSARY
@@ -69,6 +72,23 @@
 #       with the \newcite command in the multibib package.
 #
 # History:
+#
+# 1.10.3 Check for Windows version of convert being used instead of
+#       ImageMagick's version (thanks to Martin Baute).
+#
+# 1.10.2 Use htlatex as a fallback when latex2html is not available (thanks
+#       to Tomasz Grzegurzko).
+#
+# 1.10.1 Make convert program mandatory only if actually used (thanks to
+#       Julien Schueller).
+#
+# 1.10.0 Added NO_DEFAULT and DEFAULT_PS options.
+#       Fixed issue with cleaning files for LaTeX documents originating in
+#       a subdirectory.
+#
+# 1.9.6 Fixed problem with LATEX_SMALL_IMAGES.
+#       Strengthened check to make sure the output directory does not contain
+#       the source files.
 #
 # 1.9.5 Add support for image types not directly supported by either latex
 #       or pdflatex.  (Thanks to Jorge Gerardo Pena Pastor for SVG support.)
@@ -570,6 +590,21 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   LATEX_WANTIT(DVIPS_CONVERTER dvips)
   LATEX_WANTIT(PS2PDF_CONVERTER ps2pdf)
   LATEX_WANTIT(PDFTOPS_CONVERTER pdftops)
+  # MiKTeX calls latex2html htlatex
+  IF (NOT ${LATEX2HTML_CONVERTER})
+    FIND_PROGRAM(HTLATEX_CONVERTER
+      NAMES htlatex
+      PATHS ${MIKTEX_BINARY_PATH}
+            /usr/bin
+    )
+    IF (HTLATEX_CONVERTER)
+      SET(USING_HTLATEX TRUE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+      SET(LATEX2HTML_CONVERTER ${HTLATEX_CONVERTER}
+        CACHE FILEPATH "htlatex taking the place of latex2html" FORCE)
+    ELSE (HTLATEX_CONVERTER)
+      SET(USING_HTLATEX FALSE CACHE INTERNAL "True when using MiKTeX htlatex instead of latex2html" FORCE)
+    ENDIF (HTLATEX_CONVERTER)
+  ENDIF (NOT ${LATEX2HTML_CONVERTER})
   LATEX_WANTIT(LATEX2HTML_CONVERTER latex2html)
 
   SET(LATEX_COMPILER_FLAGS "-interaction=nonstopmode"
@@ -622,9 +657,6 @@ FUNCTION(LATEX_SETUP_VARIABLES)
   FIND_PROGRAM(IMAGEMAGICK_CONVERT convert
     DOC "The convert program that comes with ImageMagick (available at http://www.imagemagick.org)."
     )
-  IF (NOT IMAGEMAGICK_CONVERT)
-    MESSAGE(SEND_ERROR "Could not find convert program.  Please download ImageMagick from http://www.imagemagick.org and install.")
-  ENDIF (NOT IMAGEMAGICK_CONVERT)
 
   OPTION(LATEX_USE_SYNCTEX
     "If on, have LaTeX generate a synctex file, which WYSIWYG editors can use to correlate output files like dvi and pdf with the lines of LaTeX source that generates them.  In addition to adding the LATEX_SYNCTEX_FLAGS to the command line, this option also adds build commands that \"corrects\" the resulting synctex file to point to the original LaTeX files rather than those generated by UseLATEX.cmake."
@@ -635,11 +667,11 @@ FUNCTION(LATEX_SETUP_VARIABLES)
     "If on, the raster images will be converted to 1/6 the original size.  This is because papers usually require 600 dpi images whereas most monitors only require at most 96 dpi.  Thus, smaller images make smaller files for web distributation and can make it faster to read dvi files."
     OFF)
   IF (LATEX_SMALL_IMAGES)
-    SET(LATEX_RASTER_SCALE 16)
-    SET(LATEX_OPPOSITE_RASTER_SCALE 100)
+    SET(LATEX_RASTER_SCALE 16 PARENT_SCOPE)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 100 PARENT_SCOPE)
   ELSE (LATEX_SMALL_IMAGES)
-    SET(LATEX_RASTER_SCALE 100)
-    SET(LATEX_OPPOSITE_RASTER_SCALE 16)
+    SET(LATEX_RASTER_SCALE 100 PARENT_SCOPE)
+    SET(LATEX_OPPOSITE_RASTER_SCALE 16 PARENT_SCOPE)
   ENDIF (LATEX_SMALL_IMAGES)
 
   # Just holds extensions for known image types.  They should all be lower case.
@@ -691,11 +723,14 @@ ENDFUNCTION(LATEX_SETUP_VARIABLES)
 FUNCTION(LATEX_GET_OUTPUT_PATH var)
   SET(latex_output_path)
   IF (LATEX_OUTPUT_PATH)
-    IF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+    GET_FILENAME_COMPONENT(
+      LATEX_OUTPUT_PATH_FULL "${LATEX_OUTPUT_PATH}" ABSOLUTE
+      )
+    IF ("${LATEX_OUTPUT_PATH_FULL}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
       MESSAGE(SEND_ERROR "You cannot set LATEX_OUTPUT_PATH to the same directory that contains LaTeX input files.")
-    ELSE ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-      SET(latex_output_path "${LATEX_OUTPUT_PATH}")
-    ENDIF ("${LATEX_OUTPUT_PATH}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+    ELSE ("${LATEX_OUTPUT_PATH_FULL}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+      SET(latex_output_path "${LATEX_OUTPUT_PATH_FULL}")
+    ENDIF ("${LATEX_OUTPUT_PATH_FULL}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   ELSE (LATEX_OUTPUT_PATH)
     IF ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
       MESSAGE(SEND_ERROR "LaTeX files must be built out of source or you must set LATEX_OUTPUT_PATH.")
@@ -713,12 +748,13 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
     input_extension
     flags
     )
-  SET (converter ${IMAGEMAGICK_CONVERT})
+  SET (require_imagemagick_convert TRUE)
   SET (convert_flags "")
   IF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
     # ImageMagick has broken eps to pdf conversion
     # use ps2pdf instead
     IF (PS2PDF_CONVERTER)
+      SET (require_imagemagick_convert FALSE)
       SET (converter ${PS2PDF_CONVERTER})
       SET (convert_flags -dEPSCrop ${PS2PDF_CONVERTER_FLAGS})
     ELSE (PS2PDF_CONVERTER)
@@ -729,6 +765,7 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
     # color spaces and tends to unnecessarily rasterize.
     # use pdftops instead
     IF (PDFTOPS_CONVERTER)
+      SET (require_imagemagick_convert FALSE)
       SET(converter ${PDFTOPS_CONVERTER})
       SET(convert_flags -eps ${PDFTOPS_CONVERTER_FLAGS})
     ELSE (PDFTOPS_CONVERTER)
@@ -738,6 +775,18 @@ FUNCTION(LATEX_ADD_CONVERT_COMMAND
   ELSE (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
     SET (convert_flags ${flags})
   ENDIF (${input_extension} STREQUAL ".eps" AND ${output_extension} STREQUAL ".pdf")
+
+  IF (require_imagemagick_convert)
+    IF (IMAGEMAGICK_CONVERT)
+      IF (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
+	MESSAGE(SEND_ERROR "IMAGEMAGICK_CONVERT set to Window's convert.exe for changing file systems rather than ImageMagick's convert for changing image formats.  Please make sure ImageMagick is installed (available at http://www.imagemagick.org) and it's convert program is used for IMAGEMAGICK_CONVERT.  (It is helpful if ImageMagick's path is before the Windows system paths.)")
+      ELSE (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
+	SET (converter ${IMAGEMAGICK_CONVERT})
+      ENDIF (${IMAGEMAGICK_CONVERT} MATCHES "system32[/\\\\]convert\\.exe")
+    ELSE (IMAGEMAGICK_CONVERT)
+      MESSAGE(SEND_ERROR "Could not find convert program. Please download ImageMagick from http://www.imagemagick.org and install.")
+    ENDIF (IMAGEMAGICK_CONVERT)
+  ENDIF (require_imagemagick_convert)
 
   ADD_CUSTOM_COMMAND(OUTPUT ${output_path}
     COMMAND ${converter}
@@ -913,7 +962,7 @@ ENDFUNCTION(LATEX_COPY_INPUT_FILE)
 
 FUNCTION(LATEX_USAGE command message)
   MESSAGE(SEND_ERROR
-    "${message}\nUsage: ${command}(<tex_file>\n           [BIBFILES <bib_file> <bib_file> ...]\n           [INPUTS <tex_file> <tex_file> ...]\n           [IMAGE_DIRS <directory1> <directory2> ...]\n           [IMAGES <image_file1> <image_file2>\n           [CONFIGURE <tex_file> <tex_file> ...]\n           [DEPENDS <tex_file> <tex_file> ...]\n           [MULTIBIB_NEWCITES] <suffix_list>\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF]\n           [MANGLE_TARGET_NAMES])"
+    "${message}\nUsage: ${command}(&lt;tex_file&gt;\n           [BIBFILES &lt;bib_file&gt; &lt;bib_file&gt; ...]\n           [INPUTS &lt;tex_file&gt; &lt;tex_file&gt; ...]\n           [IMAGE_DIRS &lt;directory1&gt; &lt;directory2&gt; ...]\n           [IMAGES &lt;image_file1&gt; &lt;image_file2&gt;\n           [CONFIGURE &lt;tex_file&gt; &lt;tex_file&gt; ...]\n           [DEPENDS &lt;tex_file&gt; &lt;tex_file&gt; ...]\n           [MULTIBIB_NEWCITES] &lt;suffix_list&gt;\n           [USE_INDEX] [USE_GLOSSARY] [USE_NOMENCL]\n           [DEFAULT_PDF] [DEFAULT_SAFEPDF] [DEFAULT_PS] [NO_DEFAULT]\n           [MANGLE_TARGET_NAMES])"
     )
 ENDFUNCTION(LATEX_USAGE command message)
 
@@ -924,7 +973,7 @@ FUNCTION(PARSE_ADD_LATEX_ARGUMENTS command)
   LATEX_PARSE_ARGUMENTS(
     LATEX
     "BIBFILES;MULTIBIB_NEWCITES;INPUTS;IMAGE_DIRS;IMAGES;CONFIGURE;DEPENDS"
-    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;MANGLE_TARGET_NAMES"
+    "USE_INDEX;USE_GLOSSARY;USE_GLOSSARIES;USE_NOMENCL;DEFAULT_PDF;DEFAULT_SAFEPDF;DEFAULT_PS;NO_DEFAULT;MANGLE_TARGET_NAMES"
     ${ARGN}
     )
 
@@ -984,6 +1033,7 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
   # Probably not all of these will be generated, but they could be.
   # Note that the aux file is added later.
   SET(auxiliary_clean_files
+    ${output_dir}/${LATEX_TARGET}.aux
     ${output_dir}/${LATEX_TARGET}.bbl
     ${output_dir}/${LATEX_TARGET}.blg
     ${output_dir}/${LATEX_TARGET}-blx.bib
@@ -1039,6 +1089,9 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
     SET(make_dvi_depends ${make_dvi_depends} ${output_dir}/${input})
     SET(make_pdf_depends ${make_pdf_depends} ${output_dir}/${input})
     IF (${input} MATCHES "\\.tex$")
+      # Dependent .tex files might have their own .aux files created.  Make
+      # sure these get cleaned as well.  This might replicate the cleaning
+      # of the main .aux file, which is OK.
       STRING(REGEX REPLACE "\\.tex$" "" input_we ${input})
       SET(auxiliary_clean_files ${auxiliary_clean_files}
         ${output_dir}/${input_we}.aux
@@ -1188,13 +1241,13 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
     COMMAND ${make_dvi_command}
     DEPENDS ${make_dvi_depends}
     )
-  IF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  IF (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
     ADD_CUSTOM_TARGET(${dvi_target}
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ELSE (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  ELSE (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
     ADD_CUSTOM_TARGET(${dvi_target} ALL
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-  ENDIF (LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF)
+  ENDIF (LATEX_NO_DEFAULT OR LATEX_DEFAULT_PDF OR LATEX_DEFAULT_SAFEPDF OR DEFAULT_PS)
 
   # Add commands and targets for building pdf outputs (with pdflatex).
   IF (PDFLATEX_COMPILER)
@@ -1216,8 +1269,13 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
       COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
         ${DVIPS_CONVERTER} ${DVIPS_CONVERTER_FLAGS} -o ${LATEX_TARGET}.ps ${LATEX_TARGET}.dvi
       DEPENDS ${output_dir}/${LATEX_TARGET}.dvi)
-    ADD_CUSTOM_TARGET(${ps_target}
-      DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    IF (LATEX_DEFAULT_PS)
+      ADD_CUSTOM_TARGET(${ps_target} ALL
+        DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    ELSE (LATEX_DEFAULT_PS)
+      ADD_CUSTOM_TARGET(${ps_target}
+        DEPENDS ${output_dir}/${LATEX_TARGET}.ps)
+    ENDIF (LATEX_DEFAULT_PS)
     IF (PS2PDF_CONVERTER)
       # Since both the pdf and safepdf targets have the same output, we
       # cannot properly do the dependencies for both.  When selecting safepdf,
@@ -1238,11 +1296,21 @@ FUNCTION(ADD_LATEX_TARGETS_INTERNAL)
   ENDIF (DVIPS_CONVERTER)
 
   IF (LATEX2HTML_CONVERTER)
-    ADD_CUSTOM_TARGET(${html_target}
-      ${CMAKE_COMMAND} -E chdir ${output_dir}
-      ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+    IF (USING_HTLATEX)
+      # htlatex places the output in a different location
+      SET (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}.html")
+    ELSE (USING_HTLATEX)
+      SET (HTML_OUTPUT "${output_dir}/${LATEX_TARGET}/${LATEX_TARGET}.html")
+    ENDIF (USING_HTLATEX)
+    ADD_CUSTOM_COMMAND(OUTPUT ${HTML_OUTPUT}
+      COMMAND ${CMAKE_COMMAND} -E chdir ${output_dir}
+        ${LATEX2HTML_CONVERTER} ${LATEX2HTML_CONVERTER_FLAGS} ${LATEX_MAIN_INPUT}
+      DEPENDS ${output_dir}/${LATEX_TARGET}.tex
       )
-    ADD_DEPENDENCIES(${html_target} ${LATEX_MAIN_INPUT} ${LATEX_INPUTS})
+    ADD_CUSTOM_TARGET(${html_target}
+      DEPENDS ${HTML_OUTPUT}
+      )
+    ADD_DEPENDENCIES(${html_target} ${dvi_target})
   ENDIF (LATEX2HTML_CONVERTER)
 
   SET_DIRECTORY_PROPERTIES(.
