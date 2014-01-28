@@ -1,0 +1,16 @@
+procedure getExpectedNbOfModels(){
+	return 1
+}
+
+vocabulary V{
+	type T isa nat
+	P(T)
+}
+
+theory T : V {
+	!x: P(x) <=> x=6.
+}
+
+structure S : V{
+	T={1..10}
+}
