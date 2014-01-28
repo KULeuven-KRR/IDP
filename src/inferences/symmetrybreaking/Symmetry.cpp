@@ -787,7 +787,6 @@ void TheorySymmetryAnalyzer::visit(const FuncTerm* t) {
 }
 
 void TheorySymmetryAnalyzer::visit(const DomainTerm* t) {
-//	clog << "DomainTerm: " << print(t) << "\n";
 	markAsUnfitForSymmetry(t->value());
 }
 
@@ -896,6 +895,10 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 
 // Extract domain elements from forbidden sorts:
 	set<const DomainElement*> forbiddenElements;
+	for (auto domEl: tsa.getForbiddenElements()){
+		forbiddenElements.insert(domEl);
+	}
+
 	for (auto sort_it = forbiddenSorts.cbegin(); sort_it != forbiddenSorts.cend(); ++sort_it) {
 		if (isSortForSymmetry(*sort_it, s)) {
 			for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it) {
@@ -984,6 +987,7 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 			}
 		}
 	}
+
 	return result;
 }
 
