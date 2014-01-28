@@ -107,7 +107,7 @@ The global namespace contains a fixed vocabulary \code{std}, which is defined as
 		+(int,int) : int
 		-(int,int) : int
 		*(int,int) : int
-		/(int,int) : float
+		partial /(int,int) : int
 		%(int,int) : int
 		abs(int) : int
 		-(int) : int
@@ -124,7 +124,7 @@ Every vocabulary implicitly contains all symbols of \code{std}.  Also, every voc
 \code{+(int,int) : int} & integer addition \\
 \code{-(int,int) : int } &integer subtraction \\
 \code{*(int,int) : int} & integer multiplication \\
-\code{/(int,int) : int} & division \\
+\code{/(int,int) : int} & division (only true when there is no remainder) \\
 \code{\%(int,int) : int} & remainder \\
 \code{abs(int) : int} & absolute value \\
 \code{-(int) : int} & unary minus \\
