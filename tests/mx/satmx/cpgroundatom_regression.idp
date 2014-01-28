@@ -1,0 +1,18 @@
+vocabulary V{
+	type X isa int
+	type Y isa X
+	Q(Y)
+	P(X)
+	C:X
+}
+theory T:V{
+	X(C) & Y(C) & P(C) & Q(C).
+}
+structure S:V{
+	X = {1..4}
+	Y = {1..2}
+}
+
+procedure getExpectedAModel(){
+	return true
+}
