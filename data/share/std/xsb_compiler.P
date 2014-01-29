@@ -1,3 +1,16 @@
+ixdivision(Solution,Numerator,Denominator) :-
+	nonvar(Numerator),
+	var(Denominator),
+	Solution = Denominator,
+	TMP is sqrt(Numerator),
+	ixconvert_to_int(TMP,Solution).
+
+ixdivision(Solution,Numerator,Denominator) :-
+	nonvar(Numerator),
+	nonvar(Denominator),
+	TMP is Numerator / Denominator,
+	ixsame_number(TMP, Solution).
+
 ixabs(X,Y) :- Y is abs(X).
 
 ixsum(List,Sum) :- ixsum(List,Sum,0).

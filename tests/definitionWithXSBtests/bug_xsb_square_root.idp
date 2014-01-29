@@ -1,0 +1,14 @@
+vocabulary V {
+  type Num isa int 
+  MaxNum(Num)
+  squareRoot(Num)
+}
+
+structure S : V {
+  Num = {1..25}
+  MaxNum = {25}
+}
+
+theory T : V { 
+  { squareRoot(r) <- MaxNum(rr) & r = rr/r. }
+}
