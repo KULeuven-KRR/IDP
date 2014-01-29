@@ -1,5 +1,5 @@
 procedure main(){
-	modelexpand(T,S,Vout)[1]
+	result = modelexpand(T,S,Vout)[1]
 	return 1
 }
 

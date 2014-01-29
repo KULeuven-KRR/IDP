@@ -89,7 +89,6 @@ if(${BUILDTESTS})
 		definitiontests.cpp
 
 		propagationtests.cpp
-		vocabularycommandtests.cpp
 		solverconnectiontests.cpp
 	)
 	set(PRINTERTESTS printertest.cpp)
