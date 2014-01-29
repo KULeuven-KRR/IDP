@@ -1,0 +1,79 @@
+vocabulary V{
+	type Time
+	Start: Time
+	Next(Time):Time
+	
+	P(Time)
+	Q(Time)
+}
+
+theory T:V{
+	!t : P(t) <=> ~P(Next(t)).
+	{
+		Q(Start).
+		Q(Next(t)) <- ~Q(t).
+	}
+	
+	P(Start).
+
+}
+
+theory invar:V{
+	!t : P(t) <=> Q(t).
+
+}
+
+
+
+theory noinvar:V{
+	!t: P(t) <=> ~Q(t).
+}
+
+theory noinvar2:V{
+	!t : P(t) <=> P(Next(t)).
+}
+
+structure S:V{
+	Time = {1..10000000}
+
+}
+
+procedure main(){
+	print("slechte dingen. moet error gooien")	
+	print(invariant(T2,noinvar2,S2))
+	
+
+}
+
+vocabulary V2{
+	type Time
+	Start: Time
+	Next(Time):Time
+	
+	On(Time)
+	Off(Time)
+}
+
+theory T2:V2{
+	On(Start).
+	On(Next(t)) <=> ~On(t).
+	
+	{
+		Off(Next(t)) <- ~Off(t).
+	}
+
+}
+
+theory noinvar3:V2{
+	!t : On(t) | Off(t).
+}
+
+theory isinvar:V2{
+	!t : ~On(t) | ~Off(t).
+	!t : On(t) | Off(t).
+}
+
+structure S2:V2{
+	Time = {1..10000000}
+
+}

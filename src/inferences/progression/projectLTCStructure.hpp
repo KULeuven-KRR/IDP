@@ -33,19 +33,21 @@ private:
 	const Function* _start;
 	const Function* _next;
 
-	bool _interpretsStart;
+	bool _shouldUseStart; //Whether or not the initialise inference will use the interpretation of structures at time point "Start"
+	bool _forceIgnoreStart; //Whether or not the user has explicitely asked to ignore info on time point Start
 	const DomainElement* _startDomElem;
 
 	Structure* _result;
 
 public:
-	static Structure* projectStructure(const Structure* inputStructure) {
+	/**Projects the input structure. If ignoreStart holds: all info about Start will be ignored. Otherwise, info about start will be used for projecting onto initial state*/
+	static Structure* projectStructure(const Structure* inputStructure, bool ignoreStart = false) {
 		auto g = LTCStructureProjector();
-		g.init(inputStructure);
+		g.init(inputStructure, ignoreStart);
 		return g.run();
 	}
 private:
-	void init(const Structure* input);
+	void init(const Structure* input, bool ignoreStart);
 	Structure* run();
 
 	void setSorts();

@@ -10,12 +10,11 @@
  ****************************************************************************/
 
 #include "Progression.hpp"
-#include "transformLTCVocabulary.hpp"
 #include "common.hpp"
 #include "IncludeComponents.hpp"
 #include "data/LTCData.hpp"
+#include "data/StateVocInfo.hpp"
 #include "data/SplitLTCTheory.hpp"
-#include "LTCTheorySplitter.hpp"
 #include "projectLTCStructure.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 
@@ -43,17 +42,14 @@ std::vector<Structure*> ProgressionInference::progress() {
 	auto data = LTCData::instance();
 
 	if (not data->hasBeenTransformed(_ltcTheo->vocabulary()) or not data->hasBeenSplit(_ltcTheo)) {
-		throw IdpException(
-				"The theory you are using the progression inference on, has not yet been initialised. Please first apply the setupprogression inference.");
+		Error::LTC::notInitialised();
 	}
 	auto vocinfo = data->getStateVocInfo(_ltcTheo->vocabulary());
 	auto voc = vocinfo->stateVoc;
 	auto bistatevoc = vocinfo->biStateVoc;
 	auto bistatetheo = data->getSplitTheory(_ltcTheo)->bistateTheory;
 	if (_stateBefore->vocabulary() != voc) {
-		throw IdpException(
-				"The structure given to the progression inference should range over vocabulary " + voc->name() + " but ranges over "
-						+ _stateBefore->vocabulary()->name());
+		Error::LTC::progressOverWrongVocabulary(voc->name(), _stateBefore->vocabulary()->name());
 	}
 	auto newstruc = _stateBefore->clone();
 	newstruc->changeVocabulary(bistatevoc);
@@ -99,7 +95,9 @@ InitialiseInference::InitialiseInference(const AbstractTheory* ltcTheo, const St
 			_projectedStructure(NULL),
 			_timeInput(Time),
 			_startInput(Start),
-			_nextInput(Next) {
+			_nextInput(Next),
+			_vocInfo(NULL){
+			prepareVocabulary();
 
 }
 InitialiseInference::~InitialiseInference() {
@@ -107,26 +105,19 @@ InitialiseInference::~InitialiseInference() {
 }
 
 initData InitialiseInference::init() {
+	if (_ltcTheo->vocabulary() != _inputStruc->vocabulary()) {
+		Error::LTC::strucVocIsNotTheoVoc();
+	}
 	auto data = LTCData::instance();
-	if (not data->hasBeenTransformed(_ltcTheo->vocabulary())) {
-		prepareVocabulary();
-		Assert(data->hasBeenTransformed(_ltcTheo->vocabulary()));
-	}
-	if (not data->hasBeenSplit(_ltcTheo)) {
-		prepareTheory();
-		Assert(data->hasBeenSplit(_ltcTheo));
-	}
 	initData output;
 	auto theos = data->getSplitTheory(_ltcTheo);
 	output._bistateTheo = theos->bistateTheory;
 	output._initTheo = theos->initialTheory;
-	auto vocs = data->getStateVocInfo(_ltcTheo->vocabulary());
-	output._bistateVoc = vocs->biStateVoc;
-	output._onestateVoc = vocs->stateVoc;
+	output._bistateVoc = _vocInfo->biStateVoc;
+	output._onestateVoc = _vocInfo->stateVoc;
 
 	prepareStructure();
 	Assert(_projectedStructure != NULL);
-
 	auto models = ModelExpansion::doModelExpansion(output._initTheo, _projectedStructure, NULL)._models;
 	output._models = generateEnoughTwoValuedExtensions(models);
 	return output;
@@ -139,98 +130,21 @@ void InitialiseInference::prepareStructure() {
 	_projectedStructure = LTCStructureProjector::projectStructure(_inputStruc);
 }
 
-void InitialiseInference::prepareTheory() {
-	auto ltcdata = LTCData::instance();
-	if (ltcdata->hasBeenSplit(_ltcTheo)) {
-		//TODO: check if nothing has changed since then
-	} else {
-		auto splitTheory = LTCTheorySplitter::SplitTheory(_ltcTheo);
-		ltcdata->registerSplit(_ltcTheo, splitTheory);
-	}
-}
 
 void InitialiseInference::prepareVocabulary() {
 	auto ltcdata = LTCData::instance();
 	auto ltcVoc = _ltcTheo->vocabulary();
-	if (ltcdata->hasBeenTransformed(ltcVoc)) {
-		//TODO: check if nothing has changed since then
-	} else {
+	if (_timeInput != NULL) {
 		LTCInputData symbols;
-		if (_timeInput != NULL) {
-			Assert(_startInput!=NULL && _nextInput!=NULL);
-			symbols.time = _timeInput;
-			symbols.start = _startInput;
-			symbols.next = _nextInput;
+		Assert(_startInput!=NULL && _nextInput!=NULL);
+		symbols.time = _timeInput;
+		symbols.start = _startInput;
+		symbols.next = _nextInput;
+		_vocInfo = ltcdata->getStateVocInfo(ltcVoc, symbols);
 
-		} else {
-			symbols = collectLTCSortAndFunctions(ltcVoc);
-		}
-
-		verify(symbols);
-
-		Assert(symbols.start != NULL);
-		auto stateVocInfo = LTCVocabularyTransformer::TransformVocabulary(ltcVoc, symbols);
-		Assert(stateVocInfo->start != NULL);
-
-		ltcdata->registerTransformation(ltcVoc, stateVocInfo);
+	} else {
+		_vocInfo = ltcdata->getStateVocInfo(ltcVoc);
 	}
 }
 
-void InitialiseInference::verify(const LTCInputData& data) const {
-	if (data.time == NULL) {
-		throw IdpException("Not find a valid Time symbol for progression");
-	}
-	if (data.start == NULL) {
-		throw IdpException("Not find a valid Start symbol for progression");
-	}
-	if (data.next == NULL) {
-		throw IdpException("Not find a valid Next symbol for progression");
-	}
-	if (data.start->arity() != 0 || data.start->outsort() != data.time) {
-		throw IdpException("In LTC theories, the function Start should be typed [:Time].");
-	}
-	if (data.next->arity() != 1 || data.next->sort(0) != data.time || data.next->outsort() != data.time) {
-		throw IdpException("Start should be a unary function typed Time->Time");
-	}
-}
 
-LTCInputData InitialiseInference::collectLTCSortAndFunctions(Vocabulary* ltcVoc) {
-	LTCInputData result;
-
-//TIME
-	if (not ltcVoc->hasSortWithName("Time")) {
-		throw IdpException("LTC theories are required to have a sort named Time. (or, if the name of this sort is not Time, provide it yourself)");
-	}
-	auto timeSort = ltcVoc->sort("Time");
-	Assert(timeSort != NULL);
-	result.time = timeSort;
-
-//START
-	if (not ltcVoc->hasFuncWithName("Start/0")) {
-		throw IdpException("LTC theories are required to have a constant of type Time named Start.  (or, if the name of this constant is not Start, provide it yourself)");
-	}
-	auto startFunc = ltcVoc->func("Start/0");
-	Assert(startFunc != NULL);
-	if (startFunc->overloaded()) {
-		throw IdpException("LTC theories can only have one function named Start.");
-	}
-	if (startFunc->nrSorts() != 1 || startFunc->sorts()[0] != timeSort) {
-		throw IdpException("");
-	}
-	result.start = startFunc;
-
-//NEXT
-	if (not ltcVoc->hasFuncWithName("Next/1")) {
-		throw IdpException("LTC theories are required to have a function, typed [Time:Time] named Next.  (or, if the name of this function is not Next, provide it yourself)");
-	}
-	auto nextFunc = ltcVoc->func("Next/1");
-	Assert(nextFunc != NULL);
-	if (nextFunc->overloaded()) {
-		throw IdpException("LTC theories can only have one function named Next.");
-	}
-	if (nextFunc->nrSorts() != 2 || nextFunc->sorts()[0] != timeSort || nextFunc->sorts()[1] != timeSort) {
-		throw IdpException("In LTC theories, the function Next should be typed [Time:Time] .");
-	}
-	result.next = nextFunc;
-	return result;
-}

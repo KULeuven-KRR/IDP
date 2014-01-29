@@ -29,6 +29,15 @@ SplitLTCTheory* LTCTheorySplitter::SplitTheory(const AbstractTheory* ltcTheo) {
 	return g.split(theo);
 }
 
+SplitLTCInvariant* LTCTheorySplitter::SplitInvariant(const AbstractTheory* invar) {
+	auto g = LTCTheorySplitter();
+	if (not isa<const Theory>(*invar)) {
+		throw IdpException("Can only perform invariant checking on theories");
+	}
+	auto inv = dynamic_cast<const Theory*>(invar);
+	return g.splitInvar(inv);
+}
+
 LTCTheorySplitter::LTCTheorySplitter()
 		: 	_initialTheory(NULL),
 			_bistateTheory(NULL),
@@ -62,10 +71,9 @@ LTCFormulaInfo LTCTheorySplitter::info(T* t) {
 	return result;
 }
 
-void LTCTheorySplitter::createTheories(const Theory* theo) {
+void LTCTheorySplitter::createTheories(const Theory* theo, bool invar) {
 	_initialTheory = new Theory(theo->name() + "_init", _vocInfo->stateVoc, theo->pi());
 	_bistateTheory = new Theory(theo->name() + "_bistate", _vocInfo->biStateVoc, theo->pi());
-
 	auto workingTheo = theo->clone();
 	FormulaUtils::removeEquivalences(workingTheo);
 	FormulaUtils::pushNegations(workingTheo);
@@ -86,9 +94,12 @@ void LTCTheorySplitter::createTheories(const Theory* theo) {
 	 * * We instantiate one-state formulas with the next-state-predicate
 	 */
 	for (auto sentence : workingTheo->sentences()) {
-		handleAndAddToConstruct(sentence, _initialTheory, _bistateTheory);
+		handleAndAddToConstruct(sentence, _initialTheory, _bistateTheory, invar);
 	}
 	for (auto def : workingTheo->definitions()) {
+		if(invar){
+			Error::LTC::invarContainsDefinitions(workingTheo->pi());
+		}
 		auto initDef = new Definition();
 		auto biStateDef = new Definition();
 		for (auto rule : def->rules()) {
@@ -96,15 +107,15 @@ void LTCTheorySplitter::createTheories(const Theory* theo) {
 			auto body = rule->body();
 			auto headinfo = info(head);
 			auto bodyinfo = info(body);
-			if (bodyinfo.hasTimeVariable && not headinfo.hasTimeVariable) {
-				throw IdpException(
-						"In LTC theories, it is not allowed to define static predicates in terms of dynamic predicates. This occurs in rule " + toString(rule));
+			auto headstatic = not (headinfo.hasTimeVariable || headinfo.containsStart);
+			auto bodystatic = not (bodyinfo.hasTimeVariable || bodyinfo.containsStart);
+			if (headstatic && not bodystatic) {
+				Error::LTC::defineStaticInTermsOfDynamic(rule->pi());
 			}
 			if (bodyinfo.containsNext && not headinfo.containsNext) {
-				throw IdpException(
-						"In LTC theories, it is not allowed to define the state at time $t$ in terms of next(t). This occurs in rule " + toString(rule));
+				Error::LTC::timeStratificationViolated(rule->pi());
 			}
-			handleAndAddToConstruct(rule, initDef, biStateDef);
+			handleAndAddToConstruct(rule, initDef, biStateDef, invar);
 		}
 		auto defsymbols = def->defsymbols();
 		auto initDefsymbols = initDef->defsymbols();
@@ -140,27 +151,38 @@ void LTCTheorySplitter::createTheories(const Theory* theo) {
 }
 
 template<class Form, class Construct>
-void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct) {
+void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar) {
 	auto sentenceInfo = info(sentence);
 	auto newSentence = sentence->clone();
 	//We already checked quantifications. They are okay now. First, we remove all quantifications over time,
 	//later, we will check which type of formula we are dealing with and handle it appropriately.
 	newSentence = FormulaUtils::removeQuantificationsOverSort(newSentence, _time);
+	auto pi=sentence->pi();
+
+
 
 	if (sentenceInfo.containsStart) {
+		if(invar){
+			//Extra checks for invariants: they cannot contain START
+			Error::LTC::invarContainsStart(pi);
+		}
 		if (sentenceInfo.containsNext) {
-			throw IdpException("LTC sentences containing start cannot contain the next-function.");
+			Error::LTC::containsStartAndNext(pi);
 		}
 		if (sentenceInfo.hasTimeVariable) {
-			throw IdpException("LTC sentences containing start cannot also have a time variable.");
+			Error::LTC::containsStartAndOther(pi);
 		}
 		newSentence = ReplaceLTCSymbols::replaceSymbols(newSentence, _ltcVoc, false);
 		initConstruct->add(newSentence);
 	} else if (sentenceInfo.containsNext) {
+		if (invar) {
+			//Extra checks for invariants: they cannot contain START
+			Error::LTC::invarContainsNext(pi);
+		}
 		Assert(not sentenceInfo.containsStart);
 		//Should be guaranteed by previous case
 		if(not sentenceInfo.hasTimeVariable){
-			throw IdpException("LTC sentences can only contain the following terms of type Time: Start, Next and variables.");
+			Error::LTC::invalidTimeTerm(pi);
 		}
 		Assert(sentenceInfo.hasTimeVariable);
 		//Don't know what else could be filled in here.
@@ -175,6 +197,10 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 		initConstruct->add(newSentence);
 		biStateConstruct->add(newNextSentence);
 	} else {
+		if (invar) {
+			//Extra checks for invariants: they cannot contain START
+			Error::LTC::invarIsStatic(pi);
+		}
 		//Static formulas are added both to Init and next state. TODO we might also leave it out of the bistate formula.
 		auto newNextSentence = newSentence->clone();
 		initConstruct->add(newSentence);
@@ -201,7 +227,7 @@ SplitLTCTheory* LTCTheorySplitter::split(const Theory* theo) {
 	Assert(theo != NULL);
 
 	initializeVariables(theo);
-	createTheories(theo);
+	createTheories(theo, false);
 
 	auto result = new SplitLTCTheory();
 	result->initialTheory = _initialTheory;
@@ -213,33 +239,56 @@ SplitLTCTheory* LTCTheorySplitter::split(const Theory* theo) {
 	return result;
 }
 
+SplitLTCInvariant* LTCTheorySplitter::splitInvar(const Theory* theo) {
+	Assert(theo != NULL);
+
+	initializeVariables(theo);
+	createTheories(theo, true);
+
+	auto result = new SplitLTCInvariant();
+	//For transforming invariants, we still need to post-process a bit.
+	//_initTheo contains all invar constraints on time Start, we still need to conjoin this
+	// _bistateTheo, contains invar on time t+1. Should be transformed to: allinvars(t) => allinvars(t+1)
+	auto allinvars = new BoolForm(SIGN::POS,true,_initialTheory->sentences(), FormulaParseInfo());
+	auto allinvarsNext = new BoolForm(SIGN::POS,true,_bistateTheory->sentences(), FormulaParseInfo());
+	auto notallinvars= allinvars->clone();
+	notallinvars->negate();
+
+	//Formula(Start)
+	result->baseStep = allinvars;
+	//Formula(now) => Formula(next)
+	result->inductionStep = new BoolForm(SIGN::POS, false, notallinvars, allinvarsNext, FormulaParseInfo());
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+		std::clog << "Splitting the LTC invariant\n" << toString(theo) << "\nresulted in the following two formulas: \n" << toString(result->baseStep) << "\n"
+				<< toString(result->inductionStep) << "\n";
+	}
+	delete(_initialTheory);
+	delete(_bistateTheory);
+
+	return result;
+}
+
 template<class T>
 void LTCTheorySplitter::checkQuantifications(T* t) {
 	auto vars = FormulaUtils::collectQuantifiedVariables(t, true);
 	auto topLevelVars = FormulaUtils::collectQuantifiedVariables(t, false);
 
 	bool timefound = false;
+	Variable* timevar = NULL;
 	for (auto tuple : vars) {
 		auto var = tuple.first;
 		if (var->sort() == _time) {
 			if (timefound) {
-				std::stringstream ss;
-				ss << "LTC theories can only contain one time variable in every sentence/formula.";
-				throw IdpException(ss.str());
+				Assert(timevar != NULL);
+				Error::LTC::multipleTimeVars(toString(timevar), toString(var), t->pi());
 			}
 			timefound = true;
+			timevar = var;
 			if (tuple.second != QuantType::UNIV) {
-				std::stringstream ss;
-				ss << "In LTC theories, every variable over type Time should be universally quantified" << " (given its context). This is violated by variable "
-						<< toString(var) << " in " << toString(t) << "\n" << " At " << print(t->pi());
-				throw IdpException(ss.str());
+				Error::LTC::wrongTimeQuantification(toString(var), t->pi());
 			}
 			if (not contains(topLevelVars, var)) {
-				std::stringstream ss;
-				ss << "In LTC theories, every variable over type Time should be universally quantified at the toplevel."
-						<< " E.g. quantifications such as ? x[type]: ! t[Time] ... are not allowed." << " This is violated by variable  " << toString(var)
-						<< " in " << toString(t) << "\n" << " At " << print(t->pi());
-				throw IdpException(ss.str());
+				Error::LTC::nonTopLevelTimeVar(toString(var), t-> pi());
 			}
 		}
 	}

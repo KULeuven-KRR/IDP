@@ -15,6 +15,7 @@
 #include "commandinterface.hpp"
 
 #include "inferences/progression/Progression.hpp"
+#include "inferences/progression/Invariants.hpp"
 #include "lua/luaconnection.hpp"
 
 InternalArgument transformInitDataToInternalArgument(const initData& info) {
@@ -96,3 +97,34 @@ public:
 	}
 };
 
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*, Structure*)> InvariantInferenceBase;
+class InvariantInference : public InvariantInferenceBase{
+public:
+	InvariantInference()
+			: InvariantInferenceBase("isinvariant",
+					"Returns true if the second theory is (provable with the induction method) an invariant of the first LTC-theory in the context of the given finite structure ",
+					false) {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto result = ProveInvariantInference::proveInvariant(get<0>(args), get<1>(args), get<2>(args));
+		return InternalArgument(result);
+	}
+};
+
+typedef TypedInference<LIST(AbstractTheory*, AbstractTheory*)> ProverInvariantInferenceBase;
+class ProverInvariantInference : public ProverInvariantInferenceBase{
+public:
+	ProverInvariantInference()
+			: ProverInvariantInferenceBase("isinvariant",
+					"Returns true if the second theory is (provable with the induction method) an invariant of the first LTC-theory ",
+					false) {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto result = ProveInvariantInference::proveInvariant(get<0>(args), get<1>(args), NULL);
+		return InternalArgument(result);
+	}
+};

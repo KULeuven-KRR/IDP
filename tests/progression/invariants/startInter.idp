@@ -1,0 +1,33 @@
+vocabulary V{
+	type Time
+	Start: Time
+	Next(Time):Time
+	
+	P(Time)
+}
+
+theory T:V{
+	!t : P(t) <=> P(Next(t)).
+	
+
+}
+
+theory invar:V{
+	!t : P(t).
+
+}
+
+procedure expectedInvariant(){
+	return true
+}
+
+procedure expectedProverInvariant(){
+	return false
+}
+
+structure S:V{
+	Time = {1..100000}
+	Start = 1
+	P<ct> = {1}
+}
+

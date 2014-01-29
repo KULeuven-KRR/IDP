@@ -21,3 +21,16 @@ struct SplitLTCTheory {
 	 */
 	Theory* initialTheory;
 };
+
+struct SplitLTCInvariant {
+	/**
+	 * Theory over vocabulary biStateVoc. Contains:
+	 * * one constraint: P(now) => P(next)
+	 */
+	Formula* inductionStep;
+	/**
+	 * Theory over vocabulary stateVoc. Contains:
+	 * * one constraint: P(Start)
+	 */
+	Formula* baseStep;
+};

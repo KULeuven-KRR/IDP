@@ -117,6 +117,31 @@ void ambigcommand(const std::string& name);
 void wrongvalue(const std::string& option, const std::string& value, const ParseInfo&);
 
 void expected(ComponentType type, const ParseInfo&);
+
+/** Errors concerning progression and LTC **/
+namespace LTC {
+/**All LTC errors have in common that they require the program to STOP after an error is encountered instead of simply notifying the global data*/
+void error(const std::string& message);
+void error(const std::string& message, const ParseInfo& p);
+void defineStaticInTermsOfDynamic(const ParseInfo&);
+void timeStratificationViolated(const ParseInfo&);
+void containsStartAndNext(const ParseInfo&);
+void containsStartAndOther(const ParseInfo&);
+void invalidTimeTerm(const ParseInfo&);
+void multipleTimeVars(const std::string& var1, const std::string& var2, const ParseInfo&);
+void wrongTimeQuantification(const std::string& var, const ParseInfo&);
+void nonTopLevelTimeVar(const std::string& var, const ParseInfo&);
+void unexpectedTimeTerm(const std::string& term, const ParseInfo&);
+void invarContainsStart(const ParseInfo&);
+void invarContainsNext(const ParseInfo&);
+void invarContainsDefinitions(const ParseInfo&);
+void invarIsStatic(const ParseInfo&);
+void invarVocIsNotTheoVoc();
+void strucVocIsNotTheoVoc();
+void notInitialised();
+void progressOverWrongVocabulary(const std::string& expectedVoc, const std::string& realVoc);
+
+}
 }
 
 namespace Warning {

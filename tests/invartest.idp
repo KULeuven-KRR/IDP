@@ -1,0 +1,36 @@
+procedure main(prover){
+
+	stdoptions.timeout = 5
+	local answer
+	if prover then
+		answer = isinvariant(T,invar)
+	else
+		answer = isinvariant(T,invar,S)
+	end
+	
+	local expectedAnswer
+	if (prover and (expectedProverInvariant ~= nil)) then
+		expectedAnswer = expectedProverInvariant()
+	else
+		expectedAnswer = expectedInvariant()
+	end
+
+	if answer then
+		if expectedAnswer then
+			return 1
+		else
+			print("Found invariant while not expecting one ")
+			return 0
+		end
+	else
+		if expectedAnswer then
+			print("Did not find invariant while expecting one ")
+			return 0
+		else
+			return 1
+		end
+	end
+	
+	return 0	
+}
+

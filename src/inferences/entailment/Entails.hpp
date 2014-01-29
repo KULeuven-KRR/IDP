@@ -27,10 +27,7 @@ private:
 	std::vector<std::string> provenStrings, disprovenStrings;
 
 public:
-	static State doCheckEntailment(const std::string& command, Theory* axioms, Theory* conjectures) {
-		Entails c(command, axioms, conjectures);
-		return c.checkEntailment();
-	}
+	static State doCheckEntailment(const std::string& command, const Theory* axioms, const Theory* conjectures);
 
 private:
 	Entails(const std::string& command, Theory* axioms, Theory* conjectures);
