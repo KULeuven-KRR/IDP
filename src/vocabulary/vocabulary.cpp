@@ -1715,6 +1715,9 @@ void Vocabulary::add(Sort* s) {
 
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
+	for(auto p: s->parents()){
+		add(p);
+	}
 	updateStructures(s, structures);
 	add(s->pred());
 }
@@ -2175,25 +2178,26 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 	if (parent == NULL) {
 		return false;
 	}
-	std::map<Sort*, Sort*> child2parentsort;
-	for (auto i = child->firstSort(); i != child->lastSort(); ++i) {
-		auto childsort = i->second;
+	// cv = childvoc, pv = parentvoc
+	std::map<Sort*, Sort*> cv2pvsort;
+	for (auto it = child->firstSort(); it!=child->lastSort(); ++it) {
+		auto childsort = it->second;
 		auto parentsort = parent->sort(childsort->name());
 		if (parentsort == NULL || parentsort->parents().size() != childsort->parents().size()) {
 			return false;
 		}
-		child2parentsort[childsort] = parentsort;
+		cv2pvsort[childsort] = parentsort;
 	}
-	for (auto i = child2parentsort.cbegin(); i != child2parentsort.cend(); ++i) {
-		auto childsort = i->first;
-		auto parentsort = i->second;
-		for (auto j = childsort->parents().cbegin(); j != childsort->parents().cend(); ++j) {
-			auto childparentit = child2parentsort.find(*j);
-			if (childparentit == child2parentsort.cend()) {
+	for (auto c2p : cv2pvsort) {
+		auto cvsort = c2p.first;
+		auto pvsort = c2p.second;
+		for (auto cvparent : cvsort->parents()) {
+			auto childparentit = cv2pvsort.find(cvparent);
+			if (childparentit == cv2pvsort.cend()) {
 				return false;
 			}
 			bool found = false;
-			for (auto k = parentsort->parents().cbegin(); k != parentsort->parents().cend(); ++k) {
+			for (auto k = pvsort->parents().cbegin(); k != pvsort->parents().cend(); ++k) {
 				if (*k == childparentit->second) {
 					found = true;
 				}
@@ -2217,8 +2221,8 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 			}
 			std::vector<Sort*> mappedsorts;
 			for (auto k = childpred->sorts().cbegin(); k < childpred->sorts().cend(); ++k) {
-				auto sortit = child2parentsort.find(*k);
-				if (sortit == child2parentsort.cend()) {
+				auto sortit = cv2pvsort.find(*k);
+				if (sortit == cv2pvsort.cend()) {
 					return false;
 				}
 				mappedsorts.push_back(sortit->second);
@@ -2243,8 +2247,8 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 			}
 			std::vector<Sort*> mappedsorts;
 			for (auto k = childfunc->sorts().cbegin(); k < childfunc->sorts().cend(); ++k) {
-				auto sortit = child2parentsort.find(*k);
-				if (sortit == child2parentsort.cend()) {
+				auto sortit = cv2pvsort.find(*k);
+				if (sortit == cv2pvsort.cend()) {
 					return false;
 				}
 				mappedsorts.push_back(sortit->second);
