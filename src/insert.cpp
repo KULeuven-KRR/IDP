@@ -1216,21 +1216,7 @@ Function* Insert::constructorfunction(const string& name, const vector<Sort*>& i
 	return createfunction(name, insorts, parsingType, true, l);
 }
 
-Function* Insert::aritfunction(const string& name, const vector<Sort*>& sorts, YYLTYPE l) const {
-	auto pi = parseinfo(l);
-	for (size_t n = 0; n < sorts.size(); ++n) {
-		if (sorts[n] == NULL) {
-			return NULL;
-		}
-	}
-	auto orig = _currvocabulary->func(name);
-	unsigned int binding = orig ? orig->binding() : 0;
-	auto insorts = sorts;
-	insorts.pop_back();
-	auto f = new Function(name, insorts, sorts.back(), pi, binding);
-	_currvocabulary->add(f);
-	return f;
-}
+
 
 // add a definition to the current theory
 //in case the definition is NULL, nothing is done.
