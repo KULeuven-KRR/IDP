@@ -1,0 +1,27 @@
+vocabulary V{
+	type t
+	P(t)
+	R(t)
+	C
+}
+vocabulary Vout{
+	extern V::C/0
+}
+theory T:V{
+	C <=> ?x: P(x) & R(x).
+}
+structure S:V{
+	t = {1..100000000}
+	P = {1}
+}
+procedure main(){
+	stdoptions.timeout=1
+	stdoptions.liftedunitpropagation=false
+	sols = modelexpandpartial(T,S, Vout)
+	if(#(sols)==1)
+	then
+		return 1
+	else
+		return 0
+	end
+}

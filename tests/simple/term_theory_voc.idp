@@ -19,7 +19,7 @@ vocabulary sp_voc2 {
 theory sp_theory4: sp_voc2 {
 }
 
-term lengthOfPath: sp_voc {
+term lengthOfPath: sp_voc2 {
 	#{ x y : edgeOnPath(x,y) }
 }
 

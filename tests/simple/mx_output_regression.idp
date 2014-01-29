@@ -1,0 +1,22 @@
+procedure main(){
+	result = modelexpand(T,S,Vout)[1]
+	return 1
+}
+
+vocabulary V{
+	type Object
+	type Passenger isa Object
+	type Car isa Object	
+	pick(Passenger)
+	drop(Passenger)
+}
+vocabulary Vout{
+	extern V::pick/1
+	extern V::drop/1
+}
+
+theory T:V{
+}
+structure S:V{
+Passenger = {P0; P1; P2; P3; P4}
+}
