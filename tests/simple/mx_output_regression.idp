@@ -1,5 +1,6 @@
 procedure main(){
 	print(modelexpand(T,S,Vout)[1])
+	return 1
 }
 
 vocabulary V{

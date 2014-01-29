@@ -79,6 +79,7 @@ if(${BUILDTESTS})
 		tabletests.cpp
 		grounderfactorytests.cpp
 		parsertests.cpp
+		simple_idptests.cpp
 		overflowtests.cpp
 		transformationtests.cpp
 		commandtests.cpp
