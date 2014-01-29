@@ -16,6 +16,7 @@
 #include "TestUtils.hpp"
 #include "utils/FileManagement.hpp"
 #include "FileEnumerator.hpp"
+#include "errorhandling/IdpException.hpp"
 
 #include <dirent.h>
 #include <exception>
@@ -29,7 +30,16 @@ vector<string> generateListOfDefXSBFiles() {
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
 
+vector<string> generateListOfFailingDefXSBFiles() {
+	vector<string> testdirs {"definitionShouldFailWithXSBTests/"};
+	return getAllFilesInDirs(getTestDirectory(), testdirs);
+}
+
 class DefinitionWithXSBTest: public ::testing::TestWithParam<string> {
+
+};
+
+class DefinitionShouldFailWithXSBTest: public ::testing::TestWithParam<string> {
 
 };
 
@@ -50,6 +60,17 @@ TEST_P(DefinitionWithXSBTest, CalculatesDefinitionWithXSB) {
 
 INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionWithXSBTest,  ::testing::ValuesIn(generateListOfDefXSBFiles()));
 
+
+// Separate tests for cases in which an error should be thrown when trying to use XSB
+TEST_P(DefinitionShouldFailWithXSBTest, CalculatesFailingDefinitionWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "runCalcDefWithXSB(T,S)"););
+	ASSERT_EQ(result, Status::FAIL);
+}
+
+INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionShouldFailWithXSBTest,  ::testing::ValuesIn(generateListOfFailingDefXSBFiles()));
 
 
 // Tests on all normal MX test files that uses a random structure for the opens to check

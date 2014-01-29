@@ -49,16 +49,28 @@ ixint(X) :-
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     0 is ROUNDEDNUMBER - X.
+    
+ixint(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
 ixfloat(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     ROUNDEDNUMBER \= X.
+    
+ixfloat(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
 ixnat(X) :- 
     nonvar(X),
     X >= 0,
     ixint(X).
+    
+ixnat(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
 ixsame_number(X,Y) :-
     ixconvert_to_int(X,X1),
@@ -73,3 +85,6 @@ ixconvert_to_int(Num,Int) :-
 	nonvar(Num),
     ixfloat(Num), 
     Int = Num.
+    
+throw_infinite_type_generation_error :-
+    error_handler:misc_error('Trying to generate an infinite type with XSB\ntry to rerun with stdoptions.xsb=false to see if that works.').

@@ -52,3 +52,10 @@ procedure checkDefinitionEvaluation(theory, structure) {
 		return 0
 	end
 }
+
+procedure runCalcDefWithXSB(theory,structure) {
+	stdoptions.timeout = 5
+	stdoptions.xsb=true
+	XSBMODEL=calculatedefinitions(theory,structure)
+	return 1
+}
