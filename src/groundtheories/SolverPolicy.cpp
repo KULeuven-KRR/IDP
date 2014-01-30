@@ -267,7 +267,6 @@ private:
 	SymbolOffset symboloffset;
 	AbstractGroundTheory* theory;
 	bool recursive;
-	std::vector<SortTable*> _tables;
 
 public:
 	RealElementGrounder(Lit headatom, PFSymbol*symbol, const std::vector<GroundTerm>& args, AbstractGroundTheory* theory, bool recursive)
@@ -289,7 +288,6 @@ public:
 				arg2var[i]=varpos;
 				varpos++;
 			}
-			_tables.push_back(theory->structure()->inter(symbol->sorts()[i]));
 		}
 	}
 
@@ -347,17 +345,7 @@ public:
 				}
 			}
 		} else {
-			auto headfalse = false;
-			for(auto i=0; i<args.size(); ++i){
-				if(not _tables[i]->contains(createDomElem(varvalues[i]))){ // TODO could do same optimization as in translator: if term has same type as pred, no out-of-bounds is possible
-					headfalse = true;
-				}
-			}
-			if(headfalse){
-				temphead = _false;
-			}else{
-				temphead = translator()->translateReduced(symboloffset, elemtuple, recursive);
-			}
+			temphead = translator()->translateReduced(symboloffset, elemtuple, recursive);
 		}
 		GroundClause clause;
 		if (headvalue) {

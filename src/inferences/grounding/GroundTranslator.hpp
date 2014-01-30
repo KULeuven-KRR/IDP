@@ -194,7 +194,6 @@ public:
 
 	TruthValue checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign);
 
-	// IMPORTANT: these methods do NOT check the types!!!
 	Lit translateNonReduced(PFSymbol* symbol, const ElementTuple& args);
 	Lit translateReduced(PFSymbol* symbol, const ElementTuple& args, bool recursive);
 	Lit translateReduced(const SymbolOffset& offset, const ElementTuple& args, bool recursivecontext);
