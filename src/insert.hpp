@@ -414,6 +414,7 @@ private:
 	template<class Table>
 	void setInter(NSPair* nst, bool expectsFunc, UTF truthvalue, Table* t, int arity) const;
 	PFSymbol* findUniqueMatch(NSPair* nst)const;
+	//Finishes an LTC vocabulary: adds derived vocabularies to the current space.
 	void finishLTCVocab(Vocabulary* voc, const LTCVocInfo* ltcVocInfo);
 
 public:
