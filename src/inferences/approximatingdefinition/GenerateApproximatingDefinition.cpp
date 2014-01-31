@@ -541,8 +541,7 @@ Definition* GenerateApproximatingDefinition::getDefinition() {
 }
 
 // Get the definition that is the basis for all approximating definitions.
-// This includes definitions for the TRUE and FALSE predforms, and the definition
-// for the top-level formulas saying they are true.
+// The definition for the top-level formulas saying they are true.
 Definition* GenerateApproximatingDefinition::getBasicDefinition() {
 	auto d = new Definition();
 

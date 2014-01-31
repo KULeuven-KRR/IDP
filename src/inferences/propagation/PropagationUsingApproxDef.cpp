@@ -38,7 +38,7 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 	auto defCalculatedResult = CalculateDefinitions::doCalculateDefinitions(
 			def_to_calculate, approxdef_structure, false, approxdef->getSymbolsToQuery());
 
-	if(not defCalculatedResult._hasModel and approxdef->isConsistent(defCalculatedResult._calculated_model)) {
+	if( approxdef->isConsistent(defCalculatedResult._calculated_model) and not defCalculatedResult._hasModel) {
 		approxdef->updateStructure(structure,defCalculatedResult._calculated_model);
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
