@@ -29,16 +29,8 @@ struct mappings {
 	std::map<PFSymbol*, PFSymbol*> _predCt2InputPredCt;
 	std::map<PFSymbol*, PFSymbol*> _predCf2InputPredCf;
 
-	// The predforms used for "true" and "false"
-	PredForm* _true_predform;
-	PredForm* _false_predform;
 
 	mappings() {
-		auto formulaID = getGlobal()->getNewID();
-		auto ctpred = new Predicate(("TRUE_" + toString(formulaID)),{});
-		auto cfpred = new Predicate(("FALSE_" + toString(formulaID)),{});
-		_true_predform = new PredForm(SIGN::POS, ctpred, {}, FormulaParseInfo());
-		_false_predform = new PredForm(SIGN::POS, cfpred, {}, FormulaParseInfo());
 	}
 
 
