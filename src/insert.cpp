@@ -777,7 +777,7 @@ void Insert::closeLTCvocab(NSPair* time, NSPair* start, NSPair* next) {
 	auto startnameBack = startname.back();
 	startname.pop_back();
 	startname.push_back(startnameBack + "/0");
-	symbols.start = funcInScope(startname, start->_pi);
+	symbols.start = funcInScope(startname, 0, start->_pi);
 	if (symbols.start == NULL) {
 		error("Could not find the provided Start symbol", voc->pi());
 	}
@@ -786,7 +786,7 @@ void Insert::closeLTCvocab(NSPair* time, NSPair* start, NSPair* next) {
 	auto nextnameBack = nextname.back();
 	nextname.pop_back();
 	nextname.push_back(nextnameBack + "/1");
-	symbols.next = funcInScope(nextname, start->_pi);
+	symbols.next = funcInScope(nextname, 1, start->_pi);
 	if (symbols.next == NULL) {
 		error("Could not find the provided Next symbol", voc->pi());
 	}
