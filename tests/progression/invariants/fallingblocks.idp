@@ -1,0 +1,134 @@
+/* The header LTCvocabulary is only supported in IDP 3.2.2 and above.*/
+
+vocabulary V{
+	
+	//These three are standard in planning problems: Time, an initial time and a successor function
+	//The header "LTCvocabulary" indicates among others that these three constructs will be present and what their meaning is.
+	type Time isa nat
+	Start: Time
+	partial Next(Time):Time //The successor is partial since we will search for plans in a finite context. In that case, the last state has no successor anymore.
+	
+	
+	//The objects in our world consist of blocks and one Table 
+	type Object
+	Table:Object
+	
+	//The fluents contain info on the location of the Objects (on eachother or on the table or in the hands of the robot)
+	On(Time, Object, Object) //first object is on second
+	Holds(Time, Object)
+	
+	//This predicate describes the initial situation
+	I_On(Object, Object)
+	
+	//One derived fluent: Above: whether one Object is above another
+	Above(Time, Object, Object) //first object is above second
+	//Another derived fluent: Falls: true when a block is caused to fall.
+	Falls(Time, Object)
+	
+	
+	//The actions: a robot can take or put down
+	Take(Time, Object)
+	Put(Time, Object, Object) //Put the first object on the second 
+	
+	//MaxBlocks determines the maximum number of blocks a robot can hold. E.g., if MaxBlocks = 2, a robot can hold a block with one on top.
+	type numbers isa int
+	MaxBlocks: numbers
+}
+
+theory T:V{
+	
+	//Check if the initial situation is a valid one: the table cannot be on other blocks
+	! b: ~ I_On(Table,b).
+	//In fact, the above should hold at any point in time; it should be an invariant of the theory. We shall check this later on.
+	 
+	
+	//A robot can only take one action at a time
+	!t : #{b: Take(t,b)} + #{b b': Put(t,b,b')} < 2.
+	
+	//Preconditions:
+	// * A robot can only put things down that he has
+	! t b: (?b': Put(t,b, b' )) => Holds(t,b).
+	// * A robot can never take the table
+	! t: ~Take(t, Table).
+	// * A robot cannot take something if he is holding something else
+	! t b: Take(t,b) => ~ ?b': Holds(t,b') .
+	// * A robot cannot put a block on an occupied block
+	! t b b': Put(t,b,b') & b' ~= Table => ~ ? b2: On(t,b2,b').	
+	// * A robot can only put a block on a block that is resting (indirectly) on the table
+	! t b b2:  Put(t,b,b2) => Above(t,b2,Table).
+	
+	
+	
+
+	{
+		//Above is the transitive closure of On for every point in time.
+		!t b1 b2: Above(t, b1, b2) <- On(t, b1, b2).
+		!t b1 b2: Above(t, b1, b2) <- ? b3: On(t, b1, b3) & Above(t,b3,b2).
+		
+		//A block falls if the robot tries to take a too high pile.
+		! t bF: Falls(t,bF) <- ? bT: Take(t,bT) &  Above(t, bF,bT) & #{bS: Above(t, bS, bT)} + 1 > MaxBlocks .
+		
+		//A robot holds a block if he takes it
+		! t b: Holds(Next(t),b) <- Take(t,b).
+		//Or if he had it and does not put it away.
+		! t b: Holds(Next(t),b) <- Holds(t,b) & ~ ? b': Put(t,b,b'). 
+		
+		//An object is on another object if:
+		// * Initially: given by I_On
+		! b1 b2: On(Start, b1, b2) <- I_On(b1,b2).
+		// * Someone puts it there
+		! t b1 b2: On(Next(t), b1, b2) <- Put(t, b1, b2).
+		// * it was already there and 
+		// * - It is not moved AND
+		// * - there is no block lower in the stack that is picked up and causes this blocks to fall
+		! t b1 b2: On(Next(t), b1, b2) <- On(t, b1, b2)	& ~ Take(t, b1) & ~ Falls(t,b1).
+		// * In case a block falls, he ends up on the table
+		! t b: On(Next(t), b, Table) <- Falls(t,b). 
+		
+	}
+	
+}
+
+structure S:V{
+	Time = {0..4}
+	Object = {B1;B2;B3;T}
+	Table = T
+	I_On={B1,T;B2,B1;B3,B2}
+	
+	MaxBlocks=2
+}
+
+//We expect that these are invariants of the theory
+//Note: sometimes it is enough to put few invariants here. 
+//Proving invariants with the induction method sometimes require that they are strong enough.
+//That is why we put them all in one theory.
+theory invar:V{
+	//The table is never on something else
+	!t : ~ ? b: On(t, Table,b).
+	//No block is ever on itself
+	! t b: ~On(t,b,b).
+	//No block is ever above itself
+	! t b: ~Above(t,b,b).
+	//Two blocks can never rest on the same block. 
+	! t b : b ~= Table => #{b': On(t, b',b)} < 2.
+	//A block can only rest on one block at most. 
+	! t b : #{b': On(t, b, b')} < 2.
+	//The robot can never hold the table
+	!t : ~Holds(t, Table).
+	//The robot can hold at most one block
+	!t : #{b:Holds(t, b)} < 2.
+	//A block cannot both be on another block and in the hands of the robot
+	! t b: Holds(t,b) => ~?b2: On(t,b,b2).
+}
+
+
+procedure expectedInvariant(){
+	return true
+}
+
+
+procedure ignoreProver(){
+	//We do not know yet if the prover should be able to prove this invariant (definitions are present)
+	return true
+}
+

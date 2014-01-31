@@ -17,7 +17,8 @@
 
 LTCVocabularyTransformer::LTCVocabularyTransformer(const Vocabulary* ltcVoc, LTCInputData input)
 		: 	_ltcVoc(ltcVoc),
-			_inputData(input) {
+			_inputData(input),
+			_result(NULL) /*Guaranteed to be set in transform()*/{
 }
 LTCVocabularyTransformer::~LTCVocabularyTransformer() {
 
@@ -52,8 +53,8 @@ LTCVocInfo* LTCVocabularyTransformer::transform() {
 	_result->time = _inputData.time;
 	_result->start = _inputData.start;
 	_result->next = _inputData.next;
-	_result->stateVoc = new Vocabulary(_ltcVoc->name() + "_OneState");
-	_result->biStateVoc = new Vocabulary(_ltcVoc->name() + "_BiState");
+	_result->stateVoc = new Vocabulary(_ltcVoc->name() + "_ss");
+	_result->biStateVoc = new Vocabulary(_ltcVoc->name() + "_bs");
 	for (auto nameAndSort = _ltcVoc->firstSort(); nameAndSort != _ltcVoc->lastSort(); ++nameAndSort) {
 		auto sort = (*nameAndSort).second;
 		if (sort != _inputData.time) {

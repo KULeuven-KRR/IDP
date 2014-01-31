@@ -68,7 +68,7 @@ class InitInference: public InitInferenceBase {
 public:
 	InitInference()
 			: InitInferenceBase("initialise",
-					"Initialise an LTC theory. Input: an LTC theory and the used Time type, Start and Next functions. Output: (depending on stdoptions.nbmodels) a number of models, and (arguments 2-5 respectively) the used bistate theory, initial theory, bistate vocabulary and initial vocabulary (for in case you want to modify the progression behaviour yourself)",
+					"Initialise an LTC theory. Input: an LTC theory and the used Time type, Start and Next functions. Output: (depending on stdoptions.nbmodels) a number of models, and (arguments 2-5 respectively) the used bistate theory, initial theory, bistate vocabulary (V_bs) and single-state vocabulary (V_ss) (for in case you want to modify the progression behaviour yourself)",
 					false) {
 		setNameSpace(getInternalNamespaceName());
 	}

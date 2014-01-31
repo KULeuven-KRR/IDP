@@ -47,10 +47,12 @@
 #include "theoryquery.hpp"
 #include "unsatcore.hpp"
 #include "progress.hpp"
+#include "names.hpp"
 
 #include "answer.hpp" //easter egg
 
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -136,6 +138,10 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<InitInferenceNoTime>());
 	inferences.push_back(make_shared<InvariantInference>());
 	inferences.push_back(make_shared<ProverInvariantInference>());
+	inferences.push_back(make_shared<setNameInference<Structure*> >());
+	inferences.push_back(make_shared<getNameInference<Structure*> >());
+	inferences.push_back(make_shared<setNameInference<AbstractTheory*> >());
+	inferences.push_back(make_shared<getNameInference<AbstractTheory*> >());
 
 	inferences.push_back(make_shared<AnswerInference>());
 	return inferences;

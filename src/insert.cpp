@@ -27,6 +27,8 @@
 #include "theory/Query.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "structure/StructureComponents.hpp"
+#include "inferences/progression/data/LTCData.hpp"
+#include "inferences/progression/data/StateVocInfo.hpp"
 #include "fobdds/CommonBddTypes.hpp"
 #include "fobdds/FoBddManager.hpp"
 #include "GlobalData.hpp"
@@ -732,6 +734,69 @@ void Insert::closevocab() {
 	}
 	closeblock();
 }
+
+void Insert::finishLTCVocab(Vocabulary* voc, const LTCVocInfo* ltcVocInfo) {
+	auto singlestatevoc = ltcVocInfo->stateVoc;
+	auto bistatevoc = ltcVocInfo->biStateVoc;
+	auto singlestateEarlier = vocabularyInScope(singlestatevoc->name(), voc->pi());
+	auto bistateEarlier = vocabularyInScope(bistatevoc->name(), voc->pi());
+	if (singlestateEarlier) {
+		declaredEarlier(ComponentType::Vocabulary, singlestatevoc->name(), voc->pi(), singlestateEarlier->pi());
+	}
+	if (bistateEarlier) {
+		declaredEarlier(ComponentType::Vocabulary, bistatevoc->name(), voc->pi(), bistateEarlier->pi());
+	}
+	_currspace->add(singlestatevoc);
+	_currspace->add(bistatevoc);
+	if (_currspace->isGlobal()) {
+		LuaConnection::addGlobal(singlestatevoc);
+	}
+	if (_currspace->isGlobal()) {
+		LuaConnection::addGlobal(bistatevoc);
+	}
+}
+
+void Insert::closeLTCvocab() {
+	auto voc = _currvocabulary;
+	auto ltcvocs = LTCData::instance()->getStateVocInfo(voc);
+	finishLTCVocab(voc, ltcvocs);
+	closevocab();
+}
+
+void Insert::closeLTCvocab(NSPair* time, NSPair* start, NSPair* next) {
+	auto voc = _currvocabulary;
+
+	LTCInputData symbols;
+
+	symbols.time = sortInScope(time->_name, time->_pi);
+	if (symbols.time == NULL) {
+		error("Could not find the provided Time symbol ", voc->pi());
+	}
+
+	auto startname = start->_name;
+	auto startnameBack = startname.back();
+	startname.pop_back();
+	startname.push_back(startnameBack + "/0");
+	symbols.start = funcInScope(startname, start->_pi);
+	if (symbols.start == NULL) {
+		error("Could not find the provided Start symbol", voc->pi());
+	}
+
+	auto nextname = next->_name;
+	auto nextnameBack = nextname.back();
+	nextname.pop_back();
+	nextname.push_back(nextnameBack + "/1");
+	symbols.next = funcInScope(nextname, start->_pi);
+	if (symbols.next == NULL) {
+		error("Could not find the provided Next symbol", voc->pi());
+	}
+
+	closevocab();
+
+	auto ltcvocs = LTCData::instance()->getStateVocInfo(voc, symbols);
+	finishLTCVocab(voc, ltcvocs);
+}
+
 
 void Insert::setvocab(const longname& vs, YYLTYPE l) {
 	auto pi = parseinfo(l);

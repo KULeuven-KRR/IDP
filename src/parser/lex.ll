@@ -320,6 +320,9 @@ COMMENTLINE2	"--".*
 "vocabulary"			{ BEGIN(vocabulary);
 						  parser.advancecol();
 						  return VOCAB_HEADER;		}
+"LTCvocabulary"			{ BEGIN(vocabulary);
+						  parser.advancecol();
+						  return LTC_VOCAB_HEADER;		}
 "theory"				{ BEGIN(theory);
 						  parser.advancecol();
 						  return THEORY_HEADER;		}
