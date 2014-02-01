@@ -49,6 +49,11 @@ class InvarTest: public ::testing::TestWithParam<string> {
 TEST_P(ProgressionTest, DoesProgression) {
 	runTests("progressiontest.idp", GetParam());
 }
+
+TEST_P(ProgressionTest, DoesProgressionWithBuiltinSimulation) {
+	runTests("progressiontest.idp", GetParam(), "alternative()");
+}
+
 TEST_P(ProgressionTestException, DoesProgression) {
 	cerr << "Testing " << GetParam() << "\n";
 	ASSERT_EQ(Status::FAIL, test({ GetParam()}));

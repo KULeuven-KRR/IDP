@@ -7,12 +7,14 @@ procedure main(){
 		sol = initialise(T,S)[1]
 	end
 	if sol == nil then
+		print("No initial state")
 		return 0
 	end
 	times = nbOfProgressions()
 	for x = 1, times, 1 do
 		sol = progress(T,sol)[1]
 		if sol == nil then
+			print(x,"no next state")
 			return 0
 		end
 	end
@@ -20,6 +22,7 @@ procedure main(){
 	if strict() then
 		sol = progress(T,sol)[1]
 		if sol == nil then
+			print("too long sequence")
 			return 1
 		end
 		return 0
@@ -27,5 +30,26 @@ procedure main(){
 	return 1
 		
 	
+}
+
+include <LTC>
+
+procedure alternative(){
+	local expected = nbOfProgressions()
+	sols = simulate_random(T,S, expected + 1) 
+	if strict() then
+		if (#sols == expected) then
+			return 1
+		else
+			return 0
+		end
+	end
+	
+	if (#sols >= expected) then
+		return 1
+	else
+		return 0
+	end
+
 }
 

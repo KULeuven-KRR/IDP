@@ -1,0 +1,114 @@
+/**
+ * Title: A Turing Machine Simulator
+ * Author: marcd
+ * 
+ * M= \langle Q, \Gamma, b, \Sigma, \delta, q_0, F \rangle where
+
+    Q is a finite, non-empty set of states
+    \Gamma is a finite, non-empty set of the tape alphabet/symbols
+    b \in \Gamma is the blank symbol (the only symbol allowed to occur on the tape infinitely often at any step during the computation)
+    \Sigma\subseteq\Gamma\setminus\{b\} is the set of input symbols
+    q_0 \in Q is the initial state
+    F \subseteq Q is the set of final or accepting states.
+    \delta: Q \setminus F \times \Gamma \rightarrow Q \times \Gamma \times \{L,R\} is a partial function called the transition function, where L is left shift, R is right shift. (A relatively uncommon variant allows "no shift", say N, as a third element of the latter set.)
+
+Anything that operates according to these specifications is a Turing machine.
+ * 
+ * 
+ * 
+ */
+ 
+ include <LTC>
+
+LTCvocabulary V{
+ 	type Time
+ 	Start : Time
+ 	Next(Time):Time
+ 	type Dir constructed from {L,R}
+ 	type Sym
+	b: Sym							//blanc
+  	type TapePos isa int
+ 	ValueAtPos(TapePos,Time):Sym  	// symbol sym at tape position at time 
+ 	InitialVal(TapePos):Sym			// the initial values on tape
+  	type Q							// states
+  	Halt:Q							// halting state
+	q0:Q							// initial state
+  	CurSt(Time):Q					// Current state
+ 	CurPos(Time):TapePos  			// Current position tape
+ 	CurVal(Time):Sym				// The current value
+  	Delta(Q,Sym,Sym,Dir,Q)
+ 	DeltaQ(Q,Sym,Q) 				// arg 3 is next state 
+ 	DeltaSym(Q,Sym,Sym)				// arg 3 is written symbol
+ 	DeltaDir(Q,Sym,Dir)				// arg 3 is direction tape movement
+ }
+ 
+ theory T: V{
+ ! ta : InitialVal(ta)=b.
+ 	
+ { DeltaQ(q,s,qn) <- ? sn d: 	Delta(q,s,sn,d,qn).}
+ { DeltaSym(q,s,sn) <- ? d qn: 	Delta(q,s,sn,d,qn).}
+ { DeltaDir(q,s,d) <- ? sn qn: 	Delta(q,s,sn,d,qn).}
+  	
+ {	ValueAtPos(ta,Start)= InitialVal(ta).
+ 	ValueAtPos(ta,Next(t)) = ValueAtPos(ta,t) <- CurPos(t)~=ta.
+ 	ValueAtPos(CurPos(t),Next(t)) = sy <- 
+ 		DeltaSym(CurSt(t),CurVal(t),sy).
+ 	ValueAtPos(CurPos(t),Next(t)) = ValueAtPos(ta,t) <- 
+ 		~ ? sy: DeltaSym(CurSt(t),CurVal(t),sy).
+ }
+ {	CurPos(Start)=0.
+    CurPos(Next(t))=CurPos(t)+1 <- DeltaDir(CurSt(t),CurVal(t),L).
+ 	CurPos(Next(t))=CurPos(t)-1 <- DeltaDir(CurSt(t),CurVal(t),R).
+ 	CurPos(Next(t))=CurPos(t) <- ~ ? d: DeltaDir(CurSt(t),CurVal(t),d). //Hier stond een ~te weinig.
+ }
+ {
+ 	CurVal(t) = ValueAtPos(CurPos(t),t).
+ }
+ 
+ {	CurSt(Start)=q0.
+ 	CurSt(Next(t))=st <- DeltaQ(CurSt(t),CurVal(t),st).
+ 	CurSt(Next(t))= CurSt(t) <- ~ ? x: DeltaQ(CurSt(t),CurVal(t),x).//Hier stond een ~te weinig.
+ }
+ 
+ 
+ 
+ 
+ }
+ structure S:  V{
+ 	Q = { A;B;C;Halt}
+ 	Halt=Halt	
+ 	q0=A
+ 	Sym={0;1}
+ 	b=0
+ 	TapePos = {-6..6} //Aangepast: was 1..10
+ 	Delta= { A,0,1,R,B ; A,1,1,L,C;  
+ 		     B,0,1,L,A ; B,1,1,R,B;
+ 		     C,0,1,L,B ; C,1,1,R,Halt }
+
+ }
+ include <mx>
+ 
+procedure stop(struc){
+ return (struc[V_ss::CurSt]() == struc[V_ss::Halt]())
+}
+
+ procedure thesimulation(){
+ 	local result = LTC.simulate(T,S,false,0,printonestate,stop)
+ }
+ 
+ procedure printonestate(state){
+ 	print("Current position:", state[V_ss::CurPos]())
+	print("Current Value:"," ", state[V_ss::CurVal]())
+	print("Current State:"," ", state[V_ss::CurSt]())
+	print("Current tape value:", state[V_ss::ValueAtPos].graph.ct)
+ }
+ 
+ procedure nbOfProgressions(){
+	return 13
+}
+
+procedure strict(){
+	return true
+}
+ 
+

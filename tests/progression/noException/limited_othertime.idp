@@ -1,4 +1,4 @@
-vocabulary V{
+LTCvocabulary V (anonymous, myfun, otherfun){
 	type anonymous
 	myfun:anonymous
 	otherfun(anonymous):anonymous
@@ -11,10 +11,6 @@ theory T:V{
 		F(otherfun(t)) = y <- F(t)  = y - 1.
 		F(myfun) = 0.
 	}
-}
-
-procedure init(){
-	return initialise(T,S,V::anonymous.type,V::myfun,V::otherfun)
 }
 
 procedure nbOfProgressions(){

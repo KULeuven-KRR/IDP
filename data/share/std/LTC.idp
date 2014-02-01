@@ -1,0 +1,170 @@
+	
+
+/** 
+Contains some internal procedures used in the simulations.
+Might be useful in case you modify the behaviour of simulation.
+*/
+namespace intern{
+
+/**Prints a list of states according to the printprocedure
+*/
+procedure printstates(models, printprocedure){
+	for i = 1, #models do 
+		print(i, "State "..i)
+		print("=====================")
+		printprocedure(models[i])
+		print("=====================")
+	end
+
+}	
+
+/**
+Returns a number between 0 and #states: the state to choose 
+0 means: STOP
+Asks the user is asked for such a number and uses the printprocedure to visualise the states
+*/
+procedure pickstate(states, printprocedure){
+	print(">> Please choose between the following states")
+	print("0","STOP")
+	printstates(states, printprocedure) 
+	local num
+	local validnum = false
+	while not validnum do
+		print("Please enter a number between 0 and "..#states)
+		num = tonumber(io.read())
+		if (num ~= nil and num >= 0 and #states >= num ) then
+			validnum = true
+		end
+	end
+	return num
+}
+
+procedure simplyFalse(){
+	return false
+}
+
+}
+
+
+
+
+/** Performs a random simulation on a given LTC-theory T in the context of a structure S
+*  This will print a sequences (of length steps) of states (structures over the single-state vocabulary) 
+* where the transition between states is according to T.
+* (i.e., the first state is a valid initial state, the second state is a valid successor of the first,...)
+* If for some reason, a state has no successors, the method stops and mentions this.
+* 
+* Furthermore, this returns a list of the obtained states*/
+procedure simulate_random(T, S, steps){
+	return simulate(T,S,true,steps,nil, nil)
+}
+
+/** Performs an interactive simulation on a given LTC-theory T in the context of a structure S
+*  This will print a sequences (of length steps) of states (structures over the single-state vocabulary) 
+* where the transition between states is according to T.
+* (i.e., the first state is a valid initial state, the second state is a valid successor of the first,...)
+* If for some reason, a state has no successors, the method stops and mentions this.
+* Each time, the user will be asked to choose between the set of valid next states.
+* 
+* Furthermore, this returns a list of the obtained states*/
+procedure simulate_interactive(T, S){
+	return simulate(T,S,false,0,nil, nil)
+}
+
+/** Complex simulation method offering a great flexibility.
+* In most cases the procedures simulate_random or simulate_interactive will be sufficient!
+* -*-*-*-
+* Performs simulation on a given LTC-theory T in the context of a structure S
+* This will print a sequences (of length steps) of states (structures over the single-state vocabulary) 
+* where the transition between states is according to T.
+* (i.e., the first state is a valid initial state, the second state is a valid successor of the first,...)
+* If for some reason, a state has no successors, the method stops and mentions this.
+* Furthermore, this returns a list of the obtained states
+* 
+* The extra arguments are:
+* - random: if this is true, the simulation is random, otherwise it is interactive
+* - steps: if steps is 0, can continue arbitrarily long, if steps is a positive integer n, runs at most n steps.
+* - printprocedure(structure) is a function with one argument, a single-state-structure. Can be used if you do not wish to print the entire structure
+*   but for example only certain predicates. The user should define this function
+* - shouldstop(structure) is a unary function returning true if the simulation should stop in a certain state (for example if a game-over state is reached)
+* - statepicker(states, printprocedure) is a function that returns a number between 0 and #states: the chosen state (used in interactive case). By default asks the user for input.
+* -> each of the above functions can be nil, in that case, the procedure will fall back to the default
+*/
+
+procedure simulate(T, S, random, steps, printprocedure, shouldStop, statepicker){
+	if printprocedure == nil then
+		printprocedure = print
+	end
+	if shouldStop == nil then
+		shouldStop = intern.simplyFalse
+	end
+	if statepicker == nil then
+		statepicker = intern.pickstate
+	end
+	
+	
+	print(">> Starting simulation")
+
+	--buffer is only for the eclipse plugin. This ensures that questions are not buffered until after the answer is expected
+	io.stdout:setvbuf("no")
+ 	io.stderr:setvbuf("no")
+
+	local backup = stdoptions.nbmodels
+ 	stdoptions.nbmodels =0
+ 	
+ 	local models = initialise(T,S)
+
+	local step = 1
+ 	local cont = (#models > 0)
+	local result = {}
+ 	
+ 	while cont do
+		print(">> Simulator step ", step)
+		
+		local num
+		if random then
+			num = math.random(#models)
+		else
+			num = statepicker(models, printprocedure)
+		end
+				
+		if num == 0 then
+			print("Simulator will stop: user asked so.")
+			break
+		end
+
+	 	local chosen=models[num]
+	 	result[step]=chosen
+	 	
+	 	print("Chosen state:",num)
+	 	printprocedure(chosen)
+	 	
+	 	step = step+1
+		if steps ~= 0 then
+			if step == steps then
+				print("Simulator will stop: maximum number of steps reached")
+				cont = false;
+			end
+		end
+	 	if  shouldStop(chosen) then
+			print("Simulator will stop: the chosen structure satisfies the stop criterion")
+	 		cont = false
+ 		end
+ 		
+ 		if cont then
+		 	models = progress(T,chosen)
+		end
+		
+		if (#models == 0) then
+			print("Simulator will stop: no more valid successor states")
+	 		cont = false 
+	 	end
+	 end
+	 
+	 
+	 stdoptions.nbmodels=backup
+	 return result
+}
+
+
+
