@@ -1,4 +1,4 @@
-
+	
 
 /** 
 Contains some internal procedures used in the simulations.
@@ -21,8 +21,7 @@ procedure printstates(models, printprocedure){
 /**
 Returns a number between 0 and #states: the state to choose 
 0 means: STOP
-If random is true, this is a random number between 1 and #states
-Otherwise, the user is asked for such a number
+Asks the user is asked for such a number and uses the printprocedure to visualise the states
 */
 procedure pickstate(states, printprocedure){
 	print(">> Please choose between the following states")
@@ -84,10 +83,10 @@ procedure simulate_interactive(T, S){
 * 
 * The extra arguments are:
 * - random: if this is true, the simulation is random, otherwise it is interactive
-* - steps: if steps is 0, can continue arbitrary long, if steps is a positive integer n, runs at most n steps.
-* - printprocedure is a function with one argument, a single-state-structure. Can be used if you do not wish to print the entire structure
+* - steps: if steps is 0, can continue arbitrarily long, if steps is a positive integer n, runs at most n steps.
+* - printprocedure(structure) is a function with one argument, a single-state-structure. Can be used if you do not wish to print the entire structure
 *   but for example only certain predicates. The user should define this function
-* - shouldstop is a unary function returning true if the simulation should stop (for example if a game-over state is reached)
+* - shouldstop(structure) is a unary function returning true if the simulation should stop in a certain state (for example if a game-over state is reached)
 * - statepicker(states, printprocedure) is a function that returns a number between 0 and #states: the chosen state (used in interactive case). By default asks the user for input.
 * -> each of the above functions can be nil, in that case, the procedure will fall back to the default
 */
@@ -106,6 +105,7 @@ procedure simulate(T, S, random, steps, printprocedure, shouldStop, statepicker)
 	
 	print(">> Starting simulation")
 
+	--buffer is only for the eclipse plugin. This ensures that questions are not buffered until after the answer is expected
 	io.stdout:setvbuf("no")
  	io.stderr:setvbuf("no")
 
