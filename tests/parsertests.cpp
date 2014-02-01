@@ -79,10 +79,4 @@ TEST(MakeTrueTest, SameVars){
 	ASSERT_EQ(Status::FAIL, test( { testfile}));
 }
 
-TEST(ParseFromLuaTest, CreatesOwnFile) {
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { getTestDirectory() + "mx/parseinlua.idp" }););
-	ASSERT_EQ(Status::SUCCESS, result);
-}
-
 }
