@@ -3220,11 +3220,11 @@ InternalPredTable* InverseInternalPredTable::getInverseTable(InternalPredTable* 
 	if(iipt != NULL){
 		return iipt->table();
 	}
-/*	auto bddpt = dynamic_cast<BDDInternalPredTable*>(inv);
+	auto bddpt = dynamic_cast<BDDInternalPredTable*>(inv);
 	if (bddpt != NULL) {
 		auto mgr = bddpt->bdd()->manager();
 		return new BDDInternalPredTable(mgr->negation(bddpt->bdd()), mgr, bddpt->vars(), bddpt->structure());
-	}*/
+	}
 	return new InverseInternalPredTable(inv);
 }
 
