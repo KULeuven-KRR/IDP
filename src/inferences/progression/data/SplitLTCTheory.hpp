@@ -22,15 +22,37 @@ struct SplitLTCTheory {
 	Theory* initialTheory;
 };
 
+enum class InvarType {SingleStateInvar, BistateInvar};
+
 struct SplitLTCInvariant {
 	/**
-	 * Theory over vocabulary biStateVoc. Contains:
-	 * * one constraint: P(now) => P(next)
+	 * The kind of invariatn this is. For a single-state invariant, this formula contains two constraints:
+	 * * basestep, which contains a formula for proving the base step of the induction
+	 * * inductionstep, which contains a formula for proving the induction step of the formula.
+	 *
+	 * For a bistate invariant, we should only prove one claim, this claim can be found in
+	 * * bistateInvar
 	 */
-	Formula* inductionStep;
+	InvarType invartype;
+
+
 	/**
+	 * Only relevanti if this invariant is a single-state invariant
 	 * Theory over vocabulary stateVoc. Contains:
 	 * * one constraint: P(Start)
 	 */
 	Formula* baseStep;
+	/**
+	 * Only relevanti if this invariant is a single-state invariant
+	 * Theory over vocabulary biStateVoc. Contains:
+	 * * one constraint: P(now) => P(next)
+	 */
+	Formula* inductionStep;
+
+
+	/**
+	 * Only relevanti if this invariant is a bistate invariant
+	 * Theory that contains the translation of the invariant to the bistatevocabulary
+	 */
+	Formula* bistateInvar;
 };

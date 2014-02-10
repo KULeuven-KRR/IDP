@@ -247,15 +247,37 @@ SplitLTCInvariant* LTCTheorySplitter::splitInvar(const Theory* theo) {
 	Assert(theo != NULL);
 
 	initializeVariables(theo);
+	auto symbols = FormulaUtils::collectSymbols(theo);
+	if (contains(symbols, _next)) {
+		createTheories(theo, false);
+		if (not _initialTheory->definitions().empty() || not _bistateTheory->definitions().empty()) {
+			Error::LTC::invarContainsDefinitions(theo->pi());
+		}
+		if (not _initialTheory->sentences().empty()) {
+			Error::LTC::invarContainsStart(theo->pi());
+		}
+		auto result = new SplitLTCInvariant();
+		result->invartype = InvarType::BistateInvar;
+		result->bistateInvar = new BoolForm(SIGN::POS, true, _bistateTheory->sentences(), FormulaParseInfo());
+		if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 0) {
+			std::clog << "Splitting the LTC bistate invariant\n" << toString(theo) << "\nresulted in the following formula: \n"
+					<< toString(result->bistateInvar) << "\n";
+		}
+		delete (_initialTheory);
+		return result;
+	}
+
+	//This is the case where we have a single-state invariant.
 	createTheories(theo, true);
 
 	auto result = new SplitLTCInvariant();
-	//For transforming invariants, we still need to post-process a bit.
+	result->invartype = InvarType::SingleStateInvar;
+	//For transforming ss-invariants, we still need to post-process a bit.
 	//_initTheo contains all invar constraints on time Start, we still need to conjoin this
 	// _bistateTheo, contains invar on time t+1. Should be transformed to: allinvars(t) => allinvars(t+1)
-	auto allinvars = new BoolForm(SIGN::POS,true,_initialTheory->sentences(), FormulaParseInfo());
-	auto allinvarsNext = new BoolForm(SIGN::POS,true,_bistateTheory->sentences(), FormulaParseInfo());
-	auto notallinvars= allinvars->clone();
+	auto allinvars = new BoolForm(SIGN::POS, true, _initialTheory->sentences(), FormulaParseInfo());
+	auto allinvarsNext = new BoolForm(SIGN::POS, true, _bistateTheory->sentences(), FormulaParseInfo());
+	auto notallinvars = allinvars->clone();
 	notallinvars->negate();
 
 	//Formula(Start)
@@ -266,8 +288,8 @@ SplitLTCInvariant* LTCTheorySplitter::splitInvar(const Theory* theo) {
 		std::clog << "Splitting the LTC invariant\n" << toString(theo) << "\nresulted in the following two formulas: \n" << toString(result->baseStep) << "\n"
 				<< toString(result->inductionStep) << "\n";
 	}
-	delete(_initialTheory);
-	delete(_bistateTheory);
+	delete (_initialTheory);
+	delete (_bistateTheory);
 
 	return result;
 }

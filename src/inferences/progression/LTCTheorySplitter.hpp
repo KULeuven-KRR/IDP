@@ -64,7 +64,8 @@ private:
 
 	template<class T>
 	void checkQuantifications(T* t);
-	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an invariant and the invariant formulas are created*/
+	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an SINGLE-STATE invariant and the invariant formulas are created
+	 * For BISTATE invariants, the usual transformation applies (see progression paper)*/
 	void createTheories(const Theory* theo, bool invar);
 	void initializeVariables(const Theory* theo);
 
