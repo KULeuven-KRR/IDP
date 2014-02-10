@@ -3695,7 +3695,7 @@ void PredInter::checkConsistency() {
 	if (not _ct->approxFinite() && not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency between an infinite certainly-true and an infinite certainly-false table");
 	}
-	auto smallest = _ct->size()._size < _cf->size()._size ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
+	auto smallest = _ct->size() < _cf->size() ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
 	auto largest = (smallest == _ct) ? _cf : _ct;
 
 	auto smallIt = smallest->begin();
