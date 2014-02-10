@@ -755,14 +755,14 @@ std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, boo
 	return t.execute(f, recursive);
 }
 
-std::set<PFSymbol*> collectSymbols(Formula* f) {
+std::set<PFSymbol*> collectSymbols(const Formula* f) {
 	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
 }
-std::set<PFSymbol*> collectSymbols(Rule* f) {
+std::set<PFSymbol*> collectSymbols(const Rule* f) {
 	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
 
 }
-std::set<PFSymbol*> collectSymbols(AbstractTheory* f) {
+std::set<PFSymbol*> collectSymbols(const AbstractTheory* f) {
 	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
 
 }
