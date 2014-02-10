@@ -16,6 +16,11 @@
 #include "commontypes.hpp"
 #include "inferences/grounding/GroundUtils.hpp"
 #include "structure/TableSize.hpp"
+#include "vocabulary/vocabulary.hpp"
+#include "structure/Structure.hpp"
+#include "theory/theory.hpp"
+#include "theory/TheoryUtils.hpp"
+#include "inferences/modelexpansion/ModelExpansion.hpp"
 
 #include <dirent.h>
 #include <exception>
@@ -350,4 +355,44 @@ TEST(SimpleTest, TestTableSizeGreaterThanOrEqual) {
 	ASSERT_TRUE(infinite_ts_1 >= approx_ts1);
 	ASSERT_TRUE(infinite_ts_1 >= approx_max_ts);
 	ASSERT_TRUE(infinite_ts_1 >= infinite_ts_1);
+}
+
+TEST(SimpleMX,NoPushNegations){
+	auto P = new Predicate("P",{});
+	auto Q = new Predicate("Q",{});
+	auto V = new Vocabulary("V", ParseInfo());
+	V->add(P);
+	V->add(Q);
+
+	auto S = new Structure("S",V,ParseInfo());
+
+	auto Pp = new PredForm(SIGN::POS, P, {}, FormulaParseInfo());
+	auto Qp = new PredForm(SIGN::POS, Q, {}, FormulaParseInfo());
+	auto nPp = new PredForm(SIGN::NEG, P, {}, FormulaParseInfo());
+	auto nQp = new PredForm(SIGN::NEG, Q, {}, FormulaParseInfo());
+
+	auto d1 = new BoolForm(SIGN::POS, false, {nPp, Qp}, FormulaParseInfo()); // ~P | Q
+	auto d2 = new BoolForm(SIGN::POS, false, {nQp, Pp}, FormulaParseInfo()); // ~Q | P
+
+	auto c1 = new BoolForm(SIGN::POS, true, {d1, d2}, FormulaParseInfo()); // (~P | Q) & (~Q | P) // P<=> Q
+	auto c2 = new BoolForm(SIGN::NEG, true, {c1}, FormulaParseInfo()); // ~(((~P | Q) & (~Q | P))) // ~((P<=> Q))
+
+	auto T = new Theory("T", V, ParseInfo());
+	T->add(c2);
+
+	auto Pp2 = new PredForm(SIGN::POS, P, {}, FormulaParseInfo());
+	auto nQp2 = new PredForm(SIGN::NEG, Q, {}, FormulaParseInfo());
+
+	auto r = new Rule({},Pp2,nQp2,ParseInfo());
+	auto d = new Definition(); // { P <- ~Q}
+	d->add(r);
+
+	T->add(d);
+	//T should have models
+	auto models = ModelExpansion::doModelExpansion(T->clone(), S->clone());
+	ASSERT_FALSE(models.unsat);
+
+	FormulaUtils::pushNegations(T);
+	models = ModelExpansion::doModelExpansion(T->clone(), S->clone());
+	ASSERT_FALSE(models.unsat);
 }
