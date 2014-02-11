@@ -22,6 +22,17 @@ ApproximatingDefinition::DerivationTypes* PropagationUsingApproxDef::getDerivati
 	return derivationtypes;
 }
 
+ApproximatingDefinition::DerivationTypes* PropagationUsingApproxDef::getAllDerivationTypes() {
+	auto derivationtypes = new ApproximatingDefinition::DerivationTypes();
+	derivationtypes->addDerivationType(
+			ApproximatingDefinition::TruthPropagation::TRUE,
+			ApproximatingDefinition::Direction::DOWN);
+	derivationtypes->addDerivationType(
+			ApproximatingDefinition::TruthPropagation::FALSE,
+			ApproximatingDefinition::Direction::UP);
+	return derivationtypes;
+}
+
 void PropagationUsingApproxDef::processApproxDef(Structure* structure, ApproximatingDefinition* approxdef) {
 
 	if (DefinitionUtils::hasRecursionOverNegation(approxdef->approximatingDefinition())) {
@@ -85,17 +96,28 @@ std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingStratification
 	return {structure};
 }
 
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingFullAD(AbstractTheory* theory, Structure* structure) {
+	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
+	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
+	rule_types.insert(ApproximatingDefinition::RuleType::FORALL);
+	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getAllDerivationTypes(),rule_types);
+	processApproxDef(structure,approxdef);
+	return {structure};
+}
+
 std::vector<Structure*>  PropagationUsingApproxDef::propagate(AbstractTheory* theory, Structure* structure) {
 	auto option = getGlobal()->getOptions()->approxDef();
 		switch (option) {
 		case ApproxDef::NONE:
 			return {structure};
-		case ApproxDef::ALL_AT_ONCE:
+		case ApproxDef::COMPLETE:
 			return propagateUsingAllRules(theory, structure);
 		case ApproxDef::CHEAP_RULES_ONLY:
 			return propagateUsingCheapRules(theory, structure);
 		case ApproxDef::STRATIFIED:
 			return propagateUsingStratification(theory, structure);
+		case ApproxDef::ALL_POSSIBLE_RULES:
+			return propagateUsingFullAD(theory, structure);
 		default:
 			throw IdpException("Invalid code path.");
 	}

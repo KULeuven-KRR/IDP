@@ -56,12 +56,14 @@ std::string str(ApproxDef choice) {
 	switch (choice) {
 	case ApproxDef::NONE:
 		return "none";
-	case ApproxDef::ALL_AT_ONCE:
-		return "all";
+	case ApproxDef::COMPLETE:
+		return "complete";
 	case ApproxDef::CHEAP_RULES_ONLY:
 		return "cheap";
 	case ApproxDef::STRATIFIED:
 		return "stratified";
+	case ApproxDef::ALL_POSSIBLE_RULES:
+		return "all";
 	default:
 		throw IdpException("Invalid code path.");
 	}

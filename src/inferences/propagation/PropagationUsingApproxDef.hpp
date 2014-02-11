@@ -25,10 +25,12 @@ class PropagationUsingApproxDef {
 
 private:
 	ApproximatingDefinition::DerivationTypes* getDerivationTypes();
+	ApproximatingDefinition::DerivationTypes* getAllDerivationTypes();
 	void processApproxDef(Structure*, ApproximatingDefinition*);
 	std::vector<Structure*> propagateUsingAllRules(AbstractTheory*, Structure*);
 	std::vector<Structure*> propagateUsingCheapRules(AbstractTheory*, Structure*);
 	std::vector<Structure*> propagateUsingStratification(AbstractTheory*, Structure*);
+	std::vector<Structure*> propagateUsingFullAD(AbstractTheory*, Structure*);
 
 public:
 	std::vector<Structure*>  propagate(AbstractTheory*, Structure*);

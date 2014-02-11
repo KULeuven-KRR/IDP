@@ -116,11 +116,12 @@ enum class SymmetryBreaking {
 
 enum class ApproxDef {
 	NONE,
-	ALL_AT_ONCE,
-	CHEAP_RULES_ONLY,
-	STRATIFIED,
+	COMPLETE,				// TRUE DOWN and FALSE UP
+	CHEAP_RULES_ONLY,		// TRUE DOWN and FALSE UP, without "expensive" rules (= rules with forall quantor in the body)
+	STRATIFIED,				// First calculate CHEAP_RULES_ONLY, then calculate TRUE DOWN and FALSE UP for only the "expensive" rules
+	ALL_POSSIBLE_RULES,		// TRUE DOWN, TRUE UP, FALSE DOWN, FALSE UP all at once
 	FIRST = NONE,
-	LAST = STRATIFIED
+	LAST = ALL_POSSIBLE_RULES
 };
 
 enum class PrintBehaviour {
