@@ -12,6 +12,7 @@
 #include "Invariants.hpp"
 #include "common.hpp"
 #include "theory/theory.hpp"
+#include "theory/TheoryUtils.hpp"
 #include "data/LTCData.hpp"
 #include "LTCTheorySplitter.hpp"
 #include "projectLTCStructure.hpp"
@@ -41,35 +42,52 @@ ProveInvariantInference::~ProveInvariantInference() {
 }
 
 bool ProveInvariantInference::run() {
-	if(_ltcTheo->vocabulary() != _invariant->vocabulary()){
+	if (_ltcTheo->vocabulary() != _invariant->vocabulary()) {
 		Error::LTC::invarVocIsNotTheoVoc();
 	}
-	if((_structure != NULL) && _ltcTheo->vocabulary() != _structure->vocabulary()){
+	if ((_structure != NULL) && _ltcTheo->vocabulary() != _structure->vocabulary()) {
 		Error::LTC::strucVocIsNotTheoVoc();
 	}
 	auto data = LTCData::instance();
-	try{
+	try {
 		//Try transforming the vocabulary without info on Time, Start Next
 		//This succeeds if it has been transformed before, or if the system can correctly find time etctera itself.
 		data->getStateVocInfo(_ltcTheo->vocabulary());
-	}catch(IdpException& e){
-		Warning::warning("Could not automatically split the LTC vocabulary. If you want to set Time, Start and Next function manually, please use the initialise inference first. ");
+	} catch (IdpException& e) {
+		Warning::warning(
+				"Could not automatically split the LTC vocabulary. If you want to set Time, Start and Next function manually, please use the initialise inference first. ");
 		throw(e);
 	}
 	auto splitTheo = data->getSplitTheory(_ltcTheo);
 	auto splitInvariant = LTCTheorySplitter::SplitInvariant(_invariant);
+#ifdef DEBUG
+	if (splitInvariant->invartype == InvarType::SingleStateInvar) {
+		Assert(splitInvariant->baseStep != NULL);
+		Assert(splitInvariant->inductionStep);
+	}
+	else {
+		Assert(splitInvariant->invartype == InvarType::BistateInvar);
+		Assert(splitInvariant->bistateInvar);
+	}
+#endif
 
 	if (_structure != NULL) {
 		auto initstructure = LTCStructureProjector::projectStructure(_structure);
 		auto transstructure = LTCStructureProjector::projectStructure(_structure, true);
-
-		return checkImplied(splitTheo->initialTheory, splitInvariant->baseStep, initstructure, true)
-				&& checkImplied(splitTheo->bistateTheory, splitInvariant->inductionStep, transstructure, false);
+		if (splitInvariant->invartype == InvarType::SingleStateInvar) {
+			return checkImplied(splitTheo->initialTheory, splitInvariant->baseStep, initstructure, true)
+					&& checkImplied(splitTheo->bistateTheory, splitInvariant->inductionStep, transstructure, false);
+		} else {
+			return checkImplied(splitTheo->bistateTheory, splitInvariant->bistateInvar, transstructure, false);
+		}
 	} else {
-		return checkImplied(splitTheo->initialTheory, splitInvariant->baseStep, true)
-				&& checkImplied(splitTheo->bistateTheory, splitInvariant->inductionStep, false);
+		if (splitInvariant->invartype == InvarType::SingleStateInvar) {
+			return checkImplied(splitTheo->initialTheory, splitInvariant->baseStep, true)
+					&& checkImplied(splitTheo->bistateTheory, splitInvariant->inductionStep, false);
+		} else {
+			return checkImplied(splitTheo->bistateTheory, splitInvariant->bistateInvar, false);
+		}
 	}
-
 }
 
 bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* implication, Structure* context, bool initial){
@@ -83,6 +101,8 @@ bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* im
 	setOption(IntType::NBMODELS, 1);
 
 	context->changeVocabulary(completeTheo->vocabulary());
+	FormulaUtils::pushNegations(completeTheo);
+	FormulaUtils::flatten(completeTheo);
 	auto models = ModelExpansion::doModelExpansion(completeTheo, context);
 	delete (context);
 	bool result = true;
