@@ -67,10 +67,10 @@ file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.cpp")
 file(GLOB_RECURSE LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.hpp")
 LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
 if(NOT WITHXSB)
-    LIST(REMOVE_ITEM LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/xsbinterface.hpp")
-    LIST(REMOVE_ITEM LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/compiler.hpp")
-    LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/xsbinterface.cpp")
-    LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/compiler.cpp")
+	file(GLOB XSBFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/*.hpp")
+	file(GLOB XSBFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/*.cpp")
+	LIST(REMOVE_ITEM LIBGIDLHPPFILES ${XSBFILES}) 
+	LIST(REMOVE_ITEM LIBGIDLCPPFILES ${XSBFILES})
 endif()
 set(IDPFILES "${IDPFILES};${LIBGIDLHPPFILES};${LIBGIDLCPPFILES}")
 
@@ -131,7 +131,11 @@ else()
 endif()
 
 install (FILES ${PROJECT_SOURCE_DIR}/data/var/config.idp DESTINATION var)
-install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P 
+install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua  
 		DESTINATION share/std)
 
+if(WITHXSB)
+install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P  
+		DESTINATION share/std)
+endif()
 #?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} kbs idp.bat idp")
