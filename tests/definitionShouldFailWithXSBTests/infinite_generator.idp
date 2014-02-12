@@ -1,0 +1,33 @@
+vocabulary V{
+	type pos isa int
+	type square
+	x(square):pos
+	y(square):pos
+	idpdh_mouseclick(square,int,int)
+
+	idpd_polygon(int, square, int, int, int, int, int, int, int, int) 
+	idpd_xpos(square, int)
+	idpd_ypos(square, int)
+	sqSize:int
+}
+
+
+theory T:V{
+	{
+		sqSize=2.
+		! S[square]: idpd_xpos(S, sqSize()*x(S)).
+		! S[square]: idpd_ypos(S, sqSize()*y(S)).
+		! S[square] X Y: idpdh_mouseclick(S,X,Y) <- 	idpd_xpos(S,X2) & X>X2 & X<X2+sqSize() 
+								& idpd_ypos(S,Y2) & Y>=Y2 & Y<Y2+sqSize().
+	}
+}
+
+
+
+
+structure S : V {
+  pos = { 1..2 }
+  square = { "s1"; "s2"; "s3"; "s4" }
+  x = { "s1"->1; "s2"->1; "s3"->2; "s4"->2 }
+  y = { "s1"->1; "s2"->2; "s3"->1; "s4"->2 }
+}

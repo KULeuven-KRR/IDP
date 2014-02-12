@@ -1,3 +1,43 @@
+% ixdivision(Solution,Numerator,Denominator)
+% Represents the built-in "Solution is Numerator/Denominator"
+% Handle special cases of this expression first: X is Y/X, Y known
+ixdivision(Denominator,Numerator,Denominator) :-
+	nonvar(Numerator),
+	var(Denominator),
+	Denominator is sqrt(Numerator).
+ixdivision(Denominator,Numerator,Denominator) :-
+	var(Numerator),
+	nonvar(Denominator),
+	ixdifferent_number(Denominator,0),
+	Numerator is Denominator*Denominator.
+
+% Handle special cases of this expression first: X is X/Y, Y known 
+% -> infinite generator
+ixdivision(Numerator,Numerator,1) :-
+	var(Numerator),
+    throw_infinite_type_generation_error.
+
+% Handle special cases of this expression first: X is X/Y, Y known, with Y ~= 1 
+% -> this always fails
+ixdivision(Numerator,Numerator,Denominator) :-
+	nonvar(Denominator),
+	ixdifferent_number(Denominator,1),
+	fail.
+	
+% Handle special cases of this expression first: O is O/Y with Y known
+% -> succeeds 
+ixdivision(Numerator,Numerator,Denominator) :-
+	nonvar(Numerator),
+	ixsame_number(Numerator,0),
+	nonvar(Denominator),
+	ixdifferent_number(Denominator,0).
+
+% Only normal cases left: X is Y/Z with Y and Z variables
+ixdivision(Solution,Numerator,Denominator) :-
+	nonvar(Numerator),
+	nonvar(Denominator),
+	Solution is Numerator / Denominator.
+
 ixabs(X,Y) :- Y is abs(X).
 
 ixsum(List,Sum) :- ixsum(List,Sum,0).
@@ -36,20 +76,41 @@ ixint(X) :-
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     0 is ROUNDEDNUMBER - X.
+    
+ixint(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
 ixfloat(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
     ROUNDEDNUMBER \= X.
+    
+ixfloat(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
 ixnat(X) :- 
     nonvar(X),
     X >= 0,
     ixint(X).
+    
+ixnat(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
      
+% First argument has to be instantiated
+% Second argument can be output variable or instantiated
 ixsame_number(X,Y) :-
     ixconvert_to_int(X,X1),
     X1 = Y.
+     
+% First argument has to be instantiated
+% Second argument has to be instantiated
+ixdifferent_number(X,Y) :-
+    ixconvert_to_int(X,X1),
+    ixconvert_to_int(Y,Y1),
+    X1 \== Y1.
 
 ixconvert_to_int(Num,Int) :-
 	nonvar(Num),
@@ -60,3 +121,6 @@ ixconvert_to_int(Num,Int) :-
 	nonvar(Num),
     ixfloat(Num), 
     Int = Num.
+    
+throw_infinite_type_generation_error :-
+    error_handler:misc_error('Trying to generate an infinite type with XSB\ntry to rerun with stdoptions.xsb=false to see if that works.').
