@@ -71,7 +71,7 @@ LTCFormulaInfo LTCTheorySplitter::info(T* t) {
 	return result;
 }
 
-void LTCTheorySplitter::createTheories(const Theory* theo, bool invar) {
+void LTCTheorySplitter::createTheories(const Theory* theo, bool single_state_invar) {
 	_initialTheory = new Theory(theo->name() + "_init", _vocInfo->stateVoc, theo->pi());
 	_bistateTheory = new Theory(theo->name() + "_bistate", _vocInfo->biStateVoc, theo->pi());
 	auto workingTheo = theo->clone();
@@ -94,10 +94,10 @@ void LTCTheorySplitter::createTheories(const Theory* theo, bool invar) {
 	 * * We instantiate one-state formulas with the next-state-predicate
 	 */
 	for (auto sentence : workingTheo->sentences()) {
-		handleAndAddToConstruct(sentence, _initialTheory, _bistateTheory, invar);
+		handleAndAddToConstruct(sentence, _initialTheory, _bistateTheory, single_state_invar);
 	}
 	for (auto def : workingTheo->definitions()) {
-		if(invar){
+		if(single_state_invar){
 			Error::LTC::invarContainsDefinitions(workingTheo->pi());
 		}
 		auto initDef = new Definition();
@@ -115,7 +115,7 @@ void LTCTheorySplitter::createTheories(const Theory* theo, bool invar) {
 			if (bodyinfo.containsNext && not headinfo.containsNext) {
 				Error::LTC::timeStratificationViolated(rule->pi());
 			}
-			handleAndAddToConstruct(rule, initDef, biStateDef, invar);
+			handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar);
 		}
 		auto defsymbols = def->defsymbols();
 		auto initDefsymbols = initDef->defsymbols();

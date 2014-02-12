@@ -26,7 +26,7 @@ enum class InvarType {SingleStateInvar, BistateInvar};
 
 struct SplitLTCInvariant {
 	/**
-	 * The kind of invariatn this is. For a single-state invariant, this formula contains two constraints:
+	 * The kind of invariant this is. For a single-state invariant, this formula contains two constraints:
 	 * * basestep, which contains a formula for proving the base step of the induction
 	 * * inductionstep, which contains a formula for proving the induction step of the formula.
 	 *
@@ -37,13 +37,13 @@ struct SplitLTCInvariant {
 
 
 	/**
-	 * Only relevanti if this invariant is a single-state invariant
+	 * Only relevant if this invariant is a single-state invariant
 	 * Theory over vocabulary stateVoc. Contains:
 	 * * one constraint: P(Start)
 	 */
 	Formula* baseStep;
 	/**
-	 * Only relevanti if this invariant is a single-state invariant
+	 * Only relevant if this invariant is a single-state invariant
 	 * Theory over vocabulary biStateVoc. Contains:
 	 * * one constraint: P(now) => P(next)
 	 */
@@ -51,7 +51,7 @@ struct SplitLTCInvariant {
 
 
 	/**
-	 * Only relevanti if this invariant is a bistate invariant
+	 * Only relevant if this invariant is a bistate invariant
 	 * Theory that contains the translation of the invariant to the bistatevocabulary
 	 */
 	Formula* bistateInvar;
