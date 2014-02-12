@@ -249,6 +249,7 @@ SplitLTCInvariant* LTCTheorySplitter::splitInvar(const Theory* theo) {
 	initializeVariables(theo);
 	auto symbols = FormulaUtils::collectSymbols(theo);
 	if (contains(symbols, _next)) {
+		//This is a bistate invariant -> bistate formula -> Create theories the usual way
 		createTheories(theo, false);
 		if (not _initialTheory->definitions().empty() || not _bistateTheory->definitions().empty()) {
 			Error::LTC::invarContainsDefinitions(theo->pi());
@@ -263,7 +264,8 @@ SplitLTCInvariant* LTCTheorySplitter::splitInvar(const Theory* theo) {
 			std::clog << "Splitting the LTC bistate invariant\n" << toString(theo) << "\nresulted in the following formula: \n"
 					<< toString(result->bistateInvar) << "\n";
 		}
-		delete (_initialTheory);
+		_initialTheory->recursiveDelete();
+		delete (_bistateTheory); //only delete top of the bistate theory
 		return result;
 	}
 
