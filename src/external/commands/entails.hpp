@@ -21,7 +21,7 @@ class EntailsInference: public EntailsInferenceBase {
 public:
 	EntailsInference()
 			: EntailsInferenceBase("entails", "Checks whether the first theory entails the second, using the set prover and arguments. ") {
-		setNameSpace(getTheoryNamespaceName());
+		setNameSpace(getInferenceNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
