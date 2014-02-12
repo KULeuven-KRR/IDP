@@ -36,7 +36,9 @@ ixdivision(Numerator,Numerator,Denominator) :-
 ixdivision(Solution,Numerator,Denominator) :-
 	nonvar(Numerator),
 	nonvar(Denominator),
-	Solution is Numerator / Denominator.
+	TMP is Numerator / Denominator,
+	ixsame_number(TMP,Solution).
+
 
 ixabs(X,Y) :- Y is abs(X).
 
