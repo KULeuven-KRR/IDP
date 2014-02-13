@@ -74,8 +74,8 @@ procedure mxwithxsb(){
 
 procedure mxwithapproxdefs(){
 	stdoptions.xsb=true
-  	stdoptions.approxdef="all"
-	stdoptions.groundwithbounds = true
+  	stdoptions.approxdef="cheap"
+  	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 5
 	return run()
