@@ -483,6 +483,7 @@ ApproximatingDefinition* GenerateApproximatingDefinition::doGenerateApproximatin
 		const AbstractTheory* orig_theory,
 		ApproximatingDefinition::DerivationTypes* derivations,
 		std::set<ApproximatingDefinition::RuleType> rule_types,
+		const Structure* structure,
 		const set<PFSymbol*>& freesymbols) {
 	if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 		clog << "Generating the approximating definition...\n";
@@ -502,7 +503,7 @@ ApproximatingDefinition* GenerateApproximatingDefinition::doGenerateApproximatin
 	}
 
 
-	const vector<Formula*>& transformedSentences = performTransformations(normal_orig_theory->sentences());
+	const vector<Formula*>& transformedSentences = performTransformations(normal_orig_theory->sentences(),structure);
 	auto transformed_theory = normal_orig_theory->clone();
 	transformed_theory->sentences(transformedSentences);
 	if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
@@ -665,7 +666,8 @@ std::pair<PredForm*,PredForm*> GenerateApproximatingDefinition::createGeneralPre
 	return std::pair<PredForm*,PredForm*>(newct, newcf);
 }
 
-const std::vector<Formula*> GenerateApproximatingDefinition::performTransformations(const std::vector<Formula*>& sentences) {
+const std::vector<Formula*> GenerateApproximatingDefinition::performTransformations(
+		const std::vector<Formula*>& sentences, const Structure* structure) {
 	std::vector<Formula*> ret;
 	for(auto sentence : sentences) {
 		auto copyToWorkOn = sentence->clone();
@@ -674,8 +676,8 @@ const std::vector<Formula*> GenerateApproximatingDefinition::performTransformati
 			context = Context::NEGATIVE;
 		}
 		const set<PFSymbol*>* emptySymbolsSet = new set<PFSymbol*>();
-		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,NULL);
-		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,NULL,(*emptySymbolsSet),true,false,context);
+		auto sentence2 = FormulaUtils::unnestFuncsAndAggs(copyToWorkOn,structure);
+		auto sentence3 = FormulaUtils::graphFuncsAndAggs(sentence2,structure,(*emptySymbolsSet),true,false,context);
 		auto sentence4 = FormulaUtils::removeEquivalences(sentence3);
 		auto sentence5 = FormulaUtils::pushNegations(sentence4);
 		ret.push_back(sentence5);
