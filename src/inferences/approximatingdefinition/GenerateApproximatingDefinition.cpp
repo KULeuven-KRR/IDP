@@ -496,10 +496,19 @@ ApproximatingDefinition* GenerateApproximatingDefinition::doGenerateApproximatin
 		Warning::warning("Trying to generate an approximating definition of a theory with no sentences");
 //		return new ApproximatingDefinition(derivations, normal_orig_theory);
 	}
+	if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
+		clog << "Transforming the following theory into a format suitable for approxdef generation:\n" <<
+				toString(normal_orig_theory) << "\n";
+	}
+
 
 	const vector<Formula*>& transformedSentences = performTransformations(normal_orig_theory->sentences());
 	auto transformed_theory = normal_orig_theory->clone();
 	transformed_theory->sentences(transformedSentences);
+	if (getOption(IntType::VERBOSE_APPROXDEF) >= 2) {
+		clog << "Resulted in the following theory:\n" <<
+				toString(transformed_theory) << "\n";
+	}
 	ApproximatingDefinition* ret = new ApproximatingDefinition(derivations, rule_types, transformed_theory);
 	auto generator = new GenerateApproximatingDefinition(transformedSentences, freesymbols, derivations, rule_types);
 	auto approx_def = generator->getDefinition();
