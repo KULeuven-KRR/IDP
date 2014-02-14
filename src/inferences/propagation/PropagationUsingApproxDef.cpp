@@ -48,30 +48,37 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 	structure->clean();
 }
 
-std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingAllRules(AbstractTheory* theory, Structure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingAllRules(
+		AbstractTheory* theory, Structure* structure) {
 	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
 	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
 	rule_types.insert(ApproximatingDefinition::RuleType::FORALL);
-	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getDerivationTypes(),rule_types);
+	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+			theory,getDerivationTypes(),rule_types,structure);
 	processApproxDef(structure,approxdef);
 	return {structure};
 }
 
-std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingCheapRules(AbstractTheory* theory, Structure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingCheapRules(
+		AbstractTheory* theory, Structure* structure) {
 	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
 	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
-	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getDerivationTypes(),rule_types);
+	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+			theory,getDerivationTypes(),rule_types,structure);
 	processApproxDef(structure,approxdef);
 	return {structure};
 }
 
-std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingStratification(AbstractTheory* theory, Structure* structure) {
+std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingStratification(
+		AbstractTheory* theory, Structure* structure) {
 	auto rule_types_1 = std::set<ApproximatingDefinition::RuleType>();
 	rule_types_1.insert(ApproximatingDefinition::RuleType::CHEAP);
 	auto rule_types_2 = std::set<ApproximatingDefinition::RuleType>();
 	rule_types_2.insert(ApproximatingDefinition::RuleType::FORALL);
-	auto approxdef_1 = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getDerivationTypes(),rule_types_1);
-	auto approxdef_2 = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getDerivationTypes(),rule_types_2);
+	auto approxdef_1 = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+			theory,getDerivationTypes(),rule_types_1,structure);
+	auto approxdef_2 = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+			theory,getDerivationTypes(),rule_types_2,structure);
 	processApproxDef(structure,approxdef_1);
 	processApproxDef(structure,approxdef_2);
 	return {structure};

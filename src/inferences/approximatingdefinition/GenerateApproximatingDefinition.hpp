@@ -68,6 +68,7 @@ public:
 			const AbstractTheory* orig_theory,
 			ApproximatingDefinition::DerivationTypes* derivations,
 			std::set<ApproximatingDefinition::RuleType> rule_types,
+			const Structure* structure = NULL,
 			const set<PFSymbol*>& freesymbols = set<PFSymbol*>());
 
 private:
@@ -86,7 +87,8 @@ private:
 	void setFormula2PredFormMap(Formula*);
 	pair<PredForm*,PredForm*> createGeneralPredForm(Formula*);
 
-	static const vector<Formula*> performTransformations(const vector<Formula*>&);
+	static const vector<Formula*> performTransformations(const vector<Formula*>&,
+			const Structure* structure = NULL);
 	Vocabulary* constructVocabulary(Vocabulary*,Definition*);
 
 };
