@@ -1,3 +1,20 @@
+% ixexponential(Solution,Base,Power)
+% Base case: right hand side is known
+ixexponential(Solution,Base,Power) :-
+	nonvar(Base),
+	nonvar(Power),
+	TMP is Base ** Power,
+	ixsame_number(TMP,Solution).
+	
+% Solution equals the base and is 1 -> power could be anything.
+ixexponential(1,1,Power) :-
+	ixint(Power).
+
+% Solution equals the base and is not 1 -> power has to be one.
+ixexponential(Base,Base,1) :-
+	nonvar(Base),
+	ixdifferent_number(Base,1). % Rule out double answer generation for previous case
+
 % ixdivision(Solution,Numerator,Denominator)
 % Represents the built-in "Solution is Numerator/Denominator"
 % Handle special cases of this expression first: X is Y/X, Y known
@@ -85,8 +102,7 @@ ixint(X) :-
      
 ixfloat(X) :- 
     nonvar(X),
-    ROUNDEDNUMBER is round(X),
-    ROUNDEDNUMBER \= X.
+    number(X).
     
 ixfloat(X) :- 
     var(X),
