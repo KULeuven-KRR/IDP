@@ -243,7 +243,7 @@ public:
 	void closequery(Query*); //!< Close the current named query
 	void closefobdd(const FOBDD*); //!< Close the current named query
 	void closeterm(Term*); //!< Close the current named term
-	void closestructure(bool considerInterpretedSymbolsTwoValued = false); //!< Close the current structure
+	void closestructure(bool assumeClosedWorld = false); //!< Close the current structure
 	void closeprocedure(std::stringstream*); //!< Close the current procedure
 
 	void usingvocab(const longname& vname, YYLTYPE); //!< use vocabulary 'vname' when parsing
