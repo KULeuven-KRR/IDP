@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef OPTIMIZE_HPP_
-#define OPTIMIZE_HPP_
+#pragma once
 
 #include <iostream>
 #include "commandinterface.hpp"
@@ -65,7 +64,7 @@ public:
 		//Optimal value
 		InternalArgument val;
 		opt._type = AT_INT;
-		opt._value._int = value;
+		opt._value._int = toInt(value); // TODO what if larger?
 		randt._value._table->push_back(opt);
 
 		if (tracer != NULL) {
@@ -80,5 +79,3 @@ public:
 		return randt;
 	}
 };
-
-#endif //OPTIMIZE_HPP_
