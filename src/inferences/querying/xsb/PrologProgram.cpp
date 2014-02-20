@@ -91,7 +91,8 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
-		if ((*it)->builtin()) {
+		if (_translator->isXSBBuiltIn((*it)->nameNoArity()) ||
+				_translator->isXSBCompilerSupported((*it)->nameNoArity())) {
 			continue;
 		}
 
@@ -102,24 +103,29 @@ string PrologProgram::getFacts() {
 				continue;
 		}
 
-		if ((*it)->builtin() || isSort) {
+		if (isSort) {
 			continue;
 		}
 
 		_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
 		auto st = _structure->inter(*it)->ct();
-		for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-			output << _translator->to_prolog_term(*it);
-			const auto& tmp = *tuple;
-			if(tmp.size()>0){
-				output << "(";
-				printList(output, tmp, ",", [&](std::ostream& output, const DomainElement* domelem){output << _translator->to_prolog_term(domelem); }, true);
-				output <<")";
-			}
-			output << ".\n";
-		}
+		printAsFacts(_translator->to_prolog_term(*it), st, output);
 	}
 	return output.str();
+}
+
+void PrologProgram::printAsFacts(string predname, PredTable* pt, std::ostream& ss) {
+	for (auto tuple = pt->begin(); !tuple.isAtEnd(); ++tuple) {
+		ss << predname;
+		const auto& tmp = *tuple;
+		if(tmp.size()>0){
+			ss << "(";
+			printList(ss, tmp, ",", [&](std::ostream& output, const DomainElement* domelem){output << _translator->to_prolog_term(domelem); }, true);
+			ss <<")";
+		}
+		ss << ".\n";
+	}
+
 }
 
 void PrologProgram::table(PFSymbol* pt) {

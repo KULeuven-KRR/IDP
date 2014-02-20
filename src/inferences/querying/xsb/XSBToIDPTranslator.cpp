@@ -52,6 +52,42 @@ bool XSBToIDPTranslator::isoperator(int c) {
 			c == '.';		// Dot for floating point numbers
 }
 
+bool XSBToIDPTranslator::isXSBBuiltIn(std::string str) {
+	if (isXSBNumber(str)) {
+		return true;
+	} else if (str == "findall" || str == "between") {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool XSBToIDPTranslator::isXSBNumber(std::string str) {
+	bool isNumber = true;
+	for (auto i = str.begin(); i != str.end() && isNumber; ++i) {
+		if (!isdigit(*i) && !isoperator(*i)) {
+			isNumber = false;
+		}
+	}
+	return isNumber;
+}
+
+// Note: It is important that each of these strings are present as
+// predicates in data/share/std/xsb_compiler.P, accompanied of the
+// IDPXSB_PREFIX.
+bool XSBToIDPTranslator::isXSBCompilerSupported(std::string str) {
+	return str == "card" ||
+			str == "prod" ||
+			str == "min" ||
+			str == "max" ||
+			str == "abs" ||
+			str == "sum" ||
+			str == "forall" ||
+			str == "int" ||
+			str == "nat" ||
+			str == "float";
+}
+
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 	if(symbol->builtin()) {
 		// When translating to XSB, it does not matter for builtin symbols which
@@ -75,25 +111,17 @@ string XSBToIDPTranslator::to_prolog_term(string str) {
 }
 
 string XSBToIDPTranslator::transform_into_term_name(string str) {
-	bool numOrOp = true; // keep the string if you are handling an operator or a number
-	for (auto i = str.begin(); i != str.end() && numOrOp; ++i) {
-		if (!isdigit(*i) && !isoperator(*i)) {
-			numOrOp = false;
-		}
-	}
-	stringstream ss;
-
-	// For built-in predicates that are present in the "xsb_compiler", we add the prefix by default
-	// TODO: make this into a pretty list or something...
-	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum" || str == "forall" || str == "int" || str == "nat" || str == "float" ) {
-		ss << IDPXSB_PREFIX;
-	} else if (!numOrOp && str != "findall" &&  str != "between") {
+	if (isXSBBuiltIn(str)) {
+		return str;
+	} else if (isXSBCompilerSupported(str)) {
+		stringstream ss;
+		ss << IDPXSB_PREFIX << str;
+		return ss.str();
+	} else {
+		stringstream ss;
 		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_" << to_simple_chars(str);
 		return ss.str();
 	}
-
-	ss << str;
-	return ss.str();
 }
 
 string XSBToIDPTranslator::to_idp_pfsymbol(string str) {

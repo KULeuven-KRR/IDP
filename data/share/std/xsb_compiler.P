@@ -1,3 +1,9 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   Note: When adding new predicates to this file as a result of them being
+%   'built-in' in IDP, make sure to also adapt the 
+%   XSBToIDPTranslator::isXSBCompilerSupported procedure
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % ixexponential(Solution,Base,Power)
 % Base case: right hand side is known
 ixexponential(Solution,Base,Power) :-
