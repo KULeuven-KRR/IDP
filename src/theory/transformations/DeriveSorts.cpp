@@ -112,16 +112,17 @@ Term* DeriveSorts::visit(FuncTerm* term) {
 		_underivable = true;
 		return term;
 	}
-	_assertsort = NULL;
 
 	auto origunderivable = _underivable;
 
 	if (f->overloaded()) {
-		_overloadedterms.insert(term);
+		_overloadedterms.insert({term,_assertsort});
 		if (not f->builtin()) {
 			_underivable = true;
 		}
 	}
+	_assertsort = NULL;
+
 
 	// Currently, overloading is resolved iteratively, so it can be that a builtin goes from overloaded to set, but the arguments of the builtins, eg +/2:, are set too broadly (int+int:int)
 	// TODO review if more builtins are added?
@@ -213,20 +214,23 @@ Formula* DeriveSorts::visit(EqChainForm* formula) {
 }
 
 void DeriveSorts::derivefuncs() {
+
 	for (auto it = _overloadedterms.begin(); it != _overloadedterms.end();) {
 		auto jt = it;
 		++jt;
-		auto f = (*it)->function();
+		auto term = (*it).first;
+		auto outsort = (*it).second;
+		auto f = term->function();
 		if (not f->builtin() || _useBuiltIns) {
 			vector<Sort*> vs;
-			for (auto kt = (*it)->subterms().cbegin(); kt != (*it)->subterms().cend(); ++kt) {
+			for (auto kt = term->subterms().cbegin(); kt != term->subterms().cend(); ++kt) {
 				vs.push_back((*kt)->sort());
 			}
-			vs.push_back(NULL);
+			vs.push_back(outsort);
 
 			auto rf = f->disambiguate(vs, _vocab);
 			if (rf != NULL) {
-				(*it)->function(rf);
+				term->function(rf);
 				if (not rf->overloaded()) {
 					_overloadedterms.erase(it);
 				}
@@ -354,7 +358,7 @@ void DeriveSorts::check() {
 		}
 	}
 	for (auto it = _overloadedterms.cbegin(); it != _overloadedterms.cend(); ++it) {
-		Error::nofuncsort((*it)->function()->name(), (*it)->pi());
+		Error::nofuncsort((*it).first->function()->name(), (*it).first->pi());
 	}
 	for (auto it = _domelements.cbegin(); it != _domelements.cend(); ++it) {
 		Error::nodomsort(toString(*it), (*it)->pi());

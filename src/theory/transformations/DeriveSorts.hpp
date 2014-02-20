@@ -39,7 +39,7 @@ private:
 	varset _underivableVariables;
 	varset _untypedvariables;
 	std::set<PredForm*> _overloadedatoms;
-	std::set<FuncTerm*> _overloadedterms;
+	std::set< std::pair<FuncTerm*, Sort*>> _overloadedterms; //The overloaded terms, together with their expected output argument (derived during top-down run).
 	std::set<DomainTerm*> _domelements; // The untyped domain elements
 	bool _changed, _firstvisit, _underivable;
 	Sort* _assertsort;
