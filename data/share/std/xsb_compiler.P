@@ -63,7 +63,13 @@ ixdivision(Solution,Numerator,Denominator) :-
 	ixsame_number(TMP,Solution).
 
 
-ixabs(X,Y) :- Y is abs(X).
+ixabs(X,Y) :- 
+	number(X),
+	Y is abs(X).
+
+ixabs(X,Y) :-
+	var(X),
+    throw_infinite_type_generation_error.
 
 ixsum(List,Sum) :- ixsum(List,Sum,0).
 ixsum([],X,X).
@@ -113,7 +119,7 @@ ixfloat(X) :-
 ixfloat(X) :- 
     var(X),
     throw_infinite_type_generation_error.
-     
+
 ixnat(X) :- 
     nonvar(X),
     X >= 0,

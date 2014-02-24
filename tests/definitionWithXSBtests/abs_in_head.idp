@@ -1,0 +1,32 @@
+procedure main() {
+  stdoptions.verbosity.calculatedefinitions=5
+  stdoptions.xsb=true
+  print(calculatedefinitions(T,S))
+}
+
+vocabulary V {
+	type Values isa int
+
+	type PM
+	Plus : PM
+	Minus : PM
+	LV(PM,Values)
+	RV(PM,Values)
+
+	LVal(Values)
+	RVal(Values)
+}
+
+theory T:V{
+	{ LV(Plus,v) <- LVal(v) & v >= 0.
+	  LV(Minus,abs(v)) <- LVal(v) & v < 0.	}
+// 	{ RV(Plus,v) <- RVal(v) & v >= 0.
+// 	  RV(Minus,abs(v)) <- RVal(v) & v < 0.	}
+}
+structure S : V {
+  Values = { -10..10 }
+  LVal = { -6 }
+  RVal = { -1 }
+  Minus = "m"
+  Plus = "p"
+}

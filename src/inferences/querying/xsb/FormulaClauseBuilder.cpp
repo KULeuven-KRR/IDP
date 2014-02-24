@@ -271,18 +271,16 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 				}
 				term->addInputvarsToCheck(inputvars);
 			} else {
-				auto toNumericalOperation = true;
-				for(auto arg : p->args()) {
-					if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
-							SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
-							SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
-						toNumericalOperation = false;
-					}
-				}
 				term->numeric(true);
-				term->numericalOperation(toNumericalOperation);
 				term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
 			}
+		} else if (is(p->symbol(),STDFUNC::ABS)) {
+			term->numeric(false);
+			auto output = term->variables().back();
+			auto input = term->variables().front();
+			term->addInputvarToCheck(input);
+			term->addOutputvarToCheck(output);
+
 		} else {
 			term->numeric(false);
 		}
