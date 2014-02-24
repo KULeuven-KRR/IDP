@@ -55,8 +55,6 @@ bool XSBToIDPTranslator::isoperator(int c) {
 bool XSBToIDPTranslator::isXSBBuiltIn(std::string str) {
 	if (isXSBNumber(str)) {
 		return true;
-	} else if (str == "findall" || str == "between") {
-		return true;
 	} else {
 		return false;
 	}
