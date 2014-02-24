@@ -39,7 +39,7 @@ void FormulaClauseToPrologClauseConverter::visit(ExistsClause* ec) {
 }
 
 void FormulaClauseToPrologClauseConverter::visit(ForallClause* fc) {
-	PrologTerm* forall = new PrologTerm(_translator->to_prolog_term("forall"));
+	PrologTerm* forall = new PrologTerm(XSBToIDPTranslator::get_forall_term_name());
 	std::list<PrologTerm*> list;
 //	Create generator clause
 	AndClause* tmp = new AndClause(generateGeneratorClauseName());

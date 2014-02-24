@@ -78,7 +78,7 @@ string FormulaClauseBuilder::generateNewQuantSetExprName() {
 
 PrologVariable* FormulaClauseBuilder::createPrologVar(const Variable* var) {
 	auto prologVarName = _translator->to_prolog_varname(var->name());
-	auto prologVarSortName = _translator->to_prolog_sortname(var->sort()->name());
+	auto prologVarSortName = _translator->to_prolog_sortname(var->sort());
 	return _translator->create(prologVarName, prologVarSortName);
 }
 

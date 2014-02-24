@@ -61,7 +61,7 @@ string PrologProgram::getRanges() {
 			if (st->isRange() && not st->size().isInfinite()) {
 				_loaded.insert((*it)->name());
 				_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
-				auto sortname = _translator->to_prolog_sortname((*it)->name());
+				auto sortname = _translator->to_prolog_sortname((*it));
 				output << sortname << "(X) :- var(X), between(" << _translator->to_prolog_term(st->first()) << ","
 						<< _translator->to_prolog_term(st->last()) << ",X).\n";
 				output << sortname << "(X) :- nonvar(X), X >= " << _translator->to_prolog_term(st->first()) << ", X =< "
@@ -80,7 +80,7 @@ string PrologProgram::getFacts() {
 			if (not st->isRange() && st->finite()) {
 				_loaded.insert((*it)->name());
 				_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
-				auto factname = _translator->to_prolog_sortname((*it)->name());
+				auto factname = _translator->to_prolog_sortname((*it));
 				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
 					output << factname << "(" << _translator->to_prolog_term((*tuple).front()) << ").\n";
 				}
@@ -92,7 +92,7 @@ string PrologProgram::getFacts() {
 
 	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
 		if (_translator->isXSBBuiltIn((*it)->nameNoArity()) ||
-				_translator->isXSBCompilerSupported((*it)->nameNoArity())) {
+				_translator->isXSBCompilerSupported((*it))) {
 			continue;
 		}
 
