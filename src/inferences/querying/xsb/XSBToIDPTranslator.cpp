@@ -79,11 +79,11 @@ bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
-	if(is(symbol,STDFUNC::ABS)) {
+	if (is(symbol,STDFUNC::ABS)) {
 		return get_abs_term_name();
 	}
-	if(symbol->builtin()) {
-		// When translating to XSB, it does not matter for builtin symbols which
+	if (is(symbol,STDPRED::EQ) || is(symbol,STDPRED::GT) || is(symbol,STDPRED::LT)) {
+		// When translating to XSB, it does not matter for comparison symbols which
 		// namespace they are in or which types of arguments they get since they
 		// need to be mapped to the same XSB built-in anyway
 		return to_prolog_term(symbol->nameNoArity());

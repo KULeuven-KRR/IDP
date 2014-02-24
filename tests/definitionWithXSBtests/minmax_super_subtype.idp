@@ -1,0 +1,27 @@
+vocabulary V {
+  type num isa nat
+  type num2 isa num
+  type num3 isa num2
+  P(num)
+  P2(num)
+  Q(num)
+  Q2(num)
+  PQ(num)
+}
+
+theory T : V {
+  { 
+    P(y) <- y = MAX[:num]. 
+    P2(y) <- y = MAX[:num2]. 
+    Q(y) <- y = MIN[:num]. 
+    Q2(y) <- y = MIN[:num2].
+  }
+  { PQ(y) <- y = MIN[:num3]. }
+  { PQ(y) <- y = MAX[:num3]. }
+}
+
+structure S : V {
+  num = {1..5}
+  num2 = {2..3}
+  num3 = {3..3}
+}
