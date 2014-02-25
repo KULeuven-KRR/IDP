@@ -972,7 +972,7 @@ ComparisonPredGenerator::~ComparisonPredGenerator() {
 	delete (_interpretation);
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		if (not it->second->hasVocabularies()) {
-			delete (it->second);
+			//delete (it->second);
 		}
 	}
 }
@@ -1060,9 +1060,9 @@ void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for (auto it = _overpreds.begin(); it != _overpreds.end();) {
 		map<Sort*, Predicate*>::iterator jt = it;
 		++it;
-		if (jt->second->removeVocabulary(vocabulary)) {
+		/*if (jt->second->removeVocabulary(vocabulary)) {
 			_overpreds.erase(jt);
-		}
+		}*/
 	}
 }
 
