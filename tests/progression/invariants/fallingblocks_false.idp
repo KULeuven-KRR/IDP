@@ -127,3 +127,7 @@ procedure expectedInvariant(){
 	return false
 }
 
+procedure ignoreProver(){
+	// The prover takes too long (and requires Card2FO functionality)
+	return true
+}
