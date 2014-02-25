@@ -1390,8 +1390,24 @@ bool BDDInternalPredTable::approxEqual(const InternalPredTable* ipt, const Unive
 	if(bipt == NULL){
 		return InternalPredTable::approxEqual(ipt,u);
 	}
-	auto otherbdd = _manager->getBDD(bipt->bdd(),bipt->manager());
-	if(_bdd == otherbdd){
+
+	map<const FOBDDVariable*, const FOBDDVariable*> otherToThisVars;
+	auto othervars = bipt->vars();
+	if(othervars.size() != vars().size()){
+		return false;
+	}
+
+	//Set the bdds to the same variables
+	auto othervar = othervars.cbegin();
+	for(auto var: vars()){
+		auto varone = _manager->getVariable(*othervar);
+		auto vartwo = _manager->getVariable(var);
+		otherToThisVars[varone] = vartwo;
+		othervar++;
+	}
+	auto otherbdd = _manager->getBDD(bipt->bdd(), bipt->manager());
+	otherbdd = _manager->substitute(otherbdd,otherToThisVars);
+	if (_bdd == otherbdd) {
 		return true;
 	}
 	return false;
@@ -1426,7 +1442,7 @@ bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Uni
 	}
 
 	//Two tables are inverse if their intersection is empty (conjunction is false)
-	//And their unioin is everything (disjunction is true)
+	//And their union is everything (disjunction is true)
 	auto conj = _manager->conjunction(_bdd, otherbdd);
 	auto disj = _manager->disjunction(_bdd, otherbdd);
 	if(_manager->isFalsebdd(conj) && _manager->isTruebdd(disj)){
