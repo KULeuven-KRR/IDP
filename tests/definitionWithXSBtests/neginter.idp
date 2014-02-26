@@ -1,0 +1,37 @@
+vocabulary V{
+  type t isa int
+  P(t)
+  P1(t,t)
+  P2(t,t)
+  P3(t,t)
+  Q(t)
+  Q(t):t
+  R:t
+}
+
+structure S  : V {
+  t = {-5..5}
+}
+theory T:V{
+  {
+    ! x : P(x) <- (x =  -1).
+  }
+  {
+    ! x : P1(x,-x).
+  }
+  {
+    ! x y : P2(x,y) <- (x =  -y).
+  }
+  {
+    ! x y : P3(x,y) <- (-x =  y).
+  }
+  {
+    Q(-5).
+  }
+  {
+    ! x : Q(x) = -x.
+  }
+  {
+    R=-3.
+  }
+}

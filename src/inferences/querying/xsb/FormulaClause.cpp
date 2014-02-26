@@ -34,17 +34,19 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 			output << "\\+ ";
 		}
 		if (pt._arguments.size() == 2) {
+			// Important: always add a whitespace before and after each operator, arguments may be of the form -1
+			// which will only be accepted by XSB if they are written as (X = -1), and not if written as (X=-1)
 			if (pt._arguments.back()->numeric()) {
 				output << toString(*pt._arguments.front()) << " is " << toString(*pt._arguments.back());
 			} else {
 				if (pt._name == "<" or pt._name == ">" or pt._name == "=<" or pt._name == ">=") {
 					if (pt._numerical_operation) {
-						output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
+						output << toString(*pt._arguments.front()) << " " << pt._name <<  " " << toString(*pt._arguments.back());
 					} else {
-						output << toString(*pt._arguments.front()) << "@" << pt._name << toString(*pt._arguments.back());
+						output << toString(*pt._arguments.front()) << " @" << pt._name <<  " " << toString(*pt._arguments.back());
 					}
 				} else {
-					output << toString(*pt._arguments.front()) << pt._name << toString(*pt._arguments.back());
+					output << toString(*pt._arguments.front()) <<  " " << pt._name <<  " " << toString(*pt._arguments.back());
 				}
 			}
 		} else {
@@ -71,6 +73,7 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 		output << toString(*pt._arguments.front()) << " " << pt._name << " " << toString(*pt._arguments.back());
 	} else {
 		if (!pt._sign) {
+			// For a negated call, all variables have to be instantiated
 			for (auto it = (pt._variables).begin(); it != (pt._variables).end(); ++it) {
 				output << *(*it)->instantiation() << ", ";
 			}
