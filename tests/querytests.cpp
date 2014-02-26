@@ -40,7 +40,7 @@ TEST(InternalQueryTest,MultipleOccurencesOfSameVar){
 	auto size = res->size();
 	auto sizeIsExact = (size._type==TableSizeType::TST_EXACT);
 	ASSERT_TRUE(sizeIsExact);
-	size_t one = 1;
+	long long one = 1;
 	ASSERT_EQ(one,size._size);
 }
 
