@@ -39,7 +39,7 @@ private:
 	varset _underivableVariables;
 	varset _untypedvariables;
 	std::set<PredForm*> _overloadedatoms;
-	std::set<FuncTerm*> _overloadedterms;
+	std::set< std::pair<FuncTerm*, Sort*>> _overloadedterms; //The overloaded terms, together with their expected output argument (derived during top-down run).
 	std::set<DomainTerm*> _domelements; // The untyped domain elements
 	bool _changed, _firstvisit, _underivable;
 	Sort* _assertsort;
@@ -75,16 +75,22 @@ private:
 		_underivable = false;
 		_changed = true;
 		_firstvisit = true;
-		f->accept(this); // First visit: collect untyped symbols, set types of variables that occur in typed positions.
+		run(f); // First visit: collect untyped symbols, set types of variables that occur in typed positions.
 
 		_firstvisit = false;
 		while (_changed) {
 			_changed = false;
-			derivefuncs();
-			derivepreds();
-			f->accept(this); // Next visit: type derivation over overloaded predicates or functions.
+			run(f);
 		}
 		check();
+	}
+
+	template<typename T>
+	void run(T f) {
+		_underivableVariables.clear();
+		f->accept(this);
+		derivefuncs();
+		derivepreds();
 	}
 
 	void derivefuncs(); // disambiguate the overloaded functions

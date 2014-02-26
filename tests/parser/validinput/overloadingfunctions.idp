@@ -1,0 +1,16 @@
+vocabulary V{
+	type X
+	type Y
+	f(X):X  
+	f(X):Y
+	g(X):X
+}
+
+theory T:V{
+	!x: f(x) = g(x).
+}
+
+
+procedure main(){
+	return 1
+}

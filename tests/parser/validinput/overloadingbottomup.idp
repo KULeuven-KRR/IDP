@@ -1,0 +1,16 @@
+vocabulary V{
+	type X
+	type Y
+	P(X)
+	P(Y)
+	Q(X)
+}
+
+theory T:V{
+	!x: Q(x) => P(x).
+}
+
+
+procedure main(){
+	return 1
+}
