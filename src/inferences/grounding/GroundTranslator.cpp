@@ -276,7 +276,7 @@ Lit GroundTranslator::translate(const SymbolOffset& offset, const ElementTuple& 
 }
 
 // ERROR if a domain element is not an int, as no var can be constructed for it!!!
-void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool recursive){
+void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool ){
 	for(auto terms2lit: term2lits){
 		litlist equalities;
 		bool equalitycertainlyfalse = false;
