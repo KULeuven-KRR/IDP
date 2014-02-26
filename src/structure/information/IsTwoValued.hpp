@@ -14,5 +14,4 @@
 class Term;
 class Structure;
 
-#warning only guaranteed to be replaced (currently) if  getOption(REDUCEDGROUNDING) is true
 bool isTwoValued(const Term* t, const Structure* structure);
