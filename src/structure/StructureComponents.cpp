@@ -1379,6 +1379,27 @@ bool BDDInternalPredTable::approxEmpty(const Universe& univ) const {
 	}
 }
 
+// Returns NULL if not substitutable
+const FOBDD* substituteSuchThatBddHasVars(const BDDInternalPredTable* bipt, const std::vector<Variable*>& vars, shared_ptr<FOBDDManager> manager){
+	auto othervars = bipt->vars();
+	if(othervars.size() != vars.size()){
+		return NULL;
+	}
+
+	//Set the bdds to the same variables
+	auto othervar = othervars.cbegin();
+	map<const FOBDDVariable*, const FOBDDVariable*> otherToThisVars;
+	for(auto var: vars){
+		auto varone = manager->getVariable(*othervar);
+		auto vartwo = manager->getVariable(var);
+		otherToThisVars[varone] = vartwo;
+		othervar++;
+	}
+	auto otherbdd = manager->getBDD(bipt->bdd(), bipt->manager());
+	otherbdd = manager->substitute(otherbdd,otherToThisVars);
+	return otherbdd;
+}
+
 bool BDDInternalPredTable::approxEqual(const InternalPredTable* ipt, const Universe& u) const{
 	if(ipt == this){
 		return true;
@@ -1390,8 +1411,9 @@ bool BDDInternalPredTable::approxEqual(const InternalPredTable* ipt, const Unive
 	if(bipt == NULL){
 		return InternalPredTable::approxEqual(ipt,u);
 	}
-	auto otherbdd = _manager->getBDD(bipt->bdd(),bipt->manager());
-	if(_bdd == otherbdd){
+
+	auto otherbdd = substituteSuchThatBddHasVars(bipt,vars(), _manager);
+	if (otherbdd!=NULL && _bdd == otherbdd) {
 		return true;
 	}
 	return false;
@@ -1405,28 +1427,17 @@ bool BDDInternalPredTable::approxInverse(const InternalPredTable* ipt, const Uni
 	if (bipt == NULL) {
 		return InternalPredTable::approxInverse(ipt,u);
 	}
-	map<const FOBDDVariable*, const FOBDDVariable*> otherToThisVars;
-	auto othervars = bipt->vars();
-	if(othervars.size() != vars().size()){
+
+	auto otherbdd = substituteSuchThatBddHasVars(bipt, vars(), _manager);
+	if(otherbdd==NULL){
 		return false;
 	}
-
-	//Set the bdds to the same variables
-	auto othervar = othervars.cbegin();
-	for(auto var: vars()){
-		auto varone = _manager->getVariable(*othervar);
-		auto vartwo = _manager->getVariable(var);
-		otherToThisVars[varone] = vartwo;
-		othervar++;
-	}
-	auto otherbdd = _manager->getBDD(bipt->bdd(), bipt->manager());
-	otherbdd = _manager->substitute(otherbdd,otherToThisVars);
 	if (_bdd == _manager->negation(otherbdd)) {
 		return true;
 	}
 
 	//Two tables are inverse if their intersection is empty (conjunction is false)
-	//And their unioin is everything (disjunction is true)
+	//And their union is everything (disjunction is true)
 	auto conj = _manager->conjunction(_bdd, otherbdd);
 	auto disj = _manager->disjunction(_bdd, otherbdd);
 	if(_manager->isFalsebdd(conj) && _manager->isTruebdd(disj)){
