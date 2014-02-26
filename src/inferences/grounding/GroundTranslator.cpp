@@ -276,7 +276,7 @@ Lit GroundTranslator::translate(const SymbolOffset& offset, const ElementTuple& 
 }
 
 // ERROR if a domain element is not an int, as no var can be constructed for it!!!
-void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool recursive){
+void GroundTranslator::createImplications(Lit newhead, const std::map<std::vector<GroundTerm>, Lit >& term2lits, const std::vector<GroundTerm>& terms, bool ){
 	for(auto terms2lit: term2lits){
 		litlist equalities;
 		bool equalitycertainlyfalse = false;
@@ -468,8 +468,8 @@ Lit GroundTranslator::reify(double bound, CompType comp, AggFunction aggtype, Se
 	}
 }
 
-#warning need much more sharing in groundtranslator cp reify (negations!)
-#warning optimize in solver by passing translator and adding a cheaper method to do the below for var comp int?
+//#warning need much more sharing in groundtranslator cp reify (negations!)
+//#warning optimize in solver by passing translator and adding a cheaper method to do the below for var comp int?
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto leftvar = dynamic_cast<CPVarTerm*>(left);
 	auto newright = right;

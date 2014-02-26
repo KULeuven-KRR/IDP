@@ -135,6 +135,16 @@ bool ProveInvariantInference::checkImplied(const Theory* hypothesis, Formula* co
 		return true;
 	} else if(result == State::UNKNOWN){
 		Warning::warning("Could not prove invariant, but could not disprove it either");
+		return false;
+	} else {
+		Assert(result == State::DISPROVEN);
+		std::clog << "Prover disproved the ";
+		if (initial) {
+			std::clog << "initial";
+		} else {
+			std::clog << "induction";
+		}
+		std::clog << " step of invariant checking.\n";
+		return false;
 	}
-	return false;
 }

@@ -527,7 +527,7 @@ void Structure::sortCheck() const {
 }
 
 void Structure::functionCheck() {
-#warning check for partial interpretations!
+//#warning check for partial interpretations!
 	for (auto func2inter : _funcinter) {
 		auto f = func2inter.first;
 		auto ft = func2inter.second;
@@ -535,7 +535,6 @@ void Structure::functionCheck() {
 			continue;
 		}
 		if (not ft->universe().approxFinite()) {
-#warning Not checking function consistency for infinite domains might result in incorrect results
 			Warning::warning("Consistency cannot be checked for functions over an infinite domain.");
 			continue;
 		}

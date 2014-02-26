@@ -142,7 +142,7 @@ Lit AtomGrounder::run() const {
 	return lit;
 }
 
-void AtomGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+void AtomGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& ) {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run());
 }
@@ -211,7 +211,7 @@ Lit ComparisonGrounder::run() const {
 	return result;
 }
 
-void ComparisonGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+void ComparisonGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& ) {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run()); // TODO can do better?
 }
@@ -638,7 +638,7 @@ Lit AggGrounder::run() const {
 	return tseitin;
 }
 
-void AggGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+void AggGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& ) {
 	formula.setType(Conn::CONJ);
 	formula.literals.push_back(run());
 }
@@ -918,7 +918,7 @@ bool QuantGrounder::split() {
 
 	// Try to find a delay of the instantiated subformula by introducing a new tseitin symbol that implies the formula
 	// TODO when definition body delaying is possible, should create a real definition for the tseitin.
-#warning Expected bug: too many models the Tseitin is generated using an implication
+//#warning Expected bug: too many models the Tseitin is generated using an implication
 
 	vector<Sort*> sorts;
 	varset vars;

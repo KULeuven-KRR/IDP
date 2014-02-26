@@ -120,8 +120,6 @@ public:
 				auto pi = structure->inter(p);
 				if (pi->approxTwoValued()) {
 					printTab();
-					auto ctsize = pi->ct()->size();
-					auto cfsize = pi->cf()->size();
 					output() << print(p) << " = ";
 					visit(pi->ct());
 					output() << '\n';

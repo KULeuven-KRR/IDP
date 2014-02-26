@@ -45,7 +45,7 @@ AggregateOptimizationGrounder::~AggregateOptimizationGrounder() {
 	delete (_setgrounder);
 }
 
-void AggregateOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request){
+void AggregateOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& ){
 	formula.setType(Conn::CONJ);
 	if (verbosity() > 2) {
 		printOrig();
@@ -71,7 +71,7 @@ VariableOptimizationGrounder::~VariableOptimizationGrounder() {
 	delete (_termgrounder);
 }
 
-void VariableOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request){
+void VariableOptimizationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& ){
 	formula.setType(Conn::CONJ);
 	if (verbosity() > 2) {
 		printOrig();

@@ -22,6 +22,6 @@ protected:
 	Formula* visit(PredForm* pf);
 
 private:
-	QuantForm* solveGreater(int, AggTerm*);
-	QuantForm* solveLesser(int, AggTerm*);
+	QuantForm* solveGreater(size_t, AggTerm*);
+	QuantForm* solveLesser(size_t, AggTerm*);
 };

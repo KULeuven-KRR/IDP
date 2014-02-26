@@ -885,7 +885,7 @@ Grounder* LazyGroundingManager::getFirstSubGrounder() const {
 // FIXME can be used to get a complete extension of the structure
 void LazyGroundingManager::extendStructure(Structure* structure) const {
 // TODO handle functions, sorts and definitions
-#warning equivalences handled incorrectly
+//#warning equivalences handled incorrectly
 	for (auto pred2inter : structure->getPredInters()) {
 		auto pred = pred2inter.first;
 		auto symbolit = symbol2watchedrules.find(pred);

@@ -135,7 +135,7 @@ void DelayInitializer::findDelays() {
 		clog << "Solving optimization problem to find delays.\n";
 	}
 
-#warning delay_optimization currently only works if useIFCompletion is FALSE!!! (has extra constraint)
+//#warning delay_optimization currently only works if useIFCompletion is FALSE!!! (has extra constraint)
 	auto savedoptions = getGlobal()->getOptions();
 	auto newoptions = new Options(false);
 	getGlobal()->setOptions(newoptions);
