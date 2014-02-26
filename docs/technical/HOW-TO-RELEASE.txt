@@ -10,8 +10,7 @@
 * This last one creates the releasable files
 
 
-
-** For Windows (NOT YET TESTED FROM A BLANK INSTALL) **
+** For Windows **
 
 * You should install some software:
  - Cmake: http://www.cmake.org/cmake/resources/software.html
@@ -27,9 +26,9 @@
 * This last one creates the releasable files
 
 
-
-
-
 ** For Mac **
 
-TODO
+* Similar to linux, except that 
+       - macports might be required to get a recent enough compiler, bison and flex.
+       - static binaries are not supported on mac, so build a standard "Release"
+       - copy the relevant dependencies into the package (libstd, libgcc)
