@@ -93,7 +93,7 @@ Formula* CardConstrToFO::visit(AggForm* form) {
 	}
 }
 
-QuantForm* CardConstrToFO::solveGreater(int b, AggTerm* f) {
+QuantForm* CardConstrToFO::solveGreater(size_t b, AggTerm* f) {
 	auto vs = varset();
 	auto conjuncts = std::vector<Formula*>();
 	auto quantSetExpr = f->set()->getSets()[0];
@@ -109,7 +109,7 @@ QuantForm* CardConstrToFO::solveGreater(int b, AggTerm* f) {
 
 	for (size_t i = 0; i < b; i++) { //er moeten b sets variabelen zijn die aan de formule voldoen
 		auto substs = std::map<Variable*, Variable*>();
-		for (int j = 0; j < vectorQuantvars.size(); j++) { //voor elke variabele in 1 set
+		for (size_t j = 0; j < vectorQuantvars.size(); j++) { //voor elke variabele in 1 set
 			auto curV = new Variable(vectorQuantvars[j]->sort());
 			substs.insert( { vectorQuantvars[j], curV });
 			allQuantVars.insert(curV);
@@ -133,7 +133,7 @@ QuantForm* CardConstrToFO::solveGreater(int b, AggTerm* f) {
 	return new QuantForm(SIGN::POS, QUANT::EXIST, allQuantVars, &(Gen::conj(conjuncts)), FormulaParseInfo());
 }
 
-QuantForm* CardConstrToFO::solveLesser(int b, AggTerm* f) {
+QuantForm* CardConstrToFO::solveLesser(size_t b, AggTerm* f) {
 	auto returnV = solveGreater(b + 1, f);
 	returnV->negate();
 	return returnV;
