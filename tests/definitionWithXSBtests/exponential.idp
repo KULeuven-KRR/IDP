@@ -29,9 +29,11 @@ theory T : V {
     { P_t2(x) <- given(s) & x = s * (s^2 + 1) / 2. }
     { P_t2(x) <- given(s) & x = s * (s*s + 1) / 2. }
     
-    { P6(x) <- x = x^4. }
+/*    // Commented because these cannot be tested as the non-xsb reference case does not work yet
+	{ P6(x) <- x = x^4. }
     { P6(x) <- x = x^0. }
     { P6(x) <- x = x^(-2). }
+*/
 }
 
 structure S : V {
