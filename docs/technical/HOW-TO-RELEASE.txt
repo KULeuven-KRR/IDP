@@ -1,0 +1,34 @@
+** For Linux **
+
+* Install everything that is mentioned in the developing-IDP file.
+* Create new build directory
+* Configure it to statically release: (disable XSB, disable SPASS)
+ cmake ~/software/idp/ -DCMAKE_INSTALL_PREFIX=/cw/dtailocal/bartb/local -DCMAKE_BUILD_TYPE="StaticRelease" -DWITHXSB=OFF -DSPASS=OFF
+* make
+* make install
+* make package
+* This last one creates the releasable files
+
+
+** For Windows **
+
+* You should install some software:
+ - Cmake: http://www.cmake.org/cmake/resources/software.html
+ - Gcc: http://sourceforge.net/projects/tdm-gcc/files/TDM-GCC%20Installer/tdm-gcc-webdl.exe/download
+ - Bison and flex can be found on https://people.cs.kuleuven.be/~bart.bogaerts/bison-flex.zip
+* Create new build directory
+* Configure it to statically release: (disable XSB, disable SPASS)
+ cmake ~/software/idp/ -DCMAKE_INSTALL_PREFIX=/cw/dtailocal/bartb/local -DCMAKE_BUILD_TYPE="StaticRelease" -DWITHXSB=OFF -DSPASS=OFF
+* Refer in the cmake-gui to the correct bison and flex 
+* make
+* make install
+* make package
+* This last one creates the releasable files
+
+
+** For Mac **
+
+* Similar to linux, except that 
+       - macports might be required to get a recent enough compiler, bison and flex.
+       - static binaries are not supported on mac, so build a standard "Release"
+       - copy the relevant dependencies into the package (libstd, libgcc)
