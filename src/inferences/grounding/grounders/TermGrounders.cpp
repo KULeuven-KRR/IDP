@@ -386,7 +386,7 @@ GroundTerm AggTermGrounder::run() const {
 				conditions.push_back(_true);
 				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
 			}else{
-				#warning Hack because DeriveTermBounds (so ALSO in other parts of the system) does not derive complete bounds for MIN and MAX aggregates (forgetting infinity)
+				//#warning Hack because DeriveTermBounds (so ALSO in other parts of the system) does not derive complete bounds for MIN and MAX aggregates (forgetting infinity)
 				dom = getDomain()->clone();
 				auto neutraldom = createDomElem(neutral);
 				if(not dom->contains(neutraldom)){
