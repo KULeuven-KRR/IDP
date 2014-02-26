@@ -78,6 +78,10 @@ void transform(Construct* object, Values ... parameters) {
 }
 
 namespace FormulaUtils {
+    
+CompType getComparison(const PredForm* pf);
+
+    
 /** Returns true iff the aggregate formula is anti-monotone */
 bool isAntimonotone(const AggForm* af);
 
@@ -106,6 +110,9 @@ bool containsDomainTerms(Formula* f);
 bool containsFuncTermsOutsideOfSets(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
+
+/** Modifies the theory by transforming cardinality constraints bounded by a value smaller than maxbound to its FO-counterpart. **/
+AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
 std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager);
@@ -154,10 +161,11 @@ Theory* sharedTseitinTransform(Theory* t, Structure* s = NULL);
 
 /** Replace the given term by the given variable in the given formula */
 Formula* substituteTerm(Formula*, Term*, Variable*);
-
 Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const DomainElement*>& var2domelem);
+/** Replace the variables according to the given map */
+Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var);
 
-/** Non-recursively push quantifiers down as far as possible **/
+/** Non-recursively push quantifiers down as far as possible */
 Formula* pushQuantifiers(Formula* t);
 
 /** Recursively move all function and aggregate terms */

@@ -125,6 +125,7 @@ if(${BUILDTESTS})
 		addMXTest(nobounds nobounds.cpp) 
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
+        addMXTest(focard focard.cpp)
 		if(WITHXSB)
 		    addMXTest(xsbtest definitionWithXSBtests.cpp)
 			addMXTest(approxdefs approxdefsmx.cpp)
@@ -145,7 +146,7 @@ if(${BUILDTESTS})
 		# ALSO ADD ABOVE ELSE!
 		set(LONGERTESTS
 			mxtests/basic.cpp
-
+            mxtests/focard.cpp
 			mxtests/bounds.cpp
 			mxtests/xsbmx.cpp
 			mxtests/approxdefsmx.cpp

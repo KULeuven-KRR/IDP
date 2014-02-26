@@ -14,8 +14,6 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 
-#pragma once
-
 #include <set>
 #include <map>
 #include "vocabulary/vocabulary.hpp"

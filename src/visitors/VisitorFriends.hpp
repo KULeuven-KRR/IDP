@@ -125,8 +125,9 @@ class AddMarkers;
 		friend class CollectSymbols;\
 		friend class AddMarkers;\
 		friend class ReplaceLTCSymbols;\
-		friend class RemoveQuantificationsOverSort;
-
+		friend class RemoveQuantificationsOverSort;\
+		friend class CardConstrToFO;\
+		friend class SubstituteVarWithVar;
 
 class AbstractTheory;
 class Theory;

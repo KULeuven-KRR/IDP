@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef CMD_REMOVENESTING_HPP_
-#define CMD_REMOVENESTING_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
@@ -25,6 +24,20 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		FormulaUtils::unnestTerms(get<0>(args));
+		return nilarg();
+	}
+};
+
+typedef TypedInference<LIST(AbstractTheory*, int)> TheoryIntBase;
+class RemoveCardinalitiesInference: public TheoryIntBase {
+public:
+	RemoveCardinalitiesInference()
+			: TheoryIntBase("removecardinalities", "Replaced cardinalities with a bound smaller than the given one (or always if 0) with FO sentences.") {
+		setNameSpace(getTheoryNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		FormulaUtils::replaceCardinalitiesWithFOFormulas(get<0>(args), get<1>(args));
 		return nilarg();
 	}
 };
@@ -67,5 +80,3 @@ public:
 		return nilarg();
 	}
 };
-
-#endif /* CMD_REMOVENESTING_HPP_ */

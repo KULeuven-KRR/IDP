@@ -202,6 +202,9 @@ The \code{theory} namespace and all its procedures are included in the global na
 	\item[pushnegations(theory)]
  		Push negations inwards until they are right in front of literals.
  		Modifies the given theory.
+	\item[removecardinalities(theory,int)]
+		Replaces atoms consisting of a cardinality term compared with an integer term, if the latter is smaller or equal to the given integer (or if that is zero), with an equivalent FO formula.
+ 		Modifies the given theory.
 	\item[removenesting(theory)]
  		Move nested terms out of predicates (except for the equality-predicate) and functions.
  		Modifies the given theory.

@@ -31,6 +31,7 @@
 #include "information/HasRecursiveAggregate.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
+#include "transformations/CardConstrToFO.hpp"
 #include "transformations/PushNegations.hpp"
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
@@ -62,6 +63,7 @@
 #include "transformations/RemoveQuantificationsOverSort.hpp"
 #include "information/FindDelayPredForms.hpp"
 #include "information/ContainedVariables.hpp"
+#include "transformations/SubstituteVarWithVar.hpp"
 
 using namespace std;
 
@@ -98,6 +100,7 @@ bool approxTwoValued(const Term* t, const Structure* str) {
 bool containsSymbol(const PFSymbol* s, const Term* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
+
 
 void checkSorts(Vocabulary* voc, Term* term) {
 	transform<CheckSorts>(term, voc);
@@ -260,6 +263,25 @@ Definition* eliminateUniversalQuantifications(Definition* d) {
 
 /* FormulaUtils */
 namespace FormulaUtils {
+    
+    
+ CompType getComparison(const PredForm* pf) {
+	auto sign = pf->sign();
+	auto symbol = pf->symbol();
+	Assert(VocabularyUtils::isComparisonPredicate(symbol));
+	if (is(symbol, STDPRED::EQ)) {
+		return isPos(sign) ? CompType::EQ : CompType::NEQ;
+	} else if (is(symbol, STDPRED::LT)) {
+		return isPos(sign) ? CompType::LT : CompType::GEQ;
+	} else {
+		Assert(is(symbol, STDPRED::GT));
+		return isPos(sign) ? CompType::GT : CompType::LEQ;
+	}
+}
+
+ AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound) {
+	return transform<CardConstrToFO, AbstractTheory*>(t, maxbound);
+}
 
 void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
 	transform<AddFuncConstraints, AbstractTheory, Vocabulary*, std::map<Function*, Formula*>&, bool>(theory, voc, funcconstraints, alsoCPableFunctions);
@@ -368,6 +390,10 @@ Formula* substituteTerm(Formula* f, Term* t, Variable* v) {
 
 Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const DomainElement*>& var2domelem){
 	return transform<SubstituteVarWithDom, Formula*>(formula, var2domelem);
+}
+
+Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var){
+	return transform<SubstituteVarWithVar, Formula*>(formula, var2var);
 }
 
 Formula* pushQuantifiers(Formula* t) {

@@ -20,20 +20,6 @@ using namespace std;
 using namespace CPSupport;
 using namespace TermUtils;
 
-CompType getComparison(const PredForm* pf) {
-	auto sign = pf->sign();
-	auto symbol = pf->symbol();
-	Assert(VocabularyUtils::isComparisonPredicate(symbol));
-	if (is(symbol, STDPRED::EQ)) {
-		return isPos(sign) ? CompType::EQ : CompType::NEQ;
-	} else if (is(symbol, STDPRED::LT)) {
-		return isPos(sign) ? CompType::LT : CompType::GEQ;
-	} else {
-		Assert(is(symbol, STDPRED::GT));
-		return isPos(sign) ? CompType::GT : CompType::LEQ;
-	}
-}
-
 /**
  * Given functerm = dom/varterm, construct graph
  */
@@ -94,9 +80,9 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		}
 	}
 	if (newformula == NULL and isAgg(left) and threevalleft) {
-		newformula = makeAggForm(right, invertComp(getComparison(pf)), dynamic_cast<AggTerm*>(left), pf->pi(), _structure);
+		newformula = makeAggForm(right, invertComp(FormulaUtils::getComparison(pf)), dynamic_cast<AggTerm*>(left), pf->pi(), _structure);
 	} else if (newformula == NULL and isAgg(right) and threevalright) {
-		newformula = makeAggForm(left, getComparison(pf), dynamic_cast<AggTerm*>(right), pf->pi(), _structure);
+		newformula = makeAggForm(left, FormulaUtils::getComparison(pf), dynamic_cast<AggTerm*>(right), pf->pi(), _structure);
 	}
 	if (newformula != NULL) {
 		delete (pf);
