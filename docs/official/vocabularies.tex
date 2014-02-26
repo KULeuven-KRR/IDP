@@ -51,9 +51,11 @@ A partial function is declared by
 	partial MyFunc(T1,T2,T3):T
 \end{lstlisting}
 
-Constants of type \code{T} can be declared by \code{MyConst:T} or \code{MyConst():T}.  Besides functions with an identifier as name, functions of arity two with names \code{+,-,*,/,\%}  and \code{\textasciicircum} can be declared, as well as unary functions with names \code{-} and \code{abs}.
+Constants of type \code{T} can be declared by \code{MyConst:T} or \code{MyConst():T}.
 
 Any symbol has to be declared on its own line.
+
+Invalid symbol names are: isa, type, extends, contains, extern
 
 
 
@@ -101,9 +103,6 @@ The global namespace contains a fixed vocabulary \code{std}, which is defined as
 	vocabulary std {
 		type nat	
 		type int contains nat
-		type float contains int
-		type char
-		type string contains char
 
 		+(int,int) : int
 		-(int,int) : int
@@ -112,14 +111,7 @@ The global namespace contains a fixed vocabulary \code{std}, which is defined as
 		%(int,int) : int
 		abs(int) : int
 		-(int) : int
-		
-		+(float,float) : float
-		-(float,float) : float
-		*(float,float) : float
-		/(float,float) : float
-		^(float,float) : float
-		abs(float) : float
-		-(float) : float
+
 	}
 \end{lstlisting}
 Every vocabulary implicitly contains all symbols of \code{std}.  Also, every vocabulary contains for each of its types \code{A} the predicates \code{=(A,A)}, \code{<(A,A)}, and \code{>(A,A)} and the functions \code{MIN:A}, \code{MAX:A}, \code{SUCC(A):A} and \code{PRED(A):A}. In every structure, the symbols of \code{std} have the following interpretation:
@@ -129,23 +121,13 @@ Every vocabulary implicitly contains all symbols of \code{std}.  Also, every voc
 \begin{tabular}{l|l}
 \code{nat} & all natural numbers \\
 \code{int} & all integer numbers \\ 
-\code{float} & all floating point numbers \\
-\code{char} & all characters \\
-\code{string} & all strings \\
 \code{+(int,int) : int} & integer addition \\
 \code{-(int,int) : int } &integer subtraction \\
 \code{*(int,int) : int} & integer multiplication \\
-\code{/(int,int) : float} & division \\
+\code{/(int,int) : int} & division \\
 \code{\%(int,int) : int} & remainder \\
 \code{abs(int) : int} & absolute value \\
 \code{-(int) : int} & unary minus \\
-\code{+(float,float) : float} & floating point addition \\
-\code{-(float,float) : float} & floating point subtraction \\
-\code{*(float,float) : float} & floating point multiplication \\
-\code{/(float,float) : float} & floating point division \\ 
-\code{\textasciicircum(float,float) : float} & floating point exponentiation \\
-\code{abs(float) : float} & absolute value \\
-\code{-(float) : float} & unary minus
 \end{tabular} 
 
 \end{center}

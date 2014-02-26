@@ -76,7 +76,17 @@ Besides this, for every natural number $n$, \idp also supports the following qua
 
 A universally quantified formula $\forall x\ P(x)$ becomes `{\tt !\,x\,:\,P(x)}' in \idp syntax, and similarly for existentially quantified formulas. As a shorthand for the formula `{\tt !\,x\,:\,!\,y\,:\,!\,z\,:\,Q(x,y,z).}', one can write `{\tt !\,x y z\,:\,Q(x,y,z)}'. 
 
-
+\idp also supports binary quantifications, which allow to writer shorter or more readable formulas:
+\begin{center}
+\begin{tabular}{c|c|l}
+Binary Quantification & Shorthand for \\
+\hline
+\code{? (x,y) in P : Q(x,y)}	&  \code{? x y : P(x,y) \& Q(x,y)} \\
+\code{! (x,y) in P : Q(x,y)}	&  \code{! x y : P(x,y) => Q(x,y)} \\
+\code{? (x,y) sat P(x,y) : Q(x,y)}	&  \code{? x y : P(x,y) \& Q(x,y)} \\
+\code{! (x,y) sat P(x,y) : Q(x,y)}	&  \code{! x y : P(x,y) => Q(x,y)} \\
+\end{tabular}
+\end{center}
 
 In \idp, every variable has a type. The informal meaning of a sentence of the form $\forall x\ \psi$, respectively $\exists x\ \psi$, where $x$ has type $T$ is then `for each object $x$ of type $T$, $\psi$ must be true', respectively `there exists at least one object $x$ of type $T$ such that $\psi$ is true'. The type of a variable can be declared by the user, or derived by \idp (see section~\ref{ssec:vtype}).
 
