@@ -959,18 +959,22 @@ void Insert::openstructure(const string& sname, YYLTYPE l) {
 	_currspace->add(_currstructure);
 }
 
-void Insert::closestructure(bool considerInterpretedSymbolsTwoValued) {
+void Insert::closestructure(bool assumeClosedWorld) {
 	Assert(_currstructure);
 	finalizePendingAssignments();
 	_currstructure->checkAndAutocomplete();
 	_currstructure->sortCheck(); // TODO also add to commands?
 	_currstructure->functionCheck();
-	if (considerInterpretedSymbolsTwoValued) {
-		for (auto pred : parsedpreds) {
-			makeUnknownsFalse(_currstructure->inter(pred));
+	if (assumeClosedWorld) {
+		for (auto pred : _currstructure->vocabulary()->getPreds()) {
+			for (auto predToSet : pred.second->nonbuiltins()) {
+				makeUnknownsFalse(_currstructure->inter(predToSet));
+			}
 		}
-		for (auto func : parsedfuncs) {
-			makeUnknownsFalse(_currstructure->inter(func)->graphInter());
+		for (auto func : _currstructure->vocabulary()->getFuncs()) {
+			for (auto funcToSet : func.second->nonbuiltins()) {
+				makeUnknownsFalse(_currstructure->inter(funcToSet)->graphInter());
+			}
 		}
 	}
 	_currstructure->clean();
