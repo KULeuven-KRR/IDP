@@ -9,6 +9,7 @@ vocabulary V {
 	P3:t
 	P4:t
 	P5(t)
+	P6(t)
 	
 	// Tests with *just* the correct domain
 	type t2 isa int
@@ -20,13 +21,17 @@ theory T : V {
     
     { P2(x) <- x = constant2 * (constant2^2 + 1) / 2. }
     
-    { P3 = constant ^ constant2. }
-    { P4 = constant2 ^ constant. }
+    { P3 = 2*constant ^ constant2. }
+    { P4 = 2*constant2 ^ constant. }
     
     { P5(x) <- given(s) & x = s * (s^2 + 1) / 2. }
     
     { P_t2(x) <- given(s) & x = s * (s^2 + 1) / 2. }
     { P_t2(x) <- given(s) & x = s * (s*s + 1) / 2. }
+    
+    { P6(x) <- x = x^4. }
+    { P6(x) <- x = x^0. }
+    { P6(x) <- x = x^(-2). }
 }
 
 structure S : V {
