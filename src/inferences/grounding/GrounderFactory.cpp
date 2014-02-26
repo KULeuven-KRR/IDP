@@ -770,17 +770,22 @@ AggForm* GrounderFactory::tryToTurnIntoAggForm(const PredForm* pf){
 }
 
 void GrounderFactory::visit(const BoolForm* bf) {
-	_context._conjPathUntilNode = (_context._conjunctivePathFromRoot and (bf->isConjWithSign() or bf->subformulas().size() == 1));
-
-	// If a disjunction or conj with one subformula, it's subformula can be treated as if it was the root of this formula
-	if (isPos(bf->sign()) and bf->subformulas().size() == 1) {
-		descend(bf->subformulas()[0]);
-	} else {
-		if (_context._conjPathUntilNode) {
-			createBoolGrounderConjPath(bf);
-		} else {
-			createBoolGrounderDisjPath(bf);
+	if(bf->subformulas().size() == 1){
+		_context._conjPathUntilNode = _context._conjunctivePathFromRoot;
+		auto subf = bf->subformulas()[0];
+		if(isNeg(bf->sign())){
+			subf->negate();
 		}
+		descend(subf);
+		return;
+	}
+
+	_context._conjPathUntilNode = (_context._conjunctivePathFromRoot and bf->isConjWithSign());
+
+	if (_context._conjPathUntilNode) {
+		createBoolGrounderConjPath(bf);
+	} else {
+		createBoolGrounderDisjPath(bf);
 	}
 }
 
