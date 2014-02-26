@@ -496,7 +496,7 @@ void CPSetTerm::put(std::ostream& stream) const {
 	if (type() == AggFunction::PROD) {
 		stream <<weights()[0] <<"*";
 	}
-	for (auto i = 0; i < varids().size(); ++i) {
+	for (u_int i = 0; i < varids().size(); ++i) {
 		if (type() == AggFunction::SUM) {
 			stream << "(" <<conditions()[i] <<", " << weights()[i] << " * var" << varids()[i] << ") + ";
 		}else if (type() == AggFunction::PROD) {
