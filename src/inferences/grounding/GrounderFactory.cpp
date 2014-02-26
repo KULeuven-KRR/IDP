@@ -310,16 +310,7 @@ LazyGroundingManager* GrounderFactory::create(const GroundInfo& data, PCSolver* 
 LazyGroundingManager* GrounderFactory::ground(AbstractTheory* theory, Term* minimizeterm) {
 	std::vector<Grounder*> grounders;
 
-	FormulaUtils::combineAggregates(theory);
-
-	// TODO: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
-	if(getOption(SKOLEMIZE) && _nbmodelsequivalent){
-		Warning::warning("Skolemization does not preserve the number of models, so will not be applied as model-equivalence was also requested.");
-	}
-
-	if(getOption(SKOLEMIZE) && not _nbmodelsequivalent){
-		theory = FormulaUtils::skolemize(theory);
-	}
+	theory = FormulaUtils::improveTheoryForInference(theory, getConcreteStructure(), getOption(SKOLEMIZE), _nbmodelsequivalent);
 
 	// NOTE: important that we only add funcconstraints for the theory at hand! e.g. for calculate definitions, we should not find values for the functions not occurring in it!
 	FormulaUtils::addFuncConstraints(theory, _vocabulary, funcconstraints, not getOption(BoolType::CPSUPPORT));

@@ -1,0 +1,45 @@
+vocabulary V {	
+	type t isa int
+	given(t)
+	constant:t
+	constant2:t
+	
+	P(t)
+	P2(t)
+	P3:t
+	P4:t
+	P5(t)
+	P6(t)
+	
+	// Tests with *just* the correct domain
+	type t2 isa int
+	P_t2(t2)
+}
+
+theory T : V {
+    { P(x) <- x = constant * (constant^2 + 1) / 2. }
+    
+    { P2(x) <- x = constant2 * (constant2^2 + 1) / 2. }
+    
+    { P3 = 2*constant ^ constant2. }
+    { P4 = 2*constant2 ^ constant. }
+    
+    { P5(x) <- given(s) & x = s * (s^2 + 1) / 2. }
+    
+    { P_t2(x) <- given(s) & x = s * (s^2 + 1) / 2. }
+    { P_t2(x) <- given(s) & x = s * (s*s + 1) / 2. }
+    
+/*    // Commented because these cannot be tested as the non-xsb reference case does not work yet
+	{ P6(x) <- x = x^4. }
+    { P6(x) <- x = x^0. }
+    { P6(x) <- x = x^(-2). }
+*/
+}
+
+structure S : V {
+  t = { 0..999 }
+  t2 = { 15..15 }
+  given = { 3 }
+  constant = { ->2 }
+  constant2 = { ->3 }
+}

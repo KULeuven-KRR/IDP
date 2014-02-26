@@ -48,6 +48,7 @@ bool XSBToIDPTranslator::isoperator(int c) {
 			c == '%' ||
 			c == '<' ||
 			c == '>' ||
+			c == '^' ||
 			c == '.';		// Dot for floating point numbers
 }
 

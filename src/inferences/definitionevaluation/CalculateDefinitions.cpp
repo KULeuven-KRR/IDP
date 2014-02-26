@@ -177,6 +177,8 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 		clog << "Calculating known definitions\n";
 	}
 
+	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
+
 	// Collect the open symbols of all definitions
 	std::map<Definition*, std::set<PFSymbol*> > opens;
 	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
@@ -280,11 +282,9 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	return result;
 }
 
-
-
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure,
-		bool satdelay, std::set<PFSymbol*> symbolsToQuery) {
-        Theory* theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-        theory->add(definition);
-        return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
+// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) {
+	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	theory->add(definition);
+	return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
 }

@@ -229,7 +229,12 @@ int nrSubformulas(AbstractTheory*);
 void pushNegations(AbstractTheory*);
 
 /** Calculate all operations on domainelements */
-Theory* calculateArithmetic(Theory*, const Structure* s) ;
+template<class T>
+T calculateArithmetic(T theory, const Structure* structure);
+
+/** Applies some useful transformations to reduce the grounding size of the theory **/
+template<class T>
+T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
 
 /** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
 Formula* pushQuantifiersAndNegations(Formula*);

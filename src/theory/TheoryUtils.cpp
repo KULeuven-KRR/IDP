@@ -459,8 +459,24 @@ void pushNegations(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-Theory* calculateArithmetic(Theory* t, const Structure* s) {
-	return transform<CalculateKnownArithmetic, Theory*>(t,s);
+template<class T>
+T calculateArithmetic(T t, const Structure* s) {
+	return transform<CalculateKnownArithmetic, T>(t,s);
+}
+
+template<class T>
+T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent) {
+	FormulaUtils::combineAggregates(theory);
+	theory = FormulaUtils::calculateArithmetic(theory, structure);
+
+	if (skolemize && nbmodelsequivalent) {
+		// TODO: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
+		Warning::warning("Skolemization does not preserve the number of models, so will not be applied as model-equivalence was also requested.");
+	}
+	if (skolemize && not nbmodelsequivalent) {
+		theory = FormulaUtils::skolemize(theory);
+	}
+	return theory;
 }
 
 Formula* pushQuantifiersAndNegations(Formula* t) {
@@ -804,3 +820,8 @@ AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s) 
 }
 
 }
+
+template Theory* FormulaUtils::calculateArithmetic(Theory* t, const Structure* s);
+template AbstractTheory* FormulaUtils::calculateArithmetic(AbstractTheory* t, const Structure* s);
+template Theory* FormulaUtils::improveTheoryForInference(Theory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
+template AbstractTheory* FormulaUtils::improveTheoryForInference(AbstractTheory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
