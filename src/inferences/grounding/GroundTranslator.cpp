@@ -468,8 +468,8 @@ Lit GroundTranslator::reify(double bound, CompType comp, AggFunction aggtype, Se
 	}
 }
 
-#warning need much more sharing in groundtranslator cp reify (negations!)
-#warning optimize in solver by passing translator and adding a cheaper method to do the below for var comp int?
+//#warning need much more sharing in groundtranslator cp reify (negations!)
+//#warning optimize in solver by passing translator and adding a cheaper method to do the below for var comp int?
 Lit GroundTranslator::reify(CPTerm* left, CompType comp, const CPBound& right, TsType tstype) {
 	auto leftvar = dynamic_cast<CPVarTerm*>(left);
 	auto newright = right;
