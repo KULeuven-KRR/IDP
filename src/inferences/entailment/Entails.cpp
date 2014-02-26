@@ -121,6 +121,9 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	disprovenStrings.push_back("SZS status CounterSatisfiable");
 	disprovenStrings.push_back("SPASS beiseite: Completion found.");
 
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
+
 	// Determine whether the theories are compatible with this inference
 	// and whether arithmetic support is required
 	TheorySupportedChecker axiomsSupported;
@@ -129,7 +132,6 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 		Warning::warning("The input contains a definition. A (possibly) weaker form of entailment will be verified, based on its completion.");
 		FormulaUtils::addCompletion(axioms, NULL);
 	}
-
 
 	TheorySupportedChecker conjecturesSupported;
 	conjecturesSupported.runCheck(conjectures);
@@ -148,9 +150,6 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
         
 	if(axiomsSupported.aggregateFound()){
 		Warning::warning("The input contains aggregates. Non-cardinality aggregates will be dropped, resulting in a weaker form of entailment.");
-                //card needs the graphFuncsandAggs first
-		FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
-		FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
 	}
 	if (not conjecturesSupported.arithmeticFound() && not axiomsSupported.arithmeticFound()) {
 		hasArithmetic = false;
