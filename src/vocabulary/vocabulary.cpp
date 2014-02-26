@@ -1056,7 +1056,7 @@ void ComparisonPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
 	}
 }
 
-void ComparisonPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
+void ComparisonPredGenerator::removeVocabulary(const Vocabulary* ) {
 	for (auto it = _overpreds.begin(); it != _overpreds.end();) {
 		map<Sort*, Predicate*>::iterator jt = it;
 		++it;
