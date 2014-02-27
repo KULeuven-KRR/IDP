@@ -239,23 +239,23 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
-void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
+void OptionPolicy<EnumType, ValueType>::copyValues(const Options& opts) {
 	for (auto option: _options) {
 		if(option!=NULL){
-			option->setValue(opts->getValue(option->getType()));
+			option->setValue(opts.getValue(option->getType()));
 		}
 	}
 }
 
 template<>
-void OptionPolicy<OptionType, Options*>::copyValues(Options* opts) {
+void OptionPolicy<OptionType, Options*>::copyValues(const Options& opts) {
 	for (auto option: _options) {
 		if(option==NULL){
 			continue;
 		}
 		auto value = option->getValue();
 		if(value->isVerbosityBlock()){
-			value->copyValues(opts->getValue(VERBOSITY));
+			value->copyValues(opts.getValue(VERBOSITY));
 		}
 	}
 }
@@ -412,7 +412,7 @@ bool Options::isOption(const string& optname) const {
 			|| isOptionOfType<Options*>(optname);
 }
 
-void Options::copyValues(Options* opts) {
+void Options::copyValues(const Options& opts) {
 	StringPol::copyValues(opts);
 	BoolPol::copyValues(opts);
 	IntPol::copyValues(opts);
