@@ -21,6 +21,7 @@
 #include "theory/theory.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
+#include "lua/luaconnection.hpp"
 
 #include <dirent.h>
 #include <exception>
@@ -357,7 +358,20 @@ TEST(SimpleTest, TestTableSizeGreaterThanOrEqual) {
 	ASSERT_TRUE(infinite_ts_1 >= infinite_ts_1);
 }
 
+class DataManager {
+public:
+	DataManager() {
+		LuaConnection::makeLuaConnection();
+	}
+	~DataManager() {
+		LuaConnection::closeLuaConnection();
+		GlobalData::close();
+	}
+};
+
 TEST(SimpleMX,NoPushNegations){
+	DataManager m;
+
 	auto P = new Predicate("P",{});
 	auto Q = new Predicate("Q",{});
 	auto V = new Vocabulary("V", ParseInfo());
