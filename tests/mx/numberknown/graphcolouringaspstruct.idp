@@ -2,10 +2,14 @@
    Graph Colouring Problem
 ****************************/
 
-vocabulary V{
+vocabulary input{
 	type Colour 
 	type Vtx
 	Edge(Vtx,Vtx)
+}
+
+vocabulary V{
+	extern vocabulary input
 	Colouring(Vtx):Colour
 	P
 }
@@ -18,7 +22,7 @@ theory T: V{
 	~P.
 }
 
-factlist S: V{
+factlist S: input{
 	Colour(red).
 	Colour(blue).
 	Colour(yellow).

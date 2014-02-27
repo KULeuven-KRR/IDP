@@ -101,14 +101,14 @@ The \code{inferences} namespace and all its procedures are included in the globa
  	\item[progress(theory,structure)] can only be called with an LTC theory. Performs one progression step for the \href{https://people.cs.kuleuven.be/~bart.bogaerts/articles/2014/001/Progression.pdf}{progression inference} 
 	\item[isinvariant(theory, theory)] uses a theorem prover (set by stdoptions.provercommand) to try to prove that the second theory is an invariant of the first theory. The second theory should be of the form : $\forall t[Time]:\varphi[t]$, where $\varphi$ can be a single-state formula or a bistate formula and the first should be an LTC theory. It uses the methods presented in \href{https://people.cs.kuleuven.be/~bart.bogaerts/articles/2014/001/Progression.pdf}{progression inference}.
 	\item[isinvariant(theory, theory, structure)] uses the model expander to prove that the second theory is an invariant of the first theory in the context of the given structure. The second theory should be of the form : $\forall t[Time]:\varphi[t]$, where $\varphi$ can be a single-state formula or a bistate formula and the first should be an LTC theory. It uses the methods presented in \href{https://people.cs.kuleuven.be/~bart.bogaerts/articles/2014/001/Progression.pdf}{progression inference}.
-	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal.
+	\item[minimize(theory,structure,term)] Returns all models of the theory that extend the given structure and such that the term is minimal. The structure can interpret a subvocabulary of the vocabulary of the theory, the vocabulary of the theory and the term have to be identical.
 	
 	\item[modelexpandpartial(theory,structure)]
-		Apply model expansion to theory T, structure S.
+		Apply model expansion to theory T, structure S. The structure can interpret a subvocabulary of the vocabulary of the theory.
  		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
 		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
 	\item[modelexpand(theory,structure)]
- 		Apply model expansion to theory T, structure S.
+ 		Apply model expansion to theory T, structure S. The structure can interpret a subvocabulary of the vocabulary of the theory.
  		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
 		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
 		

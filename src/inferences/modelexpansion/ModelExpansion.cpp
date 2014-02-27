@@ -54,7 +54,11 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 		throw notyetimplemented("Modelexpansion of already ground theories");
 	}
 	if(structure->vocabulary()!=theory->vocabulary()){
-		throw IdpException("Modelexpansion requires that the theory and structure range over the same vocabulary.");
+		if(VocabularyUtils::isSubVocabulary(structure->vocabulary(), theory->vocabulary())){
+			structure->changeVocabulary(theory->vocabulary());
+		}else {
+			throw IdpException("Modelexpansion requires that the structure interprets (a subvocabulary of) the vocabulary of the theory.");
+		}
 	}
 	if(term!=NULL && structure->vocabulary()!=term->vocabulary()){
 		throw IdpException("Modelexpansion requires that the minimization term and the structure range over the same vocabulary.");

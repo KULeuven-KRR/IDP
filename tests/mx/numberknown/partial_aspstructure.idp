@@ -2,13 +2,14 @@ procedure getExpectedNbOfModels(){
 	return 1
 }
 
-vocabulary V{
+vocabulary input{
 	type Node isa int
- 
 	Path(Node,Node)
- 
-	Start : Node
 	Reached(Node)
+}
+vocabulary V{
+	extern vocabulary input
+	Start : Node
 }
 
 theory T : V {
@@ -18,7 +19,7 @@ theory T : V {
 	}
 }
 
-factlist S : V{ 
+factlist S : input{ 
 	Path(2,2).
 	Path(3,3).
 	Reached(2).
