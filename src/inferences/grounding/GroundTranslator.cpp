@@ -56,6 +56,10 @@ SymbolInfo::SymbolInfo(PFSymbol* symbol, StructureInfo structure)
 			checkers(new CheckerInfo(symbol, structure)) {
 }
 
+SymbolInfo::~SymbolInfo(){
+	delete(checkers);
+}
+
 FunctionInfo::FunctionInfo(Function* symbol, StructureInfo structure)
 		: 	symbol(symbol),
 			checkers(new CheckerInfo(symbol, structure)) {

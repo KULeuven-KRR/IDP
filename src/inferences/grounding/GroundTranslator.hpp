@@ -64,6 +64,7 @@ struct SymbolInfo {
 	std::map<std::vector<GroundTerm>, Lit > lazyatoms2lit;
 
 	SymbolInfo(PFSymbol* symbol, StructureInfo structure);
+	~SymbolInfo();
 };
 
 struct FunctionInfo {

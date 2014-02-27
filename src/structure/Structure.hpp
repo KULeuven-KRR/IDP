@@ -45,6 +45,10 @@ public:
 	Structure(const std::string& name, Vocabulary* v, const ParseInfo& pi);
 	~Structure();
 
+	void addInterToDelete(PredInter* pi) const {
+		_intersToDelete.push_back(pi);
+	}
+
 	// Mutators
 	void notifyAddedToVoc(Sort* sort);
 	void notifyAddedToVoc(PFSymbol* symbol);

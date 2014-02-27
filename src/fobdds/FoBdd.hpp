@@ -29,7 +29,7 @@ private:
 	const FOBDDKernel* _kernel;
 	const FOBDD* _truebranch;
 	const FOBDD* _falsebranch;
-	std::shared_ptr<FOBDDManager> _manager;
+	std::weak_ptr<FOBDDManager> _manager;
 	ParseInfo _pi; //!< The place where the fobdd was parsed.
 
 	void replacefalse(const FOBDD* f) {
@@ -71,7 +71,10 @@ public:
 	void accept(FOBDDVisitor* visitor) const;
 
 	std::shared_ptr<FOBDDManager>manager() const{
-		return _manager;
+		if(_manager.expired()){
+			throw IdpException("Invalid code path");
+		}
+		return _manager.lock();
 	}
 
 	bool operator<(const FOBDD& rhs) const;
