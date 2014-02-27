@@ -382,11 +382,18 @@ GroundTerm AggTermGrounder::run() const {
 
 			auto neutral = getNeutralElement(_type);
 			auto dom = getDomain();
+			bool emptysetpossible = true;
+			for(auto c: conditions){
+				if(c==_true){
+					emptysetpossible = false;
+				}
+			}
 			if (trueweight != neutral) {
 				conditions.push_back(_true);
 				varids.push_back(_translator->translateTerm(createDomElem(trueweight)));
-			}else{
-				//#warning Hack because DeriveTermBounds (so ALSO in other parts of the system) does not derive complete bounds for MIN and MAX aggregates (forgetting infinity)
+			}else if(emptysetpossible) {
+				//#warning Hack because DeriveTermBounds (so ALSO in other parts of the system) does not derive complete bounds for MIN and MAX aggregates (it ignores infinity), we add it here later on
+						// Try not to do this if not necessary, it messes with cp as domains are no longer ranges
 				dom = getDomain()->clone();
 				auto neutraldom = createDomElem(neutral);
 				if(not dom->contains(neutraldom)){
