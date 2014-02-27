@@ -552,6 +552,21 @@ public:
 		return _name2sort;
 	}
 
+	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols(){
+		std::vector<PFSymbol*> symbols;
+		for(auto pn: getPreds()){
+			for(auto p:pn.second->nonbuiltins()){
+				symbols.push_back(p);
+			}
+		}
+		for(auto pn: getFuncs()){
+			for(auto p:pn.second->nonbuiltins()){
+				symbols.push_back(p);
+			}
+		}
+		return symbols;
+	}
+
 	std::map<std::string, Sort*>::iterator firstSort() {
 		return _name2sort.begin();
 	}
