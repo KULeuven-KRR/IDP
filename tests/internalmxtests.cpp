@@ -69,11 +69,6 @@ TEST(MXTest, NullOptim) {
 	ASSERT_THROW(ModelExpansion::doMinimization(&mx.t, &mx.s, NULL), IdpException);
 }
 
-TEST(MXTest, DifferentVocabulary) {
-	auto mx = MxTesting(true);
-	ASSERT_THROW(ModelExpansion::doModelExpansion(&mx.t, &mx.s), IdpException);
-}
-
 TEST(OptimTest, DifferentVocabulary) {
 	auto mx = MxTesting(true);
 	ASSERT_THROW(ModelExpansion::doMinimization(&mx.t, &mx.s, &mx.o), IdpException);
