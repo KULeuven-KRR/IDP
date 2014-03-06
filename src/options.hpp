@@ -92,8 +92,9 @@ enum BoolType {
 	LIFTEDUNITPROPAGATION,
 	STABLESEMANTICS,
 	REDUCEDGROUNDING,
-	XSB,
-	PROVER_SUPPORTS_TFA
+	POSTPROCESS_DEFS,
+	PROVER_SUPPORTS_TFA,
+	XSB
 };
 
 enum OptionType {
@@ -304,7 +305,7 @@ public:
 		return values;
 	}
 
-	void copyValues(Options* opts);
+	void copyValues(const OptionPolicy<EnumType, ValueType>& opts);
 };
 
 // Note: Makes sure users cannot set the XSB option when there is no XSB available.
@@ -407,7 +408,7 @@ public:
 	}
 
 	template<class EnumType>
-	typename OptionTypeTraits<EnumType>::ValueType getValue(EnumType type) {
+	typename OptionTypeTraits<EnumType>::ValueType getValue(EnumType type) const {
 		return OptionPolicy<EnumType, typename OptionTypeTraits<EnumType>::ValueType>::getValue(type);
 	}
 
@@ -418,7 +419,7 @@ public:
 	bool isVerbosityBlock() {
 		return _isVerbosity;
 	}
-	void copyValues(Options*);
+	void copyValues(const Options& opts);
 
 	std::string printAllowedValues(const std::string& option) const;
 	std::ostream& put(std::ostream&) const;

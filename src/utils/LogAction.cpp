@@ -14,6 +14,3 @@ using namespace std;
 void logActionAndTime(const std::string& action){
 	std::clog <<action << (long long)((double)clock()*1000/(CLOCKS_PER_SEC)) <<"ms\n";
 }
-void logActionAndValue(const std::string& action, double value){
-	std::clog <<action <<"&&" <<value <<"\n";
-}

@@ -41,7 +41,7 @@ void Delay::put(std::ostream& stream) const {
 	}
 }
 
-const Rule& DelayedRule::getRule() const {
+Rule* DelayedRule::getRule() const {
 	return _rule->getRule();
 }
 
@@ -249,7 +249,7 @@ void LazyGroundingManager::delay(DefinitionGrounder* dg) {
 // Add watches for all that have already been introduced into the grounding
 void LazyGroundingManager::fireAllKnown(DelayedRule* delrule, bool watchedvalue) {
 	Assert(resolvingqueues);
-	auto symbol = delrule->getRule().head()->symbol();
+	auto symbol = delrule->getRule()->head()->symbol();
 	const auto& knownlits = symbol2knownlits[symbol][watchedvalue];
 	for (const auto& atom2tuple : knownlits) {
 		specificFire(delrule, watchedvalue ? atom2tuple.first : -atom2tuple.first, atom2tuple.second);
@@ -883,13 +883,22 @@ Grounder* LazyGroundingManager::getFirstSubGrounder() const {
 }
 
 // FIXME can be used to get a complete extension of the structure
-void LazyGroundingManager::extendStructure(Structure* structure) const {
+std::vector<Definition*> LazyGroundingManager::extendStructure(Structure* structure) const {
 // TODO handle functions, sorts and definitions
 //#warning equivalences handled incorrectly
+	std::vector<Definition*> postprocessdefs;
 	for (auto pred2inter : structure->getPredInters()) {
 		auto pred = pred2inter.first;
 		auto symbolit = symbol2watchedrules.find(pred);
 		if (symbolit != symbol2watchedrules.cend()) {
+			auto def = new Definition();
+			for(auto r: symbolit->second.at(true)){
+				def->add(r->getRule());
+			}
+			for(auto r: symbolit->second.at(false)){
+				def->add(r->getRule());
+			}
+			postprocessdefs.push_back(def);
 			if (verbosity() > 0) {
 				clog << "Symbol " << toString(pred) << " is watched as head in a definition, so the definition should be evaluated to extend it.\n";
 			}
@@ -917,6 +926,7 @@ void LazyGroundingManager::extendStructure(Structure* structure) const {
 			pred2inter.second->ct(new PredTable(InverseInternalPredTable::getInverseTable(cf->internTable()), cf->universe()));
 		}
 	}
+	return postprocessdefs;
 }
 
 void DelayedSentence::put(std::ostream& stream) const {

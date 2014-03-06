@@ -173,6 +173,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::EXISTS_ONLYONELEFT_APPROX, "existsonlyoneleftapprox", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::POSTPROCESS_DEFS, "postprocessdefs", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LIFTEDUNITPROPAGATION, "liftedunitpropagation", boolvalues, true, PrintBehaviour::PRINT);
@@ -239,25 +240,33 @@ void OptionPolicy<EnumType, ValueType>::createOption(EnumType type, const std::s
 }
 
 template<class EnumType, class ValueType>
-void OptionPolicy<EnumType, ValueType>::copyValues(Options* opts) {
+void OptionPolicy<EnumType, ValueType>::copyValues(const OptionPolicy<EnumType, ValueType>& opts) {
 	for (auto option: _options) {
 		if(option!=NULL){
-			option->setValue(opts->getValue(option->getType()));
+			option->setValue(opts.getValue(option->getName()));
 		}
 	}
 }
 
 template<>
-void OptionPolicy<OptionType, Options*>::copyValues(Options* opts) {
+void OptionPolicy<OptionType, Options*>::copyValues(const OptionPolicy<OptionType, Options*>& opts) {
 	for (auto option: _options) {
 		if(option==NULL){
 			continue;
 		}
 		auto value = option->getValue();
 		if(value->isVerbosityBlock()){
-			value->copyValues(opts->getValue(VERBOSITY));
+			value->copyValues(*opts.getValue(VERBOSITY));
 		}
 	}
+}
+
+void Options::copyValues(const Options& opts) {
+	StringPol::copyValues(opts);
+	BoolPol::copyValues(opts);
+	IntPol::copyValues(opts);
+	DoublePol::copyValues(opts);
+	OptionPol::copyValues(opts);
 }
 
 template<class EnumType, class ConcreteType>
@@ -410,14 +419,6 @@ std::string Options::printAllowedValues(const std::string& name) const {
 bool Options::isOption(const string& optname) const {
 	return isOptionOfType<int>(optname) || isOptionOfType<bool>(optname) || isOptionOfType<double>(optname) || isOptionOfType<std::string>(optname)
 			|| isOptionOfType<Options*>(optname);
-}
-
-void Options::copyValues(Options* opts) {
-	StringPol::copyValues(opts);
-	BoolPol::copyValues(opts);
-	IntPol::copyValues(opts);
-	DoublePol::copyValues(opts);
-	OptionPol::copyValues(opts);
 }
 
 template<class OptionList, class StringList>

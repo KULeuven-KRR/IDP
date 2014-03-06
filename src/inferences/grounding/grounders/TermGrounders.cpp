@@ -105,6 +105,7 @@ GroundTerm FuncTermGrounder::run() const {
 					poptab();
 					clog << tabs() << "Term value out of argument type" << "\n";
 				}
+				groundterm._domelement =NULL;
 				return groundterm;
 			}
 			args[n] = groundterm._domelement;

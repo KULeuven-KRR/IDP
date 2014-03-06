@@ -3955,15 +3955,16 @@ PredInter* InconsistentPredInterGenerator::get(const Structure* structure) {
 
 // FIXME better way of managing (the memory of) these interpretations?
 EqualInterGenerator::~EqualInterGenerator() {
-	deleteList(generatedInters);
+	//deleteList(generatedInters);
 }
 PredInter* EqualInterGenerator::get(const Structure* structure) {
 	SortTable* st = structure->inter(_sort);
 	Universe univ(vector<SortTable*>(2, st));
 	EqualInternalPredTable* eip = new EqualInternalPredTable();
 	PredTable* ct = new PredTable(eip, univ);
-	generatedInters.push_back(new PredInter(ct, true));
-	return generatedInters.back();
+	auto pi = new PredInter(ct, true);
+	structure->addInterToDelete(pi);
+	return pi;
 }
 
 StrLessThanInterGenerator::~StrLessThanInterGenerator() {
@@ -4036,6 +4037,14 @@ void FuncInter::funcTable(FuncTable* ft) {
 	//We cannot pass ft to the predtable since on several occasions, _functable gets deleted
 	PredTable* ct = new PredTable(new FuncInternalPredTable(new FuncTable(ft->internTable(), ft->universe()), true), ft->universe());
 	_graphinter = new PredInter(ct, true);
+}
+
+const DomainElement* FuncInter::value(const ElementTuple& tuple) const{
+	if(approxTwoValued()){
+		return funcTable()->operator [](tuple);
+	}else{
+		throw notyetimplemented("Getting value of graphed funcinter");
+	}
 }
 
 void FuncInter::materialize() {

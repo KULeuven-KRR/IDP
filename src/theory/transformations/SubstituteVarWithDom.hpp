@@ -6,7 +6,7 @@
  * Written by Broes De Cat, Stef De Pooter, Johan Wittocx
  * and Bart Bogaerts, K.U.Leuven, Departement Computerwetenschappen,
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
-****************************************************************/
+ ****************************************************************/
 
 #pragma once
 #include "visitors/TheoryMutatingVisitor.hpp"
@@ -24,12 +24,13 @@ public:
 	}
 protected:
 	Term* traverse(Term* t) {
-		if(t->type()==TermType::VAR){
+		if (t->type() == TermType::VAR) {
 			auto varterm = dynamic_cast<VarTerm*>(t);
 			auto it = _var2domelem.find(varterm->var());
-			if(it!=_var2domelem.cend()){
-                            delete(t);
-                            return new DomainTerm(varterm->var()->sort(), it->second, TermParseInfo());
+			if (it != _var2domelem.cend()) {
+				auto sort = varterm->var()->sort();
+				delete (varterm);
+				return new DomainTerm(sort, it->second, TermParseInfo());
 			}
 		}
 		return TheoryMutatingVisitor::traverse(t);

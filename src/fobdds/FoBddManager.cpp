@@ -1740,8 +1740,8 @@ FOBDDManager::FOBDDManager(bool rewriteArithmetic)
 }
 shared_ptr<FOBDDManager> FOBDDManager::createManager(bool rewriteArithmetic){
 	auto returnmanager = shared_ptr<FOBDDManager>(new FOBDDManager(rewriteArithmetic));
-	KernelOrder ktrue = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
-	KernelOrder kfalse = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	auto ktrue = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
+	auto kfalse = returnmanager->newOrder(KernelOrderCategory::TRUEFALSECATEGORY);
 	auto truekernel = new TrueFOBDDKernel(ktrue);
 	auto falsekernel = new FalseFOBDDKernel(kfalse);
 	returnmanager->setTrueKernel(truekernel);
@@ -1749,7 +1749,6 @@ shared_ptr<FOBDDManager> FOBDDManager::createManager(bool rewriteArithmetic){
 	returnmanager->setTrueBDD(new TrueFOBDD(truekernel,returnmanager));
 	returnmanager->setFalseBDD(new FalseFOBDD(falsekernel,returnmanager));
 	return returnmanager;
-
 }
 
 FOBDDManager::~FOBDDManager() {

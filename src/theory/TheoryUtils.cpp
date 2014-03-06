@@ -56,13 +56,13 @@
 #include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
-#include "information/CollectSymbols.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
 #include "transformations/RemoveQuantificationsOverSort.hpp"
 #include "information/FindDelayPredForms.hpp"
 #include "information/ContainedVariables.hpp"
+#include "information/CheckContainsRecursivelyDefinedAggTerms.hpp"
 #include "transformations/SubstituteVarWithVar.hpp"
 
 using namespace std;
@@ -186,6 +186,19 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
+std::set<PFSymbol*> defined(Definition* d) {
+	return d->defsymbols();
+}
+
+bool approxTotal(Definition* def) {
+	auto total = true;
+	total &= not DefinitionUtils::hasRecursionOverNegation(def);
+	total &= not DefinitionUtils::containsRecDefAggTerms(def, def->defsymbols());
+	for (auto ds : DefinitionUtils::defined(def)) {
+		total &= ds->isPredicate(); // TODO currently no way of knowing whether a function definition will be total!!! (e.g. f(x)=y <- true)
+	}
+	return total;
+}
 
 bool hasRecursionOverNegation(Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
@@ -251,6 +264,10 @@ Rule* moveOnlyBodyQuantifiers(Rule* rule){
 	return new Rule(occursinhead, rule->head(), new QuantForm(SIGN::POS, QUANT::EXIST, notinhead, rule->body(), rule->body()->pi()), rule->pi());
 }
 
+bool containsRecDefAggTerms(Definition* def, const std::set<PFSymbol*>& definedsymbols) {
+	return transform<CheckContainsRecDefAggTerms, bool>(def, definedsymbols);
+}
+
 Definition* eliminateUniversalQuantifications(Definition* d) {
 	ruleset new_rules = ruleset();
 	for (auto rule : d->rules()) {
@@ -263,7 +280,7 @@ Definition* eliminateUniversalQuantifications(Definition* d) {
 
 /* FormulaUtils */
 namespace FormulaUtils {
-    
+
     
  CompType getComparison(const PredForm* pf) {
 	auto sign = pf->sign();
@@ -795,18 +812,6 @@ std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursiv
 std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, bool recursive) {
 	CollectQuantifiedVariables t;
 	return t.execute(f, recursive);
-}
-
-std::set<PFSymbol*> collectSymbols(const Formula* f) {
-	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
-}
-std::set<PFSymbol*> collectSymbols(const Rule* f) {
-	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
-
-}
-std::set<PFSymbol*> collectSymbols(const AbstractTheory* f) {
-	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
-
 }
 
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s) {

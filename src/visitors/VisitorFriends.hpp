@@ -19,6 +19,7 @@ class TheoryMutatingVisitor;
 class ApproxCheckTwoValued;
 class CheckContainment;
 class CheckContainsAggTerms;
+class CheckContainsRecDefAggTerms;
 class CheckContainsFuncTerms;
 class CheckPartialTerm;
 class CheckSorts;
@@ -62,6 +63,7 @@ class AddMarkers;
 		friend class ApproxCheckTwoValued; \
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
+		friend class CheckContainsRecDefAggTerms; \
 		friend class CheckContainsFuncTerms; \
 		friend class CheckContainsDomainTerms; \
 		friend class CheckContainsFuncTermsOutsideOfSets; \

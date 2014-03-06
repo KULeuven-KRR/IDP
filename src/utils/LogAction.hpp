@@ -1,6 +1,10 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 
 void logActionAndTime(const std::string& action);
-void logActionAndValue(const std::string& action, double value);
+template<class Value>
+void logActionAndValue(const std::string& action, const Value& value){
+	std::clog <<action <<"&&" <<value <<"\n";
+}

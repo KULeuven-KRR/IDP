@@ -74,7 +74,7 @@ public:
 		return construction;
 	}
 
-	const Rule& getRule() const;
+	Rule* getRule() const;
 };
 
 typedef std::vector<DelayedSentence*> sentlist;
@@ -86,7 +86,7 @@ class StructureExtender {
 public:
 	virtual ~StructureExtender() {
 	}
-	virtual void extendStructure(Structure* structure) const = 0;
+	virtual std::vector<Definition*> extendStructure(Structure* structure) const = 0;
 	virtual void put(std::ostream&) const = 0;
 };
 
@@ -148,7 +148,7 @@ public:
 	bool canBeDelayedOn(PFSymbol* pfs, bool truewatch) const;
 	bool canBeDelayedOn(Formula* head, Formula* body) const;
 
-	void extendStructure(Structure* structure) const;
+	std::vector<Definition*> extendStructure(Structure* structure) const;
 
 	Grounder* getFirstSubGrounder() const;
 

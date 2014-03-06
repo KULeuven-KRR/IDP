@@ -1026,6 +1026,7 @@ void GrounderFactory::visit(const FuncTerm* t) {
 			auto producttable = getConcreteStructure()->inter(product)->funcTable();
 			auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
 			descend(factorterm);
+			factorterm->recursiveDelete();
 			auto factorgrounder = getTermGrounder();
 			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::PROD, producttable, domain, factorgrounder, stg[0]);
 		} else if (FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {

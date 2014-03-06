@@ -18,6 +18,7 @@
 #include <iostream>
 #include "vocabulary/VarCompare.hpp"
 #include "information/GetQuantifiedVariables.hpp"
+#include "information/CollectSymbols.hpp"
 
 class Definition;
 class SetExpr;
@@ -268,9 +269,10 @@ std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recur
 std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursive);
 std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, bool recursive);
 
-std::set<PFSymbol* > collectSymbols(const Formula* f);
-std::set<PFSymbol* > collectSymbols(const Rule* f);
-std::set<PFSymbol* > collectSymbols(const AbstractTheory* f);
+template<class T>
+std::set<PFSymbol* > collectSymbols(const T* f){
+	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+}
 
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
 Rule* removeQuantificationsOverSort(Rule* f, const Sort* s);
@@ -351,6 +353,10 @@ void deriveSorts(Vocabulary* v, Rule* f);
 
 /** Compute the open symbols of a definition */
 std::set<PFSymbol*> opens(Definition*);
+std::set<PFSymbol*> defined(Definition*);
+
+/** Approximate check whether the given definition is total */
+bool approxTotal(Definition*);
 
 /** Check whether the definition has recursion over negation */
 bool hasRecursionOverNegation(Definition*);
@@ -382,5 +388,8 @@ Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure);
 
 // Move head quantifiers of variables only occurring in the body to the body.
 Rule* moveOnlyBodyQuantifiers(Rule* rule);
+
+bool containsRecDefAggTerms(Definition* def, const std::set<PFSymbol*>& definedsymbols);
+
 } /* namespace DefinitionUtils */
 

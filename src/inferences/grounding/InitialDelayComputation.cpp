@@ -139,6 +139,7 @@ void DelayInitializer::findDelays() {
 	auto savedoptions = getGlobal()->getOptions();
 	auto newoptions = new Options(false);
 	getGlobal()->setOptions(newoptions);
+	setOption(POSTPROCESS_DEFS,false);
 	setOption(VERBOSE_GROUNDING, 0);
 	setOption(VERBOSE_CREATE_GROUNDERS, 0);
 	setOption(VERBOSE_GEN_AND_CHECK, 0);

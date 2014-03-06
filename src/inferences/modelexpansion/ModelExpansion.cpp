@@ -24,6 +24,7 @@
 #include "errorhandling/error.hpp"
 #include "creation/cppinterface.hpp"
 #include "utils/Timer.hpp"
+#include "DefinitionPostProcessing.hpp"
 
 using namespace std;
 
@@ -87,8 +88,8 @@ void ModelExpansion::setOutputVocabulary(Vocabulary* v) {
 	_outputvoc = v;
 }
 
-Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
-		Vocabulary* outputvoc);
+Structure* handleSolution(Structure const * const structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
+		Vocabulary* outputvoc, const std::vector<Definition*>& defs);
 
 class SolverTermination: public TerminateMonitor {
 private:
@@ -119,21 +120,31 @@ MXResult ModelExpansion::expand() const {
 	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
-	stringstream ss;
-	ss <<"mx_voc" <<getGlobal()->getNewID();
-	auto voc = new Vocabulary(ss.str());
+	auto voc = new Vocabulary(createName());
 	voc->add(clonetheory->vocabulary());
 	voc->add(newstructure->vocabulary());
 	newstructure->changeVocabulary(voc);
 	clonetheory->vocabulary(voc);
 
-	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory);
+	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory); // TODO implement with same meta-level approach as below!
+
+	std::vector<Definition*> postprocessdefs;
+	if(getOption(POSTPROCESS_DEFS)){
+		postprocessdefs = simplifyTheoryForPostProcessableDefinitions(clonetheory, _minimizeterm, _structure, voc, targetvoc);
+	}
+	if(getOption(SATISFIABILITYDELAY)){ // Add non-forgotten defs again, as top-down grounding might give a better result
+		for(auto def: postprocessdefs){
+			clonetheory->add(def);
+		}
+		postprocessdefs.clear();
+	}
+
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
 		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);
 	}catch(...){
 		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-			logActionAndValue("effective-size", Grounder::groundedAtoms());
+			logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
 		}
 		throw;
 	}
@@ -160,10 +171,6 @@ MXResult ModelExpansion::expand() const {
 	}
 	for(auto pf : _assumeFalse.assumeFalse){
 		assumptions.push_back(grounding->translator()->translateNonReduced(pf.symbol, pf.args));
-	}
-
-	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		logActionAndValue("maxsize", toDouble(Grounder::getFullGroundingSize()));
 	}
 
 	// Run solver
@@ -205,10 +212,14 @@ MXResult ModelExpansion::expand() const {
 	time.join();
 
 	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		auto stats = mx->getStats();
-		logActionAndValue("decisions", stats.decisions);
-		logActionAndValue("first_decision", stats.time_of_first_decision);
-		logActionAndValue("effective-size", Grounder::groundedAtoms());
+		logActionAndValue("effective-size", groundingAndExtender.first->getSize());
+		if(mx->getNbModelsFound()>0){
+			logActionAndValue("state", "satisfiable");
+		}
+		if (_minimizeterm != NULL && mx->getBestSolutionsFound().size()>0){
+			logActionAndValue("bestvalue", mx->getBestValueFound());
+		}
+		std::clog.flush();
 		// TODO solving time
 	}
 
@@ -216,7 +227,7 @@ MXResult ModelExpansion::expand() const {
 		throw IdpException("Solver was terminated");
 	}
 
-	result._optimumfound = true;
+	result._optimumfound = not result._interrupted;
 	result.unsat = unsat;
 	if(t.hasTimedOut()){
 		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
@@ -234,6 +245,9 @@ MXResult ModelExpansion::expand() const {
 			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
 		}
 		cleanup;
+		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+			logActionAndValue("state", "unsat");
+		}
 		return result;
 	}
 
@@ -251,11 +265,23 @@ MXResult ModelExpansion::expand() const {
 				ss <<"Solver generated " << list.size() << " model(s): ";
 				logActionAndTime(ss.str());
 			}
+			if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+				logActionAndValue("bestvalue", bestvalue);
+				if(result._optimumfound){
+					logActionAndValue("state", "optimal");
+				}else{
+					logActionAndValue("state", "satisfiable");
+				}
+				std::clog.flush();
+			}
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
-				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc));
+				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc, postprocessdefs));
 			}
 		}
 	} else if(not unsat){
+		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
+			logActionAndValue("state", "satisfiable");
+		}
 		auto abstractsolutions = mx->getSolutions();
 		if (mxverbosity > 0) {
 			stringstream ss;
@@ -263,36 +289,28 @@ MXResult ModelExpansion::expand() const {
 			logActionAndTime(ss.str());
 		}
 		for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
-			solutions.push_back(handleSolution(newstructure, **model, grounding, extender, targetvoc));
+			solutions.push_back(handleSolution(newstructure, **model, grounding, extender, targetvoc, postprocessdefs));
 		}
 	}
 
 	// Clean up: remove all objects that are only used here.
 	cleanup;
 	result._models = solutions;
-
-	if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-		logActionAndTime("total-mx-time");
-	}
-
 	return result;
 }
 
-Structure* handleSolution(Structure* structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
-		Vocabulary* outputvoc) {
+Structure* handleSolution(Structure const * const structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
+		Vocabulary* outputvoc, const std::vector<Definition*>& postprocessdefs) {
 	auto newsolution = structure->clone();
 	SolverConnection::addLiterals(model, grounding->translator(), newsolution);
 	SolverConnection::addTerms(model, grounding->translator(), newsolution);
+	auto defs = postprocessdefs;
 	if (extender != NULL && useLazyGrounding()) {
-		/*if(getOption(VERBOSE_GROUNDING)>0){
-			clog <<"Structure before extension = \n" <<toString(newsolution) <<"\n";
-		}*/
-		extender->extendStructure(newsolution);
+		auto moredefs = extender->extendStructure(newsolution);
+		insertAtEnd(defs, moredefs);
 		newsolution->clean();
-		if(getOption(VERBOSE_GROUNDING)>1){
-			clog <<"Extended structure = \n" <<toString(newsolution) <<"\n";
-		}
 	}
+	computeRemainingDefinitions(defs, newsolution, outputvoc);
 	newsolution->changeVocabulary(outputvoc);
 	newsolution->clean();
 	Assert(newsolution->isConsistent());

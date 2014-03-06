@@ -264,6 +264,7 @@ private:
 	std::vector<GroundTerm> args; // Constants!
 	std::map<int,int> var2arg, arg2var;
 	PFSymbol* symbol;
+	std::vector<SortTable*> _tables;
 	SymbolOffset symboloffset;
 	AbstractGroundTheory* theory;
 	bool recursive;
@@ -288,6 +289,7 @@ public:
 				arg2var[i]=varpos;
 				varpos++;
 			}
+			_tables.push_back(theory->structure()->inter(symbol->sorts()[i]));
 		}
 	}
 
@@ -345,7 +347,16 @@ public:
 				}
 			}
 		} else {
-			temphead = translator()->translateReduced(symboloffset, elemtuple, recursive);
+			bool cf = false;
+			for (size_t n = 0; n < elemtuple.size(); ++n) {
+				if (elemtuple[n] == NULL || not _tables[n]->contains(elemtuple[n])) {
+					if (getOption(VERBOSE_GROUNDING) > 3) {
+						Warning::warning("Out of bounds on generalized atom grounder");
+					}
+					cf = true;
+				}
+			}
+			temphead = cf?_false : translator()->translateReduced(symboloffset, elemtuple, recursive);
 		}
 		GroundClause clause;
 		if (headvalue) {
