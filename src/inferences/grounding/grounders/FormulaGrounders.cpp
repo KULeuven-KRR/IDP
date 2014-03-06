@@ -176,7 +176,12 @@ Lit ComparisonGrounder::run() const {
 	auto right = _righttermgrounder->run();
 
 	if((not left.isVariable && left._domelement==NULL) || (not right.isVariable && right._domelement==NULL)){
-		return _false;
+		auto isnegated = _comparator==CompType::NEQ || _comparator==CompType::LEQ || _comparator==CompType::GEQ;
+		if(_comparator==CompType::EQ && _comparator!=CompType::NEQ){
+			// TODO remove warning when properly handled (e.g., by detecting denoting checks)
+			Warning::warning("Models might depend on the semantics of non-denoting terms under comparison operators, be careful!");
+		}
+		return isnegated?_true:_false;
 	}
 
 	Lit result;
