@@ -31,7 +31,14 @@ private:
 	std::string transform_into_term_name(std::string);
 
 public:
+//  These 4 procedures decide whether a given string represents an
+//	XSB built-in or an XSB predicate that is supported in the
+//	predefined XSB code for IDP found in data/share/std/xsb_compiler.P
 	bool isoperator(int c);
+	bool isXSBNumber(std::string str);
+	bool isXSBBuiltIn(std::string str);
+	bool isXSBCompilerSupported(const PFSymbol* symbol);
+	bool isXSBCompilerSupported(const Sort*);
 
 	std::string to_prolog_term(const PFSymbol*);
 	std::string to_prolog_term(const std::string);
@@ -48,11 +55,13 @@ public:
 
 
 	std::string to_prolog_varname(std::string);
-	std::string to_prolog_sortname(std::string);
+	std::string to_prolog_sortname(const Sort*);
 	static std::string to_simple_chars(std::string);
 
 	static std::string get_idp_prefix();
 	static std::string get_idp_caps_prefix();
+	static std::string get_forall_term_name();
+	static std::string get_abs_term_name();
 
 private:
 	std::map<std::string, PrologVariable*> vars;

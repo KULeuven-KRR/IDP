@@ -1,3 +1,9 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   Note: When adding new predicates to this file as a result of them being
+%   'built-in' in IDP, make sure to also adapt the 
+%   XSBToIDPTranslator::isXSBCompilerSupported procedure
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % ixexponential(Solution,Base,Power)
 % Base case: right hand side is known
 ixexponential(Solution,Base,Power) :-
@@ -57,7 +63,13 @@ ixdivision(Solution,Numerator,Denominator) :-
 	ixsame_number(TMP,Solution).
 
 
-ixabs(X,Y) :- Y is abs(X).
+ixabs(X,Y) :- 
+	number(X),
+	Y is abs(X).
+
+ixabs(X,_) :-
+	var(X),
+    throw_infinite_type_generation_error.
 
 ixsum(List,Sum) :- ixsum(List,Sum,0).
 ixsum([],X,X).
@@ -107,7 +119,7 @@ ixfloat(X) :-
 ixfloat(X) :- 
     var(X),
     throw_infinite_type_generation_error.
-     
+
 ixnat(X) :- 
     nonvar(X),
     X >= 0,

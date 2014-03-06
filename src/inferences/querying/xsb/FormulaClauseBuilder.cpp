@@ -78,7 +78,7 @@ string FormulaClauseBuilder::generateNewQuantSetExprName() {
 
 PrologVariable* FormulaClauseBuilder::createPrologVar(const Variable* var) {
 	auto prologVarName = _translator->to_prolog_varname(var->name());
-	auto prologVarSortName = _translator->to_prolog_sortname(var->sort()->name());
+	auto prologVarSortName = _translator->to_prolog_sortname(var->sort());
 	return _translator->create(prologVarName, prologVarSortName);
 }
 
@@ -246,26 +246,6 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 		FuncTerm fterm(get(STDFUNC::PRODUCT), {&domterm, p->subterms()[0]}, {});
 		PredForm eqPredForm(SIGN::POS, get(STDPRED::EQ, p->subterms()[1]->sort()), {p->subterms()[1], &fterm}, {});
 		eqPredForm.accept(this);
-	} else if(p->args().size() == 1 && p->symbol()->nameNoArity() == "MIN") {
-		// Special case for the MIN function of types
-		auto unification = new PrologTerm("=");
-		enter(unification);
-		p->subterms()[0]->accept(this);
-		auto fst = _pp->structure()->inter(p->args().at(0)->sort())->first();
-		unification->addArgument(createPrologConstant(fst));
-		leave();
-		_parent->addVariables(unification->variables());
-
-	} else if(p->args().size() == 1 && p->symbol()->nameNoArity() == "MAX") {
-		// Special case for the MAX function of types
-		auto unification = new PrologTerm("=");
-		enter(unification);
-		p->subterms()[0]->accept(this);
-		auto last = _pp->structure()->inter(p->args().at(0)->sort())->last();
-		unification->addArgument(createPrologConstant(last));
-		leave();
-		_parent->addVariables(unification->variables());
-
 	} else {
 		auto term = new PrologTerm(_translator->to_prolog_term(p->symbol()));
 		term->sign(p->sign() == SIGN::POS);
@@ -291,18 +271,16 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 				}
 				term->addInputvarsToCheck(inputvars);
 			} else {
-				auto toNumericalOperation = true;
-				for(auto arg : p->args()) {
-					if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
-							SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
-							SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
-						toNumericalOperation = false;
-					}
-				}
 				term->numeric(true);
-				term->numericalOperation(toNumericalOperation);
 				term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
 			}
+		} else if (is(p->symbol(),STDFUNC::ABS)) {
+			term->numeric(false);
+			auto output = term->variables().back();
+			auto input = term->variables().front();
+			term->addInputvarToCheck(input);
+			term->addOutputvarToCheck(output);
+
 		} else {
 			term->numeric(false);
 		}

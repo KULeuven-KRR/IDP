@@ -1,0 +1,24 @@
+vocabulary V {
+	type t
+
+	Q(t,t)
+
+	type Dir constructed from {a,b}
+	P(t,Dir,t)
+	P2(t,t,Dir)
+	P3(Dir,t,t)
+}
+
+theory T : V {
+  {  P(x,a,y) <- Q(x,y). }
+  {  P2(x,y,a) <- Q(x,y). }
+  {  
+    P3(a,x,y) <- Q(x,y). 
+    P3(b,x,y) <- Q(y,x).
+  }
+}
+
+structure S : V {
+  t = { 1..5 }
+  Q = { 1,2; 2,3; 3,4; 4,5 }
+}

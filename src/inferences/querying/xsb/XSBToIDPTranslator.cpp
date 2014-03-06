@@ -52,9 +52,38 @@ bool XSBToIDPTranslator::isoperator(int c) {
 			c == '.';		// Dot for floating point numbers
 }
 
+bool XSBToIDPTranslator::isXSBBuiltIn(std::string str) {
+	return isXSBNumber(str);
+}
+
+bool XSBToIDPTranslator::isXSBNumber(std::string str) {
+	bool isNumber = true;
+	for (auto i = str.begin(); i != str.end() && isNumber; ++i) {
+		if (!isdigit(*i) && !isoperator(*i)) {
+			isNumber = false;
+		}
+	}
+	return isNumber;
+}
+
+// Note: It is important that each of these strings are present as
+// predicates in data/share/std/xsb_compiler.P, accompanied of the
+// IDPXSB_PREFIX.
+bool XSBToIDPTranslator::isXSBCompilerSupported(const PFSymbol* symbol) {
+	return is(symbol,STDFUNC::ABS);
+}
+bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
+	return sort == get(STDSORT::INTSORT) ||
+		sort == get(STDSORT::NATSORT) ||
+		sort == get(STDSORT::FLOATSORT);
+}
+
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
-	if(symbol->builtin()) {
-		// When translating to XSB, it does not matter for builtin symbols which
+	if (is(symbol,STDFUNC::ABS)) {
+		return get_abs_term_name();
+	}
+	if (is(symbol,STDPRED::EQ) || is(symbol,STDPRED::GT) || is(symbol,STDPRED::LT)) {
+		// When translating to XSB, it does not matter for comparison symbols which
 		// namespace they are in or which types of arguments they get since they
 		// need to be mapped to the same XSB built-in anyway
 		return to_prolog_term(symbol->nameNoArity());
@@ -75,25 +104,13 @@ string XSBToIDPTranslator::to_prolog_term(string str) {
 }
 
 string XSBToIDPTranslator::transform_into_term_name(string str) {
-	bool numOrOp = true; // keep the string if you are handling an operator or a number
-	for (auto i = str.begin(); i != str.end() && numOrOp; ++i) {
-		if (!isdigit(*i) && !isoperator(*i)) {
-			numOrOp = false;
-		}
-	}
-	stringstream ss;
-
-	// For built-in predicates that are present in the "xsb_compiler", we add the prefix by default
-	// TODO: make this into a pretty list or something...
-	if (str == "card" || str == "prod" || str == "min" || str == "max" || str == "abs" || str=="sum" || str == "forall" || str == "int" || str == "nat" || str == "float" ) {
-		ss << IDPXSB_PREFIX;
-	} else if (!numOrOp && str != "findall" &&  str != "between") {
+	if (isXSBBuiltIn(str)) {
+		return str;
+	} else {
+		stringstream ss;
 		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_" << to_simple_chars(str);
 		return ss.str();
 	}
-
-	ss << str;
-	return ss.str();
 }
 
 string XSBToIDPTranslator::to_idp_pfsymbol(string str) {
@@ -111,7 +128,7 @@ string XSBToIDPTranslator::to_prolog_pred_and_arity(const PFSymbol* symbol) {
 
 string XSBToIDPTranslator::to_prolog_pred_and_arity(const Sort* sort) {
 	// Sorts always have arity 1
-	return to_prolog_sortname(sort->name()).append("/1");
+	return to_prolog_sortname(sort).append("/1");
 }
 
 string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
@@ -167,7 +184,27 @@ string XSBToIDPTranslator::to_prolog_term(CompType c) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(AggFunction af) {
-	return transform_into_term_name(toString(af));
+	string str;
+	switch (af) {
+	case AggFunction::CARD:
+		str = "ixcard";
+		break;
+	case AggFunction::SUM:
+		str = "ixsum";
+		break;
+	case AggFunction::PROD:
+		str = "ixprod";
+		break;
+	case AggFunction::MIN:
+		str = "ixmin";
+		break;
+	case AggFunction::MAX:
+		str = "ixmax";
+		break;
+	default:
+		break;
+	}
+	return str;
 }
 
 string XSBToIDPTranslator::to_simple_chars(string str) {
@@ -189,8 +226,14 @@ string XSBToIDPTranslator::to_prolog_varname(string str) {
 	return s.str();
 }
 
-string XSBToIDPTranslator::to_prolog_sortname(string str) {
-	return to_prolog_term(to_simple_chars(str));
+string XSBToIDPTranslator::to_prolog_sortname(const Sort* sort) {
+	if (isXSBCompilerSupported(sort)) {
+		std::stringstream ss;
+		ss << IDPXSB_PREFIX << sort->name();
+		return ss.str();
+	} else {
+		return to_prolog_term(to_simple_chars(sort->name()));
+	}
 }
 
 string XSBToIDPTranslator::get_idp_prefix() {
@@ -199,6 +242,18 @@ string XSBToIDPTranslator::get_idp_prefix() {
 
 string XSBToIDPTranslator::get_idp_caps_prefix() {
 	return IDPXSB_CAPS_PREFIX;
+}
+
+string XSBToIDPTranslator::get_forall_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "forall";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_abs_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "abs";
+	return ss.str();
 }
 
 PrologVariable* XSBToIDPTranslator::create(std::string name, std::string type) {
