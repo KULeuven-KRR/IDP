@@ -132,6 +132,12 @@ MXResult ModelExpansion::expand() const {
 	if(getOption(POSTPROCESS_DEFS)){
 		postprocessdefs = simplifyTheoryForPostProcessableDefinitions(clonetheory, _minimizeterm, _structure, voc, targetvoc);
 	}
+	if(getOption(SATISFIABILITYDELAY)){ // Add non-forgotten defs again, as top-down grounding might give a better result
+		for(auto def: postprocessdefs){
+			clonetheory->add(def);
+		}
+		postprocessdefs.clear();
+	}
 
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
@@ -304,7 +310,7 @@ Structure* handleSolution(Structure const * const structure, const MinisatID::Mo
 		insertAtEnd(defs, moredefs);
 		newsolution->clean();
 	}
-	computeRemainingDefinitions(defs, newsolution);
+	computeRemainingDefinitions(defs, newsolution, outputvoc);
 	newsolution->changeVocabulary(outputvoc);
 	newsolution->clean();
 	Assert(newsolution->isConsistent());

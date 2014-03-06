@@ -142,16 +142,41 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 	return postprocessdefs;
 }
 
-void computeRemainingDefinitions(const std::vector<Definition*> defs, Structure* structure) {
+void computeRemainingDefinitions(const std::vector<Definition*> postprocessdefs, Structure* structure, Vocabulary* outputvoc) {
+	// First, we recheck which definitions we really need to evaluate (possible including those used as constructions in lazy grounding)
+	std::queue<PFSymbol*> sq;
+	std::map<PFSymbol*, std::vector<Definition*>> s2defs;
+	for(auto d: postprocessdefs){
+		for(auto s: d->defsymbols()){
+			s2defs[s].push_back(d);
+			if(not structure->inter(s)->approxTwoValued() && outputvoc->contains(s)){
+				sq.push(s);
+			}
+		}
+	}
+	std::set<Definition*> evaluatedefs;
+	while(not sq.empty()){
+		auto s = sq.front();
+		sq.pop();
+		for(auto d: s2defs[s]){
+			if(evaluatedefs.find(d)==evaluatedefs.cend()){
+				evaluatedefs.insert(d);
+				for(auto os:DefinitionUtils::opens(d)){
+					sq.push(os);
+				}
+			}
+		}
+	}
+
 	// Decide which symbols have to be two-valued to allow evaluation of all definitions
 	std::set<PFSymbol*> needtwovalued;
-	for (auto def : defs) {
+	for (auto def : evaluatedefs) {
 		auto opens = DefinitionUtils::opens(def);
 		needtwovalued.insert(opens.cbegin(), opens.cend());
 	}
 	for (auto i = needtwovalued.begin(); i != needtwovalued.end();) {
 		bool found = false;
-		for (auto def : defs) {
+		for (auto def : evaluatedefs) {
 			if (contains(DefinitionUtils::defined(def), *i)) {
 				found = true;
 			}
@@ -179,7 +204,7 @@ void computeRemainingDefinitions(const std::vector<Definition*> defs, Structure*
 
 	// Evaluate it (preferably with XSB)
 	auto t = new Theory(createName(), structure->vocabulary(), { });
-	for (auto def : defs) {
+	for (auto def : evaluatedefs) {
 		t->add(def->clone()); // TODO currently because calculate deletes definitions (and now we might need them also later on)
 	}
 	if (getOption(VERBOSE_DEFINITIONS) > 0) {
