@@ -67,7 +67,7 @@ ixabs(X,Y) :-
 	number(X),
 	Y is abs(X).
 
-ixabs(X,Y) :-
+ixabs(X,_) :-
 	var(X),
     throw_infinite_type_generation_error.
 
