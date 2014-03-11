@@ -37,7 +37,9 @@ macro(addToCXX ARGUMENT)
 endmacro()
 
 ### Fix for newest ubuntu+gcc
-addToCXX("-Wl,--no-as-needed")
+if(LINUX)
+	addToCXX("-Wl,--no-as-needed")
+endif()
 
 ### Rpath handling
 include(cmake/rpathhandling.cmake)
