@@ -299,7 +299,7 @@ $\neq$    & \code{$\sim$=}  & does not equal \\
 \end{table}
 
 As a simple example, consider the following input.
-\lstinputlisting[caption={\texttt{con.idp}}]{tutorial/con.idp}
+\lstinputlisting[caption={\texttt{con1.idp}}]{tutorial/con1.idp}
 Without the constraint, there are four structures in the knowledge base.
 The constraint eliminates one of them (the one where
 \texttt{A} is \texttt{true} and \texttt{B} is \texttt{false}),
@@ -307,7 +307,7 @@ leaving three structures as shown in the following transcript.
 \begin{lstlisting}{}
 $ idp -e 'stdoptions.nbmodels=0;
     L=modelexpand(T,S);
-    for i=1,#L do print (L[i]) end' con.idp 
+    for i=1,#L do print (L[i]) end' con1.idp 
 structure  : V {
   A = false
   B = false
