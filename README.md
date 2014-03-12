@@ -3,10 +3,10 @@ IDP is a system for representing knowledge in the logic FO(IDP) and applying rea
 FO(IDP) is a logic consisting of first-order logic, inductive definitions, aggregates, 
 partial functions and arithmetic.
 Out of the box, the following inferences are supported:
-  - grounding
-  - modelexpansion
-  - propagation
-  - evaluating definitions
+   - grounding
+   - modelexpansion
+   - propagation
+   - evaluating definitions
 
 # Installing and running the system
 Required software packages:
