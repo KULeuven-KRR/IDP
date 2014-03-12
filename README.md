@@ -1,8 +1,11 @@
 This is the readme for the IDP system, version 3.0.1-beta.
+
 IDP is a system for representing knowledge in the logic FO(IDP) and applying reasoning on it.
 FO(IDP) is a logic consisting of first-order logic, inductive definitions, aggregates, 
 partial functions and arithmetic.
+
 Out of the box, the following inferences are supported:
+
    - grounding
    - modelexpansion
    - propagation
@@ -10,6 +13,7 @@ Out of the box, the following inferences are supported:
 
 # Installing and running the system
 Required software packages:
+
    - C and C++ compiler, supporting most of the C++11 standard. Examples are GCC 4.4 or higher, clang 3.2 or visual studio 11.
    - Cmake build environment. 
    - Bison and flex packages or yacc and lex packages.
