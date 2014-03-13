@@ -963,8 +963,10 @@ void Insert::closestructure(bool assumeClosedWorld) {
 	Assert(_currstructure);
 	finalizePendingAssignments();
 	_currstructure->checkAndAutocomplete();
-	_currstructure->sortCheck(); // TODO also add to commands?
-	_currstructure->functionCheck();
+	if (getOption(BoolType::ASSUMECONSISTENTINPUT) != true) {
+		_currstructure->sortCheck(); // TODO also add to commands?
+		_currstructure->functionCheck();
+	}
 	if (assumeClosedWorld) {
 		for (auto pred : _currstructure->vocabulary()->getPreds()) {
 			for (auto predToSet : pred.second->nonbuiltins()) {
