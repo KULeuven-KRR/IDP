@@ -963,8 +963,8 @@ void Insert::closestructure(bool assumeClosedWorld) {
 	Assert(_currstructure);
 	finalizePendingAssignments();
 	_currstructure->checkAndAutocomplete();
-	if (getOption(BoolType::ASSUMECONSISTENTINPUT) != true) {
-		_currstructure->sortCheck(); // TODO also add to commands?
+	if (not getOption(BoolType::ASSUMECONSISTENTINPUT)) {
+		_currstructure->sortCheck();
 		_currstructure->functionCheck();
 	}
 	if (assumeClosedWorld) {
