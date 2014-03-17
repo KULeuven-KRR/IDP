@@ -37,9 +37,6 @@ bool ApproximatingDefinition::DerivationTypes::hasDerivation(Direction dir) {
 std::set<PFSymbol*> ApproximatingDefinition::getSymbolsToQuery() {
 	auto ret = std::set<PFSymbol*>();
 
-	ret.insert(_mappings->_true_predform->symbol());
-	ret.insert(_mappings->_false_predform->symbol());
-
 	for(auto ctf : _mappings->_pred2predCt) {
 		ret.insert(ctf.second);
 	}
@@ -79,15 +76,6 @@ Structure* ApproximatingDefinition::inputStructure(Structure* structure) {
 }
 
 bool ApproximatingDefinition::isConsistent(Structure* s) {
-	// If the built-in "false" formula is made true, the theory has to be inconsistent
-	if (not s->inter(_mappings->_false_predform->symbol())->ct()->empty()) {
-		std::stringstream ss;
-		ss << "The approximating definition detected that built-in FALSE "
-			  "had to be true in order for the theory to be consistent.\n"
-			  "Hence, the theory is inconsistent.";
-		Warning::warning(ss.str());
-		return false;
-	}
 	for (auto i : _original_theory->sentences()) {
 		auto sentence_cf = _mappings->_formula2cf[i];
 		// If one of the top-level sentences is detected to be certainly false,
