@@ -10,6 +10,7 @@
  ****************************************************************************/
 
 #include "PropagationUsingApproxDef.hpp"
+#include <assert.h>
 
 ApproximatingDefinition::DerivationTypes* PropagationUsingApproxDef::getDerivationTypes() {
 	auto derivationtypes = new ApproximatingDefinition::DerivationTypes();
@@ -37,8 +38,9 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 
 	auto defCalculatedResult = CalculateDefinitions::doCalculateDefinitions(
 			def_to_calculate, approxdef_structure, false, approxdef->getSymbolsToQuery());
-
-	if( approxdef->isConsistent(defCalculatedResult._calculated_model) and defCalculatedResult._hasModel) {
+        
+        assert(defCalculatedResult._hasModel);
+	if( approxdef->isConsistent(defCalculatedResult._calculated_model)) {
 		approxdef->updateStructure(structure,defCalculatedResult._calculated_model);
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			clog << "Calculating the approximating definitions with XSB resulted in the following structure:\n" <<
