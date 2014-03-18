@@ -1,8 +1,6 @@
-This is the readme for the IDP system, version 3.0.1-beta.
-
-IDP is a system for representing knowledge in the logic FO(IDP) and applying reasoning on it.
-FO(IDP) is a logic consisting of first-order logic, inductive definitions, aggregates, 
-partial functions and arithmetic.
+This is the readme for the IDP system.
+IDP is a system for representing knowledge in the logic FO(.) and applying reasoning on it.
+FO(.) is a logic consisting of first-order logic, inductive definitions, aggregates, partial functions and arithmetic.
 
 Out of the box, the following inferences are supported:
 
@@ -10,6 +8,7 @@ Out of the box, the following inferences are supported:
    - modelexpansion
    - propagation
    - evaluating definitions
+   - ...
 
 # Installing and running the system
 Required software packages:
