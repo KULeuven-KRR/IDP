@@ -25,7 +25,7 @@ void resourceMonitorLoop(void* t) {
 			timer->call_on_timeout();
 			break;
 		}
-		if(timer->call_for_memorybound() < getCurrentRSS()/1024/1024){
+		if(timer->call_for_memorybound() < (long)getCurrentRSS()/1024/1024){
 			timer->_wentOut = true;
 			timer->call_on_timeout();
 			break;
