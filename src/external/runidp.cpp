@@ -22,7 +22,7 @@
 #include "runidp.hpp"
 #include "insert.hpp"
 #include "GlobalData.hpp"
-#include "utils/Timer.hpp"
+#include "utils/ResourceMonitor.hpp"
 #include "utils/LogAction.hpp"
 
 #include "utils/StringUtils.hpp"
@@ -184,9 +184,9 @@ void monitorShutdown(void*) {
 	}
 }
 
-void timeout() {
-	clog << "Timed-out\n";
-	getGlobal()->notifyTimeout();
+void resourceOut() {
+	clog << "Out of resources\n";
+	getGlobal()->notifyOutOfResources();
 	tthread::thread shutdown(&monitorShutdown, NULL);
 	shutdown.join();
 }
@@ -247,8 +247,8 @@ const DomainElement* executeProcedure(const string& proc) {
 	if (!stoprunning) {
 		jumpback = 0;
 
-		auto t = basicTimer([](){return getOption(TIMEOUT); },[](){timeout();});
-		tthread::thread signalhandling(&timerLoop, &t);
+		auto t = basicResourceMonitor([](){return getOption(TIMEOUT); }, [](){return getOption(MEMORYOUT); },[](){resourceOut();});
+		tthread::thread signalhandling(&resourceMonitorLoop, &t);
 
 		RunData d;
 		d.proc = temp;
