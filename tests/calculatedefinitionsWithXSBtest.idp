@@ -20,7 +20,7 @@ procedure checkForRandomInputStructure(theory, structure, nrtimes) {
 }
 
 procedure checkDefinitionEvaluation(theory, structure) {
-	stdoptions.timeout = 5
+	stdoptions.timeout = 10
 	stdoptions.xsb=false
 	NOXSBMODEL=calculatedefinitions(theory,structure)
 	stdoptions.xsb=true
@@ -38,9 +38,8 @@ procedure checkDefinitionEvaluation(theory, structure) {
 	end
 	if (XSBMODEL == nil or NOXSBMODEL == nil) then
 	end
-	stdoptions.timeout=0
 	io.stderr:write("Both definition evaluations resulted in a model. Comparing models...\n")
-	if (approxEqual(XSBMODEL,NOXSBMODEL)) then
+	if (equal(XSBMODEL,NOXSBMODEL)) then
 		return 1
 	else
 		io.stderr:write("FAIL! Calculating the definition with XSB resulted in a different model than calculating it without XSB.\n")
