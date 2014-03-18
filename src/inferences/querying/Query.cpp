@@ -57,6 +57,13 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 }
 
 PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_ptr<FOBDDManager> manager, const FOBDD* bdd, Structure const * const structure) const {
+	if(not structure->isConsistent()){
+		throw IdpException("Querying cannot be applied to inconsistent structures");
+	}
+	if(not structure->approxTwoValued()){
+		Warning::warning("Querying for three-valued structures can behave incorrectly.");
+	}
+
 	Assert(bdd != NULL);
 	if (getOption(IntType::VERBOSE_QUERY) > 0) {
 		clog << "Query-BDD:" << "\n" << print(bdd) << "\n";
