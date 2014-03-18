@@ -45,7 +45,7 @@ private:
 	DomainElementFactory* _domainelemFactory;
 	int _idcounter;
 
-	bool _wastimeout;
+	bool _outofresources;
 
 	Options* _options;
 	std::stack<size_t> _tabsizestack;
@@ -77,7 +77,7 @@ public:
 		return shouldTerminate;
 	}
 	bool timedout() const {
-		return shouldTerminate && _wastimeout;
+		return shouldTerminate && _outofresources;
 	}
 	static void reset() {
 		shouldTerminate = false;
@@ -104,8 +104,8 @@ public:
 			}
 		}
 	}
-	void notifyTimeout() {
-		_wastimeout = true;
+	void notifyOutOfResources() {
+		_outofresources = true;
 		shouldTerminate = true;
 		for (auto i = _monitors.cbegin(); i < _monitors.cend(); ++i) {
 			(*i)->notifyTerminateRequested();
