@@ -30,8 +30,5 @@ void resourceMonitorLoop(void* t) {
 			timer->call_on_timeout();
 			break;
 		}
-		if(timer->call_for_timebound()==0){
-			return;
-		}
 	}
 }
