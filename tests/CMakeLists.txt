@@ -148,8 +148,10 @@ if(${BUILDTESTS})
 			mxtests/basic.cpp
             mxtests/focard.cpp
 			mxtests/bounds.cpp
-			mxtests/xsbmx.cpp
-			mxtests/approxdefsmx.cpp
+			if(WITHXSB)
+				mxtests/xsbmx.cpp
+				mxtests/approxdefsmx.cpp
+			endif()
 			mxtests/nobounds.cpp
 			mxtests/boundsNoLUP.cpp
 			mxtests/cp.cpp
