@@ -76,6 +76,4 @@ MESSAGE(STATUS "${CMAKE_CXX_FLAGS}")
 add_executable(multiprocessrun multiprocessrun.cpp)
 target_link_libraries(multiprocessrun pthread)
 
-include(CPack)
-
 install (TARGETS multiprocessrun DESTINATION bin)

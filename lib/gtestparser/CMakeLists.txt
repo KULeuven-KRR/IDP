@@ -84,6 +84,4 @@ ADD_FLEX_BISON_DEPENDENCY(myscanner myparser)
 
 add_executable(gtestparser Main.cpp ${BISON_myparser_OUTPUTS} ${FLEX_myscanner_OUTPUTS})
 
-include(CPack)
-
 install (TARGETS gtestparser DESTINATION bin)
