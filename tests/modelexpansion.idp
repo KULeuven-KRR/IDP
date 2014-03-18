@@ -170,6 +170,8 @@ procedure run() {
 	stdoptions.verbosity.transformations=0
 	stdoptions.verbosity.creategrounders=0
 	
+	stdoptions.mxtimeout = 2000
+	
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
 	solutions = modelexpand(T, S, Vout)
 	io.stderr:write("MX done\n")
