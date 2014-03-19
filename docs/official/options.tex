@@ -78,10 +78,12 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{xsb = [false, true]}] Enable/disable the usage of \xsb.
 	\item[{timeout = [0..max(int)]}] Set the time after which an inference is requested to stop gracefully (in seconds, 0 indicates \emph{no} timeout).
 		In interactive mode, this is one lua call, otherwise the execution of the command supplied by ``-e'' (or the main procedure) is timed.
-		Whenever a timeout is reached, the inference is provided with 10 seconds to exit gracefully, otherwise the system aborts.				
-	\item[{mxtimeout = [0..max(int)]}] Set the time after which an execution of model expansion times out (in seconds, 0 indicates \emph{no} timeout).
-		If any models have been found, they are returned properly.
-		In case of model optimization, the best model(s) found to date are returned, not guaranteeing optimality has been proven. 
+		Whenever a timeout is reached, the inference is provided with 10 seconds to exit gracefully, otherwise the system aborts.
+	\item[{memoryout = [0..max(int)]}] Similar to the above, but monitors the memory usage (in Mb).				
+	\item[{mxtimeout = [0..max(int)]}] Similar to above, but only times calls to model expansion and minimization.
+		If any models have already been found, they are returned properly.
+		In case of model optimization, the best model(s) found to date are returned, not guaranteeing optimality has been proven.
+	\item[{mxmemoryout = [0..max(int)]}] Similar to the above, but monitors the memory usage (in Mb). 
 	\item[{seed = [0..max(int)]}] Set the seed for the random generator (used in the estimators for BDDs and in the SAT-solver).
 	\item[{approxdef = ["none", "complete", "cheap"]}]
 		\begin{itemize}

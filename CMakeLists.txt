@@ -37,7 +37,7 @@ macro(addToCXX ARGUMENT)
 endmacro()
 
 ### Fix for newest ubuntu+gcc
-if(LINUX)
+IF("${CMAKE_SYSTEM}" MATCHES "Linux")
 	addToCXX("-Wl,--no-as-needed")
 endif()
 

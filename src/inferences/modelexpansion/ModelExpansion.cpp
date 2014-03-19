@@ -23,7 +23,7 @@
 #include "inferences/modelexpansion/TraceMonitor.hpp"
 #include "errorhandling/error.hpp"
 #include "creation/cppinterface.hpp"
-#include "utils/Timer.hpp"
+#include "utils/ResourceMonitor.hpp"
 #include "DefinitionPostProcessing.hpp"
 
 using namespace std;
@@ -61,8 +61,8 @@ shared_ptr<ModelExpansion> ModelExpansion::createMX(AbstractTheory* theory, Stru
 			throw IdpException("Modelexpansion requires that the structure interprets (a subvocabulary of) the vocabulary of the theory.");
 		}
 	}
-	if(term!=NULL && structure->vocabulary()!=term->vocabulary()){
-		throw IdpException("Modelexpansion requires that the minimization term and the structure range over the same vocabulary.");
+	if(term!=NULL && not VocabularyUtils::isSubVocabulary(term->vocabulary(), theory->vocabulary())){
+		throw IdpException("Modelexpansion requires that the minimization term ranges over (a subvocabulary of) the vocabulary of the theory.");
 	}
 	auto m = shared_ptr<ModelExpansion>(new ModelExpansion(t, structure, term, tracemonitor, assumeFalse));
 	m->setOutputVocabulary(outputvoc);
@@ -182,8 +182,8 @@ MXResult ModelExpansion::expand() const {
 	auto terminator = new SolverTermination(mx);
 	getGlobal()->addTerminationMonitor(terminator);
 
-	auto t = basicTimer([](){return getOption(MXTIMEOUT);},[terminator](){terminator->notifyTerminateRequested();});
-	thread time(&timerLoop, &t);
+	auto t = basicResourceMonitor([](){return getOption(MXTIMEOUT);}, [](){return getOption(MXMEMORYOUT);},[terminator](){terminator->notifyTerminateRequested();});
+	thread time(&resourceMonitorLoop, &t);
 
 	MXResult result;
 	try {
@@ -229,14 +229,14 @@ MXResult ModelExpansion::expand() const {
 
 	result._optimumfound = not result._interrupted;
 	result.unsat = unsat;
-	if(t.hasTimedOut()){
+	if(t.outOfResources()){
 		Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
 		result._optimumfound = false;
 		result._interrupted = true;
 		getGlobal()->reset();
 	}
 
-	if(not t.hasTimedOut() && unsat){
+	if(not t.outOfResources() && unsat){
 		MXResult result;
 		result.unsat = true;
 		for(auto lit: mx->getUnsatExplanation()){
