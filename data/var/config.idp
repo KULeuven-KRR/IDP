@@ -13,7 +13,7 @@ procedure configIDP(){
 	metitarskicommand = "run-metitarski %i > %o"
 	meliacommand = "run-melia-jar -format tff-int %i > %o"  --java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar MELIA-0.1.2.jar
 
-	stdoptions.provercommand = ""
+	stdoptions.provercommand = "" // The empty string means: use the builtin compiled SPASS prover
 	stdoptions.proversupportsTFA = false
 }
 }
