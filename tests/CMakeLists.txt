@@ -118,8 +118,11 @@ if(${BUILDTESTS})
 		addMXTest(satbounds satbounds.cpp) 
 		addMXTest(satcp satcp.cpp)
 		addMXTest(cp cp.cpp) 
-		addMXTest(lazy lazy.cpp) 
-		addMXTest(verylazy verylazy.cpp) 
+		addMXTest(lazy lazy.cpp)  
+		addMXTest(verylazy verylazy.cpp)
+		if(SPASS)
+		    addMXTest(funcdetect funcdetect.cpp)
+		endif() 
 		addMXTest(satnobounds satnobounds.cpp) 
 		addMXTest(basic basic.cpp) 
 		addMXTest(nobounds nobounds.cpp) 
@@ -157,6 +160,9 @@ if(${BUILDTESTS})
 			mxtests/cp.cpp
 			mxtests/lazy.cpp
 			mxtests/verylazy.cpp
+			if(SPASS)
+			    mxtests/funcdetect.cpp
+			endif()
 			mxtests/symm.cpp
 			mxtests/optim.cpp
 			mxtests/satnobounds.cpp

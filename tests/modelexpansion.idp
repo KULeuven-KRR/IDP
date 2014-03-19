@@ -50,6 +50,13 @@ procedure mxverylazy(){
 	return run()
 }
 
+procedure mxfuncdetect(){
+	stdoptions.timeout = 100
+	detectfunctions(T)
+	setvocabulary(S,getvocabulary(T))
+	return run()
+}
+
 procedure mxnoboundslong(){
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
