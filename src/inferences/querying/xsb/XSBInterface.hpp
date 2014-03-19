@@ -42,7 +42,5 @@ public:
 	void exit();
 	void load(const Definition*, Structure*);
 	SortedElementTable queryDefinition(PFSymbol*, TruthValue tv = TruthValue::True);
-	bool query(PFSymbol*, ElementTuple);
-	PrologTerm* atom2term(PredForm* pf);
-	PrologTerm* atom2term(PFSymbol* symbol, ElementTuple el);
+	bool hasUnknowns(PFSymbol*);
 };

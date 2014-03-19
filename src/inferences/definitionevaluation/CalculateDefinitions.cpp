@@ -59,7 +59,16 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 			}
 		}
 
+		auto possRecNegSymbols = DefinitionUtils::approxRecurionsOverNegationSymbols(definition);
 		for (auto symbol : symbols) {
+			if (possRecNegSymbols.find(symbol) != possRecNegSymbols.end()) {
+				if(xsb_interface->hasUnknowns(symbol)) {
+	            	xsb_interface->reset();
+	            	result._hasModel=false;
+	            	result._calculated_model=structure;
+	            	return result;
+				}
+			}
 			auto sorted = xsb_interface->queryDefinition(symbol);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));

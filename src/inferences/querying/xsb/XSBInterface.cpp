@@ -214,3 +214,48 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	}
 	return result;
 }
+
+bool XSBInterface::hasUnknowns(PFSymbol* s) {
+	auto term = symbol2term(s);
+	SortedElementTable result;
+	XSB_StrDefine (buff);
+	stringstream ss;
+	ss << "call_tv(" << *term << ",undefined).";
+	auto query = new char[ss.str().size() + 1];
+	strcpy(query, ss.str().c_str());
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "Quering XSB with: " <<  query << "\n";
+	}
+    char* delimiter = new char [strlen(" ") + 1];
+    strcpy(delimiter," ");
+	auto rc = xsb_query_string_string(query, &buff, delimiter);
+	delete(query);
+	handleResult(rc);
+
+	while (rc == XSB_SUCCESS) {
+		std::list<string> answer = split(buff.string);
+		ElementTuple tuple;
+		for (auto it = answer.begin(); it != answer.end(); ++it) {
+			tuple.push_back(_translator->to_idp_domelem(*it));
+		}
+		result.insert(tuple);
+
+		rc = xsb_next_string(&buff, delimiter);
+		handleResult(rc);
+	}
+	XSB_StrDestroy(&buff);
+	auto hasUnknowns = not result.empty();
+
+	delete(delimiter);
+	delete (term);
+
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "Resulted in the following answer:\n";
+		if (hasUnknowns) {
+			clog << "true\n\n";
+		} else {
+			clog << "false\n\n";
+		}
+	}
+	return hasUnknowns;
+}

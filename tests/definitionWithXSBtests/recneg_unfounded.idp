@@ -1,0 +1,16 @@
+vocabulary V {
+  type nr isa int
+  even(nr)
+} 
+
+structure S : V {  
+  nr = {0..99}
+} 
+
+theory T : V {
+  {
+    even(0).
+    even(n) <- ~even(n).
+  }
+}
+
