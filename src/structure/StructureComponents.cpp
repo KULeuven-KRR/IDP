@@ -2000,7 +2000,7 @@ bool ConstructedInternalSortTable::empty() const {
 	if(isRecursive()){
 		for(auto f:_constructors){
 			auto allnonrec = true;
-			for(u_int i=0; i<f->arity(); ++i){
+			for(uint i=0; i<f->arity(); ++i){
 				if(f->insorts()[i]==f->outsort()){
 					allnonrec = false;
 					break;
@@ -2034,7 +2034,7 @@ bool ConstructedInternalSortTable::approxEmpty() const {
 	if(isRecursive()){
 		for(auto f:_constructors){
 			auto allnonrec = true;
-			for(u_int i=0; i<f->arity(); ++i){
+			for(uint i=0; i<f->arity(); ++i){
 				if(f->insorts()[i]==f->outsort()){
 					allnonrec = false;
 					break;
