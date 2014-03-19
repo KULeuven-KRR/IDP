@@ -183,7 +183,7 @@ MXResult ModelExpansion::expand() const {
 	getGlobal()->addTerminationMonitor(terminator);
 
 	auto t = basicResourceMonitor([](){return getOption(MXTIMEOUT);}, [](){return getOption(MXMEMORYOUT);},[terminator](){terminator->notifyTerminateRequested();});
-	thread time(&resourceMonitorLoop, &t);
+	tthread::thread time(&resourceMonitorLoop, &t);
 
 	MXResult result;
 	try {

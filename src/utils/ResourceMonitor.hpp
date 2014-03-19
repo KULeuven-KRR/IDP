@@ -9,13 +9,7 @@
 #include "unistd.h"
 #include <iostream>
 
-#ifdef __MINGW32__
-#include <windows.h>
-#define sleep(n) Sleep(1000*n)
-#endif
-//#include <thread>
 #include <tinythread.h>
-using namespace tthread;
 
 template<class CallForTimeBound, class CallForMemoryBound, class CallOnTimeout>
 class ResourceMonitor {
