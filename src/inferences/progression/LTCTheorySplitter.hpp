@@ -15,15 +15,15 @@
 #include "data/LTCFormulaInfo.hpp"
 #include <map>
 
-class SplitLTCTheory;
-class SplitLTCInvariant;
+struct SplitLTCTheory;
+struct SplitLTCInvariant;
 class Sort;
 class Variable;
 class AbstractTheory;
 class Theory;
 class QuantForm;
 class QuantSetExpr;
-class LTCVocInfo;
+struct LTCVocInfo;
 class Vocabulary;
 
 class LTCTheorySplitter {

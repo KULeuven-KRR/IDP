@@ -19,9 +19,9 @@ class AbstractTheory;
 class Sort;
 class Function;
 class Vocabulary;
-class LTCInputData;
+struct LTCInputData;
 class Theory;
-class LTCVocInfo;
+struct LTCVocInfo;
 
 struct initData {
 	std::vector<Structure*> _models;

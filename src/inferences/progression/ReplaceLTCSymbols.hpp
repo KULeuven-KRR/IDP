@@ -14,7 +14,7 @@
 #include <vector>
 
 class Vocabulary;
-class LTCVocInfo;
+struct LTCVocInfo;
 class Term;
 class Formula;
 class PredForm;

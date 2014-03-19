@@ -13,13 +13,10 @@
 
 #include <stddef.h>
 
-
-
 class Structure;
 class AbstractTheory;
 class Theory;
 class Formula;
-
 
 class ProveInvariantInference {
 	const Theory* _ltcTheo;
@@ -45,5 +42,3 @@ private:
 	 */
 	bool checkImplied(const Theory* hypothesis, Formula* implication, bool initial);
 };
-
-

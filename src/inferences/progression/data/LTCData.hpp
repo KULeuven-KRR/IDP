@@ -13,12 +13,12 @@
 #include "GlobalData.hpp"
 #include <map>
 
-class LTCVocInfo;
+struct LTCVocInfo;
 class Vocabulary;
 class Sort;
 class Function;
 class AbstractTheory;
-class SplitLTCTheory;
+struct SplitLTCTheory;
 
 struct LTCInputData {
 	const Sort* time;

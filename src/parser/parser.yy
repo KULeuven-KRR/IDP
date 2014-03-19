@@ -621,7 +621,7 @@ aggterm		: P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
 			;
 
 formset		: '{' variables ':' formula '}'	{ $$ = data().set($4,@1,*$2); delete($2);	}
-			| '{' ':' formula '}'			{ $$ = data().set($3,@1); }
+			| '{' ':' formula '}'			{ $$ = data().set($3,@1, varset()); }
 			;
 			
 termlist	: termlist ',' term 		{ $$ = $1; if($3!=NULL){data().addToFirst($$,data().trueset($3,@1)); 	}		}
@@ -629,7 +629,7 @@ termlist	: termlist ',' term 		{ $$ = $1; if($3!=NULL){data().addToFirst($$,data
 			;
 
 termset		: '{' variables ':' formula ':' term '}'	{ $$ = data().set($4,$6,@1,*$2); delete($2);	}	
-			| '{' ':' formula ':' term '}'				{ $$ = data().set($3,$5,@1);	}
+			| '{' ':' formula ':' term '}'				{ $$ = data().set($3,$5,@1,varset());	}
 			;
 
 

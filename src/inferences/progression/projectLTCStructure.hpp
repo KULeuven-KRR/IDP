@@ -15,7 +15,7 @@
 class Structure;
 class Structure;
 class Vocabulary;
-class LTCVocInfo;
+struct LTCVocInfo;
 class Sort;
 class Function;
 class DomainElement;

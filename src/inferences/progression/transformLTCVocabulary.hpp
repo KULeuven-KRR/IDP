@@ -21,7 +21,7 @@ class Sort;
 class PFSymbol;
 class Predicate;
 class Function;
-class LTCInputData;
+struct LTCInputData;
 
 
 class LTCVocabularyTransformer {

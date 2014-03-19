@@ -57,7 +57,7 @@ class AbstractTheory;
 class Options;
 class UserProcedure;
 class Namespace;
-class LTCVocInfo;
+struct LTCVocInfo;
 
 struct YYLTYPE;
 struct lua_State;
@@ -373,9 +373,9 @@ public:
 	const FOBDD* truefobdd() const;
 	const FOBDD* falsefobdd() const;
 
-	EnumSetExpr* set(Formula*, YYLTYPE,const varset& vv=std::set<Variable*, VarCompare>());
+	EnumSetExpr* set(Formula*, YYLTYPE,const varset& vv);
 	//!< Create a new set of the form { x1 ... xn : phi }
-	EnumSetExpr* set(Formula*, Term*, YYLTYPE,const varset& vv=varset());
+	EnumSetExpr* set(Formula*, Term*, YYLTYPE,const varset& vv);
 	//!< Create a new set of the form { x1 ... xn : phi : t }
 
 	EnumSetExpr* trueset(Term* t, YYLTYPE l);
