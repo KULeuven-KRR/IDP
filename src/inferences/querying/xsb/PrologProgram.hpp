@@ -20,7 +20,6 @@ class Definition;
 class PFSymbol;
 class Sort;
 class PrologClause;
-class PredTable;
 class XSBToIDPTranslator;
 
 using std::string;
@@ -39,7 +38,8 @@ private:
 	set<string> _loaded;
 	set<string> _all_predicates;
 	XSBToIDPTranslator* _translator;
-	void printAsFacts(std::string, PredTable*, std::ostream&);
+	void printAsFacts(std::string, PFSymbol*, std::ostream&);
+	void printTuple(const ElementTuple&, std::ostream&);
 
 public:
 	PrologProgram(Structure* structure, XSBToIDPTranslator* translator)

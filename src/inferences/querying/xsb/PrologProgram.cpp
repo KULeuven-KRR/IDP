@@ -90,15 +90,15 @@ string PrologProgram::getFacts() {
 
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
-	for (auto it = openSymbols.begin(); it != openSymbols.end(); ++it) {
-		if (_translator->isXSBBuiltIn((*it)->nameNoArity()) ||
-				_translator->isXSBCompilerSupported((*it))) {
+	for (auto symbol : openSymbols) {
+		if (_translator->isXSBBuiltIn(symbol->nameNoArity()) ||
+				_translator->isXSBCompilerSupported(symbol)) {
 			continue;
 		}
 
 		auto isSort = false;
 		for (auto sort : _sorts) {
-			if (sort->pred() == *it)
+			if (sort->pred() == symbol)
 				isSort = true;
 				continue;
 		}
@@ -107,25 +107,43 @@ string PrologProgram::getFacts() {
 			continue;
 		}
 
-		_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
-		auto st = _structure->inter(*it)->ct();
-		printAsFacts(_translator->to_prolog_term(*it), st, output);
+		_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
+		printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 	}
 	return output.str();
 }
 
-void PrologProgram::printAsFacts(string predname, PredTable* pt, std::ostream& ss) {
-	for (auto tuple = pt->begin(); !tuple.isAtEnd(); ++tuple) {
-		ss << predname;
-		const auto& tmp = *tuple;
-		if(tmp.size()>0){
-			ss << "(";
-			printList(ss, tmp, ",", [&](std::ostream& output, const DomainElement* domelem){output << _translator->to_prolog_term(domelem); }, true);
-			ss <<")";
+void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
+	if (not _structure->inter(symbol)->approxTwoValued()) {
+		// If the symbol is not two-valued, it needs to be tabled to handle the unknown values
+		// TODO: include something like the table() framework for the rules?
+		ss << ":- table " << _translator->to_prolog_pred_and_arity(symbol) << ".\n";
+	}
+	auto certainly_true = _structure->inter(symbol)->ct();
+	auto possibly_true = _structure->inter(symbol)->pt();
+	for (auto it = possibly_true->begin(); !it.isAtEnd(); ++it) {
+		ss << symbol_name;
+		ElementTuple tuple = *it;
+		printTuple(tuple,ss);
+		if (not certainly_true->contains(tuple)) {
+			// If the tuple is not in the certainly true table, it is unknown
+			// Unknown symbols needs to be printed as follows:
+			//   symbol(arg1,..,argn) :- tnot(symbol(arg1,..,argn)).
+			ss << " :- tnot(" << symbol_name;
+			printTuple(tuple,ss);
+			ss << ")";
 		}
 		ss << ".\n";
 	}
 
+}
+
+void PrologProgram::printTuple(const ElementTuple& tuple, std::ostream& ss) {
+	if (tuple.size()>0){
+		ss << "(";
+		printList(ss, tuple, ",", [&](std::ostream& output, const DomainElement* domelem){output << _translator->to_prolog_term(domelem); }, true);
+		ss <<")";
+	}
 }
 
 void PrologProgram::table(PFSymbol* pt) {

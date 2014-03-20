@@ -105,18 +105,19 @@ void XSBInterface::loadDefinition(Definition* d) {
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
 	_pp->setDefinition(cloned_definition);
+	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
 	auto str = _pp->getCode();
-	auto str3 = _pp->getRanges();
 	auto str2 = _pp->getFacts();
+	auto str3 = _pp->getRanges();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code\n\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3 << "\n";
 	}
-	sendToXSB(str3, false);
-	sendToXSB(str2, true);
-	sendToXSB(str, false);
+	sendToXSB(str3);
+	sendToXSB(str2);
+	sendToXSB(str);
 }
 
-void XSBInterface::sendToXSB(string str, bool isFacts) {
+void XSBInterface::sendToXSB(string str) {
 	auto name = tmpnam(NULL);
 
 	ofstream tmp;
@@ -124,11 +125,7 @@ void XSBInterface::sendToXSB(string str, bool isFacts) {
 	tmp << str;
 	tmp.close();
 	stringstream ss;
-	if (isFacts) {
-		ss << "load_dync('" << name << "').\n";
-	} else {
-		ss << "load_dyn('" << name << "').\n";
-	}
+	ss << "load_dyn('" << name << "').\n";
 	commandCall(ss.str());
 	remove(name);
 }

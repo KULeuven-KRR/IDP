@@ -22,7 +22,6 @@ class PFSymbol;
 class PredForm;
 class XSBToIDPTranslator;
 
-using std::string;
 class XSBInterface {
 private:
 	PrologProgram* _pp;
@@ -32,8 +31,8 @@ private:
 	XSBInterface();
 	void loadOpenSymbols();
 	void loadInterpretation(PFSymbol*);
-	void sendToXSB(string, bool);
-	void commandCall(const string& command);
+	void sendToXSB(std::string);
+	void commandCall(const std::string& command);
 	void handleResult(int xsb_status);
 	PrologTerm* symbol2term(const PFSymbol*);
 
