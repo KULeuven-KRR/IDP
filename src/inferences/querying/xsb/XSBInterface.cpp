@@ -151,12 +151,12 @@ void XSBInterface::exit() {
 	interface_instance = NULL;
 }
 
-SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
+SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	auto term = symbol2term(s);
 	SortedElementTable result;
 	XSB_StrDefine (buff);
 	stringstream ss;
-	ss << "call_tv(" << *term << ",true).";
+	ss << "call_tv(" << *term << "," << _translator->to_xsb_truth_type(tv) << ").";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {

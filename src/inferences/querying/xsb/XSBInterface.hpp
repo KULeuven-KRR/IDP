@@ -42,7 +42,7 @@ public:
 	void reset();
 	void exit();
 	void loadDefinition(Definition*);
-	SortedElementTable queryDefinition(PFSymbol*);
+	SortedElementTable queryDefinition(PFSymbol*, TruthValue tv = TruthValue::True);
 	bool query(PFSymbol*, ElementTuple);
 	PrologTerm* atom2term(PredForm* pf);
 	PrologTerm* atom2term(PFSymbol* symbol, ElementTuple el);

@@ -51,8 +51,7 @@ public:
 
 	std::string to_prolog_term(CompType);
 	std::string to_prolog_term(AggFunction);
-
-
+	std::string to_xsb_truth_type(TruthValue);
 
 	std::string to_prolog_varname(std::string);
 	std::string to_prolog_sortname(const Sort*);

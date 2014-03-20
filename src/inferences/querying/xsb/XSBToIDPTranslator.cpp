@@ -207,6 +207,26 @@ string XSBToIDPTranslator::to_prolog_term(AggFunction af) {
 	return str;
 }
 
+std::string XSBToIDPTranslator::to_xsb_truth_type(TruthValue tv) {
+	string str;
+	switch (tv) {
+	case TruthValue::True:
+		str = "true";
+		break;
+	case TruthValue::Unknown:
+		str = "undefined";
+		break;
+	case TruthValue::False:
+		str = "false";
+		break;
+	default:
+		throw IdpException("Invalid code path.");
+		break;
+	}
+	return str;
+}
+
+
 string XSBToIDPTranslator::to_simple_chars(string str) {
 	stringstream s;
 	for (auto i = str.begin(); i != str.end(); ++i) {
