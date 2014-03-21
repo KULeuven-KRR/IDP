@@ -22,6 +22,7 @@ public:
 	T execute(T t, Predicate* origPred, Predicate* newPred){
 		_origPred = origPred;
 		_newPred = newPred;
+		Assert(origPred->sorts()==newPred->sorts());
 		t = t->accept(this);
 		return t;
 	}
