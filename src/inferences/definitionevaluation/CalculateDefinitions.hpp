@@ -77,11 +77,10 @@ private:
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateKnownDefinition(Definition* definition, Structure* structure,
-			bool satdelay, std::set<PFSymbol*> symbolsToQuery);
+			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateDefinition(Definition* definition, Structure* structure,
 			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionCalculationResult processXSBResult(const bool success, Structure* structure,
-			Structure* oldStructure) const;
+	void removeLoopsForStableSemantics(std::map<Definition*, std::set<PFSymbol*> > opens) const;
 };

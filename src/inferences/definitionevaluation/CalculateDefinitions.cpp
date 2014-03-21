@@ -183,24 +183,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	auto opens = DefinitionUtils::opens(theory->definitions());
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
-		bool foundone = false;
-		auto def = opens.begin();
-		while (def != opens.end()) {
-			auto hasrecursion = DefinitionUtils::hasRecursionOverNegation((*def).first);
-			//TODO in the future: put a smarter check here
-
-			auto currentdefinition = def++;
-			// REASON: set erasure does only invalidate iterators pointing to the erased elements
-			// Remove opens that have a two-valued interpretation
-
-			if (hasrecursion) {
-				foundone = true;
-				opens.erase(currentdefinition);
-			}
-		}
-		if (foundone) {
-			Warning::warning("Ignoring definitions for which we cannot detect totality because option stablesemantics is true.");
-		}
+		removeLoopsForStableSemantics(opens);
 	}
 
 	DefinitionCalculationResult result;
@@ -278,8 +261,30 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	return result;
 }
 
+void CalculateDefinitions::removeLoopsForStableSemantics(std::map<Definition*,
+		std::set<PFSymbol*> > opens) const {
+	bool foundone = false;
+	auto def = opens.begin();
+	while (def != opens.end()) {
+		auto hasrecursion = DefinitionUtils::hasRecursionOverNegation((*def).first);
+		//TODO in the future: put a smarter check here
+
+		auto currentdefinition = def++;
+		// REASON: set erasure does only invalidate iterators pointing to the erased elements
+
+		if (hasrecursion) {
+			foundone = true;
+			opens.erase(currentdefinition);
+		}
+	}
+	if (foundone) {
+		Warning::warning("Ignoring definitions for which we cannot detect totality because option stablesemantics is true.");
+	}
+}
+
 // IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) {
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition,
+		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
 	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
 	theory->add(definition);
 	return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
