@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef COMMANDINTERFACE_HPP_
-#define COMMANDINTERFACE_HPP_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -198,10 +197,9 @@ typedef TypedInference<LIST(Term*)> TermBase;
 typedef TypedInference<LIST(std::string*)> StringBase;
 typedef TypedInference<LIST(AbstractTheory*)> TheoryBase;
 typedef TypedInference<LIST(AbstractTheory*, Structure*)> TheoryStructureBase;
+typedef TypedInference<LIST(Formula*, Structure*)> FormulaStructureBase;
 typedef TypedInference<LIST(SortTable*)> SortTableBase;
 typedef TypedInference<LIST(const PredTable*)> PredTableBase;
 typedef TypedInference<LIST(Query*)> QueryBase;
 typedef TypedInference<LIST(FOBDD*)> FOBDDBase;
 typedef TypedInference<LIST(Options*)> OptionsBase;
-
-#endif /* COMMANDINTERFACE_HPP_ */

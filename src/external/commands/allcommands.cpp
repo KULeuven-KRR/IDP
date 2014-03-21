@@ -36,6 +36,7 @@
 #include "help.hpp"
 #include "iterators.hpp"
 #include "entails.hpp"
+#include "evaluate.hpp"
 #include "tablesize.hpp"
 #include "twovaluedextensions.hpp"
 #include "calculatedefinitions.hpp"
@@ -118,6 +119,8 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<HelpInference>());
 	inferences.push_back(make_shared<PrintGroundingInference>());
 	inferences.push_back(make_shared<EntailsInference>());
+	inferences.push_back(make_shared<EvaluateFormulaInference>());
+	inferences.push_back(make_shared<EvaluateTermInference>());
 	inferences.push_back(make_shared<RemoveNestingInference>());
 	inferences.push_back(make_shared<RemoveCardinalitiesInference>());
 	// TODO issue #50 bdds inferences.push_back(new SimplifyInference());

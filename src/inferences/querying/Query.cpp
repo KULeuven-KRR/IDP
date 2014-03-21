@@ -22,6 +22,7 @@
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "creation/cppinterface.hpp"
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
 	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure;
@@ -180,4 +181,42 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 	}
 	delete generator;
 	return result;
+}
+
+bool evaluate(Formula* form, const Structure* structure){
+	if(not structure->approxTwoValued()){ // TODO can be improved
+		throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+	}
+	if(not form->freeVars().empty()){
+		throw IdpException("The input formula had free variables");
+	}
+
+	Query q("Eval", {}, form, {});
+	auto result = Querying::doSolveQuery(&q, structure);
+	if(result->empty()){ // No answers => false
+		return false;
+	}else{ // Empty tuple => true
+		return true;
+	}
+}
+
+const DomainElement* evaluate(Term* term, const Structure* structure){
+	if(not structure->approxTwoValued()){ // TODO can be improved
+		throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+	}
+	if(not term->freeVars().empty()){
+		throw IdpException("The input formula had free variables");
+	}
+
+	auto var = Gen::var(term->sort());
+	Formula& pf = Gen::operator ==(*term, *new VarTerm(var,{}));
+
+	Query q("Eval", {var}, &pf, {});
+	auto result = Querying::doSolveQuery(&q, structure);
+	pf.recursiveDelete();
+	if(result->empty()){
+		return NULL; // partial
+	}else{
+		return result->begin().operator *()[0];
+	}
 }
