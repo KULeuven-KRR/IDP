@@ -185,6 +185,13 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
+std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*> defs) {
+	std::map<Definition*, std::set<PFSymbol*> > opens;
+	for (auto def : defs) {
+		opens[def] = DefinitionUtils::opens(def);
+	}
+	return opens;
+}
 std::set<PFSymbol*> defined(Definition* d) {
 	return d->defsymbols();
 }

@@ -180,10 +180,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
 
 	// Collect the open symbols of all definitions
-	std::map<Definition*, std::set<PFSymbol*> > opens;
-	for (auto it = theory->definitions().cbegin(); it != theory->definitions().cend(); ++it) {
-		opens[*it] = DefinitionUtils::opens(*it);
-	}
+	auto opens = DefinitionUtils::opens(theory->definitions());
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		bool foundone = false;
@@ -208,7 +205,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 	DefinitionCalculationResult result;
 	result._calculated_model = structure; // Set first intermediate result
-
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
