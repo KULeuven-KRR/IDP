@@ -126,7 +126,7 @@ Entails::Entails(Theory* axioms, Theory* conjectures)
 	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
 	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
 
-	FormulaUtils::addCompletion(axioms, NULL);
+	FormulaUtils::replaceDefinitionsWithCompletion(axioms, NULL);
 
 	// Determine whether the theories are compatible with this inference
 	// and whether arithmetic support is required

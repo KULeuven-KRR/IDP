@@ -112,17 +112,17 @@ protected:
 		newtheory = FormulaUtils::graphFuncsAndAggs(newtheory, NULL,  {}, true, false /*TODO check*/, Context::POSITIVE);
 
 		if (not _conjecture) {
-			for (auto c: newtheory->components()) {
+			for (auto c: newtheory->getComponents()) {
 				startAxiom("a");
 				c->accept(this);
 				endAxiom(_axiomStream);
 				_count++;
 			}
-		} else if (not newtheory->components().empty()) {
+		} else if (not newtheory->getComponents().empty()) {
 			// Output a conjecture as a conjunction.
 			startAxiom("cnj");
 			bool begin = true;
-			for (auto sentence : newtheory->components()) {
+			for (auto sentence : newtheory->getComponents()) {
 				if(not begin){
 					_os << " & ";
 				}

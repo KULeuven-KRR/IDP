@@ -21,6 +21,7 @@
  * NOTE: afterwards it is best to the simplify transformation.
  *
  * FIXME Should folding of partial terms introduce EXISTS?
+ * FIXME the implementation only replaces with function terms
  */
 class ReplaceVariableUsingEqualities: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
@@ -33,7 +34,6 @@ public:
 	template<typename T>
 	T execute(T t) {
 		replacements.clear();
-		t = dynamic_cast<T>(FormulaUtils::splitComparisonChains(t));
 		t = t->accept(this);
 		return t;
 	}
@@ -76,12 +76,7 @@ protected:
 
 	Formula* visit(PredForm* pf) {
 		if (contains(removals, pf)) {
-			auto maketrue = pf->sign() == SIGN::POS;
-			if (maketrue) {
-				return new BoolForm(SIGN::POS, true, { }, pf->pi());
-			} else {
-				return new BoolForm(SIGN::POS, false, { }, pf->pi());
-			}
+			return new BoolForm(pf->sign(), true, { }, pf->pi());
 		}
 		return traverse(pf);
 	}
