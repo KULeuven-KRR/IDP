@@ -188,6 +188,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 	DefinitionCalculationResult result;
 	result._calculated_model = structure; // Set first intermediate result
+	result._hasModel = true;
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
@@ -196,57 +197,51 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 		fixpoint = true;
 		for (auto it = opens.begin(); it != opens.end();) {
 			auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
+
 			// Remove opens that have a two-valued interpretation
-			for (auto symbol = currentdefinition->second.begin(); symbol != currentdefinition->second.end();) {
-				auto currentsymbol = symbol++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
-				if (structure->inter(*currentsymbol)->approxTwoValued()) {
-					currentdefinition->second.erase(currentsymbol);
-				}
-			}
+			auto toRemove = DefinitionUtils::twoValuedOpens(currentdefinition->first, structure);
+			currentdefinition->second.erase(toRemove.begin(),toRemove.end());
+
 			// If no opens are left, calculate the interpretation of the defined atoms
 			if (currentdefinition->second.empty()) {
 				auto definition = currentdefinition->first;
-				auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-				if (getOption(XSB) && hasrecursion) {
-					Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
-				}
 
-				bool tooexpensive = false;
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
 				}
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 					clog << "Using structure " << toString(structure) << "\n";
 				}
-				auto has_recursive_aggregate = DefinitionUtils::approxContainsRecDefAggTerms(definition);
-				if(getOption(XSB) && has_recursive_aggregate) {
-					Warning::warning("Currently, no support for definitions that have recursive aggregates");
-				}
-				auto useXSB = getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+				bool tooexpensive = false;
+#ifdef WITHXSB
+				auto useXSB = determineXSBUsage(definition);
 				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
+#else
+				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, false, symbolsToQuery);
+#endif
 				if (tooexpensive) {
 					continue;
 				}
 				result._calculated_model = defCalcResult._calculated_model; // Update current structure
 
-				if (not defCalcResult._hasModel) {
+				if (not defCalcResult._hasModel) { // If the definition did not have a model, quit execution (don't set fixpoint to false)
 					if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 						clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
 					}
 					result._hasModel = false;
-					// When returning a result that has no model, the other arguments are as follows:
-					// _calculated_model:  the structure resulting from the last unsuccessful definition calculation
-					// _calculated_definitions: all definitions that have been successfully calculated
-					return result;
+				} else { // If it did have a model, update result and continue
+					fixpoint = false;
+					opens.erase(currentdefinition);
+					theory->remove(definition);
+					result._calculated_definitions.push_back(definition);
 				}
-				theory->remove(definition);
-				result._calculated_definitions.push_back(definition);
-				opens.erase(currentdefinition);
-				fixpoint = false;
 			}
 		}
 	}
-	if (not structure->isConsistent()) {
+	if (not structure->isConsistent() or not result._hasModel) {
+		// When returning a result that has no model, the other arguments are as follows:
+		// _calculated_model:  the structure resulting from the last unsuccessful definition calculation
+		// _calculated_definitions: all definitions that have been successfully calculated
 		result._hasModel = false;
 		return result;
 	}
@@ -281,6 +276,22 @@ void CalculateDefinitions::removeLoopsForStableSemantics(std::map<Definition*,
 		Warning::warning("Ignoring definitions for which we cannot detect totality because option stablesemantics is true.");
 	}
 }
+
+#ifdef WITHXSB
+bool CalculateDefinitions::determineXSBUsage(Definition* definition) const {
+	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
+	if (getOption(XSB) && hasrecursion) {
+		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
+	}
+
+	auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
+	if(getOption(XSB) && has_recursive_aggregate) {
+		Warning::warning("Currently, no support for definitions that have recursive aggregates");
+	}
+
+	return getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+}
+#endif
 
 // IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
 DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition,

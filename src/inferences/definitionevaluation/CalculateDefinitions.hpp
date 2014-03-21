@@ -83,4 +83,8 @@ private:
 			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
 
 	void removeLoopsForStableSemantics(std::map<Definition*, std::set<PFSymbol*> > opens) const;
+
+#ifdef WITHXSB
+	bool determineXSBUsage(Definition* definition) const ;
+#endif
 };
