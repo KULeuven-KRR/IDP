@@ -149,6 +149,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_FUNCDETECT, "functiondetection", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_APPROXDEF, "approxdef", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
@@ -162,7 +163,6 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LAZYHEURISTIC, "lazyheur", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::WATCHEDRELEVANCE, "relevancewatched", boolvalues, false, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::FUNCDETECTRESULTS, "funcdetectresults", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::SHAREDTSEITIN, "sharedtseitins", { false }, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TRACE, "trace", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::STABLESEMANTICS, "stablesemantics", boolvalues, false, PrintBehaviour::PRINT);

@@ -46,7 +46,7 @@ FunctionDetection::~FunctionDetection(){
 }
 
 void FunctionDetection::detectAndRewriteIntoFunctions() {
-	if(getOption(FUNCDETECTRESULTS)){
+	if(getOption(VERBOSE_FUNCDETECT)>0){
 		clog <<"varin&&" <<FormulaUtils::countQuantVars(theory) <<"\n";
 	}
 	auto somereplaced = false;
@@ -131,7 +131,7 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 	FormulaUtils::pushNegations(theory);
 	FormulaUtils::flatten(theory);
 
-	if(getOption(FUNCDETECTRESULTS)){
+	if(getOption(VERBOSE_FUNCDETECT)>0){
 		clog <<"varout&&" <<FormulaUtils::countQuantVars(theory)-inoutputvarcount <<"\n";
 		clog <<"totalfunc&&" <<totalfunc <<"\n";
 		clog <<"partfunc&&" <<partfunc <<"\n";
