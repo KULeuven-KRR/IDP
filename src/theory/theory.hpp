@@ -109,9 +109,8 @@ public:
 	//!< delete the formula, but not its children UNLESS _allwaysDeleteRecursively is true, then also deletes children
 
 	// Mutators
-	Formula* negate() {
+	void negate() {
 		_sign = !_sign;
-		return this;
 		//if (_pi.originalobject())
 		// FIXME _pi.originalobject()->negate();
 	}
@@ -589,7 +588,7 @@ public:
 	}
 	void recursiveDelete();
 
-	Definition* add(Rule*); //!< add a rule to the definition
+	void add(Rule*); //!< add a rule to the definition
 	void remove(Rule*); //!< remove a rule of the definition
 	template<typename List>
 	Definition* add(const List& list){

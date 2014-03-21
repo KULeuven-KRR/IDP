@@ -462,10 +462,9 @@ void Definition::recursiveDelete() {
 	delete (this);
 }
 
-Definition* Definition::add(Rule* r) {
+void Definition::add(Rule* r) {
 	_rules.insert(r);
 	_defsyms.insert(r->head()->symbol());
-	return this;
 }
 
 void Definition::remove(Rule* r) {
