@@ -335,6 +335,8 @@ bool isVar(Term* t);
 bool isAggOrFunc(Term* t);
 bool isVarOrDom(Term* t);
 
+bool isCard(Term* term);
+
 /** Returns false if the term is not two-valued in the given structure.
  *  May return true if the term is two-valued in the structure. */
 bool approxTwoValued(const Term*, const Structure*);

@@ -20,8 +20,6 @@
 #include "theory/TheoryUtils.hpp"
 #include "utils/ListUtils.hpp"
 
-bool isCard(AggTerm* term);
-
 template<typename Stream>
 class TPTPPrinter: public StreamPrinter<Stream> {
 	VISITORFRIENDS()
@@ -415,7 +413,7 @@ protected:
 			_ignore = true;
 			return;
 		}
-		if(not isCard(af->getAggTerm())){
+		if(not TermUtils::isCard(af->getAggTerm())){
 			_ignore = true;
 			return;
 		}

@@ -100,24 +100,6 @@ protected:
 	}
 };
 
-bool isCard(AggTerm* term){
-	if(term->function()==AggFunction::CARD){
-		return true;
-	}
-
-	if(term->function()==AggFunction::SUM){
-		for(auto set: term->set()->getSets()){
-			auto term = dynamic_cast<DomainTerm*>(set->getTerm());
-			if(term==NULL || term->value()->type()!=DomainElementType::DET_INT || term->value()->value()._int!=1 ){
-				return false;
-			}
-		}
-		return true;
-	}
-
-	return false;
-}
-
 State Entails::doCheckEntailment(Theory* axioms, Theory* conjectures) {
 	auto state = State::UNKNOWN;
 	try{

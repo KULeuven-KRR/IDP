@@ -18,14 +18,12 @@
 #include "creation/cppinterface.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-bool isCard(Term* i) {
-	return TermUtils::isAgg(i) && dynamic_cast<AggTerm*>(i)->function() == CARD;
-}
+using namespace TermUtils;
 
 Formula* CardConstrToFO::visit(EqChainForm* ef) {
 	bool needsSplit = false;
-	for (auto i = ef->subterms().cbegin(); i < ef->subterms().cend(); ++i) {
-		if (isCard(*i)) {
+	for (auto st : ef->subterms()) {
+		if (isCard(st)) {
 			needsSplit = true;
 			break;
 		}

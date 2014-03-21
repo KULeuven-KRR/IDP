@@ -102,6 +102,28 @@ bool isVarOrDom(Term* t) {
 	return isVar(t) || isDom(t);
 }
 
+bool isCard(Term* t){
+	if(not TermUtils::isAgg(t)){
+		return false;
+	}
+	auto at = dynamic_cast<AggTerm*>(t);
+	if(at->function()==AggFunction::CARD){
+		return true;
+	}
+
+	if(at->function()==AggFunction::SUM){
+		for(auto set: at->set()->getSets()){
+			auto term = dynamic_cast<DomainTerm*>(set->getTerm());
+			if(term==NULL || term->value()->type()!=DomainElementType::DET_INT || term->value()->value()._int!=1 ){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
 bool approxTwoValued(const Term* t, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(t, str);
 }
