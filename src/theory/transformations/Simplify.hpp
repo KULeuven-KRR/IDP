@@ -110,9 +110,9 @@ protected:
 		auto qf = dynamic_cast<QuantForm*>(f);
 		if (qf != NULL) {
 			auto subform = simplify(qf->subformula());
-			if (isTrue(subform)) {
+			if (isTrue(subform) && qf->isUnivWithSign()) {
 				return subform;
-			} else if (isFalse(subform)) {
+			} else if (isFalse(subform) && not qf->isUnivWithSign()) {
 				return subform;
 			} else {
 				qf->subformula(subform);
@@ -132,13 +132,10 @@ protected:
 		if (newqf != qf) {
 			return newqf->accept(this);
 		}
-		if (_structure == NULL) {
-			return qf;
-		}
 		qf->subformula(qf->subformula()->accept(this));
 		varset remainingvars;
 		for (auto var : qf->quantVars()) {
-			if (contains(qf->subformula()->freeVars(), var) || var->sort() == NULL || (_structure != NULL && _structure->inter(var->sort())->empty())) {
+			if (contains(qf->subformula()->freeVars(), var) || var->sort() == NULL || _structure==NULL || _structure->inter(var->sort())->empty()) {
 				remainingvars.insert(var);
 			}
 		}
@@ -170,7 +167,8 @@ protected:
 			if (contains(rule->head()->freeVars(), var)
 					|| contains(rule->body()->freeVars(), var)
 					|| var->sort() == NULL
-					|| (_structure != NULL && _structure->inter(var->sort())->empty())) {
+					|| _structure==NULL
+					|| _structure->inter(var->sort())->empty()) {
 				remainingvars.insert(var);
 			}
 		}
