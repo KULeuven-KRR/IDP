@@ -1715,11 +1715,14 @@ const FOBDD* FOBDDManager::makeMore(bool goal, const FOBDD* bdd, const std::set<
 		return bdd;
 	}
 	SymbolCollector sc(shared_from_this());
-	auto goalbdd = goal ? _truebdd : _falsebdd;
 	auto kernelsymbols = sc.collectSymbols(bdd->kernel());
 	for (auto sym : symbolsToRemove) {
 		if (kernelsymbols.find(sym) != kernelsymbols.end()) {
-			return goalbdd;
+			if(goal){
+				return makeMore(goal, disjunction(bdd->truebranch(), bdd->falsebranch()), symbolsToRemove);
+			}else{
+				return makeMore(goal, conjunction(bdd->truebranch(), bdd->falsebranch()), symbolsToRemove);
+			}
 		}
 	}
 	auto newtrue = makeMore(goal, bdd->truebranch(), symbolsToRemove);
