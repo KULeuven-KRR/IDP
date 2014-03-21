@@ -25,6 +25,10 @@ if(WITHGECODE)
 	addToCXX("-D WITHGECODE")
 endif()
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STRICT_ANSI__")
+endif()
+
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/safeint"
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
@@ -128,10 +132,10 @@ if(${BUILDTESTS})
 		addMXTest(nobounds nobounds.cpp) 
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
-		addMXTest(focard focard.cpp)
+        addMXTest(focard focard.cpp)
 		if(WITHXSB)
 		    addMXTest(xsbtest definitionWithXSBtests.cpp)
-		    addMXTest(approxdefs approxdefsmx.cpp)
+			addMXTest(approxdefs approxdefsmx.cpp)
 		endif()
 
 		add_executable(slow ${MXTESTS}/slow.cpp ${MXINCLUDES})
