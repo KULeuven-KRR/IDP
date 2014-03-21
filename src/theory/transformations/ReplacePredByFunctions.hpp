@@ -13,15 +13,22 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "IncludeComponents.hpp"
 
+/**
+ * Given a functional dependency <P,domainindices,codomainindicates,partial>
+ * 		=> each of the arguments of P at a codomainindex functionally depends only on the arguments of P at the domainindices.
+ * 			The dependency is partial if partial is true
+ *
+ * 		The transformation replaces every occurrence of P with those new functions.
+ */
 class ReplacePredByFunctions: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	Vocabulary* vocabulary;
 	Predicate* _predToReplace;
 	std::set<int> _domainindices;
-	std::map<int, Function*> _index2function;
+	std::map<int, Function*> _index2function; // Which function was introduced for which argument (codomain)index of _predToReplace
 
-	std::vector<Rule*> _rules;
+	std::vector<Rule*> _rules; // If the symbol is defined, we might possibly have to introduce multiple rules if there are multiple functions
 
 public:
 	template<typename T>
