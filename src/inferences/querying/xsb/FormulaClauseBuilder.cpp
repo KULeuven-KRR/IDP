@@ -181,7 +181,7 @@ void FormulaClauseBuilder::visit(const EqChainForm* ecf) {
 		_parent->addVariables(term->variables());
 	} else {
 		// Standard case: treat as conjunction / disjunction of comparisons
-		auto boolform = FormulaUtils::splitComparisonChains(ecf->cloneKeepVars());
+		auto boolform = FormulaUtils::splitComparisonChains((Formula*)ecf->cloneKeepVars());
 		boolform->accept(this);
 	}
 }

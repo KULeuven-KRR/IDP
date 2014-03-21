@@ -59,7 +59,7 @@ class CombineAggregates;
 class AddMarkers;
 class ReplacePredByPred;
 class ReplacePredByFunctions;
-class ReplaceVariableByFuncTerm;
+class ReplaceVariableUsingEqualities;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -130,7 +130,7 @@ class ReplaceVariableByFuncTerm;
 		friend class CollectSymbolOccurences;\
 		friend class AddMarkers;\
 		friend class ReplaceLTCSymbols;\
-		friend class ReplaceVariableByFuncTerm; \
+		friend class ReplaceVariableUsingEqualities; \
 		friend class ReplacePredByFunctions;\
 		friend class Simplify;\
 		friend class RemoveQuantificationsOverSort;\

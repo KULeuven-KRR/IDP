@@ -57,7 +57,7 @@
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "transformations/ReplacePredByPred.hpp"
-#include "transformations/ReplaceVariableByFuncTerm.hpp"
+#include "transformations/ReplaceVariablesUsingEqualities.hpp"
 #include "transformations/ReplacePredByFunctions.hpp"
 #include "transformations/Simplify.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
@@ -437,16 +437,8 @@ void deriveSorts(Vocabulary* v, Formula* f) {
 	transform<DeriveSorts>(f, v, true);
 }
 
-Formula* flatten(Formula* f) {
-	return transform<Flatten, Formula*>(f);
-}
-
 Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Formula*>(f, str, definedsymbols, unnestall, cpsupport, con);
-}
-
-Formula* pushNegations(Formula* f) {
-	return transform<PushNegations, Formula*>(f);
 }
 
 Formula* removeEquivalences(Formula* f) {
@@ -473,11 +465,6 @@ void removeInterpretationOfDefinedSymbols(const Definition* d, Structure* s) {
 Theory* replaceWithNestedTseitins(Theory* theory) {
 	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);
 }
-
-Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
-	return transform<SplitComparisonChains, Formula*>(f, v);
-}
-
 Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
 }
@@ -520,11 +507,12 @@ Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* the
 	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
 }
 
-Theory* replaceVariableByDefiningFunctionTerms(Theory* t) {
-	return transform<ReplaceVariableByFuncTerm, Theory*>(t);
-}
-Formula* replaceVariableByDefiningFunctionTerms(Formula* t) {
-	return transform<ReplaceVariableByFuncTerm, Formula*>(t);
+template<class T>
+T replaceVariablesUsingEqualities(T t) {
+	t = flatten(t);
+	t = splitComparisonChains(t);
+	t = pushNegations(t);
+	return transform<ReplaceVariableUsingEqualities, T>(t);
 }
 
 Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
@@ -573,9 +561,17 @@ void addIfCompletion(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-void flatten(AbstractTheory* t) {
-	auto newt = transform<Flatten, AbstractTheory*>(t);
-	Assert(newt==t);
+template<class T>
+T flatten(T t) {
+	return transform<Flatten, T>(t);
+}
+template<class T>
+T pushNegations(T t) {
+	return transform<PushNegations, T>(t);
+}
+template<class T>
+T splitComparisonChains(T t, Vocabulary* voc) {
+	return transform<SplitComparisonChains, T>(t, voc);
 }
 
 Theory* graphFuncsAndAggs(Theory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
@@ -583,11 +579,6 @@ Theory* graphFuncsAndAggs(Theory* t, const Structure* str, const std::set<PFSymb
 }
 AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, definedsymbols, unnestall, cpsupport, con);
-}
-
-void pushNegations(AbstractTheory* t) {
-	auto newt = transform<PushNegations, AbstractTheory*>(t);
-	Assert(newt==t);
 }
 
 template<class T>
@@ -642,10 +633,6 @@ Theory* eliminateUniversalQuantifications(Theory* t) {
 
 AbstractTheory* removeEquivalences(AbstractTheory* t) {
 	return transform<RemoveEquivalences, AbstractTheory*>(t);
-}
-
-AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
-	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str) {
@@ -945,9 +932,20 @@ AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s) 
 
 }
 
+template Formula* FormulaUtils::flatten(Formula*);
+template Theory* FormulaUtils::flatten(Theory*);
+template AbstractTheory* FormulaUtils::flatten(AbstractTheory*);
+template Formula* FormulaUtils::pushNegations(Formula*);
+template Theory* FormulaUtils::pushNegations(Theory*);
+template AbstractTheory* FormulaUtils::pushNegations(AbstractTheory*);
+template Formula* FormulaUtils::splitComparisonChains(Formula*, Vocabulary*);
+template Theory* FormulaUtils::splitComparisonChains(Theory*, Vocabulary*);
+template AbstractTheory* FormulaUtils::splitComparisonChains(AbstractTheory*, Vocabulary*);
 template Term* TermUtils::simplify(Term* t, const Structure* s);
 template Formula* FormulaUtils::simplify(Formula* t, const Structure* s);
 template Theory* FormulaUtils::simplify(Theory* t, const Structure* s);
 template AbstractTheory* FormulaUtils::simplify(AbstractTheory* t, const Structure* s);
+template Formula* FormulaUtils::replaceVariablesUsingEqualities(Formula* t);
+template Theory* FormulaUtils::replaceVariablesUsingEqualities(Theory* t);
 template Theory* FormulaUtils::improveTheoryForInference(Theory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
 template AbstractTheory* FormulaUtils::improveTheoryForInference(AbstractTheory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);

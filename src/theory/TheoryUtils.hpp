@@ -135,17 +135,11 @@ void deriveSorts(Vocabulary* v, Formula* f);
  */
 double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,const  Structure* structure);
 
-/** Flatten all nested formulas */
-Formula* flatten(Formula*);
-
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas
  *  definedsymbols parameter:
  *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
  *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
-
-/** Push negations inside */
-Formula* pushNegations(Formula* f);
 
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
@@ -161,13 +155,10 @@ Theory* replaceWithNestedTseitins(Theory* theory);
 Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory);
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory);
 
-Theory* replaceVariableByDefiningFunctionTerms(Theory* t);
-Formula* replaceVariableByDefiningFunctionTerms(Formula* t);
+template<class T>
+T replaceVariablesUsingEqualities(T t);
 
 Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions);
-
-/** Recursively rewrite all EqChainForms in the given formula to BoolForms */
-Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
@@ -227,7 +218,14 @@ void addFuncConstraints(TheoryComponent*, Vocabulary*, std::map<Function*, Formu
 void addFuncConstraints(Term*, Vocabulary*, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
-void flatten(AbstractTheory*);
+template<class T>
+T flatten(T);
+/** Push negations inside */
+template<class T>
+T pushNegations(T);
+/** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
+template<class T>
+T splitComparisonChains(T, Vocabulary* voc = NULL);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>')
@@ -242,9 +240,6 @@ AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 
 /** Count the number of subformulas in the theory */
 int nrSubformulas(AbstractTheory*);
-
-/** Push negations inside */
-void pushNegations(AbstractTheory*);
 
 template<class T>
 T simplify(T theory, const Structure* structure);
@@ -263,9 +258,6 @@ Theory* eliminateUniversalQuantifications(Theory*);
 
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);
-
-/** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
-AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL);

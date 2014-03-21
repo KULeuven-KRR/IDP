@@ -29,7 +29,7 @@ Formula* CardConstrToFO::visit(EqChainForm* ef) {
 		}
 	}
 	if (needsSplit) {
-		auto newformula = FormulaUtils::splitComparisonChains(ef);
+		auto newformula = FormulaUtils::splitComparisonChains((Formula*)ef);
 		return newformula->accept(this);
 	} else {
 		return traverse(ef);

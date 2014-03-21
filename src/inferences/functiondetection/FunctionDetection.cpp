@@ -98,13 +98,11 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 				}
 			}
 		}
-		theory = FormulaUtils::replaceVariableByDefiningFunctionTerms(theory);
+		theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
 		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
 
-		// TODO fix transformations so no duplicate code is necessary (which is incomplete anyway)
-		FormulaUtils::pushNegations(theory);
-		FormulaUtils::flatten(theory);
-		theory = FormulaUtils::replaceVariableByDefiningFunctionTerms(theory);
+		// TODO fix transformations so it does not have to be called multiple times (which is incomplete anyway)
+		theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
 		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
 	}
 

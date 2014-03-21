@@ -14,15 +14,15 @@
 #include "IncludeComponents.hpp"
 
 /**
- * Transformation which looks for variables which will only make a formula true if it is equal to a function term.
- * In that case, it replaces all occurrences of the variable with the function term.
+ * Transformation which looks for variables which will only make a formula true if it is equal to another term.
+ * In that case, it replaces all occurrences of the variable with the other term.
  *
- * NOTE: prior needs FLATTENED, NEG PUSHED and EQCHAIN removal!
- * NOTE: afterwards it is best to run an unused-variable elimination transformation.
+ * NOTE: requires flattened, negation pushed and eqchain free input
+ * NOTE: afterwards it is best to the simplify transformation.
  *
  * FIXME Should folding of partial terms introduce EXISTS?
  */
-class ReplaceVariableByFuncTerm: public TheoryMutatingVisitor {
+class ReplaceVariableUsingEqualities: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	std::set<PredForm*> removals;
