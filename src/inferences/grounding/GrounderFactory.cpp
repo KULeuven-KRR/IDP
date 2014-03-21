@@ -1396,6 +1396,8 @@ const FOBDD* GrounderFactory::simplify(const vector<Variable*>& fovars, std::sha
 	}
 	if (approxastrue) {
 		bdd = manager->makeMoreTrue(bdd, definedsymbols);
+			// Defined symbols have to be removed because the grounding of a definition should not simplify the body when it implies the head has to be true (could lose loops)
+			// NOTE: this is not a proper fix, as it is not done when simplify is not called and also drops unnecessarily much information
 		bdd = manager->makeMoreTrue(bdd, bddvars, { }, structure, cost_per_answer);
 	} else {
 		bdd = manager->makeMoreFalse(bdd, definedsymbols);
