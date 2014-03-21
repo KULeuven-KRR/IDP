@@ -51,35 +51,36 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 	}
 	auto somereplaced = false;
 
-	for (auto name2pred : origVoc->getPreds()) { // TODO this does NOT cover everything if we start introducing reduced predicates
-		CHECKTERMINATION;
-		auto replaced = false;
-		auto pred = name2pred.second;
-		if (pred->overloaded() || pred->builtin() || pred->arity()==0) {
-			continue;
-		}
-
-		std::vector<Variable*> predvars;
-		for (uint i = 0; i < pred->arity(); i++) {
-			auto var = new Variable(pred->sort(i));
-			predvars.push_back(var);
-		}
-		auto subsetgen = SubsetGenerator<Variable*, VarCompare>(predvars, min((int)pred->arity()-1, 3));
-
-		for(auto subset : subsetgen){
-			if(replaced){
-				break;
+	for (auto pn : origVoc->getPreds()) { // TODO this does NOT cover everything if we start introducing reduced predicates
+		for (auto pred : pn.second->nonbuiltins()) {
+			CHECKTERMINATION;
+			auto replaced = false;
+			if (pred->arity() == 0) {
+				continue;
 			}
-			replaced = tryToTransform(theory, pred, predvars, subset, false);
-			if(replaced){
-				break;
-			}
-			replaced = tryToTransform(theory, pred, predvars, subset, true);
-		}
 
-		if(replaced){
-			somereplaced = true;
-			continue;
+			std::vector<Variable*> predvars;
+			for (uint i = 0; i < pred->arity(); i++) {
+				auto var = new Variable(pred->sort(i));
+				predvars.push_back(var);
+			}
+			auto subsetgen = SubsetGenerator<Variable*, VarCompare>(predvars, min((int) pred->arity() - 1, 3));
+
+			for (auto subset : subsetgen) {
+				if (replaced) {
+					break;
+				}
+				replaced = tryToTransform(theory, pred, predvars, subset, false);
+				if (replaced) {
+					break;
+				}
+				replaced = tryToTransform(theory, pred, predvars, subset, true);
+			}
+
+			if (replaced) {
+				somereplaced = true;
+				continue;
+			}
 		}
 	}
 
