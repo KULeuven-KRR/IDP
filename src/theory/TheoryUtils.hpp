@@ -147,9 +147,6 @@ Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSy
 /** Push negations inside */
 Formula* pushNegations(Formula* f);
 
-/** Calculate all operations on domainelements */
-Formula* calculateArithmetic(Formula* f, const Structure* s) ;
-
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
@@ -163,14 +160,6 @@ Theory* replaceWithNestedTseitins(Theory* theory);
 
 Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory);
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory);
-
-Theory* removeValidQuantifications(Theory* theory, Structure* structure);
-Formula* removeValidQuantifications(Formula* formula, Structure* structure);
-Theory* removeValidQuantifications(Theory* theory, bool assumeTypesNotEmpty);
-Formula* removeValidQuantifications(Formula* formula, bool assumeTypesNotEmpty);
-
-Theory* removeValidAtoms(Theory* t);
-Formula* removeValidAtoms(Formula* t);
 
 Theory* replaceVariableByDefiningFunctionTerms(Theory* t);
 Formula* replaceVariableByDefiningFunctionTerms(Formula* t);
@@ -257,9 +246,8 @@ int nrSubformulas(AbstractTheory*);
 /** Push negations inside */
 void pushNegations(AbstractTheory*);
 
-/** Calculate all operations on domainelements */
 template<class T>
-T calculateArithmetic(T theory, const Structure* structure);
+T simplify(T theory, const Structure* structure);
 
 /** Applies some useful transformations to reduce the grounding size of the theory **/
 template<class T>
@@ -349,6 +337,9 @@ bool containsSymbol(const PFSymbol* s, const Term* f);
 
 /** Derive sorts in the given term */
 void deriveSorts(Vocabulary*, Term*);
+
+template<class T>
+T simplify(T theory, const Structure* structure);
 
 /** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
  * 	If no bounds can be derived, NULL is returned for both bounds

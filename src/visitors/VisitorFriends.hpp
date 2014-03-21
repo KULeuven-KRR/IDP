@@ -60,8 +60,6 @@ class AddMarkers;
 class ReplacePredByPred;
 class ReplacePredByFunctions;
 class ReplaceVariableByFuncTerm;
-class RemoveValidTerms;
-class RemoveValidQuantifications;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -101,7 +99,6 @@ class RemoveValidQuantifications;
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
-		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class EliminateUniversalQuantifications; \
@@ -121,7 +118,6 @@ class RemoveValidQuantifications;
 		friend class FormulaClauseBuilder; \
 		friend class ReplaceNestedWithTseitinTerm;\
 		friend class ConstructNewReducedForm;\
-		friend class RemoveValidQuantifications;\
 		friend class TopDownApproximatingDefinition;\
 		friend class ContainedVariables;\
 		friend class CombineAggregates;\
@@ -136,7 +132,7 @@ class RemoveValidQuantifications;
 		friend class ReplaceLTCSymbols;\
 		friend class ReplaceVariableByFuncTerm; \
 		friend class ReplacePredByFunctions;\
-		friend class RemoveValidTerms;\
+		friend class Simplify;\
 		friend class RemoveQuantificationsOverSort;\
 		friend class CardConstrToFO;\
 		friend class SubstituteVarWithVar;

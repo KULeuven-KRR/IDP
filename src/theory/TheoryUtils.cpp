@@ -54,14 +54,12 @@
 #include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
-#include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
 #include "transformations/ReplacePredByPred.hpp"
 #include "transformations/ReplaceVariableByFuncTerm.hpp"
 #include "transformations/ReplacePredByFunctions.hpp"
-#include "transformations/RemoveValidTerms.hpp"
-#include "transformations/RemoveValidQuantifications.hpp"
+#include "transformations/Simplify.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
@@ -122,6 +120,11 @@ bool isCard(Term* t){
 	}
 
 	return false;
+}
+
+template<class T>
+T simplify(T t, const Structure* structure){
+	return transform<Simplify, T>(t, structure);
 }
 
 bool approxTwoValued(const Term* t, const Structure* str) {
@@ -446,10 +449,6 @@ Formula* pushNegations(Formula* f) {
 	return transform<PushNegations, Formula*>(f);
 }
 
-Formula* calculateArithmetic(Formula* f, const Structure* s) {
-	return transform<CalculateKnownArithmetic, Formula*>(f,s);
-}
-
 Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
@@ -519,26 +518,6 @@ Formula* pushQuantifiers(Formula* t) {
 
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory){
 	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
-}
-
-Theory* removeValidAtoms(Theory* t) {
-	return transform<RemoveValidTerms, Theory*>(t);
-}
-Formula* removeValidAtoms(Formula* t) {
-	return transform<RemoveValidTerms, Formula*>(t);
-}
-
-Theory* removeValidQuantifications(Theory* theory, Structure* structure){
-	return transform<RemoveValidQuantifications, Theory*>(theory, structure);
-}
-Formula* removeValidQuantifications(Formula* formula, Structure* structure){
-	return transform<RemoveValidQuantifications, Formula*>(formula, structure);
-}
-Theory* removeValidQuantifications(Theory* theory, bool assumeTypesNotEmpty){
-	return transform<RemoveValidQuantifications, Theory*>(theory, assumeTypesNotEmpty);
-}
-Formula* removeValidQuantifications(Formula* formula, bool assumeTypesNotEmpty){
-	return transform<RemoveValidQuantifications, Formula*>(formula, assumeTypesNotEmpty);
 }
 
 Theory* replaceVariableByDefiningFunctionTerms(Theory* t) {
@@ -612,14 +591,14 @@ void pushNegations(AbstractTheory* t) {
 }
 
 template<class T>
-T calculateArithmetic(T t, const Structure* s) {
-	return transform<CalculateKnownArithmetic, T>(t,s);
+T simplify(T t, const Structure* s) {
+	return transform<Simplify, T>(t,s);
 }
 
 template<class T>
 T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent) {
 	FormulaUtils::combineAggregates(theory);
-	theory = FormulaUtils::calculateArithmetic(theory, structure);
+	theory = FormulaUtils::simplify(theory, structure);
 
 	if (skolemize && nbmodelsequivalent) {
 		// TODO: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
@@ -966,7 +945,9 @@ AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s) 
 
 }
 
-template Theory* FormulaUtils::calculateArithmetic(Theory* t, const Structure* s);
-template AbstractTheory* FormulaUtils::calculateArithmetic(AbstractTheory* t, const Structure* s);
+template Term* TermUtils::simplify(Term* t, const Structure* s);
+template Formula* FormulaUtils::simplify(Formula* t, const Structure* s);
+template Theory* FormulaUtils::simplify(Theory* t, const Structure* s);
+template AbstractTheory* FormulaUtils::simplify(AbstractTheory* t, const Structure* s);
 template Theory* FormulaUtils::improveTheoryForInference(Theory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
 template AbstractTheory* FormulaUtils::improveTheoryForInference(AbstractTheory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);

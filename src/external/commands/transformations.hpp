@@ -58,7 +58,7 @@ public:
 class RemoveValidQuantificationsInference: public TheoryStructureBase {
 public:
 	RemoveValidQuantificationsInference()
-			: TheoryStructureBase("removequantifications", "Removes quantifications which have no effect on model-equivalence given a structure possibly interpreting the sorts.") {
+			: TheoryStructureBase("simplify", "Simplifies the theory, removing valid formulas, computing arithmetic, etc..") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 
@@ -67,7 +67,7 @@ public:
 		if(theory==NULL){
 			return nilarg();
 		}
-		FormulaUtils::removeValidQuantifications(theory, get<1>(args));
+		FormulaUtils::simplify(theory, get<1>(args));
 		return nilarg();
 	}
 };

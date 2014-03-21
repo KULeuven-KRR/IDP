@@ -99,15 +99,13 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 			}
 		}
 		theory = FormulaUtils::replaceVariableByDefiningFunctionTerms(theory);
-		theory = FormulaUtils::removeValidAtoms(theory);
-		theory = FormulaUtils::removeValidQuantifications(theory, assumeTypesNotEmpty);
+		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
 
 		// TODO fix transformations so no duplicate code is necessary (which is incomplete anyway)
 		FormulaUtils::pushNegations(theory);
 		FormulaUtils::flatten(theory);
 		theory = FormulaUtils::replaceVariableByDefiningFunctionTerms(theory);
-		theory = FormulaUtils::removeValidAtoms(theory);
-		theory = FormulaUtils::removeValidQuantifications(theory, assumeTypesNotEmpty);
+		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
 	}
 
 	theory = FormulaUtils::skolemize(theory);
