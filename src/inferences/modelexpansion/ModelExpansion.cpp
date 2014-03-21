@@ -217,9 +217,9 @@ MXResult ModelExpansion::expand() const {
 		if(mx->getNbModelsFound()>0){
 			logActionAndValue("state", "satisfiable");
 		}
-		if (_minimizeterm != NULL && mx->getBestSolutionsFound().size()>0){
-			logActionAndValue("bestvalue", mx->getBestValueFound());
-		}
+	//	if (_minimizeterm != NULL && mx->getBestSolutionsFound().size()>0){
+	//		logActionAndValue("bestvalue", mx->getBestValueFound());
+	//	}
 		std::clog.flush();
 		// TODO solving time
 	}
@@ -258,24 +258,25 @@ MXResult ModelExpansion::expand() const {
 		if (not unsat) {
 			Assert(mx->getBestSolutionsFound().size()>0);
 			auto list = mx->getBestSolutionsFound();
-			auto bestvalue = mx->getBestValueFound();
-			result._optimalvalue = bestvalue;
+			for (auto i = list.cbegin(); i < list.cend(); ++i) {
+				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc, postprocessdefs));
+			}
+			auto bestvalue = evaluate(_minimizeterm, solutions.front());
+			Assert(bestvalue!=NULL && bestvalue->type()==DomainElementType::DET_INT);
+			result._optimalvalue = bestvalue->value()._int;
 			if (mxverbosity > 0) {
 				logActionAndValue("bestvalue", bestvalue);
 				logActionAndValue("nrmodels", list.size());
 				logActionAndTimeSince("total-solving-time", startTime);
 			}
 			if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
-				logActionAndValue("bestvalue", bestvalue);
+				logActionAndValue("bestvalue", result._optimalvalue);
 				if(result._optimumfound){
 					logActionAndValue("state", "optimal");
 				}else{
 					logActionAndValue("state", "satisfiable");
 				}
 				std::clog.flush();
-			}
-			for (auto i = list.cbegin(); i < list.cend(); ++i) {
-				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc, postprocessdefs));
 			}
 		}
 	} else if(not unsat){
