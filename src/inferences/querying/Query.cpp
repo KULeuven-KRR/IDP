@@ -202,7 +202,7 @@ bool evaluate(Formula* form, const Structure* structure){
 
 const DomainElement* evaluate(Term* term, const Structure* structure){
 	if(not structure->approxTwoValued()){ // TODO can be improved
-		throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+		throw notyetimplemented("Cannot evaluate a term in a three-valued structure");
 	}
 	if(not term->freeVars().empty()){
 		throw IdpException("The input term had free variables");
