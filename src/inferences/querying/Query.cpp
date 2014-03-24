@@ -205,7 +205,7 @@ const DomainElement* evaluate(Term* term, const Structure* structure){
 		throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
 	}
 	if(not term->freeVars().empty()){
-		throw IdpException("The input formula had free variables");
+		throw IdpException("The input term had free variables");
 	}
 
 	auto var = Gen::var(term->sort());
