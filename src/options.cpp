@@ -176,6 +176,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::EXISTS_ONLYONELEFT_APPROX, "existsonlyoneleftapprox", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::POSTPROCESS_DEFS, "postprocessdefs", boolvalues, true, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::SPLIT_DEFS, "splitdefs", boolvalues, true, PrintBehaviour::DONOTPRINT);//Only for internal use for the moment: serves for avoiding loops in bootstrapping
 		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::LIFTEDUNITPROPAGATION, "liftedunitpropagation", boolvalues, true, PrintBehaviour::PRINT);
