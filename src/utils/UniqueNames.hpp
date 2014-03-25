@@ -1,4 +1,6 @@
 #pragma once
+#include "common.hpp"
+#include "IncludeComponents.hpp"
 
 #include <map>
 
@@ -9,6 +11,9 @@ private:
 	std::map<T,int> tounique;
 	std::map<int,T> fromunique;
 public:
+	UniqueNames(){
+		id = 0;
+	}
 	T getOriginal(int id){
 		auto it = fromunique.find(id);
 		if(it==fromunique.end()){
@@ -29,3 +34,11 @@ public:
 		}
 	}
 };
+
+std::string createName();
+
+template<class T>
+const DomainElement* mapName(T elem, UniqueNames<T>& uniquenames) {
+	return createDomElem(uniquenames.getUnique(elem));
+}
+
