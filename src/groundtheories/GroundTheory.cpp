@@ -397,6 +397,7 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 		intweightlist newweights;
 		for (uint i=0; i != term->varids().size(); ++i) {
 			auto varid = term->varids()[i];
+			auto oldcondition = term->conditions()[i];
 			auto weight1 = term->weights()[i];
 			auto cprelation = translator()->cprelation(varid);
 			if (cprelation != NULL) {
@@ -413,17 +414,21 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 				}else if(leftassetterm!=NULL
 						and leftassetterm->type()==AggFunction::PROD
 						and cprelation->comp() == CompType::EQ
-						and leftassetterm->varids().size()==2){
+						and leftassetterm->varids().size()==2){ // of the form varid = prod{(true,int),(true, term)} OR varid = prod{(true,int),(cond,term)} and oldcondition = true
 					auto varone = leftassetterm->varids()[0];
 					auto vartwo = leftassetterm->varids()[1];
-					if(translator()->domain(varone)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[0]==_true){
+					if(translator()->domain(varone)->size()==tablesize(TableSizeType::TST_EXACT, 1)
+							&& leftassetterm->conditions()[0]==_true
+							&& (oldcondition==_true || leftassetterm->conditions()[1]==_true)){
 						newvarids.push_back(vartwo);
-						newconditions.push_back(leftassetterm->conditions()[1]);
+						newconditions.push_back(oldcondition==_true?leftassetterm->conditions()[1]:oldcondition);
 						newweights.push_back(weight1 * (*translator()->domain(varone)->begin()).front()->value()._int);
 						continue;
-					}else if(translator()->domain(vartwo)->size()==tablesize(TableSizeType::TST_EXACT, 1) && leftassetterm->conditions()[1]==_true){
+					}else if(translator()->domain(vartwo)->size()==tablesize(TableSizeType::TST_EXACT, 1)
+							&& leftassetterm->conditions()[1]==_true
+							&& (oldcondition==_true || leftassetterm->conditions()[0]==_true)){
 						newvarids.push_back(varone);
-						newconditions.push_back(leftassetterm->conditions()[0]);
+						newconditions.push_back(oldcondition==_true?leftassetterm->conditions()[0]:oldcondition);
 						newweights.push_back(weight1 * (*translator()->domain(vartwo)->begin()).front()->value()._int);
 						continue;
 					}

@@ -1,0 +1,20 @@
+vocabulary V{
+	type X isa int
+	p
+	f:X
+	type XX isa int
+	c:XX
+}
+theory T:V{
+	f>5.
+	c=sum{: p : -f}.
+	c=-6.
+}
+structure S:V{
+	X = {1..10}
+	XX = {-100..100}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1;
+}
