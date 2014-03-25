@@ -44,6 +44,7 @@ class VarTerm;
 class EnumSetExpr;
 class Term;
 class AggTerm;
+class PredTable;
 
 namespace Gen {
 
@@ -77,6 +78,8 @@ Formula& forall(const varset&, Formula&);
 Formula& exists(const varset& vars, Formula& formula);
 PredForm& atom(PFSymbol*, const std::vector<Variable*>&);
 PredForm& atom(PFSymbol*, const ElementTuple&);
+
+PredTable* predtable(const SortedElementTable& table, const Universe& universe);
 
 void add(Vocabulary*, const std::vector<Sort*>);
 void add(Vocabulary*, const std::vector<PFSymbol*>);
