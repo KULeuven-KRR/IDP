@@ -961,25 +961,29 @@ void Insert::openstructure(const string& sname, YYLTYPE l) {
 
 void Insert::closestructure(bool assumeClosedWorld) {
 	Assert(_currstructure);
-	finalizePendingAssignments();
-	_currstructure->checkAndAutocomplete();
-	if (not getOption(BoolType::ASSUMECONSISTENTINPUT)) {
-		_currstructure->sortCheck();
-		_currstructure->functionCheck();
-	}
-	if (assumeClosedWorld) {
-		for (auto pred : _currstructure->vocabulary()->getPreds()) {
-			for (auto predToSet : pred.second->nonbuiltins()) {
-				makeUnknownsFalse(_currstructure->inter(predToSet));
+
+	if(getGlobal()->getErrorCount()==0){ // If the vocabulary might have errors, we should not do complex manipulations
+		finalizePendingAssignments();
+		_currstructure->checkAndAutocomplete();
+		if (not getOption(BoolType::ASSUMECONSISTENTINPUT)) {
+			_currstructure->sortCheck();
+			_currstructure->functionCheck();
+		}
+		if (assumeClosedWorld) {
+			for (auto pred : _currstructure->vocabulary()->getPreds()) {
+				for (auto predToSet : pred.second->nonbuiltins()) {
+					makeUnknownsFalse(_currstructure->inter(predToSet));
+				}
+			}
+			for (auto func : _currstructure->vocabulary()->getFuncs()) {
+				for (auto funcToSet : func.second->nonbuiltins()) {
+					makeUnknownsFalse(_currstructure->inter(funcToSet)->graphInter());
+				}
 			}
 		}
-		for (auto func : _currstructure->vocabulary()->getFuncs()) {
-			for (auto funcToSet : func.second->nonbuiltins()) {
-				makeUnknownsFalse(_currstructure->inter(funcToSet)->graphInter());
-			}
-		}
+		_currstructure->clean();
 	}
-	_currstructure->clean();
+
 	parsedpreds.clear();
 	parsedfuncs.clear();
 	if (_currspace->isGlobal()) {
