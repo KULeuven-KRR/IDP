@@ -1,0 +1,16 @@
+vocabulary V {
+	type T
+	type Z isa T contains T
+}
+
+theory T : V {
+}
+
+structure S : V {
+	T = {a;b}
+	Z = {a;b}
+}
+
+procedure main(){
+	return 1
+}
