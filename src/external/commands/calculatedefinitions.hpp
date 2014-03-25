@@ -13,14 +13,14 @@
 
 #include "commandinterface.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
+#include "inferences/definitionevaluation/refineStructureWithDefinitions.hpp"
 #include "errorhandling/error.hpp"
 #include <vector>
 
-typedef TypedInference<LIST(AbstractTheory*, Structure*)> CalculateDefinitionInferenceBase;
-class CalculateDefinitionInference: public CalculateDefinitionInferenceBase {
+class CalculateDefinitionInference: public TheoryStructureBase {
 public:
 	CalculateDefinitionInference()
-			: CalculateDefinitionInferenceBase("calculatedefinitions",
+			: TheoryStructureBase("calculatedefinitions",
 					"Make the structure more precise than the given one by evaluating all definitions with known open symbols.") {
 		setNameSpace(getInferenceNamespaceName());
 	}
@@ -43,6 +43,34 @@ public:
 		for (auto def : sols._calculated_definitions) {
 			def->recursiveDelete();
 		}
+		return InternalArgument(sols._calculated_model);
+	}
+};
+
+class RefineDefinitionsInference: public TheoryStructureBase {
+public:
+	RefineDefinitionsInference()
+			: TheoryStructureBase("refinedefinitions",
+					"Make the structure more precise than the given one by evaluating all definitions as much as possible for the given open symbols.") {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto t = get<0>(args);
+		Theory* theory = NULL;
+		if (isa<Theory>(*t)) {
+			theory = (dynamic_cast<Theory*>(t))->clone(); //Because the doCalculateDefinitions Inferences changes the theory.
+		} else {
+			Error::error("Can only calculate definitions with a non-ground theory.");
+			return nilarg();
+		}
+		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
+		auto sols = refineStructureWithDefinitions::doRefineStructureWithDefinitions(theory, get<1>(args)->clone());
+		if(not sols._hasModel ){
+			return InternalArgument();
+		}
+		Assert(sols._hasModel and sols._calculated_model != NULL);
+
 		return InternalArgument(sols._calculated_model);
 	}
 };
