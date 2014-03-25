@@ -37,12 +37,10 @@ struct DefinitionCalculationResult {
 	Structure* _calculated_model;
 	std::vector<Definition*> _calculated_definitions;
 
-	DefinitionCalculationResult() :
-		_calculated_definitions()
-	{
-		_hasModel = false;
-		_calculated_model = NULL;
-	}
+	DefinitionCalculationResult(Structure* structure) :
+		_hasModel(false),
+		_calculated_model(structure),
+		_calculated_definitions() {};
 
 
 };
@@ -72,6 +70,13 @@ public:
 		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
 	}
 
+
+	static void removeLoopsForStableSemantics(std::map<Definition*, std::set<PFSymbol*> > opens);
+
+#ifdef WITHXSB
+	static bool determineXSBUsage(Definition* definition);
+#endif
+
 private:
 	DefinitionCalculationResult calculateKnownDefinitions(Theory* theory, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
@@ -81,10 +86,4 @@ private:
 
 	DefinitionCalculationResult calculateDefinition(Definition* definition, Structure* structure,
 			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
-
-	void removeLoopsForStableSemantics(std::map<Definition*, std::set<PFSymbol*> > opens) const;
-
-#ifdef WITHXSB
-	bool determineXSBUsage(Definition* definition) const ;
-#endif
 };

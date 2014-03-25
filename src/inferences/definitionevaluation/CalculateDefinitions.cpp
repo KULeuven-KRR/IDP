@@ -37,8 +37,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
-	DefinitionCalculationResult result;
-	result._calculated_model=structure;
+	DefinitionCalculationResult result(structure);
 #ifdef WITHXSB
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
@@ -183,11 +182,10 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	auto opens = DefinitionUtils::opens(theory->definitions());
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
-		removeLoopsForStableSemantics(opens);
+		CalculateDefinitions::removeLoopsForStableSemantics(opens);
 	}
 
-	DefinitionCalculationResult result;
-	result._calculated_model = structure; // Set first intermediate result
+	DefinitionCalculationResult result(structure);
 	result._hasModel = true;
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
@@ -200,7 +198,11 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 			// Remove opens that have a two-valued interpretation
 			auto toRemove = DefinitionUtils::twoValuedOpens(currentdefinition->first, structure);
-			currentdefinition->second.erase(toRemove.begin(),toRemove.end());
+			for (auto symbol : toRemove) {
+				if (currentdefinition->second.find(symbol) != currentdefinition->second.end()) {
+					currentdefinition->second.erase(symbol);
+				}
+			}
 
 			// If no opens are left, calculate the interpretation of the defined atoms
 			if (currentdefinition->second.empty()) {
@@ -214,7 +216,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 				}
 				bool tooexpensive = false;
 #ifdef WITHXSB
-				auto useXSB = determineXSBUsage(definition);
+				auto useXSB = CalculateDefinitions::determineXSBUsage(definition);
 				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
 #else
 				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, false, symbolsToQuery);
@@ -257,7 +259,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 }
 
 void CalculateDefinitions::removeLoopsForStableSemantics(std::map<Definition*,
-		std::set<PFSymbol*> > opens) const {
+		std::set<PFSymbol*> > opens) {
 	bool foundone = false;
 	auto def = opens.begin();
 	while (def != opens.end()) {
@@ -278,7 +280,7 @@ void CalculateDefinitions::removeLoopsForStableSemantics(std::map<Definition*,
 }
 
 #ifdef WITHXSB
-bool CalculateDefinitions::determineXSBUsage(Definition* definition) const {
+bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
 	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");

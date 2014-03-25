@@ -12,6 +12,7 @@
 #include "TheoryUtils.hpp"
 
 #include "IncludeComponents.hpp"
+#include "creation/cppinterface.hpp"
 #include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 #include "information/ApproxCheckTwoValued.hpp"
 #include "fobdds/FoBdd.hpp"
@@ -385,6 +386,19 @@ Formula* calculateArithmetic(Formula* f, const Structure* s) {
 Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
 }
+
+// Change the interpretation of defined symbols such that all elements are unknown
+void removeInterpretationOfDefinedSymbols(const Theory* t, Structure* s) {
+	for (auto def : t->definitions()) {
+		for (auto defsymbol : def->defsymbols()) {
+			auto emptytable1 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+			s->inter(defsymbol)->ct(emptytable1);
+			auto emptytable2 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+			s->inter(defsymbol)->cf(emptytable2);
+		}
+	}
+}
+
 
 Theory* replaceWithNestedTseitins(Theory* theory) {
 	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);

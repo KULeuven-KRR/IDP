@@ -146,6 +146,9 @@ Formula* calculateArithmetic(Formula* f, const Structure* s) ;
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
+/** Remove the interpretation of all defined symbols in the theory (make them completely unknown) */
+void removeInterpretationOfDefinedSymbols(const Theory*, Structure*);
+
 /** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
 Theory* replaceWithNestedTseitins(Theory* theory);
 
