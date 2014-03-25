@@ -5,16 +5,6 @@
 
 extern void parsefile(const std::string&);
 
-std::string createName() {
-	std::stringstream ss;
-	ss << getGlobal()->getNewID();
-	return ss.str();
-}
-
-template<class T>
-const DomainElement* mapName(T elem, UniqueNames<T>& uniquenames) {
-	return createDomElem(uniquenames.getUnique(elem));
-}
 
 std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* theory, Term* term, Structure* inputstructure, Vocabulary* fullvoc, Vocabulary* outputvoc) {
 	if (theory->definitions().empty()) {

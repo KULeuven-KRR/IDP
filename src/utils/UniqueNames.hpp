@@ -1,4 +1,6 @@
 #pragma once
+#include "common.hpp"
+#include "IncludeComponents.hpp"
 
 #include <map>
 
@@ -29,3 +31,11 @@ public:
 		}
 	}
 };
+
+std::string createName();
+
+template<class T>
+const DomainElement* mapName(T elem, UniqueNames<T>& uniquenames) {
+	return createDomElem(uniquenames.getUnique(elem));
+}
+
