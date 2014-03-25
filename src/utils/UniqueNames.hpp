@@ -11,6 +11,9 @@ private:
 	std::map<T,int> tounique;
 	std::map<int,T> fromunique;
 public:
+	UniqueNames(){
+		id = 0;
+	}
 	T getOriginal(int id){
 		auto it = fromunique.find(id);
 		if(it==fromunique.end()){
