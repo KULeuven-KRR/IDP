@@ -13,10 +13,18 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-
 #include <set>
+#include <vector>
 #include <map>
 #include "vocabulary/vocabulary.hpp"
+template<class T>
+class UniqueNames;
+class Options;
+class Vocabulary;
+class Theory;
+class AbstractTheory;
+class Function;
+class Predicate;
 
 /**
  * Split definitions as much as possible. We do this so we can detect more
@@ -38,20 +46,26 @@
  *  under the Well-Founded Semantics.
  */
 
-class SplitDefinitions: public TheoryMutatingVisitor {
-	VISITORFRIENDS()
-private:
-	std::set<PFSymbol*> _curr_opens;
-	std::set<Definition*> _definitions_to_add;
-	std::map<PFSymbol*, std::set<Rule*>> _defsymbol_to_rule;
-	Definition* merge_defs(Definition*, Definition*);
+class SplitDefinitions {
 
 public:
-	template<typename T>
-	T execute(T t) {
-		return t->accept(this);
-	}
-protected:
-	Theory* visit(Theory*);
-	Definition* visit(Definition*);
+	Theory* execute(Theory* t);
+private:
+	std::vector<Definition*> split(Definition* d); //Splits the definition and DELETES it
+	void prepare(); //Prepares all options etcetera
+	void finish(); //Should be ran before exiting! Set back options.
+
+	Structure* turnIntoStructure(Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames);
+
+private:
+	Options* savedOptions;
+	Vocabulary* splitVoc;
+	AbstractTheory* splitTheo;
+
+	//Input for the bootstrapping
+	Function* definesFunc;
+	Predicate* openPred;
+	//Output of the bootstrapping
+	Predicate* sameDef;
+
 };

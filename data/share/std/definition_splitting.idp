@@ -78,14 +78,18 @@ procedure splitdefinitions(theorystruct){
  */
 vocabulary def_split_voc {
 // INPUT
-	type rule isa int
+	type rule 
 	type symbol
 	
 	defines(rule):symbol
+	
+	//Warning: in current implementation: the defined symbol is always in the set of "opens"
 	open(rule,symbol)
 	
 	edge(symbol,symbol)
 	reaches(symbol,symbol)
+	
+	
 	
 // OUTPUT
 	samedef(rule,rule)
@@ -97,7 +101,7 @@ theory def_split_theory : def_split_voc {
 		reaches(x,y) <- reaches(x,z) & edge(z, y).
 	}
 	{
-		samedef(r1,r2) <- reaches(defines(r),defines(r2)) & reaches(defines(r2),defines(r)). 
+		samedef(r1,r2) <- reaches(defines(r1),defines(r2)) & reaches(defines(r2),defines(r1)). 
 	}
 }
 structure def_split_ex : def_split_voc{

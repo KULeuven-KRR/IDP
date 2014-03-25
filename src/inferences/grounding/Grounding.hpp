@@ -139,6 +139,9 @@ private:
 		if (getOption(BoolType::SHAREDTSEITIN)) {
 			_theory = FormulaUtils::sharedTseitinTransform(_theory, _structure);
 		}
+		if (getOption(BoolType::SPLIT_DEFS)){
+			DefinitionUtils::splitDefinitions(_theory);
+		}
 
 		// Calculate known definitions
 		auto satdelay = getOption(SATISFIABILITYDELAY);

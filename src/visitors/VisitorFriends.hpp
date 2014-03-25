@@ -102,7 +102,6 @@ class AddMarkers;
 		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \
 		friend class SplitComparisonChains; \
-		friend class SplitDefinitions; \
 		friend class SubstituteTerm; \
 		friend class SubstituteVarWithDom; \
 		friend class UnnestTerms; \
