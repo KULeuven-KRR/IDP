@@ -43,10 +43,15 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 		}
 	}
 	for (auto s : fullvoc->getNonBuiltinNonOverloadedSymbols()) {
+		if(isa<Function>(*s)){
+			insentence->ct()->add( { mapName(s, uniquesymbnames) });
+			continue;
+		}
 		if (not inputstructure->inter(s)->ct()->approxEmpty() || not inputstructure->inter(s)->cf()->approxEmpty()) {
 			insentence->ct()->add( { mapName(s, uniquesymbnames) });
 		}
 	}
+
 
 	for (auto s : outputvoc->getNonBuiltinNonOverloadedSymbols()) {
 		outsymbol->ct()->add( { mapName<PFSymbol*>(s, uniquesymbnames) });
@@ -172,7 +177,8 @@ void computeRemainingDefinitions(const std::vector<Definition*> postprocessdefs,
 	getGlobal()->setOptions(newoptions);
 	setOption(XSB, true);
 	setOption(POSTPROCESS_DEFS, false);
-	CalculateDefinitions::doCalculateDefinitions(t, structure);
+	auto result = CalculateDefinitions::doCalculateDefinitions(t, structure);
+	Assert(result._hasModel);
 	t->recursiveDelete();
 	getGlobal()->setOptions(oldoptions);
 }
