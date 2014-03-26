@@ -16,7 +16,6 @@
 
 extern void parsefile(const std::string&);
 
-
 namespace BootstrappingUtils {
 Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
 		UniqueNames<Definition*>& uniqueDefNames) {
@@ -75,10 +74,16 @@ Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<P
 
 			auto ruleclone = r->clone();
 			ruleclone = DefinitionUtils::unnestHeadTermsNotVarsOrDomElems(ruleclone, structure);
-			auto opens = FormulaUtils::collectSymbols(ruleclone->body());
+			auto opens = FormulaUtils::collectSymbolOccurences(ruleclone->body());
 			for (auto open : opens) {
-				symbolName = mapName(open, uniqueSymbNames);
-				openInter->ct()->add( { ruleName, symbolName, pos }); //TODO correct sign!!!
+				symbolName = mapName(open.first, uniqueSymbNames);
+				auto symbolOcc = open.second;
+				if (symbolOcc != Context::NEGATIVE) {
+					openInter->ct()->add( { ruleName, symbolName, neg });
+				}
+				if (symbolOcc != Context::POSITIVE) {
+					openInter->ct()->add( { ruleName, symbolName, neg });
+				}
 			}
 		}
 
@@ -92,20 +97,18 @@ Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<P
 
 }
 
-Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn,
-		UniqueNames<Definition*>& udn) {
-	return getDefinitionInfo({d},usn,urn,udn);
+Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
+	return getDefinitionInfo( { d }, usn, urn, udn);
 }
-Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn,
-		UniqueNames<Definition*>& udn) {
-	return getDefinitionInfo(t->definitions(),usn,urn,udn);
+Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
+	return getDefinitionInfo(t->definitions(), usn, urn, udn);
 }
 
-Options* setBootstrappingOptions(){
+Options* setBootstrappingOptions() {
 	auto old = getGlobal()->getOptions();
 	auto newoptions = new Options(false);
 	getGlobal()->setOptions(newoptions);
-	setOption(POSTPROCESS_DEFS, false);//Important since postprocessing is implemented with bootstrapping
+	setOption(POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
 	setOption(SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
 	setOption(GROUNDWITHBOUNDS, true);
 	setOption(LIFTEDUNITPROPAGATION, true);
@@ -119,9 +122,5 @@ Options* setBootstrappingOptions(){
 	setOption(BoolType::SHOWWARNINGS, false);
 	return old;
 }
-
-
-
-
 
 }
