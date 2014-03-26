@@ -26,7 +26,13 @@
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
 	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure;
-	if(not structure->approxTwoValued()){
+	auto alltwoval = true;
+	for(auto s: FormulaUtils::collectSymbols(q->query())){
+		if(not structure->inter(s)->approxTwoValued()){
+			alltwoval = false;
+		}
+	}
+	if(not alltwoval){
 		symbolicstructure = generateNonLiftedBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure);
 	}
 	return solveQuery(q,structure,symbolicstructure);
@@ -41,7 +47,13 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	const FOBDD* bdd = NULL;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery,structure);
-	if (not structure->approxTwoValued()) {
+	auto alltwoval = true;
+	for(auto s: FormulaUtils::collectSymbols(q->query())){
+		if(not structure->inter(s)->approxTwoValued()){
+			alltwoval = false;
+		}
+	}
+	if(not alltwoval){
 		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
 		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,{}, true,false);
 		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
@@ -112,7 +124,7 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 	auto result = TableUtils::createPredTable(univ);
 	// execute the query
 	ElementTuple currtuple(vars.size());
-	//cerr <<"Generator: " <<print(generator) <<"\n";
+	//clog <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();
@@ -184,8 +196,10 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 }
 
 bool evaluate(Formula* form, const Structure* structure){
-	if(not structure->approxTwoValued()){ // TODO can be improved
-		throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+	for(auto s: FormulaUtils::collectSymbols(form)){
+		if(not structure->inter(s)->approxTwoValued()){
+			throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+		}
 	}
 	if(not form->freeVars().empty()){
 		throw IdpException("The input formula had free variables");
@@ -201,15 +215,17 @@ bool evaluate(Formula* form, const Structure* structure){
 }
 
 const DomainElement* evaluate(Term* term, const Structure* structure){
-	if(not structure->approxTwoValued()){ // TODO can be improved
-		throw notyetimplemented("Cannot evaluate a term in a three-valued structure");
+	for(auto s: FormulaUtils::collectSymbols(term)){
+		if(not structure->inter(s)->approxTwoValued()){
+			throw notyetimplemented("Cannot evaluate a term in a three-valued structure");
+		}
 	}
 	if(not term->freeVars().empty()){
 		throw IdpException("The input term had free variables");
 	}
 
 	auto var = Gen::var(term->sort());
-	Formula& pf = Gen::operator ==(*term, *new VarTerm(var,{}));
+	auto& pf = Gen::operator ==(*term, *new VarTerm(var,{}));
 
 	Query q("Eval", {var}, &pf, {});
 	auto result = Querying::doSolveQuery(&q, structure);

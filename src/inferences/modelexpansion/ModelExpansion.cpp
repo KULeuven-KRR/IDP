@@ -261,7 +261,7 @@ MXResult ModelExpansion::expand() const {
 			for (auto i = list.cbegin(); i < list.cend(); ++i) {
 				solutions.push_back(handleSolution(newstructure, **i, grounding, extender, targetvoc, postprocessdefs));
 			}
-			auto bestvalue = evaluate(_minimizeterm, solutions.front());
+			auto bestvalue = evaluate(_minimizeterm->clone(), solutions.front());
 			Assert(bestvalue!=NULL && bestvalue->type()==DomainElementType::DET_INT);
 			result._optimalvalue = bestvalue->value()._int;
 			if (mxverbosity > 0) {
