@@ -63,7 +63,6 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
             if(not isConsistentWith(predtable1, structure->inter(symbol))) {
             	xsb_interface->reset();
             	result._hasModel=false;
-            	result._calculated_model=structure;
             	return result;
             }
 			auto sortedTableUNKN = xsb_interface->queryDefinition(symbol, TruthValue::Unknown);
@@ -85,7 +84,6 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			if(not structure->inter(symbol)->isConsistent()){
             	xsb_interface->reset();
             	result._hasModel=false;
-            	result._calculated_model=structure;
             	return result;
 			}
             if(isa<Function>(*symbol) and structure->inter(symbol)->approxTwoValued()) {
