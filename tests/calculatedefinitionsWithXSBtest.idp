@@ -52,6 +52,45 @@ procedure checkDefinitionEvaluation(theory, structure) {
 	end
 }
 
+procedure checkDefinitionRefining(theory, structure) {
+	stdoptions.timeout = 10
+	standardoptions()
+	stdoptions.xsb=true
+	stdoptions.nbmodels=0
+	
+	io.stderr:write("Refined definitions with XSB...")
+	REFINEDDEFS=refinedefinitions(theory,structure)
+	if (REFINEDDEFS==nil) then
+		io.stderr:write("no model was found\n");
+	else
+		io.stderr:write("model found\n");
+	end
+	
+	stdoptions.xsb=false
+	io.stderr:write("Doing MX without XSB...")
+	NRMODELSNOXSB=#modelexpand(T, structure)
+	io.stderr:write(" found "..NRMODELSNOXSB.." model(s)\n")
+	
+	if (REFINEDDEFS == nil) then
+		if (NRMODELSNOXSB==0) then
+			return 1
+		else
+			io.stderr:write("FAIL! Could not refine the defined symbols with XSB, while without XSB a model exists.\n")
+			return 0
+		end
+	else
+		io.stderr:write("Both approaches have at least one model.\nDoing MX without XSB on top of the definition refinement...")
+		NRMODELSONTOP=#modelexpand(T,REFINEDDEFS)
+		io.stderr:write(" found "..NRMODELSONTOP.." model(s)\n")
+		if (NRMODELSONTOP ~= NRMODELSNOXSB) then
+			io.stderr:write("FAIL! Refine the defined symbols with XSB changed the number of models.\n")
+			return 0
+		else
+			return 1
+		end
+	end
+}
+
 procedure runCalcDefWithXSB(theory,structure) {
 	stdoptions.timeout = 5
 	stdoptions.xsb=true

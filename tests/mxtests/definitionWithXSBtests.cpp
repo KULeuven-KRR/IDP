@@ -58,6 +58,15 @@ TEST_P(DefinitionWithXSBTest, CalculatesDefinitionWithXSB) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 
+// Dedicated definition refining test from the definitiontests and definitionWithXSBtests
+TEST_P(DefinitionWithXSBTest, RefinesDefinitionWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionRefining(T,S)"););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+
 INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionWithXSBTest,  ::testing::ValuesIn(generateListOfDefXSBFiles()));
 
 
@@ -82,6 +91,7 @@ TEST_P(MXnbTest, DoesMXWithXSBOnRandomStruct) {
 	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkForRandomInputStructure(T,S,10)"););
 	ASSERT_EQ(result, Status::SUCCESS);
 }
+
 
 
 }
