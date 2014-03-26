@@ -113,7 +113,9 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 	}
 #endif
 	// Not possible without XSB
-	throw notyetimplemented("Cannot evaluate definitions for three-valued opens without XSB.");
+	Warning::warning("Tried to evaluate definitions for three-valued opens without XSB,\n"
+			"this is not possible and nothing was done instead.");
+	return result;
 }
 
 DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Theory* theory, Structure* structure,
