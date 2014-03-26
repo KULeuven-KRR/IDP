@@ -206,6 +206,32 @@ void registerHandler(Handler f, SIGNAL s) {
 	signal(s, f); // Note: sigaction objects are cleaner but are not in the ISO standard and poorly portable
 }
 
+void setIDPSignalHanders() {
+	signal(SIGABRT, SIGABRT_handler);
+	signal(SIGFPE, SIGFPE_handler);
+	signal(SIGTERM, SIGTERM_handler);
+	signal(SIGSEGV, SIGSEGV_handler);
+	signal(SIGINT, SIGINT_handler);
+#if defined(__linux__)
+	signal(SIGHUP, SIGABRT_handler);
+	signal(SIGXCPU, SIGABRT_handler);
+	signal(SIGXFSZ, SIGABRT_handler);
+#endif
+}
+
+void unsetSignalHandelers() {
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGFPE, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+#if defined(__linux__)
+	signal(SIGHUP, SIG_DFL);
+	signal(SIGXCPU, SIG_DFL);
+	signal(SIGXFSZ, SIG_DFL);
+#endif
+}
+
 /**
  * @return the return value of the executed lua procedure if applicable
  */
@@ -224,16 +250,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	running = true;
 	getGlobal()->reset();
 
-	signal(SIGABRT, SIGABRT_handler);
-	signal(SIGFPE, SIGFPE_handler);
-	signal(SIGTERM, SIGTERM_handler);
-	signal(SIGSEGV, SIGSEGV_handler);
-	signal(SIGINT, SIGINT_handler);
-#if defined(__linux__)
-	signal(SIGHUP, SIGABRT_handler);
-	signal(SIGXCPU, SIGABRT_handler);
-	signal(SIGXFSZ, SIGABRT_handler);
-#endif
+	setIDPSignalHanders();
 
 	//IMPORTANT: because signals are handled asynchronously, a special mechanism is needed to recover from them (exception throwing does not work)
 	//setjmp maintains a jump point to which any stack can jump back, re-executing this statement with different return value,
@@ -266,17 +283,7 @@ const DomainElement* executeProcedure(const string& proc) {
 	}
 	jumpback = 1;
 	
-	signal(SIGABRT, SIG_DFL);
-	signal(SIGFPE, SIG_DFL);
-	signal(SIGTERM, SIG_DFL);
-	signal(SIGSEGV, SIG_DFL);
-	signal(SIGINT, SIG_DFL);
-#if defined(__linux__)
-	signal(SIGHUP, SIG_DFL);
-	signal(SIGXCPU, SIG_DFL);
-	signal(SIGXFSZ, SIG_DFL);
-#endif
-
+	unsetSignalHandelers();
 
 	if (Error::nr_of_errors() + Warning::nr_of_warnings() > 15 && Error::nr_of_errors()>0) {
 		clog << "\nFirst critical error encountered:\n"; // NOTE: repeat first error for easy retrieval in the output.

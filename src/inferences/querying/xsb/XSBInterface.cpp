@@ -21,6 +21,8 @@ using std::stringstream;
 using std::ofstream;
 using std::clog;
 
+extern void setIDPSignalHanders();
+
 XSBInterface* interface_instance = NULL;
 
 XSBInterface* XSBInterface::instance() {
@@ -143,6 +145,7 @@ void XSBInterface::reset() {
 	_structure = NULL;
 	delete(_pp);
 	_pp = NULL;
+	setIDPSignalHanders();
 }
 
 void XSBInterface::exit() {
