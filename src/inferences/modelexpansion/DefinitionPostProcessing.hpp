@@ -1,46 +1,37 @@
 #pragma once
 
 #include "utils/UniqueNames.hpp"
+#include "utils/BootstrappingUtils.hpp"
 #include "theory/TheoryUtils.hpp"
 
 extern void parsefile(const std::string&);
 
-
-std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* theory, Term* term, Structure* inputstructure, Vocabulary* fullvoc, Vocabulary* outputvoc) {
+std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* theory, Term* term, Structure* inputstructure, Vocabulary* fullvoc,
+		Vocabulary* outputvoc) {
 	if (theory->definitions().empty()) {
 		return {};
 	}
 
 	auto orignbmodels = getOption(NBMODELS);
 	auto defverb = getOption(VERBOSE_DEFINITIONS);
-	auto savedoptions = getGlobal()->getOptions();
-	auto newoptions = new Options(false);
-	getGlobal()->setOptions(newoptions);
-	setOption(POSTPROCESS_DEFS, false);
-	setOption(GROUNDWITHBOUNDS, true);
-	setOption(LIFTEDUNITPROPAGATION, true);
-	setOption(LONGESTBRANCH, 12);
-	setOption(NRPROPSTEPS, 12);
-	setOption(CPSUPPORT, true);
-	setOption(TSEITINDELAY, false);
-	setOption(SATISFIABILITYDELAY, false);
-	setOption(NBMODELS, 1);
-	setOption(AUTOCOMPLETE, true);
-	setOption(BoolType::SHOWWARNINGS, false);
 
-	if (not getGlobal()->instance()->alreadyParsed("definition_splitting")) {
-		parsefile("definition_splitting");
-	}
-	auto ns = getGlobal()->getGlobalNamespace()->subspace("stdspace")->subspace("definitionsplitting");
-	auto splitvoc = new Vocabulary(createName());
-	splitvoc->add(ns->vocabulary("defs_split_voc"));
-	auto structure = new Structure(createName(), splitvoc, { });
-	auto insentence = structure->inter(splitvoc->pred("insentence/1"));
-	auto defines = structure->inter(splitvoc->pred("defines/2"));
-	auto open = structure->inter(splitvoc->pred("open/2"));
-	auto outsymbol = structure->inter(splitvoc->pred("outsymbol/1"));
+	auto savedoptions = BootstrappingUtils::setBootstrappingOptions();
 	UniqueNames<PFSymbol*> uniquesymbnames;
+	UniqueNames<Rule*> uniquerulenames;
 	UniqueNames<Definition*> uniquedefnames;
+
+	auto structure = BootstrappingUtils::getDefinitionInfo(theory, uniquesymbnames, uniquerulenames, uniquedefnames);
+
+	auto defnamespace = getGlobal()->getGlobalNamespace()->subspace("stdspace")->subspace("definitionbootstrapping");
+	Assert(defnamespace != NULL);
+	auto voc = defnamespace->vocabulary("prepost");
+	Assert(voc != NULL);
+	structure->changeVocabulary(voc);
+	auto insentence = structure->inter(voc->pred("inFO/1"));
+	Assert(insentence != NULL);
+	auto outsymbol = structure->inter(voc->pred("output/1"));
+	Assert(outsymbol != NULL);
+
 	for (auto sent : theory->sentences()) {
 		for (auto symb : FormulaUtils::collectSymbols(sent)) {
 			insentence->ct()->add( { mapName(symb, uniquesymbnames) });
@@ -57,37 +48,16 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 		}
 	}
 
-	auto definitions = theory->definitions();
-	theory->definitions().clear();
-	for (auto def : definitions) {
-		if (not DefinitionUtils::approxTotal(def)) {
-			for (auto symb : FormulaUtils::collectSymbols(def)) {
-				insentence->ct()->add( { mapName(symb, uniquesymbnames) });
-			}
-			theory->add(def);
-		} else {
-			for (auto ds : DefinitionUtils::defined(def)) {
-				defines->ct()->add( { mapName(def, uniquedefnames), mapName(ds, uniquesymbnames) });
-			}
-			for (auto os : DefinitionUtils::opens(def)) {
-				open->ct()->add( { mapName(def, uniquedefnames), mapName(os, uniquesymbnames) });
-			}
-		}
-	}
 	for (auto s : outputvoc->getNonBuiltinNonOverloadedSymbols()) {
 		outsymbol->ct()->add( { mapName<PFSymbol*>(s, uniquesymbnames) });
 	}
 	structure->checkAndAutocomplete();
 	makeUnknownsFalse(outsymbol);
 	makeUnknownsFalse(insentence);
-	makeUnknownsFalse(defines);
-	makeUnknownsFalse(open);
 	structure->clean();
-	auto processtheory = ns->theory("defs_split_theory")->clone();
-	auto processterm = ns->term("defs_split_term")->clone();
-	processtheory->vocabulary(splitvoc);
-	processterm->vocabulary(splitvoc);
-	auto splitsolutions = ModelExpansion::doMinimization(processtheory, structure, processterm, NULL, NULL)._models;
+
+	auto processtheory = FormulaUtils::merge(defnamespace->theory("prepostTheo"), defnamespace->theory("findHigher"))->clone();
+	auto splitsolutions = ModelExpansion::doModelExpansion(processtheory, structure, NULL, NULL)._models;
 	if (splitsolutions.size() < 1) {
 		throw IdpException("Invalid code path: no solution to splitting problem");
 	}
@@ -96,38 +66,34 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 	if (defverb > 0) {
 		std::clog << "Optimal postprocessing split: " << print(splitmodel) << "\n";
 	}
-	auto postelem = splitmodel->inter(splitvoc->func("post/0"))->value( { });
-	auto theoryelem = splitmodel->inter(splitvoc->func("theory/0"))->value( { });
-	auto dointer = splitmodel->inter(splitvoc->func("do/1"));
 
+	auto postprocess = splitmodel->inter(voc->pred("post/1"));
+	auto search = splitmodel->inter(voc->pred("search/1"));
+
+	theory->definitions().clear();
 	std::vector<Definition*> postprocessdefs;
-	for (auto i = dointer->funcTable()->begin(); not i.isAtEnd(); ++i) {
-		auto def = uniquedefnames.getOriginal((*i)[0]->value()._int);
-		auto val = (*i)[1];
-		auto totheory = false;
-		if (val == postelem) {
-			if (orignbmodels != 1) { // TODO allow multiple models, by properly postprocessing open symbols
-				totheory = true;
-			} else {
-				if (defverb > 0) {
-					std::clog << "Postprocessing: " << print(def) << "\n";
-				}
-				postprocessdefs.push_back(def);
-			}
-		}
-		if (val == theoryelem || totheory) {
+	for (auto i = postprocess->ct()->begin(); not i.isAtEnd(); ++i) {
+		auto domelem = (*i)[0];
+		auto origdef = uniquedefnames.getOriginal(domelem->value()._int);
+		if (orignbmodels != 1) {
+			theory->add(origdef);
+		} else {
 			if (defverb > 0) {
-				std::clog << "Considered during search: " << print(def) << "\n";
+				std::clog << "Postprocessing: " << print(origdef) << "\n";
 			}
-			theory->add(def);
+			postprocessdefs.push_back(origdef);
 		}
 	}
+	for (auto i = search->ct()->begin(); not i.isAtEnd(); ++i) {
+		auto domelem = (*i)[0];
+		auto origdef = uniquedefnames.getOriginal(domelem->value()._int);
+		theory->add(origdef);
+	}
+
 	deleteList(splitsolutions);
 	processtheory->recursiveDelete();
-	processterm->recursiveDelete();
-	delete (newoptions);
+	delete getGlobal()->getOptions();
 	delete (structure);
-	delete (splitvoc);
 	getGlobal()->setOptions(savedoptions);
 	return postprocessdefs;
 }
@@ -136,22 +102,22 @@ void computeRemainingDefinitions(const std::vector<Definition*> postprocessdefs,
 	// First, we recheck which definitions we really need to evaluate (possible including those used as constructions in lazy grounding)
 	std::queue<PFSymbol*> sq;
 	std::map<PFSymbol*, std::vector<Definition*>> s2defs;
-	for(auto d: postprocessdefs){
-		for(auto s: d->defsymbols()){
+	for (auto d : postprocessdefs) {
+		for (auto s : d->defsymbols()) {
 			s2defs[s].push_back(d);
-			if(not structure->inter(s)->approxTwoValued() && outputvoc->contains(s)){
+			if (not structure->inter(s)->approxTwoValued() && outputvoc->contains(s)) {
 				sq.push(s);
 			}
 		}
 	}
 	std::set<Definition*> evaluatedefs;
-	while(not sq.empty()){
+	while (not sq.empty()) {
 		auto s = sq.front();
 		sq.pop();
-		for(auto d: s2defs[s]){
-			if(evaluatedefs.find(d)==evaluatedefs.cend()){
+		for (auto d : s2defs[s]) {
+			if (evaluatedefs.find(d) == evaluatedefs.cend()) {
 				evaluatedefs.insert(d);
-				for(auto os:DefinitionUtils::opens(d)){
+				for (auto os : DefinitionUtils::opens(d)) {
 					sq.push(os);
 				}
 			}
