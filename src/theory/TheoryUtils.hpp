@@ -19,6 +19,7 @@
 #include "vocabulary/VarCompare.hpp"
 #include "information/GetQuantifiedVariables.hpp"
 #include "information/CollectSymbols.hpp"
+#include "information/CollectSymbolOccurences.hpp"
 
 class Definition;
 class SetExpr;
@@ -277,6 +278,12 @@ std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, boo
 template<class T>
 std::set<PFSymbol* > collectSymbols(const T* f){
 	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+}
+
+template<class T>
+std::set<std::pair<PFSymbol*, Context> > collectSymbolOccurences(const T* f){
+	CollectSymbolOccurences t;
+	return t.execute(f);
 }
 
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
