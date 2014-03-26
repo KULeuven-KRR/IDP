@@ -23,7 +23,6 @@ class PredForm;
 class XSBToIDPTranslator;
 
 using std::string;
-
 class XSBInterface {
 private:
 	PrologProgram* _pp;
