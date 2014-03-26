@@ -140,6 +140,32 @@ namespace stdspace{
 			//options should be set by bootstrapping procedure
 			return onemodel(mytheo,struc)
 		}
+
+		/**
+		* Finding symbols involved in recursion over negation
+		*/
+		vocabulary recnegvoc{
+			extern vocabulary dependencyGraph
+	
+		// OUTPUT
+			recneg(def,symbol)
+			hasrecneg(def)
+		}
+
+		theory recnegTheo:recnegvoc{
+			{
+				recneg(d,s) <- ? s': depends(d,s,s',neg) & depends(d,s',s,neg).
+			}
+			{
+				hasrecneg(d) <- ?s: recneg(d,s).
+			}
+		}
+		procedure findsymbolswithrecursionovernegation(struc){
+			local mytheo = merge(recnegTheo, dependency)
+			//options should be set by bootstrapping procedure
+			return onemodel(mytheo,struc)
+		}
+
 	}
 }
 
