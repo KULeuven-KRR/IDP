@@ -13,10 +13,7 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-#include <set>
 #include <vector>
-#include <map>
-#include "vocabulary/vocabulary.hpp"
 template<class T>
 class UniqueNames;
 class Options;
@@ -25,6 +22,7 @@ class Theory;
 class AbstractTheory;
 class Function;
 class Predicate;
+class Structure;
 
 /**
  * Split definitions as much as possible. We do this so we can detect more
@@ -51,20 +49,14 @@ class SplitDefinitions {
 public:
 	Theory* execute(Theory* t);
 private:
-	std::vector<Definition*> split(Definition* d); //Splits the definition and DELETES it
+	std::vector<Definition*> split(Structure* s,UniqueNames<Rule*>& uniqueRuleNames); //Takes a structure containing metadata regarding one or more definitions and splits
 	void prepare(); //Prepares all options etcetera
 	void finish(); //Should be ran before exiting! Set back options.
 
-	Structure* turnIntoStructure(Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames);
-
 private:
 	Options* savedOptions;
-	Vocabulary* splitVoc;
-	AbstractTheory* splitTheo;
 
-	//Input for the bootstrapping
-	Function* definesFunc;
-	Predicate* openPred;
+	AbstractTheory* splittheo;
 	//Output of the bootstrapping
 	Predicate* sameDef;
 

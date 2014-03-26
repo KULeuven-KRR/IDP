@@ -1,0 +1,158 @@
+/**
+* This file contains tools for boostrapping with definitions based on the dependency graph
+*/
+include <mx> 
+
+namespace stdspace{
+	namespace definitionbootstrapping{
+		
+		/*
+		*  Basic meta-data about definitions
+		*/
+		vocabulary basicdata{
+			type def
+			type rule
+			type symbol
+			defines(rule):symbol
+			in(rule):def
+			
+			type sign constructed from {pos, neg}
+			
+			inbody(rule,symbol,sign) //Means: symbol occurs positive/negative in the body of rule
+		}
+
+		/*
+		* Basic representation of dependency graphs in definitions
+		*/
+		vocabulary dependencyGraph{
+			extern vocabulary basicdata
+			depends(def, symbol,symbol,sign) //means: symbol depends pos/neg on second symbol (directly or indirectly)
+			dependsAny(def, symbol,symbol) //means: symbol depends on second symbol
+		}
+		theory dependency: dependencyGraph{
+			{
+				depends(d, p, q, s) <- ?r: in(r) = d & defines(r) = p & inbody(r,q,s).
+				depends(d, p, q, s) <- depends(d,p,r,s) & depends(d,r,q,pos).
+				depends(d, p, q, s) <- depends(d,p,r,pos) & depends(d,r,q,s).
+				depends(d, p, q, pos) <- depends(d,p,r,s) & depends(d,r,q,s).
+			}
+			{
+				dependsAny(d,p,q) <- depends(d,p,q,s).
+			}
+		}
+
+		/**
+		* Higher level info about definitions	
+		*/
+		vocabulary higher{
+			extern vocabulary basicdata
+			definedin(symbol,def)
+			openin(symbol,def)
+		}
+		theory findHigher:higher{
+			{	
+				definedin(p,d) <- ?r: in(r) = d & defines(r) = p.
+			}
+			{
+				openin(p,d) <- ?r s: inbody(r,p,s) & in(r)=d & ~definedin(p,d).
+			}
+		}
+
+		/* TOTAL DEFINITION STRATIFICATION
+		 * Decide whether a definition 
+		 *	- Can be evaluated in preprocessing
+		 * 	- Should be grounded and considered by search
+		 *	- Can be evaluated in a postprocessing step
+		 *	- Can be forgotten entirely (based on the output vocabulary)
+		 */
+		vocabulary prepost{
+			extern vocabulary higher
+			//INPUT:
+			output(symbol) //whether symbol is in outputvoc
+			inFO(symbol) //whether symbol occurs in FO
+
+			//AUXILIARY
+			dependson(symbol,symbol) //In order to know the value of first symbol, second symbol needs to be twovalued
+			
+			relevant(symbol) //whether value of symbol should be known (symbol is either output, or some output depends on it)
+			free(symbol) //whether symbol is free from constraints (only defined once, not in fo, no constraints on symbols depending on it)
+
+			//OUTPUT
+			// pre(def) //should preprocess definition --> Requires knowledge on which predicates are twovalued
+			search(def) //should include def in search 
+			post(def) //should postprocess definition
+			forget(def) //can forget definition
+
+		}
+
+		theory prepostTheo: prepost{
+			{
+				dependson(p,q) <- ? d: definedin(p,d) & openin(q,d).
+			}
+			{
+				relevant(s) <- output(s).
+				relevant(s) <- ?s': dependson(s',s) & relevant(s').
+			}
+			{
+				free(s) <- ~inFO(s) & #{d:definedin(s,d)} =< 1 & ! s':dependson(s',s) => free(s').
+			}
+			/*{
+				pre(d) <- ?s: (~free(s) & definedin(s,d)) &  ( !s':openin(s',d) => (twovalued(s') | ?d': definedin(s',d') & do(d')=pre )).
+			}*/
+			{
+				search(d) <- /*~pre(d) & */ ?s:  ~free(s) & definedin(s,d).
+			}
+			{
+				post(d) <- /*~pre(d) & */ ~search(d) & ?s: relevant(s) & definedin(s,d).
+			}
+			{
+				forget(d) <- /*~pre(d) & */ ~search(d) & ~post(d).
+			}
+		}
+
+		procedure decideWorkflow(struc){
+			local mytheo = merge(prepostTheo, findHigher)
+			//options should be set by bootstrapping procedure
+			return onemodel(mytheo,struc)
+		}
+
+
+		/**
+		* Splitting (a set of) definitions into its (their) strongly connected components 
+		*/			
+		vocabulary def_split_voc {
+		// INPUT
+			extern vocabulary dependencyGraph
+	
+		// OUTPUT
+			samedef(rule,rule)
+		}
+		theory def_split_theory : def_split_voc {
+			{
+				samedef(r,r).
+				samedef(r1,r2) <-  in(r1) = in(r2) & defines(r1) = defines(r2).
+				samedef(r1,r2) <- in(r1) = in(r2) & dependsAny(in(r1), defines(r1),defines(r2)) & dependsAny(in(r1), defines(r2),defines(r1)). 
+			}
+		}
+		
+		procedure findsplitting(struc){
+			local mytheo = merge(def_split_theory, dependency)
+			//options should be set by bootstrapping procedure
+			return onemodel(mytheo,struc)
+		}
+	}
+}
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
