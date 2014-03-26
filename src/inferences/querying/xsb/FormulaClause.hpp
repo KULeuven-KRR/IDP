@@ -397,10 +397,11 @@ class XSBToIDPTranslator;
 
 class SetExpression: public FormulaClause {
 private:
+	bool _twovaluedbody;
 	PrologVariable* _var;
 	set<PrologVariable*> _quantvars;
 public:
-	SetExpression(string name, XSBToIDPTranslator* translator);
+	SetExpression(string name, XSBToIDPTranslator* translator, bool twovaluedbody);
 	PrologVariable* var() {
 		return _var;
 	}
@@ -414,6 +415,9 @@ public:
 	set<PrologVariable*>& quantifiedVariables() {
 		return _quantvars;
 	}
+	bool hasTwoValuedBody() {
+		return _twovaluedbody;
+	}
 };
 
 class EnumSetExpression: public SetExpression {
@@ -421,8 +425,8 @@ private:
 	FormulaClause* _last;
 	std::map<FormulaClause*, PrologTerm*> _set;
 public:
-	EnumSetExpression(string name, XSBToIDPTranslator* translator)
-			: SetExpression(name, translator),
+	EnumSetExpression(string name, XSBToIDPTranslator* translator, bool twovaluedbody)
+			: SetExpression(name, translator, twovaluedbody),
 			  _last(NULL),
 			  _set() {}
 	void addChild(FormulaClause* f) {
@@ -442,8 +446,8 @@ private:
 	PrologTerm* _term;
 	FormulaClause* _clause;
 public:
-	QuantSetExpression(string name, XSBToIDPTranslator* translator)
-			: SetExpression(name, translator),
+	QuantSetExpression(string name, XSBToIDPTranslator* translator, bool twovaluedbody)
+			: SetExpression(name, translator, twovaluedbody),
 			  _term(NULL),
 			  _clause(NULL) {}
 	void addChild(FormulaClause* f) {

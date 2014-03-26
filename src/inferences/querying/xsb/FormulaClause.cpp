@@ -146,8 +146,9 @@ void EnumSetExpression::accept(FormulaClauseVisitor* f) {
 	f->visit(this);
 }
 
-SetExpression::SetExpression(string name, XSBToIDPTranslator* translator)
-		: FormulaClause(name) {
+SetExpression::SetExpression(string name, XSBToIDPTranslator* translator, bool twovaluedbody)
+		: FormulaClause(name),
+		  _twovaluedbody(twovaluedbody) {
 	_var = translator->create("INTERNAL_VAR_NAME");
 }
 

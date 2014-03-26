@@ -140,7 +140,7 @@ void FormulaClauseBuilder::visit(const DomainTerm* d) {
 }
 
 void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
-	auto term = new EnumSetExpression(generateNewEnumSetExprName(), _translator);
+	auto term = new EnumSetExpression(generateNewEnumSetExprName(), _translator, SetUtils::approxTwoValued(e,_pp->structure()));
 	enter(term);
 	for (uint i = 0; i < e->getSubSets().size(); ++i) {
 		auto subf = e->getSets()[i]->getCondition();
@@ -154,7 +154,7 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 }
 
 void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
-	auto term = new QuantSetExpression(generateNewQuantSetExprName(), _translator);
+	auto term = new QuantSetExpression(generateNewQuantSetExprName(), _translator, SetUtils::approxTwoValued(q,_pp->structure()));
 	term->quantifiedVariables(_translator->prologVars(q->quantVars()));
 	enter(term);
 	q->getSubFormula()->accept(this);

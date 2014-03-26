@@ -270,6 +270,18 @@ string XSBToIDPTranslator::get_forall_term_name() {
 	return ss.str();
 }
 
+string XSBToIDPTranslator::get_twovalued_findall_term_name() {
+	std::stringstream ss;
+	ss << "findall";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_threevalued_findall_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "threeval_findall";
+	return ss.str();
+}
+
 string XSBToIDPTranslator::get_abs_term_name() {
 	std::stringstream ss;
 	ss << IDPXSB_PREFIX << "abs";
