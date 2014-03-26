@@ -9,7 +9,9 @@ vocabulary V {
 	P3:t
 	P4:t
 	P5(t)
-	P6(t)
+	
+// Commented because these cannot be tested as the non-xsb reference case does not work yet
+// 	P6(t)
 	
 	// Tests with *just* the correct domain
 	type t2 isa int
