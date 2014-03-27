@@ -29,8 +29,15 @@ void PrologProgram::setDefinition(Definition* d) {
 	_definition = d;
 
 //	Defined symbols should be tabled
-	for (auto it = d->defsymbols().begin(); it != d->defsymbols().end(); ++it) {
-		table(*it);
+	for (auto symbol : d->defsymbols()) {
+		table(symbol);
+	}
+
+//  Opens that are threevalued should be tabled
+	for (auto symbol : DefinitionUtils::opens(d)) {
+		if (not _structure->inter(symbol)->approxTwoValued()) {
+			table(symbol);
+		}
 	}
 	FormulaClauseBuilder builder(this, d, _translator);
 	FormulaClauseToPrologClauseConverter converter(this, _translator);
