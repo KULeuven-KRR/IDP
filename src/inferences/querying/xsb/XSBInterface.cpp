@@ -115,16 +115,22 @@ void XSBInterface::load(Definition* d, Structure* structure) {
 }
 
 void XSBInterface::sendToXSB(string str) {
-	auto name = tmpnam(NULL);
-
-	ofstream tmp;
-	tmp.open(name);
-	tmp << str;
-	tmp.close();
-	stringstream ss;
-	ss << "load_dyn('" << name << "').\n";
-	commandCall(ss.str());
-	remove(name);
+	auto name = GlobalData::instance()->getTempFileName();
+	try {
+		ofstream tmp;
+		tmp.open(name);
+		tmp << str;
+		tmp.close();
+		stringstream ss;
+		ss << "load_dyn('" << name << "').\n";
+		commandCall(ss.str());
+	} catch (const Exception& ex) {
+		stringstream ss;
+		ss << "Exception caught: " << ex.getMessage();
+		Error::error(ss.str());
+		clog.flush();
+	}
+	GlobalData::instance()->removeTempFile(name);
 }
 
 void XSBInterface::reset() {
