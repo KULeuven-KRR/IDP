@@ -1,0 +1,15 @@
+vocabulary V{
+	type t
+	f(t):t
+	q(t)
+}
+
+theory T:V{
+	{
+		!x: f(x)=x <- q(x).
+	}
+}
+
+structure S:V{
+	t = {1..3}
+}

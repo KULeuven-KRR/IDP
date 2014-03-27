@@ -1,0 +1,16 @@
+vocabulary V {
+  type  t isa int
+  p(t)
+  q(t)
+}
+
+theory T : V {
+  { p(t) <- q(t). }
+}
+
+structure S : V {
+  t = {1..5}
+  q<ct> = {2;3;4}
+  q<cf> = {5}
+  p<cf> = {2}
+}

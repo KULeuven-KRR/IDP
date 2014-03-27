@@ -1,0 +1,19 @@
+vocabulary V {
+  type Type isa nat
+  P
+  R(Type):Type
+}
+
+theory T : V {  
+  {
+    P <- ! y : (1  =  #{ x : (R(x)  =  y)}).
+  }
+  
+  {
+    P <- ! y : ?1x : R(x) = y.
+  }
+}
+
+structure S : V {
+  Type = {1..4}
+}

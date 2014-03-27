@@ -1,0 +1,17 @@
+vocabulary V {
+  type nonint
+  type nonint2
+  nonint_function(nonint):nonint2
+  nonint_pred(nonint,nonint2)
+}
+
+theory T : V {
+  { nonint_function(x) = y <- nonint_pred(x,y). }
+}
+
+structure S : V {
+  nonint = {d1;d2;d3}
+  nonint2 = {e1;e2}
+  nonint_pred<ct> = {d1,e1}
+  nonint_pred<cf> = {d2,e2}
+}

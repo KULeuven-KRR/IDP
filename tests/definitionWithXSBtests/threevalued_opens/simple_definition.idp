@@ -1,0 +1,25 @@
+vocabulary V {
+  type x isa int
+  type y isa int
+  p(x,x,y)
+  q(x,x,y)
+}
+
+theory T : V {
+  { q(x,x2,y) <- p(x,x2,y).}
+}
+
+structure S : V {
+  p<ct> = {
+    2,1,1;
+    2,1,2;
+    2,1,3;
+    2,2,2;
+    2,2,3;
+  }
+  p<cf> = {
+    1,1,1;
+    1,1,2;
+    1,1,3;
+  }
+}

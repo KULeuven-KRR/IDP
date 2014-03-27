@@ -1,0 +1,27 @@
+vocabulary V {
+  type T isa string 
+  type F isa string
+  type Q isa F
+  
+  F(T):F
+  B(T):T
+  B(T)
+  
+  Run(T,T)
+  P(T,T)
+  P2(T,T)
+  P3(T,T)
+}
+
+theory T:V {
+  { Run(f1,f2) <- Q(F(f1)).}
+  { P(f1,f2) <- B(f1) & B(f1)=f2.}
+  { P2(f1,f2) <- B(B(f1)).}
+  { P3(f1,B(B(f1))).}
+}
+
+structure S:V {
+  T={"x"; "y"}
+  F={"pOK"; "pNOK"}
+  Q={"pOK"}
+}

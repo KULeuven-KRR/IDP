@@ -1,0 +1,32 @@
+vocabulary V {
+	type t
+
+	findall(t,t)
+	between(t,t)
+
+	P(t,t)
+	P2(t,t)
+	P3(t,t)
+	Q(t,t)
+	Q2(t,t)
+	Q3(t,t)
+}
+
+theory T : V {
+  {  P(x,y) <- findall(x,y). }
+  {  P2(x,y) <- findall(x,y). }
+  {  
+    P3(x,y) <- findall(x,y). 
+    P3(x,y) <- findall(y,x).
+  }
+  {  Q(x,y) <- between(x,y). }
+  {  Q2(x,y) <- between(x,y). }
+  {  
+    Q3(x,y) <- between(x,y). 
+    Q3(x,y) <- between(y,x).
+  }
+}
+
+structure S : V {
+  t = { 1..2 }
+}

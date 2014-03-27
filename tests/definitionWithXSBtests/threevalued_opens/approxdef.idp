@@ -1,0 +1,45 @@
+vocabulary V {
+  type G isa int
+  T6_ct
+  T6_cf
+  T7_ct(G,G)
+  T7_cf(G,G)
+  T8_ct
+  T8_cf
+  D_ct(G)
+  D_cf(G)
+  C_ct(G)
+  C_cf(G)
+  D_ct_input_ct(G)
+  D_cf_input_cf(G)
+  C_ct_input_ct(G)
+  C_cf_input_cf(G)
+}
+
+theory T : V {
+    {
+        T6_cf <- (? x y : T7_cf(x,y)).
+        T6_ct <- (! x y : T7_ct(x,y)).
+        ! x y : T7_cf(x,y) <- (C_ct(x) & D_ct(y) & x~=y).
+        ! x : C_cf(x) <- C_cf_input_cf(x).
+        ! x : C_ct(x) <- C_ct_input_ct(x).
+        ! y : D_cf(y) <- D_cf_input_cf(y).
+        ! y : D_ct(y) <- D_ct_input_ct(y).
+        T8_ct <- (? x : C_ct(x)).
+        T8_cf <- (! x : C_cf_input_cf(x)).
+        ! x y : T7_ct(x,y) <- T6_ct.
+        ! x y : T7_cf(x,y) <- ((! var10 var11 : ((var10=x & var11=y) | T7_ct(var10,var11))) & T6_cf).
+        ! x : C_ct(x) <- (? y : T7_cf(x,y)).
+        ! x : C_cf(x) <- (? y : (T7_ct(x,y) & D_ct(y) & x ~= y)).
+        ! y : D_ct(y) <- (? x : T7_cf(x,y)).
+        ! y : D_cf(y) <- (? x : (T7_ct(x,y) & C_ct(x) & x ~= y)).
+        ! x : C_cf(x) <- T8_cf.
+        ! x : C_ct(x) <- ((! var12 : (var12=x) | C_cf(var12)) & T8_ct).
+        T6_ct <- true.
+        T8_ct <- true.
+    }
+}
+
+structure S : V {
+  V::G[V::G] = { 1..2 }
+}
