@@ -12,6 +12,7 @@
 #pragma once
 
 #include <memory>
+#include "lua/luaconnection.hpp"
 
 class Vocabulary;
 class Predicate;
@@ -39,6 +40,12 @@ class FOBDDManager;
 class FOBDDVariable;
 
 namespace Tests {
+
+class DataManager {
+public:
+	DataManager();
+	~DataManager();
+};
 
 struct TestingSet1 {
 	SortTable* sorttable; //[-2,2]

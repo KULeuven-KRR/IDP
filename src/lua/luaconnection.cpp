@@ -118,8 +118,12 @@ const DomainElement* convertToElement(int arg, lua_State* L) {
 
 namespace LuaConnection {
 
-lua_State* _state;
+lua_State* _state = NULL;
 lua_State* getState() {
+	if(_state==NULL){
+		cerr <<"THROWING" <<"\n";
+		throw IdpException("Lua was not initialized");
+	}
 	return _state;
 }
 
@@ -2051,7 +2055,7 @@ void addInternalProcedures(lua_State*) {
 
 	// The mapping of all possible procedure names to a map with all their possible arguments and associated effective internal procedures
 	for (auto i = getAllInferences().cbegin(); i != getAllInferences().cend(); ++i) {
-		addInternalProcedure((*i).get(), _state);
+		addInternalProcedure((*i).get(), getState());
 	}
 }
 
@@ -2061,20 +2065,20 @@ void addInternalProcedures(lua_State*) {
 void makeLuaConnection() {
 	// Create the lua state
 	_state = lua_open();
-	luaL_openlibs(_state);
+	luaL_openlibs(getState());
 
 	_checkedAddToGlobal.clear(); // TODO belongs to some singleton?
 
 	// Create all metatables
-	createMetaTables(_state);
+	createMetaTables(getState());
 
 	// Add internal procedures
-	addInternalProcedures(_state);
+	addInternalProcedures(getState());
 
 	// Overwrite some standard lua procedures
-	int err = luaL_dofile(_state,getPathOfLuaInternals().c_str());
+	int err = luaL_dofile(getState(),getPathOfLuaInternals().c_str());
 	if (err) {
-		clog << lua_tostring(_state,-1) << "\n";
+		clog << lua_tostring(getState(),-1) << "\n";
 		clog << "Error in " << getPathOfLuaInternals() << ".\n";
 		exit(1);
 	}
@@ -2100,7 +2104,7 @@ void makeLuaConnection() {
 	// Parse and run configuration file
 	auto errornb = run({getPathOfConfigFile()}, false, false, "stdspace.configIDP()");
 	if(errornb!=0){
-		clog << lua_tostring(_state,-1) << "\n";
+		clog << lua_tostring(getState(),-1) << "\n";
 		clog << "Error in " << getPathOfConfigFile() << ".\n";
 		exit(1);
 	}
@@ -2111,7 +2115,8 @@ void makeLuaConnection() {
  */
 void closeLuaConnection() {
 	_checkedAddToGlobal.clear(); // TODO belongs to some singleton?
-	lua_close(_state);
+	lua_close(getState());
+	_state = NULL;
 	//FIXME it seems that all of the Internal Procedures have been deleted by gc.
 	//FIXME no, they are not, just some are deleted...
 //	for (auto i = ns2name2procedures.cbegin(); i != ns2name2procedures.cend(); ++i) {
@@ -2127,12 +2132,12 @@ void closeLuaConnection() {
 
 const DomainElement* execute(const std::string& chunk) {
 	try {
-		int err = luaL_dostring(_state,chunk.c_str());
+		int err = luaL_dostring(getState(),chunk.c_str());
 		if (err) {
 			stringstream ss;
-			auto result = lua_tostring(_state,-1);
+			auto result = lua_tostring(getState(),-1);
 			ss <<result;
-			lua_pop(_state, 1);
+			lua_pop(getState(), 1);
 			Error::error(ss.str());
 			return NULL;
 		}
@@ -2140,15 +2145,15 @@ const DomainElement* execute(const std::string& chunk) {
 		// Stops execution of further commands, as expected
 	}
 
-	return convertToElement(-1, _state);
+	return convertToElement(-1, getState());
 }
 
 void pushglobal(const vector<string>& name, const ParseInfo& pi) {
-	lua_getglobal(_state, name[0].c_str());
+	lua_getglobal(getState(), name[0].c_str());
 	for (size_t n = 1; n < name.size(); ++n) {
-		if (lua_istable(_state,-1)) {
-			lua_getfield(_state, -1, name[n].c_str());
-			lua_remove(_state, -2);
+		if (lua_istable(getState(),-1)) {
+			lua_getfield(getState(), -1, name[n].c_str());
+			lua_remove(getState(), -2);
 		} else {
 			stringstream ss;
 			ss << "Unknown object.";
@@ -2162,59 +2167,59 @@ InternalArgument* call(const vector<string>& proc, const vector<vector<string>>&
 	for (size_t n = 0; n < args.size(); ++n) {
 		pushglobal(args[n], pi);
 	}
-	int err = lua_pcall(_state, args.size(), 1, 0);
+	int err = lua_pcall(getState(), args.size(), 1, 0);
 	if (err) {
 		stringstream ss;
-		ss << lua_tostring(_state,-1);
-		lua_pop(_state, 1);
+		ss << lua_tostring(getState(),-1);
+		lua_pop(getState(), 1);
 		Error::error(ss.str(), pi);
 		return NULL;
 	} else {
-		InternalArgument* ia = new InternalArgument(createArgument(-1, _state));
-		lua_pop(_state, 1);
+		InternalArgument* ia = new InternalArgument(createArgument(-1, getState()));
+		lua_pop(getState(), 1);
 		return ia;
 	}
 }
 
 const DomainElement* funccall(string* procedure, const ElementTuple& input) {
-	lua_getfield(_state, LUA_REGISTRYINDEX, procedure->c_str());
+	lua_getfield(getState(), LUA_REGISTRYINDEX, procedure->c_str());
 	for (auto it = input.cbegin(); it != input.cend(); ++it) {
-		convertToLua(_state, *it);
+		convertToLua(getState(), *it);
 	}
-	int err = lua_pcall(_state, input.size(), 1, 0);
+	int err = lua_pcall(getState(), input.size(), 1, 0);
 	if (err) {
 		stringstream ss;
-		ss << string(lua_tostring(_state,-1));
-		lua_pop(_state, 1);
+		ss << string(lua_tostring(getState(),-1));
+		lua_pop(getState(), 1);
 		Error::error(ss.str());
 		return NULL;
 	} else {
-		auto d = convertToElement(-1, _state);
-		lua_pop(_state, 1);
+		auto d = convertToElement(-1, getState());
+		lua_pop(getState(), 1);
 		return d;
 	}
 }
 
 bool predcall(string* procedure, const ElementTuple& input) {
-	lua_getfield(_state, LUA_REGISTRYINDEX, procedure->c_str());
+	lua_getfield(getState(), LUA_REGISTRYINDEX, procedure->c_str());
 	for (auto it = input.cbegin(); it != input.cend(); ++it) {
-		convertToLua(_state, *it);
+		convertToLua(getState(), *it);
 	}
-	int err = lua_pcall(_state, input.size(), 1, 0);
+	int err = lua_pcall(getState(), input.size(), 1, 0);
 	if (err) {
 		stringstream ss;
-		ss << string(lua_tostring(_state,-1)) << "\n";
-		lua_pop(_state, 1);
+		ss << string(lua_tostring(getState(),-1)) << "\n";
+		lua_pop(getState(), 1);
 		throw IdpException(ss.str());
 	} else {
-		bool b = lua_toboolean(_state, -1);
-		lua_pop(_state, 1);
+		bool b = lua_toboolean(getState(), -1);
+		lua_pop(getState(), 1);
 		return b;
 	}
 }
 
 void compile(UserProcedure* proc) {
-	compile(proc, _state);
+	compile(proc, getState());
 }
 
 template<>
@@ -2242,8 +2247,8 @@ Vocabulary* vocabulary(InternalArgument* arg) {
 
 string* getProcedure(const std::vector<std::string>& name, const ParseInfo& pi) {
 	pushglobal(name, pi);
-	InternalArgument ia = createArgument(-1, _state);
-	lua_pop(_state, 1);
+	InternalArgument ia = createArgument(-1, getState());
+	lua_pop(getState(), 1);
 	if (ia._type == AT_PROCEDURE) {
 		return ia._value._string;
 	} else {

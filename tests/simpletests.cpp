@@ -21,14 +21,17 @@
 #include "theory/theory.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
-#include "lua/luaconnection.hpp"
+#include "testingtools.hpp"
 
 #include <dirent.h>
 #include <exception>
 
 using namespace std;
+using namespace Tests;
 
 TEST(SimpleTest, TestTableSizeEquality) {
+	DataManager m;
+
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
@@ -95,6 +98,8 @@ TEST(SimpleTest, TestTableSizeEquality) {
 }
 
 TEST(SimpleTest, TestTableSizeSmallerThan) {
+	DataManager m;
+
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
@@ -161,6 +166,8 @@ TEST(SimpleTest, TestTableSizeSmallerThan) {
 }
 
 TEST(SimpleTest, TestTableSizeGreaterThan) {
+	DataManager m;
+
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
@@ -227,6 +234,8 @@ TEST(SimpleTest, TestTableSizeGreaterThan) {
 }
 
 TEST(SimpleTest, TestTableSizeSmallerThanOrEqual) {
+	DataManager m;
+
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
@@ -293,6 +302,8 @@ TEST(SimpleTest, TestTableSizeSmallerThanOrEqual) {
 }
 
 TEST(SimpleTest, TestTableSizeGreaterThanOrEqual) {
+	DataManager m;
+
 	auto exact_ts0 = tablesize(TableSizeType::TST_EXACT, 0);
 	auto exact_ts1 = tablesize(TableSizeType::TST_EXACT, 1);
 	auto exact_max_ts = tablesize(TableSizeType::TST_EXACT, getMaxElem<long>()); // long unsigned int max value
@@ -357,17 +368,6 @@ TEST(SimpleTest, TestTableSizeGreaterThanOrEqual) {
 	ASSERT_TRUE(infinite_ts_1 >= approx_max_ts);
 	ASSERT_TRUE(infinite_ts_1 >= infinite_ts_1);
 }
-
-class DataManager {
-public:
-	DataManager() {
-		LuaConnection::makeLuaConnection();
-	}
-	~DataManager() {
-		LuaConnection::closeLuaConnection();
-		GlobalData::close();
-	}
-};
 
 TEST(SimpleMX,NoPushNegations){
 	DataManager m;

@@ -18,6 +18,7 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "groundtheories/GroundPolicy.hpp"
 #include "groundtheories/GroundTheory.hpp"
+#include "testingtools.hpp"
 
 #include <exception>
 
@@ -32,6 +33,7 @@ struct MxTesting {
 	Sort sort;
 	Variable var;
 	VarTerm o;
+	DataManager m;
 
 	MxTesting(bool differentvoc)
 			: 	v(Vocabulary("one")),
