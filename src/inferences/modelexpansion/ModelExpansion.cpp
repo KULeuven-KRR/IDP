@@ -115,8 +115,7 @@ public:
 		delete (mx);
 
 MXResult ModelExpansion::expand() const {
-	auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_GROUNDING));
-	mxverbosity = max(mxverbosity,getOption(IntType::VERBOSE_SOLVING_STATISTICS));
+	auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_SOLVING_STATISTICS));
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
 	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
 	auto clonetheory = _theory->clone();
@@ -285,7 +284,6 @@ MXResult ModelExpansion::expand() const {
 		}
 		auto abstractsolutions = mx->getSolutions();
 		if (mxverbosity > 0) {
-			stringstream ss;
 			logActionAndValue("nrmodels", abstractsolutions.size());
 			logActionAndTimeSince("total-solving-time", startTime);
 		}
