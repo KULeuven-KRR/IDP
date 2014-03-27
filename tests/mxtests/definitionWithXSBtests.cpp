@@ -25,62 +25,37 @@ using namespace std;
 
 namespace Tests {
 
-vector<string> generateListOfDefXSBFiles() {
-	vector<string> testdirs {"definitionWithXSBtests/", "definitiontests/"};
+// All files with theories in them that depend on twovalued opens
+vector<string> generateListOfTwovaluedDefsFiles() {
+	vector<string> testdirs {"definitionWithXSBtests/twovalued_opens/",
+		"definitiontests/"};
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
-
+// All test files that should throw an exception
 vector<string> generateListOfFailingDefXSBFiles() {
 	vector<string> testdirs {"definitionShouldFailWithXSBTests/"};
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
+// All files with theories in them that depend on three- or twovalued opens
+vector<string> generateListOfThreevaluedDefsFiles() {
+	vector<string> testdirs {"definitionWithXSBtests/threevalued_opens/"};
+//	vector<string> testdirs {"definitionWithXSBtests/threevalued_opens",
+//		"definitionWithXSBtests/twovalued_opens", "definitiontests/"};
+	return getAllFilesInDirs(getTestDirectory(), testdirs);
+}
 
-class DefinitionWithXSBTest: public ::testing::TestWithParam<string> {
+class CalculateDefinitionsWithXSBTest: public ::testing::TestWithParam<string> {};
+class DefinitionShouldFailWithXSBTest: public ::testing::TestWithParam<string> {};
+class RefineDefinitionsWithXSBTest: public ::testing::TestWithParam<string> {};
 
-};
 
-class DefinitionShouldFailWithXSBTest: public ::testing::TestWithParam<string> {
-
-};
+// 1: MX With stdoptions.xsb = true
+//---------------------------------
 
 // Normal MX tests with xsb=true
 TEST_P(MXnbTest, DoesMXWithXSB) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithxsb()");
 }
-
-// Dedicated calculate definition test from the definitiontests and definitionWithXSBtests
-// These two directories are not put together because the tests in definitionWithXSBtests do not contain the assertions
-TEST_P(DefinitionWithXSBTest, CalculatesDefinitionWithXSB) {
-	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionEvaluation(T,S)"););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
-
-// Dedicated definition refining test from the definitiontests and definitionWithXSBtests
-TEST_P(DefinitionWithXSBTest, RefinesDefinitionWithXSB) {
-	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionRefining(T,S)"););
-	ASSERT_EQ(result, Status::SUCCESS);
-}
-
-INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionWithXSBTest,  ::testing::ValuesIn(generateListOfDefXSBFiles()));
-
-
-// Separate tests for cases in which an error should be thrown when trying to use XSB
-TEST_P(DefinitionShouldFailWithXSBTest, CalculatesFailingDefinitionWithXSB) {
-	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "runCalcDefWithXSB(T,S)"););
-	ASSERT_EQ(result, Status::FAIL);
-}
-
-INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionShouldFailWithXSBTest,  ::testing::ValuesIn(generateListOfFailingDefXSBFiles()));
-
 
 // Tests on all normal MX test files that uses a random structure for the opens to check
 // whether the definition evaluation is correct
@@ -93,6 +68,42 @@ TEST_P(MXnbTest, DoesMXWithXSBOnRandomStruct) {
 }
 
 
+// 2: Tests for the "calculatedefinitions(t,s)" call with stdoptions.xsb=true
+//---------------------------------------------------------------------------
 
+// Dedicated calculate definition test from the definitiontests and definitionWithXSBtests
+// These two directories are not put together because the tests in definitionWithXSBtests do not contain the assertions
+TEST_P(CalculateDefinitionsWithXSBTest, CalculatesDefinitionWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionEvaluation(T,S)"););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, CalculateDefinitionsWithXSBTest,  ::testing::ValuesIn(generateListOfTwovaluedDefsFiles()));
+
+// Separate tests for cases in which an error should be thrown when trying to use XSB
+TEST_P(DefinitionShouldFailWithXSBTest, CalculatesFailingDefinitionWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "runCalcDefWithXSB(T,S)"););
+	ASSERT_EQ(result, Status::FAIL);
+}
+INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionShouldFailWithXSBTest,  ::testing::ValuesIn(generateListOfFailingDefXSBFiles()));
+
+
+// 3: Tests for the "refinedefinitions(t,s)" call with stdoptions.xsb=true
+//-------------------------------------------------------------------------
+
+// Dedicated definition refining test from the definitiontests and definitionWithXSBtests
+TEST_P(RefineDefinitionsWithXSBTest, RefinesDefinitionWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionRefining(T,S)"););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+INSTANTIATE_TEST_CASE_P(RefinesDefinitionWithXSB, RefineDefinitionsWithXSBTest,  ::testing::ValuesIn(generateListOfThreevaluedDefsFiles()));
 }
 
