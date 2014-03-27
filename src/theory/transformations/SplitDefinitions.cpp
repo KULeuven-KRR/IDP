@@ -20,6 +20,9 @@
 extern void parsefile(const std::string&);
 
 Theory* SplitDefinitions::execute(Theory* t) {
+	if(not getOption(SPLIT_DEFS)){
+		return t;
+	}
 	prepare();
 
 	UniqueNames<PFSymbol*> usn;
@@ -112,6 +115,7 @@ void SplitDefinitions::prepare() {
 void SplitDefinitions::finish() {
 	auto newOptions = getGlobal()->getOptions();
 	getGlobal()->setOptions(savedOptions);
+	splittheo->recursiveDelete();
 	delete newOptions;
 }
 
