@@ -16,8 +16,17 @@
 #include "fobdds/FoBddVariable.hpp"
 #include "fobdds/FoBddFactory.hpp"
 #include "structure/StructureComponents.hpp"
+#include "lua/luaconnection.hpp"
 
 namespace Tests {
+
+DataManager::DataManager() {
+	LuaConnection::makeLuaConnection();
+}
+DataManager::~DataManager() {
+	LuaConnection::closeLuaConnection();
+	GlobalData::close();
+}
 
 TestingSet1 getTestingSet1() {
 	TestingSet1 testingSet;
