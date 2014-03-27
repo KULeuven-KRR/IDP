@@ -1,7 +1,7 @@
 /**
 * This file contains tools for boostrapping with definitions based on the dependency graph
 */
-include <mx> 
+
 
 namespace stdspace{
 	namespace definitionbootstrapping{
@@ -109,12 +109,12 @@ namespace stdspace{
 				forget(d) <- /*~pre(d) & */ ~search(d) & ~post(d).
 			}
 		}
-
+		/* No longer used: done in C++
 		procedure decideWorkflow(struc){
 			local mytheo = merge(prepostTheo, findHigher)
 			//options should be set by bootstrapping procedure
 			return onemodel(mytheo,struc)
-		}
+		}*/
 
 
 		/**
@@ -134,12 +134,12 @@ namespace stdspace{
 				samedef(r1,r2) <- in(r1) = in(r2) & dependsAny(in(r1), defines(r1),defines(r2)) & dependsAny(in(r1), defines(r2),defines(r1)). 
 			}
 		}
-		
+		/* No longer used: done in C++
 		procedure findsplitting(struc){
 			local mytheo = merge(def_split_theory, dependency)
 			//options should be set by bootstrapping procedure
 			return onemodel(mytheo,struc)
-		}
+		}*/
 
 		/**
 		* Finding symbols involved in recursion over negation
@@ -160,11 +160,12 @@ namespace stdspace{
 				hasrecneg(d) <- ?s: recneg(d,s).
 			}
 		}
+		/* No longer used: done in C++
 		procedure findsymbolswithrecursionovernegation(struc){
 			local mytheo = merge(recnegTheo, dependency)
 			//options should be set by bootstrapping procedure
 			return onemodel(mytheo,struc)
-		}
+		}*/
 
 	}
 }
