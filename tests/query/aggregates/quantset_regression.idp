@@ -1,0 +1,18 @@
+vocabulary V{
+	type Bool
+	type PredForm
+	type Constraint
+	delay(Constraint, Bool, PredForm)
+}
+query Q : V {
+	{v: v=sum{c : ! b p: ~delay(c, b, p) : 1 }}
+}
+structure S  : V {
+  Bool = { "False"; "True" }
+  Constraint = { C }
+  PredForm = { A }
+  delay = {  }
+}
+procedure getExpectedSet(){
+  return {{1}}
+}

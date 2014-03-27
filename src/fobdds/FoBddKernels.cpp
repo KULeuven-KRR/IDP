@@ -89,7 +89,7 @@ std::ostream& FOBDDQuantKernel::put(std::ostream& output) const {
 	pushtab();
 	auto bddmanager = FOBDDManager::createManager(false);
 	auto newbdd=bddmanager->getBDDTryMaintainOrder(_bdd,_bdd->manager());
-	auto nodebruijnbdd = bddmanager->substitute(newbdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
+	auto nodebruijnbdd = bddmanager->substituteIndex(newbdd,bddmanager->getDeBruijnIndex(_sort,0),bddmanager->getVariable(v));
 	output << "" << nt() << print(nodebruijnbdd);
 	poptab();
 	output << "" << nt();

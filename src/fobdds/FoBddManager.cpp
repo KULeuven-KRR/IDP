@@ -1094,19 +1094,9 @@ const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVar
 	return s.FOBDDVisitor::change(bdd);
 }
 
-const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
-	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(shared_from_this(), miv);
-	return s.FOBDDVisitor::change(bdd);
-}
-
-const FOBDDTerm* FOBDDManager::substitute(const FOBDDTerm* bddt, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>& miv) {
-	SubstituteTerms<FOBDDDeBruijnIndex, FOBDDVariable> s(shared_from_this(), miv);
-	return bddt->acceptchange(&s);
-}
-
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const map<const FOBDDVariable*, const FOBDDTerm*>& mvv) {
-	SubstituteTerms<FOBDDVariable, FOBDDTerm> s(shared_from_this(), mvv);
-	return s.FOBDDVisitor::change(bdd);
+       SubstituteTerms<FOBDDVariable, FOBDDTerm> s(shared_from_this(), mvv);
+       return s.FOBDDVisitor::change(bdd);
 }
 
 const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOBDDDomainTerm* term, const FOBDDVariable* variable) {
@@ -1116,16 +1106,20 @@ const FOBDDKernel* FOBDDManager::substitute(const FOBDDKernel* kernel, const FOB
 	return kernel->acceptchange(&s);
 }
 
-const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
-	SubstituteIndex s(shared_from_this(), index, variable);
-	return s.FOBDDVisitor::change(bdd);
-}
-
 const FOBDD* FOBDDManager::substitute(const FOBDD* bdd, const FOBDDVariable* variable, const FOBDDDeBruijnIndex* index) {
 	std::map<const FOBDDVariable*, const FOBDDDeBruijnIndex*> m;
 	m[variable] = index;
 	SubstituteTerms<FOBDDVariable, FOBDDDeBruijnIndex> s(shared_from_this(), m);
 	return s.FOBDDVisitor::change(bdd);
+}
+
+const FOBDD* FOBDDManager::substituteIndex(const FOBDD* bdd, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
+	SubstituteIndex s(shared_from_this(), index, variable);
+	return s.FOBDDVisitor::change(bdd);
+}
+const FOBDDTerm* FOBDDManager::substituteIndex(const FOBDDTerm* bddt, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable) {
+	SubstituteIndex s(shared_from_this(), index, variable);
+	return bddt->acceptchange(&s);
 }
 
 int FOBDDManager::longestbranch(const FOBDDKernel* kernel) {
