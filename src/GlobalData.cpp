@@ -41,6 +41,9 @@ GlobalData::~GlobalData() {
 	for (auto i = _openfiles.cbegin(); i != _openfiles.cend(); ++i) {
 		fclose(*i);
 	}
+	for (auto i = _temp_file_names.cbegin(); i != _temp_file_names.cend(); ++i) {
+		remove(*i);
+	}
 	for (auto m = _monitors.begin(); m != _monitors.end(); ++m) {
 		delete (*m);
 	}
@@ -98,10 +101,21 @@ FILE* GlobalData::openFile(const char* filename, const char* mode) {
 	return f;
 }
 
+char* GlobalData::getTempFileName() {
+	auto name = tmpnam(NULL);
+	_temp_file_names.insert(name);
+	return f;
+}
+
 void GlobalData::closeFile(FILE* filepointer) {
 	Assert(filepointer!=NULL);
 	_openfiles.erase(filepointer);
 	fclose(filepointer);
+}
+
+void GlobalData::removeTempFile(char* name) {
+	_temp_file_names.erase(name);
+	remove(name);
 }
 
 void GlobalData::setTabSize(size_t size) {
