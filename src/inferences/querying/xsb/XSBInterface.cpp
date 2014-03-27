@@ -32,12 +32,6 @@ XSBInterface* XSBInterface::instance() {
 	return interface_instance;
 }
 
-void XSBInterface::setStructure(Structure* structure){
-	// TODO: delete possible previous PrologProgram?
-	_pp = new PrologProgram(structure,_translator);
-	_structure = structure;
-}
-
 std::list<string> split(std::string sentence) {
 	std::istringstream iss(sentence);
 	std::list<string> tokens;
@@ -95,7 +89,10 @@ XSBInterface::XSBInterface() {
 	commandCall(ss2.str());
 }
 
-void XSBInterface::loadDefinition(Definition* d) {
+void XSBInterface::load(Definition* d, Structure* structure) {
+	// TODO: delete possible previous PrologProgram?
+	_pp = new PrologProgram(structure,_translator);
+	_structure = structure;
 	auto cloned_definition = d->clone();
 	Theory theory("", _structure->vocabulary(), ParseInfo());
 	theory.add(cloned_definition);
@@ -106,8 +103,8 @@ void XSBInterface::loadDefinition(Definition* d) {
 	FormulaUtils::flatten(&theory);
 	_pp->setDefinition(cloned_definition);
 	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
-	auto str = _pp->getCode();
 	auto str2 = _pp->getFacts();
+	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code\n\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3 << "\n";

@@ -41,9 +41,8 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			clog << "Refining the above definition using XSB\n";
 		}
 		auto xsb_interface = XSBInterface::instance();
-		xsb_interface->setStructure(structure);
+		xsb_interface->load(definition,structure);
 
-		xsb_interface->loadDefinition(definition);
 		auto symbols = definition->defsymbols();
 		if(not symbolsToQuery.empty()) {
 			for(auto it = symbols.begin(); it != symbols.end();) {

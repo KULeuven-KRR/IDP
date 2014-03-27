@@ -38,10 +38,9 @@ private:
 
 public:
 	static XSBInterface* instance();
-	void setStructure(Structure* structure);
 	void reset();
 	void exit();
-	void loadDefinition(Definition*);
+	void load(Definition*, Structure*);
 	SortedElementTable queryDefinition(PFSymbol*, TruthValue tv = TruthValue::True);
 	bool query(PFSymbol*, ElementTuple);
 	PrologTerm* atom2term(PredForm* pf);

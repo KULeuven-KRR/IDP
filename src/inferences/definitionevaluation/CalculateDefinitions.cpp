@@ -47,9 +47,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 			clog << "Calculating the above definition using XSB\n";
 		}
 		auto xsb_interface = XSBInterface::instance();
-		xsb_interface->setStructure(structure);
-
-		xsb_interface->loadDefinition(definition);
+		xsb_interface->load(definition,structure);
 		auto symbols = definition->defsymbols();
 		if(not symbolsToQuery.empty()) {
 			for(auto it = symbols.begin(); it != symbols.end();) {
