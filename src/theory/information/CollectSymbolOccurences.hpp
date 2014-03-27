@@ -25,12 +25,12 @@ class CollectSymbolOccurences: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	std::set<std::pair<PFSymbol*, Context>> _result;
-	Definition* _definition;
 	Context _context;
 
 public:
 	template<typename T>
 	std::set<std::pair<PFSymbol*, Context>> execute(T f) {
+		_context = Context::POSITIVE;
 		f->accept(this);
 		return _result;
 	}
