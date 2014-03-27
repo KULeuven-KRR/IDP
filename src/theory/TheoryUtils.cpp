@@ -226,6 +226,11 @@ bool hasRecursionOverNegation(Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
 }
 
+std::set<PFSymbol*> recurionsOverNegationSymbols(Definition* d){
+	return transform<RecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
+}
+
+
 void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }

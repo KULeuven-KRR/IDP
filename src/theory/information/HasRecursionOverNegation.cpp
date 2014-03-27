@@ -10,92 +10,90 @@
  ****************************************************************************/
 
 #include "HasRecursionOverNegation.hpp"
-
+#include "utils/UniqueNames.hpp"
+#include "theory/TheoryUtils.hpp"
+#include "utils/BootstrappingUtils.hpp"
 #include "IncludeComponents.hpp"
+#include "inferences/modelexpansion/ModelExpansion.hpp"
+
+
+extern void parsefile(const std::string&);
 
 using namespace std;
 
 bool HasRecursionOverNegation::execute(Definition* d) {
-	_definition = d;
-	_result = false;
-	for (auto it = d->rules().cbegin(); it != d->rules().cend(); it++) {
-		_currentlyNegated = false;
-		(*it)->accept(this);
-		if (_result) {
-			return true;
-		}
-	}
-	return _result;
+	return not DefinitionUtils::recurionsOverNegationSymbols(d).empty();
 }
 
-void HasRecursionOverNegation::visit(const EqChainForm* f) {
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
+std::set<PFSymbol*> RecursionOverNegationSymbols::execute(Definition* d) {
+	if(getOption(GUARANTEE_NO_REC_NEG)){
+		return {};
 	}
-	traverse(f);
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
+	prepare();
+
+	UniqueNames<PFSymbol*> usn;
+	UniqueNames<Rule*> urn;
+	UniqueNames<Definition*> udn;
+
+	auto structure = BootstrappingUtils::getDefinitionInfo(d, usn, urn, udn);
+	auto result = handle(structure, usn);
+	finish();
+	return result;
 }
 
-void HasRecursionOverNegation::visit(const EquivForm* f) {
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-	traverse(f);
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-}
+void RecursionOverNegationSymbols::prepare() {
+	savedOptions = BootstrappingUtils::setBootstrappingOptions();
 
-void HasRecursionOverNegation::visit(const BoolForm* f) {
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-	traverse(f);
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-}
-
-void HasRecursionOverNegation::visit(const QuantForm* f) {
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-	traverse(f);
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-}
-
-void HasRecursionOverNegation::visit(const AggForm* f) {
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-	traverse(f);
-	if (f->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
-}
-
-void HasRecursionOverNegation::visit(const PredForm* pf) {
-	if (pf->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
+	if (not getGlobal()->instance()->alreadyParsed("definitions")) {
+		parsefile("definitions");
 	}
 
-	if (_definition->defsymbols().find(pf->symbol()) != _definition->defsymbols().cend() && _currentlyNegated) {
-		_result = true;
-	} else {
-		traverse(pf);
-	}
-	if (pf->sign() == SIGN::NEG) {
-		_currentlyNegated = !_currentlyNegated;
-	}
+	auto defnamespace = getGlobal()->getGlobalNamespace()->subspace("stdspace")->subspace("definitionbootstrapping");
+	Assert(defnamespace != NULL);
+
+	auto recnegvoc = defnamespace->vocabulary("recnegvoc");
+	Assert(recnegvoc != NULL);
+	recursivePredicates = recnegvoc->pred("recneg/2");
+	Assert(recursivePredicates != NULL);
+
+	auto deptheo = defnamespace->theory("dependency");
+	Assert(deptheo != NULL);
+	bootstraptheo = defnamespace->theory("recnegTheo");
+	Assert(bootstraptheo != NULL);
+	bootstraptheo = FormulaUtils::merge(bootstraptheo, deptheo);
+	Assert(bootstraptheo != NULL);
+
 }
-void HasRecursionOverNegation::visit(const FuncTerm* ft) {
-	if (_definition->defsymbols().find(ft->function()) != _definition->defsymbols().cend() && _currentlyNegated) {
-		_result = true;
-	} else {
-		traverse(ft);
+void RecursionOverNegationSymbols::finish() {
+	auto newOptions = getGlobal()->getOptions();
+	getGlobal()->setOptions(savedOptions);
+	bootstraptheo->recursiveDelete();
+	delete newOptions;
+}
+
+std::set<PFSymbol*> RecursionOverNegationSymbols::handle(Structure* structure, UniqueNames<PFSymbol*> uniqueSymbols) {
+	auto temptheo = bootstraptheo->clone();
+	auto models = ModelExpansion::doModelExpansion(temptheo, structure, NULL, NULL, { })._models;
+	if (models.size() != 1) {
+		throw IdpException("Invalid code path: no solution to recursion over negation problem");
 	}
+	temptheo->recursiveDelete();
+
+	auto splitmodel = models[0];
+	splitmodel->makeTwoValued();
+
+	auto recneginter = splitmodel->inter(recursivePredicates);
+	std::set<PFSymbol*> result;
+	for (auto it = recneginter->ct()->begin(); not it.isAtEnd(); ++it) {
+		auto tuple = *it;
+		Assert(tuple.size() == 2);
+		auto el = tuple[1];
+		Assert(el->type() == DET_INT);
+		auto sym = uniqueSymbols.getOriginal(el->value()._int);
+		result.insert(sym);
+	}
+
+	delete splitmodel;
+	delete structure;
+	return result;
 }

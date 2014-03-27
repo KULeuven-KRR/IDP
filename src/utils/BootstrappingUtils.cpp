@@ -10,6 +10,7 @@
  ****************************************************************************/
 #include "BootstrappingUtils.hpp"
 #include "common.hpp"
+#include "commontypes.hpp"
 #include "utils/UniqueNames.hpp"
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
@@ -97,19 +98,23 @@ Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<P
 
 }
 
-Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
-	return getDefinitionInfo( { d }, usn, urn, udn);
+Structure* getDefinitionInfo(Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
+	return getDefinitionInfo(std::vector<Definition*>({ d }), usn, urn, udn);
 }
 Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
 	return getDefinitionInfo(t->definitions(), usn, urn, udn);
 }
 
 Options* setBootstrappingOptions() {
+	//All bootstrapping methods that use this procedure should have a dedicated option that is set to false here and that guarantees that
+	//that specific bootstrapping procedure will not be executed again.
 	auto old = getGlobal()->getOptions();
 	auto newoptions = new Options(false);
 	getGlobal()->setOptions(newoptions);
 	setOption(POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
 	setOption(SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
+	setOption(GUARANTEE_NO_REC_NEG, true); //Important since checking recursion over negation is implemented with bootstrapping
+
 	setOption(GROUNDWITHBOUNDS, true);
 	setOption(LIFTEDUNITPROPAGATION, true);
 	setOption(LONGESTBRANCH, 12);

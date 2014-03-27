@@ -27,7 +27,7 @@ namespace BootstrappingUtils {
 	 */
 Structure* getDefinitionInfo(const Theory* theo, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
 		UniqueNames<Definition*>& uniqueDefNames);
-Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
+Structure* getDefinitionInfo(Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
 		UniqueNames<Definition*>& uniqueDefNames);
 
 Options* setBootstrappingOptions(); //Sets the options for running bootstrapping applications. Returns backup of old options. When calling this method, you are responsible for deleting the options that are now set.

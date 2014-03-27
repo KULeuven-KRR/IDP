@@ -11,26 +11,37 @@
 
 #pragma once
 
-#include "visitors/TheoryVisitor.hpp"
+#include <set>
 
 class Definition;
+template<class T>
+class UniqueNames;
+class Options;
+class PFSymbol;
+class Structure;
+class AbstractTheory;
+class Predicate;
 
-class HasRecursionOverNegation: public DefaultTraversingTheoryVisitor {
-	VISITORFRIENDS()
-private:
-	Definition* _definition;
-	bool _currentlyNegated;
-	bool _result;
+class HasRecursionOverNegation {
 
 public:
 	bool execute(Definition* d);
 
-protected:
-	void visit(const PredForm*);
-	void visit(const BoolForm*);
-	void visit(const QuantForm*);
-	void visit(const EqChainForm*);
-	void visit(const AggForm*);
-	void visit(const EquivForm*);
-	void visit(const FuncTerm* ft);
+};
+
+class RecursionOverNegationSymbols {
+
+public:
+	std::set<PFSymbol*> execute(Definition* d);
+
+private:
+	void prepare();
+	void finish();
+	std::set<PFSymbol*> handle(Structure* struc, UniqueNames<PFSymbol*>);
+
+private:
+	Options* savedOptions;
+	AbstractTheory* bootstraptheo;
+	Predicate* recursivePredicates;
+
 };

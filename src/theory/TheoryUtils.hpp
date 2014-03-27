@@ -376,6 +376,7 @@ bool approxTotal(Definition*);
 
 /** Check whether the definition has recursion over negation */
 bool hasRecursionOverNegation(Definition*);
+std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);
 
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);
