@@ -366,7 +366,6 @@ void Structure::makeTwoValued() {
 		::makeTwoValued((*i).first, (*i).second);
 	}
 	clean();
-	Assert(approxTwoValued());
 }
 
 void computescore(Sort* s, map<Sort*, unsigned int>& scores) {

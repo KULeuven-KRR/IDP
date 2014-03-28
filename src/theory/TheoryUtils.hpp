@@ -226,7 +226,7 @@ void flatten(AbstractTheory*);
 Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
-/** Merge two theories */
+/** Merge two theories, returns a full clone */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 
 /** Count the number of subformulas in the theory */

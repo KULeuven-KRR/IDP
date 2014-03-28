@@ -34,7 +34,9 @@ template<class Factory, class DomainType>
 TypedFOPropagator<Factory, DomainType>::~TypedFOPropagator() {
 	delete (_scheduler);
 	deleteList(_admissiblecheckers);
-	deleteList(_leafconnectors);
+	for(auto l: _leafconnectors){
+		l.second->recursiveDelete();
+	}
 	delete (_factory);
 	if (_theory != NULL) {
 		_theory->recursiveDelete();
@@ -338,6 +340,7 @@ void TypedFOPropagator<Factory, Domain>::updateDomain(const Formula* f, FOPropDi
 	//extra propagation in the same direction can be done.
 	if (_factory->approxequals(olddom, newdom) || not admissible(newdom, olddom)) {
 		delete (newdom);
+		delete (newdomain);
 		return;
 	}
 	ct ? setCTOfDomain(f, newdom) : setCFOfDomain(f, newdom);

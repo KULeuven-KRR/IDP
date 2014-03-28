@@ -16,7 +16,6 @@
 #include "utils/BootstrappingUtils.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 
-
 extern void parsefile(const std::string&);
 
 Theory* SplitDefinitions::execute(Theory* t) {
@@ -31,11 +30,9 @@ Theory* SplitDefinitions::execute(Theory* t) {
 
 	auto structure = BootstrappingUtils::getDefinitionInfo(t, usn, urn, udn);
 	auto newDefs = split(structure, urn);
+	delete(structure);
 
-	for (auto def : t->definitions()) {
-		delete(def);
-	}
-	t->definitions().clear();
+	deleteList(t->definitions());
 	t->definitions(newDefs);
 
 	finish();
@@ -43,7 +40,6 @@ Theory* SplitDefinitions::execute(Theory* t) {
 }
 
 std::vector<Definition*> SplitDefinitions::split(Structure* structure, UniqueNames<Rule*>& uniqueRuleNames){
-
 	auto temptheo = splittheo->clone();
 	auto models = ModelExpansion::doModelExpansion(temptheo, structure, NULL, NULL, { })._models;
 	if (models.size() != 1) {
@@ -60,7 +56,6 @@ std::vector<Definition*> SplitDefinitions::split(Structure* structure, UniqueNam
 	auto allrules = structure->inter(structure->vocabulary()->sort("rule"));
 
 	std::vector<Definition*> result;
-
 	for(auto ruleIt = allrules->begin(); not ruleIt.isAtEnd(); ++ruleIt){
 		auto currentRuleName = (*ruleIt)[0];
 		if(contains(rulesDone, currentRuleName)){
@@ -84,8 +79,7 @@ std::vector<Definition*> SplitDefinitions::split(Structure* structure, UniqueNam
 		}
 	}
 
-	delete splitmodel;
-	delete structure;
+	delete(splitmodel);
 	return result;
 }
 

@@ -121,6 +121,7 @@ Options* setBootstrappingOptions() {
 	setOption(NRPROPSTEPS, 12);
 	setOption(CPSUPPORT, true);
 	setOption(TSEITINDELAY, false);
+	setOption(XSB, true);
 	setOption(SATISFIABILITYDELAY, false);
 	setOption(NBMODELS, 1);
 	setOption(AUTOCOMPLETE, true);

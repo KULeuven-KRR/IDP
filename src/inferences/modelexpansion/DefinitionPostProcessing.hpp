@@ -69,7 +69,7 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 	makeUnknownsFalse(insentence);
 	structure->clean();
 
-	auto processtheory = FormulaUtils::merge(defnamespace->theory("prepostTheo"), defnamespace->theory("findHigher"))->clone();
+	auto processtheory = FormulaUtils::merge(defnamespace->theory("prepostTheo"), defnamespace->theory("findHigher"));
 	auto splitsolutions = ModelExpansion::doModelExpansion(processtheory, structure, NULL, NULL)._models;
 	if (splitsolutions.size() < 1) {
 		throw IdpException("Invalid code path: no solution to splitting problem");
