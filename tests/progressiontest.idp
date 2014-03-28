@@ -21,11 +21,10 @@ procedure main(){
 	
 	if strict() then
 		sol = progress(T,sol)[1]
-		if sol == nil then
+		if sol ~= nil then
 			print("too long sequence")
-			return 1
+			return 0
 		end
-		return 0
 	end
 	return 1
 		
